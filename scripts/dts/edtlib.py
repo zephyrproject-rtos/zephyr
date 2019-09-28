@@ -94,7 +94,7 @@ class EDT:
     bindings_dirs:
       The bindings directory paths passed to __init__()
     """
-    def __init__(self, dts, bindings_dirs):
+    def __init__(self, dts, bindings_dirs, warn_file=None):
         """
         EDT constructor. This is the top-level entry point to the library.
 
@@ -104,7 +104,14 @@ class EDT:
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
+
+        warn_file:
+          'file' object to write warnings to. If None, sys.stderr is used.
         """
+        # Do this indirection with None in case sys.stderr is deliberately
+        # overridden
+        self._warn_file = sys.stderr if warn_file is None else warn_file
+
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
 
@@ -140,6 +147,10 @@ class EDT:
 
         # to_path() checks that the node exists
         return self._node2enode[chosen.props[name].to_path()]
+
+    def __repr__(self):
+        return "<EDT for '{}', binding directories '{}'>".format(
+            self.dts_path, self.bindings_dirs)
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -192,11 +203,11 @@ class EDT:
                 # representing the file)
                 binding = yaml.load(contents, Loader=yaml.Loader)
             except yaml.YAMLError as e:
-                _warn("'{}' appears in binding directories but isn't valid "
-                      "YAML: {}".format(binding_path, e))
+                self._warn("'{}' appears in binding directories but isn't "
+                           "valid YAML: {}".format(binding_path, e))
                 continue
 
-            binding_compat = _binding_compat(binding, binding_path)
+            binding_compat = self._binding_compat(binding, binding_path)
             if binding_compat not in dt_compats:
                 # Either not a binding (binding_compat is None -- might be a
                 # binding fragment or a spurious file), or a binding whose
@@ -209,10 +220,62 @@ class EDT:
             # and register the binding.
 
             binding = self._merge_included_bindings(binding, binding_path)
-            _check_binding(binding, binding_path)
+            self._check_binding(binding, binding_path)
 
             self._compat2binding[binding_compat, _binding_bus(binding)] = \
                 (binding, binding_path)
+
+    def _binding_compat(self, binding, binding_path):
+        # Returns the string listed in 'compatible:' in 'binding', or None if
+        # no compatible is found. Only takes 'self' for the sake of
+        # self._warn().
+        #
+        # Also searches for legacy compatibles on the form
+        #
+        #   properties:
+        #       compatible:
+        #           constraint: <string>
+
+        def new_style_compat():
+            # New-style 'compatible: "foo"' compatible
+
+            if binding is None or "compatible" not in binding:
+                # Empty file, binding fragment, spurious file, or old-style
+                # compat
+                return None
+
+            compatible = binding["compatible"]
+            if not isinstance(compatible, str):
+                _err("malformed 'compatible:' field in {} - should be a string"
+                     .format(binding_path))
+
+            return compatible
+
+        def old_style_compat():
+            # Old-style 'constraint: "foo"' compatible
+
+            try:
+                return binding["properties"]["compatible"]["constraint"]
+            except Exception:
+                return None
+
+        new_compat = new_style_compat()
+        old_compat = old_style_compat()
+        if old_compat:
+            self._warn("The 'properties: compatible: constraint: ...' way of "
+                       "specifying the compatible in {} is deprecated. Put "
+                       "'compatible: \"{}\"' at the top level of the binding "
+                       "instead.".format(binding_path, old_compat))
+
+            if new_compat:
+                _err("compatibles for {} should be specified with either "
+                     "'compatible:' at the top level or with the legacy "
+                     "'properties: compatible: constraint: ...' field, not "
+                     "both".format(binding_path))
+
+            return old_compat
+
+        return new_compat
 
     def _merge_included_bindings(self, binding, binding_path):
         # Merges any bindings listed in the 'include:' section of 'binding'
@@ -239,10 +302,10 @@ class EDT:
 
         # Legacy syntax
         if "inherits" in binding:
-            _warn("the 'inherits:' syntax in {} is deprecated and will be "
-                  "removed - please use 'include: foo.yaml' or "
-                  "'include: [foo.yaml, bar.yaml]' instead"
-                  .format(binding_path))
+            self._warn("the 'inherits:' syntax in {} is deprecated and will "
+                       "be removed - please use 'include: foo.yaml' or "
+                       "'include: [foo.yaml, bar.yaml]' instead"
+                       .format(binding_path))
 
             inherits = binding.pop("inherits")
             if not isinstance(inherits, list) or \
@@ -326,9 +389,144 @@ class EDT:
             node._init_props()
             node._init_interrupts()
 
-    def __repr__(self):
-        return "<EDT for '{}', binding directories '{}'>".format(
-            self.dts_path, self.bindings_dirs)
+    def _check_binding(self, binding, binding_path):
+        # Does sanity checking on 'binding'. Only takes 'self' for the sake of
+        # self._warn().
+
+        for prop in "title", "description":
+            if prop not in binding:
+                _err("missing '{}' property in {}".format(prop, binding_path))
+
+            if not isinstance(binding[prop], str) or not binding[prop]:
+                _err("missing, malformed, or empty '{}' in {}"
+                     .format(prop, binding_path))
+
+        ok_top = {"title", "description", "compatible", "properties", "#cells",
+                  "parent-bus", "child-bus", "parent", "child",
+                  "child-binding", "sub-node"}
+
+        for prop in binding:
+            if prop not in ok_top and not prop.endswith("-cells"):
+                _err("unknown key '{}' in {}, expected one of {}, or *-cells"
+                     .format(prop, binding_path, ", ".join(ok_top)))
+
+        for pc in "parent", "child":
+            # 'parent/child-bus:'
+            bus_key = pc + "-bus"
+            if bus_key in binding and \
+               not isinstance(binding[bus_key], str):
+                self._warn("malformed '{}:' value in {}, expected string"
+                           .format(bus_key, binding_path))
+
+            # Legacy 'child/parent: bus: ...' keys
+            if pc in binding:
+                self._warn("'{0}: bus: ...' in {1} is deprecated and will be "
+                           "removed - please use a top-level '{0}-bus:' key "
+                           "instead (see binding-template.yaml)"
+                           .format(pc, binding_path))
+
+                # Just 'bus:' is expected
+                if binding[pc].keys() != {"bus"}:
+                    _err("expected (just) 'bus:' in '{}:' in {}"
+                         .format(pc, binding_path))
+
+                if not isinstance(binding[pc]["bus"], str):
+                    _err("malformed '{}: bus:' value in {}, expected string"
+                         .format(pc, binding_path))
+
+        self._check_binding_properties(binding, binding_path)
+
+        if "child-binding" in binding:
+            if not isinstance(binding["child-binding"], dict):
+                _err("malformed 'child-binding:' in {}, expected a binding "
+                     "(dictionary with keys/values)".format(binding_path))
+
+            self._check_binding(binding["child-binding"], binding_path)
+
+        if "sub-node" in binding:
+            self._warn("'sub-node: properties: ...' in {} is deprecated and "
+                       "will be removed - please give a full binding for the "
+                       "child node in 'child-binding:' instead (see "
+                       "binding-template.yaml)".format(binding_path))
+
+            if binding["sub-node"].keys() != {"properties"}:
+                _err("expected (just) 'properties:' in 'sub-node:' in {}"
+                     .format(binding_path))
+
+            self._check_binding_properties(binding["sub-node"], binding_path)
+
+        if "#cells" in binding:
+            self._warn('"#cells:" in {} is deprecated and will be removed - '
+                       "please put 'interrupt-cells:', 'pwm-cells:', "
+                       "'gpio-cells:', etc., instead. The name should match "
+                       "the name of the corresponding phandle-array property "
+                       "(see binding-template.yaml)".format(binding_path))
+
+        def ok_cells_val(val):
+            # Returns True if 'val' is an okay value for '*-cells:' (or the
+            # legacy '#cells:')
+
+            return isinstance(val, list) and \
+                   all(isinstance(elm, str) for elm in val)
+
+        for key, val in binding.items():
+            if key.endswith("-cells") or key == "#cells":
+                if not ok_cells_val(val):
+                    _err("malformed '{}:' in {}, expected a list of strings"
+                         .format(key, binding_path))
+
+    def _check_binding_properties(self, binding, binding_path):
+        # _check_binding() helper for checking the contents of 'properties:'.
+        # Only takes 'self' for the sake of self._warn().
+
+        if "properties" not in binding:
+            return
+
+        ok_prop_keys = {"description", "type", "required", "category",
+                        "constraint", "enum", "const", "default"}
+
+        for prop_name, options in binding["properties"].items():
+            for key in options:
+                if key == "category":
+                    self._warn(
+                        "please put 'required: {}' instead of 'category: {}' "
+                        "in properties: {}: ...' in {} - 'category' will be "
+                        "removed".format(
+                            "true" if options["category"] == "required"
+                                else "false",
+                            options["category"], prop_name, binding_path))
+
+                if key not in ok_prop_keys:
+                    _err("unknown setting '{}' in 'properties: {}: ...' in {}, "
+                         "expected one of {}".format(
+                             key, prop_name, binding_path,
+                             ", ".join(ok_prop_keys)))
+
+            _check_prop_type_and_default(
+                prop_name, options.get("type"),
+                options.get("required") or options.get("category") == "required",
+                options.get("default"), binding_path)
+
+            if "required" in options and not isinstance(options["required"], bool):
+                _err("malformed 'required:' setting '{}' for '{}' in 'properties' "
+                     "in {}, expected true/false"
+                     .format(options["required"], prop_name, binding_path))
+
+            if "description" in options and \
+               not isinstance(options["description"], str):
+                _err("missing, malformed, or empty 'description' for '{}' in "
+                     "'properties' in {}".format(prop_name, binding_path))
+
+            if "enum" in options and not isinstance(options["enum"], list):
+                _err("enum in {} for property '{}' is not a list"
+                     .format(binding_path, prop_name))
+
+            if "const" in options and not isinstance(options["const"], (int, str)):
+                _err("const in {} for property '{}' is not a scalar"
+                     .format(binding_path, prop_name))
+
+    def _warn(self, msg):
+        print("warning: " + msg, file=self._warn_file)
 
 
 class Node:
@@ -442,8 +640,8 @@ class Node:
         addr = _translate(addr, self._node)
 
         if self.regs and self.regs[0].addr != addr:
-            _warn("unit-address and first reg (0x{:x}) don't match for {}"
-                  .format(self.regs[0].addr, self.name))
+            self.edt._warn("unit-address and first reg (0x{:x}) don't match "
+                           "for {}".format(self.regs[0].addr, self.name))
 
         return addr
 
@@ -1113,57 +1311,6 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
-def _binding_compat(binding, binding_path):
-    # Returns the string listed in 'compatible:' in 'binding', or None if no
-    # compatible is found.
-    #
-    # Also searches for legacy compatibles on the form
-    #
-    #   properties:
-    #       compatible:
-    #           constraint: <string>
-
-    def new_style_compat():
-        # New-style 'compatible: "foo"' compatible
-
-        if binding is None or "compatible" not in binding:
-            # Empty file, binding fragment, spurious file, or old-style compat
-            return None
-
-        compatible = binding["compatible"]
-        if not isinstance(compatible, str):
-            _err("malformed 'compatible:' field in {} - should be a string"
-                 .format(binding_path))
-
-        return compatible
-
-    def old_style_compat():
-        # Old-style 'constraint: "foo"' compatible
-
-        try:
-            return binding["properties"]["compatible"]["constraint"]
-        except Exception:
-            return None
-
-    new_compat = new_style_compat()
-    old_compat = old_style_compat()
-    if old_compat:
-        _warn("The 'properties: compatible: constraint: ...' way of "
-              "specifying the compatible in {} is deprecated. Put "
-              "'compatible: \"{}\"' at the top level of the binding instead."
-              .format(binding_path, old_compat))
-
-        if new_compat:
-            _err("compatibles for {} should be specified with either "
-                 "'compatible:' at the top level or with the legacy "
-                 "'properties: compatible: constraint: ...' field, not both"
-                 .format(binding_path))
-
-        return old_compat
-
-    return new_compat
-
-
 def _binding_bus(binding):
     # Returns the bus specified by 'parent-bus: ...' in the binding (or the
     # legacy 'parent: bus: ...'), or None if missing
@@ -1273,139 +1420,6 @@ def _binding_include(loader, node):
         return loader.construct_sequence(node)
 
     _binding_inc_error("unrecognised node type in !include statement")
-
-
-def _check_binding(binding, binding_path):
-    # Does sanity checking on 'binding'
-
-    for prop in "title", "description":
-        if prop not in binding:
-            _err("missing '{}' property in {}".format(prop, binding_path))
-
-        if not isinstance(binding[prop], str) or not binding[prop]:
-            _err("missing, malformed, or empty '{}' in {}"
-                 .format(prop, binding_path))
-
-    ok_top = {"title", "description", "compatible", "properties", "#cells",
-              "parent-bus", "child-bus", "parent", "child", "child-binding",
-              "sub-node"}
-
-    for prop in binding:
-        if prop not in ok_top and not prop.endswith("-cells"):
-            _err("unknown key '{}' in {}, expected one of {}, or *-cells"
-                 .format(prop, binding_path, ", ".join(ok_top)))
-
-    for pc in "parent", "child":
-        # 'parent/child-bus:'
-        bus_key = pc + "-bus"
-        if bus_key in binding and \
-           not isinstance(binding[bus_key], str):
-            _warn("malformed '{}:' value in {}, expected string"
-                  .format(bus_key, binding_path))
-
-        # Legacy 'child/parent: bus: ...' keys
-        if pc in binding:
-            _warn("'{0}: bus: ...' in {1} is deprecated and will be removed - "
-                  "please use a top-level '{0}-bus:' key instead (see "
-                  "binding-template.yaml)".format(pc, binding_path))
-
-            # Just 'bus:' is expected
-            if binding[pc].keys() != {"bus"}:
-                _err("expected (just) 'bus:' in '{}:' in {}"
-                     .format(pc, binding_path))
-
-            if not isinstance(binding[pc]["bus"], str):
-                _err("malformed '{}: bus:' value in {}, expected string"
-                     .format(pc, binding_path))
-
-    _check_binding_properties(binding, binding_path)
-
-    if "child-binding" in binding:
-        if not isinstance(binding["child-binding"], dict):
-            _err("malformed 'child-binding:' in {}, expected a binding "
-                 "(dictionary with keys/values)".format(binding_path))
-
-        _check_binding(binding["child-binding"], binding_path)
-
-    if "sub-node" in binding:
-        _warn("'sub-node: properties: ...' in {} is deprecated and will be "
-              "removed - please give a full binding for the child node in "
-              "'child-binding:' instead (see binding-template.yaml)"
-              .format(binding_path))
-
-        if binding["sub-node"].keys() != {"properties"}:
-            _err("expected (just) 'properties:' in 'sub-node:' in {}"
-                 .format(binding_path))
-
-        _check_binding_properties(binding["sub-node"], binding_path)
-
-    if "#cells" in binding:
-        _warn('"#cells:" in {} is deprecated and will be removed - please put '
-              "'interrupt-cells:', 'pwm-cells:', 'gpio-cells:', etc., "
-              "instead. The name should match the name of the corresponding "
-              "phandle-array property (see binding-template.yaml)"
-              .format(binding_path))
-
-    def ok_cells_val(val):
-        # Returns True if 'val' is an okay value for '*-cells:' (or the legacy
-        # '#cells:')
-
-        return isinstance(val, list) and \
-               all(isinstance(elm, str) for elm in val)
-
-    for key, val in binding.items():
-        if key.endswith("-cells") or key == "#cells":
-            if not ok_cells_val(val):
-                _err("malformed '{}:' in {}, expected a list of strings"
-                     .format(key, binding_path))
-
-
-def _check_binding_properties(binding, binding_path):
-    # _check_binding() helper for checking the contents of 'properties:'
-
-    if "properties" not in binding:
-        return
-
-    ok_prop_keys = {"description", "type", "required", "category",
-                    "constraint", "enum", "const", "default"}
-
-    for prop_name, options in binding["properties"].items():
-        for key in options:
-            if key == "category":
-                _warn("please put 'required: {}' instead of 'category: {}' in "
-                      "'properties: {}: ...' in {} - 'category' will be "
-                      "removed".format(
-                         "true" if options["category"] == "required" else "false",
-                         options["category"], prop_name, binding_path))
-
-            if key not in ok_prop_keys:
-                _err("unknown setting '{}' in 'properties: {}: ...' in {}, "
-                     "expected one of {}".format(
-                         key, prop_name, binding_path,
-                         ", ".join(ok_prop_keys)))
-
-        _check_prop_type_and_default(
-            prop_name, options.get("type"),
-            options.get("required") or options.get("category") == "required",
-            options.get("default"), binding_path)
-
-        if "required" in options and not isinstance(options["required"], bool):
-            _err("malformed 'required:' setting '{}' for '{}' in 'properties' "
-                 "in {}, expected true/false"
-                 .format(options["required"], prop_name, binding_path))
-
-        if "description" in options and \
-           not isinstance(options["description"], str):
-            _err("missing, malformed, or empty 'description' for '{}' in "
-                 "'properties' in {}".format(prop_name, binding_path))
-
-        if "enum" in options and not isinstance(options["enum"], list):
-            _err("enum in {} for property '{}' is not a list"
-                 .format(binding_path, prop_name))
-
-        if "const" in options and not isinstance(options["const"], (int, str)):
-            _err("const in {} for property '{}' is not a scalar"
-                 .format(binding_path, prop_name))
 
 
 def _check_prop_type_and_default(prop_name, prop_type, required, default,
@@ -1918,7 +1932,3 @@ def _check_dt(dt):
 
 def _err(msg):
     raise EDTError(msg)
-
-
-def _warn(msg):
-    print("warning: " + msg, file=sys.stderr)
