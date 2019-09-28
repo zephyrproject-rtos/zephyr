@@ -59,7 +59,7 @@ __start:
 	movw %ax, %fs
 	movw %ax, %gs
 
-	movl $(_exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
+	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
 
 	/* transition to long mode. along the way, we enable SSE. */
 
@@ -582,7 +582,7 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 	.fill 4064, 1, 0
 
 /*
- * The exception stack is used both for exceptions and early initialization.
+ * Known-good stack for handling CPU exceptions.
  */
 
 .global _exception_stack
