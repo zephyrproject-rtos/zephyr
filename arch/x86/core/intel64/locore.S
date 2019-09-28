@@ -108,20 +108,6 @@ __start:
 	rep stosq
 #endif
 
-#ifdef CONFIG_MULTIBOOT_INFO
-	/* If EBX isn't 0, then we have a valid multiboot info struct. */
-
-	testl %ebx, %ebx
-	jz 1f
-	movl %ebx, %esi
-
-	movl $__MULTIBOOT_INFO_SIZEOF, %ecx
-	movq $multiboot_info, %rdi
-	rep
-	movsb
-1:
-#endif /* CONFIG_MULTIBOOT_INFO */
-
 	/*
 	 * set up SSE in case something uses the floating-point unit during
 	 * early initialization (either directly, or if GCC gets clever)
@@ -132,7 +118,8 @@ __start:
 
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
-	call z_cstart
+	movl %ebx, %edi		/* multiboot pointer (or NULL) */
+	call z_x86_prep_c	/* enter kernel; never returns */
 
 stop:	jmp stop
 
