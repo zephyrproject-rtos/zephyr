@@ -17,23 +17,20 @@
 .globl __start
 __start:
 
+	/*
+	 * kernel execution begins here in 32-bit mode, with flat-mode
+	 * descriptors in all segment registers, interrupts disabled.
+	 * first, let common code do things like detect multiboot info.
+	 */
+
 #include "../common.S"
 
-	/* switch to our own GDT/IDT and stack. */
-
-	lgdt gdt48
-	lidt idt48
-	jmpl $X86_KERNEL_CS_32, $1f
-1:	movw $X86_KERNEL_DS_32, %ax
-	movw %ax, %ds
-	movw %ax, %ss
-	movw %ax, %es
-	movw %ax, %fs
-	movw %ax, %gs
-
 	/*
-	 * clear the BSS. note that we do this in 32-bit mode, so
-	 * the BSS must fit entirely in the first 4GB of RAM.
+	 * N.B.: if multiboot info struct is present, "common.S"
+	 * has left a pointer to it in EBX. do not clobber (yet).
+	 *
+	 * next, clear the BSS. note we're still in 32-bit mode,
+	 * so the BSS must fit entirely in the first 4GB of RAM.
 	 */
 
 	cld
@@ -42,9 +39,10 @@ __start:
 	movl $__bss_num_dwords, %ecx
 	rep stosl
 
-	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
-
-	/* transition to long mode. along the way, we enable SSE. */
+	/*
+	 * transition to long mode, reload the segment registers,
+	 * and configure per-CPU stuff: GS, task register, stack.
+	 */
 
 	movl %cr4, %eax			/* enable PAE and SSE */
 	orl $(CR4_PAE | CR4_OSFXSR), %eax
@@ -63,8 +61,8 @@ __start:
 	orl $CR0_PG, %eax
 	movl %eax, %cr0
 
-	/* jump into long mode, reload the segment registers (again). */
-
+	lgdt gdt48
+	lidt idt48
 	jmpl $X86_KERNEL_CS_64, $1f
 .code64
 1:	movl $X86_KERNEL_DS_64, %eax
@@ -80,17 +78,18 @@ __start:
 
 	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
 
+	/*
+	 * finally, complete environment for the C runtime and go.
+	 */
+
+	cld	/* GCC presumes a clear direction flag */
+
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
 	movq $_interrupt_stack, %rdi
 	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
 	rep stosq
 #endif
-
-	/*
-	 * set up SSE in case something uses the floating-point unit during
-	 * early initialization (either directly, or if GCC gets clever)
-	 */
 
 	xorl %edi, %edi
 	call x86_sse_init
@@ -103,8 +102,6 @@ __start:
 
 	movl %ebx, %edi		/* multiboot pointer (or NULL) */
 	call z_x86_prep_c	/* enter kernel; never returns */
-
-stop:	jmp stop
 
 /*
  * void x86_sse_init(struct k_thread *thread);
