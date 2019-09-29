@@ -39,6 +39,9 @@ __start:
 	movl $__bss_num_dwords, %ecx
 	rep stosl
 
+	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
+	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
+
 	/*
 	 * transition to long mode, reload the segment registers,
 	 * and configure per-CPU stuff: GS, task register, stack.
@@ -71,12 +74,12 @@ __start:
 	movw %ax, %ss
 	movw %ax, %fs
 
-	movl $X86_KERNEL_CPU0_TR, %eax
+	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
-	movl $X86_KERNEL_CPU0_GS, %eax
+	movw __x86_cpuboot_t_gs_OFFSET(%rbp), %ax
 	movw %ax, %gs
 
-	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
+	movq __x86_cpuboot_t_sp_OFFSET(%rbp), %rsp
 
 	/*
 	 * finally, complete environment for the C runtime and go.
@@ -86,7 +89,8 @@ __start:
 
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
-	movq $_interrupt_stack, %rdi
+	movq %rsp, %rdi
+	subq $CONFIG_ISR_STACK_SIZE, %rdi
 	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
 	rep stosq
 #endif
@@ -100,8 +104,8 @@ __start:
 
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
-	movl %ebx, %edi		/* multiboot pointer (or NULL) */
-	call z_x86_prep_c	/* enter kernel; never returns */
+	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rdi
+	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
 
 /*
  * void x86_sse_init(struct k_thread *thread);
@@ -147,13 +151,13 @@ z_arch_switch:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
-	movq $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %rsp
+	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
 	/* fall through to __resume */
 
 /*
  * Entry:
- *   RSP = top of _interrupt_stack
+ *   RSP = top of CPU interrupt stack
  *   RDI = (struct k_thread *) thread to resume
  */
 

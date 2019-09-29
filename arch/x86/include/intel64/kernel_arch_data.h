@@ -72,6 +72,20 @@ struct x86_tss64 {
 
 typedef struct x86_tss64 x86_tss64_t;
 
+/*
+ * Per-CPU bootstrapping parameters. See locore.S and cpu.c.
+ */
+
+struct x86_cpuboot {
+	u16_t tr;		/* selector for task register */
+	u16_t gs;		/* selector for GS */
+	u64_t sp;		/* initial stack pointer */
+	void *fn;		/* kernel entry function */
+	void *arg;		/* argument for above function */
+};
+
+typedef struct x86_cpuboot x86_cpuboot_t;
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_ */
