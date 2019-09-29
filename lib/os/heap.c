@@ -7,16 +7,6 @@
 #include <kernel.h>
 #include "heap.h"
 
-static void *chunk_mem(struct z_heap *h, chunkid_t c)
-{
-	chunk_unit_t *buf = chunk_buf(h);
-	u8_t *ret = ((u8_t *)&buf[c]) + chunk_header_bytes(h);
-
-	CHECK(!(((size_t)ret) & (big_heap(h) ? 7 : 3)));
-
-	return ret;
-}
-
 static void free_list_remove(struct z_heap *h, int bidx,
 			     chunkid_t c)
 {
@@ -96,7 +86,7 @@ static void *split_alloc(struct z_heap *h, int bidx, size_t sz)
 
 	set_chunk_used(h, c, true);
 
-	return chunk_mem(h, c);
+	return chunk_to_mem(h, c);
 }
 
 void sys_heap_free(struct sys_heap *heap, void *mem)
@@ -106,8 +96,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 
 	struct z_heap *h = heap->heap;
-	chunkid_t c = ((u8_t *)mem - chunk_header_bytes(h)
-		       - (u8_t *)chunk_buf(h)) / CHUNK_UNIT;
+	chunkid_t c = mem_to_chunk(h, mem);
 
 	/*
 	 * This should catch many double-free cases.
@@ -204,7 +193,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 {
-	/* Must fit in a 32 bit count of HUNK_UNIT */
+	/* Must fit in a 32 bit count of CHUNK_UNIT */
 	CHECK(bytes / CHUNK_UNIT <= 0xffffffffU);
 
 	/* Reserve the final marker chunk's header */

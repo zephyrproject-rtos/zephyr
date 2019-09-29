@@ -203,6 +203,21 @@ static inline size_t heap_footer_bytes(size_t size)
 	return big_heap_bytes(size) ? 8 : 4;
 }
 
+static inline void *chunk_to_mem(struct z_heap *h, chunkid_t c)
+{
+	chunk_unit_t *buf = chunk_buf(h) + c;
+	void *ret = (u8_t *)buf + chunk_header_bytes(h);
+	CHECK(!((uintptr_t)ret & (big_heap(h) ? 7 : 3)));
+	return ret;
+}
+
+static inline chunkid_t mem_to_chunk(struct z_heap *h, void *ptr)
+{
+	ptr = (u8_t *)ptr - chunk_header_bytes(h);
+	CHECK(!((uintptr_t)ptr & (CHUNK_UNIT - 1)));
+	return (chunk_unit_t *)ptr - chunk_buf(h);
+}
+
 static inline size_t chunksz(size_t bytes)
 {
 	return (bytes + CHUNK_UNIT - 1) / CHUNK_UNIT;
