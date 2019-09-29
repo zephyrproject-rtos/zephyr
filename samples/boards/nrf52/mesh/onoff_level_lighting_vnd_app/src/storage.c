@@ -29,7 +29,7 @@ static void save_gen_onpowerup_state(void)
 			  sizeof(gen_power_onoff_srv_user_data.onpowerup));
 
 	if (gen_power_onoff_srv_user_data.onpowerup == 0x02) {
-		save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
+		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
 	}
 }
 
@@ -43,17 +43,25 @@ static void save_lightness_temp_def_state(void)
 			  sizeof(light_ctl_srv_user_data.lightness_temp_def));
 }
 
-static void save_lightness_temp_last_state(void)
+static void save_lightness_last_state(void)
 {
-	light_ctl_srv_user_data.lightness_temp_last =
-		(u32_t) ((light_ctl_srv_user_data.lightness << 16) |
-			 light_ctl_srv_user_data.temp);
+	settings_save_one("ps/ll", &light_lightness_srv_user_data.last,
+					  sizeof(light_lightness_srv_user_data.last));
 
-	settings_save_one("ps/ltl",
-			  &light_ctl_srv_user_data.lightness_temp_last,
-			  sizeof(light_ctl_srv_user_data.lightness_temp_last));
+	printk("Lightness Last values have beed saved !!\n");
+}
 
-	printk("Light CTL Last values have beed saved !!\n");
+static void save_lightness_temp_last_target_state(void)
+{
+	light_ctl_srv_user_data.lightness_temp_last_tgt =
+		(u32_t) ((light_ctl_srv_user_data.target_lightness << 16) |
+			 light_ctl_srv_user_data.target_temp);
+
+	settings_save_one("ps/ltlt",
+			  &light_ctl_srv_user_data.lightness_temp_last_tgt,
+			  sizeof(light_ctl_srv_user_data.lightness_temp_last_tgt));
+
+	printk("Lightness & Temp. Target values have beed saved !!\n");
 }
 
 static void save_lightness_range(void)
@@ -94,8 +102,11 @@ static void storage_work_handler(struct k_work *work)
 	case LIGHTNESS_TEMP_DEF_STATE:
 		save_lightness_temp_def_state();
 		break;
-	case LIGHTNESS_TEMP_LAST_STATE:
-		save_lightness_temp_last_state();
+	case LIGHTNESS_LAST_STATE:
+		save_lightness_last_state();
+		break;
+	case LIGHTNESS_TEMP_LAST_TARGET_STATE:
+		save_lightness_temp_last_target_state();
 		break;
 	case LIGHTNESS_RANGE:
 		save_lightness_range();
@@ -147,10 +158,16 @@ static int ps_set(const char *key, size_t len_rd,
 			 sizeof(light_ctl_srv_user_data.lightness_temp_def));
 		}
 
-		if (!strncmp(key, "ltl", key_len)) {
+		if (!strncmp(key, "ll", key_len)) {
 			len = read_cb(cb_arg,
-			 &light_ctl_srv_user_data.lightness_temp_last,
-			 sizeof(light_ctl_srv_user_data.lightness_temp_last));
+			 &light_lightness_srv_user_data.last,
+			 sizeof(light_lightness_srv_user_data.last));
+		}
+
+		if (!strncmp(key, "ltlt", key_len)) {
+			len = read_cb(cb_arg,
+			 &light_ctl_srv_user_data.lightness_temp_last_tgt,
+			 sizeof(light_ctl_srv_user_data.lightness_temp_last_tgt));
 		}
 
 		if (!strncmp(key, "lr", key_len)) {

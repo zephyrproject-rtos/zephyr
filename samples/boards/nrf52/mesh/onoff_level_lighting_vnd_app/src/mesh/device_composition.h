@@ -120,7 +120,7 @@ struct light_ctl_state {
 	u32_t lightness_temp_def;
 	s16_t delta_uv_def;
 
-	u32_t lightness_temp_last;
+	u32_t lightness_temp_last_tgt;
 
 	u8_t last_tid;
 	u16_t last_src_addr;
