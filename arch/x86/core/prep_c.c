@@ -10,8 +10,10 @@
 
 extern FUNC_NORETURN void z_cstart(void);
 
-FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *info)
+FUNC_NORETURN void z_x86_prep_c(int unused, struct multiboot_info *info)
 {
+	ARG_UNUSED(unused);
+
 	_kernel.cpus[0].nested = 0;
 	_kernel.cpus[0].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack) +
 					CONFIG_ISR_STACK_SIZE;

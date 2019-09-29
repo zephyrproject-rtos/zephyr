@@ -104,7 +104,7 @@ __start:
 
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
-	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rdi
+	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rsi
 	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
 
 /*
