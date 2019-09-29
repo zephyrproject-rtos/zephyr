@@ -13,7 +13,7 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 20
+	default 30
 
 config RGF_NUM_BANKS
 	default 2
