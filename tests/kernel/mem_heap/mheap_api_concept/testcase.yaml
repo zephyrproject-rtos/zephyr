@@ -1,3 +1,4 @@
 tests:
   kernel.memory_heap:
     tags: kernel
+    filter: not CONFIG_SYS_HEAP_MEMPOOL_COMPAT

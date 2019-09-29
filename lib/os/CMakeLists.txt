@@ -10,7 +10,6 @@ zephyr_sources(
   dec.c
   fdtable.c
   hex.c
-  mempool.c
   rb.c
   sem.c
   thread_entry.c
@@ -19,6 +18,9 @@ zephyr_sources(
   heap.c
   heap-validate.c
   )
+
+zephyr_sources_ifndef(CONFIG_SYS_HEAP_MEMPOOL_COMPAT mempool.c)
+zephyr_sources_ifdef(CONFIG_SYS_HEAP_MEMPOOL_COMPAT heap-mempool-compat.c)
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 

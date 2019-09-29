@@ -49,4 +49,13 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
+config SYS_HEAP_MEMPOOL_COMPAT
+	bool "Enable sys_heap compatibility wrappers for the mempool API"
+	default y
+	select SYS_HEAP_VALIDATE
+	help
+	  This provides compatibility wrappers to replace the mempool
+	  allocator with the sys_heap allocator in order to test it
+	  using existing code.
+
 endmenu

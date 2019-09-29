@@ -45,13 +45,16 @@
  * obviously.  This memory is part of the user's buffer when
  * allocated.
  */
-typedef size_t chunkid_t;
+
+enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
+
+#ifdef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
+#include <sys/heap-compat-common.h>
+#else
 
 #define CHUNK_UNIT 8
 
-typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
-
-enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
+typedef size_t chunkid_t;
 
 struct z_heap_bucket {
 	chunkid_t next;
@@ -63,6 +66,10 @@ struct z_heap {
 	u32_t avail_buckets;
 	struct z_heap_bucket buckets[0];
 };
+
+#endif
+
+typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 
 static inline bool big_heap_chunks(size_t chunks)
 {

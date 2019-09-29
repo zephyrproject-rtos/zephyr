@@ -238,6 +238,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	/* Assign resource pool of lower size */
 	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
 
+#ifndef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
 	/* Prepend to the queue, but fails because of
 	 * insufficient memory
 	 */
@@ -249,6 +250,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	 * operations failed
 	 */
 	zassert_true(k_queue_is_empty(pqueue), NULL);
+#endif
 
 	/* Assign resource pool of sufficient size */
 	k_thread_resource_pool_assign(k_current_get(),

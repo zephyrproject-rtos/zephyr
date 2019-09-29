@@ -95,6 +95,7 @@ void test_sys_mem_pool_alloc_align4(void)
  */
 void test_sys_mem_pool_min_block_size(void)
 {
+#ifndef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
 	void *block[TOTAL_MIN_BLKS], *block_fail;
 
 	/**
@@ -119,6 +120,7 @@ void test_sys_mem_pool_min_block_size(void)
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		sys_mem_pool_free(block[i]);
 	}
+#endif
 }
 
 /*test case main entry*/

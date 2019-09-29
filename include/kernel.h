@@ -4269,6 +4269,9 @@ static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 
 /** @} */
 
+#ifdef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
+#include <sys/heap-k_mempool-compat.h>
+#else
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -4322,6 +4325,7 @@ struct k_mem_pool {
 		} \
 	}; \
 	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK)
+#endif
 
 /**
  * @brief Allocate memory from a memory pool.

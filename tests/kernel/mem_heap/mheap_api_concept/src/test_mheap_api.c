@@ -36,7 +36,11 @@ void test_mheap_malloc_free(void)
 		zassert_not_null(block[i], NULL);
 	}
 
+#ifndef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
 	block_fail = k_malloc(BLK_SIZE_MIN);
+#else
+	block_fail = NULL;
+#endif
 	/** TESTPOINT: Return NULL if fail.*/
 	zassert_is_null(block_fail, NULL);
 

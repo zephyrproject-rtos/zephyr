@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_SYS_MEMPOOL_H_
 #define ZEPHYR_INCLUDE_SYS_MEMPOOL_H_
 
+#ifdef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
+#include <sys/heap-sys_mempool-compat.h>
+#else
+
 #include <kernel.h>
 #include <sys/mempool_base.h>
 #include <sys/mutex.h>
@@ -111,5 +115,7 @@ void sys_mem_pool_free(void *ptr);
  * @return A 0 if OK, or size of data to copy elsewhere
  */
 size_t sys_mem_pool_try_expand_inplace(void *ptr, size_t new_size);
+
+#endif /* !CONFIG_SYS_HEAP_MEMPOOL_COMPAT */
 
 #endif

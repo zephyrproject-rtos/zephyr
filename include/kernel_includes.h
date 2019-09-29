@@ -25,7 +25,9 @@
 #include <sys/slist.h>
 #include <sys/sflist.h>
 #include <sys/util.h>
+#ifndef CONFIG_SYS_HEAP_MEMPOOL_COMPAT
 #include <sys/mempool_base.h>
+#endif
 #include <kernel_version.h>
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>
