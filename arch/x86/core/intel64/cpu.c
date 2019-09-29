@@ -9,7 +9,7 @@
 #include <kernel_structs.h>
 #include <arch/x86/multiboot.h>
 
-extern FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *);
+extern FUNC_NORETURN void z_x86_prep_c(int, struct multiboot_info *);
 
 extern u8_t _exception_stack[];
 
