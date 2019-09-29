@@ -1,4 +1,4 @@
 tests:
-  test:
+  board.shell:
     tags: shell
     harness: keyboard
