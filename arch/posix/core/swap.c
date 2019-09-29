@@ -84,7 +84,7 @@ int __swap(unsigned int key)
  * current thread.
  *
  * Note that we will never come back to this thread:
- * posix_core_main_thread_start() does never return
+ * posix_main_thread_start() does never return
  */
 void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 		k_thread_stack_t *main_stack,
