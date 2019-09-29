@@ -593,13 +593,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_out();
-#endif
 	_current = new_thread;
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
-#endif
 }
 
 #ifdef CONFIG_USE_SWITCH
