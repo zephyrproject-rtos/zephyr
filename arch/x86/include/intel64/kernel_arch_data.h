@@ -25,6 +25,12 @@
 
 #define X86_KERNEL_CPU0_GS	0x30	/* data selector covering TSS */
 #define X86_KERNEL_CPU0_TR	0x40	/* 64-bit task state segment */
+#define X86_KERNEL_CPU1_GS	0x50	/* data selector covering TSS */
+#define X86_KERNEL_CPU1_TR	0x60	/* 64-bit task state segment */
+#define X86_KERNEL_CPU2_GS	0x70	/* data selector covering TSS */
+#define X86_KERNEL_CPU2_TR	0x80	/* 64-bit task state segment */
+#define X86_KERNEL_CPU3_GS	0x90	/* data selector covering TSS */
+#define X86_KERNEL_CPU3_TR	0xA0	/* 64-bit task state segment */
 
 #ifndef _ASMLANGUAGE
 
@@ -85,6 +91,8 @@ struct x86_cpuboot {
 };
 
 typedef struct x86_cpuboot x86_cpuboot_t;
+
+extern u8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 
 #endif /* _ASMLANGUAGE */
 
