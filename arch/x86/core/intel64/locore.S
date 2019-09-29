@@ -14,6 +14,60 @@
 .section .locore,"ax"
 .code32
 
+#ifdef CONFIG_SMP && (CONFIG_MP_NUM_CPUS > 1)
+
+	/*
+	 * APs are sent here on startup, in real mode. This
+	 * is first because we want it on a page boundary.
+	 */
+
+.code16
+.global x86_ap_start
+x86_ap_start:
+
+	/*
+	 * First, we move to 32-bit protected mode, and set up the
+	 * same flat environment that the BSP gets from the loader.
+	 */
+
+	lgdt gdt48
+	lidt idt48
+	movw $1, %ax
+	lmsw %ax
+	jmpl $X86_KERNEL_CS_32, $1f
+.code32
+1:	movw $X86_KERNEL_DS_32, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %ss
+	movw %ax, %fs
+	movw %ax, %gs
+
+	/*
+	 * Now, reverse-map our local APIC ID to our logical CPU ID
+	 * so we can locate our x86_cpuboot[] bundle. Put it in EBP.
+	 */
+
+	movl CONFIG_LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
+	shrl $24, %eax
+	andl $0x0F, %eax		/* local APIC ID -> EAX */
+
+	movl $x86_cpuboot, %ebp
+	xorl %ebx, %ebx
+1:	cmpl $CONFIG_MP_NUM_CPUS, %ebx
+	jz unknown_loapic_id
+	cmpb %al, x86_cpu_loapics(%ebx)
+	je go64				/* proceed to 64-bit mode */
+	incl %ebx
+	addl $__X86_CPUBOOT_SIZEOF, %ebp
+	jmp 1b
+
+unknown_loapic_id:
+	jmp unknown_loapic_id
+
+#endif /* CONFIG_SMP && ... */
+
+.code32
 .globl __start
 __start:
 
@@ -22,6 +76,9 @@ __start:
 	 * descriptors in all segment registers, interrupts disabled.
 	 * first, let common code do things like detect multiboot info.
 	 */
+
+	lgdt gdt48
+	lidt idt48
 
 #include "../common.S"
 
@@ -47,7 +104,7 @@ __start:
 	 * and configure per-CPU stuff: GS, task register, stack.
 	 */
 
-	movl %cr4, %eax			/* enable PAE and SSE */
+go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	orl $(CR4_PAE | CR4_OSFXSR), %eax
 	movl %eax, %cr4
 	clts
@@ -64,8 +121,6 @@ __start:
 	orl $CR0_PG, %eax
 	movl %eax, %cr0
 
-	lgdt gdt48
-	lidt idt48
 	jmpl $X86_KERNEL_CS, $1f
 .code64
 1:	movl $X86_KERNEL_DS, %eax
@@ -207,6 +262,10 @@ gdt:
 
 	.word 0, 0, 0, 0		/* 0x28: unused */
 
+	/*
+	 * CPU 0 task state segment descriptors
+	 */
+
 	.word 0				/* 0x30: 64-bit TSS data (for GS) */
 	.word tss0
 	.word 0x9200
@@ -217,11 +276,61 @@ gdt:
 	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
 	.word tss0
 	.word 0x8900
+	.word 0, 0, 0, 0, 0
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+	/*
+	 * CPU 1 task state segment descriptors
+	 */
+
+	.word 0				/* 0x50: 64-bit TSS data (for GS) */
+	.word tss1
+	.word 0x9200
 	.word 0
+
+	.word 0, 0, 0, 0		/* 0x58: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
+	.word tss1
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+	/*
+	 * CPU 2 task state segment descriptors
+	 */
+
+	.word 0				/* 0x70: 64-bit TSS data (for GS) */
+	.word tss2
+	.word 0x9200
 	.word 0
+
+	.word 0, 0, 0, 0		/* 0x78: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0x80: 64-bit TSS (16-byte entry) */
+	.word tss2
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+	/*
+	 * CPU 3 task state segment descriptors
+	 */
+
+	.word 0				/* 0x90: 64-bit TSS data (for GS) */
+	.word tss3
+	.word 0x9200
 	.word 0
-	.word 0
-	.word 0
+
+	.word 0, 0, 0, 0		/* 0x98: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0xA0: 64-bit TSS (16-byte entry) */
+	.word tss3
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
 
 gdt48:
 	.word (gdt48 - gdt - 1)
@@ -542,3 +651,23 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 _exception_stack:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+.global _exception_stack1
+.align 16
+_exception_stack1:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+.global _exception_stack2
+.align 16
+_exception_stack2:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+.global _exception_stack3
+.align 16
+_exception_stack3:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif
