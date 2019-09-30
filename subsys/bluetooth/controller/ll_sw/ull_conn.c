@@ -45,8 +45,13 @@
 
 static int init_reset(void);
 static void ticker_update_conn_op_cb(u32_t status, void *param);
+static void ticker_stop_conn_op_cb(u32_t status, void *param);
+static void ticker_start_conn_op_cb(u32_t status, void *param);
+
 static inline void disable(u16_t handle);
 static void conn_cleanup(struct ll_conn *conn, u8_t reason);
+static void tx_ull_flush(struct ll_conn *conn);
+static void tx_lll_flush(void *param);
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
@@ -95,9 +100,6 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx);
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn);
-static void ticker_stop_conn_op_cb(u32_t status, void *param);
-static void ticker_start_conn_op_cb(u32_t status, void *param);
-
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
 				CONFIG_BT_CTLR_TX_BUFFER_SIZE)
@@ -1204,6 +1206,33 @@ ull_conn_tx_demux_release:
 	} while (--count);
 }
 
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn,
+					  struct node_tx *tx)
+{
+	if (conn->tx_head == conn->tx_ctrl) {
+		conn->tx_head = conn->tx_head->next;
+		if (conn->tx_ctrl == conn->tx_ctrl_last) {
+			conn->tx_ctrl = NULL;
+			conn->tx_ctrl_last = NULL;
+		} else {
+			conn->tx_ctrl = conn->tx_head;
+		}
+
+		/* point to self to indicate a control PDU mem alloc */
+		tx->next = tx;
+	} else {
+		if (conn->tx_head == conn->tx_data) {
+			conn->tx_data = conn->tx_data->next;
+		}
+		conn->tx_head = conn->tx_head->next;
+
+		/* point to NULL to indicate a Data PDU mem alloc */
+		tx->next = NULL;
+	}
+
+	return tx;
+}
+
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 {
 	bool pause_tx = false;
@@ -1223,33 +1252,12 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 		 1) ||
 		(!pause_tx && (conn->tx_head == conn->tx_ctrl))) && count--) {
 		struct pdu_data *pdu_tx;
-		struct node_tx *tx_lll;
+		struct node_tx *tx;
 		memq_link_t *link;
 
-		tx_lll = conn->tx_head;
+		tx = tx_ull_dequeue(conn, conn->tx_head);
 
-		if (conn->tx_head == conn->tx_ctrl) {
-			conn->tx_head = conn->tx_head->next;
-			if (conn->tx_ctrl == conn->tx_ctrl_last) {
-				conn->tx_ctrl = NULL;
-				conn->tx_ctrl_last = NULL;
-			} else {
-				conn->tx_ctrl = conn->tx_head;
-			}
-
-			/* point to self to indicate a control PDU mem alloc */
-			tx_lll->next = tx_lll;
-		} else {
-			if (conn->tx_head == conn->tx_data) {
-				conn->tx_data = conn->tx_data->next;
-			}
-			conn->tx_head = conn->tx_head->next;
-
-			/* point to NULL to indicate a Data PDU mem alloc */
-			tx_lll->next = NULL;
-		}
-
-		pdu_tx = (void *)tx_lll->pdu;
+		pdu_tx = (void *)tx->pdu;
 		if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
 			ctrl_tx_pre_ack(conn, pdu_tx);
 		}
@@ -1257,7 +1265,7 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 		link = mem_acquire(&mem_link_tx.free);
 		LL_ASSERT(link);
 
-		memq_enqueue(link, tx_lll, &conn->lll.memq_tx.tail);
+		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
 	}
 }
 
@@ -1323,47 +1331,6 @@ void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx)
 	lll_tx->node = tx;
 
 	MFIFO_ENQUEUE(conn_ack, idx);
-}
-
-void ull_conn_lll_tx_flush(void *param)
-{
-	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
-	struct lll_conn *lll = param;
-	struct node_rx_pdu *rx;
-	struct node_tx *tx;
-	memq_link_t *link;
-
-	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-			    (void **)&tx);
-	while (link) {
-		struct lll_tx *lll_tx;
-		u8_t idx;
-
-		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
-		LL_ASSERT(lll_tx);
-
-		lll_tx->handle = 0xFFFF;
-		lll_tx->node = tx;
-
-		/* TX node UPSTREAM, i.e. Tx node ack path */
-		link->next = tx->next; /* Indicates ctrl pool or data pool */
-		tx->next = link;
-
-		MFIFO_ENQUEUE(conn_ack, idx);
-
-		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-				    (void **)&tx);
-	}
-
-	/* Get the link mem reserved in the connection context */
-	rx = (void *)&conn->llcp_terminate.node_rx;
-	LL_ASSERT(rx->hdr.link);
-	link = rx->hdr.link;
-	rx->hdr.link = NULL;
-
-	/* Enqueue the terminate towards ULL context */
-	ull_rx_put(link, rx);
-	ull_rx_sched();
 }
 
 struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
@@ -1476,11 +1443,29 @@ static void ticker_update_conn_op_cb(u32_t status, void *param)
 		  param == ull_disable_mark_get());
 }
 
+static void ticker_stop_conn_op_cb(u32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	void *p = ull_update_mark(param);
+
+	LL_ASSERT(p == param);
+}
+
+static void ticker_start_conn_op_cb(u32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	void *p = ull_update_unmark(param);
+
+	LL_ASSERT(p == param);
+}
+
 static void ticker_op_stop_cb(u32_t status, void *param)
 {
 	u32_t retval;
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, ull_conn_lll_tx_flush};
+	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
@@ -1526,7 +1511,12 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 	struct node_rx_pdu *rx;
 	u32_t ticker_status;
 
-	/* Prepare the rx packet structure */
+	/* Only termination structure is populated here in ULL context
+	 * but the actual enqueue happens in the LLL context in
+	 * tx_lll_flush. The reason being to avoid passing the reason
+	 * value and handle through the mayfly scheduling of the
+	 * tx_lll_flush.
+	 */
 	rx = (void *)&conn->llcp_terminate.node_rx;
 	rx->hdr.handle = conn->lll.handle;
 	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
@@ -1542,8 +1532,8 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 		ll_rx_put(rx->hdr.link, rx);
 	}
 
-	/* TODO: flush demux-ed Tx buffer still in ULL context */
-	LL_ASSERT(!conn->tx_head);
+	/* flush demux-ed Tx buffer still in ULL context */
+	tx_ull_flush(conn);
 
 	/* Enable Ticker Job, we are in a radio event which disabled it if
 	 * worker0 and job0 priority where same.
@@ -1563,6 +1553,65 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
+}
+
+static void tx_ull_flush(struct ll_conn *conn)
+{
+	while (conn->tx_head) {
+		struct node_tx *tx;
+		memq_link_t *link;
+
+		tx = tx_ull_dequeue(conn, conn->tx_head);
+
+		link = mem_acquire(&mem_link_tx.free);
+		LL_ASSERT(link);
+
+		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
+	}
+}
+
+static void tx_lll_flush(void *param)
+{
+	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
+	struct lll_conn *lll = param;
+	struct node_rx_pdu *rx;
+	struct node_tx *tx;
+	memq_link_t *link;
+
+	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+			    (void **)&tx);
+	while (link) {
+		struct lll_tx *lll_tx;
+		u8_t idx;
+
+		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
+		LL_ASSERT(lll_tx);
+
+		lll_tx->handle = 0xFFFF;
+		lll_tx->node = tx;
+
+		/* TX node UPSTREAM, i.e. Tx node ack path */
+		link->next = tx->next; /* Indicates ctrl pool or data pool */
+		tx->next = link;
+
+		MFIFO_ENQUEUE(conn_ack, idx);
+
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+				    (void **)&tx);
+	}
+
+	/* Get the terminate structure reserved in the connection context.
+	 * The terminate reason and connection handle should already be
+	 * populated before this mayfly function was scheduled.
+	 */
+	rx = (void *)&conn->llcp_terminate.node_rx;
+	LL_ASSERT(rx->hdr.link);
+	link = rx->hdr.link;
+	rx->hdr.link = NULL;
+
+	/* Enqueue the terminate towards ULL context */
+	ull_rx_put(link, rx);
+	ull_rx_sched();
 }
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
@@ -5494,20 +5543,4 @@ ull_conn_rx_unknown_rsp_send:
 	}
 
 	return nack;
-}
-
-static void ticker_stop_conn_op_cb(u32_t status, void *param)
-{
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-
-	void *p = ull_update_mark(param);
-	LL_ASSERT(p == param);
-}
-
-static void ticker_start_conn_op_cb(u32_t status, void *param)
-{
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-
-	void *p = ull_update_unmark(param);
-	LL_ASSERT(p == param);
 }
