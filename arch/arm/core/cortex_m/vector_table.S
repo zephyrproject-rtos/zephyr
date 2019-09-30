@@ -33,42 +33,42 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
      */
     .word z_main_stack + CONFIG_MAIN_STACK_SIZE
 
-    .word __reset
-    .word __nmi
+    .word z_arm_reset
+    .word z_arm_nmi
 
-    .word __hard_fault
+    .word z_arm_hard_fault
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __svc
-    .word __reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_svc
+    .word z_arm_reserved
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    .word __mpu_fault
-    .word __bus_fault
-    .word __usage_fault
+    .word z_arm_mpu_fault
+    .word z_arm_bus_fault
+    .word z_arm_usage_fault
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-    .word __secure_fault
+    .word z_arm_secure_fault
 #else
-    .word __reserved
+    .word z_arm_reserved
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-    .word __reserved
-    .word __reserved
-    .word __reserved
-    .word __svc
-    .word __debug_monitor
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_reserved
+    .word z_arm_svc
+    .word z_arm_debug_monitor
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    .word __reserved
-    .word __pendsv
+    .word z_arm_reserved
+    .word z_arm_pendsv
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
     .word z_clock_isr
 #else
-    .word __reserved
+    .word z_arm_reserved
 #endif
 

@@ -21,11 +21,11 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(z_ExcExit)
-GTEXT(_IntExit)
+GTEXT(z_arm_exc_exit)
+GTEXT(z_arm_int_exit)
 GDATA(_kernel)
 #if defined(CONFIG_CPU_CORTEX_R)
-GTEXT(__pendsv)
+GTEXT(z_arm_pendsv)
 #endif
 
 /**
@@ -34,13 +34,13 @@ GTEXT(__pendsv)
  *            directly in vector table
  *
  * Kernel allows installing interrupt handlers (ISRs) directly into the vector
- * table to get the lowest interrupt latency possible. This allows the ISR to be
- * invoked directly without going through a software interrupt table. However,
- * upon exiting the ISR, some kernel work must still be performed, namely
- * possible context switching. While ISRs connected in the software interrupt
- * table do this automatically via a wrapper, ISRs connected directly in the
- * vector table must invoke _IntExit() as the *very last* action before
- * returning.
+ * table to get the lowest interrupt latency possible. This allows the ISR to
+ * be invoked directly without going through a software interrupt table.
+ * However, upon exiting the ISR, some kernel work must still be performed,
+ * namely possible context switching. While ISRs connected in the software
+ * interrupt table do this automatically via a wrapper, ISRs connected directly
+ * in the vector table must invoke z_arm_int_exit() as the *very last* action
+ * before returning.
  *
  * e.g.
  *
@@ -48,27 +48,29 @@ GTEXT(__pendsv)
  *     {
  *     printk("in %s\n", __FUNCTION__);
  *     doStuff();
- *     _IntExit();
+ *     z_arm_int_exit();
  *     }
  *
  * @return N/A
  */
 
-SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
+SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 
-/* _IntExit falls through to z_ExcExit (they are aliases of each other) */
+/* z_arm_int_exit falls through to z_arm_exc_exit (they are aliases of each
+ * other)
+ */
 
 /**
  *
  * @brief Kernel housekeeping when exiting exception handler installed
  *            directly in vector table
  *
- * See _IntExit().
+ * See z_arm_int_exit().
  *
  * @return N/A
  */
 
-SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_ExcExit)
+SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 #if defined(CONFIG_CPU_CORTEX_R)
     push {r0, lr}
 #endif
@@ -89,7 +91,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_ExcExit)
     str r2, [r1]
 #elif defined(CONFIG_CPU_CORTEX_R)
     push {r0, lr}
-    bl __pendsv
+    bl z_arm_pendsv
     pop {r0, lr}
 #endif
 

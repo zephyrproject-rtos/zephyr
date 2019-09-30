@@ -137,7 +137,7 @@ LOG_MODULE_DECLARE(os);
  */
 
 #if (CONFIG_FAULT_DUMP == 1)
-static void FaultShow(const z_arch_esf_t *esf, int fault)
+static void fault_show(const z_arch_esf_t *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d", fault);
 
@@ -156,7 +156,7 @@ static void FaultShow(const z_arch_esf_t *esf, int fault)
  *
  * For Dump level 0, no information needs to be generated.
  */
-static void FaultShow(const z_arch_esf_t *esf, int fault)
+static void fault_show(const z_arch_esf_t *esf, int fault)
 {
 	(void)esf;
 	(void)fault;
@@ -205,13 +205,14 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
 
 /**
  *
- * @brief Dump MPU fault information
+ * @brief Dump MemManage fault information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t MpuFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
+static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
+			      bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 	u32_t mmfar = -EINVAL;
@@ -239,7 +240,7 @@ static u32_t MpuFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 
 		if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0) {
 			PR_EXC("  MMFAR Address: 0x%x", mmfar);
-			if (fromHardFault) {
+			if (from_hard_fault) {
 				/* clear SCB_MMAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
@@ -328,13 +329,13 @@ static u32_t MpuFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 
 /**
  *
- * @brief Dump bus fault information
+ * @brief Dump BusFault information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return N/A
  */
-static int BusFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
+static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -360,7 +361,7 @@ static int BusFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 
 		if ((SCB->CFSR & SCB_CFSR_BFARVALID_Msk) != 0) {
 			PR_EXC("  BFAR Address: 0x%x", bfar);
-			if (fromHardFault) {
+			if (from_hard_fault) {
 				/* clear SCB_CFSR_BFAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 			}
@@ -482,13 +483,13 @@ static int BusFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 
 /**
  *
- * @brief Dump usage fault information
+ * @brief Dump UsageFault information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t UsageFault(const z_arch_esf_t *esf)
+static u32_t usage_fault(const z_arch_esf_t *esf)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -538,13 +539,13 @@ static u32_t UsageFault(const z_arch_esf_t *esf)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /**
  *
- * @brief Dump secure fault information
+ * @brief Dump SecureFault information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return N/A
  */
-static void SecureFault(const z_arch_esf_t *esf)
+static void secure_fault(const z_arch_esf_t *esf)
 {
 	PR_FAULT_INFO("***** SECURE FAULT *****");
 
@@ -579,11 +580,11 @@ static void SecureFault(const z_arch_esf_t *esf)
  *
  * @brief Dump debug monitor exception information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return N/A
  */
-static void DebugMonitor(const z_arch_esf_t *esf)
+static void debug_monitor(const z_arch_esf_t *esf)
 {
 	ARG_UNUSED(esf);
 
@@ -599,11 +600,11 @@ static void DebugMonitor(const z_arch_esf_t *esf)
  *
  * @brief Dump hard fault information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t HardFault(z_arch_esf_t *esf, bool *recoverable)
+static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -643,14 +644,14 @@ static u32_t HardFault(z_arch_esf_t *esf, bool *recoverable)
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)");
 		if (SCB_MMFSR != 0) {
-			reason = MpuFault(esf, 1, recoverable);
+			reason = mem_manage_fault(esf, 1, recoverable);
 		} else if (SCB_BFSR != 0) {
-			reason = BusFault(esf, 1, recoverable);
+			reason = bus_fault(esf, 1, recoverable);
 		} else if (SCB_UFSR != 0) {
-			reason = UsageFault(esf);
+			reason = usage_fault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
-			SecureFault(esf);
+			secure_fault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		}
 	}
@@ -665,11 +666,11 @@ static u32_t HardFault(z_arch_esf_t *esf, bool *recoverable)
  *
  * @brief Dump reserved exception information
  *
- * See _FaultDump() for example.
+ * See z_arm_fault_dump() for example.
  *
  * @return N/A
  */
-static void ReservedException(const z_arch_esf_t *esf, int fault)
+static void reserved_exception(const z_arch_esf_t *esf, int fault)
 {
 	ARG_UNUSED(esf);
 
@@ -679,7 +680,7 @@ static void ReservedException(const z_arch_esf_t *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static u32_t FaultHandle(z_arch_esf_t *esf, int fault, bool *recoverable)
+static u32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -687,39 +688,39 @@ static u32_t FaultHandle(z_arch_esf_t *esf, int fault, bool *recoverable)
 
 	switch (fault) {
 	case 3:
-		reason = HardFault(esf, recoverable);
+		reason = hard_fault(esf, recoverable);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	/* HardFault is used for all fault conditions on ARMv6-M. */
+	/* HardFault is raised for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
-		reason = MpuFault(esf, 0, recoverable);
+		reason = mem_manage_fault(esf, 0, recoverable);
 		break;
 	case 5:
-		reason = BusFault(esf, 0, recoverable);
+		reason = bus_fault(esf, 0, recoverable);
 		break;
 	case 6:
-		reason = UsageFault(esf);
+		reason = usage_fault(esf);
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
-		SecureFault(esf);
+		secure_fault(esf);
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
-		DebugMonitor(esf);
+		debug_monitor(esf);
 		break;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	default:
-		ReservedException(esf, fault);
+		reserved_exception(esf, fault);
 		break;
 	}
 
 	if ((*recoverable) == false) {
 		/* Dump generic information about the fault. */
-		FaultShow(esf, fault);
+		fault_show(esf, fault);
 	}
 
 	return reason;
@@ -733,7 +734,7 @@ static u32_t FaultHandle(z_arch_esf_t *esf, int fault, bool *recoverable)
  *
  * @param secure_esf Pointer to the secure stack frame.
  */
-static void SecureStackDump(const z_arch_esf_t *secure_esf)
+static void secure_stack_dump(const z_arch_esf_t *secure_esf)
 {
 	/*
 	 * In case a Non-Secure exception interrupted the Secure
@@ -769,7 +770,7 @@ static void SecureStackDump(const z_arch_esf_t *secure_esf)
 	PR_FAULT_INFO("  S instruction address:  0x%x", sec_ret_addr);
 
 }
-#define SECURE_STACK_DUMP(esf) SecureStackDump(esf)
+#define SECURE_STACK_DUMP(esf) secure_stack_dump(esf)
 #else
 /* We do not dump the Secure stack information for lower dump levels. */
 #define SECURE_STACK_DUMP(esf)
@@ -805,7 +806,7 @@ static void SecureStackDump(const z_arch_esf_t *secure_esf)
  * Note: exc_return argument shall only be used by the Fault handler if we are
  * running a Secure Firmware.
  */
-void _Fault(z_arch_esf_t *esf, u32_t exc_return)
+void z_arm_fault(z_arch_esf_t *esf, u32_t exc_return)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
@@ -880,7 +881,7 @@ void _Fault(z_arch_esf_t *esf, u32_t exc_return)
 	(void) exc_return;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	reason = FaultHandle(esf, fault, &recoverable);
+	reason = fault_handle(esf, fault, &recoverable);
 	if (recoverable) {
 		return;
 	}
@@ -900,7 +901,7 @@ _exit_fatal:
  *
  * @return N/A
  */
-void z_FaultInit(void)
+void z_arm_fault_init(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

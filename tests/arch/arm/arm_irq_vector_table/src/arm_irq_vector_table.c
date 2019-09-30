@@ -69,7 +69,7 @@ void isr0(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[0]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -83,7 +83,7 @@ void isr1(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[1]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -97,7 +97,7 @@ void isr2(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[2]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -125,7 +125,7 @@ void test_arm_irq_vector_table(void)
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
-		z_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
+		z_arm_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
 

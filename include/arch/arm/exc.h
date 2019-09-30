@@ -36,7 +36,7 @@
 #define _EXC_IRQ_DEFAULT_PRIO Z_EXC_PRIO(_IRQ_PRIO_OFFSET)
 
 #ifdef _ASMLANGUAGE
-GTEXT(z_ExcExit);
+GTEXT(z_arm_exc_exit);
 #else
 #include <zephyr/types.h>
 
@@ -64,7 +64,7 @@ struct __esf {
 
 typedef struct __esf z_arch_esf_t;
 
-extern void z_ExcExit(void);
+extern void z_arm_exc_exit(void);
 
 #ifdef __cplusplus
 }

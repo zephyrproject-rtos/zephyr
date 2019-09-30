@@ -30,13 +30,13 @@ extern const int _k_neg_eagain;
  * the heavy lifting of context switching.
 
  * This is the only place we have to save BASEPRI since the other paths to
- * __pendsv all come from handling an interrupt, which means we know the
+ * z_arm_pendsv all come from handling an interrupt, which means we know the
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
  * Given that z_arch_swap() is called to effect a cooperative context switch,
  * only the caller-saved integer registers need to be saved in the thread of the
  * outgoing thread. This is all performed by the hardware, which stores it in
- * its exception stack frame, created when handling the __pendsv exception.
+ * its exception stack frame, created when handling the z_arm_pendsv exception.
  *
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
@@ -62,7 +62,7 @@ int z_arch_swap(unsigned int key)
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
 #elif defined(CONFIG_CPU_CORTEX_R)
-	cortex_r_svc();
+	z_arm_cortex_r_svc();
 	irq_unlock(key);
 #endif
 

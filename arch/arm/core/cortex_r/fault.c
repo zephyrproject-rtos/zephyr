@@ -18,11 +18,11 @@
  *
  * This is a stub for more exception handling code to be added later.
  */
-void _Fault(z_arch_esf_t *esf, u32_t exc_return)
+void z_arm_fault(z_arch_esf_t *esf, u32_t exc_return)
 {
 	z_arm_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
 
-void z_FaultInit(void)
+void z_arm_fault_init(void)
 {
 }

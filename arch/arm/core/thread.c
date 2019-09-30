@@ -25,16 +25,17 @@ extern u8_t *z_priv_stack_find(void *obj);
  * @brief Initialize a new thread from its stack space
  *
  * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by __pendsv(), is put at the other end of
- * the stack, and thus reusable by the stack when not needed anymore.
+ * initial context, to be "restored" by z_arm_pendsv(), is put at the other end
+ * of the stack, and thus reusable by the stack when not needed anymore.
  *
  * The initial context is an exception stack frame (ESF) since exiting the
  * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
  * an instruction address to jump to must always be set since the CPU always
  * runs in thumb mode, the ESF expects the real address of the instruction,
- * with the lsb *not* set (instructions are always aligned on 16 bit halfwords).
- * Since the compiler automatically sets the lsb of function addresses, we have
- * to unset it manually before storing it in the 'pc' field of the ESF.
+ * with the lsb *not* set (instructions are always aligned on 16 bit
+ * halfwords).  Since the compiler automatically sets the lsb of function
+ * addresses, we have to unset it manually before storing it in the 'pc' field
+ * of the ESF.
  *
  * <options> is currently unused.
  *

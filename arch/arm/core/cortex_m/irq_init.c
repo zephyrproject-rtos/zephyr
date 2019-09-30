@@ -24,7 +24,7 @@
  * @return N/A
  */
 
-void z_IntLibInit(void)
+void z_arm_int_lib_init(void)
 {
 	int irq = 0;
 

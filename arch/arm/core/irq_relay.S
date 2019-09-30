@@ -54,7 +54,7 @@ GTEXT(__vector_relay_handler)
 SECTION_FUNC(vector_relay_table, __vector_relay_table)
 	.word z_main_stack + CONFIG_MAIN_STACK_SIZE
 
-	.word __reset
+	.word z_arm_reset
 
 	.word __vector_relay_handler	/* nmi */
 	.word __vector_relay_handler	/* hard fault */

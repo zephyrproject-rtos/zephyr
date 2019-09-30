@@ -40,7 +40,7 @@ static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 #ifdef CONFIG_CMU_HFCLK_HFXO
 	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_HFXO) {
@@ -124,7 +124,7 @@ static int silabs_exx32_init(struct device *arg)
 #endif
 
 	/* Initialize system clock according to CONFIG_CMU settings */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

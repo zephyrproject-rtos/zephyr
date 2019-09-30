@@ -17,27 +17,27 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_Fault)
+GTEXT(z_arm_fault)
 
-GTEXT(__hard_fault)
+GTEXT(z_arm_hard_fault)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-GTEXT(__mpu_fault)
-GTEXT(__bus_fault)
-GTEXT(__usage_fault)
+GTEXT(z_arm_mpu_fault)
+GTEXT(z_arm_bus_fault)
+GTEXT(z_arm_usage_fault)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-GTEXT(__secure_fault)
+GTEXT(z_arm_secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
-GTEXT(__debug_monitor)
+GTEXT(z_arm_debug_monitor)
 #elif defined(CONFIG_ARMV7_R)
-GTEXT(__undef_instruction)
-GTEXT(__prefetch_abort)
-GTEXT(__data_abort)
+GTEXT(z_arm_undef_instruction)
+GTEXT(z_arm_prefetch_abort)
+GTEXT(z_arm_data_abort)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-GTEXT(__reserved)
+GTEXT(z_arm_reserved)
 
 /**
  *
@@ -47,41 +47,41 @@ GTEXT(__reserved)
  * monitor and reserved exceptions.
  *
  * Save the values of the MSP and PSP in r0 and r1 respectively, so the first
- * and second parameters to the _Fault() C function that will handle the rest.
- * This has to be done because at this point we do not know if the fault
+ * and second parameters to the z_arm_fault() C function that will handle the
+ * rest.  This has to be done because at this point we do not know if the fault
  * happened while handling an exception or not, and thus the ESF could be on
- * either stack. _Fault() will find out where the ESF resides.
+ * either stack. z_arm_fault() will find out where the ESF resides.
  *
  * Provides these symbols:
  *
- *   __hard_fault
- *   __mpu_fault
- *   __bus_fault
- *   __usage_fault
- *   __secure_fault
- *   __debug_monitor
- *   __reserved
+ *   z_arm_hard_fault
+ *   z_arm_mpu_fault
+ *   z_arm_bus_fault
+ *   z_arm_usage_fault
+ *   z_arm_secure_fault
+ *   z_arm_debug_monitor
+ *   z_arm_reserved
  */
 
-SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_hard_fault)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_mpu_fault)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_bus_fault)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_usage_fault)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__secure_fault)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_debug_monitor)
 #elif defined(CONFIG_ARMV7_R)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__undef_instruction)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__prefetch_abort)
-SECTION_SUBSEC_FUNC(TEXT,__fault,__data_abort)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_undef_instruction)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_prefetch_abort)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_data_abort)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_reserved)
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* force unlock interrupts */
@@ -137,8 +137,9 @@ _s_stack_frame_endif:
 #endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
 #elif defined(CONFIG_ARMV7_R)
 	/*
-	 * Pass null for the esf to _Fault for now.  A future PR will add better
-	 * exception debug for Cortex-R  that subsumes what esf provides.
+	 * Pass null for the esf to z_arm_fault for now.  A future PR will add
+	 * better exception debug for Cortex-R  that subsumes what esf
+	 * provides.
 	 */
 	mov r0, #0
 #else
@@ -158,7 +159,7 @@ _s_stack_frame_endif:
 	mov r1, lr
 #endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
 	push {r0, lr}
-	bl _Fault
+	bl z_arm_fault
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	pop {r0, pc}

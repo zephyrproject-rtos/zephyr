@@ -49,7 +49,7 @@ extern volatile irq_offload_routine_t offload_routine;
  *
  * @return 1 if in ISR, 0 if not.
  */
-static ALWAYS_INLINE bool z_IsInIsr(void)
+static ALWAYS_INLINE bool z_arch_is_in_isr(void)
 {
 	u32_t vector = __get_IPSR();
 
@@ -85,7 +85,7 @@ static ALWAYS_INLINE bool z_IsInIsr(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_ExcSetup(void)
+static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
 	NVIC_SetPriority(PendSV_IRQn, 0xff);
 
@@ -137,7 +137,7 @@ static ALWAYS_INLINE void z_ExcSetup(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_clearfaults(void)
+static ALWAYS_INLINE void z_arm_clear_faults(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

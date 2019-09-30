@@ -20,8 +20,8 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(__svc)
-GTEXT(__pendsv)
+GTEXT(z_arm_svc)
+GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
 GTEXT(z_arm_do_syscall)
 GDATA(_k_neg_eagain)
@@ -37,11 +37,11 @@ GDATA(_kernel)
  * switch contexts, it pends the PendSV exception.
  *
  * When PendSV is pended, the decision that a context switch must happen has
- * already been taken. In other words, when __pendsv() runs, we *know* we have
- * to swap *something*.
+ * already been taken. In other words, when z_arm_pendsv() runs, we *know* we
+ * have to swap *something*.
  */
 
-SECTION_FUNC(TEXT, __pendsv)
+SECTION_FUNC(TEXT, z_arm_pendsv)
 
 #ifdef CONFIG_TRACING
     /* Register the context switch */
@@ -246,7 +246,7 @@ in_fp_endif:
     push {r2,lr}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
-    bl z_arch_configure_dynamic_mpu_regions
+    bl z_arm_configure_dynamic_mpu_regions
     pop {r2,lr}
 #endif
 
@@ -343,7 +343,7 @@ _thread_irq_disabled:
  *
  * @return N/A
  */
-SECTION_FUNC(TEXT, __svc)
+SECTION_FUNC(TEXT, z_arm_svc)
     /* Use EXC_RETURN state to find out if stack frame is on the
      * MSP or PSP
      */
@@ -381,8 +381,8 @@ _stack_frame_endif:
     mov lr, r1
 #endif /* CONFIG_IRQ_OFFLOAD */
 
-    /* exception return is done in _IntExit() */
-    b _IntExit
+    /* exception return is done in z_arm_int_exit() */
+    b z_arm_int_exit
 
 _oops:
     push {r0, lr}
@@ -402,7 +402,7 @@ _oops:
  *
  * @return N/A
  */
-SECTION_FUNC(TEXT, __svc)
+SECTION_FUNC(TEXT, z_arm_svc)
     tst lr, #0x4    /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
@@ -445,8 +445,8 @@ SECTION_FUNC(TEXT, __svc)
     bl z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, lr}
 
-    /* exception return is done in _IntExit() */
-    b _IntExit
+    /* exception return is done in z_arm_int_exit() */
+    b z_arm_int_exit
 #endif
 
 _oops:
@@ -517,7 +517,7 @@ valid_syscall_id:
 #endif
 
 #elif defined(CONFIG_ARMV7_R)
-SECTION_FUNC(TEXT, __svc)
+SECTION_FUNC(TEXT, z_arm_svc)
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
      * Save r12 and the lr as we will be swapping in another process and
@@ -564,19 +564,19 @@ demux:
     blx z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, lr}
 
-    /* exception return is done in _IntExit() */
+    /* exception return is done in z_arm_int_exit() */
     mov r0, #RET_FROM_SVC
-    b _IntExit
+    b z_arm_int_exit
 #endif
 
 _context_switch:
     /* handler mode exit, to PendSV */
     push {r0, lr}
-    bl __pendsv
+    bl z_arm_pendsv
     pop {r0, lr}
 
     mov r0, #RET_FROM_SVC
-    b _IntExit
+    b z_arm_int_exit
 
 _oops:
     push {r0, lr}
@@ -585,8 +585,8 @@ _oops:
     cpsie i
     movs pc, lr
 
-GTEXT(cortex_r_svc)
-SECTION_FUNC(TEXT, cortex_r_svc)
+GTEXT(z_arm_cortex_r_svc)
+SECTION_FUNC(TEXT, z_arm_cortex_r_svc)
     svc #0
     bx lr
 
