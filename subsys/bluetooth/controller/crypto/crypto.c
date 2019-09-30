@@ -36,7 +36,8 @@ int bt_rand(void *buf, size_t len)
 int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
 		  u8_t enc_data[16])
 {
-	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
+	BT_DBG("key %s", bt_hex(key, 16));
+	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	ecb_encrypt(key, plaintext, enc_data, NULL);
 
@@ -48,7 +49,8 @@ int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
 int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
 		  u8_t enc_data[16])
 {
-	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
+	BT_DBG("key %s", bt_hex(key, 16));
+	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	ecb_encrypt_be(key, plaintext, enc_data);
 
