@@ -354,6 +354,7 @@ config NET_TCP_RETRY_COUNT
 
 choice
 	prompt "Select TCP stack"
+	depends on NET_TCP
 	default NET_TCP1
 	help
 	  Select the TCP stack implementation to use.
