@@ -30,7 +30,7 @@
 #include <kernel_structs.h>
 #include <debug/tracing.h>
 
-extern void __reserved(void);
+extern void z_arm_reserved(void);
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #define NUM_IRQS_PER_REG 32
@@ -87,7 +87,7 @@ int z_arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -180,7 +180,7 @@ int z_arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	struct device *dev = _sw_isr_table[0].arg;
 
@@ -196,14 +196,14 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  * Installed in all dynamic interrupt slots at boot time. Throws an error if
  * called.
  *
- * See __reserved().
+ * See z_arm_reserved().
  *
  * @return N/A
  */
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	__reserved();
+	z_arm_reserved();
 }
 
 /* FIXME: IRQ direct inline functions have to be placed here and not in
@@ -320,7 +320,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      u32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	z_irq_priority_set(irq, priority, flags);
+	z_arm_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

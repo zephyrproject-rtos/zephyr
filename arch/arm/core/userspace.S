@@ -68,7 +68,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* Re-program dynamic memory map.
      *
      * Important note:
-     * z_arch_configure_dynamic_mpu_regions() may re-program the MPU Stack Guard
+     * z_arm_configure_dynamic_mpu_regions() may re-program the MPU Stack Guard
      * to guard the privilege stack for overflows (if building with option
      * CONFIG_MPU_STACK_GUARD). There is a risk of actually overflowing the
      * stack while doing the re-programming. We minimize the risk by placing
@@ -82,7 +82,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     push {r0,r1,r2,r3,ip,lr}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
-    bl z_arch_configure_dynamic_mpu_regions
+    bl z_arm_configure_dynamic_mpu_regions
     pop {r0,r1,r2,r3,ip,lr}
 #endif
 

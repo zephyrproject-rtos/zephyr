@@ -31,16 +31,16 @@
 GTEXT(__start)
 GTEXT(_vector_table)
 
-GTEXT(__nmi)
-GTEXT(__undef_instruction)
-GTEXT(__svc)
-GTEXT(__prefetch_abort)
-GTEXT(__data_abort)
+GTEXT(z_arm_nmi)
+GTEXT(z_arm_undef_instruction)
+GTEXT(z_arm_svc)
+GTEXT(z_arm_prefetch_abort)
+GTEXT(z_arm_data_abort)
 
-GTEXT(__pendsv)
-GTEXT(__reserved)
+GTEXT(z_arm_pendsv)
+GTEXT(z_arm_reserved)
 
-GTEXT(_PrepC)
+GTEXT(z_arm_prep_c)
 GTEXT(_isr_wrapper)
 
 #else /* _ASMLANGUAGE */

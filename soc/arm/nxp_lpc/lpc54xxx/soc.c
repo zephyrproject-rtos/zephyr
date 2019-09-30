@@ -33,7 +33,7 @@
  *
  */
 
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 
 #ifdef CONFIG_SOC_LPC54114_M4
@@ -88,7 +88,7 @@ static int nxp_lpc54114_init(struct device *arg)
 	oldLevel = irq_lock();
 
 	/* Initialize FRO/system clock to 48 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU if configured in

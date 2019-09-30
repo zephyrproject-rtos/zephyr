@@ -251,7 +251,7 @@ static int ke1xf_init(struct device *arg)
 	return 0;
 }
 
-void _WdogInit(void)
+void z_arm_watchdog_init(void)
 {
 	/*
 	 * NOTE: DO NOT SINGLE STEP THROUGH THIS FUNCTION!!! Watchdog

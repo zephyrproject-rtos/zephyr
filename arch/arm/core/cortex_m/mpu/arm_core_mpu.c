@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(mpu);
  * available MPU regions for dynamic programming depends on the number of the
  * static MPU regions currently being programmed, and the total number of HW-
  * available MPU regions. This macro is only used internally in function
- * z_arch_configure_dynamic_mpu_regions(), to reserve sufficient area for the
+ * z_arm_configure_dynamic_mpu_regions(), to reserve sufficient area for the
  * array of dynamic regions passed to the underlying driver.
  */
 #if defined(CONFIG_USERSPACE)
@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(mpu);
  * For some MPU architectures, such as the unmodified ARMv8-M MPU,
  * the function must execute with MPU enabled.
  */
-void z_arch_configure_static_mpu_regions(void)
+void z_arm_configure_static_mpu_regions(void)
 {
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 		const struct k_mem_partition gcov_region =
@@ -142,7 +142,7 @@ void z_arch_configure_static_mpu_regions(void)
  * For some MPU architectures, such as the unmodified ARMv8-M MPU,
  * the function must execute with MPU enabled.
  */
-void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
+void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 {
 	/* Define an array of k_mem_partition objects to hold the configuration
 	 * of the respective dynamic MPU regions to be programmed for
@@ -293,7 +293,7 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread)
 	 * This triggers re-programming of the entire dynamic
 	 * memory map.
 	 */
-	z_arch_configure_dynamic_mpu_regions(thread);
+	z_arm_configure_dynamic_mpu_regions(thread);
 }
 
 /*

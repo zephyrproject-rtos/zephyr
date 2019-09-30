@@ -106,7 +106,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	/* Boot ROM did initialize the XTAL, here we only sets external XTAL
 	 * OSC freq
@@ -280,7 +280,7 @@ static int imxrt_init(struct device *arg)
 	}
 
 	/* Initialize system clock */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

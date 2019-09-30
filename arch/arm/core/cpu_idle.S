@@ -20,7 +20,7 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(z_CpuIdleInit)
+GTEXT(z_arm_cpu_idle_init)
 GTEXT(z_arch_cpu_idle)
 GTEXT(z_arch_cpu_atomic_idle)
 
@@ -44,10 +44,10 @@ GTEXT(z_arch_cpu_atomic_idle)
  *
  * C function prototype:
  *
- * void z_CpuIdleInit (void);
+ * void z_arm_cpu_idle_init(void);
  */
 
-SECTION_FUNC(TEXT, z_CpuIdleInit)
+SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
 #if defined(CONFIG_CPU_CORTEX_M)
 	ldr r1, =_SCB_SCR
 	movs.n r2, #_SCR_INIT_BITS

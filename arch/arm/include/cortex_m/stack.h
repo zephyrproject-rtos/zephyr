@@ -37,7 +37,7 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_InterruptStackSetup(void)
+static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
 	u32_t msp = (u32_t)(Z_THREAD_STACK_BUFFER(_interrupt_stack)) +
 			    K_THREAD_STACK_SIZEOF(_interrupt_stack);

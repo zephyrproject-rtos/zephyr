@@ -27,20 +27,20 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern void z_FaultInit(void);
-extern void z_CpuIdleInit(void);
+extern void z_arm_fault_init(void);
+extern void z_arm_cpu_idle_init(void);
 #ifdef CONFIG_ARM_MPU
-extern void z_arch_configure_static_mpu_regions(void);
-extern void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
+extern void z_arm_configure_static_mpu_regions(void);
+extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
 #endif /* CONFIG_ARM_MPU */
 
 static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
-	z_InterruptStackSetup();
-	z_ExcSetup();
-	z_FaultInit();
-	z_CpuIdleInit();
-	z_clearfaults();
+	z_arm_interrupt_stack_setup();
+	z_arm_exc_setup();
+	z_arm_fault_init();
+	z_arm_cpu_idle_init();
+	z_arm_clear_faults();
 }
 
 static ALWAYS_INLINE void
@@ -68,7 +68,7 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 	 *
 	 * This function is invoked once, upon system initialization.
 	 */
-	z_arch_configure_static_mpu_regions();
+	z_arm_configure_static_mpu_regions();
 #endif
 
 	/* get high address of the stack, i.e. its start (stack grows down) */
@@ -91,7 +91,7 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 	 * If stack protection is enabled, make sure to set it
 	 * before jumping to thread entry function
 	 */
-	z_arch_configure_dynamic_mpu_regions(main_thread);
+	z_arm_configure_dynamic_mpu_regions(main_thread);
 #endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
@@ -142,8 +142,6 @@ z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 }
 
 extern void z_arch_cpu_atomic_idle(unsigned int key);
-
-#define z_arch_is_in_isr() z_IsInIsr()
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,

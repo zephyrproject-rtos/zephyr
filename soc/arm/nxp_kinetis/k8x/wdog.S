@@ -17,7 +17,7 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_WdogInit)
+GTEXT(z_arm_watchdog_init)
 
 /* watchdog register offsets */
 #define WDOG_SCTRL_HI_OFFSET  0x0
@@ -36,7 +36,7 @@ GTEXT(_WdogInit)
  * @return N/A
  */
 
-SECTION_FUNC(TEXT,_WdogInit)
+SECTION_FUNC(TEXT,z_arm_watchdog_init)
     /*
      * NOTE: DO NOT SINGLE STEP THROUGH THIS FUNCTION!!!
      * There are timing requirements for the execution of the unlock process.

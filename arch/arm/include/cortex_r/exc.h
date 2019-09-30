@@ -40,7 +40,7 @@ extern volatile irq_offload_routine_t offload_routine;
  *
  * @return 1 if in ISR, 0 if not.
  */
-static ALWAYS_INLINE bool z_IsInIsr(void)
+static ALWAYS_INLINE bool z_arch_is_in_isr(void)
 {
 	unsigned int status;
 
@@ -59,7 +59,7 @@ static ALWAYS_INLINE bool z_IsInIsr(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_ExcSetup(void)
+static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
 }
 
@@ -70,11 +70,11 @@ static ALWAYS_INLINE void z_ExcSetup(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_clearfaults(void)
+static ALWAYS_INLINE void z_arm_clear_faults(void)
 {
 }
 
-extern void cortex_r_svc(void);
+extern void z_arm_cortex_r_svc(void);
 
 #ifdef __cplusplus
 }

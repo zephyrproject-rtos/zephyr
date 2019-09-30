@@ -18,7 +18,7 @@
  * Variables
  ******************************************************************************/
 
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
    /*
     * Core clock: 48MHz
@@ -85,7 +85,7 @@ static int kl2x_init(struct device *arg)
 	SIM->COPC = 0;
 
 	/* Initialize system clock to 48 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU
