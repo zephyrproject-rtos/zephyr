@@ -121,6 +121,7 @@
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @gnuless
 /drivers/dma/*sam0*                       @Sizurka
+/drivers/dma/dma_stm32*                   @cybertale
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
@@ -379,6 +380,7 @@
 /tests/drivers/can/                       @alexanderwachter
 /tests/drivers/flash_simulator/           @nvlsianpu
 /tests/drivers/hwinfo/                    @alexanderwachter
+/tests/drivers/i2s/*/96b_argonkey.conf    @cybertale
 /tests/drivers/spi/                       @tbursztyka
 /tests/drivers/uart/uart_async_api/       @Mierunski
 /tests/kernel/                            @andrewboie @andyross @nashif
