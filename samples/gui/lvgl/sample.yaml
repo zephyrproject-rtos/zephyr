@@ -10,3 +10,15 @@ tests:
     platform_whitelist: nrf52840_pca10056
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
+  sample.display.waveshare_epaper_gdeh0213b1:
+    platform_whitelist: nrf52840_pca10056
+    extra_args: SHIELD=waveshare_epaper_gdeh0213b1
+    tags: shield
+  sample.display.waveshare_epaper_gdeh0213b72:
+    platform_whitelist: nrf52840_pca10056
+    extra_args: SHIELD=waveshare_epaper_gdeh0213b72
+    tags: shield
+  sample.display.waveshare_epaper_gdeh029a1:
+    platform_whitelist: nrf52840_pca10056
+    extra_args: SHIELD=waveshare_epaper_gdeh029a1
+    tags: shield
