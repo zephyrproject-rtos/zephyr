@@ -32,6 +32,12 @@ config EXCEPTION_STACK_SIZE
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config SCHED_IPI_VECTOR
+	int "IDT vector to use for scheduler IPI"
+	default 33
+	range 33 255
+	depends on SMP
+
 # We should really only have to provide one of the following two values,
 # but a bug in the Zephyr SDK for x86 precludes the use of division in
 # the assembler. For now, we require that these values be specified manually,
