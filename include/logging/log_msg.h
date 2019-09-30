@@ -305,6 +305,13 @@ void log_msg_hexdump_data_get(struct log_msg *msg,
 			      size_t *length,
 			      size_t offset);
 
+/** @brief Extend capacity of a hexdump message.
+ *
+ * @param msg		Message.
+ * @param ext_bytes	Number of bytes by which message should be extended.
+ */
+int log_msg_hexdump_extend(struct log_msg *msg, u32_t ext_bytes);
+
 union log_msg_chunk *log_msg_no_space_handle(void);
 
 /** @brief Allocate single chunk from the pool.

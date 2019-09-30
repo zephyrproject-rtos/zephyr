@@ -456,3 +456,78 @@ void log_msg_hexdump_data_get(struct log_msg *msg,
 {
 	log_msg_hexdump_data_op(msg, data, length, offset, false);
 }
+
+static u32_t chunks_cnt(u32_t bytes)
+{
+	if (bytes <= LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK) {
+		return 1;
+	}
+
+	return ceiling_fraction(bytes + HEXDUMP_BYTES_CONT_MSG -
+				LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK,
+				HEXDUMP_BYTES_CONT_MSG);
+}
+
+int log_msg_hexdump_extend(struct log_msg *msg, u32_t ext_bytes)
+{
+	u32_t total = msg->hdr.params.hexdump.length + ext_bytes;
+	struct log_msg_cont **chunk;
+	u8_t first_chunk_tail[sizeof(void *)];
+	size_t first_chunk_tail_len = 0;
+	u32_t new_chunks_cnt;
+	u32_t prev_chunks_cnt;
+
+	prev_chunks_cnt = chunks_cnt(msg->hdr.params.hexdump.length);
+	new_chunks_cnt = chunks_cnt(total);
+
+	if (new_chunks_cnt == prev_chunks_cnt) {
+		msg->hdr.params.hexdump.length = total;
+		return 0;
+	}
+
+	/* Check if conversion from single to multi chunk message is needed. */
+	if (msg->hdr.params.hexdump.length <=
+			LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK) {
+		if (msg->hdr.params.hexdump.length >
+				LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK) {
+			first_chunk_tail_len = msg->hdr.params.hexdump.length -
+					LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
+			log_msg_hexdump_data_get(msg, first_chunk_tail,
+					&first_chunk_tail_len,
+					LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK);
+		}
+		/* If first chunk has data that can fit in head chunk, just do
+		 * memory move.
+		 */
+		memmove(msg->payload.ext.data.bytes, msg->payload.single.bytes,
+				msg->hdr.params.hexdump.length);
+
+		msg->payload.ext.next = NULL;
+	}
+
+	chunk = &msg->payload.ext.next;
+	for (int i = 1; i < new_chunks_cnt; i++) {
+		if (*chunk == NULL) {
+			*chunk = (struct log_msg_cont *)log_msg_chunk_alloc();
+			if (*chunk == NULL) {
+				return -ENOMEM;
+			}
+			(*chunk)->next = NULL;
+			msg->hdr.params.hexdump.length =
+					i*HEXDUMP_BYTES_CONT_MSG +
+					LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
+		}
+		chunk = &(*chunk)->next;
+	}
+
+	/* Conclude conversion from single to multi chunk message */
+	if (first_chunk_tail_len > 0) {
+		log_msg_hexdump_data_put(msg, first_chunk_tail,
+					 &first_chunk_tail_len,
+					 LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK);
+	}
+
+	msg->hdr.params.hexdump.length = total;
+
+	return 0;
+}
