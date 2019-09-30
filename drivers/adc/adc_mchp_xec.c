@@ -151,7 +151,7 @@ static int adc_xec_start_read(struct device *dev,
 	struct adc_xec_data *data = dev->driver_data;
 	u32_t reg;
 
-	if (sequence->channels & ~MCHP_ADC_MAX_CHAN_MASK) {
+	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
 		return -EINVAL;
 	}
 
