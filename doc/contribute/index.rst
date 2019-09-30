@@ -297,7 +297,8 @@ uncrustify
 ==========
 
 The `uncrustify tool <https://sourceforge.net/projects/uncrustify>`_ can
-be helpful to quickly reformat your source code to our `Coding Style`_
+be helpful to quickly reformat large amounts of new source code to our
+`Coding Style`_
 standards together with a configuration file we've provided:
 
 .. code-block:: bash
@@ -306,6 +307,10 @@ standards together with a configuration file we've provided:
    uncrustify --replace --no-backup -l C -c $ZEPHYR_BASE/.uncrustify.cfg my_source_file.c
    # On Windows
    uncrustify --replace --no-backup -l C -c %ZEPHYR_BASE%\.uncrustify.cfg my_source_file.c
+
+But note that you should not use uncrustify to reformat existing Zephyr code,
+or to modify files in which you only introduce a small fix. This would create a
+lot of unwelcome extra changed lines.
 
 On Linux systems, you can install uncrustify with
 
