@@ -42,7 +42,6 @@ config TINYCRYPT_SHA256_HMAC_PRNG
 config TINYCRYPT_ECC_DH
 	bool "ECC_DH anonymous key agreement protocol"
 	depends on TINYCRYPT
-	select ENTROPY_GENERATOR
 	help
 	  This option enables support for the Elliptic curve
 	  Diffie-Hellman anonymous key agreement protocol.
@@ -53,7 +52,6 @@ config TINYCRYPT_ECC_DH
 config TINYCRYPT_ECC_DSA
 	bool "ECC_DSA digital signature algorithm"
 	depends on TINYCRYPT
-	select ENTROPY_GENERATOR
 	help
 	  This option enables support for the Elliptic Curve Digital
 	  Signature Algorithm (ECDSA).
