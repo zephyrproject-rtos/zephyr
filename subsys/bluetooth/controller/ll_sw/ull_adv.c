@@ -610,6 +610,9 @@ u8_t ll_adv_enable(u8_t enable)
 		conn_lll->slave.window_widening_event_us = 0;
 		conn_lll->slave.window_size_prepare_us = 0;
 		/* FIXME: END: Move to ULL? */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+		memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;

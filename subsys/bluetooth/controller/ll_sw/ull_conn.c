@@ -2044,7 +2044,11 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 				     ticks_at_expire, ticks_win_offset,
 				     HAL_TICKER_US_TO_TICKS(periodic_us),
 				     HAL_TICKER_REMAINDER(periodic_us),
+#if defined(CONFIG_BT_CTLR_CONN_META)
+				     TICKER_LAZY_MUST_EXPIRE,
+#else
 				     TICKER_NULL_LAZY,
+#endif /* CONFIG_BT_CTLR_CONN_META */
 				     (ticks_slot_offset + conn->evt.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
 				     lll->role ? ull_slave_ticker_cb :
