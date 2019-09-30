@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+title: DMA Base Structure
+
+description: >
+    This binding gives the base structures for all DMA devices
+
+include: base.yaml
+
+child-bus: dma
+
+properties:
+    label:
+      required: true
+
+    "#dma-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a DMA specifier
