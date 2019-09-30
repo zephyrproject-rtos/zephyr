@@ -52,4 +52,11 @@ config ENTROPY_STM32_RNG
 
 endif # ENTROPY_GENERATOR
 
+if DMA_STM32
+
+config DMA_STM32_V1
+	default y
+
+endif # DMA
+
 endif # SOC_SERIES_STM32F7X
