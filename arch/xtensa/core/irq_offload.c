@@ -23,7 +23,7 @@ void z_irq_do_offload(void *unused)
 	offload_routine(offload_param);
 }
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	IRQ_CONNECT(CONFIG_IRQ_OFFLOAD_INTNUM, XCHAL_EXCM_LEVEL,
 		z_irq_do_offload, NULL, 0);

@@ -107,7 +107,7 @@ static void irq_offload_handler(void *arg, int err)
 	offload_fn(offload_arg);
 }
 
-void irq_offload(irq_offload_routine_t fn, void *arg)
+void z_arch_irq_offload(irq_offload_routine_t fn, void *arg)
 {
 	offload_fn = fn;
 	offload_arg = arg;

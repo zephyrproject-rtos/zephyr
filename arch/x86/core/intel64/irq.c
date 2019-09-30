@@ -89,7 +89,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_IRQ_OFFLOAD
 #include <irq_offload.h>
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	u32_t key;
 

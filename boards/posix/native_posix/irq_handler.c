@@ -329,7 +329,7 @@ static void offload_sw_irq_handler(void *a)
  *
  * Raise the SW IRQ assigned to handled this
  */
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	off_routine = routine;
 	off_parameter = parameter;

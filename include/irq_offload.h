@@ -17,6 +17,8 @@ extern "C" {
 
 typedef void (*irq_offload_routine_t)(void *parameter);
 
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter);
+
 /**
  * @brief Run a function in interrupt context
  *
@@ -29,7 +31,10 @@ typedef void (*irq_offload_routine_t)(void *parameter);
  * @param parameter Argument to pass to the function when it is run as an
  * interrupt
  */
-void irq_offload(irq_offload_routine_t routine, void *parameter);
+static inline void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	z_arch_irq_offload(routine, parameter);
+}
 
 #ifdef __cplusplus
 }
