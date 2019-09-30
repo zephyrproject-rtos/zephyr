@@ -79,6 +79,7 @@
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @rsalveti @idlethread
+/boards/arm/qemu_cortex_m*/               @ioannisg
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
