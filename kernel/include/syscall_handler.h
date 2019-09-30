@@ -17,6 +17,7 @@
 #include <kernel_internal.h>
 #include <kernel_structs.h>
 #include <stdbool.h>
+#include <logging/log.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
@@ -280,8 +281,9 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
 	bool expr_copy = !(expr); \
 	if (expr_copy) { \
-		printk("syscall %s failed check: " fmt "\n", \
-		       __func__, ##__VA_ARGS__); \
+		LOG_MODULE_DECLARE(os); \
+		LOG_ERR("syscall %s failed check: " fmt, \
+			__func__, ##__VA_ARGS__); \
 	} \
 	expr_copy; })
 
