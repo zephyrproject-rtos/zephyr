@@ -14,7 +14,7 @@
 .section .locore,"ax"
 .code32
 
-#ifdef CONFIG_SMP && (CONFIG_MP_NUM_CPUS > 1)
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 
 	/*
 	 * APs are sent here on startup, in real mode. This
