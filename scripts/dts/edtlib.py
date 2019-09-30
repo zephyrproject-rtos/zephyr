@@ -894,15 +894,6 @@ class Node:
         node = self._node
         prop = node.props.get(name)
 
-        if prop_type == "boolean":
-            if not prop:
-                return False
-            if prop.type is not TYPE_EMPTY:
-                _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
-                     "but is assigned a value ('{3}') instead of being empty "
-                     "('{0};')".format(name, node, self.binding_path, prop))
-            return True
-
         if not prop:
             if required and self.enabled:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
@@ -918,7 +909,14 @@ class Node:
                     return bytes(default)
                 return default
 
-            return None
+            return False if prop_type == "boolean" else None
+
+        if prop_type == "boolean":
+            if prop.type is not TYPE_EMPTY:
+                _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
+                     "but is assigned a value ('{3}') instead of being empty "
+                     "('{0};')".format(name, node, self.binding_path, prop))
+            return True
 
         if prop_type == "int":
             return prop.to_num()
