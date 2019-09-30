@@ -1,4 +1,4 @@
-# Kconfig - Keyboard scan  configuration options
+# Kconfig - Keyboard scan configuration options
 
 #
 # Copyright (c) 2019 Intel Corporation
@@ -7,7 +7,7 @@
 #
 
 menuconfig KSCAN
-	bool "Keyboard scan Drivers"
+	bool "Keyboard Scan Drivers"
 	help
 	  Include Keyboard scan drivers in system config.
 
