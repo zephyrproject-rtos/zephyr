@@ -152,14 +152,17 @@ static int adc_xec_start_read(struct device *dev,
 	u32_t reg;
 
 	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
+		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0UL) {
+		LOG_ERR("No channel selected");
 		return -EINVAL;
 	}
 
 	if (!adc_xec_validate_buffer_size(sequence)) {
+		LOG_ERR("Incorrect buffer size");
 		return -ENOMEM;
 	}
 
