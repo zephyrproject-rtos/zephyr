@@ -1483,7 +1483,7 @@ static void ticker_op_stop_cb(u32_t status, void *param)
 	mfy.param = param;
 
 	/* Flush pending tx PDUs in LLL (using a mayfly) */
-	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 1,
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
 				&mfy);
 	LL_ASSERT(!retval);
 }
