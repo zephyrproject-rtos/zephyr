@@ -64,6 +64,13 @@ config NET_IPV4_AUTO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
+config NET_IPV4_HDR_OPTIONS
+	bool "Enable IPv4 Header options support"
+	help
+	  Enables IPv4 header options support. Current support for only
+	  ICMPv4 Echo request. Only RecordRoute and Timestamp are handled.
+
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4
