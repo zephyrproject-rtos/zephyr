@@ -32,6 +32,7 @@ GEN_OFFSET_SYM(x86_tss64_t, ist1);
 GEN_OFFSET_SYM(x86_tss64_t, cpu);
 GEN_ABSOLUTE_SYM(__X86_TSS64_SIZEOF, sizeof(x86_tss64_t));
 
+GEN_OFFSET_SYM(x86_cpuboot_t, ready);
 GEN_OFFSET_SYM(x86_cpuboot_t, tr);
 GEN_OFFSET_SYM(x86_cpuboot_t, gs);
 GEN_OFFSET_SYM(x86_cpuboot_t, sp);

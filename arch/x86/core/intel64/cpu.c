@@ -18,7 +18,7 @@
 
 __weak u8_t x86_cpu_loapics[] = { 0, 1, 2, 3 };
 
-extern FUNC_NORETURN void z_x86_prep_c(int, struct multiboot_info *);
+extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
 
 extern char x86_ap_start[];  /* AP entry point in locore.S */
 
@@ -110,4 +110,7 @@ void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	z_loapic_ipi(apic_id, LOAPIC_ICR_IPI_INIT, 0);
 	k_busy_wait(10000);
 	z_loapic_ipi(apic_id, LOAPIC_ICR_IPI_STARTUP, vector);
+
+	while (x86_cpuboot[cpu_num].ready == 0) {
+	}
 }
