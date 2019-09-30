@@ -419,11 +419,82 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 	log_msg_put(msg);
 }
 
+void test_hexdump_realloc(void)
+{
+	u8_t data[1];
+	u8_t new_data[HEXDUMP_BYTES_CONT_MSG+1];
+	u8_t rbuf[HEXDUMP_BYTES_CONT_MSG];
+	size_t len;
+	u32_t offset;
+	int err;
+	struct log_msg *msg = log_msg_hexdump_create(NULL, data, sizeof(data));
+
+	for (int i = 0; i < sizeof(new_data); i++) {
+		new_data[i] = i;
+	}
+
+	len = 4;
+	log_msg_hexdump_data_put(msg, new_data, &len, 0);
+	zassert_equal(1, len, "Unexpected len:%d", len);
+
+	err = log_msg_hexdump_extend(msg, 4);
+	zassert_equal(0, err, "Unexpected err:%d", err);
+
+	len = 4;
+	log_msg_hexdump_data_put(msg, new_data, &len, 0);
+	zassert_equal(4, len, "Unexpected len:%d", len);
+
+	err = log_msg_hexdump_extend(msg, HEXDUMP_BYTES_CONT_MSG);
+	zassert_equal(0, err, "Unexpected err:%d", err);
+
+	len = sizeof(new_data);
+	log_msg_hexdump_data_put(msg, new_data, &len, 0);
+	zassert_equal(sizeof(new_data), len, "Unexpected len:%d", len);
+
+	err = log_msg_hexdump_extend(msg, HEXDUMP_BYTES_CONT_MSG);
+	len = 4;
+	offset = LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
+	log_msg_hexdump_data_put(msg, new_data, &len, offset);
+	zassert_equal(4, len, "Unexpected len:%d", len);
+
+	log_msg_hexdump_data_get(msg, rbuf, &len, offset);
+	zassert_equal(4, len, "Unexpected len:%d", len);
+	zassert_equal(0, memcmp(new_data, rbuf, len),
+			"Expected different buffer content");
+}
+
+void test_hexdump_realloc_mutlichunk(void)
+{
+	struct log_msg *msg = log_msg_hexdump_create(NULL, NULL, 0);
+	char inbuf[] = "123456789 qwerty uiopasd fghjk lzxcv bbnnm";
+	u32_t test_len = sizeof(inbuf);
+	char outbuf[sizeof(inbuf)];
+	int err;
+	size_t len = 1;
+
+	for (int i = 0; i < test_len; i++) {
+		err = log_msg_hexdump_extend(msg, 1);
+		zassert_equal(0, err, "Unexpected err:%d", err);
+
+		log_msg_hexdump_data_put(msg, &inbuf[i], &len, i);
+		zassert_equal(1, len, "Unexpected len:%d", len);
+	}
+
+	len = test_len;
+	log_msg_hexdump_data_get(msg, outbuf, &len, 0);
+	zassert_equal(test_len, len, "Unexpected len:%d", len);
+
+	err = memcmp(inbuf, outbuf, test_len);
+
+	zassert_equal(err, 0, "Buffers do not match (ret: %d)", err);
+}
 
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_log_message,
+		ztest_unit_test(test_hexdump_realloc_mutlichunk),
+		ztest_unit_test(test_hexdump_realloc),
 		ztest_unit_test(test_log_std_msg),
 		ztest_unit_test(test_log_hexdump_msg),
 		ztest_unit_test(test_log_hexdump_data_get_single_chunk),
