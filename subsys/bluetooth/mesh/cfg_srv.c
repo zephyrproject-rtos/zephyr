@@ -1101,27 +1101,24 @@ void va_get_loop(void (*func)(struct label *l))
 {
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 	int i;
-    for (i = 0; i < ARRAY_SIZE(labels); i++)
-    {
-        func(&labels[i]);
-    }
+	for (i = 0; i < ARRAY_SIZE(labels); i++) {
+		func(&labels[i]);
+	}
 #endif
 }
 
-struct label * va_alloc(void)
+struct label *va_alloc(void)
 {
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 	int i;
 
-    for (i = 0; i < ARRAY_SIZE(labels); i++)
-    {
-        if (!labels[i].ref)
-        {
-            return &labels[i];
-        }
-    }
+	for (i = 0; i < ARRAY_SIZE(labels); i++) {
+		if (!labels[i].ref) {
+			return &labels[i];
+		}
+	}
 #endif
-    return NULL;
+	return NULL;
 }
 
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
@@ -1132,12 +1129,12 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
 		if (!labels[i].ref) {
-			
-			if(IS_ENABLED(CONFIG_BT_SETTINGS) && 
-					atomic_test_and_clear_bit(free_slot->flag, BT_MESH_VA_CHANGED)){
-                bt_mesh_clear_va(&labels[i]);
-            }
-			
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+			    atomic_test_and_clear_bit(free_slot->flag, BT_MESH_VA_CHANGED)) {
+				bt_mesh_clear_va(&labels[i]);
+			}
+
 			free_slot = &labels[i];
 			continue;
 		}
@@ -1146,10 +1143,10 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 			*addr = labels[i].addr;
 			labels[i].ref++;
 			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
-			
-			if(IS_ENABLED(CONFIG_BT_SETTINGS)){
-                bt_mesh_store_va();
-            }
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				bt_mesh_store_va();
+			}
 			return STATUS_SUCCESS;
 		}
 	}
@@ -1167,10 +1164,9 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 	memcpy(free_slot->uuid, label_uuid, 16);
 	atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
 
-	if(IS_ENABLED(CONFIG_BT_SETTINGS))
-    {
-        bt_mesh_store_va();
-    }
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_va();
+	}
 
 	return STATUS_SUCCESS;
 }
@@ -1188,10 +1184,9 @@ static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 			labels[i].ref--;
 			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
 
-			if(IS_ENABLED(CONFIG_BT_SETTINGS))
-            {
-                bt_mesh_store_va();
-            }
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				bt_mesh_store_va();
+			}
 			return STATUS_SUCCESS;
 		}
 	}
@@ -2237,7 +2232,7 @@ static void net_key_update(struct bt_mesh_model *model,
 			send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
 			return;
 		}
-		/* fall through */
+	/* fall through */
 	case BT_MESH_KR_PHASE_2:
 	case BT_MESH_KR_PHASE_3:
 		send_net_key_status(model, ctx, idx, STATUS_CANNOT_UPDATE);
@@ -2427,7 +2422,7 @@ static void node_identity_set(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(&msg, STATUS_INVALID_NETKEY);
 		net_buf_simple_add_le16(&msg, idx);
 		net_buf_simple_add_u8(&msg, node_id);
-	} else  {
+	} else {
 		net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
 		net_buf_simple_add_le16(&msg, idx);
 
@@ -2921,9 +2916,9 @@ static u16_t hb_pwr2(u8_t val, u8_t sub)
 
 struct hb_pub_param {
 	u16_t dst;
-	u8_t  count_log;
-	u8_t  period_log;
-	u8_t  ttl;
+	u8_t count_log;
+	u8_t period_log;
+	u8_t ttl;
 	u16_t feat;
 	u16_t net_idx;
 } __packed;

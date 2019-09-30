@@ -39,10 +39,10 @@
  * gets deleted its struct becomes invalid and may be reused for other keys.
  */
 static struct key_update {
-	u16_t key_idx:12,    /* AppKey or NetKey Index */
-	      valid:1,       /* 1 if this entry is valid, 0 if not */
-	      app_key:1,     /* 1 if this is an AppKey, 0 if a NetKey */
-	      clear:1;       /* 1 if key needs clearing, 0 if storing */
+	u16_t key_idx : 12,     /* AppKey or NetKey Index */
+	      valid : 1,        /* 1 if this entry is valid, 0 if not */
+	      app_key : 1,      /* 1 if this is an AppKey, 0 if a NetKey */
+	      clear : 1;        /* 1 if key needs clearing, 0 if storing */
 } key_updates[CONFIG_BT_MESH_APP_KEY_COUNT + CONFIG_BT_MESH_SUBNET_COUNT];
 
 static struct k_delayed_work pending_store;
@@ -50,7 +50,7 @@ static struct k_delayed_work pending_store;
 /* Mesh network storage information */
 struct net_val {
 	u16_t primary_addr;
-	u8_t  dev_key[16];
+	u8_t dev_key[16];
 } __packed;
 
 /* Sequence number storage */
@@ -61,11 +61,11 @@ struct seq_val {
 /* Heartbeat Publication storage */
 struct hb_pub_val {
 	u16_t dst;
-	u8_t  period;
-	u8_t  ttl;
+	u8_t period;
+	u8_t ttl;
 	u16_t feat;
-	u16_t net_idx:12,
-	      indefinite:1;
+	u16_t net_idx : 12,
+	      indefinite : 1;
 };
 
 /* Miscellaneous configuration server model states */
@@ -82,33 +82,32 @@ struct cfg_val {
 /* IV Index & IV Update storage */
 struct iv_val {
 	u32_t iv_index;
-	u8_t  iv_update:1,
-	      iv_duration:7;
+	u8_t iv_update : 1,
+	     iv_duration : 7;
 } __packed;
 
 /* Replay Protection List storage */
 struct rpl_val {
-	u32_t seq:24,
-	      old_iv:1;
+	u32_t seq : 24,
+	      old_iv : 1;
 };
 
 /* NetKey storage information */
 struct net_key_val {
-	u8_t kr_flag:1,
-	     kr_phase:7;
+	u8_t kr_flag : 1,
+	     kr_phase : 7;
 	u8_t val[2][16];
 } __packed;
 
 /* AppKey storage information */
 struct app_key_val {
 	u16_t net_idx;
-	bool  updated;
-	u8_t  val[2][16];
+	bool updated;
+	u8_t val[2][16];
 } __packed;
 
 /* Virtual Address information */
-struct va_val
-{
+struct va_val {
 	u16_t ref;
 	u16_t addr;
 	u8_t uuid[16];
@@ -117,11 +116,11 @@ struct va_val
 struct mod_pub_val {
 	u16_t addr;
 	u16_t key;
-	u8_t  ttl;
-	u8_t  retransmit;
-	u8_t  period;
-	u8_t  period_div:4,
-	      cred:1;
+	u8_t ttl;
+	u8_t retransmit;
+	u8_t period;
+	u8_t period_div : 4,
+	     cred : 1;
 };
 
 /* We need this so we don't overwrite app-hardcoded values in case FCB
@@ -694,41 +693,37 @@ static int vnd_mod_set(const char *name, size_t len_rd,
 
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 static int va_set(const char *name, size_t len_rd,
-				  settings_read_cb read_cb, void *cb_arg)
+		  settings_read_cb read_cb, void *cb_arg)
 {
 	struct va_val labels;
 	struct label *l;
 	int err;
 
-	if (len_rd == 0)
-	{
+	if (len_rd == 0) {
 		BT_WARN("Mesh Vritual Address length = 0");
 		return 0;
 	}
 
 	err = mesh_x_set(read_cb, cb_arg, &labels, sizeof(labels));
-	if (err)
-	{
+	if (err) {
 		BT_ERR("Failed to set \'virtual address\'");
 		return err;
 	}
 
-	if (labels.ref == 0)
-	{
+	if (labels.ref == 0) {
 		BT_WARN("Ignore Mesh Virtual Address ref = 0");
 		return 0;
 	}
 
 	l = va_alloc();
-	if (l != NULL)
-	{
+	if (l != NULL) {
 		memcpy(&l->uuid, &labels.uuid, 16);
 		l->addr = labels.addr;
 		l->ref = labels.ref;
 	}
 
 	BT_DBG("Restored Virtual Address, addr 0x%04x ref 0x%03x",
-		   l->addr, l->ref);
+	       l->addr, l->ref);
 	return 0;
 }
 #endif
@@ -749,7 +744,7 @@ const struct mesh_setting {
 	{ "s", sig_mod_set },
 	{ "v", vnd_mod_set },
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
-	{"Va", va_set},
+	{ "Va", va_set },
 #endif
 };
 
@@ -820,7 +815,7 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		}
 	}
 
-	if (mod->cb && mod->cb->settings_commit)  {
+	if (mod->cb && mod->cb->settings_commit) {
 		mod->cb->settings_commit(mod);
 	}
 }
@@ -891,14 +886,14 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, mesh_set, mesh_commit,
 			       NULL);
 
 /* Pending flags that use K_NO_WAIT as the storage timeout */
-#define NO_WAIT_PENDING_BITS (BIT(BT_MESH_NET_PENDING) |           \
-			      BIT(BT_MESH_IV_PENDING) |            \
+#define NO_WAIT_PENDING_BITS (BIT(BT_MESH_NET_PENDING) | \
+			      BIT(BT_MESH_IV_PENDING) |	 \
 			      BIT(BT_MESH_SEQ_PENDING))
 
 /* Pending flags that use CONFIG_BT_MESH_STORE_TIMEOUT */
-#define GENERIC_PENDING_BITS (BIT(BT_MESH_KEYS_PENDING) |          \
-			      BIT(BT_MESH_HB_PUB_PENDING) |        \
-			      BIT(BT_MESH_CFG_PENDING) |           \
+#define GENERIC_PENDING_BITS (BIT(BT_MESH_KEYS_PENDING) |   \
+			      BIT(BT_MESH_HB_PUB_PENDING) | \
+			      BIT(BT_MESH_CFG_PENDING) |    \
 			      BIT(BT_MESH_MOD_PENDING))
 
 static void schedule_store(int flag)
@@ -1265,7 +1260,7 @@ static void store_pending_keys(void)
 					store_app_key(key);
 				} else {
 					BT_WARN("AppKeyIndex 0x%03x not found",
-					       update->key_idx);
+						update->key_idx);
 				}
 
 			} else {
@@ -1276,7 +1271,7 @@ static void store_pending_keys(void)
 					store_net_key(sub);
 				} else {
 					BT_WARN("NetKeyIndex 0x%03x not found",
-					       update->key_idx);
+						update->key_idx);
 				}
 			}
 		}
@@ -1415,12 +1410,9 @@ void bt_mesh_clear_va(struct label *l)
 	snprintk(path, sizeof(path), "bt/mesh/Va/%x", l->addr);
 	err = settings_delete(path);
 
-	if (err)
-	{
+	if (err) {
 		BT_ERR("Failed to clear Virtual Address 0x%04x", l->addr);
-	}
-	else
-	{
+	} else   {
 		BT_DBG("Cleared Virtual Address 0x%04x", l->addr);
 	}
 #endif
@@ -1433,11 +1425,11 @@ static void store_pending_va(struct label *l)
 	char path[20];
 	int err;
 
-	if(!atomic_test_and_clear_bit(l->flag, BT_MESH_VA_CHANGED)){
+	if (!atomic_test_and_clear_bit(l->flag, BT_MESH_VA_CHANGED)) {
 		return;
 	}
 
-	if (lab->ref == 0){
+	if (lab->ref == 0) {
 		bt_mesh_clear_va(lab);
 		return;
 	}
@@ -1449,12 +1441,9 @@ static void store_pending_va(struct label *l)
 	memcpy(&label.uuid, l->uuid, 16);
 	err = settings_save_one(path, &label, sizeof(label));
 
-	if (err)
-	{
+	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
-	}
-	else
-	{
+	} else   {
 		BT_DBG("Stored %s value", log_strdup(path));
 	}
 }
@@ -1513,8 +1502,7 @@ static void store_pending(struct k_work *work)
 	}
 
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
-	if (atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING))
-	{
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING)) {
 		va_get_loop(store_pending_va);
 	}
 #endif
