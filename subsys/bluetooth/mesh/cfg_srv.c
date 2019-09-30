@@ -39,13 +39,9 @@
 
 #define DEFAULT_TTL 7
 
-static struct bt_mesh_cfg_srv *conf;
+static struct label labels[CONFIG_BT_MESH_LABEL_COUNT];
 
-static struct label {
-	u16_t ref;
-	u16_t addr;
-	u8_t  uuid[16];
-} labels[CONFIG_BT_MESH_LABEL_COUNT];
+static struct bt_mesh_cfg_srv *conf;
 
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 			 bool primary)
@@ -1100,6 +1096,34 @@ send_status:
 			    status, mod_id);
 }
 
+
+void va_get_loop(void (*func)(struct label *l))
+{
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	int i;
+    for (i = 0; i < ARRAY_SIZE(labels); i++)
+    {
+        func(&labels[i]);
+    }
+#endif
+}
+
+struct label * va_alloc(void)
+{
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	int i;
+
+    for (i = 0; i < ARRAY_SIZE(labels); i++)
+    {
+        if (!labels[i].ref)
+        {
+            return &labels[i];
+        }
+    }
+#endif
+    return NULL;
+}
+
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 {
@@ -1108,6 +1132,12 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
 		if (!labels[i].ref) {
+			
+			if(IS_ENABLED(CONFIG_BT_SETTINGS) && 
+					atomic_test_and_clear_bit(free_slot->flag, BT_MESH_VA_CHANGED)){
+                bt_mesh_clear_va(&labels[i]);
+            }
+			
 			free_slot = &labels[i];
 			continue;
 		}
@@ -1115,6 +1145,11 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 		if (!memcmp(labels[i].uuid, label_uuid, 16)) {
 			*addr = labels[i].addr;
 			labels[i].ref++;
+			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
+			
+			if(IS_ENABLED(CONFIG_BT_SETTINGS)){
+                bt_mesh_store_va();
+            }
 			return STATUS_SUCCESS;
 		}
 	}
@@ -1130,6 +1165,12 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 	free_slot->ref = 1U;
 	free_slot->addr = *addr;
 	memcpy(free_slot->uuid, label_uuid, 16);
+	atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
+
+	if(IS_ENABLED(CONFIG_BT_SETTINGS))
+    {
+        bt_mesh_store_va();
+    }
 
 	return STATUS_SUCCESS;
 }
@@ -1145,6 +1186,12 @@ static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 			}
 
 			labels[i].ref--;
+			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
+
+			if(IS_ENABLED(CONFIG_BT_SETTINGS))
+            {
+                bt_mesh_store_va();
+            }
 			return STATUS_SUCCESS;
 		}
 	}

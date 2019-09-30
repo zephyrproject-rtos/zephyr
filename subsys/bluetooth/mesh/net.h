@@ -216,6 +216,9 @@ enum {
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
 
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	BLE_MESH_VA_PENDING,
+#endif
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
 };
