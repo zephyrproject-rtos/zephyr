@@ -25,6 +25,11 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	  option ONLY if you are certain that transactions with
 	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
 
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NORDIC_NRF_SPI  := nordic,nrf-spi
+DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
+DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
+
 # In most Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
 # (in nRF91 and nRF53 Series this limitation concerns UART peripherals as well).
@@ -34,18 +39,15 @@ if SPI_0 && (SOC_NRF52810 || \
 	(!I2C_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)) ||\
 	(!I2C_0 && !(SOC_SERIES_NRF53X && UART_0_NRF_UARTE)))
 
-choice
-	prompt "SPI Port 0 Driver type"
-
 config SPI_0_NRF_SPI
-	bool "nRF SPI 0"
+	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
 	depends on HAS_HW_NRF_SPI0
 	select NRFX_SPI0
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
-	bool "nRF SPIM 0"
+	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -55,7 +57,7 @@ config SPI_0_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
-	bool "nRF SPIS 0"
+	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	depends on HAS_HW_NRF_SPIS0
 	depends on SPI_SLAVE
 	select NRFX_SPIS0
@@ -63,8 +65,6 @@ config SPI_0_NRF_SPIS
 	  Enable nRF SPI Slave with EasyDMA on port 0.
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
-
-endchoice
 
 config SPI_0_NRF_ORC
 	hex "SPI Port 0 over-read character"
@@ -83,18 +83,16 @@ endif # SPI_0 && (SOC_NRF52810 || ...
 if SPI_1 && !I2C_1 && \
 	!(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && \
 	!(SOC_SERIES_NRF53X && UART_1_NRF_UARTE)
-choice
-	prompt "SPI Port 1 Driver type"
 
 config SPI_1_NRF_SPI
-	bool "nRF SPI 1"
+	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
 	depends on HAS_HW_NRF_SPI1
 	select NRFX_SPI1
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
-	bool "nRF SPIM 1"
+	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -104,7 +102,7 @@ config SPI_1_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
-	bool "nRF SPIS 1"
+	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	depends on HAS_HW_NRF_SPIS1
 	depends on SPI_SLAVE
 	select NRFX_SPIS1
@@ -112,8 +110,6 @@ config SPI_1_NRF_SPIS
 	  Enable nRF SPI Slave with EasyDMA on port 1.
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
-
-endchoice
 
 config SPI_1_NRF_ORC
 	hex "SPI Port 1 over-read character"
@@ -132,18 +128,16 @@ endif # SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && ...
 if SPI_2 && !I2C_2 && \
 	!(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && \
 	!(SOC_SERIES_NRF53X && UART_2_NRF_UARTE)
-choice
-	prompt "SPI Port 2 Driver type"
 
 config SPI_2_NRF_SPI
-	bool "nRF SPI 2"
+	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
 	depends on HAS_HW_NRF_SPI2
 	select NRFX_SPI2
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
-	bool "nRF SPIM 2"
+	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -153,7 +147,7 @@ config SPI_2_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
-	bool "nRF SPIS 2"
+	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	depends on HAS_HW_NRF_SPIS2
 	depends on SPI_SLAVE
 	select NRFX_SPIS2
@@ -161,8 +155,6 @@ config SPI_2_NRF_SPIS
 	  Enable nRF SPI Slave with EasyDMA on port 2.
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
-
-endchoice
 
 config SPI_2_NRF_ORC
 	hex "SPI Port 2 over-read character"
@@ -182,18 +174,15 @@ if SPI_3 && !I2C_3 && \
 	!(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && \
 	!(SOC_SERIES_NRF53X && UART_3_NRF_UARTE)
 
-choice
-	prompt "SPI Port 3 Driver type"
-
 config SPI_3_NRF_SPIM
-	bool "nRF SPIM 3"
+	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM3
 	help
 	  Enable nRF SPI Master with EasyDMA on port 3.
 
 config SPI_3_NRF_SPIS
-	bool "nRF SPIS 3"
+	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	depends on HAS_HW_NRF_SPIS3
 	depends on SPI_SLAVE
 	select NRFX_SPIS3
@@ -201,8 +190,6 @@ config SPI_3_NRF_SPIS
 	  Enable nRF SPI Slave with EasyDMA on port 3.
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
-
-endchoice
 
 config SPI_3_NRF_ORC
 	hex "SPI Port 3 over-read character"
@@ -227,17 +214,12 @@ endif # SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && ...
 
 if SPI_4
 
-choice
-	prompt "SPI Port 4 Driver type"
-
 config SPI_4_NRF_SPIM
-	bool "nRF SPIM 4"
+	def_bool $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	depends on HAS_HW_NRF_SPIM4
 	select NRFX_SPIM4
 	help
 	  Enable nRF SPI Master with EasyDMA on port 4.
-
-endchoice
 
 config SPI_4_NRF_ORC
 	hex "SPI Port 4 over-read character"
