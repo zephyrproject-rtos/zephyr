@@ -90,7 +90,8 @@ static void rtc0_nrf5_isr(void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
 #endif
 
@@ -106,7 +107,8 @@ static void swi_lll_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 static void swi_ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
@@ -161,7 +163,8 @@ int lll_init(void)
 		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_nrf5_isr, NULL, 0);
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
 		    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
@@ -170,7 +173,8 @@ int lll_init(void)
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	irq_enable(HAL_SWI_JOB_IRQ);
 #endif
 
