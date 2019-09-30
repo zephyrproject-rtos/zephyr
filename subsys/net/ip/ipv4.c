@@ -79,6 +79,12 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 		return -ENOBUFS;
 	}
 
+	if (net_pkt_ipv4_opts_len(pkt)) {
+		ipv4_hdr->vhl = 0x40 | (0x0F &
+				 ((net_pkt_ip_hdr_len(pkt) +
+				   net_pkt_ipv4_opts_len(pkt)) / 4U));
+	}
+
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
@@ -112,6 +118,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	struct net_ipv4_hdr *hdr;
 	union net_ip_header ip;
 	u8_t hdr_len;
+	u8_t opts_len;
 	int pkt_len;
 
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
@@ -140,7 +147,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	net_pkt_set_ip_hdr_len(pkt, hdr_len);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+
+	opts_len = hdr_len - sizeof(struct net_ipv4_hdr);
+	net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
 	pkt_len = ntohs(hdr->len);
 	if (real_len < pkt_len) {
@@ -188,9 +198,9 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	net_pkt_acknowledge_data(pkt, &ipv4_access);
 
-	if (hdr_len > sizeof(struct net_ipv4_hdr)) {
-		/* There are probably options, let's skip them */
-		if (net_pkt_skip(pkt, hdr_len - sizeof(struct net_ipv4_hdr))) {
+	if (opts_len) {
+		/* Only few options are handled in EchoRequest, rest skipped */
+		if (net_pkt_skip(pkt, opts_len)) {
 			NET_DBG("Header too big? %u", hdr_len);
 			goto drop;
 		}

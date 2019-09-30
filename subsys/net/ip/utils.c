@@ -566,7 +566,8 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 		if (proto != IPPROTO_ICMP) {
 			len = 2 * sizeof(struct in_addr);
 			sum = net_pkt_get_len(pkt) -
-				net_pkt_ip_hdr_len(pkt) + proto;
+				net_pkt_ip_hdr_len(pkt) -
+				net_pkt_ipv4_opts_len(pkt) + proto;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
@@ -588,8 +589,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) - len);
 
 	sum = calc_chksum(sum, pkt->cursor.pos, len);
-
-	net_pkt_skip(pkt, len + net_pkt_ipv6_ext_len(pkt));
+	net_pkt_skip(pkt, len + net_pkt_ip_opts_len(pkt));
 
 	sum = pkt_calc_chksum(pkt, sum);
 
@@ -607,7 +607,9 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	u16_t sum;
 
-	sum = calc_chksum(0, pkt->buffer->data, net_pkt_ip_hdr_len(pkt));
+	sum = calc_chksum(0, pkt->buffer->data,
+			  net_pkt_ip_hdr_len(pkt) +
+			  net_pkt_ipv4_opts_len(pkt));
 
 	sum = (sum == 0U) ? 0xffff : htons(sum);
 
