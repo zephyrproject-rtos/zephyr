@@ -44,7 +44,6 @@ memq_link_t *ull_conn_ack_peek(u8_t *ack_last, u16_t *handle,
 memq_link_t *ull_conn_ack_by_last_peek(u8_t last, u16_t *handle,
 				       struct node_tx **tx);
 void *ull_conn_ack_dequeue(void);
-void ull_conn_lll_tx_flush(void *param);
 struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
 				struct node_tx *tx);
 u8_t ull_conn_llcp_req(void *conn);
