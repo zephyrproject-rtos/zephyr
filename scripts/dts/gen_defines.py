@@ -63,6 +63,7 @@ def main():
             write_irqs(node)
             write_props(node)
             write_clocks(node)
+            write_dmas(node)
             write_spi_dev(node)
             write_bus(node)
             write_existence_flags(node)
@@ -141,6 +142,9 @@ def write_props(node):
 
         # See write_clocks()
         if prop.name == "clocks":
+            continue
+
+        if prop.name == "dmas":
             continue
 
         # edtlib provides these as well (Property.val becomes an edtlib.Node
@@ -577,6 +581,46 @@ def write_clocks(node):
 
         out_dev(node, "CLOCKS_CLOCK_FREQUENCY",
                 controller.props["clock-frequency"].val)
+
+
+def write_dmas(node):
+    if "dmas" not in node.props:
+        return
+
+    for dma_i, dma in enumerate(node.props["dmas"].val):
+        out_dev_s(node, "DMA_CONTROLLER_{}".format(dma_i), dma.controller.label)
+        out_dev(node, "DMA_CHANNEL_{}".format(dma_i), dma.data["channel"])
+
+        # Client parameter syntax varys with the DMA controller changes.
+        if "st,stm32-dma" in dma.controller.compats:
+            dma.slot = dma.data["slot"]
+            dma.channel_config = dma.data["channel_config"]
+            dma.features = dma.data["features"]
+
+            if dma.channel_config & (0x1 << 9) != 0x0:
+                dma.periph_inc = 0x1
+            else:
+                dma.periph_inc = 0x0
+
+            if dma.channel_config & (0x1 << 10) != 0x0:
+                dma.mem_inc = 0x1
+            else:
+                dma.mem_inc = 0x0
+
+            if dma.channel_config & (0x1 << 15) != 0x0:
+                dma.periph_inc_fixed = 1
+            else:
+                dma.periph_inc_fixed = 0
+
+            dma.priority = (dma.channel_config >> 16) & 0x3
+            dma.fifo_threshold = dma.features & 0x3
+
+            out_dev(node, "DMA_SLOT_{}".format(dma_i), dma.slot)
+            out_dev(node, "DMA_PERIPH_ADDR_INC_{}".format(dma_i), dma.periph_inc)
+            out_dev(node, "DMA_MEM_ADDR_INC_{}".format(dma_i), dma.mem_inc)
+            out_dev(node, "DMA_PERIPH_INC_FIXED_{}".format(dma_i), dma.periph_inc_fixed)
+            out_dev(node, "DMA_PRIORITY_{}".format(dma_i), dma.priority)
+            out_dev(node, "DMA_FIFO_THRESHOLD_{}".format(dma_i), dma.fifo_threshold)
 
 
 def str2ident(s):
