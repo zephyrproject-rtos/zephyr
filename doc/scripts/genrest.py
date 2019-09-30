@@ -3,6 +3,7 @@
 # index.rst.
 
 import errno
+from operator import attrgetter
 import os
 import sys
 import textwrap
@@ -46,7 +47,8 @@ def expr_str(expr):
     return kconfiglib.expr_str(expr, rst_link)
 
 
-INDEX_RST_HEADER = """.. _configuration_options:
+INDEX_RST_HEADER = """\
+.. _configuration_options:
 
 Configuration Options
 #####################
@@ -77,11 +79,9 @@ Supported Options
      - Description
 """
 
+
 def main():
     # Writes index.rst and the symbol RST files
-
-    # Accelerate doc building by skipping kconfig option documentation.
-    turbo_mode = os.environ.get('KCONFIG_TURBO_MODE') == "1"
 
     if len(sys.argv) != 3:
         sys.exit("usage: {} <Kconfig> <output directory>"
@@ -90,17 +90,22 @@ def main():
     kconf = kconfiglib.Kconfig(sys.argv[1])
     out_dir = sys.argv[2]
 
+    if os.environ.get("KCONFIG_TURBO_MODE") == "1":
+        write_dummy_index(kconf, out_dir)
+    else:
+        write_rst(kconf, out_dir)
+
+
+def write_rst(kconf, out_dir):
+    # Generates all output pages
+
     # String with the RST for the index page
     index_rst = INDEX_RST_HEADER
-    index_def_rst = ":orphan:\n\n"
 
     # Sort the symbols by name so that they end up in sorted order in index.rst
-    for sym in sorted(kconf.unique_defined_syms, key=lambda sym: sym.name):
-        if turbo_mode:
-            index_def_rst += ".. option:: CONFIG_{}\n".format(sym.name)
-        else:
-            # Write an RST file for the symbol
-            write_sym_rst(sym, out_dir)
+    for sym in sorted(kconf.unique_defined_syms, key=attrgetter("name")):
+        # Write an RST file for the symbol
+        write_sym_rst(sym, out_dir)
 
         # Add an index entry for the symbol that links to its RST file. Also
         # list its prompt(s), if any. (A symbol can have multiple prompts if it
@@ -110,12 +115,22 @@ def main():
             " / ".join(node.prompt[0]
                        for node in sym.nodes if node.prompt))
 
-    if turbo_mode:
-        write_if_updated(os.path.join(out_dir, "options.rst"), index_def_rst)
-    else:
-        for choice in kconf.unique_choices:
-            # Write an RST file for the choice
-            write_choice_rst(choice, out_dir)
+    for choice in kconf.unique_choices:
+        # Write an RST file for the choice
+        write_choice_rst(choice, out_dir)
+
+    write_if_updated(os.path.join(out_dir, "index.rst"), index_rst)
+
+
+def write_dummy_index(kconf, out_dir):
+    # Writes a dummy index page that just provides targets for all symbol links
+    # so that they can be referenced from elsewhere in the documentation, to
+    # speed up builds when we don't need the Kconfig symbol documentation
+
+    index_rst = INDEX_RST_HEADER + "\n(Dummy index page for turbo mode)\n\n"
+
+    for sym in sorted(kconf.unique_defined_syms, key=attrgetter("name")):
+        index_rst += ".. option:: CONFIG_{}\n".format(sym.name)
 
     write_if_updated(os.path.join(out_dir, "index.rst"), index_rst)
 
@@ -224,8 +239,10 @@ def defaults_rst(sc):
         # The implicit value hint below would be misleading as well.
         return ""
 
-    rst = "Defaults\n" \
-          "========\n\n"
+    heading = "Default"
+    if len(sc.defaults) != 1:
+        heading += "s"
+    rst = "{}\n{}\n\n".format(heading, len(heading)*"=")
 
     if sc.defaults:
         for value, cond in sc.orig_defaults:
@@ -233,10 +250,8 @@ def defaults_rst(sc):
             if cond is not sc.kconfig.y:
                 rst += " if " + expr_str(cond)
             rst += "\n"
-
     else:
         rst += "No defaults. Implicitly defaults to "
-
         if isinstance(sc, kconfiglib.Choice):
             rst += "the first (visible) choice option.\n"
         elif sc.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
