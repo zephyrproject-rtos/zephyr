@@ -944,8 +944,8 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 			    net_auth);
 
 	if (memcmp(auth, net_auth, 8)) {
-		BT_WARN("Authentication Value %s != %s",
-			bt_hex(auth, 8), bt_hex(net_auth, 8));
+		BT_WARN("Authentication Value %s", bt_hex(auth, 8));
+		BT_WARN(" != %s", bt_hex(net_auth, 8));
 		return false;
 	}
 

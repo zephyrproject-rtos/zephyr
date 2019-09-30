@@ -485,7 +485,8 @@ static int smp_f5(const u8_t *w, const u8_t *n1, const u8_t *n2,
 	int err;
 
 	BT_DBG("w %s", bt_hex(w, 32));
-	BT_DBG("n1 %s n2 %s", bt_hex(n1, 16), bt_hex(n2, 16));
+	BT_DBG("n1 %s", bt_hex(n1, 16));
+	BT_DBG("n2 %s", bt_hex(n2, 16));
 
 	sys_memcpy_swap(ws, w, 32);
 
@@ -536,9 +537,12 @@ static int smp_f6(const u8_t *w, const u8_t *n1, const u8_t *n2,
 	int err;
 
 	BT_DBG("w %s", bt_hex(w, 16));
-	BT_DBG("n1 %s n2 %s", bt_hex(n1, 16), bt_hex(n2, 16));
-	BT_DBG("r %s io_cap %s", bt_hex(r, 16), bt_hex(iocap, 3));
-	BT_DBG("a1 %s a2 %s", bt_hex(a1, 7), bt_hex(a2, 7));
+	BT_DBG("n1 %s", bt_hex(n1, 16));
+	BT_DBG("n2 %s", bt_hex(n2, 16));
+	BT_DBG("r %s", bt_hex(r, 16));
+	BT_DBG("io_cap %s", bt_hex(iocap, 3));
+	BT_DBG("a1 %s", bt_hex(a1, 7));
+	BT_DBG("a2 %s", bt_hex(a2, 7));
 
 	sys_memcpy_swap(m, n1, 16);
 	sys_memcpy_swap(m + 16, n2, 16);
@@ -575,7 +579,8 @@ static int smp_g2(const u8_t u[32], const u8_t v[32],
 
 	BT_DBG("u %s", bt_hex(u, 32));
 	BT_DBG("v %s", bt_hex(v, 32));
-	BT_DBG("x %s y %s", bt_hex(x, 16), bt_hex(y, 16));
+	BT_DBG("x %s", bt_hex(x, 16));
+	BT_DBG("y %s", bt_hex(y, 16));
 
 	sys_memcpy_swap(m, u, 32);
 	sys_memcpy_swap(m + 32, v, 32);
@@ -1794,9 +1799,12 @@ static int smp_c1(const u8_t k[16], const u8_t r[16],
 	u8_t p1[16], p2[16];
 	int err;
 
-	BT_DBG("k %s r %s", bt_hex(k, 16), bt_hex(r, 16));
-	BT_DBG("ia %s ra %s", bt_addr_le_str(ia), bt_addr_le_str(ra));
-	BT_DBG("preq %s pres %s", bt_hex(preq, 7), bt_hex(pres, 7));
+	BT_DBG("k %s", bt_hex(k, 16));
+	BT_DBG("r %s", bt_hex(r, 16));
+	BT_DBG("ia %s", bt_addr_le_str(ia));
+	BT_DBG("ra %s", bt_addr_le_str(ra));
+	BT_DBG("preq %s", bt_hex(preq, 7));
+	BT_DBG("pres %s", bt_hex(pres, 7));
 
 	/* pres, preq, rat and iat are concatenated to generate p1 */
 	p1[0] = ia->type;
@@ -2215,7 +2223,8 @@ static u8_t legacy_pairing_random(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("pcnf %s cfm %s", bt_hex(smp->pcnf, 16), bt_hex(tmp, 16));
+	BT_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
+	BT_DBG("cfm %s", bt_hex(tmp, 16));
 
 	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -3135,7 +3144,8 @@ static u8_t sc_smp_check_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("pcnf %s cfm %s", bt_hex(smp->pcnf, 16), bt_hex(cfm, 16));
+	BT_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
+	BT_DBG("cfm %s", bt_hex(cfm, 16));
 
 	if (memcmp(smp->pcnf, cfm, 16)) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -3393,8 +3403,8 @@ static u8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	BT_DBG("identity %s", bt_addr_le_str(&req->addr));
 
 	if (!bt_addr_le_is_identity(&req->addr)) {
-		BT_ERR("Invalid identity %s for %s",
-		       bt_addr_le_str(&req->addr), bt_addr_le_str(&conn->le.dst));
+		BT_ERR("Invalid identity %s", bt_addr_le_str(&req->addr));
+		BT_ERR(" for %s", bt_addr_le_str(&conn->le.dst));
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
