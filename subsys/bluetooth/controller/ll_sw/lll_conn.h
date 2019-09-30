@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+#include "lll_conn_meta.h"
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 #define LLL_CONN_RSSI_SAMPLE_COUNT 10
 #define LLL_CONN_RSSI_THRESHOLD    4
@@ -136,6 +139,10 @@ struct lll_conn {
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	struct lll_conn_meta conn_meta;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 };
 
 int lll_conn_init(void);

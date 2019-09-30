@@ -535,6 +535,13 @@ config BT_CTLR_LOW_LAT_ULL
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
 
+config BT_CTLR_CONN_META
+	prompt "Enable connection meta data extension"
+	bool
+	help
+	  Enables vendor specific per-connection meta data as part of the
+	  LLL connection object.
+
 endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST
