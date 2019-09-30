@@ -83,6 +83,7 @@ typedef struct x86_tss64 x86_tss64_t;
  */
 
 struct x86_cpuboot {
+	volatile int ready;	/* CPU has started */
 	u16_t tr;		/* selector for task register */
 	u16_t gs;		/* selector for GS */
 	u64_t sp;		/* initial stack pointer */
