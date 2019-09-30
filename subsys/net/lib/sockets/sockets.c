@@ -644,7 +644,9 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 
 		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
 							pkt, &ipv4_access);
-		if (!ipv4_hdr || net_pkt_acknowledge_data(pkt, &ipv4_access)) {
+		if (!ipv4_hdr ||
+		    net_pkt_acknowledge_data(pkt, &ipv4_access) ||
+		    net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
 			ret = -ENOBUFS;
 			goto error;
 		}

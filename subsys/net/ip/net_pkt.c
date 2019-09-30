@@ -1704,6 +1704,8 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
+		net_pkt_set_ipv4_opts_len(clone_pkt,
+					  net_pkt_ipv4_opts_len(pkt));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
 		net_pkt_set_ipv6_hop_limit(clone_pkt,
