@@ -153,3 +153,7 @@ arduino_spi: &spi1 {
 &wwdg {
 	status = "okay";
 };
+
+&dma2 {
+	status = "okay";
+};

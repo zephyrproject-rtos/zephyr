@@ -83,3 +83,7 @@ arduino_i2c: &i2c1 {
 &adc1 {
 	status = "okay";
 };
+
+&dma1 {
+	status = "okay";
+};
