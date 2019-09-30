@@ -42,5 +42,9 @@ FUNC_NORETURN void z_x86_prep_c(int unused, struct multiboot_info *info)
 			    true);
 #endif
 
+#if defined(CONFIG_SMP)
+	z_x86_ipi_setup();
+#endif
+
 	z_cstart();
 }
