@@ -8,7 +8,6 @@
 #include <kernel.h>
 #include <string.h>
 #include <sys/math_extras.h>
-#include <sys/printk.h>
 #include <sys/rb.h>
 #include <kernel_structs.h>
 #include <sys/sys_io.h>
@@ -477,13 +476,10 @@ static int thread_perms_test(struct _k_object *ko)
 static void dump_permission_error(struct _k_object *ko)
 {
 	int index = thread_index_get(_current);
-	printk("thread %p (%d) does not have permission on %s %p [",
-	       _current, index,
-	       otype_to_str(ko->type), ko->name);
-	for (int i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
-		printk("%02x", ko->perms[i]);
-	}
-	printk("]\n");
+	LOG_ERR("thread %p (%d) does not have permission on %s %p",
+		_current, index,
+		otype_to_str(ko->type), ko->name);
+	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
 void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
@@ -491,16 +487,16 @@ void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
 {
 	switch (retval) {
 	case -EBADF:
-		printk("%p is not a valid %s\n", obj, otype_to_str(otype));
+		LOG_ERR("%p is not a valid %s", obj, otype_to_str(otype));
 		break;
 	case -EPERM:
 		dump_permission_error(ko);
 		break;
 	case -EINVAL:
-		printk("%p used before initialization\n", obj);
+		LOG_ERR("%p used before initialization", obj);
 		break;
 	case -EADDRINUSE:
-		printk("%p %s in use\n", obj, otype_to_str(otype));
+		LOG_ERR("%p %s in use", obj, otype_to_str(otype));
 		break;
 	default:
 		/* Not handled error */
@@ -636,7 +632,7 @@ void *z_user_alloc_from_copy(const void *src, size_t size)
 
 	dst = z_thread_malloc(size);
 	if (dst == NULL) {
-		printk("out of thread resource pool memory (%zu)", size);
+		LOG_ERR("out of thread resource pool memory (%zu)", size);
 		goto out_err;
 	}
 
@@ -683,11 +679,11 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%zu)\n", src, actual_len);
+		LOG_ERR("string too long %p (%zu)", src, actual_len);
 		goto out;
 	}
 	if (size_add_overflow(actual_len, 1, &actual_len)) {
-		printk("overflow\n");
+		LOG_ERR("overflow");
 		goto out;
 	}
 
@@ -716,12 +712,12 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%zu)\n", src, actual_len);
+		LOG_ERR("string too long %p (%zu)", src, actual_len);
 		ret = EINVAL;
 		goto out;
 	}
 	if (size_add_overflow(actual_len, 1, &actual_len)) {
-		printk("overflow\n");
+		LOG_ERR("overflow");
 		ret = EINVAL;
 		goto out;
 	}
@@ -760,7 +756,7 @@ void z_app_shmem_bss_zero(void)
 static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
-	printk("Bad system call id %u invoked\n", bad_id);
+	LOG_ERR("Bad system call id %u invoked", bad_id);
 	z_arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
@@ -768,7 +764,7 @@ static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
 				 u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
-	printk("Unimplemented system call\n");
+	LOG_ERR("Unimplemented system call");
 	z_arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
