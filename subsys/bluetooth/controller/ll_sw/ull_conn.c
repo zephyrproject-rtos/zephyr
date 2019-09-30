@@ -1532,6 +1532,9 @@ static void conn_cleanup(struct ll_conn *conn)
 		ll_rx_put(rx->hdr.link, rx);
 	}
 
+	/* TODO: flush demux-ed Tx buffer still in ULL context */
+	LL_ASSERT(!conn->tx_head);
+
 	/* Enable Ticker Job, we are in a radio event which disabled it if
 	 * worker0 and job0 priority where same.
 	 */
@@ -1547,6 +1550,9 @@ static void conn_cleanup(struct ll_conn *conn)
 
 	/* Invalidate the connection context */
 	lll->handle = 0xFFFF;
+
+	/* Demux and flush Tx PDUs that remain enqueued in thread context */
+	ull_conn_tx_demux(UINT8_MAX);
 }
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
