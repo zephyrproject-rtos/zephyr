@@ -6,7 +6,6 @@
 
 #include <kernel.h>
 #include <kernel_internal.h>
-#include <sys/printk.h>
 #include <sys/__assert.h>
 #include <arch/cpu.h>
 #include <logging/log_ctrl.h>
@@ -96,7 +95,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * See #17656
 	 *
 	 * if (k_is_in_isr()) {
-	 *     printk("Fault during interrupt handling\n");
+	 *     LOG_ERR("Fault during interrupt handling\n");
 	 * }
 	 */
 

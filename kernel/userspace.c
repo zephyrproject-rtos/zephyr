@@ -66,7 +66,7 @@ const char *otype_to_str(enum k_objects otype)
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */
-#ifdef CONFIG_PRINTK
+#ifdef CONFIG_LOG
 	switch (otype) {
 	/* otype-to-str.h is generated automatically during build by
 	 * gen_kobject_list.py
