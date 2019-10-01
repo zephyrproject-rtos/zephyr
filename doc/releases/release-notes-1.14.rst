@@ -28,7 +28,7 @@ Bluetooth
 
   * 1.14.x Host subsystem qualified with QDID 95152
   * 1.14.x Mesh subsystem qualified with QDID 95153
-  * 1.14.x Controller subsystem qualified on Nordic nRF52 with QDID <TBD>
+  * 1.14.x Controller component qualified on Nordic nRF52 with QDID 135679
 
 Zephyr Kernel 1.14.0
 ####################
