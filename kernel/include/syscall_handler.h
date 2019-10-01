@@ -12,7 +12,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
-#include <sys/printk.h>
 #include <sys/math_extras.h>
 #include <kernel_internal.h>
 #include <kernel_structs.h>
@@ -404,7 +403,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 
 	ret = z_object_validate(ko, otype, init);
 
-#ifdef CONFIG_PRINTK
+#ifdef CONFIG_LOG
 	if (ret != 0) {
 		z_dump_object_error(ret, obj, ko, otype);
 	}
