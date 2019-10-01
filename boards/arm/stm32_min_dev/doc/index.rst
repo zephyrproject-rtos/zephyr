@@ -108,16 +108,33 @@ The stm32_min_dev board configuration supports the following hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
+UART
+====
+
+The STM32 Minimum Development board suports the following UART pin maping by
+default:
+
+- UART1_TX: PA9
+- UART1_RX: PA10
+- UART2_TX: PA2
+- UART2_RX: PA3
+
 I2C
 ===
 
-The STM32 Minimum Development Board board supports two I2C devices. The default
+The STM32 Minimum Development board supports two I2C devices. The default
 I2C mapping for Zephyr is:
 
 - I2C1_SCL : PB6
 - I2C1_SDA : PB7
 - I2C2_SCL : PB10
 - I2C2_SDA : PB11
+
+On-Board LEDs
+=============
+
+The board has one on-board LED that is connected to PB12/PC13 on the black/blue
+variants respectively.
 
 Programming and Debugging
 *************************
