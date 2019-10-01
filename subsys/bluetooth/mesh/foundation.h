@@ -143,8 +143,8 @@ u8_t bt_mesh_beacon_get(void);
 u8_t bt_mesh_gatt_proxy_get(void);
 u8_t bt_mesh_default_ttl_get(void);
 
-void va_get_loop(void (*func)(struct label *l));
-struct label *va_alloc(void);
+void va_get_loop(void (*func)(u16_t index, struct label *l));
+struct label *va_alloc(u16_t index);
 
 void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store);
 
