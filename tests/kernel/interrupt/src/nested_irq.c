@@ -74,7 +74,19 @@ void isr0(void *param)
 {
 	ARG_UNUSED(param);
 	printk("%s running !!\n", __func__);
+#if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
+	/* QEMU Cortex-M0 timer emulation appears to not capturing the
+	 * current time accurately, resulting in erroneous busy wait
+	 * implementation.
+	 *
+	 * Work-around:
+	 * Increase busy-loop duration to ensure the timer interrupt will fire
+	 * during the busy loop waiting.
+	 */
+	k_busy_wait(MS_TO_US(1000));
+#else
 	k_busy_wait(MS_TO_US(10));
+#endif
 	printk("%s execution completed !!\n", __func__);
 	zassert_equal(new_val, old_val, "Nested interrupt is not working\n");
 }
