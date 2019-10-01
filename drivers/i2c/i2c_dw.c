@@ -43,7 +43,7 @@ static inline void i2c_dw_data_ask(struct device *dev)
 	u8_t cnt;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0U) {
@@ -97,7 +97,7 @@ static void i2c_dw_data_read(struct device *dev)
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	while (regs->ic_status.bits.rfne && (dw->xfr_len > 0)) {
 		dw->xfr_buf[0] = regs->ic_data_cmd.raw;
@@ -125,7 +125,7 @@ static int i2c_dw_data_send(struct device *dev)
 	u32_t data = 0U;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	/* Nothing to send anymore, mask the interrupt */
 	if (dw->xfr_len == 0U) {
@@ -170,7 +170,7 @@ static inline void i2c_dw_transfer_complete(struct device *dev)
 	u32_t value;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 	value = regs->ic_clr_intr;
@@ -187,7 +187,7 @@ static void i2c_dw_isr(void *arg)
 	int ret = 0;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	/* Cache ic_intr_stat for processing, so there is no need to read
 	 * the register multiple times.
@@ -266,7 +266,7 @@ static int i2c_dw_setup(struct device *dev, u16_t slave_address)
 	u32_t value;
 	union ic_con_register ic_con;
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	ic_con.raw = 0U;
 
@@ -394,7 +394,7 @@ static int i2c_dw_transfer(struct device *dev,
 	int ret;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	__ASSERT_NO_MSG(msgs);
 	if (!num_msgs) {
@@ -503,7 +503,7 @@ static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 	u32_t	rc = 0U;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)dw->base_address;
+		(struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	dw->app_config = config;
 
@@ -625,7 +625,7 @@ static int i2c_dw_initialize(struct device *dev)
 
 	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
 
-	regs = (struct i2c_dw_registers *) dw->base_address;
+	regs = (struct i2c_dw_registers *) UINT_TO_POINTER(dw->base_address);
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
