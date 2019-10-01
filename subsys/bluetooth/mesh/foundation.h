@@ -112,6 +112,17 @@
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
 
+enum label_flag{
+	BT_MESH_VA_CHANGED,	/* Label information changed */
+};
+
+struct label {
+	u16_t ref;
+	u16_t addr;
+	u8_t  uuid[16];
+	atomic_t flag[1];
+};
+
 void bt_mesh_cfg_reset(void);
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat);
