@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <espi.h>
+#include <drivers/espi.h>
 #include <logging/log.h>
 #include "espi_utils.h"
 
