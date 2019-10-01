@@ -44,9 +44,11 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 	printk("Connected %s\n", addr);
 
+#ifdef CONFIG_BT_SMP
 	if (bt_conn_set_security(conn, BT_SECURITY_L2)) {
 		printk("Failed to set security\n");
 	}
+#endif
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
@@ -58,6 +60,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 }
 
+#ifdef CONFIG_BT_SMP
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
@@ -66,16 +69,30 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (!err) {
-		printk("Security changed: %s level %u", addr, level);
+		printk("Security changed: %s level %u\n", addr, level);
 	} else {
-		printk("Security failed: %s level %u err %d", addr, level, err);
+		printk("Security failed: %s level %u err %d\n", addr, level, err);
 	}
 }
+static void onIdentityResolved(struct bt_conn *conn, const bt_addr_le_t *rpa, const bt_addr_le_t *identity) {
+	char addr[BT_ADDR_LE_STR_LEN];
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	printk("Conn %s\n", addr);
+
+	bt_addr_le_to_str(rpa, addr, sizeof(addr));
+	printk("rpa %s\n", addr);
+	bt_addr_le_to_str(identity, addr, sizeof(addr));
+	printk("identity %s\n", addr);
+}
+#endif
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+#ifdef CONFIG_BT_SMP
+	.identity_resolved = onIdentityResolved,
 	.security_changed = security_changed,
+#endif
 };
 
 static void bt_ready(int err)
@@ -102,6 +119,7 @@ static void bt_ready(int err)
 	printk("Advertising successfully started\n");
 }
 
+#ifdef CONFIG_BT_SMP
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -125,6 +143,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
 };
+#endif
 
 void main(void)
 {
@@ -137,5 +156,7 @@ void main(void)
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
+#ifdef CONFIG_BT_SMP
 	bt_conn_auth_cb_register(&auth_cb_display);
+#endif
 }
