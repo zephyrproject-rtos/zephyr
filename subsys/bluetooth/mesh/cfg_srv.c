@@ -1098,13 +1098,11 @@ send_status:
 
 void va_get_loop(void (*func)(struct label *l))
 {
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
 		func(&labels[i]);
 	}
-#endif
 }
 
 struct label *va_alloc(void)
@@ -1129,12 +1127,6 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
 		if (!labels[i].ref) {
-
-			if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-			    atomic_test_and_clear_bit(free_slot->flag, BT_MESH_VA_CHANGED)) {
-				bt_mesh_clear_va(&labels[i]);
-			}
-
 			free_slot = &labels[i];
 			continue;
 		}
@@ -1142,7 +1134,7 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 		if (!memcmp(labels[i].uuid, label_uuid, 16)) {
 			*addr = labels[i].addr;
 			labels[i].ref++;
-			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
+			atomic_set_bit(labels[i]->flag, BT_MESH_VA_CHANGED);
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 				bt_mesh_store_va();
@@ -1182,7 +1174,7 @@ static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 			}
 
 			labels[i].ref--;
-			atomic_set_bit(free_slot->flag, BT_MESH_VA_CHANGED);
+			atomic_set_bit(labels[i]->flag, BT_MESH_VA_CHANGED);
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 				bt_mesh_store_va();
