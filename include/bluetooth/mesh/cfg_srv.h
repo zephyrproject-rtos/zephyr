@@ -60,17 +60,6 @@ struct bt_mesh_cfg_srv {
 	} hb_sub;
 };
 
-enum{
-	BT_MESH_VA_CHANGED	/* Label information changed */
-}
-
-static struct label {
-	u16_t ref;
-	u16_t addr;
-	u8_t  uuid[16];
-	atomic_t flag[1];
-};
-
 extern const struct bt_mesh_model_op bt_mesh_cfg_srv_op[];
 extern const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb;
 
