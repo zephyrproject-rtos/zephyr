@@ -41,7 +41,7 @@ static u32_t counter(void)
 
 /* Note: this function has public linkage, and MUST have this
  * particular name.  The platform architecture itself doesn't care,
- * but there is a test (tests/kernel/arm_irq_vector_table) that needs
+ * but there is a test (tests/arch/arm_irq_vector_table) that needs
  * to find it to it can set it in a custom vector table.  Should
  * probably better abstract that at some point (e.g. query and reset
  * it by pointer at runtime, maybe?) so we don't have this leaky
