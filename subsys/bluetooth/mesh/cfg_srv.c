@@ -1108,7 +1108,7 @@ void va_get_loop(void (*func)(u16_t index, struct label *l))
 struct label *va_alloc(u16_t index)
 {
 	if(index < ARRAY_SIZE(labels)) {
-		return labels[index];
+		return &labels[index];
 	}
 	
 	return NULL;
