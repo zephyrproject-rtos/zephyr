@@ -112,7 +112,7 @@ void setup_fs(void)
 		return;
 	}
 
-	ret = fs_write(&img, &c_img->data, c_img->data_size);
+	ret = fs_write(&img, c_img->data, c_img->data_size);
 	if (ret < 0) {
 		TC_PRINT("Failed to write image file data: %d\n", ret);
 		ztest_test_fail();
