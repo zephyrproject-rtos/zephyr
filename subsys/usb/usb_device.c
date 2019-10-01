@@ -212,8 +212,6 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 	u32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
 	usb_request_handler handler = usb_dev.req_handlers[type];
 
-	LOG_DBG("** %d **", type);
-
 	if (type >= MAX_NUM_REQ_HANDLERS) {
 		LOG_DBG("Error Incorrect iType %d", type);
 		return false;
@@ -286,7 +284,7 @@ static void usb_handle_control_transfer(u8_t ep,
 	u32_t chunk = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
-	LOG_DBG("ep %x, status %x", ep, ep_status);
+	LOG_DBG("ep 0x%02x, status 0x%02x", ep, ep_status);
 
 	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
 		u16_t length;
