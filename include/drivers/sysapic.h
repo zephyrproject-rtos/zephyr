@@ -18,7 +18,12 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
+#ifdef CONFIG_IOAPIC
 #define LOAPIC_IRQ_BASE  CONFIG_IOAPIC_NUM_RTES
+#else
+#define LOAPIC_IRQ_BASE 0
+#endif
+
 #define LOAPIC_IRQ_COUNT 6  /* Default to LOAPIC_TIMER to LOAPIC_ERROR */
 
 /* irq_controller.h interface */

@@ -18,7 +18,12 @@
 #include <drivers/sysapic.h>
 #include <irq.h>
 
+#ifdef CONFIG_IOAPIC
 #define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
+#else
+#define IS_IOAPIC_IRQ(irq)  0
+#endif
+
 #define HARDWARE_IRQ_LIMIT ((LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT) - 1)
 
 /**
