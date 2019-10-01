@@ -728,6 +728,9 @@ static int va_set(const char *name, size_t len_rd,
 		memcpy(&l->uuid, &labels.uuid, 16);
 		l->addr = labels.addr;
 		l->ref = labels.ref;
+	} else {
+		BT_WARN("Insufficient numbers of lables");
+		return;
 	}
 
 	BT_DBG("Restored Virtual Address, addr 0x%04x ref 0x%03x",
