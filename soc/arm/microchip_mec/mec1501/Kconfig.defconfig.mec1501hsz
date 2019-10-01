@@ -70,4 +70,11 @@ config PWM_XEC
 
 endif # PWM
 
+if KSCAN
+
+config KSCAN_XEC
+	default y
+
+endif # KSCAN
+
 endif # SOC_MEC1501_HSZ
