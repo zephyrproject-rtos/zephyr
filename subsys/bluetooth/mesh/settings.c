@@ -106,6 +106,13 @@ struct app_key_val {
 	u8_t  val[2][16];
 } __packed;
 
+/* Virtual Address information */
+struct va_val {
+	u16_t ref;
+	u16_t addr;
+	u8_t uuid[16];
+} __packed;
+
 struct mod_pub_val {
 	u16_t addr;
 	u16_t key;
@@ -684,6 +691,43 @@ static int vnd_mod_set(const char *name, size_t len_rd,
 	return mod_set(true, name, len_rd, read_cb, cb_arg);
 }
 
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+static int va_set(const char *name, size_t len_rd,
+		  settings_read_cb read_cb, void *cb_arg)
+{
+	struct va_val labels;
+	struct label *l;
+	int err;
+
+	if (len_rd == 0) {
+		BT_WARN("Mesh Vritual Address length = 0");
+		return 0;
+	}
+
+	err = mesh_x_set(read_cb, cb_arg, &labels, sizeof(labels));
+	if (err) {
+		BT_ERR("Failed to set \'virtual address\'");
+		return err;
+	}
+
+	if (labels.ref == 0) {
+		BT_WARN("Ignore Mesh Virtual Address ref = 0");
+		return 0;
+	}
+
+	l = va_alloc();
+	if (l != NULL) {
+		memcpy(&l->uuid, &labels.uuid, 16);
+		l->addr = labels.addr;
+		l->ref = labels.ref;
+	}
+
+	BT_DBG("Restored Virtual Address, addr 0x%04x ref 0x%03x",
+	       l->addr, l->ref);
+	return 0;
+}
+#endif
+
 const struct mesh_setting {
 	const char *name;
 	int (*func)(const char *name, size_t len_rd,
@@ -699,6 +743,9 @@ const struct mesh_setting {
 	{ "Cfg", cfg_set },
 	{ "s", sig_mod_set },
 	{ "v", vnd_mod_set },
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	{ "Va", va_set },
+#endif
 };
 
 static int mesh_set(const char *name, size_t len_rd,
@@ -1354,6 +1401,54 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 	}
 }
 
+void bt_mesh_clear_va(struct label *l)
+{
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	char path[20];
+	int err;
+
+	snprintk(path, sizeof(path), "bt/mesh/Va/%x", l->addr);
+	err = settings_delete(path);
+
+	if (err) {
+		BT_ERR("Failed to clear Virtual Address 0x%04x", l->addr);
+	} else   {
+		BT_DBG("Cleared Virtual Address 0x%04x", l->addr);
+	}
+#endif
+}
+
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+static void store_pending_va(struct label *l)
+{
+	struct va_val label;
+	char path[20];
+	int err;
+
+	if (!atomic_test_and_clear_bit(l->flag, BT_MESH_VA_CHANGED)) {
+		return;
+	}
+
+	if (lab->ref == 0) {
+		bt_mesh_clear_va(lab);
+		return;
+	}
+
+	snprintk(path, sizeof(path), "bt/mesh/Va/%x", l->addr);
+
+	label.ref = l->ref;
+	label.addr = l->addr;
+	memcpy(&label.uuid, l->uuid, 16);
+	err = settings_save_one(path, &label, sizeof(label));
+
+	if (err) {
+		BT_ERR("Failed to store %s value", log_strdup(path));
+	} else   {
+		BT_DBG("Stored %s value", log_strdup(path));
+	}
+}
+#endif
+
 static void store_pending(struct k_work *work)
 {
 	BT_DBG("");
@@ -1405,6 +1500,12 @@ static void store_pending(struct k_work *work)
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_MOD_PENDING)) {
 		bt_mesh_model_foreach(store_pending_mod, NULL);
 	}
+
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING)) {
+		va_get_loop(store_pending_va);
+	}
+#endif
 }
 
 void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
@@ -1584,6 +1685,13 @@ void bt_mesh_store_mod_pub(struct bt_mesh_model *mod)
 {
 	mod->flags |= BT_MESH_MOD_PUB_PENDING;
 	schedule_store(BT_MESH_MOD_PENDING);
+}
+
+void bt_mesh_store_va(void)
+{
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	schedule_store(BLE_MESH_VA_PENDING);
+#endif
 }
 
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
