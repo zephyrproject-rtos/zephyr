@@ -1096,26 +1096,21 @@ send_status:
 			    status, mod_id);
 }
 
-void va_get_loop(void (*func)(struct label *l))
+void va_get_loop(void (*func)(u16_t index, struct label *l))
 {
-	int i;
+	u16_t i;
 
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
-		func(&labels[i]);
+		func(i, &labels[i]);
 	}
 }
 
-struct label *va_alloc(void)
+struct label *va_alloc(u16_t index)
 {
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(labels); i++) {
-		if (!labels[i].ref) {
-			return &labels[i];
-		}
+	if(index < ARRAY_SIZE(labels)) {
+		return labels[index];
 	}
-#endif
+	
 	return NULL;
 }
 
