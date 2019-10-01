@@ -325,7 +325,7 @@ void start_tcp(void)
 		tcp4_handler_in_use[i] = false;
 #endif
 #if defined(CONFIG_NET_IPV6)
-		tcp4_handler_in_use[i] = false;
+		tcp6_handler_in_use[i] = false;
 #endif
 	}
 
