@@ -1,0 +1,12 @@
+identifier: stm32l1_disco
+name: STM32L1DISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+flash: 128
+supported:
+  - gpio
