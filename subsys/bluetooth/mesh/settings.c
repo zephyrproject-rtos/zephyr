@@ -697,10 +697,18 @@ static int va_set(const char *name, size_t len_rd,
 {
 	struct va_val labels;
 	struct label *l;
+	u16_t index;
 	int err;
-
+	
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+	
+	index = strtol(name, NULL, 16);
+	
 	if (len_rd == 0) {
-		BT_WARN("Mesh Vritual Address length = 0");
+		BT_WARN("Mesh Virtual Address length = 0");
 		return 0;
 	}
 
@@ -715,7 +723,7 @@ static int va_set(const char *name, size_t len_rd,
 		return 0;
 	}
 
-	l = va_alloc();
+	l = va_alloc(index);
 	if (l != NULL) {
 		memcpy(&l->uuid, &labels.uuid, 16);
 		l->addr = labels.addr;
@@ -1401,13 +1409,13 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 	}
 }
 
-void bt_mesh_clear_va(struct label *l)
+void bt_mesh_clear_va(u16_t index, struct label *l)
 {
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 	char path[20];
 	int err;
 
-	snprintk(path, sizeof(path), "bt/mesh/Va/%x", l->addr);
+	snprintk(path, sizeof(path), "bt/mesh/Va/%x", index);
 	err = settings_delete(path);
 
 	if (err) {
@@ -1419,7 +1427,7 @@ void bt_mesh_clear_va(struct label *l)
 }
 
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
-static void store_pending_va(struct label *l)
+static void store_pending_va(u16_t index, struct label *l)
 {
 	struct va_val label;
 	char path[20];
@@ -1429,12 +1437,12 @@ static void store_pending_va(struct label *l)
 		return;
 	}
 
-	if (lab->ref == 0) {
-		bt_mesh_clear_va(lab);
+	if (l->ref == 0) {
+		bt_mesh_clear_va(index, l);
 		return;
 	}
 
-	snprintk(path, sizeof(path), "bt/mesh/Va/%x", l->addr);
+	snprintk(path, sizeof(path), "bt/mesh/Va/%x", index);
 
 	label.ref = l->ref;
 	label.addr = l->addr;
