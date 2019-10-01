@@ -33,8 +33,9 @@ FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *info)
 #endif
 
 #if CONFIG_X86_STACK_PROTECTION
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, _interrupt_stack, MMU_PAGE_SIZE,
-			    MMU_ENTRY_READ, MMU_PTE_RW_MASK, true);
+	z_x86_mmu_set_flags(&z_x86_kernel_ptables, _interrupt_stack,
+			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK,
+			    true);
 #endif
 
 	z_cstart();

@@ -25,23 +25,23 @@ void reset_flag(void);
 void reset_multi_pte_page_flag(void);
 void reset_multi_pde_flag(void);
 
-#define PDPT (&z_x86_kernel_pdpt)
+#define PTABLES (&z_x86_kernel_ptables)
 
 #define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
 #define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
-#define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(PDPT, ADDR_PAGE_1)->p = 1)
-#define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(PDPT, ADDR_PAGE_2)->p = 1)
+#define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(PTABLES, ADDR_PAGE_1)->p = 1)
+#define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(PTABLES, ADDR_PAGE_2)->p = 1)
 
 
 static void set_flags(void *ptr, size_t size, x86_page_entry_data_t flags,
 		      x86_page_entry_data_t mask)
 {
-	z_x86_mmu_set_flags(PDPT, ptr, size, flags, mask, true);
+	z_x86_mmu_set_flags(PTABLES, ptr, size, flags, mask, true);
 }
 
 static int buffer_validate(void *addr, size_t size, int write)
 {
-	return z_x86_mmu_validate(PDPT, addr, size, write);
+	return z_x86_mmu_validate(PTABLES, addr, size, write);
 }
 
 /* if Failure occurs

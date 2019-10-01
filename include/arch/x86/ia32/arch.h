@@ -486,7 +486,10 @@ extern struct task_state_segment _main_tss;
 #endif
 
 struct z_x86_kernel_stack_data {
-	struct x86_mmu_pdpt pdpt;
+	/* For 32-bit, a single four-entry page directory pointer table, that
+	 * needs to be aligned to 32 bytes.
+	 */
+	struct x86_page_tables ptables;
 } __aligned(0x20);
 
 /* With both hardware stack protection and userspace enabled, stacks are
@@ -581,64 +584,6 @@ struct z_x86_thread_stack_header {
 	CODE_UNREACHABLE; \
 } while (false)
 #endif
-
-#ifdef CONFIG_X86_MMU
-/* Kernel's page table. Always active when threads are running in supervisor
- * mode, or handling an interrupt.
- *
- * If KPTI is not enabled, this is used as a template to create per-thread
- * page tables for when threads run in user mode.
- */
-extern struct x86_mmu_pdpt z_x86_kernel_pdpt;
-#ifdef CONFIG_X86_KPTI
-/* Separate page tables for user mode threads. The top-level PDPT is never
- * installed into the CPU; instead used as a template for creating per-thread
- * page tables.
- */
-extern struct x86_mmu_pdpt z_x86_user_pdpt;
-#define USER_PDPT	z_x86_user_pdpt
-#else
-#define USER_PDPT	z_x86_kernel_pdpt
-#endif
-/**
- * @brief Fetch page table flags for a particular page
- *
- * Given a memory address, return the flags for the containing page's
- * PDE and PTE entries. Intended for debugging.
- *
- * @param pdpt Which page table to use
- * @param addr Memory address to example
- * @param pde_flags Output parameter for page directory entry flags
- * @param pte_flags Output parameter for page table entry flags
- */
-void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
-			x86_page_entry_data_t *pde_flags,
-			x86_page_entry_data_t *pte_flags);
-
-
-/**
- * @brief set flags in the MMU page tables
- *
- * Modify bits in the existing page tables for a particular memory
- * range, which must be page-aligned
- *
- * @param pdpt Which page table to use
- * @param ptr Starting memory address which must be page-aligned
- * @param size Size of the region, must be page size multiple
- * @param flags Value of bits to set in the page table entries
- * @param mask Mask indicating which particular bits in the page table entries to
- *	 modify
- * @param flush Whether to flush the TLB for the modified pages, only needed
- *        when modifying the active page tables
- */
-void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
-			 size_t size,
-			 x86_page_entry_data_t flags,
-			 x86_page_entry_data_t mask, bool flush);
-
-int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
-		       int write);
-#endif /* CONFIG_X86_MMU */
 
 #ifdef __cplusplus
 }
