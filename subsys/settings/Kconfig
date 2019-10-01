@@ -45,7 +45,6 @@ config SETTINGS_USE_BASE64
 
 choice
 	prompt "Storage back-end"
-	optional
 	default SETTINGS_FCB if FCB
 	default SETTINGS_NONE
 	depends on SETTINGS
