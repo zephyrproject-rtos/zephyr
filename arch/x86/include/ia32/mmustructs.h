@@ -123,48 +123,39 @@
  * Returns the page table entry for the addr
  * use the union to extract page entry related information.
  */
-#define X86_MMU_GET_PTE(pdpt, addr)\
+#define X86_MMU_GET_PTE(ptables, addr)\
 	((union x86_mmu_pte *)\
-	 (&X86_MMU_GET_PT_ADDR(pdpt, addr)->entry[MMU_PAGE_NUM(addr)]))
+	 (&X86_MMU_GET_PT_ADDR(ptables, addr)->entry[MMU_PAGE_NUM(addr)]))
 
 /*
  * Returns the Page table address for the particular address.
  * Page Table address(returned value) is always 4KBytes aligned.
  */
-#define X86_MMU_GET_PT_ADDR(pdpt, addr) \
+#define X86_MMU_GET_PT_ADDR(ptables, addr) \
 	((struct x86_mmu_pt *)\
-	 (X86_MMU_GET_PDE(pdpt, addr)->pt << MMU_PAGE_SHIFT))
+	 (X86_MMU_GET_PDE(ptables, addr)->pt << MMU_PAGE_SHIFT))
 
 /* Returns the page directory entry for the addr
  * use the union to extract page directory entry related information.
  */
-#define X86_MMU_GET_PDE(pdpt, addr)\
+#define X86_MMU_GET_PDE(ptables, addr)\
 	((union x86_mmu_pde_pt *)					\
-	 (&X86_MMU_GET_PD_ADDR(pdpt, addr)->entry[MMU_PDE_NUM(addr)]))
+	 (&X86_MMU_GET_PD_ADDR(ptables, addr)->entry[MMU_PDE_NUM(addr)]))
 
 /* Returns the page directory entry for the addr
  * use the union to extract page directory entry related information.
  */
-#define X86_MMU_GET_PD_ADDR(pdpt, addr) \
+#define X86_MMU_GET_PD_ADDR(ptables, addr) \
 	((struct x86_mmu_pd *)		       \
-	 (X86_MMU_GET_PDPTE(pdpt, addr)->pd << MMU_PAGE_SHIFT))
+	 (X86_MMU_GET_PDPTE(ptables, addr)->pd << MMU_PAGE_SHIFT))
 
 /* Returns the page directory pointer entry */
-#define X86_MMU_GET_PDPTE(pdpt, addr) \
-	(&((pdpt)->entry[MMU_PDPTE_NUM(addr)]))
+#define X86_MMU_GET_PDPTE(ptables, addr) \
+	(&X86_MMU_GET_PDPT(ptables, addr)->entry[MMU_PDPTE_NUM(addr)])
 
-/* Return the Page directory address.
- * input is the entry number
- */
-#define X86_MMU_GET_PD_ADDR_INDEX(pdpt, index) \
-	((struct x86_mmu_pd *)		       \
-	 (X86_MMU_GET_PDPTE_INDEX(pdpt, index)->pd << MMU_PAGE_SHIFT))
-
-/* Returns the page directory pointer entry.
- * Input is the entry number
- */
-#define X86_MMU_GET_PDPTE_INDEX(pdpt, index) \
-	(&((pdpt)->entry[index]))
+/* Returns the page directory pointer table corresponding to the address */
+#define X86_MMU_GET_PDPT(ptables, addr) \
+	(&((ptables)->pdpt))
 
 /* memory partition arch/soc independent attribute */
 #define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | \
@@ -483,6 +474,10 @@ struct x86_mmu_pt {
 	union x86_mmu_pte entry[Z_X86_NUM_PT_ENTRIES];
 };
 
+struct x86_page_tables {
+	struct x86_mmu_pdpt pdpt;
+};
+
 /**
  * Debug function for dumping out page tables
  *
@@ -499,18 +494,72 @@ struct x86_mmu_pt {
  *
  * Entry codes in uppercase indicate that user mode may access.
  *
- * @param pdpt Top-level pointer to the page tables, as programmed in CR3
+ * @param ptables Top-level pointer to the page tables, as programmed in CR3
  */
-void z_x86_dump_page_tables(struct x86_mmu_pdpt *pdpt);
+void z_x86_dump_page_tables(struct x86_page_tables *ptables);
 
-static inline struct x86_mmu_pdpt *z_x86_page_tables_get(void)
+static inline struct x86_page_tables *z_x86_page_tables_get(void)
 {
-	struct x86_mmu_pdpt *ret;
+	struct x86_page_tables *ret;
 
 	__asm__ volatile("movl %%cr3, %0\n\t" : "=r" (ret));
 
 	return ret;
 }
+
+/* Kernel's page table. Always active when threads are running in supervisor
+ * mode, or handling an interrupt.
+ *
+ * If KPTI is not enabled, this is used as a template to create per-thread
+ * page tables for when threads run in user mode.
+ */
+extern struct x86_page_tables z_x86_kernel_ptables;
+#ifdef CONFIG_X86_KPTI
+/* Separate page tables for user mode threads. This is never installed into the
+ * CPU; instead it is used as a template for creating per-thread page tables.
+ */
+extern struct x86_page_tables z_x86_user_ptables;
+#define USER_PTABLES	z_x86_user_ptables
+#else
+#define USER_PTABLES	z_x86_kernel_ptables
+#endif
+/**
+ * @brief Fetch page table flags for a particular page
+ *
+ * Given a memory address, return the flags for the containing page's
+ * PDE and PTE entries. Intended for debugging.
+ *
+ * @param ptables Which set of page tables to use
+ * @param addr Memory address to example
+ * @param pde_flags Output parameter for page directory entry flags
+ * @param pte_flags Output parameter for page table entry flags
+ */
+void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
+			 x86_page_entry_data_t *pde_flags,
+			 x86_page_entry_data_t *pte_flags);
+
+/**
+ * @brief set flags in the MMU page tables
+ *
+ * Modify bits in the existing page tables for a particular memory
+ * range, which must be page-aligned
+ *
+ * @param ptables Which set of page tables to use
+ * @param ptr Starting memory address which must be page-aligned
+ * @param size Size of the region, must be page size multiple
+ * @param flags Value of bits to set in the page table entries
+ * @param mask Mask indicating which particular bits in the page table entries
+ *             to modify
+ * @param flush Whether to flush the TLB for the modified pages, only needed
+ *              when modifying the active page tables
+ */
+void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
+			 size_t size,
+			 x86_page_entry_data_t flags,
+			 x86_page_entry_data_t mask, bool flush);
+
+int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
+		       bool write);
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_MMUSTRUCTS_H_ */

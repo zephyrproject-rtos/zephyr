@@ -345,7 +345,7 @@ dataWords:
 #ifdef CONFIG_X86_MMU
 z_x86_enable_paging:
 	/* load the page directory address into the registers*/
-	movl $z_x86_kernel_pdpt, %eax
+	movl $z_x86_kernel_ptables, %eax
 	movl %eax, %cr3
 
 	/* Enable PAE */
