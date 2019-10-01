@@ -10,7 +10,7 @@
 #include <device.h>
 #include <soc.h>
 #include <gpio.h>
-#include <espi.h>
+#include <drivers/espi.h>
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 static struct device *gpio_dev0;

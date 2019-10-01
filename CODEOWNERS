@@ -217,6 +217,7 @@
 /include/drivers/can.h                    @alexanderwachter
 /include/drivers/counter.h                @nordic-krch
 /include/drivers/display.h                @vanwinkeljan
+/include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @andrewboie @gnuless
@@ -255,7 +256,6 @@
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
-/include/espi.h                           @albertofloyd @franciscomunoz @scottwcpg
 /include/kernel.h                         @andrewboie @andyross
 /include/kernel_version.h                 @andrewboie @andyross
 /include/linker/app_smem*.ld              @andrewboie
