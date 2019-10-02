@@ -359,6 +359,10 @@ static int check_pulls(void)
 
 	/* Disconnect output */
 	rc = gpio_pin_configure(dev, PIN_OUT, 0);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
+		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
+	}
 	zassert_equal(rc, 0,
 		      "output disconnect failed");
 
