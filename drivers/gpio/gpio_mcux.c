@@ -104,22 +104,25 @@ static int gpio_mcux_configure(struct device *dev,
 	 * 0 - pin is input, 1 - pin is output
 	 */
 
+	/* Treat disconnected ie, (!GPIO_INPUT && !GPIO_OUTPUT) the same
+	 * way we treat GPIO_INPUT, this we aren't driving anything by accident
+	 */
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if ((flags & GPIO_INPUT) != 0) {
-			gpio_base->PDDR &= ~BIT(pin);
-		} else {  /* GPIO_OUTPUT */
+		if ((flags & GPIO_OUTPUT) != 0) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 				gpio_base->PSOR = BIT(pin);
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 				gpio_base->PCOR = BIT(pin);
 			}
 			gpio_base->PDDR |= BIT(pin);
+		} else {  /* GPIO_INPUT or disconnect */
+			gpio_base->PDDR &= ~BIT(pin);
 		}
 	} else {	/* GPIO_ACCESS_BY_PORT */
-		if ((flags & GPIO_INPUT) != 0) {
-			gpio_base->PDDR = 0x0;
-		} else {  /* GPIO_OUTPUT */
+		if ((flags & GPIO_OUTPUT) != 0) {
 			gpio_base->PDDR = 0xFFFFFFFF;
+		} else {  /* GPIO_INPUT or disconnect */
+			gpio_base->PDDR = 0x0;
 		}
 	}
 
