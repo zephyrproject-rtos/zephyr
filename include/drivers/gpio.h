@@ -660,6 +660,8 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 		(struct gpio_driver_data *)port->driver_data;
 	int ret;
 
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
 	__ASSERT((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) !=
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
