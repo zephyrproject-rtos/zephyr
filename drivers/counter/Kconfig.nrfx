@@ -71,4 +71,5 @@ config COUNTER_RTC_WITH_PPI_WRAP
 	default y
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+
 endif
