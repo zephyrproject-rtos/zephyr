@@ -13,12 +13,29 @@ Sample Overview
 ***************
 
 This simple echo application demonstrates the WebUSB sample application.
-
 This application receives the data and echoed back to the WebUSB
 based web application (web page) running in the browser at host.
-
 This application is intended for testing purposes only. For running
 real usecase, implement applications based on the WebUSB API.
+This sample can be found under :zephyr_file:`samples/subsys/usb/webusb` in the
+Zephyr project tree.
+
+Requirements
+************
+
+This project requires an USB device driver, which is available for multiple
+boards supported in Zephyr.
+
+Building and Running
+********************
+
+Build and flash webusb sample with:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/webusb
+   :board: <board to use>
+   :goals: flash
+   :compact:
 
 Testing with latest Google Chrome on host
 *****************************************
