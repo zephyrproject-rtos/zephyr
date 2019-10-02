@@ -23,6 +23,17 @@
 
 typedef int (*out_func_t)(int c, void *ctx);
 
+/* Prototype for function capable of fetching next argument from the context.
+ * Context shall hold the state and fetch next argument.
+ *
+ * @param[in]  ctx	Context from which argument is fetched.
+ * @param[out] data	Location where argument is saved.
+ * @param[in]  arg_size	Argument size to fetch.
+ * @param[in]  fp	If true in indicates that argument is a floating number.
+ */
+typedef void (*printk_arg_get_t)(void *ctx, void *data,
+				 size_t arg_size, bool fp);
+
 enum pad_type {
 	PAD_NONE,
 	PAD_ZERO_BEFORE,
@@ -101,7 +112,8 @@ static void print_err(out_func_t out, void *ctx)
  *
  * @return N/A
  */
-void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
+void z_vprintk_fn(out_func_t out, void *ctx, const char *fmt,
+		printk_arg_get_t arg_get_fn, void *arg)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
@@ -171,11 +183,16 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				long d;
 
 				if (length_mod == 'z') {
-					d = va_arg(ap, ssize_t);
+					arg_get_fn(arg, &d, sizeof(ssize_t),
+							false);
 				} else if (length_mod == 'l') {
-					d = va_arg(ap, long);
+					arg_get_fn(arg, &d, sizeof(long),
+							false);
 				} else if (length_mod == 'L') {
-					long long lld = va_arg(ap, long long);
+					long long lld;
+
+					arg_get_fn(arg, &lld,
+						   sizeof(long long), false);
 					if (lld > __LONG_MAX__ ||
 					    lld < ~__LONG_MAX__) {
 						print_err(out, ctx);
@@ -183,7 +200,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					}
 					d = lld;
 				} else {
-					d = va_arg(ap, int);
+					arg_get_fn(arg, &d, sizeof(int), false);
 				}
 
 				if (d < 0) {
@@ -199,19 +216,25 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				unsigned long u;
 
 				if (length_mod == 'z') {
-					u = va_arg(ap, size_t);
+					arg_get_fn(arg, &u, sizeof(size_t),
+							false);
 				} else if (length_mod == 'l') {
-					u = va_arg(ap, unsigned long);
+					arg_get_fn(arg, &u,
+						  sizeof(unsigned long), false);
 				} else if (length_mod == 'L') {
-					unsigned long long llu =
-						va_arg(ap, unsigned long long);
+					unsigned long long llu;
+
+					arg_get_fn(arg, &llu,
+						   sizeof(unsigned long long),
+						   false);
 					if (llu > ~0UL) {
 						print_err(out, ctx);
 						break;
 					}
 					u = llu;
 				} else {
-					u = va_arg(ap, unsigned int);
+					arg_get_fn(arg, &u,
+						   sizeof(unsigned int), false);
 				}
 
 				_printk_dec_ulong(out, ctx, u, padding,
@@ -227,16 +250,21 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				  /* Fall through */
 			case 'x':
 			case 'X': {
-				unsigned long long x;
+				unsigned long long x = 0;
 
 				if (*fmt == 'p') {
-					x = (uintptr_t)va_arg(ap, void *);
+					arg_get_fn(arg, &x, sizeof(void *),
+							false);
 				} else if (length_mod == 'l') {
-					x = va_arg(ap, unsigned long);
+					arg_get_fn(arg, &x,
+						   sizeof(unsigned long),
+						   false);
 				} else if (length_mod == 'L') {
-					x = va_arg(ap, unsigned long long);
+					arg_get_fn(arg, &x, sizeof(long long),
+							false);
 				} else {
-					x = va_arg(ap, unsigned int);
+					arg_get_fn(arg, &x,
+						   sizeof(unsigned int), false);
 				}
 
 				_printk_hex_ulong(out, ctx, x, padding,
@@ -244,8 +272,11 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 's': {
-				char *s = va_arg(ap, char *);
-				char *start = s;
+				char *s;
+				char *start;
+
+				arg_get_fn(arg, &s, sizeof(char *), false);
+				start = s;
 
 				while (*s) {
 					out((int)(*s++), ctx);
@@ -260,8 +291,9 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'c': {
-				int c = va_arg(ap, int);
+				int c;
 
+				arg_get_fn(arg, &c, sizeof(int), false);
 				out(c, ctx);
 				break;
 			}
@@ -279,6 +311,45 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 still_might_format:
 		++fmt;
 	}
+}
+
+void arg_get(void *ctx, void *data, size_t arg_size, bool fp)
+{
+	ARG_UNUSED(fp);
+	__ASSERT_NO_MSG(arg_size <= 8);
+	va_list *ap = (va_list *)ctx;
+	union {
+	  u8_t u8;
+	  u16_t u16;
+	  u32_t u32;
+	  u64_t u64;
+	} u;
+
+	switch (arg_size) {
+	case sizeof(u8_t):
+		u.u8 = va_arg(*ap, int);
+		break;
+	case sizeof(u16_t):
+		u.u16 = va_arg(*ap, int);
+		break;
+	case sizeof(u32_t):
+		u.u32 = va_arg(*ap, u32_t);
+		break;
+	default:
+		u.u64 = va_arg(*ap, u64_t);
+		break;
+	}
+
+	memcpy(data, &u.u8, arg_size);
+}
+
+void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
+{
+	va_list ap_;
+
+	va_copy(ap_, ap);
+	z_vprintk_fn(out, ctx, fmt, arg_get, IS_ENABLED(CONFIG_64BIT) ?
+			(va_list *)&ap_ : (va_list *)&ap);
 }
 
 #ifdef CONFIG_USERSPACE
