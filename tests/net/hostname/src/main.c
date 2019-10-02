@@ -269,6 +269,40 @@ static void iface_setup(void)
 	test_started = true;
 }
 
+static int bytes_from_hostname_unique(u8_t *buf, int buf_len, const char *src)
+{
+	unsigned int i;
+
+	(void)memset(buf, 0, buf_len);
+
+	if ((2 * buf_len) < strlen(src)) {
+		return -ENOMEM;
+	}
+
+	for (i = 0U; i < strlen(src); i++) {
+		buf[i/2] <<= 4;
+
+		if (src[i] >= '0' && src[i] <= '9') {
+			buf[i/2] += (src[i] - '0');
+			continue;
+		}
+
+		if (src[i] >= 'A' && src[i] <= 'F') {
+			buf[i/2] += (10 + (src[i] - 'A'));
+			continue;
+		}
+
+		if (src[i] >= 'a' && src[i] <= 'f') {
+			buf[i/2] += (10 + (src[i] - 'a'));
+			continue;
+		}
+
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void hostname_get(void)
 {
 	const char *hostname;
@@ -280,10 +314,10 @@ static void hostname_get(void)
 			  sizeof(CONFIG_NET_HOSTNAME) - 1, "");
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
-		char mac[8];
+		char mac[6];
 		int ret;
 
-		ret = net_bytes_from_str(mac, sizeof(mac),
+		ret = bytes_from_hostname_unique(mac, sizeof(mac),
 				 hostname + sizeof(CONFIG_NET_HOSTNAME) - 1);
 		zassert_equal(ret, 0, "");
 
