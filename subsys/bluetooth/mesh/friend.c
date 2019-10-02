@@ -27,8 +27,6 @@
 #include "foundation.h"
 #include "friend.h"
 
-#define FRIEND_BUF_SIZE     (BT_MESH_ADV_DATA_SIZE - BT_MESH_NET_HDR_LEN)
-
 /* We reserve one extra buffer for each friendship, since we need to be able
  * to resend the last sent PDU, which sits separately outside of the queue.
  */
