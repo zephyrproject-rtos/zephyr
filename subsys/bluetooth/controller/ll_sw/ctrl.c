@@ -2264,55 +2264,60 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
-	if (0) {
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+	struct pdu_data *pdu_rx;
+
+	pdu_rx = (void *)node_rx->pdu_data;
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
+
+	switch (rej_ext_ind->reject_opcode) {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		/* resume data packet rx and tx */
+		_radio.conn_curr->pause_rx = 0U;
+		_radio.conn_curr->pause_tx = 0U;
+
+		/* Procedure complete */
+		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
+		_radio.conn_curr->procedure_expire = 0U;
+
+		/* enqueue as if it were a reject ind */
+		pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+		pdu_rx->llctrl.reject_ind.error_code =
+		rej_ext_ind->error_code;
+		*rx_enqueue = 1U;
+		break;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_CTLR_PHY)
-	} else if (_radio.conn_curr->llcp_phy.ack !=
-		   _radio.conn_curr->llcp_phy.req) {
-		isr_rx_conn_pkt_ctrl_rej_phy_upd(node_rx, rx_enqueue);
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		if (_radio.conn_curr->llcp_phy.ack !=
+		    _radio.conn_curr->llcp_phy.req) {
+			isr_rx_conn_pkt_ctrl_rej_phy_upd(node_rx, rx_enqueue);
+		}
+		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	} else if (_radio.conn_curr->llcp_conn_param.ack !=
-		   _radio.conn_curr->llcp_conn_param.req) {
-		isr_rx_conn_pkt_ctrl_rej_conn_upd(node_rx, rx_enqueue);
+	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
+		if (_radio.conn_curr->llcp_conn_param.ack !=
+		    _radio.conn_curr->llcp_conn_param.req) {
+			isr_rx_conn_pkt_ctrl_rej_conn_upd(node_rx, rx_enqueue);
+		}
+		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	} else if (_radio.conn_curr->llcp_length.ack !=
-		   _radio.conn_curr->llcp_length.req) {
-		isr_rx_conn_pkt_ctrl_rej_dle(node_rx, rx_enqueue);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	} else {
-		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
-		struct pdu_data *pdu_rx;
-
-		pdu_rx = (void *)node_rx->pdu_data;
-		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-
-		switch (rej_ext_ind->reject_opcode) {
-		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-			/* resume data packet rx and tx */
-			_radio.conn_curr->pause_rx = 0U;
-			_radio.conn_curr->pause_tx = 0U;
-
-			/* Procedure complete */
-			_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-			_radio.conn_curr->procedure_expire = 0U;
-
-			/* enqueue as if it were a reject ind */
-			pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
-			pdu_rx->llctrl.reject_ind.error_code =
-				rej_ext_ind->error_code;
-			*rx_enqueue = 1U;
-			break;
-
-		default:
-			/* Ignore */
-			break;
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
+		if (_radio.conn_curr->llcp_length.ack !=
+		    _radio.conn_curr->llcp_length.req) {
+			isr_rx_conn_pkt_ctrl_rej_dle(node_rx, rx_enqueue);
 		}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	default:
+		/* Ignore */
+		break;
 	}
 }
 
