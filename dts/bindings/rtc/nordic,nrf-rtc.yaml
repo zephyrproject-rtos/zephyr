@@ -21,4 +21,4 @@ properties:
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      required: true
+      required: false
