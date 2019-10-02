@@ -13,6 +13,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
+	defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
+#define USE_NEWLIB_LIBC 1
+#else
+#define USE_NEWLIB_LIBC 0
+#endif
+
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
@@ -47,8 +54,15 @@ static u32_t timestamp_div;
 typedef int (*out_func_t)(int c, void *ctx);
 
 extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
-extern void z_vprintk(out_func_t out, void *log_output,
-		     const char *fmt, va_list ap);
+typedef void (*printk_arg_get_t)(void *ctx, void *data, size_t len, bool fp);
+extern void z_vprintk_fn(out_func_t out, void *ctx, const char *fmt,
+		printk_arg_get_t arg_get_fn, void *arg);
+extern void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap);
+
+struct log_output_args {
+	struct log_msg *msg;
+	u32_t idx;
+};
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -107,6 +121,7 @@ static int out_func(int c, void *ctx)
 	return 0;
 }
 
+
 static int print_formatted(const struct log_output *log_output,
 			   const char *fmt, ...)
 {
@@ -114,12 +129,13 @@ static int print_formatted(const struct log_output *log_output,
 	int length = 0;
 
 	va_start(args, fmt);
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = z_prf(out_func, (void *)log_output, (char *)fmt, args);
-#else
-	z_vprintk(out_func, (void *)log_output, fmt, args);
-#endif
+
+	if (USE_NEWLIB_LIBC) {
+		length = z_prf(out_func, (void *)log_output, (char *)fmt, args);
+	} else {
+		z_vprintk(out_func, (void *)log_output, fmt, args);
+	}
+
 	va_end(args);
 
 	return length;
@@ -266,19 +282,43 @@ static void newline_print(const struct log_output *ctx, u32_t flags)
 	}
 }
 
+static void arg_get(void *ctx, void *data, size_t len, bool fp)
+{
+	struct log_output_args *args = (struct log_output_args *)ctx;
+
+	if (len <= sizeof(u32_t)) {
+		__ASSERT_NO_MSG(args->idx < log_msg_nargs_get(args->msg));
+		*(u32_t *)data = (u32_t)log_msg_arg_get(args->msg, args->idx);
+	} else {
+		*(u64_t *)data = log_msg_arg_get(args->msg, args->idx);
+	}
+	args->idx++;
+}
+
 static void std_print(struct log_msg *msg,
 		      const struct log_output *log_output)
 {
 	const char *str = log_msg_str_get(msg);
-	u32_t nargs = log_msg_nargs_get(msg);
-	u32_t *args = alloca(sizeof(u32_t)*nargs);
-	int i;
+	u32_t nargs;
+	u32_t *args;
 
-	for (i = 0; i < nargs; i++) {
+	if (USE_NEWLIB_LIBC == 0) {
+		struct log_output_args data = {
+			.msg = msg
+		};
+
+		z_vprintk_fn(out_func, (void *)log_output, str, arg_get, &data);
+		return;
+	}
+
+	nargs = log_msg_nargs_get(msg);
+	args = alloca(sizeof(u32_t)*nargs);
+
+	for (int i = 0; i < nargs; i++) {
 		args[i] = log_msg_arg_get(msg, i);
 	}
 
-	switch (log_msg_nargs_get(msg)) {
+	switch (nargs) {
 	case 0:
 		print_formatted(log_output, str);
 		break;
@@ -552,12 +592,11 @@ void log_output_string(const struct log_output *log_output,
 				level, domain_id, source_id);
 	}
 
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = z_prf(out_func, (void *)log_output, (char *)fmt, ap);
-#else
-	z_vprintk(out_func, (void *)log_output, fmt, ap);
-#endif
+	if (USE_NEWLIB_LIBC) {
+		length = z_prf(out_func, (void *)log_output, (char *)fmt, ap);
+	} else {
+		z_vprintk(out_func, (void *)log_output, fmt, ap);
+	}
 
 	(void)length;
 
