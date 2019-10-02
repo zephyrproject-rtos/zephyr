@@ -127,7 +127,8 @@ def write_dummy_index(kconf, out_dir):
     # so that they can be referenced from elsewhere in the documentation, to
     # speed up builds when we don't need the Kconfig symbol documentation
 
-    index_rst = INDEX_RST_HEADER + "\n(Dummy index page for turbo mode)\n\n"
+    index_rst = INDEX_RST_HEADER + "\n   * - dummy" + \
+       "\n     - Dummy index page for turbo mode\n\n"
 
     for sym in sorted(kconf.unique_defined_syms, key=attrgetter("name")):
         index_rst += ".. option:: CONFIG_{}\n".format(sym.name)
