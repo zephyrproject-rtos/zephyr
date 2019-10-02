@@ -84,8 +84,8 @@
 #define GPIO_DIR_OUT            (1 << 9) /* GPIO_OUTPUT */
 #define GPIO_PUD_PULL_UP	GPIO_PULL_UP
 #define GPIO_PUD_PULL_DOWN	GPIO_PULL_DOWN
-#define GPIO_INT_ACTIVE_LOW     (1 << 15) /* GPIO_INT_LOW_0 */
-#define GPIO_INT_ACTIVE_HIGH    (1 << 16) /* GPIO_INT_HIGH_1 */
+#define GPIO_INT_ACTIVE_LOW     (1 << 16) /* GPIO_INT_LOW_0 */
+#define GPIO_INT_ACTIVE_HIGH    (1 << 17) /* GPIO_INT_HIGH_1 */
 /** @endcond */
 
 /**
