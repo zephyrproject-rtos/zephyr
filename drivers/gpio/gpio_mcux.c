@@ -105,15 +105,20 @@ static int gpio_mcux_configure(struct device *dev,
 	 */
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if ((flags & GPIO_INPUT) != 0) {
+		switch (flags & GPIO_DIR_MASK) {
+		case GPIO_INPUT:
 			gpio_base->PDDR &= ~BIT(pin);
-		} else {  /* GPIO_OUTPUT */
+			break;
+		case GPIO_OUTPUT:
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 				gpio_base->PSOR = BIT(pin);
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 				gpio_base->PCOR = BIT(pin);
 			}
 			gpio_base->PDDR |= BIT(pin);
+			break;
+		default:
+			return -ENOTSUP;
 		}
 	} else {	/* GPIO_ACCESS_BY_PORT */
 		if ((flags & GPIO_INPUT) != 0) {
