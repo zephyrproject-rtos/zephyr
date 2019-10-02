@@ -503,7 +503,7 @@ This should now be written like this:
            type: int
            required: false
 
-   child-node:
+   child-binding:
        title: ...
        description: ...
 
