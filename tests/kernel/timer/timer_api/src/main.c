@@ -55,15 +55,15 @@ static void init_timer_data(void)
 static void duration_expire(struct k_timer *timer)
 {
 	/** TESTPOINT: expire function */
+	s64_t interval = k_uptime_delta(&tdata.timestamp);
+
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
-		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= DURATION,
-			     timer);
+		TIMER_ASSERT(interval >= DURATION, timer);
 	} else {
-		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= PERIOD, timer);
+		TIMER_ASSERT(interval >= PERIOD, timer);
 	}
 
-	tdata.timestamp = k_uptime_get();
 	if (tdata.expire_cnt >= EXPIRE_TIMES) {
 		k_timer_stop(timer);
 	}
