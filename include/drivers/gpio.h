@@ -76,19 +76,19 @@ extern "C" {
  */
 
 /** Disables GPIO pin interrupt. */
-#define GPIO_INT_DISABLE               (0U << 12)
+#define GPIO_INT_DISABLE               (1U << 12)
 
 /** @cond INTERNAL_HIDDEN */
 
 /* Enables GPIO pin interrupt. */
-#define GPIO_INT_ENABLE                (1U << 12)
+#define GPIO_INT_ENABLE                (1U << 13)
 
 /* GPIO interrupt is sensitive to logical levels.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LEVELS_LOGICAL        (1U << 13)
+#define GPIO_INT_LEVELS_LOGICAL        (1U << 14)
 
 /* GPIO interrupt is edge sensitive.
  *
@@ -97,7 +97,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_EDGE                  (1U << 14)
+#define GPIO_INT_EDGE                  (1U << 15)
 
 /* Trigger detection when input state is (or transitions to) physical low or
  * logical 0 level.
@@ -105,7 +105,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LOW_0                 (1U << 15)
+#define GPIO_INT_LOW_0                 (1U << 16)
 
 /* Trigger detection on input state is (or transitions to) physical high or
  * logical 1 level.
@@ -113,7 +113,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_HIGH_1                (1U << 16)
+#define GPIO_INT_HIGH_1                (1U << 17)
 
 /** @endcond */
 
@@ -187,7 +187,7 @@ extern "C" {
  * @note Drivers that do not support a debounce feature should ignore
  * this flag rather than rejecting the configuration with -ENOTSUP.
  */
-#define GPIO_INT_DEBOUNCE              (1U << 17)
+#define GPIO_INT_DEBOUNCE              (1U << 18)
 
 /**
  * @name GPIO drive strength flags
@@ -212,7 +212,7 @@ extern "C" {
  * @{
  */
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS 18
+#define GPIO_DS_LOW_POS 19
 #define GPIO_DS_LOW_MASK (0x3U << GPIO_DS_LOW_POS)
 /** @endcond */
 
@@ -227,7 +227,7 @@ extern "C" {
 #define GPIO_DS_ALT_LOW (0x1U << GPIO_DS_LOW_POS)
 
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_HIGH_POS 20
+#define GPIO_DS_HIGH_POS 21
 #define GPIO_DS_HIGH_MASK (0x3U << GPIO_DS_HIGH_POS)
 /** @endcond */
 
@@ -611,6 +611,13 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 
 	__ASSERT_NO_MSG((flags & GPIO_INT_DEBOUNCE) == 0);
 
+	__ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE))
+		 != (GPIO_INT_DISABLE | GPIO_INT_ENABLE),
+		 "Cannot both enable and disable interrupts");
+
+	__ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE)) != 0U,
+		 "Must either enable or disable interrupts");
+
 	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 		 ((flags & GPIO_INT_EDGE) != 0) ||
 		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) !=
@@ -630,7 +637,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 	}
 
 	trig = (enum gpio_int_trig)(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
-	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_ENABLE));
+	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_DISABLE | GPIO_INT_ENABLE));
 
 	return api->pin_interrupt_configure(port, pin, mode, trig);
 }
@@ -687,7 +694,8 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 	} else {
 		data->invert &= ~BIT(pin);
 	}
-	if (api->pin_interrupt_configure) {
+	if (((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE)) != 0U)
+	    && (api->pin_interrupt_configure != NULL)) {
 		flags &= ~GPIO_INT_DEBOUNCE;
 		ret = z_impl_gpio_pin_interrupt_configure(port, pin, flags);
 	}
