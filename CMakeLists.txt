@@ -746,7 +746,7 @@ endif()
 # Warning most of this gperf code is duplicated below for
 # gen_kobject_list.py / output_lib
 if(CONFIG_ARM AND CONFIG_USERSPACE)
-  set(GEN_PRIV_STACKS $ENV{ZEPHYR_BASE}/scripts/gen_priv_stacks.py)
+  set(GEN_PRIV_STACKS $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py)
   set(PROCESS_PRIV_STACKS_GPERF $ENV{ZEPHYR_BASE}/scripts/process_gperf.py)
 
   set(PRIV_STACKS                    priv_stacks_hash.gperf)
@@ -770,7 +770,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${GEN_PRIV_STACKS}
     --kernel $<TARGET_FILE:priv_stacks_prebuilt>
-    --output ${PRIV_STACKS}
+    --priv-output ${PRIV_STACKS}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS priv_stacks_prebuilt
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -901,7 +901,7 @@ if(CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${GEN_KOBJ_LIST}
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    --gperf-output ${OBJ_LIST}
+    --kobj-output ${OBJ_LIST}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
