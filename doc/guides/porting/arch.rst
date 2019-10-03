@@ -564,3 +564,55 @@ In addition to implementing these APIs, there are some other tasks as well:
   be looked up in _k_syscall_table. Bad system call IDs should jump to the
   :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
+
+API Reference
+*************
+
+Timing
+======
+
+.. doxygengroup:: arch-timing
+   :project: Zephyr
+
+Threads
+=======
+
+.. doxygengroup:: arch-threads
+   :project: Zephyr
+
+Power Management
+================
+
+.. doxygengroup:: arch-pm
+   :project: Zephyr
+
+Symmetric Multi-Processing
+==========================
+
+.. doxygengroup:: arch-smp
+   :project: Zephyr
+
+Interrupts
+==========
+
+.. doxygengroup:: arch-irq
+   :project: Zephyr
+
+Userspace
+=========
+
+.. doxygengroup:: arch-userspace
+   :project: Zephyr
+
+Benchmarking
+============
+
+.. doxygengroup:: arch-benchmarking
+   :project: Zephyr
+
+Miscellaneous Architecture APIs
+===============================
+
+.. doxygengroup:: arch-misc
+   :project: Zephyr
+
