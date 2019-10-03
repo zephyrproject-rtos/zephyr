@@ -42,6 +42,7 @@
 struct can_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
+	struct _timeout timeout;
 };
 
 
@@ -59,6 +60,7 @@ struct can_stm32_data {
 	struct can_mailbox mb0;
 	struct can_mailbox mb1;
 	struct can_mailbox mb2;
+	struct device *dev;  /* Device ptr for the timeout function */
 	u64_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];

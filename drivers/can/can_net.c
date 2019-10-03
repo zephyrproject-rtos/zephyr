@@ -89,12 +89,14 @@ static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
 }
 
 static int net_can_send(struct device *dev, const struct zcan_frame *frame,
-			can_tx_callback_t cb, void *cb_arg, s32_t timeout)
+			can_tx_callback_t cb, void *cb_arg,
+			s32_t mb_timeout, s32_t send_timeout)
 {
 	struct net_can_context *ctx = dev->driver_data;
 
 	NET_ASSERT(frame->id_type == CAN_EXTENDED_IDENTIFIER);
-	return can_send(ctx->can_dev, frame, timeout, cb, cb_arg);
+	return can_send(ctx->can_dev, frame, mb_timeout, send_timeout,
+			cb, cb_arg);
 }
 
 static void net_can_recv(struct zcan_frame *frame, void *arg)

@@ -121,7 +121,8 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
+	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, TEST_SEND_TIMEOUT,
+		       NULL, NULL);
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);

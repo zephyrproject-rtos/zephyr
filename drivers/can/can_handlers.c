@@ -20,25 +20,21 @@ static inline int z_vrfy_can_configure(struct device *dev, enum can_mode mode,
 
 static inline int z_vrfy_can_send(struct device *dev,
 				  const struct zcan_frame *msg,
-				  s32_t timeout,
+				  s32_t mb_timeout, s32_t send_timeout,
 				  can_tx_callback_t callback_isr,
 				  void *callback_arg)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((const struct zcan_frame *)msg,
-				      sizeof(struct zcan_frame)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(((struct zcan_frame *)msg)->data,
-				     sizeof((struct zcan_frame *)msg)->data));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(msg, sizeof(struct zcan_frame)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(msg->data, sizeof(msg->data)));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,
 				    "callbacks may not be set from user mode"));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)callback_arg, sizeof(void *)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(callback_arg, sizeof(void *)));
 
-	return z_impl_can_send((struct device *)dev,
-			      (const struct zcan_frame *)msg,
-			      (s32_t)timeout, (can_tx_callback_t) callback_isr,
-			      (void *)callback_arg);
+	return z_impl_can_send(dev, msg, mb_timeout, send_timeout, callback_isr,
+			       callback_arg);
 }
 #include <syscalls/can_send_mrsh.c>
 

@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <timeout_q.h>
 #include <drivers/can.h>
 #include "can_stm32.h"
 
@@ -19,7 +20,6 @@
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
-#define CAN_BOFF_RECOVER_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
 /*
  * Translation tables
@@ -84,13 +84,15 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 }
 
-static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
-						  struct can_stm32_data *data)
+static inline void can_stm32_bus_state_change_isr(struct device *dev)
 {
+	CAN_TypeDef *can = DEV_CFG(dev)->can;
+	struct can_stm32_data *data = DEV_DATA(dev);
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
 
-	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF)) {
+	if ((data->state_change_isr == NULL) ||
+	    (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF))) {
 		return;
 	}
 
@@ -105,53 +107,86 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 		state = CAN_ERROR_ACTIVE;
 	}
 
-	if (data->state_change_isr) {
-		data->state_change_isr(state, err_cnt);
+	data->state_change_isr(state, err_cnt);
+}
+
+static int can_stm32_get_err_code(CAN_TypeDef *can)
+{
+	switch ((can->ESR & CAN_ESR_LEC) >> CAN_ESR_LEC_Pos) {
+	case 0x1:
+		return CAN_TX_STUFFING_ERR;
+	case 0x2:
+		return CAN_TX_FORM_ERR;
+	case 0x3:
+		return CAN_TX_NACK;
+	case 0x4:
+		return CAN_TX_RECESSIVE_BIT_ERR;
+	case 0x5:
+		return CAN_TX_DOMINANT_BIT_ERR;
+	case 0x6:
+		return CAN_TX_CRC_ERROR;
+	default:
+		return CAN_TX_UNKNOWN;
 	}
 }
 
 static inline
 void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 {
-	u32_t bus_off;
-	int err;
+	u32_t err;
 
-	bus_off = can->ESR & CAN_ESR_BOFF;
-
-	if ((can->TSR & CAN_TSR_RQCP0) | bus_off) {
-		err = can->TSR & CAN_TSR_TXOK0 ? CAN_TX_OK  :
-		      can->TSR & CAN_TSR_TERR0 ? CAN_TX_ERR :
-		      can->TSR & CAN_TSR_ALST0 ? CAN_TX_ARB_LOST :
-		      bus_off                  ? CAN_TX_BUS_OFF :
-						 CAN_TX_UNKNOWN;
-
-		data->mb0.tx_callback(err, data->mb0.callback_arg);
+	if ((can->TSR & CAN_TSR_RQCP0)) {
+		if (can->TSR & CAN_TSR_TXOK0) {
+			err = CAN_TX_OK;
+		} else if (can->TSR & CAN_TSR_ALST0) {
+			err = CAN_TX_ARB_LOST;
+		} else if (can->ESR & CAN_ESR_BOFF) {
+			err = CAN_TX_BUS_OFF;
+		} else if (can->TSR & CAN_TSR_TERR0) {
+			err = can_stm32_get_err_code(can);
+		} else {
+			err = CAN_TX_TIMEOUT;
+		}
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP0;
+		z_abort_timeout(&data->mb0.timeout);
+		data->mb0.tx_callback(err, data->mb0.callback_arg);
 	}
 
-	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
-		err = can->TSR & CAN_TSR_TXOK1 ? CAN_TX_OK  :
-		      can->TSR & CAN_TSR_TERR1 ? CAN_TX_ERR :
-		      can->TSR & CAN_TSR_ALST1 ? CAN_TX_ARB_LOST :
-		      bus_off                  ? CAN_TX_BUS_OFF :
-						 CAN_TX_UNKNOWN;
-
-		data->mb1.tx_callback(err, data->mb1.callback_arg);
+	if ((can->TSR & CAN_TSR_RQCP1)) {
+		if (can->TSR & CAN_TSR_TXOK1) {
+			err = CAN_TX_OK;
+		} else if (can->TSR & CAN_TSR_ALST1) {
+			err = CAN_TX_ARB_LOST;
+		} else if (can->ESR & CAN_ESR_BOFF) {
+			err = CAN_TX_BUS_OFF;
+		} else if (can->TSR & CAN_TSR_TERR1) {
+			err = can_stm32_get_err_code(can);
+		} else {
+			err = CAN_TX_TIMEOUT;
+		}
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP1;
+		z_abort_timeout(&data->mb1.timeout);
+		data->mb1.tx_callback(err, data->mb1.callback_arg);
 	}
 
-	if ((can->TSR & CAN_TSR_RQCP2) | bus_off) {
-		err = can->TSR & CAN_TSR_TXOK2 ? CAN_TX_OK  :
-		      can->TSR & CAN_TSR_TERR2 ? CAN_TX_ERR :
-		      can->TSR & CAN_TSR_ALST2 ? CAN_TX_ARB_LOST :
-		      bus_off                  ? CAN_TX_BUS_OFF :
-						 CAN_TX_UNKNOWN;
-
-		data->mb2.tx_callback(err, data->mb2.callback_arg);
+	if ((can->TSR & CAN_TSR_RQCP2)) {
+		if (can->TSR & CAN_TSR_TXOK2) {
+			err = CAN_TX_OK;
+		} else if (can->TSR & CAN_TSR_ALST2) {
+			err = CAN_TX_ARB_LOST;
+		} else if (can->ESR & CAN_ESR_BOFF) {
+			err = CAN_TX_BUS_OFF;
+		} else if (can->TSR & CAN_TSR_TERR2) {
+			err = can_stm32_get_err_code(can);
+		} else {
+			err = CAN_TX_TIMEOUT;
+		}
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP2;
+		z_abort_timeout(&data->mb2.timeout);
+		data->mb2.tx_callback(err, data->mb2.callback_arg);
 	}
 
 	if (can->TSR & CAN_TSR_TME) {
@@ -175,8 +210,9 @@ static void can_stm32_isr(void *arg)
 
 	can_stm32_tx_isr_handler(can, data);
 	can_stm32_rx_isr_handler(can, data);
+
 	if (can->MSR & CAN_MSR_ERRI) {
-		can_stm32_bus_state_change_isr(can, data);
+		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
 	}
 }
@@ -225,11 +261,8 @@ static void can_stm32_state_change_isr(void *arg)
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
 
-
-	/*Signal bus-off to waiting tx*/
 	if (can->MSR & CAN_MSR_ERRI) {
-		can_stm32_tx_isr_handler(can, data);
-		can_stm32_bus_state_change_isr(can, data);
+		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
 	}
 }
@@ -288,7 +321,6 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 				u32_t bitrate)
 {
-	CAN_HandleTypeDef hcan;
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -303,7 +335,6 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(clock);
-	hcan.Instance = can;
 	ret = clock_control_get_rate(clock, (clock_control_subsys_t *) &cfg->pclken,
 				     &clock_rate);
 	if (ret != 0) {
@@ -382,6 +413,7 @@ static int can_stm32_init(struct device *dev)
 	data->mb1.tx_callback = NULL;
 	data->mb2.tx_callback = NULL;
 	data->state_change_isr = NULL;
+	data->dev = dev;
 
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
@@ -514,16 +546,52 @@ done:
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
+static void can_stm32_tx0_timeout(struct _timeout *t)
+{
+	struct can_mailbox *mb = CONTAINER_OF(t, struct can_mailbox, timeout);
+	struct can_stm32_data *data = CONTAINER_OF(mb, struct can_stm32_data, mb0);
+	struct device *dev = data->dev;
+	const struct can_stm32_config *cfg = DEV_CFG(dev);
+	CAN_TypeDef *can = cfg->can;
+
+	can->TSR |= CAN_TSR_ABRQ0;
+}
+
+static void can_stm32_tx1_timeout(struct _timeout *t)
+{
+	struct can_mailbox *mb = CONTAINER_OF(t, struct can_mailbox, timeout);
+	struct can_stm32_data *data = CONTAINER_OF(mb, struct can_stm32_data, mb1);
+	struct device *dev = data->dev;
+	const struct can_stm32_config *cfg = DEV_CFG(dev);
+	CAN_TypeDef *can = cfg->can;
+
+	can->TSR |= CAN_TSR_ABRQ1;
+}
+
+static void can_stm32_tx2_timeout(struct _timeout *t)
+{
+	struct can_mailbox *mb = CONTAINER_OF(t, struct can_mailbox, timeout);
+	struct can_stm32_data *data = CONTAINER_OF(mb, struct can_stm32_data, mb2);
+	struct device *dev = data->dev;
+	const struct can_stm32_config *cfg = DEV_CFG(dev);
+	CAN_TypeDef *can = cfg->can;
+
+	can->TSR |= CAN_TSR_ABRQ2;
+}
 
 int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
-		   s32_t timeout, can_tx_callback_t callback, void *callback_arg)
+		   s32_t mb_timeout, s32_t send_timeout,
+		   can_tx_callback_t callback, void *callback_arg)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
-	u32_t transmit_status_register = can->TSR;
 	CAN_TxMailBox_TypeDef *mailbox = NULL;
 	struct can_mailbox *mb = NULL;
+	u32_t time_spent = 0;
+	void (*to_func)(struct _timeout *t);
+	s64_t time_stamp;
+	int ret;
 
 	LOG_DBG("Sending %d bytes on %s. "
 		    "Id: 0x%x, "
@@ -548,31 +616,60 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 		return CAN_TX_BUS_OFF;
 	}
 
-	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	while (!(transmit_status_register & CAN_TSR_TME)) {
+	time_stamp = k_uptime_get();
+
+	ret = k_mutex_lock(&data->inst_mutex,
+			   mb_timeout == K_NO_WAIT ? K_NO_WAIT :
+			   mb_timeout == K_FOREVER ? K_FOREVER :
+			   K_MSEC(mb_timeout));
+
+	if (ret != 0) {
+		LOG_DBG("Timeout waiting for tx_mutex");
+		return CAN_TIMEOUT;
+	}
+
+	while (!(can->TSR & CAN_TSR_TME)) {
 		k_mutex_unlock(&data->inst_mutex);
 		LOG_DBG("Transmit buffer full. Wait with timeout (%dms)",
-			    timeout);
-		if (k_sem_take(&data->tx_int_sem, timeout)) {
+			    mb_timeout);
+		time_spent = k_uptime_get() - time_stamp;
+		if (time_spent >= mb_timeout || mb_timeout == K_NO_WAIT ||
+		    k_sem_take(&data->tx_int_sem,
+			       mb_timeout == K_FOREVER ? K_FOREVER :
+			       K_MSEC(mb_timeout - time_spent))) {
+			LOG_DBG("Timeout waiting for free mbox");
 			return CAN_TIMEOUT;
 		}
 
-		k_mutex_lock(&data->inst_mutex, K_FOREVER);
-		transmit_status_register = can->TSR;
+		time_spent = k_uptime_get() - time_stamp;
+		if (time_spent >= mb_timeout) {
+			return CAN_TIMEOUT;
+		}
+
+		ret = k_mutex_lock(&data->inst_mutex,
+				   mb_timeout == K_FOREVER ? K_FOREVER :
+				   K_MSEC(mb_timeout - time_spent));
+		if (ret != 0) {
+			LOG_DBG("Timeout waiting for inst_mutex");
+			return CAN_TIMEOUT;
+		}
 	}
 
-	if (transmit_status_register & CAN_TSR_TME0) {
+	if (can->TSR & CAN_TSR_TME0) {
 		LOG_DBG("Using mailbox 0");
 		mailbox = &can->sTxMailBox[0];
 		mb = &(data->mb0);
-	} else if (transmit_status_register & CAN_TSR_TME1) {
+		to_func = can_stm32_tx0_timeout;
+	} else if (can->TSR & CAN_TSR_TME1) {
 		LOG_DBG("Using mailbox 1");
 		mailbox = &can->sTxMailBox[1];
 		mb = &data->mb1;
-	} else if (transmit_status_register & CAN_TSR_TME2) {
+		to_func = can_stm32_tx1_timeout;
+	} else if (can->TSR & CAN_TSR_TME2) {
 		LOG_DBG("Using mailbox 2");
 		mailbox = &can->sTxMailBox[2];
 		mb = &data->mb2;
+		to_func = can_stm32_tx2_timeout;
 	}
 
 	mb->tx_callback = callback;
@@ -601,7 +698,14 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
 
-	return 0;
+	__ASSERT(send_timeout != K_NO_WAIT, "Message can't be sent instantly");
+
+	if (send_timeout != K_FOREVER) {
+		z_init_timeout(&mb->timeout);
+		z_add_timeout(&mb->timeout, to_func, z_ms_to_ticks(send_timeout));
+	}
+
+	return CAN_TX_OK;
 }
 
 static inline int can_stm32_check_free(void **arr, int start, int end)
@@ -939,7 +1043,7 @@ static inline int can_stm32_attach(struct device *dev, can_rx_callback_t cb,
 	return filter_nr;
 }
 
-int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
+static int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
 			 void *cb_arg,
 			 const struct zcan_filter *filter)
 {
@@ -952,7 +1056,7 @@ int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
 	return filter_nr;
 }
 
-void can_stm32_detach(struct device *dev, int filter_nr)
+static void can_stm32_detach(struct device *dev, int filter_nr)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);

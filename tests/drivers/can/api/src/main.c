@@ -14,6 +14,7 @@
  * @brief TestPurpose: verify can driver works
  * @details
  * - Test Steps
+ *   -# Test TX timeout.
  *   -# Set driver to loopback mode
  *   -# Try to send a message.
  *   -# Attach a filter from every kind
@@ -28,7 +29,9 @@
  * @}
  */
 
+#define TEST_MB_TIMEOUT      K_MSEC(100)
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
+#define TEST_TIMEOUT_MARGIN  K_MSEC(2)
 #define TEST_RECEIVE_TIMEOUT K_MSEC(100)
 
 #define TEST_CAN_STD_ID      0x555
@@ -159,6 +162,17 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
+static void tx_timeout_isr(u32_t error_flags, void *arg)
+{
+	int expected_err = (int)arg;
+
+	k_sem_give(&tx_cb_sem);
+
+	zassert_not_equal(error_number, CAN_TX_OK,
+			  "Expected err: %d, issued err: %d",
+			  expected_err, error_number);
+}
+
 static void tx_std_isr(u32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
@@ -255,7 +269,8 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
+	ret = can_send(can_dev, msg, TEST_MB_TIMEOUT, TEST_SEND_TIMEOUT,
+		       NULL, NULL);
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
@@ -267,19 +282,21 @@ static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
 
 	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
 		if (msg->std_id == TEST_CAN_STD_ID) {
-			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
-				       tx_std_isr, msg);
+			ret = can_send(can_dev, msg, TEST_MB_TIMEOUT,
+				       TEST_SEND_TIMEOUT, tx_std_isr, msg);
 		} else {
-			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
-				       tx_std_masked_isr, msg);
+			ret = can_send(can_dev, msg, TEST_MB_TIMEOUT,
+				       TEST_SEND_TIMEOUT, tx_std_masked_isr,
+				       msg);
 		}
 	} else {
 		if (msg->ext_id == TEST_CAN_EXT_ID) {
-			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
-				       tx_ext_isr, msg);
+			ret = can_send(can_dev, msg, TEST_MB_TIMEOUT,
+				       TEST_SEND_TIMEOUT, tx_ext_isr, msg);
 		} else {
-			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
-				       tx_ext_masked_isr, msg);
+			ret = can_send(can_dev, msg, TEST_MB_TIMEOUT,
+				       TEST_SEND_TIMEOUT, tx_ext_masked_isr,
+				       msg);
 		}
 	}
 
@@ -407,6 +424,61 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
 	ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(ret, 0, "Receiving timeout");
 	can_detach(can_dev, filter_id);
+}
+
+/*
+ * Sending a message before loopback is set must trigger a timeout because
+ * no other node is present to ACK the frame.
+ */
+static void test_timeout(void)
+{
+	int ret;
+	u32_t start_time;
+	s32_t time_diff;
+
+	start_time = k_uptime_get_32();
+	ret = can_send(can_dev, &test_std_msg, TEST_MB_TIMEOUT,
+		       TEST_SEND_TIMEOUT, NULL, NULL);
+	time_diff = k_uptime_get_32() - start_time;
+	time_diff -= TEST_SEND_TIMEOUT;
+
+	zassert_not_equal(ret, CAN_TX_OK,
+			  "Message should not be sent successfully [%d]", ret);
+	zassert_true(time_diff <= TEST_TIMEOUT_MARGIN &&
+		     time_diff >= -TEST_SEND_TIMEOUT,
+		     "Timeout is out of bounds");
+
+	k_sem_reset(&tx_cb_sem);
+	ret = can_send(can_dev, &test_std_msg, TEST_MB_TIMEOUT,
+		       TEST_SEND_TIMEOUT, tx_timeout_isr, (void *)CAN_TX_NACK);
+	zassert_equal(ret, CAN_TX_OK,
+		      "Message should be copied to a mailbox successfully [%d]",
+		      ret);
+
+	/* This timeout should be issued before the previos */
+	ret = can_send(can_dev, &test_std_msg, TEST_MB_TIMEOUT,
+		       TEST_SEND_TIMEOUT / 2,
+		       tx_timeout_isr, (void *)CAN_TX_TIMEOUT);
+	zassert_equal(ret, CAN_TX_OK,
+		      "Message should be copied to a mailbox successfully [%d]",
+		      ret);
+
+	start_time = k_uptime_get_32();
+	ret = k_sem_take(&tx_cb_sem,
+			 TEST_TIMEOUT_MARGIN + TEST_SEND_TIMEOUT / 2);
+	zassert_equal(ret, 0, "Missing TX callback for timeout frame");
+	time_diff = k_uptime_get_32() - start_time;
+	time_diff -= TEST_SEND_TIMEOUT;
+
+	start_time = k_uptime_get_32();
+	ret = k_sem_take(&tx_cb_sem, TEST_TIMEOUT_MARGIN + TEST_SEND_TIMEOUT);
+	zassert_equal(ret, 0, "Missing TX callback for NACK frame");
+	time_diff = k_uptime_get_32() - start_time;
+	time_diff -= TEST_SEND_TIMEOUT;
+
+	zassert_true(time_diff <= TEST_TIMEOUT_MARGIN &&
+		     time_diff >= -TEST_SEND_TIMEOUT,
+		     "Timeout is out of bounds");
 }
 
 /*
@@ -605,7 +677,8 @@ static void test_send_invalid_dlc(void)
 
 	frame.dlc = CAN_MAX_DLC + 1;
 
-	ret = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, tx_std_isr, NULL);
+	ret = can_send(can_dev, &frame, TEST_MB_TIMEOUT, TEST_SEND_TIMEOUT,
+		       tx_std_isr, NULL);
 	zassert_equal(ret, CAN_TX_EINVAL,
 		      "ret [%d] not equal to %d", ret, CAN_TX_EINVAL);
 }
@@ -619,6 +692,7 @@ void test_main(void)
 	zassert_not_null(can_dev, "Device not found");
 
 	ztest_test_suite(can_driver,
+			 ztest_unit_test(test_timeout),
 			 ztest_unit_test(test_set_loopback),
 			 ztest_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_filter_attach),

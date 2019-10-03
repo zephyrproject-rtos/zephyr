@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 
 #define NET_CAN_WFTMAX 2
 #define NET_CAN_ALLOC_TIMEOUT K_MSEC(100)
+#define NET_CAN_SEND_TIMEOUT  K_MSEC(500)
+#define NET_CAN_MB_TIMEOUT  K_MSEC(10)
 
 /* Minimal separation time betwee frames */
 #define NET_CAN_STMIN CONFIG_NET_L2_CANBUS_STMIN
@@ -453,7 +455,7 @@ static int canbus_send_fc(struct device *net_can_dev,
 
 	NET_DBG("Sending FC to ID: 0x%08x", frame.ext_id);
 	return api->send(net_can_dev, &frame, canbus_fc_send_cb, NULL,
-			 K_FOREVER);
+			 NET_CAN_MB_TIMEOUT, NET_CAN_SEND_TIMEOUT);
 }
 
 static int canbus_process_cf_data(struct net_pkt *frag_pkt,
@@ -721,7 +723,7 @@ static inline int canbus_send_cf(struct net_pkt *pkt)
 	net_pkt_cursor_backup(pkt, &cursor_backup);
 	net_pkt_read(pkt, &frame.data[1], len);
 	ret = api->send(net_can_dev, &frame, canbus_tx_frame_isr,
-			pkt, K_NO_WAIT);
+			pkt, K_NO_WAIT, NET_CAN_SEND_TIMEOUT);
 	if (ret == CAN_TX_OK) {
 		ctx->sn++;
 		ctx->rem_len -= len;
@@ -935,7 +937,8 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 	net_pkt_read(pkt, &frame.data[index], NET_CAN_DL - index);
 	pkt->canbus_tx_ctx->rem_len -= NET_CAN_DL - index;
 
-	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
+	ret = api->send(net_can_dev, &frame, NULL, NULL,
+			NET_CAN_MB_TIMEOUT, NET_CAN_SEND_TIMEOUT);
 	if (ret != CAN_TX_OK) {
 		NET_ERR("Sending FF failed [%d]. CTX: %p",
 			ret, pkt->canbus_tx_ctx);
@@ -973,7 +976,8 @@ static inline int canbus_send_single_frame(struct net_pkt *pkt, size_t len,
 
 	canbus_set_frame_datalength(&frame, len + index);
 
-	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
+	ret = api->send(net_can_dev, &frame, NULL, NULL,
+			NET_CAN_MB_TIMEOUT, NET_CAN_SEND_TIMEOUT);
 	if (ret != CAN_TX_OK) {
 		NET_ERR("Sending SF failed [%d]", ret);
 		return -EIO;
@@ -1514,7 +1518,8 @@ static inline int canbus_send_dad_request(struct device *net_can_dev,
 	frame.ext_id = canbus_addr_to_id(ll_addr->addr,
 					 sys_rand32_get() & CAN_NET_IF_ADDR_MASK);
 
-	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
+	ret = api->send(net_can_dev, &frame, NULL, NULL,
+			NET_CAN_MB_TIMEOUT, NET_CAN_SEND_TIMEOUT);
 	if (ret != CAN_TX_OK) {
 		NET_ERR("Sending DAD request failed [%d]", ret);
 		return -EIO;
@@ -1559,7 +1564,7 @@ static inline void canbus_send_dad_response(struct k_work *item)
 					 ntohs(UNALIGNED_GET((u16_t *) ll_addr->addr)));
 
 	ret = api->send(net_can_dev, &frame, canbus_send_dad_resp_cb, item,
-			K_FOREVER);
+			NET_CAN_MB_TIMEOUT, NET_CAN_SEND_TIMEOUT);
 	if (ret != CAN_TX_OK) {
 		NET_ERR("Sending SF failed [%d]", ret);
 	} else {

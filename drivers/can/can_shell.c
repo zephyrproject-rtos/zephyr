@@ -198,7 +198,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		    ext ? frame.ext_id : frame.std_id,
 		    ext ? "extended" : "standard", frame.dlc);
 
-	ret = can_send(can_dev, &frame, K_FOREVER, NULL, NULL);
+	ret = can_send(can_dev, &frame, K_FOREVER, K_MSEC(100), NULL, NULL);
 	if (ret) {
 		shell_error(shell, "Failed to send frame [%d]", ret);
 		return -EIO;

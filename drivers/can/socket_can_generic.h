@@ -15,6 +15,7 @@
 
 #define SOCKET_CAN_NAME_1 "SOCKET_CAN_1"
 #define SEND_TIMEOUT K_MSEC(100)
+#define MB_TIMEOUT   K_MSEC(100)
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
 #define BUF_ALLOC_TIMEOUT K_MSEC(50)
@@ -63,7 +64,7 @@ static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	ret = can_send(socket_context->can_dev,
-		       (struct zcan_frame *)pkt->frags->data,
+		       (struct zcan_frame *)pkt->frags->data, MB_TIMEOUT,
 		       SEND_TIMEOUT, tx_irq_callback, "socket_can_send");
 	if (ret) {
 		LOG_DBG("Cannot send socket CAN msg (%d)", ret);

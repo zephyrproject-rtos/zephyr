@@ -262,16 +262,26 @@ void main(void)
 
 	while (1) {
 		change_led_frame.data[0] = toggle++ & 0x01 ? SET_LED : RESET_LED;
-		/* This sending call is none blocking. */
-		can_send(can_dev, &change_led_frame, K_FOREVER, tx_irq_callback,
-			 "LED change");
+		/* This call is only blocking for the mailbox acquirement*/
+		ret = can_send(can_dev, &change_led_frame,
+			       K_FOREVER, K_MSEC(100), tx_irq_callback,
+			       "LED change");
+		if (ret != CAN_TX_OK) {
+			printk("LED change message timed out [%d]\n", ret);
+		}
+
 		k_sleep(SLEEP_TIME);
 
 		UNALIGNED_PUT(sys_cpu_to_be16(counter),
 			      (u16_t *)&counter_frame.data[0]);
 		counter++;
-		/* This sending call is blocking until the message is sent. */
-		can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);
+		/* This call is blocking until the message is sent. */
+		ret = can_send(can_dev, &counter_frame, K_FOREVER, K_MSEC(100),
+			       NULL, NULL);
+		if (ret != CAN_TX_OK) {
+			printk("Counter message timed out [%d]\n", ret);
+		}
+
 		k_sleep(SLEEP_TIME);
 	}
 }

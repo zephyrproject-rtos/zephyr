@@ -19,6 +19,7 @@
 #define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->driver_data)
 
 struct mcp2515_tx_cb {
+	struct k_delayed_work to_work;
 	can_tx_callback_t cb;
 	void *cb_arg;
 };
@@ -36,12 +37,16 @@ struct mcp2515_data {
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
 	k_thread_stack_t *int_thread_stack;
-	struct k_sem int_sem;
+	struct k_work int_work;
 
 	/* tx data */
 	struct k_sem tx_sem;
-	struct mcp2515_tx_cb tx_cb[MCP2515_TX_CNT];
-	u8_t tx_busy_map;
+
+	struct mcp2515_tx_cb tx_cb0;
+	struct mcp2515_tx_cb tx_cb1;
+	struct mcp2515_tx_cb tx_cb2;
+
+	ATOMIC_DEFINE(tx_busy_map, MCP2515_TX_CNT);
 
 	/* filter data */
 	u32_t filter_usage;
@@ -53,6 +58,7 @@ struct mcp2515_data {
 	/* general data */
 	struct k_mutex mutex;
 	enum can_state old_state;
+	struct device *this_device;
 };
 
 struct mcp2515_config {
@@ -150,7 +156,10 @@ struct mcp2515_config {
 #define MCP2515_EFLG_RX0OVR             BIT(6)
 #define MCP2515_EFLG_RX1OVR             BIT(7)
 
-#define MCP2515_TXCTRL_TXREQ			BIT(3)
+#define MCP2515_TXCTRL_TXREQ            BIT(3)
+#define MCP2515_TXCTRL_TXERR            BIT(4)
+#define MCP2515_TXCTRL_MLOA             BIT(5)
+#define MCP2515_TXCTRL_ABTF             BIT(6)
 
 #define MCP2515_CANSTAT_MODE_POS		5
 #define MCP2515_CANSTAT_MODE_MASK		(0x07 << MCP2515_CANSTAT_MODE_POS)

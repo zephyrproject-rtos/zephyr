@@ -37,15 +37,29 @@ extern "C" {
 
 /* CAN_TX_* are the error flags from tx_callback and send.*/
 /** send successfully */
-#define CAN_TX_OK       (0)
+#define CAN_TX_OK                (0)
+/** timeout expired before frame could be sent */
+#define CAN_TX_TIMEOUT           (-2)
 /** general send error */
-#define CAN_TX_ERR      (-2)
+#define CAN_TX_ERR               (-3)
 /** bus arbitration lost during sending */
-#define CAN_TX_ARB_LOST (-3)
+#define CAN_TX_ARB_LOST          (-4)
+/** frame was not acknowledged during the ack phase */
+#define CAN_TX_NACK              (-5)
+/** a form error occurred (fixed-form bit had an illegal value) */
+#define CAN_TX_FORM_ERR          (-6)
+/** a receiving node detected a CRC error */
+#define CAN_TX_CRC_ERROR         (-7)
+/** violation of the stuffing rule */
+#define CAN_TX_STUFFING_ERR      (-8)
+/** dominant bit was sent but recessive bit was read from the bus */
+#define CAN_TX_DOMINANT_BIT_ERR  (-9)
+/** dominant bit was sent but recessive bit was read from the bus */
+#define CAN_TX_RECESSIVE_BIT_ERR (-10)
 /** controller is in bus off state */
-#define CAN_TX_BUS_OFF  (-4)
+#define CAN_TX_BUS_OFF           (-11)
 /** unexpected error */
-#define CAN_TX_UNKNOWN  (-5)
+#define CAN_TX_UNKNOWN           (-12)
 
 /** invalid parameter */
 #define CAN_TX_EINVAL   (-22)
@@ -269,8 +283,8 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
 
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
-			  s32_t timeout, can_tx_callback_t callback_isr,
-			  void *callback_arg);
+			  s32_t mb_timeout, s32_t send_timeout,
+			  can_tx_callback_t callback_isr, void *callback_arg);
 
 
 typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
@@ -326,9 +340,9 @@ struct can_driver_api {
 };
 
 /** @cond INTERNAL_HIDDEN */
-void can_common_isr_callback_handler(u32_t err, void *cb_arg);
+void can_common_isr_callback_handler(int err, void *cb_arg);
 struct can_send_wait {
-	u32_t err;
+	int err;
 	struct k_sem sem;
 };
 /** @endcond */
@@ -341,7 +355,10 @@ struct can_send_wait {
  * *
  * @param dev          Pointer to the device structure for the driver instance.
  * @param msg          Message to transfer.
- * @param timeout      Waiting for empty tx mailbox timeout in ms or K_FOREVER.
+ * @param mb_timeout   Timeout for acquiring a mailbox. Use K_NO_WAIT for none
+ *                     blocking call (callback_isr must not be NULL then), or
+ *                     K_FOREVER for unlimited waiting.
+ * @param send_timeout Timeout for sending the message in ms.
  * @param callback_isr Is called when message was sent or a transmission error
  *                     occurred. If NULL, this function is blocking until
  *                     message is sent. This must be NULL if called from user
@@ -352,25 +369,28 @@ struct can_send_wait {
  * @retval CAN_TX_* on failure.
  */
 __syscall int can_send(struct device *dev, const struct zcan_frame *msg,
-		       s32_t timeout, can_tx_callback_t callback_isr,
+		       s32_t mb_timeout, s32_t send_timeout,
+		       can_tx_callback_t callback_isr,
 		       void *callback_arg);
 
 static inline int z_impl_can_send(struct device *dev,
 				 const struct zcan_frame *msg,
-				 s32_t timeout, can_tx_callback_t callback_isr,
+				 s32_t mb_timeout, s32_t send_timeout,
+				 can_tx_callback_t callback_isr,
 				 void *callback_arg)
 {
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
 	if (callback_isr) {
-		return api->send(dev, msg, timeout, callback_isr, callback_arg);
+		return api->send(dev, msg, mb_timeout, send_timeout,
+				 callback_isr, callback_arg);
 	} else {
 		struct can_send_wait send_wait;
 		int ret;
 
 		k_sem_init(&send_wait.sem, 0, 1);
-		ret = api->send(dev, msg, timeout,
+		ret = api->send(dev, msg, mb_timeout, send_timeout,
 				can_common_isr_callback_handler, &send_wait);
 		if (ret != CAN_TX_OK) {
 			return ret;
@@ -395,14 +415,16 @@ static inline int z_impl_can_send(struct device *dev,
  * @param length Number of bytes to write (max. 8).
  * @param id  Identifier of the can message.
  * @param rtr Send remote transmission request or data frame
- * @param timeout Waiting for empty tx mailbox timeout in ms or K_FOREVER
+ * @param mb_timeout   Timeout for acquiring a mailbox in ms.
+ * @param send_timeout Timeout for sending the message in ms.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -EINVAL if length > 8.
  */
 static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
-			    u32_t id, enum can_rtr rtr, s32_t timeout)
+			    u32_t id, enum can_rtr rtr, s32_t mb_timeout,
+			    s32_t send_timeout)
 {
 	struct zcan_frame msg;
 
@@ -422,7 +444,7 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
 	msg.rtr = rtr;
 	memcpy(msg.data, data, length);
 
-	return can_send(dev, &msg, timeout, NULL, NULL);
+	return can_send(dev, &msg, mb_timeout, send_timeout, NULL, NULL);
 }
 
 /**
