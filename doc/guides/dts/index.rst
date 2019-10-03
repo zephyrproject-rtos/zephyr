@@ -485,6 +485,12 @@ The binding below shows various legacy syntax.
                type: int
                category: required
 
+   # Assume this is a binding for an interrupt controller
+   "#cells":
+       - irq
+       - priority
+       - flags
+
 This should now be written like this:
 
 .. code-block:: yaml
@@ -511,6 +517,11 @@ This should now be written like this:
            child-prop:
                type: int
                required: true
+
+   interrupt-cells:
+       - irq
+       - priority
+       - cells
 
 The legacy syntax is still supported for backwards compatibility, but generates
 deprecation warnings. Support will be dropped in the Zephyr 2.3 release.
