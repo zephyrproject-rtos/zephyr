@@ -87,8 +87,10 @@ static ALWAYS_INLINE void z_arch_kernel_init(void)
 }
 #endif
 
-#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
-
+static inline bool z_arch_is_in_isr(void)
+{
+	return z_arch_curr_cpu()->nested != 0U;
+}
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_ */
