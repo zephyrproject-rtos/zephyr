@@ -171,11 +171,6 @@ unsigned int posix_irq_lock(void)
 	return hw_irq_ctrl_change_lock(true);
 }
 
-unsigned int z_arch_irq_lock(void)
-{
-	return posix_irq_lock();
-}
-
 /**
  *
  * @brief Enable all interrupts on the CPU
@@ -193,12 +188,6 @@ void posix_irq_unlock(unsigned int key)
 {
 	hw_irq_ctrl_change_lock(key);
 }
-
-void z_arch_irq_unlock(unsigned int key)
-{
-	posix_irq_unlock(key);
-}
-
 
 void posix_irq_full_unlock(void)
 {

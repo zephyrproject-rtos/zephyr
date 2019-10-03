@@ -24,8 +24,6 @@ extern "C" {
 void posix_halt_cpu(void);
 void posix_atomic_halt_cpu(unsigned int imask);
 
-unsigned int z_arch_irq_lock(void);
-void z_arch_irq_unlock(unsigned int key);
 void z_arch_irq_enable(unsigned int irq);
 void z_arch_irq_disable(unsigned int irq);
 int  z_arch_irq_is_enabled(unsigned int irq);
@@ -34,6 +32,16 @@ void posix_irq_unlock(unsigned int key);
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
 /* irq_offload() from irq_offload.h must also be defined by the SOC or board */
+
+static inline unsigned int z_arch_irq_lock(void)
+{
+	return posix_irq_lock();
+}
+
+static inline void z_arch_irq_unlock(unsigned int key)
+{
+	posix_irq_unlock(key);
+}
 
 /**
  * Returns true if interrupts were unlocked prior to the
