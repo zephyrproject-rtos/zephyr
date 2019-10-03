@@ -51,9 +51,6 @@ extern "C" {
 
 typedef struct __esf __esf_t;
 
-void xtensa_switch(void *switch_to, void **switched_from);
-#define z_arch_switch xtensa_switch
-
 #ifdef __cplusplus
 }
 #endif
