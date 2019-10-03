@@ -27,6 +27,10 @@ if (CONFIG_ASAN)
   toolchain_cc_asan()
 endif ()
 
+if (CONFIG_UBSAN)
+  toolchain_cc_ubsan()
+endif ()
+
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
 zephyr_ld_options(
