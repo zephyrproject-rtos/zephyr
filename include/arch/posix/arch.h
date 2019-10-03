@@ -56,35 +56,6 @@ static ALWAYS_INLINE void z_arch_nop(void)
 	__asm__ volatile("nop");
 }
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
-{
-	return posix_irq_lock();
-}
-
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
-{
-	posix_irq_unlock(key);
-}
-
-static ALWAYS_INLINE void z_arch_irq_enable(unsigned int irq)
-{
-	posix_irq_enable(irq);
-}
-
-static ALWAYS_INLINE void z_arch_irq_disable(unsigned int irq)
-{
-	posix_irq_disable(irq);
-}
-
-static ALWAYS_INLINE int z_arch_irq_is_enabled(unsigned int irq)
-{
-	return posix_irq_is_enabled(irq);
-}
-
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	return key == false;

@@ -7,9 +7,26 @@
 #include "posix_soc_if.h"
 #include "board_irq.h"
 
+#ifdef CONFIG_IRQ_OFFLOAD
 void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	posix_irq_offload(routine, parameter);
+}
+#endif
+
+void z_arch_irq_enable(unsigned int irq)
+{
+	posix_irq_enable(irq);
+}
+
+void z_arch_irq_disable(unsigned int irq)
+{
+	posix_irq_disable(irq);
+}
+
+int z_arch_irq_is_enabled(unsigned int irq)
+{
+	return posix_irq_is_enabled(irq);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

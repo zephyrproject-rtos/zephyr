@@ -40,24 +40,6 @@ static inline struct _cpu *z_arch_curr_cpu(void)
 
 	return cpu;
 }
-
-#if defined(CONFIG_SMP)
-
-#include <drivers/interrupt_controller/loapic.h>
-
-/*
- * it is not clear exactly how/where/why to abstract this, as it
- * assumes the use of a local APIC (but there's no other mechanism).
- */
-
-static inline void z_arch_sched_ipi(void)
-{
-	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
-}
-
-#endif
-
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_FUNC_H_ */

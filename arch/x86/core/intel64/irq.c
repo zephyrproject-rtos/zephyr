@@ -8,6 +8,7 @@
 #include <arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <drivers/interrupt_controller/sysapic.h>
+#include <drivers/interrupt_controller/loapic.h>
 #include <irq.h>
 
 unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
@@ -114,4 +115,12 @@ void z_x86_ipi_setup(void)
 		(void *) z_sched_ipi;
 }
 
+/*
+ * it is not clear exactly how/where/why to abstract this, as it
+ * assumes the use of a local APIC (but there's no other mechanism).
+ */
+void z_arch_sched_ipi(void)
+{
+	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
+}
 #endif

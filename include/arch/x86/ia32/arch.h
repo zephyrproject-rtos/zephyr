@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <arch/common/ffs.h>
 #include <misc/util.h>
+#include <arch/x86/ia32/syscall.h>
 
 #ifndef _ASMLANGUAGE
 #include <stddef.h>	/* for size_t */

@@ -1814,7 +1814,10 @@ static inline u32_t k_uptime_delta_32(s64_t *reftime)
  *
  * @return Current hardware clock up-counter (in cycles).
  */
-#define k_cycle_get_32()	z_arch_k_cycle_get_32()
+static inline u32_t k_cycle_get_32(void)
+{
+	return z_arch_k_cycle_get_32();
+}
 
 /**
  * @}
@@ -4747,10 +4750,6 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * @ingroup kernel_apis
  * @{
  */
-
-extern void z_arch_cpu_idle(void);
-extern void z_arch_cpu_atomic_idle(unsigned int key);
-
 /**
  * @brief Make the CPU idle.
  *
@@ -5161,10 +5160,6 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @req K-MISC-006
  */
 __syscall void k_str_out(char *c, size_t n);
-
-extern void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-			    void (*fn)(int key, void *data), void *arg);
-
 
 /**
  * @brief Disable preservation of floating point context information.

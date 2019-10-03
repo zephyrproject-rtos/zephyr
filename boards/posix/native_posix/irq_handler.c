@@ -274,6 +274,7 @@ void posix_sw_clear_pending_IRQ(unsigned int IRQn)
 	hw_irq_ctrl_clear_irq(IRQn);
 }
 
+#ifdef CONFIG_IRQ_OFFLOAD
 /**
  * Storage for functions offloaded to IRQ
  */
@@ -303,3 +304,4 @@ void posix_irq_offload(irq_offload_routine_t routine, void *parameter)
 	posix_sw_set_pending_IRQ(OFFLOAD_SW_IRQ);
 	posix_irq_disable(OFFLOAD_SW_IRQ);
 }
+#endif /* CONFIG_IRQ_OFFLOAD */
