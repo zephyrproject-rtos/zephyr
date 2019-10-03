@@ -945,13 +945,27 @@ void ull_conn_done(struct node_rx_event_done *done)
 		return;
 	}
 
-	/* Slave drift compensation calc or master terminate acked */
+	/* Events elapsed used in timeout checks below */
+	latency_event = lll->latency_event;
+	elapsed_event = latency_event + 1;
+
+	/* Slave drift compensation calc and new latency or
+	 * master terminate acked
+	 */
 	ticks_drift_plus = 0U;
 	ticks_drift_minus = 0U;
 	if (done->extra.trx_cnt) {
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
 			ull_slave_done(done, &ticks_drift_plus,
 				       &ticks_drift_minus);
+
+			if (conn->tx_head || memq_peek(lll->memq_tx.head,
+						       lll->memq_tx.tail,
+						       NULL)) {
+				lll->latency_event = 0;
+			} else {
+				lll->latency_event = lll->latency;
+			}
 		} else if (reason_peer) {
 			lll->master.terminate_ack = 1;
 		}
@@ -959,10 +973,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 		/* Reset connection failed to establish countdown */
 		conn->connect_expire = 0U;
 	}
-
-	/* Events elapsed used in timeout checks below */
-	latency_event = lll->latency_event;
-	elapsed_event = latency_event + 1;
 
 	/* Reset supervision countdown */
 	if (done->extra.crc_valid) {
