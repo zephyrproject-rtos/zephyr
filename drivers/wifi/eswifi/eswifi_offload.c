@@ -433,7 +433,7 @@ static int eswifi_off_get(sa_family_t family,
 	k_sem_init(&socket->accept_sem, 1, 1);
 
 	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
-				       500);
+				       K_MSEC(500));
 
 unlock:
 	eswifi_unlock(eswifi);

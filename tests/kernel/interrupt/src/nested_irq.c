@@ -112,7 +112,7 @@ void test_nested_isr(void)
 #endif /* CONFIG_ARM */
 
 	k_timer_init(&timer, handler, NULL);
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, DURATION, K_NO_WAIT);
 
 #if defined(CONFIG_ARM)
 	irq_enable(irq_line_0);
@@ -143,7 +143,7 @@ static void offload_function(void *param)
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
 	k_timer_init(&timer, timer_handler, NULL);
 	k_busy_wait(MS_TO_US(1));
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, DURATION, K_NO_WAIT);
 	zassert_not_equal(check_lock_new, check_lock_old,
 		"Interrupt locking didn't work properly");
 }

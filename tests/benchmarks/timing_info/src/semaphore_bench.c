@@ -95,7 +95,7 @@ void semaphore_bench(void)
 	TIMING_INFO_PRE_READ();
 	u32_t sem_take_wo_cxt_start = TIMING_INFO_OS_GET_TIME();
 
-	k_sem_take(&sem_bench, 10);
+	k_sem_take(&sem_bench, K_MSEC(10));
 	TIMING_INFO_PRE_READ();
 	u32_t sem_take_wo_cxt_end = TIMING_INFO_OS_GET_TIME();
 	u32_t sem_take_wo_cxt_cycles = sem_take_wo_cxt_end -
@@ -136,7 +136,7 @@ void mutex_bench(void)
 		TIMING_INFO_PRE_READ();
 		mutex_lock_start_time = TIMING_INFO_OS_GET_TIME();
 
-		k_mutex_lock(&mutex0, 100);
+		k_mutex_lock(&mutex0, K_MSEC(100));
 
 		TIMING_INFO_PRE_READ();
 		mutex_lock_end_time = TIMING_INFO_OS_GET_TIME();
@@ -180,13 +180,13 @@ void thread_sem1_test(void *p1, void *p2, void *p3)
 	z_arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
 	sem_start_time =  TIMING_INFO_OS_GET_TIME();
-	k_sem_take(&sem_bench, 10);
+	k_sem_take(&sem_bench, K_MSEC(10));
 }
 
 u32_t sem_count;
 void thread_sem0_test(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&sem_bench, 10);/* To sync threads */
+	k_sem_take(&sem_bench, K_MSEC(10));/* To sync threads */
 
 	k_sem_give(&sem_bench);
 	sem_count++;
@@ -197,12 +197,12 @@ void thread_sem1_give_test(void *p1, void *p2, void *p3)
 {
 	k_sem_give(&sem_bench);         /* sync the 2 threads*/
 
-	k_sem_take(&sem_bench_1, 1000); /* clear the previous sem_give*/
+	k_sem_take(&sem_bench_1, K_MSEC(1000)); /* clear the previous sem_give*/
 }
 
 void thread_sem0_give_test(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&sem_bench, 10);/* To sync threads */
+	k_sem_take(&sem_bench, K_MSEC(10));/* To sync threads */
 
 	/* To make sure that the sem give will cause a swap to occur */
 	k_thread_priority_set(sem1_tid, 1);

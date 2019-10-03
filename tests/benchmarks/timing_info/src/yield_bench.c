@@ -68,7 +68,7 @@ void yield_bench(void)
 
 void thread_yield0_test(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&yield_sem, 10);
+	k_sem_take(&yield_sem, K_MSEC(10));
 	TIMING_INFO_PRE_READ();
 	thread_start_time =  TIMING_INFO_OS_GET_TIME();
 	while (count != 1000U) {

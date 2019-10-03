@@ -50,7 +50,7 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 		attr = &init_timer_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_timer_slab, (void **)&timer, 100) == 0) {
+	if (k_mem_slab_alloc(&cv2_timer_slab, (void **)&timer, K_MSEC(100)) == 0) {
 		(void)memset(timer, 0, sizeof(struct cv2_timer));
 	} else {
 		return NULL;
@@ -90,9 +90,9 @@ osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 	}
 
 	if (timer->type == osTimerOnce) {
-		k_timer_start(&timer->z_timer, millisec, 0);
+		k_timer_start(&timer->z_timer, millisec, K_NO_WAIT);
 	} else if (timer->type == osTimerPeriodic) {
-		k_timer_start(&timer->z_timer, 0, millisec);
+		k_timer_start(&timer->z_timer, K_NO_WAIT, millisec);
 	}
 
 	timer->status = ACTIVE;

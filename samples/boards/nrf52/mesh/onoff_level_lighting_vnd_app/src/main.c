@@ -210,12 +210,12 @@ void main(void)
 	update_light_state();
 
 	short_time_multireset_bt_mesh_unprovisioning();
-	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
+	k_timer_start(&reset_counter_timer, K_MSEC(7000), K_NO_WAIT);
 
 #if defined(CONFIG_MCUMGR)
 	/* Initialize the Bluetooth mcumgr transport. */
 	smp_bt_register();
 
-	k_timer_start(&smp_svr_timer, 0, K_MSEC(1000));
+	k_timer_start(&smp_svr_timer, K_NO_WAIT, K_MSEC(1000));
 #endif
 }

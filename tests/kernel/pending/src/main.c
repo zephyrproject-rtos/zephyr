@@ -196,7 +196,7 @@ static void timer_tests(void)
 
 	timer_start_tick = k_uptime_get_32();
 
-	k_timer_start(&timer, NUM_SECONDS(1), 0);
+	k_timer_start(&timer, NUM_SECONDS(1), K_NO_WAIT);
 
 	if (k_timer_status_sync(&timer)) {
 		timer_data = timer.user_data;

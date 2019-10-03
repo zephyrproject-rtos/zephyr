@@ -69,14 +69,15 @@ static void no_transition_work_handler(struct k_work *work)
 		update_led_gpio();
 	}
 
-	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
+	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000),
+		      K_NO_WAIT);
 
 	/* If Lightness & Temperature values remains stable for
 	 * 10 Seconds then & then only get stored on SoC flash.
 	 */
 	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
 		k_timer_start(&save_lightness_temp_last_values_timer,
-			      K_MSEC(10000), 0);
+			      K_MSEC(10000), K_NO_WAIT);
 	}
 }
 

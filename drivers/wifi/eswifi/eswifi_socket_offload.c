@@ -344,7 +344,7 @@ static int eswifi_socket_open(int family, int type, int proto)
 	socket->recv_data = socket;
 
 	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
-					500);
+					K_MSEC(500));
 
 unlock:
 	eswifi_unlock(eswifi);
