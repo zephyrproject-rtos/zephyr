@@ -81,7 +81,11 @@ extern void z_irq_spurious(void *unused);
 #define XTENSA_ERR_NORET
 
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
+
+static inline u32_t z_arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
 
 /**
  * @brief Explicitly nop operation.
