@@ -81,8 +81,10 @@ static int setup(void)
 	zassert_equal(rc, 0,
 		      "get raw low failed");
 	if (raw_in() != false) {
-		printk("FATAL: output low does not read low\n");
-		k_panic();
+		TC_PRINT("FATAL output pin not wired to input pin? (out low => in high)\n");
+		while (true) {
+			k_sleep(K_FOREVER);
+		}
 	}
 
 	zassert_equal(v1 & BIT(PIN_IN), 0,
@@ -96,8 +98,10 @@ static int setup(void)
 	zassert_equal(rc, 0,
 		      "get raw high failed");
 	if (raw_in() != true) {
-		printk("FATAL: output high does not read high\n");
-		k_panic();
+		TC_PRINT("FATAL output pin not wired to input pin? (out high => in low)\n");
+		while (true) {
+			k_sleep(K_FOREVER);
+		}
 	}
 	zassert_not_equal(v1 & BIT(PIN_IN), 0,
 			  "out high does not read low");
