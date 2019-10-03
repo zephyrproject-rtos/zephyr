@@ -6,6 +6,7 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
+#include <irq.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
 		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
