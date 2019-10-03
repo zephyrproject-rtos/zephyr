@@ -64,7 +64,7 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 	return ep;
 }
 
-char *tcp_endpoint_to_string(union tcp_endpoint *ep)
+static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 {
 #define NBUFS 2
 #define BUF_SIZE 80
@@ -370,32 +370,6 @@ static void tcp_win_append(struct tcp_win *w, const void *data, size_t len)
 	tcp_dbg("%s %p %zu->%zu byte(s)", w->name, buf, prev_len, w->len);
 }
 
-static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
-{
-	struct net_buf *buf, *out = NULL;
-
-	tcp_assert(len, "Invalid request, len: %zu", len);
-
-	tcp_assert(len <= w->len, "Insufficient window length, "
-			"len: %zu, req: %zu", w->len, len);
-	while (len) {
-
-		buf = tcp_slist(&w->bufs, get, struct net_buf, next);
-
-		w->len -= buf->len;
-
-		out = out ? net_buf_frag_add(out, buf) : buf;
-
-		len -= buf->len;
-	}
-
-	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
-
-	tcp_dbg("%s len=%zu", w->name, net_buf_frags_len(out));
-
-	return out;
-}
-
 static struct net_buf *tcp_win_peek(struct tcp_win *w, size_t len)
 {
 	struct net_buf *buf, *out = tcp_nbuf_alloc(&tcp_nbufs, len);
@@ -528,7 +502,7 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 	return len;
 }
 
-void tcp_adj(struct net_pkt *pkt, int req_len)
+static void tcp_adj(struct net_pkt *pkt, int req_len)
 {
 	struct net_ipv4_hdr *ip = ip_get(pkt);
 	u16_t len = ntohs(ip->len) + req_len;
@@ -810,11 +784,12 @@ void tcp_input(struct net_pkt *pkt)
 
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
-enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
-				  struct net_pkt *pkt,
-				  union net_ip_header *ip_hdr,
-				  union net_proto_header *proto_hdr,
-				  void *user_data)
+static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
+						struct net_pkt *pkt,
+						union net_ip_header *ip_hdr,
+						union net_proto_header
+						*proto_hdr,
+						void *user_data)
 {
 	struct tcp *conn = ((struct net_context *)user_data)->tcp;
 
@@ -1052,22 +1027,8 @@ next_state:
 	}
 }
 
-ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
-{
-	struct tcp *conn = (void *) sys_slist_peek_head(&tp_conns);
-	ssize_t bytes_received = conn->rcv->len;
-	struct net_buf *data = tcp_win_pop(conn->rcv, bytes_received);
-
-	tcp_assert(bytes_received < len, "Unimplemented");
-
-	net_buf_linearize(buf, len, data, 0, net_buf_frags_len(data));
-
-	tcp_chain_free(data);
-
-	return bytes_received;
-}
-
-ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len, int flags)
+static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
+				int flags)
 {
 	tcp_win_append(conn->snd, buf, len);
 
@@ -1326,6 +1287,47 @@ drop:
 
 #if defined(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
+
+static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
+{
+	struct net_buf *buf, *out = NULL;
+
+	tcp_assert(len, "Invalid request, len: %zu", len);
+
+	tcp_assert(len <= w->len, "Insufficient window length, "
+			"len: %zu, req: %zu", w->len, len);
+	while (len) {
+
+		buf = tcp_slist(&w->bufs, get, struct net_buf, next);
+
+		w->len -= buf->len;
+
+		out = out ? net_buf_frag_add(out, buf) : buf;
+
+		len -= buf->len;
+	}
+
+	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
+
+	tcp_dbg("%s len=%zu", w->name, net_buf_frags_len(out));
+
+	return out;
+}
+
+static ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
+{
+	struct tcp *conn = (void *) sys_slist_peek_head(&tp_conns);
+	ssize_t bytes_received = conn->rcv->len;
+	struct net_buf *data = tcp_win_pop(conn->rcv, bytes_received);
+
+	tcp_assert(bytes_received <= len, "Unimplemented");
+
+	net_buf_linearize(buf, len, data, 0, net_buf_frags_len(data));
+
+	tcp_chain_free(data);
+
+	return bytes_received;
+}
 
 static void tcp_step(void)
 {
