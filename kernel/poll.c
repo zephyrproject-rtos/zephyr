@@ -638,7 +638,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		if (timeout != K_FOREVER) {
 			z_add_timeout(&work->timeout,
 				      triggered_work_expiration_handler,
-				      z_ms_to_ticks(timeout));
+				      k_ms_to_ticks_ceil32(timeout));
 		}
 
 		/* From now, any event will result in submitted work. */

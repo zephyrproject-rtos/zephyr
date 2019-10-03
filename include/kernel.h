@@ -1637,7 +1637,7 @@ __syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 static inline u32_t z_impl_k_timer_remaining_get(struct k_timer *timer)
 {
 	const s32_t ticks = z_timeout_remaining(&timer->timeout);
-	return (ticks > 0) ? (u32_t)__ticks_to_ms(ticks) : 0U;
+	return (ticks > 0) ? (u32_t)k_ticks_to_ms_floor64(ticks) : 0U;
 }
 
 /**
@@ -3077,7 +3077,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-	return __ticks_to_ms(z_timeout_remaining(&work->timeout));
+	return k_ticks_to_ms_floor64(z_timeout_remaining(&work->timeout));
 }
 
 /**

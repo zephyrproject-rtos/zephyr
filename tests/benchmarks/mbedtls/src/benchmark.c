@@ -174,7 +174,7 @@ do {                                                                  \
 	}                                                             \
 								      \
 	delta = k_cycle_get_32() - tsc;                               \
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS64(delta);                   \
+	delta = k_cyc_to_ns_floor64(delta);                   \
 								      \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \

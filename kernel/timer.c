@@ -112,8 +112,8 @@ void z_impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 
 	volatile s32_t period_in_ticks, duration_in_ticks;
 
-	period_in_ticks = z_ms_to_ticks(period);
-	duration_in_ticks = z_ms_to_ticks(duration);
+	period_in_ticks = k_ms_to_ticks_ceil32(period);
+	duration_in_ticks = k_ms_to_ticks_ceil32(duration);
 
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period_in_ticks;

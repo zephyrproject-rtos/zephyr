@@ -257,7 +257,7 @@ void k_sched_time_slice_set(s32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
-		slice_time = z_ms_to_ticks(slice);
+		slice_time = k_ms_to_ticks_ceil32(slice);
 		slice_max_prio = prio;
 		z_reset_time_slice();
 	}
@@ -368,7 +368,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	}
 
 	if (timeout != K_FOREVER) {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(timeout);
+		s32_t ticks = _TICK_ALIGN + k_ms_to_ticks_ceil32(timeout);
 
 		z_add_thread_timeout(thread, ticks);
 	}
@@ -975,9 +975,9 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
-	ticks = z_ms_to_ticks(ms);
+	ticks = k_ms_to_ticks_ceil32(ms);
 	ticks = z_tick_sleep(ticks);
-	return __ticks_to_ms(ticks);
+	return k_ticks_to_ms_floor64(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -992,9 +992,9 @@ s32_t z_impl_k_usleep(int us)
 {
 	s32_t ticks;
 
-	ticks = z_us_to_ticks(us);
+	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);
-	return __ticks_to_us(ticks);
+	return k_ticks_to_us_floor64(ticks);
 }
 
 #ifdef CONFIG_USERSPACE

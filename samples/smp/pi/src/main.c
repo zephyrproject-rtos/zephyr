@@ -102,7 +102,7 @@ void main(void)
 	stop_time = k_cycle_get_32();
 
 	cycles_spent = stop_time - start_time;
-	nanoseconds_spent = SYS_CLOCK_HW_CYCLES_TO_NS(cycles_spent);
+	nanoseconds_spent = (u32_t)k_cyc_to_ns_floor64(cycles_spent);
 
 	for (i = 0; i < THREADS_NUM; i++)
 		printk("Pi value calculated by thread #%d: %s\n", i, buffer[i]);

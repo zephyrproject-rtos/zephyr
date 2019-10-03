@@ -238,7 +238,7 @@ u32_t z_tick_get_32(void)
 
 s64_t z_impl_k_uptime_get(void)
 {
-	return __ticks_to_ms(z_tick_get());
+	return k_ticks_to_ms_floor64(z_tick_get());
 }
 
 #ifdef CONFIG_USERSPACE

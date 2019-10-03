@@ -269,10 +269,10 @@ void test_timer_periodicity(void)
 		 * Please note, that expected firing time is not the
 		 * one requested, as the kernel uses the ticks to manage
 		 * time. The actual perioid will be equal to [tick time]
-		 * multiplied by z_ms_to_ticks(PERIOD).
+		 * multiplied by k_ms_to_ticks_ceil32(PERIOD).
 		 */
 		TIMER_ASSERT(WITHIN_ERROR(delta,
-				__ticks_to_ms(z_ms_to_ticks(PERIOD)), 1),
+				k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD)), 1),
 				&periodicity_timer);
 	}
 
@@ -532,7 +532,7 @@ void test_timer_remaining_get(void)
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
 	 */
-	zassert_true(remaining <= (DURATION / 2) + __ticks_to_ms(1), NULL);
+	zassert_true(remaining <= (DURATION / 2) + k_ticks_to_ms_floor64(1), NULL);
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
