@@ -30,8 +30,13 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_64BIT
+#define STACK_ALIGN 8
+#define STACK_ALIGN_SIZE 8
+#else
 #define STACK_ALIGN 4
 #define STACK_ALIGN_SIZE 4
+#endif
 
 struct __esf {
 	u32_t dummy; /*maybe we will want to add something someday*/
