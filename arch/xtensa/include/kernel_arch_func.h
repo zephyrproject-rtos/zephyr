@@ -83,6 +83,13 @@ static ALWAYS_INLINE void z_arch_kernel_init(void)
 #endif
 }
 
+void xtensa_switch(void *switch_to, void **switched_from);
+
+static inline void z_arch_switch(void *switch_to, void **switched_from)
+{
+	return xtensa_switch(switch_to, switched_from);
+}
+
 #ifdef __cplusplus
 }
 #endif
