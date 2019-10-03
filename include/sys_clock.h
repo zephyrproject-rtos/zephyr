@@ -33,20 +33,6 @@ extern int _sys_clock_always_on;
 extern void z_enable_sys_clock(void);
 #endif
 
-/* Note that some systems with comparatively slow cycle counters
- * experience precision loss when doing math like this.  In the
- * general case it is not correct that "cycles" are much faster than
- * "ticks".
- */
-static inline int sys_clock_hw_cycles_per_tick(void)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-#else
-	return 1; /* Just to avoid a division by zero */
-#endif
-}
-
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
@@ -86,77 +72,16 @@ static inline int sys_clock_hw_cycles_per_tick(void)
 
 #endif
 
-static ALWAYS_INLINE s32_t z_ms_to_ticks(s32_t ms)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
-	int cyc = sys_clock_hw_cycles_per_sec();
-
-	/* use 64-bit math to keep precision */
-	return (s32_t)ceiling_fraction((s64_t)ms * cyc,
-		((s64_t)MSEC_PER_SEC * cyc) / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	/* simple division keeps precision */
-	s32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	return (s32_t)ceiling_fraction(ms, ms_per_tick);
-#endif
-
-#else
-	__ASSERT(ms == 0, "ms not zero");
-	return 0;
-#endif
-}
-
-static inline u64_t __ticks_to_ms(s64_t ticks)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (u64_t)ticks * MSEC_PER_SEC /
-	       (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-#else
-	__ASSERT(ticks == 0, "ticks not zero");
-	return 0ULL;
-#endif
-}
-
-/*
- * These are only currently used by k_usleep(), but they are
- * defined here for parity with their ms analogs above. Note:
- * we don't bother trying the 32-bit intermediate shortcuts
- * possible with ms, because of the magnitudes involved.
- */
-
-static inline s32_t z_us_to_ticks(s32_t us)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ceiling_fraction(
-		(s64_t)us * sys_clock_hw_cycles_per_sec(),
-		((s64_t)USEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
-		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	__ASSERT(us == 0, "us not zero");
-	return 0;
-#endif
-}
-
-static inline s32_t __ticks_to_us(s32_t ticks)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ((s64_t)ticks * USEC_PER_SEC /
-	       (s64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	__ASSERT(ticks == 0, "ticks not zero");
-	return 0;
-#endif
-}
+#define __ticks_to_ms(t) k_ticks_to_ms_floor64(t)
+#define z_ms_to_ticks(t) k_ms_to_ticks_ceil32(t)
+#define __ticks_to_us(t) k_ticks_to_us_floor64(t)
+#define z_us_to_ticks(t) k_us_to_ticks_ceil64(t)
+#define sys_clock_hw_cycles_per_tick() k_ticks_to_cyc_floor32(1)
+#define SYS_CLOCK_HW_CYCLES_TO_NS64(t) (1000 * k_cyc_to_us_floor64(t))
+#define SYS_CLOCK_HW_CYCLES_TO_NS(t) ((u32_t)(1000 * k_cyc_to_us_floor64(t)))
 
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
-
-/* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
-#define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec())
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
@@ -170,18 +95,6 @@ static inline s32_t __ticks_to_us(s32_t ticks)
  * @ingroup kernel_apis
  * @{
  */
-
-/**
- * @brief Compute nanoseconds from hardware clock cycles.
- *
- * This macro converts a time duration expressed in hardware clock cycles
- * to the equivalent duration expressed in nanoseconds.
- *
- * @param X Duration in hardware clock cycles.
- *
- * @return Duration in nanoseconds.
- */
-#define SYS_CLOCK_HW_CYCLES_TO_NS(X) (u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X))
 
 /**
  * @} end defgroup clock_apis
