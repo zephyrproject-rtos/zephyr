@@ -15,6 +15,11 @@
 #error __FILE__ goes only with Cortex-M GCC
 #endif
 
+#if !defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && \
+	!defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#error "Unsupported architecture"
+#endif
+
 #define PRIORITY 0
 #define BASEPRI_MODIFIED_1 0x20
 #define BASEPRI_MODIFIED_2 0x40
@@ -44,6 +49,22 @@ const _callee_saved_t ztest_thread_callee_saved_regs_init = {
 static void load_callee_saved_regs(const _callee_saved_t *regs)
 {
 	/* Load the callee-saved registers with given values */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"mov r1, r7;\n\t"
+		"mov r0, %0;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"mov r8, r4;\n\t"
+		"mov r9, r5;\n\t"
+		"mov r10, r6;\n\t"
+		"mov r11, r7;\n\t"
+		"mov r7, r1;\n\t"
+		:
+		: "r" (regs)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"mov r1, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
@@ -52,6 +73,7 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 		: "r" (regs)
 		: "memory"
 	);
+#endif
 	__DSB();
 }
 
@@ -259,6 +281,21 @@ static void alt_thread_entry(void)
 	 *
 	 * Note: preserve r7 register (frame pointer).
 	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"mov r1, r7;\n\t"
+		"mov r0, %0;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"mov r8, r4;\n\t"
+		"mov r9, r5;\n\t"
+		"mov r10, r6;\n\t"
+		"mov r11, r7;\n\t"
+		"mov r7, r1;\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"mov r0, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
@@ -266,6 +303,7 @@ static void alt_thread_entry(void)
 		: : "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
 
 	/* Manually trigger a context-switch, to swap-out
 	 * the alternative test thread.
@@ -319,8 +357,16 @@ void test_arm_thread_swap(void)
 	zassert_true(_current->arch.basepri == 0,
 		"Thread BASEPRI flag not clear at thread start\n");
 	/* Verify, also, that the interrupts are unlocked. */
+#if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	zassert_true(__get_BASEPRI() == 0,
 		"initial BASEPRI not in zero\n");
+#else
+	/* For Cortex-M Baseline architecture, we verify that
+	 * the interrupt lock is disabled.
+	 */
+	 zassert_true(__get_PRIMASK() == 0,
+	 "initial PRIMASK not zero\n");
+#endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if defined(CONFIG_USERSPACE)
 	/* The main test thread is set to run in privilege mode */
@@ -396,12 +442,29 @@ void test_arm_thread_swap(void)
 	 * are successfully loaded into the thread's callee-saved
 	 * registers' container.
 	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"push {r0, r1, r2, r3};\n\t"
+		"mov r1, %0;\n\t"
+		"stmia r1!, {r4-r7};\n\t"
+		"mov r2, r8;\n\t"
+		"mov r3, r9;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"mov r2, r10;\n\t"
+		"mov r3, r11;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"pop {r0, r1, r2, r3};\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+ #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
 
 	/* Manually trigger a context-switch to swap-out the current thread.
 	 * Request a return to a different interrupt lock state.
@@ -424,20 +487,53 @@ void test_arm_thread_swap(void)
 #endif /* CONFIG_NO_OPTIMIZATIONS */
 
 	/* Dump callee-saved registers to memory. */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"push {r0, r1, r2, r3};\n\t"
+		"mov r1, %0;\n\t"
+		"stmia r1!, {r4-r7};\n\t"
+		"mov r2, r8;\n\t"
+		"mov r3, r9;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"mov r2, r10;\n\t"
+		"mov r3, r11;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"pop {r0, r1, r2, r3};\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+ #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Note: ARMv6-M will always write back the base register,
+	 * so we make sure we preserve the state of the register
+	 * used, as base register in the Store Multiple instruction.
+	 * We also enforce write-back to suppress assembler warning.
+	 */
+	__asm__ volatile (
+		"push {r0, r1, r2, r3, r4, r5, r6, r7};\n\t"
+		"stm %0!, {%1};\n\t"
+		"pop {r0, r1, r2, r3, r4, r5, r6, r7};\n\t"
+		:
+		: "r" (&ztest_swap_return_val), "r" (swap_return_val)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"stm %0, {%1};\n\t"
 		:
 		: "r" (&ztest_swap_return_val), "r" (swap_return_val)
 		: "memory"
 	);
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif
 
 
@@ -466,12 +562,21 @@ void test_arm_thread_swap(void)
 	zassert_true(_current->arch.basepri == 0,
 		"arch.basepri value not in accordance with the update\n");
 
+#if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	/* Verify that the BASEPRI register is updated during the last
 	 * swap-in of the thread.
 	 */
 	zassert_true(__get_BASEPRI() == BASEPRI_MODIFIED_2,
 		"BASEPRI not in accordance with the update: 0x%0x\n",
 		__get_BASEPRI());
+#else
+	/* For Cortex-M Baseline architecture, we verify that
+	 * the interrupt lock is enabled.
+	 */
+	 zassert_true(__get_PRIMASK() != 0,
+	 "PRIMASK not in accordance with the update: 0x%0x\n",
+	 __get_PRIMASK());
+#endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
 	/* The thread is now swapped-back in. */
