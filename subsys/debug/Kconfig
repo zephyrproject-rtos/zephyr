@@ -45,14 +45,24 @@ config TRACING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
+
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX
 	help
-	  Builds Zephyr with Address Sanitizer enabled.  This is currently
-	  only supported by the native_posix port, and requires a recent-ish
-	  compiler with the ``-fsanitize=address`` command line option, and
-	  the libasan library.
+	  Builds Zephyr with Address Sanitizer enabled. This is currently
+	  only supported by boards based on the posix architecture, and requires a
+	  recent-ish compiler with the ``-fsanitize=address`` command line option,
+	  and the libasan library.
+
+config UBSAN
+	bool "Build with undefined behavior sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Undefined Behavior Sanitizer enabled.
+	  This is currently only supported by boards based on the posix
+	  architecture, and requires a recent-ish compiler with the
+	  ``-fsanitize=undefined`` command line option.
 
 config STACK_USAGE
 	bool "Generate stack usage information"
