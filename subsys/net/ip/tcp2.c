@@ -33,6 +33,8 @@ NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
+int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
+
 static size_t tcp_endpoint_len(sa_family_t af)
 {
 	return (af == AF_INET) ? sizeof(struct sockaddr_in) :
@@ -188,11 +190,19 @@ static void tcp_send(struct net_pkt *pkt)
 
 	tcp_pkt_ref(pkt);
 
+	if (tcp_send_cb) {
+		if (tcp_send_cb(pkt) < 0) {
+			tcp_err("net_send_data()");
+			tcp_pkt_unref(pkt);
+		}
+		goto out;
+	}
+
 	if (net_send_data(pkt) < 0) {
 		tcp_err("net_send_data()");
 		tcp_pkt_unref(pkt);
 	}
-
+out:
 	tcp_pkt_unref(pkt);
 }
 
@@ -650,9 +660,16 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	tcp_dbg("%s", tcp_th(pkt));
 
+	if (tcp_send_cb) {
+		tcp_send_cb(pkt);
+		goto out;
+	}
+
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
 	tcp_send_process(&conn->send_timer);
+out:
+	return;
 }
 
 static struct tcp *tcp_conn_calloc(void)
