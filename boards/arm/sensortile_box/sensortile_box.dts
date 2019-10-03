@@ -21,12 +21,12 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led: led {
-			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 
 		green_led: led_2 {
-			gpios = <&gpiof 2 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
 	};
@@ -55,14 +55,14 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
-		drdy-gpios = <&gpiod 13 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
 		label = "LPS22HH";
-		drdy-gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -73,7 +73,7 @@
 	stts751@38 {
 		compatible = "st,stts751";
 		reg = <0x38>;
-		drdy-gpios = <&gpiog 5 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
 		label = "STTS751";
 	};
 };
