@@ -440,7 +440,12 @@ static int gpio_stm32_port_set_bits_raw(struct device *dev, u32_t mask)
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
-	LL_GPIO_SetOutputPin(gpio, mask);
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly.
+	 * Extend its usage on other series as well.
+	 */
+	WRITE_REG(gpio->BSRR, mask);
 
 	return 0;
 }
@@ -450,7 +455,16 @@ static int gpio_stm32_port_clear_bits_raw(struct device *dev, u32_t mask)
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly.
+	 */
+	WRITE_REG(gpio->BRR, mask);
+#else
+	/* On other series, for this function, LL abstraction is useful  */
 	LL_GPIO_ResetOutputPin(gpio, mask);
+#endif
 
 	return 0;
 }
@@ -460,7 +474,12 @@ static int gpio_stm32_port_toggle_bits(struct device *dev, u32_t mask)
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
-	LL_GPIO_TogglePin(gpio, mask);
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly.
+	 * Extend its usage on other series as well.
+	 */
+	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ mask);
 
 	return 0;
 }
