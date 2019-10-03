@@ -234,4 +234,5 @@
 	ppi-base = <7>;
 	gpiote-base = <0>;
 	status = "okay";
+	#pwm-cells = <1>;
 };

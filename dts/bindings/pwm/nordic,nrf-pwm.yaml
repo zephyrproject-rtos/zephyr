@@ -5,13 +5,10 @@ description: >
 
 compatible: "nordic,nrf-pwm"
 
-include: base.yaml
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
     reg:
-      required: true
-
-    label:
       required: true
 
     center-aligned:
@@ -58,3 +55,9 @@ properties:
       type: boolean
       description: Channel 3 inverted
       required: false
+
+    "#pwm-cells":
+      const: 1
+
+pwm-cells:
+  - channel

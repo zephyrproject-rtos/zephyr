@@ -123,6 +123,7 @@
 			interrupts = <28 1>;
 			status = "disabled";
 			label = "PWM_0";
+			#pwm-cells = <1>;
 		};
 
 		qdec: qdec@40012000 {
@@ -224,4 +225,5 @@
 	clock-prescaler = <0>;
 	ppi-base = <14>;
 	gpiote-base = <0>;
+	#pwm-cells = <1>;
 };
