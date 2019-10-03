@@ -18,11 +18,19 @@
 		zephyr,console = &uart1;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		pwm-0 = &pwm0;
+	};
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&adc0 {
+	status = "okay";
 };
 
 &i2c0 {
@@ -45,4 +53,16 @@
 	io_girq = <19>;
 	vw_girq = <24>;
 	pc_girq = <15>;
+};
+
+&ps2_0 {
+	status = "okay";
+};
+
+&ps2_1 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
 };
