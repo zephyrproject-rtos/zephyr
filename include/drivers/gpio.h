@@ -44,6 +44,9 @@ extern "C" {
 /** Enables pin as output, no change to the output state. */
 #define GPIO_OUTPUT             (1U << 9)
 
+/** Disables pin for both input and output. */
+#define GPIO_DISCONNECTED	0
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Initializes output to a low state. */

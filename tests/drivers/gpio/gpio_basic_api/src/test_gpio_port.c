@@ -358,7 +358,7 @@ static int check_pulls(void)
 	TC_PRINT("- %s\n", __func__);
 
 	/* Disconnect output */
-	rc = gpio_pin_configure(dev, PIN_OUT, 0);
+	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_DISCONNECTED);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
 		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
