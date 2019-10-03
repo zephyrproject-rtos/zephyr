@@ -49,19 +49,12 @@ z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 	thread->arch.swap_return_value = value;
 }
 
-extern void z_arch_cpu_atomic_idle(unsigned int key);
-
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,
 					       u32_t stack_start);
 
 extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
-
-extern void z_arch_switch_to_main_thread(struct k_thread *main_thread,
-					 k_thread_stack_t *main_stack,
-					 size_t main_stack_size,
-					 k_thread_entry_t _main);
 
 #endif /* _ASMLANGUAGE */
 

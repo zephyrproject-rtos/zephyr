@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_CPU_H_
 
+#include <sys/arch_inlines.h>
+
 #if defined(CONFIG_X86)
 #include <arch/x86/arch.h>
 #elif defined(CONFIG_X86_64)

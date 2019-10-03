@@ -15,6 +15,7 @@
 #include <sys/rb.h>
 #include <sys/util.h>
 #include <string.h>
+#include <sys/arch_interface.h>
 #endif
 
 #define K_NUM_PRIORITIES \

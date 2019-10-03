@@ -50,10 +50,6 @@ extern "C" {
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
-extern int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags);
-
 /**
  * Configure a dynamic interrupt.
  *
