@@ -343,7 +343,7 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
 		return pkt;
 	}
-
+#if 0
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
 		struct net_pkt *arp_pkt;
 
@@ -362,7 +362,7 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 		NET_DBG("Found ARP entry, sending pkt %p to iface %p",
 			pkt, iface);
 	}
-
+#endif 
 	return pkt;
 }
 #else

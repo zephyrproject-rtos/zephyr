@@ -177,10 +177,10 @@ arduino_i2c: &i2c0 {
 &spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
-	cs-gpios = <&gpio0 17 0>, <&gpio1 5 0>;
+	sck-pin = <3>;
+	mosi-pin = <28>;
+	miso-pin = <4>;
+	cs-gpios = <&gpio0 29 0>, <&gpio1 5 0>;
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
