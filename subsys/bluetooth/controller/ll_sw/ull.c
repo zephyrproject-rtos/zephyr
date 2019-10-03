@@ -896,7 +896,7 @@ void ll_radio_state_abort(void)
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 	u32_t ret;
 
-	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy);
 	LL_ASSERT(!ret);
 }
