@@ -31,34 +31,11 @@ void z_x86_early_serial_init(void);
 /* Create all page tables with boot configuration and enable paging */
 void z_x86_paging_init(void);
 
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the kernel.
- * Trivial stuff is done inline; more complex initialization is done via
- * function calls.
- *
- * @return N/A
- */
 static inline void z_arch_kernel_init(void)
 {
 	/* No-op on this arch */
 }
 
-/**
- *
- * @brief Set the return value for the specified thread (inline)
- *
- * @param thread pointer to thread
- * @param value value to set as return value
- *
- * The register used to store the return value from a function call invocation
- * is set to @a value.  It is assumed that the specified @a thread is pending, and
- * thus the threads context is stored in its TCS.
- *
- * @return N/A
- */
 static ALWAYS_INLINE void
 z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {

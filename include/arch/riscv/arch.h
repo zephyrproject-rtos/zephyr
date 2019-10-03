@@ -69,20 +69,6 @@ int z_arch_irq_is_enabled(unsigned int irq);
 void z_arch_irq_priority_set(unsigned int irq, unsigned int prio);
 void z_irq_spurious(void *unused);
 
-
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
- */
 #if defined(CONFIG_RISCV_HAS_PLIC)
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -130,10 +116,6 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 			  : "memory");
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	/* FIXME: looking at z_arch_irq_lock, this should be reducable
@@ -146,14 +128,10 @@ static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
 }
 
-/**
- * @brief Explicitly nop operation.
- */
 static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
-
 
 extern u32_t z_timer_cycle_get_32(void);
 

@@ -39,26 +39,13 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 extern void _isr_wrapper(void);
 extern void z_irq_spurious(void *unused);
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * Z_ISR_DECLARE will populate the .intList section with the interrupt's
+/* Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
  * the vector table and the software ISR table. This is all done at
  * build-time.
  *
  * We additionally set the priority in the interrupt controller at
  * runtime.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -66,40 +53,6 @@ extern void z_irq_spurious(void *unused);
 	z_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
-
-
-
-/**
- *
- * @brief Disable all interrupts on the local CPU
- *
- * This routine disables interrupts.  It can be called from either interrupt or
- * thread level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock() to re-enable interrupts.
- *
- * The lock-out key should only be used as the argument to the
- * irq_unlock() API.  It should never be used to manually re-enable
- * interrupts or to inspect or manipulate the contents of the source register.
- *
- * This function can be called recursively: it will return a key to return the
- * state of interrupt locking to the previous level.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * thread executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * thread disables interrupts and subsequently invokes a kernel
- * routine that causes the calling thread to block, the interrupt
- * disable state will be restored when the thread is later rescheduled
- * for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- */
 
 static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
@@ -109,28 +62,11 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 	return key;
 }
 
-/**
- *
- * @brief Enable all interrupts on the local CPU
- *
- * This routine re-enables interrupts on the local CPU.  The @a key parameter
- * is an architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock().
- *
- * This routine can be called from either interrupt or thread level.
- *
- * @return N/A
- */
-
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("seti %0" : : "ir"(key) : "memory");
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	/* ARC irq lock uses instruction "clri r0",

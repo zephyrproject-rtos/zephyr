@@ -50,6 +50,10 @@ extern "C" {
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
+extern int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags);
+
 /**
  * Configure a dynamic interrupt.
  *
@@ -63,10 +67,6 @@ extern "C" {
  *
  * @return The vector assigned to this interrupt
  */
-extern int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags);
-
 static inline int
 irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		    void (*routine)(void *parameter), void *parameter,
@@ -187,6 +187,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 /**
  * @brief Lock interrupts.
+ * @def irq_lock()
  *
  * This routine disables all interrupts on the CPU. It returns an unsigned
  * integer "lock-out key", which is an architecture-dependent indicator of
@@ -214,7 +215,8 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * The lock-out key should never be used to manually re-enable interrupts
  * or to inspect or manipulate the contents of the CPU's interrupt bits.
  *
- * @return Lock-out key.
+ * @return An architecture-dependent lock-out key representing the
+ *         "interrupt disable state" prior to the call.
  */
 #ifdef CONFIG_SMP
 unsigned int z_smp_global_lock(void);
@@ -225,6 +227,7 @@ unsigned int z_smp_global_lock(void);
 
 /**
  * @brief Unlock interrupts.
+ * @def irq_unlock()
  *
  * This routine reverses the effect of a previous call to irq_lock() using
  * the associated lock-out key. The caller must call the routine once for

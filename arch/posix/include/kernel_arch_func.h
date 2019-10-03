@@ -26,22 +26,10 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 		size_t main_stack_size, k_thread_entry_t _main);
 #endif
 
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the kernel.
- * Trivial stuff is done inline; more complex initialization is done via
- * function calls.
- *
- * @return N/A
- */
 static inline void z_arch_kernel_init(void)
 {
 	/* Nothing to be done */
 }
-
-
 
 static ALWAYS_INLINE void
 z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)

@@ -217,10 +217,6 @@ static inline u32_t z_arch_k_cycle_get_32(void)
 	return z_timer_cycle_get_32();
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	return (key & 0x200) != 0;
