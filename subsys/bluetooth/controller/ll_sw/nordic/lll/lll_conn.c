@@ -417,6 +417,18 @@ void lll_conn_isr_tx(void *param)
 
 void lll_conn_isr_abort(void *param)
 {
+	/* Clear radio status and events */
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+
 	isr_cleanup(param);
 }
 
