@@ -862,16 +862,6 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 
 	BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
-	if (client->filter_type == WHITELIST) {
-		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
-			if (client->filter[i] == addr) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	if (client->filter_type == BLACKLIST) {
 		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
 			if (client->filter[i] == addr) {
@@ -880,6 +870,18 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 		}
 
 		return true;
+	}
+
+	if (addr == BT_MESH_ADDR_ALL_NODES) {
+		return true;
+	}
+
+	if (client->filter_type == WHITELIST) {
+		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
+			if (client->filter[i] == addr) {
+				return true;
+			}
+		}
 	}
 
 	return false;
