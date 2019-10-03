@@ -66,10 +66,7 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
 #endif
 
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
+/* All arguments must be computable by the compiler at build time.
  *
  * Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
@@ -78,14 +75,6 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * We additionally set the priority in the interrupt controller at
  * runtime.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -94,13 +83,6 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
 	irq_p; \
 })
 
-
-/**
- * Configure a 'direct' static interrupt.
- *
- * See include/irq.h for details.
- * All arguments must be computable at build time.
- */
 #define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \

@@ -37,40 +37,16 @@ extern void z_arm_reserved(void);
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
-/**
- *
- * @brief Enable an interrupt line
- *
- * Enable the interrupt. After this call, the CPU will receive interrupts for
- * the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
 
-/**
- *
- * @brief Disable an interrupt line
- *
- * Disable an interrupt line. After this call, the CPU will stop receiving
- * interrupts for the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
 
-/**
- * @brief Return IRQ enable state
- *
- * @param irq IRQ line
- * @return interrupt enable state, true or false
- */
 int z_arch_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
@@ -122,16 +98,6 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 }
 
 #elif defined(CONFIG_CPU_CORTEX_R)
-
-/**
- *
- * @brief Enable an interrupt line
- *
- * Enable the interrupt. After this call, the CPU will receive interrupts for
- * the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_enable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
@@ -139,15 +105,6 @@ void z_arch_irq_enable(unsigned int irq)
 	irq_enable_next_level(dev, (irq >> 8) - 1);
 }
 
-/**
- *
- * @brief Disable an interrupt line
- *
- * Disable an interrupt line. After this call, the CPU will stop receiving
- * interrupts for the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_disable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
@@ -155,12 +112,6 @@ void z_arch_irq_disable(unsigned int irq)
 	irq_disable_next_level(dev, (irq >> 8) - 1);
 }
 
-/**
- * @brief Return IRQ enable state
- *
- * @param irq IRQ line
- * @return interrupt enable state, true or false
- */
 int z_arch_irq_is_enabled(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;

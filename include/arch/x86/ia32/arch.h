@@ -168,12 +168,7 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * Internally this function does a few things:
+/* Internally this function does a few things:
  *
  * 1. There is a declaration of the interrupt parameters in the .intList
  * section, used by gen_idt to create the IDT. This does the same thing
@@ -190,14 +185,6 @@ typedef struct s_isrList {
  *
  * 4. z_irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options, as defined in sysapic.h
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -228,11 +215,6 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-/** Configure a 'direct' static interrupt
- *
- * All arguments must be computable by the compiler at build time
- *
- */
 #define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
@@ -306,38 +288,6 @@ struct _x86_syscall_stack_frame {
 	u32_t esp;
 	u32_t ss;
 };
-
-/**
- * @brief Disable all interrupts on the CPU (inline)
- *
- * This routine disables interrupts.  It can be called from either interrupt
- * or thread level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock() to re-enable interrupts.
- *
- * The lock-out key should only be used as the argument to the irq_unlock()
- * API.  It should never be used to manually re-enable interrupts or to inspect
- * or manipulate the contents of the source register.
- *
- * This function can be called recursively: it will return a key to return the
- * state of interrupt locking to the previous level.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * thread executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * thread disables interrupts and subsequently invokes a kernel
- * routine that causes the calling thread to block, the interrupt
- * disable state will be restored when the thread is later rescheduled
- * for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- *
- */
 
 static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {

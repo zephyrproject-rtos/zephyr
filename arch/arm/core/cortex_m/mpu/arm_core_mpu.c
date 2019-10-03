@@ -259,12 +259,6 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 }
 
 #if defined(CONFIG_USERSPACE)
-
-/**
- * @brief Get the maximum number of partitions for a memory domain
- *        that is supported by the MPU hardware, and with respect
- *        to the current static memory region configuration.
- */
 int z_arch_mem_domain_max_partitions_get(void)
 {
 	int available_regions = arm_core_mpu_get_max_available_dyn_regions();
@@ -280,9 +274,6 @@ int z_arch_mem_domain_max_partitions_get(void)
 	return ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(available_regions);
 }
 
-/**
- * @brief Configure the memory domain of the thread.
- */
 void z_arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	if (_current != thread) {
@@ -296,12 +287,6 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread)
 	z_arm_configure_dynamic_mpu_regions(thread);
 }
 
-/*
- * @brief Reset the MPU configuration related to the memory domain
- *        partitions
- *
- * @param domain pointer to the memory domain (must be valid)
- */
 void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	/* This function will reset the access permission configuration
@@ -332,13 +317,6 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	}
 }
 
-/*
- * @brief Remove a partition from the memory domain
- *
- * @param domain pointer to the memory domain (must be valid
- * @param partition_id the ID (sequence) number of the memory domain
- *        partition (must be a valid partition).
- */
 void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				       u32_t  partition_id)
 {
@@ -371,9 +349,6 @@ void z_arch_mem_domain_thread_remove(struct k_thread *thread)
 	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
-/*
- * Validate the given buffer is user accessible or not
- */
 int z_arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return arm_core_mpu_buffer_validate(addr, size, write);

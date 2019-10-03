@@ -27,23 +27,14 @@
 #endif
 	GDATA(_k_neg_eagain)
 
-/**
- *
- * @brief Initiate a cooperative context switch
- *
- * The z_arch_swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking z_arch_swap(), the
- * caller disables interrupts (via irq_lock) and the return 'key'
- * is passed as a parameter to z_arch_swap().  The 'key' actually represents
- * the EFLAGS register prior to disabling interrupts via a 'cli' instruction.
- *
- * Given that z_arch_swap() is called to effect a cooperative context switch, only
- * the non-volatile integer registers need to be saved in the TCS of the
+/*
+ * Given that z_arch_swap() is called to effect a cooperative context switch,
+ * only the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
- * The X86_THREAD_FLAG_INT and _EXC bits in the k_thread->arch.flags field
- * will signify that the thread was preemptively context switched out, and thus
- * both the volatile and non-volatile integer registers need to be restored.
+ * The X86_THREAD_FLAG_INT and _EXC bits in the k_thread->arch.flags field will
+ * signify that the thread was preemptively context switched out, and thus both
+ * the volatile and non-volatile integer registers need to be restored.
  *
  * The non-volatile registers need to be scrubbed to ensure they contain no
  * sensitive information that could compromise system security.  This is to
@@ -54,26 +45,22 @@
  * to this routine that alter the values of these registers MUST be reviewed
  * for potential security impacts.
  *
- * Floating point registers are handled using a lazy save/restore
- * mechanism since it's expected relatively few threads will be created
- * with the K_FP_REGS or K_SSE_REGS option bits.  The kernel data structure
- * maintains a 'current_fp' field to keep track of the thread that "owns"
- * the floating point registers.  Floating point registers consist of
- * ST0->ST7 (x87 FPU and MMX registers) and XMM0 -> XMM7.
+ * Floating point registers are handled using a lazy save/restore mechanism
+ * since it's expected relatively few threads will be created with the
+ * K_FP_REGS or K_SSE_REGS option bits.  The kernel data structure maintains a
+ * 'current_fp' field to keep track of the thread that "owns" the floating
+ * point registers.  Floating point registers consist of ST0->ST7 (x87 FPU and
+ * MMX registers) and XMM0 -> XMM7.
  *
- * All floating point registers are considered 'volatile' thus they will
- * only be saved/restored when a preemptive context switch occurs.
+ * All floating point registers are considered 'volatile' thus they will only
+ * be saved/restored when a preemptive context switch occurs.
  *
  * Floating point registers are currently NOT scrubbed, and are subject to
  * potential security leaks.
  *
- * @return -EAGAIN, or a return value set by a call to
- * z_arch_thread_return_value_set()
- *
  * C function prototype:
  *
  * unsigned int z_arch_swap (unsigned int eflags);
- *
  */
 
 .macro read_tsc var_name

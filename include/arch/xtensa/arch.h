@@ -39,36 +39,6 @@ extern "C" {
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 
-
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
- *
- * Internally this function does a few things:
- *
- * 1. The enum statement has no effect but forces the compiler to only
- * accept constant values for the irq_p parameter, very important as the
- * numerical IRQ line is used to create a named section.
- *
- * 2. An instance of _isr_table_entry is created containing the ISR and its
- * parameter. If you look at how _sw_isr_table is created, each entry in the
- * array is in its own section named by the IRQ line number. What we are doing
- * here is to override one of the default entries (which points to the
- * spurious IRQ handler) with what was supplied here.
- *
- * 3. The priority level for the interrupt is configured by a call to
- * z_irq_priority_set()
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
- */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
@@ -87,9 +57,6 @@ static inline u32_t z_arch_k_cycle_get_32(void)
 	return z_timer_cycle_get_32();
 }
 
-/**
- * @brief Explicitly nop operation.
- */
 static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");

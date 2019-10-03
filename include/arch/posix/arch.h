@@ -51,9 +51,6 @@ static inline u32_t z_arch_k_cycle_get_32(void)
 	return z_timer_cycle_get_32();
 }
 
-/**
- * @brief Explicitly nop operation.
- */
 static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
