@@ -225,32 +225,36 @@ static void tcp_win_free(struct tcp_win *w)
 
 int net_tcp_unref(struct net_context *context)
 {
-	int key;
+	struct tcp *conn = context->tcp;
 
-	tcp_dbg("context: %p", context);
+	tcp_dbg("%p", context);
 
-	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
+	tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
 
 	if (_tcp_conn_delete == false) {
 		goto out;
 	}
 
-	tcp_send_queue_flush(context->tcp);
+	{
+		int key = irq_lock();
 
-	tcp_win_free(context->tcp->snd);
-	tcp_win_free(context->tcp->rcv);
+		context->tcp = NULL;
+		context->flags |= NET_TCP_IN_USE;
 
-	tcp_free(context->tcp->src);
-	tcp_free(context->tcp->dst);
+		irq_unlock(key);
+	}
 
-	key = irq_lock();
+	tcp_send_queue_flush(conn);
 
-	sys_slist_find_and_remove(&tp_conns, (sys_snode_t *) context->tcp);
-	memset(context->tcp, 0, sizeof(*context->tcp));
-	context->tcp = NULL;
-	context->flags |= NET_TCP_IN_USE;
+	tcp_win_free(conn->snd);
+	tcp_win_free(conn->rcv);
 
-	irq_unlock(key);
+	tcp_free(conn->src);
+	tcp_free(conn->dst);
+
+	memset(conn, 0, sizeof(*conn));
+
+	sys_slist_find_and_remove(&tp_conns, (sys_snode_t *) conn);
 out:
 	return 0;
 }
@@ -1155,25 +1159,26 @@ int net_tcp_connect(struct net_context *context,
 		    u16_t remote_port, u16_t local_port,
 		    s32_t timeout, net_context_connect_cb_t cb, void *user_data)
 {
+	struct tcp *conn = context->tcp;
 	int ret;
 
 	switch (net_context_get_family(context)) {
 	case AF_INET:
-		net_sin(&context->tcp->src->sa)->sin_port = local_port;
-		net_sin(&context->tcp->dst->sa)->sin_port = remote_port;
+		net_sin(&conn->src->sa)->sin_port = local_port;
+		net_sin(&conn->dst->sa)->sin_port = remote_port;
 		break;
 
 	case AF_INET6:
-		net_sin6(&context->tcp->src->sa)->sin6_port = local_port;
-		net_sin6(&context->tcp->dst->sa)->sin6_port = remote_port;
+		net_sin6(&conn->src->sa)->sin6_port = local_port;
+		net_sin6(&conn->dst->sa)->sin6_port = remote_port;
 		break;
 
 	default:
 		return -EPROTONOSUPPORT;
 	}
 
-	context->tcp->src->sa = *local_addr;
-	context->tcp->dst->sa = *remote_addr;
+	conn->src->sa = *local_addr;
+	conn->dst->sa = *remote_addr;
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
@@ -1189,7 +1194,7 @@ int net_tcp_connect(struct net_context *context,
 
 	/* Input of a (nonexistent) packet with no flags set will cause
 	 * a TCP connection to be established */
-	tcp_in(context->tcp, NULL);
+	tcp_in(conn, NULL);
 
 	return 0;
 }
@@ -1197,14 +1202,15 @@ int net_tcp_connect(struct net_context *context,
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		   void *user_data)
 {
+	struct tcp *conn = context->tcp;
 	struct sockaddr local_addr = { };
 	u16_t local_port, remote_port;
 
-	tcp_dbg("context: %p, tcp: %p, cb: %p", context, context->tcp, cb);
+	tcp_dbg("context: %p, tcp: %p, cb: %p", context, conn, cb);
 
-	context->tcp->accept_cb = cb;
+	conn->accept_cb = cb;
 
-	if (!context->tcp || context->tcp->state != TCP_LISTEN) {
+	if (!conn || conn->state != TCP_LISTEN) {
 		return -EINVAL;
 	}
 
@@ -1259,12 +1265,14 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
+	struct tcp *conn = context->tcp;
+
 	tcp_dbg("context: %p, cb: %p, user_data: %p", context, cb, user_data);
 
 	context->recv_cb = cb;
 
-	if (context->tcp) {
-		context->tcp->recv_user_data = user_data;
+	if (conn) {
+		conn->recv_user_data = user_data;
 	}
 
 	return 0;
