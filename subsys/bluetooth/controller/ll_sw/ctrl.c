@@ -2261,6 +2261,23 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+static inline void
+isr_rx_conn_pkt_ctrl_rej_enc(struct radio_pdu_node_rx *node_rx,
+			     u8_t *rx_enqueue)
+{
+	/* resume data packet rx and tx */
+	_radio.conn_curr->pause_rx = 0U;
+	_radio.conn_curr->pause_tx = 0U;
+
+	/* Procedure complete */
+	_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
+	_radio.conn_curr->procedure_expire = 0U;
+
+	*rx_enqueue = 1U;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
@@ -2273,19 +2290,15 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	switch (rej_ext_ind->reject_opcode) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		/* resume data packet rx and tx */
-		_radio.conn_curr->pause_rx = 0U;
-		_radio.conn_curr->pause_tx = 0U;
+		if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req &&
+		    _radio.conn_curr->llcp_type == LLCP_ENCRYPTION) {
+			/* enqueue as if it were a reject ind */
+			pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+			pdu_rx->llctrl.reject_ind.error_code =
+				rej_ext_ind->error_code;
 
-		/* Procedure complete */
-		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-		_radio.conn_curr->procedure_expire = 0U;
-
-		/* enqueue as if it were a reject ind */
-		pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
-		pdu_rx->llctrl.reject_ind.error_code =
-		rej_ext_ind->error_code;
-		*rx_enqueue = 1U;
+			isr_rx_conn_pkt_ctrl_rej_enc(node_rx, rx_enqueue);
+		}
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -2941,16 +2954,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
-		/* resume data packet rx and tx */
-		_radio.conn_curr->pause_rx = 0U;
-		_radio.conn_curr->pause_tx = 0U;
-
-		/* Procedure complete */
-		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-		_radio.conn_curr->procedure_expire = 0U;
-
-		/* enqueue the reject ind */
-		*rx_enqueue = 1U;
+		isr_rx_conn_pkt_ctrl_rej_enc(node_rx, rx_enqueue);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
