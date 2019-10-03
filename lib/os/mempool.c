@@ -166,7 +166,6 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		for (i = 0; i < 4; i++) {
 			int b = (bn & ~3) + i;
 
-			set_alloc_bit(p, level, b);
 			sys_dlist_remove(block_ptr(p, lsz, b));
 		}
 
@@ -198,13 +197,12 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 	int i, bn;
 
 	bn = block_num(p, block, lsizes[l]);
+	set_alloc_bit(p, l + 1, 4*bn);
 
 	for (i = 1; i < 4; i++) {
-		int lbn = 4*bn + i;
 		int lsz = lsizes[l + 1];
 		void *block2 = (lsz * i) + (char *)block;
 
-		clear_alloc_bit(p, l + 1, lbn);
 		sys_dlist_append(&p->levels[l + 1].free_list, block2);
 	}
 
