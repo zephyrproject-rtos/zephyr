@@ -183,7 +183,7 @@ x86_sse_init:
 mxcsr:	.long X86_MXCSR_SANE
 
 /*
- * void z_arch_switch(void *switch_to, void **switched_from);
+ * void z_x86_switch(void *switch_to, void **switched_from);
  *
  * Note that switch_handle for us is simply a pointer to the containing
  * 'struct k_thread', thus:
@@ -192,8 +192,8 @@ mxcsr:	.long X86_MXCSR_SANE
  * RSI = (struct k_thread **) switched_from
  */
 
-.globl z_arch_switch
-z_arch_switch:
+.globl z_x86_switch
+z_x86_switch:
 	movq (%rsi), %rsi
 
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)

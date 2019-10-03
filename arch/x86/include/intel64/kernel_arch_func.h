@@ -6,9 +6,16 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_FUNC_H_
 
+#include <kernel_structs.h>
+
 #ifndef _ASMLANGUAGE
 
-extern void z_arch_switch(void *switch_to, void **switched_from);
+extern void z_x86_switch(void *switch_to, void **switched_from);
+
+static inline void z_arch_switch(void *switch_to, void **switched_from)
+{
+	z_x86_switch(switch_to, switched_from);
+}
 
 /**
  * @brief Initialize scheduler IPI vector.
