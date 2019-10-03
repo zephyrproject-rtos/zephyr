@@ -56,6 +56,14 @@ static void clear_alloc_bit(struct sys_mem_pool_base *p, int level, int bn)
 	*word &= ~(1<<bit);
 }
 
+static inline bool alloc_bit_is_set(struct sys_mem_pool_base *p, int level, int bn)
+{
+	u32_t *word;
+	int bit = get_bit_ptr(p, level, bn, &word);
+
+	return (*word >> bit) & 1;
+}
+
 /* Returns all four of the allocated bits for the specified blocks
  * "partners" in the bottom 4 bits of the return value
  */
@@ -149,6 +157,10 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 	while (level >= 0) {
 		int i, lsz = lsizes[level];
 		void *block = block_ptr(p, lsz, bn);
+
+		/* Detect common double-free occurrences */
+		__ASSERT(alloc_bit_is_set(p, level, bn),
+			 "mempool double-free detected at %p", block);
 
 		/* Put it back */
 		clear_alloc_bit(p, level, bn);
