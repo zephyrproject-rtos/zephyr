@@ -961,7 +961,6 @@ class Node:
         # to have a 'type: ...'. No Property object is created for it.
         return None
 
-
     def _check_undeclared_props(self):
         # Checks that all properties are declared in the binding
 
