@@ -132,7 +132,7 @@ osStatus_t osDelay(uint32_t ticks)
 		return osErrorISR;
 	}
 
-	k_sleep(__ticks_to_ms(ticks));
+	k_sleep(k_ticks_to_ms_floor64(ticks));
 
 	return osOK;
 }
@@ -149,7 +149,7 @@ osStatus_t osDelayUntil(uint32_t ticks)
 	}
 
 	ticks_elapsed = osKernelGetTickCount();
-	k_sleep(__ticks_to_ms(ticks - ticks_elapsed));
+	k_sleep(k_ticks_to_ms_floor64(ticks - ticks_elapsed));
 
 	return osOK;
 }

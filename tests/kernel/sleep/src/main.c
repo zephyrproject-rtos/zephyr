@@ -22,7 +22,7 @@
 
 #define ONE_SECOND		(MSEC_PER_SEC)
 #define ONE_SECOND_ALIGNED	\
-	(u32_t)(__ticks_to_ms(z_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
+	(u32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;

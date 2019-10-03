@@ -378,7 +378,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	if (delay == 0) {
 		k_thread_start(thread);
 	} else {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(delay);
+		s32_t ticks = _TICK_ALIGN + k_ms_to_ticks_ceil32(delay);
 
 		z_add_thread_timeout(thread, ticks);
 	}

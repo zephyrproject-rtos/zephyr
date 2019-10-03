@@ -72,13 +72,20 @@ extern void z_enable_sys_clock(void);
 
 #endif
 
-#define __ticks_to_ms(t) k_ticks_to_ms_floor64(t)
-#define z_ms_to_ticks(t) k_ms_to_ticks_ceil32(t)
-#define __ticks_to_us(t) k_ticks_to_us_floor64(t)
-#define z_us_to_ticks(t) k_us_to_ticks_ceil64(t)
-#define sys_clock_hw_cycles_per_tick() k_ticks_to_cyc_floor32(1)
-#define SYS_CLOCK_HW_CYCLES_TO_NS64(t) (1000 * k_cyc_to_us_floor64(t))
-#define SYS_CLOCK_HW_CYCLES_TO_NS(t) ((u32_t)(1000 * k_cyc_to_us_floor64(t)))
+#define __ticks_to_ms(t) __DEPRECATED_MACRO \
+	k_ticks_to_ms_floor64(t)
+#define z_ms_to_ticks(t) \
+	k_ms_to_ticks_ceil32(t)
+#define __ticks_to_us(t) __DEPRECATED_MACRO \
+	k_ticks_to_us_floor64(t)
+#define z_us_to_ticks(t) __DEPRECATED_MACRO \
+	k_us_to_ticks_ceil64(t)
+#define sys_clock_hw_cycles_per_tick() __DEPRECATED_MACRO \
+	k_ticks_to_cyc_floor32(1)
+#define SYS_CLOCK_HW_CYCLES_TO_NS64(t) __DEPRECATED_MACRO \
+	k_cyc_to_ns_floor64(t)
+#define SYS_CLOCK_HW_CYCLES_TO_NS(t) __DEPRECATED_MACRO \
+	((u32_t)k_cyc_to_ns_floor64(t))
 
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
@@ -88,7 +95,7 @@ extern void z_enable_sys_clock(void);
  * and calculates the average cycle time
  */
 #define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
-	(u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X) / NCYCLES)
+	(u32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
 
 /**
  * @defgroup clock_apis Kernel Clock APIs

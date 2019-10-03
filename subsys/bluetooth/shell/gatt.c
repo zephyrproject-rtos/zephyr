@@ -860,7 +860,7 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	memcpy(value + offset, buf, len);
 
 	delta = k_cycle_get_32() - cycle_stamp;
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);
+	delta = (u32_t)k_cyc_to_ns_floor64(delta);
 
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
