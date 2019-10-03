@@ -53,7 +53,10 @@ z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 }
 #endif
 
-#define z_arch_is_in_isr() (_kernel.nested != 0U)
+static inline bool z_arch_is_in_isr(void)
+{
+	return _kernel.nested != 0U;
+}
 
 #endif /* _ASMLANGUAGE */
 
