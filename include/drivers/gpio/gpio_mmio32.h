@@ -20,7 +20,6 @@ struct gpio_mmio32_context {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	const struct gpio_mmio32_config *config;
-	u32_t invert; /* Mask of 'reg' bits that should be inverted */
 };
 
 int gpio_mmio32_init(struct device *dev);
