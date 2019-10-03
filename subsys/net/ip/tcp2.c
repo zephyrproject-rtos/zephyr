@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * Manual:	https://github.com/ozhuraki/zephyr/blob/tcp2-dev/README.md
- * TODO:	https://github.com/ozhuraki/zephyr/blob/tcp2-dev/TODO
- * PR:		https://github.com/zephyrproject-rtos/zephyr/pull/11443/
- */
-
 #define LOG_LEVEL 4
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_tcp2);
