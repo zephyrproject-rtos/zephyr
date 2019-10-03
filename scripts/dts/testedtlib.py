@@ -39,7 +39,7 @@ def run():
     edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
 
     # Deprecated features are tested too, which generate warnings. Verify them.
-    verify_streq(warnings.getvalue(), """\
+    verify_eq(warnings.getvalue(), """\
 warning: The 'properties: compatible: constraint: ...' way of specifying the compatible in test-bindings/deprecated.yaml is deprecated. Put 'compatible: "deprecated"' at the top level of the binding instead.
 warning: the 'inherits:' syntax in test-bindings/deprecated.yaml is deprecated and will be removed - please use 'include: foo.yaml' or 'include: [foo.yaml, bar.yaml]' instead
 warning: please put 'required: true' instead of 'category: required' in properties: required: ...' in test-bindings/deprecated.yaml - 'category' will be removed
