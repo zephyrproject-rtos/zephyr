@@ -215,8 +215,8 @@ static void alt_thread_entry(void)
 	zassert_true(p_ztest_thread->arch.basepri == 0,
 		"ztest thread basepri not preserved in swap-out\n");
 #else
-	/* Verify that the main test thread has an initial value of zero
-	 * for state variable thread.arch.basepri.
+	/* Verify that the main test thread has the correct value
+	 * for state variable thread.arch.basepri (set before swap).
 	 */
 	zassert_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
 		"ztest thread basepri not preserved in swap-out\n");
@@ -359,7 +359,7 @@ void test_arm_thread_swap(void)
 	/* Verify, also, that the interrupts are unlocked. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	zassert_true(__get_BASEPRI() == 0,
-		"initial BASEPRI not in zero\n");
+		"initial BASEPRI not zero\n");
 #else
 	/* For Cortex-M Baseline architecture, we verify that
 	 * the interrupt lock is disabled.
@@ -429,7 +429,7 @@ void test_arm_thread_swap(void)
 	 * The container will, later, be populated by the swap
 	 * mechanism.
 	 */
-	memcpy(&_current->callee_saved, 0, sizeof(_callee_saved_t));
+	memset(&_current->callee_saved, 0, sizeof(_callee_saved_t));
 
 	/* Verify context-switch has not occurred yet. */
 	test_flag = switch_flag;
