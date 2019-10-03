@@ -544,6 +544,18 @@ static void isr_done(void *param)
 
 static void isr_abort(void *param)
 {
+	/* Clear radio status and events */
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+
 	radio_filter_disable();
 
 	isr_cleanup(param);
