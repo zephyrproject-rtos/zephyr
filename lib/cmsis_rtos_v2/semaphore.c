@@ -34,7 +34,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	}
 
 	if (k_mem_slab_alloc(&cv2_semaphore_slab,
-			     (void **)&semaphore, 100) == 0) {
+			     (void **)&semaphore, K_MSEC(100)) == 0) {
 		(void)memset(semaphore, 0, sizeof(struct cv2_sem));
 	} else {
 		return NULL;

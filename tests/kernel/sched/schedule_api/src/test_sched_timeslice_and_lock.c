@@ -80,7 +80,7 @@ static void timer_handler(struct k_timer *timer)
 static void thread_handler(void *p1, void *p2, void *p3)
 {
 	k_timer_init(&timer, timer_handler, NULL);
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, DURATION, K_NO_WAIT);
 }
 
 /*test cases*/
@@ -188,7 +188,7 @@ void test_sleep_wakeup_preemptible(void)
 static int executed;
 static void coop_thread(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&pend_sema, 100);
+	k_sem_take(&pend_sema, K_MSEC(100));
 	executed = 1;
 }
 

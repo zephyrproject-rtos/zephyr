@@ -204,7 +204,7 @@ static void test_pool_block_get_timeout(void)
 		free_blocks(getwt_set, ARRAY_SIZE(getwt_set));
 	}
 
-	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, 5);
+	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, K_MSEC(5));
 	zassert_true(rv == 0,
 		     "Failed to get size 3148 byte block from POOL_ID");
 
@@ -213,7 +213,7 @@ static void test_pool_block_get_timeout(void)
 		     "byte block from POOL_ID");
 
 	k_sem_give(&HELPER_SEM);    /* Activate helper_task */
-	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, 20);
+	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, K_MSEC(20));
 	zassert_true(rv == 0, "Failed to get size 3148 byte block from POOL_ID");
 
 	rv = k_sem_take(&REGRESS_SEM, K_NO_WAIT);

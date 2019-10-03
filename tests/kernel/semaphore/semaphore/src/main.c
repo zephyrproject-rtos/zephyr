@@ -556,7 +556,7 @@ void test_sem_measure_timeouts(void)
 	/* With 0 as the timeout */
 	start_ticks = k_uptime_get();
 
-	ret_value = k_sem_take(&simple_sem, 0);
+	ret_value = k_sem_take(&simple_sem, K_NO_WAIT);
 
 	end_ticks = k_uptime_get();
 

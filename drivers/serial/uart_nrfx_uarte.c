@@ -485,7 +485,8 @@ static int uarte_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
-		k_timer_start(&data->async->tx_timeout_timer, timeout, 0);
+		k_timer_start(&data->async->tx_timeout_timer, timeout,
+			      K_NO_WAIT);
 	}
 	return 0;
 }

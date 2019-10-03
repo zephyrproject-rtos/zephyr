@@ -91,7 +91,7 @@ static void twork_resubmit(void *data)
 	/**TESTPOINT: init via k_work_init*/
 	k_delayed_work_init(&new_work, new_work_handler);
 
-	k_delayed_work_submit_to_queue(work_q, &new_work, 0);
+	k_delayed_work_submit_to_queue(work_q, &new_work, K_NO_WAIT);
 
 	/* This is done to test a neagtive case when k_delayed_work_cancel()
 	 * fails in k_delayed_work_submit_to_queue API. Removing work from it
@@ -100,7 +100,7 @@ static void twork_resubmit(void *data)
 	 */
 	k_queue_remove(&(new_work.work_q->queue), &(new_work.work));
 
-	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work, 0),
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work, K_NO_WAIT),
 		      -EINVAL, NULL);
 
 	k_sem_give(&sync_sema);

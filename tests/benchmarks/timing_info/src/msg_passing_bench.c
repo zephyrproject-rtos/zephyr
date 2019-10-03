@@ -131,7 +131,8 @@ void msg_passing_bench(void)
 				thread_producer_msgq_w_cxt_switch, NULL,
 				NULL, NULL, 2 /*priority*/, 0, 50);
 
-	u32_t msg_status =  k_msgq_get(&benchmark_q, &received_data, 300);
+	u32_t msg_status =  k_msgq_get(&benchmark_q, &received_data,
+				       K_MSEC(300));
 
 	producer_wo_cxt_switch_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
@@ -242,7 +243,8 @@ void msg_passing_bench(void)
 	TIMING_INFO_PRE_READ();
 	mbox_get_w_cxt_start_time = TIMING_INFO_OS_GET_TIME();
 
-	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer, 300);
+	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer,
+			    K_MSEC(300));
 	MBOX_CHECK(status);
 
 	TIMING_INFO_PRE_READ();
@@ -356,7 +358,8 @@ void thread_producer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 		if (status == 0) {
 			data_to_send++;
 		}
-		status = k_msgq_put(&benchmark_q_get, &data_to_send, 20);
+		status = k_msgq_put(&benchmark_q_get, &data_to_send,
+				    K_MSEC(20));
 	}
 }
 
@@ -368,7 +371,7 @@ void thread_consumer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 	__msg_q_get_w_cxt_start_time = TIMING_INFO_OS_GET_TIME();
 	received_data_get =  k_msgq_get(&benchmark_q_get,
 					&received_data_consumer,
-					300);
+					K_MSEC(300));
 	TIMING_INFO_PRE_READ();
 	time_check = TIMING_INFO_OS_GET_TIME();
 }
@@ -389,7 +392,7 @@ void thread_mbox_sync_put_send(void *p1, void *p2, void *p3)
 	mbox_sync_put_start_time = TIMING_INFO_OS_GET_TIME();
 	z_arch_timing_value_swap_end = 1U;
 
-	status = k_mbox_put(&benchmark_mbox, &tx_msg, 300);
+	status = k_mbox_put(&benchmark_mbox, &tx_msg, K_MSEC(300));
 	MBOX_CHECK(status);
 
 	TIMING_INFO_PRE_READ();
@@ -405,7 +408,8 @@ void thread_mbox_sync_put_receive(void *p1, void *p2, void *p3)
 		.tx_target_thread = K_ANY
 	};
 
-	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer, 300);
+	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer,
+			    K_MSEC(300));
 	MBOX_CHECK(status);
 }
 
@@ -420,7 +424,7 @@ void thread_mbox_sync_get_send(void *p1, void *p2, void *p3)
 		.tx_target_thread = K_ANY,
 	};
 
-	status = k_mbox_put(&benchmark_mbox, &tx_msg, 300);
+	status = k_mbox_put(&benchmark_mbox, &tx_msg, K_MSEC(300));
 	MBOX_CHECK(status);
 }
 
@@ -437,7 +441,8 @@ void thread_mbox_sync_get_receive(void *p1, void *p2, void *p3)
 	TIMING_INFO_PRE_READ();
 	mbox_sync_get_start_time = TIMING_INFO_OS_GET_TIME();
 
-	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer, 300);
+	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer,
+			    K_MSEC(300));
 	MBOX_CHECK(status);
 }
 
@@ -469,6 +474,7 @@ void thread_mbox_async_put_receive(void *p1, void *p2, void *p3)
 		.tx_target_thread = K_ANY
 	};
 
-	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer, 300);
+	status = k_mbox_get(&benchmark_mbox, &rx_msg, &single_element_buffer,
+			    K_MSEC(300));
 	MBOX_CHECK(status);
 }

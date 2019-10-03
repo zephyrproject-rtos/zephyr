@@ -45,7 +45,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		attr = &init_mslab_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_mem_slab, (void **)&mslab, 100) == 0) {
+	if (k_mem_slab_alloc(&cv2_mem_slab, (void **)&mslab, K_MSEC(100)) == 0) {
 		(void)memset(mslab, 0, sizeof(struct cv2_mslab));
 	} else {
 		return NULL;

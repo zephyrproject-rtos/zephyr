@@ -420,7 +420,7 @@ static int write(const struct shell_transport *transport,
 		 */
 		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
 
-		k_timer_start(&sh_telnet->send_timer, timeout, 0);
+		k_timer_start(&sh_telnet->send_timer, timeout, K_NO_WAIT);
 	}
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,

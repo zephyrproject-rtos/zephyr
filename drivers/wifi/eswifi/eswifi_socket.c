@@ -141,7 +141,7 @@ static void eswifi_off_read_work(struct k_work *work)
 done:
 	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
 					     &socket->read_work,
-					     500);
+					     K_MSEC(500));
 	if (err) {
 		LOG_ERR("Rescheduling socket read error");
 	}
