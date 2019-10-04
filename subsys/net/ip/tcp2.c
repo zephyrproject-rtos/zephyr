@@ -13,9 +13,11 @@ LOG_MODULE_REGISTER(net_tcp2);
 #include <stdlib.h>
 #include <zephyr.h>
 #include <net/net_pkt.h>
-#include "tcp2_priv.h"
-#include "net_private.h"
+#include <net/net_ip.h>
+#include <net/net_context.h>
+#include "connection.h"
 #include "net_stats.h"
+#include "tcp2_priv.h"
 
 static int tcp_rto = 500; /* Retransmission timeout, msec */
 static int tcp_retries = 3;
@@ -1274,7 +1276,7 @@ int net_tcp_finalize(struct net_pkt *pkt)
 	tcp_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
-		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+		tcp_hdr->chksum = net_calc_chksum(pkt, IPPROTO_TCP);
 	}
 
 	return net_pkt_set_data(pkt, &tcp_access);
@@ -1286,8 +1288,8 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 	struct net_tcp_hdr *tcp_hdr;
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
-	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
-	    net_calc_chksum_tcp(pkt) != 0U) {
+			net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+			net_calc_chksum(pkt, IPPROTO_TCP) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
 		goto drop;
 	}
