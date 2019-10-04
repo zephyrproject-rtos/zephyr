@@ -279,7 +279,8 @@ should know about.
 * :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more Device Tree
   overlay files. Multiple filenames can be separated with either spaces or
   semicolons. Each file includes Device Tree values that override the default
-  DT values.
+  DT values. See :ref:`application_dt` below for details on device tree
+  overlays, and :ref:`device-tree` for an overview on devicetree and Zephyr.
 
 * :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
@@ -1492,15 +1493,17 @@ docstrings at the top of ``scripts/kconfig/menuconfig.py`` and
 Device Tree Overlays
 ====================
 
-As described in :ref:`device-tree`, Zephyr uses Device Tree to
-describe the hardware it runs on. This section describes how you can
-modify an application build's device tree using overlay files. For additional
-information regarding the relationship between Device Tree and Kconfig see
-:ref:`dt_vs_kconfig`. In some cases the information contained in Device Tree
-files is closely connected to the software and might need to be modified
-using the overlay file concept. This can be relevant for many of the different
-Device Tree nodes, but is particularly useful for :ref:`certain types
-of nodes <dt-alias-chosen>`.
+As described in :ref:`device-tree`, Zephyr uses Device Tree to describe the
+hardware it runs on. This section describes how you can modify an application
+build's device tree using overlay files. For additional information regarding
+the relationship between Device Tree and Kconfig see :ref:`dt_vs_kconfig`. For
+an example of how to use custom overlays with ``west build``, see
+:ref:`west-building-cmake-args`.
+
+In some cases the information contained in Device Tree files is closely
+connected to the software and might need to be modified using the overlay file
+concept. This can be relevant for many of the different Device Tree nodes, but
+is particularly useful for :ref:`certain types of nodes <dt-alias-chosen>`.
 
 Overlay files, which customarily have the :file:`.overlay` extension,
 contain device tree fragments which add to or modify the device tree
