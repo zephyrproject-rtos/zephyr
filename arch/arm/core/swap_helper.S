@@ -466,6 +466,7 @@ _stack_frame_endif:
 _oops:
     push {r0, lr}
     bl z_do_kernel_oops
+    /* return from SVC exception is done here */
     pop {r0, pc}
 
 #if defined(CONFIG_USERSPACE)
