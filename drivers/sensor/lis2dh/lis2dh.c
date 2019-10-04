@@ -45,7 +45,6 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 }
 #endif
 
-#if defined(CONFIG_LIS2DH_TRIGGER) || defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
 int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val)
 {
@@ -63,7 +62,6 @@ int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 	return lis2dh_reg_write_byte(dev, reg_addr,
 				     (old_val & ~mask) | ((val << pos) & mask));
 }
-#endif
 
 static void lis2dh_convert(s16_t raw_val, u16_t scale,
 			   struct sensor_value *val)
