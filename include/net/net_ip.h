@@ -1406,6 +1406,18 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 const char *net_family2str(sa_family_t family);
 
+/**
+ * @brief Calculates a checksum for the packet
+ *
+ * @param pkt Network packet
+ * @param proto IP Protocol
+ *
+ * @return 16-bit checksum as defined in RFC 791
+ */
+struct net_pkt;
+
+u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
+
 #ifdef __cplusplus
 }
 #endif
