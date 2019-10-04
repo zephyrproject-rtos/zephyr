@@ -56,22 +56,22 @@
 		compatible = "gpio-keys";
 		switch0: switch_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 1";
 		};
 		switch1: switch_1 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 1 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 2";
 		};
 		switch2: switch_2 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 2 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 3";
 		};
 		switch3: switch_3 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 3 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 4";
 		};
 	};
