@@ -493,8 +493,10 @@ void ll_rx_dequeue(void)
 		struct node_rx_cc *cc = (void *)((struct node_rx_pdu *)rx)->pdu;
 		struct node_rx_ftr *ftr = &(rx->rx_ftr);
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    ((cc->status == BT_HCI_ERR_ADV_TIMEOUT) || cc->role)) {
+		if (0) {
+
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if ((cc->status == BT_HCI_ERR_ADV_TIMEOUT) || cc->role) {
 			struct lll_adv *lll = ftr->param;
 			struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
 
@@ -529,6 +531,10 @@ void ll_rx_dequeue(void)
 			}
 
 			adv->is_enabled = 0U;
+#else /* !CONFIG_BT_PERIPHERAL */
+			ARG_UNUSED(cc);
+#endif /* !CONFIG_BT_PERIPHERAL */
+
 		} else if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 			struct lll_scan *lll = ftr->param;
 			struct ll_scan_set *scan = (void *)HDR_LLL2EVT(lll);
