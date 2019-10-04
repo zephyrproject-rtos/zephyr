@@ -52,6 +52,21 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	z_fatal_error(reason, esf);
 }
 
+/**
+ * @brief Handle a software-generated fatal exception
+ * (e.g. kernel oops, panic, etc.).
+ *
+ * Notes:
+ * - the function is invoked in SVC Handler
+ * - if triggered from nPRIV mode, only oops and stack fail error reasons
+ *   may be propagated to the fault handling process.
+ * - We expect the supplied exception stack frame to always be a valid
+ *   frame. That is because, if the ESF cannot be stacked during an SVC,
+ *   a processor fault (e.g. stacking error) will be generated, and the
+ *   fault handler will executed insted of the SVC.
+ *
+ * @param esf exception frame
+ */
 void z_do_kernel_oops(const z_arch_esf_t *esf)
 {
 	/* Stacked R0 holds the exception reason. */
