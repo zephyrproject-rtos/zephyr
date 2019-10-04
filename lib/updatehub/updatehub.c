@@ -802,6 +802,6 @@ void updatehub_autohandler(void)
 	static struct k_delayed_work work;
 
 	k_delayed_work_init(&work, autohandler);
-	k_delayed_work_submit(&work, 0);
+	k_delayed_work_submit(&work, K_NO_WAIT);
 }
 
