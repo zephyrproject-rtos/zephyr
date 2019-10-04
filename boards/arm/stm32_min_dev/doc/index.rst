@@ -43,6 +43,18 @@ Additional device support is left for the user to implement.
 More information on hooking up peripherals and lengthy how to articles can be
 found at `EmbedJournal`_.
 
+The pinout diagram of STM32 Minimum Development Blue Pill board can be seen
+below. The Black Pill's one is similar:
+
+.. figure:: img/stm32_min_dev_pinout_blue.jpg
+     :width: 500px
+     :align: center
+     :height: 350px
+     :alt: Pinout for STM32 Minimum Development Blue Pill Board
+
+     Pinout for STM32 Minimum Development Blue Pill Board
+
+
 STLinkV2 connection:
 ====================
 
