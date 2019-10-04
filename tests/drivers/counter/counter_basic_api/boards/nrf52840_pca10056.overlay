@@ -17,3 +17,8 @@
 &timer4 {
 	prescaler = <4>;
 };
+
+&rtc0 {
+	ppi-wrap;
+};
+
