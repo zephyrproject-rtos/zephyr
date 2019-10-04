@@ -320,6 +320,16 @@ int lis2dh_init(struct device *dev)
 		return status;
 	}
 
+	if (IS_ENABLED(DT_INST_0_ST_LIS2DH_DISCONNECT_SDO_SA0_PULL_UP)) {
+		status = lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL0,
+						 LIS2DH_SDO_PU_DISC_SHIFT,
+						 LIS2DH_SDO_PU_DISC_MASK, 1);
+		if (status < 0) {
+			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
+			return status;
+		}
+	}
+
 	/* Initialize control register ctrl1 to ctrl 6 to default boot values
 	 * to avoid warm start/reset issues as the accelerometer has no reset
 	 * pin. Register values are retained if power is not removed.
