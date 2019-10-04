@@ -9,6 +9,9 @@ choice
 prompt "STM32L1x MCU Selection"
 depends on SOC_SERIES_STM32L1X
 
+config SOC_STM32L151X8A
+	bool "STM32L151X8A"
+
 config SOC_STM32L151XB
 	bool "STM32L151XB"
 
