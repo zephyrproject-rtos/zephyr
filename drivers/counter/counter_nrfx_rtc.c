@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 #define IS_FIXED_TOP(dev) COND_CODE_1(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT, \
 		(get_nrfx_config(dev)->fixed_top), (true))
 
+#define IS_PPI_WRAP(dev) COND_CODE_1(CONFIG_COUNTER_RTC_WITH_PPI_WRAP, \
+		(get_nrfx_config(dev)->use_ppi), (false))
+
 #define CC_ADJUSTED_OFFSET 16
 #define CC_ADJ_MASK(chan) (BIT(chan + CC_ADJUSTED_OFFSET))
 
@@ -359,11 +362,13 @@ static int ppi_setup(struct device *dev, u8_t chan)
 	struct counter_nrfx_data *data = get_dev_data(dev);
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	nrfx_err_t result;
 
 	if (!nrfx_config->use_ppi) {
 		return 0;
 	}
 
+	nrf_rtc_event_enable(rtc, RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
 	result = nrfx_dppi_channel_alloc(&data->ppi_ch);
 	if (result != NRFX_SUCCESS) {
@@ -386,7 +391,6 @@ static int ppi_setup(struct device *dev, u8_t chan)
 		ERR("Failed to allocate PPI channel.");
 		return -ENODEV;
 	}
-
 	(void)nrfx_ppi_channel_assign(data->ppi_ch, evt_addr, task_addr);
 	(void)nrfx_ppi_channel_enable(data->ppi_ch);
 #endif
@@ -394,15 +398,17 @@ static int ppi_setup(struct device *dev, u8_t chan)
 	return 0;
 }
 
-static void ppi_free(struct device *dev)
+static void ppi_free(struct device *dev, u8_t chan)
 {
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	u8_t ppi_ch = get_dev_data(dev)->ppi_ch;
+	NRF_RTC_Type *rtc = nrfx_config->rtc;
 
 	if (!nrfx_config->use_ppi) {
 		return;
 	}
+	nrf_rtc_event_disable(rtc, RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
@@ -412,6 +418,7 @@ static void ppi_free(struct device *dev)
 	nrf_rtc_publish_clear(rtc, evt);
 	(void)nrfx_dppi_channel_free(ppi_ch);
 #else /* DPPI_PRESENT */
+	(void)nrfx_ppi_channel_disable(ppi_ch);
 	(void)nrfx_ppi_channel_free(ppi_ch);
 #endif
 #endif
@@ -423,10 +430,7 @@ static void ppi_free(struct device *dev)
 static bool sw_wrap_required(struct device *dev)
 {
 	return (get_dev_data(dev)->top != COUNTER_MAX_TOP_VALUE)
-#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-		    && !get_nrfx_config(dev)->use_ppi
-#endif
-		;
+			&& !IS_PPI_WRAP(dev);
 }
 
 static int set_fixed_top_value(struct device *dev,
@@ -475,6 +479,17 @@ static int set_top_value(struct device *dev, const struct counter_top_cfg *cfg)
 	}
 
 	nrf_rtc_int_disable(rtc, RTC_CHANNEL_INT_MASK(top_ch));
+
+	if (IS_PPI_WRAP(dev)) {
+		if ((dev_data->top == COUNTER_MAX_TOP_VALUE) &&
+				cfg->ticks != COUNTER_MAX_TOP_VALUE) {
+			err = ppi_setup(dev, top_ch);
+		} else if (((dev_data->top != COUNTER_MAX_TOP_VALUE) &&
+				cfg->ticks == COUNTER_MAX_TOP_VALUE)) {
+			ppi_free(dev, top_ch);
+		}
+	}
+
 	dev_data->top_cb = cfg->callback;
 	dev_data->top_user_data = cfg->user_data;
 	dev_data->top = cfg->ticks;
@@ -566,11 +581,7 @@ static void top_irq_handle(struct device *dev)
 		/* Perform manual clear if custom top value is used and PPI
 		 * clearing is not used.
 		 */
-		if (!IS_FIXED_TOP(dev) && (evt != NRF_RTC_EVENT_OVERFLOW)
-#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-		    && !get_nrfx_config(dev)->use_ppi
-#endif
-		) {
+		if (!IS_FIXED_TOP(dev) && !IS_PPI_WRAP(dev)) {
 			nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_CLEAR);
 		}
 
