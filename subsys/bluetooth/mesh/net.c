@@ -66,9 +66,7 @@
 #define FRIEND_CRED_COUNT 0
 #endif
 
-#if FRIEND_CRED_COUNT > 0
 static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
-#endif
 
 static u64_t msg_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static u16_t msg_cache_next;
@@ -210,8 +208,6 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 	return 0;
 }
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
 int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16])
 {
 	u16_t lpn_addr, frnd_addr;
@@ -397,13 +393,6 @@ int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
 
 	return -ENOENT;
 }
-#else
-int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
-		    const u8_t **enc, const u8_t **priv)
-{
-	return -ENOENT;
-}
-#endif /* FRIEND || LOW_POWER */
 
 u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 {
@@ -1022,8 +1011,6 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 	return bt_mesh_net_decrypt(enc, buf, BT_MESH_NET_IVI_RX(rx), false);
 }
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
 static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 			  size_t data_len, struct bt_mesh_net_rx *rx,
 			  struct net_buf_simple *buf)
@@ -1059,7 +1046,6 @@ static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 
 	return -ENOENT;
 }
-#endif
 
 static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 				 struct bt_mesh_net_rx *rx,
@@ -1076,15 +1062,14 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 			continue;
 		}
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
-		if (!friend_decrypt(sub, data, data_len, rx, buf)) {
+		if ((IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
+		     IS_ENABLED(CONFIG_BT_MESH_FRIEND)) &&
+		    !friend_decrypt(sub, data, data_len, rx, buf)) {
 			rx->friend_cred = 1U;
 			rx->ctx.net_idx = sub->net_idx;
 			rx->sub = sub;
 			return true;
 		}
-#endif
 
 		if (NID(data) == sub->keys[0].nid &&
 		    !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
