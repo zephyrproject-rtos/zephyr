@@ -563,7 +563,6 @@ struct bt_gatt_ccc_cfg {
 	u8_t                    id;
 	bt_addr_le_t		peer;
 	u16_t			value;
-	u8_t			data[4] __aligned(4);
 };
 
 /* Internal representation of CCC value */
