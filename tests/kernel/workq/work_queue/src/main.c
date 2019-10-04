@@ -289,7 +289,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 
 #if defined(CONFIG_POLL)
 	k_delayed_work_submit(&delayed_tests[2].work,
-			      0 /* Submit immediately */);
+			      K_NO_WAIT /* Submit immediately */);
 
 	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
 	k_delayed_work_cancel(&delayed_tests[2].work);
@@ -370,7 +370,7 @@ static void coop_delayed_work_resubmit(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
-		k_delayed_work_submit(&delayed_tests[0].work, 1);
+		k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(1));
 
 		/* Busy wait 1 ms to force a clash with workqueue */
 #if defined(CONFIG_ARCH_POSIX)
