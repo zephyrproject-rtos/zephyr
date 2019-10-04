@@ -81,6 +81,8 @@ applications.
 :c:func:`DEVICE_DECLARE()`
    Declare a device object.
 
+.. _device_struct:
+
 Driver Data Structures
 **********************
 
