@@ -349,15 +349,15 @@ static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
 #endif
 }
 
+int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
+			    u8_t pos, u8_t mask, u8_t val);
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 int lis2dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
 int lis2dh_init_interrupt(struct device *dev);
-
-int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
-			    u8_t pos, u8_t mask, u8_t val);
 
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val);
