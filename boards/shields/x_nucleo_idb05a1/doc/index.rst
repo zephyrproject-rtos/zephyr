@@ -48,6 +48,8 @@ expansion board could be made:
 
 You could check Figure 3 in `X-NUCLEO-IDB05A1 databrief`_ for more details.
 
+The stm32mp157c_dk2 board is known to need this IRQ pin modification.
+
 Hardware
 ********
 
