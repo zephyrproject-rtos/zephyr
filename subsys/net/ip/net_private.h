@@ -149,12 +149,6 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 
-enum net_verdict net_context_packet_received(struct net_conn *conn,
-					     struct net_pkt *pkt,
-					     union net_ip_header *ip_hdr,
-					     union net_proto_header *proto_hdr,
-					     void *user_data);
-
 #if defined(CONFIG_NET_IPV4)
 extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */

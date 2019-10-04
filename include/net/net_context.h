@@ -951,6 +951,25 @@ int net_context_recv(struct net_context *context,
 		     s32_t timeout,
 		     void *user_data);
 
+struct net_conn;
+/**
+ * @brief Deliver the incoming packet through the recv_cb of the net_context
+ *        to the upper layers
+ *
+ * @param conn		Network connection
+ * @param pkt		Network packet
+ * @param ip_hdr	Pointer to IP header, optional
+ * @param proto_hdr	Pointer to transport layer protocol header, optional
+ * @param user_data	User data passed as an argument
+ *
+ * @return NET_OK	if the packet is consumed through the recv_cb
+ *         NET_DROP	if the recv_cb isn't set
+ */
+enum net_verdict net_context_packet_received(struct net_conn *conn,
+					     struct net_pkt *pkt,
+					     union net_ip_header *ip_hdr,
+					     union net_proto_header *proto_hdr,
+					     void *user_data);
 /**
  * @brief Update TCP receive window for context.
  *
