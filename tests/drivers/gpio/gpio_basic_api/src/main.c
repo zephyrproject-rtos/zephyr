@@ -13,6 +13,10 @@
 #include <fsl_port.h>
 #endif
 
+#ifdef CONFIG_BOARD_MIMXRT1050_EVK
+#include <fsl_iomuxc.h>
+#endif
+
 static void board_setup(void)
 {
 #ifdef DT_INST_0_TEST_GPIO_BASIC_API
@@ -33,6 +37,22 @@ static void board_setup(void)
 
 	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
+#ifdef CONFIG_BOARD_MIMXRT1050_EVK
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22, 0);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_GPIO1_IO23, 0);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_07_GPIO1_IO23,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 }
 
