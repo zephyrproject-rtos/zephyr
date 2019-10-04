@@ -2688,9 +2688,12 @@ static int ping_ipv6(const struct shell *shell, char *host)
 
 	net_icmpv6_register_handler(&ping6_handler);
 
-	nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
-	if (nbr) {
-		iface = nbr->iface;
+	iface = net_if_ipv6_select_src_iface(&ipv6_target);
+	if (!iface) {
+		nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
+		if (nbr) {
+			iface = nbr->iface;
+		}
 	}
 
 #if defined(CONFIG_NET_ROUTE)
