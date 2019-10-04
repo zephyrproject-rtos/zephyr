@@ -171,9 +171,9 @@ void att_cfm_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
-	atomic_clear_bit(att->flags, ATT_PENDING_CFM);
-#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
+	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
+		atomic_clear_bit(att->flags, ATT_PENDING_CFM);
+	}
 
 	att_pdu_sent(conn, user_data);
 }
@@ -184,9 +184,9 @@ void att_rsp_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
-	atomic_clear_bit(att->flags, ATT_PENDING_RSP);
-#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
+	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
+		atomic_clear_bit(att->flags, ATT_PENDING_RSP);
+	}
 
 	att_pdu_sent(conn, user_data);
 }
