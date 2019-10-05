@@ -327,6 +327,7 @@ static void pl011_irq_callback_set(struct device *dev,
 	DEV_DATA(dev)->irq_cb = cb;
 	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct uart_driver_api pl011_driver_api = {
 	.poll_in = pl011_poll_in,
@@ -392,6 +393,8 @@ static int pl011_init(struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(void *arg)
 {
 	struct device *dev = arg;
