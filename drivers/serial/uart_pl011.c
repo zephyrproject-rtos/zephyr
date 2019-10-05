@@ -10,7 +10,6 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/uart.h>
-#include <arch/arm/cortex_m/cmsis.h>
 
 
 /*
