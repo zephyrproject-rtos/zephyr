@@ -1578,6 +1578,8 @@ static void tx_lll_flush(void *param)
 	struct node_tx *tx;
 	memq_link_t *link;
 
+	lll_conn_flush(lll);
+
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 			    (void **)&tx);
 	while (link) {
