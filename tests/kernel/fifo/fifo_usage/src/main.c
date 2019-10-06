@@ -156,7 +156,7 @@ static void test_single_fifo_play(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				thread_entry_fn_single, &fifo1, NULL, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* Let the child thread run */
 	k_sem_take(&end_sema, K_FOREVER);
@@ -187,7 +187,7 @@ static void test_dual_fifo_play(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				thread_entry_fn_dual, &fifo1, &fifo2, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 
 	for (i = 0U; i < LIST_LEN; i++) {
 		/* Put item into fifo */
@@ -219,7 +219,7 @@ static void test_isr_fifo_play(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				thread_entry_fn_isr, &fifo1, &fifo2, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 
 
 	/* Put item into fifo */

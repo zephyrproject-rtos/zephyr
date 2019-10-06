@@ -95,7 +95,7 @@ void test_customdata_get_set_coop(void)
 {
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
-				      K_PRIO_COOP(1), 0, 0);
+				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 
 	k_sleep(K_MSEC(500));
 
@@ -130,7 +130,7 @@ void test_thread_name_get_set(void)
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
 				      thread_name_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(1), 0, 0);
+				      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 
 	ret = k_thread_name_set(tid, "customdata");
 	zassert_equal(ret, 0, "k_thread_name_set() failed");
@@ -198,7 +198,7 @@ void test_thread_name_user_get_set(void)
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
 				      thread_name_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(1), K_USER, 0);
+				      K_PRIO_PREEMPT(1), K_USER, K_NO_WAIT);
 	ret = k_thread_name_set(tid, "customdata");
 	zassert_equal(ret, 0, "k_thread_name_set() failed");
 	ret = k_thread_name_copy(tid, thread_name, sizeof(thread_name));
@@ -223,7 +223,7 @@ void test_customdata_get_set_preempt(void)
 	/** TESTPOINT: custom data of preempt thread */
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(0), K_USER, 0);
+				      K_PRIO_PREEMPT(0), K_USER, K_NO_WAIT);
 
 	k_sleep(K_MSEC(500));
 

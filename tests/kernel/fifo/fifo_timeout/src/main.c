@@ -144,7 +144,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 		tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_timeout,
 				&test_data[ii], NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* In general, there is no guarantee of wakeup order when multiple
@@ -218,13 +218,13 @@ static int test_multiple_threads_get_data(struct timeout_order_data *test_data,
 		tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_get_data,
 				&test_data[ii], NULL, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_timeout,
 				&test_data[ii], NULL, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 
 	for (ii = 0; ii < test_data_size-1; ii++) {
 		k_fifo_put(test_data[ii].fifo, get_scratch_packet());
@@ -365,7 +365,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_put_timeout, &fifo_timeout[0],
 				&timeout, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_fifo_get(&fifo_timeout[0], timeout + 10);
 	zassert_true(packet != NULL, NULL);
@@ -381,7 +381,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 	packet = k_fifo_get(&timeout_order_fifo, K_NO_WAIT);
@@ -400,7 +400,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 	packet = k_fifo_get(&timeout_order_fifo, K_NO_WAIT);
@@ -420,7 +420,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values_wfe,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_fifo_get(&timeout_order_fifo, K_FOREVER);
 	zassert_true(packet != NULL, NULL);

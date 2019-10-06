@@ -112,7 +112,7 @@ static void test_early_sleep(void)
 				   helper_tstack, THREAD_STACK,
 				   helper_thread, NULL, NULL, NULL,
 				   k_thread_priority_get(k_current_get()) + 1,
-				   K_INHERIT_PERMS, 0);
+				   K_INHERIT_PERMS, K_NO_WAIT);
 
 	TC_PRINT("k_sleep() ticks at POST_KERNEL level: %d\n",
 					actual_post_kernel_sleep_ticks);

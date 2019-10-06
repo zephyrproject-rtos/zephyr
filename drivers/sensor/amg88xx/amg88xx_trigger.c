@@ -183,7 +183,7 @@ int amg88xx_init_interrupt(struct device *dev)
 			CONFIG_AMG88XX_THREAD_STACK_SIZE,
 			(k_thread_entry_t)amg88xx_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = amg88xx_work_cb;
 	drv_data->dev = dev;

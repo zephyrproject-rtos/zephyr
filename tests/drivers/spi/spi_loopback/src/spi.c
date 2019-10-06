@@ -445,7 +445,7 @@ void testing_spi(void)
 					  spi_async_stack, STACK_SIZE,
 					  (k_thread_entry_t)spi_async_call_cb,
 					  &async_evt, &caller, NULL,
-					  K_PRIO_COOP(7), 0, 0);
+					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||

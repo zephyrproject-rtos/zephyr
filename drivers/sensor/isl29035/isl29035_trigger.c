@@ -180,7 +180,7 @@ int isl29035_init_interrupt(struct device *dev)
 			CONFIG_ISL29035_THREAD_STACK_SIZE,
 			(k_thread_entry_t)isl29035_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = isl29035_work_cb;
 	drv_data->dev = dev;

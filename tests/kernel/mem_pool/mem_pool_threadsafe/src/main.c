@@ -74,7 +74,7 @@ void test_mpool_threadsafe(void)
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 tmpool_api, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(1), 0, 0);
+					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {

@@ -129,7 +129,7 @@ void msg_passing_bench(void)
 	producer_w_cxt_switch_tid =
 		k_thread_create(&my_thread, my_stack_area, STACK_SIZE,
 				thread_producer_msgq_w_cxt_switch, NULL,
-				NULL, NULL, 2 /*priority*/, 0, 50);
+				NULL, NULL, 2 /*priority*/, 0, K_MSEC(50));
 
 	u32_t msg_status =  k_msgq_get(&benchmark_q, &received_data,
 				       K_MSEC(300));
@@ -137,7 +137,8 @@ void msg_passing_bench(void)
 	producer_wo_cxt_switch_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
 				thread_producer_msgq_wo_cxt_switch,
-				NULL, NULL, NULL, -2 /*priority*/, 0, 0);
+				NULL, NULL, NULL, -2 /*priority*/, 0,
+				K_NO_WAIT);
 
 	k_thread_abort(producer_w_cxt_switch_tid);
 	k_thread_abort(producer_wo_cxt_switch_tid);
@@ -152,13 +153,13 @@ void msg_passing_bench(void)
 		k_thread_create(&my_thread, my_stack_area,
 				STACK_SIZE,
 				thread_producer_get_msgq_w_cxt_switch, NULL,
-				NULL, NULL, 1 /*priority*/, 0, 50);
+				NULL, NULL, 1 /*priority*/, 0, K_MSEC(50));
 	consumer_get_w_cxt_switch_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0,
 				STACK_SIZE,
 				thread_consumer_get_msgq_w_cxt_switch,
 				NULL, NULL, NULL,
-				2 /*priority*/, 0, 50);
+				2 /*priority*/, 0, K_MSEC(50));
 	k_sleep(K_MSEC(2000));  /* make the main thread sleep */
 	k_thread_abort(producer_get_w_cxt_switch_tid);
 	__msg_q_get_w_cxt_end_time = (z_arch_timing_value_swap_common);
@@ -187,13 +188,13 @@ void msg_passing_bench(void)
 				STACK_SIZE,
 				thread_mbox_sync_put_send,
 				NULL, NULL, NULL,
-				2 /*priority*/, 0, 0);
+				2 /*priority*/, 0, K_NO_WAIT);
 	thread_mbox_sync_put_receive_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0,
 				STACK_SIZE,
 				thread_mbox_sync_put_receive,
 				NULL, NULL, NULL,
-				1 /*priority*/, 0, 0);
+				1 /*priority*/, 0, K_NO_WAIT);
 	k_sleep(K_MSEC(1000));  /* make the main thread sleep */
 	mbox_sync_put_end_time = (z_arch_timing_value_swap_common);
 
@@ -206,12 +207,12 @@ void msg_passing_bench(void)
 				STACK_SIZE,
 				thread_mbox_sync_get_send,
 				NULL, NULL, NULL,
-				1 /*prio*/, 0, 0);
+				1 /*prio*/, 0, K_NO_WAIT);
 	thread_mbox_sync_get_receive_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0,
 				STACK_SIZE,
 				thread_mbox_sync_get_receive, NULL,
-				NULL, NULL, 2 /*priority*/, 0, 0);
+				NULL, NULL, 2 /*priority*/, 0, K_NO_WAIT);
 	k_sleep(K_MSEC(1000)); /* make the main thread sleep */
 	mbox_sync_get_end_time = (z_arch_timing_value_swap_common);
 
@@ -224,13 +225,13 @@ void msg_passing_bench(void)
 				STACK_SIZE,
 				thread_mbox_async_put_send,
 				NULL, NULL, NULL,
-				2 /*prio*/, 0, 0);
+				2 /*prio*/, 0, K_NO_WAIT);
 	thread_mbox_async_put_receive_tid =
 		k_thread_create(&my_thread_0, my_stack_area_0,
 				STACK_SIZE,
 				thread_mbox_async_put_receive,
 				NULL, NULL, NULL,
-				3 /*priority*/, 0, 0);
+				3 /*priority*/, 0, K_NO_WAIT);
 	k_sleep(K_MSEC(1000)); /* make the main thread sleep */
 
 	/*******************************************************************/

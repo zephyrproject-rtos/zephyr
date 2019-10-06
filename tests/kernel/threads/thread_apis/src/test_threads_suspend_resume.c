@@ -26,7 +26,7 @@ static void threads_suspend_resume(int prio)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      create_prio, K_USER, 0);
+				      create_prio, K_USER, K_NO_WAIT);
 	/* checkpoint: suspend current thread */
 	k_thread_suspend(tid);
 	k_sleep(K_MSEC(100));
