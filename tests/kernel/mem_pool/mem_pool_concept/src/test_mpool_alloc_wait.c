@@ -80,7 +80,7 @@ void test_mpool_alloc_wait_prio(void)
 				 tmpool_alloc_wait_timeout, NULL, NULL, NULL,
 				 K_PRIO_PREEMPT(0), 0, 20);
 	/*relinquish CPU for above threads to start */
-	k_sleep(30);
+	k_sleep(K_MSEC(30));
 	/*free one block, expected to unblock thread "tid[1]"*/
 	k_mem_pool_free(&block[0]);
 	/*wait for all threads exit*/

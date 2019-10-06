@@ -136,7 +136,7 @@ void test_init_setup(void)
 		val32 = 1U;
 		err = settings_save();
 		zassert_true(err == 0, "can't save settings");
-		k_sleep(250);
+		k_sleep(K_MSEC(250));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
 }

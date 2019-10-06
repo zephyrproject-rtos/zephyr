@@ -130,7 +130,7 @@ void test_sleep_cooperative(void)
 
 	spawn_threads(0);
 	/* checkpoint: all ready threads get executed when k_sleep */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);
 	}
@@ -324,7 +324,7 @@ void test_lock_preemptible(void)
 		zassert_true(tdata[i].executed == 0, NULL);
 	}
 	/* make current thread unready */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/* checkpoint: all other threads get executed */
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);

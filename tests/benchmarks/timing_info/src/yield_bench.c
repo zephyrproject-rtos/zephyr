@@ -34,7 +34,7 @@ k_tid_t yield1_tid;
 void yield_bench(void)
 {
 	/* Thread yield*/
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	yield0_tid = k_thread_create(&my_thread, my_stack_area,
 				     STACK_SIZE,
 				     thread_yield0_test,
@@ -52,7 +52,7 @@ void yield_bench(void)
 
 	TIMING_INFO_PRE_READ();
 	thread_sleep_start_time =   TIMING_INFO_OS_GET_TIME();
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 	thread_sleep_end_time =   ((u32_t)z_arch_timing_value_swap_common);
 
 	u32_t yield_cycles = (thread_end_time - thread_start_time) / 2000U;

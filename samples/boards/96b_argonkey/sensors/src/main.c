@@ -142,7 +142,7 @@ void main(void)
 
 	for (i = 0; i < 5; i++) {
 		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, on);
-		k_sleep(200);
+		k_sleep(K_MSEC(200));
 		on = (on == 1) ? 0 : 1;
 	}
 
@@ -350,7 +350,7 @@ void main(void)
 #endif /* CONFIG_LSM6DSL */
 
 		printk("- (%d) (trig_cnt: %d)\n\n", ++cnt, lsm6dsl_trig_cnt);
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }
 

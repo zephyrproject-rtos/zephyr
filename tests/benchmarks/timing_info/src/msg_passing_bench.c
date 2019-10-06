@@ -159,7 +159,7 @@ void msg_passing_bench(void)
 				thread_consumer_get_msgq_w_cxt_switch,
 				NULL, NULL, NULL,
 				2 /*priority*/, 0, 50);
-	k_sleep(2000);  /* make the main thread sleep */
+	k_sleep(K_MSEC(2000));  /* make the main thread sleep */
 	k_thread_abort(producer_get_w_cxt_switch_tid);
 	__msg_q_get_w_cxt_end_time = (z_arch_timing_value_swap_common);
 
@@ -194,7 +194,7 @@ void msg_passing_bench(void)
 				thread_mbox_sync_put_receive,
 				NULL, NULL, NULL,
 				1 /*priority*/, 0, 0);
-	k_sleep(1000);  /* make the main thread sleep */
+	k_sleep(K_MSEC(1000));  /* make the main thread sleep */
 	mbox_sync_put_end_time = (z_arch_timing_value_swap_common);
 
 	/*******************************************************************/
@@ -212,7 +212,7 @@ void msg_passing_bench(void)
 				STACK_SIZE,
 				thread_mbox_sync_get_receive, NULL,
 				NULL, NULL, 2 /*priority*/, 0, 0);
-	k_sleep(1000); /* make the main thread sleep */
+	k_sleep(K_MSEC(1000)); /* make the main thread sleep */
 	mbox_sync_get_end_time = (z_arch_timing_value_swap_common);
 
 	/*******************************************************************/
@@ -231,7 +231,7 @@ void msg_passing_bench(void)
 				thread_mbox_async_put_receive,
 				NULL, NULL, NULL,
 				3 /*priority*/, 0, 0);
-	k_sleep(1000); /* make the main thread sleep */
+	k_sleep(K_MSEC(1000)); /* make the main thread sleep */
 
 	/*******************************************************************/
 	int single_element_buffer = 0, status;

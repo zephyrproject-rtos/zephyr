@@ -325,7 +325,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 	enc424j600_write_sbc(dev, ENC424J600_1BC_SETTXRTS);
 
 	do {
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ECON1L, &tmp);
 	} while (tmp & ENC424J600_ECON1_TXRTS);
 
@@ -545,12 +545,12 @@ static int enc424j600_stop_device(struct device *dev)
 			      ENC424J600_ECON1_RXEN);
 
 	do {
-		k_sleep(10U);
+		k_sleep(K_MSEC(10U));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ESTATL, &tmp);
 	} while (tmp & ENC424J600_ESTAT_RXBUSY);
 
 	do {
-		k_sleep(10U);
+		k_sleep(K_MSEC(10U));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ECON1L, &tmp);
 	} while (tmp & ENC424J600_ECON1_TXRTS);
 

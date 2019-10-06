@@ -174,6 +174,6 @@ void main(void)
 
 		printk("- (%d) (trig_cnt: %d)\n\n", ++cnt, lsm6dsl_trig_cnt);
 		print_samples = 1;
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

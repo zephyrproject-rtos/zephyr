@@ -608,11 +608,11 @@ static void tx_thread(void)
 		switch (h5.link_state) {
 		case UNINIT:
 			/* FIXME: send sync */
-			k_sleep(100);
+			k_sleep(K_MSEC(100));
 			break;
 		case INIT:
 			/* FIXME: send conf */
-			k_sleep(100);
+			k_sleep(K_MSEC(100));
 			break;
 		case ACTIVE:
 			buf = net_buf_get(&h5.tx_queue, K_FOREVER);

@@ -231,7 +231,7 @@ void test_tickless(void)
 			(k_thread_entry_t) ticklessTestThread,
 			NULL, NULL, NULL,
 			PRIORITY, 0, K_NO_WAIT);
-	k_sleep(4000);
+	k_sleep(K_MSEC(4000));
 }
 
 /**

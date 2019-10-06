@@ -138,7 +138,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 void test_cpu_id_threads(void)
 {
 	/* Make sure idle thread runs on each core */
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	int parent_cpu_id = z_arch_curr_cpu()->id;
 
@@ -436,7 +436,7 @@ void test_main(void)
 	 * thread from which they can exit correctly to run the main
 	 * test.
 	 */
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	ztest_test_suite(smp,
 			 ztest_unit_test(test_smp_coop_threads),

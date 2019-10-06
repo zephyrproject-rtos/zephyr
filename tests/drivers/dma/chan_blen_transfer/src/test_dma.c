@@ -78,7 +78,7 @@ static int test_task(u32_t chan_id, u32_t blen)
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
-	k_sleep(2000);
+	k_sleep(K_MSEC(2000));
 	TC_PRINT("%s\n", rx_data);
 	if (strcmp(tx_data, rx_data) != 0)
 		return TC_FAIL;

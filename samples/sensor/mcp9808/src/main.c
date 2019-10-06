@@ -72,6 +72,6 @@ void main(void)
 
 		printf("temp: %d.%06d\n", temp.val1, temp.val2);
 
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

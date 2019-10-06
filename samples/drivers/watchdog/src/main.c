@@ -86,7 +86,7 @@ void main(void)
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
 		printk("Feeding watchdog...\n");
 		wdt_feed(wdt, wdt_channel_id);
-		k_sleep(50);
+		k_sleep(K_MSEC(50));
 	}
 
 	/* Waiting for the SoC reset. */

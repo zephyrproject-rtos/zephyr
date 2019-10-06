@@ -140,7 +140,7 @@ static int i2s_stm32_set_clock(struct device *dev, u32_t bit_clk_freq)
 		}
 
 		/* wait 1 ms */
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 	LOG_DBG("PLLI2S is locked");
 

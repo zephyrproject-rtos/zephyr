@@ -199,7 +199,7 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 				       K_PRIO_PREEMPT(0), 0, 0);
 
 	/* Wait threads to initialize */
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 
 	k_queue_append(pqueue, (void *)&data[0]);
 	k_queue_append(pqueue, (void *)&data[1]);
