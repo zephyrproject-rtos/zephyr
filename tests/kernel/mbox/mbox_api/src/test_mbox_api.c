@@ -419,7 +419,8 @@ static void tmbox_get(struct k_mbox *pmbox)
 			     NULL);
 
 		zassert_true(k_mbox_data_block_get
-			     (&mmsg, &mpoolrx, &rxblock, 1) == -EAGAIN, NULL);
+			     (&mmsg, &mpoolrx, &rxblock, K_MSEC(1)) == -EAGAIN,
+			     NULL);
 
 		/* Now dispose of the block since the test case finished */
 		k_mbox_data_get(&mmsg, NULL);
