@@ -137,7 +137,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lsm6dsl_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lsm6dsl_work_cb;
 	drv_data->dev = dev;

@@ -249,10 +249,12 @@ void task_high(void)
 	counter = SEM_TEST_START;
 
 	k_thread_create(&coop_thread[0], coop_stack[0], COOP_STACKSIZE,
-			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
+			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0,
+			K_NO_WAIT);
 
 	k_thread_create(&coop_thread[1], coop_stack[1], COOP_STACKSIZE,
-			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+			K_NO_WAIT);
 
 	counter = FIFO_TEST_START;
 	fifo_tests(THIRD_SECOND, &task_high_state, my_fifo_get, k_sem_take);

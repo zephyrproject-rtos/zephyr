@@ -62,7 +62,7 @@ void test_k_thread_foreach(void)
 	/* Create new thread which should add a new entry to the thread list */
 	k_tid_t tid = k_thread_create(&tdata, tstack,
 			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
-			NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	k_sleep(K_MSEC(1));
 
 	/* Call k_thread_foreach() and check

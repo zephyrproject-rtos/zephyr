@@ -139,7 +139,7 @@ void system_thread_bench(void)
 	k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
 			thread_swap_test,
 			NULL, NULL, NULL,
-			-1 /*priority*/, 0, 0);
+			-1 /*priority*/, 0, K_NO_WAIT);
 
 	k_sleep(K_MSEC(1));
 	thread_abort_end_time = (z_arch_timing_value_swap_common);
@@ -166,7 +166,7 @@ void system_thread_bench(void)
 					 STACK_SIZE,
 					 thread_swap_test,
 					 NULL, NULL, NULL,
-					 5 /*priority*/, 0, 10);
+					 5 /*priority*/, 0, K_MSEC(10));
 	TIMING_INFO_PRE_READ();
 	thread_create_end_time = TIMING_INFO_OS_GET_TIME();
 
@@ -183,7 +183,7 @@ void system_thread_bench(void)
 					      STACK_SIZE,
 					      thread_suspend_test,
 					      NULL, NULL, NULL,
-					      -1 /*priority*/, 0, 0);
+					      -1 /*priority*/, 0, K_NO_WAIT);
 
 	TIMING_INFO_PRE_READ();
 	thread_suspend_end_time = TIMING_INFO_OS_GET_TIME();

@@ -908,7 +908,7 @@ static void init_ports(void)
 	tid = k_thread_create(&gptp_thread_data, gptp_stack,
 			      K_THREAD_STACK_SIZEOF(gptp_stack),
 			      (k_thread_entry_t)gptp_thread,
-			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, 0);
+			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, K_NO_WAIT);
 	k_thread_name_set(&gptp_thread_data, "gptp");
 }
 

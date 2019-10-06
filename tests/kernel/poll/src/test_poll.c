@@ -210,7 +210,8 @@ void test_poll_wait(void)
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper, (void *)1, 0, 0,
-			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
+			main_low_prio - 1, K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
@@ -266,7 +267,7 @@ void test_poll_wait(void)
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
-			0, 0, 0, main_low_prio - 1, 0, 0);
+			0, 0, 0, main_low_prio - 1, 0, K_NO_WAIT);
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
@@ -302,7 +303,7 @@ void test_poll_wait(void)
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
 			(void *)1, 0, 0, old_prio + 1,
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* semaphore */
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
@@ -419,7 +420,8 @@ void test_poll_cancel(bool is_main_low_prio)
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_cancel_helper, (void *)1, 0, 0,
-			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
+			main_low_prio - 1, K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
 
 	rc = k_poll(cancel_events, ARRAY_SIZE(cancel_events), K_SECONDS(1));
 
@@ -519,7 +521,7 @@ void test_poll_multi(void)
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			multi, 0, 0, 0, main_low_prio - 1,
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/*
 	 * create additional thread to add multiple(more than one) pending threads
@@ -528,7 +530,7 @@ void test_poll_multi(void)
 	k_thread_create(&test_loprio_thread, test_loprio_stack,
 			K_THREAD_STACK_SIZEOF(test_loprio_stack),
 			multi_lowprio, 0, 0, 0, main_low_prio + 1,
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* Allow lower priority thread to add poll event in the list */
 	k_sleep(K_MSEC(250));
@@ -596,7 +598,8 @@ void test_poll_threadstate(void)
 
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack), threadstate,
-			ztest_tid, 0, 0, main_low_prio - 1, K_INHERIT_PERMS, 0);
+			ztest_tid, 0, 0, main_low_prio - 1, K_INHERIT_PERMS,
+			K_NO_WAIT);
 
 	/* wait for spawn thread to take action */
 	zassert_equal(k_poll(&event, 1, K_SECONDS(1)), 0, "");

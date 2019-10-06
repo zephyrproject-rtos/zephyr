@@ -64,7 +64,7 @@ static void tstack_thread_thread(struct k_stack *pstack)
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, STACK_SIZE,
 				      tThread_entry, pstack, NULL, NULL,
 				      K_PRIO_PREEMPT(0), K_USER |
-				      K_INHERIT_PERMS, 0);
+				      K_INHERIT_PERMS, K_NO_WAIT);
 	tstack_push(pstack);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -150,7 +150,8 @@ void test_stack_alloc_thread2thread(void)
 	/**TESTPOINT: thread-thread data passing via stack*/
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, STACK_SIZE,
 					tThread_entry, &kstack_test_alloc,
-					NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+					NULL, NULL, K_PRIO_PREEMPT(0), 0,
+					K_NO_WAIT);
 	tstack_push(&kstack_test_alloc);
 	k_sem_take(&end_sema, K_FOREVER);
 

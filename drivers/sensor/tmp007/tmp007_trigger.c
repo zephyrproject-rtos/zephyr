@@ -172,7 +172,7 @@ int tmp007_init_interrupt(struct device *dev)
 			CONFIG_TMP007_THREAD_STACK_SIZE,
 			(k_thread_entry_t)tmp007_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;
 	drv_data->dev = dev;

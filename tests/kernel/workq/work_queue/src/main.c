@@ -117,7 +117,7 @@ static void delayed_test_items_submit(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_work_main,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
@@ -266,7 +266,7 @@ static void test_delayed_submit(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_main,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
@@ -315,7 +315,7 @@ static void test_delayed_cancel(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_cancel_main,
-			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, 0);
+			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(WORK_ITEM_WAIT_ALIGNED);
@@ -401,7 +401,7 @@ static void test_delayed_resubmit_thread(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_resubmit,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(WORK_ITEM_WAIT_ALIGNED);

@@ -39,13 +39,13 @@ void yield_bench(void)
 				     STACK_SIZE,
 				     thread_yield0_test,
 				     NULL, NULL, NULL,
-				     0 /*priority*/, 0, 0);
+				     0 /*priority*/, 0, K_NO_WAIT);
 
 	yield1_tid = k_thread_create(&my_thread_0, my_stack_area_0,
 				     STACK_SIZE,
 				     thread_yield1_test,
 				     NULL, NULL, NULL,
-				     0 /*priority*/, 0, 0);
+				     0 /*priority*/, 0, K_NO_WAIT);
 
 	/*read the time of start of the sleep till the swap happens */
 	z_arch_timing_value_swap_end = 1U;

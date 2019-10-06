@@ -100,7 +100,7 @@ void drop_to_user_mode(void)
 	k_thread_create(&my_thread_user, my_stack_area_0, STACK_SIZE,
 			drop_to_user_mode_thread,
 			NULL, NULL, NULL,
-			-1 /*priority*/, K_INHERIT_PERMS, 0);
+			-1 /*priority*/, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 
@@ -135,7 +135,7 @@ void user_thread_creation(void)
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,
 			test_drop_to_user_mode_1,
 			NULL, NULL, NULL,
-			0 /*priority*/, K_INHERIT_PERMS | K_USER, 0);
+			0 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	TIMING_INFO_PRE_READ();
 	user_thread_creation_end_time = TIMING_INFO_GET_TIMER_VALUE();
@@ -189,7 +189,7 @@ void syscall_overhead(void)
 	k_thread_create(&my_thread_user, my_stack_area_0, STACK_SIZE,
 			syscall_overhead_user_thread,
 			NULL, NULL, NULL,
-			-1 /*priority*/, K_INHERIT_PERMS | K_USER, 0);
+			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
 	u32_t total_cycles = (u32_t)
@@ -253,7 +253,7 @@ void validation_overhead(void)
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,
 			validation_overhead_user_thread,
 			NULL, NULL, NULL,
-			-1 /*priority*/, K_INHERIT_PERMS | K_USER, 0);
+			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
 	u32_t total_cycles_obj_init = (u32_t)
