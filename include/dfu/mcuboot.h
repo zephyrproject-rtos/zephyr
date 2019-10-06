@@ -30,9 +30,26 @@
 
 #define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
 
+/* Header: */
+#define BOOT_HEADER_MAGIC_V1 0x96f3b83d
+#define BOOT_HEADER_SIZE_V1 32
+
 /* Trailer: */
 #define BOOT_MAX_ALIGN		8
 #define BOOT_MAGIC_SZ		16
+#define BOOT_FLAG_SET   1
+#define BOOT_FLAG_BAD   2
+#define BOOT_FLAG_UNSET 3
+#define BOOT_FLAG_ANY   4  /* NOTE: control only, not dependent on sector */
+
+#define BOOT_MAGIC_GOOD    1
+#define BOOT_MAGIC_BAD     2
+#define BOOT_MAGIC_UNSET   3
+#define BOOT_MAGIC_ANY     4  /* NOTE: control only, not dependent on sector */
+#define BOOT_MAGIC_NOTGOOD 5  /* NOTE: control only, not dependent on sector */
+
+#define BOOT_FLAG_IMAGE_OK  0
+#define BOOT_FLAG_COPY_DONE 1
 
 #define BOOT_TRAILER_IMG_STATUS_OFFS(bank_area) ((bank_area)->fa_size -\
 						  BOOT_MAGIC_SZ -\
@@ -61,10 +78,14 @@ struct mcuboot_img_sem_ver {
  * to applications is omitted.
  */
 struct mcuboot_img_header_v1 {
-	/** The size of the image, in bytes. */
+	u32_t header_magic;
+	u32_t image_load_address;
+	u16_t header_size;
+	u16_t pad;
 	u32_t image_size;
-	/** The image version. */
+	u32_t image_flags;
 	struct mcuboot_img_sem_ver sem_ver;
+	u32_t pad2;
 };
 
 /**

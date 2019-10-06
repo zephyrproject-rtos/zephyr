@@ -19,25 +19,6 @@
 #include <dfu/mcuboot.h>
 
 /*
- * Helpers for image headers and trailers, as defined by mcuboot.
- */
-
-/*
- * Strict defines: the definitions in the following block contain
- * values which are MCUboot implementation requirements.
- */
-
-/* Header: */
-#define BOOT_HEADER_MAGIC_V1 0x96f3b83d
-#define BOOT_HEADER_SIZE_V1 32
-
-/* Trailer: */
-#define BOOT_FLAG_SET   1
-#define BOOT_FLAG_BAD   2
-#define BOOT_FLAG_UNSET 3
-#define BOOT_FLAG_ANY   4  /* NOTE: control only, not dependent on sector */
-
-/*
  * Raw (on-flash) representation of the v1 image header.
  */
 struct mcuboot_v1_raw_header {
@@ -55,19 +36,6 @@ struct mcuboot_v1_raw_header {
 	} version;
 	u32_t pad2;
 } __packed;
-
-/*
- * End of strict defines
- */
-
-#define BOOT_MAGIC_GOOD    1
-#define BOOT_MAGIC_BAD     2
-#define BOOT_MAGIC_UNSET   3
-#define BOOT_MAGIC_ANY     4  /* NOTE: control only, not dependent on sector */
-#define BOOT_MAGIC_NOTGOOD 5  /* NOTE: control only, not dependent on sector */
-
-#define BOOT_FLAG_IMAGE_OK  0
-#define BOOT_FLAG_COPY_DONE 1
 
 #define FLASH_MIN_WRITE_SIZE DT_FLASH_WRITE_BLOCK_SIZE
 
