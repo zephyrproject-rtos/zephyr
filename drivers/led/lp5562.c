@@ -489,7 +489,7 @@ static inline int lp5562_set_engine_exec_state(struct device *dev,
 	 * Delay between consecutive I2C writes to
 	 * ENABLE register (00h) need to be longer than 488μs (typ.).
 	 */
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	return ret;
 }

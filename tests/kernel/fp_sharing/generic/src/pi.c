@@ -134,7 +134,7 @@ void calculate_pi_high(void)
 		 * once the sleep ends.
 		 */
 
-		k_sleep(10);
+		k_sleep(K_MSEC(10));
 
 		pi *= 4;
 

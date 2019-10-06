@@ -16,7 +16,7 @@ K_SEM_DEFINE(sync_sema, 0, 1);
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	execute_flag = 1;
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	execute_flag = 2;
 }
 
@@ -44,7 +44,7 @@ void test_threads_abort_self(void)
 	execute_flag = 0;
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_abort,
 			NULL, NULL, NULL, 0, K_USER, 0);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/**TESTPOINT: spawned thread executed but abort itself*/
 	zassert_true(execute_flag == 1, NULL);
 }
@@ -67,18 +67,18 @@ void test_threads_abort_others(void)
 				      0, K_USER, 0);
 
 	k_thread_abort(tid);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/**TESTPOINT: check not-started thread is aborted*/
 	zassert_true(execute_flag == 0, NULL);
 
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
 			      0, K_USER, 0);
-	k_sleep(50);
+	k_sleep(K_MSEC(50));
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
 	zassert_true(execute_flag == 1, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 	zassert_true(execute_flag == 1, NULL);
 }
 
@@ -96,9 +96,9 @@ void test_threads_abort_repeat(void)
 				      0, K_USER, 0);
 
 	k_thread_abort(tid);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
 	/* If no fault occurred till now. The test case passed. */
 	ztest_test_pass();
@@ -177,7 +177,7 @@ void test_delayed_thread_abort(void)
 				      K_PRIO_PREEMPT(1), 0, 100);
 
 	/* Give up CPU */
-	k_sleep(50);
+	k_sleep(K_MSEC(50));
 
 	/* Test point: check if thread delayed for 100ms has not started*/
 	zassert_true(execute_flag == 0, "Delayed thread created is not"

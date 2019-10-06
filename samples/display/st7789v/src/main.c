@@ -167,6 +167,6 @@ void main(void)
 			break;
 		}
 		++cnt;
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 }

@@ -274,7 +274,7 @@ static int test_wdt_callback_2(void)
 
 	while (1) {
 		wdt_feed(wdt, 0);
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	};
 }
 #endif

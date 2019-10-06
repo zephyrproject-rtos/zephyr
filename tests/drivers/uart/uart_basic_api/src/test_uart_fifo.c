@@ -124,7 +124,7 @@ static int test_fifo_fill(void)
 	/* Verify uart_irq_tx_enable() */
 	uart_irq_tx_enable(uart_dev);
 
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 	/* Verify uart_irq_tx_disable() */
 	uart_irq_tx_disable(uart_dev);

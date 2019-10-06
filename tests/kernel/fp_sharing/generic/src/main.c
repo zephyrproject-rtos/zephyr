@@ -331,7 +331,7 @@ void load_store_high(void)
 		 * once the sleep ends.
 		 */
 
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 
 		/* periodically issue progress report */
 
@@ -380,6 +380,6 @@ void main(void *p1, void *p2, void *p3)
 	 * gcov manually later when the test completes.
 	 */
 	while (true) {
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

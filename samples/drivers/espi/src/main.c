@@ -222,7 +222,7 @@ void main(void)
 {
 	int ret;
 
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);

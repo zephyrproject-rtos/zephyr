@@ -421,6 +421,6 @@ void main(void)
 #endif
 
 		cnt++;
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

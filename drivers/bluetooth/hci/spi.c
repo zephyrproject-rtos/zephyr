@@ -407,7 +407,7 @@ static int bt_spi_send(struct net_buf *buf)
 		if (!pending) {
 			break;
 		}
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 
 	k_sem_take(&sem_busy, K_FOREVER);

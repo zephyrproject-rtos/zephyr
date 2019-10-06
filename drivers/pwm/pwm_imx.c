@@ -96,7 +96,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	} else {
 		PWM_PWMCR_REG(base) = PWM_PWMCR_SWR(1);
 		do {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 			cr = PWM_PWMCR_REG(base);
 		} while ((PWM_PWMCR_SWR(cr)) &&
 			 (++wait_count < CONFIG_PWM_PWMSWR_LOOP));

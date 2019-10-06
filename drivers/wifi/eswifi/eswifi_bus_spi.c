@@ -48,7 +48,7 @@ static int eswifi_spi_wait_cmddata_ready(struct eswifi_spi_data *spi)
 
 	do {
 		/* allow other threads to be scheduled */
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	} while (!eswifi_spi_cmddata_ready(spi) && --max_retries);
 
 	return max_retries ? 0 : -ETIMEDOUT;
@@ -169,7 +169,7 @@ data:
 	/* Flush remaining data if receiving buffer not large enough */
 	while (eswifi_spi_cmddata_ready(spi)) {
 		eswifi_spi_read(eswifi, tmp, 2);
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 
 	/* Our device is flagged with SPI_HOLD_ON_CS|SPI_LOCK_ON, release */

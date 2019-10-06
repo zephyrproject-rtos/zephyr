@@ -212,7 +212,7 @@ void test_pipe_block_put(void)
 				      tThread_block_put, &kpipe, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	tpipe_get(&kpipe, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -232,7 +232,7 @@ void test_pipe_block_put_sema(void)
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_block_put, &pipe, &sync_sema,
 				      NULL, K_PRIO_PREEMPT(0), 0, 0);
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	tpipe_get(&pipe, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -315,7 +315,7 @@ void test_half_pipe_block_put_sema(void)
 				      &khalfpipe, &sync_sema, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	tpipe_get(&khalfpipe, K_FOREVER);
 
 	k_thread_abort(tid);

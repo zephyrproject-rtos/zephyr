@@ -463,6 +463,6 @@ void main(void)
 
 	while (1) {
 		publisher();
-		k_sleep(5000);
+		k_sleep(K_MSEC(5000));
 	}
 }

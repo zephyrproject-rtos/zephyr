@@ -173,7 +173,7 @@ static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
 {
 	(void)p2; (void)p3;
 
-	k_sleep(250);
+	k_sleep(K_MSEC(250));
 
 	k_sem_give(&wait_sem);
 
@@ -377,7 +377,7 @@ static void poll_cancel_helper(void *p1, void *p2, void *p3)
 
 	static struct fifo_msg msg;
 
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	k_fifo_cancel_wait(&cancel_fifo);
 
@@ -531,7 +531,7 @@ void test_poll_multi(void)
 			K_USER | K_INHERIT_PERMS, 0);
 
 	/* Allow lower priority thread to add poll event in the list */
-	k_sleep(250);
+	k_sleep(K_MSEC(250));
 	rc = k_poll(events, ARRAY_SIZE(events), K_SECONDS(1));
 
 	zassert_equal(rc, 0, "");
@@ -547,7 +547,7 @@ void test_poll_multi(void)
 
 	/* wait for polling threads to complete execution */
 	k_thread_priority_set(k_current_get(), old_prio);
-	k_sleep(250);
+	k_sleep(K_MSEC(250));
 }
 
 static struct k_poll_signal signal;
@@ -556,7 +556,7 @@ static void threadstate(void *p1, void *p2, void *p3)
 {
 	(void)p2; (void)p3;
 
-	k_sleep(250);
+	k_sleep(K_MSEC(250));
 	/* Update polling thread state explicitly to improve code coverage */
 	k_thread_suspend(p1);
 	/* Enable polling thread by signalling */

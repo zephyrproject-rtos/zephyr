@@ -120,7 +120,7 @@ static void test_all_instances(counter_test_func_t func,
 		}
 		counter_tear_down_instance(devices[i]);
 		/* Allow logs to be printed. */
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 }
 

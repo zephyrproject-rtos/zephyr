@@ -63,7 +63,7 @@ void test_k_thread_foreach(void)
 	k_tid_t tid = k_thread_create(&tdata, tstack,
 			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
 			NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	/* Call k_thread_foreach() and check
 	 * thread_callback is getting called for

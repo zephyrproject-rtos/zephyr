@@ -66,7 +66,7 @@ static void test_all_instances(test_func_t func,
 			func(devices[i].name, devices[i].startup_us);
 			tear_down_instance(devices[i].name);
 			/* Allow logs to be printed. */
-			k_sleep(100);
+			k_sleep(K_MSEC(100));
 		}
 	}
 }
