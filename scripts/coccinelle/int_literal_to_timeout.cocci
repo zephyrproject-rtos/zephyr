@@ -28,6 +28,7 @@ identifier last_timeout =~ "(?x)^k_
 | poll
 | queue_get
 | sem_take
+| sleep
 | stack_pop
 | timer_start
 | work_poll_submit(|_to_queue)
