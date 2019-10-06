@@ -791,8 +791,11 @@ void ticker_worker(void *param)
 		if (ticker->ticks_slot != 0U &&
 		   (slot_reserved || ticker_resolve_collision(node, ticker))) {
 			ticker->lazy_current++;
-			if (ticker->must_expire == 0U) {
-				/* Skip this ticker node */
+			if ((ticker->must_expire == 0U) ||
+			    (ticker->lazy_periodic >= ticker->lazy_current)) {
+				/* Not a must-expire case or this is programmed
+				 * latency. Skip this ticker node
+				 */
 				continue;
 			}
 			/* Continue but perform shallow expiry */
