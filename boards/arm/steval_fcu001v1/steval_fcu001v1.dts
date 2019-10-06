@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2019 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f401Xc.dtsi>
+
+/ {
+	model = "STMicroelectronics Flight Controller Board";
+	compatible = "st,flight-controller-board", "st,stm32f401";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_1: led_1 {
+			gpios = <&gpiob 5 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		red_led_2: led_2 {
+			gpios = <&gpiob 4 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	aliases {
+		led0 = &red_led_1;
+		led1 = &red_led_2;
+	};
+};
+
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm {
+		status = "okay";
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
