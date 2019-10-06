@@ -391,10 +391,17 @@ static int ht16k33_init(struct device *dev)
 		}
 
 		err = gpio_pin_configure(irq_dev, config->irq_pin,
-					 GPIO_DIR_IN | GPIO_INT |
-					 GPIO_INT_EDGE | config->irq_flags);
+					 GPIO_INPUT | config->irq_flags);
 		if (err) {
 			LOG_ERR("Failed to configure IRQ pin (err %d)", err);
+			return -EINVAL;
+		}
+
+		err = gpio_pin_interrupt_configure(irq_dev, config->irq_pin,
+						   GPIO_INT_EDGE_FALLING);
+		if (err) {
+			LOG_ERR("Failed to configure IRQ pin flags (err %d)",
+				err);
 			return -EINVAL;
 		}
 
@@ -408,12 +415,7 @@ static int ht16k33_init(struct device *dev)
 		}
 
 		/* Enable interrupt pin */
-		cmd[0] = HT16K33_CMD_ROW_INT_SET;
-		if (config->irq_flags & GPIO_INT_ACTIVE_HIGH) {
-			cmd[0] |= HT16K33_OPT_INT_HIGH;
-		} else {
-			cmd[0] |= HT16K33_OPT_INT_LOW;
-		}
+		cmd[0] = HT16K33_CMD_ROW_INT_SET | HT16K33_OPT_INT_LOW;
 		if (i2c_write(data->i2c, cmd, 1, config->i2c_addr)) {
 			LOG_ERR("Enabling HT16K33 IRQ output failed");
 			return -EIO;
