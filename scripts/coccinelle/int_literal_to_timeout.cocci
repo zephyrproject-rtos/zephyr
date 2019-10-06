@@ -18,18 +18,19 @@ virtual report
 // Base rule provides the complex identifier regular expression
 @r_last_timeout@
 identifier last_timeout =~ "(?x)^k_
-( timer_start
-| queue_get
+( delayed_work_submit(|_to_queue)
 | futex_wait
-| stack_pop
-| delayed_work_submit(|_to_queue)
-| work_poll_submit(|_to_queue)
+| mbox_data_block_get
+| (mbox|msgq)_get
+| mem_(pool|slab)_alloc
 | mutex_lock
-| sem_take
-| (msgq|mbox|pipe)_(block_)?(put|get)
-| mem_(slab|pool)_alloc
+| pipe_(get|put)
 | poll
-| thread_deadline_set
+| queue_get
+| sem_take
+| stack_pop
+| timer_start
+| work_poll_submit(|_to_queue)
 )$";
 @@
 last_timeout(...)
