@@ -40,9 +40,6 @@ LOG_MODULE_DECLARE(os);
 #define EACD(edr)  (((edr) & SYSMPU_EDR_EACD_MASK) >> SYSMPU_EDR_EACD_SHIFT)
 #endif
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE) || \
-	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
-
 /* Exception Return (EXC_RETURN) is provided in LR upon exception entry.
  * It is used to perform an exception return and to detect possible state
  * transition upon exception.
@@ -102,7 +99,6 @@ LOG_MODULE_DECLARE(os);
  * to the Secure stack during a Non-Secure exception entry.
  */
 #define ADDITIONAL_STATE_CONTEXT_WORDS 10
-#endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
 
 /**
  *
@@ -777,6 +773,128 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
 #endif /* CONFIG_FAULT_DUMP== 2 */
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
+/*
+ * This internal function does the following:
+ *
+ * - Retrieves the exception stack frame
+ * - Evaluates whether to report being in a nested exception
+ *
+ * If the ESF is not successfully retrieved, the function signals
+ * an error by returning NULL.
+ *
+ * @return ESF pointer on success, otherwise return NULL
+ */
+static inline z_arch_esf_t *get_esf(u32_t msp, u32_t psp, u32_t exc_return,
+	bool *nested_exc)
+{
+	bool alternative_state_exc = false;
+	z_arch_esf_t *ptr_esf;
+
+	*nested_exc = false;
+
+	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
+			EXC_RETURN_INDICATOR_PREFIX) {
+		/* Invalid EXC_RETURN value. This is a fatal error. */
+		return NULL;
+	}
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	if ((exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) == 0U) {
+		/* Secure Firmware shall only handle Secure Exceptions.
+		 * This is a fatal error.
+		 */
+		return NULL;
+	}
+
+	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
+		/* Exception entry occurred in Secure stack. */
+	} else {
+		/* Exception entry occurred in Non-Secure stack. Therefore,
+		 * msp/psp point to the Secure stack, however, the actual
+		 * exception stack frame is located in the Non-Secure stack.
+		 */
+		alternative_state_exc = true;
+
+		/* Dump the Secure stack before handling the actual fault. */
+		z_arch_esf_t *secure_esf;
+
+		if (exc_return & EXC_RETURN_SPSEL_PROCESS) {
+			/* Secure stack pointed by PSP */
+			secure_esf = (z_arch_esf_t *)psp;
+		} else {
+			/* Secure stack pointed by MSP */
+			secure_esf = (z_arch_esf_t *)msp;
+			*nested_exc = true;
+		}
+
+		SECURE_STACK_DUMP(secure_esf);
+
+		/* Handle the actual fault.
+		 * Extract the correct stack frame from the Non-Secure state
+		 * and supply it to the fault handing function.
+		 */
+		if (exc_return & EXC_RETURN_MODE_THREAD) {
+			ptr_esf = (z_arch_esf_t *)__TZ_get_PSP_NS();
+		} else {
+			ptr_esf = (z_arch_esf_t *)__TZ_get_MSP_NS();
+		}
+	}
+#elif defined(CONFIG_ARM_NONSECURE_FIRMWARE)
+	if (exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) {
+		/* Non-Secure Firmware shall only handle Non-Secure Exceptions.
+		 * This is a fatal error.
+		 */
+		return NULL;
+	}
+
+	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
+		/* Exception entry occurred in Secure stack.
+		 *
+		 * Note that Non-Secure firmware cannot inspect the Secure
+		 * stack to determine the root cause of the fault. Fault
+		 * inspection will indicate the Non-Secure instruction
+		 * that performed the branch to the Secure domain.
+		 */
+		alternative_state_exc = true;
+
+		PR_FAULT_INFO("Exception occurred in Secure State");
+
+		if (exc_return & EXC_RETURN_SPSEL_PROCESS) {
+			/* Non-Secure stack frame on PSP */
+			ptr_esf = (z_arch_esf_t *)psp;
+		} else {
+			/* Non-Secure stack frame on MSP */
+			ptr_esf = (z_arch_esf_t *)msp;
+		}
+	} else {
+		/* Exception entry occurred in Non-Secure stack. */
+	}
+#else
+	/* The processor has a single execution state.
+	 * We verify that the Thread mode is using PSP.
+	 */
+	if ((exc_return & EXC_RETURN_MODE_THREAD) &&
+		(!(exc_return & EXC_RETURN_SPSEL_PROCESS))) {
+		PR_EXC("SPSEL in thread mode does not indicate PSP");
+		return NULL;
+	}
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+
+	if (!alternative_state_exc) {
+		if (exc_return & EXC_RETURN_MODE_THREAD) {
+			/* Returning to thread mode */
+			ptr_esf =  (z_arch_esf_t *)psp;
+
+		} else {
+			/* Returning to handler mode */
+			ptr_esf = (z_arch_esf_t *)msp;
+			*nested_exc = true;
+		}
+	}
+
+	return ptr_esf;
+}
+
 /**
  *
  * @brief ARM Fault handler
@@ -791,106 +909,66 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
  * The k_sys_fatal_error_handler() is invoked once the above operations are
  * completed, and is responsible for implementing the error handling policy.
  *
- * The provided ESF pointer points to the exception stack frame of the current
- * security state. Note that the current security state might not be the actual
+ * The function needs, first, to determine the exception stack frame.
+ * Note that the current security state might not be the actual
  * state in which the processor was executing, when the exception occurred.
  * The actual state may need to be determined by inspecting the EXC_RETURN
  * value, which is provided as argument to the Fault handler.
  *
- * @param esf Pointer to the exception stack frame of the current security
- * state. The stack frame may be either on the Main stack (MSP) or Process
- * stack (PSP) depending at what execution state the exception was taken.
+ * If the exception occurred in the same security state, the stack frame
+ * will be pointed to by either MSP or PSP depending on the processor
+ * execution state when the exception occurred. MSP and PSP values are
+ * provided as arguments to the Fault handler.
  *
+ * @param msp MSP value immediately after the exception occurred
+ * @param psp PSP value immediately after the exception occurred
  * @param exc_return EXC_RETURN value present in LR after exception entry.
  *
- * Note: exc_return argument shall only be used by the Fault handler if we are
- * running a Secure Firmware.
  */
-void z_arm_fault(z_arch_esf_t *esf, u32_t exc_return)
+void z_arm_fault(u32_t msp, u32_t psp, u32_t exc_return)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
-	bool recoverable;
+	bool recoverable, nested_exc;
+	z_arch_esf_t *esf;
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE)
-	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
-			EXC_RETURN_INDICATOR_PREFIX) {
-		/* Invalid EXC_RETURN value */
-		goto _exit_fatal;
-	}
-	if ((exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) == 0U) {
-		/* Secure Firmware shall only handle Secure Exceptions.
-		 * This is a fatal error.
-		 */
-		goto _exit_fatal;
-	}
+	/* Create a stack-ed copy of the ESF to be used during
+	 * the fault handling process.
+	 */
+	z_arch_esf_t esf_copy;
 
-	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
-		/* Exception entry occurred in Secure stack. */
-	} else {
-		/* Exception entry occurred in Non-Secure stack. Therefore, 'esf'
-		 * holds the Secure stack information, however, the actual
-		 * exception stack frame is located in the Non-Secure stack.
-		 */
+	/* Force unlock interrupts */
+	z_arch_irq_unlock(0);
 
-		/* Dump the Secure stack before handling the actual fault. */
-		SECURE_STACK_DUMP(esf);
-
-		/* Handle the actual fault.
-		 * Extract the correct stack frame from the Non-Secure state
-		 * and supply it to the fault handing function.
-		 */
-		if (exc_return & EXC_RETURN_MODE_THREAD) {
-			esf = (z_arch_esf_t *)__TZ_get_PSP_NS();
-			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) == 0) {
-				PR_EXC("RETTOBASE does not match EXC_RETURN");
-				goto _exit_fatal;
-			}
-		} else {
-			esf = (z_arch_esf_t *)__TZ_get_MSP_NS();
-			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) != 0) {
-				PR_EXC("RETTOBASE does not match EXC_RETURN");
-				goto _exit_fatal;
-			}
-		}
-	}
-#elif defined(CONFIG_ARM_NONSECURE_FIRMWARE)
-	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
-			EXC_RETURN_INDICATOR_PREFIX) {
-		/* Invalid EXC_RETURN value */
-		goto _exit_fatal;
-	}
-	if (exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) {
-		/* Non-Secure Firmware shall only handle Non-Secure Exceptions.
-		 * This is a fatal error.
-		 */
-		goto _exit_fatal;
-	}
-
-	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
-		/* Exception entry occurred in Secure stack.
-		 *
-		 * Note that Non-Secure firmware cannot inspect the Secure
-		 * stack to determine the root cause of the fault. Fault
-		 * inspection will indicate the Non-Secure instruction
-		 * that performed the branch to the Secure domain.
-		 */
-		PR_FAULT_INFO("Exception occurred in Secure State");
-	}
-#else
-	(void) exc_return;
-#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+	/* Retrieve the Exception Stack Frame (ESF) to be supplied
+	 * as argument to the remainder of the fault handling process.
+	 */
+	 esf = get_esf(msp, psp, exc_return, &nested_exc);
+	__ASSERT(esf != NULL,
+		"ESF could not be retrieved successfully. Shall never occur.");
 
 	reason = fault_handle(esf, fault, &recoverable);
 	if (recoverable) {
 		return;
 	}
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE) || \
-	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
-_exit_fatal:
-#endif
-	z_arm_fatal_error(reason, esf);
+	/* Copy ESF */
+	memcpy(&esf_copy, esf, sizeof(z_arch_esf_t));
+
+	/* Overwrite stacked IPSR to mark a nested exception,
+	 * or a return to Thread mode. Note that this may be
+	 * required, if the retrieved ESF contents are invalid
+	 * due to, for instance, a stacking error.
+	 */
+	if (nested_exc) {
+		if ((esf_copy.basic.xpsr & IPSR_ISR_Msk) == 0) {
+			esf_copy.basic.xpsr |= IPSR_ISR_Msk;
+		}
+	} else {
+		esf_copy.basic.xpsr &= ~(IPSR_ISR_Msk);
+	}
+
+	z_arm_fatal_error(reason, &esf_copy);
 }
 
 /**
