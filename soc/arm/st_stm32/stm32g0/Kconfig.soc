@@ -8,6 +8,9 @@ choice
 	prompt "STM32G0x MCU Selection"
 	depends on SOC_SERIES_STM32G0X
 
+config SOC_STM32G031XX
+	bool "STM32G031XX"
+
 config SOC_STM32G071XX
 	bool "STM32G071XX"
 
