@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f412Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F412ZG-NUCLEO board";
@@ -49,10 +50,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-arduino_serial: &usart6 {};
 
 &usart3 {
 	current-speed = <115200>;
