@@ -1,0 +1,12 @@
+sample:
+  name: KSCAN driver sample
+tests:
+  sample.driver.kscan:
+    tags: drivers
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: true
+        regex:
+            - "kb data(.*)"
+    depends_on: kscan
