@@ -1,0 +1,32 @@
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs Gecko Family ADC
+
+compatible: "silabs,gecko-adc"
+
+include: adc-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
+    prescaler:
+      type: int
+      description: clock prescaler divisor applied to the generic clock
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - input
