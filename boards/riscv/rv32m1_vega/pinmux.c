@@ -69,6 +69,11 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porte, 27, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
+	/* RGB LEDs */
+	pinmux_pin_set(porta, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, 23, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, 24, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 #if CONFIG_SPI_1
 	/* LPSPI1 SCK, SIN, SOUT, CS */
 	pinmux_pin_set(portb, 20, PORT_PCR_MUX(kPORT_MuxAlt2));
