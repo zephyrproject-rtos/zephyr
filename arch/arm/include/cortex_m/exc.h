@@ -49,6 +49,32 @@ static ALWAYS_INLINE bool z_arch_is_in_isr(void)
 }
 
 /**
+ * @brief Find out if we were in ISR context
+ *        before the current exception occurred.
+ *
+ * A function that determines, based on inspecting the current
+ * ESF, whether the processor was in handler mode before entering
+ * the current exception state (i.e. nested exception) or not.
+ *
+ * Notes:
+ * - The function shall only be called from ISR context.
+ * - We do not use ARM processor state flags to determine
+ *   whether we are in a nested exception; we rely on the
+ *   RETPSR value stacked on the ESF. Hence, the function
+ *   assumes that the ESF stack frame has a valid RETPSR
+ *   value.
+ *
+ * @param esf the exception stack frame (cannot be NULL)
+ * @return true if execution state was in handler mode, before
+ *              the current exception occurred, otherwise false.
+ */
+static ALWAYS_INLINE bool z_arch_is_in_nested_exception(
+	const z_arch_esf_t *esf)
+{
+	return (esf->basic.xpsr & IPSR_ISR_Msk) ? (true) : (false);
+}
+
+/**
  * @brief Setup system exceptions
  *
  * Set exception priorities to conform with the BASEPRI locking mechanism.
