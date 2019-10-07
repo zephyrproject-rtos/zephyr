@@ -69,7 +69,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/arm/mec1501modular_assy6885/mec1501modular_assy6885`
+:zephyr_file:`boards/arm/mec1501modular_assy6885/mec1501modular_assy6885_defconfig`
 Kconfig file.
 
 Connections and IOs

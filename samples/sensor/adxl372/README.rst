@@ -70,7 +70,7 @@ In this example below the :ref:`nrf52_pca10040` board is used.
 
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/adxl372
+   :zephyr-app: samples/sensor/adxl372
    :board: nrf52_pca10040
    :goals: build flash
 

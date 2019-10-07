@@ -162,7 +162,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:zephyr_file:`arch/arm/core/fault.c` for an example.
+:zephyr_file:`arch/arm/core/cortex_m/fault.c` for an example.
 
 Thread Context Switching
 ************************

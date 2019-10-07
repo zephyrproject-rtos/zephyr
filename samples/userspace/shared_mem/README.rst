@@ -26,7 +26,7 @@ This example will only cover the qemu_x86 board, since the sample
 just prints text to a console.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/userspace/shared_mem
+   :zephyr-app: samples/userspace/shared_mem
    :board: qemu_x86
    :goals: build run
    :compact:
