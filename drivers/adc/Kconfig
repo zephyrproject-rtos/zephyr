@@ -45,6 +45,8 @@ config ADC_1
 config ADC_2
 	bool "Enable ADC 2"
 
+source "drivers/adc/Kconfig.gecko"
+
 source "drivers/adc/Kconfig.mcux"
 
 source "drivers/adc/Kconfig.nrfx"

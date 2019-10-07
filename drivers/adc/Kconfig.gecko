@@ -1,0 +1,15 @@
+# ADC configuration options
+
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_GECKO
+	bool "Gecko ADC driver"
+	default y
+	depends on SOC_FAMILY_EXX32
+	select SOC_GECKO_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the Silabs GeckoEXX32 ADC

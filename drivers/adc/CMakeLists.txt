@@ -4,6 +4,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ADC			adc_common.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_SHELL		adc_shell.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_GECKO		adc_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_MCUX_ADC12	adc_mcux_adc12.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_MCUX_ADC16	adc_mcux_adc16.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_SAM_AFEC	adc_sam_afec.c)
