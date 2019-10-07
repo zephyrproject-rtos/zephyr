@@ -1,0 +1,5 @@
+description: Texas Instruments LMP90097 AFE binding
+
+compatible: "ti,lmp90097"
+
+include: ti,lmp90xxx-base.yaml
