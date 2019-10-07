@@ -2,7 +2,6 @@
  * Copyright (c) 2019 Lexmark International, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include <mem.h>
@@ -10,6 +9,17 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r4";
+			reg = <0>;
+		};
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
 
@@ -19,7 +29,6 @@
 					<0xf9020000 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			interrupt-parent = <&core_intc>;
 			label = "GIC";
 			status = "okay";
 		};
