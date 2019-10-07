@@ -235,6 +235,16 @@ comment "BLE Controller features"
 
 if BT_CONN
 
+config BT_CTLR_LLCP_CONN
+	int "Number of connections with worst-case overlapping procedures"
+	default 1
+	range 1 BT_MAX_CONN
+	help
+	  Set the number connections for which worst-case buffer requirements
+	  for LLCP procedures must be met. Executing LLCP procedures on
+	  more than this number of connections simultaneously may cause
+	  instabilities.
+
 config BT_CTLR_LE_ENC
 	bool "LE Encryption"
 	depends on !BT_CTLR_DATA_LENGTH_CLEAR && !BT_CTLR_PHY_2M_NRF

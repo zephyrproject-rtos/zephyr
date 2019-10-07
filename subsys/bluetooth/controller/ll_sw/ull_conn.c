@@ -114,7 +114,12 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				(CONFIG_BT_CTLR_TX_BUFFER_SIZE + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
-#define CONN_TX_CTRL_BUFFERS 2
+/**
+ * One connection may take up to 4 TX buffers for procedures
+ * simultaneously, for example 2 for encryption, 1 for termination,
+ * and 1 one that is in flight and has not been returned to the pool
+ */
+#define CONN_TX_CTRL_BUFFERS (4 * CONFIG_BT_CTLR_LLCP_CONN)
 #define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				     offsetof(struct pdu_data, llctrl) + \
 				     sizeof(struct pdu_data_llctrl))
