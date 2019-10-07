@@ -111,11 +111,11 @@ static inline int stm32_clock_control_on(struct device *dev,
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X ||
 		CONFIG_SOC_SERIES_STM32WBX || CONFIG_SOC_SERIES_STM32G4X */
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 #if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_EnableClock(pclken->enr);
@@ -162,11 +162,11 @@ static inline int stm32_clock_control_off(struct device *dev,
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X ||
 		CONFIG_SOC_SERIES_STM32WBX || CONFIG_SOC_SERIES_STM32G4X */
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 #ifdef CONFIG_SOC_SERIES_STM32L0X
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_DisableClock(pclken->enr);
@@ -216,6 +216,13 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_APB1_2:
 #endif
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+	case STM32_CLOCK_BUS_APB2:
+		/*
+		 * STM32G0x only has one APB, but two reset/clock enable
+		 * registers for peripherals, so return the APB1 clock rate here
+		 */
+#endif /* CONFIG_SOC_SERIES_STM32G0X */
 		*rate = apb1_clock;
 		break;
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
