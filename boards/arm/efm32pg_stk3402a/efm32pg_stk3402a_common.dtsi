@@ -94,6 +94,10 @@
 	status = "okay";
 };
 
+&adc0 {
+	status = "okay";
+};
+
 
 &flash0 {
 	/*

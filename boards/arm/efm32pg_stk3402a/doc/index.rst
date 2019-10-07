@@ -61,6 +61,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
