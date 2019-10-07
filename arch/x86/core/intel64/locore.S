@@ -135,6 +135,7 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	movw %ax, %gs
 
 	movq __x86_cpuboot_t_sp_OFFSET(%rbp), %rsp
+	movq %rsp, %gs:__x86_tss64_t_ist1_OFFSET
 
 	/*
 	 * finally, complete environment for the C runtime and go.
