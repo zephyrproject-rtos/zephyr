@@ -20,6 +20,11 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+config SOC_GECKO_ADC
+	bool
+	help
+	  Set if the Analog to Digital Converter (ADC) HAL module is used.
+
 config SOC_GECKO_CORE
 	bool
 	help
