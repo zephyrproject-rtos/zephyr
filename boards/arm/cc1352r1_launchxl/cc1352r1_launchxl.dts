@@ -9,7 +9,7 @@
 #include <ti/cc1352r.dtsi>
 #include "boosterpack_connector.dtsi"
 
-#define BTN_GPIO_FLAGS (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
 / {
 	model = "TI CC1352R1 LaunchXL";
@@ -32,11 +32,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 7 0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 6 0>;
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
 		};
 	};
