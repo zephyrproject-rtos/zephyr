@@ -118,3 +118,18 @@ In this case, a shield-particular revision name can be used:
      :zephyr-app: your_app
      :shield: shield_v2
      :goals: build
+
+You can also provide a board-specific configuration to a specific shield
+revision:
+
+.. code-block:: none
+
+   boards/shields/<shield>
+   ├── <shield_v1>.overlay
+   ├── <shield_v1>.conf
+   ├── <shield_v2>.overlay
+   ├── <shield_v2>.conf
+   └── <boards>
+       └── <shield_v2>
+           ├── board.overlay
+           └── board.conf
