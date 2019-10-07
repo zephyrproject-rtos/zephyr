@@ -67,73 +67,32 @@ Notice the following important details:
 Manifest Files
 **************
 
-A west manifest is a YAML file named :file:`west.yml`. Manifests have two
-top-level "sections", ``west`` and ``manifest``, like this:
-
-.. code-block:: yaml
-
-   west:
-     # contents of west section
-   manifest:
-     # contents of manifest section
-
-In YAML terms, the manifest file contains a mapping, with two keys relevant to
-west at top level. These keys are the scalar strings ``west`` and
-``manifest``. Their contents are described next.
-
-West Section
-============
-
-.. note::
-
-   Support for this feature will be removed in a future version of west, when
-   the west repository is no longer cloned into the installation.
-
-The ``west`` section specifies the URL and revision of the west repository
-which is cloned into the installation. For example:
-
-.. code-block:: yaml
-
-   west:
-     url: https://example.com/west
-     revision: v0.5.6
-
-This specifies cloning the west repository from URL
-``https://example.com/west`` (any URL accepted by ``git clone`` will work), at
-revision ``v0.5.6``. The revision can be a Git branch, tag, or SHA.
-
-That is, the west section also contains a mapping, with permitted keys ``url``
-and ``revision``. These specify the fetch URL and Git revision for the west
-repository to clone into the installation, as described in
-:ref:`west-struct`. If not given, the default URL is
-https://github.com/zephyrproject-rtos/west, and the default revision is
-``master``.
-
-The file :file:`west-schema.yml` in the west source code repository contains a
-pykwalify schema for this section's contents.
-
-Manifest Section
-================
-
-This is the main section in the manifest file. There are four subsections:
-``defaults``, ``remotes``, ``projects``, and ``self``. In YAML terms, the value
-of the ``manifest`` key is also a mapping, with these "subsections" as keys.
-For example:
+A west manifest is a YAML file named :file:`west.yml`. Manifests have a
+top-level ``manifest`` section with some subsections, like this:
 
 .. code-block:: yaml
 
    manifest:
      defaults:
-       # contents of defaults subsection
+       # default project attributes (optional)
      remotes:
-       # contents of remotes subsection
+       # short names for project URLs (optional)
      projects:
-       # contents of projects subsection
+       # a list of projects managed by west (mandatory)
      self:
-       # contents of self subsection
+       # configuration related to the manifest repository itself,
+       # i.e. the repository containing west.yml (optional)
 
-The ``remotes`` and ``projects`` subsections are the only mandatory ones, so
-we'll cover them first.
+In YAML terms, the manifest file contains a mapping, with a ``manifest``
+key. Any other keys and their contents are ignored (west v0.5 also required a
+``west`` key, but this is ignored starting with v0.6).
+
+There are four subsections: ``defaults``, ``remotes``, ``projects``, and
+``self``. In YAML terms, the value of the ``manifest`` key is also a mapping,
+with these "subsections" as keys. Only ``projects`` is mandatory: this is the
+list of repositories managed by west and their metadata.
+
+We'll cover the ``remotes`` and ``projects`` subsections in detail first.
 
 The ``remotes`` subsection contains a sequence which specifies the base URLs
 where projects can be fetched from. Each sequence element has a name and a "URL
@@ -156,82 +115,105 @@ bases are respectively ``https://example.com/base1`` and
 you might use ``git@example.com:base1`` if ``remote1`` supported Git over SSH
 as well. Anything acceptable to Git will work.
 
-The ``projects`` subsection contains a sequence describing the
-project repositories in the west installation. Each project has a
-name and a remote; the project's name is appended to the remote URL
-base to form the Git fetch URL west uses to clone the project and keep
-it up to date. Here is a simple example; we'll assume the ``remotes``
-given above.
+The ``projects`` subsection contains a sequence describing the project
+repositories in the west installation. Every project has a unique name. You can
+specify what Git remote URLs to use when cloning and fetching the projects,
+what revisions to track, and where the project should be stored on the local
+file system.
+
+Here is an example. We'll assume the ``remotes`` given above.
+
+.. Note: if you change this example, keep the equivalent manifest below in
+   sync.
 
 .. code-block:: yaml
 
    manifest:
-     # [...]
+     # [... same remotes as above...]
      projects:
        - name: proj1
          remote: remote1
          path: extra/project-1
        - name: proj2
-         remote: remote1
+         repo-path: my-path
+         remote: remote2
          revision: v1.3
        - name: proj3
-         remote: remote2
+         url: https://github.com/user/project-three
          revision: abcde413a111
 
-This example has three projects:
+In this manifest:
 
 - ``proj1`` has remote ``remote1``, so its Git fetch URL is
-  ``https://example.com/base1/proj1`` (note that west adds the ``/`` between
-  the URL base and project name). This project will be cloned at path
-  ``extra/project-1`` relative to the west installation's root directory.
-  Since the project has no ``revision``, the current tip of the ``master``
-  branch will be checked out as a detached ``HEAD``.
+  ``https://example.com/base1/proj1``. The remote ``url-base`` is appended with
+  a ``/`` and the project ``name`` to form the URL.
 
-- ``proj2`` has the same remote, so its fetch URL is
-  ``https://example.com/base1/proj2``. Since the project has no ``path``
-  specified, it will be cloned at ``proj2`` (i.e. a project's ``name`` is used
-  as its default ``path``). The commit pointed to by the ``v1.3`` tag will be
-  checked out.
+  Locally, this project will be cloned at path ``extra/project-1`` relative to
+  the west installation's root directory, since it has an explicit ``path``
+  attribute with this value.
 
-- ``proj3`` has fetch URL ``https://example.com/base2/proj3`` and will be
-  cloned at path ``proj3``. Commit ``abcde413a111`` will be checked out.
+  Since the project has no ``revision`` specified, ``master`` is used by
+  default. The current tip of this branch will be fetched and checked out as a
+  detached ``HEAD`` when west next updates this project.
 
-Each element in the ``projects`` sequence can contain the following keys. Some
-of the description refers to the ``defaults`` subsection, which will be
-described next.
+- ``proj2`` has a ``remote`` and a ``repo-path``, so its fetch URL is
+  ``https://example.com/base2/my-path``. The ``repo-path`` attribute, if
+  present, overrides the default ``name`` when forming the fetch URL.
 
-- ``name``: Mandatory, the name of the project. The fetch URL is formed as
-  remote url-base + '/' + ``name``. The name cannot be one of the reserved
-  values "west" and "manifest".
-- ``remote``: The name of the project's remote. If not given, the ``remote``
-  value in the ``defaults`` subsection is tried next. If both are missing, the
+  Since the project has no ``path`` attribute, its ``name`` is used by
+  default. It will be cloned into a directory named ``proj2``. The commit
+  pointed to by the ``v1.3`` tag will be checked out when west updates the
+  project.
+
+- ``proj3`` has an explicit ``url``, so it will be fetched from
+  ``https://github.com/user/project-three``.
+
+  Its local path defaults to its name, ``proj3``. Commit ``abcde413a111`` will
+  be checked out when it is next updated.
+
+The list of project keys and their usage follows. Sometimes we'll refer to the
+``defaults`` subsection; it will be described next.
+
+- ``name``: Mandatory. the name of the project. The name cannot be one of the
+  reserved values "west" or "manifest". The name must be unique in the manifest
+  file.
+- ``remote`` or ``url``: Mandatory (one of the two, but not both).
+
+  If the project has a ``remote``, that remote's ``url-base`` will be combined
+  with the project's ``name`` (or ``repo-path``, if it has one) to form the
+  fetch URL instead.
+
+  If the project has a ``url``, that's the complete fetch URL for the
+  remote Git repository.
+
+  If the project has neither, the ``defaults`` section must specify a
+  ``remote``, which will be used as the the project's remote. Otherwise, the
   manifest is invalid.
 - ``repo-path``: Optional. If given, this is concatenated on to the remote's
   ``url-base`` instead of the project's ``name`` to form its fetch URL.
-- ``url``: Optional. If given, this is the project's complete fetch URL.
-  It cannot be combined with either ``remote`` or ``repo-path``. Note that this
-  overrides any default remote.
-- ``revision``: Optional. The current project revision used by ``west update``.
-  If not given, the value from the ``defaults`` subsection will be used if
-  present.  If both are missing, ``master`` is used. A project revision can be
-  a branch, tag, or SHA. The names of unqualified branch and tag revisions are
-  fetched as-is.  For qualified refs, like ``refs/heads/foo``, the last
-  component (``foo``) is used.
-- ``path``: Optional. Where to clone the repository locally. If missing, it's
-  cloned in the west installation's root subdirectory given by the project's
-  name.
+  Projects may not have both ``url`` and ``repo-path`` attributes.
+- ``revision``: Optional. The Git revision that ``west update`` should check
+  out. This will be checked out as a detached HEAD by default, to avoid
+  conflicting with local branch names.  If not given, the ``revision`` value
+  from the ``defaults`` subsection will be used if present.
+
+  A project revision can be a branch, tag, or SHA. The default ``revision`` is
+  ``master`` if not otherwise specified.
+- ``path``: Optional. Relative path specifying where to clone the repository
+  locally, relative to the top directory in the west installation. If missing,
+  the project's ``name`` is used as a directory name.
 - ``clone-depth``: Optional. If given, a positive integer which creates a
   shallow history in the cloned repository limited to the given number of
-  commits.
+  commits. This can only be used if the ``revision`` is a branch or tag.
 - ``west-commands``: Optional. If given, a relative path to a YAML file within
   the project which describes additional west commands provided by that
   project. This file is named :file:`west-commands.yml` by convention. See
   :ref:`west-extensions` for details.
 
-The ``defaults`` subsection can provide default values for project-related
-values. In particular, the default remote name and revision can be specified
-here. Another way to write the same manifest we have been describing so far
-using ``defaults`` is:
+The ``defaults`` subsection can provide default values for project
+attributes. In particular, the default remote name and revision can be
+specified here. Another way to write the same manifest we have been describing
+so far using ``defaults`` is:
 
 .. code-block:: yaml
 
@@ -251,8 +233,10 @@ using ``defaults`` is:
          path: extra/project-1
          revision: master
        - name: proj2
-       - name: proj3
+         repo-path: my-path
          remote: remote2
+       - name: proj3
+         url: https://github.com/user/project-three
          revision: abcde413a111
 
 Finally, the ``self`` subsection can be used to control the behavior of the
