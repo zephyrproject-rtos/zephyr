@@ -62,6 +62,52 @@ struct gpio_sifive_data {
 #define DEV_GPIO_DATA(dev)				\
 	((struct gpio_sifive_data *)(dev)->driver_data)
 
+/* _irq_level and _level2_irq are copied from
+ * soc/riscv/riscv-privileged/common/soc_common_irq.c
+ * Ideally this kind of thing should be made available in include/irq.h or
+ * somewhere similar since the multi-level IRQ format is generic to
+  Zephyr, and then both this copy and the one in riscv-privileged
+ * be removed for the shared implementation
+ */
+static inline unsigned int _irq_level(unsigned int irq)
+{
+	return ((irq >> 8) && 0xff) == 0U ? 1 : 2;
+}
+
+static inline unsigned int _level2_irq(unsigned int irq)
+{
+	return (irq >> 8) - 1;
+}
+
+/* Given gpio_irq_base and the pin number, return the IRQ number for the pin */
+static inline unsigned int gpio_sifive_pin_irq(unsigned int base_irq, int pin)
+{
+	unsigned int level = _irq_level(base_irq);
+	unsigned int pin_irq = 0;
+
+	if (level == 1) {
+		pin_irq = base_irq + pin;
+	} else if (level == 2) {
+		pin_irq = base_irq + (pin << 8);
+	}
+
+	return pin_irq;
+}
+
+/* Given the PLIC source number, return the number of the GPIO pin associated
+ * with the interrupt
+ */
+static inline int gpio_sifive_plic_to_pin(unsigned int base_irq, int plic_irq)
+{
+	unsigned int level = _irq_level(base_irq);
+
+	if (level == 2) {
+		base_irq = _level2_irq(base_irq);
+	}
+
+	return (plic_irq - base_irq);
+}
+
 static void gpio_sifive_irq_handler(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -81,15 +127,18 @@ static void gpio_sifive_irq_handler(void *arg)
 	 * to indicate to GPIO controller that interrupt for the corresponding
 	 * pin has been handled.
 	 */
-	if (gpio->rise_ip & pin_mask) {
-		gpio->rise_ip = pin_mask;
-	} else if (gpio->fall_ip & pin_mask) {
-		gpio->fall_ip = pin_mask;
-	} else if (gpio->high_ip & pin_mask) {
-		gpio->high_ip = pin_mask;
-	} else if (gpio->low_ip & pin_mask) {
-		gpio->low_ip = pin_mask;
+	if (gpio->rise_ip & BIT(pin)) {
+		gpio->rise_ip = BIT(pin);
+	} else if (gpio->fall_ip & BIT(pin)) {
+		gpio->fall_ip = BIT(pin);
+	} else if (gpio->high_ip & BIT(pin)) {
+		gpio->high_ip = BIT(pin);
+	} else if (gpio->low_ip & BIT(pin)) {
+		gpio->low_ip = BIT(pin);
 	}
+
+	/* Call the corresponding callback registered for the pin */
+	gpio_fire_callbacks(&data->cb, dev, BIT(pin));
 }
 
 /**
@@ -117,93 +166,32 @@ static int gpio_sifive_config(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Configure gpio direction */
-	if (flags & GPIO_DIR_OUT) {
-		gpio->in_en &= ~BIT(pin);
-		gpio->out_en |= BIT(pin);
-
-		/*
-		 * Account for polarity only for GPIO_DIR_OUT.
-		 * invert register handles only output gpios
-		 */
-		if (flags & GPIO_POL_INV) {
-			gpio->invert |= BIT(pin);
-		} else {
-			gpio->invert &= ~BIT(pin);
-		}
-	} else {
-		gpio->out_en &= ~BIT(pin);
-		gpio->in_en |= BIT(pin);
-
-		/* Polarity inversion is not supported for input gpio */
-		if (flags & GPIO_POL_INV) {
-			return -EINVAL;
-		}
-
-		/*
-		 * Pull-up can be configured only for input gpios.
-		 * Only Pull-up can be enabled or disabled.
-		 */
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
-			return -EINVAL;
-		}
-
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-			gpio->pue |= BIT(pin);
-		} else {
-			gpio->pue &= ~BIT(pin);
-		}
+	/* We cannot support open-source open-drain configuration */
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		return -ENOTSUP;
 	}
 
-	/*
-	 * Configure interrupt if GPIO_INT is set.
-	 * Here, we just configure the gpio interrupt behavior,
-	 * we do not enable/disable interrupt for a particular
-	 * gpio.
-	 * Interrupt for a gpio is:
-	 * 1) enabled only via a call to gpio_sifive_enable_callback.
-	 * 2) disabled only via a call to gpio_sifive_disabled_callback.
+	/* We only support pull-ups, not pull-downs */
+	if ((flags & GPIO_PULL_DOWN) != 0) {
+		return -ENOTSUP;
+	}
+
+	/* Set pull-up if requested */
+	WRITE_BIT(gpio->pue, pin, flags & GPIO_PULL_UP);
+
+	/* Set the initial output value before enabling output to avoid
+	 * glitches
 	 */
-	if (!(flags & GPIO_INT)) {
-		return 0;
+	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+		gpio->out_val |= BIT(pin);
+	}
+	if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+		gpio->out_val &= ~BIT(pin);
 	}
 
-	/*
-	 * Interrupt cannot be set for GPIO_DIR_OUT
-	 */
-	if (flags & GPIO_DIR_OUT) {
-		return -EINVAL;
-	}
-
-	/* Edge or Level triggered ? */
-	if (flags & GPIO_INT_EDGE) {
-		gpio->high_ie &= ~BIT(pin);
-		gpio->low_ie &= ~BIT(pin);
-
-		/* Rising Edge, Falling Edge or Double Edge ? */
-		if (flags & GPIO_INT_DOUBLE_EDGE) {
-			gpio->rise_ie |= BIT(pin);
-			gpio->fall_ie |= BIT(pin);
-		} else if (flags & GPIO_INT_ACTIVE_HIGH) {
-			gpio->rise_ie |= BIT(pin);
-			gpio->fall_ie &= ~BIT(pin);
-		} else {
-			gpio->rise_ie &= ~BIT(pin);
-			gpio->fall_ie |= BIT(pin);
-		}
-	} else {
-		gpio->rise_ie &= ~BIT(pin);
-		gpio->fall_ie &= ~BIT(pin);
-
-		/* Level High ? */
-		if (flags & GPIO_INT_ACTIVE_HIGH) {
-			gpio->high_ie |= BIT(pin);
-			gpio->low_ie &= ~BIT(pin);
-		} else {
-			gpio->high_ie &= ~BIT(pin);
-			gpio->low_ie |= BIT(pin);
-		}
-	}
+	/* Enable input/output */
+	WRITE_BIT(gpio->out_en, pin, flags & GPIO_OUTPUT);
+	WRITE_BIT(gpio->in_en, pin, flags & GPIO_INPUT);
 
 	return 0;
 }
@@ -285,6 +273,117 @@ static int gpio_sifive_read(struct device *dev,
 	return 0;
 }
 
+static int gpio_sifive_port_get_raw(struct device *dev,
+				   gpio_port_value_t *value)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+
+	*value = gpio->in_val;
+
+	return 0;
+}
+
+static int gpio_sifive_port_set_masked_raw(struct device *dev,
+					  gpio_port_pins_t mask,
+					  gpio_port_value_t value)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+
+	gpio->out_val = (gpio->out_val & ~mask) | (value & mask);
+
+	return 0;
+}
+
+static int gpio_sifive_port_set_bits_raw(struct device *dev,
+					gpio_port_pins_t mask)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+
+	gpio->out_val |= mask;
+
+	return 0;
+}
+
+static int gpio_sifive_port_clear_bits_raw(struct device *dev,
+					  gpio_port_pins_t mask)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+
+	gpio->out_val &= ~mask;
+
+	return 0;
+}
+
+static int gpio_sifive_port_toggle_bits(struct device *dev,
+				       gpio_port_pins_t mask)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+
+	gpio->out_val ^= mask;
+
+	return 0;
+}
+
+static int gpio_sifive_pin_interrupt_configure(struct device *dev,
+					      unsigned int pin,
+					      enum gpio_int_mode mode,
+					      enum gpio_int_trig trig)
+{
+	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
+	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
+
+	switch (mode) {
+	case GPIO_INT_MODE_DISABLED:
+		gpio->rise_ie &= ~BIT(pin);
+		gpio->fall_ie &= ~BIT(pin);
+		gpio->high_ie &= ~BIT(pin);
+		gpio->low_ie  &= ~BIT(pin);
+		irq_disable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
+		break;
+	case GPIO_INT_MODE_LEVEL:
+		gpio->rise_ie &= ~BIT(pin);
+		gpio->fall_ie &= ~BIT(pin);
+
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			gpio->high_ip  = BIT(pin);
+			gpio->high_ie |= BIT(pin);
+			gpio->low_ie  &= ~BIT(pin);
+		} else if (trig == GPIO_INT_TRIG_LOW) {
+			gpio->high_ie &= ~BIT(pin);
+			gpio->low_ip   = BIT(pin);
+			gpio->low_ie  |= BIT(pin);
+		}
+		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
+		break;
+	case GPIO_INT_MODE_EDGE:
+		gpio->high_ie &= ~BIT(pin);
+		gpio->low_ie  &= ~BIT(pin);
+
+		/* Rising Edge, Falling Edge or Double Edge ? */
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			gpio->rise_ip  = BIT(pin);
+			gpio->rise_ie |= BIT(pin);
+			gpio->fall_ie &= ~BIT(pin);
+		} else if (trig == GPIO_INT_TRIG_LOW) {
+			gpio->rise_ie &= ~BIT(pin);
+			gpio->fall_ip  = BIT(pin);
+			gpio->fall_ie |= BIT(pin);
+		} else {
+			gpio->rise_ip  = BIT(pin);
+			gpio->rise_ie |= BIT(pin);
+			gpio->fall_ip  = BIT(pin);
+			gpio->fall_ie |= BIT(pin);
+		}
+		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
+		break;
+	default:
+		__ASSERT(false, "Invalid MODE %d passed to driver", mode);
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int gpio_sifive_manage_callback(struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
@@ -335,12 +434,18 @@ static int gpio_sifive_disable_callback(struct device *dev,
 }
 
 static const struct gpio_driver_api gpio_sifive_driver = {
-	.config              = gpio_sifive_config,
-	.write               = gpio_sifive_write,
-	.read                = gpio_sifive_read,
-	.manage_callback     = gpio_sifive_manage_callback,
-	.enable_callback     = gpio_sifive_enable_callback,
-	.disable_callback    = gpio_sifive_disable_callback,
+	.config                  = gpio_sifive_config,
+	.write                   = gpio_sifive_write,
+	.read                    = gpio_sifive_read,
+	.port_get_raw            = gpio_sifive_port_get_raw,
+	.port_set_masked_raw     = gpio_sifive_port_set_masked_raw,
+	.port_set_bits_raw       = gpio_sifive_port_set_bits_raw,
+	.port_clear_bits_raw     = gpio_sifive_port_clear_bits_raw,
+	.port_toggle_bits        = gpio_sifive_port_toggle_bits,
+	.pin_interrupt_configure = gpio_sifive_pin_interrupt_configure,
+	.manage_callback         = gpio_sifive_manage_callback,
+	.enable_callback         = gpio_sifive_enable_callback,
+	.disable_callback        = gpio_sifive_disable_callback,
 };
 
 /**
@@ -376,9 +481,9 @@ static int gpio_sifive_init(struct device *dev)
 static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
-	.gpio_base_addr    = DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS,
-	.gpio_irq_base     = DT_INST_0_SIFIVE_GPIO0_IRQ_0,
-	.gpio_cfg_func     = gpio_sifive_cfg_0,
+	.gpio_base_addr = DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS,
+	.gpio_irq_base  = DT_INST_0_SIFIVE_GPIO0_IRQ_0,
+	.gpio_cfg_func  = gpio_sifive_cfg_0,
 };
 
 static struct gpio_sifive_data gpio_sifive_data0;
