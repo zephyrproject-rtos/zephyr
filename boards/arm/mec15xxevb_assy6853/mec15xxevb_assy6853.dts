@@ -19,11 +19,39 @@
 	};
 
 	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		led2 = &led4;
 		pwm-0 = &pwm0;
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led_0 {
+			/* GPIO156/LED0 on schematic,
+			 * LED2 on silkscreen.
+			 */
+			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+		led3: led_1 {
+			/* GPIO157/LED1 on schematic,
+			 * LED3 on silkscreen.
+			 */
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+		led4: led_2 {
+			/* GPIO153/LED2 on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <&gpiod 11 GPIO_ACTIVE_LOW>;
+			label = "LED 4";
+		};
 	};
 };
 
