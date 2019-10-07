@@ -25,6 +25,10 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 
+struct multiboot_info;
+
+extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
+
 #endif
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

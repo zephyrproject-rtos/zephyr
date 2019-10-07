@@ -18,8 +18,6 @@
 
 __weak u8_t x86_cpu_loapics[] = { 0, 1, 2, 3 };
 
-extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
-
 extern char x86_ap_start[];  /* AP entry point in locore.S */
 
 extern u8_t _exception_stack[];
