@@ -105,15 +105,15 @@ example:
      # [...]
      remotes:
        - name: remote1
-         url-base: https://example.com/base1
+         url-base: https://git.example.com/base1
        - name: remote2
-         url-base: https://example.com/base2
+         url-base: https://git.example.com/base2
 
 Above, two remotes are given, with names ``remote1`` and ``remote2``. Their URL
-bases are respectively ``https://example.com/base1`` and
-``https://example.com/base2``. You can use SSH URL bases as well; for example,
-you might use ``git@example.com:base1`` if ``remote1`` supported Git over SSH
-as well. Anything acceptable to Git will work.
+bases are respectively ``https://git.example.com/base1`` and
+``https://git.example.com/base2``. You can use SSH URL bases as well; for
+example, you might use ``git@example.com:base1`` if ``remote1`` supported Git
+over SSH as well. Anything acceptable to Git will work.
 
 The ``projects`` subsection contains a sequence describing the project
 repositories in the west installation. Every project has a unique name. You can
@@ -145,8 +145,8 @@ Here is an example. We'll assume the ``remotes`` given above.
 In this manifest:
 
 - ``proj1`` has remote ``remote1``, so its Git fetch URL is
-  ``https://example.com/base1/proj1``. The remote ``url-base`` is appended with
-  a ``/`` and the project ``name`` to form the URL.
+  ``https://git.example.com/base1/proj1``. The remote ``url-base`` is appended
+  with a ``/`` and the project ``name`` to form the URL.
 
   Locally, this project will be cloned at path ``extra/project-1`` relative to
   the west installation's root directory, since it has an explicit ``path``
@@ -157,7 +157,7 @@ In this manifest:
   detached ``HEAD`` when west next updates this project.
 
 - ``proj2`` has a ``remote`` and a ``repo-path``, so its fetch URL is
-  ``https://example.com/base2/my-path``. The ``repo-path`` attribute, if
+  ``https://git.example.com/base2/my-path``. The ``repo-path`` attribute, if
   present, overrides the default ``name`` when forming the fetch URL.
 
   Since the project has no ``path`` attribute, its ``name`` is used by
@@ -224,9 +224,9 @@ so far using ``defaults`` is:
 
      remotes:
        - name: remote1
-         url-base: https://example.com/base1
+         url-base: https://git.example.com/base1
        - name: remote2
-         url-base: https://example.com/base2
+         url-base: https://git.example.com/base2
 
      projects:
        - name: proj1
@@ -245,7 +245,7 @@ manifest repository itself. Its value is a map with the following keys:
 - ``path``: Optional. The path to clone the manifest repository into, relative
   to the west installation's root directory. If not given, the basename of the
   path component in the manifest repository URL will be used by default.  For
-  example, if the URL is ``https://example.com/project-repo``, the manifest
+  example, if the URL is ``https://git.example.com/project-repo``, the manifest
   repository would be cloned to the directory :file:`project-repo`.
 
 - ``west-commands``: Optional. This is analogous to the same key in a
