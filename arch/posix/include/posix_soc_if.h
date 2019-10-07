@@ -16,6 +16,7 @@
 
 #include "posix_trace.h"
 #include "soc_irq.h" /* Must exist and define _ARCH_IRQ/ISR_* macros */
+#include "irq_offload.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,33 +25,14 @@ extern "C" {
 void posix_halt_cpu(void);
 void posix_atomic_halt_cpu(unsigned int imask);
 
-void z_arch_irq_enable(unsigned int irq);
-void z_arch_irq_disable(unsigned int irq);
-int  z_arch_irq_is_enabled(unsigned int irq);
+void posix_irq_enable(unsigned int irq);
+void posix_irq_disable(unsigned int irq);
+int  posix_irq_is_enabled(unsigned int irq);
 unsigned int posix_irq_lock(void);
 void posix_irq_unlock(unsigned int key);
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
-/* irq_offload() from irq_offload.h must also be defined by the SOC or board */
-
-static inline unsigned int z_arch_irq_lock(void)
-{
-	return posix_irq_lock();
-}
-
-static inline void z_arch_irq_unlock(unsigned int key)
-{
-	posix_irq_unlock(key);
-}
-
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static inline bool z_arch_irq_unlocked(unsigned int key)
-{
-	return key == false;
-}
+void posix_irq_offload(irq_offload_routine_t routine, void *parameter);
 
 #ifdef __cplusplus
 }
