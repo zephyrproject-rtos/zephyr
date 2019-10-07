@@ -3381,9 +3381,8 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 		LL_ASSERT(0);
 		break;
 	}
-
 }
-#endif
+#endif /* CONFIG_BT_CONN */
 
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 {
@@ -3397,11 +3396,12 @@ void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 		encode_control(node_rx, pdu_data, buf);
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		encode_data_ctrl(node_rx, pdu_data, buf);
 	}
 }
 
+#if defined(CONFIG_BT_CONN)
 void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 {
 	struct bt_hci_evt_num_completed_packets *ep;
@@ -3420,6 +3420,7 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
 }
+#endif
 
 s8_t hci_get_class(struct node_rx_pdu *node_rx)
 {
@@ -3507,11 +3508,17 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 			return -1;
 		}
 
+#if defined(CONFIG_BT_CONN)
 	} else if (pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
 		return HCI_CLASS_EVT_CONNECTION;
 	} else {
 		return HCI_CLASS_ACL_DATA;
 	}
+#else
+	} else {
+		return -1;
+	}
+#endif
 }
 
 void hci_init(struct k_poll_signal *signal_host_buf)
