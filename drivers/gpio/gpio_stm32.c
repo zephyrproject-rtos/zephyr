@@ -41,26 +41,48 @@ static void gpio_stm32_isr(int line, void *arg)
  */
 const int gpio_stm32_flags_to_conf(int flags, int *pincfg)
 {
-	int direction = flags & GPIO_DIR_MASK;
-	int pud = flags & GPIO_PUD_MASK;
 
 	if (pincfg == NULL) {
 		return -EINVAL;
 	}
 
-	if (direction == GPIO_DIR_OUT) {
+	if ((flags & GPIO_OUTPUT) != 0) {
+		/* Output only or Output/Input */
+
 		*pincfg = STM32_PINCFG_MODE_OUTPUT;
-	} else {
-		/* pull-{up,down} maybe? */
-		*pincfg = STM32_PINCFG_MODE_INPUT;
-		if (pud == GPIO_PUD_PULL_UP) {
+
+		if ((flags & GPIO_SINGLE_ENDED) != 0) {
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				*pincfg |= STM32_PINCFG_OPEN_DRAIN;
+			} else  {
+				/* Output can't be open source */
+				return -ENOTSUP;
+			}
+		} else {
+			*pincfg |= STM32_PINCFG_PUSH_PULL;
+		}
+
+		if ((flags & GPIO_PULL_UP) != 0) {
 			*pincfg |= STM32_PINCFG_PULL_UP;
-		} else if (pud == GPIO_PUD_PULL_DOWN) {
+		} else if ((flags & GPIO_PULL_DOWN) != 0) {
+			*pincfg |= STM32_PINCFG_PULL_DOWN;
+		}
+
+	} else if  ((flags & GPIO_INPUT) != 0) {
+		/* Input */
+
+		*pincfg = STM32_PINCFG_MODE_INPUT;
+
+		if ((flags & GPIO_PULL_UP) != 0) {
+			*pincfg |= STM32_PINCFG_PULL_UP;
+		} else if ((flags & GPIO_PULL_DOWN) != 0) {
 			*pincfg |= STM32_PINCFG_PULL_DOWN;
 		} else {
-			/* floating */
 			*pincfg |= STM32_PINCFG_FLOATING;
 		}
+	} else {
+		/* Desactivated: Analog */
+		*pincfg = STM32_PINCFG_MODE_ANALOG;
 	}
 
 	return 0;
@@ -302,6 +324,76 @@ static int gpio_stm32_int_enabled_port(int pin)
 	return gpio_stm32_get_exti_source(pin);
 }
 
+static int gpio_stm32_port_get_raw(struct device *dev, u32_t *value)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+	*value = LL_GPIO_ReadInputPort(gpio);
+
+	return 0;
+}
+
+static int gpio_stm32_port_set_masked_raw(struct device *dev, u32_t mask,
+					 u32_t value)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+	u32_t port_value;
+
+	port_value = LL_GPIO_ReadOutputPort(gpio);
+	LL_GPIO_WriteOutputPort(gpio, (port_value & ~mask) | (mask & value));
+
+	return 0;
+}
+
+static int gpio_stm32_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly. Valid also on other series.
+	 */
+	WRITE_REG(gpio->BSRR, mask);
+
+	return 0;
+}
+
+static int gpio_stm32_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly.
+	 */
+	WRITE_REG(gpio->BRR, mask);
+#else
+	/* On other series, LL abstraction is needed  */
+	LL_GPIO_ResetOutputPin(gpio, mask);
+#endif
+
+	return 0;
+}
+
+static int gpio_stm32_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+	/*
+	 * On F1 series, using LL API requires a costly pin mask translation.
+	 * Skip it and use CMSIS API directly. Valid also on other series.
+	 */
+	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ mask);
+
+	return 0;
+}
+
 /**
  * @brief Configure pin or port
  */
@@ -314,11 +406,6 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	int map_res;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-		/* hardware cannot invert signal */
 		return -ENOTSUP;
 	}
 
@@ -336,53 +423,15 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		goto release_lock;
 	}
 
-	if (gpio_stm32_configure(cfg->base, pin, pincfg, 0) != 0) {
-		err = -EIO;
-		goto release_lock;
-	}
-
-	if (!IS_ENABLED(CONFIG_EXTI_STM32)) {
-		goto release_lock;
-	}
-
-	if (flags & GPIO_INT) {
-		if (stm32_exti_set_callback(pin, cfg->port,
-					    gpio_stm32_isr, dev) != 0) {
-			err = -EBUSY;
-			goto release_lock;
-		}
-
-		gpio_stm32_enable_int(cfg->port, pin);
-
-		if ((flags & GPIO_INT_EDGE) != 0) {
-			int edge = 0;
-
-			if ((flags & GPIO_INT_DOUBLE_EDGE) != 0) {
-				edge = STM32_EXTI_TRIG_RISING |
-				       STM32_EXTI_TRIG_FALLING;
-			} else if ((flags & GPIO_INT_ACTIVE_HIGH) != 0) {
-				edge = STM32_EXTI_TRIG_RISING;
-			} else {
-				edge = STM32_EXTI_TRIG_FALLING;
-			}
-
-			stm32_exti_trigger(pin, edge);
-		} else {
-			/* Level trigger interrupts not supported */
-			err = -ENOTSUP;
-			goto release_lock;
-		}
-
-		if (stm32_exti_enable(pin) != 0) {
-			err = -EIO;
-			goto release_lock;
-		}
-	} else {
-		if (gpio_stm32_int_enabled_port(pin) == cfg->port) {
-			stm32_exti_disable(pin);
-			stm32_exti_unset_callback(pin);
+	if ((flags & GPIO_OUTPUT) != 0) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			gpio_stm32_port_clear_bits_raw(dev, BIT(pin));
 		}
 	}
+
+	gpio_stm32_configure(cfg->base, pin, pincfg, 0);
 
 release_lock:
 #if defined(CONFIG_STM32H7_DUAL_CORE)
@@ -433,6 +482,75 @@ static int gpio_stm32_read(struct device *dev, int access_op,
 	return 0;
 }
 
+static int gpio_stm32_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	struct gpio_stm32_data *data = dev->driver_data;
+	int edge = 0;
+	int err = 0;
+
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {
+	}
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		if (gpio_stm32_int_enabled_port(pin) == cfg->port) {
+			stm32_exti_disable(pin);
+			stm32_exti_unset_callback(pin);
+			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
+			data->cb_pins &= ~BIT(pin);
+		}
+		/* else: No irq source configured for pin. Nothing to disable */
+		goto release_lock;
+	}
+
+	/* Level trigger interrupts not supported */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		err = -ENOTSUP;
+		goto release_lock;
+	}
+
+	if (stm32_exti_set_callback(pin, cfg->port,
+				    gpio_stm32_isr, dev) != 0) {
+		err = -EBUSY;
+		goto release_lock;
+	}
+
+	data->cb_pins |= BIT(pin);
+
+	gpio_stm32_enable_int(cfg->port, pin);
+
+	switch (trig) {
+	case GPIO_INT_TRIG_LOW:
+		edge = STM32_EXTI_TRIG_FALLING;
+		break;
+	case GPIO_INT_TRIG_HIGH:
+		edge = STM32_EXTI_TRIG_RISING;
+		break;
+	case GPIO_INT_TRIG_BOTH:
+		edge = STM32_EXTI_TRIG_RISING |
+		       STM32_EXTI_TRIG_FALLING;
+		break;
+	}
+
+	stm32_exti_trigger(pin, edge);
+
+	if (stm32_exti_enable(pin) != 0) {
+		err = -EIO;
+		goto release_lock;
+	}
+
+release_lock:
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
+	return err;
+}
+
 static int gpio_stm32_manage_callback(struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
@@ -474,6 +592,12 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 	.config = gpio_stm32_config,
 	.write = gpio_stm32_write,
 	.read = gpio_stm32_read,
+	.port_get_raw = gpio_stm32_port_get_raw,
+	.port_set_masked_raw = gpio_stm32_port_set_masked_raw,
+	.port_set_bits_raw = gpio_stm32_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_stm32_port_clear_bits_raw,
+	.port_toggle_bits = gpio_stm32_port_toggle_bits,
+	.pin_interrupt_configure = gpio_stm32_pin_interrupt_configure,
 	.manage_callback = gpio_stm32_manage_callback,
 	.enable_callback = gpio_stm32_enable_callback,
 	.disable_callback = gpio_stm32_disable_callback,
