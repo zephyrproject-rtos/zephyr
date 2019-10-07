@@ -18,7 +18,7 @@ ADC data prints to the console. Further processing (not included in this
 sample) is required to extract a heart rate signal from the light measurement.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/max30101
+   :zephyr-app: samples/sensor/max30101
    :board: hexiwear_k64
    :goals: build
    :compact:

@@ -18,7 +18,7 @@ This sample requires an ADXL362 sensor. It should work with any platform
 featuring a I2C peripheral interface. It does not work on QEMU.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/adxl362
+   :zephyr-app: samples/sensor/adxl362
    :board: <board to use>
    :goals: build flash
    :compact:
