@@ -165,8 +165,10 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
 		config->base->CTRL1 |= CAN_CTRL1_LOM(1);
 	}
-	/* Disable self reception */
-	config->base->MCR |= CAN_MCR_SRXDIS(1);
+	if (mode != CAN_LOOPBACK_MODE && mode != CAN_SILENT_LOOPBACK_MODE) {
+		/* Disable self-reception unless loopback is requested */
+		config->base->MCR |= CAN_MCR_SRXDIS(1);
+	}
 	mcux_flexcan_thaw(dev);
 #endif
 
