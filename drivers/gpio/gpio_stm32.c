@@ -260,6 +260,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			     u32_t pin, int flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	int err = 0;
 	int pincfg;
 	int map_res;
 
@@ -282,18 +283,21 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	 */
 	map_res = gpio_stm32_flags_to_conf(flags, &pincfg);
 	if (map_res != 0) {
-		return map_res;
+		err = map_res;
+		goto release_lock;
 	}
 
 	if (gpio_stm32_configure(cfg->base, pin, pincfg, 0) != 0) {
-		return -EIO;
+		err = -EIO;
+		goto release_lock;
 	}
 
 	if (IS_ENABLED(CONFIG_EXTI_STM32) && (flags & GPIO_INT) != 0) {
 
 		if (stm32_exti_set_callback(pin, cfg->port,
 					    gpio_stm32_isr, dev) != 0) {
-			return -EBUSY;
+			err = -EBUSY;
+			goto release_lock;
 		}
 
 		gpio_stm32_enable_int(cfg->port, pin);
@@ -313,20 +317,23 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			stm32_exti_trigger(pin, edge);
 		} else {
 			/* Level trigger interrupts not supported */
-			return -ENOTSUP;
+			err = -ENOTSUP;
+			goto release_lock;
 		}
 
 		if (stm32_exti_enable(pin) != 0) {
-			return -ENOSYS;
+			err = -EIO;
+			goto release_lock;
 		}
 
 	}
 
+release_lock:
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
-	return 0;
+	return err;
 }
 
 /**
