@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f3/stm32f334X8.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F334R8-NUCLEO board";
@@ -60,12 +61,12 @@
 	pinctrl-names = "default";
 };
 
-arduino_i2c: &i2c1 {
+&i2c1 {
       status = "okay";
       clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-arduino_spi: &spi1 {
+&spi1 {
 	status = "okay";
 };
 
