@@ -1,5 +1,7 @@
 sample:
   name: X-NUCLEO-IKS01A3 sensor shield
+common:
+  min_ram: 16
 tests:
   sample.shield.x_nucleo_iks01a3:
     harness: shield
