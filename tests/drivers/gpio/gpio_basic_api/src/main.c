@@ -11,6 +11,8 @@
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
+#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#include "device_imx.h"
 #endif
 
 #ifdef CONFIG_BOARD_MIMXRT1050_EVK
@@ -37,6 +39,48 @@ static void board_setup(void)
 
 	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+	/*
+	 * Configure pin mux.
+	 * The following code needs to configure the same GPIOs which were
+	 * selected as test pins in device tree.
+	 */
+
+	if (strcmp(DEV_NAME, "GPIO_5") != 0) {
+		printk("FATAL: controller set in DTS %s != controller %s\n",
+		       DEV_NAME, "GPIO_5");
+		k_panic();
+	}
+
+	if (PIN_IN != 15) {
+		printk("FATAL: input pin set in DTS %d != %d\n", PIN_IN, 15);
+		k_panic();
+	}
+
+	if (PIN_OUT != 14) {
+		printk("FATAL: output pin set in DTS %d != %d\n", PIN_OUT, 14);
+		k_panic();
+	}
+
+	/* Configure pin RGMII2_RD2 as GPIO5_IO14. */
+	IOMUXC_SW_MUX_CTL_PAD_RGMII2_RD2 =
+				IOMUXC_SW_MUX_CTL_PAD_RGMII2_RD2_MUX_MODE(5);
+	/* Select pull enabled, speed 100 MHz, drive strength 43 ohm */
+	IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD2 =
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD2_PUE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD2_PKE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD2_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD2_DSE(6);
+
+	/* Configure pin RGMII2_RD3 as GPIO5_IO15. */
+	IOMUXC_SW_MUX_CTL_PAD_RGMII2_RD3 =
+				IOMUXC_SW_MUX_CTL_PAD_RGMII2_RD3_MUX_MODE(5);
+	/* Select pull enabled, speed 100 MHz, drive strength 43 ohm */
+	IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3 =
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_PUE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_PKE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_DSE(6);
 #endif
 
 #ifdef CONFIG_BOARD_MIMXRT1050_EVK
