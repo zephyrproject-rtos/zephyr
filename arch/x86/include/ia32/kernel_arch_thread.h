@@ -43,7 +43,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
-#include <ia32/mmustructs.h>
+#include <arch/x86/mmustructs.h>
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.

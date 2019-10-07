@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <ia32/mmustructs.h>
+#include <arch/x86/mmustructs.h>
 #include <ztest.h>
 #include "boot_page_table.h"
 

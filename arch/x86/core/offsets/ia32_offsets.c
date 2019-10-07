@@ -24,7 +24,7 @@
 
 /* list of headers that define whose structure offsets will be generated */
 
-#include <ia32/mmustructs.h>
+#include <arch/x86/mmustructs.h>
 
 #include <kernel_offsets.h>
 

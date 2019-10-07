@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
-#include <ia32/mmustructs.h>
+#include <arch/x86/mmustructs.h>
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
 #include <kernel_structs.h>

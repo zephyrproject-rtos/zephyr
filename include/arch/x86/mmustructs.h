@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_X86_INCLUDE_IA32_MMUSTRUCTS_H_
-#define ZEPHYR_ARCH_X86_INCLUDE_IA32_MMUSTRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
 
 #define MMU_PAGE_SIZE 4096U
 #define MMU_PAGE_MASK 0xfffU
@@ -562,4 +562,4 @@ int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write);
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_MMUSTRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_ */
