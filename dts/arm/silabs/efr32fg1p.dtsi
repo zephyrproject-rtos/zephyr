@@ -155,6 +155,17 @@
 			interrupts = <2 0>;
 			status = "disabled";
 		};
+
+		adc0: adc@40002000 {
+			compatible = "silabs,gecko-adc";
+			reg = <0x40002000 0x400>;
+			interrupts = <14 0>;
+			peripheral-id = <0>;
+			prescaler = <32>;
+			label = "ADC_0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 
