@@ -247,8 +247,7 @@ extern "C" {
  */
 
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DIR_SHIFT          8
-#define GPIO_DIR_MASK		(0x3U << GPIO_DIR_SHIFT)
+#define GPIO_DIR_MASK		(GPIO_INPUT | GPIO_OUTPUT)
 /** @endcond */
 
 /** Legacy flag indicating pin is configured as input only.
