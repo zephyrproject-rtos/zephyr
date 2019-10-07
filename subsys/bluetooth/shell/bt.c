@@ -888,10 +888,10 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		shell_print(ctx_shell, "Interval: 0x%04x (%.2f ms)",
-			    info.le.interval, info.le.interval * 1.25);
-		shell_print(ctx_shell, "Latency: 0x%04x (%.2f ms)",
-			    info.le.latency, info.le.latency * 1.25);
+		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
+			    info.le.interval, info.le.interval * 5 / 4);
+		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
+			    info.le.latency, info.le.latency * 5 / 4);
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 	}
