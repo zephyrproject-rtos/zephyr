@@ -27,7 +27,6 @@ extern u8_t _exception_stack3[];
 
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss0 = {
-	.ist1 = (u64_t) _interrupt_stack + CONFIG_ISR_STACK_SIZE,
 	.ist7 = (u64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
@@ -36,7 +35,6 @@ struct x86_tss64 tss0 = {
 #if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss1 = {
-	.ist1 = (u64_t) _interrupt_stack1 + CONFIG_ISR_STACK_SIZE,
 	.ist7 = (u64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
@@ -46,7 +44,6 @@ struct x86_tss64 tss1 = {
 #if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss2 = {
-	.ist1 = (u64_t) _interrupt_stack2 + CONFIG_ISR_STACK_SIZE,
 	.ist7 = (u64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
@@ -56,7 +53,6 @@ struct x86_tss64 tss2 = {
 #if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss3 = {
-	.ist1 = (u64_t) _interrupt_stack3 + CONFIG_ISR_STACK_SIZE,
 	.ist7 = (u64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])
