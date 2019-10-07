@@ -172,7 +172,7 @@ Using UART1
 The following approach can be used when an application needs to use
 more than one UART for connecting peripheral devices:
 
-1. Add device tree overlay file to the main directory of your application:
+1. Add devicetree overlay file to the main directory of your application:
 
    .. code-block:: console
 
@@ -195,8 +195,9 @@ more than one UART for connecting peripheral devices:
 
 Overlay file naming
 ===================
+
 The file has to be named ``<board>.overlay`` and placed in the app main directory to be
-picked up automatically by the device tree compiler.
+picked up automatically by the build system.
 
 Selecting the pins
 ==================
@@ -211,7 +212,7 @@ In the table 7.1.1 'aQFN73 ball assignments' select the pins marked
 'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
 in under-10KHz applications. They are not suitable for 115200 speed of UART.
 
-Translate 'Pin' into number for Device tree by using the following formula::
+Translate the 'Pin' into number for devicetree by using the following formula::
 
    pin_no = b\*32 + a
 

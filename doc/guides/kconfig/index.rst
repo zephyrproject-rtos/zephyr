@@ -34,7 +34,7 @@ sense for the user to change its value.
 In Zephyr, Kconfig configuration is done after selecting a machine, so in
 general, it does not make sense to put a prompt on a symbol that corresponds to
 a fixed machine-specific setting. Usually, such settings should be handled via
-device tree (``.dts``) files instead.
+devicetree (``.dts``) files instead.
 
 Symbols without prompts can't be configured directly by the user (they derive
 their value from other symbols), so less restrictions apply to them. If some
@@ -808,12 +808,12 @@ Kconfig Functions
 *****************
 
 Kconfiglib provides user-defined preprocessor functions that
-we use in Zephyr to expose Device Tree information to Kconfig.
+we use in Zephyr to expose devicetree information to Kconfig.
 For example, we can get the default value for a Kconfig symbol
-from the device tree.
+from the devicetree.
 
-Device Tree Related Functions
-=============================
+Devicetree Related Functions
+============================
 
 See the Python docstrings in ``scripts/kconfig/kconfigfunctions.py`` for more
 details on the functions.
@@ -831,7 +831,7 @@ Example Usage
 -------------
 
 The following example shows the usage of the ``dt_node_reg_addr`` function.
-This function will take a path to a device tree node and register the register
+This function will take a path to a devicetree node and register the register
 address of that node:
 
 .. code-block:: none

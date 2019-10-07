@@ -22,8 +22,8 @@ under :zephyr_file:`/boards/shields`:
 
 These files provides shield configuration as follows:
 
-* **<shield>.overlay**: This file provides a shield description in device tree
-  format that is merged with the board's device tree information before
+* **<shield>.overlay**: This file provides a shield description in devicetree
+  format that is merged with the board's devicetree information before
   compilation.
 
 * **dts_fixup.h**: This is a fixup file to bind board components definitions with
@@ -41,8 +41,8 @@ This should be done at two different level:
 
 * Pinmux: Connector pins should be correctly configured to match shield pins
 
-* Device tree: A board device tree file should define a node alias for each
-  connector interface.  For example, for Arduino I2C:
+* Devicetree: A board :ref:`device-tree` file should define a node alias for
+  each connector interface. For example, for Arduino I2C:
 
 .. code-block:: none
 
