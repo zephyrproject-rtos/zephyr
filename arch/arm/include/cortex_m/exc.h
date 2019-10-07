@@ -38,35 +38,14 @@ extern volatile irq_offload_routine_t offload_routine;
  * to the Vector Key field, otherwise the writes are ignored.
  */
 #define AIRCR_VECT_KEY_PERMIT_WRITE 0x05FAUL
-/* The current executing vector is found in the IPSR register. We consider the
- * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions to be
- * interrupts. Taking a fault within an exception is also considered in
- * interrupt context.
+
+/*
+ * The current executing vector is found in the IPSR register. All
+ * IRQs and system exceptions are considered as interrupt context.
  */
 static ALWAYS_INLINE bool z_arch_is_in_isr(void)
 {
-	u32_t vector = __get_IPSR();
-
-	/* IRQs + PendSV (14) + SYSTICK (15) are interrupts. */
-	return (vector > 13)
-#ifdef CONFIG_IRQ_OFFLOAD
-		/* Only non-NULL if currently running an offloaded function */
-		|| offload_routine != NULL
-#endif
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-		/* On ARMv6-M there is no nested execution bit, so we check
-		 * exception 3, hard fault, to a detect a nested exception.
-		 */
-		|| (vector == 3U)
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-		/* If not in thread mode, and if RETTOBASE bit in ICSR is 0,
-		 * then there are preempted active exceptions to execute.
-		 */
-		|| (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk))
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-		;
+	return (__get_IPSR()) ? (true) : (false);
 }
 
 /**
