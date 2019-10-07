@@ -8,7 +8,7 @@
 #include "test_gpio.h"
 
 /* Grotesque hack for pinmux boards */
-#if defined(CONFIG_BOARD_FRDM_K64F)
+#if defined(CONFIG_BOARD_FRDM_K64F) || defined(CONFIG_BOARD_RV32M1_VEGA)
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
@@ -109,6 +109,12 @@ static void board_setup(void)
 			);
 	pinmux_pin_set(port0, PIN_IN,  pin_config);
 	pinmux_pin_set(port0, PIN_OUT, pin_config);
+#elif defined(CONFIG_BOARD_RV32M1_VEGA)
+	const char *pmx_name = CONFIG_PINMUX_RV32M1_PORTA_NAME;
+	struct device *pmx = device_get_binding(pmx_name);
+
+	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 }
 
