@@ -5,7 +5,9 @@
  */
 
 #include <kernel.h>
+
 #include <kernel_internal.h>
+#include <kernel_structs.h>
 #include <sys/__assert.h>
 #include <arch/cpu.h>
 #include <logging/log_ctrl.h>
@@ -93,11 +95,12 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * an IRQ or exception was being handled, or thread context.
 	 *
 	 * See #17656
-	 *
-	 * if (k_is_in_isr()) {
-	 *     LOG_ERR("Fault during interrupt handling\n");
-	 * }
 	 */
+#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
+	if (z_arch_is_in_nested_exception(esf)) {
+		LOG_ERR("Fault during interrupt handling\n");
+	}
+#endif
 
 	LOG_ERR("Current thread: %p (%s)", thread,
 		log_strdup(thread_name_get(thread)));
@@ -107,6 +110,13 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	/* If the system fatal error handler returns, then kill the faulting
 	 * thread; a policy decision was made not to hang the system.
 	 *
+	 * Policy for fatal errors in ISRs: unconditionally panic.
+	 *
+	 * There is one exception to this policy: a stack sentinel
+	 * check may be performed (on behalf of the current thread)
+	 * during ISR exit, but in this case the thread should be
+	 * aborted.
+	 *
 	 * Note that k_thread_abort() returns on some architectures but
 	 * not others; e.g. on ARC, x86_64, Xtensa with ASM2, ARM
 	 */
@@ -114,8 +124,31 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		__ASSERT(reason != K_ERR_KERNEL_PANIC,
 			 "Attempted to recover from a kernel panic condition");
 		/* FIXME: #17656 */
-		__ASSERT(!k_is_in_isr(),
-			 "Attempted to recover from a fatal error in ISR");
+#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
+		if (z_arch_is_in_nested_exception(esf)) {
+#if defined(CONFIG_STACK_SENTINEL)
+			if (reason != K_ERR_STACK_CHK_FAIL) {
+				__ASSERT(0,
+				 "Attempted to recover from a fatal error in ISR");
+			 }
+#endif /* CONFIG_STACK_SENTINEL */
+		}
+#endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
+	} else {
+		/* Test mode */
+#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
+			if (z_arch_is_in_nested_exception(esf)) {
+				/* Abort the thread only on STACK Sentinel check fail. */
+#if defined(CONFIG_STACK_SENTINEL)
+				if (reason != K_ERR_STACK_CHK_FAIL) {
+					return;
+				}
+#else
+				return;
+#endif /* CONFIG_STACK_SENTINEL */
+			}
+#endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 	}
+
 	k_thread_abort(thread);
 }

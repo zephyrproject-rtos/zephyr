@@ -4794,7 +4794,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 extern void z_sys_power_save_idle_exit(s32_t ticks);
 
 #ifdef Z_ARCH_EXCEPT
-/* This archtecture has direct support for triggering a CPU exception */
+/* This architecture has direct support for triggering a CPU exception */
 #define z_except_reason(reason)	Z_ARCH_EXCEPT(reason)
 #else
 
