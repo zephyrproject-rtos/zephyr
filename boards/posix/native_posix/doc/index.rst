@@ -540,7 +540,7 @@ The following peripherals are currently provided with this board:
   on the host file system.
 
   The size of the flash device can be configured through the native POSIX board
-  device tree and the sector size is configurable via the Kconfig option
+  devicetree and the sector size is configurable via the Kconfig option
   :option:`CONFIG_FLASH_NATIVE_POSIX_SECTOR_SIZE`. The sector size will only be
   used to return flash page layout related information and no restrictions are
   imposed by the driver based on the configured sector size. As such an erase
@@ -552,7 +552,7 @@ The following peripherals are currently provided with this board:
   By default the binary data is located in the file *flash.bin* in the current
   working directory. The location of this file can be changed through the
   command line parameter *--flash*. The flash data will be stored in raw format
-  and the file will be truncated to match the size specified in the device tree
+  and the file will be truncated to match the size specified in the devicetree
   configuration. In case the file does not exists the driver will take care of
   creating the file, else the existing file is used.
 

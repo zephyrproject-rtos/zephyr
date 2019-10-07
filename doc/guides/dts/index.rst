@@ -5,7 +5,7 @@ Devicetree
 
 Zephyr uses the *devicetree* data structure to describe the hardware available
 on a board, as well as its initial configuration in an application. Note that
-"devicetree" -- without spaces -- is preferred to "device tree". The
+"devicetree" -- without spaces -- is preferred to "devicetree". The
 `Devicetree specification`_ fully defines this data structure and its source
 and binary representations.
 

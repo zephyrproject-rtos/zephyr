@@ -119,7 +119,7 @@ two cores. This is done in 3 ways:
 - **Compilation**: Clock configuration is only accessible to M7 core. M4 core only
   has access to bus clock activation and deactivation.
 - **Static pre-compilation assignment**: Peripherals such as a UART are assigned in
-  device tree before compilation. The user must ensure peripherals are not assigned
+  devicetree before compilation. The user must ensure peripherals are not assigned
   to both cores at the same time.
 - **Run time protection**: Interrupt-controller and GPIO configurations could be
   accessed by both cores at run time. Accesses are protected by a hardware semaphore

@@ -195,7 +195,7 @@ Serial Port
 by default to the RAM console to be dumped by the Linux Remoteproc Framework
 on Cortex®-A7 core. Alternatively, Zephyr console output can be assigned to
 UART7 which is disabled by default. UART console can be enabled through
-board's device tree and 96b_avenger96_defconfig board file (or prj.conf
+board's devicetree and 96b_avenger96_defconfig board file (or prj.conf
 project files), and will disable existing RAM console output. Default UART
 console settings are 115200 8N1.
 
