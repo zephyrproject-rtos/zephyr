@@ -14,7 +14,7 @@
 .section .locore,"ax"
 .code32
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if CONFIG_MP_NUM_CPUS > 1
 
 	/*
 	 * APs are sent here on startup, in real mode. This
@@ -65,7 +65,7 @@ x86_ap_start:
 unknown_loapic_id:
 	jmp unknown_loapic_id
 
-#endif /* CONFIG_SMP && ... */
+#endif /* CONFIG_MP_NUM_CPUS > 1 */
 
 .code32
 .globl __start
@@ -280,7 +280,7 @@ gdt:
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if CONFIG_MP_NUM_CPUS > 1
 	/*
 	 * CPU 1 task state segment descriptors
 	 */
@@ -298,7 +298,7 @@ gdt:
 	.word 0, 0, 0, 0, 0
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+#if CONFIG_MP_NUM_CPUS > 2
 	/*
 	 * CPU 2 task state segment descriptors
 	 */
@@ -316,7 +316,7 @@ gdt:
 	.word 0, 0, 0, 0, 0
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+#if CONFIG_MP_NUM_CPUS > 3
 	/*
 	 * CPU 3 task state segment descriptors
 	 */
@@ -653,21 +653,21 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 _exception_stack:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if CONFIG_MP_NUM_CPUS > 1
 .global _exception_stack1
 .align 16
 _exception_stack1:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+#if CONFIG_MP_NUM_CPUS > 2
 .global _exception_stack2
 .align 16
 _exception_stack2:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+#if CONFIG_MP_NUM_CPUS > 3
 .global _exception_stack3
 .align 16
 _exception_stack3:

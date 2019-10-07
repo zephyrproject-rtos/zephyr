@@ -34,7 +34,7 @@ static inline struct _cpu *z_arch_curr_cpu(void)
 	return cpu;
 }
 
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+#if defined(CONFIG_SMP)
 
 #include <drivers/interrupt_controller/loapic.h>
 

@@ -32,7 +32,7 @@ struct x86_tss64 tss0 = {
 	.cpu = &(_kernel.cpus[0])
 };
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if CONFIG_MP_NUM_CPUS > 1
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss1 = {
 	.ist7 = (u64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
@@ -41,7 +41,7 @@ struct x86_tss64 tss1 = {
 };
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+#if CONFIG_MP_NUM_CPUS > 2
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss2 = {
 	.ist7 = (u64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
@@ -50,7 +50,7 @@ struct x86_tss64 tss2 = {
 };
 #endif
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+#if CONFIG_MP_NUM_CPUS > 3
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss3 = {
 	.ist7 = (u64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
@@ -66,19 +66,19 @@ struct x86_cpuboot x86_cpuboot[] = {
 		.sp = (u64_t) _interrupt_stack + CONFIG_ISR_STACK_SIZE,
 		.fn = z_x86_prep_c
 	},
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if CONFIG_MP_NUM_CPUS > 1
 	{
 		.tr = X86_KERNEL_CPU1_TR,
 		.gs = X86_KERNEL_CPU1_GS,
 	},
 #endif
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 2)
+#if CONFIG_MP_NUM_CPUS > 2
 	{
 		.tr = X86_KERNEL_CPU2_TR,
 		.gs = X86_KERNEL_CPU2_GS,
 	},
 #endif
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 3)
+#if CONFIG_MP_NUM_CPUS > 3
 	{
 		.tr = X86_KERNEL_CPU3_TR,
 		.gs = X86_KERNEL_CPU3_GS,
