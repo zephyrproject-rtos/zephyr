@@ -111,6 +111,8 @@ static inline int gpio_cc32xx_write(struct device *port,
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
 
+	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
+
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		value = value << pin;
 		/* Bitpack external GPIO pin number for GPIOPinWrite API: */
@@ -132,6 +134,8 @@ static inline int gpio_cc32xx_read(struct device *port,
 	unsigned long port_base = gpio_config->port_base;
 	long status;
 	unsigned char pin_packed;
+
+	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		/* Bitpack external GPIO pin number for GPIOPinRead API: */
@@ -210,6 +214,8 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 	unsigned long port_base = gpio_config->port_base;
 	unsigned long int_type;
 
+	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
+
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		if (mode == GPIO_INT_MODE_EDGE) {
 			if (trig == GPIO_INT_TRIG_BOTH) {
@@ -253,6 +259,8 @@ static int gpio_cc32xx_enable_callback(struct device *dev,
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
+	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
+
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		data->pin_callback_enables |= (1 << pin);
 	} else {
@@ -267,6 +275,8 @@ static int gpio_cc32xx_disable_callback(struct device *dev,
 				     int access_op, u32_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
+
+	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		data->pin_callback_enables &= ~(1 << pin);
