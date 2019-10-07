@@ -230,6 +230,49 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 }
 #endif
 
+#if defined(CONFIG_BT_REMOTE_INFO)
+static const char *ver_str(u8_t ver)
+{
+	const char * const str[] = {
+		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
+		"5.0", "5.1",
+	};
+
+	if (ver < ARRAY_SIZE(str)) {
+		return str[ver];
+	}
+
+	return "unknown";
+}
+
+static void remote_info_available(struct bt_conn *conn,
+				  struct bt_conn_remote_info *remote_info)
+{
+	struct bt_conn_info info;
+
+	bt_conn_get_info(conn, &info);
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
+		shell_print(ctx_shell,
+			    "Remote LMP version %s (0x%02x) subversion 0x%04x "
+			    "manufacturer 0x%04x", ver_str(remote_info->version),
+			    remote_info->version, remote_info->subversion,
+			    remote_info->manufacturer);
+	}
+
+	if (info.type == BT_CONN_TYPE_LE) {
+		u8_t features[8];
+		char features_str[2 * sizeof(features) +  1];
+
+		sys_memcpy_swap(features, remote_info->le.features,
+				sizeof(features));
+		bin2hex(features, sizeof(features),
+			features_str, sizeof(features_str));
+		shell_print(ctx_shell, "LE Features: 0x%s ", features_str);
+	}
+}
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -240,6 +283,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	.security_changed = security_changed,
+#endif
+#if defined(CONFIG_BT_REMOTE_INFO)
+	.remote_info_available = remote_info_available,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -834,8 +880,8 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_conn *conn = NULL;
-	bt_addr_le_t addr;
 	struct bt_conn_info info;
+	bt_addr_le_t addr;
 	int err;
 
 	switch (argc) {
