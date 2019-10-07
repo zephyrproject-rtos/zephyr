@@ -39,12 +39,8 @@ static void gpio_stm32_isr(int line, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-const int gpio_stm32_flags_to_conf(int flags, int *pincfg)
+static int gpio_stm32_flags_to_conf(int flags, int *pincfg)
 {
-
-	if (pincfg == NULL) {
-		return -EINVAL;
-	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
@@ -223,7 +219,7 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 
 static void gpio_stm32_set_exti_source(int port, int pin)
 {
-	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
+	u32_t line = gpio_stm32_pin_to_exti_line(pin);
 
 #if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
 	/*
@@ -249,7 +245,7 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 
 static int gpio_stm32_get_exti_source(int pin)
 {
-	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
+	u32_t line = gpio_stm32_pin_to_exti_line(pin);
 	int port;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -310,18 +306,6 @@ static int gpio_stm32_enable_int(int port, int pin)
 	gpio_stm32_set_exti_source(port, pin);
 
 	return 0;
-}
-
-/**
- * @brief Get enabled GPIO port for EXTI of the specific pin number
- */
-static int gpio_stm32_int_enabled_port(int pin)
-{
-	if (pin > 15) {
-		return -EINVAL;
-	}
-
-	return gpio_stm32_get_exti_source(pin);
 }
 
 static int gpio_stm32_port_get_raw(struct device *dev, u32_t *value)
@@ -403,10 +387,13 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	int err = 0;
 	int pincfg;
-	int map_res;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
+
+	if (pin > 15) {
+		return -EINVAL;
 	}
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
@@ -417,9 +404,8 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	/* figure out if we can map the requested GPIO
 	 * configuration
 	 */
-	map_res = gpio_stm32_flags_to_conf(flags, &pincfg);
-	if (map_res != 0) {
-		err = map_res;
+	err = gpio_stm32_flags_to_conf(flags, &pincfg);
+	if (err != 0) {
 		goto release_lock;
 	}
 
@@ -497,7 +483,7 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		if (gpio_stm32_int_enabled_port(pin) == cfg->port) {
+		if (gpio_stm32_get_exti_source(pin) == cfg->port) {
 			stm32_exti_disable(pin);
 			stm32_exti_unset_callback(pin);
 			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
