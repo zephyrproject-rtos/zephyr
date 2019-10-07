@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f7/stm32f756Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F756ZG-NUCLEO board";
@@ -50,10 +51,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_serial: &usart6 {};
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
 
 &usart2 {
 	current-speed = <115200>;

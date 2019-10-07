@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l4r5Xi.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L4R5ZI-NUCLEO board";
@@ -51,10 +52,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-arduino_serial: &usart3 {};
 
 &usart1 {
 	current-speed = <115200>;
