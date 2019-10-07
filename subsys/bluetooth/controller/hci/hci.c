@@ -3336,19 +3336,13 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CONN)
 void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 {
+	struct pdu_data *pdu_data = PDU_DATA(node_rx);
 	struct bt_hci_acl_hdr *acl;
-	struct pdu_data *pdu_data;
 	u16_t handle_flags;
 	u16_t handle;
 	u8_t *data;
 
 	handle = node_rx->hdr.handle;
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-	pdu_data = (void *)node_rx->pdu;
-#else
-	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	switch (pdu_data->ll_id) {
 	case PDU_DATA_LLID_DATA_CONTINUE:
@@ -3386,13 +3380,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 {
-	struct pdu_data *pdu_data;
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-	pdu_data = (void *)node_rx->pdu;
-#else
-	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
-#endif /* CONFIG_BT_LL_SW_SPLIT */
+	struct pdu_data *pdu_data = PDU_DATA(node_rx);
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 		encode_control(node_rx, pdu_data, buf);
@@ -3424,13 +3412,9 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 
 s8_t hci_get_class(struct node_rx_pdu *node_rx)
 {
-	struct pdu_data *pdu_data;
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-	pdu_data = (void *)node_rx->pdu;
-#else
-	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
-#endif /* CONFIG_BT_LL_SW_SPLIT */
+#if defined(CONFIG_BT_CONN)
+	struct pdu_data *pdu_data = PDU_DATA(node_rx);
+#endif
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 
