@@ -72,6 +72,7 @@ struct mcp2515_config {
 	u8_t tq_bs1;
 	u8_t tq_bs2;
 	u32_t bus_speed;
+	u32_t osc_freq;
 };
 
 /* MCP2515 Opcodes */

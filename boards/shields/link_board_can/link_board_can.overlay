@@ -19,6 +19,7 @@
 		label = "CAN_1";
 		reg = <0>;
 		bus-speed = <125000>;
+		osc-freq = <24000000>;
 		sjw = <1>;
 		prop-seg = <2>;
 		phase-seg1 = <7>;
