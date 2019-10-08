@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
 #include <net/socks.h>
+#include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
 
@@ -765,6 +766,11 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		return -1;
 	}
 
+	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
+				    net_pkt_priority(pkt),
+				    net_pkt_timestamp(pkt)->nanosecond,
+				    k_cycle_get_32());
+
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
 	} else {
@@ -845,6 +851,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 				if (net_pkt_eof(pkt)) {
 					sock_set_eof(ctx);
 				}
+
+				net_stats_update_tc_rx_time(
+					net_pkt_iface(pkt),
+					net_pkt_priority(pkt),
+					net_pkt_timestamp(pkt)->nanosecond,
+					k_cycle_get_32());
 
 				net_pkt_unref(pkt);
 			}

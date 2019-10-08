@@ -211,6 +211,14 @@ struct net_stats_tx_time {
 };
 
 /**
+ * @brief Network packet receive times for calculating average RX time
+ */
+struct net_stats_rx_time {
+	u64_t sum;
+	net_stats_t count;
+};
+
+/**
  * @brief Traffic class statistics
  */
 struct net_stats_tc {
@@ -222,6 +230,7 @@ struct net_stats_tc {
 	} sent[NET_TC_TX_COUNT];
 
 	struct {
+		struct net_stats_rx_time rx_time;
 		net_stats_t pkts;
 		net_stats_t bytes;
 		u8_t priority;
@@ -287,6 +296,11 @@ struct net_stats {
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
 	/** Network packet TX time statistics */
 	struct net_stats_tx_time tx_time;
+#endif
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS)
+	/** Network packet RX time statistics */
+	struct net_stats_rx_time rx_time;
 #endif
 };
 
