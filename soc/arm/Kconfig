@@ -34,7 +34,7 @@ config CPU_HAS_NRF_IDAU
 
 config CPU_HAS_FPU_DOUBLE_PRECISION
 	bool
-	depends on CPU_CORTEX_M7
+	depends on (CPU_CORTEX_M7 || CPU_CORTEX_R4 || CPU_CORTEX_R5)
 	select CPU_HAS_FPU
 	help
 	  When enabled, indicates that the SoC has a double
