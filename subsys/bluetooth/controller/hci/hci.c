@@ -3494,7 +3494,7 @@ u8_t hci_get_class(struct node_rx_pdu *node_rx)
 
 #if defined(CONFIG_BT_CONN)
 	} else if (pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
-		return HCI_CLASS_EVT_CONNECTION;
+		return HCI_CLASS_EVT_LLCP;
 	} else {
 		return HCI_CLASS_ACL_DATA;
 	}
