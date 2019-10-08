@@ -148,6 +148,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	case HCI_CLASS_EVT_DISCARDABLE:
 	case HCI_CLASS_EVT_REQUIRED:
 	case HCI_CLASS_EVT_CONNECTION:
+	case HCI_CLASS_EVT_LLCP:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
 			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true,
 					     K_NO_WAIT);
@@ -199,6 +200,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 		case HCI_CLASS_EVT_REQUIRED:
 			break;
 		case HCI_CLASS_EVT_CONNECTION:
+		case HCI_CLASS_EVT_LLCP:
 			/* for conn-related events, only pend is relevant */
 			hbuf_count = 1;
 			/* fallthrough */
@@ -256,6 +258,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	class = node_rx->hdr.user_meta;
 	if (n) {
 		if (class == HCI_CLASS_EVT_CONNECTION ||
+		    class == HCI_CLASS_EVT_LLCP ||
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 			/* node to process later, schedule an iteration */
 			BT_DBG("FC: signalling");
@@ -266,6 +269,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 
 	switch (class) {
 	case HCI_CLASS_EVT_CONNECTION:
+	case HCI_CLASS_EVT_LLCP:
 		BT_DBG("FC: dequeueing event");
 		(void) sys_slist_get(&hbuf_pend);
 		break;
@@ -295,6 +299,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 			class = node_rx->hdr.user_meta;
 
 			if (class == HCI_CLASS_EVT_CONNECTION ||
+			    class == HCI_CLASS_EVT_LLCP ||
 			    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 				/* more to process, schedule an
 				 * iteration
