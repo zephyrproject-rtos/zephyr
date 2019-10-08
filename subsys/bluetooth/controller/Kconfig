@@ -516,7 +516,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
-	depends on ZERO_LATENCY_IRQS
+	depends on ZERO_LATENCY_IRQS && BT_LL_SW_SPLIT
 	help
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,

@@ -406,21 +406,36 @@ void ll_reset(void)
 
 	/* Reset LLL via mayfly */
 	{
-		u32_t retval;
-		struct k_sem sem;
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL,
 					    perform_lll_reset};
+		u32_t retval;
+
+		/* NOTE: If Zero Latency Interrupt is used, then LLL context
+		 *       will be the highest priority IRQ in the system, hence
+		 *       mayfly_enqueue will be done running the callee inline
+		 *       (vector to the callee function) in this function. Else
+		 *       we use semaphore to wait for perform_lll_reset to
+		 *       complete.
+		 */
+
+#if !defined(CONFIG_BT_CTLR_ZLI)
+		struct k_sem sem;
 
 		k_sem_init(&sem, 0, 1);
 		mfy.param = &sem;
+#endif /* !CONFIG_BT_CTLR_ZLI */
+
 		retval = mayfly_enqueue(TICKER_USER_ID_THREAD,
 					TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!retval);
+
+#if !defined(CONFIG_BT_CTLR_ZLI)
 		/* LLL reset must complete before returning - wait for
 		 * reset completion in LLL mayfly thread
 		 */
 		k_sem_take(&sem, K_FOREVER);
+#endif /* !CONFIG_BT_CTLR_ZLI */
 	}
 
 	/* Common to init and reset */
@@ -1210,7 +1225,9 @@ static void perform_lll_reset(void *param)
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CONN */
 
+#if !defined(CONFIG_BT_CTLR_ZLI)
 	k_sem_give(param);
+#endif /* !CONFIG_BT_CTLR_ZLI */
 }
 
 static inline void *mark_set(void **m, void *param)
