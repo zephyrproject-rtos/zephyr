@@ -273,23 +273,23 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 #define SGX	BIT(15)
 
 #ifdef CONFIG_X86_MMU
-static void dump_entry_flags(const char *name, x86_page_entry_data_t flags)
+static void dump_entry_flags(const char *name, u64_t flags)
 {
 	LOG_ERR("%s: 0x%x%x %s, %s, %s, %s", name, (u32_t)(flags>>32),
 		(u32_t)(flags),
-		flags & (x86_page_entry_data_t)MMU_ENTRY_PRESENT ?
+		flags & MMU_ENTRY_PRESENT ?
 		"Present" : "Non-present",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_WRITE ?
+		flags & MMU_ENTRY_WRITE ?
 		"Writable" : "Read-only",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_USER ?
+		flags & MMU_ENTRY_USER ?
 		"User" : "Supervisor",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_EXECUTE_DISABLE ?
+		flags & MMU_ENTRY_EXECUTE_DISABLE ?
 		"Execute Disable" : "Execute Enabled");
 }
 
 static void dump_mmu_flags(struct x86_page_tables *ptables, void *addr)
 {
-	x86_page_entry_data_t pde_flags, pte_flags;
+	u64_t pde_flags, pte_flags;
 
 	z_x86_mmu_get_flags(ptables, addr, &pde_flags, &pte_flags);
 
