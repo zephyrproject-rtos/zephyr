@@ -246,10 +246,14 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	case 10:
 		resolution = table_resolution[2];
 		break;
-#endif
 	case 12:
 		resolution = table_resolution[3];
 		break;
+#else
+	case 12:
+		resolution = table_resolution[0];
+		break;
+#endif
 	default:
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
