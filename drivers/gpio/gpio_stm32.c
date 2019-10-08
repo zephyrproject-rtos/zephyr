@@ -517,8 +517,7 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		edge = STM32_EXTI_TRIG_RISING;
 		break;
 	case GPIO_INT_TRIG_BOTH:
-		edge = STM32_EXTI_TRIG_RISING |
-		       STM32_EXTI_TRIG_FALLING;
+		edge = STM32_EXTI_TRIG_BOTH;
 		break;
 	}
 
