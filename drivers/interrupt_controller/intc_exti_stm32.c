@@ -120,9 +120,7 @@ void stm32_exti_disable(int line)
 	if (line < 32) {
 		LL_EXTI_DisableIT_0_31(1 << line);
 	} else {
-
 		__ASSERT_NO_MSG(line);
-
 	}
 }
 
@@ -167,20 +165,29 @@ static inline void stm32_exti_clear_pending(int line)
 
 void stm32_exti_trigger(int line, int trigger)
 {
-	if (trigger & STM32_EXTI_TRIG_RISING) {
-		if (line < 32) {
-			LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		} else {
-			__ASSERT_NO_MSG(line);
-		}
+
+	if (line >= 32) {
+		__ASSERT_NO_MSG(line);
 	}
 
-	if (trigger & STM32_EXTI_TRIG_FALLING) {
-		if (line < 32) {
-			LL_EXTI_EnableFallingTrig_0_31(1 << line);
-		} else {
-			__ASSERT_NO_MSG(line);
-		}
+	switch (trigger) {
+	case STM32_EXTI_TRIG_NONE:
+		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_RISING:
+		LL_EXTI_EnableRisingTrig_0_31(1 << line);
+		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_FALLING:
+		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_BOTH:
+		LL_EXTI_EnableRisingTrig_0_31(1 << line);
+		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+	default:
+		__ASSERT_NO_MSG(trigger);
 	}
 }
 
