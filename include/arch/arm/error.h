@@ -40,7 +40,6 @@ do { \
 		: \
 		: "r" (r0), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
-	CODE_UNREACHABLE; \
 } while (false)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #define Z_ARCH_EXCEPT(reason_p) do { \
@@ -52,7 +51,6 @@ do { \
 		: \
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
-	CODE_UNREACHABLE; \
 } while (false)
 #elif defined(CONFIG_ARMV7_R)
 /* Pick up the default definition in kernel.h for now */
