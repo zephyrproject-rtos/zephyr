@@ -1,0 +1,52 @@
+# Kconfig - STM32F446ZE Nucleo board configuration
+#
+# Copyright (c) 2018 Philémon Jaermann
+# Copyright (c) 2019 Peter Nimac
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F446ZE
+
+config BOARD
+	default "nucleo_f446ze"
+
+if UART_CONSOLE
+
+config UART_3
+	default y
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config UART_6
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if I2S
+
+config I2S_2
+	default y
+
+endif # I2S
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
+endif # BOARD_NUCLEO_F446ZE

@@ -1,0 +1,25 @@
+identifier: nucleo_f446ze
+name: NUCLEO-F446ZE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 96
+flash: 512
+supported:
+  - arduino_i2c
+  - arduino_serial
+  - arduino_i2c
+  - arduino_spi
+  - arduino_gpio
+  - uart
+  - gpio
+  - usb_device
+  - i2c
+  - rtc
+  - counter
+  - i2s
+  - spi
+  - adc
