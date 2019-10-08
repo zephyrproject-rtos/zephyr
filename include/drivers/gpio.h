@@ -182,7 +182,11 @@ extern "C" {
 
 /** @} */
 
-/** Enable GPIO pin debounce. */
+/** Enable GPIO pin debounce.
+ *
+ * @note Drivers that do not support a debounce feature should ignore
+ * this flag rather than rejecting the configuration with -ENOTSUP.
+ */
 #define GPIO_INT_DEBOUNCE              (1U << 17)
 
 /**
@@ -583,7 +587,8 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
  * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP If any of the configuration options is not supported.
+ * @retval -ENOTSUP If any of the configuration options is not supported
+ *                  (unless otherwise directed by flag documentation).
  * @retval -EINVAL  Invalid argument.
  * @retval -EBUSY   Interrupt line required to configure pin interrupt is
  *                  already in use.
@@ -632,7 +637,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
  *        bias flags', GPIO_INT_DEBOUNCE.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP if any of the configuration options is not supported.
+ * @retval -ENOTSUP if any of the configuration options is not supported
+ *                  (unless otherwise directed by flag documentation).
  * @retval -EINVAL Invalid argument.
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
