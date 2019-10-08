@@ -42,6 +42,12 @@
 #include "ll_feat.h"
 #include "ll_filter.h"
 
+#if defined(CONFIG_BT_CTLR_ZLI)
+#define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
+#else
+#define IRQ_CONNECT_FLAGS 0
+#endif
+
 /* Global singletons */
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
@@ -181,11 +187,16 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-			   radio_nrf5_isr, 0);
+			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-		    rtc0_nrf5_isr, NULL, 0);
+		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
+	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
+		    swi5_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#else
 	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
 		    swi5_nrf5_isr, NULL, 0);
+#endif
 
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);
