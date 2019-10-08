@@ -372,5 +372,10 @@ config GDBSTUB_SERIAL_BACKEND_NAME
 	help
 	  Use serial as backenf for GDB
 
-
 endif
+
+menu "Debug Access Port"
+
+source "subsys/debug/dap/Kconfig"
+
+endmenu

@@ -1,0 +1,56 @@
+# Kconfig - cmsis dap controller configuration options
+
+#
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CMSIS_DAP
+	bool "CMSIS DAP compatible controller"
+	default n
+	select SWD_DRIVER
+	help
+	  Enable CMSIS DAP.
+
+if CMSIS_DAP
+
+config CMSIS_DAP_PACKET_COUNT
+	int "Maximum packet buffers for request and response data."
+	default 4
+	range 1 255
+	help
+	  Maximum packet buffers for request and response data.
+
+config CMSIS_DAP_STACK_SIZE
+	int "DAP controller thread stack size"
+	default 512
+	help
+	  Thread stack size
+
+config CMSIS_DAP_USB_HID_INTERFACE
+	bool "Enable USB HID interface"
+	depends on USB_DEVICE_DRIVER
+	default y
+	help
+	  Enable USB HID interface to host.
+
+config CMSIS_DAP_USB_HID_DEVICE_NAME
+	string "USB HID device name"
+	depends on CMSIS_DAP_USB_HID_INTERFACE
+	default "HID_0"
+	help
+	  USB HID device name
+
+config CMSIS_DAP_USB_HID_STACK_SIZE
+	int "DAP USB HID interface thread stack size"
+	depends on CMSIS_DAP_USB_HID_INTERFACE
+	default 512
+	help
+	  Thread stack size
+
+module = CMSIS_DAP
+module-str = cmsis dap
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CMSIS_DAP
