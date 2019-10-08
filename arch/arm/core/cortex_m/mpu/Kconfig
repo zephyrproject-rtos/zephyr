@@ -24,6 +24,7 @@ config ARM_MPU
 
 config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 	int
+	default 256 if ARM_MPU && ARMV6_M_ARMV8_M_BASELINE && !ARMV8_M_BASELINE
 	default 32 if ARM_MPU
 	default 4
 	help
