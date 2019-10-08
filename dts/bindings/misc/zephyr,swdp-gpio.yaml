@@ -2,45 +2,45 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: >
-    This is a representation of the Serial Wire Debug Port interface
-    implementation by GPIO bit-banging.
+  This is a representation of the Serial Wire Debug Port interface
+  implementation by GPIO bit-banging.
 
 compatible: "zephyr,swdp-gpio"
 
 include: base.yaml
 
 properties:
-    clk-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for SWCLK output
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWCLK output
 
-    dout-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for SWDIO output
+  dout-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWDIO output
 
-    din-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for SWDIO input
+  din-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWDIO input
 
-    dnoe-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for SWDIO NOE output
+  dnoe-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWDIO NOE output
 
-    noe-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for SWD NOE output
+  noe-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWD NOE output
 
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO pin used for RESET output
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for RESET output
 
-    port-write-cycles:
-      type: int
-      required: true
-      description: Number of processor cycles for I/O Port write operations
+  port-write-cycles:
+    type: int
+    required: true
+    description: Number of processor cycles for I/O Port write operations
