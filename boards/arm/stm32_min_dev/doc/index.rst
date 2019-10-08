@@ -10,8 +10,8 @@ The STM32 Minimum Development Board, is a popular and inexpensive
 breadboard-friendly breakout board for the `STM32F103x8`_ CPU. There
 are two variants of the board:
 
-- `Blue Pill Board`_
-- `Black Pill Board`_
+- Blue Pill Board
+- Black Pill Board
 
 Zephyr applications can use the stm32_min_dev_blue or stm32_min_dev_black board
 configuration to use these boards.
@@ -179,9 +179,5 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
-.. _Black Pill Board:
-        https://wiki.stm32duino.com/index.php?title=Black_Pill
-.. _Blue Pill Board:
-        https://wiki.stm32duino.com/index.php?title=Blue_Pill
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/
