@@ -12,7 +12,7 @@
 #define MODE_IRQ	0x12
 #define MODE_SVC	0x13
 #define MODE_ABT	0x17
-#define MODE_UDF	0x1b
+#define MODE_UND	0x1b
 #define MODE_SYS	0x1f
 #define MODE_MASK	0x1f
 
@@ -22,6 +22,14 @@
 #define T_BIT	(1 << 5)
 
 #define HIVECS	(1 << 13)
+
+#define CPACR_NA	(0U)
+#define CPACR_FA	(3U)
+
+#define CPACR_CP10(r)	(r << 20)
+#define CPACR_CP11(r)	(r << 22)
+
+#define FPEXC_EN	(1 << 30)
 
 #define RET_FROM_SVC	0
 #define RET_FROM_IRQ	1

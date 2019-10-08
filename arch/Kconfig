@@ -414,6 +414,12 @@ config CPU_HAS_TEE
 	  Execution Environment (e.g. when it has a security attribution
 	  unit).
 
+config CPU_HAS_DCLS
+	bool
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology.
+
 config CPU_HAS_FPU
 	bool
 	help
