@@ -412,6 +412,14 @@ config BT_CTLR_PHY_CODED
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 endif # BT_PHY_UPDATE
 
+config BT_CTLR_ZLI
+	bool "Use Zero Latency IRQs"
+	depends on ZERO_LATENCY_IRQS
+	help
+	  Enable support for use of Zero Latency IRQ feature. Note, applications
+	  shall not use Zero Latency IRQ themselves when this option is selected,
+	  else will impact controller stability.
+
 if BT_LL_SW_LEGACY
 
 config BT_CTLR_WORKER_PRIO
