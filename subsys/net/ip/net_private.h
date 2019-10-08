@@ -88,6 +88,17 @@ char *net_sprint_addr(sa_family_t af, const void *addr);
 int net_context_get_timestamp(struct net_context *context,
 			      struct net_pkt *pkt,
 			      struct net_ptp_time *timestamp);
+#else
+static inline int net_context_get_timestamp(struct net_context *context,
+					    struct net_pkt *pkt,
+					    struct net_ptp_time *timestamp)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(timestamp);
+
+	return -ENOTSUP;
+}
 #endif
 
 #if defined(CONFIG_COAP)

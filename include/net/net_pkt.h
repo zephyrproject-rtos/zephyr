@@ -97,10 +97,21 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
+	/* We do not support combination of TXTIME and TXTIME_STATS as the
+	 * same variable is shared in net_pkt.h
+	 */
+#if defined(CONFIG_NET_PKT_TXTIME) && defined(CONFIG_NET_PKT_TXTIME_STATS)
+#error \
+"Cannot define both CONFIG_NET_PKT_TXTIME and CONFIG_NET_PKT_TXTIME_STATS"
+#endif
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME) || \
-					defined(CONFIG_NET_PKT_RXTIME_STATS)
+				defined(CONFIG_NET_PKT_RXTIME_STATS) || \
+				defined(CONFIG_NET_PKT_TXTIME_STATS)
 	union {
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_RXTIME_STATS)
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || \
+				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
+				defined(CONFIG_NET_PKT_TXTIME_STATS)
 		/** Timestamp if available. */
 		struct net_ptp_time timestamp;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */

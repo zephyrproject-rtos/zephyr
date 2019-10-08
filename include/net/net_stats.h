@@ -203,11 +203,11 @@ struct net_stats_ipv6_mld {
 };
 
 /**
- * @brief Network packet transfer times
+ * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
-	u64_t time_sum;
-	net_stats_t time_count;
+	u64_t sum;
+	net_stats_t count;
 };
 
 /**
@@ -223,10 +223,10 @@ struct net_stats_rx_time {
  */
 struct net_stats_tc {
 	struct {
+		struct net_stats_tx_time tx_time;
 		net_stats_t pkts;
 		net_stats_t bytes;
 		u8_t priority;
-		struct net_stats_tx_time tx_time;
 	} sent[NET_TC_TX_COUNT];
 
 	struct {
@@ -293,7 +293,13 @@ struct net_stats {
 	struct net_stats_tc tc;
 #endif
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && \
+	defined(CONFIG_NET_PKT_TXTIME_STATS)
+#error \
+"Cannot define both CONFIG_NET_CONTEXT_TIMESTAMP and CONFIG_NET_PKT_TXTIME_STATS"
+#endif
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
+					defined(CONFIG_NET_PKT_TXTIME_STATS)
 	/** Network packet TX time statistics */
 	struct net_stats_tx_time tx_time;
 #endif
