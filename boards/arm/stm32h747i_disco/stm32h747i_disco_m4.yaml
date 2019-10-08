@@ -9,6 +9,7 @@ toolchain:
 ram: 288
 flash: 1024
 supported:
+  - arduino_gpio
   - gpio
 testing:
   ignore_tags:
