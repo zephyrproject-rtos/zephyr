@@ -661,6 +661,23 @@ config NET_PKT_RXTIME_STATS
 	  in net-shell.
 	  The RX statistics are only calculated for UDP and TCP packets.
 
+config NET_PKT_TXTIME_STATS
+	bool "Enable network packet TX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP) && !NET_PKT_TXTIME
+	help
+	  Enable network packet TX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  application to just before it is sent to network. The TX timing
+	  information can then be seen in network interface statistics in
+	  net-shell.
+	  The RX calculation is done only for UDP or TCP packets, but for TX
+	  we do not know the protocol so the TX packet timing is done for all
+	  network protocol packets.
+	  Note that CONFIG_NET_PKT_TXTIME cannot be set at the same time
+	  because net_pkt shares the time variable for statistics and TX time.
+
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"
 	select NET_MGMT
