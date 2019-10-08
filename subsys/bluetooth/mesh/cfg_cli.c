@@ -27,6 +27,9 @@
 
 #define CID_NVAL 0xffff
 
+/* 2 byte dummy opcode for getting compile time buffer sizes. */
+#define DUMMY_2_BYTE_OP	BT_MESH_MODEL_OP_2(0xff, 0xff)
+
 struct comp_data {
 	u8_t *status;
 	struct net_buf_simple *comp;
@@ -552,7 +555,7 @@ static int cli_wait(void)
 int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 			      u8_t *status, struct net_buf_simple *comp)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_DEV_COMP_DATA_GET, 1);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -586,7 +589,7 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 			u8_t *val)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -615,7 +618,7 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 			u8_t new_val, u8_t *val)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 1);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -694,7 +697,7 @@ int bt_mesh_cfg_gatt_proxy_set(u16_t net_idx, u16_t addr, u8_t val,
 int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 			  u8_t *transmit)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_GET, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -727,7 +730,7 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 			  u8_t new_transmit, u8_t *status, u8_t *transmit)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_SET, 2);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -762,7 +765,7 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    const u8_t net_key[16], u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 18 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_ADD, 18);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -803,7 +806,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    u16_t key_app_idx, const u8_t app_key[16],
 			    u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 1 + 19 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_ADD, 19);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -845,7 +848,7 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			u16_t mod_app_idx, u16_t mod_id, u16_t cid,
 			u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 8 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_BIND, 8);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -913,7 +916,7 @@ int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		   u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 8 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 8);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1020,7 +1023,7 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		      const u8_t label[16], u16_t mod_id, u16_t cid,
 		      u16_t *virt_addr, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 22 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, DUMMY_2_BYTE_OP, 22);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1136,7 +1139,7 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		       u16_t mod_id, u16_t cid,
 		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 6 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_GET, 6);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1205,7 +1208,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		       u16_t mod_id, u16_t cid,
 		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 13 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_SET, 13);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1278,7 +1281,7 @@ int bt_mesh_cfg_mod_pub_set_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 5 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_SET, 5);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1319,7 +1322,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_GET, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1357,7 +1360,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 			   const struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_SET, 9);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1400,7 +1403,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_GET, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
