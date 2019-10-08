@@ -340,6 +340,21 @@ static inline void net_stats_update_tx_time(struct net_if *iface,
 }
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP && STATISTICS */
 
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS)
+static inline void net_stats_update_rx_time(struct net_if *iface,
+					    u32_t start_time,
+					    u32_t end_time)
+{
+	u32_t diff = end_time - start_time;
+
+	UPDATE_STAT(iface, stats.rx_time.sum +=
+		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+	UPDATE_STAT(iface, stats.rx_time.count += 1);
+}
+#else
+#define net_stats_update_rx_time(iface, start_time, end_time)
+#endif /* CONFIG_NET_CONTEXT_TIMESTAMP && STATISTICS */
+
 #if (NET_TC_COUNT > 1) && defined(CONFIG_NET_STATISTICS) \
 	&& defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_sent_pkt(struct net_if *iface, u8_t tc)
@@ -386,6 +401,25 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 	ARG_UNUSED(end_time);
 }
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP && CONFIG_NET_STATISTICS */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS) \
+	&& defined(CONFIG_NET_NATIVE)
+static inline void net_stats_update_tc_rx_time(struct net_if *iface,
+					       u8_t tc,
+					       u32_t start_time,
+					       u32_t end_time)
+{
+	u32_t diff = end_time - start_time;
+
+	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.sum +=
+		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.count += 1);
+
+	net_stats_update_rx_time(iface, start_time, end_time);
+}
+#else
+#define net_stats_update_tc_rx_time(iface, tc, start_time, end_time)
+#endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 
 static inline void net_stats_update_tc_recv_pkt(struct net_if *iface, u8_t tc)
 {
@@ -434,6 +468,21 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 	ARG_UNUSED(end_time);
 }
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP && CONFIG_NET_STATISTICS */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS) \
+	&& defined(CONFIG_NET_NATIVE)
+static inline void net_stats_update_tc_rx_time(struct net_if *iface,
+					       u8_t pkt_priority,
+					       u32_t start_time,
+					       u32_t end_time)
+{
+	ARG_UNUSED(pkt_priority);
+
+	net_stats_update_rx_time(iface, start_time, end_time);
+}
+#else
+#define net_stats_update_tc_rx_time(iface, priority, start_time, end_time)
+#endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 #endif /* NET_TC_COUNT > 1 */
 
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT) \

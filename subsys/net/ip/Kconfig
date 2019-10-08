@@ -189,11 +189,19 @@ config NET_TC_MAPPING_SR_CLASS_B_ONLY
 endchoice
 
 config NET_TX_DEFAULT_PRIORITY
-	int "Default network packet priority if none have been set"
+	int "Default network TX packet priority if none have been set"
 	default 1
 	range 0 7
 	help
 	  What is the default network packet priority if user has not specified
+	  one. The value 0 means lowest priority and 7 is the highest.
+
+config NET_RX_DEFAULT_PRIORITY
+	int "Default network RX packet priority if none have been set"
+	default 0
+	range 0 7
+	help
+	  What is the default network RX packet priority if user has not set
 	  one. The value 0 means lowest priority and 7 is the highest.
 
 config NET_IP_ADDR_CHECK
@@ -639,6 +647,19 @@ config NET_PKT_TXTIME
 	  Enable network packet TX time support. This is needed for
 	  when the application wants to set the exact time when the network
 	  packet should be sent.
+
+config NET_PKT_RXTIME_STATS
+	bool "Enable network packet RX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP)
+	help
+	  Enable network packet RX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  device driver to just before it is given to application. The RX
+	  timing information can then be seen in network interface statistics
+	  in net-shell.
+	  The RX statistics are only calculated for UDP and TCP packets.
 
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"

@@ -97,9 +97,10 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME) || \
+					defined(CONFIG_NET_PKT_RXTIME_STATS)
 	union {
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_RXTIME_STATS)
 		/** Timestamp if available. */
 		struct net_ptp_time timestamp;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */

@@ -1187,7 +1187,26 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, s32_t timeout)
 		net_pkt_set_ipv6_next_hdr(pkt, 255);
 	}
 
-	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
+	if (&tx_pkts == slab) {
+		net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
+	} else if (&rx_pkts == slab) {
+		net_pkt_set_priority(pkt, CONFIG_NET_RX_DEFAULT_PRIORITY);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS)) {
+		struct net_ptp_time tp = {
+			/* Use the nanosecond field to temporarily
+			 * store the cycle count as it is a 32-bit
+			 * variable. The net_pkt timestamp field is used
+			 * to calculate how long it takes the packet to travel
+			 * from network device driver to the application.
+			 */
+			.nanosecond = k_cycle_get_32(),
+		};
+
+		net_pkt_set_timestamp(pkt, &tp);
+	}
+
 	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
