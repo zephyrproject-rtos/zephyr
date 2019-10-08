@@ -783,6 +783,31 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 	int i;
 
 	PR("RX traffic class statistics:\n");
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS)
+	PR("TC  Priority\tRecv pkts\tbytes\ttime\n");
+
+	for (i = 0; i < NET_TC_RX_COUNT; i++) {
+		net_stats_t count = GET_STAT(iface,
+					     tc.recv[i].rx_time.count);
+		if (count == 0) {
+			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
+			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
+			   GET_STAT(iface, tc.recv[i].priority),
+			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].bytes));
+		} else {
+			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
+			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
+			   GET_STAT(iface, tc.recv[i].priority),
+			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].bytes),
+			   (u32_t)(GET_STAT(iface,
+					    tc.recv[i].rx_time.sum) /
+				   (u64_t)count));
+		}
+	}
+#else
 	PR("TC  Priority\tRecv pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
@@ -792,9 +817,21 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 		   GET_STAT(iface, tc.recv[i].pkts),
 		   GET_STAT(iface, tc.recv[i].bytes));
 	}
+#endif /* CONFIG_NET_PKT_RXTIME_STATS */
 #else
 	ARG_UNUSED(shell);
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS)
+	net_stats_t count = GET_STAT(iface, rx_time.count);
+
+	if (count != 0) {
+		PR("Avg %s net_pkt (%u) time %lu us\n", "RX", count,
+		   (u32_t)(GET_STAT(iface, rx_time.sum) / (u64_t)count));
+	}
+#else
 	ARG_UNUSED(iface);
+#endif /* CONFIG_NET_PKT_RXTIME_STATS */
+
 #endif /* NET_TC_RX_COUNT > 1 */
 }
 
