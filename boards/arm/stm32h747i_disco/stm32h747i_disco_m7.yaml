@@ -9,4 +9,5 @@ toolchain:
 ram: 512
 flash: 1024
 supported:
+  - arduino_gpio
   - gpio
