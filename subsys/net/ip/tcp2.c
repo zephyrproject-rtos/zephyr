@@ -72,14 +72,24 @@ static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 {
 #define NBUFS 2
 #define BUF_SIZE 80
+	sa_family_t af = ep->sa.sa_family;
 	static char buf[NBUFS][BUF_SIZE];
 	char addr[INET6_ADDRSTRLEN];
 	static int i;
 	char *s = buf[++i % NBUFS];
 
-	net_addr_ntop(AF_INET, &ep->sin.sin_addr, addr, sizeof(addr));
-
-	snprintf(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
+	switch (af) {
+	case 0:
+		snprintf(s, BUF_SIZE, ":%hu", ntohs(ep->sin.sin_port));
+		break;
+	case AF_INET: case AF_INET6:
+		net_addr_ntop(af, &ep->sin.sin_addr, addr, sizeof(addr));
+		snprintf(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
+		break;
+	default:
+		s = NULL;
+		tcp_err("Unknown address family: %hu", af);
+	}
 #undef BUF_SIZE
 #undef NBUFS
 	return s;
