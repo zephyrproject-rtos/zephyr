@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2019, Phytec Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* -DDTC_OVERLAY_FILE=dap_hid_reel_board.overlay */
+
+/ {
+	dp {
+		compatible = "dap,sw_gpio";
+		label = "DAP_SW";
+		status = "okay";
+		clk-gpios = <&arduino_header 10 0>;	/* D4 */
+		dout-gpios = <&arduino_header 9 0>;	/* D3 */
+		din-gpios = <&arduino_header 8 0>;	/* D2 */
+		dnoe-gpios = <&arduino_header 12 0>;	/* D6 */
+		noe-gpios = <&arduino_header 11 0>;	/* D5 */
+		reset-gpios = <&arduino_header 13 0>;	/* D7 */
+		port-write-cycles = <2>;
+	};
+};
