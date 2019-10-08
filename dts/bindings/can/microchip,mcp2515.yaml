@@ -11,6 +11,10 @@ compatible: "microchip,mcp2515"
 include: [spi-device.yaml, can-controller.yaml]
 
 properties:
+    osc-freq:
+      type: int
+      required: true
+      description: Frequency of the external oscillator
     int-gpios:
       type: phandle-array
       required: true

@@ -193,8 +193,7 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 				dev_cfg->tq_bs2;
 
 	/* CNF1; SJW<7:6> | BRP<5:0> */
-	u8_t brp =
-		(CONFIG_CAN_MCP2515_OSC_FREQ / (bit_length * bitrate * 2)) - 1;
+	u8_t brp = (dev_cfg->osc_freq / (bit_length * bitrate * 2)) - 1;
 	const u8_t sjw = (dev_cfg->tq_sjw - 1) << 6;
 	u8_t cnf1 = sjw | brp;
 
@@ -238,12 +237,12 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 		 "PROP + BS1 >= BS2");
 	__ASSERT(dev_cfg->tq_bs2 > dev_cfg->tq_sjw, "BS2 > SJW");
 
-	if (CONFIG_CAN_MCP2515_OSC_FREQ % (bit_length * bitrate * 2)) {
+	if (dev_cfg->osc_freq % (bit_length * bitrate * 2)) {
 		LOG_ERR("Prescaler is not a natural number! "
 			"prescaler = osc_rate / ((PROP + SEG1 + SEG2 + 1) "
 			"* bitrate * 2)\n"
 			"prescaler = %d / ((%d + %d + %d + 1) * %d * 2)",
-			CONFIG_CAN_MCP2515_OSC_FREQ, dev_cfg->tq_prop,
+			dev_cfg->osc_freq, dev_cfg->tq_prop,
 			dev_cfg->tq_bs1, dev_cfg->tq_bs2, bitrate);
 	}
 
@@ -623,6 +622,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.tq_bs1 = DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG1,
 	.tq_bs2 = DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2,
 	.bus_speed = DT_INST_0_MICROCHIP_MCP2515_BUS_SPEED,
+	.osc_freq = DT_INST_0_MICROCHIP_MCP2515_OSC_FREQ
 };
 
 DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_0_MICROCHIP_MCP2515_LABEL, &mcp2515_init,
