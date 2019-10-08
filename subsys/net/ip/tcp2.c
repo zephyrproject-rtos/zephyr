@@ -61,8 +61,18 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 
 		break;
 	}
-	case AF_INET6: default:
-		tcp_assert(false, "sa_family %hu isn't supported yet", af);
+	case AF_INET6: {
+		struct net_ipv6_hdr *ip = (void *)ip_get(pkt);
+		struct tcphdr *th = (void *)(ip + 1);
+
+		ep->sin6.sin6_port = src ? th->th_sport : th->th_dport;
+
+		ep->sin6.sin6_addr = src ? ip->src : ip->dst;
+
+		break;
+	}
+	default:
+		tcp_err("Unknown address family: %hu", af);
 	}
 
 	return ep;
