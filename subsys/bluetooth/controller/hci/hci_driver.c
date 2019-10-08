@@ -81,12 +81,12 @@ static s32_t hbuf_count;
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
-		void *node_rx;
+		struct node_rx_pdu *node_rx;
 		u8_t num_cmplt;
 		u16_t handle;
 
 		/* While there are completed rx nodes */
-		while ((num_cmplt = ll_rx_get(&node_rx, &handle))) {
+		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
 #if defined(CONFIG_BT_CONN)
 			struct net_buf *buf;
 
@@ -104,6 +104,9 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			 * the handover
 			 */
 			ll_rx_dequeue();
+
+			/* Find out and store the class for this node */
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
 
 			/* Send the rx node up to Host thread, recv_thread() */
 			BT_DBG("RX node enqueue");
@@ -183,7 +186,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
-	s8_t class = hci_get_class(node_rx);
+	u8_t class = node_rx->hdr.user_meta;
 	struct net_buf *buf = NULL;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -226,7 +229,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	struct node_rx_pdu *node_rx = NULL;
 	s32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
-	s8_t class;
+	u8_t class;
 	int reset;
 
 	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -250,7 +253,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	}
 
 	/* Return early if this iteration already has a node to process */
-	class = hci_get_class(node_rx);
+	class = node_rx->hdr.user_meta;
 	if (n) {
 		if (class == HCI_CLASS_EVT_CONNECTION ||
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
@@ -289,7 +292,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 		/* next node */
 		node_rx = (void *)sys_slist_peek_head(&hbuf_pend);
 		if (node_rx) {
-			class = hci_get_class(node_rx);
+			class = node_rx->hdr.user_meta;
 
 			if (class == HCI_CLASS_EVT_CONNECTION ||
 			    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {

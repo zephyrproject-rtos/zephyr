@@ -211,6 +211,7 @@ struct node_rx_hdr {
 	};
 
 	enum node_rx_type   type;
+	u8_t                user_meta; /* User metadata */
 	u16_t               handle;
 
 	union {

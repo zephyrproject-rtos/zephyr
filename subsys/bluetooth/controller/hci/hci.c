@@ -3410,7 +3410,7 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 }
 #endif
 
-s8_t hci_get_class(struct node_rx_pdu *node_rx)
+u8_t hci_get_class(struct node_rx_pdu *node_rx)
 {
 #if defined(CONFIG_BT_CONN)
 	struct pdu_data *pdu_data = PDU_DATA(node_rx);
@@ -3489,7 +3489,7 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 		default:
-			return -1;
+			return HCI_CLASS_NONE;
 		}
 
 #if defined(CONFIG_BT_CONN)
@@ -3500,7 +3500,7 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 	}
 #else
 	} else {
-		return -1;
+		return HCI_CLASS_NONE;
 	}
 #endif
 }
