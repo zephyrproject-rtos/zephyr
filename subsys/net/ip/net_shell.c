@@ -737,12 +737,13 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 
 	PR("TX traffic class statistics:\n");
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
+				defined(CONFIG_NET_PKT_TXTIME_STATS)
 	PR("TC  Priority\tSent pkts\tbytes\ttime\n");
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		net_stats_t count = GET_STAT(iface,
-					     tc.sent[i].tx_time.time_count);
+					     tc.sent[i].tx_time.count);
 		if (count == 0) {
 			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
@@ -756,7 +757,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes),
 			   (u32_t)(GET_STAT(iface,
-					    tc.sent[i].tx_time.time_sum) /
+					    tc.sent[i].tx_time.sum) /
 				   (u64_t)count));
 		}
 	}
@@ -773,7 +774,17 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 #else
 	ARG_UNUSED(shell);
+
+#if defined(CONFIG_NET_PKT_TXTIME_STATS)
+	net_stats_t count = GET_STAT(iface, tx_time.count);
+
+	if (count != 0) {
+		PR("Avg %s net_pkt (%u) time %lu us\n", "TX", count,
+		   (u32_t)(GET_STAT(iface, tx_time.sum) / (u64_t)count));
+	}
+#else
 	ARG_UNUSED(iface);
+#endif /* CONFIG_NET_PKT_TXTIME_STATS */
 #endif /* NET_TC_TX_COUNT > 1 */
 }
 
@@ -929,10 +940,10 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #endif
 
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
-	if (GET_STAT(iface, tx_time.time_count) > 0) {
+	if (GET_STAT(iface, tx_time.count) > 0) {
 		PR("Network pkt TX time %lu us\n",
-		   (u32_t)(GET_STAT(iface, tx_time.time_sum) /
-			   (u64_t)GET_STAT(iface, tx_time.time_count)));
+		   (u32_t)(GET_STAT(iface, tx_time.sum) /
+			   (u64_t)GET_STAT(iface, tx_time.count)));
 	}
 #endif
 
