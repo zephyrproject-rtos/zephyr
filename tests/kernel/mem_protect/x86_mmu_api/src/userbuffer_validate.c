@@ -33,8 +33,8 @@ void reset_multi_pde_flag(void);
 #define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(PTABLES, ADDR_PAGE_2)->p = 1)
 
 
-static void set_flags(void *ptr, size_t size, x86_page_entry_data_t flags,
-		      x86_page_entry_data_t mask)
+static void set_flags(void *ptr, size_t size, u64_t flags,
+		      u64_t mask)
 {
 	z_x86_mmu_set_flags(PTABLES, ptr, size, flags, mask, true);
 }

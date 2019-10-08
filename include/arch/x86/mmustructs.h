@@ -453,9 +453,7 @@ union x86_mmu_pte {
 #define Z_X86_PD_AREA	(Z_X86_PT_AREA * Z_X86_NUM_PD_ENTRIES)
 #define Z_X86_PDPT_AREA (Z_X86_PD_AREA * Z_X86_NUM_PDPT_ENTRIES)
 
-typedef u64_t x86_page_entry_data_t;
-
-typedef x86_page_entry_data_t k_mem_partition_attr_t;
+typedef u64_t k_mem_partition_attr_t;
 
 struct x86_mmu_pdpt {
 	union x86_mmu_pdpte entry[Z_X86_NUM_PDPT_ENTRIES];
@@ -535,8 +533,7 @@ extern struct x86_page_tables z_x86_user_ptables;
  * @param pte_flags Output parameter for page table entry flags
  */
 void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
-			 x86_page_entry_data_t *pde_flags,
-			 x86_page_entry_data_t *pte_flags);
+			 u64_t *pde_flags, u64_t *pte_flags);
 
 /**
  * @brief set flags in the MMU page tables
@@ -554,9 +551,7 @@ void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
  *              when modifying the active page tables
  */
 void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
-			 size_t size,
-			 x86_page_entry_data_t flags,
-			 x86_page_entry_data_t mask, bool flush);
+			 size_t size, u64_t flags, u64_t mask, bool flush);
 
 int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write);

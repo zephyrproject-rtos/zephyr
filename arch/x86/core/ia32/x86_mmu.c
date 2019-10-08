@@ -167,17 +167,14 @@ void z_x86_dump_page_tables(struct x86_page_tables *ptables)
 }
 
 void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
-			 x86_page_entry_data_t *pde_flags,
-			 x86_page_entry_data_t *pte_flags)
+			 u64_t *pde_flags, u64_t *pte_flags)
 {
-	*pde_flags =
-		(x86_page_entry_data_t)(X86_MMU_GET_PDE(ptables, addr)->value &
-			~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
+	*pde_flags = X86_MMU_GET_PDE(ptables, addr)->value &
+		~MMU_PDE_PAGE_TABLE_MASK;
 
 	if ((*pde_flags & MMU_ENTRY_PRESENT) != 0) {
-		*pte_flags = (x86_page_entry_data_t)
-			(X86_MMU_GET_PTE(ptables, addr)->value &
-			 ~(x86_page_entry_data_t)MMU_PTE_PAGE_MASK);
+		*pte_flags = X86_MMU_GET_PTE(ptables, addr)->value &
+			~MMU_PTE_PAGE_MASK;
 	} else {
 		*pte_flags = 0;
 	}
@@ -347,8 +344,7 @@ static inline void tlb_flush_page(void *addr)
 				 MMU_ENTRY_CACHING_DISABLE)
 
 void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
-			 size_t size, x86_page_entry_data_t flags,
-			 x86_page_entry_data_t mask, bool flush)
+			 size_t size, u64_t flags, u64_t mask, bool flush)
 {
 	u32_t addr = (u32_t)ptr;
 
@@ -367,7 +363,7 @@ void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 		union x86_mmu_pte *pte;
 		union x86_mmu_pde_pt *pde;
 		union x86_mmu_pdpte *pdpte;
-		x86_page_entry_data_t cur_flags = flags;
+		u64_t cur_flags = flags;
 
 		pdpte = X86_MMU_GET_PDPTE(ptables, addr);
 		__ASSERT(pdpte->p == 1, "set flags on non-present PDPTE");
@@ -719,8 +715,8 @@ static void reset_mem_partition(struct x86_page_tables *thread_ptables,
 static void apply_mem_partition(struct x86_page_tables *ptables,
 				struct k_mem_partition *partition)
 {
-	x86_page_entry_data_t x86_attr;
-	x86_page_entry_data_t mask;
+	u64_t x86_attr;
+	u64_t mask;
 
 	if (IS_ENABLED(CONFIG_X86_KPTI)) {
 		x86_attr = partition->attr | MMU_ENTRY_PRESENT;
