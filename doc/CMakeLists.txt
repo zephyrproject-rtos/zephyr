@@ -312,6 +312,14 @@ set(SPHINX_BUILD_HTML_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
+
+  # nRF-specific hack to pass these through to nrf/doc/zephyr/conf.py (the
+  # Sphinx configuration file). We use it for Intersphinx. See
+  # nrf/doc/CMakeLists.txt.
+  ZEPHYR_OUTPUT=${SPHINX_OUTPUT_DIR}
+  ZEPHYR_RST_SRC=${RST_OUT}/doc
+  KCONFIG_OUTPUT=${KCONFIG_OUTPUT}
+
   ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
 
 # The sphinx-html target is provided as a convenience for incremental
@@ -419,7 +427,10 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html content doxy_real_modified_times kconfig devicetree)
+
+# nRF-specific: No 'kconfig' dependency here, because we use a shared Kconfig
+# documentation set instead
+add_dependencies(html content doxy_real_modified_times devicetree)
 
 add_custom_target(
   htmldocs
