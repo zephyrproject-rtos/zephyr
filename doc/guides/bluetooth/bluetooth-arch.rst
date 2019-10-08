@@ -393,9 +393,8 @@ configuration options needed will look something like the following:
     CONFIG_FLASH=y
     CONFIG_FLASH_PAGE_LAYOUT=y
     CONFIG_FLASH_MAP=y
-    CONFIG_FCB=y
+    CONFIG_NVS=y
     CONFIG_SETTINGS=y
-    CONFIG_SETTINGS_FCB=y
 
 Once enabled, it is the responsibility of the application to call
 settings_load() after having initialized Bluetooth (using the
