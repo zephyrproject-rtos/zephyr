@@ -98,10 +98,14 @@ typedef struct {
 
 #ifdef CONFIG_OBJECT_TRACING
 #define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
-#define _OBJECT_TRACING_INIT .__next = NULL,
+#define _OBJECT_TRACING_LINKED_FLAG u8_t __linked;
+#define _OBJECT_TRACING_INIT \
+	.__next = NULL,	     \
+	.__linked = 0,
 #else
 #define _OBJECT_TRACING_INIT
 #define _OBJECT_TRACING_NEXT_PTR(type)
+#define _OBJECT_TRACING_LINKED_FLAG
 #endif
 
 #ifdef CONFIG_POLL
@@ -1461,6 +1465,7 @@ struct k_timer {
 	void *user_data;
 
 	_OBJECT_TRACING_NEXT_PTR(k_timer)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1837,6 +1842,7 @@ struct k_queue {
 	};
 
 	_OBJECT_TRACING_NEXT_PTR(k_queue)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define _K_QUEUE_INITIALIZER(obj) \
@@ -2559,6 +2565,7 @@ struct k_stack {
 	stack_data_t *base, *next, *top;
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack)
+	_OBJECT_TRACING_LINKED_FLAG
 	u8_t flags;
 };
 
@@ -3214,6 +3221,7 @@ struct k_mutex {
 	int owner_orig_prio;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mutex)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 
 /**
@@ -3316,6 +3324,7 @@ struct k_sem {
 	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_sem)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -3475,6 +3484,7 @@ struct k_msgq {
 	u32_t used_msgs;
 
 	_OBJECT_TRACING_NEXT_PTR(k_msgq)
+	_OBJECT_TRACING_LINKED_FLAG
 	u8_t flags;
 };
 /**
@@ -3772,6 +3782,7 @@ struct k_mbox {
 	struct k_spinlock lock;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mbox)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -3956,6 +3967,7 @@ struct k_pipe {
 	} wait_q;
 
 	_OBJECT_TRACING_NEXT_PTR(k_pipe)
+	_OBJECT_TRACING_LINKED_FLAG
 	u8_t	       flags;		/**< Flags */
 };
 
@@ -4133,6 +4145,7 @@ struct k_mem_slab {
 	u32_t num_used;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
+	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define _K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
