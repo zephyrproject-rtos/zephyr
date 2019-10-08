@@ -27,6 +27,8 @@ else()
   set(FPU_FOR_cortex-m4      fpv4-${PRECISION_TOKEN}d16)
   set(FPU_FOR_cortex-m7      fpv5-${PRECISION_TOKEN}d16)
   set(FPU_FOR_cortex-m33     fpv5-${PRECISION_TOKEN}d16)
+  set(FPU_FOR_cortex-r4      vfpv3-d16)
+  set(FPU_FOR_cortex-r5      vfpv3-d16)
 
   if(CONFIG_FLOAT)
     list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
