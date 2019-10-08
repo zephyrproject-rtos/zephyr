@@ -44,10 +44,14 @@ void stm32_exti_disable(int line);
  * @brief EXTI trigger flags
  */
 enum stm32_exti_trigger {
+	/* clear trigger */
+	STM32_EXTI_TRIG_NONE  = 0x0,
 	/* trigger on rising edge */
 	STM32_EXTI_TRIG_RISING  = 0x1,
 	/* trigger on falling endge */
 	STM32_EXTI_TRIG_FALLING = 0x2,
+	/* trigger on falling endge */
+	STM32_EXTI_TRIG_BOTH = 0x3,
 };
 
 /**
