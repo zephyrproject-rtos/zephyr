@@ -94,7 +94,6 @@ respectively.
 Supported Features
 ==================
 
-The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
 The stm32_min_dev board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
@@ -120,30 +119,35 @@ The stm32_min_dev board configuration supports the following hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
-UART
-====
+Connections and IOs
+===================
 
-The STM32 Minimum Development board suports the following UART pin maping by
-default:
+Default Zephyr Peripheral Mapping:
+----------------------------------
 
-- UART1_TX: PA9
-- UART1_RX: PA10
-- UART2_TX: PA2
-- UART2_RX: PA3
+- UART_1 TX/RX: PA9/PA10
+- UART_2 TX/RX: PA2/PA3
+- UART_3 TX/RX: PB10/PB11
+- I2C_1 SCL/SDA : PB6/PB7
+- I2C_2 SCL/SDA : PB10/PB11
+- PWM_1_CH1: PA8
+- SPI_1 NSS_OE/SCK/MISO/MOSI: PA4/PA5/PA6/PA7
+- SPI_2 NSS_OE/SCK/MISO/MOSI: PB12/PB13/PB14/PB15
+- USB_DC DM/DP: PA11/PA12
 
-I2C
-===
+System Clock
+------------
 
-The STM32 Minimum Development board supports two I2C devices. The default
-I2C mapping for Zephyr is:
+The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
 
-- I2C1_SCL : PB6
-- I2C1_SDA : PB7
-- I2C2_SCL : PB10
-- I2C2_SDA : PB11
+Serial Port
+-----------
+
+STM32 Minimum Development Board has 3 U(S)ARTs. The Zephyr console output is
+assigned to UART_1. Default settings are 115200 8N1.
 
 On-Board LEDs
-=============
+-------------
 
 The board has one on-board LED that is connected to PB12/PC13 on the black/blue
 variants respectively.
