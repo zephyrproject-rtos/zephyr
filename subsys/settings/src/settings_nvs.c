@@ -188,7 +188,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	}
 
 	if (delete) {
-		return -ENOENT;
+		return 0;
 	}
 
 	/* No free IDs left. */
