@@ -54,6 +54,8 @@ elseif("${ARCH}" STREQUAL "riscv")
   else()
     list(APPEND TOOLCHAIN_C_FLAGS -mabi=ilp32 -march=rv32ima)
   endif()
+elseif("${ARCH}" STREQUAL "x86")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
 endif()
 
 if(NOT no_libgcc)
