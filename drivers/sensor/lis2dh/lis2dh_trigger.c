@@ -355,7 +355,7 @@ int lis2dh_init_interrupt(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
-	u8_t raw[LIS2DH_DATA_OFS + 2];
+	u8_t raw[2];
 
 	/* setup data ready gpio interrupt */
 	lis2dh->gpio_int1 = device_get_binding(DT_LIS2DH_INT1_GPIO_DEV_NAME);
