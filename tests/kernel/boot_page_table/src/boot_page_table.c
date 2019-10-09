@@ -17,22 +17,17 @@ MMU_BOOT_REGION(START_ADDR_RANGE2, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE3, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE4, ADDR_SIZE, REGION_PERM);
 
-static int check_param(union x86_mmu_pte *value, uint32_t perm)
+static int check_param(u64_t value, u64_t perm)
 {
-	u32_t status = (value->rw  == ((perm & MMU_PTE_RW_MASK) >> 0x1));
-
-	status &= (value->us == ((perm & MMU_PTE_US_MASK) >> 0x2));
-	status &= value->p;
-	return status;
+	return ((value & REGION_PERM) == REGION_PERM);
 }
 
-static int check_param_nonset_region(union x86_mmu_pte *value,
-				     uint32_t perm)
+static int check_param_nonset_region(u64_t value, u64_t perm)
 {
-	u32_t status = (value->rw  == 0);
+	u32_t status = ((value & Z_X86_MMU_RW) == 0);
 
-	status &= (value->us == 0);
-	status &= (value->p == 0);
+	status &= ((value & Z_X86_MMU_US) == 0);
+	status &= ((value & Z_X86_MMU_P) == 0);
 	return status;
 }
 
@@ -40,12 +35,12 @@ static void starting_addr_range(u32_t start_addr_range)
 {
 
 	u32_t addr_range, status = true;
-	union x86_mmu_pte *value;
+	u64_t value;
 
 	for (addr_range = start_addr_range; addr_range <=
 	     (start_addr_range + STARTING_ADDR_RANGE_LMT);
 	     addr_range += 0x1000) {
-		value = X86_MMU_GET_PTE(&z_x86_kernel_ptables, addr_range);
+		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param(value, REGION_PERM);
 		zassert_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
@@ -55,12 +50,12 @@ static void starting_addr_range(u32_t start_addr_range)
 static void before_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
-	union x86_mmu_pte *value;
+	u64_t value;
 
 	for (addr_range = start_addr_range - 0x7000;
 	     addr_range < (start_addr_range); addr_range += 0x1000) {
 
-		value = X86_MMU_GET_PTE(&z_x86_kernel_ptables, addr_range);
+		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
 
 		zassert_false((status == 0U), "error at %d permissions %d\n",
@@ -71,12 +66,12 @@ static void before_start_addr_range(u32_t start_addr_range)
 static void ending_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
-	union x86_mmu_pte *value;
+	u64_t value;
 
 	for (addr_range = start_addr_range + ADDR_SIZE; addr_range <
 	     (start_addr_range + ADDR_SIZE + 0x10000);
 	     addr_range += 0x1000) {
-		value = X86_MMU_GET_PTE(&z_x86_kernel_ptables, addr_range);
+		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
 		zassert_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);

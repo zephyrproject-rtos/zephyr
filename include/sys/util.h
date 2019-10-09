@@ -214,6 +214,9 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #endif
 #endif
 
+/** 64-bit unsigned integer with bit position _n set */
+#define BIT64(_n) (1ULL << (_n))
+
 /**
  * @brief Macro sets or clears bit depending on boolean value
  *
