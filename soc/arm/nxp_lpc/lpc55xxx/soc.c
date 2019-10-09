@@ -85,7 +85,7 @@ static int nxp_lpc55s69_init(struct device *arg)
 
 	z_arm_clear_faults();
 
-	/* Initialize FRO/system clock to 48 MHz */
+	/* Initialize FRO/system clock to 96 MHz */
 	clock_init();
 
 #ifdef CONFIG_GPIO_MCUX_LPC
