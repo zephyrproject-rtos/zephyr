@@ -55,21 +55,33 @@ device controller driver and USB device class drivers or customer applications.
 It's a port of the LPCUSB device stack. It provides the following
 functionalities:
 
-   * Responds to standard device requests and returns standard descriptors,
-     essentially handling 'Chapter 9' processing, specifically the standard
-     device requests in table 9-3 from the universal serial bus specification
-     revision 2.0.
-   * Provides a programming interface to be used by USB device classes or
-     customer applications. The APIs are described in the usb_device.h file.
-   * Uses the APIs provided by the device controller drivers to interact with
-     the USB device controller.
+* Responds to standard device requests and returns standard descriptors,
+  essentially handling 'Chapter 9' processing, specifically the standard
+  device requests in table 9-3 from the universal serial bus specification
+  revision 2.0.
+* Provides a programming interface to be used by USB device classes or
+  customer applications. The APIs are described in the usb_device.h file.
+* Uses the APIs provided by the device controller drivers to interact with
+  the USB device controller.
 
 USB device class drivers
 ************************
 
-To initialize the device class driver instance the USB device class driver
-should call :c:func:`usb_set_config()` passing as parameter the instance's
-configuration structure.
+Zephyr USB Device Stack supports many standard classes, such as HID, MSC
+Ethernet over USB, DFU, Bluetooth.
+
+Implementing non standard USB class
+===================================
+
+Configuration of USB Device is done in the stack layer.
+
+The following structures and callbacks need to be defined:
+
+* Part of USB Descriptor table
+* USB Endpoint configuration table
+* USB Device configuration structure
+* Endpoint callbacks
+* Optionally class, vendor and custom handlers
 
 For example, for USB loopback application:
 
@@ -95,10 +107,9 @@ USB Device configuration structure:
    :end-before: usb.rst device config data end
    :linenos:
 
-Configuration of USB Device is done in the stack layer.
 
 The vendor device requests are forwarded by the USB stack core driver to the
-class driver through the registered class handler.
+class driver through the registered vendor handler.
 
 For the loopback class driver, :c:func:`loopback_vendor_handler` processes
 the vendor requests:
@@ -123,7 +134,7 @@ Run built sample with:
 
 .. code-block:: console
 
-   make -Cbuild run
+   west build -t run
 
 In a terminal window, run the following command to list USB devices:
 
