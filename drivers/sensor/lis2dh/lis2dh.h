@@ -166,13 +166,7 @@
 #define LIS2DH_REG_INT2_DUR		0x37
 
 /* sample buffer size includes status register */
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-#define LIS2DH_BUF_SZ			8
-#define LIS2DH_DATA_OFS			1
-#else
 #define LIS2DH_BUF_SZ			7
-#define LIS2DH_DATA_OFS			0
-#endif
 
 #if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 /* INT1 and INT2 are configured */
@@ -189,9 +183,6 @@
 union lis2dh_sample {
 	u8_t raw[LIS2DH_BUF_SZ];
 	struct {
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-		u8_t dummy;
-#endif
 		u8_t status;
 		s16_t xyz[3];
 	} __packed;
