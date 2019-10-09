@@ -189,12 +189,8 @@ union tcp_endpoint {
 	struct sockaddr_in6 sin6;
 };
 
-/** TCP context flag; is this TCP context/socket used or not */
-#define NET_TCP_IN_USE BIT(0)
-
 struct tcp { /* TCP connection */
 	sys_snode_t next;
-	u32_t flags;
 	struct net_context *context;
 	void *recv_user_data;
 	enum tcp_state state;

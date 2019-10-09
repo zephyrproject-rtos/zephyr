@@ -29,7 +29,8 @@ static bool _tcp_conn_delete = true;
 
 static sys_slist_t tp_conns = SYS_SLIST_STATIC_INIT(&tp_conns);
 
-static struct tcp tcp_conns[CONFIG_NET_MAX_CONTEXTS];
+static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
+				CONFIG_NET_MAX_CONTEXTS, 4);
 
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
@@ -267,15 +268,6 @@ int net_tcp_unref(struct net_context *context)
 		goto out;
 	}
 
-	{
-		int key = irq_lock();
-
-		context->tcp = NULL;
-		context->flags |= NET_TCP_IN_USE;
-
-		irq_unlock(key);
-	}
-
 	tcp_send_queue_flush(conn);
 
 	tcp_win_free(conn->snd);
@@ -284,9 +276,16 @@ int net_tcp_unref(struct net_context *context)
 	tcp_free(conn->src);
 	tcp_free(conn->dst);
 
-	memset(conn, 0, sizeof(*conn));
+	{
+		int key = irq_lock();
 
-	sys_slist_find_and_remove(&tp_conns, (sys_snode_t *) conn);
+		context->tcp = NULL;
+		memset(conn, 0, sizeof(*conn));
+		sys_slist_find_and_remove(&tp_conns, (sys_snode_t *) conn);
+		k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+
+		irq_unlock(key);
+	}
 out:
 	return 0;
 }
@@ -694,27 +693,6 @@ out:
 	return;
 }
 
-static struct tcp *tcp_conn_calloc(void)
-{
-	struct tcp *conn = NULL;
-	int i, key;
-
-	key = irq_lock();
-
-	for (i = 0; i < ARRAY_SIZE(tcp_conns); i++) {
-		if (false == (tcp_conns[i].flags & NET_TCP_IN_USE)) {
-			conn = &tcp_conns[i];
-			memset(conn, 0, sizeof(*conn));
-			conn->flags |= NET_TCP_IN_USE;
-			break;
-		}
-	}
-
-	irq_unlock(key);
-
-	return conn;
-}
-
 static void tcp_conn_init(struct tcp *conn)
 {
 	conn->state = TCP_LISTEN;
@@ -728,24 +706,33 @@ static void tcp_conn_init(struct tcp *conn)
 
 	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
 	k_timer_user_data_set(&conn->send_timer, conn);
-
-	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
 }
 
 int net_tcp_get(struct net_context *context)
 {
-	int ret = 0;
-	struct tcp *conn = tcp_conn_calloc();
+	int ret, key;
+	struct tcp *conn;
 
-	if (NULL == conn) {
-		ret = -EPROTONOSUPPORT;
+	key = irq_lock();
+
+	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
+
+	if (ret) {
+		ret = -ENOMEM;
+		tcp_warn("%s", strerror(ret));
+		irq_unlock(key);
 		goto out;
 	}
 
-	tcp_conn_init(conn);
-
+	memset(conn, 0, sizeof(*conn));
 	conn->context = context;
 	context->tcp = conn;
+
+	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
+
+	irq_unlock(key);
+
+	tcp_conn_init(conn);
 
 	conn->iface = net_context_get_iface(context);
 
