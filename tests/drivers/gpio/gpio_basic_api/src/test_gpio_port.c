@@ -415,7 +415,7 @@ static int check_pulls(void)
 		return TC_FAIL;
 	}
 	zassert_equal(raw_in(), false,
-		      "logical pull-up does not read low");
+		      "logical pull-down does not read low");
 	zassert_equal(logic_in(), true,
 		      "logical pull-down reads false");
 
