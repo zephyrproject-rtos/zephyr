@@ -18,12 +18,12 @@ extern "C" {
  * @brief Indicates how hex data should be rendered in tabular format.
  */
 struct sf_hex_tbl_fmt {
-    /** Whether or not to render ASCII equivalents. */
-    u8_t ascii:1;
-    /** Whether or not to add address labels to the output. */
-    u8_t addr_label:1;
-    /** The starting value for the address labels. */
-    u32_t addr;
+	/** Whether or not to render ASCII equivalents. */
+	u8_t ascii : 1;
+	/** Whether or not to add address labels to the output. */
+	u8_t addr_label : 1;
+	/** The starting value for the address labels. */
+	u32_t addr;
 } __attribute__((packed));
 
 /**
@@ -36,7 +36,7 @@ struct sf_hex_tbl_fmt {
  * @param len   The number of bytes to render from data.
  */
 void sf_hex_tabulate_16(struct sf_hex_tbl_fmt *fmt, unsigned char *data,
-    size_t len);
+			size_t len);
 
 #ifdef __cplusplus
 }

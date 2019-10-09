@@ -76,13 +76,13 @@ enum psa_attest_err_t att_test(void)
 {
 	enum psa_attest_err_t err = PSA_ATTEST_ERR_SUCCESS;
 
-        /* 64-bytee nonce/challenge, encrypted using the default public key;
-         *
-         * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
-         * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
-         * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
-         * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
-         */
+	/* 64-bytee nonce/challenge, encrypted using the default public key;
+	 *
+	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
+	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
+	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
+	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
+	 */
 	u32_t nonce_sz = 64;
 	u8_t nonce_buf[ATT_MAX_TOKEN_SIZE] = {
 		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,

@@ -181,6 +181,7 @@ enum psa_attest_err_t al_psa_attest_err(enum psa_attest_err_t err,
 
 void al_dump_log(void)
 {
-        while (log_process(false)) {
-        }
+	while (log_process(false)) {
+
+	}
 }
