@@ -16,10 +16,12 @@ set -e
 QEMUBOARD="mps2-an521"
 
 # Merge bootloader and TFM image into single binary
-srec_cat build/mcuboot.bin -Binary build/tfm_sign.bin -Binary -offset 0x80000 -o tfm_qemu.bin -Binary
+srec_cat build/mcuboot.bin -Binary build/tfm_sign.bin -Binary -offset \
+0x80000 -o tfm_qemu.bin -Binary
 
 # Convert .bin to .efl with an appropriate offset
-srec_cat tfm_qemu.bin -binary -offset 0x10000000 -o tfm_qemu.hex -intel --line-length=44
+srec_cat tfm_qemu.bin -binary -offset 0x10000000 -o tfm_qemu.hex -intel \
+--line-length=44
 
 # Start qemu
 echo "Starting QEMU (CTRL+C to quit)"

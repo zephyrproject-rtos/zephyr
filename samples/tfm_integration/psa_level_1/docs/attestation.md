@@ -180,14 +180,14 @@ tool, and you can verify the above IAT response packet by:
    except the hex values before saving the hex dump as a text file):
 
 ```
-$ xxd -r -p docs/samples/iatresp.cbor.txt doc/samples/iatresp.cbor
+$ xxd -r -p docs/samples/iatresp.cbor.txt docs/samples/iatresp.cbor
 ```
 
 2. Checking the signature of the CBOR file using the public key in .pem
    format, optionally display the decoded CBOR IAT data in JSON format (`-p`):
 
 ```
-$ check_iat -k publickey.pem -p doc/samples/sampleiat.bin
+$ check_iat -k docs/samples/publickey.pem -p docs/samples/iatresp.bin
 Signature OK
 ...
 ```
