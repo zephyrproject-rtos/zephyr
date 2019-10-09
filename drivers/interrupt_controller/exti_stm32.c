@@ -387,8 +387,7 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 /**
  * @brief set & unset for the interrupt callbacks
  */
-int stm32_exti_set_callback(int line, int port, stm32_exti_callback_t cb,
-				void *arg)
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
 	struct device *dev = DEVICE_GET(exti_stm32);
 	struct stm32_exti_data *data = dev->driver_data;
