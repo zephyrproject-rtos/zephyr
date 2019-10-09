@@ -90,6 +90,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 			IOCON_PIO_OPENDRAIN_DI
 			);
 	pinmux_pin_set(port0,  4, port0_pin4_config);
+
 #endif
 
 #ifdef CONFIG_GPIO_MCUX_LPC_PORT1
