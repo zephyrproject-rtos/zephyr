@@ -51,7 +51,9 @@ void test_log_std_msg(void)
 		used_slabs += (i > LOG_MSG_NARGS_SINGLE_CHUNK) ? 2 : 1;
 		zassert_equal(used_slabs,
 			      k_mem_slab_num_used_get(&log_msg_pool),
-			      "Expected mem slab allocation.");
+			      "%d: Unexpected slabs used (expected:%d, got %d).",
+			      i, used_slabs,
+			      k_mem_slab_num_used_get(&log_msg_pool));
 
 		log_msg_put(msg);
 
@@ -461,7 +463,10 @@ void test_hexdump_realloc(void)
 	zassert_equal(4, len, "Unexpected len:%d", len);
 	zassert_equal(0, memcmp(new_data, rbuf, len),
 			"Expected different buffer content");
+
+	log_msg_put(msg);
 }
+
 
 void test_hexdump_realloc_mutlichunk(void)
 {
@@ -487,12 +492,70 @@ void test_hexdump_realloc_mutlichunk(void)
 	err = memcmp(inbuf, outbuf, test_len);
 
 	zassert_equal(err, 0, "Buffers do not match (ret: %d)", err);
+
+	log_msg_put(msg);
+}
+
+static u32_t hf_cycle_get(void)
+{
+
+#if CONFIG_SOC_SERIES_NRF52X
+	return DWT->CYCCNT;
+#else
+	return k_cycle_get_32();
+#endif
+}
+
+static u32_t hexdump_create_timing(u32_t buf_size)
+{
+	u8_t buf[buf_size];
+	static const int iterations = 5;
+	struct log_msg *msg[iterations];
+	u32_t elapsed;
+	u32_t used = k_mem_slab_num_used_get(&log_msg_pool);
+	u32_t start;
+
+#if CONFIG_SOC_SERIES_NRF52X
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	DWT->CYCCNT = 0;
+#endif
+	start = hf_cycle_get();
+
+	for (int i = 0; i < iterations; i++) {
+		msg[i] = log_msg_hexdump_create(NULL, buf, buf_size);
+	}
+	elapsed = hf_cycle_get() - start;
+
+	for (int i = 0; i < iterations; i++) {
+
+		log_msg_put(msg[i]);
+	}
+
+	PRINT("Create %d byte hexdump message tool %d cycles\n",
+			buf_size, elapsed/iterations);
+
+	zassert_equal(used, k_mem_slab_num_used_get(&log_msg_pool),
+			"Expected freeing all messages");
+	return elapsed/iterations;
+}
+
+/* Test used to profile log_msg_hexdump_create function. Reliable results
+ * require high frequency clock.
+ */
+
+void test_hexdump_create_timings(void)
+{
+	hexdump_create_timing(5);
+	hexdump_create_timing(15);
+	hexdump_create_timing(50);
 }
 
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_log_message,
+		ztest_unit_test(test_hexdump_create_timings),
 		ztest_unit_test(test_hexdump_realloc_mutlichunk),
 		ztest_unit_test(test_hexdump_realloc),
 		ztest_unit_test(test_log_std_msg),
