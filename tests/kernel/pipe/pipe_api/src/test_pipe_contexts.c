@@ -62,7 +62,6 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
 		if (sema) {
 			k_sem_take(sema, K_FOREVER);
 		}
-		k_mem_pool_free(&block);
 	}
 }
 
