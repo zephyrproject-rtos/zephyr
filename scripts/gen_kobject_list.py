@@ -112,9 +112,9 @@ subsystems = [
     "ptp_clock_driver_api",
 ]
 
-
-kobj_header = """%compare-lengths
+header_one = """%compare-lengths
 %define lookup-function-name z_object_lookup
+%define lookup-function-name z_priv_stack_map_lookup
 %language=ANSI-C
 %global-table
 %struct-type
@@ -123,22 +123,21 @@ kobj_header = """%compare-lengths
 #include <toolchain.h>
 #include <syscall_handler.h>
 #include <string.h>
-%}
-struct _k_object;
 """
 
-priv_header = """%compare-lengths
-%define lookup-function-name z_priv_stack_map_lookup
-%language=ANSI-C
-%global-table
-%struct-type
+header_two = """%}
+struct _k_object;
+struct _k_priv_stack_map {
+    char *name;
+    u8_t *priv_stack_addr;
+};
 """
 
 # Different versions of gperf have different prototypes for the lookup
 # function, best to implement the wrapper here. The pointer value itself is
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
-kobj_footer = """%%
+footer = """%%
 struct _k_object *z_object_gperf_find(void *obj)
 {
     return z_object_lookup((const char *)obj, sizeof(void *));
@@ -153,6 +152,13 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
             func(&wordlist[i], context);
         }
     }
+}
+
+u8_t *z_priv_stack_find(void *obj)
+{
+    const struct _k_priv_stack_map *map =
+        z_priv_stack_map_lookup((const char *)obj, sizeof(void *));
+    return map->priv_stack_addr;
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
@@ -170,56 +176,14 @@ priv_stack_decl_temp = ("static u8_t __used"
                         " __aligned(Z_PRIVILEGE_STACK_ALIGN)"
                         " priv_stack_%x[CONFIG_PRIVILEGED_STACK_SIZE];\n")
 
-priv_includes = """#include <kernel.h>
-#include <string.h>
-"""
+def write_gperf_table(fp, eh, objs, static_begin, static_end):
+    fp.write(header_one)
 
-priv_structure = """struct _k_priv_stack_map {
-    char *name;
-    u8_t *priv_stack_addr;
-};
-%%
-"""
-
-# Different versions of gperf have different prototypes for the lookup
-# function, best to implement the wrapper here. The pointer value itself is
-# turned into a string, we told gperf to expect binary strings that are not
-# NULL-terminated.
-priv_footer = """%%
-u8_t *z_priv_stack_find(void *obj)
-{
-    const struct _k_priv_stack_map *map =
-        z_priv_stack_map_lookup((const char *)obj, sizeof(void *));
-    return map->priv_stack_addr;
-}
-"""
-
-def write_priv_gperf_table(fp, eh, objs):
-    fp.write(priv_header)
-
-    # priv stack declarations
-    fp.write("%{\n")
-    fp.write(priv_includes)
     for obj_addr in objs:
         fp.write(priv_stack_decl_temp % (obj_addr))
-    fp.write("%}\n")
 
-    # structure declaration
-    fp.write(priv_structure)
+    fp.write(header_two)
 
-    for obj_addr in objs:
-        byte_str = struct.pack("<I" if eh.little_endian else ">I", obj_addr)
-        fp.write("\"")
-        for byte in byte_str:
-            val = "\\x%02x" % byte
-            fp.write(val)
-
-        fp.write("\",priv_stack_%x\n" % obj_addr)
-
-    fp.write(priv_footer)
-
-def write_kobj_gperf_table(fp, eh, objs, static_begin, static_end):
-    fp.write(kobj_header)
     num_mutexes = eh.get_sys_mutex_counter()
     if num_mutexes != 0:
         fp.write("static struct k_mutex kernel_mutexes[%d] = {\n" % num_mutexes)
@@ -254,12 +218,15 @@ def write_kobj_gperf_table(fp, eh, objs, static_begin, static_end):
         # at boot during some PRE_KERNEL_* phase
         initialized = static_begin <= obj_addr < static_end
         is_driver = obj_type.startswith("K_OBJ_DRIVER_")
+        print(obj_type)
 
         byte_str = struct.pack("<I" if eh.little_endian else ">I", obj_addr)
         fp.write("\"")
         for byte in byte_str:
             val = "\\x%02x" % byte
             fp.write(val)
+
+        #fp.write("\",priv_stack_%x\n" % obj_addr)
 
         flags = "0"
         if initialized:
@@ -274,7 +241,9 @@ def write_kobj_gperf_table(fp, eh, objs, static_begin, static_end):
             bit = ko.data % 8
             thread_idx_map[idx] = thread_idx_map[idx] & ~(2**bit)
 
-    fp.write(kobj_footer)
+
+
+    fp.write(footer)
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
@@ -385,10 +354,7 @@ def parse_args():
         "-k", "--kernel", required=False,
         help="Input zephyr ELF binary")
     parser.add_argument(
-        "-p", "--priv-output", required=False,
-        help="Output list of kernel object addresses for gperf use (priv-stacks)")
-    parser.add_argument(
-        "-o", "--kobj-output", required=False,
+        "-o", "--output", required=False,
         help="Output list of kernel object addresses for gperf use (kobj-list)")
     parser.add_argument(
         "-V", "--validation-output", required=False,
@@ -412,7 +378,7 @@ def parse_args():
 
 def main():
     parse_args()
-
+    
     eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
     syms = eh.get_symbols()
     max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
@@ -427,15 +393,9 @@ def main():
                  "Increase CONFIG_MAX_THREAD_BYTES to {}"
                  .format(thread_counter, -(-thread_counter // 8)))
 
-    if args.priv_output:
-        assert args.kernel, "--kernel ELF required for --priv-output"
-        with open(args.priv_output, "w") as fp:
-            write_priv_gperf_table(fp, eh, objs)
-
-    if args.kobj_output:
-        assert args.kernel, "--kernel ELF required for --kobj-output"
-        with open(args.kobj_output, "w") as fp:
-            write_kobj_gperf_table(fp, eh, objs,
+    if args.output:
+        with open(args.output, "w") as fp:
+            write_gperf_table(fp, eh, objs,
                               syms["_static_kernel_objects_begin"],
                               syms["_static_kernel_objects_end"])
 
