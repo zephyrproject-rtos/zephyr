@@ -119,6 +119,13 @@ config NET_IPV6_RA_RDNSS
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
 
+config NET_ICMPV6_CHECKSUM
+	bool "Check ICMPv6 checksum"
+	default y
+	help
+	  Enables ICMPv6 handler to check ICMPv6 checksum. If the checksum is
+	  invalid, then the packet is discarded.
+
 config NET_6LO
 	bool "Enable 6lowpan IPv6 Compression library"
 	default y if NET_L2_IEEE802154

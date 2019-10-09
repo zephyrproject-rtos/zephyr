@@ -310,7 +310,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_calc_chksum_icmpv4(pkt) != 0U) {
+	if (IS_ENABLED(CONFIG_NET_ICMPV4_CHECKSUM) && net_calc_chksum_icmpv4(pkt) != 0U) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}

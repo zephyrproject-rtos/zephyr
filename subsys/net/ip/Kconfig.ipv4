@@ -67,6 +67,14 @@ config NET_IPV4_AUTO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
+config NET_ICMPV4_CHECKSUM
+	bool "Check ICMPv4 checksum"
+	default y
+	help
+	  Enables ICMPv4 handler to check ICMPv4 checksum. If the checksum is
+	  invalid, then the packet is discarded.
+
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4

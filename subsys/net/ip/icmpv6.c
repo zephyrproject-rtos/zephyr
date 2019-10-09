@@ -373,7 +373,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_calc_chksum_icmpv6(pkt) != 0U) {
+	if (IS_ENABLED(CONFIG_NET_ICMPV6_CHECKSUM) && net_calc_chksum_icmpv6(pkt) != 0U) {
 		NET_DBG("DROP: invalid checksum");
 		goto drop;
 	}
