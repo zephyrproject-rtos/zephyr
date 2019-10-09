@@ -522,10 +522,7 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 
 	stm32_exti_trigger(pin, edge);
 
-	if (stm32_exti_enable(pin) != 0) {
-		err = -EIO;
-		goto release_lock;
-	}
+	stm32_exti_enable(pin);
 
 release_lock:
 #if defined(CONFIG_STM32H7_DUAL_CORE)
