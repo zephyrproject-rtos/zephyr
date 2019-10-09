@@ -116,6 +116,43 @@ supports the following hardware features:
 |           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
 
+BLE Software Link Layer experimental support
+==================================================
+This is an experimental feature supported on the Zephyr's RI5CY
+configuration, ``rv32m1_vega_ri5cy``. It  uses the Software Link Layer
+framework by Nordic Semi to enable the the on-SoC radio and transceiver for
+implementing a software defined BLE controller. By using both the controller
+and the host stack available in Zephyr, the following BLE samples can be used
+with this board:
+
+- beacon
+- central
+- central_hr
+- eddystone
+- hci_uart
+- ibeacon
+- peripheral_csc (Cycling Speed Cadence)
+- peripheral_dis (Device Information Service)
+- peripheral_esp (Environmental Sensing Service)
+- peripheral_hr (Heart Rate)
+- peripheral_ht (Health Thermometer)
+- scan_adv
+
+.. note::
+
+   BLE Software Link Layer limitations:
+
+   - **no 2 Mbps PHY**
+   - no 512/256 Kbps PHY
+   - **no controller-based cryptographic services (neither RPA nor LL encryption
+     or decryption)**
+   - no mesh support
+   - **no power-save**
+   - no TX power adjustment
+
+   Limitations marked **bold** above are planned to be addressed on this
+   platform.
+
 Connections and IOs
 ===================
 
