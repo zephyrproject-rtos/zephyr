@@ -38,6 +38,35 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
+/* TODO: IPv4 options may enlarge the IPv4 header */
+static struct tcphdr *th_get(struct net_pkt *pkt)
+{
+	struct tcphdr *th = NULL;
+	ssize_t len = net_pkt_get_len(pkt);
+
+	switch (pkt->family) {
+	case AF_INET:
+		if (len < (sizeof(struct net_ipv4_hdr) +
+				sizeof(struct tcphdr))) {
+			tcp_warn("Undersized IPv4 packet: %zd byte(s)", len);
+			goto out;
+		}
+		th = (struct tcphdr *)(ip_get(pkt) + 1);
+		break;
+	case AF_INET6:
+		if (len < (sizeof(struct net_ipv6_hdr) +
+				sizeof(struct tcphdr))) {
+			tcp_warn("Undersized IPv6 packet: %zd byte(s)", len);
+			goto out;
+		}
+		th = (struct tcphdr *)((u8_t *)ip6_get(pkt) + 1);
+		break;
+	default:
+		break;
+	}
+out:
+	return th;
+}
 static size_t tcp_endpoint_len(sa_family_t af)
 {
 	return (af == AF_INET) ? sizeof(struct sockaddr_in) :

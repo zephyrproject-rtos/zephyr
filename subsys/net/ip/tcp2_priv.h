@@ -32,22 +32,6 @@
 #define ip_get(_x) ((struct net_ipv4_hdr *) net_pkt_ip_data((_x)))
 #define ip6_get(_x) ((struct net_ipv6_hdr *) net_pkt_ip_data((_x)))
 
-/* TBD: IPv4 options may enlarge the IPv4 header, check the IPv4
- * header length and not the size of the struct
- */
-#define th_get(_pkt)						\
-({								\
-	struct tcphdr *_th = NULL;				\
-								\
-	if ((_pkt) && net_pkt_get_len(_pkt) >=			\
-			(sizeof(struct net_ipv4_hdr) +		\
-			sizeof(struct tcphdr))) {		\
-		_th = (struct tcphdr *) (ip_get(_pkt) + 1);	\
-	}							\
-								\
-	_th;							\
-})
-
 #define tcp_slist(_slist, _op, _type, _link)				\
 ({									\
 	sys_snode_t *_node = sys_slist_##_op(_slist);			\
