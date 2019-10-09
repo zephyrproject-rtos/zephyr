@@ -25,7 +25,7 @@ some highlights of the Nucleo F446ZE board:
 - Five LEDs: USB communication, three user LED (LD1, LD2 and LD3) and a power LED
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f446ze.png
+.. image:: img/nucleo_f446ze.jpg
    :width: 720px
    :align: center
    :height: 720px
