@@ -10,13 +10,8 @@
  *
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <arch/cpu.h>
-#ifdef CONFIG_TICKLESS_IDLE
-#include <kernel_structs.h>
-#endif
 
 _ASM_FILE_PROLOGUE
 
