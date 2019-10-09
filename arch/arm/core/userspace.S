@@ -7,11 +7,9 @@
  *
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <kernel_structs.h>
-#include <arch/cpu.h>
+#include <offsets_short.h>
 #include <syscall.h>
 
 _ASM_FILE_PROLOGUE

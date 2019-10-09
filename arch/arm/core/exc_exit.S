@@ -14,9 +14,9 @@
  * wrapped around by _isr_wrapper()).
  */
 
-#include <kernel_structs.h>
-#include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE

@@ -12,12 +12,12 @@
  * a parameter.
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
+#include <sw_isr_table.h>
+
 
 _ASM_FILE_PROLOGUE
 
