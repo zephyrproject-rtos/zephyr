@@ -120,7 +120,7 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Set up the kernel stack used during privilege elevation */
 	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
-			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK,
+			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, Z_X86_MMU_RW,
 			    true);
 
 	/* Initialize per-thread page tables, since that wasn't done when
@@ -199,13 +199,13 @@ void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
 		MMU_PAGE_SIZE,
 		((options & K_USER) == 0U) ? MMU_ENTRY_READ : MMU_ENTRY_WRITE,
-		MMU_PTE_RW_MASK, true);
+		Z_X86_MMU_RW, true);
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
 	/* Set guard area to read-only to catch stack overflows */
 	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK,
+			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
 			    true);
 #endif
 

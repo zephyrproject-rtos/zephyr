@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
 
+#include <sys/util.h>
+
 #define MMU_PAGE_SIZE 4096U
 #define MMU_PAGE_MASK 0xfffU
 #define MMU_PAGE_SHIFT 12U
@@ -17,145 +19,67 @@
 #define MMU_IS_ON_PAGE_BOUNDARY(a) (!((u32_t)(a) & MMU_PAGE_MASK))
 
 /*
- * The following bitmasks correspond to the bit-fields in the
- * x86_mmu_pde_pt structure.
+ * Common flags in the same bit position regardless of which structure level,
+ * although not every flag is supported at every level, and some may be
+ * ignored depending on the state of other bits (such as P or PS)
+ *
+ * These flags indicate bit position, and can be used for setting flags or
+ * masks as needed.
  */
 
-#define MMU_PDE_P_MASK          0x00000001ULL
-#define MMU_PDE_RW_MASK         0x00000002ULL
-#define MMU_PDE_US_MASK         0x00000004ULL
-#define MMU_PDE_PWT_MASK        0x00000008ULL
-#define MMU_PDE_PCD_MASK        0x00000010ULL
-#define MMU_PDE_A_MASK          0x00000020ULL
-#define MMU_PDE_PS_MASK         0x00000080ULL
-#define MMU_PDE_IGNORED_MASK    0x00000F40ULL
-
-#define MMU_PDE_XD_MASK            0x8000000000000000ULL
-#define MMU_PDE_PAGE_TABLE_MASK    0x00000000fffff000ULL
-#define MMU_PDE_NUM_SHIFT          21U
-#define MMU_PDE_NUM(v)             (((u32_t)(v) >> MMU_PDE_NUM_SHIFT) & 0x1ffU)
-#define MMU_ENTRIES_PER_PGT        512U
-#define MMU_PDPTE_NUM_SHIFT        30U
-#define MMU_PDPTE_NUM(v)           (((u32_t)(v) >> MMU_PDPTE_NUM_SHIFT) & 0x3U)
+#define Z_X86_MMU_P		BIT64(0)	/** Present */
+#define Z_X86_MMU_RW		BIT64(1)	/** Read-Write */
+#define Z_X86_MMU_US		BIT64(2)	/** User-Supervisor */
+#define Z_X86_MMU_PWT		BIT64(3)	/** Page Write Through */
+#define Z_X86_MMU_PCD		BIT64(4)	/** Page Cache Disable */
+#define Z_X86_MMU_A		BIT64(5)	/** Accessed */
+#define Z_X86_MMU_D		BIT64(6)	/** Dirty */
+#define Z_X86_MMU_PS		BIT64(7)	/** Page Size */
+#define Z_X86_MMU_G		BIT64(8)	/** Global */
+#define Z_X86_MMU_XD		BIT64(63)	/** Execute Disable */
 
 /*
- * The following bitmasks correspond to the bit-fields in the
- * x86_mmu_pde_2mb structure.
+ * Structure-specific flags / masks
  */
 
-#define MMU_2MB_PDE_P_MASK          0x00000001ULL
-#define MMU_2MB_PDE_RW_MASK         0x00000002ULL
-#define MMU_2MB_PDE_US_MASK         0x00000004ULL
-#define MMU_2MB_PDE_PWT_MASK        0x00000008ULL
-#define MMU_2MB_PDE_PCD_MASK        0x00000010ULL
-#define MMU_2MB_PDE_A_MASK          0x00000020ULL
-#define MMU_2MB_PDE_D_MASK          0x00000040ULL
-#define MMU_2MB_PDE_PS_MASK         0x00000080ULL
-#define MMU_2MB_PDE_G_MASK          0x00000100ULL
-#define MMU_2MB_PDE_IGNORED_MASK    0x00380e00ULL
-#define MMU_2MB_PDE_PAT_MASK        0x00001000ULL
-#define MMU_2MB_PDE_PAGE_TABLE_MASK 0x0007e000ULL
-#define MMU_2MB_PDE_PAGE_MASK       0xffc00000ULL
-#define MMU_2MB_PDE_CLEAR_PS        0x00000000ULL
-#define MMU_2MB_PDE_SET_PS          0x00000080ULL
+#define Z_X86_MMU_PDE_PAT	BIT64(12)
+#define Z_X86_MMU_PTE_PAT	BIT64(7)	/** Page Attribute Table */
 
+#define Z_X86_MMU_PDPTE_PD_MASK		0x00000000FFFFF000ULL
+#define Z_X86_MMU_PDE_PT_MASK		0x00000000FFFFF000ULL
+#define Z_X86_MMU_PDE_2MB_MASK		0x00000000FFC00000ULL
+#define Z_X86_MMU_PTE_ADDR_MASK		0x00000000FFFFF000ULL
 
 /*
- * The following bitmasks correspond to the bit-fields in the
- * x86_mmu_pte structure.
+ * These flags indicate intention when setting access properties.
  */
 
-#define MMU_PTE_P_MASK            0x00000001ULL
-#define MMU_PTE_RW_MASK           0x00000002ULL
-#define MMU_PTE_US_MASK           0x00000004ULL
-#define MMU_PTE_PWT_MASK          0x00000008ULL
-#define MMU_PTE_PCD_MASK          0x00000010ULL
-#define MMU_PTE_A_MASK            0x00000020ULL
-#define MMU_PTE_D_MASK            0x00000040ULL
-#define MMU_PTE_PAT_MASK          0x00000080ULL
-#define MMU_PTE_G_MASK            0x00000100ULL
-#define MMU_PTE_ALLOC_MASK        0x00000200ULL
-#define MMU_PTE_CUSTOM_MASK       0x00000c00ULL
-#define MMU_PTE_XD_MASK           0x8000000000000000ULL
-#define MMU_PTE_PAGE_MASK         0x00000000fffff000ULL
-#define MMU_PTE_MASK_ALL          0xffffffffffffffffULL
-#define MMU_PAGE_NUM(v)           (((u32_t)(v) >> MMU_PAGE_NUM_SHIFT) & 0x1ffU)
-#define MMU_PAGE_NUM_SHIFT 12
+#define MMU_ENTRY_NOT_PRESENT       0ULL
+#define MMU_ENTRY_PRESENT           Z_X86_MMU_P
 
-/*
- * The following values are to are to be OR'ed together to mark the use or
- * unuse of various options in a PTE or PDE as appropriate.
- */
+#define MMU_ENTRY_READ              0ULL
+#define MMU_ENTRY_WRITE             Z_X86_MMU_RW
 
-#define MMU_ENTRY_NOT_PRESENT       0x00000000ULL
-#define MMU_ENTRY_PRESENT           0x00000001ULL
+#define MMU_ENTRY_SUPERVISOR        0ULL
+#define MMU_ENTRY_USER              Z_X86_MMU_US
 
-#define MMU_ENTRY_READ              0x00000000ULL
-#define MMU_ENTRY_WRITE             0x00000002ULL
+#define MMU_ENTRY_WRITE_BACK        0ULL
+#define MMU_ENTRY_WRITE_THROUGH     Z_X86_MMU_PWT
 
-#define MMU_ENTRY_SUPERVISOR        0x00000000ULL
-#define MMU_ENTRY_USER              0x00000004ULL
+#define MMU_ENTRY_CACHING_ENABLE    0ULL
+#define MMU_ENTRY_CACHING_DISABLE   Z_X86_MMU_PCD
 
-#define MMU_ENTRY_WRITE_BACK        0x00000000ULL
-#define MMU_ENTRY_WRITE_THROUGH     0x00000008ULL
+#define MMU_ENTRY_NOT_ACCESSED      0ULL
+#define MMU_ENTRY_ACCESSED          Z_X86_MMU_A
 
-#define MMU_ENTRY_CACHING_ENABLE    0x00000000ULL
-#define MMU_ENTRY_CACHING_DISABLE   0x00000010ULL
+#define MMU_ENTRY_NOT_DIRTY         0ULL
+#define MMU_ENTRY_DIRTY             Z_X86_MMU_D
 
-#define MMU_ENTRY_NOT_ACCESSED      0x00000000ULL
-#define MMU_ENTRY_ACCESSED          0x00000020ULL
+#define MMU_ENTRY_NOT_GLOBAL        0ULL
+#define MMU_ENTRY_GLOBAL            Z_X86_MMU_G
 
-#define MMU_ENTRY_NOT_DIRTY         0x00000000ULL
-#define MMU_ENTRY_DIRTY             0x00000040ULL
-
-#define MMU_ENTRY_NOT_GLOBAL        0x00000000ULL
-#define MMU_ENTRY_GLOBAL            0x00000100ULL
-
-#define MMU_ENTRY_NOT_ALLOC         0x00000000ULL
-#define MMU_ENTRY_ALLOC             0x00000200ULL
-
-#define MMU_ENTRY_EXECUTE_DISABLE   0x8000000000000000ULL
-
-/* Helper macros to ease the usage of the MMU page table structures.
- */
-
-/*
- * Returns the page table entry for the addr
- * use the union to extract page entry related information.
- */
-#define X86_MMU_GET_PTE(ptables, addr)\
-	((union x86_mmu_pte *)\
-	 (&X86_MMU_GET_PT_ADDR(ptables, addr)->entry[MMU_PAGE_NUM(addr)]))
-
-/*
- * Returns the Page table address for the particular address.
- * Page Table address(returned value) is always 4KBytes aligned.
- */
-#define X86_MMU_GET_PT_ADDR(ptables, addr) \
-	((struct x86_mmu_pt *)\
-	 (X86_MMU_GET_PDE(ptables, addr)->pt << MMU_PAGE_SHIFT))
-
-/* Returns the page directory entry for the addr
- * use the union to extract page directory entry related information.
- */
-#define X86_MMU_GET_PDE(ptables, addr)\
-	((union x86_mmu_pde_pt *)					\
-	 (&X86_MMU_GET_PD_ADDR(ptables, addr)->entry[MMU_PDE_NUM(addr)]))
-
-/* Returns the page directory entry for the addr
- * use the union to extract page directory entry related information.
- */
-#define X86_MMU_GET_PD_ADDR(ptables, addr) \
-	((struct x86_mmu_pd *)		       \
-	 (X86_MMU_GET_PDPTE(ptables, addr)->pd << MMU_PAGE_SHIFT))
-
-/* Returns the page directory pointer entry */
-#define X86_MMU_GET_PDPTE(ptables, addr) \
-	(&X86_MMU_GET_PDPT(ptables, addr)->entry[MMU_PDPTE_NUM(addr)])
-
-/* Returns the page directory pointer table corresponding to the address */
-#define X86_MMU_GET_PDPT(ptables, addr) \
-	(&((ptables)->pdpt))
+#define MMU_ENTRY_EXECUTE_DISABLE   Z_X86_MMU_XD
+#define MMU_ENTRY_EXECUTE_ENABLE    0ULL
 
 /* memory partition arch/soc independent attribute */
 #define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | \
@@ -185,11 +109,11 @@
 
 
  /* memory partition access permission mask */
-#define K_MEM_PARTITION_PERM_MASK   (MMU_PTE_RW_MASK |\
-				     MMU_PTE_US_MASK |\
-				     MMU_PTE_XD_MASK)
+#define K_MEM_PARTITION_PERM_MASK   (Z_X86_MMU_RW | Z_X86_MMU_US | \
+				     Z_X86_MMU_XD)
 
 #ifndef _ASMLANGUAGE
+#include <sys/__assert.h>
 #include <zephyr/types.h>
 
 /* Structure used by gen_mmu.py to create page directories and page tables.
@@ -225,225 +149,6 @@ struct mmu_region {
 #define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
 	Z_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
-/*
- * The following defines the format of a 64-bit page directory pointer entry
- * that references a page directory table
- */
-union x86_mmu_pdpte {
-	 /** access Page directory entry through use of bitmasks */
-	u64_t  value;
-	struct {
-		/** present: must be 1 to reference a page table */
-		u64_t p:1;
-
-		u64_t reserved:2;
-
-		/** page-level write-through: determines the memory type used
-		 * to access the page table referenced by this entry
-		 */
-		u64_t pwt:1;
-
-		/** page-level cache disable: determines the memory
-		 * type used to access the page table referenced by
-		 * this entry
-		 */
-		u64_t pcd:1;
-
-		u64_t ignored1:7;
-
-		/** page table: physical address of page table */
-		u64_t pd:20;
-
-		u64_t ignored3:32;
-	};
-};
-
-/*
- * The following defines the format of a 32-bit page directory entry
- * that references a page table (as opposed to a 2 Mb page).
- */
-union x86_mmu_pde_pt {
-	 /** access Page directory entry through use of bitmasks */
-	u64_t  value;
-	struct {
-		/** present: must be 1 to reference a page table */
-		u64_t p:1;
-
-		/** read/write: if 0, writes may not be allowed to the region
-		 * controlled by this entry
-		 */
-		u64_t rw:1;
-
-		/** user/supervisor: if 0, accesses with CPL=3 are not allowed
-		 * to the region controlled by this entry
-		 */
-		u64_t us:1;
-
-		/** page-level write-through: determines the memory type used
-		 * to access the page table referenced by this entry
-		 */
-		u64_t pwt:1;
-
-		/** page-level cache disable: determines the memory
-		 * type used to access the page table referenced by
-		 * this entry
-		 */
-		u64_t pcd:1;
-
-		/** accessed: if 1 -> entry has been used to translate
-		 */
-		u64_t a:1;
-
-		u64_t ignored1:1;
-
-		/** page size: ignored when CR4.PSE=0 */
-		u64_t ps:1;
-
-		u64_t ignored2:4;
-
-		/** page table: physical address of page table */
-		u64_t pt:20;
-
-		u64_t ignored3:31;
-
-		/* Execute disable */
-		u64_t xd:1;
-	};
-};
-
-
-/*
- * The following defines the format of a 64-bit page directory entry
- * that references a 2 Mb page (as opposed to a page table).
- */
-
-union x86_mmu_pde_2mb {
-	u32_t  value;
-	struct {
-		/** present: must be 1 to map a 4 Mb page */
-		u64_t p:1;
-
-		/** read/write: if 0, writes may not be allowed to the 4 Mb
-		 * page referenced by this entry
-		 */
-		u64_t rw:1;
-
-		/** user/supervisor: if 0, accesses with CPL=3 are not allowed
-		 * to the 4 Mb page referenced by this entry
-		 */
-		u64_t us:1;
-
-		/** page-level write-through: determines the memory type used
-		 * to access the 4 Mb page referenced by
-		 * this entry
-		 */
-		u64_t pwt:1;
-
-		/** page-level cache disable: determines the memory type used
-		 * to access the 4 Mb page referenced by this entry
-		 */
-		u64_t pcd:1;
-
-		/** accessed: if 1 -> entry has been used to translate */
-		u64_t a:1;
-
-		/** dirty: indicates whether software has written to the 4 Mb
-		 * page referenced by this entry
-		 */
-		u64_t d:1;
-
-		/** page size: must be 1 otherwise this entry references a page
-		 * table entry
-		 */
-		u64_t ps:1;
-
-		/** global: if CR4.PGE=1, then determines whether this
-		 * translation is global, i.e. used regardless of PCID
-		 */
-		u64_t g:1;
-
-		u64_t ignored1:3;
-
-		/** If PAT is supported, indirectly determines the memory type
-		 * used to access the 4 Mb page, otherwise must be 0
-		 */
-		u64_t pat:1;
-
-		u64_t reserved1:8;
-
-		/** page table: physical address of page table */
-		u64_t pt:11;
-
-		u64_t reserved2:31;
-
-		/** execute disable */
-		u64_t xd:1;
-	};
-};
-
-/*
- * The following defines the format of a 64-bit page table entry that maps
- * a 4 Kb page.
- */
-union x86_mmu_pte {
-	u64_t  value;
-
-	struct {
-		/** present: must be 1 to map a 4 Kb page */
-		u64_t p:1;
-
-		/** read/write: if 0, writes may not be allowed to the 4 Kb
-		 * page controlled by this entry
-		 */
-		u64_t rw:1;
-
-		/** user/supervisor: if 0, accesses with CPL=3 are not allowed
-		 * to the 4 Kb page controlled by this entry
-		 */
-		u64_t us:1;
-
-		/** page-level write-through: determines the memory type used
-		 * to access the 4 Kb page referenced by this entry
-		 */
-		u64_t pwt:1;
-
-		/** page-level cache disable: determines the memory type used
-		 * to access the 4 Kb page referenced by this entry
-		 */
-		u64_t pcd:1;
-
-		/** accessed: if 1 -> 4 Kb page has been referenced */
-		u64_t a:1;
-
-		/** dirty: if 1 -> 4 Kb page has been written to */
-		u64_t d:1;
-
-		/** If PAT is supported, indirectly determines the memory type
-		 * used to access the 4 Kb page, otherwise must be 0
-		 */
-		u64_t pat:1;
-
-		/** global: if CR4.PGE=1, then determines whether this
-		 * translation is global, i.e. used regardless of PCID
-		 */
-		u64_t g:1;
-
-		/** allocated: if 1 -> this PTE has been allocated/ reserved;
-		 * this is only used by software, i.e. this bit is ignored by
-		 * the MMU
-		 */
-		u64_t ignore1:3;
-
-		/** page: physical address of the 4 Kb page */
-		u64_t page:20;
-
-		u64_t ignore2:31;
-
-		/* Execute disable */
-		u64_t xd:1;
-	};
-};
-
 #define Z_X86_NUM_PDPT_ENTRIES	4
 #define Z_X86_NUM_PD_ENTRIES	512
 #define Z_X86_NUM_PT_ENTRIES	512
@@ -456,25 +161,104 @@ union x86_mmu_pte {
 typedef u64_t k_mem_partition_attr_t;
 
 struct x86_mmu_pdpt {
-	union x86_mmu_pdpte entry[Z_X86_NUM_PDPT_ENTRIES];
-};
-
-union x86_mmu_pde {
-	union x86_mmu_pde_pt pt;
-	union x86_mmu_pde_2mb twomb;
+	u64_t entry[Z_X86_NUM_PDPT_ENTRIES];
 };
 
 struct x86_mmu_pd {
-	union x86_mmu_pde entry[Z_X86_NUM_PD_ENTRIES];
+	u64_t entry[Z_X86_NUM_PD_ENTRIES];
 };
 
 struct x86_mmu_pt {
-	union x86_mmu_pte entry[Z_X86_NUM_PT_ENTRIES];
+	u64_t entry[Z_X86_NUM_PT_ENTRIES];
 };
 
 struct x86_page_tables {
 	struct x86_mmu_pdpt pdpt;
 };
+
+/*
+ * Inline functions for getting the next linked structure
+ */
+
+static inline u64_t *z_x86_pdpt_get_pdpte(struct x86_mmu_pdpt *pdpt,
+					  uintptr_t addr)
+{
+	int index = (addr >> 30U) & (Z_X86_NUM_PDPT_ENTRIES - 1);
+
+	return &pdpt->entry[index];
+}
+
+static inline struct x86_mmu_pd *z_x86_pdpte_get_pd(u64_t pdpte)
+{
+	uintptr_t addr = pdpte & Z_X86_MMU_PDPTE_PD_MASK;
+
+	return (struct x86_mmu_pd *)addr;
+}
+
+static inline u64_t *z_x86_pd_get_pde(struct x86_mmu_pd *pd, uintptr_t addr)
+{
+	int index = (addr >> 21U) & (Z_X86_NUM_PD_ENTRIES - 1);
+
+	return &pd->entry[index];
+}
+
+static inline struct x86_mmu_pt *z_x86_pde_get_pt(u64_t pde)
+{
+	uintptr_t addr = pde & Z_X86_MMU_PDE_PT_MASK;
+
+	__ASSERT((pde & Z_X86_MMU_PS) == 0, "pde is for 2MB page");
+
+	return (struct x86_mmu_pt *)addr;
+}
+
+static inline u64_t *z_x86_pt_get_pte(struct x86_mmu_pt *pt, uintptr_t addr)
+{
+	int index = (addr >> 12U) & (Z_X86_NUM_PT_ENTRIES - 1);
+
+	return &pt->entry[index];
+}
+
+/*
+ * Inline functions for obtaining page table structures from the top-level
+ */
+
+static inline struct x86_mmu_pdpt *
+z_x86_get_pdpt(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	ARG_UNUSED(addr);
+
+	return &ptables->pdpt;
+}
+
+static inline u64_t *z_x86_get_pdpte(struct x86_page_tables *ptables,
+				       uintptr_t addr)
+{
+	return z_x86_pdpt_get_pdpte(z_x86_get_pdpt(ptables, addr), addr);
+}
+
+static inline struct x86_mmu_pd *
+z_x86_get_pd(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	return z_x86_pdpte_get_pd(*z_x86_get_pdpte(ptables, addr));
+}
+
+static inline u64_t *z_x86_get_pde(struct x86_page_tables *ptables,
+				     uintptr_t addr)
+{
+	return z_x86_pd_get_pde(z_x86_get_pd(ptables, addr), addr);
+}
+
+static inline struct x86_mmu_pt *
+z_x86_get_pt(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	return z_x86_pde_get_pt(*z_x86_get_pde(ptables, addr));
+}
+
+static inline u64_t *z_x86_get_pte(struct x86_page_tables *ptables,
+				     uintptr_t addr)
+{
+	return z_x86_pt_get_pte(z_x86_get_pt(ptables, addr), addr);
+}
 
 /**
  * Debug function for dumping out page tables

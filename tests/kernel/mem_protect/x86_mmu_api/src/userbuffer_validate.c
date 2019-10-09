@@ -29,9 +29,10 @@ void reset_multi_pde_flag(void);
 
 #define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
 #define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
-#define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(PTABLES, ADDR_PAGE_1)->p = 1)
-#define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(PTABLES, ADDR_PAGE_2)->p = 1)
-
+#define PRESET_PAGE_1_VALUE set_flags(ADDR_PAGE_1, MMU_PAGE_SIZE, \
+				      MMU_ENTRY_PRESENT, Z_X86_MMU_P)
+#define PRESET_PAGE_2_VALUE set_flags(ADDR_PAGE_2, MMU_PAGE_SIZE, \
+				      MMU_ENTRY_PRESENT, Z_X86_MMU_P)
 
 static void set_flags(void *ptr, size_t size, u64_t flags,
 		      u64_t mask)
@@ -59,7 +60,7 @@ static int buffer_rw_read(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 
@@ -78,7 +79,7 @@ static int buffer_writeable_write(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 	if (status != 0) {
@@ -96,7 +97,7 @@ static int buffer_readable_read(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE);
 	if (status != 0) {
@@ -114,7 +115,7 @@ static int buffer_readable_write(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE);
 	if (status != 0) {
@@ -133,7 +134,7 @@ static int buffer_supervisor_rw(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE |
 				 BUFF_USER);
@@ -152,7 +153,7 @@ static int buffer_supervisor_w(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 	if (status != -EPERM) {
@@ -170,7 +171,7 @@ static int buffer_user_rw_user(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE |
 				 BUFF_USER);
 	if (status != 0) {
@@ -188,7 +189,7 @@ static int buffer_user_rw_supervisor(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE |
 				 BUFF_USER);
 	if (status != -EPERM) {
@@ -208,12 +209,12 @@ static int multi_page_buffer_user(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1,
 				       2 * MMU_PAGE_SIZE,
@@ -234,12 +235,12 @@ static int multi_page_buffer_write_user(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_WRITEABLE);
@@ -259,12 +260,12 @@ static int multi_page_buffer_read_user(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE, BUFF_READABLE
 				 | BUFF_USER);
@@ -284,12 +285,12 @@ static int multi_page_buffer_read(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_WRITEABLE);
@@ -309,12 +310,12 @@ static int multi_pde_buffer_rw(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_WRITEABLE);
@@ -334,12 +335,12 @@ static int multi_pde_buffer_writeable_write(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_WRITEABLE);
@@ -359,12 +360,12 @@ static int multi_pde_buffer_readable_read(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_READABLE);
@@ -384,12 +385,12 @@ static int multi_pde_buffer_readable_write(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
-			   MMU_PDE_RW_MASK);
+			   Z_X86_MMU_RW);
 
 	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
 				 BUFF_READABLE);
@@ -406,7 +407,7 @@ void reset_flag(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 }
 
 void reset_multi_pte_page_flag(void)
@@ -414,12 +415,12 @@ void reset_multi_pte_page_flag(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 }
 
 void reset_multi_pde_flag(void)
@@ -427,12 +428,12 @@ void reset_multi_pde_flag(void)
 	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PDE_RW_MASK | MMU_PDE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 
 	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
-			   MMU_PDE_RW_MASK | MMU_PDE_US_MASK);
+			   Z_X86_MMU_RW | Z_X86_MMU_US);
 }
 
 /**

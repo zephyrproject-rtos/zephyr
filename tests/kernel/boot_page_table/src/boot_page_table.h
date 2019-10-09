@@ -6,28 +6,6 @@
 #ifndef __BOOT_PAGE_TABLE_H__
 #define __BOOT_PAGE_TABLE_H__
 
-#ifndef X86_MMU_GET_PT_ADDR
-
-/* Helper macros to ease the usage of the MMU page table structures.
- * Returns the Page table address for the particular address.
- * Page Table address(returned value) is always 4KBytes aligned.
- */
-#define X86_MMU_GET_PT_ADDR(addr)      \
-	((struct x86_mmu_page_table *) \
-	 (X86_MMU_GET_PDE(addr)->page_table << MMU_PAGE_SHIFT))
-
-#endif
-
-#ifndef X86_MMU_GET_PTE
-/* Returns the page table entry for the addr
- * use the union to extract page entry related information.
- */
-
-#define X86_MMU_GET_PTE(addr)	   \
-	((union x86_mmu_pae_pte *) \
-	 (&X86_MMU_GET_PT_ADDR(addr)->entry[MMU_PAGE_NUM(addr)]))
-#endif
-
 #define MMU_READ                  0x00
 #define MMU_WRITE                 0x01
 #define MMU_READ_WRITE             (MMU_READ | MMU_WRITE)
