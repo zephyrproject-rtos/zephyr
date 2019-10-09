@@ -2,8 +2,8 @@
 
 .. _zephyr_2.1:
 
-Zephyr Kernel 2.1.0 (Working Draft)
-####################################
+Zephyr 2.1.0 (Working Draft)
+############################
 
 We are pleased to announce the release of Zephyr kernel version 2.1.0.
 
