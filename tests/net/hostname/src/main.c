@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#if defined(CONFIG_NET_IF_LOG_LEVEL_DBG)
+#if defined(CONFIG_NET_HOSTNAME_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -142,6 +142,14 @@ static void eth_fake_iface_init(struct net_if *iface)
 	struct eth_fake_context *ctx = dev->driver_data;
 
 	ctx->iface = iface;
+
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	ctx->mac_address[0] = 0x00;
+	ctx->mac_address[1] = 0x00;
+	ctx->mac_address[2] = 0x5E;
+	ctx->mac_address[3] = 0x00;
+	ctx->mac_address[4] = 0x53;
+	ctx->mac_address[5] = sys_rand32_get();
 
 	net_if_set_link_addr(iface, ctx->mac_address,
 			     sizeof(ctx->mac_address),
@@ -269,6 +277,40 @@ static void iface_setup(void)
 	test_started = true;
 }
 
+static int bytes_from_hostname_unique(u8_t *buf, int buf_len, const char *src)
+{
+	unsigned int i;
+
+	(void)memset(buf, 0, buf_len);
+
+	if ((2 * buf_len) < strlen(src)) {
+		return -ENOMEM;
+	}
+
+	for (i = 0U; i < strlen(src); i++) {
+		buf[i/2] <<= 4;
+
+		if (src[i] >= '0' && src[i] <= '9') {
+			buf[i/2] += (src[i] - '0');
+			continue;
+		}
+
+		if (src[i] >= 'A' && src[i] <= 'F') {
+			buf[i/2] += (10 + (src[i] - 'A'));
+			continue;
+		}
+
+		if (src[i] >= 'a' && src[i] <= 'f') {
+			buf[i/2] += (10 + (src[i] - 'a'));
+			continue;
+		}
+
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void hostname_get(void)
 {
 	const char *hostname;
@@ -280,10 +322,10 @@ static void hostname_get(void)
 			  sizeof(CONFIG_NET_HOSTNAME) - 1, "");
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
-		char mac[8];
+		char mac[6];
 		int ret;
 
-		ret = net_bytes_from_str(mac, sizeof(mac),
+		ret = bytes_from_hostname_unique(mac, sizeof(mac),
 				 hostname + sizeof(CONFIG_NET_HOSTNAME) - 1);
 		zassert_equal(ret, 0, "");
 

@@ -7,8 +7,7 @@
 #include <kernel_structs.h>
 #include <cmsis_os.h>
 #include <ksched.h>
-
-extern const k_tid_t _main_thread;
+#include <kernel_internal.h>
 
 /**
  * @brief Get the RTOS kernel system timer counter
@@ -42,5 +41,5 @@ osStatus osKernelStart(void)
  */
 int32_t osKernelRunning(void)
 {
-	return z_has_thread_started(_main_thread);
+	return z_has_thread_started(&z_main_thread);
 }

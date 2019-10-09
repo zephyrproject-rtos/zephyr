@@ -13,7 +13,7 @@ The scheduler determines which thread is allowed to execute
 at any point in time; this thread is known as the **current thread**.
 
 Whenever the scheduler changes the identity of the current thread,
-or when execution of the current thread is supplanted by an ISR,
+or when execution of the current thread is replaced by an ISR,
 the kernel first saves the current thread's CPU register values.
 These register values get restored when the thread later resumes execution.
 
@@ -27,7 +27,7 @@ exist, the scheduler chooses the one that has been waiting longest.
 
 .. note::
     Execution of ISRs takes precedence over thread execution,
-    so the execution of the current thread may be supplanted by an ISR
+    so the execution of the current thread may be replaced by an ISR
     at any time unless interrupts have been masked. This applies to both
     cooperative threads and preemptive threads.
 
@@ -125,7 +125,7 @@ becomes the current thread, its non-preemptible status is maintained.
 
 .. note::
     Locking out the scheduler is a more efficient way for a preemptible thread
-    to inhibit preemption than changing its priority level to a negative value.
+    to prevent preemption than changing its priority level to a negative value.
 
 .. _metairq_priorities:
 

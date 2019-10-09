@@ -136,7 +136,7 @@ int hts221_init_interrupt(struct device *dev)
 			CONFIG_HTS221_THREAD_STACK_SIZE,
 			(k_thread_entry_t)hts221_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = hts221_work_cb;
 	drv_data->dev = dev;

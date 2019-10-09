@@ -26,7 +26,7 @@ This example will only cover the qemu_x86 board, since the sample
 just prints text to a console.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/userspace/shared_mem
+   :zephyr-app: samples/userspace/shared_mem
    :board: qemu_x86
    :goals: build run
    :compact:
@@ -42,7 +42,7 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 Two definitions can be inserted to change the wheel settings and print
 the state information.  To enable the definitions uncomment the last
-two lines in CMakelists.txt.
+two lines in CMakeLists.txt.
 
 Functionality
 *************

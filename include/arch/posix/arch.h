@@ -30,8 +30,13 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_64BIT
+#define STACK_ALIGN 8
+#define STACK_ALIGN_SIZE 8
+#else
 #define STACK_ALIGN 4
 #define STACK_ALIGN_SIZE 4
+#endif
 
 struct __esf {
 	u32_t dummy; /*maybe we will want to add something someday*/
@@ -45,7 +50,7 @@ extern u32_t z_timer_cycle_get_32(void);
 /**
  * @brief Explicitly nop operation.
  */
-static ALWAYS_INLINE void arch_nop(void)
+static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

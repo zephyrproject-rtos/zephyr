@@ -19,13 +19,13 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(__reset)
+GTEXT(z_arm_reset)
 GDATA(_interrupt_stack)
-GDATA(_svc_stack)
-GDATA(_sys_stack)
-GDATA(_fiq_stack)
-GDATA(_abort_stack)
-GDATA(_undef_stack)
+GDATA(z_arm_svc_stack)
+GDATA(z_arm_sys_stack)
+GDATA(z_arm_fiq_stack)
+GDATA(z_arm_abort_stack)
+GDATA(z_arm_undef_stack)
 
 #define STACK_MARGIN	4
 
@@ -38,12 +38,12 @@ GDATA(_undef_stack)
  * privileged level. At this point, the main stack pointer (MSP) is already
  * pointing to a valid area in SRAM.
  *
- * When these steps are completed, jump to _PrepC(), which will finish setting
- * up the system for running C code.
+ * When these steps are completed, jump to z_arm_prep_c(), which will finish
+ * setting up the system for running C code.
  *
  * @return N/A
  */
-SECTION_SUBSEC_FUNC(TEXT, _reset_section, __reset)
+SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	mov r0,  #0
 	mov r1,  #0
@@ -65,7 +65,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Setup FIQ stack */
 	msr CPSR_c, #(MODE_FIQ | I_BIT | F_BIT)
-	ldr sp, =(_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE - STACK_MARGIN)
+	ldr sp, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE - STACK_MARGIN)
 
 	/* Setup IRQ stack */
 	msr CPSR_c, #(MODE_IRQ | I_BIT | F_BIT)
@@ -73,21 +73,21 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Setup data abort stack */
 	msr CPSR_c, #(MODE_ABT | I_BIT | F_BIT)
-	ldr sp, =(_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE - \
+	ldr sp, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE - \
 				STACK_MARGIN)
 
 	/* Setup undefined mode stack */
 	msr CPSR_c, #(MODE_UDF | I_BIT | F_BIT)
-	ldr sp, =(_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE - \
+	ldr sp, =(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE - \
 				STACK_MARGIN)
 
 	/* Setup SVC mode stack */
 	msr CPSR_c, #(MODE_SVC | I_BIT | F_BIT)
-	ldr sp, =(_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE - STACK_MARGIN)
+	ldr sp, =(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE - STACK_MARGIN)
 
 	/* Setup System mode stack */
 	msr CPSR_c, #(MODE_SYS | I_BIT | F_BIT)
-	ldr sp, =(_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE - STACK_MARGIN)
+	ldr sp, =(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE - STACK_MARGIN)
 
 	/* Setup system control register */
 	mrc p15, 0, r0, c1, c0, 0	/* SCTLR */
@@ -96,7 +96,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #if defined(CONFIG_WDOG_INIT)
 	/* board-specific watchdog initialization is necessary */
-	bl _WdogInit
+	bl z_arm_watchdog_init
 #endif
 
-	b _PrepC
+	b z_arm_prep_c

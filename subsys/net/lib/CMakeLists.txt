@@ -17,9 +17,9 @@ if (CONFIG_DNS_RESOLVER
   add_subdirectory(dns)
 endif()
 
-if(CONFIG_HTTP_PARSER_URL
-    OR CONFIG_HTTP_PARSER)
+if(CONFIG_HTTP_PARSER_URL OR CONFIG_HTTP_PARSER OR CONFIG_HTTP_CLIENT)
   add_subdirectory(http)
 endif()
 
+add_subdirectory_ifdef(CONFIG_WEBSOCKET_CLIENT websocket)
 add_subdirectory_ifdef(CONFIG_OPENTHREAD_PLAT openthread)

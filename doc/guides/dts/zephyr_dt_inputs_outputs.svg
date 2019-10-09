@@ -1,0 +1,880 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   style="background-color: rgb(255, 255, 255);"
+   version="1.1"
+   width="721px"
+   height="621px"
+   viewBox="-0.5 -0.5 721 621"
+   content="&lt;mxfile host=&quot;www.draw.io&quot; modified=&quot;2019-10-04T20:14:06.232Z&quot; agent=&quot;Mozilla/5.0 (X11; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0&quot; etag=&quot;f1KdDVQKCpK18vfmvEm6&quot; version=&quot;12.0.2&quot; type=&quot;google&quot; pages=&quot;1&quot;&gt;&lt;diagram id=&quot;u5Qc6Gt7wLgsKawjMbJk&quot; name=&quot;Page-1&quot;&gt;7VpZc6M4EP41fgzF4SuPiY/ZVGXHqSS1M5kXlwwyaEcgRgjbzK9fCcRp7MjxkaR28hKp0dGiv+7+WrhjjfzNFwpC72/iQNwxdWfTscYd0zT1nsH/CUmSSQyzd51JXIocKSsFT+g3lEJdSmPkwKg2kBGCGQrrQpsEAbRZTQYoJev6sCXB9V1D4MItwZMN8Lb0G3KYl0mHPb2U/wWR6+U7G7p84oN8sBREHnDIuiKyJh1rRAlhWcvfjCAWby9/L9m86Y6nhWIUBkxlQnfy7WHmJ1e/nr0flgvN9WJErgZSN5bkB4YOP7/sEso84pIA4EkpvaUkDhwoVtV5rxxzT0jIhQYX/gsZS6QxQcwIF3nMx/Ip3CD2vdJ+EUtpPdkbb+TKaSepdB4gRT5kkOaygNHkezlZdF/ydUWnXCrt5WtlZxYH3fkqpSgiMbXhnvdnSkgC6kK2Z1y/MDh3FUj4KWjC51GIAUOruh5AQtYtxpVW5Q1p2AOMLJVcARzLnTpmH3N1bx204k1XNKd39xNDIytIMUjy53y7ypCWWZqmKY8VO8yD5hYL2pzSXKgB0IhR8rNwRqMOLe5koRjnb1wRkLQlJmvbA5RpfsyDxpVD7NhPrXy79hCDTyFI7bvmo7PpmY8KmACM3IC3MVyK8UuE8YhgQlM1LKcHh05XzEn1qTzR079CdX5cBjf7kbaNjDKCZlPy+NmV0WRdBiMjjzBeJRAN9TOByVIB0xN3BlNfiIOMn0fz2T+Tx/ubl7lAgDpeZiFDIq6kizylwZvyqCoaCPOcoLoON7Tt8VkCeDzHQN68nd08jjWHRZdGIQgCwoA419ysQIxmhrvFYAHxA4mQGFFCLyQo4GFvsuKoieQeMuGBRaqR3gTvCbBnDF7H3kWh11OB3l3QEUrpCwKoI5gHovw1EZrsAN6zB9MJ/V8xSZEAIlj2xAJwhWyuP4Ra63Y2jgVDMXWBJ5SjU/uDLHVkWWrA6p8LWEW6//A06ITUpa9IXQzrPblLf8vnHWZ3Ck5dMRjGvCaAOxJ75bWDKMwKhSXaCPPV0b3tfSfAu9Wt4324jffhJQOpYX4WvO+i+CWpPzvFN/Ky80Nz/FzLiqNUSE4zxcgs8gobrthukRn/flFJRPuc5kOQ5Za00sqVz5dXhp/Gz/aX113jEOdLe83VTuiRpmrVbfbe0yVzNffz1du7r+O7r1/mhpYAbsJzFN75FkFti89aeI97k+H44rHE7PfUgsnZkrapVHmn5c9vGHoJFeYUwX+6QIGDAjdSR8xkw2AQIVEBiBMzL6vB54+z2bP6KiMSMICEQjROC3ZRwRfVPA9bpj5SXswmaeXuwgDStMxJwQnDP4XWAYVWG4ovCuKcCL9PRiyz4EvlyWmZ59mT37E5TU59EICslCgDvYaU3qABgSzZylkNFBRqHBHdlC538sCWhRDFyBHZFIVHXPWdrbLMQ4cNgxQqJyk1zbodresWEqy3uHwhPH3iun5Xn6+x4MHFrleOvjbZ5ae9dvteyE8NJRZSlJ5zm/ghwtyQb87SZ69V04zNIeZAmpPJgASweALsn24Kx8bTBi+d8r9+/zRe3LWaebvFi7uXLGWNYYvdz0qoJHFq8qmcZ72BUGWfArJl1jBip7FVb/i6rS5662BcKxcKixhh7prTLK+qM3v5PQ6J+oArqXMv50VGTsvJslP7xKaDwOlk398wSA4oQ+6EhX3oIMAE9ycxC2P2dsLPbcwaoKyVkC1+LUUNTAq8IBvgGyn2kePgXQShnslOzfD7RgN9LXfLrXWqeTaKP1CB3xRlX3Yzmx7yuUwFybyBsg9zvCVLRuioA+8obeS+orblbxzwtCJ8YIXAIdsDX2AnfVDoPxcJNf2uqXnFkAP1/f/VwGYjlxaVzbvVwErxuc3q/GUt04CriKNijToaL35lcuorwIJqnfcKsP86cIw8+R+JHN4tfwmYcfXyB5XW5D8=&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg148"
+   sodipodi:docname="zephyr_dt_inputs_outputs.svg"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14"
+   inkscape:export-filename="/home/mbolivar/zp/zephyr/doc/guides/dts/zephyr_dt_inputs_outputs.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <metadata
+     id="metadata152">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2001"
+     inkscape:window-height="1610"
+     id="namedview150"
+     showgrid="false"
+     inkscape:zoom="1.5201288"
+     inkscape:cx="329.5894"
+     inkscape:cy="363.03523"
+     inkscape:window-x="68"
+     inkscape:window-y="27"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg148" />
+  <defs
+     id="defs2" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path4"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 310,150 h 60 v -13.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path6"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 370,131.12 3.5,7 -3.5,-1.75 -3.5,1.75 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path8"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 203.64,116.64 c 0,-1.76 0.71,-3.45 1.99,-4.7 1.28,-1.24 3.02,-1.94 4.82,-1.94 h 92.73 c 1.81,0 3.54,0.7 4.82,1.94 1.28,1.25 2,2.94 2,4.7 v 53.08 c -17,-7 -36.19,-7 -53.18,0 -17,7.01 -36.19,7.01 -53.18,0 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path10"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 196.82,123.27 c 0,-3.66 3.05,-6.63 6.82,-6.63 h 92.72 c 3.77,0 6.82,2.97 6.82,6.63 v 53.09 c -16.99,-7.01 -36.18,-7.01 -53.18,0 -17,7 -36.19,7 -53.18,0 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path12"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 190,129.91 c 0,-1.76 0.72,-3.45 2,-4.7 1.28,-1.24 3.01,-1.94 4.82,-1.94 h 92.73 c 1.8,0 3.54,0.7 4.82,1.94 1.28,1.25 1.99,2.94 1.99,4.7 v 53.08 c -16.99,-7 -36.18,-7 -53.18,0 C 226.19,190 207,190 190,182.99 Z" />
+  <g
+     id="g18"
+     transform="translate(201.05191,111.73835)">
+    <switch
+       id="switch16">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="41"
+         width="80"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 81px; white-space: nowrap; overflow-wrap: normal; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>FILE1.overlay</xhtml:div>
+            <xhtml:div>...</xhtml:div>
+            <xhtml:div>FILE_n.overlay<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text14"
+         font-size="12px"
+         y="27"
+         x="40">
+        <tspan
+           y="27"
+           x="40"
+           id="tspan276"
+           sodipodi:role="line">FILE_1.overlay</tspan>
+        <tspan
+           y="42"
+           x="40"
+           id="tspan278"
+           sodipodi:role="line">...</tspan>
+        <tspan
+           y="57"
+           x="40"
+           id="tspan280"
+           sodipodi:role="line">FILE_n.overlay</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path20"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 180,110 h -10 v 80 h 10" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path22"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 160,150 h 10" />
+  <g
+     id="g28"
+     transform="translate(-0.5,129.5)">
+    <switch
+       id="switch26">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="41"
+         width="157"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+            <xhtml:div>Set by DTC_OVERLAY_FILE.</xhtml:div>
+            <xhtml:div>Optional DTS format files</xhtml:div>
+            <xhtml:div>which override BOARD.dts<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text24"
+         font-size="12px"
+         y="6.6069913"
+         x="82.947037">
+        <tspan
+           y="6.6069913"
+           x="82.947037"
+           id="tspan162"
+           sodipodi:role="line">Set by DTC_OVERLAY_FILE.</tspan>
+        <tspan
+           y="21.606991"
+           x="82.947037"
+           id="tspan164"
+           sodipodi:role="line">Optional DTS format files</tspan>
+        <tspan
+           y="36.606991"
+           x="82.947037"
+           id="tspan166"
+           sodipodi:role="line">which override BOARD.dts.</tspan>
+        <tspan
+           y="51.606991"
+           x="82.947037"
+           id="tspan168"
+           sodipodi:role="line"></tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path30"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 180,0 h -10 v 60 h 10" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path32"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 160,30 h 10" />
+  <g
+     id="g38"
+     transform="translate(38.5,9.5)">
+    <switch
+       id="switch36">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="41"
+         width="118"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;"><xhtml:div>In  board directory.</xhtml:div>
+The &quot;base&quot; devicetree.<xhtml:div>Includes .dtsi files.<xhtml:br />
+</xhtml:div>
+</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text34"
+         font-size="12px"
+         y="3.9756355"
+         x="57.026482">
+        <tspan
+           y="3.9756355"
+           x="57.026482"
+           id="tspan154"
+           sodipodi:role="line">In board directory.</tspan>
+        <tspan
+           y="18.975636"
+           x="57.026482"
+           id="tspan156"
+           sodipodi:role="line">The &quot;base&quot; devicetree.</tspan>
+        <tspan
+           y="33.975636"
+           x="57.026482"
+           id="tspan158"
+           sodipodi:role="line">Includes .dtsi files.</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path40"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 410,90 h 80 v 133.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path42"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 490,228.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <circle
+     style="fill:#ffffff;stroke:#000000"
+     r="40"
+     id="ellipse44"
+     pointer-events="none"
+     cy="90"
+     cx="370" />
+  <g
+     id="g50"
+     transform="translate(362.5,75.605932)">
+    <switch
+       id="switch48">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="15"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 16px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">dtc </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text46"
+         font-size="12px"
+         y="12"
+         x="8">
+        <tspan
+           y="12"
+           x="8"
+           id="tspan170"
+           sodipodi:role="line">Apply</tspan>
+        <tspan
+           y="27"
+           x="8"
+           id="tspan172"
+           sodipodi:role="line">overlays</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path52"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 310,30 h 60 v 13.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path54"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 370,48.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path56"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 190,0 h 120 v 51 q -30,-16.2 -60,0 -30,16.2 -60,0 V 9 Z" />
+  <g
+     id="g62"
+     transform="translate(219.5,15.5)">
+    <switch
+       id="switch60">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="61"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 62px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">BOARD.dts</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text58"
+         font-size="12px"
+         y="12"
+         x="31">BOARD.dts</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path64"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 310,275 h 36 v 78.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path66"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 346,358.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path68"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 203.64,241.64 c 0,-1.76 0.71,-3.45 1.99,-4.7 1.28,-1.24 3.02,-1.94 4.82,-1.94 h 92.73 c 1.81,0 3.54,0.7 4.82,1.94 1.28,1.25 2,2.94 2,4.7 v 53.08 c -17,-7 -36.19,-7 -53.18,0 -17,7.01 -36.19,7.01 -53.18,0 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path70"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 196.82,248.27 c 0,-3.66 3.05,-6.63 6.82,-6.63 h 92.72 c 3.77,0 6.82,2.97 6.82,6.63 v 53.09 c -16.99,-7.01 -36.18,-7.01 -53.18,0 -17,7 -36.19,7 -53.18,0 z" />
+  <path
+     style="fill:#d5e8d4;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path72"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 190,254.91 c 0,-1.76 0.72,-3.45 2,-4.7 1.28,-1.24 3.01,-1.94 4.82,-1.94 h 92.73 c 1.8,0 3.54,0.7 4.82,1.94 1.28,1.25 1.99,2.94 1.99,4.7 v 53.08 c -16.99,-7 -36.18,-7 -53.18,0 C 226.19,315 207,315 190,307.99 Z" />
+  <g
+     id="g78"
+     transform="translate(197.10487,236.73835)">
+    <switch
+       id="switch76">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="41"
+         width="92"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 93px; white-space: nowrap; overflow-wrap: normal; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>BINDING_1.yaml</xhtml:div>
+            <xhtml:div>...</xhtml:div>
+            <xhtml:div>BINDING_n.yaml<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text74"
+         font-size="12px"
+         y="27"
+         x="46">
+        <tspan
+           y="27"
+           x="46"
+           id="tspan188"
+           sodipodi:role="line">BINDING_1.yaml</tspan>
+        <tspan
+           y="42"
+           x="46"
+           id="tspan190"
+           sodipodi:role="line">...</tspan>
+        <tspan
+           y="57"
+           x="46"
+           id="tspan192"
+           sodipodi:role="line">BINDING_n.yaml</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path80"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 180,235 h -10 v 80 h 10" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path82"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 160,275 h 10" />
+  <g
+     id="g88"
+     transform="translate(7.842161,216.89725)">
+    <switch
+       id="switch86">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="56"
+         width="148"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+            <xhtml:div>In zephyr/dts/bindings.</xhtml:div>
+            <xhtml:div>Extensible with DTS_ROOT.</xhtml:div>
+            <xhtml:div>Contain rules for DTS to C</xhtml:div>
+            <xhtml:div>code generation step.<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text84"
+         font-size="12px"
+         y="34"
+         x="74">
+        <tspan
+           y="34"
+           x="74"
+           id="tspan180"
+           sodipodi:role="line">In zephyr/dts/bindings/.</tspan>
+        <tspan
+           y="49"
+           x="74"
+           id="tspan182"
+           sodipodi:role="line">Extensible with DTS_ROOT.</tspan>
+        <tspan
+           y="64"
+           x="74"
+           id="tspan184"
+           sodipodi:role="line">Contain rules for DTS to C</tspan>
+        <tspan
+           y="79"
+           x="74"
+           id="tspan186"
+           sodipodi:role="line">code generation step.</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-width:0.79604656;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path90"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 355,460 v 46.6586" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path92"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 355,511.9086 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <circle
+     style="fill:#ffffff;stroke:#000000"
+     r="50"
+     id="ellipse94"
+     pointer-events="none"
+     cy="410"
+     cx="355" />
+  <g
+     id="g100"
+     transform="translate(325.47352,385.97458)">
+    <switch
+       id="switch98">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="27"
+         width="62"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 63px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>zephyr DTS</xhtml:div>
+            <xhtml:div>scripts<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text96"
+         font-size="12px"
+         y="20"
+         x="31">
+        <tspan
+           y="20"
+           x="31"
+           id="tspan210"
+           sodipodi:role="line">Apply bindings,</tspan>
+        <tspan
+           y="35"
+           x="31"
+           id="tspan212"
+           sodipodi:role="line">generate code</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path102"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 420,275 h -60 v 78.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path104"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 360,358.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <path
+     style="fill:#ffff66;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path106"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 420,230 h 140 v 51 q -35,-16.2 -70,0 -35,16.2 -70,0 v -42 z" />
+  <g
+     id="g112"
+     transform="translate(432.5,245.5)">
+    <switch
+       id="switch110">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="115"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 116px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>BOARD.dts_compiled<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text108"
+         font-size="12px"
+         y="12"
+         x="58">
+        <tspan
+           y="12"
+           x="58"
+           id="tspan200"
+           sodipodi:role="line">BOARD.dts_compiled</tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path114"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 570,290 10,0 v -60 h -10" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path116"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="M 590,260 H 580" />
+  <g
+     id="g122"
+     transform="translate(595.57944,201.47563)">
+    <switch
+       id="switch120">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="70"
+         width="118"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 118px; white-space: nowrap; overflow-wrap: normal; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>In build/zephyr.</xhtml:div>
+            <xhtml:div>DTS file, combination of BOARD.dts and overlays.</xhtml:div>
+            <xhtml:div>Intermediate output.<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;direction:rtl;text-anchor:middle;fill:#000000"
+         id="text118"
+         font-size="12px"
+         y="41"
+         x="59">
+        <tspan
+           y="51.248001"
+           x="59"
+           id="tspan232"
+           sodipodi:role="line"></tspan>
+      </text>
+    </switch>
+  </g>
+  <path
+     id="path124"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 240.61834,519.01945 h -9.92476 v 98.27889 h 9.92476"
+     inkscape:connector-curvature="0"
+     style="fill:none;stroke:#000000;stroke-width:1.10419369;stroke-miterlimit:10" />
+  <path
+     id="path126"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 220.65784,568.1589 h 10"
+     inkscape:connector-curvature="0"
+     style="fill:none;stroke:#000000;stroke-miterlimit:10" />
+  <g
+     id="g132"
+     transform="translate(42.447034,520.15995)"
+     inkscape:export-xdpi="96"
+     inkscape:export-ydpi="96">
+    <switch
+       id="switch130">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="70"
+         width="178"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+            <xhtml:div>Final outputs.<xhtml:br />
+</xhtml:div>
+            <xhtml:div>In build/zephyr/include/generated.</xhtml:div>
+            <xhtml:div>
+              <xhtml:br />
+            </xhtml:div>
+            <xhtml:div>Include C headers via</xhtml:div>
+            <xhtml:div>&lt;generated_dts_board.h&gt;<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text128"
+         font-size="12px"
+         y="41"
+         x="89">
+        <tspan
+           y="41"
+           x="89"
+           id="tspan214"
+           sodipodi:role="line">Final outputs, in</tspan>
+        <tspan
+           y="56"
+           x="89"
+           id="tspan222"
+           sodipodi:role="line">build/zephyr/include/generated/.</tspan>
+      </text>
+    </switch>
+  </g>
+  <g
+     transform="matrix(1.3085305,0,0,1.2589775,-77.132624,-160.11221)"
+     id="g293">
+    <path
+       style="fill:#ffff66;stroke:#000000;stroke-miterlimit:10"
+       inkscape:connector-curvature="0"
+       d="m 271.02,546.64 c 0,-3.67 4.71,-6.64 10.51,-6.64 h 142.96 c 5.8,0 10.51,2.97 10.51,6.64 v 53.08 c -26.2,-7 -55.79,-7 -81.99,0 -26.2,7.01 -55.78,7.01 -81.99,0 z"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path134" />
+    <path
+       style="fill:#ffff66;stroke:#000000;stroke-miterlimit:10"
+       inkscape:connector-curvature="0"
+       d="m 260.51,553.27 c 0,-1.76 1.11,-3.45 3.08,-4.69 1.97,-1.25 4.64,-1.94 7.43,-1.94 h 142.96 c 2.79,0 5.46,0.69 7.43,1.94 1.97,1.24 3.08,2.93 3.08,4.69 v 53.09 c -26.2,-7.01 -55.79,-7.01 -81.99,0 -26.2,7 -55.79,7 -81.99,0 z"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path136" />
+    <path
+       style="fill:#ffff66;stroke:#000000;stroke-miterlimit:10"
+       inkscape:connector-curvature="0"
+       d="m 250,559.91 c 0,-3.67 4.71,-6.64 10.51,-6.64 h 142.96 c 5.8,0 10.51,2.97 10.51,6.64 v 53.08 c -26.21,-7 -55.79,-7 -81.99,0 -26.2,7.01 -55.79,7.01 -81.99,0 z"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path138" />
+  </g>
+  <g
+     id="g144"
+     transform="translate(285.39195,531.63454)">
+    <switch
+       id="switch142">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="27"
+         width="140"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 141px; white-space: nowrap; overflow-wrap: normal; text-align: left;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>generated_dts_board.conf,</xhtml:div>
+            <xhtml:div>generated C headers.<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
+         id="text140"
+         font-size="12px"
+         y="20"
+         x="70">
+        <tspan
+           y="20"
+           x="70"
+           id="tspan4298"
+           sodipodi:role="line">Generated C code</tspan>
+        <tspan
+           y="35"
+           x="70"
+           id="tspan4300"
+           sodipodi:role="line">(generated_dts_board_&lt;foo&gt;.h)</tspan>
+        <tspan
+           y="50"
+           x="70"
+           id="tspan4302"
+           sodipodi:role="line">Include via &lt;generated_dts_board.h&gt;</tspan>
+        <tspan
+           y="65"
+           x="70"
+           id="tspan4304"
+           sodipodi:role="line">only, as _&lt;foo&gt; names may change.</tspan>
+      </text>
+    </switch>
+  </g>
+  <text
+     id="text244"
+     y="270.52966"
+     x="664.5752"
+     style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       y="305.92029"
+       x="664.5752"
+       id="tspan242"
+       sodipodi:role="line" /></text>
+  <g
+     transform="translate(576.21504,203.74048)"
+     id="g258">
+    <switch
+       id="switch256">
+      <foreignObject
+         style="overflow:visible;"
+         pointer-events="all"
+         width="148"
+         height="56"
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+            <xhtml:div>In zephyr/dts/bindings.</xhtml:div>
+            <xhtml:div>Extensible with DTS_ROOT.</xhtml:div>
+            <xhtml:div>Contain rules for DTS to C</xhtml:div>
+            <xhtml:div>code generation step.<xhtml:br />
+</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         x="74"
+         y="34"
+         font-size="12px"
+         id="text254"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000">
+        <tspan
+           y="34"
+           x="74"
+           id="tspan266"
+           sodipodi:role="line">DTS file in build/zephyr/.</tspan>
+        <tspan
+           y="49"
+           x="74"
+           id="tspan268"
+           sodipodi:role="line">Intermediate output,</tspan>
+        <tspan
+           y="64"
+           x="74"
+           id="tspan270"
+           sodipodi:role="line">combination of base</tspan>
+        <tspan
+           y="79"
+           x="74"
+           id="tspan272"
+           sodipodi:role="line">devicetree and any</tspan>
+        <tspan
+           y="94"
+           x="74"
+           id="tspan274"
+           sodipodi:role="line">overlays.</tspan>
+      </text>
+    </switch>
+  </g>
+</svg>

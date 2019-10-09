@@ -635,10 +635,10 @@ static int cc1200_tx(struct device *dev,
 	}
 
 	/* Wait for SYNC to be sent */
-	k_sem_take(&cc1200->tx_sync, 100);
+	k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	if (atomic_get(&cc1200->tx_start) == 1) {
 		/* Now wait for the packet to be fully sent */
-		k_sem_take(&cc1200->tx_sync, 100);
+		k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	}
 
 out:

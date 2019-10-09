@@ -124,7 +124,7 @@ static u16_t xec_select_div(u32_t freq, u32_t max_freq[16])
 static void xec_compute_on_off(u32_t freq, u32_t dc, u32_t clk,
 			       u32_t *on, u32_t *off)
 {
-	u32_t on_off;
+	u64_t on_off;
 
 	on_off = (clk * 10) / freq;
 

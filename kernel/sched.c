@@ -13,6 +13,7 @@
 #include <syscall_handler.h>
 #include <drivers/timer/system_timer.h>
 #include <stdbool.h>
+#include <kernel_internal.h>
 
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		z_priq_dumb_add
@@ -79,17 +80,6 @@ static inline bool is_thread_dummy(struct k_thread *thread)
 }
 #endif
 
-static inline bool is_idle(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	extern k_tid_t const _idle_thread;
-
-	return thread == _idle_thread;
-#endif
-}
-
 bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 {
 	if (t1->base.prio < t2->base.prio) {
@@ -152,7 +142,8 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
 	 * preemptible priorities (this is sort of an API glitch).
 	 * They must always be preemptible.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_ENABLED) && is_idle(_current)) {
+	if (!IS_ENABLED(CONFIG_PREEMPT_ENABLED) &&
+	    z_is_idle_thread_object(_current)) {
 		return true;
 	}
 
@@ -220,7 +211,8 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 
 	/* Put _current back into the queue */
-	if (th != _current && active && !is_idle(_current) && !queued) {
+	if (th != _current && active && !z_is_idle_thread_object(_current) &&
+	    !queued) {
 		_priq_run_add(&_kernel.ready_q.runq, _current);
 		z_mark_thread_as_queued(_current);
 	}
@@ -275,7 +267,7 @@ static inline int sliceable(struct k_thread *t)
 {
 	return is_preempt(t)
 		&& !z_is_prio_higher(t->base.prio, slice_max_prio)
-		&& !is_idle(t)
+		&& !z_is_idle_thread_object(t)
 		&& !z_is_thread_timeout_active(t);
 }
 
@@ -531,7 +523,7 @@ static inline int resched(u32_t key)
 	_current_cpu->swap_ok = 0;
 #endif
 
-	return z_arch_irq_unlocked(key) && !z_is_in_isr();
+	return z_arch_irq_unlocked(key) && !z_arch_is_in_isr();
 }
 
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
@@ -563,7 +555,7 @@ void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(_current->base.sched_locked != 0, "");
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
 	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
@@ -593,13 +585,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_out();
-#endif
 	_current = new_thread;
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
-#endif
 }
 
 #ifdef CONFIG_USE_SWITCH
@@ -649,7 +635,7 @@ ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 {
 	struct k_thread *t;
 
-	__ASSERT_NO_MSG(!is_idle(thread));
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
 		if (z_is_t1_higher_prio_than_t2(thread, t)) {
@@ -671,7 +657,7 @@ void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 	}
 #endif
 
-	__ASSERT_NO_MSG(!is_idle(thread));
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
 }
@@ -707,7 +693,7 @@ void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
 {
 	struct k_thread *t;
 
-	__ASSERT_NO_MSG(!is_idle(thread));
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	thread->base.order_key = pq->next_order_key++;
 
@@ -734,7 +720,7 @@ void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread)
 		return;
 	}
 #endif
-	__ASSERT_NO_MSG(!is_idle(thread));
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	rb_remove(&pq->tree, &thread->base.qnode_rb);
 
@@ -861,7 +847,7 @@ void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
 	struct k_thread *thread = (struct k_thread *)tid;
 
@@ -915,9 +901,9 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 
 void z_impl_k_yield(void)
 {
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
-	if (!is_idle(_current)) {
+	if (!z_is_idle_thread_object(_current)) {
 		LOCKED(&sched_spinlock) {
 			if (!IS_ENABLED(CONFIG_SMP) ||
 			    z_is_thread_queued(_current)) {
@@ -945,7 +931,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 #ifdef CONFIG_MULTITHREADING
 	u32_t expected_wakeup_time;
 
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
 	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
 
@@ -1032,7 +1018,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
-	if (!z_is_in_isr()) {
+	if (!z_arch_is_in_isr()) {
 		z_reschedule_unlocked();
 	}
 
@@ -1119,7 +1105,7 @@ static inline k_tid_t z_vrfy_k_current_get(void)
 
 int z_impl_k_is_preempt_thread(void)
 {
-	return !z_is_in_isr() && is_preempt(_current);
+	return !z_arch_is_in_isr() && is_preempt(_current);
 }
 
 #ifdef CONFIG_USERSPACE

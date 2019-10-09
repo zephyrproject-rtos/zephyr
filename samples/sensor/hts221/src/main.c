@@ -68,7 +68,7 @@ void main(void)
 
 	while (!IS_ENABLED(CONFIG_HTS221_TRIGGER)) {
 		process_sample(dev);
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 	k_sleep(K_FOREVER);
 }

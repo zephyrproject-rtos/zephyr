@@ -203,7 +203,7 @@ static void gptp_md_pdelay_check_multiple_resp(int port)
 		duration = GPTP_MULTIPLE_PDELAY_RESP_WAIT -
 			gptp_uscaled_ns_to_timer_ms(&port_ds->pdelay_req_itv);
 
-		k_timer_start(&state->pdelay_timer, duration, 0);
+		k_timer_start(&state->pdelay_timer, duration, K_NO_WAIT);
 	} else {
 		state->state = GPTP_PDELAY_REQ_SEND_REQ;
 	}
@@ -636,7 +636,7 @@ static void gptp_md_pdelay_req_state_machine(int port)
 		k_timer_start(&state->pdelay_timer,
 			      gptp_uscaled_ns_to_timer_ms(
 				      &port_ds->pdelay_req_itv),
-			      0);
+			      K_NO_WAIT);
 		/*
 		 * Transition directly to GPTP_PDELAY_REQ_WAIT_RESP.
 		 * Check for the TX timestamp will be done during

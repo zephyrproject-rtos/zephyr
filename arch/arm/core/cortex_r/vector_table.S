@@ -17,11 +17,11 @@
 _ASM_FILE_PROLOGUE
 
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
-	ldr	pc,	=__reset             /*                   offset 0 */
-	ldr	pc,	=__undef_instruction /* undef instruction offset 4 */
-	ldr	pc,	=__svc               /* svc               offset 8 */
-	ldr	pc,	=__prefetch_abort    /* prefetch abort offset  0xc */
-	ldr	pc,	=__data_abort        /* data abort     offset 0x10 */
-	nop                          /*                offset 0x14 */
-	ldr	pc,	=_isr_wrapper        /* IRQ            offset 0x18 */
-	ldr	pc,	=__nmi               /* FIQ            offset 0x1c */
+	ldr pc, =z_arm_reset             /*                   offset 0 */
+	ldr pc, =z_arm_undef_instruction /* undef instruction offset 4 */
+	ldr pc, =z_arm_svc               /* svc               offset 8 */
+	ldr pc, =z_arm_prefetch_abort    /* prefetch abort offset  0xc */
+	ldr pc, =z_arm_data_abort        /* data abort     offset 0x10 */
+	nop				 /*                offset 0x14 */
+	ldr pc, =_isr_wrapper		 /* IRQ            offset 0x18 */
+	ldr pc, =z_arm_nmi               /* FIQ            offset 0x1c */

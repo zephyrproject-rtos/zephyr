@@ -6,6 +6,7 @@
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>
+#include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>
 #include <Global.h>
@@ -29,7 +30,7 @@ void sys_trace_thread_switched_in(void)
 
 	thread = k_current_get();
 
-	if (is_idle_thread(thread)) {
+	if (z_is_idle_thread_object(thread)) {
 		SEGGER_SYSVIEW_OnIdle();
 	} else {
 		SEGGER_SYSVIEW_OnTaskStartExec((u32_t)(uintptr_t)thread);
@@ -69,7 +70,7 @@ static void send_task_list_cb(void)
 		char name[20];
 		const char *tname = k_thread_name_get(thread);
 
-		if (is_idle_thread(thread)) {
+		if (z_is_idle_thread_object(thread)) {
 			continue;
 		}
 

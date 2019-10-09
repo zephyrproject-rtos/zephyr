@@ -88,6 +88,13 @@ log_backend_std_sync_string(const struct log_output *const log_output,
 	}
 
 	key = irq_lock();
+	/* Even though interrupts are locked here there are still cases when
+	 * it may lead to failure. Log output is not re-entrant and irq_lock
+	 * does not prevent NMI or ZLI (Zero latency interrupts). If context
+	 * is interrupted by NMI it usually means fault scenario and best that
+	 * can be done is to flush the output and process new data.
+	 */
+	log_output_flush(log_output);
 	log_output_string(log_output, src_level, timestamp, fmt, ap, flags);
 	irq_unlock(key);
 }
@@ -120,6 +127,13 @@ log_backend_std_sync_hexdump(const struct log_output *const log_output,
 	}
 
 	key = irq_lock();
+	/* Even though interrupts are locked here there are still cases when
+	 * it may lead to failure. Log output is not re-entrant and irq_lock
+	 * does not prevent NMI or ZLI (Zero latency interrupts). If context
+	 * is interrupted by NMI it usually means fault scenario and best that
+	 * can be done is to flush the output and process new data.
+	 */
+	log_output_flush(log_output);
 	log_output_hexdump(log_output, src_level, timestamp,
 			metadata, data, length, flags);
 	irq_unlock(key);

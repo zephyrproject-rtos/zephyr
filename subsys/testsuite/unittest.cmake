@@ -34,7 +34,10 @@ list(APPEND INCLUDE
   .
 )
 
-set (CMAKE_C_FLAGS "-m32")
+if(CMAKE_HOST_APPLE)
+else()
+set (CMAKE_C_FLAGS "-m32") #deprecated on macOS
+endif()
 
 target_compile_options(testbinary PRIVATE
   -Wall

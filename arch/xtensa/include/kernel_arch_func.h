@@ -61,7 +61,7 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
@@ -83,13 +83,11 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 #endif
 }
 
-extern void k_cpu_atomic_idle(unsigned int key);
-
 #ifdef __cplusplus
 }
 #endif
 
-#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
+#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 

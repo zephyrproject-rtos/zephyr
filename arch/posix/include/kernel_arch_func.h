@@ -36,7 +36,7 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
  *
  * @return N/A
  */
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* Nothing to be done */
 }
@@ -44,7 +44,7 @@ static inline void kernel_arch_init(void)
 
 
 static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->callee_saved.retval = value;
 }
@@ -53,7 +53,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 }
 #endif
 
-#define z_is_in_isr() (_kernel.nested != 0U)
+#define z_arch_is_in_isr() (_kernel.nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 

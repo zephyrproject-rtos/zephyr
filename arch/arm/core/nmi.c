@@ -34,7 +34,7 @@ static _NmiHandler_t handler = z_SysNmiOnReset;
  * @brief Default NMI handler installed when kernel is up
  *
  * The default handler outputs a error message and reboots the target. It is
- * installed by calling z_NmiInit();
+ * installed by calling z_arm_nmi_init();
  *
  * @return N/A
  */
@@ -57,7 +57,7 @@ static void DefaultHandler(void)
  * @return N/A
  */
 
-void z_NmiInit(void)
+void z_arm_nmi_init(void)
 {
 	handler = DefaultHandler;
 }
@@ -88,8 +88,8 @@ void z_NmiHandlerSet(void (*pHandler)(void))
  * @return N/A
  */
 
-void __nmi(void)
+void z_arm_nmi(void)
 {
 	handler();
-	z_ExcExit();
+	z_arm_exc_exit();
 }

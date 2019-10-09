@@ -79,10 +79,12 @@
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @rsalveti @idlethread
+/boards/arm/qemu_cortex_m*/               @ioannisg
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
 /boards/arm/sensortile_box/               @avisconti
+/boards/arm/steval_fcu001v1/              @Navin-Sankar
 /boards/arm/stm32*_disco/                 @erwango
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango
@@ -116,6 +118,7 @@
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
+/drivers/clock_control/*nrf*              @nordic-krch
 /drivers/counter/                         @nordic-krch
 /drivers/counter/counter_cmos.c           @gnuless
 /drivers/display/                         @vanwinkeljan
@@ -217,6 +220,7 @@
 /include/drivers/can.h                    @alexanderwachter
 /include/drivers/counter.h                @nordic-krch
 /include/drivers/display.h                @vanwinkeljan
+/include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @andrewboie @gnuless
@@ -255,7 +259,6 @@
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
-/include/espi.h                           @albertofloyd @franciscomunoz @scottwcpg
 /include/kernel.h                         @andrewboie @andyross
 /include/kernel_version.h                 @andrewboie @andyross
 /include/linker/app_smem*.ld              @andrewboie

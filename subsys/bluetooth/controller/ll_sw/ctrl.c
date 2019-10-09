@@ -2274,58 +2274,76 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+static inline void
+isr_rx_conn_pkt_ctrl_rej_enc(struct radio_pdu_node_rx *node_rx,
+			     u8_t *rx_enqueue)
+{
+	/* resume data packet rx and tx */
+	_radio.conn_curr->pause_rx = 0U;
+	_radio.conn_curr->pause_tx = 0U;
+
+	/* Procedure complete */
+	_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
+	_radio.conn_curr->procedure_expire = 0U;
+
+	*rx_enqueue = 1U;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
-	if (0) {
-#if defined(CONFIG_BT_CTLR_PHY)
-	} else if (_radio.conn_curr->llcp_phy.ack !=
-		   _radio.conn_curr->llcp_phy.req) {
-		isr_rx_conn_pkt_ctrl_rej_phy_upd(node_rx, rx_enqueue);
-#endif /* CONFIG_BT_CTLR_PHY */
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+	struct pdu_data *pdu_rx;
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	} else if (_radio.conn_curr->llcp_conn_param.ack !=
-		   _radio.conn_curr->llcp_conn_param.req) {
-		isr_rx_conn_pkt_ctrl_rej_conn_upd(node_rx, rx_enqueue);
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	pdu_rx = (void *)node_rx->pdu_data;
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	} else if (_radio.conn_curr->llcp_length.ack !=
-		   _radio.conn_curr->llcp_length.req) {
-		isr_rx_conn_pkt_ctrl_rej_dle(node_rx, rx_enqueue);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
+	switch (rej_ext_ind->reject_opcode) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	} else {
-		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
-		struct pdu_data *pdu_rx;
-
-		pdu_rx = (void *)node_rx->pdu_data;
-		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-
-		switch (rej_ext_ind->reject_opcode) {
-		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-			/* resume data packet rx and tx */
-			_radio.conn_curr->pause_rx = 0U;
-			_radio.conn_curr->pause_tx = 0U;
-
-			/* Procedure complete */
-			_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-			_radio.conn_curr->procedure_expire = 0U;
-
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req &&
+		    _radio.conn_curr->llcp_type == LLCP_ENCRYPTION) {
 			/* enqueue as if it were a reject ind */
 			pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
 			pdu_rx->llctrl.reject_ind.error_code =
 				rej_ext_ind->error_code;
-			*rx_enqueue = 1U;
-			break;
 
-		default:
-			/* Ignore */
-			break;
+			isr_rx_conn_pkt_ctrl_rej_enc(node_rx, rx_enqueue);
 		}
+		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		if (_radio.conn_curr->llcp_phy.ack !=
+		    _radio.conn_curr->llcp_phy.req) {
+			isr_rx_conn_pkt_ctrl_rej_phy_upd(node_rx, rx_enqueue);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
+		if (_radio.conn_curr->llcp_conn_param.ack !=
+		    _radio.conn_curr->llcp_conn_param.req) {
+			isr_rx_conn_pkt_ctrl_rej_conn_upd(node_rx, rx_enqueue);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
+		if (_radio.conn_curr->llcp_length.ack !=
+		    _radio.conn_curr->llcp_length.req) {
+			isr_rx_conn_pkt_ctrl_rej_dle(node_rx, rx_enqueue);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	default:
+		/* Ignore */
+		break;
 	}
 }
 
@@ -2930,16 +2948,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
-		/* resume data packet rx and tx */
-		_radio.conn_curr->pause_rx = 0U;
-		_radio.conn_curr->pause_tx = 0U;
-
-		/* Procedure complete */
-		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-		_radio.conn_curr->procedure_expire = 0U;
-
-		/* enqueue the reject ind */
-		*rx_enqueue = 1U;
+		isr_rx_conn_pkt_ctrl_rej_enc(node_rx, rx_enqueue);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 

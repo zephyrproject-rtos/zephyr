@@ -45,13 +45,14 @@ config X86_LONGMODE
 	prompt "Run in long (64-bit) mode"
 	default n
 	select 64BIT
-	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select SCHED_IPI_SUPPORTED
 
 config MAX_IRQ_LINES
 	int "Number of IRQ lines"
 	default 128
-	range 0 256
+	range 0 224
 	help
 	  This option specifies the number of IRQ lines in the system. It
 	  determines the size of the _irq_to_interrupt_vector_table, which
@@ -82,7 +83,21 @@ choice
 		  Reboot via the RST_CNT register, going back to BIOS.
 endchoice
 
-config X86_MULTIBOOT
+config ACPI
+	bool "ACPI (Advanced Configuration and Power Interface) support"
+	default n
+	help
+	  Allow retrieval of platform configuration at runtime.
+
+config X86_MEMMAP_ENTRIES
+	int "Number of memory map entries"
+	range 1 256
+	default 1 if !MULTIBOOT_MEMMAP
+	default 64 if MULTIBOOT_MEMMAP
+	help
+	  Maximum number of memory regions to hold in the memory map.
+
+config MULTIBOOT
 	bool "Generate multiboot header"
 	default y
 	help
@@ -91,9 +106,10 @@ config X86_MULTIBOOT
 	  to leave this option on if you're not sure. It only expands the
 	  text segment by 12-16 bytes and is typically ignored if not needed.
 
-config X86_MULTIBOOT_INFO
+if MULTIBOOT
+
+config MULTIBOOT_INFO
 	bool "Preserve multiboot information structure"
-	depends on X86_MULTIBOOT
 	default n
 	help
 	  Multiboot passes a pointer to an information structure to the
@@ -101,28 +117,33 @@ config X86_MULTIBOOT_INFO
 	  display driver) need to refer to information in this structure,
 	  and so set this option to preserve the data in a permanent location.
 
-if X86_MULTIBOOT
+config MULTIBOOT_MEMMAP
+	bool "Use multiboot memory map if provided"
+	default n
+	select MULTIBOOT_INFO
+	help
+	  Use the multiboot memory map if the loader provides one.
 
-config X86_MULTIBOOT_FRAMEBUF
+config MULTIBOOT_FRAMEBUF
 	bool "Multiboot framebuffer support"
 	default n
 	select DISPLAY
 	select FRAMEBUF_DISPLAY
-	select X86_MULTIBOOT_INFO
+	select MULTIBOOT_INFO
 
-if X86_MULTIBOOT_FRAMEBUF
+if MULTIBOOT_FRAMEBUF
 
-config X86_MULTIBOOT_FRAMEBUF_X
+config MULTIBOOT_FRAMEBUF_X
 	int "Multiboot framebuffer X pixels"
 	default 640
 
-config X86_MULTIBOOT_FRAMEBUF_Y
+config MULTIBOOT_FRAMEBUF_Y
 	int "Multiboot framebuffer Y pixels"
 	default 480
 
-endif # X86_MULTIBOOT_FRAMEBUF
+endif # MULTIBOOT_FRAMEBUF
 
-endif # X86_MULTIBOOT
+endif # MULTIBOOT
 
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
@@ -131,7 +152,7 @@ config X86_VERY_EARLY_CONSOLE
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
 	  very minimal serial driver which gets initialized at the very
-	  beginning of z_cstart(), via kernel_arch_init(). This driver enables
+	  beginning of z_cstart(), via z_arch_kernel_init(). This driver enables
 	  printk to emit messages to the 16550 UART port 0 instance in device
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
 

@@ -76,6 +76,13 @@ Examples
 
 Here are some ``west build`` usage examples, grouped by area.
 
+Forcing CMake to Run Again
+--------------------------
+
+To force a CMake re-run, use the ``--cmake`` (or ``--c``) option::
+
+  west build -c
+
 Setting a Default Board
 -----------------------
 
@@ -110,11 +117,8 @@ With the above, running ``west build -b reel_board samples/hello_world`` will
 use build directory :file:`build/reel_board/hello_world`.  See
 :ref:`west-building-config` for more details on this option.
 
-Controlling the Build System
-----------------------------
-
-There are several ways to control the build system generated and used by ``west
-build``.
+Setting the Build System Target
+-------------------------------
 
 To specify the build system target to run, use ``--target`` (or ``-t``).
 
@@ -133,10 +137,16 @@ all the files in the build directory::
 
   west build -t pristine
 
-To have ``west build`` run the ``pristine`` target before re-running CMake to
-generate a build system, use the ``--pristine`` (or ``-p``) option. For
-example, to switch board and application (which requires a pristine build
-directory) in one command::
+Pristine Builds
+---------------
+
+A *pristine* build directory is essentially a new build directory. All
+byproducts from previous builds have been removed.
+
+To have ``west build`` make the build directory pristine before re-running
+CMake to generate a build system, use the ``--pristine`` (or ``-p``)
+option. For example, to switch board and application (which requires a pristine
+build directory) in one command::
 
   west build -b qemu_x86 samples/philosophers
   west build -p -b reel_board samples/hello_world
@@ -151,22 +161,28 @@ To let west decide for you if a pristine build is needed, use ``-p auto``::
    permanent.
 
 .. _west-building-generator:
+.. _west-building-cmake-args:
 
-To add additional arguments to the CMake invocation performed by ``west
+Additional CMake Arguments
+--------------------------
+
+To pass additional arguments to the CMake invocation performed by ``west
 build``, pass them after a ``--`` at the end of the command line.
+
+.. important::
+
+   Passing additional CMake arguments like this forces ``west build`` to re-run
+   CMake, even if a build system has already been generated.
+
+   After using ``--`` once to generate the build directory, use ``west build -d
+   <build-dir>`` on subsequent runs to do incremental builds.
 
 For example, to use the Unix Makefiles CMake generator instead of Ninja (which
 ``west build`` uses by default), run::
 
   west build -b reel_board -- -G'Unix Makefiles'
 
-.. note::
-
-   Passing additional CMake arguments like this forces ``west build`` to re-run
-   CMake, even if a build system has already been generated.
-
-As another example, to use Unix Makefiles and enable the
-`CMAKE_VERBOSE_MAKEFILE`_ option::
+To use Unix Makefiles and set `CMAKE_VERBOSE_MAKEFILE`_ to ``ON``::
 
   west build -b reel_board -- -G'Unix Makefiles' -DCMAKE_VERBOSE_MAKEFILE=ON
 
@@ -174,14 +190,15 @@ Notice how the ``--`` only appears once, even though multiple CMake arguments
 are given. All command-line arguments to ``west build`` after a ``--`` are
 passed to CMake.
 
-As a final example, to merge the :file:`file.conf` Kconfig fragment into your
-build's :file:`.config`::
+To set :ref:`DTC_OVERLAY_FILE <application_dt>` to :file:`enable-modem.overlay`,
+using that file as a :ref:`devicetree overlay <device-tree>`::
+
+  west build -b reel_board -- -DDTC_OVERLAY_FILE=enable-modem.overlay
+
+To merge the :file:`file.conf` Kconfig fragment into your build's
+:file:`.config`::
 
   west build -- -DOVERLAY_CONFIG=file.conf
-
-To force a CMake re-run, use the ``--cmake`` (or ``--c``) option::
-
-  west build -c
 
 .. _west-building-config:
 

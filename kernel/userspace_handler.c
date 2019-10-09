@@ -20,7 +20,7 @@ static struct _k_object *validate_any_object(void *obj)
 	 */
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_ANY);
 	if (ret != 0) {
-#ifdef CONFIG_PRINTK
+#ifdef CONFIG_LOG
 		z_dump_object_error(ret, obj, ko, K_OBJ_ANY);
 #endif
 		return NULL;

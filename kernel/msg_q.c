@@ -110,7 +110,7 @@ void k_msgq_cleanup(struct k_msgq *msgq)
 
 int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
 {
-	__ASSERT(!z_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!z_arch_is_in_isr() || timeout == K_NO_WAIT, "");
 
 	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
@@ -126,7 +126,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
 			(void)memcpy(pending_thread->base.swap_data, data,
 			       msgq->msg_size);
 			/* wake up waiting thread */
-			z_set_thread_return_value(pending_thread, 0);
+			z_arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
 			z_reschedule(&msgq->lock, key);
 			return 0;
@@ -185,7 +185,7 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *q,
 
 int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
 {
-	__ASSERT(!z_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!z_arch_is_in_isr() || timeout == K_NO_WAIT, "");
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;
@@ -215,7 +215,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
 			msgq->used_msgs++;
 
 			/* wake up waiting thread */
-			z_set_thread_return_value(pending_thread, 0);
+			z_arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
 			z_reschedule(&msgq->lock, key);
 			return 0;
@@ -287,7 +287,7 @@ void z_impl_k_msgq_purge(struct k_msgq *msgq)
 
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = z_unpend_first_thread(&msgq->wait_q)) != NULL) {
-		z_set_thread_return_value(pending_thread, -ENOMSG);
+		z_arch_thread_return_value_set(pending_thread, -ENOMSG);
 		z_ready_thread(pending_thread);
 	}
 

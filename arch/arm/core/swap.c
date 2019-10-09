@@ -17,35 +17,35 @@ extern const int _k_neg_eagain;
  *
  * @brief Initiate a cooperative context switch
  *
- * The __swap() routine is invoked by various kernel services to effect
- * a cooperative context context switch.  Prior to invoking __swap(), the caller
+ * The z_arch_swap() routine is invoked by various kernel services to effect
+ * a cooperative context context switch.  Prior to invoking z_arch_swap(), the caller
  * disables interrupts via irq_lock() and the return 'key' is passed as a
- * parameter to __swap().  The 'key' actually represents the BASEPRI register
+ * parameter to z_arch_swap().  The 'key' actually represents the BASEPRI register
  * prior to disabling interrupts via the BASEPRI mechanism.
  *
- * __swap() itself does not do much.
+ * z_arch_swap() itself does not do much.
  *
  * It simply stores the intlock key (the BASEPRI value) parameter into
  * current->basepri, and then triggers a PendSV exception, which does
  * the heavy lifting of context switching.
 
  * This is the only place we have to save BASEPRI since the other paths to
- * __pendsv all come from handling an interrupt, which means we know the
+ * z_arm_pendsv all come from handling an interrupt, which means we know the
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
- * Given that __swap() is called to effect a cooperative context switch,
+ * Given that z_arch_swap() is called to effect a cooperative context switch,
  * only the caller-saved integer registers need to be saved in the thread of the
  * outgoing thread. This is all performed by the hardware, which stores it in
- * its exception stack frame, created when handling the __pendsv exception.
+ * its exception stack frame, created when handling the z_arm_pendsv exception.
  *
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
  *
  * @return -EAGAIN, or a return value set by a call to
- * z_set_thread_return_value()
+ * z_arch_thread_return_value_set()
  *
  */
-int __swap(int key)
+int z_arch_swap(unsigned int key)
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	read_timer_start_of_swap();
@@ -62,7 +62,7 @@ int __swap(int key)
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
 #elif defined(CONFIG_CPU_CORTEX_R)
-	cortex_r_svc();
+	z_arm_cortex_r_svc();
 	irq_unlock(key);
 #endif
 

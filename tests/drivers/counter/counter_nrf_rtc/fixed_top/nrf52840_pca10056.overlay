@@ -1,0 +1,6 @@
+&rtc0 {
+	fixed-top;
+};
+&rtc2 {
+	fixed-top;
+};

@@ -58,7 +58,7 @@ void main(void)
 		if (IS_ENABLED(CONFIG_ADXL362_TRIGGER)) {
 			k_sem_take(&sem, K_FOREVER);
 		} else {
-			k_sleep(1000);
+			k_sleep(K_MSEC(1000));
 			if (sensor_sample_fetch(dev) < 0) {
 				printf("Sample fetch error\n");
 				return;

@@ -260,7 +260,7 @@ void main(void)
 	for (i = 0; i < 6; i++) {
 		gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, on);
 		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, !on);
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 		on = (on == 1) ? 0 : 1;
 	}
 
@@ -441,7 +441,7 @@ void main(void)
 		printk("%d:: iis3dhhc trig %d\n", cnt, iis3dhhc_trig_cnt);
 #endif
 
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }
 

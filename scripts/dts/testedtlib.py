@@ -3,6 +3,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import sys
 
 import edtlib
@@ -34,7 +35,18 @@ def run():
     def verify_streq(actual, expected):
         verify_eq(str(actual), expected)
 
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    warnings = io.StringIO()
+    edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
+
+    # Deprecated features are tested too, which generate warnings. Verify them.
+    verify_eq(warnings.getvalue(), """\
+warning: The 'properties: compatible: constraint: ...' way of specifying the compatible in test-bindings/deprecated.yaml is deprecated. Put 'compatible: "deprecated"' at the top level of the binding instead.
+warning: the 'inherits:' syntax in test-bindings/deprecated.yaml is deprecated and will be removed - please use 'include: foo.yaml' or 'include: [foo.yaml, bar.yaml]' instead
+warning: please put 'required: true' instead of 'category: required' in properties: required: ...' in test-bindings/deprecated.yaml - 'category' will be removed
+warning: please put 'required: false' instead of 'category: optional' in properties: optional: ...' in test-bindings/deprecated.yaml - 'category' will be removed
+warning: 'sub-node: properties: ...' in test-bindings/deprecated.yaml is deprecated and will be removed - please give a full binding for the child node in 'child-binding:' instead (see binding-template.yaml)
+warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be removed - please put 'interrupt-cells:', 'pwm-cells:', 'gpio-cells:', etc., instead. The name should match the name of the corresponding phandle-array property (see binding-template.yaml)
+""")
 
     #
     # Test interrupts
@@ -129,11 +141,12 @@ def run():
     verify_streq(grandchild.props, "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}")
 
     #
-    # Test deprecated 'sub-node:' key (replaced with 'child-binding:')
+    # Test deprecated 'sub-node' key (replaced with 'child-binding') and
+    # deprecated '#cells' key (replaced with '*-cells')
     #
 
     verify_streq(edt.get_node("/deprecated/sub-node").props,
-                 "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
+                 "{'foos': <Property, name: foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /deprecated in 'test.dts', binding test-bindings/deprecated.yaml>, data: {'foo': 1, 'bar': 2}>]>}")
 
     #
     # Test Node.props (derived from DT and 'properties:' in the binding)
@@ -170,7 +183,7 @@ def run():
                  "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: {'one': 2, 'two': 3}>]>")
 
     verify_streq(edt.get_node("/props").props["foo-gpios"],
-                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>]>")
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'gpio-one': 1}>]>")
 
     #
     # Test <prefix>-map, via gpio-map (the most common case)

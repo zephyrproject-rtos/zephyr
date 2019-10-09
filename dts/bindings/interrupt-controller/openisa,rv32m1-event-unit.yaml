@@ -18,5 +18,5 @@ properties:
   "#interrupt-cells":
       const: 1
 
-"#cells":
+interrupt-cells:
   - irq

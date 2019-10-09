@@ -10,9 +10,9 @@
  *
  * This function always exits with interrupts unlocked.
  *
- * void k_cpu_idle(void)
+ * void z_arch_cpu_idle(void)
  */
-void k_cpu_idle(void)
+void z_arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile ("waiti 0");
@@ -22,9 +22,9 @@ void k_cpu_idle(void)
  *
  * This function exits with interrupts restored to <key>.
  *
- * void k_cpu_atomic_idle(unsigned int key)
+ * void z_arch_cpu_atomic_idle(unsigned int key)
  */
-void k_cpu_atomic_idle(unsigned int key)
+void z_arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 	__asm__ volatile ("waiti 0\n\t"

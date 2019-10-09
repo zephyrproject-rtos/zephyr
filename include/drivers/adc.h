@@ -354,7 +354,7 @@ __syscall int adc_read(struct device *dev,
 		       const struct adc_sequence *sequence);
 
 static inline int z_impl_adc_read(struct device *dev,
-			   const struct adc_sequence *sequence)
+				  const struct adc_sequence *sequence)
 {
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->driver_api;

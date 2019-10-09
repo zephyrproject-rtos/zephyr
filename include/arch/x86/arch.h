@@ -266,7 +266,7 @@ static inline u64_t z_tsc_read(void)
 	return rv.value;
 }
 
-static ALWAYS_INLINE void arch_nop(void)
+static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

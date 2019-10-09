@@ -24,10 +24,10 @@ struct device;
 struct z_arch_esf_t {
 };
 
-void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
-		 size_t sz, k_thread_entry_t entry,
-		 void *p1, void *p2, void *p3,
-		 int prio, unsigned int opts)
+void z_arch_new_thread(struct k_thread *t, k_thread_stack_t *stack,
+		       size_t sz, k_thread_entry_t entry,
+		       void *p1, void *p2, void *p3,
+		       int prio, unsigned int opts)
 {
 	void *args[] = { entry, p1, p2, p3 };
 	int nargs = 4;
@@ -43,7 +43,7 @@ void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 						   nargs);
 }
 
-void k_cpu_idle(void)
+void z_arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile("sti; hlt");
@@ -107,7 +107,7 @@ static void irq_offload_handler(void *arg, int err)
 	offload_fn(offload_arg);
 }
 
-void irq_offload(irq_offload_routine_t fn, void *arg)
+void z_arch_irq_offload(irq_offload_routine_t fn, void *arg)
 {
 	offload_fn = fn;
 	offload_arg = arg;

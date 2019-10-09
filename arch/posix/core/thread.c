@@ -41,10 +41,10 @@
  * pthreads stack and therefore we ignore the stack size
  *
  */
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		size_t stack_size, k_thread_entry_t thread_func,
-		void *arg1, void *arg2, void *arg3,
-		int priority, unsigned int options)
+void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		       size_t stack_size, k_thread_entry_t thread_func,
+		       void *arg1, void *arg2, void *arg3,
+		       int priority, unsigned int options)
 {
 
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);

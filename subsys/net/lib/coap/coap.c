@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <random/rand32.h>
+#include <atomic.h>
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
@@ -44,6 +46,9 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define COAP_MARKER		0xFF
 
 #define BASIC_HEADER_SIZE	4
+
+/* The CoAP message ID that is incremented each time coap_next_id() is called. */
+static u16_t message_id;
 
 static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
 {
@@ -1396,4 +1401,26 @@ struct coap_observer *coap_find_observer_by_addr(
 	}
 
 	return NULL;
+}
+
+/**
+ * @brief Internal initialization function for CoAP library.
+ *
+ * Called by the network layer init procedure. Seeds the CoAP @message_id with a
+ * random number in accordance with recommendations in CoAP specification.
+ *
+ * @note This function is not exposed in a public header, as it's for internal
+ * use and should therefore not be exposed to applications.
+ *
+ * @return N/A
+ */
+void net_coap_init(void)
+{
+	/* Initialize message_id to a random number */
+	message_id = (u16_t)sys_rand32_get();
+}
+
+u16_t coap_next_id(void)
+{
+	return message_id++;
 }

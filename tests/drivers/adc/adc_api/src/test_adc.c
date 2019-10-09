@@ -247,8 +247,7 @@ static void check_samples(int expected_count)
 	TC_PRINT("\n");
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_sample_one_channel
  */
 static int test_task_one_channel(void)
@@ -274,13 +273,13 @@ static int test_task_one_channel(void)
 
 	return TC_PASS;
 }
+
 void test_adc_sample_one_channel(void)
 {
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_sample_two_channels
  */
 #if defined(ADC_2ND_CHANNEL_ID)
@@ -319,8 +318,7 @@ void test_adc_sample_two_channels(void)
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_asynchronous_call
  */
 #if defined(CONFIG_ADC_ASYNC)
@@ -362,6 +360,7 @@ static int test_task_asynchronous_call(void)
 	return TC_PASS;
 }
 #endif /* defined(CONFIG_ADC_ASYNC) */
+
 void test_adc_asynchronous_call(void)
 {
 #if defined(CONFIG_ADC_ASYNC)
@@ -371,8 +370,7 @@ void test_adc_asynchronous_call(void)
 #endif /* defined(CONFIG_ADC_ASYNC) */
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_sample_with_interval
  */
 static enum adc_action sample_with_interval_callback(
@@ -383,6 +381,7 @@ static enum adc_action sample_with_interval_callback(
 	TC_PRINT("%s: sampling %d\n", __func__, sampling_index);
 	return ADC_ACTION_CONTINUE;
 }
+
 static int test_task_with_interval(void)
 {
 	int ret;
@@ -412,13 +411,13 @@ static int test_task_with_interval(void)
 
 	return TC_PASS;
 }
+
 void test_adc_sample_with_interval(void)
 {
 	zassert_true(test_task_with_interval() == TC_PASS, NULL);
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_repeated_samplings
  */
 static u8_t m_samplings_done;
@@ -457,6 +456,7 @@ static enum adc_action repeated_samplings_callback(
 		}
 	}
 }
+
 static int test_task_repeated_samplings(void)
 {
 	int ret;
@@ -497,13 +497,13 @@ static int test_task_repeated_samplings(void)
 
 	return TC_PASS;
 }
+
 void test_adc_repeated_samplings(void)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
 }
 
-
-/*******************************************************************************
+/*
  * test_adc_invalid_request
  */
 static int test_task_invalid_request(void)
@@ -542,6 +542,7 @@ static int test_task_invalid_request(void)
 
 	return TC_PASS;
 }
+
 void test_adc_invalid_request(void)
 {
 	zassert_true(test_task_invalid_request() == TC_PASS, NULL);

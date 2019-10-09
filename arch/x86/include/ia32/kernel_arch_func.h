@@ -41,7 +41,7 @@ void z_x86_paging_init(void);
  *
  * @return N/A
  */
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* No-op on this arch */
 }
@@ -60,14 +60,14 @@ static inline void kernel_arch_init(void)
  * @return N/A
  */
 static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	/* write into 'eax' slot created in z_swap() entry */
 
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void k_cpu_atomic_idle(unsigned int key);
+extern void z_arch_cpu_atomic_idle(unsigned int key);
 
 #ifdef CONFIG_USERSPACE
 extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
@@ -77,15 +77,16 @@ extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
 
 void z_x86_thread_pt_init(struct k_thread *thread);
 
-void z_x86_apply_mem_domain(struct x86_mmu_pdpt *pdpt,
+void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
 			    struct k_mem_domain *mem_domain);
 
-static inline struct x86_mmu_pdpt *z_x86_pdpt_get(struct k_thread *thread)
+static inline struct x86_page_tables *
+z_x86_thread_page_tables_get(struct k_thread *thread)
 {
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
-	return &header->kernel_data.pdpt;
+	return &header->kernel_data.ptables;
 }
 #endif /* CONFIG_USERSPACE */
 

@@ -1,0 +1,291 @@
+.. _smp_arch:
+
+Symmetric Multiprocessing
+#########################
+
+On multiprocessor architectures, Zephyr supports the use of multiple
+physical CPUs running Zephyr application code.  This support is
+"symmetric" in the sense that no specific CPU is treated specially by
+default.  Any processor is capable of running any Zephyr thread, with
+access to all standard Zephyr APIs supported.
+
+No special application code needs to be written to take advantage of
+this feature.  If there are two Zephyr application threads runnable on
+a supported dual processor device, they will both run simultaneously.
+
+SMP configuration is controlled under the :option:`CONFIG_SMP` kconfig
+variable.  This must be set to "y" to enable SMP features, otherwise
+a uniprocessor kernel will be built.  In general the platform default
+will have enabled this anywhere it's supported. When enabled, the
+number of physical CPUs available is visible at build time as
+:option:`CONFIG_MP_NUM_CPUS`.  Likewise, the default for this will be the
+number of available CPUs on the platform and it is not expected that
+typical apps will change it.  But it is legal and supported to set
+this to a smaller (but obviously not larger) number for special
+purposes (e.g. for testing, or to reserve a physical CPU for running
+non-Zephyr code).
+
+Synchronization
+***************
+
+At the application level, core Zephyr IPC and synchronization
+primitives all behave identically under an SMP kernel.  For example
+semaphores used to implement blocking mutual exclusion continue to be
+a proper application choice.
+
+At the lowest level, however, Zephyr code has often used the
+``irq_lock()``/``irq_unlock()`` primitives to implement fine grained
+critical sections using interrupt masking.  These APIs continue to
+work via an emulation layer (see below), but the masking technique
+does not: the fact that your CPU will not be interrupted while you are
+in your critical section says nothing about whether a different CPU
+will be running simultaneously and be inspecting or modifying the same
+data!
+
+Spinlocks
+=========
+
+SMP systems provide a more constrained ``k_spin_lock()`` primitive
+that not only masks interrupts locally, as done by ``irq_lock()``, but
+also atomically validates that a shared lock variable has been
+modified before returning to the caller, "spinning" on the check if
+needed to wait for the other CPU to exit the lock.  The default Zephyr
+implementation of ``k_spin_lock()`` and ``k_spin_unlock()`` is built
+on top of the pre-existing ``atomic_t`` layer (itself usually
+implemented using compiler intrinsics), though facilities exist for
+architectures to define their own for performance reasons.
+
+One important difference between IRQ locks and spinlocks is that the
+earlier API was naturally recursive: the lock was global, so it was
+legal to acquire a nested lock inside of a critical section.
+Spinlocks are separable: you can have many locks for separate
+subsystems or data structures, preventing CPUs from contending on a
+single global resource.  But that means that spinlocks must not be
+used recursively.  Code that holds a specific lock must not try to
+re-acquire it or it will deadlock (it is perfectly legal to nest
+**distinct** spinlocks, however).  A validation layer is available to
+detect and report bugs like this.
+
+When used on a uniprocessor system, the data component of the spinlock
+(the atomic lock variable) is unnecessary and elided.  Except for the
+recursive semantics above, spinlocks in single-CPU contexts produce
+identical code to legacy IRQ locks.  In fact the entirety of the
+Zephyr core kernel has now been ported to use spinlocks exclusively.
+
+Legacy irq_lock() emulation
+===========================
+
+For the benefit of applications written to the uniprocessor locking
+API, ``irq_lock()`` and ``irq_unlock()`` continue to work compatibly on
+SMP systems with identical semantics to their legacy versions.  They
+are implemented as a single global spinlock, with a nesting count and
+the ability to be atomically reacquired on context switch into locked
+threads.  The kernel will ensure that only one thread across all CPUs
+can hold the lock at any time, that it is released on context switch,
+and that it is re-acquired when necessary to restore the lock state
+when a thread is switched in.  Other CPUs will spin waiting for the
+release to happen.
+
+The overhead involved in this process has measurable performance
+impact, however.  Unlike uniprocessor apps, SMP apps using
+``irq_lock()`` are not simply invoking a very short (often ~1
+instruction) interrupt masking operation.  That, and the fact that the
+IRQ lock is global, means that code expecting to be run in an SMP
+context should be using the spinlock API wherever possible.
+
+CPU Mask
+********
+
+It is often desirable for real time applications to deliberately
+partition work across physical CPUs instead of relying solely on the
+kernel scheduler to decide on which threads to execute.  Zephyr
+provides an API, controlled by the :option:`CONFIG_SCHED_CPU_MASK`
+kconfig variable, which can associate a specific set of CPUs with each
+thread, indicating on which CPUs it can run.
+
+By default, new threads can run on any CPU.  Calling
+``k_thread_cpu_mask_disable()`` with a particular CPU ID will prevent
+that thread from running on that CPU in the future.  Likewise
+``k_thread_cpu_mask_enable()`` will re-enable execution.  There are also
+``k_thread_cpu_mask_clear()`` and ``k_thread_cpu_mask_enable_all()`` APIs
+available for convenience.  For obvious reasons, these APIs are
+illegal if called on a runnable thread.  The thread must be blocked or
+suspended, otherwise an ``-EINVAL`` will be returned.
+
+Note that when this feature is enabled, the scheduler algorithm
+involved in doing the per-CPU mask test requires that the list be
+traversed in full.  The kernel does not keep a per-CPU run queue.
+That means that the performance benefits from the
+:option:`CONFIG_SCHED_SCALABLE` and :option:`CONFIG_SCHED_MULTIQ`
+scheduler backends cannot be realized.  CPU mask processing is
+available only when :option:`CONFIG_SCHED_DUMB` is the selected
+backend.  This requirement is enforced in the configuration layer.
+
+SMP Boot Process
+****************
+
+A Zephyr SMP kernel begins boot identically to a uniprocessor kernel.
+Auxiliary CPUs begin in a disabled state in the architecture layer.
+All standard kernel initialization, including device initialization,
+happens on a single CPU before other CPUs are brought online.
+
+Just before entering the application ``main()`` function, the kernel
+calls ``z_smp_init()`` to launch the SMP initialization process.  This
+enumerates over the configured CPUs, calling into the architecture
+layer using ``z_arch_start_cpu()`` for each one.  This function is
+passed a memory region to use as a stack on the foreign CPU (in
+practice it uses the area that will become that CPU's interrupt
+stack), the address of a local ``smp_init_top()`` callback function to
+run on that CPU, and a pointer to a "start flag" address which will be
+used as an atomic signal.
+
+The local SMP initialization (``smp_init_top()``) on each CPU is then
+invoked by the architecture layer.  Note that interrupts are still
+masked at this point.  This routine is responsible for calling
+``smp_timer_init()`` to set up any needed stat in the timer driver.  On
+many architectures the timer is a per-CPU device and needs to be
+configured specially on auxiliary CPUs.  Then it waits (spinning) for
+the atomic "start flag" to be released in the main thread, to
+guarantee that all SMP initialization is complete before any Zephyr
+application code runs, and finally calls ``z_swap()`` to transfer
+control to the appropriate runnable thread via the standard scheduler
+API.
+
+Interprocessor Interrupts
+*************************
+
+When running in multiprocessor environments, it is occasionally the
+case that state modified on the local CPU needs to be synchronously
+handled on a different processor.
+
+One example is the Zephyr ``k_thread_abort()`` API, which cannot return
+until the thread that had been aborted is no longer runnable.  If it
+is currently running on another CPU, that becomes difficult to
+implement.
+
+Another is low power idle.  It is a firm requirement on many devices
+that system idle be implemented using a low-power mode with as many
+interrupts (including periodic timer interrupts) disabled or deferred
+as is possible.  If a CPU is in such a state, and on another CPU a
+thread becomes runnable, the idle CPU has no way to "wake up" to
+handle the newly-runnable load.
+
+So where possible, Zephyr SMP architectures should implement an
+interprocessor interrupt.  The current framework is very simple: the
+architecture provides a ``z_arch_sched_ipi()`` call, which when invoked
+will flag an interrupt on all CPUs (except the current one, though
+that is allowed behavior) which will then invoke the ``z_sched_ipi()``
+function implemented in the scheduler.  The expectation is that these
+APIs will evolve over time to encompass more functionality
+(e.g. cross-CPU calls), and that the scheduler-specific calls here
+will be implemented in terms of a more general framework.
+
+Note that not all SMP architectures will have a usable IPI mechanism
+(either missing, or just undocumented/unimplemented).  In those cases
+Zephyr provides fallback behavior that is correct, but perhaps
+suboptimal.
+
+Using this, ``k_thread_abort()`` becomes only slightly more
+complicated in SMP: for the case where a thread is actually running on
+another CPU (we can detect this atomically inside the scheduler), we
+broadcast an IPI and spin, waiting for the thread to either become
+"DEAD" or for it to re-enter the queue (in which case we terminate it
+the same way we would have in uniprocessor mode).  Note that the
+"aborted" check happens on any interrupt exit, so there is no special
+handling needed in the IPI per se.  This allows us to implement a
+reasonable fallback when IPI is not available: we can simply spin,
+waiting until the foreign CPU receives any interrupt, though this may
+be a much longer time!
+
+Likewise idle wakeups are trivially implementable with an empty IPI
+handler.  If a thread is added to an empty run queue (i.e. there may
+have been idle CPUs), we broadcast an IPI.  A foreign CPU will then be
+able to see the new thread when exiting from the interrupt and will
+switch to it if available.
+
+Without an IPI, however, a low power idle that requires an interrupt
+will not work to synchronously run new threads.  The workaround in
+that case is more invasive: Zephyr will **not** enter the system idle
+handler and will instead spin in its idle loop, testing the scheduler
+state at high frequency (not spinning on it though, as that would
+involve severe lock contention) for new threads.  The expectation is
+that power constrained SMP applications are always going to provide an
+IPI, and this code will only be used for testing purposes or on
+systems without power consumption requirements.
+
+SMP Kernel Internals
+********************
+
+In general, Zephyr kernel code is SMP-agnostic and, like application
+code, will work correctly regardless of the number of CPUs available.
+But in a few areas there are notable changes in structure or behavior.
+
+
+Per-CPU data
+============
+
+Many elements of the core kernel data need to be implemented for each
+CPU in SMP mode.  For example, the ``_current`` thread pointer obviously
+needs to reflect what is running locally, there are many threads
+running concurrently.  Likewise a kernel-provided interrupt stack
+needs to be created and assigned for each physical CPU, as does the
+interrupt nesting count used to detect ISR state.
+
+These fields are now moved into a separate ``struct _cpu`` instance
+within the ``_kernel`` struct, which has a ``cpus[]`` array indexed by ID.
+Compatibility fields are provided for legacy uniprocessor code trying
+to access the fields of ``cpus[0]`` using the older syntax and assembly
+offsets.
+
+Note that an important requirement on the architecture layer is that
+the pointer to this CPU struct be available rapidly when in kernel
+context.  The expectation is that ``z_arch_curr_cpu()`` will be
+implemented using a CPU-provided register or addressing mode that can
+store this value across arbitrary context switches or interrupts and
+make it available to any kernel-mode code.
+
+Similarly, where on a uniprocessor system Zephyr could simply create a
+global "idle thread" at the lowest priority, in SMP we may need one
+for each CPU.  This makes the internal predicate test for "_is_idle()"
+in the scheduler, which is a hot path performance environment, more
+complicated than simply testing the thread pointer for equality with a
+known static variable.  In SMP mode, idle threads are distinguished by
+a separate field in the thread struct.
+
+Switch-based context switching
+==============================
+
+The traditional Zephyr context switch primitive has been ``z_swap()``.
+Unfortunately, this function takes no argument specifying a thread to
+switch to.  The expectation has always been that the scheduler has
+already made its preemption decision when its state was last modified
+and cached the resulting "next thread" pointer in a location where
+architecture context switch primitives can find it via a simple struct
+offset.  That technique will not work in SMP, because the other CPU
+may have modified scheduler state since the current CPU last exited
+the scheduler (for example: it might already be running that cached
+thread!).
+
+Instead, the SMP "switch to" decision needs to be made synchronously
+with the swap call, and as we don't want per-architecture assembly
+code to be handling scheduler internal state, Zephyr requires a
+somewhat lower-level context switch primitives for SMP systems:
+``z_arch_switch()`` is always called with interrupts masked, and takes
+exactly two arguments.  The first is an opaque (architecture defined)
+handle to the context to which it should switch, and the second is a
+pointer to such a handle into which it should store the handle
+resulting from the thread that is being switched out.
+
+The kernel then implements a portable ``z_swap()`` implementation on top
+of this primitive which includes the relevant scheduler logic in a
+location where the architecture doesn't need to understand it.
+Similarly, on interrupt exit, switch-based architectures are expected
+to call ``z_get_next_switch_handle()`` to retrieve the next thread to
+run from the scheduler, passing in an "interrupted" handle reflecting
+the same opaque type used by switch, which the kernel will then save
+in the interrupted thread struct.
+
+Note that while SMP requires :option:`CONFIG_USE_SWITCH`, the reverse is not
+true.  A uniprocessor architecture built with :option:`CONFIG_SMP` = n might
+still decide to implement its context switching using
+``z_arch_switch()``.

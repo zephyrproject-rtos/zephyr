@@ -25,16 +25,17 @@ extern u8_t *z_priv_stack_find(void *obj);
  * @brief Initialize a new thread from its stack space
  *
  * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by __pendsv(), is put at the other end of
- * the stack, and thus reusable by the stack when not needed anymore.
+ * initial context, to be "restored" by z_arm_pendsv(), is put at the other end
+ * of the stack, and thus reusable by the stack when not needed anymore.
  *
  * The initial context is an exception stack frame (ESF) since exiting the
  * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
  * an instruction address to jump to must always be set since the CPU always
  * runs in thumb mode, the ESF expects the real address of the instruction,
- * with the lsb *not* set (instructions are always aligned on 16 bit halfwords).
- * Since the compiler automatically sets the lsb of function addresses, we have
- * to unset it manually before storing it in the 'pc' field of the ESF.
+ * with the lsb *not* set (instructions are always aligned on 16 bit
+ * halfwords).  Since the compiler automatically sets the lsb of function
+ * addresses, we have to unset it manually before storing it in the 'pc' field
+ * of the ESF.
  *
  * <options> is currently unused.
  *
@@ -50,10 +51,10 @@ extern u8_t *z_priv_stack_find(void *obj);
  * @return N/A
  */
 
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stackSize, k_thread_entry_t pEntry,
-		 void *parameter1, void *parameter2, void *parameter3,
-		 int priority, unsigned int options)
+void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		       size_t stackSize, k_thread_entry_t pEntry,
+		       void *parameter1, void *parameter2, void *parameter3,
+		       int priority, unsigned int options)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
@@ -352,7 +353,7 @@ int z_arch_float_disable(struct k_thread *thread)
 		return -EINVAL;
 	}
 
-	if (z_is_in_isr()) {
+	if (z_arch_is_in_isr()) {
 		return -EINVAL;
 	}
 

@@ -29,7 +29,7 @@ This project outputs sensor data to the console. It requires a LSM303DLHC
 system-in-package, which is present on the stm32f3_disco board
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/lsm303dlhc
+   :zephyr-app: samples/sensor/lsm303dlhc
    :board: stm32f3_disco
    :goals: build
    :compact:

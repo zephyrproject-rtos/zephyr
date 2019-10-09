@@ -4,6 +4,7 @@
  */
 
 #include <kernel.h>
+#include <ksched.h>
 #include <arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <drivers/interrupt_controller/sysapic.h>
@@ -89,17 +90,28 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_IRQ_OFFLOAD
 #include <irq_offload.h>
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
-	u32_t key;
-
-	key = irq_lock();
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = routine;
 	x86_irq_args[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = parameter;
 	__asm__ volatile("int %0" : : "i" (CONFIG_IRQ_OFFLOAD_VECTOR)
 			  : "memory");
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = NULL;
-	irq_unlock(key);
 }
 
 #endif /* CONFIG_IRQ_OFFLOAD */
+
+#if defined(CONFIG_SMP)
+
+void z_x86_ipi_setup(void)
+{
+	/*
+	 * z_sched_ipi() doesn't have the same signature as a typical ISR, so
+	 * we fudge it with a cast. the argument is ignored, no harm done.
+	 */
+
+	x86_irq_funcs[CONFIG_SCHED_IPI_VECTOR - IV_IRQS] =
+		(void *) z_sched_ipi;
+}
+
+#endif

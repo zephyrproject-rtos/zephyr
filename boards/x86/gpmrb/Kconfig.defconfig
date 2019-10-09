@@ -4,7 +4,7 @@
 
 if BOARD_GPMRB
 
-config X86_MULTIBOOT
+config MULTIBOOT
 	default n
 
 config BOARD

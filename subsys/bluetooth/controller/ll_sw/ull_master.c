@@ -154,6 +154,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
 	/* FIXME: END: Move to ULL? */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;

@@ -84,7 +84,7 @@ static void process(struct device *dev)
 		       sensor_value_to_double(&temp_val));
 
 		if (!IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-			k_sleep(1000);
+			k_sleep(K_MSEC(1000));
 		}
 	}
 }

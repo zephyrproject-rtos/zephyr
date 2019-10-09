@@ -193,11 +193,11 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 	 * So run it from work queue instead.
 	 */
 	k_delayed_work_init(&ipv4_timer, do_ipv4_lookup);
-	k_delayed_work_submit(&ipv4_timer, 0);
+	k_delayed_work_submit(&ipv4_timer, K_NO_WAIT);
 
 #if defined(CONFIG_MDNS_RESOLVER)
 	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
-	k_delayed_work_submit(&mdns_ipv4_timer, 0);
+	k_delayed_work_submit(&mdns_ipv4_timer, K_NO_WAIT);
 #endif
 }
 
@@ -281,7 +281,7 @@ static void setup_ipv4(struct net_if *iface)
 
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV4)
 	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
-	k_delayed_work_submit(&mdns_ipv4_timer, 0);
+	k_delayed_work_submit(&mdns_ipv4_timer, K_NO_WAIT);
 #endif
 }
 
@@ -321,7 +321,7 @@ static void setup_ipv6(struct net_if *iface)
 
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV6)
 	k_delayed_work_init(&mdns_ipv6_timer, do_mdns_ipv6_lookup);
-	k_delayed_work_submit(&mdns_ipv6_timer, 0);
+	k_delayed_work_submit(&mdns_ipv6_timer, K_NO_WAIT);
 #endif
 }
 

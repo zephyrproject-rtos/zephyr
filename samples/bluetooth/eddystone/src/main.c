@@ -663,7 +663,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	printk("Disconnected (reason 0x%02x)\n", reason);
 
 	if (!slot->connectable) {
-		k_delayed_work_submit(&idle_work, 0);
+		k_delayed_work_submit(&idle_work, K_NO_WAIT);
 	}
 }
 

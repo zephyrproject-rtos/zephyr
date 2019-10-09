@@ -7,7 +7,6 @@ Peripherals
    :maxdepth: 1
 
    adc.rst
-   can.rst
    counter.rst
    dma.rst
    entropy.rst

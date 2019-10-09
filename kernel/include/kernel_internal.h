@@ -40,10 +40,10 @@ extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
 /* Implemented by architectures. Only called from z_setup_new_thread. */
-extern void z_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
-			size_t stackSize, k_thread_entry_t entry,
-			void *p1, void *p2, void *p3,
-			int prio, unsigned int options);
+extern void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
+			      size_t stackSize, k_thread_entry_t entry,
+			      void *p1, void *p2, void *p3,
+			      int prio, unsigned int options);
 
 extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_stack_t *stack, size_t stack_size,
@@ -181,7 +181,7 @@ extern int z_arch_buffer_validate(void *addr, size_t size, int write);
  * - Set up any kernel stack region for the CPU to use during privilege
  *   elevation
  * - Put the CPU in whatever its equivalent of user mode is
- * - Transfer execution to z_new_thread() passing along all the supplied
+ * - Transfer execution to z_arch_new_thread() passing along all the supplied
  *   arguments, in user mode.
  *
  * @param Entry point to start executing as a user thread
@@ -275,10 +275,37 @@ extern int z_stack_adjust_initialized;
 extern void z_arch_busy_wait(u32_t usec_to_wait);
 #endif
 
+int z_arch_swap(unsigned int key);
+
 /**
  * TODO: document
  */
 extern FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+extern u64_t z_arch_timing_swap_start;
+extern u64_t z_arch_timing_swap_end;
+extern u64_t z_arch_timing_irq_start;
+extern u64_t z_arch_timing_irq_end;
+extern u64_t z_arch_timing_tick_start;
+extern u64_t z_arch_timing_tick_end;
+extern u64_t z_arch_timing_user_mode_end;
+
+/* FIXME: Document. Temporary storage, seems x86 specific? */
+extern u32_t z_arch_timing_value_swap_end;
+extern u64_t z_arch_timing_value_swap_common;
+extern u64_t z_arch_timing_value_swap_temp;
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+extern u32_t z_timestamp_main; /* timestamp when main task starts */
+extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
+#endif
+
+extern struct k_thread z_main_thread;
+extern struct k_thread z_idle_thread;
+extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(z_idle_stack, CONFIG_IDLE_STACK_SIZE);
 
 #ifdef __cplusplus
 }

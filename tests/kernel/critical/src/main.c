@@ -196,11 +196,11 @@ static void start_threads(void)
 {
 	k_thread_create(&thread1, stack1, STACK_SIZE,
 			alternate_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, 0);
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 
 	k_thread_create(&thread2, stack2, STACK_SIZE,
 			regression_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, 0);
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 }
 
 /**

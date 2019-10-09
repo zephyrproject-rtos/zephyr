@@ -171,7 +171,11 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *param))
 
 	/* Setup resources required by Radio */
 	hf_clock = radio_hf_clock_get();
-	clock_control_on(hf_clock, (void *)1); /* start clock, blocking. */
+	clock_control_on(hf_clock, NULL); /* start clock, blocking. */
+
+	while (clock_control_get_status(hf_clock, NULL) !=
+			CLOCK_CONTROL_STATUS_ON) {
+	}
 
 	/* Reset Radio h/w */
 	radio_reset();

@@ -24,7 +24,7 @@ if not doc_mode:
 
     # if a board port doesn't use DTS than these might not be set
     if os.path.isfile(DTS_POST_CPP) and BINDINGS_DIRS is not None:
-        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split(";"))
+        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split("?"))
     else:
         edt = None
 

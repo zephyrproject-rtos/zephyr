@@ -1,0 +1,4 @@
+tests:
+  arch.x86.info:
+    arch_whitelist: x86
+    platform_whitelist: up_squared

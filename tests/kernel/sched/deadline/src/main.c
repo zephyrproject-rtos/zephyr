@@ -39,7 +39,7 @@ void worker(void *p1, void *p2, void *p3)
 	 * with the scheduling.
 	 */
 	while (1) {
-		k_sleep(1000000);
+		k_sleep(K_MSEC(1000000));
 	}
 }
 
@@ -56,7 +56,7 @@ void test_deadline(void)
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO,
-				0, 0);
+				0, K_NO_WAIT);
 
 		/* Positive-definite number with the bottom 8 bits
 		 * masked off to prevent aliasing where "very close"
@@ -78,7 +78,7 @@ void test_deadline(void)
 
 	zassert_true(n_exec == 0, "threads ran too soon");
 
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
 

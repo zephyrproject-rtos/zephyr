@@ -12,11 +12,22 @@
 #include <ia32/kernel_arch_func.h>
 #endif
 
-#define z_is_in_isr() (_kernel.nested != 0U)
+#ifdef CONFIG_SMP
+#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
+#else
+#define z_arch_is_in_isr() (_kernel.nested != 0U)
+#endif
 
 #ifndef _ASMLANGUAGE
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
+
+struct multiboot_info;
+
+extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
 
 #endif
 

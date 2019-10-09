@@ -36,6 +36,9 @@
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 /* STM32G0: maximum erase time of 40ms for a 2K sector */
 #define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
+/* STM32G4: maximum erase time of 24.47ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32G4X)
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(25))
 #endif
 
 /* Let's wait for double the max erase time to be sure that the operation is
@@ -133,7 +136,8 @@ static void flash_stm32_flush_caches(struct device *dev,
 	ARG_UNUSED(len);
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
@@ -142,6 +146,8 @@ static void flash_stm32_flush_caches(struct device *dev,
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
 	struct stm32wbx_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32G4X)
+	struct stm32g4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 	if (regs->acr.val & FLASH_ACR_DCEN) {
 		regs->acr.val &= ~FLASH_ACR_DCEN;
@@ -232,6 +238,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	struct stm32wbx_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	struct stm32g0x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32G4X)
+	struct stm32g4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 	int rc = 0;
 
@@ -277,6 +285,10 @@ static struct flash_stm32_priv flash_data = {
 	.regs = (struct stm32wbx_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	.regs = (struct stm32g0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
+#elif defined(CONFIG_SOC_SERIES_STM32G4X)
+	.regs = (struct stm32g4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #endif

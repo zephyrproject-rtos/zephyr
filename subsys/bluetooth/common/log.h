@@ -65,10 +65,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define BT_HEXDUMP_DBG(_data, _length, _str) \
 		LOG_HEXDUMP_DBG((const u8_t *)_data, _length, _str)
 
+/* NOTE: These helper functions always encodes into the same buffer storage.
+ * It is the responsibility of the user of this function to copy the information
+ * in this string if needed.
+ */
 const char *bt_hex_real(const void *buf, size_t len);
 const char *bt_addr_str_real(const bt_addr_t *addr);
 const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
 
+/* NOTE: log_strdup does not guarantee a duplication of the string.
+ * It is therefore still the responsibility of the user to handle the
+ * restrictions in the underlying function call.
+ */
 #define bt_hex(buf, len) log_strdup(bt_hex_real(buf, len))
 #define bt_addr_str(addr) log_strdup(bt_addr_str_real(addr))
 #define bt_addr_le_str(addr) log_strdup(bt_addr_le_str_real(addr))

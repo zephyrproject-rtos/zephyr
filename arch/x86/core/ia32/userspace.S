@@ -50,7 +50,7 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_pdpt, %esi
+	movl	$z_x86_kernel_ptables, %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
@@ -165,7 +165,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_pdpt, %esi
+	movl	$z_x86_kernel_ptables, %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
@@ -394,8 +394,8 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__end_drop_to_usermode_time
-	mov %edx,__end_drop_to_usermode_time+4
+	mov %eax,z_arch_timing_enter_user_mode_end
+	mov %edx,z_arch_timing_enter_user_mode_end+4
 	pop %edx
 	pop %eax
 #endif

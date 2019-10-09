@@ -1,3 +1,0 @@
-tests:
-  libraries.sys.util.dec:
-    tags: lib_sys_util_tests

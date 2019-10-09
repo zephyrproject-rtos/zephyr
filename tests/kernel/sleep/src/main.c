@@ -198,7 +198,7 @@ void test_sleep(void)
 					 THREAD_STACK,
 					 (k_thread_entry_t) test_thread,
 					 0, 0, NULL, TEST_THREAD_PRIORITY,
-					 0, 0);
+					 0, K_NO_WAIT);
 
 	TC_PRINT("Test thread started: id = %p\n", test_thread_id);
 
@@ -206,7 +206,7 @@ void test_sleep(void)
 					   helper_thread_stack, THREAD_STACK,
 					   (k_thread_entry_t) helper_thread,
 					   0, 0, NULL, HELPER_THREAD_PRIORITY,
-					   0, 0);
+					   0, K_NO_WAIT);
 
 	TC_PRINT("Helper thread started: id = %p\n", helper_thread_id);
 

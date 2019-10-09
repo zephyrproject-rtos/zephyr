@@ -35,7 +35,7 @@ void test_gpio_pin_read_write(void)
 		zassert_true(gpio_pin_write(dev, PIN_OUT, val_write) == 0,
 			    "write data fail");
 		TC_PRINT("write: %" PRIu32 "\n", val_write);
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 		zassert_true(gpio_pin_read(dev, PIN_IN, &val_read) == 0,
 			    "read data fail");
 		TC_PRINT("read: %" PRIu32 "\n", val_read);

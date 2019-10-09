@@ -34,7 +34,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, psem, NULL, NULL,
 				      K_PRIO_PREEMPT(0),
-				      K_USER | K_INHERIT_PERMS, 0);
+				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 	/*clean the spawn thread avoid side effect in next TC*/

@@ -14,56 +14,97 @@
 .section .locore,"ax"
 .code32
 
+#if CONFIG_MP_NUM_CPUS > 1
+
+	/*
+	 * APs are sent here on startup, in real mode. This
+	 * is first because we want it on a page boundary.
+	 */
+
+.code16
+.global x86_ap_start
+x86_ap_start:
+
+	/*
+	 * First, we move to 32-bit protected mode, and set up the
+	 * same flat environment that the BSP gets from the loader.
+	 */
+
+	lgdt gdt48
+	lidt idt48
+	movw $1, %ax
+	lmsw %ax
+	jmpl $X86_KERNEL_CS_32, $1f
+.code32
+1:	movw $X86_KERNEL_DS_32, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %ss
+	movw %ax, %fs
+	movw %ax, %gs
+
+	/*
+	 * Now, reverse-map our local APIC ID to our logical CPU ID
+	 * so we can locate our x86_cpuboot[] bundle. Put it in EBP.
+	 */
+
+	movl CONFIG_LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
+	shrl $24, %eax
+	andl $0x0F, %eax		/* local APIC ID -> EAX */
+
+	movl $x86_cpuboot, %ebp
+	xorl %ebx, %ebx
+1:	cmpl $CONFIG_MP_NUM_CPUS, %ebx
+	jz unknown_loapic_id
+	cmpb %al, x86_cpu_loapics(%ebx)
+	je go64				/* proceed to 64-bit mode */
+	incl %ebx
+	addl $__X86_CPUBOOT_SIZEOF, %ebp
+	jmp 1b
+
+unknown_loapic_id:
+	jmp unknown_loapic_id
+
+#endif /* CONFIG_MP_NUM_CPUS > 1 */
+
+.code32
 .globl __start
 __start:
 
 	/*
-	 * multiboot starts us here in 32-bit flat mode with interrupts and
-	 * paging disabled. first, check to see if EAX has a valid multiboot
-	 * magic in it, and if not, zero EBX so we know it's bogus later.
-	 * Remember not to clobber EBX until we've copied the boot info struct!
+	 * kernel execution begins here in 32-bit mode, with flat-mode
+	 * descriptors in all segment registers, interrupts disabled.
+	 * first, let common code do things like detect multiboot info.
 	 */
-
-#ifdef CONFIG_X86_MULTIBOOT_INFO
-	cmpl $X86_MULTIBOOT_EAX_MAGIC, %eax
-	je 1f
-	xorl %ebx, %ebx
-1:
-#endif
-
-	/* FIXME: ...resetting TSC here is common to IA32 and Intel64... */
-	/* FIXME: ...disabling the PICs is common to IA32 and Intel64... */
-
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	xorl %eax, %eax
-	xorl %edx, %edx
-	movl $X86_TIME_STAMP_COUNTER_MSR, %ecx
-	wrmsr
-#endif
-
-#ifdef CONFIG_PIC_DISABLE
-	movb $0xff, %al
-	outb %al, $0x21
-	outb %al, $0xA1
-#endif
-
-	/* next, switch to our own GDT/IDT and stack. */
 
 	lgdt gdt48
 	lidt idt48
-	jmpl $X86_KERNEL_CS_32, $1f
-1:	movw $X86_KERNEL_DS_32, %ax
-	movw %ax, %ds
-	movw %ax, %ss
-	movw %ax, %es
-	movw %ax, %fs
-	movw %ax, %gs
 
-	movl $(_exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
+#include "../common.S"
 
-	/* transition to long mode. along the way, we enable SSE. */
+	/*
+	 * N.B.: if multiboot info struct is present, "common.S"
+	 * has left a pointer to it in EBX. do not clobber (yet).
+	 *
+	 * next, clear the BSS. note we're still in 32-bit mode,
+	 * so the BSS must fit entirely in the first 4GB of RAM.
+	 */
 
-	movl %cr4, %eax			/* enable PAE and SSE */
+	cld
+	xorl %eax, %eax
+	movl $__bss_start, %edi
+	movl $__bss_num_dwords, %ecx
+	rep stosl
+
+	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
+	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
+
+	/*
+	 * transition to long mode, reload the segment registers,
+	 * and configure per-CPU stuff: GS, task register, stack.
+	 */
+
+go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	orl $(CR4_PAE | CR4_OSFXSR), %eax
 	movl %eax, %cr4
 	clts
@@ -80,61 +121,48 @@ __start:
 	orl $CR0_PG, %eax
 	movl %eax, %cr0
 
-	/* jump into long mode, reload the segment registers (again). */
-
-	jmpl $X86_KERNEL_CS_64, $1f
+	jmpl $X86_KERNEL_CS, $1f
 .code64
-1:	movl $X86_KERNEL_DS_64, %eax
+1:	movl $X86_KERNEL_DS, %eax
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
 
-	movl $X86_KERNEL_TSS, %eax
+	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
-	movl $X86_KERNEL_GS_64, %eax
+	movw __x86_cpuboot_t_gs_OFFSET(%rbp), %ax
 	movw %ax, %gs
 
-	cld
-	xorl %eax, %eax
-	movq $__bss_start, %rdi
-	movq $__bss_num_qwords, %rcx
-	rep stosq
+	movq __x86_cpuboot_t_sp_OFFSET(%rbp), %rsp
+	movq %rsp, %gs:__x86_tss64_t_ist1_OFFSET
+
+	/*
+	 * finally, complete environment for the C runtime and go.
+	 */
+
+	cld	/* GCC presumes a clear direction flag */
 
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
-	movq $_interrupt_stack, %rdi
+	movq %rsp, %rdi
+	subq $CONFIG_ISR_STACK_SIZE, %rdi
 	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
 	rep stosq
 #endif
 
-#ifdef CONFIG_X86_MULTIBOOT_INFO
-	/* If EBX isn't 0, then we have a valid multiboot info struct. */
-
-	testl %ebx, %ebx
-	jz 1f
-	movl %ebx, %esi
-
-	movl $__X86_MULTIBOOT_INFO_SIZEOF, %ecx
-	movq $x86_multiboot_info, %rdi
-	rep
-	movsb
-1:
-#endif /* CONFIG_X86_MULTIBOOT_INFO */
-
-	/*
-	 * set up SSE in case something uses the floating-point unit during
-	 * early initialization (either directly, or if GCC gets clever)
-	 */
-
 	xorl %edi, %edi
 	call x86_sse_init
 
+#ifdef CONFIG_LOAPIC
+	call z_loapic_enable
+#endif
+
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
-	call z_cstart
-
-stop:	jmp stop
+	incl __x86_cpuboot_t_ready_OFFSET(%rbp)
+	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rsi
+	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
 
 /*
  * void x86_sse_init(struct k_thread *thread);
@@ -153,25 +181,6 @@ x86_sse_init:
 1:	retq
 
 mxcsr:	.long X86_MXCSR_SANE
-
-/*
- * FIXME: The multiboot header is identical (for obvious reasons) to the
- * version in ia32/crt0.S. They should be refactored into a common file.
- */
-
-#ifdef CONFIG_X86_MULTIBOOT
-	.align 4
-	.long X86_MULTIBOOT_HEADER_MAGIC
-	.long X86_MULTIBOOT_HEADER_FLAGS
-	.long -(X86_MULTIBOOT_HEADER_MAGIC + X86_MULTIBOOT_HEADER_FLAGS)
-#ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
-	.fill 5,4,0				/* (unused exec layout) */
-	.long 0					/* linear graphics mode */
-	.long CONFIG_X86_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long CONFIG_X86_MULTIBOOT_FRAMEBUF_Y	/* height */
-	.long 32				/* depth */
-#endif /* CONFIG_X86_MULTIBOOT_FRAMEBUF */
-#endif
 
 /*
  * void z_arch_switch(void *switch_to, void **switched_from);
@@ -199,21 +208,21 @@ z_arch_switch:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
-	movq $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %rsp
+	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
 	/* fall through to __resume */
 
 /*
  * Entry:
- *   RSP = top of _interrupt_stack
+ *   RSP = top of CPU interrupt stack
  *   RDI = (struct k_thread *) thread to resume
  */
 
 __resume:
-	pushq $X86_KERNEL_DS_64			/* SS */
+	pushq $X86_KERNEL_DS			/* SS */
 	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
 	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
-	pushq $X86_KERNEL_CS_64			/* CS */
+	pushq $X86_KERNEL_CS			/* CS */
 	pushq _thread_offset_to_rip(%rdi)	/* RIP */
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
@@ -255,6 +264,10 @@ gdt:
 
 	.word 0, 0, 0, 0		/* 0x28: unused */
 
+	/*
+	 * CPU 0 task state segment descriptors
+	 */
+
 	.word 0				/* 0x30: 64-bit TSS data (for GS) */
 	.word tss0
 	.word 0x9200
@@ -265,11 +278,61 @@ gdt:
 	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
 	.word tss0
 	.word 0x8900
+	.word 0, 0, 0, 0, 0
+
+#if CONFIG_MP_NUM_CPUS > 1
+	/*
+	 * CPU 1 task state segment descriptors
+	 */
+
+	.word 0				/* 0x50: 64-bit TSS data (for GS) */
+	.word tss1
+	.word 0x9200
 	.word 0
+
+	.word 0, 0, 0, 0		/* 0x58: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
+	.word tss1
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 2
+	/*
+	 * CPU 2 task state segment descriptors
+	 */
+
+	.word 0				/* 0x70: 64-bit TSS data (for GS) */
+	.word tss2
+	.word 0x9200
 	.word 0
+
+	.word 0, 0, 0, 0		/* 0x78: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0x80: 64-bit TSS (16-byte entry) */
+	.word tss2
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 3
+	/*
+	 * CPU 3 task state segment descriptors
+	 */
+
+	.word 0				/* 0x90: 64-bit TSS data (for GS) */
+	.word tss3
+	.word 0x9200
 	.word 0
-	.word 0
-	.word 0
+
+	.word 0, 0, 0, 0		/* 0x98: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0xA0: 64-bit TSS (16-byte entry) */
+	.word tss3
+	.word 0x8900
+	.word 0, 0, 0, 0, 0
+#endif
 
 gdt48:
 	.word (gdt48 - gdt - 1)
@@ -283,7 +346,7 @@ gdt48:
 #define INTR 0x8e
 
 #define IDT(nr, type, ist) \
-	.word vector_ ## nr, X86_KERNEL_CS_64; \
+	.word vector_ ## nr, X86_KERNEL_CS; \
 	.byte ist, type; \
 	.word 0, 0, 0, 0, 0
 
@@ -582,7 +645,7 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 	.fill 4064, 1, 0
 
 /*
- * The exception stack is used both for exceptions and early initialization.
+ * Known-good stack for handling CPU exceptions.
  */
 
 .global _exception_stack
@@ -590,3 +653,23 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 _exception_stack:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 
+#if CONFIG_MP_NUM_CPUS > 1
+.global _exception_stack1
+.align 16
+_exception_stack1:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 2
+.global _exception_stack2
+.align 16
+_exception_stack2:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 3
+.global _exception_stack3
+.align 16
+_exception_stack3:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+#endif

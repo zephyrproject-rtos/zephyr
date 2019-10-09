@@ -735,7 +735,7 @@ void gptp_update_pdelay_req_interval(int port, s8_t log_val)
 		new_itv = 1;
 	}
 
-	k_timer_start(&state_pdelay->pdelay_timer, new_itv, 0);
+	k_timer_start(&state_pdelay->pdelay_timer, new_itv, K_NO_WAIT);
 }
 
 void gptp_update_sync_interval(int port, s8_t log_val)
@@ -814,7 +814,7 @@ void gptp_update_announce_interval(int port, s8_t log_val)
 		new_itv = 1;
 	}
 
-	k_timer_start(&state_ann->ann_send_periodic_timer, new_itv, 0);
+	k_timer_start(&state_ann->ann_send_periodic_timer, new_itv, K_NO_WAIT);
 }
 
 struct port_user_data {
@@ -908,7 +908,7 @@ static void init_ports(void)
 	tid = k_thread_create(&gptp_thread_data, gptp_stack,
 			      K_THREAD_STACK_SIZEOF(gptp_stack),
 			      (k_thread_entry_t)gptp_thread,
-			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, 0);
+			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, K_NO_WAIT);
 	k_thread_name_set(&gptp_thread_data, "gptp");
 }
 

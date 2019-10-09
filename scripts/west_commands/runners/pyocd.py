@@ -10,6 +10,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
 DEFAULT_PYOCD_GDB_PORT = 3333
+DEFAULT_PYOCD_TELNET_PORT = 4444
 
 
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
@@ -18,7 +19,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, target,
                  pyocd='pyocd',
                  flash_addr=0x0, flash_opts=None,
-                 gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
+                 gdb_port=DEFAULT_PYOCD_GDB_PORT,
+                 telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None):
         super(PyOcdBinaryRunner, self).__init__(cfg)
 
@@ -27,6 +29,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
+        self.telnet_port = telnet_port
         self.tui_args = ['-tui'] if tui else []
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
@@ -75,6 +78,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_PYOCD_GDB_PORT))
+        parser.add_argument('--telnet-port', default=DEFAULT_PYOCD_TELNET_PORT,
+                            help='pyocd telnet port, defaults to {}'.format(
+                                DEFAULT_PYOCD_TELNET_PORT))
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--board-id',
@@ -89,7 +95,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             cfg, args.target,
             pyocd=args.pyocd,
             flash_addr=flash_addr, flash_opts=args.flash_opt,
-            gdb_port=args.gdb_port, tui=args.tui,
+            gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency)
 
@@ -102,7 +108,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         return ret
 
     def port_args(self):
-        return ['-p', str(self.gdb_port)]
+        return ['-p', str(self.gdb_port), '-T', str(self.telnet_port)]
 
     def do_run(self, command, **kwargs):
         self.require(self.pyocd)

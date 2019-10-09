@@ -81,7 +81,7 @@ void st7789v_transmit(struct st7789v_data *data, u8_t cmd,
 static void st7789v_exit_sleep(struct st7789v_data *data)
 {
 	st7789v_transmit(data, ST7789V_CMD_SLEEP_OUT, NULL, 0);
-	k_sleep(120);
+	k_sleep(K_MSEC(120));
 }
 
 static void st7789v_reset_display(struct st7789v_data *data)
@@ -89,14 +89,14 @@ static void st7789v_reset_display(struct st7789v_data *data)
 	LOG_DBG("Resetting display");
 #ifdef DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_CONTROLLER
 	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 1);
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 0);
-	k_sleep(6);
+	k_sleep(K_MSEC(6));
 	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 1);
-	k_sleep(20);
+	k_sleep(K_MSEC(20));
 #else
 	st7789v_transmit(p_st7789v, ST7789V_CMD_SW_RESET, NULL, 0);
-	k_sleep(5);
+	k_sleep(K_MSEC(5));
 #endif
 }
 

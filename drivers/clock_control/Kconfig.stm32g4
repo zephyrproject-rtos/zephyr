@@ -1,0 +1,56 @@
+# Kconfig - STM32G4 PLL configuration options
+#
+# Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32G4X
+
+config CLOCK_STM32_PLL_M_DIVISOR
+	int "PLL divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 4
+	range 1 16
+	help
+	  PLL divisor, allowed values: 1-16.
+
+config CLOCK_STM32_PLL_N_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 75
+	range 8 127
+	help
+	  PLL multiplier, allowed values: 8-127.
+
+config CLOCK_STM32_PLL_P_DIVISOR
+	int "PLL P Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 7
+	range 7 17
+	help
+	  PLL P Output divisor, allowed values: 7, 17.
+
+config CLOCK_STM32_PLL_Q_DIVISOR
+	int "PLL Q Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 2
+	range 2 8
+	help
+	  PLL Q Output divisor, allowed values: 2, 4, 6, 8.
+
+config CLOCK_STM32_PLL_R_DIVISOR
+	int "PLL R Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 2
+	range 2 8
+	help
+	  PLL R Output divisor, allowed values: 2, 4, 6, 8.
+
+config CLOCK_STM32_LSE
+	bool "Low-speed external clock"
+	help
+	  Enable the low-speed external (LSE) clock supplied with a 32.768 kHz
+	  crystal resonator oscillator.
+
+endif # SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX

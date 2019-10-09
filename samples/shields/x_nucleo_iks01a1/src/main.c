@@ -98,6 +98,6 @@ void main(void)
 		   sensor_value_to_double(&accel_xyz[1]),
 		   sensor_value_to_double(&accel_xyz[2]));
 
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

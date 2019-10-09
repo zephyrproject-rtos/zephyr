@@ -124,7 +124,8 @@ void test_slice_reset(void)
 		for (int i = 0; i < NUM_THREAD; i++) {
 			tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 						 thread_time_slice, NULL, NULL, NULL,
-						 K_PRIO_PREEMPT(j), 0, 0);
+						 K_PRIO_PREEMPT(j), 0,
+						 K_NO_WAIT);
 		}
 		/* enable time slice*/
 		k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));

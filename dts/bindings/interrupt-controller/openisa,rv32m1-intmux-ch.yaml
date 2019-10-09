@@ -20,5 +20,5 @@ properties:
   interrupts:
       required: true
 
-"#cells":
+interrupt-cells:
   - irq

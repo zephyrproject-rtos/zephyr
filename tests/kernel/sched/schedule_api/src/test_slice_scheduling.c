@@ -101,7 +101,8 @@ void test_slice_scheduling(void)
 		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 					 thread_tslice,
 					 INT_TO_POINTER(i), NULL, NULL,
-					 K_PRIO_PREEMPT(BASE_PRIORITY), 0, 0);
+					 K_PRIO_PREEMPT(BASE_PRIORITY), 0,
+					 K_NO_WAIT);
 	}
 
 	/* enable time slice*/

@@ -25,5 +25,5 @@ properties:
     "#pwm-cells":
       const: 1
 
-"#cells":
+pwm-cells:
   - channel

@@ -14,7 +14,7 @@ config NESTED_INTERRUPTS
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"
 	default y
-	depends on PRINTK
+	depends on LOG
 	help
 	  Install handlers for various CPU exception/trap vectors to
 	  make debugging them easier, at a small expense in code size.

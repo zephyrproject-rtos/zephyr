@@ -103,7 +103,7 @@ static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
 	z_ready_thread(thread);
-	z_set_thread_return_value_with_data(thread, 0, data);
+	z_thread_return_value_set_with_data(thread, 0, data);
 }
 #endif /* CONFIG_POLL */
 

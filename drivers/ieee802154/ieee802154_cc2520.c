@@ -839,7 +839,7 @@ static int cc2520_tx(struct device *dev,
 			goto error;
 		}
 
-		k_sem_take(&cc2520->tx_sync, 10);
+		k_sem_take(&cc2520->tx_sync, K_MSEC(10));
 
 		retry--;
 		status = verify_tx_done(cc2520);

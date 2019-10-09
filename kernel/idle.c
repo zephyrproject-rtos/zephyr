@@ -20,8 +20,11 @@
 #endif
 
 /* Fallback idle spin loop for SMP platforms without a working IPI */
-#define SMP_FALLBACK \
-	(defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
+#if (defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
+#define SMP_FALLBACK 1
+#else
+#define SMP_FALLBACK 0
+#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
@@ -144,9 +147,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u32_t __idle_time_stamp;
+	extern u32_t z_timestamp_idle;
 
-	__idle_time_stamp = k_cycle_get_32();
+	z_timestamp_idle = k_cycle_get_32();
 #endif
 
 	while (true) {
@@ -156,8 +159,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #else
 		(void)z_arch_irq_lock();
 		sys_power_save_idle();
-
 		IDLE_YIELD_IF_COOP();
-	}
 #endif
+	}
 }

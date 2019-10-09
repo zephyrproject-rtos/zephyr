@@ -33,6 +33,12 @@
 
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_ZLI)
+#define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
+#else
+#define IRQ_CONNECT_FLAGS 0
+#endif
+
 static struct {
 	struct {
 		void              *param;
@@ -90,7 +96,8 @@ static void rtc0_nrf5_isr(void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
 #endif
 
@@ -106,7 +113,8 @@ static void swi_lll_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 static void swi_ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
@@ -137,7 +145,7 @@ int lll_init(void)
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clk_k32, NULL);
 
 	/* Initialize HF CLK */
 	lll.clk_hf =
@@ -156,12 +164,18 @@ int lll_init(void)
 
 	/* Connect ISRs */
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-			   radio_nrf5_isr, 0);
+			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#else
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
+#endif
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
-		    swi_lll_nrf5_isr, NULL, 0);
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
 		    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
@@ -170,7 +184,8 @@ int lll_init(void)
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	irq_enable(HAL_SWI_JOB_IRQ);
 #endif
 
@@ -214,7 +229,8 @@ void lll_resume(void *param)
 
 void lll_disable(void *param)
 {
-	if (!param || param == event.curr.param) {
+	/* LLL disable of current event, done is generated */
+	if (!param || (param == event.curr.param)) {
 		if (event.curr.abort_cb && event.curr.param) {
 			event.curr.abort_cb(NULL, event.curr.param);
 		} else {
@@ -228,7 +244,7 @@ void lll_disable(void *param)
 		next = ull_prepare_dequeue_iter(&idx);
 		while (next) {
 			if (!next->is_aborted &&
-			    param == next->prepare_param.param) {
+			    (!param || (param == next->prepare_param.param))) {
 				next->is_aborted = 1;
 				next->abort_cb(&next->prepare_param,
 					       next->prepare_param.param);
@@ -323,10 +339,14 @@ int lll_clk_on_wait(void)
 	int err;
 
 	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk_hf, (void *)1);
-	if (!err || err == -EINPROGRESS) {
-		DEBUG_RADIO_XTAL(1);
+	err = clock_control_on(lll.clk_hf, NULL);
+
+	while (clock_control_get_status(lll.clk_hf, NULL) !=
+			CLOCK_CONTROL_STATUS_ON) {
+		k_cpu_idle();
 	}
+
+	DEBUG_RADIO_XTAL(1);
 
 	return err;
 }

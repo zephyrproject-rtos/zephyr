@@ -9,7 +9,7 @@
  * @file
  * @brief Kernel swapper code for POSIX
  *
- * This module implements the __swap() routine for the POSIX architecture.
+ * This module implements the z_arch_swap() routine for the POSIX architecture.
  *
  */
 
@@ -23,18 +23,18 @@
  *
  * @brief Initiate a cooperative context switch
  *
- * The __swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking __swap(), the
+ * The z_arch_swap() routine is invoked by various kernel services to effect
+ * a cooperative context switch.  Prior to invoking z_arch_swap(), the
  * caller disables interrupts (via irq_lock) and the return 'key'
- * is passed as a parameter to __swap().
+ * is passed as a parameter to z_arch_swap().
  *
  *
  * @return -EAGAIN, or a return value set by a call to
- * z_set_thread_return_value()
+ * z_arch_thread_return_value_set()
  *
  */
 
-int __swap(unsigned int key)
+int z_arch_swap(unsigned int key)
 {
 /*
  * struct k_thread * _kernel.current is the currently runnig thread
@@ -48,7 +48,7 @@ int __swap(unsigned int key)
  */
 	_kernel.current->callee_saved.key = key;
 	_kernel.current->callee_saved.retval = -EAGAIN;
-	/* retval may be modified with a call to z_set_thread_return_value() */
+	/* retval may be modified with a call to z_arch_thread_return_value_set() */
 
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)
@@ -80,11 +80,11 @@ int __swap(unsigned int key)
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**
- * This is just a version of __swap() in which we do not save anything about the
+ * This is just a version of z_arch_swap() in which we do not save anything about the
  * current thread.
  *
  * Note that we will never come back to this thread:
- * posix_core_main_thread_start() does never return
+ * posix_main_thread_start() does never return
  */
 void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 		k_thread_stack_t *main_stack,

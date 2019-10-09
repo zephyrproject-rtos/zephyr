@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+#include "lll_meta.h"
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
 
 #define TICKER_INSTANCE_ID_CTLR 0
 #define TICKER_USER_ID_LLL      MAYFLY_CALL_ID_0
@@ -210,7 +213,12 @@ struct node_rx_hdr {
 	enum node_rx_type   type;
 	u16_t               handle;
 
-	struct node_rx_ftr  rx_ftr;
+	union {
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+		lll_rx_pdu_meta_t  rx_pdu_meta;
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
+		struct node_rx_ftr rx_ftr;
+	};
 };
 
 struct node_rx_pdu {

@@ -15,7 +15,7 @@ int test_frequency(void)
 	TC_PRINT("Testing system tick frequency\n");
 
 	start = k_cycle_get_32();
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 	end = k_cycle_get_32();
 
 	delta = end - start;

@@ -1030,28 +1030,11 @@ static int start_security(struct bt_conn *conn)
 	}
 #endif /* CONFIG_BT_BREDR */
 
-	switch (conn->role) {
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP)
-	case BT_HCI_ROLE_MASTER:
-	{
-		if (!bt_smp_keys_check(conn)) {
-			return bt_smp_send_pairing_req(conn);
-		}
-		/* LE SC LTK and legacy master LTK are stored in same place */
-		return bt_conn_le_start_encryption(conn,
-						   conn->le.keys->ltk.rand,
-						   conn->le.keys->ltk.ediv,
-						   conn->le.keys->ltk.val,
-						   conn->le.keys->enc_size);
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		return bt_smp_start_security(conn);
 	}
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_SMP */
-#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_SMP)
-	case BT_HCI_ROLE_SLAVE:
-		return bt_smp_send_security_req(conn);
-#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_SMP */
-	default:
-		return -EINVAL;
-	}
+
+	return -EINVAL;
 }
 
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)

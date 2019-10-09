@@ -337,8 +337,9 @@
 		compatible = "deprecated";
 		required = <1>;
 		required-2 = <2>;
+		#foo-cells = <2>;
 		sub-node {
-			child-prop = <3>;
+			foos = <&{/deprecated} 1 2>;
 		};
 	};
 };
