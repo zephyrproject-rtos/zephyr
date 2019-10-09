@@ -53,7 +53,7 @@ void main(void)
 	/* Get the entity attestation token (requires ~1kB stack memory!). */
 	att_test();
 
-        /* Dump any queued log messages, and wait for system events. */
+	/* Dump any queued log messages, and wait for system events. */
 	while (1) {
 		al_dump_log();
 	}

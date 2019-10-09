@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-/** Maximum buffer size for an intial attestation token instance. */
+/** Maximum buffer size for an initial attestation token instance. */
 #define ATT_MAX_TOKEN_SIZE (0x200)
 
 /**

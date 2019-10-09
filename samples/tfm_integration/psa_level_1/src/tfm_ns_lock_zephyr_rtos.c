@@ -19,10 +19,10 @@ K_MUTEX_DEFINE(tfm_mutex);
  * \brief NS world, NS lock based dispatcher
  */
 uint32_t tfm_ns_lock_dispatch(veneer_fn fn,
-			      uint32_t arg0, uint32_t arg1,
-			      uint32_t arg2, uint32_t arg3)
+			      u32_t arg0, u32_t arg1,
+			      u32_t arg2, u32_t arg3)
 {
-	uint32_t result;
+	u32_t result;
 
 	/* TFM request protected by NS lock */
 	if (k_mutex_lock(&tfm_mutex, K_MSEC(1000)) == 0) {
@@ -41,7 +41,7 @@ uint32_t tfm_ns_lock_dispatch(veneer_fn fn,
 /**
  * \brief NS world, Init NS lock
  */
-enum tfm_status_e tfm_ns_lock_init()
+enum tfm_status_e tfm_ns_lock_init(void)
 {
 	/* Mutex initialised at compile time. */
 	return TFM_SUCCESS;

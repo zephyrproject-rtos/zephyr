@@ -6,13 +6,13 @@ device, and can be used to verify device authenticity through shared keys.
 The attestation process is based around the **PSA initial attestation token
 (IAT)** ([IETF draft](IA1)), which is generated via a request to the secure
 processing environment (SPE), and signed using a private attestation key only
-accessible to the SPE.
+accessible inside the SPE.
 
 [IA1]: https://datatracker.ietf.org/doc/draft-tschofenig-rats-psa-token/
 
 ## Token Technical Details
 
-This IAT response is encoded in **CBOR** ([RFC7049](TTD1)), then wrapped and
+This IAT response is encoded in **CBOR** ([RFC7049](TTD1)), and wrapped and
 signed using **CBOR Object Signing and Encryption (COSE)** ([RFC8152](TTD1)),
 with a tagged `COSE_Sign1` structure (CBOR tag `18`).
 
@@ -24,7 +24,8 @@ The current TF-M implementation supports **ECDSA P256** signatures over
 
 ## Key-Based Device Verification
 
-A public/private key pair is used between the attesting TF-M device and the remote server to establish the TF-M device's identity:
+A public/private key pair is used between the attesting TF-M device and the
+remote server to establish the TF-M device's identity:
 
 - The remote server holds a copy of the public attestation key
 - The TF-M device holds the private attestation key, either in secure storage
@@ -49,9 +50,9 @@ authentication:
 A key requirement for a secure attestation process is the use of a
 32/48/64-byte server-generated [nonce](NCP1) or challenge.
 
-A unique value is assigned here to ensure that previous IAT responses can
-not be replayed to the remote server, allowing an attacker to bypass the
-device authentication process.
+A unique value is assigned to the challenge field to ensure that previous IAT
+responses can not be replayed to the remote server, potentially allowing an
+attacker to bypass the device authentication process.
 
 **Always assign a unique value to the nonce field for every IAT request!**
 
@@ -59,8 +60,8 @@ device authentication process.
 
 ### Exporting the Public Key
 
-In order to make effective use of the IAT for device authentication, the
-remote server must have the public attestation key that matches the private
+In order to make effective use of IAT for device authentication, the remote
+server must have the public attestation key that matches the private
 attestation key held by the TF-M device.
 
 Since the MPS2+/AN521 board does not have HW crypto support, it uses a

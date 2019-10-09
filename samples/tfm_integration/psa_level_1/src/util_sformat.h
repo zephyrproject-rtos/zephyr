@@ -24,7 +24,7 @@ struct sf_hex_tbl_fmt {
 	u8_t addr_label : 1;
 	/** The starting value for the address labels. */
 	u32_t addr;
-} __attribute__((packed));
+} __packed;
 
 /**
  * @brief Prints a 16-value wide tabular rendering of 8-bit hex data, with

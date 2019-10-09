@@ -22,7 +22,7 @@ enum psa_attest_err_t att_get_pub_key(void)
 	/* TODO: How to retrieve this?!? */
 
 	/* Log any eventual errors via app_log */
-	return (err ? al_psa_attest_err(err, __func__) : err);
+	return err ? al_psa_attest_err(err, __func__) : err;
 }
 
 enum psa_attest_err_t att_get_iat(u8_t *ch_buffer, u32_t ch_sz,
@@ -31,10 +31,12 @@ enum psa_attest_err_t att_get_iat(u8_t *ch_buffer, u32_t ch_sz,
 	enum psa_attest_err_t err = PSA_ATTEST_ERR_SUCCESS;
 	u32_t sys_token_sz;
 
-	/* First determine how large the token is on this system.
+	/*
+	 * First determine how large the token is on this system.
 	 * We don't need to compare with the size of ATT_MAX_TOKEN_SIZE here
 	 * since a check will be made in 'psa_initial_attest_get_token' and the
-	 * error return code will indicate a mismatch. */
+	 * error return code will indicate a mismatch.
+	 */
 	switch (ch_sz) {
 	case 32:
 		err = psa_initial_attest_get_token_size(
@@ -69,7 +71,7 @@ enum psa_attest_err_t att_get_iat(u8_t *ch_buffer, u32_t ch_sz,
 
 err:
 	/* Log any eventual errors via app_log */
-	return (err ? al_psa_attest_err(err, __func__) : err);
+	return err ? al_psa_attest_err(err, __func__) : err;
 }
 
 enum psa_attest_err_t att_test(void)
