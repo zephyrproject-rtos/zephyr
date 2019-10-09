@@ -244,7 +244,7 @@ static void color_postfix(const struct log_output *log_output,
 
 
 static int ids_print(const struct log_output *log_output, bool level_on,
-		    bool func_on, u32_t domain_id, u32_t source_id, u32_t level)
+		    bool func_on, u8_t domain_id, u16_t source_id, u32_t level)
 {
 	int total = 0;
 
@@ -252,12 +252,17 @@ static int ids_print(const struct log_output *log_output, bool level_on,
 		total += print_formatted(log_output, "<%s> ", severity[level]);
 	}
 
-	total += print_formatted(log_output,
+	if (domain_id > 0) {
+		total += print_formatted(log_output,
+					"%s/", log_domain_name_get(domain_id));
+	} else {
+		total += print_formatted(log_output,
 				(func_on &&
 				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
 				log_source_name_get(NULL, 0, domain_id,
 						    source_id));
+	}
 
 	return total;
 }
@@ -447,7 +452,6 @@ static void raw_string_print(struct log_msg *msg,
 		/* Sting is stored in a hexdump message. */
 		log_msg_hexdump_data_get(msg, log_output->buf, &length, offset);
 		log_output->control_block->offset = length;
-
 		if (length != 0) {
 			eol = (log_output->buf[length - 1] == '\n');
 		}
@@ -463,7 +467,7 @@ static void raw_string_print(struct log_msg *msg,
 
 static u32_t prefix_print(const struct log_output *log_output,
 			 u32_t flags, bool func_on, u32_t timestamp, u8_t level,
-			 u8_t domain_id, u16_t source_id)
+			 bool from_domain, u8_t domain_id, u16_t source_id)
 {
 	u32_t length = 0U;
 
@@ -501,7 +505,7 @@ static u32_t prefix_print(const struct log_output *log_output,
 
 	} else {
 		color_prefix(log_output, colors_on, level);
-		length += ids_print(log_output, level_on, func_on,
+		length += ids_print(log_output, level_on, false,
 				    domain_id, source_id, level);
 	}
 
@@ -526,6 +530,7 @@ void log_output_msg_process(const struct log_output *log_output,
 	u8_t domain_id = (u8_t)log_msg_domain_id_get(msg);
 	u16_t source_id = (u16_t)log_msg_source_id_get(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	bool from_domain = msg->hdr.ids.domain_id != 0;
 	int prefix_offset;
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
@@ -536,7 +541,8 @@ void log_output_msg_process(const struct log_output *log_output,
 
 	prefix_offset = raw_string ?
 			0 : prefix_print(log_output, flags, std_msg, timestamp,
-					 level, domain_id, source_id);
+					 level, from_domain, domain_id,
+					 source_id);
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
@@ -585,7 +591,7 @@ void log_output_string(const struct log_output *log_output,
 
 	if (!raw_string) {
 		prefix_print(log_output, flags, true, timestamp,
-				level, domain_id, source_id);
+				level, false, domain_id, source_id);
 	}
 
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
@@ -627,7 +633,7 @@ void log_output_hexdump(const struct log_output *log_output,
 	}
 
 	prefix_offset = prefix_print(log_output, flags, true, timestamp,
-				     level, domain_id, source_id);
+				     level, false, domain_id, source_id);
 
 	/* Print metadata */
 	print_formatted(log_output, "%s", metadata);
