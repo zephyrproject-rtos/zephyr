@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M wrapper for ISRs with parameter
+ * @brief ARM Cortex-M and Cortex-R wrapper for ISRs with parameter
  *
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.

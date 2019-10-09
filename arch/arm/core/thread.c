@@ -6,9 +6,10 @@
 
 /**
  * @file
- * @brief New thread creation for ARM Cortex-M
+ * @brief New thread creation for ARM Cortex-M and Cortex-R
  *
- * Core thread related primitives for the ARM Cortex-M processor architecture.
+ * Core thread related primitives for the ARM Cortex-M and Cortex-R
+ * processor architecture.
  */
 
 #include <kernel.h>

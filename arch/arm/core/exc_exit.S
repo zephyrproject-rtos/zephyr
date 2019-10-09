@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M exception/interrupt exit API
+ * @brief ARM Cortex-M and Cortex-R exception/interrupt exit API
  *
  *
  * Provides functions for performing kernel handling when exiting exceptions or

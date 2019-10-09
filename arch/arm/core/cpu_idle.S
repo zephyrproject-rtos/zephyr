@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M power management
+ * @brief ARM Cortex-M and Cortex-R power management
  *
  */
 
