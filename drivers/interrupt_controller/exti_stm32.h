@@ -72,8 +72,7 @@ typedef void (*stm32_exti_callback_t) (int line, void *user);
  * @param cb   user callback
  * @param arg  user arg
  */
-int stm32_exti_set_callback(int line, int port, stm32_exti_callback_t cb,
-				void *data);
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *data);
 
 /**
  * @brief unset EXTI interrupt callback
