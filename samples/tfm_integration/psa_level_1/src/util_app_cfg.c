@@ -9,13 +9,12 @@
 
 #include "psa/error.h"
 #include "psa/protected_storage.h"
-#include "config.h"
-#include "applog.h"
+#include "util_app_cfg.h"
+#include "util_app_log.h"
 
 /** The 64-bit UID associated with the config record in secure storage. */
 static psa_ps_uid_t cfg_data_uid = 0x0000000055CFDA7A;
 
-/** Declare a reference to the application logging interface. */
 LOG_MODULE_DECLARE(app, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -32,7 +31,7 @@ psa_status_t cfg_create_data(void)
 {
 	psa_status_t status;
 
-	LOG_INF("Creating new config file with UID 0x%llX",
+	LOG_INF("app_cfg: Creating new config file with UID 0x%llX",
 		(u64_t)cfg_data_uid);
 
 	/*

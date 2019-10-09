@@ -10,6 +10,7 @@ project(NONE)
 #set(TFMBOARD "MUSCA_A")
 set(ZEPHYRBOARD "mps2_an521_nonsecure")
 set(TFMBOARD "AN521")
+set(TFMCONFIG "ConfigRegressionIPC")
 
 # Make sure we are using a compatible board target.
 if(NOT (${BOARD} STREQUAL ${ZEPHYRBOARD}))
@@ -89,18 +90,15 @@ if(NOT TFM_BUILD_EXISTS)
         endif()
         file(MAKE_DIRECTORY ${TFM_REMOTE_DIR}/tfm/build)
         tfmbuild_exec("cd .. && ${GIT_EXECUTABLE} reset --hard ${TFM_COMMIT_HASH}")
-        tfmbuild_exec("${CMAKE_COMMAND} -G\"Unix Makefiles\" -DPROJ_CONFIG=`${READLINK} -f ../configs/ConfigRegressionIPC.cmake` -DTFM_PSA_API=True -DTARGET_PLATFORM=${TFMBOARD} -DBL2=True -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCOMPILER=GNUARM ../")
+        tfmbuild_exec("${CMAKE_COMMAND} -G\"Unix Makefiles\" -DPROJ_CONFIG=`${READLINK} -f ../configs/${TFMCONFIG}.cmake` -DTFM_PSA_API=True -DTARGET_PLATFORM=${TFMBOARD} -DBL2=True -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCOMPILER=GNUARM ../")
         tfmbuild_exec("make")
         tfmbuild_exec("make install")
 endif()
 
 target_include_directories(app PRIVATE ${TFM_PSA_API_DIR}/inc)
 target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm)
-target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/)
-target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/)
 
 target_compile_definitions(app PRIVATE -DTFM_PSA_API)
-target_compile_definitions(app PRIVATE -DDOMAIN_NS=1)
 
 # target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_audit_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_crypto_api.c)
@@ -110,21 +108,8 @@ target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_nspm_svc_handler.c)
 # target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_platform_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_psa_ns_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_sst_api.c)
-target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework.c)
-target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework_helpers.c)
-target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework_integ_test_helper.c)
-target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/crypto_tests_common.c)
-target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/non_secure/crypto_ns_interface_testsuite.c)
 
 FILE(GLOB app_sources ${APPLICATION_SOURCE_DIR}/src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${TFM_REMOTE_DIR}/tfm/build/install/export/tfm/veneers/s_veneers.o)
-
-# Add post-build merge step
-# add_custom_command(
-#         TARGET app POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E echo app_post_build
-#         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#         COMMENT "Merging ${ZEPHYR_BINARY_DIR}/zephyr.hex with secure TF-M lib for board: ${BOARD}"
-# )

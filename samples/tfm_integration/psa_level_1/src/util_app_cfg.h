@@ -8,6 +8,10 @@
 
 #include "psa/error.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief The struct used to persist config data to secure storage.
  *
@@ -53,3 +57,7 @@ psa_status_t cfg_create_data(void);
  * @return #PSA_SUCCESS on success, otherwise a appropriate psa_status_t code.
  */
 psa_status_t cfg_load_data(struct cfg_data *p_cfg_data);
+
+#ifdef __cplusplus
+}
+#endif
