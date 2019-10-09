@@ -31,7 +31,7 @@
  *
  * @param line EXTI# line
  */
-int stm32_exti_enable(int line);
+void stm32_exti_enable(int line);
 
 /**
  * @brief disable EXTI interrupt for specific line
