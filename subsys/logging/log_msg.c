@@ -101,6 +101,14 @@ static void cont_free(struct log_msg_cont *cont)
 	}
 }
 
+static bool is_multichunk_msg(struct log_msg *msg)
+{
+	return (log_msg_is_std(msg) && log_msg_nargs_get(msg) >
+			LOG_MSG_NARGS_SINGLE_CHUNK) ||
+		(!log_msg_is_std(msg) && (msg->hdr.params.hexdump.length >
+			LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK));
+}
+
 static void msg_free(struct log_msg *msg)
 {
 	u32_t nargs = msg->hdr.params.std.nargs;
@@ -129,7 +137,7 @@ static void msg_free(struct log_msg *msg)
 		}
 	}
 
-	if (msg->hdr.params.generic.ext == 1) {
+	if (is_multichunk_msg(msg)) {
 		cont_free(msg->payload.ext.next);
 	}
 
@@ -235,7 +243,6 @@ static struct log_msg *msg_alloc(u32_t nargs)
 	}
 
 	msg->hdr.params.std.nargs = 0U;
-	msg->hdr.params.generic.ext = 1;
 	n -= LOG_MSG_NARGS_HEAD_CHUNK;
 	next = &msg->payload.ext.next;
 	*next = NULL;
@@ -330,13 +337,11 @@ struct log_msg *log_msg_hexdump_create(const char *str,
 		       data,
 		       LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK);
 		msg->payload.ext.next = NULL;
-		msg->hdr.params.generic.ext = 1;
 
 		data += LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
 		length -= LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
 	} else {
 		(void)memcpy(msg->payload.single.bytes, data, length);
-		msg->hdr.params.generic.ext = 0;
 		length = 0U;
 	}
 
