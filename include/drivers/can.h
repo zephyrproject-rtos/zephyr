@@ -257,7 +257,7 @@ struct can_bus_err_cnt {
  * @param error_flags status of the performed send operation
  * @param arg argument that was passed when the message was sent
  */
-typedef void (*can_tx_callback_t)(u32_t error_flags, void *arg);
+typedef void (*can_tx_callback_t)(int error_number, void *arg);
 
 /**
  * @typedef can_rx_callback_t

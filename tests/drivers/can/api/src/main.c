@@ -162,7 +162,7 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_timeout_isr(u32_t error_flags, void *arg)
+static void tx_timeout_isr(int error_number, void *arg)
 {
 	int expected_err = (int)arg;
 
@@ -173,7 +173,7 @@ static void tx_timeout_isr(u32_t error_flags, void *arg)
 			  expected_err, error_number);
 }
 
-static void tx_std_isr(u32_t error_flags, void *arg)
+static void tx_std_isr(int error_number, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -182,7 +182,7 @@ static void tx_std_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->std_id, TEST_CAN_STD_ID, "Arg does not match");
 }
 
-static void tx_std_masked_isr(u32_t error_flags, void *arg)
+static void tx_std_masked_isr(int error_number, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -191,7 +191,7 @@ static void tx_std_masked_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->std_id, TEST_CAN_STD_MASK_ID, "Arg does not match");
 }
 
-static void tx_ext_isr(u32_t error_flags, void *arg)
+static void tx_ext_isr(int error_number, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -200,7 +200,7 @@ static void tx_ext_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->ext_id, TEST_CAN_EXT_ID, "Arg does not match");
 }
 
-static void tx_ext_masked_isr(u32_t error_flags, void *arg)
+static void tx_ext_masked_isr(int error_number, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 

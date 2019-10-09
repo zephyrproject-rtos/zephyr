@@ -425,10 +425,10 @@ static void canbus_set_frame_addr_pkt(struct zcan_frame *frame,
 	canbus_set_frame_addr(frame, dest_addr, &src_addr, mcast);
 }
 
-static void canbus_fc_send_cb(u32_t err_flags, void *arg)
+static void canbus_fc_send_cb(int err_number, void *arg)
 {
-	if (err_flags) {
-		NET_ERR("Sending FC frame failed: %d", err_flags);
+	if (err_number) {
+		NET_ERR("Sending FC frame failed: %d", err_number);
 	}
 }
 
@@ -684,7 +684,7 @@ static enum net_verdict canbus_process_sf(struct net_pkt *pkt)
 	return canbus_finish_pkt(pkt);
 }
 
-static void canbus_tx_frame_isr(u32_t err_flags, void *arg)
+static void canbus_tx_frame_isr(int err_number, void *arg)
 {
 	struct net_pkt *pkt = (struct net_pkt *)arg;
 	struct canbus_isotp_tx_ctx *ctx = pkt->canbus_tx_ctx;
@@ -1528,14 +1528,14 @@ static inline int canbus_send_dad_request(struct device *net_can_dev,
 	return 0;
 }
 
-static void canbus_send_dad_resp_cb(u32_t err_flags, void *cb_arg)
+static void canbus_send_dad_resp_cb(int err_number, void *cb_arg)
 {
 	static u8_t fail_cnt;
 	struct k_work *work = (struct k_work *)cb_arg;
 
-	if (err_flags) {
-		NET_ERR("Failed to send dad response [%u]", err_flags);
-		if (err_flags != CAN_TX_BUS_OFF &&
+	if (err_number) {
+		NET_ERR("Failed to send dad response [%u]", err_number);
+		if (err_number != CAN_TX_BUS_OFF &&
 		    fail_cnt < NET_CAN_DAD_SEND_RETRY) {
 			k_work_submit_to_queue(&net_canbus_workq, work);
 		}
