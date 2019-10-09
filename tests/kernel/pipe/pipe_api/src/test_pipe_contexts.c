@@ -7,12 +7,15 @@
 #include <ztest.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define PIPE_LEN	16
-#define BYTES_TO_WRITE	4
+#define PIPE_LEN	(4 * _MPOOL_MINBLK)
+#define BYTES_TO_WRITE	_MPOOL_MINBLK
 #define BYTES_TO_READ BYTES_TO_WRITE
-K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
+K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, 4);
 
-static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
+static ZTEST_DMEM unsigned char __aligned(4) data[] =
+"abcd1234$%^&PIPEefgh5678!/?*EPIPijkl9012[]<>PEPImnop3456{}()IPEP";
+BUILD_ASSERT(sizeof(data) >= PIPE_LEN);
+
 /**TESTPOINT: init via K_PIPE_DEFINE*/
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);
@@ -296,6 +299,36 @@ void test_half_pipe_get_put(void)
 				      tThread_half_pipe_put, &khalfpipe,
 				      NULL, NULL, K_PRIO_PREEMPT(0),
 				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	tpipe_get(&khalfpipe, K_FOREVER);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid);
+}
+
+/**
+ * @brief Test get/put with saturating smaller pipe buffer
+ * @see k_pipe_put(), k_pipe_get()
+ */
+void test_half_pipe_saturating_block_put(void)
+{
+	int r[3];
+	struct k_mem_block blocks[3];
+
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_half_pipe_block_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+
+	k_sleep(10);
+
+	/* Ensure half the mempool is still queued in the pipe */
+	r[0] = k_mem_pool_alloc(&mpool, &blocks[0], BYTES_TO_WRITE, K_NO_WAIT);
+	r[1] = k_mem_pool_alloc(&mpool, &blocks[1], BYTES_TO_WRITE, K_NO_WAIT);
+	r[2] = k_mem_pool_alloc(&mpool, &blocks[2], BYTES_TO_WRITE, K_NO_WAIT);
+	zassert_true(r[0] == 0 && r[1] == 0 && r[2] == -ENOMEM, NULL);
+	k_mem_pool_free(&blocks[0]);
+	k_mem_pool_free(&blocks[1]);
 
 	tpipe_get(&khalfpipe, K_FOREVER);
 
