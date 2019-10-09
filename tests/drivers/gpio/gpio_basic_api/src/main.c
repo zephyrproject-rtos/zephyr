@@ -8,15 +8,16 @@
 #include "test_gpio.h"
 
 /* Grotesque hack for pinmux boards */
-#ifdef CONFIG_BOARD_FRDM_K64F
+#if defined(CONFIG_BOARD_FRDM_K64F)
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
 #include "device_imx.h"
-#endif
-
-#ifdef CONFIG_BOARD_MIMXRT1050_EVK
+#elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 #include <fsl_iomuxc.h>
+#elif defined(CONFIG_SOC_FAMILY_LPC)
+#include <drivers/pinmux.h>
+#include "soc.h"
 #endif
 
 static void board_setup(void)
@@ -32,7 +33,7 @@ static void board_setup(void)
 	}
 #endif
 
-#ifdef CONFIG_BOARD_FRDM_K64F
+#if defined(CONFIG_BOARD_FRDM_K64F)
 	/* TODO figure out how to get this from "GPIO_2" */
 	const char *pmx_name = "portc";
 	struct device *pmx = device_get_binding(pmx_name);
@@ -81,9 +82,7 @@ static void board_setup(void)
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_SPEED(2) |
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_DSE(6);
-#endif
-
-#ifdef CONFIG_BOARD_MIMXRT1050_EVK
+#elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_GPIO1_IO23, 0);
 
@@ -97,6 +96,19 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#elif defined(CONFIG_SOC_FAMILY_LPC)
+	/* Assumes ARDUINO pins are mapped on PORT0 on all boards*/
+	struct device *port0 =
+		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
+	const u32_t pin_config = (
+			IOCON_PIO_FUNC0 |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_INPFILT_OFF |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	pinmux_pin_set(port0, PIN_IN,  pin_config);
+	pinmux_pin_set(port0, PIN_OUT, pin_config);
 #endif
 }
 
