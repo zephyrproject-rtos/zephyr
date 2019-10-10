@@ -129,8 +129,9 @@
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
-/drivers/flash/                           @nashif
+/drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*native_posix*             @vanwinkeljan @aescolar
+/drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
 /drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
@@ -224,6 +225,7 @@
 /include/drivers/display.h                @vanwinkeljan
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @andrewboie @gnuless
 /include/drivers/pcie/                    @gnuless
