@@ -47,7 +47,7 @@ manifest:
       revision: 080d1dff4a07b5798ab979fde40dde8da452b854
       path: modules/hal/nordic
     - name: hal_openisa
-      revision: 0cbbf29f1523fe2970e57622bd79d9b115ca84e5
+      revision: 6416140c00f7e663752bd420ba89e3caefc1d70e
       path: modules/hal/openisa
     - name: hal_microchip
       revision: 85302959c0c659311cf90ac51d133e5ce19c9288
