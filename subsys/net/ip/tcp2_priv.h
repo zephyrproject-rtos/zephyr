@@ -9,16 +9,6 @@
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 #define is_timer_subscribed(_t) (k_timer_remaining_get(_t))
 
-#define tcp_dbg(fmt, args...) printk("%s: " fmt "\n", __func__, ## args)
-#define tcp_err(fmt, args...) do {				\
-	printk("%s: Error: " fmt "\n", __func__, ## args);	\
-	k_oops();						\
-} while (0)
-
-#define tcp_warn(fmt, args...) do {				\
-	printk("%s: Warning: " fmt "\n", __func__, ## args);	\
-} while (0)
-
 #define tcp_assert(cond, fmt, args...) do {			\
 	if ((cond) == false) {					\
 		printk("%s: Assertion failed: %s, " fmt "\n",	\
@@ -104,7 +94,7 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 
 #define conn_state(_conn, _s)						\
 ({									\
-	tcp_dbg("%s->%s",						\
+	NET_DBG("%s->%s",						\
 		tcp_state_to_str((_conn)->state, false),		\
 		tcp_state_to_str((_s), false));				\
 	(_conn)->state = _s;						\
