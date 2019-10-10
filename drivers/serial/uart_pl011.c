@@ -354,7 +354,6 @@ static int pl011_init(struct device *dev)
 {
 	int ret;
 	u32_t lcrh;
-	const struct uart_device_config *config = dev->config->config_info;
 
 	/* disable the uart */
 	pl011_disable(dev);
@@ -387,7 +386,7 @@ static int pl011_init(struct device *dev)
 	__ISB();
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
+	DEV_CFG(dev)->irq_config_func(dev);
 #endif
 	pl011_enable(dev);
 
