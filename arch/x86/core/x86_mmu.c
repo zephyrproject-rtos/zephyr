@@ -26,37 +26,67 @@ BUILD_ASSERT(DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024ULL) - 1ULL <=
 /* Mark text and rodata as read-only.
  * Userspace may read all text and rodata.
  */
-MMU_BOOT_REGION((u32_t)&_image_text_start, (u32_t)&_image_text_size,
+MMU_BOOT_REGION(&_image_text_start, &_image_text_size,
 		Z_X86_MMU_US);
 
-MMU_BOOT_REGION((u32_t)&_image_rodata_start, (u32_t)&_image_rodata_size,
+MMU_BOOT_REGION(&_image_rodata_start, &_image_rodata_size,
 		Z_X86_MMU_US | Z_X86_MMU_XD);
 
 #ifdef CONFIG_USERSPACE
-MMU_BOOT_REGION((u32_t)&_app_smem_start, (u32_t)&_app_smem_size,
+MMU_BOOT_REGION(&_app_smem_start, &_app_smem_size,
 		Z_X86_MMU_RW | Z_X86_MMU_XD);
 #endif
 
 #ifdef CONFIG_COVERAGE_GCOV
-MMU_BOOT_REGION((u32_t)&__gcov_bss_start, (u32_t)&__gcov_bss_size,
+MMU_BOOT_REGION(&__gcov_bss_start, &__gcov_bss_size,
 		Z_X86_MMU_RW | Z_X86_MMU_US | Z_X86_MMU_XD);
+#endif
+
+#ifdef CONFIG_X86_LONGMODE
+extern char _locore_start[];
+extern char _locore_size[];
+extern char _lorodata_start[];
+extern char _lorodata_size[];
+extern char _lodata_start[];
+extern char _lodata_size[];
+
+/* Early boot regions that need to be in low memory to be comprehensible
+ * by the CPU in 16-bit mode
+ */
+
+MMU_BOOT_REGION(&_locore_start, &_locore_size, 0);
+MMU_BOOT_REGION(&_lorodata_start, &_lorodata_size, Z_X86_MMU_XD);
+MMU_BOOT_REGION(&_lodata_start, &_lodata_size, Z_X86_MMU_RW | Z_X86_MMU_XD);
 #endif
 
 /* __kernel_ram_size includes all unused memory, which is used for heaps.
  * User threads cannot access this unless granted at runtime. This is done
  * automatically for stacks.
  */
-MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
+MMU_BOOT_REGION(&__kernel_ram_start, &__kernel_ram_size,
 		Z_X86_MMU_RW | Z_X86_MMU_XD);
 
 /*
  * Inline functions for setting memory addresses in page table structures
  */
 
+#ifdef CONFIG_X86_LONGMODE
+static inline void pml4e_update_pdpt(u64_t *pml4e, struct x86_mmu_pdpt *pdpt)
+{
+	uintptr_t pdpt_addr = (uintptr_t)pdpt;
+
+	*pml4e = ((*pml4e & ~Z_X86_MMU_PML4E_PDPT_MASK) |
+		  (pdpt_addr & Z_X86_MMU_PML4E_PDPT_MASK));
+}
+#endif /* CONFIG_X86_LONGMODE */
+
 static inline void pdpte_update_pd(u64_t *pdpte, struct x86_mmu_pd *pd)
 {
 	uintptr_t pd_addr = (uintptr_t)pd;
 
+#ifdef CONFIG_X86_LONGMODE
+	__ASSERT((*pdpte & Z_X86_MMU_PS) == 0, "PDPT is for 1GB page");
+#endif
 	*pdpte = ((*pdpte & ~Z_X86_MMU_PDPTE_PD_MASK) |
 		  (pd_addr & Z_X86_MMU_PDPTE_PD_MASK));
 }
@@ -121,15 +151,12 @@ static char get_entry_code(u64_t value)
 	return ret;
 }
 
-static void z_x86_dump_pt(struct x86_mmu_pt *pt, uintptr_t base, int index)
+static void print_entries(u64_t entries_array[], size_t count)
 {
 	int column = 0;
 
-	printk("Page table %d for 0x%08lX - 0x%08lX at %p\n",
-	       index, base, base + Z_X86_PT_AREA - 1, pt);
-
-	for (int i = 0; i < Z_X86_NUM_PT_ENTRIES; i++) {
-		printk("%c", get_entry_code(pt->entry[i]));
+	for (int i = 0; i < count; i++) {
+		printk("%c", get_entry_code(entries_array[i]));
 
 		column++;
 		if (column == 64) {
@@ -137,24 +164,26 @@ static void z_x86_dump_pt(struct x86_mmu_pt *pt, uintptr_t base, int index)
 			printk("\n");
 		}
 	}
+
+	if (column != 0) {
+		printk("\n");
+	}
+}
+
+static void z_x86_dump_pt(struct x86_mmu_pt *pt, uintptr_t base, int index)
+{
+	printk("Page table %d for 0x%016lX - 0x%016lX at %p\n",
+	       index, base, base + Z_X86_PT_AREA - 1, pt);
+
+	print_entries(pt->entry, Z_X86_NUM_PT_ENTRIES);
 }
 
 static void z_x86_dump_pd(struct x86_mmu_pd *pd, uintptr_t base, int index)
 {
-	int column = 0;
-
-	printk("Page directory %d for 0x%08lX - 0x%08lX at %p\n",
+	printk("Page directory %d for 0x%016lX - 0x%016lX at %p\n",
 	       index, base, base + Z_X86_PD_AREA - 1, pd);
 
-	for (int i = 0; i < Z_X86_NUM_PD_ENTRIES; i++) {
-		printk("%c", get_entry_code(pd->entry[i]));
-
-		column++;
-		if (column == 64) {
-			column = 0;
-			printk("\n");
-		}
-	}
+	print_entries(pd->entry, Z_X86_NUM_PD_ENTRIES);
 
 	for (int i = 0; i < Z_X86_NUM_PD_ENTRIES; i++) {
 		struct x86_mmu_pt *pt;
@@ -174,13 +203,11 @@ static void z_x86_dump_pd(struct x86_mmu_pd *pd, uintptr_t base, int index)
 static void z_x86_dump_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t base,
 			    int index)
 {
-	printk("Page directory pointer table %d for 0x%08lX - 0x%08lX at %p\n",
+	printk("Page directory pointer table %d for 0x%0816lX - 0x%016lX at %p\n",
 	       index, base, base + Z_X86_PDPT_AREA - 1, pdpt);
 
-	for (int i = 0; i < Z_X86_NUM_PDPT_ENTRIES; i++) {
-		printk("%c", get_entry_code(pdpt->entry[i]));
-	}
-	printk("\n");
+	print_entries(pdpt->entry, Z_X86_NUM_PDPT_ENTRIES);
+
 	for (int i = 0; i < Z_X86_NUM_PDPT_ENTRIES; i++) {
 		struct x86_mmu_pd *pd;
 		u64_t pdpte = pdpt->entry[i];
@@ -188,15 +215,47 @@ static void z_x86_dump_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t base,
 		if ((pdpte & Z_X86_MMU_P) == 0) {
 			continue;
 		}
+#ifdef CONFIG_X86_LONGMODE
+		if ((pdpte & Z_X86_MMU_PS) != 0) {
+			continue;
+		}
+#endif
 		pd = z_x86_pdpte_get_pd(pdpte);
 		z_x86_dump_pd(pd, base + (i * Z_X86_PD_AREA), i);
 	}
 }
 
+#ifdef CONFIG_X86_LONGMODE
+static void z_x86_dump_pml4(struct x86_mmu_pml4 *pml4)
+{
+	printk("Page mapping level 4 at %p for all memory addresses\n", pml4);
+
+	print_entries(pml4->entry, Z_X86_NUM_PML4_ENTRIES);
+
+	for (int i = 0; i < Z_X86_NUM_PML4_ENTRIES; i++) {
+		struct x86_mmu_pdpt *pdpt;
+		u64_t pml4e = pml4->entry[i];
+
+		if ((pml4e & Z_X86_MMU_P) == 0) {
+			continue;
+		}
+
+		pdpt = z_x86_pml4e_get_pdpt(pml4e);
+		z_x86_dump_pdpt(pdpt, i * Z_X86_PDPT_AREA, i);
+	}
+}
+
+void z_x86_dump_page_tables(struct x86_page_tables *ptables)
+{
+	z_x86_dump_pml4(z_x86_get_pml4(ptables));
+}
+
+#else
 void z_x86_dump_page_tables(struct x86_page_tables *ptables)
 {
 	z_x86_dump_pdpt(z_x86_get_pdpt(ptables, 0), 0, 0);
 }
+#endif
 
 void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
 			 u64_t *pde_flags, u64_t *pte_flags)
@@ -313,7 +372,6 @@ static int x86_mmu_validate_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t addr,
 
 	while (remaining) {
 		u64_t pdpte = *z_x86_pdpt_get_pdpte(pdpt, pos);
-		struct x86_mmu_pd *pd;
 
 		if ((pdpte & Z_X86_MMU_P) == 0) {
 			/* Non-present */
@@ -321,13 +379,30 @@ static int x86_mmu_validate_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t addr,
 			break;
 		}
 
-		pd = z_x86_pdpte_get_pd(pdpte);
-		to_examine = get_table_max(pos, remaining, Z_X86_PD_AREA);
-
-		ret = x86_mmu_validate_pd(pd, pos, to_examine, write);
-		if (ret != 0) {
+#ifdef CONFIG_X86_LONGMODE
+		if ((pdpte & Z_X86_MMU_US) == 0 ||
+		    (write && (pdpte & Z_X86_MMU_RW) == 0)) {
+			ret = -1;
 			break;
 		}
+#endif
+		to_examine = get_table_max(pos, remaining, Z_X86_PD_AREA);
+
+#ifdef CONFIG_X86_LONGMODE
+		/* Check if 1GB page, if not, examine linked page directory */
+		if ((pdpte & Z_X86_MMU_PS) == 0) {
+#endif
+			struct x86_mmu_pd *pd = z_x86_pdpte_get_pd(pdpte);
+
+			ret = x86_mmu_validate_pd(pd, pos, to_examine, write);
+			if (ret != 0) {
+				break;
+			}
+#ifdef CONFIG_X86_LONGMODE
+		} else {
+			ret = 0;
+		}
+#endif
 		remaining -= to_examine;
 		pos += to_examine;
 	}
@@ -335,14 +410,55 @@ static int x86_mmu_validate_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t addr,
 	return ret;
 }
 
+#ifdef CONFIG_X86_LONGMODE
+static int x86_mmu_validate_pml4(struct x86_mmu_pml4 *pml4, uintptr_t addr,
+				 size_t size, bool write)
+{
+	uintptr_t pos = addr;
+	size_t remaining = size;
+	int ret = 0;
+	size_t to_examine;
+
+	while (remaining) {
+		u64_t pml4e = *z_x86_pml4_get_pml4e(pml4, pos);
+		struct x86_mmu_pdpt *pdpt;
+
+		if ((pml4e & Z_X86_MMU_P) == 0 || (pml4e & Z_X86_MMU_US) == 0 ||
+		    (write && (pml4e & Z_X86_MMU_RW) == 0)) {
+			ret = -1;
+			break;
+		}
+
+		to_examine = get_table_max(pos, remaining, Z_X86_PDPT_AREA);
+		pdpt = z_x86_pml4e_get_pdpt(pml4e);
+
+		ret = x86_mmu_validate_pdpt(pdpt, pos, to_examine, write);
+		if (ret != 0) {
+			break;
+		}
+
+		remaining -= to_examine;
+		pos += to_examine;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_X86_LONGMODE */
+
 int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write)
 {
 	int ret;
-	/* 32-bit just has one PDPT that covers the entire address space */
+
+#ifdef CONFIG_X86_LONGMODE
+	struct x86_mmu_pml4 *pml4 = z_x86_get_pml4(ptables);
+
+	ret = x86_mmu_validate_pml4(pml4, (uintptr_t)addr, size, write);
+#else
 	struct x86_mmu_pdpt *pdpt = z_x86_get_pdpt(ptables, (uintptr_t)addr);
 
 	ret = x86_mmu_validate_pdpt(pdpt, (uintptr_t)addr, size, write);
+#endif
 
 #ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	__asm__ volatile ("lfence" : : : "memory");
@@ -361,10 +477,18 @@ static inline void tlb_flush_page(void *addr)
 	__asm__ ("invlpg %0" :: "m" (*page));
 }
 
+#ifdef CONFIG_X86_LONGMODE
+#define PML4E_FLAGS_MASK	(Z_X86_MMU_RW | Z_X86_MMU_US | Z_X86_MMU_P)
+
+#define PDPTE_FLAGS_MASK	PML4E_FLAGS_MASK
+
+#define PDE_FLAGS_MASK		PDPTE_FLAGS_MASK
+#else
 #define PDPTE_FLAGS_MASK	Z_X86_MMU_P
 
 #define PDE_FLAGS_MASK		(Z_X86_MMU_RW | Z_X86_MMU_US | \
 				 PDPTE_FLAGS_MASK)
+#endif
 
 #define PTE_FLAGS_MASK		(PDE_FLAGS_MASK | Z_X86_MMU_XD | \
 				 Z_X86_MMU_PWT | \
@@ -373,7 +497,7 @@ static inline void tlb_flush_page(void *addr)
 void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 			 size_t size, u64_t flags, u64_t mask, bool flush)
 {
-	u32_t addr = (u32_t)ptr;
+	uintptr_t addr = (uintptr_t)ptr;
 
 	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
 	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
@@ -386,18 +510,43 @@ void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 		mask |= Z_X86_MMU_PTE_ADDR_MASK;
 	}
 
+	/* NOTE: All of this code assumes that 2MB or 1GB pages are not being
+	 * modified.
+	 */
 	while (size != 0) {
 		u64_t *pte;
 		u64_t *pde;
 		u64_t *pdpte;
+#ifdef CONFIG_X86_LONGMODE
+		u64_t *pml4e;
+#endif
 		u64_t cur_flags = flags;
+		bool exec = (flags & Z_X86_MMU_XD) == 0;
 
+#ifdef CONFIG_X86_LONGMODE
+		pml4e = z_x86_pml4_get_pml4e(z_x86_get_pml4(ptables), addr);
+		__ASSERT((*pml4e & Z_X86_MMU_P) != 0,
+			 "set flags on non-present PML4e");
+		*pml4e |= (flags & PML4E_FLAGS_MASK);
+
+		if (exec) {
+			*pml4e &= ~Z_X86_MMU_XD;
+		}
+
+		pdpte = z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(*pml4e),
+					     addr);
+#else
 		pdpte = z_x86_pdpt_get_pdpte(z_x86_get_pdpt(ptables, addr),
 					     addr);
+#endif
 		__ASSERT((*pdpte & Z_X86_MMU_P) != 0,
 			 "set flags on non-present PDPTE");
 		*pdpte |= (flags & PDPTE_FLAGS_MASK);
-
+#ifdef CONFIG_X86_LONGMODE
+		if (exec) {
+			*pdpte &= ~Z_X86_MMU_XD;
+		}
+#endif
 		pde = z_x86_pd_get_pde(z_x86_pdpte_get_pd(*pdpte), addr);
 		__ASSERT((*pde & Z_X86_MMU_P) != 0,
 			 "set flags on non-present PDE");
@@ -406,7 +555,7 @@ void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 		/* If any flags enable execution, clear execute disable at the
 		 * page directory level
 		 */
-		if ((flags & Z_X86_MMU_XD) == 0) {
+		if (exec) {
 			*pde &= ~Z_X86_MMU_XD;
 		}
 
@@ -444,9 +593,15 @@ static void *get_page(void)
 	return page_pos;
 }
 
-__aligned(0x20) struct x86_page_tables z_x86_kernel_ptables;
+#ifdef CONFIG_X86_LONGMODE
+#define PTABLES_ALIGN	4096
+#else
+#define PTABLES_ALIGN	32
+#endif
+
+__aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_kernel_ptables;
 #ifdef CONFIG_X86_KPTI
-__aligned(0x20) struct x86_page_tables z_x86_user_ptables;
+__aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_user_ptables;
 #endif
 
 extern char z_shared_kernel_page_start[];
@@ -457,17 +612,39 @@ static inline bool is_within_system_ram(uintptr_t addr)
 		(addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
 }
 
-#define PDE_IGNORED	BIT64(11)
+/* Ignored bit posiition at all levels */
+#define IGNORED		BIT64(11)
+
+static void maybe_clear_xd(u64_t *entry, bool exec)
+{
+	/* Execute disable bit needs special handling, we should only set it at
+	 * intermediate levels if ALL containing pages have XD set (instead of
+	 * just one).
+	 *
+	 * Use an ignored bit position in the PDE to store a marker on whether
+	 * any configured region allows execution.
+	 */
+	if (exec) {
+		*entry |= IGNORED;
+		*entry &= ~Z_X86_MMU_XD;
+	} else if ((*entry & IGNORED) == 0) {
+		*entry |= Z_X86_MMU_XD;
+	}
+}
 
 static void add_mmu_region_page(struct x86_page_tables *ptables,
 				uintptr_t addr, u64_t flags, bool user_table)
 {
+#ifdef CONFIG_X86_LONGMODE
+	u64_t *pml4e;
+#endif
 	struct x86_mmu_pdpt *pdpt;
 	u64_t *pdpte;
 	struct x86_mmu_pd *pd;
 	u64_t *pde;
 	struct x86_mmu_pt *pt;
 	u64_t *pte;
+	bool exec = (flags & Z_X86_MMU_XD) == 0;
 
 #ifdef CONFIG_X86_KPTI
 	/* If we are generating a page table for user mode, and this address
@@ -482,7 +659,19 @@ static void add_mmu_region_page(struct x86_page_tables *ptables,
 	}
 #endif
 
+#ifdef CONFIG_X86_LONGMODE
+	pml4e = z_x86_pml4_get_pml4e(z_x86_get_pml4(ptables), addr);
+	if ((*pml4e & Z_X86_MMU_P) == 0) {
+		pdpt = get_page();
+		pml4e_update_pdpt(pml4e, pdpt);
+	} else {
+		pdpt = z_x86_pml4e_get_pdpt(*pml4e);
+	}
+	*pml4e |= (flags & PML4E_FLAGS_MASK);
+	maybe_clear_xd(pml4e, exec);
+#else
 	pdpt = z_x86_get_pdpt(ptables, addr);
+#endif
 
 	/* Setup the PDPTE entry for the address, creating a page directory
 	 * if one didn't exist
@@ -495,6 +684,9 @@ static void add_mmu_region_page(struct x86_page_tables *ptables,
 		pd = z_x86_pdpte_get_pd(*pdpte);
 	}
 	*pdpte |= (flags & PDPTE_FLAGS_MASK);
+#ifdef CONFIG_X86_LONGMODE
+	maybe_clear_xd(pdpte, exec);
+#endif
 
 	/* Setup the PDE entry for the address, creating a page table
 	 * if necessary
@@ -507,20 +699,7 @@ static void add_mmu_region_page(struct x86_page_tables *ptables,
 		pt = z_x86_pde_get_pt(*pde);
 	}
 	*pde |= (flags & PDE_FLAGS_MASK);
-
-	/* Execute disable bit needs special handling, we should only set it at
-	 * the page directory level if ALL pages have XD set (instead of just
-	 * one).
-	 *
-	 * Use an ignored bit position in the PDE to store a marker on whether
-	 * any configured region allows execution.
-	 */
-	if ((flags & Z_X86_MMU_XD) == 0) {
-		*pde |= PDE_IGNORED;
-		*pde &= ~Z_X86_MMU_XD;
-	} else if ((*pde & PDE_IGNORED) == 0) {
-		*pde |= Z_X86_MMU_XD;
-	}
+	maybe_clear_xd(pde, exec);
 
 #ifdef CONFIG_X86_KPTI
 	if (user_table && (flags & Z_X86_MMU_US) == 0 &&
@@ -552,7 +731,6 @@ static void add_mmu_region(struct x86_page_tables *ptables,
 		 "unaligned address provided");
 	__ASSERT((rgn->size & MMU_PAGE_MASK) == 0U,
 		 "unaligned size provided");
-
 	addr = rgn->address;
 	flags = rgn->flags | Z_X86_MMU_P;
 
@@ -587,8 +765,15 @@ void z_x86_paging_init(void)
 		       CONFIG_X86_MMU_PAGE_POOL_PAGES - pages_free);
 	}
 
+#ifdef CONFIG_X86_LONGMODE
+	/* MMU already enabled at boot for long mode, we just need to
+	 * program CR3 with our newly generated page tables.
+	 */
+	__asm__ volatile("movq %0, %%cr3\n\t"
+			 : : "r" (&z_x86_kernel_ptables) : "memory");
+#else
 	z_x86_enable_paging();
-
+#endif
 }
 
 #ifdef CONFIG_X86_USERSPACE

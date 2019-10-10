@@ -17,7 +17,6 @@
 #include "sys_io.h"
 #include <drivers/interrupt_controller/sysapic.h>
 #include <kernel_arch_thread.h>
-#include <arch/x86/mmustructs.h>
 #include <stdbool.h>
 #include <arch/common/ffs.h>
 #include <misc/util.h>

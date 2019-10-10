@@ -23,9 +23,6 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-/* Create all page tables with boot configuration and enable paging */
-void z_x86_paging_init(void);
-
 static inline void z_arch_kernel_init(void)
 {
 	/* No-op on this arch */
