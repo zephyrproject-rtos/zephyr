@@ -52,9 +52,10 @@
 #ifdef CONFIG_FLASH
 #include <stm32wbxx_ll_hsem.h>
 #endif /* CONFIG_FLASH */
-#ifdef CONFIG_I2C
+
+#ifdef CONFIG_I2C_STM32
 #include <stm32wbxx_ll_i2c.h>
-#endif /* CONFIG_I2C */
+#endif /* CONFIG_I2C_STM32 */
 
 #ifdef CONFIG_SPI_STM32
 #include <stm32wbxx_ll_spi.h>

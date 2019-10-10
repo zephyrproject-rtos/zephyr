@@ -47,7 +47,7 @@
 #include <stm32l1xx_ll_exti.h>
 #endif
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32l1xx_ll_i2c.h>
 #endif
 
