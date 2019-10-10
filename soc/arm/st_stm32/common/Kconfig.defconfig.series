@@ -9,6 +9,13 @@
 
 if SOC_FAMILY_STM32
 
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_STM32_CUBE
+	default y
+
+endif #CLOCK_CONTROL
+
 if SERIAL
 
 config UART_STM32
