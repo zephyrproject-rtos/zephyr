@@ -68,7 +68,8 @@ config SETTINGS_FS
 
 config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
-	depends on SETTINGS
+	depends on NVS
+	depends on FLASH_MAP
 	help
 	  Enables NVS storage support
 
