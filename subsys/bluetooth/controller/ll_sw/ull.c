@@ -147,9 +147,9 @@ static struct {
 } mem_link_done;
 
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#define LL_PDU_RX_CNT 2
+#define LL_PDU_RX_CNT 3
 #else
-#define LL_PDU_RX_CNT 1
+#define LL_PDU_RX_CNT 2
 #endif
 
 #define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
