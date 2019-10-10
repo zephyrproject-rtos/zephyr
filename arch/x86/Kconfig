@@ -16,23 +16,23 @@ config ARCH
 config CPU_ATOM
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool # hidden
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
 config CPU_APOLLO_LAKE
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -155,6 +155,71 @@ config X86_VERY_EARLY_CONSOLE
 	  beginning of z_cstart(), via z_arch_kernel_init(). This driver enables
 	  printk to emit messages to the 16550 UART port 0 instance in device
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
+
+config X86_MMU
+	bool "Enable Memory Management Unit"
+	select MEMORY_PROTECTION
+	help
+	  This options enables the memory management unit present in x86
+	  and creates a set of page tables at boot time that is runtime-
+	  mutable.
+
+config X86_MMU_PAGE_POOL_PAGES
+	int "Number of pages to reserve for building page tables"
+	default 16
+	depends on X86_MMU
+	help
+	  Building page tables at boot requires a pool of free memory pages
+	  to construct it. This can't be derived at build time, tune this
+	  to your SoC's specific memory map.
+
+config X86_NO_MELTDOWN
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability,
+	  as described in CVE-2017-5754.
+
+config X86_NO_SPECTRE_V1
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V1, V1.1, and V1.2
+	  CPU vulnerabilities as described in CVE-2017-5753 and CVE-2018-3693.
+
+config X86_NO_SPECTRE_V2
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V2 CPU
+	  vulnerability, as described in CVE-2017-5715.
+
+config X86_NO_SPECTRE_V4
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V4 CPU
+	  vulnerability, as described in CVE-2018-3639.
+
+config X86_NO_LAZY_FP
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate
+	  that a particular SOC is not vulnerable to the Lazy FP CPU
+	  vulnerability, as described in CVE-2018-3665.
+
+config X86_NO_SPECULATIVE_VULNERABILITIES
+	bool
+	select X86_NO_MELTDOWN
+	select X86_NO_SPECTRE_V1
+	select X86_NO_SPECTRE_V2
+	select X86_NO_SPECTRE_V4
+	select X86_NO_LAZY_FP
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC does not perform any kind of speculative execution,
+	  or is a newer chip which is immune to the class of vulnerabilities
+	  which exploit speculative execution side channel attacks.
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"

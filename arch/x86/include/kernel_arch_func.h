@@ -36,6 +36,11 @@ extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
 void z_x86_early_serial_init(void);
 #endif /* CONFIG_X86_VERY_EARLY_CONSOLE */
 
+#ifdef CONFIG_X86_MMU
+/* Create all page tables with boot configuration and enable paging */
+void z_x86_paging_init(void);
+#endif /* CONFIG_X86_MMU */
+
 #endif
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

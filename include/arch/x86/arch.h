@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <irq.h>
+#include <arch/x86/mmustructs.h>
 
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
