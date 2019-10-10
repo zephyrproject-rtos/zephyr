@@ -112,9 +112,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	movl $pml4, %eax		/* load page base */
 	movl %eax, %cr3
 
-	movl $X86_EFER_MSR, %ecx	/* enable long mode */
+	movl $X86_EFER_MSR, %ecx	/* enable long mode and no-execute */
 	rdmsr
-	orl $X86_EFER_MSR_LME, %eax
+	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE), %eax
 	wrmsr
 
 	movl %cr0, %eax			/* enable paging */
