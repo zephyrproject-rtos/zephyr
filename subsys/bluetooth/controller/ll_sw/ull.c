@@ -223,6 +223,7 @@ static void *mark_update;
 static void *mark_disable;
 
 static inline int init_reset(void);
+static void perform_lll_reset(void *param);
 static inline void *mark_set(void **m, void *param);
 static inline void *mark_unset(void **m, void *param);
 static inline void *mark_get(void *m);
@@ -401,6 +402,19 @@ void ll_reset(void)
 	/* Re-initialize the free ll rx mfifo */
 	MFIFO_INIT(ll_pdu_rx_free);
 #endif /* CONFIG_BT_CONN */
+
+	/* Reset LLL via mayfly */
+	{
+		u32_t retval;
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL,
+					    perform_lll_reset};
+
+		mfy.param = NULL;
+		retval = mayfly_enqueue(TICKER_USER_ID_THREAD,
+					TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!retval);
+	}
 
 	/* Common to init and reset */
 	err = init_reset();
@@ -1161,6 +1175,33 @@ static inline int init_reset(void)
 	rx_alloc(UINT8_MAX);
 
 	return 0;
+}
+
+static void perform_lll_reset(void *param)
+{
+	int err;
+
+	/* Reset LLL */
+	err = lll_reset();
+	LL_ASSERT(!err);
+
+#if defined(CONFIG_BT_BROADCASTER)
+	/* Reset adv state */
+	err = lll_adv_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	/* Reset scan state */
+	err = lll_scan_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CONN)
+	/* Reset conn role */
+	err = lll_conn_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CONN */
 }
 
 static inline void *mark_set(void **m, void *param)
