@@ -3,7 +3,6 @@
 CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32G4X=y
 CONFIG_SOC_STM32G431XX=y
-CONFIG_CORTEX_M_SYSTICK=y
 
 # 170MHz system clock only in 'boost power' mode. RM0440, section
 # 5.1.5 states that the R1MODE bit must be cleared before system can
