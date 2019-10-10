@@ -71,7 +71,7 @@ manifest:
       revision: d4708d0a432e95f51bdc712591ba5295b751140c
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: bbcb1b14285ac1b694d8c7e47c2f139c80b7fc4c
+      revision: 4f1e8f5a78dc08aa42a47cc1ad059cce558c26c3
       path: modules/crypto/mbedtls
     - name: mcumgr
       revision: 84934959d2d1722a23b7e7e200191ae4a6f96168
