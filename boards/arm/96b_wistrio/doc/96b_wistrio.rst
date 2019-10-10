@@ -19,7 +19,7 @@ boards.
 
      96Boards WisTrio
 
-This board is one of the 96Boards IoT Edition platform providing LoRa
+This board is one of the `96Boards IoT Edition`_ platforms providing LoRa
 connectivity.
 
 Hardware
@@ -212,3 +212,6 @@ References
 
 .. _Getting started page:
    https://github.com/blacksphere/blackmagic/wiki/Getting-Started
+
+.. _96Boards IoT Edition:
+    https://linaro.co/ie-specification
