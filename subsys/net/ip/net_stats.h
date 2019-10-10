@@ -475,4 +475,5 @@ void net_print_statistics(void);
 #define net_print_statistics()
 #endif
 
+void net_stats_reset(struct net_if *iface);
 #endif /* __NET_STATS_H__ */
