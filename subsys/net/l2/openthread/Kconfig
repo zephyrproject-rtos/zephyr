@@ -12,6 +12,7 @@ menuconfig NET_L2_OPENTHREAD
 	depends on FLASH_PAGE_LAYOUT
 	depends on CPLUSPLUS
 	depends on REBOOT
+	depends on SETTINGS
 	select OPENTHREAD_PLAT
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
