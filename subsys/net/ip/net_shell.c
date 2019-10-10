@@ -3462,7 +3462,11 @@ static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	cmd_net_stats_iface(shell, argc, argv);
+	if (strcmp(argv[1], "reset") == 0) {
+		net_stats_reset(NULL);
+	} else {
+		cmd_net_stats_iface(shell, argc, argv);
+	}
 #else
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
