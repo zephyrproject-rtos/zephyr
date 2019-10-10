@@ -23,11 +23,6 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#ifdef CONFIG_X86_VERY_EARLY_CONSOLE
-/* Setup ultra-minimal serial driver for printk() */
-void z_x86_early_serial_init(void);
-#endif
-
 /* Create all page tables with boot configuration and enable paging */
 void z_x86_paging_init(void);
 
