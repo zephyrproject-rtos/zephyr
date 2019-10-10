@@ -1968,9 +1968,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 
 		/* Acquire Rx node */
 		rx = conn->llcp_rx;
-		conn->llcp_rx = NULL;
-
 		LL_ASSERT(rx && rx->hdr.link);
+		conn->llcp_rx = rx->hdr.link->mem;
 
 		/* Prepare the rx packet structure */
 		if ((conn->llcp.conn_upd.interval != lll->interval) ||
@@ -2924,9 +2923,8 @@ static inline void event_len_prep(struct ll_conn *conn)
 
 		/* Prepare the rx packet structure */
 		rx = conn->llcp_rx;
-		conn->llcp_rx = NULL;
-
 		LL_ASSERT(rx && rx->hdr.link);
+		conn->llcp_rx = rx->hdr.link->mem;
 
 		rx->hdr.handle = conn->lll.handle;
 		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -3241,6 +3239,20 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH)) {
+				/* get the DLE rx node reserved for ULL->LL */
+				rx = conn->llcp_rx;
+				LL_ASSERT(rx && rx->hdr.link);
+				conn->llcp_rx = rx->hdr.link->mem;
+
+				/* Mark for buffer for release */
+				rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+
+				/* enqueue rx node towards Thread */
+				ll_rx_put(rx->hdr.link, rx);
+			}
+
 			ll_rx_sched();
 
 			return;
@@ -3348,8 +3360,7 @@ static u8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
 	conn->llcp.conn_upd.is_internal = 0U;
 
-	LL_ASSERT(!conn->llcp_rx);
-
+	link->mem = conn->llcp_rx;
 	(*rx)->hdr.link = link;
 	conn->llcp_rx = *rx;
 	*rx = NULL;
@@ -4188,8 +4199,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			conn->llcp_length.state =
 				LLCP_LENGTH_STATE_RESIZE;
 
-			LL_ASSERT(!conn->llcp_rx);
-
+			link->mem = conn->llcp_rx;
 			(*rx)->hdr.link = link;
 			conn->llcp_rx = *rx;
 			*rx = NULL;
@@ -4425,8 +4435,6 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	conn->llcp.phy_upd_ind.rx = ind->m_to_s_phy;
 	conn->llcp.phy_upd_ind.instant = instant;
 	conn->llcp.phy_upd_ind.initiate = 0U;
-
-	LL_ASSERT(!conn->llcp_rx);
 
 	link->mem = conn->llcp_rx;
 	(*rx)->hdr.link = link;
