@@ -297,3 +297,14 @@ You can use ``--freeze`` to produce a frozen manifest that's equivalent to your
 current manifest file. The ``-o`` option specifies an output file; if not
 given, standard output is used.
 
+Validating Manifests
+====================
+
+The ``--validate`` action either succeeds if the current manifest file is valid,
+or fails with an error:
+
+.. code-block:: none
+
+   west manifest --validate
+
+The error message can help diagnose errors.
