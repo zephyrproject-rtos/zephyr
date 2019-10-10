@@ -42,6 +42,7 @@ enum adc_gain {
 	ADC_GAIN_16,  /**< x 16. */
 	ADC_GAIN_32,  /**< x 32. */
 	ADC_GAIN_64,  /**< x 64. */
+	ADC_GAIN_128, /**< x 128. */
 };
 
 /** @brief ADC references. */
