@@ -1,3 +1,4 @@
 tests:
   logging.log_msg:
     tags: log_msg logging
+    min_flash: 64
