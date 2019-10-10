@@ -882,6 +882,9 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 		    info.id);
 
 	if (info.type == BT_CONN_TYPE_LE) {
+		u8_t chan_map[5];
+		char str_chan_map[11];
+
 		print_le_addr("Remote", info.le.dst);
 		print_le_addr("Local", info.le.src);
 		print_le_addr("Remote on-air", info.le.remote);
@@ -893,6 +896,13 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 			    info.le.latency, info.le.latency * 1.25);
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
+
+		memcpy(chan_map, info.le.chan_map, 5);
+		sys_mem_swap(chan_map, 5);
+		bin2hex(chan_map, 5, str_chan_map, sizeof(str_chan_map));
+
+		shell_print(shell, "Channel map, %s", str_chan_map);
+
 	}
 
 #if defined(CONFIG_BT_BREDR)
