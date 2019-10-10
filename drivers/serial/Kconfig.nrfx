@@ -93,6 +93,15 @@ config UART_0_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_0_NRF_HW_ASYNC
 
+config UART_0_GPIO_MANAGEMENT
+	bool "Enable GPIO management on port 0"
+	depends on UART_0_NRF_UARTE && DEVICE_POWER_MANAGEMENT
+	default y
+	help
+	  If enabled, the driver will configure the GPIOs used by the uart to
+	  their default configuration when device is powered down. The GPIOs
+	  will be configured back to correct state when UART is powered up.
+
 endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
 # ----------------- port 1 -----------------
@@ -156,6 +165,15 @@ config UART_1_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_1_NRF_HW_ASYNC
 
+config UART_1_GPIO_MANAGEMENT
+	bool "Enable GPIO management on port 1"
+	depends on DEVICE_POWER_MANAGEMENT
+	default y
+	help
+	  If enabled, the driver will configure the GPIOs used by the uart to
+	  their default configuration when device is powered down. The GPIOs
+	  will be configured back to correct state when UART is powered up.
+
 endif # UART_1_NRF_UARTE
 
 # ----------------- port 2 -----------------
@@ -218,6 +236,15 @@ config UART_2_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_2_NRF_HW_ASYNC
 
+config UART_2_GPIO_MANAGEMENT
+	bool "Enable GPIO management on port 2"
+	depends on DEVICE_POWER_MANAGEMENT
+	default y
+	help
+	  If enabled, the driver will configure the GPIOs used by the uart to
+	  their default configuration when device is powered down. The GPIOs
+	  will be configured back to correct state when UART is powered up.
+
 endif # UART_2_NRF_UARTE
 
 # ----------------- port 3 -----------------
@@ -279,6 +306,15 @@ config UART_3_NRF_HW_ASYNC
 config UART_3_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_3_NRF_HW_ASYNC
+
+config UART_3_GPIO_MANAGEMENT
+	bool "Enable GPIO management on port 3"
+	depends on DEVICE_POWER_MANAGEMENT
+	default y
+	help
+	  If enabled, the driver will configure the GPIOs used by the uart to
+	  their default configuration when device is powered down. The GPIOs
+	  will be configured back to correct state when UART is powered up.
 
 endif # UART_3_NRF_UARTE
 
