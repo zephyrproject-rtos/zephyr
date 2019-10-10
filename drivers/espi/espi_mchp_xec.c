@@ -365,15 +365,17 @@ static void espi_init_flash(struct device *dev)
 
 static void espi_rst_isr(struct device *dev)
 {
+	u8_t rst_sts;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
 
-	if (ESPI_CAP_REGS->ERST_STS & MCHP_ESPI_RST_ISTS) {
-		ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+	rst_sts = ESPI_CAP_REGS->ERST_STS;
 
-		/* TODO: Check if we need to detect eSPI reset after boot */
-		ESPI_CAP_REGS->ERST_IEN = 0;
-		if (ESPI_CAP_REGS->ERST_STS & ~MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
+	/* eSPI reset status register is clear on write register */
+	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+
+	if (rst_sts & MCHP_ESPI_RST_ISTS) {
+		if (rst_sts & ~MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
 			data->espi_rst_asserted = 1;
 		} else {
 			data->espi_rst_asserted = 0;
