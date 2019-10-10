@@ -98,6 +98,12 @@ config PLIC
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC;
 
+config SWERV_PIC
+	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
+	default n
+	help
+	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU;
+
 config VEXRISCV_LITEX_IRQ
 	bool "VexRiscv LiteX Interrupt controller"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
