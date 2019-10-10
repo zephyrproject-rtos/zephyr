@@ -5926,6 +5926,35 @@ int bt_le_set_chan_map(u8_t chan_map[5])
 				    buf, NULL);
 }
 
+int bt_le_get_chan_map(struct bt_conn *conn)
+{
+	int err;
+	struct net_buf *buf, *rsp;
+	struct bt_hci_cp_le_read_chan_map *cp;
+	struct bt_hci_rp_le_read_chan_map *rp;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_CHAN_MAP,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_CHAN_MAP, buf, &rsp);
+	if (err) {
+		BT_DBG("Failed to read channel map %d", err);
+		return err;
+	}
+
+	rp = (struct bt_hci_rp_le_read_chan_map *)rsp->data;
+	memcpy(&conn->le.chan_map[0], rp->ch_map, 5);
+
+	net_buf_unref(rsp);
+	return 0;
+}
+
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	struct net_buf *buf;

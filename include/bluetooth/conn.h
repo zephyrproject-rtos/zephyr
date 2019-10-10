@@ -148,6 +148,8 @@ struct bt_conn_le_info {
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
+
+	const u8_t *chan_map; /** Connection channel map. */
 };
 
 /** BR/EDR Connection Info Structure */
@@ -191,7 +193,7 @@ struct bt_conn_info {
  *
  *  @return Zero on success or (negative) error code on failure.
  */
-int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
+int bt_conn_get_info(struct bt_conn *conn, struct bt_conn_info *info);
 
 /** @brief Update the connection parameters.
  *

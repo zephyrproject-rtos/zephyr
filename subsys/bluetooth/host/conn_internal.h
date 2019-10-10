@@ -51,6 +51,7 @@ struct bt_conn_le {
 	u16_t			pending_timeout;
 
 	u8_t			features[8];
+	u8_t			chan_map[5];
 
 	struct bt_keys		*keys;
 };

@@ -1847,8 +1847,10 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
-int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
+int bt_conn_get_info(struct bt_conn *conn, struct bt_conn_info *info)
 {
+	int err;
+
 	info->type = conn->type;
 	info->role = conn->role;
 	info->id = conn->id;
@@ -1867,6 +1869,13 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->le.interval = conn->le.interval;
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
+
+		err = bt_le_get_chan_map(conn);
+		if (err) {
+			return err;
+		}
+		info->le.chan_map = conn->le.chan_map;
+
 		return 0;
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
