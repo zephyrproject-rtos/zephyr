@@ -118,7 +118,7 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	wrmsr
 
 	movl %cr0, %eax			/* enable paging */
-	orl $CR0_PG, %eax
+	orl $(CR0_PG | CR0_WP), %eax
 	movl %eax, %cr0
 
 	jmpl $X86_KERNEL_CS, $1f
