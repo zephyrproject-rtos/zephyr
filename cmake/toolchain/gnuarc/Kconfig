@@ -1,0 +1,8 @@
+# GNU ARC Toolchain
+
+# Copyright (c) 2020 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_GNUARC
+	def_bool y
+	select HAS_NEWLIB_LIBC_NANO
