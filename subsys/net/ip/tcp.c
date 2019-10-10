@@ -972,6 +972,11 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	return net_send_data(pkt);
 }
 
+static void flush_queue(struct net_context *context)
+{
+	(void)net_tcp_send_data(context, NULL, NULL);
+}
+
 static void restart_timer(struct net_tcp *tcp)
 {
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
@@ -1134,6 +1139,11 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	 */
 	if (valid_ack) {
 		restart_timer(ctx->tcp);
+
+		/* Flush anything pending. This is important as if there
+		 * is FIN waiting in the queue, it gets sent asap.
+		 */
+		flush_queue(ctx);
 	}
 
 	return true;
@@ -1377,6 +1387,7 @@ int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 static void queue_fin(struct net_context *ctx)
 {
 	struct net_pkt *pkt = NULL;
+	bool flush = false;
 	int ret;
 
 	ret = net_tcp_prepare_segment(ctx->tcp, NET_TCP_FIN, NULL, 0,
@@ -1385,7 +1396,15 @@ static void queue_fin(struct net_context *ctx)
 		return;
 	}
 
+	if (sys_slist_is_empty(&ctx->tcp->sent_list)) {
+		flush = true;
+	}
+
 	net_tcp_queue_pkt(ctx, pkt);
+
+	if (flush) {
+		flush_queue(ctx);
+	}
 }
 
 int net_tcp_put(struct net_context *context)
