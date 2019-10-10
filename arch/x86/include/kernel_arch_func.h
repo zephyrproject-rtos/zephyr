@@ -31,6 +31,11 @@ struct multiboot_info;
 
 extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
 
+#ifdef CONFIG_X86_VERY_EARLY_CONSOLE
+/* Setup ultra-minimal serial driver for printk() */
+void z_x86_early_serial_init(void);
+#endif /* CONFIG_X86_VERY_EARLY_CONSOLE */
+
 #endif
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */
