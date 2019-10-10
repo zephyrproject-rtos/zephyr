@@ -13,5 +13,6 @@ zephyr_sources(
   cpp_virtual.c
   cpp_vtable.cpp
   cpp_new.cpp
+  cpp_guard.c
 )
 endif()
