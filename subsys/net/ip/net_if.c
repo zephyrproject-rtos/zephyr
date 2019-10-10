@@ -269,6 +269,31 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	net_tc_submit_to_tx_queue(tc, pkt);
 }
 
+void net_if_stats_reset(struct net_if *iface)
+{
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	struct net_if *tmp;
+
+	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
+		if (iface == tmp) {
+			memset(&iface->stats, 0, sizeof(iface->stats));
+			return;
+		}
+	}
+#endif
+}
+
+void net_if_stats_reset_all(void)
+{
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		memset(&iface->stats, 0, sizeof(iface->stats));
+	}
+#endif
+}
+
 static inline void init_iface(struct net_if *iface)
 {
 	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
