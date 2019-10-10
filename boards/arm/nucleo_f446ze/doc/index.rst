@@ -138,6 +138,8 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+.. rst-class:: rst-columns
+
 - UART_3_TX : PD8
 - UART_3_RX : PD9
 - UART_6_TX : PG14
