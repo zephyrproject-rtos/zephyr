@@ -5,6 +5,48 @@
 
 comment "BLE Controller support"
 
+# The following symbols are enabled depending if the controller actually
+# supports the respective features.
+
+config BT_CTLR_LE_ENC_SUPPORT
+	bool
+
+config BT_CTLR_CONN_PARAM_REQ_SUPPORT
+	bool
+
+config BT_CTLR_EXT_REJ_IND_SUPPORT
+	bool
+
+config BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	bool
+
+config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	bool
+
+config BT_CTLR_PRIVACY_SUPPORT
+	bool
+
+config BT_CTLR_EXT_SCAN_FP_SUPPORT
+	bool
+
+config BT_CTLR_PHY_UPDATE_SUPPORT
+	bool
+
+config BT_CTLR_ADV_EXT_SUPPORT
+	bool
+
+config BT_CTLR_CHAN_SEL_2_SUPPORT
+	bool
+
+config BT_CTLR_XTAL_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_SCHED_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -33,6 +75,26 @@ config BT_LL_SW_LEGACY
 	select ENTROPY_GENERATOR
 	select ENTROPY_NRF5_RNG if SOC_COMPATIBLE_NRF
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
+	depends on SOC_COMPATIBLE_NRF
+
+	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
+					 !BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
+						  BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
+	select BT_CTLR_EXT_SCAN_FP_SUPPORT
+	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
+					      BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+
+	select BT_CTLR_XTAL_ADVANCED_SUPPORT
+	select BT_CTLR_SCHED_ADVANCED_SUPPORT
+	select BT_CTLR_TIFS_HW_SUPPORT
+
 	help
 	  Use Zephyr software BLE Link Layer implementation.
 
@@ -44,6 +106,25 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_HAS_HCI_VS
 	select ENTROPY_NRF5_RNG
 	select ENTROPY_NRF5_BIAS_CORRECTION
+
+	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
+					 !BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
+						  BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
+	select BT_CTLR_EXT_SCAN_FP_SUPPORT
+	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
+					      BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+
+	select BT_CTLR_XTAL_ADVANCED_SUPPORT
+	select BT_CTLR_SCHED_ADVANCED_SUPPORT
+	select BT_CTLR_TIFS_HW_SUPPORT
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -255,7 +336,7 @@ config BT_CTLR_LLCP_CONN
 
 config BT_CTLR_LE_ENC
 	bool "LE Encryption"
-	depends on !BT_CTLR_DATA_LENGTH_CLEAR && !BT_CTLR_PHY_2M_NRF
+	depends on BT_CTLR_LE_ENC_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth v4.0 LE Encryption feature in the
@@ -263,6 +344,7 @@ config BT_CTLR_LE_ENC
 
 config BT_CTLR_CONN_PARAM_REQ
 	bool "Connection Parameter Request"
+	depends on BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND
 	default y
 	help
@@ -271,6 +353,7 @@ config BT_CTLR_CONN_PARAM_REQ
 
 config BT_CTLR_EXT_REJ_IND
 	bool "Extended Reject Indication"
+	depends on BT_CTLR_EXT_REJ_IND_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth v4.1 Extended Reject Indication feature
@@ -278,6 +361,7 @@ config BT_CTLR_EXT_REJ_IND
 
 config BT_CTLR_SLAVE_FEAT_REQ
 	bool "Slave-initiated Features Exchange"
+	depends on BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth v4.1 Slave-initiated Features Exchange
@@ -292,7 +376,7 @@ config BT_CTLR_LE_PING
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
-	depends on !SOC_SERIES_NRF51X
+	depends on BT_CTLR_PRIVACY_SUPPORT
 	default y
 	select BT_CTLR_FILTER
 	select BT_RPA
@@ -311,7 +395,7 @@ config BT_CTLR_RL_SIZE
 
 config BT_CTLR_EXT_SCAN_FP
 	bool "LE Extended Scanner Filter Policies"
-	depends on BT_OBSERVER
+	depends on BT_OBSERVER && BT_CTLR_EXT_SCAN_FP_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth v4.2 LE Extended Scanner Filter Policies
@@ -321,8 +405,8 @@ config BT_CTLR_DATA_LENGTH
 	# Hidden option to enable support for Bluetooth v4.2 LE Data Length
 	# Update procedure in the Controller.
 	bool
-	depends on BT_DATA_LEN_UPDATE
-	default y if SOC_COMPATIBLE_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
+	depends on BT_DATA_LEN_UPDATE && BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	default y
 
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
@@ -336,9 +420,9 @@ config BT_CTLR_PHY
 	# Hidden option to enable support for Bluetooth 5.0 PHY Update
 	# Procedure in the Controller.
 	bool
-	depends on BT_PHY_UPDATE
+	depends on BT_PHY_UPDATE && BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND
-	default y if SOC_COMPATIBLE_NRF52X || BT_CTLR_PHY_2M_NRF
+	default y
 
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
@@ -351,7 +435,7 @@ endif # BT_CONN
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on BT_CONN || BT_CTLR_ADV_EXT
+	depends on (BT_CONN || BT_CTLR_ADV_EXT) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
@@ -359,6 +443,7 @@ config BT_CTLR_CHAN_SEL_2
 
 config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions"
+	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	select BT_CTLR_CHAN_SEL_2
 	help
@@ -405,7 +490,7 @@ config BT_CTLR_DATA_LENGTH_CLEAR
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 
-if BT_PHY_UPDATE
+
 config BT_CTLR_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
@@ -414,6 +499,7 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
+if BT_CTLR_PHY
 config BT_CTLR_PHY_2M
 	bool "2Mbps PHY Support"
 	depends on !SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF
@@ -423,11 +509,11 @@ config BT_CTLR_PHY_2M
 
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
-	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
+	depends on BT_CTLR_ADV_EXT && HAS_HW_NRF_RADIO_BLE_CODED
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
-endif # BT_PHY_UPDATE
+endif # BT_CTLR_PHY
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
@@ -461,6 +547,7 @@ endif # BT_LL_SW_LEGACY
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
+	depends on BT_CTLR_XTAL_ADVANCED_SUPPORT
 	default y
 	help
 	  Enables advanced event preparation offset ahead of radio tx/rx, taking
@@ -491,7 +578,7 @@ config BT_CTLR_XTAL_THRESHOLD
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BT_MAX_CONN != 0)
+	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
 	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
 	help
 	  Enable non-overlapping placement of observer, initiator and master
@@ -574,7 +661,7 @@ config BT_CTLR_RADIO_ENABLE_FAST
 
 config BT_CTLR_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
-	depends on !BT_CTLR_RADIO_ENABLE_FAST
+	depends on !BT_CTLR_RADIO_ENABLE_FAST && BT_CTLR_TIFS_HW_SUPPORT
 	default y
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
