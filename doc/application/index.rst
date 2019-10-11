@@ -1510,8 +1510,6 @@ to a whitespace-separated list of your overlay files.
 The Zephyr build system begins creation of a devicetree by running
 the C preprocessor on a file which includes the following:
 
-#. Configuration options from :ref:`Kconfig <configuration_options>`.
-
 #. The board's devicetree source file, which by default is the Zephyr
    file :file:`boards/<ARCHITECTURE>/<BOARD>/<BOARD>.dts`. (This location
    can be overridden by setting the :makevar:`DTS_SOURCE` CMake
