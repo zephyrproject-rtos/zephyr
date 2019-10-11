@@ -203,6 +203,7 @@ import logging
 
 
 hw_map_local = threading.Lock()
+report_lock = threading.Lock()
 
 
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
@@ -522,7 +523,6 @@ class BinaryHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.valgrind = False
         self.terminated = False
 
     def try_kill_process_by_pid(self):
@@ -566,12 +566,14 @@ class BinaryHandler(Handler):
         else:
             command = [self.binary]
 
-        if self.valgrind and shutil.which("valgrind"):
+        run_valgrind = False
+        if options.enable_valgrind and shutil.which("valgrind"):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
                        "--log-file="+self.build_dir+"/valgrind.log"
                        ] + command
+            run_valgrind = True
 
         verbose("Spawning process: " +
                 " ".join(shlex.quote(word) for word in command) + os.linesep +
@@ -605,16 +607,21 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
+
         if not self.terminated and self.returncode != 0:
             #When a process is killed, the default handler returns 128 + SIGTERM
             #so in that case the return code itself is not meaningful
             self.set_state("failed", handler_time)
-            self.instance.reason = "Handler error"
+            self.instance.reason = "Handler Error"
+        elif run_valgrind and self.returncode == 2:
+            self.set_state("failed", handler_time)
+            self.instance.reason = "Valgrind error"
         elif harness.state:
             self.set_state(harness.state, handler_time)
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Handler timeout"
+
 
         self.record(harness)
 
@@ -795,7 +802,6 @@ class DeviceHandler(Handler):
             for c in self.instance.testcase.cases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
-
 
         handler_time = time.time() - start_time
 
@@ -1737,7 +1743,6 @@ class CMake():
             msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
 
             self.instance.status = "passed"
-            self.instance.reason = ""
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
@@ -1988,7 +1993,6 @@ class ProjectBuilder(FilterBuilder):
             verbose("run test: %s" %self.instance.name)
             self.run()
             self.instance.status, _ = self.instance.handler.get_state()
-            self.instance.reason = ""
             pipeline.put({
                 "op": "report",
                 "test": self.instance,
@@ -1999,7 +2003,22 @@ class ProjectBuilder(FilterBuilder):
 
         # Report results and output progress to screen
         elif op == "report":
-            self.report_out()
+            with report_lock:
+                self.report_out()
+
+    def log_info_file(self, instance):
+
+        build_dir = instance.build_dir
+        h_log = "{}/handler.log".format(build_dir)
+        b_log = "{}/build.log".format(build_dir)
+        v_log = "{}/valgrind.log".format(build_dir)
+
+        if os.path.exists(v_log) and "Valgrind" in instance.reason:
+            log_info("{}".format(v_log))
+        elif os.path.exists(h_log):
+            log_info("{}".format(h_log))
+        else:
+            log_info("{}".format(b_log))
 
     def report_out(self):
         total_tests_width = len(str(self.suite.total_tests))
@@ -2012,25 +2031,17 @@ class ProjectBuilder(FilterBuilder):
                 status = COLOR_RED + "FAILED " + COLOR_NORMAL + instance.reason
             else:
                 info(
-                    "{:<25} {:<50} {}FAILED{}: {}".format(
+                    "\n{:<25} {:<50} {}FAILED{}: {}".format(
                         instance.platform.name,
                         instance.testcase.name,
                         COLOR_RED,
                         COLOR_NORMAL,
                         instance.reason), False)
-
-                # FIXME
-                h_log = "{}/handler.log".format(instance.build_dir)
-                b_log = "{}/build.log".format(instance.build_dir)
-                if os.path.exists(h_log):
-                    log_info("{}".format(h_log))
-                else:
-                    log_info("{}".format(b_log))
-
+            if not VERBOSE:
+                self.log_info_file(instance)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
             status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
-
         else:
             status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
 
@@ -2053,13 +2064,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["failed", "timeout"]:
-                h_log = "{}/handler.log".format(instance.build_dir)
-                b_log = "{}/build.log".format(instance.build_dir)
-                if os.path.exists(h_log):
-                    log_info("{}".format(h_log))
-                else:
-                    log_info("{}".format(b_log))
-
+                self.log_info_file(instance)
         else:
             sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
@@ -3342,6 +3347,13 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         NOTE: west-flash must be enabled to use this option.
         """
     )
+    parser.add_argument(
+        "--enable-valgrind", action="store_true",
+        help="""Run binary through valgrind and check for several memory access
+        errors." Valgrind needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration.
+        """)
 
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
@@ -3378,7 +3390,7 @@ def log_info(filename):
             log_file.write(data)
         info("{:-^100}".format(filename))
     else:
-        info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+        info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
 def size_report(sc):
     info(sc.filename)
