@@ -155,6 +155,13 @@ config FORCE_NO_ASSERT
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 
+config ASSERT_NO_FILE_INFO
+	bool "Disable file info for asserts"
+	help
+	  This option removes the name and the path of the source file
+	  in which the assertion occurred. Enabling this will save
+	  target code space, and thus may be necessary for tiny targets.
+
 config OBJECT_TRACING
 	bool "Kernel object tracing"
 	help
