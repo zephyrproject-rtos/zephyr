@@ -80,7 +80,7 @@ host_interface interface = {
     .destroy = host_destroy
 };
 
-static char global_heap_buf[128 * 1024] = { 0 };
+static char global_heap_buf[256 * 1024] = { 0 };
 
 int iwasm_main()
 {
