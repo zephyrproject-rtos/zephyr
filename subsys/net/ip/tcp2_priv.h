@@ -169,7 +169,6 @@ struct tcp { /* TCP connection */
 	struct net_context *context;
 	void *recv_user_data;
 	enum tcp_state state;
-	int fd;
 	u32_t seq;
 	u32_t ack;
 	union tcp_endpoint *src;
