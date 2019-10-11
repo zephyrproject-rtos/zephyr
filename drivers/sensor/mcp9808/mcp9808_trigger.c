@@ -11,12 +11,10 @@
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
-
+#include <logging/log.h>
 #include "mcp9808.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(MCP9808);
+LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 static int mcp9808_reg_write(struct mcp9808_data *data, u8_t reg, u16_t val)
 {

@@ -6,15 +6,14 @@
 
 #include <sys/util.h>
 #include <kernel.h>
+#include <logging/log.h>
 
 #define START_TRIG_INT1			0
 #define START_TRIG_INT2			1
 #define TRIGGED_INT1			4
 #define TRIGGED_INT2			5
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(lis2dh);
+LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,

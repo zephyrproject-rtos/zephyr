@@ -10,12 +10,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "hmc5883l.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(HMC5883L);
+LOG_MODULE_DECLARE(HMC5883L, CONFIG_SENSOR_LOG_LEVEL);
 
 int hmc5883l_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,

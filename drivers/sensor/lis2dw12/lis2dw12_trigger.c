@@ -15,8 +15,7 @@
 
 #include "lis2dw12.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LIS2DW12);
+LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * lis2dw12_enable_int - enable selected int pin to generate interrupt

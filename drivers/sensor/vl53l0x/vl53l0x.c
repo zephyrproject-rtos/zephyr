@@ -21,8 +21,7 @@
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(VL53L0X);
+LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:

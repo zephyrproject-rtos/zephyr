@@ -18,8 +18,7 @@
 
 #include "lps22hh.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LPS22HH);
+LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps22hh_set_odr_raw(struct device *dev, u8_t odr)
 {

@@ -8,9 +8,7 @@
 
 #include "fxas21002.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(FXAS21002);
+LOG_MODULE_DECLARE(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxas21002_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,

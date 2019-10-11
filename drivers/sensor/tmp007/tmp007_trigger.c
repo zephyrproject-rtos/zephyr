@@ -14,9 +14,8 @@
 
 extern struct tmp007_data tmp007_driver;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(TMP007);
+LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
 int tmp007_attr_set(struct device *dev,
 		    enum sensor_channel chan,

@@ -12,8 +12,7 @@
 
 #include "mpu6050.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(MPU6050);
+LOG_MODULE_REGISTER(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
 /* see "Accelerometer Measurements" section from register map description */
 static void mpu6050_convert_accel(struct sensor_value *val, s16_t raw_val,

@@ -18,8 +18,7 @@
 
 #include "stts751.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(STTS751);
+LOG_MODULE_REGISTER(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int stts751_set_odr_raw(struct device *dev, u8_t odr)
 {

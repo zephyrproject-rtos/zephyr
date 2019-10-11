@@ -9,12 +9,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "mpu6050.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(MPU6050);
+LOG_MODULE_DECLARE(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
 int mpu6050_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,

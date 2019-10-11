@@ -12,8 +12,7 @@
 
 #include "max44009.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(MAX44009);
+LOG_MODULE_REGISTER(MAX44009, CONFIG_SENSOR_LOG_LEVEL);
 
 static int max44009_reg_read(struct max44009_data *drv_data, u8_t reg,
 

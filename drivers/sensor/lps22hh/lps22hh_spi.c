@@ -17,8 +17,7 @@
 
 #define LPS22HH_SPI_READ		(1 << 7)
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LPS22HH);
+LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lps22hh_spi_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)

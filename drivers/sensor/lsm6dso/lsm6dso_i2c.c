@@ -16,8 +16,7 @@
 
 #ifdef DT_ST_LSM6DSO_BUS_I2C
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LSM6DSO);
+LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lsm6dso_i2c_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)

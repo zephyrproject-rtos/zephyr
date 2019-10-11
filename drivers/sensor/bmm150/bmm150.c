@@ -9,8 +9,7 @@
 #include <logging/log.h>
 #include "bmm150.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMM150);
+LOG_MODULE_REGISTER(BMM150, CONFIG_SENSOR_LOG_LEVEL);
 
 static const struct {
 	int freq;

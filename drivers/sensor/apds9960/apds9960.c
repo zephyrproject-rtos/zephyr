@@ -21,8 +21,7 @@
 
 #include "apds9960.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(APDS9960);
+LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
 static void apds9960_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)

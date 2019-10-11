@@ -12,9 +12,8 @@
 
 #include "adxl362.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(ADXL362);
+LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl362_thread_cb(void *arg)
 {

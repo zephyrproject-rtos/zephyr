@@ -16,8 +16,7 @@
 
 #ifdef DT_ST_STTS751_BUS_I2C
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(STTS751);
+LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 static int stts751_i2c_read(struct device *dev, u8_t reg_addr,
 				 u8_t *value, u16_t len)

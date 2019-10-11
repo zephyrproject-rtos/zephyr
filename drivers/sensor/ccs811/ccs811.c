@@ -16,8 +16,7 @@
 
 #include "ccs811.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(CCS811);
+LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

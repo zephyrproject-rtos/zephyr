@@ -11,9 +11,8 @@
 #include <drivers/sensor.h>
 #include "adxl372.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(ADXL372);
+LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl372_thread_cb(void *arg)
 {

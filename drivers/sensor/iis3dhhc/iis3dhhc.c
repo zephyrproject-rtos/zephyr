@@ -17,8 +17,7 @@
 
 #include "iis3dhhc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(IIS3DHHC);
+LOG_MODULE_REGISTER(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 static int iis3dhhc_sample_fetch(struct device *dev,
 				 enum sensor_channel chan)

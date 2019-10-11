@@ -11,12 +11,10 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
-
+#include <logging/log.h>
 #include "lis2mdl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LIS2MDL);
+LOG_MODULE_DECLARE(LIS2MDL, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lis2mdl_enable_int(struct device *dev, int enable)
 {
