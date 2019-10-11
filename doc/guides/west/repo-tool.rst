@@ -262,6 +262,17 @@ Miscellaneous Commands
 West has a few more commands for managing the multi-repo, which are briefly
 discussed here. Run ``west <command> -h`` for detailed help.
 
+- ``west forall -c COMMAND [PROJECT ...]``: Runs the shell command ``COMMAND``
+  within the top-level repository directory of each of the specified projects
+  (default: all cloned projects). If ``COMMAND`` consists of more than one
+  word, it must be quoted to prevent it from being split up by the shell.
+
+  To run an arbitrary Git command in each project, use something like ``west
+  forall -c 'git <command> --options'``. Note that ``west forall`` can be used
+  to run any command, though, not just Git commands.
+
+- ``west help <command>``: this is equivalent to ``west <command> -h``.
+
 - ``west list [-f FORMAT] [PROJECT ...]``: Lists project information from the
   manifest file, such as URL, revision, path, etc. The printed information can
   be controlled using the ``-f`` option.
@@ -278,16 +289,7 @@ discussed here. Run ``west <command> -h`` for detailed help.
 - ``west status [PROJECT ...]``: Like ``west diff``, for
   running ``git status``.
 
-- ``west forall -c COMMAND [PROJECT ...]``: Runs the shell command ``COMMAND``
-  within the top-level repository directory of each of the specified projects
-  (default: all cloned projects). If ``COMMAND`` consists of more than one
-  word, it must be quoted to prevent it from being split up by the shell.
-
-  To run an arbitrary Git command in each project, use something like ``west
-  forall -c 'git <command> --options'``. Note that ``west forall`` can be used
-  to run any command, though, not just Git commands.
-
-- ``west help <command>``: this is equivalent to ``west <command> -h``.
+- ``west topdir``: Prints the top directory of the west workspace.
 
 .. _PyPI:
    https://pypi.org/project/west/
