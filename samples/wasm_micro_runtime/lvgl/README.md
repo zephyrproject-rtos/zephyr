@@ -2,7 +2,7 @@ Introduction
 ==============
 This sample demonstrates that a graphic user interface application in WebAssembly by compiling the LittlevGL, an open-source embedded 2d graphic library into the WASM bytecode.
 
-In this sample, the whole LittlevGL source code is built into the WebAssembly code with the user application. The platform interfaces defined by LittlevGL is implemented in the runtime and exported to the application through the declarations from source "ext_lib_export.c" as below:
+In this sample, the whole LittlevGL source code is built into the WebAssembly code with the user application. The platform interfaces defined by LittlevGL are implemented in the runtime and exported to the application through the declarations from source "ext_lib_export.c" as below:
 
         EXPORT_WASM_API(display_init),
         EXPORT_WASM_API(display_input_read),
@@ -10,13 +10,13 @@ In this sample, the whole LittlevGL source code is built into the WebAssembly co
         EXPORT_WASM_API(display_fill),
         EXPORT_WASM_API(display_vdb_write),
         EXPORT_WASM_API(display_map),
-        EXPORT_WASM_API(time_get_ms), };
+        EXPORT_WASM_API(time_get_ms)
 
 The runtime component supports building target for Zephyr/STM Nucleo board.
 
 Below picture shows the WASM application is running on an STM board with an LCD touch panel. 
 
-![WAMR UI SAMPLE](../../../../modules/lib/wasm-micro-runtime/doc/pics/vgl_demo2.png "WAMR UI DEMO STM32")
+![WAMR UI SAMPLE](pics/vgl_demo2.png "WAMR UI DEMO STM32")
 
 
 The number on top will plus one each second, and the number on the bottom will plus one when clicked. When users click the blue button, the WASM application increases the counter, and the latest counter value is displayed on the top banner of the touch panel. 

@@ -27,8 +27,6 @@ simple/
 
 - build.sh<br/>
   The script to build all binaries.
-- build_no_gui.sh<br/>
-  The script to build all binaries without gui library support.
 - CMakeLists.txt<br/>
   CMake file used to build the simple application.
 - prj.conf<br/>

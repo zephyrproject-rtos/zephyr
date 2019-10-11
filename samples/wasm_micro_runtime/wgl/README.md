@@ -10,7 +10,7 @@ The runtime component supports building target for Zephyr/STM Nucleo board.
 Below pictures show the WASM application is running on an STM board with an LCD touch panel. When users click the blue button, the WASM application increases the counter, and the latest counter value is displayed on the top banner of the touch panel. The number on top will plus one each second, and the number on the bottom will plus one when clicked.
 
 
-![WAMR UI SAMPLE](../../../../modules/lib/wasm-micro-runtime/doc/pics/vgl_demo2.png "WAMR UI DEMO")
+![WAMR UI SAMPLE](pics/vgl_demo2.png "WAMR UI DEMO")
 
 Install required SDK and libraries
 ==============
