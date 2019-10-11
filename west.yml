@@ -59,7 +59,7 @@ manifest:
       revision: 0ec40aed8087f26bd9ac1b70fb5a6c326a6451aa
       path: modules/hal/st
     - name: hal_stm32
-      revision: 41ae0cf14ca89fb0c934ebdb5d75e940f98af64a
+      revision: 886636e6db209abe6a05a95be5ec7b85a3dd7237
       path: modules/hal/stm32
     - name: hal_ti
       revision: 7a82e93e14766ef6e42df9915ea2ab8e3b952a8b
