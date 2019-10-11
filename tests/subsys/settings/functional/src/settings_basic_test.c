@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
  */
 static void test_clear_settings(void)
 {
-#if IS_ENABLED(CONFIG_SETTINGS_FCB)
+#if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
 	const struct flash_area *fap;
 	int rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
 
