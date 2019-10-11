@@ -249,8 +249,7 @@ in_fp_endif:
 #if defined (CONFIG_ARM_MPU)
     /* Re-program dynamic memory map */
     push {r2,lr}
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+    mov r0, r2 /* _current thread */
     bl z_arm_configure_dynamic_mpu_regions
     pop {r2,lr}
 #endif
@@ -501,7 +500,6 @@ _do_syscall:
     /* Bad syscalls treated as valid syscalls with ID K_SYSCALL_BAD. */
 
 valid_syscall_id:
-    push {r0, r1}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r1, [r0, #_thread_offset_to_mode]
@@ -518,7 +516,6 @@ valid_syscall_id:
      * instructions with the previous privilege.
      */
     isb
-    pop {r0, r1}
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr
