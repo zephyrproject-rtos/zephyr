@@ -4,16 +4,16 @@ Initial attestation is used to provide a snapshot of key details about the
 device, and can be used to verify device authenticity through shared keys.
 
 The attestation process is based around the **PSA initial attestation token
-(IAT)** ([IETF draft](IA1)), which is generated via a request to the secure
+(IAT)** ([IETF draft][IA1]), which is generated via a request to the secure
 processing environment (SPE), and signed using a private attestation key only
 accessible inside the SPE.
 
-[IA1]: https://datatracker.ietf.org/doc/draft-tschofenig-rats-psa-token/
+[IA1]:https://datatracker.ietf.org/doc/draft-tschofenig-rats-psa-token/
 
 ## Token Technical Details
 
-This IAT response is encoded in **CBOR** ([RFC7049](TTD1)), and wrapped and
-signed using **CBOR Object Signing and Encryption (COSE)** ([RFC8152](TTD1)),
+This IAT response is encoded in **CBOR** ([RFC7049][TTD1]), and wrapped and
+signed using **CBOR Object Signing and Encryption (COSE)** ([RFC8152][TTD1]),
 with a tagged `COSE_Sign1` structure (CBOR tag `18`).
 
 The current TF-M implementation supports **ECDSA P256** signatures over
@@ -43,12 +43,12 @@ authentication:
 
 ![][fig1]
 
-[fig1]: img/iat_auth.png
+[fig1]:img/iat_auth.png
 
 ### Nonce/Challenge
 
 A key requirement for a secure attestation process is the use of a
-32/48/64-byte server-generated [nonce](NCP1) or challenge.
+32/48/64-byte server-generated [nonce][NCP1] or challenge.
 
 A unique value is assigned to the challenge field to ensure that previous IAT
 responses can not be replayed to the remote server, potentially allowing an
@@ -56,7 +56,7 @@ attacker to bypass the device authentication process.
 
 **Always assign a unique value to the nonce field for every IAT request!**
 
-[NCP1]: https://en.wikipedia.org/wiki/Cryptographic_nonce
+[NCP1]:https://en.wikipedia.org/wiki/Cryptographic_nonce
 
 ### Exporting the Public Key
 
