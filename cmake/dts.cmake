@@ -17,7 +17,11 @@ set(GENERATED_DTS_BOARD_CONF      ${PROJECT_BINARY_DIR}/include/generated/genera
 set(DTS_POST_CPP                  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
-set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
+
+if(DEFINED DTS_COMMON_OVERLAYS)
+  # TODO: remove this warning in version 1.16
+  message(FATAL_ERROR "DTS_COMMON_OVERLAYS is no longer supported. Use DTC_OVERLAY_FILE instead.")
+endif()
 
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
 # files may be found. It always includes the application directory,
@@ -31,7 +35,6 @@ list(APPEND
 
 set(dts_files
   ${DTS_SOURCE}
-  ${DTS_COMMON_OVERLAYS}
   ${shield_dts_files}
   )
 

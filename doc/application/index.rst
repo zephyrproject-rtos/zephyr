@@ -1517,17 +1517,6 @@ the C preprocessor on a file which includes the following:
    can be overridden by setting the :makevar:`DTS_SOURCE` CMake
    variable.)
 
-#. Any "common" overlays provided by the build system. Currently, this
-   is just the file :file:`dts/common/common.dts`. (The common
-   overlays can be overridden by setting the
-   :makevar:`DTS_COMMON_OVERLAYS` CMake variable.)
-
-   The file :file:`common.dts` conditionally includes devicetree
-   fragments based on Kconfig settings. For example, it includes a
-   fragment for MCUboot chain-loading, located at
-   :file:`dts/common/mcuboot.overlay`, if
-   :option:`CONFIG_BOOTLOADER_MCUBOOT` is set.
-
 #. Any file or files given by the :makevar:`DTC_OVERLAY_FILE` CMake
    variable.
 
