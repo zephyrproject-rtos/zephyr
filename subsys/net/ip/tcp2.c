@@ -753,7 +753,6 @@ int net_tcp_get(struct net_context *context)
 
 	if (ret) {
 		ret = -ENOMEM;
-		NET_WARN("%s", strerror(ret));
 		irq_unlock(key);
 		goto out;
 	}
