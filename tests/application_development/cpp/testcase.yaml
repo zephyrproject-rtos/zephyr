@@ -1,4 +1,0 @@
-tests:
-  application_development.cpp.main:
-    platform_exclude: qemu_x86_coverage
-    tags: cpp

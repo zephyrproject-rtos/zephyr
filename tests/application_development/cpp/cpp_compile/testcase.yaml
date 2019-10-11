@@ -1,0 +1,5 @@
+tests:
+  misc.app_dev.cpp.cpp_compile:
+    arch_exclude: posix
+    build_only: true
+    tags: cpp
