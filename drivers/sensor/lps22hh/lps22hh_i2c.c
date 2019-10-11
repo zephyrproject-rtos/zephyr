@@ -16,8 +16,7 @@
 
 #ifdef DT_ST_LPS22HH_BUS_I2C
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LPS22HH);
+LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lps22hh_i2c_read(struct device *dev, u8_t reg_addr,
 				 u8_t *value, u16_t len)

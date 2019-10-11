@@ -13,9 +13,8 @@
 
 #include "adt7420.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(ADT7420);
+LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adt7420_thread_cb(void *arg)
 {

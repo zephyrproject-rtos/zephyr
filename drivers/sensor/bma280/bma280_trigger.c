@@ -12,9 +12,8 @@
 
 #include "bma280.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMA280);
+LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
 int bma280_attr_set(struct device *dev,
 		    enum sensor_channel chan,

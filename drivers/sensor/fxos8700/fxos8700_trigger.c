@@ -6,10 +6,9 @@
  */
 
 #include "fxos8700.h"
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(FXOS8700);
+
+LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,

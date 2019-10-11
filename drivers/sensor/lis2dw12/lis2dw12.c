@@ -22,8 +22,7 @@
 
 #include "lis2dw12.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LIS2DW12);
+LOG_MODULE_REGISTER(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * lis2dw12_set_range - set full scale range for acc

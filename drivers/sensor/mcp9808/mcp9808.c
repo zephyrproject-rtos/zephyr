@@ -17,8 +17,7 @@
 
 #include "mcp9808.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(MCP9808);
+LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 int mcp9808_reg_read(struct mcp9808_data *data, u8_t reg, u16_t *val)
 {

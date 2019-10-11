@@ -10,12 +10,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "lsm6dsl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LSM6DSL);
+LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 int lsm6dsl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,

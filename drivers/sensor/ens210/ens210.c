@@ -14,8 +14,7 @@
 #include <logging/log.h>
 #include "ens210.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ENS210);
+LOG_MODULE_REGISTER(ENS210, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef ENS210_CRC_CHECK
 u32_t ens210_crc7(u32_t bitstream)

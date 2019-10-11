@@ -15,9 +15,8 @@
 
 extern struct bmg160_device_data bmg160_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMG160);
+LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
 static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 				 u32_t pin)

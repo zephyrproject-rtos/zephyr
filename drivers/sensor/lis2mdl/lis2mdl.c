@@ -13,14 +13,12 @@
 #include <sys/byteorder.h>
 #include <drivers/sensor.h>
 #include <string.h>
-
+#include <logging/log.h>
 #include "lis2mdl.h"
 
 struct lis2mdl_data lis2mdl_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LIS2MDL);
+LOG_MODULE_REGISTER(LIS2MDL, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_LIS2MDL_MAG_ODR_RUNTIME
 static int lis2mdl_set_odr(struct device *dev, const struct sensor_value *val)

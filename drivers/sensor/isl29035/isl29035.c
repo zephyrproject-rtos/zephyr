@@ -15,8 +15,7 @@
 
 #include "isl29035.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ISL29035);
+LOG_MODULE_REGISTER(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
 static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

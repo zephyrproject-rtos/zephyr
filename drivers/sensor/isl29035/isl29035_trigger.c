@@ -9,14 +9,12 @@
 #include <drivers/i2c.h>
 #include <sys/util.h>
 #include <kernel.h>
-
+#include <logging/log.h>
 #include "isl29035.h"
 
 extern struct isl29035_driver_data isl29035_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(ISL29035);
+LOG_MODULE_DECLARE(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
 static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {

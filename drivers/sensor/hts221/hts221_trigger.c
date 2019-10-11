@@ -10,12 +10,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "hts221.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(HTS221);
+LOG_MODULE_DECLARE(HTS221, CONFIG_SENSOR_LOG_LEVEL);
 
 int hts221_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,

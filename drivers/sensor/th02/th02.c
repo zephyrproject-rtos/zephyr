@@ -15,8 +15,7 @@
 
 #include "th02.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TH02);
+LOG_MODULE_REGISTER(TH02, CONFIG_SENSOR_LOG_LEVEL);
 
 static u8_t read8(struct device *dev, u8_t d)
 {

@@ -23,8 +23,7 @@
 
 #include "bme280.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BME280);
+LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bm280_reg_read(struct bme280_data *data,
 
