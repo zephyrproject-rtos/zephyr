@@ -21,19 +21,19 @@ struct gpio_callback gpio_cb;
 static int cb_count;
 
 static void callback_edge(struct device *port, struct gpio_callback *cb,
-			  u32_t pins)
+			  gpio_port_pins_t pins)
 {
-	zassert_equal(pins, 1 << TEST_PIN,
+	zassert_equal(pins, BIT(TEST_PIN),
 		     "Detected interrupt on an invalid pin");
 	cb_count++;
 }
 
 static void callback_level(struct device *port, struct gpio_callback *cb,
-			   u32_t pins)
+			   gpio_port_pins_t pins)
 {
 	int ret;
 
-	zassert_equal(pins, 1 << TEST_PIN,
+	zassert_equal(pins, BIT(TEST_PIN),
 		     "Detected interrupt on an invalid pin");
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
