@@ -149,8 +149,6 @@ function get_tests_to_run() {
 	./scripts/ci/get_modified_tests.py --commits ${COMMIT_RANGE} > modified_tests.args;
 	./scripts/ci/get_modified_boards.py --commits ${COMMIT_RANGE} > modified_boards.args;
 
-	rm -f test_file.txt
-	touch test_file_1.txt test_file_2.txt
 	if [ -s modified_boards.args ]; then
 		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file_1.txt || exit 1;
 	fi
@@ -277,6 +275,10 @@ if [ -n "$MAIN_CI" ]; then
 	else
 		echo "Skipping west command tests"
 	fi
+
+	# cleanup
+	rm -f test_file.txt
+	touch test_file_1.txt test_file_2.txt
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${PULL_REQUEST_NR}" -o -n "${LOCAL_RUN}"  ]; then
