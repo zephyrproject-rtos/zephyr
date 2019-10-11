@@ -24,4 +24,9 @@ config RTIO_INIT_PRIORITY
 	help
 	  RTIO initialization priority.
 
+config RTIO_CONTEXT
+	# Private option; will be selected by the drivers if
+	# this feature is required.
+	bool
+
 endif # RTIO
