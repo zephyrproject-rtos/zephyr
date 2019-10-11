@@ -41,6 +41,8 @@ GDATA(_kernel)
  * already been taken. In other words, when z_arm_pendsv() runs, we *know* we
  * have to swap *something*.
  *
+ * For Cortex-M, z_arm_pendsv() is invoked with no arguments.
+ *
  * For Cortex-R, PendSV exception is not supported by the architecture and this
  * function is directly called either by _IntExit in case of preemption, or
  * z_arm_svc in case of cooperative switching.
@@ -163,7 +165,9 @@ out_fp_endif:
     str v3, [v4, #0]
 #endif
 
-    /* Restore previous interrupt disable state (irq_lock key) */
+    /* Restore previous interrupt disable state (irq_lock key)
+     * (We clear the arch.basepri field after restoring state)
+     */
 #if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0)) && \
 	    _thread_offset_to_basepri > 124
     /* Doing it this way since the offset to thread->arch.basepri can in
@@ -410,13 +414,21 @@ _oops:
  * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
+  /* Use EXC_RETURN state to find out if stack frame is on the
+   * MSP or PSP
+   */
     tst lr, #0x4    /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */
 
+
+    /* Figure out what SVC call number was invoked */
+
     ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    /* SVC is a two-byte instruction, point to it and read encoding */
+    /* SVC is a two-byte instruction, point to it and read the
+     * SVC number (lower byte of SCV instruction)
+     */
     ldrh r1, [r1, #-2]
 
    /*
@@ -425,8 +437,6 @@ SECTION_FUNC(TEXT, z_arm_svc)
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
     * 3: System call (if user mode supported)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
     */
     ands r1, #0xff
 #if defined(CONFIG_USERSPACE)
@@ -442,7 +452,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
     tst r2, #0x1
     bne _oops
 
-#endif
+#endif /* CONFIG_USERSPACE */
 
     cmp r1, #2
     beq _oops
