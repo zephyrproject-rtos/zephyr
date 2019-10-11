@@ -41,7 +41,13 @@ int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
 	struct tcphdr *th = NULL;
-	ssize_t len = net_pkt_get_len(pkt);
+	ssize_t len;
+
+	if (pkt == NULL) {
+		goto out;
+	}
+
+	len = net_pkt_get_len(pkt);
 
 	switch (pkt->family) {
 	case AF_INET:
