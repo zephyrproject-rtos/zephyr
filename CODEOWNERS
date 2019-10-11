@@ -339,6 +339,7 @@
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
+/subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
