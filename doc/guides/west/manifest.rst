@@ -89,6 +89,7 @@ top-level ``manifest`` section with some subsections, like this:
      self:
        # configuration related to the manifest repository itself,
        # i.e. the repository containing west.yml (optional)
+     version: <schema-version> # optional
 
 In YAML terms, the manifest file contains a mapping, with a ``manifest``
 key. Any other keys and their contents are ignored (west v0.5 also required a
@@ -249,7 +250,7 @@ so far using ``defaults`` is:
          url: https://github.com/user/project-three
          revision: abcde413a111
 
-Finally, the ``self`` subsection can be used to control the behavior of the
+The ``self`` subsection can be used to control the behavior of the
 manifest repository itself. Its value is a map with the following keys:
 
 - ``path``: Optional. The path to clone the manifest repository into, relative
@@ -283,8 +284,27 @@ zephyr repository does contain extension commands, its ``self`` entry declares
 the location of the corresponding :file:`west-commands.yml` relative to the
 repository root.
 
+.. _west-manifest-schema-version:
+
+The ``version`` subsection can be used to mark the lowest version of the
+manifest file schema that can parse this file's data:
+
+.. code-block:: yaml
+
+   manifest:
+     version: 0.7
+     # marks that this manifest uses features available in west 0.7 and
+     # up, like manifest imports
+
 The pykwalify schema :file:`manifest-schema.yml` in the west source code
-repository is used to validate the manifest section.
+repository is used to validate the manifest section. The current manifest
+``version`` is 0.7, which corresponds to west version 0.7. This is the only
+value this field can currently take.
+
+If a later version of west, say version ``21.0``, includes changes to the
+manifest schema that cannot be parsed by west 0.7, then setting ``version:
+21.0`` will cause west to print an error when attempting to parse the manifest
+data.
 
 .. _west-manifest-import:
 
