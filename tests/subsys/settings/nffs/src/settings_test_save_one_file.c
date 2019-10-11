@@ -24,6 +24,8 @@ void test_config_save_one_file(void)
 	zassert_true(rc == 0 || rc == -EEXIST, "can't create directory");
 
 	cf.cf_name = TEST_CONFIG_DIR "/blah";
+	cf.cf_maxlines = 1000;
+	cf.cf_lines = 0; /* normally fetched while loading, but this is test */
 	rc = settings_file_src(&cf);
 	zassert_true(rc == 0, "can't register FS as configuration source");
 
