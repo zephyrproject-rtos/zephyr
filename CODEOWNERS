@@ -131,6 +131,7 @@
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
 /drivers/flash/*stm32*                    @superna9999
+/drivers/gpio/                            @mnkp @pabigot
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
 /drivers/hwinfo/                          @alexanderwachter
