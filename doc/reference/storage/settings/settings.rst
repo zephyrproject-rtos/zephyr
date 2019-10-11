@@ -94,12 +94,15 @@ Loading data from persisted storage
 
 A call to ``settings_load()`` uses an ``h_set`` implementation
 to load settings data from storage to volatile memory.
-For both FCB and filesystem back-end the most
-recent key values are guaranteed by traversing all stored content
-and (potentially) overwriting older key values with newer ones.
 After all data is loaded, the ``h_commit`` handler is issued,
 signalling the application that the settings were successfully
 retrieved.
+
+Technically FCB and filesystem backends may store some history of the entities.
+This means that the newest data entity is stored after any
+older existing data entities.
+Starting with Zephyr 2.1, the back-end must filter out all old entities and
+call the callback with only the newest entity.
 
 Storing data to persistent storage
 **********************************
