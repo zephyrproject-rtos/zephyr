@@ -6,9 +6,10 @@
 
 /**
  * @file
- * @brief Kernel fatal error handler for ARM Cortex-M
+ * @brief Kernel fatal error handler for ARM Cortex-M and Cortex-R
  *
- * This module provides the z_NanoFatalErrorHandler() routine for ARM Cortex-M.
+ * This module provides the z_arm_fatal_error() routine for ARM Cortex-M
+ * and Cortex-R CPUs.
  */
 
 #include <toolchain.h>

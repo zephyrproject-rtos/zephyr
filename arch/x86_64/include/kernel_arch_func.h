@@ -27,62 +27,14 @@ static inline struct _cpu *z_arch_curr_cpu(void)
 	return (struct _cpu *)(long)ret;
 }
 
-static inline unsigned int z_arch_irq_lock(void)
-{
-	unsigned long long key;
-
-	__asm__ volatile("pushfq; cli; popq %0" : "=r"(key));
-	return (int)key;
-}
-
-static inline void z_arch_irq_unlock(unsigned int key)
-{
-	if (key & 0x200) {
-		__asm__ volatile("sti");
-	}
-}
-
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static inline bool z_arch_irq_unlocked(unsigned int key)
-{
-	return (key & 0x200) != 0;
-}
-
 static inline void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
-void z_arch_irq_disable(unsigned int irq);
-void z_arch_irq_enable(unsigned int irq);
-
-/* Not a standard Zephyr function, but probably will be */
-static inline unsigned long long z_arch_k_cycle_get_64(void)
+static inline bool z_arch_is_in_isr(void)
 {
-	unsigned int hi, lo;
-
-	__asm__ volatile("rdtsc" : "=d"(hi), "=a"(lo));
-	return (((unsigned long long)hi) << 32) | lo;
-}
-
-static inline unsigned int z_arch_k_cycle_get_32(void)
-{
-#ifdef CONFIG_HPET_TIMER
-	extern u32_t z_timer_cycle_get_32(void);
-	return z_timer_cycle_get_32();
-#else
-	return (u32_t)z_arch_k_cycle_get_64();
-#endif
-}
-
-#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0)
-
-static inline void z_arch_switch(void *switch_to, void **switched_from)
-{
-	xuk_switch(switch_to, switched_from);
+	return z_arch_curr_cpu()->nested != 0U;
 }
 
 static inline u32_t x86_apic_scaled_tsc(void)
@@ -95,21 +47,12 @@ static inline u32_t x86_apic_scaled_tsc(void)
 	return (u32_t)(tsc >> CONFIG_XUK_APIC_TSC_SHIFT);
 }
 
+static inline void z_arch_switch(void *switch_to, void **switched_from)
+{
+	xuk_switch(switch_to, switched_from);
+}
+
 void x86_apic_set_timeout(u32_t cyc_from_now);
-
-#define Z_ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags) \
-	z_arch_irq_connect_dynamic(irq, pri, isr, arg, flags)
-
-extern int x86_64_except_reason;
-
-
-/* Vector 5 is the "bounds" exception which is otherwise vestigial
- * (BOUND is an illegal instruction in long mode)
- */
-#define Z_ARCH_EXCEPT(reason) do {		\
-		x86_64_except_reason = reason;	\
-		__asm__ volatile("int $5");	\
-	} while (false)
 
 void z_arch_sched_ipi(void);
 

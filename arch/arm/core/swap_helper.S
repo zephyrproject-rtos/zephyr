@@ -1,20 +1,21 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Thread context switching for ARM Cortex-M
+ * @brief Thread context switching for ARM Cortex-M and Cortex-R
  *
  * This module implements the routines necessary for thread context switching
- * on ARM Cortex-M CPUs.
+ * on ARM Cortex-M and Cortex-R CPUs.
  */
 
-#include <kernel_structs.h>
-#include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
 

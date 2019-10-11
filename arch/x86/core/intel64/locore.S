@@ -112,9 +112,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	movl $pml4, %eax		/* load page base */
 	movl %eax, %cr3
 
-	movl $X86_EFER_MSR, %ecx	/* enable long mode */
+	movl $X86_EFER_MSR, %ecx	/* enable long mode and no-execute */
 	rdmsr
-	orl $X86_EFER_MSR_LME, %eax
+	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE), %eax
 	wrmsr
 
 	movl %cr0, %eax			/* enable paging */
@@ -183,7 +183,7 @@ x86_sse_init:
 mxcsr:	.long X86_MXCSR_SANE
 
 /*
- * void z_arch_switch(void *switch_to, void **switched_from);
+ * void z_x86_switch(void *switch_to, void **switched_from);
  *
  * Note that switch_handle for us is simply a pointer to the containing
  * 'struct k_thread', thus:
@@ -192,8 +192,8 @@ mxcsr:	.long X86_MXCSR_SANE
  * RSI = (struct k_thread **) switched_from
  */
 
-.globl z_arch_switch
-z_arch_switch:
+.globl z_x86_switch
+z_x86_switch:
 	movq (%rsi), %rsi
 
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)

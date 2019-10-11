@@ -66,7 +66,10 @@ static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 	return irq_num;
 }
 
-#define z_arch_is_in_isr	z_arc_v2_irq_unit_is_in_isr
+static inline bool z_arch_is_in_isr(void)
+{
+	return z_arc_v2_irq_unit_is_in_isr();
+}
 
 extern void z_thread_entry_wrapper(void);
 extern void z_user_thread_entry_wrapper(void);

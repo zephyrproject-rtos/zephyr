@@ -6,17 +6,12 @@
 
 /**
  * @file
- * @brief ARM Cortex-M power management
+ * @brief ARM Cortex-M and Cortex-R power management
  *
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <arch/cpu.h>
-#ifdef CONFIG_TICKLESS_IDLE
-#include <kernel_structs.h>
-#endif
 
 _ASM_FILE_PROLOGUE
 

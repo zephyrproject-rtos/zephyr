@@ -12,13 +12,15 @@
 #include <ia32/kernel_arch_func.h>
 #endif
 
-#ifdef CONFIG_SMP
-#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
-#else
-#define z_arch_is_in_isr() (_kernel.nested != 0U)
-#endif
-
 #ifndef _ASMLANGUAGE
+static inline bool z_arch_is_in_isr(void)
+{
+#ifdef CONFIG_SMP
+	return z_arch_curr_cpu()->nested != 0;
+#else
+	return _kernel.nested != 0U;
+#endif
+}
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);

@@ -156,7 +156,11 @@ static ALWAYS_INLINE void z_arch_nop(void)
 
 
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
+
+static inline u32_t z_arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
 
 #ifdef __cplusplus
 }

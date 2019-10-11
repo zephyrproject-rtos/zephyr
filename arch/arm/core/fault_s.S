@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief Fault handlers for ARM Cortex-M
+ * @brief Fault handlers for ARM Cortex-M and Cortex-R
  *
- * Fault handlers for ARM Cortex-M processors.
+ * Fault handlers for ARM Cortex-M and Cortex-R processors.
  */
 
 #include <toolchain.h>

@@ -26,6 +26,7 @@
 
 #define X86_EFER_MSR			0xC0000080
 #define X86_EFER_MSR_LME		BIT(8)
+#define X86_EFER_MSR_NXE		BIT(11)
 
 #ifndef _ASMLANGUAGE
 #ifdef __cplusplus

@@ -6,18 +6,18 @@
 
 /**
  * @file
- * @brief ARM Cortex-M wrapper for ISRs with parameter
+ * @brief ARM Cortex-M and Cortex-R wrapper for ISRs with parameter
  *
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
+#include <sw_isr_table.h>
+
 
 _ASM_FILE_PROLOGUE
 

@@ -109,10 +109,10 @@ SECTIONS
 	_image_ram_end = .;
 	_end = .;
 
+#include <linker/debug-sections.ld>
+
 	/DISCARD/ :
 	{
-	*(.comment*)
-	*(.debug*)
 	*(.got)
 	*(.got.plt)
 	*(.igot)

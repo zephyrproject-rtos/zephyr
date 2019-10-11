@@ -14,6 +14,7 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <toolchain.h>
 #include <zephyr/types.h>
 #include <sys/sys_io.h>
 

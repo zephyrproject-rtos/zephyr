@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M exception/interrupt exit API
+ * @brief ARM Cortex-M and Cortex-R exception/interrupt exit API
  *
  *
  * Provides functions for performing kernel handling when exiting exceptions or
@@ -14,9 +14,9 @@
  * wrapped around by _isr_wrapper()).
  */
 
-#include <kernel_structs.h>
-#include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE

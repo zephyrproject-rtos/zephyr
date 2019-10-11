@@ -292,6 +292,7 @@ static inline int lll_is_stop(void *lll)
 }
 
 int lll_init(void);
+int lll_reset(void);
 int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		lll_prepare_cb_t prepare_cb, int prio,
 		struct lll_prepare_param *prepare_param);
