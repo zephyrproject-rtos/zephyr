@@ -29,4 +29,10 @@ config RTIO_CONTEXT
 	# this feature is required.
 	bool
 
+config RTIO_RAMP
+	bool "RTIO ramp driver"
+	select RTIO_CONTEXT
+	help
+	  RTIO ramp driver
+
 endif # RTIO

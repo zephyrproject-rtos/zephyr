@@ -26,6 +26,7 @@ Samples and Demos
    gui/*
    video/*
    smp/*
+   rtio/*
 
 .. comment
    To add a new sample document, please use the template available under

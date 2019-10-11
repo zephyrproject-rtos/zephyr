@@ -1,0 +1,7 @@
+sample:
+  name: Ramp Reader Sample
+tests:
+  sample.rtio.ramp_reader:
+    harness: rtio
+    tags: rtio
+    depends_on: rtio
