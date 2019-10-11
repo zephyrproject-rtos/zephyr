@@ -33,8 +33,6 @@ extern "C" {
 
 #include <sys/types.h>
 
-struct tcp; /* TODO: drop this forward declaration */
-
 /**
  * @brief Create a TCP connecton for the net_context
  *
@@ -89,14 +87,14 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 /**
  * @brief Enqueue data for transmission
  *
- * @param conn		TCP connection
+ * @param context	Network context
  * @param buf		Pointer to the data
  * @param len		Number of bytes
  * @param msghdr	Data for a vector array operation
  *
  * @return 0 if ok, < 0 if error
  */
-int net_tcp_queue(struct tcp *conn, const void *buf, size_t len,
+int net_tcp_queue(struct net_context *context, const void *buf, size_t len,
 		  const struct msghdr *msghdr);
 /* TODO: split into 2 functions, conn -> context, queue -> send? */
 

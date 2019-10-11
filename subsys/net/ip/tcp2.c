@@ -1122,10 +1122,18 @@ int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
 	return -EPROTONOSUPPORT;
 }
 
-int net_tcp_queue(struct tcp *conn, const void *buf, size_t len,
+int net_tcp_queue(struct net_context *context, const void *buf, size_t len,
 		  const struct msghdr *msghdr)
 {
+	struct tcp *conn = context->tcp;
 	ssize_t ret = 0;
+
+	NET_DBG("conn: %p, buf: %p, len: %zu", conn, buf, len);
+
+	if (conn == NULL) {
+		ret = -ESHUTDOWN;
+		goto out;
+	}
 
 	if (msghdr && msghdr->msg_iovlen > 0) {
 		int i;
@@ -1141,6 +1149,8 @@ int net_tcp_queue(struct tcp *conn, const void *buf, size_t len,
 	} else {
 		ret = _tcp_send(conn, buf, len, 0);
 	}
+out:
+	NET_DBG("conn: %p, ret: %zd", conn, ret);
 
 	return ret;
 }

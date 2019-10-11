@@ -1570,7 +1570,7 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
 #if IS_ENABLED(CONFIG_NET_TCP2)
-		ret = net_tcp_queue(context->tcp, buf, len, msghdr);
+		ret = net_tcp_queue(context, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
