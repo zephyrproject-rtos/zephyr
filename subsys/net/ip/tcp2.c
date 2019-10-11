@@ -845,16 +845,20 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
 static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 						struct net_pkt *pkt,
-						union net_ip_header *ip_hdr,
-						union net_proto_header
-						*proto_hdr,
+						union net_ip_header *ip,
+						union net_proto_header *proto,
 						void *user_data)
 {
 	struct tcp *conn = ((struct net_context *)user_data)->tcp;
+	u8_t vhl = ip->ipv4->vhl;
 
 	ARG_UNUSED(net_conn);
-	ARG_UNUSED(ip_hdr);
-	ARG_UNUSED(proto_hdr);
+	ARG_UNUSED(proto);
+
+	if (vhl != 0x45) {
+		NET_ERR("conn: %p, Unsupported IP version: 0x%hx", conn, vhl);
+		goto out;
+	}
 
 	NET_DBG("conn: %p, %s", conn, tcp_th(pkt));
 
@@ -877,7 +881,7 @@ static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 	if (conn) {
 		tcp_in(conn, pkt);
 	}
-
+out:
 	return NET_DROP;
 }
 
