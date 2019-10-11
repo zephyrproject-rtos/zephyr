@@ -62,7 +62,10 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     msr PSPLIM, r0
 #endif
 
-#if defined (CONFIG_ARM_MPU)
+    /* push args to stack */
+    push {r1,r2,r3,lr}
+    push {r0,ip}
+
     /* Re-program dynamic memory map.
      *
      * Important note:
@@ -77,20 +80,17 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      * stack, since we do not control how much stack is actually left, when
      * user invokes z_arm_userspace_enter().
      */
-    push {r0,r1,r2,r3,ip,lr}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     bl z_arm_configure_dynamic_mpu_regions
-    pop {r0,r1,r2,r3,ip,lr}
-#endif
+
+    pop {r0,ip}
 
     /* load up stack info from user stack */
     ldr r0, [ip]
     ldr ip, [ip, #4]
 
-
-    /* push args to stack */
-    push {r0,r1,r2,r3,ip,lr}
+    push {r0,ip}
 
     /* clear the user stack area to clean out privileged data */
     /* from right past the guard right up to the end */
@@ -102,18 +102,18 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #endif
     bl memset
 
-    pop {r0,r1,r2,r3,ip,lr}
+    pop {r0,ip}
 
     /* r0 contains user stack start, ip contains user stack size */
     add r0, r0, ip   /* calculate top of stack */
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* clear stack limit (stack protection not required in user mode) */
-    push {r3}
     mov r3, #0
     msr PSPLIM, r3
-    pop {r3}
 #endif
+    /* pop remaining arguments from stack before switching stacks */
+    pop {r1,r2,r3,lr}
 
     /* set stack to user stack */
     msr PSP, r0
