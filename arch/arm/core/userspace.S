@@ -33,6 +33,9 @@ GDATA(_k_syscall_table)
  * The conversion is one way, and threads which transition to user mode do
  * not transition back later, unless they are doing system calls.
  *
+ * The function is invoked as:
+ * z_arm_userspace_enter(user_entry, p1, p2, p3,
+ *                        stack_info.start, stack_info.size);
  */
 SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* move user_entry to lr */
@@ -44,14 +47,20 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     msr PSPLIM, r0
 #endif
 
-    /* set stack to privileged stack */
+    /* prepare to set stack to privileged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
 
+    /* store current stack pointer to ip
+     * the current stack pointer is needed to retrieve
+     * stack_info.start and stack_info.size
+     */
     mov ip, sp
+
+    /* set stack to privileged stack */
     msr PSP, r0
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
