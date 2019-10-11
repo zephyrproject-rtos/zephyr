@@ -27,7 +27,7 @@ static int tcp_window = 1280 - sizeof(struct net_ipv6_hdr)
 static bool tcp_echo;
 static bool _tcp_conn_delete = true;
 
-static sys_slist_t tp_conns = SYS_SLIST_STATIC_INIT(&tp_conns);
+static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
 static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
@@ -310,7 +310,7 @@ int net_tcp_unref(struct net_context *context)
 
 		context->tcp = NULL;
 		memset(conn, 0, sizeof(*conn));
-		sys_slist_find_and_remove(&tp_conns, (sys_snode_t *) conn);
+		sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) conn);
 		k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
 		irq_unlock(key);
@@ -757,7 +757,7 @@ int net_tcp_get(struct net_context *context)
 	conn->context = context;
 	context->tcp = conn;
 
-	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
+	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
 
 	irq_unlock(key);
 
@@ -798,7 +798,7 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	bool found = false;
 	struct tcp *conn;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&tp_conns, conn, next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
 
 		if (NULL == conn->src || NULL == conn->dst) {
 			continue;
@@ -1371,7 +1371,7 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
 
 static ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
 {
-	struct tcp *conn = (void *) sys_slist_peek_head(&tp_conns);
+	struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
 	ssize_t bytes_received = conn->rcv->len;
 	struct net_buf *data = tcp_win_pop(conn->rcv, bytes_received);
 
@@ -1493,7 +1493,7 @@ bool tp_input(struct net_pkt *pkt)
 			tp_trace = false;
 			{
 				struct net_context *context;
-				conn = (void *) sys_slist_peek_head(&tp_conns);
+				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
 				net_tcp_unref(context);
 				tcp_free(context);
@@ -1505,7 +1505,7 @@ bool tp_input(struct net_pkt *pkt)
 		}
 		if (is("CLOSE2", tp->op)) {
 			struct tcp *conn =
-				(void *)sys_slist_peek_head(&tp_conns);
+				(void *)sys_slist_peek_head(&tcp_conns);
 			net_tcp_put(conn->context);
 		}
 		if (is("RECV", tp->op)) {
@@ -1518,7 +1518,7 @@ bool tp_input(struct net_pkt *pkt)
 		}
 		if (is("SEND", tp->op)) {
 			ssize_t len = tp_str_to_hex(buf, sizeof(buf), tp->data);
-			struct tcp *conn = (void *) sys_slist_peek_head(&tp_conns);
+			struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
 
 			tp_output(pkt->iface, buf, 1);
 			responded = true;
@@ -1539,7 +1539,7 @@ bool tp_input(struct net_pkt *pkt)
 		break;
 	case TP_INTROSPECT_REQUEST:
 		json_len = sizeof(buf);
-		conn = (void *) sys_slist_peek_head(&tp_conns);
+		conn = (void *)sys_slist_peek_head(&tcp_conns);
 		tcp_to_json(conn, buf, &json_len);
 		break;
 	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
