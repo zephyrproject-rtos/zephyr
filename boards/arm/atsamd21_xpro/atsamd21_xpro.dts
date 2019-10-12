@@ -27,7 +27,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&portb 30 0>;
+			gpios = <&portb 30 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED";
 		};
 	};
@@ -35,7 +35,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		user_button: button_0 {
-			gpios = <&porta 15 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&porta 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";
 		};
 	};
