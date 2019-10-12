@@ -687,6 +687,7 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 		data->invert &= ~BIT(pin);
 	}
 	if (api->pin_interrupt_configure) {
+		flags &= ~GPIO_INT_DEBOUNCE;
 		ret = z_impl_gpio_pin_interrupt_configure(port, pin, flags);
 	}
 
