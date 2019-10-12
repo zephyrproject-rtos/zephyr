@@ -55,7 +55,8 @@ static int init_callback(struct device *dev,
 
 	if (rc == 0) {
 		/* 2. configure PIN_IN callback, but don't enable */
-		rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
+		rc = gpio_pin_configure(dev, PIN_IN,
+					GPIO_INPUT | GPIO_INT_DEBOUNCE);
 	}
 
 	if (rc == 0) {
@@ -79,9 +80,7 @@ static void trigger_callback(struct device *dev, int enable_cb)
 	cb_cnt[0] = 0;
 	cb_cnt[1] = 0;
 	if (enable_cb == 1) {
-		gpio_pin_interrupt_configure(dev, PIN_IN,
-					     GPIO_INT_EDGE_RISING
-					     | GPIO_INT_DEBOUNCE);
+		gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_EDGE_RISING);
 	} else {
 		gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	}
