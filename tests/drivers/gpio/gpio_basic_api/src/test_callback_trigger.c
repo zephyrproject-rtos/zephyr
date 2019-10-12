@@ -71,7 +71,7 @@ static int test_callback(int mode)
 	}
 
 	/* 2. configure PIN_IN callback and trigger condition */
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
+	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_INT_DEBOUNCE);
 	if (rc != 0) {
 		TC_ERROR("config PIN_IN fail: %d\n", rc);
 		goto err_exit;
@@ -90,7 +90,7 @@ static int test_callback(int mode)
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
 	cb_cnt = 0;
-	rc = gpio_pin_interrupt_configure(dev, PIN_IN, mode | GPIO_INT_DEBOUNCE);
+	rc = gpio_pin_interrupt_configure(dev, PIN_IN, mode);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("Mode %x not supported\n", mode);
 		goto pass_exit;
