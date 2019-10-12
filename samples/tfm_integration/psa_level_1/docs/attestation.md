@@ -12,12 +12,12 @@ accessible inside the SPE.
 
 ## Token Technical Details
 
-This IAT response is encoded in **CBOR** ([RFC7049][TTD1]), and wrapped and
+This IAT response is encoded in **CBOR** ([RFC7049][TTD1]), wrapped and
 signed using **CBOR Object Signing and Encryption (COSE)** ([RFC8152][TTD1]),
 with a tagged `COSE_Sign1` structure (CBOR tag `18`).
 
-The current TF-M implementation supports **ECDSA P256** signatures over
-**SHA256**.
+The current TF-M implementation supports **ECDSA P256** signatures and
+**SHA256** hashes.
 
 [TTD1]:https://tools.ietf.org/html/rfc7049
 [TTD2]:https://tools.ietf.org/html/rfc8152
@@ -114,6 +114,28 @@ $ openssl ec \
 This .pem file can be used with tools like `check_iat` to verify the signature
 of IAT packets, discussed in the example section of this guide.
 
+### IAT Verification via `check_iat`
+
+TF-M conveniently provides an IAT verification tool in the
+`tools/iat-verifier` folder. Follow the instructions there to install the
+tool, and you can verify the above IAT response packet by:
+
+1. Converting the hex dump to a binary CBOR file via xxd (removing everything
+   except the hex values before saving the hex dump as a text file):
+
+```
+$ xxd -r -p docs/samples/iatresp.cbor.txt docs/samples/iatresp.cbor
+```
+
+2. Checking the signature of the CBOR file using the public key in .pem
+   format, optionally display the decoded CBOR IAT data in JSON format (`-p`):
+
+```
+$ check_iat -k docs/samples/publickey.pem -p docs/samples/iatresp.bin
+Signature OK
+...
+```
+
 ## Example IAT Response
 
 If a server sends an IAT request with the following 64-byte nonce ...
@@ -170,24 +192,44 @@ key pair was used:
 000001E0 C7 18 A6 94 D1 FE 34 46 1F E8 3A 6D 30 61 0E    ......4F..:m0a.
 ```
 
-### IAT Verification via `check_iat`
-
-TF-M conveniently provides an IAT verification tool in the
-`tools/iat-verifier` folder. Follow the instructions there to install the
-tool, and you can verify the above IAT response packet by:
-
-1. Converting the hex dump to a binary CBOR file via xxd (removing everything
-   except the hex values before saving the hex dump as a text file):
+The contents of the IAT packet can be analyzed using `decompile_token`, which
+is installed along with the `check_iat` command described earlier in this
+guide:
 
 ```
-$ xxd -r -p docs/samples/iatresp.cbor.txt docs/samples/iatresp.cbor
+$ decompile_token docs/samples/iatresp.cbor
+boot_seed: !!binary |
+  oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8=
+challenge: !!binary |
+  ABEiM0RVZneImaq7zN3u/wARIjNEVWZ3iJmqu8zd7v8AESIzRFVmd4iZqrvM3e7/ABEiM0RVZneI
+  maq7zN3u/w==
+client_id: -1
+hardware_id: 060456527282910010
+implementation_id: !!binary |
+  qqqqqqqqqqq7u7u7u7u7u8zMzMzMzMzM3d3d3d3d3d0=
+instance_id: !!binary |
+  AfpYdV9lhifOVGDym3UpZxMkjK562eKYS5AoDvy8tQJI
+originator: www.trustedfirmware.org
+profile_id: PSA_IOT_PROFILE_1
+security_lifecycle: SL_SECURED
+sw_components:
+- sw_component_type: NSPE_SPE
+  sw_component_version: 0.0.0
+  3: 0
+  measurement_value: !!binary |
+    hx2sICTiGo3pCqJnpDWXLHDUf1Aq6RU7syB4a/zeQ34=
+  measurement_description: SHA256
+  signer_id: !!binary |
+    v+bYb4gm9P+X+5bE5vvEmT5GGfxWXaJq3zTDKUia3Dg=
 ```
 
-2. Checking the signature of the CBOR file using the public key in .pem
-   format, optionally display the decoded CBOR IAT data in JSON format (`-p`):
+Binary values are encoded in **BASE64**. Decoding the `challenge` value from
+BASE64 to hex, for example, yields the following, matching the nonce data
+provided during the IAT request (newlines added for clarity):
 
 ```
-$ check_iat -k docs/samples/publickey.pem -p docs/samples/iatresp.bin
-Signature OK
-...
+00112233445566778899AABBCCDDEEFF
+00112233445566778899AABBCCDDEEFF
+00112233445566778899AABBCCDDEEFF
+00112233445566778899AABBCCDDEEFF
 ```
