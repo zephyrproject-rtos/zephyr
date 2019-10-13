@@ -610,6 +610,15 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 
 	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
 
+	__ASSERT_NO_MSG((flags & GPIO_INT_DEBOUNCE) == 0);
+
+	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
+		 ((flags & GPIO_INT_EDGE) != 0) ||
+		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) !=
+		  (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)),
+		 "Only one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 can be "
+		 "enabled for a level interrupt.");
+
 	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
 		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
@@ -655,6 +664,13 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 	__ASSERT((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) !=
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
+
+	__ASSERT((flags & GPIO_OUTPUT) != 0 || (flags & GPIO_SINGLE_ENDED) == 0,
+		 "Output needs to be enabled for 'Open Drain', 'Open Source' "
+		 "mode to be supported");
+
+	__ASSERT_NO_MSG((flags & GPIO_SINGLE_ENDED) != 0 ||
+			(flags & GPIO_LINE_OPEN_DRAIN) == 0);
 
 	__ASSERT((flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH)) == 0
 		 || (flags & GPIO_OUTPUT) != 0,
