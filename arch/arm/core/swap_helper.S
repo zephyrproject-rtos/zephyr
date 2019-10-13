@@ -198,6 +198,34 @@ out_fp_endif:
     cpsie i
 _thread_irq_disabled:
 
+#if defined(CONFIG_ARM_MPU)
+    /* Re-program dynamic memory map */
+    push {r2,lr}
+    mov r0, r2
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2,r3}
+    mov lr, r3
+#endif
+
+#ifdef CONFIG_USERSPACE
+    /* restore mode */
+    ldr r3, =_thread_offset_to_mode
+    adds r3, r2, r3
+    ldr r0, [r3]
+    mrs r3, CONTROL
+    movs.n r1, #1
+    bics r3, r1
+    orrs r3, r0
+    msr CONTROL, r3
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
+#endif
+
     ldr r4, =_thread_offset_to_callee_saved
     adds r0, r2, r4
 
@@ -342,65 +370,8 @@ _thread_irq_disabled:
      */
     bx lr
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-
-/**
- *
- * @brief Service call handler
- *
- * The service call (svc) is used in the following occasions:
- * - IRQ offloading
- * - Kernel run-time exceptions
- *
- * @return N/A
- */
-SECTION_FUNC(TEXT, z_arm_svc)
-    /* Use EXC_RETURN state to find out if stack frame is on the
-     * MSP or PSP
-     */
-    ldr r0, =0x4
-    mov r1, lr
-    tst r1, r0
-    beq _stack_frame_msp
-    mrs r0, PSP
-    bne _stack_frame_endif
-_stack_frame_msp:
-    mrs r0, MSP
-_stack_frame_endif:
-
-    /* Figure out what SVC call number was invoked */
-    ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    /* SVC is a two-byte instruction, point to it and read  encoding */
-    subs r1, r1, #2
-    ldrb r1, [r1, #0]
-
-   /*
-    * grab service call number:
-    * 1: irq_offload (if configured)
-    * 2: kernel panic or oops (software generated fatal exception)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
-    */
-
-    cmp r1, #2
-    beq _oops
-
-#if defined(CONFIG_IRQ_OFFLOAD)
-    push {r0, lr}
-    bl z_irq_do_offload  /* call C routine which executes the offload */
-    pop {r0, r1}
-    mov lr, r1
-#endif /* CONFIG_IRQ_OFFLOAD */
-
-    /* exception return is done in z_arm_int_exit() */
-    b z_arm_int_exit
-
-_oops:
-    push {r0, lr}
-    bl z_do_kernel_oops
-    pop {r0, pc}
-
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+  defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 /**
  *
@@ -417,10 +388,22 @@ SECTION_FUNC(TEXT, z_arm_svc)
   /* Use EXC_RETURN state to find out if stack frame is on the
    * MSP or PSP
    */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+  movs r0, #0x4
+  mov r1, lr
+  tst r1, r0
+  beq _stack_frame_msp
+  mrs r0, PSP
+  bne _stack_frame_endif
+_stack_frame_msp:
+  mrs r0, MSP
+_stack_frame_endif:
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     tst lr, #0x4    /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */
+#endif
 
 
     /* Figure out what SVC call number was invoked */
@@ -429,7 +412,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
     /* SVC is a two-byte instruction, point to it and read the
      * SVC number (lower byte of SCV instruction)
      */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    subs r1, r1, #2
+    ldrb r1, [r1]
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldrb r1, [r1, #-2]
+#endif
 
    /*
     * grab service call number:
@@ -448,7 +436,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
      * check that we are privileged before invoking other SVCs
      * oops if we are unprivileged
      */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    movs r3, #0x1
+    tst r2, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     tst r2, #0x1
+#endif
     bne _oops
 
 #endif /* CONFIG_USERSPACE */
@@ -459,7 +452,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
 #if defined(CONFIG_IRQ_OFFLOAD)
     push {r0, lr}
     bl z_irq_do_offload  /* call C routine which executes the offload */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    pop {r0, r3}
+    mov lr, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     pop {r0, lr}
+#endif
 
     /* exception return is done in z_arm_int_exit() */
     b z_arm_int_exit
@@ -493,13 +491,28 @@ _oops:
      * r8 - saved link register
      */
 _do_syscall:
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    movs r3, #24
+    ldr r1, [r0, r3]   /* grab address of PC from stack frame */
+    mov r8, r1
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r8, [r0, #24]   /* grab address of PC from stack frame */
+#endif
     ldr r1, =z_arm_do_syscall
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    str r1, [r0, r3]   /* overwrite the PC to point to z_arm_do_syscall */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     str r1, [r0, #24]   /* overwrite the PC to point to z_arm_do_syscall */
+#endif
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    ldr r3, =K_SYSCALL_LIMIT
+    cmp r6, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* validate syscall limit */
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
+#endif
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
@@ -511,6 +524,20 @@ _do_syscall:
 valid_syscall_id:
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    mov ip, r2
+    ldr r1, =_thread_offset_to_mode
+    ldr r3, [r0, r1]
+    movs r2, #1
+    bics r3, r2
+    /* Store (privileged) mode in thread's mode state variable */
+    str r3, [r0, r1]
+    mov r2, ip
+    dsb
+    /* set mode to privileged, r2 still contains value from CONTROL */
+    movs r3, #1
+    bics r2, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r1, [r0, #_thread_offset_to_mode]
     bic r1, #1
     /* Store (privileged) mode in thread's mode state variable */
@@ -518,6 +545,7 @@ valid_syscall_id:
     dsb
     /* set mode to privileged, r2 still contains value from CONTROL */
     bic r2, #1
+#endif
     msr CONTROL, r2
 
     /* ISB is not strictly necessary here (stack pointer is not being
