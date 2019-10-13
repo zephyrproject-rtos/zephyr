@@ -429,7 +429,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
     /* SVC is a two-byte instruction, point to it and read the
      * SVC number (lower byte of SCV instruction)
      */
-    ldrh r1, [r1, #-2]
+    ldrb r1, [r1, #-2]
 
    /*
     * grab service call number:
@@ -438,7 +438,6 @@ SECTION_FUNC(TEXT, z_arm_svc)
     * 2: kernel panic or oops (software generated fatal exception)
     * 3: System call (if user mode supported)
     */
-    ands r1, #0xff
 #if defined(CONFIG_USERSPACE)
     mrs r2, CONTROL
 
@@ -504,7 +503,7 @@ _do_syscall:
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
-    str r6, [r0, #0]
+    str r6, [r0]
     ldr r6, =K_SYSCALL_BAD
 
     /* Bad syscalls treated as valid syscalls with ID K_SYSCALL_BAD. */
