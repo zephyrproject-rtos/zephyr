@@ -19,8 +19,7 @@
 
 #include "lsm6dsl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM6DSL);
+LOG_MODULE_REGISTER(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};

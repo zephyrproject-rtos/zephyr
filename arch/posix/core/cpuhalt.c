@@ -24,18 +24,6 @@
 #include "posix_soc_if.h"
 #include <debug/tracing.h>
 
-/**
- *
- * @brief Power save idle routine for IA-32
- *
- * This function will be called by the kernel idle loop or possibly within
- * an implementation of _sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.
- *
- * This function is just a pass thru to the SOC one
- *
- * @return N/A
- */
 void z_arch_cpu_idle(void)
 {
 	sys_trace_idle();
@@ -43,25 +31,6 @@ void z_arch_cpu_idle(void)
 	posix_halt_cpu();
 }
 
-/**
- *
- * @brief Atomically re-enable interrupts and enter low power mode
- *
- * INTERNAL
- * The requirements for z_arch_cpu_atomic_idle() are as follows:
- * 1) The enablement of interrupts and entering a low-power mode needs to be
- *    atomic, i.e. there should be no period of time where interrupts are
- *    enabled before the processor enters a low-power mode.  See the comments
- *    in k_lifo_get(), for example, of the race condition that
- *    occurs if this requirement is not met.
- *
- * 2) After waking up from the low-power mode, the interrupt lockout state
- *    must be restored as indicated in the 'key' input parameter.
- *
- * This function is just a pass thru to the SOC one
- *
- * @return N/A
- */
 void z_arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();

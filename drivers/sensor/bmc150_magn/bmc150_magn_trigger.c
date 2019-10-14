@@ -12,9 +12,8 @@
 
 #include "bmc150_magn.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMC150_MAGN);
+LOG_MODULE_DECLARE(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 
 int bmc150_magn_trigger_set(struct device *dev,
 			    const struct sensor_trigger *trig,

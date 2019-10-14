@@ -9,6 +9,10 @@
 
 if SOC_FAMILY_STM32
 
+# SYSTICK is the default tick source on STM32 Socs
+config CORTEX_M_SYSTICK
+	default y
+
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_STM32_CUBE

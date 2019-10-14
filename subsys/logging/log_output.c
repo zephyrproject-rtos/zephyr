@@ -17,7 +17,7 @@
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
-#define HEXDUMP_BYTES_IN_LINE 8
+#define HEXDUMP_BYTES_IN_LINE 16
 
 #define  DROPPED_COLOR_PREFIX \
 	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
@@ -366,6 +366,10 @@ static void hexdump_line_print(const struct log_output *log_output,
 	}
 
 	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			print_formatted(log_output, " ");
+		}
+
 		if (i < length) {
 			print_formatted(log_output, "%02x ", data[i]);
 		} else {
@@ -376,6 +380,10 @@ static void hexdump_line_print(const struct log_output *log_output,
 	print_formatted(log_output, "|");
 
 	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			print_formatted(log_output, " ");
+		}
+
 		if (i < length) {
 			char c = (char)data[i];
 

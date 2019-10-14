@@ -10,8 +10,7 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(lis2dh);
+LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 #if defined(DT_ST_LIS2DH_BUS_SPI)

@@ -51,16 +51,6 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
 	return val;
 }
 
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the
- * kernel.  Trivial stuff is done inline; more complex initialization is
- * done via function calls.
- *
- * @return N/A
- */
 static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];

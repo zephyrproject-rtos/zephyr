@@ -16,8 +16,7 @@
 
 #include "tmp007.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP007);
+LOG_MODULE_REGISTER(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
 int tmp007_reg_read(struct tmp007_data *drv_data, u8_t reg, u16_t *val)
 {

@@ -30,6 +30,7 @@ config PINMUX_XEC_GPIO140_176
 	default y
 
 config PINMUX_XEC_GPIO200_236
+	default y if ADC_XEC
 	default n
 
 config PINMUX_XEC_GPIO240_276
@@ -81,10 +82,6 @@ endif # ESPI
 
 if RTOS_TIMER
 
-config MCHP_XEC_RTOS_TIMER
-	bool
-	default y
-
 # XEC RTOS timer HW frequency is fixed at 32768
 # The driver requires tickless mode and ticks per
 # second to be 32768 for accurate operation.
@@ -99,8 +96,10 @@ endif # RTOS_TIMER
 
 if !RTOS_TIMER
 
-config CORTEX_M_SYSTICK
-	default y
+# If RTOS timer is not enabled we use ARM Cortex-M
+# SYSTICK. SYSTICK frequency is 48MHz divided by
+# SOC_MEC1501_PROC_CLK_DIV.
+#
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
@@ -110,4 +109,14 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 endif # RTOS_TIMER
 
+if PS2
+
+config PS2_XEC_0
+	default y
+
+config PS2_XEC_1
+	default y
+
+endif #PS2
 endif # BOARD_MEC1501MODULAR_ASSY6885
+

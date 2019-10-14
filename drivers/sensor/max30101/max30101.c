@@ -8,8 +8,7 @@
 
 #include "max30101.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(MAX30101);
+LOG_MODULE_REGISTER(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 
 static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

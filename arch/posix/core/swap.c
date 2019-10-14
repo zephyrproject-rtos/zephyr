@@ -19,36 +19,23 @@
 #include "irq.h"
 #include "kswap.h"
 
-/**
- *
- * @brief Initiate a cooperative context switch
- *
- * The z_arch_swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking z_arch_swap(), the
- * caller disables interrupts (via irq_lock) and the return 'key'
- * is passed as a parameter to z_arch_swap().
- *
- *
- * @return -EAGAIN, or a return value set by a call to
- * z_arch_thread_return_value_set()
- *
- */
-
 int z_arch_swap(unsigned int key)
 {
-/*
- * struct k_thread * _kernel.current is the currently runnig thread
- * struct k_thread * _kernel.ready_q.cache contains the next thread to run
- * (cannot be NULL)
- *
- * Here a "real" arch would save all processor registers, stack pointer and so
- * forth.
- * But we do not need to do so because we use posix threads => those are all
- * nicely kept by the native OS kernel
- */
+	/*
+	 * struct k_thread * _kernel.current is the currently runnig thread
+	 * struct k_thread * _kernel.ready_q.cache contains the next thread to
+	 * run (cannot be NULL)
+	 *
+	 * Here a "real" arch would save all processor registers, stack pointer
+	 * and so forth.  But we do not need to do so because we use posix
+	 * threads => those are all nicely kept by the native OS kernel
+	 */
 	_kernel.current->callee_saved.key = key;
 	_kernel.current->callee_saved.retval = -EAGAIN;
-	/* retval may be modified with a call to z_arch_thread_return_value_set() */
+
+	/* retval may be modified with a call to
+	 * z_arch_thread_return_value_set()
+	 */
 
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)
@@ -63,8 +50,9 @@ int z_arch_swap(unsigned int key)
 
 	/*
 	 * Here a "real" arch would load all processor registers for the thread
-	 * to run. In this arch case, we just block this thread until allowed to
-	 * run later, and signal to whomever is allowed to run to continue.
+	 * to run. In this arch case, we just block this thread until allowed
+	 * to run later, and signal to whomever is allowed to run to
+	 * continue.
 	 */
 	posix_swap(ready_thread_ptr->thread_idx,
 		this_thread_ptr->thread_idx);
@@ -79,12 +67,11 @@ int z_arch_swap(unsigned int key)
 
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-/**
- * This is just a version of z_arch_swap() in which we do not save anything about the
- * current thread.
+/* This is just a version of z_arch_swap() in which we do not save anything
+ * about the current thread.
  *
- * Note that we will never come back to this thread:
- * posix_main_thread_start() does never return
+ * Note that we will never come back to this thread: posix_main_thread_start()
+ * does never return.
  */
 void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 		k_thread_stack_t *main_stack,

@@ -17,8 +17,7 @@
 
 #include "amg88xx.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(AMG88XX);
+LOG_MODULE_REGISTER(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
 static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

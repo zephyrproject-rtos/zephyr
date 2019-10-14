@@ -9,9 +9,8 @@
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(qdec_nrfx);
+LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 
 #define FULL_ANGLE 360

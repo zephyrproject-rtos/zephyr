@@ -15,9 +15,8 @@
 
 extern struct amg88xx_data amg88xx_driver;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(AMG88XX);
+LOG_MODULE_DECLARE(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
 int amg88xx_attr_set(struct device *dev,
 		     enum sensor_channel chan,

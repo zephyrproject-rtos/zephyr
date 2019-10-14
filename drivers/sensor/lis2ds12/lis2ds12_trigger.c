@@ -14,12 +14,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "lis2ds12.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LIS2DS12);
+LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
 static void lis2ds12_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)

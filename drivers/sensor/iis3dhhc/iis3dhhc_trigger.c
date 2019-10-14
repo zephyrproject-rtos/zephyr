@@ -15,8 +15,7 @@
 
 #include "iis3dhhc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(IIS3DHHC);
+LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * iis3dhhc_enable_int - enable selected int pin to generate interrupt

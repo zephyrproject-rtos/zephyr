@@ -14,8 +14,7 @@
 
 #include "hmc5883l.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(HMC5883L);
+LOG_MODULE_REGISTER(HMC5883L, CONFIG_SENSOR_LOG_LEVEL);
 
 static void hmc5883l_convert(struct sensor_value *val, s16_t raw_val,
 			     u16_t divider)

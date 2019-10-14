@@ -21,13 +21,8 @@
 extern u8_t *z_priv_stack_find(void *obj);
 #endif
 
-/**
- *
- * @brief Initialize a new thread from its stack space
- *
- * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by z_arm_pendsv(), is put at the other end
- * of the stack, and thus reusable by the stack when not needed anymore.
+/* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
+ * end of the stack, and thus reusable by the stack when not needed anymore.
  *
  * The initial context is an exception stack frame (ESF) since exiting the
  * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
@@ -37,21 +32,7 @@ extern u8_t *z_priv_stack_find(void *obj);
  * halfwords).  Since the compiler automatically sets the lsb of function
  * addresses, we have to unset it manually before storing it in the 'pc' field
  * of the ESF.
- *
- * <options> is currently unused.
- *
- * @param stack      pointer to the aligned stack memory
- * @param stackSize  size of the available stack memory in bytes
- * @param pEntry the entry point
- * @param parameter1 entry point to the first param
- * @param parameter2 entry point to the second param
- * @param parameter3 entry point to the third param
- * @param priority   thread priority
- * @param options    thread options: K_ESSENTIAL, K_FP_REGS
- *
- * @return N/A
  */
-
 void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		       size_t stackSize, k_thread_entry_t pEntry,
 		       void *parameter1, void *parameter2, void *parameter3,

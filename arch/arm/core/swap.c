@@ -13,14 +13,7 @@ extern void read_timer_start_of_swap(void);
 #endif
 extern const int _k_neg_eagain;
 
-/**
- *
- * @brief Initiate a cooperative context switch
- *
- * The z_arch_swap() routine is invoked by various kernel services to effect
- * a cooperative context context switch.  Prior to invoking z_arch_swap(), the caller
- * disables interrupts via irq_lock() and the return 'key' is passed as a
- * parameter to z_arch_swap().  The 'key' actually represents the BASEPRI register
+/* The 'key' actually represents the BASEPRI register
  * prior to disabling interrupts via the BASEPRI mechanism.
  *
  * z_arch_swap() itself does not do much.
@@ -40,10 +33,6 @@ extern const int _k_neg_eagain;
  *
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
- *
- * @return -EAGAIN, or a return value set by a call to
- * z_arch_thread_return_value_set()
- *
  */
 int z_arch_swap(unsigned int key)
 {

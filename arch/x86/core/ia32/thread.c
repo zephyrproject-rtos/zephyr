@@ -174,22 +174,6 @@ int z_arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
-/**
- * @brief Create a new kernel execution thread
- *
- * Initializes the k_thread object and sets up initial stack frame.
- *
- * @param thread pointer to thread struct memory, including any space needed
- *		for extra coprocessor context
- * @param stack the pointer to aligned stack memory
- * @param stack_size the stack size in bytes
- * @param entry thread entry point routine
- * @param parameter1 first param to entry point
- * @param parameter2 second param to entry point
- * @param parameter3 third param to entry point
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
- */
 void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		       size_t stack_size, k_thread_entry_t entry,
 		       void *parameter1, void *parameter2, void *parameter3,

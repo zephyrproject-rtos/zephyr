@@ -18,9 +18,7 @@
 
 #include "hp206c.h"
 
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(HP206C);
+LOG_MODULE_REGISTER(HP206C, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int hp206c_bus_config(struct device *dev)
 {

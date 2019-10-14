@@ -15,8 +15,7 @@
 
 #include "lps22hh.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LPS22HH);
+LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * lps22hh_enable_int - enable selected int pin to generate interrupt

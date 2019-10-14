@@ -14,9 +14,8 @@
 
 #include "adt7420.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ADT7420);
+LOG_MODULE_REGISTER(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
 static int adt7420_temp_reg_read(struct device *dev, u8_t reg, s16_t *val)
 {

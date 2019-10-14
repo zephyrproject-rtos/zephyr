@@ -1,6 +1,0 @@
-#!/bin/bash
-# Copyright (c) 2017 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-trap "kill $1" SIGINT
-while kill -0 $1 2> /dev/null; do sleep 1; done;
