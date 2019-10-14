@@ -222,8 +222,19 @@ class EDT:
             binding = self._merge_included_bindings(binding, binding_path)
             self._check_binding(binding, binding_path)
 
-            self._compat2binding[binding_compat, _binding_bus(binding)] = \
-                (binding, binding_path)
+            bus = _binding_bus(binding)
+
+            # Do not allow two different bindings to have the same
+            # 'compatible:'/'parent-bus:' combo
+            old_binding = self._compat2binding.get((binding_compat, bus))
+            if old_binding:
+                msg = "both {} and {} have 'compatible: {}'".format(
+                    old_binding[1], binding_path, binding_compat)
+                if bus is not None:
+                    msg += " and 'parent-bus: {}'".format(bus)
+                _err(msg)
+
+            self._compat2binding[binding_compat, bus] = (binding, binding_path)
 
     def _binding_compat(self, binding, binding_path):
         # Returns the string listed in 'compatible:' in 'binding', or None if
