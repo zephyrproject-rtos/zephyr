@@ -6,6 +6,7 @@ zephyr_library_sources(
   vector_table.S
   reset.S
   fault.c
+  irq_manage.c
   reboot.c
   stacks.c
   )

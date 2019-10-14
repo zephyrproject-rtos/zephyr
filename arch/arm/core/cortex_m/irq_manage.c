@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M and Cortex-R interrupt management
+ * @brief ARM Cortex-M interrupt management
  *
  *
  * Interrupt management: enabling/disabling and dynamic ISR
@@ -16,12 +16,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_R)
-#include <device.h>
-#include <irq_nextlevel.h>
-#endif
 #include <sys/__assert.h>
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -32,7 +27,6 @@
 
 extern void z_arm_reserved(void);
 
-#if defined(CONFIG_CPU_CORTEX_M)
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
@@ -97,121 +91,6 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_R)
-void z_arch_irq_enable(unsigned int irq)
-{
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_enable_next_level(dev, (irq >> 8) - 1);
-}
-
-void z_arch_irq_disable(unsigned int irq)
-{
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_disable_next_level(dev, (irq >> 8) - 1);
-}
-
-int z_arch_irq_is_enabled(unsigned int irq)
-{
-	struct device *dev = _sw_isr_table[0].arg;
-
-	return irq_is_enabled_next_level(dev);
-}
-
-/**
- * @internal
- *
- * @brief Set an interrupt's priority
- *
- * The priority is verified if ASSERT_ON is enabled. The maximum number
- * of priority levels is a little complex, as there are some hardware
- * priority levels which are reserved: three for various types of exceptions,
- * and possibly one additional to support zero latency interrupts.
- *
- * @return N/A
- */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
-{
-	struct device *dev = _sw_isr_table[0].arg;
-
-	if (irq == 0)
-		return;
-
-	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
-}
-
-#endif
-
-/**
- *
- * @brief Spurious interrupt handler
- *
- * Installed in all dynamic interrupt slots at boot time. Throws an error if
- * called.
- *
- * See z_arm_reserved().
- *
- * @return N/A
- */
-void z_irq_spurious(void *unused)
-{
-	ARG_UNUSED(unused);
-	z_arm_reserved();
-}
-
-/* FIXME: IRQ direct inline functions have to be placed here and not in
- * arch/cpu.h as inline functions due to nasty circular dependency between
- * arch/cpu.h and kernel_structs.h; the inline functions typically need to
- * perform operations on _kernel.  For now, leave as regular functions, a
- * future iteration will resolve this.
- *
- * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
- */
-
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-void _arch_isr_direct_pm(void)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
-	unsigned int key;
-
-	/* irq_lock() does what we wan for this CPU */
-	key = irq_lock();
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* Lock all interrupts. irq_lock() will on this CPU only disable those
-	 * lower than BASEPRI, which is not what we want. See comments in
-	 * arch/arm/core/isr_wrapper.S
-	 */
-	__asm__ volatile("cpsid i" : : : "memory");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-	if (_kernel.idle) {
-		s32_t idle_val = _kernel.idle;
-
-		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
-	}
-
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
-	irq_unlock(key);
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile("cpsie i" : : : "memory");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-}
-#endif
-
-void z_arch_isr_direct_header(void)
-{
-	sys_trace_isr_enter();
-}
-
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /**
  *
@@ -267,14 +146,3 @@ int irq_target_state_is_secure(unsigned int irq)
 }
 
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
-{
-	z_isr_install(irq, routine, parameter);
-	z_arm_irq_priority_set(irq, priority, flags);
-	return irq;
-}
-#endif /* CONFIG_DYNAMIC_INTERRUPTS */
