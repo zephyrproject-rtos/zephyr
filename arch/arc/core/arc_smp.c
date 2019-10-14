@@ -44,15 +44,15 @@ u64_t z_arc_smp_switch_in_isr(void)
 	u32_t new_thread;
 	u32_t old_thread;
 
-	if (!_current_cpu->swap_ok) {
-		return 0;
-	}
-
 	old_thread = (u32_t)_current;
 
 	new_thread = (u32_t)z_get_next_ready_thread();
 
 	if (new_thread != old_thread) {
+/* should check whether new_thread to relace old_thread */
+#ifdef CONFIG_TIMESLICING
+		z_reset_time_slice();
+#endif
 		_current_cpu->swap_ok = 0;
 		((struct k_thread *)new_thread)->base.cpu =
 				arch_curr_cpu()->id;
@@ -120,7 +120,7 @@ void arch_sched_ipi(void)
 {
 	u32_t i;
 
-	/* broadcast sched_ipi request to all cores
+	/* broadcast sched_ipi request to other cores
 	 * if the target is current core, hardware will ignore it
 	 */
 	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
