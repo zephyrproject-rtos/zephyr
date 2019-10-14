@@ -1047,6 +1047,8 @@ void z_sched_ipi(void)
 
 void z_sched_abort(struct k_thread *thread)
 {
+	k_spinlock_key_t key;
+
 	if (thread == _current) {
 		z_remove_thread_from_ready_q(thread);
 		return;
@@ -1065,17 +1067,19 @@ void z_sched_abort(struct k_thread *thread)
 	 * running on or because we caught it idle in the queue
 	 */
 	while ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
-		LOCKED(&sched_spinlock) {
-			if (z_is_thread_prevented_from_running(thread)) {
-				__ASSERT(!z_is_thread_queued(thread), "");
-				thread->base.thread_state |= _THREAD_DEAD;
-			} else if (z_is_thread_queued(thread)) {
-				_priq_run_remove(&_kernel.ready_q.runq, thread);
-				z_mark_thread_as_not_queued(thread);
-				thread->base.thread_state |= _THREAD_DEAD;
-			} else {
-				k_busy_wait(100);
-			}
+		key = k_spin_lock(&sched_spinlock);
+		if (z_is_thread_prevented_from_running(thread)) {
+			__ASSERT(!z_is_thread_queued(thread), "");
+			thread->base.thread_state |= _THREAD_DEAD;
+			k_spin_unlock(&sched_spinlock, key);
+		} else if (z_is_thread_queued(thread)) {
+			_priq_run_remove(&_kernel.ready_q.runq, thread);
+			z_mark_thread_as_not_queued(thread);
+			thread->base.thread_state |= _THREAD_DEAD;
+			k_spin_unlock(&sched_spinlock, key);
+		} else {
+			k_spin_unlock(&sched_spinlock, key);
+			k_busy_wait(100);
 		}
 	}
 }
