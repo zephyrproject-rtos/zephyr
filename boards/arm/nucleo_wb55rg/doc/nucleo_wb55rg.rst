@@ -187,6 +187,8 @@ input/output, pull-up, etc.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+.. rst-class:: rst-columns
+
 - UART_1 TX/RX : PB7/PB6
 - LPUART_1 TX/RX : PA3/PA2 (arduino_serial)
 - I2C_1_SCL : PB8

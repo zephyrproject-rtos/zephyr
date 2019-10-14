@@ -133,6 +133,8 @@ For mode details please refer to `STM32G4 Nucleo-64 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+.. rst-class:: rst-columns
+
 - UART_1_TX : PC4
 - UART_1_RX : PC5
 - UART_2_TX : PA2
