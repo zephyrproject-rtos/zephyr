@@ -828,6 +828,14 @@ void log_backend_enable(struct log_backend const *const backend,
 	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);
+
+	/* Wakeup logger thread after attaching first backend. It might be
+	 * blocked with log messages pending.
+	 */
+	if (!backend_attached) {
+		k_sem_give(&log_process_thread_sem);
+	}
+
 	backend_attached = true;
 }
 
