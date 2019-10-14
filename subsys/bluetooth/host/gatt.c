@@ -1306,9 +1306,9 @@ static u8_t find_next(const struct bt_gatt_attr *attr, void *user_data)
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 {
 	struct bt_gatt_attr *next = NULL;
+	u16_t handle = attr->handle ? : find_static_attr(attr);
 
-	bt_gatt_foreach_attr(attr->handle + 1, attr->handle + 1, find_next,
-			     &next);
+	bt_gatt_foreach_attr(handle + 1, handle + 1, find_next, &next);
 
 	return next;
 }
