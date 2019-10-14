@@ -117,6 +117,8 @@ source "drivers/sensor/ms5837/Kconfig"
 
 source "drivers/sensor/nrf5/Kconfig"
 
+source "drivers/sensor/opt3001/Kconfig"
+
 source "drivers/sensor/pms7003/Kconfig"
 
 source "drivers/sensor/qdec_nrfx/Kconfig"
