@@ -2082,6 +2082,55 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
+bool bt_gatt_is_subscribed(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, u16_t ccc_value)
+{
+	const struct _bt_gatt_ccc *ccc;
+
+	__ASSERT(conn, "invalid parameter\n");
+	__ASSERT(attr, "invalid parameter\n");
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return false;
+	}
+
+	/* Check if attribute is a characteristic declaration */
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = attr->user_data;
+
+		if (!(chrc->properties &
+			(BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE))) {
+			/* Characteristic doesn't support subscription */
+			return false;
+		}
+
+		attr = bt_gatt_attr_next(attr);
+	}
+
+	/* Check if attribute is a characteristic value */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
+		attr = bt_gatt_attr_next(attr);
+	}
+
+	/* Check if the attribute is the CCC Descriptor */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
+		return false;
+	}
+
+	ccc = attr->user_data;
+
+	/* Check if the connection is subscribed */
+	for (size_t i = 0; i < BT_GATT_CCC_MAX; i++) {
+		if (conn->id == ccc->cfg[i].id &&
+		    !bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer) &&
+		    (ccc_value & ccc->cfg[i].value)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 			  const void *data, u16_t length)

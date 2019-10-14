@@ -917,6 +917,27 @@ struct bt_gatt_indicate_params {
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
 
+
+/** @brief Check if connection have subscribed to attribute
+ *
+ *  Check if connection has subscribed to attribute value change.
+ *
+ *  The attribute object can be the so called Characteristic Declaration,
+ *  which is usually declared with BT_GATT_CHARACTERISTIC followed
+ *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
+ *  automatically created after the Characteristic Declaration when using
+ *  BT_GATT_CHARACTERISTIC, or the Client Characteristic Configuration
+ *  Descriptor (CCCD) which is created by BT_GATT_CCC.
+ *
+ *  @param conn Connection object.
+ *  @param attr Attribute object.
+ *  @param ccc_value The subscription type, either notifications or indications.
+ *
+ *  @return true if the attribute object has been subscribed.
+ */
+bool bt_gatt_is_subscribed(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, u16_t ccc_value);
+
 /** @brief Get ATT MTU for a connection
  *
  *  Get negotiated ATT connection MTU, note that this does not equal the largest
