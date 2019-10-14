@@ -240,9 +240,9 @@ static int gpio_stm32_enable_int(int port, int pin)
 	}
 #endif
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_GPIO_AF_SetEXTISource(port, line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_EXTI_SetEXTISource(port, line);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	LL_EXTI_SetEXTISource(port, line);
