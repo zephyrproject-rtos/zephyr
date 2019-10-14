@@ -126,7 +126,7 @@ done_cache_invalidate:
         jl @_sys_resume_from_deep_sleep
 #endif
 
-#ifdef CONFIG_SMP
+#if CONFIG_MP_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
 
@@ -137,11 +137,9 @@ _slave_core_wait:
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _slave_core_wait
 
+	ld sp, [arc_cpu_sp]
 	/* signal master core that slave core runs */
 	st 0, [arc_cpu_wake_flag]
-
-	/* get sp set by master core */
-	_get_curr_cpu_irq_stack sp
 
 #if defined(CONFIG_ARC_FIRQ_STACK)
 	jl z_arc_firq_stack_set
