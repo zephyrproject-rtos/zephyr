@@ -211,6 +211,7 @@ on_irq_stack:
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
 
+#ifdef CONFIG_IRQ_OFFLOAD
 	/*
 	 * If we are here due to a system call, t1 register should != 0.
 	 * In this case, perform IRQ offloading, otherwise jump to call_irq
@@ -226,6 +227,7 @@ on_irq_stack:
 	tail z_irq_do_offload
 
 call_irq:
+#endif /* CONFIG_IRQ_OFFLOAD */
 #ifdef CONFIG_TRACING
 	call sys_trace_isr_enter
 #endif
