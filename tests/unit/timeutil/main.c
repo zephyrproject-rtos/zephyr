@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include "timeutil_test.h"
+#include "../../../lib/os/timeutil.c"
 
 void timeutil_check(const struct timeutil_test_data *tp,
 		    size_t count)
@@ -13,10 +14,10 @@ void timeutil_check(const struct timeutil_test_data *tp,
 	const struct timeutil_test_data *tpe = tp + count;
 
 	while (tp < tpe) {
-		struct tm tm = *gmtime(&tp->unix);
-		time_t unix = timeutil_timegm(&tm);
+		struct tm tm = *gmtime(&tp->ux);
+		time_t uxtime = timeutil_timegm(&tm);
 
-		zassert_equal(&tm, gmtime_r(&tp->unix, &tm),
+		zassert_equal(&tm, gmtime_r(&tp->ux, &tm),
 			      "gmtime_r failed");
 
 		zassert_equal(tm.tm_year, tp->tm.tm_year,
@@ -43,9 +44,9 @@ void timeutil_check(const struct timeutil_test_data *tp,
 		zassert_equal(tm.tm_yday, tp->tm.tm_yday,
 			      "datetime %s yday %d != %d",
 			      tp->civil, tm.tm_yday, tp->tm.tm_yday);
-		zassert_equal(tp->unix, unix,
+		zassert_equal(tp->ux, uxtime,
 			      "datetime %s reverse != %ld",
-			      tp->civil, unix);
+			      tp->civil, uxtime);
 
 		++tp;
 	}

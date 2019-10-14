@@ -12,7 +12,7 @@
 
 static const struct timeutil_test_data tests[] = {
 	/* 32-bit, but algorithm subtraction underflows */
-	{ .unix = -2147483648,
+	{ .ux = -2147483648,
 	  .civil = "1901-12-13 20:45:52 Fri 347",
 	  .tm = {
 		  .tm_sec = 52,
@@ -24,7 +24,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 5,
 		  .tm_yday = 346,
 	  } },
-	{ .unix = (time_t)-2147483649,
+	{ .ux = (time_t)-2147483649,
 	  .civil = "1901-12-13 20:45:51 Fri 347",
 	  .tm = {
 		  .tm_sec = 51,
@@ -36,7 +36,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 5,
 		  .tm_yday = 346,
 	  } },
-	{ .unix = (time_t)2147483648,
+	{ .ux = (time_t)2147483648,
 	  .civil = "2038-01-19 03:14:08 Tue 019",
 	  .tm = {
 		  .tm_sec = 8,
@@ -48,7 +48,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 2,
 		  .tm_yday = 18,
 	  } },
-	{ .unix = (time_t)64060588799,
+	{ .ux = (time_t)64060588799,
 	  .civil = "3999-12-31 23:59:59 Fri 365",
 	  .tm = {
 		  .tm_sec = 59,
@@ -60,7 +60,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 5,
 		  .tm_yday = 364,
 	  } },
-	{ .unix = (time_t)64060588800,
+	{ .ux = (time_t)64060588800,
 	  .civil = "4000-01-01 00:00:00 Sat 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -73,7 +73,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_yday = 0,
 	  } },
 	/* Normal century is a common year */
-	{ .unix = (time_t)-2208988801,
+	{ .ux = (time_t)-2208988801,
 	  .civil = "1899-12-31 23:59:59 Sun 365",
 	  .tm = {
 		  .tm_sec = 59,
@@ -85,7 +85,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 0,
 		  .tm_yday = 364,
 	  } },
-	{ .unix = (time_t)-2208988800,
+	{ .ux = (time_t)-2208988800,
 	  .civil = "1900-01-01 00:00:00 Mon 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -97,7 +97,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 1,
 		  .tm_yday = 0,
 	  } },
-	{ .unix = (time_t)-2203977600,
+	{ .ux = (time_t)-2203977600,
 	  .civil = "1900-02-28 00:00:00 Wed 059",
 	  .tm = {
 		  .tm_sec = 0,
@@ -109,7 +109,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 3,
 		  .tm_yday = 58,
 	  } },
-	{ .unix = (time_t)-2203891200,
+	{ .ux = (time_t)-2203891200,
 	  .civil = "1900-03-01 00:00:00 Thu 060",
 	  .tm = {
 		  .tm_sec = 0,
@@ -121,7 +121,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 4,
 		  .tm_yday = 59,
 	  } },
-	{ .unix = (time_t)-2177539200,
+	{ .ux = (time_t)-2177539200,
 	  .civil = "1900-12-31 00:00:00 Mon 365",
 	  .tm = {
 		  .tm_sec = 0,
@@ -133,7 +133,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 1,
 		  .tm_yday = 364,
 	  } },
-	{ .unix = (time_t)-2177452800,
+	{ .ux = (time_t)-2177452800,
 	  .civil = "1901-01-01 00:00:00 Tue 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -149,7 +149,7 @@ static const struct timeutil_test_data tests[] = {
 	/* Extrema, check against proleptic Gregorian calendar data:
 	 * https://www.timeanddate.com/calendar/?year=1&country=22
 	 */
-	{ .unix = (time_t)-62167305600,
+	{ .ux = (time_t)-62167305600,
 	  .civil = "-1-12-31 00:00:00 Fri 365",
 	  .tm = {
 		  .tm_sec = 0,
@@ -161,7 +161,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 5,
 		  .tm_yday = 364,
 	  } },
-	{ .unix = (time_t)-62167219200,
+	{ .ux = (time_t)-62167219200,
 	  .civil = "0-01-01 00:00:00 Sat 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -173,7 +173,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 6,
 		  .tm_yday = 0,
 	  } },
-	{ .unix = (time_t)-62135596801,
+	{ .ux = (time_t)-62135596801,
 	  .civil = "0-12-31 23:59:59 Sun 366",
 	  .tm = {
 		  .tm_sec = 59,
@@ -185,7 +185,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 0,
 		  .tm_yday = 365,
 	  } },
-	{ .unix = (time_t)-62135596800,
+	{ .ux = (time_t)-62135596800,
 	  .civil = "1-01-01 00:00:00 Mon 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -197,7 +197,7 @@ static const struct timeutil_test_data tests[] = {
 		  .tm_wday = 1,
 		  .tm_yday = 0,
 	  } },
-	{ .unix = (time_t)-62135596800,
+	{ .ux = (time_t)-62135596800,
 	  .civil = "1-01-01 00:00:00 Mon 001",
 	  .tm = {
 		  .tm_sec = 0,
@@ -214,7 +214,7 @@ static const struct timeutil_test_data tests[] = {
 static void test_time32_errno_clear(void)
 {
 	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
-		.unix = 0,
+		.ux = 0,
 		.civil = "1970-01-01 00:00:00 Thu 001",
 		.tm = {
 			.tm_sec = 0,
@@ -230,9 +230,9 @@ static void test_time32_errno_clear(void)
 
 	errno = EINVAL;
 
-	time_t unix = timeutil_timegm(&tp->tm);
+	time_t ux = timeutil_timegm(&tp->tm);
 
-	zassert_equal(unix, tp->unix,
+	zassert_equal(ux, tp->ux,
 		      "conversion incorrect");
 	zassert_equal(errno, 0,
 		      "errno was not cleared");
@@ -241,7 +241,7 @@ static void test_time32_errno_clear(void)
 static void test_time32_epochm1(void)
 {
 	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
-		.unix = -1,
+		.ux = -1,
 		.civil = "1969-12-31 23:59:59 Wed 365",
 		.tm = {
 			.tm_sec = 59,
@@ -257,9 +257,9 @@ static void test_time32_epochm1(void)
 
 	errno = EINVAL;
 
-	time_t unix = timeutil_timegm(&tp->tm);
+	time_t ux = timeutil_timegm(&tp->tm);
 
-	zassert_equal(unix, tp->unix,
+	zassert_equal(ux, tp->ux,
 		      "conversion incorrect");
 	zassert_equal(errno, 0,
 		      "final errno state bad");
@@ -286,9 +286,9 @@ static void test_time32_underflow(void)
 		      "fullscale failed");
 	errno = 0;
 
-	time_t unix = timeutil_timegm(&tp->tm);
+	time_t ux = timeutil_timegm(&tp->tm);
 
-	zassert_equal(unix, -1,
+	zassert_equal(ux, -1,
 		      "underflow undetected");
 	zassert_equal(errno, ERANGE,
 		      "final errno state bad");
@@ -315,9 +315,9 @@ static void test_time32_overflow(void)
 		      "fullscale failed");
 	errno = 0;
 
-	time_t unix = timeutil_timegm(&tp->tm);
+	time_t ux = timeutil_timegm(&tp->tm);
 
-	zassert_equal(unix, -1,
+	zassert_equal(ux, -1,
 		      "overflow undetected");
 	zassert_equal(errno, ERANGE,
 		      "final errno state bad");

@@ -11,7 +11,7 @@
 #include <sys/timeutil.h>
 
 struct timeutil_test_data {
-	time_t unix;
+	time_t ux;
 	const char *civil;
 	struct tm tm;
 };

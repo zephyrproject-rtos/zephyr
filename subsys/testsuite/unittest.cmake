@@ -36,7 +36,13 @@ list(APPEND INCLUDE
 
 if(CMAKE_HOST_APPLE)
 else()
+
+if(M64_MODE)
+set (CMAKE_C_FLAGS "-m64")
+else()
 set (CMAKE_C_FLAGS "-m32") #deprecated on macOS
+endif(M64_MODE)
+
 endif()
 
 target_compile_options(testbinary PRIVATE
