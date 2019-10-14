@@ -3439,7 +3439,10 @@ int net_if_up(struct net_if *iface)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+	if ((IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+	     net_if_is_ip_offloaded(iface)) ||
+	    (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD) &&
+	     net_if_is_socket_offloaded(iface))) {
 		net_if_flag_set(iface, NET_IF_UP);
 		goto exit;
 	}
