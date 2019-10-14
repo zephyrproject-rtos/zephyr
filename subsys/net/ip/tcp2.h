@@ -63,11 +63,9 @@ int net_tcp_unref(struct net_context *context);
 /* TODO: Merge net_tcp_unref() and net_tcp_put() */
 
 /**
- * @brief Register an accept callback
+ * @brief Listen for an incoming TCP connection
  *
- * @param context	Network context
- * @param cb		net_tcp_accept_cb_t callback
- * @param user_data	User data passed as an argument in the callback
+ * @param context Network context
  *
  * @return 0 if successful, < 0 on error
  */
