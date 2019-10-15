@@ -42,7 +42,9 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
 			: "=r" (status) : : "memory", "cc");
 	status &= MODE_MASK;
 
-	return (status == MODE_FIQ) || (status == MODE_IRQ);
+	return	(status == MODE_FIQ) ||
+		(status == MODE_IRQ) ||
+		(status == MODE_SVC);
 }
 
 /**
