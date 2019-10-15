@@ -23,7 +23,7 @@
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		label = "LSM6DSL";
-		irq-gpios = <&arduino_header 10 0>;	/* D4 */
+		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
 	};
 
 	lsm303agr-magn@1e {
