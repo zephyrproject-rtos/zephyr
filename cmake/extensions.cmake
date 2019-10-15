@@ -17,6 +17,7 @@
 # 3.1. *_ifdef
 # 3.2. *_ifndef
 # 3.3. *_option compiler compatibility checks
+# 3.3.1 Toolchain integration
 # 3.4. Debugging CMake
 # 3.5. File system management
 
@@ -1244,7 +1245,7 @@ function(zephyr_compile_options_ifndef feature_toggle)
   endif()
 endfunction()
 
-# 3.2. *_option Compiler-compatibility checks
+# 3.3. *_option Compiler-compatibility checks
 #
 # Utility functions for silently omitting compiler flags when the
 # compiler lacks support. *_cc_option was ported from KBuild, see
@@ -1332,6 +1333,45 @@ function(target_ld_options target scope)
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
   endforeach()
+endfunction()
+
+# 3.3.1 Toolchain integration
+#
+# 'toolchain_parse_make_rule' is a function that parses the output of
+# 'gcc -M'.
+#
+# The argument 'input_file' is in input parameter with the path to the
+# file with the dependency information.
+#
+# The argument 'include_files' is an output parameter with the result
+# of parsing the include files.
+function(toolchain_parse_make_rule input_file include_files)
+  file(READ ${input_file} input)
+
+  # The file is formatted like this:
+  # empty_file.o: misc/empty_file.c \
+  # nrf52840_pca10056/nrf52840_pca10056.dts \
+  # nrf52840_qiaa.dtsi
+
+  # Get rid of the backslashes
+  string(REPLACE "\\" ";" input_as_list ${input})
+
+  # Pop the first line and treat it specially
+  list(GET input_as_list 0 first_input_line)
+  string(FIND ${first_input_line} ": " index)
+  math(EXPR j "${index} + 2")
+  string(SUBSTRING ${first_input_line} ${j} -1 first_include_file)
+  list(REMOVE_AT input_as_list 0)
+
+  list(APPEND result ${first_include_file})
+
+  # Add the other lines
+  list(APPEND result ${input_as_list})
+
+  # Strip away the newlines and whitespaces
+  list(TRANSFORM result STRIP)
+
+  set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
 # 3.4. Debugging CMake
