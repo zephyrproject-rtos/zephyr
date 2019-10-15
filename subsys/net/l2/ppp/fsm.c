@@ -396,25 +396,23 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		/* 2 + 1 + 1 (configure-[req|ack|nack|rej]) +
 		 * data_len (options)
 		 */
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) + data_len;
+		len = sizeof(ppp) + data_len;
 		break;
 
 	case PPP_DISCARD_REQ:
 		break;
 
 	case PPP_ECHO_REQ:
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
-			sizeof(u32_t) + data_len;
+		len = sizeof(ppp) + sizeof(u32_t) + data_len;
 		break;
 
 	case PPP_ECHO_REPLY:
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
-			net_pkt_remaining_data(req_pkt);
+		len = sizeof(ppp) + net_pkt_remaining_data(req_pkt);
 		break;
 
 	case PPP_PROTOCOL_REJ:
-		len = sizeof(u8_t) + sizeof(u8_t) + sizeof(u16_t) +
-			sizeof(u16_t) + net_pkt_remaining_data(req_pkt);
+		len = sizeof(ppp) + sizeof(u16_t) +
+			net_pkt_remaining_data(req_pkt);
 		protocol = data_len;
 		break;
 
