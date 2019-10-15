@@ -371,7 +371,7 @@ config NET_TCP2
 
 endchoice
 
-config NET_TP
+config NET_TEST_PROTOCOL
 	bool "Enable JSON based test protocol (UDP)"
 	default n
 	help

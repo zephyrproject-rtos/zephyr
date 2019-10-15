@@ -34,7 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_ROUTE        route.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP1         connection.c tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP2         connection.c tcp2.c)
-zephyr_library_sources_ifdef(CONFIG_NET_TP           tp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_TEST_PROTOCOL           tp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TRICKLE      trickle.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          connection.c udp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET  connection.c

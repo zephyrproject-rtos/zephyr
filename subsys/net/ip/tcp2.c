@@ -1355,7 +1355,7 @@ drop:
 	return NULL;
 }
 
-#if defined(CONFIG_NET_TP)
+#if defined(CONFIG_NET_TEST_PROTOCOL)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
 
 static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
@@ -1578,4 +1578,4 @@ bool tp_input(struct net_pkt *pkt)
 
 	return true;
 }
-#endif /* end of IS_ENABLED(CONFIG_NET_TP) */
+#endif /* end of IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) */

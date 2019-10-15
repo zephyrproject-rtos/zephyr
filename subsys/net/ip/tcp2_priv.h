@@ -31,7 +31,7 @@
 	_x;								\
 })
 
-#if IS_ENABLED(CONFIG_NET_TP)
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_malloc(_size) \
 	tp_malloc(_size, tp_basename(__FILE__), __LINE__, __func__)
 #define tcp_calloc(_nmemb, _size) \
@@ -43,7 +43,7 @@
 #define tcp_free(_ptr) k_free(_ptr)
 #endif
 
-#if IS_ENABLED(CONFIG_NET_TP)
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_nbuf_alloc(_pool, _len) \
 	tp_nbuf_alloc(_pool, _len, tp_basename(__FILE__), __LINE__, __func__)
 #define tcp_nbuf_unref(_nbuf) \
@@ -53,7 +53,7 @@
 #define tcp_nbuf_unref(_nbuf) net_buf_unref(_nbuf)
 #endif
 
-#if IS_ENABLED(CONFIG_NET_TP)
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_pkt_alloc(_len) tp_pkt_alloc(_len, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
@@ -80,7 +80,7 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 #endif
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
 
-#if IS_ENABLED(CONFIG_NET_TP)
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
 	tp_seq_track(TP_SEQ, &(_conn)->seq, (_req), tp_basename(__FILE__), \
 			__LINE__, __func__)

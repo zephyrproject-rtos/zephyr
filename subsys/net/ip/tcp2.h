@@ -119,7 +119,7 @@ int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta);
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 int net_tcp_finalize(struct net_pkt *pkt);
 
-#if defined(CONFIG_NET_TP)
+#if defined(CONFIG_NET_TEST_PROTOCOL)
 /**
  * @brief Handle an incoming TCP packet
  *
