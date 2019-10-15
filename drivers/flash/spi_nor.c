@@ -363,7 +363,7 @@ static int spi_nor_init(struct device *dev)
 #define INST_0_BYTES (DT_INST_0_JEDEC_SPI_NOR_SIZE / 8)
 
 /* instance 0 page count */
-#define LAYOUT_PAGES_COUNT (INST_0_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+#define LAYOUT_PAGES_COUNT (INST_0_BYTES / SPI_NOR_PAGE_SIZE)
 
 BUILD_ASSERT_MSG((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)
 		 == INST_0_BYTES,
@@ -371,7 +371,7 @@ BUILD_ASSERT_MSG((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)
 
 static const struct flash_pages_layout dev_layout = {
 	.pages_count = LAYOUT_PAGES_COUNT,
-	.pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
+	.pages_size = SPI_NOR_PAGE_SIZE,
 };
 #undef LAYOUT_PAGES_COUNT
 
