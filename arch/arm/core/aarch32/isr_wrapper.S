@@ -195,10 +195,6 @@ _idle_state_cleared:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-#if defined(CONFIG_CPU_CORTEX_R)
-	mov r0, #RET_FROM_IRQ
-#endif
-
 	/* Use 'bx' instead of 'b' because 'bx' can jump further, and use
 	 * 'bx' instead of 'blx' because exception return is done in
 	 * z_arm_int_exit() */
