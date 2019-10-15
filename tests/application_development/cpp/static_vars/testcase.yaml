@@ -1,0 +1,11 @@
+tests:
+  misc.app_dev.cpp.static_vars:
+    arch_exclude: posix
+    platform_exclude: qemu_x86_coverage
+    tags: cpp
+  misc.app_dev.cpp.static_vars.libcxx:
+    arch_exclude: posix
+    platform_exclude: qemu_x86_coverage
+    tags: cpp
+    extra_configs:
+        - CONFIG_LIB_CPLUSPLUS=y
