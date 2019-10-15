@@ -1527,9 +1527,12 @@ bool tp_input(struct net_pkt *pkt)
 			net_tcp_put(conn->context);
 		}
 		if (is("RECV", tp->op)) {
+#define HEXSTR_SIZE 64
+			char hexstr[HEXSTR_SIZE];
 			ssize_t len = tcp_recv(0, buf, sizeof(buf), 0);
 			tp_init(conn, tp);
-			tp->data = tp_hex_to_str(buf, len);
+			bin2hex(buf, len, hexstr, HEXSTR_SIZE);
+			tp->data = hexstr;
 			NET_DBG("%zd = tcp_recv(\"%s\")", len, tp->data);
 			json_len = sizeof(buf);
 			tp_encode(tp, buf, &json_len);
