@@ -12,6 +12,9 @@ config NUM_IRQS
 	# - include the UART interrupts
 	default 220
 
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 1
 

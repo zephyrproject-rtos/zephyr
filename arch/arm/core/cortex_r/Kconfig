@@ -85,9 +85,6 @@ config RUNTIME_NMI
 config GEN_ISR_TABLES
 	default y
 
-config GEN_IRQ_VECTOR_TABLE
-	default n
-
 config VIC_IRQ_VECTOR
 	bool "Enable VIC port hardware IRQ vector"
 	depends on (CPU_CORTEX_R4 || CPU_CORTEX_R5)
