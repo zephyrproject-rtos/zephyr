@@ -9,5 +9,6 @@ include: i2c-device.yaml
 
 properties:
     irq-gpios:
+      # This signal is active high when produced by the sensor
       type: phandle-array
       required: false
