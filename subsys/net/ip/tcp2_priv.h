@@ -153,7 +153,6 @@ enum tcp_state {
 };
 
 struct tcp_win { /* TCP window */
-	char *name;
 	size_t len;
 	sys_slist_t bufs;
 };

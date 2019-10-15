@@ -275,16 +275,15 @@ static void tcp_send_queue_flush(struct tcp *conn)
 	}
 }
 
-static void tcp_win_free(struct tcp_win *w)
+static void tcp_win_free(struct tcp_win *w, const char *name)
 {
 	struct net_buf *buf;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&w->bufs, buf, next) {
-		NET_DBG("%s %p len=%d", w->name, buf, buf->len);
+		NET_DBG("%s %p len=%d", name, buf, buf->len);
 		tcp_nbuf_unref(buf);
 	}
 
-	tcp_free(w->name);
 	tcp_free(w);
 }
 
@@ -302,8 +301,8 @@ int net_tcp_unref(struct net_context *context)
 
 	tcp_send_queue_flush(conn);
 
-	tcp_win_free(conn->snd);
-	tcp_win_free(conn->rcv);
+	tcp_win_free(conn->snd, "SND");
+	tcp_win_free(conn->rcv, "RCV");
 
 	tcp_free(conn->src);
 	tcp_free(conn->dst);
@@ -381,13 +380,9 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	}
 }
 
-static struct tcp_win *tcp_win_new(const char *name)
+static struct tcp_win *tcp_win_new(void)
 {
 	struct tcp_win *w = tcp_calloc(1, sizeof(struct tcp_win));
-
-	w->name = tcp_malloc(strlen(name) + 1);
-
-	strcpy(w->name, name);
 
 	sys_slist_init(&w->bufs);
 
@@ -417,7 +412,8 @@ out:
 	return prefix ? s : (s + 4);
 }
 
-static void tcp_win_append(struct tcp_win *w, const void *data, size_t len)
+static void tcp_win_append(struct tcp_win *w, const char *name,
+				const void *data, size_t len)
 {
 	struct net_buf *buf = tcp_nbuf_alloc(&tcp_nbufs, len);
 	size_t prev_len = w->len;
@@ -430,10 +426,11 @@ static void tcp_win_append(struct tcp_win *w, const void *data, size_t len)
 
 	w->len += len;
 
-	NET_DBG("%s %p %zu->%zu byte(s)", w->name, buf, prev_len, w->len);
+	NET_DBG("%s %p %zu->%zu byte(s)", name, buf, prev_len, w->len);
 }
 
-static struct net_buf *tcp_win_peek(struct tcp_win *w, size_t len)
+static struct net_buf *tcp_win_peek(struct tcp_win *w, const char *name,
+					size_t len)
 {
 	struct net_buf *buf, *out = tcp_nbuf_alloc(&tcp_nbufs, len);
 
@@ -450,7 +447,7 @@ static struct net_buf *tcp_win_peek(struct tcp_win *w, size_t len)
 
 	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
 
-	NET_DBG("%s len=%zu", w->name, net_buf_frags_len(out));
+	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
 
 	return out;
 }
@@ -541,10 +538,10 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		net_pkt_read(pkt, buf, len);
 
-		tcp_win_append(conn->rcv, buf, len);
+		tcp_win_append(conn->rcv, "RCV", buf, len);
 
 		if (tcp_echo) {
-			tcp_win_append(conn->snd, buf, len);
+			tcp_win_append(conn->snd, "SND", buf, len);
 		}
 
 		tcp_free(buf);
@@ -689,7 +686,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	if (PSH & flags) {
 		size_t len = conn->snd->len;
-		struct net_buf *buf = tcp_win_peek(conn->snd, len);
+		struct net_buf *buf = tcp_win_peek(conn->snd, "SND", len);
 
 		{
 			va_list ap;
@@ -731,8 +728,8 @@ static void tcp_conn_init(struct tcp *conn)
 
 	conn->win = tcp_window;
 
-	conn->rcv = tcp_win_new("RCV");
-	conn->snd = tcp_win_new("SND");
+	conn->rcv = tcp_win_new();
+	conn->snd = tcp_win_new();
 
 	sys_slist_init(&conn->send_queue);
 
@@ -1031,8 +1028,8 @@ next_state:
 			}
 		}
 		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
-			tcp_win_free(conn->snd);
-			conn->snd = tcp_win_new("SND");
+			tcp_win_free(conn->snd, "SND");
+			conn->snd = tcp_win_new();
 		}
 		break; /* TODO: Catch all the rest here */
 	case TCP_CLOSE_WAIT:
@@ -1093,7 +1090,7 @@ next_state:
 static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
 				int flags)
 {
-	tcp_win_append(conn->snd, buf, len);
+	tcp_win_append(conn->snd, "SND", buf, len);
 
 	tcp_in(conn, NULL);
 
@@ -1361,7 +1358,8 @@ drop:
 #if defined(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
 
-static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
+static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
+					size_t len)
 {
 	struct net_buf *buf, *out = NULL;
 
@@ -1382,7 +1380,7 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
 
 	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
 
-	NET_DBG("%s len=%zu", w->name, net_buf_frags_len(out));
+	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
 
 	return out;
 }
@@ -1391,7 +1389,7 @@ static ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
 {
 	struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
 	ssize_t bytes_received = conn->rcv->len;
-	struct net_buf *data = tcp_win_pop(conn->rcv, bytes_received);
+	struct net_buf *data = tcp_win_pop(conn->rcv, "RCV", bytes_received);
 
 	tcp_assert(bytes_received <= len, "Unimplemented");
 
@@ -1502,7 +1500,8 @@ bool tp_input(struct net_pkt *pkt)
 			}
 			conn->seq = tp->seq;
 			if (len > 0) {
-				tcp_win_append(conn->snd, data_to_send, len);
+				tcp_win_append(conn->snd, "SND", data_to_send,
+						len);
 			}
 			tcp_in(conn, NULL);
 		}
