@@ -7,10 +7,8 @@
 
 /dts-v1/;
 #include <st/f4/stm32f446Xe.dtsi>
-<<<<<<< HEAD
-=======
 #include "arduino_r3_connector.dtsi"
->>>>>>> squash_branch
+
 
 / {
 	model = "STMicroelectronics STM32F446ZE-NUCLEO board";
