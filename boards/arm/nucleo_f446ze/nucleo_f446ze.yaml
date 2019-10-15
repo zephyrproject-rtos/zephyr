@@ -9,7 +9,14 @@ toolchain:
 ram: 96
 flash: 512
 supported:
+<<<<<<< HEAD
   - arduino_i2c
+=======
+  - arduino_serial
+  - arduino_i2c
+  - arduino_spi
+  - arduino_gpio
+>>>>>>> squash_branch
   - uart
   - gpio
   - usb_device

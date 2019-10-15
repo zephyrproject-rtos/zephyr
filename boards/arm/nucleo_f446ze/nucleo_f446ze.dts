@@ -7,6 +7,10 @@
 
 /dts-v1/;
 #include <st/f4/stm32f446Xe.dtsi>
+<<<<<<< HEAD
+=======
+#include "arduino_r3_connector.dtsi"
+>>>>>>> squash_branch
 
 / {
 	model = "STMicroelectronics STM32F446ZE-NUCLEO board";
@@ -54,10 +58,13 @@
 };
 
 
+<<<<<<< HEAD
 arduino_serial: &usart6 {};
 arduino_i2c: &i2c1 {};
 arduino_spi: &spi1 {};
 
+=======
+>>>>>>> squash_branch
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_b>;
