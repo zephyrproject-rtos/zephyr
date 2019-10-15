@@ -93,7 +93,7 @@
 	lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
-		irq-gpios = <&gpiod 11 0>;
+		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSL";
 	};
 
