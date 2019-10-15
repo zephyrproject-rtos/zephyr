@@ -124,6 +124,19 @@ void alt_thread4(void)
 	rv = TC_FAIL;
 }
 
+void alt_thread5(void)
+{
+	unsigned int key;
+
+	expected_reason = INT_MAX;
+
+	key = irq_lock();
+	z_except_reason(INT_MAX);
+	TC_ERROR("SHOULD NEVER SEE THIS\n");
+	rv = TC_FAIL;
+	irq_unlock(key);
+}
+
 #ifndef CONFIG_ARCH_POSIX
 #ifdef CONFIG_STACK_SENTINEL
 void blow_up_stack(void)
@@ -297,6 +310,14 @@ void test_fatal(void)
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
+	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			(k_thread_entry_t)alt_thread5,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
+			K_NO_WAIT);
+	k_thread_abort(&alt_thread);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 #ifndef CONFIG_ARCH_POSIX
 
