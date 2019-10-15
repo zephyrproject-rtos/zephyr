@@ -115,21 +115,13 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 		case IPCP_OPTION_RESERVED:
 			continue;
 
-		case IPCP_OPTION_IP_ADDRESSES:
-			count_rej++;
-			goto ignore_option;
-
-		case IPCP_OPTION_IP_COMP_PROTO:
-			count_rej++;
-			goto ignore_option;
-
 		case IPCP_OPTION_IP_ADDRESS:
 			/* Currently we only accept one option (IP address) */
 			address_option_idx = i;
 			break;
 
 		default:
-		ignore_option:
+			count_rej++;
 			nack_options[nack_idx].type.ipcp =
 				options[i].type.ipcp;
 			nack_options[nack_idx].len = options[i].len;
