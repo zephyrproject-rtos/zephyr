@@ -3607,6 +3607,16 @@ static void le_adv_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+int bt_hci_get_conn_handle(const struct bt_conn *conn, u16_t *conn_handle)
+{
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	*conn_handle = conn->handle;
+	return 0;
+}
+
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 {

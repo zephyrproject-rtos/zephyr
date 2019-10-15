@@ -16,6 +16,7 @@
 #include <net/buf.h>
 #include <bluetooth/addr.h>
 #include <bluetooth/hci_err.h>
+#include <bluetooth/conn.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1767,6 +1768,15 @@ int bt_hci_cmd_send(u16_t opcode, struct net_buf *buf);
   */
 int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
+
+/** @brief Get connection handle for a connection.
+ *
+ * @param conn Connection object.
+ * @param conn_handle Place to store the Connection handle.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_get_conn_handle(const struct bt_conn *conn, u16_t *conn_handle);
 
 /** @typedef bt_hci_vnd_evt_cb_t
   * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
