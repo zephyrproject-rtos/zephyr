@@ -2324,7 +2324,7 @@ class TestSuite:
             report_name = options.report_name
 
         if options.report_dir:
-            os.mkdir(options.report_dir)
+            os.makedirs(options.report_dir, exist_ok=True)
             filename = os.path.join(options.report_dir, report_name)
             outdir = options.report_dir
         else:
