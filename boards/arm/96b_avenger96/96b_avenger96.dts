@@ -54,14 +54,10 @@
 
 &uart4 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart4_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &uart7 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart7_pins_a &uart7_pins_rts_cts_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
