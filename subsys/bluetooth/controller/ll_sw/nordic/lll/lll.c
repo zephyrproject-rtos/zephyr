@@ -447,8 +447,9 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
 		   struct lll_prepare_param *prepare_param, u8_t is_resume)
 {
-	struct lll_event *p;
 	u8_t idx = UINT8_MAX;
+	struct lll_event *p;
+	int ret, err;
 
 	/* Find the ready prepare in the pipeline */
 	p = ull_prepare_dequeue_iter(&idx);
@@ -467,7 +468,6 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_event *next;
 		int resume_prio;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
-		int ret;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
 			/* early abort */
@@ -546,7 +546,16 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
 
-	return prepare_cb(prepare_param);
+	err = prepare_cb(prepare_param);
+
+	/* Stop running pre-empt timer, if any */
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
+			  TICKER_ID_LLL_PREEMPT, NULL, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_FAILURE) ||
+		  (ret == TICKER_STATUS_BUSY));
+
+	return err;
 }
 
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
@@ -563,7 +572,7 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void ticker_start_op_cb(u32_t status, void *param)
 {
-	/* NOTE: this callback is present only for addition debug messages
+	/* NOTE: this callback is present only for addition of debug messages
 	 * when needed, else can be dispensed with.
 	 */
 	ARG_UNUSED(param);
