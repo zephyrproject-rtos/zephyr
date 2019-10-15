@@ -30,21 +30,21 @@ void z_arch_irq_enable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
 
-	irq_enable_next_level(dev, (irq >> 8) - 1);
+	irq_enable_next_level(dev, irq);
 }
 
 void z_arch_irq_disable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
 
-	irq_disable_next_level(dev, (irq >> 8) - 1);
+	irq_disable_next_level(dev, irq);
 }
 
 int z_arch_irq_is_enabled(unsigned int irq)
 {
-    struct device *dev = _sw_isr_table[0].arg;
+	struct device *dev = _sw_isr_table[0].arg;
 
-	return irq_is_enabled_next_level(dev);
+	return irq_line_is_enabled_next_level(dev, irq);
 }
 
 /**
@@ -65,5 +65,5 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	if (irq == 0)
 		return 0;
 
-	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
+	irq_set_priority_next_level(dev, irq, prio, flags);
 }
