@@ -29,21 +29,6 @@ char *tp_basename(char *path)
 	return filename ? (filename + 1) : path;
 }
 
-/* TODO: get rid of the internal static buffer */
-const char *tp_hex_to_str(void *data, size_t len)
-{
-	static char s[512];
-	size_t i, j;
-
-	tp_assert(len < sizeof(s), "Too small");
-
-	for (i = 0, j = 0; i < len; i++, j += 2) {
-		sprintf(&s[j], "%02x", *((u8_t *) data + i));
-	}
-
-	return s;
-}
-
 size_t tp_str_to_hex(void *buf, size_t bufsize, const char *s)
 {
 	size_t i, j, len = strlen(s);
