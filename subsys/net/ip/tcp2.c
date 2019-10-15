@@ -20,9 +20,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 static int tcp_rto = 500; /* Retransmission timeout, msec */
 static int tcp_retries = 3;
-/* Fit receive window size into one IPv6 packet */
-static int tcp_window = 1280 - sizeof(struct net_ipv6_hdr)
-	- sizeof(struct tcphdr);
+static int tcp_window = NET_IPV6_MTU;
 static bool tcp_echo;
 static bool _tcp_conn_delete = true;
 
