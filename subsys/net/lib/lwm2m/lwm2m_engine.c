@@ -4203,7 +4203,7 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 {
 	struct http_parser_url parser;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
-	struct addrinfo hints, *res;
+	struct addrinfo *res, hints = { 0 };
 #endif
 	int ret;
 	u16_t off, len;
@@ -4269,9 +4269,6 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 #elif defined(CONFIG_NET_IPV6)
 		hints.ai_family = AF_INET6;
 #elif defined(CONFIG_NET_IPV4)
-		hints.ai_family = AF_INET;
-#elif defined(CONFIG_NET_SOCKETS_OFFLOAD)
-		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_INET;
 #else
 		hints.ai_family = AF_UNSPEC;
