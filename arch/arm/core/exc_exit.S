@@ -71,10 +71,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
  */
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
-#if defined(CONFIG_CPU_CORTEX_R)
-    /* r0 contains the caller mode */
-    push {r0, lr}
-#endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
     ldr r0, =_kernel
@@ -117,9 +113,6 @@ _EXIT_EXC:
 #if defined(CONFIG_CPU_CORTEX_M)
     bx lr
 #elif defined(CONFIG_CPU_CORTEX_R)
-    /* Restore the caller mode to r0 */
-    pop {r0, lr}
-
     /*
      * Restore r0-r3, r12 and lr stored into the process stack by the mode
      * entry function. These registers are saved by _isr_wrapper for IRQ mode
@@ -128,22 +121,15 @@ _EXIT_EXC:
      * r0-r3 are either the values from the thread before it was switched out
      * or they are the args to _new_thread for a new thread.
      */
-    push {r4, r5}
+    push {r4-r6}
+    mrs r6, cpsr
 
-    cmp r0, #RET_FROM_SVC
     cps #MODE_SYS
     ldmia sp!, {r0-r5}
-    beq _svc_exit
+    msr cpsr_c, r6
 
-    cps #MODE_IRQ
-    b _exc_exit
-
-_svc_exit:
-    cps #MODE_SVC
-
-_exc_exit:
     mov r12, r4
     mov lr, r5
-    pop {r4, r5}
+    pop {r4-r6}
     movs pc, lr
 #endif
