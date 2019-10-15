@@ -160,7 +160,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 
 			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
 			if (!nack_buf) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			if (!buf) {
@@ -170,13 +170,13 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 			added = append_to_buf(nack_buf,
 					      &nack_options[i].type.ipcp, 1);
 			if (!added) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			added = append_to_buf(nack_buf, &nack_options[i].len,
 					      1);
 			if (!added) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			/* If there is some data, copy it to result buf */
@@ -185,18 +185,9 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 						nack_options[i].value.pos,
 						nack_options[i].len - 1 - 1);
 				if (!added) {
-					goto out_of_mem;
+					goto bail_out;
 				}
 			}
-
-			continue;
-
-		out_of_mem:
-			if (nack_buf) {
-				net_buf_unref(nack_buf);
-			}
-
-			goto bail_out;
 		}
 	} else {
 		struct ppp_context *ctx;
