@@ -625,7 +625,6 @@ demux:
     blx z_irq_do_offload  /* call C routine which executes the offload */
 
     /* exception return is done in z_arm_int_exit() */
-    mov r0, #RET_FROM_SVC
     b z_arm_int_exit
 #endif
 
@@ -633,7 +632,6 @@ _context_switch:
     /* handler mode exit, to PendSV */
     bl z_arm_pendsv
 
-    mov r0, #RET_FROM_SVC
     b z_arm_int_exit
 
 _oops:
