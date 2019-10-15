@@ -125,14 +125,13 @@ static void write_control(void)
 
 	expect_fault = false;
 	BARRIER();
-	__asm__ volatile (
-		"mrs %0, CONTROL;\n\t"
-		"bic %0, #1;\n\t"
-		"msr CONTROL, %0;\n\t"
-		"mrs %0, CONTROL;\n\t"
-		: "=r" (msr_value)::
-	);
-	zassert_true((msr_value & 1),
+	msr_value = __get_CONTROL();
+	msr_value &= ~(CONTROL_nPRIV_Msk);
+	__set_CONTROL(msr_value);
+	__DSB();
+	__ISB();
+	msr_value = __get_CONTROL();
+	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
