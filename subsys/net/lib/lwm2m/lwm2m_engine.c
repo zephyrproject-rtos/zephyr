@@ -4202,7 +4202,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 {
 	struct http_parser_url parser;
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_LWM2M_DNS_SUPPORT)
 	struct addrinfo hints, *res;
 #endif
 	int ret;
@@ -4263,7 +4263,7 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 	}
 
 	if (ret < 0) {
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_LWM2M_DNS_SUPPORT)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 		hints.ai_family = AF_UNSPEC;
 #elif defined(CONFIG_NET_IPV6)
@@ -4290,7 +4290,7 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 		freeaddrinfo(res);
 #else
 		goto cleanup;
-#endif /* CONFIG_DNS_RESOLVER */
+#endif /* CONFIG_LWM2M_DNS_SUPPORT */
 	}
 
 	/* set port */
