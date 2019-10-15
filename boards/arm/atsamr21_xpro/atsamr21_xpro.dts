@@ -62,6 +62,34 @@
 	#size-cells = <0>;
 };
 
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	/*
+	 *	CS-PB31; MOSI-PB30; MISO-PC19; SCLK-PC18
+	 *	PAD[1]; PAD[2]; PAD[0]; PAD[3]
+	 */
+	dipo = <0>;
+	dopo = <1>;
+	label = "SPI_RF2XX";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cs-gpios = <&portb 31 0>;
+
+	rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		label = "RF2XX_0";
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&portb 0 0>;
+		reset-gpios = <&portb 15 0>;
+		slptr-gpios = <&porta 20 0>;
+		dig2-gpios = <&portb 17 0>;
+		status = "okay";
+	};
+};
+
 &sercom5 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";
