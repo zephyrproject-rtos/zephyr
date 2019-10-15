@@ -67,7 +67,8 @@ def main():
     if modules:
         write_module_index_pages()
     else:
-        write_sym_index_page(kconf.unique_defined_syms, None, None)
+        write_index_page(kconf.unique_defined_syms, None, None,
+                         desc_from_file(top_index_desc))
 
     # Write symbol pages
     if os.getenv("KCONFIG_TURBO_MODE") == "1":
@@ -89,9 +90,13 @@ def init():
     #   Title for index of non-module symbols, as passed via
     #   --non-module-title
     #
+    # top_index_desc/non_module_index_desc/all_index_desc:
+    #   Set to the corresponding command-line arguments (or None if
+    #   missing)
+    #
     # modules:
-    #   A list of (<title>, <suffix>, <path>) tuples. See the --modules
-    #   argument. Empty if --modules wasn't passed.
+    #   A list of (<title>, <suffix>, <path>, <index description>) tuples. See
+    #   the --modules argument. Empty if --modules wasn't passed.
     #
     #   <path> is an absolute pathlib.Path instance, which is handy for robust
     #   path comparisons.
@@ -102,6 +107,9 @@ def init():
     global kconf
     global out_dir
     global non_module_title
+    global top_index_desc
+    global non_module_index_desc
+    global all_index_desc
     global modules
     global strip_module_paths
 
@@ -110,21 +118,31 @@ def init():
     kconf = kconfiglib.Kconfig(args.kconfig)
     out_dir = args.out_dir
     non_module_title = args.non_module_title
+    top_index_desc = args.top_index_desc
+    non_module_index_desc = args.non_module_index_desc
+    all_index_desc = args.all_index_desc
     strip_module_paths = args.strip_module_paths
 
     modules = []
-    for title_suffix_path in args.modules:
-        if title_suffix_path.count(":") < 2:
+    for module_spec in args.modules:
+        if module_spec.count(":") == 2:
+            title, suffix, path_s = module_spec.split(":")
+            index_text = DEFAULT_INDEX_DESCRIPTION
+        elif module_spec.count(":") == 3:
+            title, suffix, path_s, index_text_fname = module_spec.split(":")
+            index_text = desc_from_file(index_text_fname)
+        else:
             sys.exit("error: --modules argument '{}' should have the format "
-                     "'<title>:<suffix>:<path>'".format(title_suffix_path))
-        title, suffix, path_s = title_suffix_path.split(":", 2)
+                     "<title>:<suffix>:<path> or the format "
+                     "<title>:<suffix>:<path>:<index description filename>"
+                     .format(module_spec))
 
         path = pathlib.Path(path_s).resolve()
         if not path.exists():
             sys.exit("error: path '{}' in --modules argument does not exist"
                      .format(path))
 
-        modules.append((title, suffix, path))
+        modules.append((title, suffix, path, index_text))
 
 
 def parse_args():
@@ -146,23 +164,57 @@ def parse_args():
         default="Zephyr",
         help="""\
 The title used for the index page that lists the symbols
-that do not appear in any module. Only meaningful in
-combination with --module.""")
+that do not appear in any module (index-main.rst). Only
+meaningful in --modules mode.""")
+
+    parser.add_argument(
+        "--top-index-desc",
+        metavar="FILE",
+        help="""\
+Path to an RST file with description text for the top-level
+index.rst index page. If missing, a generic description will
+be used. Used both in --modules and non-modules mode.
+
+See <index description filename> in the --modules
+description as well.""")
+
+    parser.add_argument(
+        "--non-module-index-desc",
+        metavar="FILE",
+        help="""\
+Like --top-index-desc, but for the index page that lists the
+non-module symbols in --modules mode (index-main.rst).""")
+
+    parser.add_argument(
+        "--all-index-desc",
+        metavar="FILE",
+        help="""\
+Like --top-index-desc, but for the index page that lists all
+symbols in --modules mode (index-all.rst).""")
 
     parser.add_argument(
         "--modules",
-        metavar="TITLE_SUFFIX_PATH",
+        metavar="MODULE_SPECIFICATION",
         nargs="+",
         default=[],
         help="""\
-Used to split the documentation into several index pages
-based on where symbols are defined. Contains a list of
-<title>:<suffix>:<path> tuples.
+Used to split the documentation into several index pages,
+based on where symbols are defined.
 
-A separate index-<suffix>.rst page is generated for each
-tuple, with the title "<title> Configuration Options", a
-'configuration_options_<suffix>' RST link target, and links
-to all symbols that appear under the tuple's <path>
+MODULE_SPECIFICATION is either a <title>:<suffix>:<path>
+tuple or a
+<title>:<suffix>:<path>:<index description filename> tuple.
+If the second form is used, <index description filename>
+should be the path to an RST file, the contents of which
+will appear on the index page that lists the symbols for the
+module (under an automatically-inserted Overview heading).
+If the first form is used, a generic description will be
+used instead.
+
+A separate index-<suffix>.rst index page is generated for
+each tuple, with the title "<title> Configuration Options",
+a 'configuration_options_<suffix>' RST link target, and
+links to all symbols that appear under the tuple's <path>
 (possibly more than one level deep). Symbols that do not
 appear in any module are added to index-main.rst.
 
@@ -199,10 +251,12 @@ within modules. This path rewriting can be disabled with
 def write_module_index_pages():
     # Generate all index pages. Passing --modules will generate more than one.
 
+    write_toplevel_index()
+
     # Maps each module title to a set of Symbols in the module
     module2syms = collections.defaultdict(set)
     # Symbols that do not appear in any module
-    nonmodule_syms = set()
+    non_module_syms = set()
 
     for sym in kconf.unique_defined_syms:
         # Loop over all definition locations
@@ -210,32 +264,32 @@ def write_module_index_pages():
             mod_title = path2module(node.filename)
 
             if mod_title is None:
-                nonmodule_syms.add(node.item)
+                non_module_syms.add(node.item)
             else:
                 module2syms[mod_title].add(node.item)
 
-    write_toplevel_index()
-
     # Write the index-main.rst index page, which lists the symbols that aren't
     # from a module
-    write_sym_index_page(nonmodule_syms, non_module_title, "main")
+    write_index_page(non_module_syms, non_module_title, "main",
+                     desc_from_file(non_module_index_desc))
 
     # Write the index-<suffix>.rst index pages, which list symbols from
     # modules. Iterate 'modules' instead of 'module2syms' so that an index page
     # gets written even if a module has no symbols, for consistency.
-    for title, suffix, _ in modules:
-        write_sym_index_page(module2syms[title], title, suffix)
+    for title, suffix, _, text in modules:
+        write_index_page(module2syms[title], title, suffix, text)
 
     # Write the index-all.rst index page, which lists all symbols, including
     # both module and non-module symbols
-    write_sym_index_page(kconf.unique_defined_syms, "All", "all")
+    write_index_page(kconf.unique_defined_syms, "All", "all",
+                     desc_from_file(all_index_desc))
 
 
 def write_toplevel_index():
     # Used in --modules mode. Writes an index.rst with a TOC tree that links to
     # index-main.rst and the index-<suffix>.rst pages.
 
-    rst = sym_index_header(None, None) + """
+    rst = index_page_header(None, None, desc_from_file(top_index_desc)) + """
 Subsystems
 **********
 
@@ -245,19 +299,19 @@ Subsystems
 """
 
     rst += "   index-main\n"
-    for _, suffix, _ in modules:
+    for _, suffix, _, _ in modules:
         rst += "   index-{}\n".format(suffix)
     rst += "   index-all\n"
 
     write_if_updated("index.rst", rst)
 
 
-def write_sym_index_page(syms, title, suffix):
+def write_index_page(syms, title, suffix, text):
     # Writes an index page for the Symbols in 'syms' to 'index-<suffix>.rst'
-    # (or index.rst if 'suffix' is None). 'title' and 'suffix' are also used
-    # for to generate a page title and link target. See sym_index_header().
+    # (or index.rst if 'suffix' is None). 'title', 'suffix', and 'text' are
+    # also used for to generate the index page header. See index_page_header().
 
-    rst = sym_index_header(title, suffix)
+    rst = index_page_header(title, suffix, text)
 
     rst += """
 Configuration symbols
@@ -286,11 +340,20 @@ Configuration symbols
     write_if_updated(fname, rst)
 
 
-def sym_index_header(title, link):
-    # write_sym_index_page() helper. Returns the RST for the beginning of a
-    # symbol index page, with title '<title> Configuration Options' and a link
-    # target 'configurations_options_<link>' pointing to the page. 'title'
-    # and 'link' can be None to skip the prefix/suffix on the title/link.
+def index_page_header(title, link, description):
+    # write_index_page() helper. Returns the RST for the beginning of a symbol
+    # index page.
+    #
+    # title:
+    #   String used for the page title, as '<title> Configuration Options'. If
+    #   None, just 'Configuration Options' is used as the title.
+    #
+    # link:
+    #   String used for link target, as 'configuration_options_<link>'. If
+    #   None, the link will be 'configuration_options'.
+    #
+    # description:
+    #   RST put into an Overview section at the beginning of the page
 
     if title is None:
         title = "Configuration Options"
@@ -312,16 +375,37 @@ def sym_index_header(title, link):
 Overview
 ********
 
+{}
+
+This documentation is generated automatically from the :file:`Kconfig` files by
+the :file:`{}` script. Click on symbols for more information.
+""".format(link, title, description, os.path.basename(__file__))
+
+
+DEFAULT_INDEX_DESCRIPTION = """\
 :file:`Kconfig` files describe build-time configuration options (called symbols
 in Kconfig-speak), how they're grouped into menus and sub-menus, and
 dependencies between them that determine what configurations are valid.
 
 :file:`Kconfig` files appear throughout the directory tree. For example,
 :file:`subsys/power/Kconfig` defines power-related options.
+"""
 
-This documentation is generated automatically from the :file:`Kconfig` files by
-the :file:`{}` script. Click on symbols for more information.
-""".format(link, title, os.path.basename(__file__))
+
+def desc_from_file(fname):
+    # Helper for loading files with descriptions for index pages. Returns
+    # DEFAULT_INDEX_DESCRIPTION if 'fname' is None, and the contents of the
+    # file otherwise.
+
+    if fname is None:
+        return DEFAULT_INDEX_DESCRIPTION
+
+    try:
+        with open(fname, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError as e:
+        sys.exit("error: failed to open index description file '{}': {}"
+                 .format(fname, e))
 
 
 def write_sym_pages():
@@ -661,7 +745,7 @@ def path2module(path):
     # part of a module with path foo/bar/. Play it safe with pathlib.
 
     abspath = pathlib.Path(kconf.srctree).joinpath(path).resolve()
-    for name, _, mod_path in modules:
+    for name, _, mod_path, _ in modules:
         try:
             abspath.relative_to(mod_path)
         except ValueError:
@@ -680,7 +764,7 @@ def strip_module_path(path):
 
     if strip_module_paths:
         abspath = pathlib.Path(kconf.srctree).joinpath(path).resolve()
-        for title, _, mod_path in modules:
+        for title, _, mod_path, _ in modules:
             try:
                 relpath = abspath.relative_to(mod_path)
             except ValueError:
