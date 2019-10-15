@@ -65,12 +65,6 @@ if(SUPPORTS_DTS)
       message(STATUS "Overlaying ${dts_file}")
     endif()
 
-    # Ensure that changes to 'dts_file's cause CMake to be re-run
-    set_property(DIRECTORY APPEND PROPERTY
-      CMAKE_CONFIGURE_DEPENDS
-      ${dts_file}
-      )
-
     math(EXPR i "${i}+1")
   endforeach()
 
@@ -109,7 +103,8 @@ if(SUPPORTS_DTS)
 
   # Run the C preprocessor on an empty C source file that has one or
   # more DTS source files -include'd into it to create the
-  # intermediary file *.dts.pre.tmp
+  # intermediary file *.dts.pre.tmp. Also, generate a dependency file
+  # so that changes to DT sources are detected.
   execute_process(
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
@@ -119,14 +114,29 @@ if(SUPPORTS_DTS)
     ${NOSYSDEF_CFLAG}
     -D__DTS__
     -P
-    -E ${ZEPHYR_BASE}/misc/empty_file.c
+    -E   # Stop after preprocessing
+    -MD  # Generate a dependency file as a side-effect
     -o ${BOARD}.dts.pre.tmp
+    ${ZEPHYR_BASE}/misc/empty_file.c
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
+
+  # Parse the generated dependency file to find the DT sources that
+  # were included and then add them to the list of files that trigger
+  # a re-run of CMake.
+  toolchain_parse_make_rule(
+    ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    include_files # Output parameter
+    )
+
+  set_property(DIRECTORY APPEND PROPERTY
+    CMAKE_CONFIGURE_DEPENDS
+    ${include_files}
+    )
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
 
