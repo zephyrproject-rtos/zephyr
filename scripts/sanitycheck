@@ -581,7 +581,7 @@ class BinaryHandler(Handler):
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
-            t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
+            t = threading.Thread(target=self._output_reader, args=(proc, harness, ), daemon=True)
             t.start()
             t.join(self.timeout)
             if t.is_alive():
