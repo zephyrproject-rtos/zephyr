@@ -1934,10 +1934,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		ctrl_tx_enqueue(conn, tx);
 
 	} else if (instant_latency <= 0x7FFF) {
-		u32_t mayfly_was_enabled;
+		u32_t ticks_slot_overhead;
 		u16_t conn_interval_old;
 		u16_t conn_interval_new;
-		u32_t ticks_slot_offset;
 		u32_t ticks_win_offset;
 		u32_t conn_interval_us;
 		struct node_rx_pdu *rx;
@@ -2026,9 +2025,17 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		lll->latency_prepare += lazy;
 		lll->latency_prepare -= (instant_latency - latency);
 
-		/* calculate the offset, window widening and interval */
-		ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
-					conn->evt.ticks_xtal_to_start);
+		/* calculate the offset */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			ticks_slot_overhead =
+				MAX(conn->evt.ticks_active_to_start,
+				    conn->evt.ticks_xtal_to_start);
+
+		} else {
+			ticks_slot_overhead = 0U;
+		}
+
+		/* calculate the window widening and interval */
 		conn_interval_us = conn->llcp.conn_upd.interval * 1250U;
 		periodic_us = conn_interval_us;
 		if (lll->role) {
@@ -2101,8 +2108,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		/* disable ticker job, in order to chain stop and start
 		 * to avoid RTC being stopped if no tickers active.
 		 */
-		mayfly_was_enabled = mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
-						       TICKER_USER_ID_ULL_LOW);
+		u32_t mayfly_was_enabled =
+			mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
+					  TICKER_USER_ID_ULL_LOW);
 		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW,
 			      0);
 #endif
@@ -2128,7 +2136,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 #else
 				     TICKER_NULL_LAZY,
 #endif /* CONFIG_BT_CTLR_CONN_META */
-				     (ticks_slot_offset + conn->evt.ticks_slot),
+				     (ticks_slot_overhead +
+				      conn->evt.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
 				     lll->role ? ull_slave_ticker_cb :
 						 ull_master_ticker_cb,
