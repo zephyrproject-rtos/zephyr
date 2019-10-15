@@ -348,8 +348,8 @@ static void tcp_send_process(struct k_timer *timer)
 						next) : tcp_pkt_clone(pkt);
 		tcp_send(pkt);
 
-		if (false == forget && false == is_timer_subscribed(
-				&conn->send_timer)) {
+		if (forget == false && is_timer_subscribed(
+				&conn->send_timer) == false) {
 			conn->send_retries = tcp_retries;
 			conn->in_retransmission = true;
 		}
