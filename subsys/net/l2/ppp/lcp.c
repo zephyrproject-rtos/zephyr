@@ -199,10 +199,6 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 		out_of_mem:
 			if (nack) {
 				net_buf_unref(nack);
-			} else {
-				if (nack_buf) {
-					net_buf_unref(nack_buf);
-				}
 			}
 
 			return -ENOMEM;
