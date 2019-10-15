@@ -604,15 +604,17 @@ static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
 	return pkt;
 }
 
-static u32_t _cs(void *data, size_t len)
+static u32_t sum(void *data, size_t len)
 {
 	u32_t s = 0;
 
-	for ( ; len > 1; len -= 2, data = (u8_t *) data + 2)
-		s += *((u16_t *) data);
+	for ( ; len > 1; len -= 2, data = (u8_t *)data + 2) {
+		s += *((u16_t *)data);
+	}
 
-	if (len)
-		s += *((u8_t *) data);
+	if (len) {
+		s += *((u8_t *)data);
+	}
 
 	return s;
 }
@@ -629,13 +631,13 @@ static void tcp_csum(struct net_pkt *pkt)
 	u16_t len = ntohs(ip->len) - 20;
 	u32_t s;
 
-	ip->chksum = cs(_cs(ip, sizeof(*ip)));
+	ip->chksum = cs(sum(ip, sizeof(*ip)));
 
-	s = _cs(&ip->src, sizeof(struct in_addr) * 2);
+	s = sum(&ip->src, sizeof(struct in_addr) * 2);
 	s += ntohs(ip->proto + len);
 
 	th->th_sum = 0;
-	s += _cs(th, len);
+	s += sum(th, len);
 
 	th->th_sum = cs(s);
 }
@@ -745,7 +747,6 @@ int net_tcp_get(struct net_context *context)
 	key = irq_lock();
 
 	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
-
 	if (ret) {
 		ret = -ENOMEM;
 		irq_unlock(key);
