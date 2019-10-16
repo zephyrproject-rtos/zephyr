@@ -17,9 +17,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_userspace_enter)
 GTEXT(z_arm_do_syscall)
 GTEXT(z_arch_user_string_nlen)
-GTEXT(z_arch_user_string_nlen_fault_start)
-GTEXT(z_arch_user_string_nlen_fault_end)
-GTEXT(z_arch_user_string_nlen_fixup)
+GTEXT(z_arm_user_string_nlen_fault_start)
+GTEXT(z_arm_user_string_nlen_fault_end)
+GTEXT(z_arm_user_string_nlen_fixup)
 GDATA(_kernel)
 
 /* Imports */
@@ -514,11 +514,11 @@ SECTION_FUNC(TEXT, z_arch_user_string_nlen)
     movs r3, #0		/* r3 is the counter */
 
 strlen_loop:
-z_arch_user_string_nlen_fault_start:
+z_arm_user_string_nlen_fault_start:
     /* r0 contains the string. r5 = *(r0 + r3]). This could fault. */
     ldrb r5, [r0, r3]
 
-z_arch_user_string_nlen_fault_end:
+z_arm_user_string_nlen_fault_end:
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     cmp r5, #0
     beq strlen_done
@@ -539,7 +539,7 @@ strlen_done:
     movs r1, #0
     str	r1, [sp, #4]
 
-z_arch_user_string_nlen_fixup:
+z_arm_user_string_nlen_fixup:
     /* Write error value to err pointer parameter */
     ldr	r1, [sp, #4]
     str	r1, [r2, #0]

@@ -14,9 +14,9 @@
 GTEXT(z_x86_syscall_entry_stub)
 GTEXT(z_x86_userspace_enter)
 GTEXT(z_arch_user_string_nlen)
-GTEXT(z_arch_user_string_nlen_fault_start)
-GTEXT(z_arch_user_string_nlen_fault_end)
-GTEXT(z_arch_user_string_nlen_fixup)
+GTEXT(z_x86_user_string_nlen_fault_start)
+GTEXT(z_x86_user_string_nlen_fault_end)
+GTEXT(z_x86_user_string_nlen_fixup)
 
 /* Imports */
 GDATA(_k_syscall_table)
@@ -270,10 +270,10 @@ SECTION_FUNC(TEXT, z_arch_user_string_nlen)
 
 	/* This code might page fault */
 strlen_loop:
-z_arch_user_string_nlen_fault_start:
+z_x86_user_string_nlen_fault_start:
 	cmpb	$0x0, (%edx, %eax, 1)	/* *(EDX + EAX) == 0? Could fault. */
 
-z_arch_user_string_nlen_fault_end:
+z_x86_user_string_nlen_fault_end:
 	je	strlen_done
 	cmp	0xc(%ebp), %eax		/* Max length reached? */
 	je	strlen_done
@@ -284,7 +284,7 @@ strlen_done:
 	/* Set error value to 0 since we succeeded */
 	movl	$0, -4(%ebp)
 
-z_arch_user_string_nlen_fixup:
+z_x86_user_string_nlen_fixup:
 	/* Write error value to err pointer parameter */
 	movl	0x10(%ebp), %ecx
 	pop	%edx
