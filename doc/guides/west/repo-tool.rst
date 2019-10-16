@@ -75,6 +75,8 @@ Finally, any repository managed by a west installation can contain
 provided by that project. This includes the manifest repository and any project
 repository.
 
+.. _west-topologies:
+
 Topologies supported
 ********************
 

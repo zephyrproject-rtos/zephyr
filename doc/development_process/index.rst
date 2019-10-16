@@ -7,9 +7,9 @@ Development Model
 .. toctree::
    :maxdepth: 1
 
+   repo_structure
    release_process
    proposals
-   code_flow
    dev_env_and_tools
    issues
    api_lifecycle

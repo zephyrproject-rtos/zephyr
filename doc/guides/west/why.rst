@@ -57,6 +57,8 @@ examined in detail:
     repositories (**R4**)
   - Requires hardcoding of the paths/locations of the external repositories
 
+.. _west-why-multi-repo:
+
 Multiple Git Repositories
 *************************
 
