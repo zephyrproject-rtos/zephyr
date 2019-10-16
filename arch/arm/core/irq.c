@@ -88,11 +88,6 @@ void _arch_isr_direct_pm(void)
 }
 #endif
 
-void z_arch_isr_direct_header(void)
-{
-	sys_trace_isr_enter();
-}
-
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
