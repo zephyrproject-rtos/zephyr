@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "udp_internal.h"
 #include "tcp_internal.h"
 #include "ipv4.h"
+#ifdef CONFIG_NET_TCP2
+#include "tcp2.h"
+#endif
+#include "tp.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
@@ -115,6 +119,16 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
 	if (!hdr) {
 		NET_DBG("DROP: no buffer");
+		goto drop;
+	}
+
+#if defined(CONFIG_NET_TCP2)
+	if (hdr->proto == IPPROTO_TCP) {
+		tcp_input(pkt);
+		goto drop;
+	}
+#endif
+	if (tp_input(pkt)) {
 		goto drop;
 	}
 
