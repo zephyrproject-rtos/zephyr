@@ -120,10 +120,10 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	/* enable data-ready interrupt */
 	if (drv_data->hw_tf->update_reg(drv_data,
 			       LSM6DSL_REG_INT1_CTRL,
-			       LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL |
-			       LSM6DSL_SHIFT_INT1_CTRL_DRDY_G,
-			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
-			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
+			       LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
+			       LSM6DSL_MASK_INT1_CTRL_DRDY_G,
+			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
+			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
 		LOG_ERR("Could not enable data-ready interrupt.");
 		return -EIO;
 	}
