@@ -23,6 +23,7 @@
 #include <sys/util.h>
 #include <net/buf.h>
 #include <bluetooth/gap.h>
+#include <bluetooth/addr.h>
 #include <bluetooth/crypto.h>
 
 #ifdef __cplusplus
