@@ -12,6 +12,10 @@
 
 #include "gpio_utils.h"
 
+#ifndef PORT_PMUX_PMUXE_A_Val
+#define PORT_PMUX_PMUXE_A_Val (0)
+#endif
+
 struct gpio_sam0_config {
 	PortGroup *regs;
 #ifdef CONFIG_SAM0_EIC
