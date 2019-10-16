@@ -352,6 +352,18 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+config NET_TCP2
+	bool "Enable experimental TCP"
+	default n
+	help
+	  Enable experimental TCP.
+
+config NET_TP
+	bool "Enable JSON based test protocol (UDP)"
+	default n
+	help
+	  Enable JSON based test protocol (UDP).
+
 config NET_UDP
 	bool "Enable UDP"
 	default y
