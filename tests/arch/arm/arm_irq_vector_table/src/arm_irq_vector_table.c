@@ -134,7 +134,8 @@ void test_arm_irq_vector_table(void)
 		      k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
 	for (int ii = 0; ii < 3; ii++) {
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+	defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 		/* the QEMU does not simulate the
 		 * STIR register: this is a workaround
 		 */
