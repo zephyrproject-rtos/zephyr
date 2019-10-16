@@ -4,4 +4,5 @@
 
 zephyr_sources(
   soc.c
+  irq.c
 )
