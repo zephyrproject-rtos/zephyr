@@ -28,17 +28,54 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_int_exit);
-GTEXT(z_arch_irq_enable)
-GTEXT(z_arch_irq_disable)
-GTEXT(z_arch_irq_is_enabled)
+GTEXT(z_soc_irq_get_active);
+GTEXT(z_soc_irq_eoi);
 #else
+
+#if defined(CONFIG_CPU_CORTEX_M)
 extern void z_arch_irq_enable(unsigned int irq);
 extern void z_arch_irq_disable(unsigned int irq);
 extern int z_arch_irq_is_enabled(unsigned int irq);
 
+/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
+extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
+				   unsigned int flags);
+
+#else
+/*
+ * Many Cortex-A and Cortex-R series cores do not designate an architectural
+ * interrupt controller and an arbitrary SoC-specific interrupt controller may
+ * be used.
+ *
+ * For this reason, the arch interrupt management functions are mapped to the
+ * SoC layer.
+ */
+
+void z_soc_irq_init(void);
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
+
+unsigned int z_soc_irq_get_active(void);
+void z_soc_irq_eoi(unsigned int irq);
+
+void z_soc_irq_priority_set(
+    unsigned int irq, unsigned int prio, unsigned int flags);
+
+#define z_arch_irq_enable(irq)		z_soc_irq_enable(irq)
+#define z_arch_irq_disable(irq)		z_soc_irq_disable(irq)
+#define z_arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+
+#define z_arm_irq_priority_set(irq, prio, flags) \
+	z_soc_irq_priority_set(irq, prio, flags)
+
+#endif /* CONFIG_CPU_CORTEX_M */
+
+
 extern void z_arm_int_exit(void);
 
 extern void z_arm_int_lib_init(void);
+
 
 /* macros convert value of it's argument to a string */
 #define DO_TOSTR(s) #s
@@ -47,10 +84,6 @@ extern void z_arm_int_lib_init(void);
 /* concatenate the values of the arguments into one */
 #define DO_CONCAT(x, y) x ## y
 #define CONCAT(x, y) DO_CONCAT(x, y)
-
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
-				   u32_t flags);
 
 
 /* Flags for use with IRQ_CONNECT() */
@@ -126,6 +159,11 @@ extern void _arch_isr_direct_pm(void);
 #define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
+#ifdef CONFIG_TRACING
+extern void sys_trace_isr_enter(void);
+extern void sys_trace_isr_exit(void);
+#endif
+
 #define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
 static ALWAYS_INLINE void z_arch_isr_direct_header(void)
 {
@@ -135,11 +173,6 @@ static ALWAYS_INLINE void z_arch_isr_direct_header(void)
 }
 
 #define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
-
-#ifdef CONFIG_TRACING
-extern void sys_trace_isr_exit(void);
-#endif
-
 static ALWAYS_INLINE void z_arch_isr_direct_footer(int maybe_swap)
 {
 #ifdef CONFIG_TRACING

@@ -19,6 +19,9 @@
 
 void z_arm_int_lib_init(void)
 {
+    /* Invoke SoC-specific interrupt initialisation */
+    z_soc_irq_init();
+
     /* Configure hardware vectored interrupt mode.*/
 #if defined(CONFIG_VIC_IRQ_VECTOR)
     __asm__ volatile(

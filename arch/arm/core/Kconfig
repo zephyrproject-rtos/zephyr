@@ -87,6 +87,13 @@ config COMPILER_ISA_THUMB2
 config NUM_IRQS
 	int
 
+config IRQ_COMMON_EOI
+	bool
+	help
+	  This option signifies that the architectural interrupt controller
+	  requires a common End of Interrupt (EOI) action after servicing every
+	  interrupt.
+
 config STACK_ALIGN_DOUBLE_WORD
 	bool "Align stacks on double-words (8 octets)"
 	default y

@@ -123,12 +123,11 @@ _idle_state_cleared:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
-#elif defined(CONFIG_ARMV7_R)
-	/*
-	 * Cortex-R only has one IRQ line so the main handler will be at
-	 * offset 0 of the table.
-	 */
-	mov r0, #0
+#elif defined(CONFIG_CPU_CORTEX_R4) || defined(CONFIG_CPU_CORTEX_R5)
+	/* Get active IRQ number from the SoC interrupt controller */
+	bl z_soc_irq_get_active
+	push {r0, r1}
+	lsl r0, r0, #3	/* table is 8-byte wide */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -150,6 +149,11 @@ _idle_state_cleared:
 	ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
+
+#ifdef CONFIG_IRQ_COMMON_EOI
+	pop {r0, r1}
+	bl z_soc_irq_eoi
+#endif
 
 #ifdef CONFIG_TRACING
 	bl sys_trace_isr_exit

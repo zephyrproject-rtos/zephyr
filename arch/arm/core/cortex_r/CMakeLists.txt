@@ -7,7 +7,6 @@ zephyr_library_sources(
   reset.S
   fault.c
   irq_init.c
-  irq_manage.c
   reboot.c
   stacks.c
   )
