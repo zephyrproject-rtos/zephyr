@@ -352,6 +352,31 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+choice
+	prompt "Select TCP stack"
+	depends on NET_TCP
+	default NET_TCP1
+	help
+	  Select the TCP stack implementation to use.
+
+config NET_TCP1
+	bool "Current stable TCP stack"
+	help
+	  The current TCP stack that has been in use since Zephyr 1.0.
+
+config NET_TCP2
+	bool "Experimental TCP stack"
+	help
+	  Enable experimental TCP which is under development.
+
+endchoice
+
+config NET_TEST_PROTOCOL
+	bool "Enable JSON based test protocol (UDP)"
+	default n
+	help
+	  Enable JSON based test protocol (UDP).
+
 config NET_UDP
 	bool "Enable UDP"
 	default y
