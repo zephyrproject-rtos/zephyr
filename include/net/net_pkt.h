@@ -129,8 +129,13 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_TCP)
-	sys_snode_t sent_list;
+#if defined(CONFIG_NET_TCP1) || defined(CONFIG_NET_TCP2)
+	union {
+		sys_snode_t sent_list;
+
+		/** Allow placing the packet into sys_slist_t */
+		sys_snode_t next;
+	};
 #endif
 
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
