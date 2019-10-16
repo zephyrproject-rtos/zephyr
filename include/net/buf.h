@@ -537,8 +537,13 @@ struct net_buf {
 		struct net_buf_simple b;
 	};
 
-	/** System metadata for this buffer. */
-	u8_t user_data[CONFIG_NET_BUF_USER_DATA_SIZE] __net_buf_align;
+	union {
+		/** System metadata for this buffer. */
+		u8_t user_data[CONFIG_NET_BUF_USER_DATA_SIZE] __net_buf_align;
+
+		/** Allow placing network buffer into sys_slist_t */
+		sys_snode_t next;
+	};
 };
 
 struct net_buf_data_cb {
