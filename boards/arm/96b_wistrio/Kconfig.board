@@ -7,4 +7,4 @@
 
 config BOARD_96B_WISTRIO
 	bool "96boards WisTrio Development Board"
-	depends on SOC_STM32L151XB
+	depends on SOC_STM32L151XBA

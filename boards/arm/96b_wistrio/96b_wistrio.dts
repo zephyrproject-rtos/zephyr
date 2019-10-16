@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/l1/stm32l151Xb.dtsi>
+#include <st/l1/stm32l151Xb-a.dtsi>
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
