@@ -34,7 +34,8 @@ extern "C" {
 #include <sys/types.h>
 
 /**
- * @brief Create a TCP connecton for the net_context
+ * @brief Allocate a TCP connecton for the net_context
+ *        and mutually link the net_context and TCP connection.
  *
  * @param context Network context
  *

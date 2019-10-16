@@ -22,7 +22,6 @@ static int tcp_rto = 500; /* Retransmission timeout, msec */
 static int tcp_retries = 3;
 static int tcp_window = NET_IPV6_MTU;
 static bool tcp_echo;
-static bool _tcp_conn_delete = true;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
@@ -287,17 +286,33 @@ static void tcp_win_free(struct tcp_win *w, const char *name)
 	tcp_free(w);
 }
 
-int net_tcp_unref(struct net_context *context)
+static int tcp_conn_unref(struct tcp *conn)
 {
-	struct tcp *conn = context->tcp;
+	int ref_count = atomic_dec(&conn->ref_count) - 1;
+	int key;
 
-	NET_DBG("%p", context);
+	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
-	tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
-
-	if (_tcp_conn_delete == false) {
+	if (ref_count) {
+		tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
 		goto out;
 	}
+
+	key = irq_lock();
+
+	if (conn->context->conn_handler) {
+		net_conn_unregister(conn->context->conn_handler);
+		conn->context->conn_handler = NULL;
+	}
+
+	if (conn->context->recv_cb) {
+		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
+					-ECONNRESET, conn->recv_user_data);
+	}
+
+	conn->context->tcp = NULL;
+
+	net_context_unref(conn->context);
 
 	tcp_send_queue_flush(conn);
 
@@ -307,18 +322,28 @@ int net_tcp_unref(struct net_context *context)
 	tcp_free(conn->src);
 	tcp_free(conn->dst);
 
-	{
-		int key = irq_lock();
+	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *)conn);
 
-		context->tcp = NULL;
-		memset(conn, 0, sizeof(*conn));
-		sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) conn);
-		k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
-		irq_unlock(key);
-	}
+	memset(conn, 0, sizeof(*conn));
+
+	irq_unlock(key);
 out:
-	return 0;
+	return ref_count;
+}
+
+int net_tcp_unref(struct net_context *context)
+{
+	int ref_count = 0;
+
+	NET_DBG("context: %p, conn: %p", context, context->tcp);
+
+	if (context->tcp) {
+		ref_count = tcp_conn_unref(context->tcp);
+	}
+
+	return ref_count;
 }
 
 static void tcp_send_process(struct k_timer *timer)
@@ -335,7 +360,7 @@ static void tcp_send_process(struct k_timer *timer)
 			tcp_send(tcp_pkt_clone(pkt));
 			conn->send_retries--;
 		} else {
-			net_tcp_unref(conn->context);
+			tcp_conn_unref(conn);
 			conn = NULL;
 		}
 	} else {
@@ -725,8 +750,25 @@ out:
 	return;
 }
 
-static void tcp_conn_init(struct tcp *conn)
+static void tcp_conn_ref(struct tcp *conn)
 {
+	int ref_count = atomic_inc(&conn->ref_count) + 1;
+
+	NET_DBG("conn: %p, ref_count: %d", conn, ref_count);
+}
+
+static struct tcp *tcp_conn_alloc(void)
+{
+	struct tcp *conn = NULL;
+	int ret;
+
+	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
+	if (ret) {
+		goto out;
+	}
+
+	memset(conn, 0, sizeof(*conn));
+
 	conn->state = TCP_LISTEN;
 
 	conn->win = tcp_window;
@@ -738,40 +780,36 @@ static void tcp_conn_init(struct tcp *conn)
 
 	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
 	k_timer_user_data_set(&conn->send_timer, conn);
+
+	tcp_conn_ref(conn);
+
+	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
+out:
+	NET_DBG("conn: %p", conn);
+
+	return conn;
 }
 
 int net_tcp_get(struct net_context *context)
 {
-	int ret, key;
+	int ret = 0, key = irq_lock();
 	struct tcp *conn;
 
-	key = irq_lock();
-
-	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
-	if (ret) {
+	conn = tcp_conn_alloc();
+	if (conn == NULL) {
 		ret = -ENOMEM;
-		irq_unlock(key);
 		goto out;
 	}
 
-	memset(conn, 0, sizeof(*conn));
+	/* Mutually link the net_context and tcp connection */
 	conn->context = context;
 	context->tcp = conn;
-
-	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
-
+out:
 	irq_unlock(key);
 
-	tcp_conn_init(conn);
-
-	conn->iface = net_context_get_iface(context);
-
-	NET_DBG("context: local: %s, remote: %s",
+	NET_DBG("context: %p (local: %s, remote: %s), conn: %p", context,
 		tcp_endpoint_to_string((void *)&context->local),
-		tcp_endpoint_to_string((void *)&context->remote));
-out:
-	NET_DBG("context: %p conn: %p %s", context,
-		conn, conn ? tcp_conn_state(conn, NULL) : "");
+		tcp_endpoint_to_string((void *)&context->remote), conn);
 
 	return ret;
 }
@@ -829,6 +867,9 @@ void tcp_input(struct net_pkt *pkt)
 			conn = context->tcp;
 			conn->dst = tcp_endpoint_new(pkt, SRC);
 			conn->src = tcp_endpoint_new(pkt, DST);
+			/* Make an extra reference, the sanity check suite
+			 * will delete the connection explicitly */
+			tcp_conn_ref(conn);
 		}
 
 		if (conn) {
@@ -1046,19 +1087,7 @@ next_state:
 		break;
 	case TCP_CLOSED:
 		fl = 0;
-		{
-			struct net_context *context = conn->context;
-			if (context->recv_cb) {
-				context->recv_cb(context, NULL, NULL, NULL,
-							-ECONNRESET,
-							conn->recv_user_data);
-			}
-			if (context->conn_handler) {
-				net_conn_unregister(context->conn_handler);
-				context->conn_handler = NULL;
-			}
-			net_tcp_unref(context);
-		}
+		tcp_conn_unref(conn);
 		break;
 	case TCP_TIME_WAIT:
 	case TCP_CLOSING:
@@ -1110,6 +1139,8 @@ int net_tcp_put(struct net_context *context)
 		conn->state = TCP_CLOSE_WAIT;
 		tcp_in(conn, NULL);
 	}
+
+	net_context_unref(context);
 
 	return 0;
 }
@@ -1499,6 +1530,7 @@ bool tp_input(struct net_pkt *pkt)
 				conn->dst = tcp_endpoint_new(pkt, SRC);
 				conn->src = tcp_endpoint_new(pkt, DST);
 				conn->iface = pkt->iface;
+				tcp_conn_ref(conn);
 			}
 			conn->seq = tp->seq;
 			if (len > 0) {
@@ -1508,13 +1540,13 @@ bool tp_input(struct net_pkt *pkt)
 			tcp_in(conn, NULL);
 		}
 		if (is("CLOSE", tp->op)) {
-			_tcp_conn_delete = true;
 			tp_trace = false;
 			{
 				struct net_context *context;
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				net_tcp_unref(context);
+				tcp_conn_unref(conn);
+				tcp_conn_unref(conn);
 				tcp_free(context);
 			}
 			tp_mem_stat();
@@ -1556,8 +1588,6 @@ bool tp_input(struct net_pkt *pkt)
 					TP_INT);
 		tp_new_find_and_apply(tp_new, "tp_trace", &tp_trace, TP_BOOL);
 		tp_new_find_and_apply(tp_new, "tcp_echo", &tcp_echo, TP_BOOL);
-		tp_new_find_and_apply(tp_new, "tp_tcp_conn_delete",
-					&_tcp_conn_delete, TP_BOOL);
 		break;
 	case TP_INTROSPECT_REQUEST:
 		json_len = sizeof(buf);

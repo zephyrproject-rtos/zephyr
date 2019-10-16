@@ -173,6 +173,7 @@ struct tcp { /* TCP connection */
 	size_t send_retries;
 	struct net_if *iface;
 	net_tcp_accept_cb_t accept_cb;
+	atomic_t ref_count;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
