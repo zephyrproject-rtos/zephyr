@@ -615,6 +615,10 @@ The binding below shows various legacy syntax.
    inherits:
        !include foo.yaml
 
+   # Redundant - base.yaml is now included automatically in all bindings, and
+   # is located at scripts/dts/base.yaml
+   include: base.yaml
+
    parent:
        bus: spi
 

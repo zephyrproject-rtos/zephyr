@@ -7,6 +7,9 @@ description: Deprecated stuff
 inherits:
     !include deprecated-include.yaml
 
+# Deprecated base.yaml include
+include: base.yaml
+
 properties:
     # Deprecated way of specifying the 'compatible' string
     compatible:

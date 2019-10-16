@@ -14,6 +14,7 @@
 
 # vim: ai:ts=4:sw=4
 
+import copy
 import os, fnmatch
 import re
 import yaml
@@ -226,12 +227,21 @@ def merge_included_bindings(fname, node):
 
     res = node
 
+    # Merge the data from base.yaml, which is included implicitly
+    inherited = base_binding()
+    merge_properties(None, fname, inherited, res)
+    res = inherited
+
     if "include" in node:
         included = node.pop("include")
         if isinstance(included, str):
             included = [included]
 
         for included_fname in included:
+            if included_fname == "base.yaml":
+                # Implicitly included
+                continue
+
             binding = load_binding_file(included_fname)
             inherited = merge_included_bindings(fname, binding)
             merge_properties(None, fname, inherited, res)
@@ -360,8 +370,9 @@ def load_bindings(root, binding_dirs):
             continue
 
         with open(file, 'r', encoding='utf-8') as yf:
-            binding = merge_included_bindings(file,
-                                              yaml.load(yf, Loader=yaml.Loader))
+            binding = yaml.load(yf, Loader=yaml.Loader)
+
+        binding = merge_included_bindings(file, binding)
 
         for compat in binding_compats:
             if compat not in compats:
@@ -381,6 +392,38 @@ def load_bindings(root, binding_dirs):
     extract.globals.bindings = compat_to_binding
     extract.globals.bus_bindings = bus_to_binding
     extract.globals.binding_compats = compats
+
+
+cached_base_binding = None
+
+
+def base_binding():
+    # Returns the contents of the automatically-loaded base.yaml
+
+    # Cache the data from base.yaml so that we only need to parse it once.
+    # yaml.load() is slow.
+    global cached_base_binding
+
+    if not cached_base_binding:
+        path = os.path.join(os.path.dirname(__file__), "base.yaml")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                cached_base_binding = yaml.load(f, Loader=yaml.Loader)
+        except (OSError, yaml.YAMLError) as e:
+            raise Exception("internal error: failed to load '{}': {}"
+                            .format(path, e))
+
+    # Return a copy of the cached data so that it can be safely modified when
+    # merging other bindings.
+    #
+    # It might be possible to avoid the copy e.g. by merging base.yaml last,
+    # but it gets pretty subtle due to merge_properties() copying by reference
+    # instead of copying data. That can lead to the cached base.yaml data
+    # getting modified indirectly after it's made part of a merged binding,
+    # even if it only appears as the from_dict in merge_properties().
+    #
+    # This version avoids subtle gotchas, and should be fast enough.
+    return copy.deepcopy(cached_base_binding)
 
 
 def _binding_compats(binding):
@@ -456,7 +499,10 @@ def load_binding_file(fname):
                        "!include statement: {}".format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
-        return yaml.load(f, Loader=yaml.Loader)
+        binding = yaml.load(f, Loader=yaml.Loader)
+        # PyYAML returns None for empty files. Convert them to an empty
+        # dict so that we still support them.
+        return {} if binding is None else binding
 
 
 def yaml_inc_error(msg):

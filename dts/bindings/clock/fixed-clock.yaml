@@ -21,10 +21,5 @@ properties:
       description: output clock frequency (Hz)
       required: true
 
-    clocks:
-      type: array
-      required: false
-      description: input clock source
-
     "#clock-cells":
       const: 0

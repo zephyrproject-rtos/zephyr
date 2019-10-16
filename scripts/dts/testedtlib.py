@@ -42,6 +42,7 @@ def run():
     verify_eq(warnings.getvalue(), """\
 warning: The 'properties: compatible: constraint: ...' way of specifying the compatible in test-bindings/deprecated.yaml is deprecated. Put 'compatible: "deprecated"' at the top level of the binding instead.
 warning: the 'inherits:' syntax in test-bindings/deprecated.yaml is deprecated and will be removed - please use 'include: foo.yaml' or 'include: [foo.yaml, bar.yaml]' instead
+warning: 'include: base.yaml' in test-bindings/deprecated.yaml is deprecated and redundant. base.yaml is now automatically included in all bindings, and can be found at scripts/dts/base.yaml.
 warning: please put 'required: true' instead of 'category: required' in properties: required: ...' in test-bindings/deprecated.yaml - 'category' will be removed
 warning: please put 'required: false' instead of 'category: optional' in properties: optional: ...' in test-bindings/deprecated.yaml - 'category' will be removed
 warning: 'sub-node: properties: ...' in test-bindings/deprecated.yaml is deprecated and will be removed - please give a full binding for the child node in 'child-binding:' instead (see binding-template.yaml)
@@ -108,7 +109,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "Parent binding")
 
     verify_streq(edt.get_node("/binding-include").props,
-                 "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
+                 "{'foo': <Property, name: foo, type: int, value: 0>, 'compatible': <Property, name: compatible, type: string-array, value: ['binding-include-test']>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
     # Test 'child/parent-bus:'
@@ -197,7 +198,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     #
 
     verify_streq(edt.get_node("/defaults").props,
-                 r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}")
+                 r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>, 'compatible': <Property, name: compatible, type: string-array, value: ['defaults']>}")
 
     #
     # Test having multiple directories with bindings, with a different .dts file

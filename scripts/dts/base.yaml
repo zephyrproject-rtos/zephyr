@@ -1,4 +1,5 @@
-# Common fields for all devices
+# This file is automatically included in all bindings, and defines common
+# properties that appear on many nodes
 
 properties:
     status:
@@ -19,13 +20,13 @@ properties:
 
     reg:
         type: array
-        description: register space
         required: false
+        description: register space
 
     reg-names:
         type: string-array
-        description: name of each register space
         required: false
+        description: name of each register space
 
     interrupts:
         type: array

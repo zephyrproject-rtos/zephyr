@@ -22,6 +22,7 @@ The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and a list of paths to directories containing bindings.
 """
 
+import copy
 import os
 import re
 import sys
@@ -216,8 +217,9 @@ class EDT:
                 # match a compatible)
                 continue
 
-            # It's a match. Merge in the included bindings, do sanity checks,
-            # and register the binding.
+            # It's a match. Merge in the included bindings (including the
+            # implicitly-included base.yaml), do sanity checks, and register
+            # the binding.
 
             binding = self._merge_included_bindings(binding, binding_path)
             self._check_binding(binding, binding_path)
@@ -324,9 +326,6 @@ class EDT:
                 _err("malformed 'inherits:' in " + binding_path)
             fnames += inherits
 
-        if not fnames:
-            return binding
-
         # Got a list of included files in 'fnames'. Now we need to merge them
         # together and then merge them into 'binding'.
 
@@ -334,8 +333,18 @@ class EDT:
         # file has a 'required:' for a particular property, OR the values
         # together, so that 'required: true' wins.
 
-        merged_included = self._load_binding(fnames[0])
-        for fname in fnames[1:]:
+        # Start with the data from base.yaml, which is included implicitly
+        merged_included = _base_binding()
+        # Merge (explicitly) included bindings
+        for fname in fnames:
+            if fname == "base.yaml":
+                self._warn(
+                    "'include: base.yaml' in {} is deprecated and redundant. "
+                    "base.yaml is now automatically included in all bindings, "
+                    "and can be found at scripts/dts/base.yaml."
+                    .format(binding_path))
+                continue
+
             included = self._load_binding(fname)
             _merge_props(merged_included, included, None, binding_path,
                          check_required=False)
@@ -366,9 +375,13 @@ class EDT:
                  .format(fname, ", ".join(paths)))
 
         with open(paths[0], encoding="utf-8") as f:
-            return self._merge_included_bindings(
-                yaml.load(f, Loader=yaml.Loader),
-                paths[0])
+            binding = yaml.load(f, Loader=yaml.Loader)
+            if binding is None:
+                # PyYAML returns None for empty files. Convert them to an empty
+                # dict so that we still support them.
+                binding = {}
+
+            return self._merge_included_bindings(binding, paths[0])
 
     def _init_nodes(self):
         # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
@@ -1318,6 +1331,37 @@ def _binding_paths(bindings_dirs):
                     binding_paths.append(os.path.join(root, filename))
 
     return binding_paths
+
+
+_cached_base_binding = None
+
+
+def _base_binding():
+    # Returns the contents of the automatically-loaded base.yaml
+
+    # Cache the data from base.yaml so that we only need to parse it once.
+    # yaml.load() is slow.
+    global _cached_base_binding
+
+    if not _cached_base_binding:
+        path = os.path.join(os.path.dirname(__file__), "base.yaml")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                _cached_base_binding = yaml.load(f, Loader=yaml.Loader)
+        except (OSError, yaml.YAMLError) as e:
+            _err("internal error: failed to load '{}': {}".format(path, e))
+
+    # Return a copy of the cached data so that it can be safely modified when
+    # merging other bindings.
+    #
+    # It might be possible to avoid the copy e.g. by merging base.yaml last,
+    # but it gets pretty subtle due to _merge_props() copying references
+    # instead of copying data. That can lead to the cached base.yaml data
+    # getting modified indirectly after it's made part of a merged binding,
+    # even if it only appears as the from_dict in _merge_props().
+    #
+    # This version avoids subtle gotchas like that, and should be fast enough.
+    return copy.deepcopy(_cached_base_binding)
 
 
 def _binding_bus(binding):

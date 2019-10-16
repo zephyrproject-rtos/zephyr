@@ -27,18 +27,37 @@ compatible: "manufacturer,device"
 #
 # If more than one binding for a compatible is found, an error is raised.
 
-# Many bindings have common fields. These are stored in files given in
-# 'include', which are merged into the binding (with a recursive dictionary
-# merge).
+# Bindings can include other files, which can be used to share common
+# definitions between bindings.
 #
-# If a key appears both in the binding and in a file it includes, then the
-# value in the binding takes precedence. This can be used to change a
-# 'required: false' from an inherited file to a 'required: true' (see the
-# 'properties' description below).
+# The file scripts/dts/base.yaml is automatically included in all bindings. It
+# defines generic properties that appear on many devicetree nodes. It is a good
+# idea to look at it to get an idea of what definitions are already available.
+#
+# Included files are merged into bindings with a simple recursive dictionary
+# merge. It is up to the binding author to make sure that the resulting binding
+# is well-formed, though the final merged binding is sanity-checked by the code
+# as well.
+#
+# It is an error for a key to appear with a different value in a binding and in
+# a file it includes, with one exception: A binding can have 'required: true'
+# for some property for which the included file has 'required: false' (see the
+# description of 'properties' below). The 'required: true' from the binding
+# takes precedence, allowing bindings to strengthen requirements from included
+# files.
+#
+# As an example, the 'reg' property can be made mandatory like this:
+#
+#     reg:
+#         required: true
+#
+# This overrides the 'required: false' given for 'reg' in the
+# implicitly-included scripts/dts/base.yaml. Note that base.yaml already gives
+# the type for 'reg', so we do not need to repeat it here.
 #
 # An error is raised if this binding has 'required: false' for some property
-# for which the included file(s) have 'required: true'. Bindings can only
-# "strengthen" requirements from files they include. This is meant to keep the
+# for which the included file has 'required: true' instead. Bindings can't
+# weaken requirements from files they include. This is meant to keep the
 # organization clean.
 #
 # When including multiple files, any overlapping 'required' keys on properties
