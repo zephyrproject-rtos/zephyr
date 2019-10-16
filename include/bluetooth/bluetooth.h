@@ -22,6 +22,7 @@
 #include <sys/printk.h>
 #include <sys/util.h>
 #include <net/buf.h>
+#include <bluetooth/gap.h>
 #include <bluetooth/crypto.h>
 
 #ifdef __cplusplus
