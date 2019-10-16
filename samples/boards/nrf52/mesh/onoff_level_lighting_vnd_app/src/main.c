@@ -44,16 +44,6 @@ static void light_default_var_init(void)
 
 static void light_default_status_init(void)
 {
-	u16_t lightness;
-
-	lightness = (u16_t) (light_ctl_srv_user_data.lightness_temp_last >> 16);
-
-	if (lightness) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-	}
-
 	/* Retrieve Default Lightness & Temperature Values */
 
 	if (light_ctl_srv_user_data.lightness_temp_def) {
