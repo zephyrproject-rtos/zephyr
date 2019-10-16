@@ -1738,8 +1738,8 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
 
 
 def _mask(prefix, child, parent, child_spec):
-    # Common code for handling <prefix>-mask properties, e.g. interrupt-mask.
-    # See _map() for the parameters.
+    # Common code for handling <prefix>-map-mask properties, e.g.
+    # interrupt-map-mask. See _map() for the parameters.
 
     mask_prop = parent.props.get(prefix + "-map-mask")
     if not mask_prop:
@@ -1755,8 +1755,8 @@ def _mask(prefix, child, parent, child_spec):
 
 
 def _pass_thru(prefix, child, parent, child_spec, parent_spec):
-    # Common code for handling <prefix>-map-thru properties, e.g.
-    # interrupt-pass-thru.
+    # Common code for handling <prefix>-map-pass-thru properties, e.g.
+    # interrupt-map-pass-thru.
     #
     # parent_spec:
     #   The parent data from the matched entry in the <prefix>-map property
