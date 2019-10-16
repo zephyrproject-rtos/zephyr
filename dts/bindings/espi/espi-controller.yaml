@@ -3,8 +3,6 @@
 
 # Common fields for ESPI devices
 
-include: base.yaml
-
 child-bus: espi
 
 properties:

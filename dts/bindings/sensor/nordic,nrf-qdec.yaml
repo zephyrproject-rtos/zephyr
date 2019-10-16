@@ -8,8 +8,6 @@ description: >
 
 compatible: "nordic,nrf-qdec"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

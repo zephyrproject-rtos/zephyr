@@ -1,7 +1,5 @@
 # Common fields for flash controllers
 
-include: base.yaml
-
 properties:
     label:
       required: true

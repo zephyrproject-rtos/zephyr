@@ -5,8 +5,6 @@ description: >
 
 compatible: "arm,cmsdk-dtimer"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

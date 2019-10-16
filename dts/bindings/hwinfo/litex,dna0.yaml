@@ -6,8 +6,6 @@ description: LiteX DNA ID reader
 
 compatible: "litex,dna0"
 
-include: base.yaml
-
 properties:
     reg:
         required: true

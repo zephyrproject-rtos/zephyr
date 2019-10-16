@@ -8,8 +8,6 @@ description: >
 
 compatible: "nordic,nrf-temp"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

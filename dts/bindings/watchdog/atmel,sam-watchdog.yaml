@@ -8,8 +8,6 @@ description: >
 
 compatible: "atmel,sam-watchdog"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

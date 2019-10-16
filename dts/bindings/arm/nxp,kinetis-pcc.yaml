@@ -8,7 +8,7 @@ description: >
 
 compatible: "nxp,kinetis-pcc"
 
-include: [clock-controller.yaml, base.yaml]
+include: clock-controller.yaml
 
 properties:
     reg:

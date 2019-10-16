@@ -5,7 +5,7 @@ description: >
 
 compatible: "arm,cmsdk-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: gpio-controller.yaml
 
 properties:
     reg:

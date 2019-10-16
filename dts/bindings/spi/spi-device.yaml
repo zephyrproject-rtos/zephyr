@@ -3,8 +3,6 @@
 
 # Common fields for SPI devices
 
-include: base.yaml
-
 parent-bus: spi
 
 properties:

@@ -9,8 +9,6 @@ description: >
 
 compatible: "atmel,sam0-tc32"
 
-include: base.yaml
-
 properties:
   reg:
     required: true

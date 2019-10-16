@@ -8,7 +8,7 @@ description: >
 
 compatible: "nxp,imx-ccm"
 
-include: [clock-controller.yaml, base.yaml]
+include: clock-controller.yaml
 
 properties:
     reg:

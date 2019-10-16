@@ -5,7 +5,7 @@ description: >
 
 compatible: "st,stm32-rcc"
 
-include: [clock-controller.yaml, base.yaml]
+include: clock-controller.yaml
 
 properties:
     reg:

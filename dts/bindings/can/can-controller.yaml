@@ -1,7 +1,5 @@
 # Common fields for CAN controllers
 
-include: base.yaml
-
 child-bus: can
 
 properties:

@@ -4,8 +4,6 @@ description: Holtek HT16K33 Keyscan binding
 
 compatible: "holtek,ht16k33-keyscan"
 
-include: base.yaml
-
 parent-bus: ht16k33
 
 properties:

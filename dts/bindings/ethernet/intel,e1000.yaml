@@ -8,8 +8,6 @@ description: >
 
 compatible: "intel,e1000"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

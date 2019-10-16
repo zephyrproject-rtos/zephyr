@@ -8,7 +8,7 @@ description: >
 
 compatible: "openisa,rv32m1-pcc"
 
-include: [clock-controller.yaml, base.yaml]
+include: clock-controller.yaml
 
 properties:
     reg:

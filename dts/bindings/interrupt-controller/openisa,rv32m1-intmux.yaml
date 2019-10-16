@@ -8,8 +8,6 @@ description: >
 
 compatible: "openisa,rv32m1-intmux"
 
-include: base.yaml
-
 properties:
   reg:
       required: true

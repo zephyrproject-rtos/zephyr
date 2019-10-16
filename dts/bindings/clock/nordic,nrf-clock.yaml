@@ -8,8 +8,6 @@ description: >
 
 compatible: "nordic,nrf-clock"
 
-include: base.yaml
-
 properties:
     label:
       required: true

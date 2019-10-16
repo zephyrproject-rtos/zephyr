@@ -3,8 +3,6 @@
 
 # Common fields for Ethernet devices
 
-include: base.yaml
-
 properties:
     local-mac-address:
       type: uint8-array

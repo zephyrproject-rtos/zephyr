@@ -8,7 +8,7 @@ description: >
 
 compatible: "nordic,nrf-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: gpio-controller.yaml
 
 properties:
     reg:

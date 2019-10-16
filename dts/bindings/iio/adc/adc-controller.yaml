@@ -3,8 +3,6 @@
 
 # Common fields for ADC controllers
 
-include: base.yaml
-
 properties:
     label:
       required: true

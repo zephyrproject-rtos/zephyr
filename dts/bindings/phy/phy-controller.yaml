@@ -3,8 +3,6 @@
 
 # Common fields for PHY providers
 
-include: base.yaml
-
 properties:
     "#phy-cells":
         type: int

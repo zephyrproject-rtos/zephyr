@@ -7,8 +7,6 @@ description: >
 
 compatible: "ti,cc2650-prcm"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

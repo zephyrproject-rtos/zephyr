@@ -3,7 +3,7 @@
 
 # Common fields for the RISC-V platform-local interrupt controller
 
-include: [interrupt-controller.yaml, base.yaml]
+include: interrupt-controller.yaml
 
 properties:
   reg:

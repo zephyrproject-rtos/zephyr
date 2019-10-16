@@ -5,8 +5,6 @@ description: >
 
 compatible: "arm,armv7m-mpu"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

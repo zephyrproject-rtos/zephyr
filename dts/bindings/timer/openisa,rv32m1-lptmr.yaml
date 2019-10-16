@@ -5,8 +5,6 @@ description: >
 
 compatible: "openisa,rv32m1-lptmr"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

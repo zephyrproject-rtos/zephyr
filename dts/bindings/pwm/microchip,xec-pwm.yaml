@@ -1,15 +1,12 @@
-#
 # Copyright (c) 2019, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Microchip XEC PWM
 
 description: >
     This binding gives a base representation of the Microchip XEC PWM
 
-include: [pwm-controller.yaml, base.yaml]
+include: pwm-controller.yaml
 
 compatible: "microchip,xec-pwm"
 
@@ -19,5 +16,3 @@ properties:
 
     label:
       required: true
-
-...

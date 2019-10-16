@@ -8,4 +8,4 @@ description: >
 
 compatible: "arduino-header-r3"
 
-include: [gpio-nexus.yaml, base.yaml]
+include: gpio-nexus.yaml

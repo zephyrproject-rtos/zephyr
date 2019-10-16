@@ -10,7 +10,7 @@ description: >
 
 compatible: "snps,archs-idu-intc"
 
-include: [interrupt-controller.yaml, base.yaml]
+include: interrupt-controller.yaml
 
 interrupt-cells:
   - irq

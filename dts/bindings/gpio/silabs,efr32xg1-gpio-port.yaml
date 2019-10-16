@@ -5,7 +5,7 @@ description: >
 
 compatible: "silabs,efr32xg1-gpio-port"
 
-include: [gpio-controller.yaml, base.yaml]
+include: gpio-controller.yaml
 
 properties:
     reg:

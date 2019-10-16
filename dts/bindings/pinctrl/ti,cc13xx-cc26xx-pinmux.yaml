@@ -8,8 +8,6 @@ description: >
 
 compatible: "ti,cc13xx-cc26xx-pinmux"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

@@ -6,8 +6,6 @@ description: >
 
 compatible: "st,stm32-ccm"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

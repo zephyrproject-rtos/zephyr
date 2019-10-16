@@ -8,5 +8,3 @@ description: >
     LED backlight and capacitive touch panel.
 
 compatible: "rocktech,rk043fn02h-ct"
-
-include: base.yaml

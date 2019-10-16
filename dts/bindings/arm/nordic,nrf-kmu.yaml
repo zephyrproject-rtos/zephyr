@@ -8,8 +8,6 @@ description: >
 
 compatible: "nordic,nrf-kmu"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

@@ -3,8 +3,6 @@
 
 # Common fields for CAN devices
 
-include: base.yaml
-
 parent-bus: can
 
 properties:

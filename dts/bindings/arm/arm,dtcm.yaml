@@ -6,8 +6,6 @@ description: >
 
 compatible: "arm,dtcm"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

@@ -3,8 +3,6 @@
 
 # Common fields for SPI controllers
 
-include: base.yaml
-
 child-bus: spi
 
 properties:

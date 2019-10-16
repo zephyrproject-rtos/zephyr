@@ -6,8 +6,6 @@ description: >
 
 compatible: "intel,s1000-pinmux"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

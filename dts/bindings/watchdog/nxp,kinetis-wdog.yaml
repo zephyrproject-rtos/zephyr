@@ -8,8 +8,6 @@ description: >
 
 compatible: "nxp,kinetis-wdog"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

@@ -5,8 +5,6 @@ description: >
 
 compatible: "atmel,sam0-watchdog"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

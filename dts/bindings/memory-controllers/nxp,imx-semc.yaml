@@ -9,8 +9,6 @@ description: >
 
 compatible: "nxp,imx-semc"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

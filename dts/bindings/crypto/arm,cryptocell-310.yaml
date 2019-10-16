@@ -8,8 +8,6 @@ description: >
 
 compatible: "arm,cryptocell-310"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

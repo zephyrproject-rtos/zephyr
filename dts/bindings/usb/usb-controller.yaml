@@ -3,8 +3,6 @@
 
 # Common fields for USB controllers
 
-include: base.yaml
-
 properties:
     maximum-speed:
       type: string

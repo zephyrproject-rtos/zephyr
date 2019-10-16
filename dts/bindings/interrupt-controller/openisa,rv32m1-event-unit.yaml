@@ -9,7 +9,7 @@ description: >
 
 compatible: "openisa,rv32m1-event-unit"
 
-include: [interrupt-controller.yaml, base.yaml]
+include: interrupt-controller.yaml
 
 properties:
   reg:

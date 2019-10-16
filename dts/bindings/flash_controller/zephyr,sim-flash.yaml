@@ -7,8 +7,6 @@ description: >
 
 compatible: "zephyr,sim-flash"
 
-include: base.yaml
-
 properties:
     label:
       required: true

@@ -5,8 +5,6 @@ description: >
 
 compatible: "nordic,nrf-spu"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

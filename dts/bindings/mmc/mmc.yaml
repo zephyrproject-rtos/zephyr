@@ -2,5 +2,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Specifies the MMC/SDHC module
-
-include: base.yaml

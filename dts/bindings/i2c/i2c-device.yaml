@@ -3,8 +3,6 @@
 
 # Common fields for I2C devices
 
-include: base.yaml
-
 parent-bus: i2c
 
 properties:

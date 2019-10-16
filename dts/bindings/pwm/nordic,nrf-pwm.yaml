@@ -5,7 +5,7 @@ description: >
 
 compatible: "nordic,nrf-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: pwm-controller.yaml
 
 properties:
     reg:

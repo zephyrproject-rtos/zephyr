@@ -6,7 +6,7 @@ description: ESP32 GPIO controller
 
 compatible: "espressif,esp32-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: gpio-controller.yaml
 
 properties:
     reg:

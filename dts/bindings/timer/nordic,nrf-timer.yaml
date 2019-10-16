@@ -8,8 +8,6 @@ description: >
 
 compatible: "nordic,nrf-timer"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

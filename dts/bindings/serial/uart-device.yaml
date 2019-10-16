@@ -3,8 +3,6 @@
 
 # Common fields for UART devices
 
-include: base.yaml
-
 parent-bus: uart
 
 properties:

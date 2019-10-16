@@ -5,8 +5,6 @@ description: >
 
 compatible: "st,stm32-pinmux"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

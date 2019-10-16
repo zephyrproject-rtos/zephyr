@@ -5,8 +5,6 @@ description: >
 
 compatible: "atmel,sam0-eic"
 
-include: base.yaml
-
 properties:
   reg:
     required: true

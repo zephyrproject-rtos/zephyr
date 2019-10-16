@@ -30,4 +30,3 @@ properties:
       type: boolean
       description: Enable fixed top value
       required: false
-

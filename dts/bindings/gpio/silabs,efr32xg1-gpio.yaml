@@ -5,8 +5,6 @@ description: >
 
 compatible: "silabs,efr32xg1-gpio"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

@@ -6,8 +6,6 @@ description: >
 
 compatible: "ti,cc2650-pinmux"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

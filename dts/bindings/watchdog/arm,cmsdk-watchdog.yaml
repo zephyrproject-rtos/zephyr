@@ -5,8 +5,6 @@ description: >
 
 compatible: "arm,cmsdk-watchdog"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

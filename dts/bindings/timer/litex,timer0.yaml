@@ -8,8 +8,6 @@ description: >
 
 compatible: "litex,timer0"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

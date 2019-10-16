@@ -8,7 +8,7 @@ description: >
 
 compatible: "snps,arcv2-intc"
 
-include: [interrupt-controller.yaml, base.yaml]
+include: interrupt-controller.yaml
 
 properties:
     "#interrupt-cells":

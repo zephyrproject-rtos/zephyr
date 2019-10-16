@@ -6,7 +6,7 @@ description: >
 
 compatible: "ti,stellaris-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: gpio-controller.yaml
 
 properties:
     reg:

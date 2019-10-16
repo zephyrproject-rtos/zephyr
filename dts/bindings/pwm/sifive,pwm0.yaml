@@ -8,7 +8,7 @@ description: >
 
 compatible: "sifive,pwm0"
 
-include: [pwm-controller.yaml, base.yaml]
+include: pwm-controller.yaml
 
 properties:
     clock-frequency:

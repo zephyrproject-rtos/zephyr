@@ -9,8 +9,6 @@ description: >
 
 compatible: "nordic,nrf-dppic"
 
-include: base.yaml
-
 properties:
     reg:
       required: true

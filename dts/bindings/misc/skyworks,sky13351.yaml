@@ -9,8 +9,6 @@ description: >
 
 compatible: "skyworks,sky13351"
 
-include: base.yaml
-
 properties:
     vctl1-gpios:
         type: phandle-array

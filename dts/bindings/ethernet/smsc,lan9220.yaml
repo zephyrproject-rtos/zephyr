@@ -9,8 +9,6 @@ description: >
 
 compatible: "smsc,lan9220"
 
-include: base.yaml
-
 properties:
     reg:
       required: true
