@@ -164,10 +164,10 @@ static void fault_show(const z_arch_esf_t *esf, int fault)
 #endif /* FAULT_DUMP == 1 */
 
 #ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_arch_user_string_nlen);
+Z_EXC_DECLARE(z_arm_user_string_nlen);
 
 static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_arch_user_string_nlen)
+	Z_EXC_HANDLE(z_arm_user_string_nlen)
 };
 #endif
 
