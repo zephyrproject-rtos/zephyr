@@ -2285,11 +2285,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_LISTEN:
-		if (net_context_get_state(context) != NET_CONTEXT_LISTENING) {
-			NET_DBG("Context %p is not listening", context);
-			return NET_DROP;
-		}
-
 		net_context_set_iface(context, net_pkt_iface(pkt));
 		break;
 	case NET_TCP_SYN_RCVD:
@@ -2476,14 +2471,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 					0,
 					context->user_data);
 		net_pkt_unref(pkt);
-
-		/* Set the context in CONNECTED state, so that it can not
-		 * accept any new connections. If application is ready to
-		 * accept the connection, zsock_accept_ctx() will set
-		 * the state back to LISTENING.
-		 */
-		net_context_set_state(context, NET_CONTEXT_CONNECTED);
-
 		return NET_OK;
 	}
 
