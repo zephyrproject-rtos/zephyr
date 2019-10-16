@@ -29,46 +29,12 @@ struct gpio_mcux_data {
 	u32_t pin_callback_enables;
 };
 
-static u32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
-		u32_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
-{
-	port_interrupt_t port_interrupt = 0;
-
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		port_interrupt = kPORT_InterruptOrDMADisabled;
-	} else {
-		if (mode == GPIO_INT_MODE_LEVEL) {
-			if (trig == GPIO_INT_TRIG_LOW) {
-				port_interrupt = kPORT_InterruptLogicZero;
-			} else {
-				port_interrupt = kPORT_InterruptLogicOne;
-			}
-		} else {
-			switch (trig) {
-			case GPIO_INT_TRIG_LOW:
-				port_interrupt = kPORT_InterruptFallingEdge;
-				break;
-			case GPIO_INT_TRIG_HIGH:
-				port_interrupt = kPORT_InterruptRisingEdge;
-				break;
-			case GPIO_INT_TRIG_BOTH:
-				port_interrupt = kPORT_InterruptEitherEdge;
-				break;
-			}
-		}
-	}
-
-	return PORT_PCR_IRQC(port_interrupt);
-}
-
 static int gpio_mcux_configure(struct device *dev,
 			       int access_op, u32_t pin, int flags)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
-	struct gpio_mcux_data *data = dev->driver_data;
 	u32_t mask = 0U;
 	u32_t pcr = 0U;
 	u8_t i;
@@ -78,22 +44,11 @@ static int gpio_mcux_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Check for an invalid pin configuration */
-	if ((flags & GPIO_INT_ENABLE) && ((flags & GPIO_INPUT) == 0)) {
-		return -EINVAL;
-	}
-
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
-		return -ENOTSUP;
-	}
-
-	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT_ENABLE) &&
-	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
 		return -ENOTSUP;
 	}
 
@@ -144,27 +99,15 @@ static int gpio_mcux_configure(struct device *dev,
 		pcr |= PORT_PCR_PE_MASK;
 	}
 
-	/* Still in the PORT module. Figure out the interrupt configuration,
-	 * but don't write it to the PCR register yet.
-	 */
-	mask |= PORT_PCR_IRQC_MASK;
-
 	/* Now we can write the PORT PCR register(s). If accessing by pin, we
 	 * only need to write one PCR register. Otherwise, write all the PCR
 	 * registers in the PORT module (one for each pin).
 	 */
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
-		WRITE_BIT(data->pin_callback_enables, pin,
-			  flags & GPIO_INT_ENABLE);
 	} else {  /* GPIO_ACCESS_BY_PORT */
 		for (i = 0U; i < ARRAY_SIZE(port_base->PCR); i++) {
 			port_base->PCR[i] = (port_base->PCR[pin] & ~mask) | pcr;
-		}
-		if (flags & GPIO_INT_ENABLE) {
-			data->pin_callback_enables = 0xFFFFFFFF;
-		} else {
-			data->pin_callback_enables = 0x0;
 		}
 	}
 
@@ -267,16 +210,56 @@ static int gpio_mcux_port_toggle_bits(struct device *dev, u32_t mask)
 	return 0;
 }
 
+static u32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
+		u32_t pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	port_interrupt_t port_interrupt = 0;
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		port_interrupt = kPORT_InterruptOrDMADisabled;
+	} else {
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			if (trig == GPIO_INT_TRIG_LOW) {
+				port_interrupt = kPORT_InterruptLogicZero;
+			} else {
+				port_interrupt = kPORT_InterruptLogicOne;
+			}
+		} else {
+			switch (trig) {
+			case GPIO_INT_TRIG_LOW:
+				port_interrupt = kPORT_InterruptFallingEdge;
+				break;
+			case GPIO_INT_TRIG_HIGH:
+				port_interrupt = kPORT_InterruptRisingEdge;
+				break;
+			case GPIO_INT_TRIG_BOTH:
+				port_interrupt = kPORT_InterruptEitherEdge;
+				break;
+			}
+		}
+	}
+
+	return PORT_PCR_IRQC(port_interrupt);
+}
+
 static int gpio_mcux_pin_interrupt_configure(struct device *dev,
 		unsigned int pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
 	struct gpio_mcux_data *data = dev->driver_data;
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
+		return -EINVAL;
+	}
+
+	/* Check for an invalid pin configuration */
+	if ((mode != GPIO_INT_MODE_DISABLED) &&
+	    ((gpio_base->PDDR & BIT(pin)) != 0)) {
 		return -EINVAL;
 	}
 
