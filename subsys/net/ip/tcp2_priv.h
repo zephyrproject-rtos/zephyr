@@ -9,14 +9,6 @@
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 #define is_timer_subscribed(_t) (k_timer_remaining_get(_t))
 
-#define tcp_assert(cond, fmt, args...) do {			\
-	if ((cond) == false) {					\
-		printk("%s: Assertion failed: %s, " fmt "\n",	\
-			__func__, #cond, ## args);		\
-		k_oops();					\
-	}							\
-} while (0)
-
 #define th_seq(_x) ntohl((_x)->th_seq)
 #define th_ack(_x) ntohl((_x)->th_ack)
 #define ip_get(_x) ((struct net_ipv4_hdr *) net_pkt_ip_data((_x)))
@@ -64,13 +56,13 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 
 	pkt->family = AF_INET;
 
-	tcp_assert(pkt, "");
+	NET_ASSERT(pkt);
 
 	if (len) {
 		struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 		net_buf_add(buf, len);
 		net_pkt_frag_insert(pkt, buf);
-		tcp_assert(buf, "");
+		NET_ASSERT(buf);
 	}
 
 	return pkt;

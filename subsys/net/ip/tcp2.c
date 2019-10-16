@@ -361,7 +361,8 @@ static void tcp_send_process(struct k_timer *timer)
 
 static void tcp_send_timer_cancel(struct tcp *conn)
 {
-	tcp_assert(conn->in_retransmission == true, "Not in retransmission");
+	NET_ASSERT_INFO(conn->in_retransmission == true,
+			"Not in retransmission");
 
 	k_timer_stop(&conn->send_timer);
 
@@ -407,7 +408,7 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 	_(TCP_CLOSED);
 	}
 #undef _
-	tcp_assert(s, "Invalid TCP state: %u", state);
+	NET_ASSERT_INFO(s, "Invalid TCP state: %u", state);
 out:
 	return prefix ? s : (s + 4);
 }
@@ -418,7 +419,7 @@ static void tcp_win_append(struct tcp_win *w, const char *name,
 	struct net_buf *buf = tcp_nbuf_alloc(&tcp_nbufs, len);
 	size_t prev_len = w->len;
 
-	tcp_assert(len, "Zero length data");
+	NET_ASSERT_INFO(len, "Zero length data");
 
 	memcpy(net_buf_add(buf, len), data, len);
 
@@ -445,7 +446,7 @@ static struct net_buf *tcp_win_peek(struct tcp_win *w, const char *name,
 		len -= buf->len;
 	}
 
-	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
+	NET_ASSERT_INFO(len == 0, "Unfulfilled request, len: %zu", len);
 
 	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
 
@@ -1064,7 +1065,7 @@ next_state:
 	case TCP_FIN_WAIT1:
 	case TCP_FIN_WAIT2:
 	default:
-		tcp_assert(false, "%s is unimplemented",
+		NET_ASSERT_INFO(false, "%s is unimplemented",
 				tcp_state_to_str(conn->state, true));
 	}
 
@@ -1364,9 +1365,9 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
 {
 	struct net_buf *buf, *out = NULL;
 
-	tcp_assert(len, "Invalid request, len: %zu", len);
+	NET_ASSERT_INFO(len, "Invalid request, len: %zu", len);
 
-	tcp_assert(len <= w->len, "Insufficient window length, "
+	NET_ASSERT_INFO(len <= w->len, "Insufficient window length, "
 			"len: %zu, req: %zu", w->len, len);
 	while (len) {
 
@@ -1379,7 +1380,7 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
 		len -= buf->len;
 	}
 
-	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
+	NET_ASSERT_INFO(len == 0, "Unfulfilled request, len: %zu", len);
 
 	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
 
@@ -1392,7 +1393,7 @@ static ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
 	ssize_t bytes_received = conn->rcv->len;
 	struct net_buf *data = tcp_win_pop(conn->rcv, "RCV", bytes_received);
 
-	tcp_assert(bytes_received <= len, "Unimplemented");
+	NET_ASSERT_INFO(bytes_received <= len, "Unimplemented");
 
 	net_buf_linearize(buf, len, data, 0, net_buf_frags_len(data));
 
@@ -1570,7 +1571,7 @@ bool tp_input(struct net_pkt *pkt)
 		tcp_step();
 		break;
 	default:
-		tcp_assert(false, "Unimplemented tp command: %s", tp->msg);
+		NET_ASSERT_INFO(false, "Unimplemented tp command: %s", tp->msg);
 	}
 
 	if (json_len) {
