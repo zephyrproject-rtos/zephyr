@@ -79,8 +79,6 @@ config ARMV7_SYS_STACK_SIZE
 	help
 	  This option specifies the size of the stack used by the system mode.
 
-if CPU_CORTEX_R
-
 config RUNTIME_NMI
 	default y
 
@@ -90,6 +88,13 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
-endif # CPU_CORTEX_R
+config VIC_IRQ_VECTOR
+	bool "Enable VIC port hardware IRQ vector"
+	depends on (CPU_CORTEX_R4 || CPU_CORTEX_R5)
+	help
+	  Enable hardware IRQ vector using the handler address provided by the
+	  the system interrupt controller through VIC port. When this option is
+	  selected, the IRQ vector (offset 0x18) in the CPU exception vector table
+	  is not used.
 
 endif # CPU_CORTEX_R
