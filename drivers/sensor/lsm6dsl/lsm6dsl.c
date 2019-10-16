@@ -793,17 +793,17 @@ static int lsm6dsl_init(struct device *dev)
 	lsm6dsl_i2c_init(dev);
 #endif
 
+	if (lsm6dsl_init_chip(dev) < 0) {
+		LOG_DBG("failed to initialize chip");
+		return -EIO;
+	}
+
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	if (lsm6dsl_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
-
-	if (lsm6dsl_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
-	}
 
 #ifdef CONFIG_LSM6DSL_SENSORHUB
 	if (lsm6dsl_shub_init_external_chip(dev) < 0) {
