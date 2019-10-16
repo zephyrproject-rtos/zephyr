@@ -76,6 +76,14 @@ config ISA_ARM
 	  processor start-up. Much of its functionality was subsumed into T32 with
 	  the introduction of Thumb-2 technology.
 
+config COMPILER_ISA_THUMB2
+	bool "Compile C functions using Thumb-2 instruction set"
+	depends on ISA_THUMB2
+	default y
+	help
+	  This option configures the compiler to compile all C functions using the
+	  Thumb-2 instruction set.
+
 config NUM_IRQS
 	int
 

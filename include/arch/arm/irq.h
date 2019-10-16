@@ -174,7 +174,7 @@ static ALWAYS_INLINE void z_arch_isr_direct_footer(int maybe_swap)
 
 #define Z_ARCH_ISR_DIRECT_DECLARE(name) \
 	static int name##_body(void); \
-	__attribute__((naked)) void name(void) \
+	__attribute__((naked, target("arm"))) void name(void) \
 	{ \
 		z_arm_isr_enter(); \
 		{ \
