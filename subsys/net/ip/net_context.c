@@ -801,6 +801,7 @@ int net_context_listen(struct net_context *context, int backlog)
 	k_mutex_lock(&context->lock, K_FOREVER);
 
 	if (net_tcp_listen(context) >= 0) {
+		context->flags |= NET_CONTEXT_LISTENING_SOCK;
 		k_mutex_unlock(&context->lock);
 		return 0;
 	}

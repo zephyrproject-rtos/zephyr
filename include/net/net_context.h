@@ -58,6 +58,9 @@ enum net_context_state {
 /** Remote address set */
 #define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
 
+/** Is this context listening connections */
+#define NET_CONTEXT_LISTENING_SOCK  BIT(9)
+
 struct net_context;
 
 /**
@@ -384,6 +387,20 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
 	NET_ASSERT(context);
 
 	return ((context->flags & NET_CONTEXT_FAMILY) >> 3);
+}
+
+/**
+ * @brief Is this context a listening one.
+ *
+ * @param context Network context.
+ *
+ * @return True if the context is listening connections, False otherwise.
+ */
+static inline bool net_context_is_listening(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->flags & NET_CONTEXT_LISTENING_SOCK;
 }
 
 /**

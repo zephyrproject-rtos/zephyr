@@ -64,7 +64,7 @@ static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 
 static void zsock_flush_queue(struct net_context *ctx)
 {
-	bool is_listen = net_context_get_state(ctx) == NET_CONTEXT_LISTENING;
+	bool is_listen = net_context_is_listening(ctx);
 	void *p;
 
 	/* recv_q and accept_q are shared via a union */
