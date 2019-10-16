@@ -7,7 +7,7 @@ Overview
 ********
 
 96Boards WisTrio LoRa Tracker board is based on the RAK Wireless RAK5205
-chipset integrating SX1276 LoRaWAN Modem, STM32L151CB MCU and GPS module.
+chipset integrating SX1276 LoRaWAN Modem, STM32L151CB-A MCU and GPS module.
 Zephyr applications use the 96b_wistrio configuration to run on these
 boards.
 
