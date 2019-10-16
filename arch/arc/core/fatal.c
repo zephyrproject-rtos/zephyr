@@ -34,3 +34,12 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 	z_arc_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
 }
+
+FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
+{
+	ARG_UNUSED(reason);
+
+	__asm__("brk");
+
+	CODE_UNREACHABLE;
+}
