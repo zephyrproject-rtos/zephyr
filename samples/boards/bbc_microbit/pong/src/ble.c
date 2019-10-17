@@ -16,6 +16,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/hci.h>
 
 
 #include "pong.h"
