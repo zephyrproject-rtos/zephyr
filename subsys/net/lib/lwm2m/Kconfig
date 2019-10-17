@@ -86,14 +86,6 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
 
-config LWM2M_LOCAL_PORT
-	int "LWM2M client port"
-	default 0
-	help
-	  This is the client port for LWM2M communication.  The default
-	  setting of 0 sets a random port for the client to be used for
-	  outgoing communication.
-
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
 	default y
