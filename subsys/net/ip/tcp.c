@@ -1943,6 +1943,7 @@ NET_CONN_CB(tcp_established)
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp_hdr *tcp_hdr = proto_hdr->tcp;
 	enum net_verdict ret = NET_OK;
+	bool do_not_send_ack = false;
 	u8_t tcp_flags;
 	u16_t data_len;
 
@@ -2051,6 +2052,8 @@ resend_ack:
 			 */
 			k_delayed_work_submit(&context->tcp->ack_timer,
 					      ACK_TIMEOUT);
+
+			net_context_set_closing(context, true);
 		} else if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_2) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
@@ -2062,7 +2065,14 @@ resend_ack:
 		context->tcp->fin_rcvd = 1U;
 	}
 
-	data_len = net_pkt_remaining_data(pkt);
+	if (!IS_ENABLED(CONFIG_NET_TCP_AUTO_ACCEPT) &&
+	    net_context_is_accepting(context)) {
+		data_len = 0;
+		do_not_send_ack = true;
+	} else {
+		data_len = net_pkt_remaining_data(pkt);
+	}
+
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
 		/* In case we have zero window, we should still accept
 		 * Zero Window Probes from peer, which per convention
@@ -2095,13 +2105,15 @@ resend_ack:
 		net_pkt_unref(pkt);
 	}
 
-	/* Increment the ack */
-	context->tcp->send_ack += data_len;
-	if (tcp_flags & NET_TCP_FIN) {
-		context->tcp->send_ack += 1U;
-	}
+	if (do_not_send_ack == false) {
+		/* Increment the ack */
+		context->tcp->send_ack += data_len;
+		if (tcp_flags & NET_TCP_FIN) {
+			context->tcp->send_ack += 1U;
+		}
 
-	send_ack(context, &conn->remote_addr, false);
+		send_ack(context, &conn->remote_addr, false);
+	}
 
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
@@ -2451,6 +2463,12 @@ NET_CONN_CB(tcp_syn_rcvd)
 		 * check the state transitions. So set the state directly.
 		 */
 		new_context->tcp->state = NET_TCP_ESTABLISHED;
+
+		/* Mark the new context to be still accepting so that we
+		 * can do proper cleanup if connection is closed before
+		 * we have called accept()
+		 */
+		net_context_set_accepting(new_context, true);
 
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
 
