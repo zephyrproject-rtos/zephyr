@@ -96,7 +96,7 @@ manifest:
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 6966f6140cb870b792330a5186020eb1f4151f3e
+      revision: 0fc68fceacd1efc1ce809c5880c380f3d98b7b6e
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
