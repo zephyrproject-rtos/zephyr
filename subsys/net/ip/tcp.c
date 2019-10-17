@@ -1165,7 +1165,8 @@ static void validate_state_transition(enum net_tcp_state current,
 			 */
 			1 << NET_TCP_ESTABLISHED,
 		[NET_TCP_LISTEN] = 1 << NET_TCP_SYN_RCVD |
-			1 << NET_TCP_SYN_SENT,
+			1 << NET_TCP_SYN_SENT |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_SYN_RCVD] = 1 << NET_TCP_FIN_WAIT_1 |
 			1 << NET_TCP_ESTABLISHED |
 			1 << NET_TCP_LISTEN |
