@@ -327,6 +327,7 @@ static void start_ble_rf(void)
 		LL_RCC_ReleaseBackupDomainReset();
 	}
 
+#ifdef CONFIG_CLOCK_STM32_LSE
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
@@ -338,6 +339,16 @@ static void start_ble_rf(void)
 
 	/* Switch OFF LSI */
 	LL_RCC_LSI1_Disable();
+#else
+	LL_RCC_LSI2_Enable();
+	while (!LL_RCC_LSI2_IsReady()) {
+	}
+
+	/* Select wakeup source of BLE RF */
+	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSI);
+	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
+#endif
+
 	/* Set RNG on HSI48 */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
