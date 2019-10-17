@@ -9,6 +9,8 @@
 #include <device.h>
 #include <init.h>
 
+#include <arch/arm/cortex_r/cmsis.h>
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -31,9 +33,7 @@ SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 void z_platform_init(void)
 {
-	__asm__ volatile(
-		"mrc p15, 0, r0, c1, c0, 0;"		/* SCTLR */
-		"bic r0, r0, #" TOSTR(HIVECS) ";"	/* Vector table at 0 */
-		"mcr p15, 0, r0, c1, c0, 0;"
-		: : : "memory");
+	unsigned int sctlr = __get_SCTLR();
+	sctlr &= ~SCTLR_V_Msk;
+	__set_SCTLR(sctlr);
 }
