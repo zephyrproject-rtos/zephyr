@@ -9,3 +9,4 @@ sample:
 tests:
   sample.net.sockets.http_client:
     harness: net
+    min_flash: 128

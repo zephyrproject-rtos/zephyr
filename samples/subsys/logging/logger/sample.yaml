@@ -29,5 +29,6 @@ tests:
     tags: logging usermode
     filter: CONFIG_ARCH_HAS_USERSPACE
     harness: keyboard
+    min_flash: 64
     extra_configs:
       - CONFIG_USERSPACE=y

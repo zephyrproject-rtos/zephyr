@@ -6,3 +6,4 @@ tests:
     filter: CONFIG_CPU_HAS_MPU
     tags: mpu
     harness: keyboard
+    min_flash: 64
