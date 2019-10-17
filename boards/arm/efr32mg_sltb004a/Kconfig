@@ -8,8 +8,6 @@ if BOARD_EFR32MG_SLTB004A
 
 config BOARD_INIT_PRIORITY
 	int
-
-	# omit prompt to signify a "hidden" option
 	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
 	  Board initialization priority. This must be bigger than

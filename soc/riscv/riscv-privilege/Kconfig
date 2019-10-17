@@ -8,7 +8,6 @@
 
 config SOC_FAMILY_RISCV_PRIVILEGE
 	bool
-	# omit prompt to signify a "hidden" option
 
 config SOC_FAMILY
 	string

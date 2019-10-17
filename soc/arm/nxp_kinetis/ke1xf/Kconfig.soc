@@ -82,7 +82,6 @@ config SOC_PART_NUMBER_KINETIS_KE1XF
 
 config WDOG_INIT
 	def_bool y
-	# omit prompt to signify a "hidden" option
 	help
 	  This processor enables the watchdog timer with a short
 	  window for configuration upon reset. Therefore, this
