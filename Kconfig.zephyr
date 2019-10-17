@@ -354,6 +354,12 @@ config APPLICATION_DEFINED_SYSCALL
 	  Scan additional folders inside application source folder
 	  for application defined syscalls.
 
+config MAKEFILE_EXPORTS
+	bool "Generate build metadata files named Makefile.exports"
+	help
+	  Generates a file with build information that can be read by
+	  third party Makefile-based build systems.
+
 endmenu
 endmenu
 
