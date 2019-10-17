@@ -11,11 +11,7 @@
 
 #include "cfb_font_dice.h"
 
-#if defined(CONFIG_SSD16XX)
-#define DISPLAY_DRIVER "SSD16XX"
-#else
-#error Unsupported board
-#endif
+#define DISPLAY_DRIVER CONFIG_CHARACTER_FRAMEBUFFER_DISPLAY_DEV_NAME
 
 struct device *display;
 

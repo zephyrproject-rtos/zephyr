@@ -9,17 +9,7 @@
 #include <display/cfb.h>
 #include <stdio.h>
 
-#if defined(CONFIG_SSD16XX)
-#define DISPLAY_DRIVER		"SSD16XX"
-#endif
-
-#if defined(CONFIG_SSD1306)
-#define DISPLAY_DRIVER		"SSD1306"
-#endif
-
-#ifndef DISPLAY_DRIVER
-#define DISPLAY_DRIVER		"DISPLAY"
-#endif
+#define DISPLAY_DRIVER	CONFIG_CHARACTER_FRAMEBUFFER_DISPLAY_DEV_NAME
 
 void main(void)
 {
@@ -28,6 +18,7 @@ void main(void)
 	u8_t ppt;
 	u8_t font_width;
 	u8_t font_height;
+	struct display_capabilities cap;
 
 	dev = device_get_binding(DISPLAY_DRIVER);
 
@@ -36,9 +27,12 @@ void main(void)
 		return;
 	}
 
-	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
-		printf("Failed to set required pixel format\n");
-		return;
+	display_get_capabilities(dev, &cap);
+	if (cap.supported_pixel_formats & PIXEL_FORMAT_MONO10) {
+		if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
+			printf("Failed to set required pixel format\n");
+			return;
+		}
 	}
 
 	printf("initialized %s\n", DISPLAY_DRIVER);

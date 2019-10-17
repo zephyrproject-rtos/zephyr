@@ -7,3 +7,6 @@ sample:
 tests:
   sample.display.cfb_custom_font.ssd16xx:
     platform_whitelist: reel_board
+  sample.display.cfb_custom_font.elcdif:
+    platform_whitelist: mimxrt1050_evk
+

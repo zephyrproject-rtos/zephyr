@@ -11,3 +11,5 @@ tests:
     tags: shield
   sample.display.cfb.ssd16xx:
     platform_whitelist: reel_board
+  sample.display.cfb.elcdif:
+    platform_whitelist: mimxrt1050_evk
