@@ -606,7 +606,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 			p->md = 1;
 		}
 
-		if (link->next) {
+		if (link->next != lll->memq_tx.tail) {
 			p->md = 1;
 		}
 	}
