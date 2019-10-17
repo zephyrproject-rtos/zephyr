@@ -98,9 +98,9 @@
 #define BME280_FILTER                   (4 << 2)
 #endif
 
-#if defined CONFIG_BME280_FORCED_MODE_OFF
+#ifndef CONFIG_BME280_FORCED_MODE
 #define BME280_MODE                     BME280_MODE_NORMAL
-#elif defined CONFIG_BME280_FORCED_MODE_ON
+#else
 /*
  * During configuration stage and prior to actual reading the sensor
  * can be placed into sleep mode.

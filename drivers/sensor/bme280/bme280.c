@@ -174,7 +174,7 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 		size = 8;
 	}
 
-#if defined CONFIG_BME280_FORCED_MODE_ON
+#ifdef CONFIG_BME280_FORCED_MODE
 
 	/*
 	 * According to datasheet, mode bits (in force mode) must be set
