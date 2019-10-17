@@ -22,7 +22,7 @@ config SOC_MK22F51212
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_CMSIS
+	select HAS_CMSIS_CORE
 	select CPU_HAS_FPU
 
 endchoice

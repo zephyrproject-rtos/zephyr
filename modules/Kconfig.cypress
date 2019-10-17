@@ -6,4 +6,4 @@
 
 config HAS_CYPRESS_DRIVERS
 	bool
-	select HAS_CMSIS
+	select HAS_CMSIS_CORE
