@@ -268,8 +268,10 @@ static inline int lis2dh_burst_read(struct device *dev, u8_t start_addr,
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(DT_ST_LIS2DH_BUS_I2C)
-	return i2c_burst_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
-			      start_addr | LIS2DH_AUTOINCREMENT_ADDR,
+	u8_t addr = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
+
+	return i2c_write_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
+			      &addr, sizeof(addr),
 			      buf, num_bytes);
 #else
 	return -ENODEV;
@@ -303,6 +305,23 @@ static inline int lis2dh_burst_write(struct device *dev, u8_t start_addr,
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(DT_ST_LIS2DH_BUS_I2C)
+	/* NRF TWIM is default and does not support burst write.  We
+	 * can't detect whether the I2C master uses TWI or TWIM, so
+	 * use a substitute implementation unconditionally on Nordic.
+	 *
+	 * See Zephyr issue #20154.
+	 */
+	if (IS_ENABLED(CONFIG_I2C_NRFX)) {
+		u8_t buffer[8];
+
+		/* Largest num_bytes used is 6 */
+		__ASSERT((1U + num_bytes) <= sizeof(buffer),
+			 "burst buffer too small");
+		buffer[0] = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
+		memmove(buffer + 1, buf, num_bytes);
+		return i2c_write(lis2dh->bus, buffer, 1 + num_bytes,
+				 LIS2DH_BUS_ADDRESS);
+	}
 	return i2c_burst_write(lis2dh->bus, LIS2DH_BUS_ADDRESS,
 			       start_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			       buf, num_bytes);
