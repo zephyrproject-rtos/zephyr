@@ -16,8 +16,7 @@ This IAT response is encoded in **CBOR** ([RFC7049][TTD1]), wrapped and
 signed using **CBOR Object Signing and Encryption (COSE)** ([RFC8152][TTD1]),
 with a tagged `COSE_Sign1` structure (CBOR tag `18`).
 
-The current TF-M implementation supports **ECDSA P256** signatures and
-**SHA256** hashes.
+The current TF-M implementation supports **ECDSA P256** with **SHA256** hashes.
 
 [TTD1]:https://tools.ietf.org/html/rfc7049
 [TTD2]:https://tools.ietf.org/html/rfc8152
@@ -233,3 +232,43 @@ provided during the IAT request (newlines added for clarity):
 00112233445566778899AABBCCDDEEFF
 00112233445566778899AABBCCDDEEFF
 ```
+
+## Sample Attestation Token Usage
+
+### Unidirectional Data Attestation
+
+In situations where data is being sent unidirectionally or asynchronously, it
+may not be possible to assign a unique nonce/challenge value from a remote
+server.
+
+This would apply with an intermediary MQTT broker, for example, where a TF-M
+based sensor node pushes data to the MQTT broker, and a remote data aggregation
+server asynchronously connects to the MQTT broker to retrieve the data at a
+later date, but where data still needs to validated for provenance, etc.
+
+In this situation, to 'attest' to the authenticity of the data sent to the MQTT
+broker, we could repurpose the 32/48/64-byte challenge field to contain the
+sensor data, along with a unique timestamp or some other unique field, and the
+entire attestation packet (including the sensor data) will then be signed with
+the private key on the TF-M device, and the signature verified by the
+aggregating server via the public key(s) it has on record.
+
+The follow sequence diagram illustrates how this might work:
+
+![][fig2]
+
+[fig2]:img/iat_async_data.png
+
+#### Tradeoffs
+
+An important tradeoff of this approach is that instead of sending relatively
+small packets of sensor data, an entire attestation token needs to be sent
+per sample, which is close to 500 bytes in length. Sensor payloads are also
+limited to 32/48/64 bytes in length.
+
+If bandwidth is an issue, an alternative approach may be to use attestation for
+a public key associated with the sensor data, and the remote server can retreive
+the public key in one attested operation, and decrypt future sensor data samples
+using the attested public key. This approach potentially allows for key updates,
+as well as distinct keys per sensor type if relevant, and allows for lower
+per-sample bandwidth requirements.
