@@ -1,3 +1,4 @@
 tests:
   kernel.common.timing:
     tags: kernel
+    min_flash: 64

@@ -3,3 +3,4 @@ tests:
     filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
     tags: arm userspace
     arch_whitelist: arm
+    min_flash: 64

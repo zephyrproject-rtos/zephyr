@@ -3,6 +3,7 @@ tests:
     arch_exclude: posix
     platform_exclude: qemu_x86_coverage qemu_x86_64
     tags: cpp
+    min_flash: 72
   misc.app_dev.libcxx.exceptions:
     arch_exclude: posix
     platform_exclude: qemu_x86_coverage qemu_x86_64 96b_meerkat96

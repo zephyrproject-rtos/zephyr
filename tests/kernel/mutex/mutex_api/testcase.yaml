@@ -1,3 +1,4 @@
 tests:
   kernel.mutex:
     tags: kernel userspace
+    min_flash: 64

@@ -3,6 +3,7 @@ tests:
     arch_whitelist: arm
     filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: arm
+    min_flash: 64
   arch.arm.swap.common.no_optimizations:
     arch_whitelist: arm
     filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE

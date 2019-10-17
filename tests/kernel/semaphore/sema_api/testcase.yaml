@@ -1,3 +1,4 @@
 tests:
   kernel.semaphore:
     tags: kernel userspace
+    min_flash: 48

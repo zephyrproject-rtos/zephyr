@@ -1,3 +1,4 @@
 tests:
   kernel.message_queue:
     tags: kernel userspace
+    min_flash: 72

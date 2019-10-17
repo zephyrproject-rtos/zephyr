@@ -1,3 +1,4 @@
 tests:
   kernel.threads:
     tags: kernel threads userspace
+    min_flash: 64

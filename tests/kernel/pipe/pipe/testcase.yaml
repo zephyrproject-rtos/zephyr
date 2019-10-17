@@ -1,3 +1,4 @@
 tests:
   kernel.pipe:
       tags: kernel userspace ignore_faults
+      min_flash: 72

@@ -1,3 +1,4 @@
 tests:
   kernel.stack:
     tags: kernel userspace
+    min_flash: 64

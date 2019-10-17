@@ -4,6 +4,7 @@ tests:
     platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     tags: kernel ignore_faults userspace
+    min_flash: 48
   kernel.common.stack_protection_no_userspace:
     extra_args: CONF_FILE=protection_no_userspace.conf
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION

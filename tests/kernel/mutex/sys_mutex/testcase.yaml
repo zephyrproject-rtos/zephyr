@@ -3,6 +3,7 @@ tests:
     min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
+    min_flash: 64
   sys.mutex.nouser:
     tags: kernel
     extra_configs:

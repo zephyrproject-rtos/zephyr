@@ -4,3 +4,4 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
     tags: kernel security userspace ignore_faults
+    min_flash: 72

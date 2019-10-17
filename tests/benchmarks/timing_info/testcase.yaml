@@ -11,6 +11,7 @@ tests:
     extra_args: CONF_FILE=prj_userspace.conf
     arch_whitelist: x86 arm arc
     tags: benchmark userspace
+    min_flash: 64
     harness: console
     harness_config:
       record:
