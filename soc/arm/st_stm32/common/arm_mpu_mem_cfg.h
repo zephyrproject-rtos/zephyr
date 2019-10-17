@@ -10,7 +10,6 @@
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 /* Flash Region Definitions */
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 #if CONFIG_FLASH_SIZE == 64
 #define REGION_FLASH_SIZE REGION_64K
 #elif CONFIG_FLASH_SIZE == 128
@@ -26,18 +25,15 @@
 #elif CONFIG_FLASH_SIZE == 2048
 #define REGION_FLASH_SIZE REGION_2M
 #else
-#error "Unsupported configuration"
-#endif
-#else /* CONFIG_SOC_SERIES_STM32WBX */
 /* For STM32WBX SoCs, last 212K are resevred for M0 fw */
 /* and should not be covered by zephyr MPU. */
 /* So map only the first 512K, which is beyond partition 'image-0' */
-#if CONFIG_FLASH_SIZE == 812
+#if defined(CONFIG_SOC_SERIES_STM32WBX) && (CONFIG_FLASH_SIZE == 812)
 #define REGION_FLASH_SIZE REGION_1M
 #else
 #error "Unsupported configuration"
-#endif
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
+#endif
 
 /* SRAM Region Definitions */
 #if CONFIG_SRAM_SIZE == 12
