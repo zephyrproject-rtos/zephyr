@@ -19,8 +19,7 @@
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
 
-#define DISPLAY_DRIVER	CONFIG_CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
-
+#define DISPLAY_DRIVER  CONFIG_CHARACTER_FRAMEBUFFER_DISPLAY_DEV_NAME
 
 static struct device *dev;
 static const char * const param_name[] = {
