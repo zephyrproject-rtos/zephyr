@@ -13,6 +13,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/hci.h>
 
 #include <sys/byteorder.h>
 #include <net/buf.h>
