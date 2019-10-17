@@ -13,6 +13,7 @@
 #include <display/mb_display.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
