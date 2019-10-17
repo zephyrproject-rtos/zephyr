@@ -164,14 +164,14 @@ typedef void (*vth)(void); /* Vector Table Handler */
 void rtc1_nrf_isr(void);
 void nrf_power_clock_isr(void);
 #if defined(CONFIG_SOC_SERIES_NRF52X)
-vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	nrf_power_clock_isr,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
 #elif defined(CONFIG_SOC_SERIES_NRF91X)
-vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -185,12 +185,12 @@ vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
  * the custom vector table to handle the timer "tick" interrupts.
  */
 extern void rtc_isr(void);
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS + 2] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0,
 	rtc_isr
 };
 #else
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
 };
 #endif /* CONFIG_SOC_SERIES_NRF52X || CONFIG_SOC_SERIES_NRF91X */
