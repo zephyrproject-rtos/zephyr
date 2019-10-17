@@ -45,6 +45,7 @@ enum cfb_font_caps {
 	CFB_FONT_MONO_VPACKED		= BIT(0),
 	CFB_FONT_MONO_HPACKED		= BIT(1),
 	CFB_FONT_MSB_FIRST		= BIT(2),
+	CFB_FONT_MONO_BFLIPED		= BIT(3),
 };
 
 struct cfb_font {
