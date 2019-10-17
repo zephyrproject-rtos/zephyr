@@ -113,7 +113,6 @@ config KW2XD_FLASH_CLOCK_DIVIDER
 
 config WDOG_INIT
 	def_bool y
-	# omit prompt to signify a "hidden" option
 	help
 	  This processor enables the watchdog timer with a short timeout
 	  upon reset. Therefore, this requires that the watchdog be configured

@@ -8,13 +8,11 @@
 
 config CPU_CORTEX
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option signifies the use of a CPU of the Cortex family.
 
 config CPU_CORTEX_M
 	bool
-	# Omit prompt to signify "hidden" option
 	select CPU_CORTEX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select HAS_CMSIS

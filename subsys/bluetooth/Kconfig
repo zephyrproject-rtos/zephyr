@@ -89,7 +89,6 @@ endmenu
 source "subsys/bluetooth/services/Kconfig"
 
 config BT_CONN
-	# Virtual/hidden option
 	bool
 
 config BT_MAX_CONN

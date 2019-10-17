@@ -15,7 +15,6 @@
 config CPU_CORTEX_M0
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0 CPU
@@ -23,7 +22,6 @@ config CPU_CORTEX_M0
 config CPU_CORTEX_M0PLUS
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0+ CPU
@@ -31,7 +29,6 @@ config CPU_CORTEX_M0PLUS
 config CPU_CORTEX_M3
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of a Cortex-M3 CPU
@@ -39,7 +36,6 @@ config CPU_CORTEX_M3
 config CPU_CORTEX_M4
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
@@ -48,7 +44,6 @@ config CPU_CORTEX_M4
 config CPU_CORTEX_M23
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV8_M_BASELINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	help
@@ -57,7 +52,6 @@ config CPU_CORTEX_M23
 config CPU_CORTEX_M33
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV8_M_MAINLINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
@@ -67,7 +61,6 @@ config CPU_CORTEX_M33
 config CPU_CORTEX_M7
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
@@ -77,13 +70,11 @@ if CPU_CORTEX_M
 
 config CPU_CORTEX_M_HAS_SYSTICK
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the CPU has the BASEPRI register.
@@ -97,7 +88,6 @@ config CPU_CORTEX_M_HAS_BASEPRI
 
 config CPU_CORTEX_M_HAS_VTOR
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on !CPU_CORTEX_M0
 	help
 	  This option signifies the CPU has the VTOR register.
@@ -110,7 +100,6 @@ config CPU_CORTEX_M_HAS_VTOR
 
 config CPU_CORTEX_M_HAS_SPLIM
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
 	help
 	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
@@ -127,7 +116,6 @@ config CPU_CORTEX_M_HAS_SPLIM
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the CPU may trigger system faults
@@ -136,7 +124,6 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 
 config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
@@ -149,7 +136,6 @@ config CPU_CORTEX_M_HAS_CMSE
 
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
@@ -167,7 +153,6 @@ config ARMV6_M_ARMV8_M_BASELINE
 
 config ARMV8_M_BASELINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	select CPU_CORTEX_M_HAS_CMSE
 	help
@@ -179,7 +164,6 @@ config ARMV8_M_BASELINE
 
 config ARMV7_M_ARMV8_M_MAINLINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	select CPU_CORTEX_M_HAS_BASEPRI
@@ -203,7 +187,6 @@ config ARMV7_M_ARMV8_M_MAINLINE
 
 config ARMV8_M_MAINLINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM
 	select CPU_CORTEX_M_HAS_CMSE
@@ -216,7 +199,6 @@ config ARMV8_M_MAINLINE
 
 config ARMV8_M_SE
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM if !ARM_NONSECURE_FIRMWARE
 	help
@@ -226,7 +208,6 @@ config ARMV8_M_SE
 
 config ARMV7_M_ARMV8_M_FP
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
 	help
 	  This option signifies the use of an ARMv7-M processor
@@ -235,7 +216,6 @@ config ARMV7_M_ARMV8_M_FP
 
 config ARMV8_M_DSP
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of an ARMv8-M processor
