@@ -1159,7 +1159,11 @@ static void validate_state_transition(enum net_tcp_state current,
 {
 	static const u16_t valid_transitions[] = {
 		[NET_TCP_CLOSED] = 1 << NET_TCP_LISTEN |
-			1 << NET_TCP_SYN_SENT,
+			1 << NET_TCP_SYN_SENT |
+			/* Initial transition from closed->established when
+			 * socket is accepted.
+			 */
+			1 << NET_TCP_ESTABLISHED,
 		[NET_TCP_LISTEN] = 1 << NET_TCP_SYN_RCVD |
 			1 << NET_TCP_SYN_SENT,
 		[NET_TCP_SYN_RCVD] = 1 << NET_TCP_FIN_WAIT_1 |
@@ -2459,10 +2463,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		net_tcp_change_state(tcp, NET_TCP_LISTEN);
 
-		/* We cannot use net_tcp_change_state() here as that will
-		 * check the state transitions. So set the state directly.
-		 */
-		new_context->tcp->state = NET_TCP_ESTABLISHED;
+		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
 
 		/* Mark the new context to be still accepting so that we
 		 * can do proper cleanup if connection is closed before
