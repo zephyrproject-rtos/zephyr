@@ -130,48 +130,13 @@
 	ch2-inverted;
 };
 
-&flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+/* Include flash partition table.
+ * Two partition tables are available:
+ * fstab-stock		-compatible with Nordic nRF5 bootloader, default
+ * fstab-debugger	-to use an external debugger, w/o the nRF5 bootloader
+ */
+#include "fstab-stock.dts"
 
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
-		};
-		slot0_partition: partition@c000 {
-			label = "image-0";
-			reg = <0x0000C000 0x00067000>;
-		};
-		slot1_partition: partition@73000 {
-			label = "image-1";
-			reg = <0x00073000 0x00067000>;
-		};
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
-		};
-
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
-
-		/*
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@f8000 {
-			label = "storage";
-			reg = <0x000f8000 0x00008000>;
-		};
-	};
-};
 
 &usbd {
 	compatible = "nordic,nrf-usbd";
