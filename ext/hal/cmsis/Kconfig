@@ -1,8 +1,13 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-config HAS_CMSIS
+config HAS_CMSIS_CORE
 	bool
+	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
+
+if HAS_CMSIS_CORE
+
+config HAS_CMSIS_CORE_M
+	bool
+
+endif
