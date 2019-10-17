@@ -338,7 +338,7 @@ static void start_ble_rf(void)
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
 	/* Switch OFF LSI */
-	LL_RCC_LSI1_Disable();
+	LL_RCC_LSI2_Disable();
 #else
 	LL_RCC_LSI2_Enable();
 	while (!LL_RCC_LSI2_IsReady()) {
