@@ -31,7 +31,4 @@
 
 #define FPEXC_EN	(1 << 30)
 
-#define __ISB()	__asm__ volatile ("isb sy" : : : "memory")
-#define __DMB()	__asm__ volatile ("dmb sy" : : : "memory")
-
 #endif
