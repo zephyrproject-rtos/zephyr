@@ -801,6 +801,12 @@ void test_cancelled_alarm_does_not_expire(void)
 
 void test_main(void)
 {
+	/* Give required clocks some time to stabilize. In particular, nRF SoCs
+	 * need such delay for the Xtal LF clock source to start and for this
+	 * test to use the correct timing.
+	 */
+	k_busy_wait(USEC_PER_MSEC * 300);
+
 	ztest_test_suite(test_counter,
 		ztest_unit_test(test_set_top_value_with_alarm),
 		ztest_unit_test(test_single_shot_alarm_notop),
