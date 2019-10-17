@@ -10,11 +10,24 @@ menuconfig CHARACTER_FRAMEBUFFER
 
 if CHARACTER_FRAMEBUFFER
 
+
+choice  CHARACTER_FRAMEBUFFER_FONTS
+	prompt "Fonts in use"
+	default CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS
+	help
+	  Font that used in framebuffer
+
 config CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS
-	bool "Use default fonts"
-	default y
+	bool "Use tiled fonts"
 	help
 	  Use default fonts.
+
+config CHARACTER_FRAMEBUFFER_USE_8X8_FONTS
+	bool "Use horizontal tilted 8x8 fonts"
+	help
+	  Use 8x8 fonts.
+
+endchoice
 
 config CHARACTER_FRAMEBUFFER_SHELL
 	bool "Character Framebuffer shell"
@@ -23,8 +36,8 @@ config CHARACTER_FRAMEBUFFER_SHELL
 	  Activate shell module that provides Framebuffer commands to the
 	  console.
 
-config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
-	string
+config CHARACTER_FRAMEBUFFER_DISPLAY_DEV_NAME
+	string "Character Framebuffer Display Driver Name"
 	default "SSD16XX" if SSD16XX
 	default "SSD1306" if SSD1306
 	depends on CHARACTER_FRAMEBUFFER_SHELL
