@@ -196,6 +196,9 @@ mxcsr:	.long X86_MXCSR_SANE
 z_x86_switch:
 	movq (%rsi), %rsi
 
+	test %rsi, %rsi
+	jz __switch_stack
+
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
 	popq %rax
@@ -208,6 +211,7 @@ z_x86_switch:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
+__switch_stack:
 	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
 	/* fall through to __resume */
