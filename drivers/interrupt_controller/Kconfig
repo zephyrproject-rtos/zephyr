@@ -55,12 +55,6 @@ config IOAPIC
 	  This option signifies that the target has an IO-APIC device. This
 	  capability allows IO-APIC-dependent code to be included.
 
-config IOAPIC_DEBUG
-	bool "IO-APIC Debugging"
-	depends on IOAPIC
-	help
-	  Enable debugging for IO-APIC driver.
-
 config IOAPIC_NUM_RTES
 	int "Number of Redirection Table Entries available"
 	default 24
