@@ -46,6 +46,13 @@ config I2C_XEC
 
 endif # I2C
 
+if ESPI
+
+config ESPI_XEC
+	default y
+
+endif #ESPI
+
 if COUNTER
 
 config COUNTER_XEC
