@@ -7,18 +7,18 @@ config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
 	depends on SOC_FAMILY_MEC
 	help
-	  Enable the Microchip XEC ESPI driver
+	  Enable the Microchip XEC ESPI driver.
 
 if ESPI_XEC
 
 config ESPI_PERIPHERAL_HOST_IO
-	def_bool y
+	default  y
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
-	def_bool y
+	default y
 
 config ESPI_PERIPHERAL_UART
-	def_bool y
+	default y
 
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
@@ -26,6 +26,6 @@ config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	depends on ESPI_PERIPHERAL_UART
 	help
 	  This tells the driver to which SoC UART to direct the UART traffic
-	  send over eSPI from host
+	  send over eSPI from host.
 
-endif # ESPI_XEC
+endif #ESPI_XEC
