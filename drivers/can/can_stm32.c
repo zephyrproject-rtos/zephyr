@@ -140,6 +140,23 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 }
 
+static void can_stm32_isr_err(CAN_TypeDef *can, struct can_stm32_data *data)
+{
+	ARG_UNUSED(data);
+
+	/* check if error management interrupts are turned on */
+	if ((can->IER & CAN_IER_ERRIE) == CAN_IER_ERRIE) {
+
+		if ((can->ESR & CAN_ESR_LEC) != 0U) {
+			/* error code, clear last error code (LEC) */
+			can->ESR |= CAN_ESR_LEC;
+		}
+
+		/* clear error interrupt */
+		can->MSR |= CAN_MSR_ERRI;
+	}
+}
+
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 
 static void can_stm32_isr(void *arg)
@@ -154,9 +171,10 @@ static void can_stm32_isr(void *arg)
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
 
-	can_stm32_tx_isr_handler(can, data);
 	can_stm32_rx_isr_handler(can, data);
+	can_stm32_tx_isr_handler(can, data);
 
+	can_stm32_isr_err(can, data);
 }
 
 #else
@@ -174,6 +192,7 @@ static void can_stm32_rx_isr(void *arg)
 	can = cfg->can;
 
 	can_stm32_rx_isr_handler(can, data);
+	can_stm32_isr_err(can, data);
 }
 
 static void can_stm32_tx_isr(void *arg)
@@ -189,6 +208,7 @@ static void can_stm32_tx_isr(void *arg)
 	can = cfg->can;
 
 	can_stm32_tx_isr_handler(can, data);
+	can_stm32_isr_err(can, data);
 }
 
 #endif
@@ -925,7 +945,7 @@ static void config_can_1_irq(CAN_TypeDef *can)
 	irq_enable(DT_CAN_1_IRQ_SCE);
 #endif
 	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
-		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
+		    CAN_IER_FMPIE1 | CAN_IER_BOFIE | CAN_IER_EWGIE | CAN_IER_EPVIE;
 }
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
