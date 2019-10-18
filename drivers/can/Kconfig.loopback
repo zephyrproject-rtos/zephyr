@@ -27,11 +27,4 @@ config CAN_MAX_FILTER
 	  Defines the array size of the filters.
 	  Must be at least the size of concurrent reads.
 
-config CAN_LOOPBACK_FRAME_BUF_SIZE
-	int "Frame buffer count"
-	range 1 65534
-	default 4
-	help
-	  Defines the number of frames that can be buffered for each filter.
-
 endif # CAN_LOOPBACK
