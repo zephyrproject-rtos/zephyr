@@ -189,12 +189,16 @@ mxcsr:	.long X86_MXCSR_SANE
  * 'struct k_thread', thus:
  *
  * RDI = (struct k_thread *) switch_to
- * RSI = (struct k_thread **) switched_from
+ * RSI = (struct k_thread **) address of output thread switch_handle field
  */
 
 .globl z_x86_switch
 z_x86_switch:
-	movq (%rsi), %rsi
+	/* RSI contains the switch_handle field to which we are
+	 * notionally supposed to store.  Offset it to get back to the
+	 * thread handle instead.
+	 */
+	subq $___thread_t_switch_handle_OFFSET, %rsi
 
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
