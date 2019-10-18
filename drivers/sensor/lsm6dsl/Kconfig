@@ -65,10 +65,6 @@ config LSM6DSL_SENSORHUB
 
 if LSM6DSL_SENSORHUB
 
-config LSM6DSL_ENABLE_INTERNAL_PULLUP
-	bool "Enabled internals pull-up resistors"
-	default y
-
 choice LSM6DSL_EXTERNAL_SENSOR_0
 	prompt "External sensor 0"
 	help
