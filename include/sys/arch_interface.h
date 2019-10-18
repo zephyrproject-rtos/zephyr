@@ -79,14 +79,28 @@ void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
 /**
  * Cooperatively context switch
  *
- * The semantics of the two switch handles are entirely up to the architecture
- * implementation, and are stored per thread in k_thread->switch_handle.
- * The outgoing thread's switch handle pointer may be updated during this
- * process.
+ * Architectures have considerable leeway on what the specific semantics of
+ * the switch handles are, but optimal implementations should do the following
+ * if possible:
+ *
+ * 1) Push all thread state relevant to the context switch to the current stack
+ * 2) Update the switched_from parameter to contain the current stack pointer,
+ *    after all context has been saved. switched_from is used as an output-
+ *    only parameter and its current value is ignored (and can be NULL, see
+ *    below).
+ * 3) Set the stack pointer to the value provided in switch_to
+ * 4) Pop off all thread state from the stack we switched to and return.
+ *
+ * Some arches may implement thread->switch handle as a pointer to the thread
+ * itself, and save context somewhere in thread->arch. In this case, on initial
+ * context switch from the dummy thread, thread->switch handle for the outgoing
+ * thread is NULL. Instead of dereferencing switched_from all the way to get
+ * the thread pointer, subtract ___thread_t_switch_handle_OFFSET to obtain the
+ * thread pointer instead.
  *
  * @param switch_to Incoming thread's switch handle
- * @param switched_from Pointer to outgoing thread's switch handle, which
- *		may be updated.
+ * @param switched_from Pointer to outgoing thread's switch handle storage
+ *        location, which may be updated.
  */
 static inline void z_arch_switch(void *switch_to, void **switched_from);
 #else
