@@ -236,7 +236,9 @@ zephyr_compile_options(
 
 # @Intent: Enforce standard integer type correspondance to match Zephyr usage.
 # (must be after compiler specific flags)
+if(CONFIG_ZEPHYR_STDINT)
 toolchain_cc_imacros(${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h)
+endif()
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(

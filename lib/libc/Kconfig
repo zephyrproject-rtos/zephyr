@@ -83,4 +83,12 @@ config MINIMAL_LIBC_LL_PRINTF
 	  Build with long long printf enabled. This will increase the size of
 	  the image.
 
+config ZEPHYR_STDINT
+	bool "Enforce standard integer types to match Zephyr usage"
+	default y
+	help
+	  This option enforces standard integer types such as uint32_t, int16_t
+	  to match Zephyr usage. When disabled default definitions provided by
+	  the compiler are used.
+
 endmenu
