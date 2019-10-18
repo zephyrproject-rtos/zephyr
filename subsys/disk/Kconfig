@@ -11,12 +11,6 @@ menuconfig DISK_ACCESS
 
 if DISK_ACCESS
 
-config DISK_ACCESS_MAX_VOLUMES
-	int "Maximum Disk Interfaces"
-	default 8
-	help
-	  Maximum number of disk access interfaces supported
-
 module = DISK
 module-str = disk
 source "subsys/logging/Kconfig.template.log_config"
