@@ -109,7 +109,11 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	movl %eax, %cr4
 	clts
 
-	movl $pml4, %eax		/* load page base */
+#ifdef CONFIG_X86_MMU
+	movl __x86_cpuboot_t_ptables_OFFSET(%ebp), %eax
+#else
+	movl $z_x86_flat_ptables, %eax
+#endif
 	movl %eax, %cr3
 
 	movl $X86_EFER_MSR, %ecx	/* enable long mode and no-execute */
@@ -548,7 +552,8 @@ idt48:
 
 .align 4096
 
-pml4:
+.globl z_x86_flat_ptables
+z_x86_flat_ptables:
 	.long pdp + 0x03		/* 0x03 = R/W, P */
 	.long 0
 	.fill 4088, 1, 0

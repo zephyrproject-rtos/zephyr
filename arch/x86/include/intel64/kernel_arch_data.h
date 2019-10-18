@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_
 
+#include <arch/x86/mmustructs.h>
+
 /*
  * Some SSE definitions. Ideally these will ultimately be shared with 32-bit.
  */
@@ -89,6 +91,9 @@ struct x86_cpuboot {
 	u64_t sp;		/* initial stack pointer */
 	void *fn;		/* kernel entry function */
 	void *arg;		/* argument for above function */
+#ifdef CONFIG_X86_MMU
+	struct x86_page_tables *ptables; /* Runtime page tables to install */
+#endif /* CONFIG_X86_MMU */
 };
 
 typedef struct x86_cpuboot x86_cpuboot_t;
