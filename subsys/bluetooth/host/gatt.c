@@ -1496,6 +1496,20 @@ struct notify_data {
 	};
 };
 
+static int gatt_send_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, void *user_data)
+{
+	int err;
+
+	err = bt_att_send(conn, buf, cb, user_data);
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
+
+	return 0;
+}
+
 static int gatt_notify(struct bt_conn *conn, u16_t handle,
 		       struct bt_gatt_notify_params *params)
 {
@@ -1528,7 +1542,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(nfy->value, params->data, params->len);
 
-	return bt_att_send(conn, buf, params->func, params->user_data);
+	return gatt_send_cb(conn, buf, params->func, params->user_data);
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, u8_t err,
@@ -3237,7 +3251,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	return bt_att_send(conn, buf, func, user_data);
+	return gatt_send_cb(conn, buf, func, user_data);
 }
 
 static int gatt_exec_write(struct bt_conn *conn,
