@@ -16,6 +16,7 @@ supported:
   - usb_cdc
   - ble
   - ieee802154
+  - pwm
   - arduino_i2c
   - arduino_spi
   - arduino_gpio
