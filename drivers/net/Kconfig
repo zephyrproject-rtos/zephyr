@@ -26,15 +26,6 @@ config NET_PPP_UART_PIPE_BUF_LEN
 	  This options sets the size of the UART pipe buffer where data
 	  is being read to.
 
-config NET_PPP_MTU
-	int "PPP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the PPP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's.
-
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"
 	default y
