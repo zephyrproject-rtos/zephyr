@@ -69,16 +69,6 @@ config	SLIP_DRV_NAME
 	help
 	  This option sets the driver name
 
-config	SLIP_MTU
-	int "SLIP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the SLIP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's. The actual SLIP connection
-	  does not use this value.
-
 module = SLIP
 module-dep = LOG
 module-str = Log level for slip driver
