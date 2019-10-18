@@ -35,18 +35,4 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  size (65536).  Other options include the 32K-byte erase size
 	  (32768), and the sector size (4096).
 
-config SPI_NOR_PAGE_SIZE
-	int "Page size of SPI flash"
-	default 0
-	help
-	  Note: This option is deprecated and is ignored.  Page size is
-	  always 256.
-
-config SPI_NOR_SECTOR_SIZE
-	int "Sector size of SPI flash"
-	default 0
-	help
-	  Note: This option is deprecated and is ignored.  Sector size
-	  is always 4096.
-
 endif # SPI_NOR
