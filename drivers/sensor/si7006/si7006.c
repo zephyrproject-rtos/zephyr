@@ -62,7 +62,7 @@ static int si7006_get_temperature(struct device *i2c_dev,
 	int retval;
 
 	retval = i2c_burst_read(i2c_dev, DT_INST_0_SILABS_SI7006_BASE_ADDRESS,
-		SI7006_MEAS_TEMP_MASTER_MODE, temp, sizeof(temp));
+		SI7006_READ_OLD_TEMP, temp, sizeof(temp));
 
 	if (retval == 0) {
 		si_data->temperature = (temp[0] << 8) | temp[1];
@@ -83,9 +83,9 @@ static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int retval;
 	struct si7006_data *si_data = dev->driver_data;
 
-	retval = si7006_get_temperature(si_data->i2c_dev, si_data);
+	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
 	if (retval == 0) {
-		retval = si7006_get_humidity(si_data->i2c_dev, si_data);
+		retval = si7006_get_temperature(si_data->i2c_dev, si_data);
 	}
 
 	return retval;
@@ -104,7 +104,7 @@ static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
 		s32_t temp_ucelcius = ((17572 * (s32_t)si_data->temperature)
-				       / 65536) * 10000;
+				       / 65536 - 4685) * 10000;
 
 		val->val1 = temp_ucelcius / 1000000;
 		val->val2 = temp_ucelcius % 1000000;
