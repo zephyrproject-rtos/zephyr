@@ -273,13 +273,6 @@ config NATIVE_STDIN_POLL_PERIOD
 	help
 	  In ms, polling period for stdin
 
-config NATIVE_STDIN_PRIO
-	int "Priority of the stdin polling thread"
-	depends on NATIVE_POSIX_STDIN_CONSOLE
-	default 4
-	help
-	  Priority of the native stdin polling thread
-
 config NATIVE_POSIX_STDOUT_CONSOLE
 	bool "Print to the host terminal stdout"
 	depends on NATIVE_POSIX_CONSOLE
