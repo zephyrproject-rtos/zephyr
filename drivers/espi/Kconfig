@@ -74,12 +74,6 @@ config ESPI_PERIPHERAL_HOST_IO
 	help
 	  Enables ACPI Host I/O over eSPI peripheral channel
 
-config ESPI_PERIPHERAL_PORT_92
-	bool "Legacy Port 92 peripheral"
-	default n
-	help
-	  Enables legacy Port 92 over eSPI peripheral channel
-
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	bool "Debug Port 80 peripheral"
 	default n
