@@ -105,8 +105,8 @@ static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
-		s32_t temp_ucelcius = ((17572 * (s32_t)si_data->temperature)
-				       / 65536) * 10000;
+		s32_t temp_ucelcius = (((17572 * (s32_t)si_data->temperature)
+					/ 65536) - 4685) * 10000;
 
 		val->val1 = temp_ucelcius / 1000000;
 		val->val2 = temp_ucelcius % 1000000;
