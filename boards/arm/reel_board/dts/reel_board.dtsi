@@ -8,21 +8,24 @@
 / {
 	leds {
 		compatible = "gpio-leds";
-		yellow_led: led_0 {
-			gpios = <&gpio0 13 0>;
-			label = "User D13";
-		};
-		red_led: led_1 {
+		red_led: led_0 {
 			gpios = <&gpio0 11 0>;
 			label = "User D3 red";
 		};
-		green_led: led_2 {
+		green_led: led_1 {
 			gpios = <&gpio0 12 0>;
 			label = "User D3 green";
 		};
-		blue_led: led_3 {
+		blue_led: led_2 {
 			gpios = <&gpio1 9 0>;
 			label = "User D3 blue";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 13>;
 		};
 	};
 
@@ -64,10 +67,10 @@
 	};
 
 	aliases {
-		led0 = &yellow_led;
-		led1 = &red_led;
-		led2 = &green_led;
-		led3 = &blue_led;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &pwm_led0;
 		sw0 = &user_button;
 	};
 };
@@ -127,6 +130,12 @@ arduino_i2c: &i2c0 {
 		label = "APDS9960";
 		int-gpios = <&gpio0 23 0>;
 	};
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <13>;
+	ch0-inverted;
 };
 
 arduino_spi: &spi1 {
