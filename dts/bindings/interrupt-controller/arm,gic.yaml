@@ -18,6 +18,7 @@ properties:
       required: true
 
 interrupt-cells:
+  - type
   - irq
-  - priority
   - flags
+  - priority
