@@ -12,6 +12,13 @@
 #define ROMABLE_REGION RAM
 #define RAMABLE_REGION RAM
 
+#ifdef CONFIG_X86_MMU
+	#define MMU_PAGE_SIZE	KB(4)
+	#define MMU_PAGE_ALIGN	. = ALIGN(MMU_PAGE_SIZE);
+#else
+	#define MMU_PAGE_ALIGN
+#endif
+
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
@@ -27,11 +34,14 @@ SECTIONS
 	_locore_start = .;
 	*(.locore)
 	*(.locore.*)
+	MMU_PAGE_ALIGN
 	_lorodata_start = .;
 	*(.lorodata)
+	MMU_PAGE_ALIGN
 	_lodata_start = .;
 	*(.tss)
 	*(.lodata)
+	MMU_PAGE_ALIGN
 	_lodata_end = .;
 	}
 
@@ -47,16 +57,20 @@ SECTIONS
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(16))
 	{
 	_image_rom_start = .;
+	_image_text_start = .;
 	*(.text)
 	*(.text.*)
+	MMU_PAGE_ALIGN
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	_image_text_end = .;
+	_image_text_size = _image_text_end - _image_text_start;
+	_image_rodata_start = .;
 
 	#include <linker/common-rom.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(16))
 	{
-	_image_rodata_start = .;
-
 	*(.rodata)
 	*(.rodata.*)
 
@@ -70,13 +84,16 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
+	MMU_PAGE_ALIGN
 	_image_rodata_end = .;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
 	_image_rom_end = .;
 
 	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
 	{
+	MMU_PAGE_ALIGN
 	_image_ram_start = .;
+	__kernel_ram_start = .;
 	*(.data)
 	*(.data.*)
 	#include <snippets-rwdata.ld>
@@ -116,6 +133,10 @@ SECTIONS
 	. = ALIGN(8);
 	_image_ram_end = .;
 	_end = .;
+
+	/* All unused memory also owned by the kernel for heaps */
+	__kernel_ram_end = PHYS_RAM_ADDR + KB(DT_RAM_SIZE);
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 #include <linker/debug-sections.ld>
 
