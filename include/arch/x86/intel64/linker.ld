@@ -27,9 +27,17 @@ SECTIONS
 	_locore_start = .;
 	*(.locore)
 	*(.locore.*)
+	_lorodata_start = .;
+	*(.lorodata)
+	_lodata_start = .;
 	*(.tss)
-	_locore_end = .;
+	*(.lodata)
+	_lodata_end = .;
 	}
+
+	_locore_size = _lorodata_start - _locore_start;
+	_lorodata_size = _lodata_start - _lorodata_start;
+	_lodata_size = _lodata_end - _lodata_start;
 
 	/*
 	 * The rest of the system is loaded in "normal" memory (typically
