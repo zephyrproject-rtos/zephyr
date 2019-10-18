@@ -43,14 +43,6 @@ config NET_PPP_VERIFY_FCS
 	  to disable this as it takes some time to verify the received
 	  packet.
 
-config NET_PPP_CALC_FCS
-	bool "Calculate FCS for the sent packet"
-	default y
-	help
-	  If you have a reliable link, then it might make sense
-	  to disable this as it takes some time to calculate the FCS for
-	  the sent packet.
-
 config	PPP_MAC_ADDR
 	string "MAC address for the interface"
 	help
