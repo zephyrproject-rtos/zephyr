@@ -39,12 +39,6 @@ module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
 
-config ADC_INIT_PRIORITY
-	int "Init priority"
-	default 80
-	help
-	  ADC Device driver initialization priority.
-
 config ADC_0
 	bool "Enable ADC 0"
 
