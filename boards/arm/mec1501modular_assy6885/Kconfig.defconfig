@@ -71,12 +71,13 @@ config I2C_XEC_2
 
 endif # I2C
 
-if ESPI
+if ESPI_XEC
 
-config ESPI_XEC
+#PS/2 driver is compiled in terms of this flag.
+config ESPI_PERIPHERAL_8042_KBC
 	default y
 
-endif # ESPI
+endif #ESPI_XEC
 
 if RTOS_TIMER
 
