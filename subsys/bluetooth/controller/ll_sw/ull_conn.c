@@ -963,7 +963,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 						       lll->memq_tx.tail,
 						       NULL)) {
 				lll->latency_event = 0;
-			} else {
+			} else if (lll->slave.latency_enabled) {
 				lll->latency_event = lll->latency;
 			}
 		} else if (reason_peer) {
