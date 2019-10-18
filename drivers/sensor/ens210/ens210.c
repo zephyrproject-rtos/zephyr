@@ -16,8 +16,8 @@
 
 LOG_MODULE_REGISTER(ENS210, CONFIG_SENSOR_LOG_LEVEL);
 
-#ifdef ENS210_CRC_CHECK
-u32_t ens210_crc7(u32_t bitstream)
+#ifdef CONFIG_ENS210_CRC_CHECK
+static u32_t ens210_crc7(u32_t bitstream)
 {
 	u32_t polynomial = (ENS210_CRC7_POLY << (ENS210_CRC7_DATA_WIDTH - 1));
 	u32_t bit = ENS210_CRC7_DATA_MSB << ENS210_CRC7_WIDTH;
@@ -34,7 +34,7 @@ u32_t ens210_crc7(u32_t bitstream)
 
 	return val;
 }
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -42,9 +42,9 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct ens210_value_data data[2];
 	int ret, cnt;
 
-#ifdef ENS210_CRC_CHECK
+#ifdef CONFIG_ENS210_CRC_CHECK
 	u32_t temp_valid, humidity_valid;
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -66,7 +66,7 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 			continue;
 		}
 
-#ifdef ENS210_CRC_CHECK
+#ifdef CONFIG_ENS210_CRC_CHECK
 		temp_valid =      data[0].val |
 				  (data[0].valid << (sizeof(data[0].val) * 8));
 		humidity_valid =  data[1].val |
@@ -81,7 +81,7 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 			LOG_WRN("Humidity CRC error");
 			continue;
 		}
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 		drv_data->temp = data[0];
 		drv_data->humidity = data[1];
