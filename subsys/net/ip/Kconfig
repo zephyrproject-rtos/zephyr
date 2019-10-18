@@ -232,6 +232,18 @@ config NET_TCP_BACKLOG_SIZE
 	  The number of simultaneous TCP connection attempts, i.e. outstanding
 	  TCP connections waiting for initial ACK.
 
+config NET_TCP_AUTO_ACCEPT
+	bool "Auto accept incoming TCP data"
+	default n
+	depends on NET_TCP
+	help
+	  Automatically accept incoming TCP data packet to the valid
+	  connection even if the application has not yet called accept().
+	  This speeds up incoming data processing and is done like in Linux.
+	  Drawback is that we allocate data for the incoming packets even if
+	  the application has not yet accepted the connection. If the peer
+	  sends lot of packets, we might run out of memory in this case.
+
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
 	depends on NET_TCP
