@@ -135,12 +135,11 @@ struct mmu_region {
  */
 
 #define __MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
-	static struct mmu_region region_##id				\
-	__attribute__((__section__(".mmulist"), used))  =		\
+	static const Z_STRUCT_SECTION_ITERABLE(mmu_region, region_##id) =	\
 	{								\
-		.address = addr,					\
-		.size = region_size,					\
-		.flags = permission_flags,				\
+		.address = (uintptr_t)(addr),				\
+		.size = (size_t)(region_size),				\
+		.flags = (permission_flags),				\
 	}
 
 #define Z_MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\

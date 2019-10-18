@@ -568,16 +568,12 @@ static void add_mmu_region(struct x86_page_tables *ptables,
 	}
 }
 
-extern struct mmu_region z_x86_mmulist_start[];
-extern struct mmu_region z_x86_mmulist_end[];
-
 /* Called from x86's z_arch_kernel_init() */
 void z_x86_paging_init(void)
 {
 	size_t pages_free;
 
-	for (struct mmu_region *rgn = z_x86_mmulist_start;
-	     rgn < z_x86_mmulist_end; rgn++) {
+	Z_STRUCT_SECTION_FOREACH(mmu_region, rgn) {
 		add_mmu_region(&z_x86_kernel_ptables, rgn, false);
 #ifdef CONFIG_X86_KPTI
 		add_mmu_region(&z_x86_user_ptables, rgn, true);
