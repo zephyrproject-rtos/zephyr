@@ -29,6 +29,12 @@ static const char *const core_devices[] = {
 	"sys_clock",
 	"UART_0",
 };
+#elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2)
+#define MAX_PM_DEVICES	15
+static const char *const core_devices[] = {
+	"sys_clock",
+	"UART_0",
+};
 #else
 #error "Add SoC's core devices list for PM"
 #endif
