@@ -18,12 +18,6 @@ module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
 
-config ESPI_SLAVE
-	bool "ESPI slave driver"
-	default y
-	help
-	  Enables eSPI driver in slave mode
-
 config ESPI_INIT_PRIORITY
 	int "IRQ Priority for ESPI Controller"
 	default 3
