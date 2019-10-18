@@ -451,6 +451,12 @@ config BT_MESH_SHELL
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
 
+config BT_MESH_MODEL_EXTENSIONS
+	bool "Support for Model extensions"
+	help
+	  Enable support for the model extension concept, allowing the Access
+	  layer to know about Mesh model relationships.
+
 if BT_SETTINGS
 
 config BT_MESH_STORE_TIMEOUT
