@@ -80,6 +80,13 @@ SECTIONS
 	#include <custom-rodata.ld>
 	#endif /* CONFIG_CUSTOM_RODATA_LD */
 
+#ifdef CONFIG_X86_MMU
+	. = ALIGN(8);
+	_mmu_region_list_start = .;
+	KEEP(*("._mmu_region.static.*"))
+	_mmu_region_list_end = .;
+#endif /* CONFIG_X86_MMU */
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
