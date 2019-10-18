@@ -518,14 +518,6 @@ config BT_CTLR_ULL_LOW_PRIO
 	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
 	  lower priority functions.
 
-config BT_CTLR_LOWEST_PRIO
-	int "Link Layer Lowest IRQ priority"
-	range BT_CTLR_ULL_LOW_PRIO 3 if SOC_SERIES_NRF51X
-	range BT_CTLR_ULL_LOW_PRIO 6 if SOC_SERIES_NRF52X
-	default BT_CTLR_ULL_LOW_PRIO
-	help
-	  The interrupt priority for RNG and other non-critical functions.
-
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
 	default y if SOC_SERIES_NRF51X
