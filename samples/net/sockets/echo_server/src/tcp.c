@@ -219,8 +219,7 @@ static int process_tcp(struct data *data)
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("Error in accept (%s): %d - stopping server",
-			data->proto, -errno);
+		LOG_ERR("%s accept error (%d)", data->proto, -errno);
 		return -errno;
 	}
 
@@ -287,9 +286,11 @@ static void process_tcp4(void)
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv4);
 		if (ret < 0) {
-			quit();
+			break;
 		}
 	}
+
+	quit();
 }
 
 static void process_tcp6(void)
@@ -311,9 +312,11 @@ static void process_tcp6(void)
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv6);
 		if (ret != 0) {
-			quit();
+			break;
 		}
 	}
+
+	quit();
 }
 
 void start_tcp(void)
