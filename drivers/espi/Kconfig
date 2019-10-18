@@ -36,12 +36,6 @@ config ESPI_PERIPHERAL_CHANNEL
 	help
 	  eSPI Controller supports peripheral channel
 
-config ESPI_VWIRE_CHANNEL
-	bool "eSPI virtual wire channel"
-	default y
-	help
-	  eSPI Controller supports virtual wires channel
-
 config ESPI_OOB_CHANNEL
 	bool "eSPI Out-of-band channel"
 	default n
