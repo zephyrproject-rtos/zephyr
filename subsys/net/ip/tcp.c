@@ -241,7 +241,9 @@ static void tcp_retry_expired(struct k_work *work)
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			NET_DBG("retry %u: [%p] pkt %p send failed",
 				tcp->retry_timeout_shift, tcp, pkt);
-			net_pkt_unref(pkt);
+			if (net_pkt_sent(pkt)) {
+				net_pkt_unref(pkt);
+			}
 		} else {
 			NET_DBG("retry %u: [%p] sent pkt %p",
 				tcp->retry_timeout_shift, tcp, pkt);
