@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 #include "i2c-priv.h"
 
-#define STM32_I2C_TIMEOUT_USEC  1000
+#define STM32_I2C_TIMEOUT_USEC  CONFIG_I2C_STM32_TIMEOUT_USEC
 #define I2C_REQUEST_WRITE       0x00
 #define I2C_REQUEST_READ        0x01
 #define HEADER                  0xF0
@@ -619,7 +619,7 @@ error:
 	return -EIO;
 }
 
-static int stm32_i2c_wait_timeout(u16_t *timeout)
+static int stm32_i2c_wait_timeout(u32_t *timeout)
 {
 	if (*timeout == 0) {
 		return 1;
@@ -637,7 +637,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 	u32_t len = msg->len;
-	u16_t timeout;
+	u32_t timeout;
 	u8_t *buf = msg->buf;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
@@ -729,7 +729,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 	u32_t len = msg->len;
-	u16_t timeout;
+	u32_t timeout;
 	u8_t *buf = msg->buf;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_READ);

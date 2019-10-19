@@ -47,4 +47,12 @@ config I2C_STM32_COMBINED_INTERRUPT
 	depends on I2C_STM32_INTERRUPT
 	default y if SOC_SERIES_STM32F0X || SOC_SERIES_STM32L0X
 
+config I2C_STM32_TIMEOUT_USEC
+	int "STM32 MCU I2C transaction timeout, in microseconds"
+	depends on I2C_STM32_V1
+	default 1000
+	help
+	  I2C timeout controls how long to wait for an ACK from a slave device.
+	  Upon exceeding the timeout the error is raised by I2C driver.
+
 endif # I2C_STM32
