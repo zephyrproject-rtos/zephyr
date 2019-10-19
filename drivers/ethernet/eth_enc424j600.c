@@ -497,6 +497,7 @@ static void enc424j600_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+	ethernet_init(iface);
 }
 
 static int enc424j600_start_device(struct device *dev)
