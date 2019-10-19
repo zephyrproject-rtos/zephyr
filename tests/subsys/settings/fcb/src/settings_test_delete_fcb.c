@@ -37,8 +37,9 @@ void test_config_delete_fcb(void)
 	zassert_true(rc == 0, "fcb redout error");
 	zassert_true(val8 == 153U, "bad value read");
 
+	test_set_called = 0;
 	settings_delete("myfoo/mybar");
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");
-	zassert_true(val8 == VAL8_DELETED, "bad value read");
+	zassert_true(test_set_called == 0, "callback called with deleted val");
 }
