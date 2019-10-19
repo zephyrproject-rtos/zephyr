@@ -50,18 +50,14 @@ endif # PWM
 
 if SPI
 
+config SPI_1
+	default y
+
 config SPI_3
 	default y
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
-
-if SPI_3
-
-config SPI_3_NRF_RX_DELAY
-	default 1
-
-endif # SPI_3
 
 endif # SPI
 
