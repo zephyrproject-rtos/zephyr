@@ -35,6 +35,10 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "net_stats.h"
 
+#if IS_ENABLED(CONFIG_NET_TCP2)
+#include "tcp2.h"
+#endif
+
 #ifndef EPFNOSUPPORT
 /* Some old versions of newlib haven't got this defined in errno.h,
  * Just use EPROTONOSUPPORT in this case
@@ -1565,6 +1569,14 @@ static int context_sendto(struct net_context *context,
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
+#if IS_ENABLED(CONFIG_NET_TCP2)
+		ret = net_tcp_queue(context, buf, len, msghdr);
+		if (ret < 0) {
+			goto fail;
+		}
+
+		net_pkt_unref(pkt);
+#else
 		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
@@ -1575,6 +1587,7 @@ static int context_sendto(struct net_context *context,
 		if (ret < 0) {
 			goto fail;
 		}
+#endif
 
 		ret = net_tcp_send_data(context, cb, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&

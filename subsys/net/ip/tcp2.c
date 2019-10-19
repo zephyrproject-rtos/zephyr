@@ -869,10 +869,9 @@ next_state:
 	}
 }
 
-static ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags)
+static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
+				int flags)
 {
-	struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
-
 	tcp_win_append(conn->snd, "SND", buf, len);
 
 	tcp_in(conn, NULL);
@@ -930,20 +929,55 @@ int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
 	return -EPROTONOSUPPORT;
 }
 
+int net_tcp_queue(struct net_context *context, const void *buf, size_t len,
+		  const struct msghdr *msghdr)
+{
+	struct tcp *conn = context->tcp;
+	ssize_t ret = 0;
+
+	NET_DBG("conn: %p, buf: %p, len: %zu", conn, buf, len);
+
+	if (conn == NULL) {
+		ret = -ESHUTDOWN;
+		goto out;
+	}
+
+	if (msghdr && msghdr->msg_iovlen > 0) {
+		int i;
+
+		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			ret = _tcp_send(conn, msghdr->msg_iov[i].iov_base,
+					msghdr->msg_iov[i].iov_len, 0);
+
+			if (ret < 0) {
+				break;
+			}
+		}
+	} else {
+		ret = _tcp_send(conn, buf, len, 0);
+	}
+out:
+	NET_DBG("conn: %p, ret: %zd", conn, ret);
+
+	return ret;
+}
+
+/* net context wants to queue data for the TCP connection - not used */
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(pkt);
 
-	return -EPROTONOSUPPORT;
+	return 0;
 }
 
+/* net context is about to send out queued data - inform caller only */
 int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 		      void *user_data)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+	if (cb) {
+		cb(context, 0, user_data);
+	}
 
 	return 0;
 }
@@ -1314,7 +1348,7 @@ bool tp_input(struct net_pkt *pkt)
 			tp_output(pkt->iface, buf, 1);
 			responded = true;
 			NET_DBG("tcp_send(\"%s\")", tp->data);
-			_tcp_send(0, buf, len, 0);
+			_tcp_send(conn, buf, len, 0);
 		}
 		break;
 	case TP_CONFIG_REQUEST:
