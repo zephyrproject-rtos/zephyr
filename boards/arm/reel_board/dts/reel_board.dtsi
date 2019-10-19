@@ -138,8 +138,7 @@ arduino_i2c: &i2c0 {
 	ch0-inverted;
 };
 
-arduino_spi: &spi1 {
-	compatible = "nordic,nrf-spi";
+arduino_spi: &spi3 {
 	status = "okay";
 	sck-pin = <47>;
 	miso-pin = <46>;

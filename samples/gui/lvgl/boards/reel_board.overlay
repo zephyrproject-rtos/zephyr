@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi3 {
+&spi1 {
 	ssd16xxfb@0 {
 		label = "DISPLAY";
 	};
