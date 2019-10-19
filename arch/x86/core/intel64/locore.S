@@ -553,13 +553,13 @@ pml4:
 	.long 0
 	.fill 4088, 1, 0
 
-pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
+pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
 	.long 0
-	.long 0x40000183
+	.long 0x40000083
 	.long 0
-	.long 0x80000183
+	.long 0x80000083
 	.long 0
-	.long 0xC0000183
+	.long 0xC0000083
 	.long 0
 	.fill 4064, 1, 0
 
