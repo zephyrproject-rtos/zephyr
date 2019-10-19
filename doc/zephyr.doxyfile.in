@@ -223,7 +223,9 @@ TAB_SIZE               = 8
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "endrst=\endverbatim"
 
-ALIASES 	       += "req=\xrefitem req \"Requirement\" \"Requirements\" "
+ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
+ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
+ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -746,8 +748,8 @@ INPUT                  = custom-doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
-			 @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
-			 @ZEPHYR_BASE@/tests/kernel/
+                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
+                         @ZEPHYR_BASE@/tests/kernel/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
