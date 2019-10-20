@@ -354,6 +354,11 @@ static int check_input_levels(void)
 	return TC_PASS;
 }
 
+/* Delay after pull input config to allow signal to settle.  The value
+ * selected is conservative (higher than may be necessary).
+ */
+#define PULL_DELAY_US 100U
+
 /* Verify that pull-up and pull-down work for a disconnected input. */
 static int check_pulls(void)
 {
@@ -371,6 +376,7 @@ static int check_pulls(void)
 		      "output disconnect failed");
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_PULL_UP);
+	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
 		return TC_PASS;
@@ -382,6 +388,7 @@ static int check_pulls(void)
 		      "physical pull-up does not read high");
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN);
+	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-down not supported\n");
 		return TC_PASS;
@@ -394,6 +401,7 @@ static int check_pulls(void)
 
 	/* Test that pull is not affected by active level */
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_UP);
+	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
 		return TC_PASS;
@@ -407,6 +415,7 @@ static int check_pulls(void)
 		      "logical pull-up reads true");
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_DOWN);
+	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
 		return TC_PASS;
