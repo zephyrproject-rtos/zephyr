@@ -87,4 +87,6 @@ source "drivers/kscan/Kconfig"
 
 source "drivers/video/Kconfig"
 
+source "drivers/eeprom/Kconfig"
+
 endmenu

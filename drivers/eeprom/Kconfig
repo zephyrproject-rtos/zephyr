@@ -1,0 +1,17 @@
+# EEPROM driver configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EEPROM
+	bool "EEPROM hardware support"
+	help
+	  Enable support for EEPROM hardware.
+
+if EEPROM
+
+module = EEPROM
+module-str = eeprom
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # EEPROM
