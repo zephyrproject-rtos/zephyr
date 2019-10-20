@@ -10,6 +10,8 @@ menu "External Sources"
 
 source "ext/hal/Kconfig"
 
+source "ext/tfm/Kconfig"
+
 source "ext/lib/crypto/Kconfig"
 
 source "ext/lib/fnmatch/Kconfig"

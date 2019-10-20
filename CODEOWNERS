@@ -218,6 +218,7 @@
 /dts/bindings/sensor/st*                  @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/lib/crypto/tinycrypt/                @ceolin
+/ext/tfm/                                 @karl-zh
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/drivers/adc.h                    @anangl
 /include/drivers/can.h                    @alexanderwachter

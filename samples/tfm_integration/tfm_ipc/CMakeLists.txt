@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.13.1)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.inc)
+
 project(tfm_ipc)
 
 set (TFM_ROOT_PATH $ENV{ZEPHYR_BASE}/ext/tfm/tfm)

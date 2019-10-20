@@ -1,0 +1,9 @@
+# Kconfig - TF-M/PSA Related
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BUILD_WITH_TFM
+	bool "Build with TF-M for Secure Execution"
