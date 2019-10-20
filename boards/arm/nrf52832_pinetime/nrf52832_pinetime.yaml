@@ -1,0 +1,10 @@
+identifier: nrf52832_pinetime
+name: Pine64 PineTime nrf52832
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
