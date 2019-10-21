@@ -13,6 +13,20 @@
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
+#define ACCEL_SCALE(sensitivity)			\
+	((SENSOR_G * (sensitivity) >> 14) / 100)
+
+/*
+ * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
+ * multiplied by 100.
+ */
+static const u32_t lis2dh_reg_val_to_scale[] = {
+	ACCEL_SCALE(1600),
+	ACCEL_SCALE(3200),
+	ACCEL_SCALE(6400),
+	ACCEL_SCALE(19200),
+};
+
 #if defined(DT_ST_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length)
@@ -63,18 +77,18 @@ int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 				     (old_val & ~mask) | ((val << pos) & mask));
 }
 
-static void lis2dh_convert(s16_t raw_val, u16_t scale,
+static void lis2dh_convert(s16_t raw_val, u32_t scale,
 			   struct sensor_value *val)
 {
 	s32_t converted_val;
 
 	/*
 	 * maximum converted value we can get is: max(raw_val) * max(scale)
-	 *	max(raw_val) = +/- 2^15
-	 *	max(scale) = 4785
-	 *	max(converted_val) = 156794880 which is less than 2^31
+	 *	max(raw_val >> 4) = +/- 2^11
+	 *	max(scale) = 114921
+	 *	max(converted_val) = 235358208 which is less than 2^31
 	 */
-	converted_val = raw_val * scale;
+	converted_val = (raw_val >> 4) * scale;
 	val->val1 = converted_val / 1000000;
 	val->val2 = converted_val % 1000000;
 }
@@ -210,20 +224,16 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
-static const union {
-	u32_t word_le32;
-	u8_t fs_values[4];
-} lis2dh_acc_range_map = { .fs_values = {2, 4, 8, 16} };
+
+#define LIS2DH_RANGE_IDX_TO_VALUE(idx)		(1 << ((idx) + 1))
+#define LIS2DH_NUM_RANGES			4
 
 static int lis2dh_range_to_reg_val(u16_t range)
 {
 	int i;
-	u32_t range_map;
 
-	range_map = sys_le32_to_cpu(lis2dh_acc_range_map.word_le32);
-
-	for (i = 0; range_map; i++, range_map >>= 1) {
-		if (range == (range_map & 0xff)) {
+	for (i = 0; i < LIS2DH_NUM_RANGES; i++) {
+		if (range == LIS2DH_RANGE_IDX_TO_VALUE(i)) {
 			return i;
 		}
 	}
@@ -241,7 +251,7 @@ static int lis2dh_acc_range_set(struct device *dev, s32_t range)
 		return fs;
 	}
 
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(range);
+	lis2dh->scale = lis2dh_reg_val_to_scale[fs];
 
 	return lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_SHIFT,
@@ -340,7 +350,7 @@ int lis2dh_init(struct device *dev)
 	}
 
 	/* set full scale range and store it for later conversion */
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(1 << (LIS2DH_FS_IDX + 1));
+	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_BITS | LIS2DH_HR_BIT);
 	if (status < 0) {
