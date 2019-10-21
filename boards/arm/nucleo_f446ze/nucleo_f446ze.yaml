@@ -9,7 +9,10 @@ toolchain:
 ram: 96
 flash: 512
 supported:
+<<<<<<< HEAD
   - arduino_i2c
+=======
+>>>>>>> 28aa6d448c4defb2dc197adea43cd2e508308e95
   - arduino_serial
   - arduino_i2c
   - arduino_spi
