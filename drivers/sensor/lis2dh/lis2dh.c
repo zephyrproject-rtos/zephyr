@@ -217,20 +217,25 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 }
 #endif
 
-#ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
-static const union {
-	u32_t word_le32;
+/*
+ * Formula for the scale is:
+ *  ((SENSOR_G * 2 * (range_g)) / 65636LL)
+ */
+static const struct {
+	u16_t fs_scale[4];
 	u8_t fs_values[4];
-} lis2dh_acc_range_map = { .fs_values = {2, 4, 8, 16} };
+} lis2dh_acc_range_map = { .fs_scale = {583, 1168, 2335, 7007},
+			   .fs_values = {2, 4, 8, 16} };
 
+#ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
 static int lis2dh_range_to_reg_val(u16_t range)
 {
 	int i;
 	u32_t range_map;
 
-	range_map = sys_le32_to_cpu(lis2dh_acc_range_map.word_le32);
+	range_map = 16;
 
-	for (i = 0; range_map; i++, range_map >>= 1) {
+	for (i = 3; range_map; i--, range_map >>= 1) {
 		if (range == (range_map & 0xff)) {
 			return i;
 		}
@@ -249,7 +254,7 @@ static int lis2dh_acc_range_set(struct device *dev, s32_t range)
 		return fs;
 	}
 
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(range);
+	lis2dh->scale = lis2dh_acc_range_map.fs_scale[fs];
 
 	return lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_SHIFT,
@@ -338,7 +343,7 @@ int lis2dh_init(struct device *dev)
 	}
 
 	/* set full scale range and store it for later conversion */
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(1 << (LIS2DH_FS_IDX + 1));
+	lis2dh->scale = lis2dh_acc_range_map.fs_scale[LIS2DH_FS_IDX];
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_BITS | LIS2DH_HR_BIT);
 	if (status < 0) {
