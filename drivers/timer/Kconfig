@@ -58,7 +58,7 @@ endif # APIC_TIMER_TSC
 
 endif # APIC_TIMER
 
-menuconfig HPET_TIMER
+config HPET_TIMER
 	bool "HPET timer"
 	depends on (X86 || X86_64)
 	select IOAPIC if X86
@@ -69,7 +69,7 @@ menuconfig HPET_TIMER
 	  This option selects High Precision Event Timer (HPET) as a
 	  system timer.
 
-menuconfig LOAPIC_TIMER
+config LOAPIC_TIMER
 	bool "LOAPIC timer"
 	depends on LOAPIC && X86
 	help

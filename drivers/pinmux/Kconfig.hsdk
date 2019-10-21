@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PINMUX_HSDK
+config PINMUX_HSDK
 	bool "ARC HSDK I/O pin mux driver"
 	depends on SOC_ARC_HSDK
 	help

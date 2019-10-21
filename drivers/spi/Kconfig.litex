@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig SPI_LITESPI
+config SPI_LITESPI
 	bool "LiteX SPI controller driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	help

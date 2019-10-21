@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig UART_GECKO
+config UART_GECKO
 	bool "Gecko UART/USART driver"
 	depends on HAS_SILABS_GECKO
 	depends on GPIO_GECKO
@@ -14,7 +14,3 @@ menuconfig UART_GECKO
 	select SOC_GECKO_USART
 	help
 	  Enable the Gecko uart driver.
-
-if UART_GECKO
-
-endif # UART_GECKO

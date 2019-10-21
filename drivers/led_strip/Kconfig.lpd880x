@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig LPD880X_STRIP
+config LPD880X_STRIP
 	bool "Enable LPD880x SPI LED strip driver"
 	depends on SPI
 	help

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig CLOCK_CONTROL_MCUX_CCM
+config CLOCK_CONTROL_MCUX_CCM
 	bool "MCUX CCM driver"
 	depends on HAS_MCUX_CCM
 	help

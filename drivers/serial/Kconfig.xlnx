@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig UART_XLNX_PS
+config UART_XLNX_PS
 	bool "Xilinx serial driver for MPSoC"
 	depends on SOC_XILINX_ZYNQMP
 	select SERIAL_HAS_DRIVER

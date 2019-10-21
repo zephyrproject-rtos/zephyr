@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PINMUX_ESP32
+config PINMUX_ESP32
 	bool "ESP32 Pin multiplexer driver"
 	depends on SOC_ESP32
 	help

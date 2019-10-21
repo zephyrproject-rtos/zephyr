@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PINMUX_BEETLE
+config PINMUX_BEETLE
 	bool "ARM V2M Beetle Pin multiplexer driver"
 	depends on SOC_SERIES_BEETLE
 	help

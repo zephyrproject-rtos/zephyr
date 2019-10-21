@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PWM_SAM
+config PWM_SAM
 	bool "Atmel SAM MCU Family PWM Driver"
 	depends on SOC_FAMILY_SAM
 	help
