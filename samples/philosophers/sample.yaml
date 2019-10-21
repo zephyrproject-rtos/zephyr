@@ -36,6 +36,7 @@ tests:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
+      - CONFIG_NETWORKING=n
   sample.kernel.philosopher.coop_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=0
