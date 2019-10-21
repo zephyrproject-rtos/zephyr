@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PCA9633
+config PCA9633
 	bool "PCA9633 LED driver"
 	depends on I2C
 	help

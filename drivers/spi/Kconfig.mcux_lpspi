@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig SPI_MCUX_LPSPI
+config SPI_MCUX_LPSPI
 	bool "MCUX SPI driver"
 	depends on HAS_MCUX_LPSPI && CLOCK_CONTROL
 	help

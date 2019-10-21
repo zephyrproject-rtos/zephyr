@@ -6,7 +6,7 @@
 # Workaround for not being able to have commas in macro arguments
 DT_COMPAT_ATMEL_SAM0_DMAC := atmel,sam0-dmac
 
-menuconfig UART_SAM0
+config UART_SAM0
 	bool "Atmel SAM0 series SERCOM USART driver"
 	default y
 	depends on SOC_FAMILY_SAM0

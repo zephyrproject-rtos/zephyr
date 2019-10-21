@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig CLOCK_CONTROL_MCUX_PCC
+config CLOCK_CONTROL_MCUX_PCC
 	bool "MCUX PCC driver"
 	depends on HAS_MCUX_PCC
 	help

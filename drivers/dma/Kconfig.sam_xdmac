@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig DMA_SAM_XDMAC
+config DMA_SAM_XDMAC
 	bool "Atmel SAM DMA (XDMAC) driver"
 	depends on SOC_FAMILY_SAM
 	help

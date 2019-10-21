@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig UART_CMSDK_APB
+config UART_CMSDK_APB
 	bool "ARM CMSDK APB UART driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT

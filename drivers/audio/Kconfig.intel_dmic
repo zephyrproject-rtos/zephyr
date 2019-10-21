@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig AUDIO_INTEL_DMIC
+config AUDIO_INTEL_DMIC
 	bool "Intel digital PDM microphone driver support"
 	help
 	  Enable Intel digital PDM microphone driver

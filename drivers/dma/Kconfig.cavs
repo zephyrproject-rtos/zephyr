@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig DMA_CAVS
+config DMA_CAVS
 	bool "Enable CAVS DMA driver"
 	help
 	  CAVS DMA driver.

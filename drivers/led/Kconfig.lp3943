@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig LP3943
+config LP3943
 	bool "LP3943 LED driver"
 	depends on I2C
 	help

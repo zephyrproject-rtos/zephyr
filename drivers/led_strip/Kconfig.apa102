@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig APA102_STRIP
+config APA102_STRIP
 	bool "APA102 SPI LED strip driver"
 	depends on SPI
 	select LED_STRIP_RGB_SCRATCH

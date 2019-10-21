@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_ESP32
+config UART_ESP32
 	bool "ESP32 UART driver"
 	default y
 	select SERIAL_HAS_DRIVER

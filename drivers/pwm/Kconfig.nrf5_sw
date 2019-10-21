@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PWM_NRF5_SW
+config PWM_NRF5_SW
 	bool "Nordic Semiconductor nRF5x series S/W PWM"
 	default y if !PWM_NRFX
 	depends on SOC_FAMILY_NRF

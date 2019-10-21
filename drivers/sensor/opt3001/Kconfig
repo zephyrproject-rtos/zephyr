@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig OPT3001
+config OPT3001
 	bool "OPT3001 Light Sensor"
 	depends on (I2C && HAS_DTS_I2C)
 	help
