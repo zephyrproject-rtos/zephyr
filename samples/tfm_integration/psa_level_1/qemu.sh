@@ -19,7 +19,7 @@ QEMUBOARD="mps2-an521"
 srec_cat build/mcuboot.bin -Binary build/tfm_sign.bin -Binary -offset \
 0x80000 -o tfm_qemu.bin -Binary
 
-# Convert .bin to .efl with an appropriate offset
+# Convert .bin to .elf with an appropriate offset
 srec_cat tfm_qemu.bin -binary -offset 0x10000000 -o tfm_qemu.hex -intel \
 --line-length=44
 

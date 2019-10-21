@@ -200,7 +200,6 @@ the sample folder:
   $ chmod +x ../../../ext/tfm/tfm/bl2/ext/mcuboot/scripts/imgtool.py
   $ ../../../ext/tfm/tfm/bl2/ext/mcuboot/scripts/imgtool.py keygen \
     -k root-rsa-3072.pem -t rsa-3072
-  $ cp root-
 
 You can then replace the .pem file in ``/ext/tfm/tfm/bl2/ext/mcuboot/`` with
 the newly generated .pem file, and rebuild the bootloader so that it uses the

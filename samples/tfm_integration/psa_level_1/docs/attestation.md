@@ -233,7 +233,7 @@ provided during the IAT request (newlines added for clarity):
 00112233445566778899AABBCCDDEEFF
 ```
 
-## Sample Attestation Token Usage
+## Alternative Attestation Token Usage
 
 ### Unidirectional Data Attestation
 
