@@ -390,6 +390,10 @@ static int can_stm32_init(struct device *dev)
 	can->MCR |= CAN_MCR_TTCM;
 #endif
 
+#ifdef CONFIG_CAN_AUTOMATIC_BUS_OFF_RECOVERY
+	can->MCR |= CAN_MCR_ABOM;
+#endif
+
 	ret = can_stm32_runtime_configure(dev, CAN_NORMAL_MODE, 0);
 	if (ret) {
 		return ret;
