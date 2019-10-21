@@ -2012,7 +2012,7 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 		}
 
 		if (conn->llcp_req == conn->llcp_ack) {
-			conn->llcp.encryption.initiate = 1U;
+			conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
 			conn->llcp_ack -= 2U;
@@ -2503,11 +2503,56 @@ static inline void event_enc_reject_prep(struct ll_conn *conn,
 
 static inline void event_enc_prep(struct ll_conn *conn)
 {
+	struct lll_conn *lll = &conn->lll;
 	struct pdu_data *pdu_ctrl_tx;
 	struct node_tx *tx;
-	struct lll_conn *lll;
 
-	if (conn->llcp.encryption.initiate) {
+	if (conn->llcp.encryption.state) {
+#if !defined(CONFIG_BT_CTLR_FAST_ENC)
+		if (lll->role &&
+		    (conn->llcp.encryption.state == LLCP_ENC_STATE_INIT)) {
+			struct node_rx_pdu *rx;
+			struct pdu_data *pdu;
+			u8_t err;
+
+			/* TODO BT Spec. text: may finalize the sending
+			 * of additional data channel PDUs queued in the
+			 * controller.
+			 */
+			err = enc_rsp_send(conn);
+			if (err) {
+				return;
+			}
+
+			/* get a rx node for ULL->LL */
+			rx = ll_pdu_rx_alloc();
+			if (!rx) {
+				return;
+			}
+
+			/* prepare enc req structure */
+			rx->hdr.handle = conn->lll.handle;
+			rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+			pdu = (void *)rx->pdu;
+			pdu->ll_id = PDU_DATA_LLID_CTRL;
+			pdu->len = offsetof(struct pdu_data_llctrl, enc_req) +
+				   sizeof(struct pdu_data_llctrl_enc_req);
+			pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+			memcpy(&pdu->llctrl.enc_req.rand[0],
+			       &conn->llcp_enc.rand[0],
+			       sizeof(pdu->llctrl.enc_req.rand));
+			pdu->llctrl.enc_req.ediv[0] = conn->llcp_enc.ediv[0];
+			pdu->llctrl.enc_req.ediv[1] = conn->llcp_enc.ediv[1];
+
+			/* enqueue enc req structure into rx queue */
+			ll_rx_put(rx->hdr.link, rx);
+			ll_rx_sched();
+
+			/* Wait for LTK reply */
+			conn->llcp.encryption.state = LLCP_ENC_STATE_LTK_WAIT;
+		}
+#endif /* !CONFIG_BT_CTLR_FAST_ENC */
+
 		return;
 	}
 
@@ -2515,8 +2560,6 @@ static inline void event_enc_prep(struct ll_conn *conn)
 	if (!tx) {
 		return;
 	}
-
-	lll = &conn->lll;
 
 	pdu_ctrl_tx = (void *)tx->pdu;
 
@@ -2559,7 +2602,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 	else {
 #else /* !CONFIG_BT_CTLR_FAST_ENC */
-	else if (!conn->llcp_enc.pause_tx || conn->llcp_enc.refresh) {
+	else if (!lll->enc_rx) {
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
 		/* place the reject ind packet as next in tx queue */
@@ -2570,22 +2613,6 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		}
 		/* place the start enc req packet as next in tx queue */
 		else {
-
-#if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			u8_t err;
-
-			/* TODO BT Spec. text: may finalize the sending
-			 * of additional data channel PDUs queued in the
-			 * controller.
-			 */
-			err = enc_rsp_send(conn);
-			if (err) {
-				mem_release(tx, &mem_conn_tx_ctrl.free);
-
-				return;
-			}
-#endif /* !CONFIG_BT_CTLR_FAST_ENC */
-
 			/* calc the Session Key */
 			ecb_encrypt(&conn->llcp_enc.ltk[0],
 				    &conn->llcp.encryption.skd[0], NULL,
@@ -5146,7 +5173,27 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		if (nack) {
 			break;
 		}
+
+		/* Start Enc Req to be scheduled by LL api */
+		conn->llcp.encryption.state = LLCP_ENC_STATE_LTK_WAIT;
+#else /* CONFIG_BT_CTLR_FAST_ENC */
+		/* back up rand and ediv for deferred generation of Enc Req */
+		memcpy(&conn->llcp_enc.rand[0],
+		       &pdu_rx->llctrl.enc_req.rand[0],
+		       sizeof(conn->llcp_enc.rand));
+		conn->llcp_enc.ediv[0] = pdu_rx->llctrl.enc_req.ediv[0];
+		conn->llcp_enc.ediv[1] = pdu_rx->llctrl.enc_req.ediv[1];
+
+		/* Enc rsp to be scheduled in master prepare */
+		conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
+
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
+
+		/* Enc Setup state machine active */
+		conn->llcp_type = LLCP_ENCRYPTION;
+		conn->llcp_ack -= 2U;
 
 		/* things from master stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
@@ -5185,20 +5232,15 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
-		if (conn->lll.role ||
-		    ((conn->llcp_req != conn->llcp_ack) &&
-		     (conn->llcp_type != LLCP_ENCRYPTION)) ||
+		if (conn->lll.role || (conn->llcp_req == conn->llcp_ack) ||
+		    (conn->llcp_type != LLCP_ENCRYPTION) ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_REQ,
 				 pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
 		/* start enc rsp to be scheduled in master prepare */
-		conn->llcp.encryption.initiate = 0U;
-		if (conn->llcp_req == conn->llcp_ack) {
-			conn->llcp_type = LLCP_ENCRYPTION;
-			conn->llcp_ack -= 2U;
-		}
+		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
@@ -5219,11 +5261,12 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			}
 
 			/* start enc rsp to be scheduled in slave  prepare */
-			conn->llcp.encryption.initiate = 0U;
+			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 			if (conn->llcp_req == conn->llcp_ack) {
 				conn->llcp_type = LLCP_ENCRYPTION;
 				conn->llcp_ack -= 2U;
 			}
+
 #else /* CONFIG_BT_CTLR_FAST_ENC */
 			nack = start_enc_rsp_send(conn, NULL);
 			if (nack) {
