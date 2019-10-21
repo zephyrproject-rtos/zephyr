@@ -69,6 +69,21 @@
 	status = "okay";
 	sda-pin = <6>;
 	scl-pin = <7>;
+
+	bma421: bma421@18 {
+		compatible = "bosch,bma4xx";
+		reg = <0x18>;
+		label = "BMA421";
+		int1-gpios = <&gpio0 8 0>;
+	};
+};
+
+&spi0 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	sck-pin = <2>;
+	mosi-pin = <3>;
+	miso-pin = <4>;
 };
 
 &flash0 {
