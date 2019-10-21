@@ -36,9 +36,6 @@ CONFIG_I2C_1=y
 CONFIG_I2C_2=n
 CONFIG_I2C_3=n
 
-# FIXME: ESP32 port should support DTS.
-CONFIG_HAS_DTS_I2C=n
-
 # IRQ priorities are fixed on Xtensa, but Kconfig will ask for these
 # if not set.
 CONFIG_I2C_0_IRQ_PRI=1
