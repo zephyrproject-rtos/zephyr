@@ -344,15 +344,15 @@ endmacro()
 
 # Constructor with a directory-inferred name
 macro(zephyr_library)
-  zephyr_library_get_current_dir_lib_name(lib_name)
+  zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} lib_name)
   zephyr_library_named(${lib_name})
 endmacro()
 
-# Determines what the current directory's lib name would be and writes
-# it to the argument "lib_name"
-macro(zephyr_library_get_current_dir_lib_name lib_name)
+# Determines what the current directory's lib name would be according to the
+# provided base and writes it to the argument "lib_name"
+macro(zephyr_library_get_current_dir_lib_name base lib_name)
   # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
-  file(RELATIVE_PATH name ${ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
+  file(RELATIVE_PATH name ${base} ${CMAKE_CURRENT_LIST_FILE})
 
   # Remove the filename (driver/serial/CMakeLists.txt => driver/serial)
   get_filename_component(name ${name} DIRECTORY)
@@ -375,6 +375,34 @@ macro(zephyr_library_named name)
   target_link_libraries(${name} PUBLIC zephyr_interface)
 endmacro()
 
+# Provides amend functionality to a Zephyr library for out-of-tree usage.
+#
+# When called from a Zephyr module, the corresponding zephyr library defined
+# within Zephyr will be looked up.
+#
+# Note, in order to ensure correct library when amending, the folder structure in the
+# Zephyr module must resemble the structure used in Zephyr, as example:
+#
+# Example: to amend the zephyr library created in
+# ZEPHYR_BASE/drivers/entropy/CMakeLists.txt
+# add the following file:
+# ZEPHYR_MODULE/drivers/entropy/CMakeLists.txt
+# with content:
+# zephyr_library_amend()
+# zephyr_libray_add_sources(...)
+#
+macro(zephyr_library_amend)
+  # This is a macro because we need to ensure the ZEPHYR_CURRENT_LIBRARY and
+  # following zephyr_library_* calls are executed within the scope of the
+  # caller.
+  if(NOT ZEPHYR_CURRENT_MODULE_DIR)
+    message(FATAL_ERROR "Function only available for Zephyr modules.")
+  endif()
+
+  zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
+
+  set(ZEPHYR_CURRENT_LIBRARY ${lib_name})
+endmacro()
 
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)
