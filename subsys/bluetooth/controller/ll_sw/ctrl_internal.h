@@ -159,7 +159,11 @@ struct connection {
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		struct {
-			u8_t  initiate:1;
+			enum {
+				LLCP_ENC_STATE_INPROG,
+				LLCP_ENC_STATE_INIT,
+				LLCP_ENC_STATE_LTK_WAIT,
+			} state:2 __packed;
 			u8_t  error_code;
 			u8_t  skd[16];
 		} encryption;
