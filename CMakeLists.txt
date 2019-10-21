@@ -470,8 +470,11 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # this binary_dir is created but stays empty. Object files land in
     # the main binary dir instead.
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
+    set(ZEPHYR_CURRENT_MODULE_DIR ${module_path})
     add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
   endforeach()
+  # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
+  set(ZEPHYR_CURRENT_MODULE_DIR)
 endif()
 
 set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
