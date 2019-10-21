@@ -614,7 +614,7 @@ typedef void *lv_obj_user_data_t;
 #define LV_TILEVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TILE_VIEW_ANIMATION_TIME
 #endif
 
-#ifdef CONFIGLVGL_OBJ_WINDOW
+#ifdef CONFIG_LVGL_OBJ_WINDOW
 #define LV_USE_WIN 1
 #else
 #define LV_USE_WIN 0
