@@ -1,0 +1,7 @@
+sample:
+  name: Measure battery voltage
+tests:
+  sample.boards.nrf.battery:
+    build_only: true
+    platform_whitelist: particle_xenon nrf52_pca20020
+    tags: battery
