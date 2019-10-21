@@ -2766,7 +2766,30 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		if (nack) {
 			break;
 		}
-#endif /* CONFIG_BT_CTLR_FAST_ENC */
+
+		/* enqueue the enc req */
+		*rx_enqueue = 1U;
+
+		/* Start Enc Req to be scheduled by LL api */
+		_radio.conn_curr->llcp.encryption.state =
+			LLCP_ENC_STATE_LTK_WAIT;
+#else /* !CONFIG_BT_CTLR_FAST_ENC */
+		/* back up rand and ediv for deferred generation of Enc Req */
+		memcpy(&_radio.conn_curr->llcp_enc.rand[0],
+		       &pdu_data_rx->llctrl.enc_req.rand[0],
+		       sizeof(_radio.conn_curr->llcp_enc.rand));
+		_radio.conn_curr->llcp_enc.ediv[0] =
+			pdu_data_rx->llctrl.enc_req.ediv[0];
+		_radio.conn_curr->llcp_enc.ediv[1] =
+			pdu_data_rx->llctrl.enc_req.ediv[1];
+
+		/* Enc rsp to be scheduled in master prepare */
+		_radio.conn_curr->llcp.encryption.state = LLCP_ENC_STATE_INIT;
+#endif /* !CONFIG_BT_CTLR_FAST_ENC */
+
+		/* Enc Setup requested */
+		_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
+		_radio.conn_curr->llcp_ack--;
 
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
@@ -2782,9 +2805,6 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		 */
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
-
-		/* enqueue the enc req */
-		*rx_enqueue = 1U;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
@@ -2806,18 +2826,16 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
 		if (_radio.conn_curr->role ||
-		    ((_radio.conn_curr->llcp_req !=
-		      _radio.conn_curr->llcp_ack) &&
-		     (_radio.conn_curr->llcp_type != LLCP_ENCRYPTION)) ||
+		    (_radio.conn_curr->llcp_req ==
+		      _radio.conn_curr->llcp_ack) ||
+		    (_radio.conn_curr->llcp_type != LLCP_ENCRYPTION) ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_REQ,
 				 pdu_data_rx->len)) {
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
 		/* start enc rsp to be scheduled in master prepare */
-		_radio.conn_curr->llcp.encryption.initiate = 0U;
-		_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
-		_radio.conn_curr->llcp_ack--;
+		_radio.conn_curr->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
@@ -2835,7 +2853,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			}
 
 			/* start enc rsp to be scheduled in slave  prepare */
-			_radio.conn_curr->llcp.encryption.initiate = 0U;
+			_radio.conn_curr->llcp.encryption.state =
+				LLCP_ENC_STATE_INPROG;
 			_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
 			_radio.conn_curr->llcp_ack--;
 #else /* CONFIG_BT_CTLR_FAST_ENC */
@@ -7671,7 +7690,54 @@ static inline void event_enc_prep(struct connection *conn)
 	struct radio_pdu_node_tx *node_tx;
 	struct pdu_data *pdu_ctrl_tx;
 
-	if (conn->llcp.encryption.initiate) {
+	if (conn->llcp.encryption.state) {
+#if !defined(CONFIG_BT_CTLR_FAST_ENC) && defined(CONFIG_BT_PERIPHERAL)
+		if (conn->role &&
+		    (conn->llcp.encryption.state == LLCP_ENC_STATE_INIT)) {
+			struct radio_pdu_node_rx *node_rx;
+			struct pdu_data *pdu_ctrl_rx;
+			u8_t err;
+
+			/* TODO BT Spec. text: may finalize the sending
+			 * of additional data channel PDUs queued in the
+			 * controller.
+			 */
+			err = enc_rsp_send(conn);
+			if (err) {
+				return;
+			}
+
+			/* Prepare the rx packet structure */
+			node_rx = packet_rx_reserve_get(2);
+			LL_ASSERT(node_rx);
+
+			node_rx->hdr.handle = conn->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+
+			/* prepare enc req structure */
+			pdu_ctrl_rx = (void *)node_rx->pdu_data;
+			pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
+			pdu_ctrl_rx->len =
+				offsetof(struct pdu_data_llctrl, enc_req) +
+				sizeof(struct pdu_data_llctrl_enc_req);
+			pdu_ctrl_rx->llctrl.opcode =
+				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+			memcpy(&pdu_ctrl_rx->llctrl.enc_req.rand[0],
+			       &conn->llcp_enc.rand[0],
+			       sizeof(pdu_ctrl_rx->llctrl.enc_req.rand));
+			pdu_ctrl_rx->llctrl.enc_req.ediv[0] =
+				conn->llcp_enc.ediv[0];
+			pdu_ctrl_rx->llctrl.enc_req.ediv[1] =
+				conn->llcp_enc.ediv[1];
+
+			/* enqueue enc req structure into rx queue */
+			packet_rx_enqueue();
+
+			/* Wait for LTK reply */
+			conn->llcp.encryption.state = LLCP_ENC_STATE_LTK_WAIT;
+		}
+#endif /* !CONFIG_BT_CTLR_FAST_ENC && CONFIG_BT_PERIPHERAL */
+
 		return;
 	}
 
@@ -7719,7 +7785,7 @@ static inline void event_enc_prep(struct connection *conn)
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 	else {
 #else /* !CONFIG_BT_CTLR_FAST_ENC */
-	else if (!conn->pause_tx || conn->refresh) {
+	else if (!conn->enc_rx) {
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
 		/* place the reject ind packet as next in tx queue */
@@ -7728,22 +7794,6 @@ static inline void event_enc_prep(struct connection *conn)
 		}
 		/* place the start enc req packet as next in tx queue */
 		else {
-
-#if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			u8_t err;
-
-			/* TODO BT Spec. text: may finalize the sending
-			 * of additional data channel PDUs queued in the
-			 * controller.
-			 */
-			err = enc_rsp_send(conn);
-			if (err) {
-				mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
-
-				return;
-			}
-#endif /* !CONFIG_BT_CTLR_FAST_ENC */
-
 			/* calc the Session Key */
 			ecb_encrypt(&conn->llcp_enc.ltk[0],
 				    &conn->llcp.encryption.skd[0], NULL,
@@ -9912,7 +9962,7 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 		}
 
 		if (conn->llcp_req == conn->llcp_ack) {
-			conn->llcp.encryption.initiate = 1U;
+			conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
 			conn->llcp_ack--;
@@ -12279,15 +12329,13 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 
 	if (error_code) {
 		if (conn->refresh == 0) {
-			if (conn->llcp_req != conn->llcp_ack) {
+			if ((conn->llcp_req == conn->llcp_ack) ||
+			     (conn->llcp_type != LLCP_ENCRYPTION)) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
 
 			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.initiate = 0U;
-
-			conn->llcp_type = LLCP_ENCRYPTION;
-			conn->llcp_req++;
+			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 		} else {
 			if (conn->llcp_terminate.ack !=
 			    conn->llcp_terminate.req) {
@@ -12299,7 +12347,8 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			conn->llcp_terminate.req++;
 		}
 	} else {
-		if (conn->llcp_req != conn->llcp_ack) {
+		if ((conn->llcp_req == conn->llcp_ack) ||
+		     (conn->llcp_type != LLCP_ENCRYPTION)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -12307,10 +12356,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		       sizeof(conn->llcp_enc.ltk));
 
 		conn->llcp.encryption.error_code = 0U;
-		conn->llcp.encryption.initiate = 0U;
-
-		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_req++;
+		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 	}
 
 	return 0;
