@@ -580,7 +580,7 @@ static int ssd16xx_init(struct device *dev)
 	gpio_pin_configure(driver->dc, SSD16XX_DC_PIN,
 			   GPIO_DIR_OUT);
 
-	driver->busy = device_get_binding(SSD16XX_DC_CNTRL);
+	driver->busy = device_get_binding(SSD16XX_BUSY_CNTRL);
 	if (driver->busy == NULL) {
 		LOG_ERR("Could not get GPIO port for SSD16XX busy signal");
 		return -EIO;
