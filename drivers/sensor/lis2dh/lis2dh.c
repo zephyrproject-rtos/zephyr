@@ -77,12 +77,6 @@ static void lis2dh_convert(s16_t raw_val, u16_t scale,
 	converted_val = raw_val * scale;
 	val->val1 = converted_val / 1000000;
 	val->val2 = converted_val % 1000000;
-
-	/* normalize val to make sure val->val2 is positive */
-	if (val->val2 < 0) {
-		val->val1 -= 1;
-		val->val2 += 1000000;
-	}
 }
 
 static int lis2dh_channel_get(struct device *dev,
