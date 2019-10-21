@@ -136,6 +136,9 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	sec_tag_t sec_tag_list[] = {
 		CA_CERTIFICATE_TAG,
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+		PSK_TAG,
+#endif
 	};
 
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
