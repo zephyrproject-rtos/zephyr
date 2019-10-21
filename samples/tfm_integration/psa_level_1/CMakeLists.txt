@@ -32,6 +32,12 @@ set(TFM_GIT_CMSIS "${GIT_EXECUTABLE} clone https://github.com/ARM-software/CMSIS
 set(TFM_REMOTE_DIR "$ENV{ZEPHYR_BASE}/ext/tfm")
 set(TFM_PSA_API_DIR "${TFM_REMOTE_DIR}/tfm/build/install/export/tfm")
 
+# Find Python 3.x interpreter
+find_package(PythonInterp 3)
+if (NOT PYTHONINTERP_FOUND)
+	message(FATAL_ERROR "Failed to find Python 3.x interpreter. Python3 must be installed and available on the PATH.")
+endif()
+
 # Assign the full git path to ${GIT_EXECUTABLE}.
 find_package(Git)
 
@@ -113,3 +119,33 @@ FILE(GLOB app_sources ${APPLICATION_SOURCE_DIR}/src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${TFM_REMOTE_DIR}/tfm/build/install/export/tfm/veneers/s_veneers.o)
+
+
+# if (NOT DEFINED IMAGE_VERSION)
+# 	set(IMAGE_VERSION 0.0.0+0)
+# endif()
+#
+# # Create and sign concatenated binary image, aligned with TF-M BL2
+# message(STATUS "Concatenating and signing secure and non-secure images")
+# set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+# 	# Create concatenated binary image from the two binary file
+# 	COMMAND ${PYTHON_EXECUTABLE} ${TFM_REMOTE_DIR}/tfm/bl2/ext/mcuboot/scripts/assemble.py
+# 	ARGS --layout ../../../../build/image_macros_preprocessed.c
+# 		 -s ${TFM_REMOTE_DIR}/tfm/build/unit_test/tfm_s.bin
+# 		 -n ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
+# 		 -o ${CMAKE_BINARY_DIR}/tfm_full.bin
+#
+# 	# Sign concatenated binary image with public key in mcuboot folder
+# 	COMMAND ${PYTHON_EXECUTABLE} ${TFM_REMOTE_DIR}/tfm/bl2/ext/mcuboot/scripts/imgtool.py
+# 	ARGS sign
+# 		 --layout ../../../../build/image_macros_preprocessed.c
+# 		 -k ../../../../bl2/ext/mcuboot/root-rsa-3072.pem
+# 		 --align 1
+# 		 -v ${IMAGE_VERSION}
+# 		 ${ADD_SECURITY_COUNTER}
+# 		 -H 0x400
+# 		 ${CMAKE_BINARY_DIR}/tfm_full.bin
+# 		 ${CMAKE_BINARY_DIR}/tfm_sign.bin
+#
+# 	# Copy mcuboot.bin
+# 	COMMAND cp ${TFM_REMOTE_DIR}/tfm/build/bl2/ext/mcuboot/mcuboot.bin ${CMAKE_BINARY_DIR})
