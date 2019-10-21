@@ -44,7 +44,7 @@ manifest:
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
     - name: hal_nordic
-      revision: 1b14177ff2176a1d17f3dd5e7e217f44337255db
+      revision: e0bfd6f253ca6a5e87b6f53a8bb317bd6f483511
       path: modules/hal/nordic
     - name: hal_openisa
       revision: be5c01f86c96500def5079bcc58d2baefdffb6c8
