@@ -33,7 +33,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 27 GPIO_INT_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
 	};
@@ -60,8 +60,8 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <15>;
-	rx-pin = <17>;
+	tx-pin = <11>;
+	rx-pin = <30>;
 };
 
 &i2c0 {
