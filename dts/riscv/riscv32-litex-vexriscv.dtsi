@@ -68,9 +68,9 @@
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
-			reg = <0xb0000000 0x2000 0xe0009800 0x6b>;
+			reg = <0xe0009800 0x6b 0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "buffers", "control";
+			reg-names = "control", "buffers";
 			label = "eth0";
 			status = "disabled";
 		};
