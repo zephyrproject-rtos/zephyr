@@ -1,4 +1,4 @@
 tests:
-  libraries.encoding:
+  libraries.encoding.base64:
     tags: base64
     type: unit
