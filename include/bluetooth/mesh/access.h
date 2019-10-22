@@ -158,6 +158,7 @@ struct bt_mesh_msg_ctx {
 	u8_t  send_ttl;
 };
 
+/** Model opcode handler. */
 struct bt_mesh_model_op {
 	/* OpCode encoded using the BT_MESH_MODEL_OP_* macros */
 	const u32_t  opcode;
