@@ -51,6 +51,13 @@ config USB_DEVICE_SN
 	help
 	  USB device SerialNumber string. MUST be configured by vendor.
 
+config USB_DEVICE_AUTO_ENABLE
+	bool "Enable USB device on system boot up"
+	default y
+	help
+	  USB device auto enable when system boots up.
+	  If selected USB device would be enabled with APPLICATION initialization level.
+
 config USB_COMPOSITE_DEVICE
 	bool "Enable composite device driver"
 	depends on USB
