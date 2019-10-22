@@ -70,3 +70,7 @@
 	sda-pin = <18>;
 	scl-pin = <5>;
 };
+
+&trng0 {
+	status = "okay";
+};
