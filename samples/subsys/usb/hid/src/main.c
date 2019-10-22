@@ -118,6 +118,16 @@ void main(void)
 {
 	LOG_DBG("Starting application");
 
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+	int ret;
+
+	ret = usb_enable();
+	if (ret < 0) {
+		LOG_ERR("Failed to enable USB device");
+		return;
+	}
+#endif
+
 	k_delayed_work_init(&delayed_report_send, send_report);
 }
 

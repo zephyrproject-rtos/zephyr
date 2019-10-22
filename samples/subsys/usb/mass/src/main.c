@@ -9,6 +9,9 @@
 
 #include <zephyr.h>
 #include <logging/log.h>
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+#include <usb/usb_device.h>
+#endif
 LOG_MODULE_REGISTER(main);
 
 #if CONFIG_DISK_ACCESS_FLASH && CONFIG_FAT_FILESYSTEM_ELM
@@ -27,9 +30,16 @@ static struct fs_mount_t fatfs_mnt = {
 
 void main(void)
 {
-	/* Nothing to be done other than the selecting appropriate build
-	 * config options. Everything is driven from the USB host side.
-	 */
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+	int ret;
+
+	ret = usb_enable();
+	if (ret < 0) {
+		LOG_ERR("Failed to enable USB device");
+	return;
+	}
+#endif
+
 	LOG_INF("The device is put in USB mass storage mode.\n");
 
 #if CONFIG_DISK_ACCESS_FLASH && CONFIG_FAT_FILESYSTEM_ELM

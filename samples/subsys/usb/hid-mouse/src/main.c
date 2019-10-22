@@ -267,6 +267,17 @@ void main(void)
 	usb_hid_register_device(hid_dev,
 				hid_report_desc, sizeof(hid_report_desc),
 				&ops);
+
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+	int ret;
+
+	ret = usb_enable();
+	if (ret < 0) {
+		LOG_ERR("Failed to enable USB device");
+		return;
+	}
+#endif
+
 	usb_hid_init(hid_dev);
 
 	while (true) {
