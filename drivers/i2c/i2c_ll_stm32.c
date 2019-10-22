@@ -297,7 +297,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-DEVICE_AND_API_INIT(i2c_stm32_##name, CONFIG_##name##_NAME,		\
+DEVICE_AND_API_INIT(i2c_stm32_##name, DT_##name##_NAME,			\
 		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

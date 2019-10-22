@@ -9,4 +9,4 @@
  * generated data matches the driver definitions.
  */
 
-#define CONFIG_I2C_0_NAME		DT_NIOS2_I2C_100200_LABEL
+#define DT_I2C_0_NAME		DT_NIOS2_I2C_100200_LABEL
