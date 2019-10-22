@@ -3838,7 +3838,6 @@ def main():
 
     suite.misc_reports(options.compare_report, options.show_footprint,
                 options.all_deltas, options.footprint_threshold, options.last_metrics)
-    suite.save_reports()
 
     if options.coverage:
         if options.gcov_tool is None:
@@ -3867,6 +3866,7 @@ def main():
             if p['connected']:
                 print("%s (%s): %d" %(p['platform'], p.get('id', None), p['counter']))
 
+    suite.save_reports()
     if suite.total_failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
 
