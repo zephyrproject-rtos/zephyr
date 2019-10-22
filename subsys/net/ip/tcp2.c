@@ -990,9 +990,21 @@ void net_tcp_init(void)
 
 int net_tcp_finalize(struct net_pkt *pkt)
 {
-	ARG_UNUSED(pkt);
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_tcp_hdr *tcp_hdr;
 
-	return 0;
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		return -ENOBUFS;
+	}
+
+	tcp_hdr->chksum = 0U;
+
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+	}
+
+	return net_pkt_set_data(pkt, &tcp_access);
 }
 
 struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
