@@ -171,6 +171,7 @@ struct tcp { /* TCP connection */
 	bool in_retransmission;
 	size_t send_retries;
 	struct net_if *iface;
+	net_tcp_accept_cb_t accept_cb;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
