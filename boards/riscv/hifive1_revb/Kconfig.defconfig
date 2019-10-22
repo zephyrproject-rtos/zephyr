@@ -29,7 +29,4 @@ config I2C_SIFIVE
 	default y
 endif
 
-config HAS_DTS_I2C
-	default y
-
 endif
