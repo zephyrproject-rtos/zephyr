@@ -514,6 +514,18 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		tcp_free(buf);
+
+		if (conn->context->recv_cb) {
+			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
+
+			net_pkt_cursor_init(up);
+			net_pkt_set_overwrite(up, true);
+			net_pkt_skip(up, 40);
+
+			net_context_packet_received(
+				(struct net_conn *)conn->context->conn_handler,
+				up, NULL, NULL, conn->recv_user_data);
+		}
 	}
 
 	return len;
@@ -1120,11 +1132,17 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+	struct tcp *conn = context->tcp;
 
-	return -EPROTOTYPE;
+	NET_DBG("context: %p, cb: %p, user_data: %p", context, cb, user_data);
+
+	context->recv_cb = cb;
+
+	if (conn) {
+		conn->recv_user_data = user_data;
+	}
+
+	return 0;
 }
 
 void net_tcp_init(void)
