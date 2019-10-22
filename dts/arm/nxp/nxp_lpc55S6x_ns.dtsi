@@ -32,88 +32,76 @@
 		};
 	};
 
-	sram0: memory@30000000 {
+	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-		reg = <0x30000000 DT_SIZE_K(64)>;
+		reg = <0x20000000 DT_SIZE_K(64)>;
 	};
 
-	sram1: memory@30010000 {
+	sram1: memory@20010000 {
 		compatible = "mmio-sram";
-		reg = <0x30010000 DT_SIZE_K(64)>;
+		reg = <0x20010000 DT_SIZE_K(64)>;
 	};
 
-	sram2: memory@30020000 {
+	sram2: memory@20020000 {
 		compatible = "mmio-sram";
-		reg = <0x30020000 DT_SIZE_K(64)>;
+		reg = <0x20020000 DT_SIZE_K(64)>;
 	};
 
-	sram3: memory@30030000 {
+	sram3: memory@20030000 {
 		compatible = "mmio-sram";
-		reg = <0x30030000 DT_SIZE_K(64)>;
+		reg = <0x20030000 DT_SIZE_K(64)>;
 	};
 
-	sram4: memory@30040000 {
+	sram4: memory@20040000 {
 		/* Conencted to USB bus*/
 		compatible = "mmio-sram";
-		reg = <0x30040000 DT_SIZE_K(16)>;
+		reg = <0x20040000 DT_SIZE_K(16)>;
 	};
 
-	sramx: memory@14000000 {
-		/* connected to code bus */
+	sramx: memory@04000000 {
 		compatible = "mmio-sram";
-		reg = <0x14000000 DT_SIZE_K(32)>;
+		reg = <0x04000000 DT_SIZE_K(32)>;
 	};
 
 	soc {
 
-		flash-controller@50034000 {
+		flash-controller@40034000 {
 			compatible = "nxp,lpc-iap";
 			label = "FLASH_IAP";
-			reg = <0x50034000 0x18>;
+			reg = <0x40034000 0x18>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@10000000 {
+			flash0: flash@00000000 {
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
-				reg = <0x10000000 DT_SIZE_K(630)>;
+				reg = <0x00000000 DT_SIZE_K(630)>;
 				erase-block-size = <512>;
 				write-block-size = <512>;
 			};
-
-			flash_reserved: flash@1009D800 {
-				compatible = "soc-nv-flash";
-				reg = <0x1009D800 DT_SIZE_K(10)>;
-				status = "disabled";
-			};
-
-			boot_rom: flash@13000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x13000000 DT_SIZE_K(128)>;
-			};
 		};
 
-		usart0: usart@50086000 {
+		usart0: usart@40086000 {
 			compatible = "nxp,lpc-usart";
-			reg = <0x50086000 0xE44>;
+			reg = <0x40086000 0xe44>;
 			interrupts = <14 0>;
 			label = "USART_0";
 			status = "disabled";
 		};
 
 		gpio0: gpio@0 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x4008c000 0x2488>;
+			interrupts = <2 2>;
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@1 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x4008c000 0x2488>;
+			interrupts = <3 2>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -135,9 +123,9 @@
 			#gpio-cells = <2>;
 		};
 
-		spi8: spi@5009f000 {
+		spi8: spi@4009f000 {
 			compatible = "nxp,lpc-spi";
-			reg = <0x5009f000 0x1000>;
+			reg = <0x4009f000 0x1000>;
 			interrupts = <59 0>;
 			label = "SPI_8";
 			status = "disabled";
