@@ -158,6 +158,7 @@ union tcp_endpoint {
 
 struct tcp { /* TCP connection */
 	sys_snode_t next;
+	void *recv_user_data;
 	enum tcp_state state;
 	u32_t seq;
 	u32_t ack;
