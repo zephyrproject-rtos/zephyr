@@ -12,6 +12,7 @@
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
+#include "hal/radio.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -446,6 +447,9 @@ u8_t ll_adv_enable(u8_t enable)
 	}
 
 	lll = &adv->lll;
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	pdu_adv = lll_adv_data_peek(lll);
 	if (pdu_adv->tx_addr) {
@@ -596,6 +600,10 @@ u8_t ll_adv_enable(u8_t enable)
 		conn_lll->rssi_reported = 0x7F;
 		conn_lll->rssi_sample_count = 0;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+		conn_lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 		/* FIXME: BEGIN: Move to ULL? */
 		conn_lll->role = 1;

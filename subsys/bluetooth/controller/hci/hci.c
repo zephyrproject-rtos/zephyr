@@ -449,7 +449,8 @@ static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
-	status = ll_tx_pwr_lvl_get(handle, type, &rp->tx_power_level);
+	status = ll_tx_pwr_lvl_get(BT_HCI_VS_LL_HANDLE_TYPE_CONN,
+				   handle, type, &rp->tx_power_level);
 
 	rp->status = status;
 	rp->handle = sys_cpu_to_le16(handle);
@@ -1866,6 +1867,10 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	rp->commands[0] |= BIT(5) | BIT(7);
 	/* Read Static Addresses, Read Key Hierarchy Roots */
 	rp->commands[1] |= BIT(0) | BIT(1);
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	/* Write Tx Power, Read Tx Power */
+	rp->commands[1] |= BIT(5) | BIT(6);
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 }
 
@@ -1998,6 +2003,49 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	(void)memset(rp->er, 0x00, sizeof(rp->er));
 #endif /* CONFIG_SOC_FAMILY_NRF */
 }
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_vs_write_tx_power_level *cmd = (void *)buf->data;
+	struct bt_hci_rp_vs_write_tx_power_level *rp;
+	u8_t handle_type;
+	u16_t handle;
+	u8_t status;
+
+	handle_type = cmd->handle_type;
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->selected_tx_power = cmd->tx_power_level;
+
+	status = ll_tx_pwr_lvl_set(handle_type, handle, &rp->selected_tx_power);
+
+	rp->status = status;
+	rp->handle_type = handle_type;
+	rp->handle = sys_cpu_to_le16(handle);
+}
+
+static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_vs_read_tx_power_level *cmd = (void *)buf->data;
+	struct bt_hci_rp_vs_read_tx_power_level *rp;
+	u8_t handle_type;
+	u16_t handle;
+	u8_t status;
+
+	handle_type = cmd->handle_type;
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	status = ll_tx_pwr_lvl_get(handle_type, handle, 0, &rp->tx_power_level);
+
+	rp->status = status;
+	rp->handle_type = handle_type;
+	rp->handle = sys_cpu_to_le16(handle);
+}
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -2184,6 +2232,16 @@ int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_VS_READ_KEY_HIERARCHY_ROOTS):
 		vs_read_key_hierarchy_roots(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	case BT_OCF(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL):
+		vs_write_tx_power_level(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_VS_READ_TX_POWER_LEVEL):
+		vs_read_tx_power_level(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
