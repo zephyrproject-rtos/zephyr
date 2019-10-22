@@ -340,6 +340,7 @@ int ll_init(struct k_sem *sem_rx)
 
 void ll_reset(void)
 {
+	u8_t bdaddr[BDADDR_SIZE] = {0, };
 	int err;
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -386,6 +387,9 @@ void ll_reset(void)
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
 		ull_filter_reset(false);
 	}
+
+	/* reset random device address */
+	ll_addr_set(1, bdaddr);
 
 	/* Re-initialize ULL internals */
 
