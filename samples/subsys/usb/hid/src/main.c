@@ -116,7 +116,15 @@ static const struct hid_ops ops = {
 
 void main(void)
 {
+	int ret;
+
 	LOG_DBG("Starting application");
+
+	ret = usb_enable();
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	k_delayed_work_init(&delayed_report_send, send_report);
 }
