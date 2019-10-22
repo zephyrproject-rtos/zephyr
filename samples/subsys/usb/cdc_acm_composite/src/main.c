@@ -19,6 +19,9 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+#include <usb/usb_device.h>
+#endif
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
@@ -127,6 +130,16 @@ void main(void)
 		LOG_DBG("CDC_ACM_1 device not found");
 		return;
 	}
+
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+	int ret;
+
+	ret = usb_enable();
+	if (ret < 0) {
+		LOG_ERR("Failed to enable USB device");
+		return;
+	}
+#endif
 
 	LOG_INF("Wait for DTR");
 

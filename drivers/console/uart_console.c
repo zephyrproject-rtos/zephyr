@@ -33,6 +33,9 @@
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"
 #endif
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+#include <usb/usb_device.h>
+#endif
 
 static struct device *uart_console_dev;
 
@@ -596,6 +599,14 @@ static int uart_console_init(struct device *arg)
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
 #if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
+#ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
+	int ret;
+
+	ret = usb_enable();
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 	while (1) {
 		u32_t dtr = 0U;
 
