@@ -534,6 +534,7 @@ struct device *radio_hf_clock_get(void)
 
 void ll_reset(void)
 {
+	u8_t bdaddr[BDADDR_SIZE] = {0, };
 	u16_t conn_handle;
 
 	/* disable advertiser events */
@@ -573,6 +574,9 @@ void ll_reset(void)
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
 		ll_filter_reset(false);
 	}
+
+	/* reset random device address */
+	ll_addr_set(1, bdaddr);
 
 	/* memory allocations */
 	common_init();
