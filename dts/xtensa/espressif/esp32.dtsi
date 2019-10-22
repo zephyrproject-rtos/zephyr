@@ -92,5 +92,13 @@
 			label = "I2C_1";
 			status = "disabled";
 		};
+
+		trng0: trng@3ff75144 {
+			compatible = "espressif,esp32-trng";
+			reg = <0x3FF75144 0x4>;
+			/* interrupts = <33 0>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			label = "TRNG_0";
+			status = "disabled";
+		};
 	};
 };
