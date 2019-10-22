@@ -26,24 +26,31 @@ build and configure them, respectively. Module :file:`CMakeLists.txt` files are
 added to the build using CMake's `add_subdirectory()`_ command, and the
 :file:`Kconfig` files are included in the build's Kconfig menu tree.
 
-If you have :ref:`west <west>` installed, you don't need to worry about how
-this variable is defined unless you are adding a new module. The build system
-knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
-modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
-variable or by adding a :makevar:`ZEPHYR_EXTRA_MODULES` line to ``.zephyrrc``
-(See the section on :ref:`env_vars` for more details). This can be
-useful if you want to keep the list of modules found with west and also add
-your own.
+Each module used by upstream Zephyr is contained in its own Git repository, and
+the set of Git repositories is managed by :ref:`west <west>`. See
+:ref:`repo-structure` for more information on the Zephyr repository topology,
+and :ref:`west-multi-repo` for more details on how west manages multiple
+repositories.
 
-See the section about :ref:`west-multi-repo` for more details.
+In that way, if you use upstream Zephyr and therefore west, you don't need to
+worry about how this variable is defined at all. The build system knows how to
+use west to set :makevar:`ZEPHYR_MODULES`. You can add additional modules to
+this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake variable or by
+setting the :makevar:`ZEPHYR_EXTRA_MODULES` environment varialbe in
+``.zephyrrc`` (See the section on :ref:`env_vars` for more details). This can be
+useful if you want to extend the list of modules found with west with your own
+local ones without having to modify the `manifest file <west.yml_>`_.
 
-Finally, you can also specify the list of modules yourself in various ways, or
-not use modules at all if your application doesn't need them.
-
-
+It is also possible to avoid using west or modules at all, see the section below
+for more information.
 
 Module Inclusion
 ****************
+
+.. note::
+   In all cases below the :makevar:`ZEPHYR_EXTRA_MODULES` environment and CMake
+   variables are taken into account only if the :makevar:`ZEPHYR_MODULES` CMake
+   variable is set, since the former is an extension to the latter.
 
 .. _modules_using_west:
 
@@ -179,13 +186,15 @@ Zephyr project issue tracking system with details about the module and how it
 integrates into the project. If the request is approved, a new repository will
 created by the project team and initialized with basic information that would
 allow submitting code to the module project following the project contribution
-guidelines.
+guidelines. The request may be approved by a maintainer of a particular
+subsystem or may have to be escalated to the TSC.
 
-All modules should be hosted in repositories under the Zephyr organization. The
-manifest should only point to repositories maintained under the Zephyr project.
-If a module is maintained as a fork of another project on Github, the Zephyr module
-related files and changes in relation to upstream need to be maintained in a
-special branch named ``zephyr``.
+All modules must be hosted in repositories under the `Zephyr organization
+<zephyrproject-rtos_>`_, and thus the manifest must only point to repositories
+maintained under the Zephyr project. If a module is maintained as a fork of an
+externally maintained project on Github or elsehwere, the Zephyr module related
+files and changes in relation to upstream must be committed to the module
+repository's ``master`` branch. See :ref:`branches` for additional information.
 
 Process
 -------
@@ -196,11 +205,12 @@ Follow the following steps to request a new module:
    created
 #. Propose a name for the repository to be created under the Zephyr project
    organization on Github.
-#. Maintainers from the Zephyr project will create the repository and initialize
-   it. You will be added as a collaborator in the new repository.
+#. If the request is approved, maintainers from the Zephyr project will create
+   the repository and initialize it. You will be added as a collaborator in the
+   new repository.
 #. Submit the module content (code) to the new repository following the
    guidelines described :ref:`here <modules_using_west>`.
-#. Add a new entry to the :zephyr_file:`west.yml` with the following
+#. Add a new entry to the `west.yml`_ manifest file with the following
    information:
 
    .. code-block:: console
@@ -231,7 +241,7 @@ Changes to existing modules
 #. Submit the changes using a pull request to an existing repository following
    the :ref:`contribution guidelines <contribute_guidelines>`.
 #. Submit a pull request changing the entry referencing the module into the
-   :zephyr_file:`west.yml` of the main Zephyr tree with the following
+   `west.yml`_ of the main Zephyr tree with the following
    information:
 
    .. code-block:: console
@@ -253,9 +263,43 @@ Where 23 in the example above indicated the pull request number submitted to the
 *my_module* repository. Once the module changes are reviewed and merged, the
 revision needs to be changed to the commit hash from the module repository.
 
+Upmerging forks
+===============
 
+When a module is in fact a fork of an existing, external project that is hosted
+on GitHub or elsewhere, it is often necessary to upmerge it: update the copy
+that is hosted under the `zephyrproject-rtos`_ GitHub organization with the
+latest changes from the external upstream repository.
+
+The procedure for upmerging module repositories that are forks of external
+projects is constrained by the following two factors:
+
+* History must **never** be rewritten in any repository that is referenced in
+  the `west.yml`_ manifest file, since that could break older revisions of the
+  repository set as a whole. This therefore excludes rebasing the module
+  repository and keeping the zephyr-specific changes always on top.
+* GitHub does not deal correctly with merge commits contained inside Pull
+  Requests, which prevents us from using regular ``git merge`` operations
+  without having to resort to pushing directly to the repository.
+
+Due to the above, this is the procedure that you must use in order to upmerge a
+module repository with the latest changes from the external upstream
+repository:
+
+#. Make a note of the current upstream revision that the module repository is
+   currently upmerged to.
+#. Take the changes from the current to the latest upstream revision and apply
+   them to the current ``master`` branch of the module repository. There are
+   several ways of achieving this  It is important to note that the
+   module repository may not share a common Git history with the original
+   upstream repository, so using ``git diff`` and ``git apply`` might be the
+   simplest course of action.
+#. Submit a pull request against the module and zephyr (manifest) repository as
+   described in :ref:`changes_to_existing_module`.
 
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
 
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _zephyrproject-rtos: https://github.com/zephyrproject-rtos
+.. _west.yml: https://github.com/zephyrproject-rtos/zephyr/blob/master/west.yml
