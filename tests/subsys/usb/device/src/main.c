@@ -190,6 +190,14 @@ static void test_usb_dc_api_read_write(void)
 /*test case main entry*/
 void test_main(void)
 {
+	int ret;
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		printk("Failed to enable USB\n");
+		return;
+	}
+
 	ztest_test_suite(test_device,
 			 /* Test API for not USB attached state */
 			 ztest_unit_test(test_usb_dc_api_invalid),

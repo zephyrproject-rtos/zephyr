@@ -283,11 +283,20 @@ static struct webusb_req_handlers req_handlers = {
 
 void main(void)
 {
+	int ret;
+
 	LOG_DBG("");
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
 
+	ret = usb_enable();
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);
 }
+

@@ -553,6 +553,8 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 
 void main(void)
 {
+	int ret;
+
 	struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
 	u32_t dtr = 0U;
 	struct app_evt_t *ev;
@@ -620,8 +622,15 @@ void main(void)
 
 	usb_hid_register_device(hid1_dev, hid_kbd_report_desc,
 				sizeof(hid_kbd_report_desc), &ops);
+
 	usb_hid_init(hid0_dev);
 	usb_hid_init(hid1_dev);
+
+	ret = usb_enable();
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	/* Initialize CDC ACM */
 
