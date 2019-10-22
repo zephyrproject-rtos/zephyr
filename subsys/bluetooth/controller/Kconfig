@@ -289,6 +289,14 @@ config BT_CTLR_TX_PWR_MINUS_40
 
 endchoice
 
+config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
+	bool "Tx Power Dynamic Control"
+	depends on BT_HCI_VS_EXT
+	help
+	  Enable dynamic control of Tx power per role/connection.
+	  Provides HCI VS commands to set and get the current Tx
+	  power on an individual role/connection basis.
+
 config BT_CTLR_SETTINGS
 	bool "Settings System"
 	depends on BT_SETTINGS

@@ -432,6 +432,20 @@ u32_t lll_radio_is_idle(void)
 	return radio_is_idle();
 }
 
+s8_t lll_radio_tx_pwr_min_get(void)
+{
+	return radio_tx_power_min_get();
+}
+
+s8_t lll_radio_tx_pwr_max_get(void)
+{
+	return radio_tx_power_max_get();
+}
+
+s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl)
+{
+	return radio_tx_power_floor(tx_pwr_lvl);
+}
 
 static int init_reset(void)
 {
