@@ -107,13 +107,13 @@ static int ens210_channel_get(struct device *dev,
 		temp_frac -= 273150000;
 
 		val->val1 = temp_frac / 1000000;
-		val->val2 = temp_frac - val->val1;
+		val->val2 = temp_frac % 1000000;
 		break;
 	case  SENSOR_CHAN_HUMIDITY:
 		humidity_frac = sys_le16_to_cpu(drv_data->humidity.val) *
 				(1000000 / 512);
 		val->val1 = humidity_frac / 1000000;
-		val->val2 = humidity_frac - val->val1;
+		val->val2 = humidity_frac % 1000000;
 
 		break;
 	default:
