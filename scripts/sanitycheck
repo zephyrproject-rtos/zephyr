@@ -1777,9 +1777,17 @@ class CMake():
 
         verbose("Running cmake on %s for %s" %(self.source_dir, self.platform.name))
 
-        cmake_args = ['-B{}'.format(self.build_dir),
-                      '-S{}'.format(self.source_dir),
-                      '-G{}'.format(get_generator()[1])]
+        ldflags="-Wl,--fatal-warnings"
+
+        #fixme: add additional cflags based on options
+        cmake_args = [
+                '-B{}'.format(self.build_dir),
+                '-S{}'.format(self.source_dir),
+                '-DEXTRA_CFLAGS="-Werror ',
+                '-DEXTRA_AFLAGS=-Wa,--fatal-warnings',
+                '-DEXTRA_LDFLAGS="{}'.format(ldflags),
+                '-G{}'.format(get_generator()[1])
+                ]
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
         cmake_args.extend(args)
