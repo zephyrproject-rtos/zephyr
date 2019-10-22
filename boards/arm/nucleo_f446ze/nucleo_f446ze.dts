@@ -9,10 +9,6 @@
 #include <st/f4/stm32f446Xe.dtsi>
 #include "arduino_r3_connector.dtsi"
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 28aa6d448c4defb2dc197adea43cd2e508308e95
 / {
 	model = "STMicroelectronics STM32F446ZE-NUCLEO board";
 	compatible = "st,stm32f446ze-nucleo", "st,stm32f446";
@@ -59,19 +55,10 @@
 };
 
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 28aa6d448c4defb2dc197adea43cd2e508308e95
 arduino_serial: &usart6 {};
 arduino_i2c: &i2c1 {};
 arduino_spi: &spi1 {};
 
-<<<<<<< HEAD
-=======
-=======
->>>>>>> squash_branch
->>>>>>> 28aa6d448c4defb2dc197adea43cd2e508308e95
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_b>;
