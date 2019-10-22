@@ -10,7 +10,6 @@ menuconfig I2C_ESP32
 	bool "ESP32 I2C"
 	depends on SOC_ESP32
 	select GPIO_ESP32
-	select HAS_DTS_I2C
 	help
 	  Enables the ESP32 I2C driver
 
