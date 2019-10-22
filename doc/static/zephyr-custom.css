@@ -53,6 +53,13 @@ div.rst-other-versions dl {
     color: #000000;
 }
 
+/* code literal links should be blue, and purple after visiting */
+a.internal code.literal {
+   color: #2980B9;
+}
+a.internal:visited code.literal {
+   color: #9B59B9;
+}
 
 /* Make the version number more visible */
 .wy-side-nav-search>div.version {
