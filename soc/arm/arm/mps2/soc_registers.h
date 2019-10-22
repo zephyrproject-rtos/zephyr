@@ -45,15 +45,9 @@ struct mps2_fpgaio {
 #define FPGAIO_LED0_USERLED0		0
 #define FPGAIO_LED0_USERLED1		1
 
-/* Mask of valid bits in fpgaio led0 register */
-#define FPGAIO_LED0_MASK		BIT_MASK(2)
-
 /* Defines for bits in fpgaio button register */
 #define FPGAIO_BUTTON_USERPB0		0
 #define FPGAIO_BUTTON_USERPB1		1
-
-/* Mask of valid bits in fpgaio button register */
-#define FPGAIO_BUTTON_MASK		BIT_MASK(2)
 
 /* Defines for bits in fpgaio misc register */
 #define FPGAIO_MISC_CLCD_CS		0
@@ -65,8 +59,5 @@ struct mps2_fpgaio {
 #define FPGAIO_MISC_ADC_SPI_CS		7
 #define FPGAIO_MISC_SHIELD0_SPI_CS	8
 #define FPGAIO_MISC_SHIELD1_SPI_CS	9
-
-/* Mask of valid bits in fpgaio misc register */
-#define FPGAIO_MISC_MASK		BIT_MASK(10)
 
 #endif /* _ARM_MPS2_REGS_H_ */
