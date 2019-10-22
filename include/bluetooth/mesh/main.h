@@ -244,6 +244,49 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers);
  */
 int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 
+/** @brief Provision the local Mesh Node.
+ *
+ *  This API should normally not be used directly by the application. The
+ *  only exception is for testing purposes where manual provisioning is
+ *  desired without an actual external provisioner.
+ *
+ *  @param net_key  Network Key
+ *  @param net_idx  Network Key Index
+ *  @param flags    Provisioning Flags
+ *  @param iv_index IV Index
+ *  @param addr     Primary element address
+ *  @param dev_key  Device Key
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
+		      u8_t flags, u32_t iv_index, u16_t addr,
+		      const u8_t dev_key[16]);
+
+/** @brief Provision a Mesh Node using PB-ADV
+ *
+ * @param uuid    UUID
+ * @param net_idx Network Key Index
+ * @param addr    Address to assign to remote device. If addr is 0, the lowest
+ *                available address will be chosen.
+ * @param attention_duration The attention duration to be send to remote device
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
+			  u8_t attention_duration);
+
+/** @brief Check if the local node has been provisioned.
+ *
+ *  This API can be used to check if the local node has been provisioned
+ *  or not. It can e.g. be helpful to determine if there was a stored
+ *  network in flash, i.e. if the network was restored after calling
+ *  settings_load().
+ *
+ *  @return True if the node is provisioned. False otherwise.
+ */
+bool bt_mesh_is_provisioned(void);
+
 /**
  * @}
  */
@@ -333,49 +376,6 @@ int bt_mesh_suspend(void);
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_resume(void);
-
-/** @brief Provision the local Mesh Node.
- *
- *  This API should normally not be used directly by the application. The
- *  only exception is for testing purposes where manual provisioning is
- *  desired without an actual external provisioner.
- *
- *  @param net_key  Network Key
- *  @param net_idx  Network Key Index
- *  @param flags    Provisioning Flags
- *  @param iv_index IV Index
- *  @param addr     Primary element address
- *  @param dev_key  Device Key
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u16_t addr,
-		      const u8_t dev_key[16]);
-
-/** @brief Provision a Mesh Node using PB-ADV
- *
- * @param uuid    UUID
- * @param net_idx Network Key Index
- * @param addr    Address to assign to remote device. If addr is 0, the lowest
- *                available address will be chosen.
- * @param attention_duration The attention duration to be send to remote device
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
-			  u8_t attention_duration);
-
-/** @brief Check if the local node has been provisioned.
- *
- *  This API can be used to check if the local node has been provisioned
- *  or not. It can e.g. be helpful to determine if there was a stored
- *  network in flash, i.e. if the network was restored after calling
- *  settings_load().
- *
- *  @return True if the node is provisioned. False otherwise.
- */
-bool bt_mesh_is_provisioned(void);
 
 /** @brief Toggle the IV Update test mode
  *

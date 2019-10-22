@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+/** Callback function for the Health Server model */
 struct bt_mesh_health_srv_cb {
 	/* Fetch current faults */
 	int (*fault_get_cur)(struct bt_mesh_model *model, u8_t *test_id,
@@ -69,8 +70,10 @@ struct bt_mesh_health_srv {
 
 int bt_mesh_fault_update(struct bt_mesh_elem *elem);
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
 extern const struct bt_mesh_model_cb bt_mesh_health_srv_cb;
+/** @endcond */
 
 /** @def BT_MESH_MODEL_HEALTH_SRV
  *
