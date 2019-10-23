@@ -149,6 +149,19 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 
+/**
+ * @brief Deliver the incoming packet through the recv_cb of the net_context
+ *        to the upper layers
+ *
+ * @param conn		Network connection
+ * @param pkt		Network packet
+ * @param ip_hdr	Pointer to IP header, optional
+ * @param proto_hdr	Pointer to transport layer protocol header, optional
+ * @param user_data	User data passed as an argument
+ *
+ * @return NET_OK	if the packet is consumed through the recv_cb
+ *         NET_DROP	if the recv_cb isn't set
+ */
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     union net_ip_header *ip_hdr,
