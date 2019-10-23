@@ -65,7 +65,7 @@
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	sda-pin = <6>;
 	scl-pin = <7>;
@@ -78,7 +78,7 @@
 	};
 };
 
-&spi0 {
+&spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <2>;
@@ -87,10 +87,6 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -98,27 +94,20 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x8000>;
+			reg = <0x00000000 0xc000>;
 		};
-		slot0_partition: partition@8000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00008000 0x34000>;
+			reg = <0x0000C000 0x32000>;
 		};
-		slot1_partition: partition@3c000 {
+		slot1_partition: partition@3e000 {
 			label = "image-1";
-			reg = <0x0003c000 0x34000>;
+			reg = <0x0003E000 0x32000>;
 		};
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
-
-		/*
-		 * The flash starting at 0x0007a000 and ending at
-		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for FCB/NFFS
-		 * will be created in this area.
-		 */
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;
