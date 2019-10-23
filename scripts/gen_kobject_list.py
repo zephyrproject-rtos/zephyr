@@ -114,7 +114,6 @@ subsystems = [
 
 header_one = """%compare-lengths
 %define lookup-function-name z_object_lookup
-%define lookup-function-name z_priv_stack_map_lookup
 %language=ANSI-C
 %global-table
 %struct-type
@@ -127,11 +126,8 @@ header_one = """%compare-lengths
 
 header_two = """%}
 struct _k_object;
-struct _k_priv_stack_map {
-    char *name;
-    u8_t *priv_stack_addr;
-};
 """
+
 
 # Different versions of gperf have different prototypes for the lookup
 # function, best to implement the wrapper here. The pointer value itself is
@@ -154,11 +150,9 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
     }
 }
 
-u8_t *z_priv_stack_find(void *obj)
+u32_t z_priv_stack_find(void *obj)
 {
-    const struct _k_priv_stack_map *map =
-        z_priv_stack_map_lookup((const char *)obj, sizeof(void *));
-    return map->priv_stack_addr;
+    return z_object_lookup((const char *)obj, sizeof(void *))->data;
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
@@ -179,8 +173,11 @@ priv_stack_decl_temp = ("static u8_t __used"
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header_one)
 
-    for obj_addr in objs:
-        fp.write(priv_stack_decl_temp % (obj_addr))
+    for obj_addr, ko in objs.items():
+        obj_type = ko.type_name
+        is_stack = obj_type == "K_OBJ__THREAD_STACK_ELEMENT"
+#        if is_stack:
+#            fp.write(priv_stack_decl_temp % (obj_addr))
 
     fp.write(header_two)
 
@@ -202,7 +199,6 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
                 fp.write(", ")
         fp.write("};\n")
 
-    fp.write("%%\n")
     # Setup variables for mapping thread indexes
     syms = eh.get_symbols()
     thread_max_bytes = syms["CONFIG_MAX_THREAD_BYTES"]
@@ -211,6 +207,14 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
     for i in range(0, thread_max_bytes):
         thread_idx_map[i] = 0xFF
 
+    priv_stacks = None
+    num_stacks = eh.get_thread_stack_counter()
+    stack = 0
+    object_str = ""
+    
+    if num_stacks != 0:
+        priv_stacks = "static struct _k_thread_stack_element stack_data[%d] = {\n" % num_stacks
+
     for obj_addr, ko in objs.items():
         obj_type = ko.type_name
         # pre-initialized objects fall within this memory range, they are
@@ -218,15 +222,21 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         # at boot during some PRE_KERNEL_* phase
         initialized = static_begin <= obj_addr < static_end
         is_driver = obj_type.startswith("K_OBJ_DRIVER_")
-        print(obj_type)
+        is_stack = obj_type == "K_OBJ__THREAD_STACK_ELEMENT"
+
+        #create privilege stack for each K_OBJ__THREAD_STACK_ELEMENT
+        if is_stack and priv_stacks:
+            if stack != 0:
+                priv_stacks += ", K_THREAD_STACK_DEFINE(stack_data[%d], %d)" % (stack, ko.data)
+            else:
+                priv_stacks += "K_THREAD_STACK_DEFINE(stack_data[%d], %d)" % (stack, ko.data)
+            stack += 1
 
         byte_str = struct.pack("<I" if eh.little_endian else ">I", obj_addr)
-        fp.write("\"")
+        object_str += "\""
         for byte in byte_str:
             val = "\\x%02x" % byte
-            fp.write(val)
-
-        #fp.write("\",priv_stack_%x\n" % obj_addr)
+            object_str += val
 
         flags = "0"
         if initialized:
@@ -234,15 +244,17 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         if is_driver:
             flags += " | K_OBJ_FLAG_DRIVER"
 
-        fp.write("\", {}, %s, %s, %s\n" % (obj_type, flags, str(ko.data)))
+        object_str += "\", {}, %s, %s, %s\n" % (obj_type, flags, str(ko.data))
 
         if obj_type == "K_OBJ_THREAD":
             idx = math.floor(ko.data / 8)
             bit = ko.data % 8
             thread_idx_map[idx] = thread_idx_map[idx] & ~(2**bit)
 
-
-
+    fp.write(priv_stacks)
+    fp.write("};\n")
+    fp.write("%%\n")
+    fp.write(object_str)
     fp.write(footer)
 
     # Generate the array of already mapped thread indexes
@@ -254,11 +266,9 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
     fp.write('};\n')
 
-
 driver_macro_tpl = """
 #define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
-
 
 def write_validation_output(fp):
     fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
@@ -326,19 +336,19 @@ def write_kobj_otype_output(fp):
 
 
 def write_kobj_size_output(fp):
-    fp.write("/* Non device/stack objects */\n")
+    fp.write("/* Non device objects */\n")
     for kobj, obj_info in kobjects.items():
         dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
-        if kobj in {"device", "_k_thread_stack_element"}:
+        if kobj in {"device"}:
             continue
 
         if dep:
             fp.write("#ifdef %s\n" % dep)
 
-        fp.write('case %s: ret = sizeof(struct %s); break;\n' %
-                 (kobject_to_enum(kobj), kobj))
+        fp.write('case %s: ret = sizeof(struct %s); break;\n' % 
+                (kobject_to_enum(kobj), kobj))
         if dep:
             fp.write("#endif\n")
 
@@ -379,21 +389,22 @@ def parse_args():
 def main():
     parse_args()
     
-    eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
-    syms = eh.get_symbols()
-    max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
-    objs = eh.find_kobjects(syms)
-    if not objs:
-        sys.stderr.write("WARNING: zero kobject found in %s\n"
-                         % args.kernel)
-
-    thread_counter = eh.get_thread_counter()
-    if thread_counter > max_threads:
-        sys.exit("Too many thread objects ({})\n"
-                 "Increase CONFIG_MAX_THREAD_BYTES to {}"
-                 .format(thread_counter, -(-thread_counter // 8)))
-
     if args.output:
+        eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
+        syms = eh.get_symbols()
+        max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
+        objs = eh.find_kobjects(syms)
+        if not objs:
+            sys.stderr.write("WARNING: zero kobject found in %s\n"
+                             % args.kernel)
+    
+        thread_counter = eh.get_thread_counter()
+        if thread_counter > max_threads:
+            sys.exit("Too many thread objects ({})\n"
+                     "Increase CONFIG_MAX_THREAD_BYTES to {}"
+                     .format(thread_counter, -(-thread_counter // 8)))
+    
+
         with open(args.output, "w") as fp:
             write_gperf_table(fp, eh, objs,
                               syms["_static_kernel_objects_begin"],

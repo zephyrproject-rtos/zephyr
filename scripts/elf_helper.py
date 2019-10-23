@@ -38,6 +38,7 @@ STACK_TYPE = "_k_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
 futex_counter = 0
+thread_stack_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -57,10 +58,11 @@ class KobjectInstance:
         global thread_counter
         global sys_mutex_counter
         global futex_counter
+        global thread_stack_counter
 
         self.addr = addr
         self.type_obj = type_obj
-
+    
         # Type name determined later since drivers needs to look at the
         # API struct address
         self.type_name = None
@@ -76,6 +78,9 @@ class KobjectInstance:
         elif self.type_obj.name == "k_futex":
             self.data = "(u32_t)(&futex_data[%d])" % futex_counter
             futex_counter += 1
+        elif self.type_obj.name == "_k_thread_stack_element":
+            self.data = "(u32_t)(&stack_data[%d])" % thread_stack_counter
+            thread_stack_counter += 1
         else:
             self.data = 0
 
@@ -123,6 +128,7 @@ class ArrayType:
             # An array of stacks appears as a multi-dimensional array.
             # The last size is the size of each stack. We need to track
             # each stack within the array, not as one huge stack object.
+
             *dimensions, stacksize = self.elements
             num_members = 1
             for e in dimensions:
@@ -582,6 +588,10 @@ class ElfHelper:
     @staticmethod
     def get_thread_counter():
         return thread_counter
+
+    @staticmethod
+    def get_thread_stack_counter():
+        return thread_stack_counter
 
     @staticmethod
     def get_sys_mutex_counter():
