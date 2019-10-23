@@ -13,7 +13,7 @@
 #include <linker/sections.h>
 
 #include <kernel.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <arch/x86/ia32/segmentation.h>
 #include <ia32/exception.h>

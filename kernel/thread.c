@@ -17,7 +17,7 @@
 #include <linker/sections.h>
 
 #include <spinlock.h>
-#include <kernel_structs.h>
+#include <sys/arch_interface.h>
 #include <sys/math_extras.h>
 #include <sys_clock.h>
 #include <drivers/timer/system_timer.h>
@@ -29,6 +29,7 @@
 #include <kswap.h>
 #include <init.h>
 #include <debug/tracing.h>
+#include <string.h>
 #include <stdbool.h>
 
 static struct k_spinlock lock;

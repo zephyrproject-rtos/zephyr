@@ -17,7 +17,7 @@
 #include <inttypes.h>
 
 #include <kernel.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 

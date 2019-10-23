@@ -11,6 +11,8 @@
  * after having been loaded into RAM.
  */
 
+#include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/x86/ia32/asm.h>
 #include <arch/x86/msr.h>
 #include <kernel_arch_data.h>

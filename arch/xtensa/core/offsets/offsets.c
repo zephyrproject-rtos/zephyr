@@ -27,8 +27,8 @@
 
 /* list of headers that define whose structure offsets will be generated */
 
+#include <kernel_arch_data.h>
 #include <kernel_structs.h>
-
 #include <kernel_offsets.h>
 
 /* Xtensa-specific k_thread structure member offsets */

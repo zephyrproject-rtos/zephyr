@@ -110,7 +110,7 @@ static inline int sys_mutex_unlock(struct sys_mutex *mutex)
 
 #else
 #include <kernel.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 
 struct sys_mutex {
 	struct k_mutex kernel_mutex;

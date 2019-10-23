@@ -8,7 +8,7 @@
 #include <arch/x86/mmustructs.h>
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <init.h>
 #include <ctype.h>
 #include <string.h>

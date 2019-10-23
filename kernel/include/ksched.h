@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
 #include <debug/tracing.h>

@@ -11,6 +11,7 @@
  * Workqueue support functions
  */
 
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <spinlock.h>

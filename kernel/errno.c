@@ -12,8 +12,8 @@
  * context switching.
  */
 
-#include <kernel_structs.h>
-#include <syscall_handler.h>
+#include <kernel.h>
+#include <kernel_arch.h>
 
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is

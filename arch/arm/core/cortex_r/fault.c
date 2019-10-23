@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 
 /**
  *

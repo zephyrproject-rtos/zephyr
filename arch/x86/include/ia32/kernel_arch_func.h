@@ -12,7 +12,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <stddef.h> /* For size_t */
+#include <kernel_arch_data.h>
 
 #ifdef __cplusplus
 extern "C" {

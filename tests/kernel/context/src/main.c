@@ -21,7 +21,7 @@
  */
 
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <arch/cpu.h>
 #include <irq_offload.h>
 #include <sys_clock.h>

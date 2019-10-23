@@ -15,7 +15,7 @@
 #ifndef ZEPHYR_ARCH_RISCV_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_RISCV_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#include <soc.h>
+#include <kernel_arch_data.h>
 
 #ifdef __cplusplus
 extern "C" {

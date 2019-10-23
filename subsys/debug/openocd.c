@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 
 #define OPENOCD_UNIMPLEMENTED	0xffffffff
 

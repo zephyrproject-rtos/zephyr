@@ -14,6 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
 
+#include <kernel_structs.h>
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <stdbool.h>

@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <toolchain.h>
+#include <linker/sections.h>
+#include <offsets_short.h>
 #include <arch/x86/ia32/asm.h>
 #include <arch/cpu.h>
-#include <offsets_short.h>
 #include <syscall.h>
 
 /* Exports */

@@ -14,7 +14,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <kernel_structs.h>
+#include <kernel_arch.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_USERSPACE

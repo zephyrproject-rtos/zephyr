@@ -14,9 +14,10 @@
  * entering and exiting a C interrupt handler.
  */
 
-#include <kernel_structs.h>
-#include <arch/x86/ia32/asm.h>
+#include <toolchain.h>
+#include <linker/sections.h>
 #include <offsets_short.h>
+#include <arch/x86/ia32/asm.h>
 #include <arch/cpu.h>
 #include <drivers/interrupt_controller/sysapic.h>
 

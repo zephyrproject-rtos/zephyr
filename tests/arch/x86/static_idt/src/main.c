@@ -14,6 +14,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
+#include <kernel_arch.h>
 #include <arch/x86/ia32/segmentation.h>
 
 #include <kernel_structs.h>
