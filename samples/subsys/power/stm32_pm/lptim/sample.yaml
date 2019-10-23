@@ -1,0 +1,13 @@
+sample:
+  name: Low Power Timer Sample for nucleo board
+tests:
+  sample.power.pm.stm32_lptim.lsi:
+    platform_whitelist: nucleo_l4r5zi
+    build_only: true
+    tags: lptim
+  sample.power.pm.stm32_lptim.lse:
+    platform_whitelist: nucleo_l4r5zi
+    build_only: true
+    tags: lptim
+    extra_configs:
+      - CONFIG_STM32_LPTIM_CLOCK_LSE=y
