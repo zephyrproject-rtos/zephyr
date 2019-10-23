@@ -73,6 +73,11 @@
 #include <stm32wbxx_ll_wwdg.h>
 #endif
 
+#ifdef CONFIG_STM32_LPTIM_TIMER
+#include <stm32wbxx_ll_lptim.h>
+#include <stm32wbxx_ll_system.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */
