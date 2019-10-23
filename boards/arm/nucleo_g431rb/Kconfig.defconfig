@@ -10,6 +10,15 @@ if BOARD_NUCLEO_G431RB
 config BOARD
 	default "nucleo_g431rb"
 
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+
+endchoice
+
+endif # STM32_LPTIM_TIMER
+
 if UART_CONSOLE
 
 config UART_1

@@ -107,6 +107,10 @@
 	};
 };
 
+&lptim1 {
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
