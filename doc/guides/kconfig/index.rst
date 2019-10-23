@@ -816,21 +816,27 @@ Devicetree Related Functions
 ============================
 
 See the Python docstrings in ``scripts/kconfig/kconfigfunctions.py`` for more
-details on the functions.
+details on the functions.  The ``*_int`` version of each function returns the
+value as a decimal integer, while the ``*_hex`` version returns a hexidecimal
+value starting with ``0x``.
 
 .. code-block:: none
 
-  dt_chosen_reg_addr(kconf, _, chosen, index=0, unit=None):
-  dt_chosen_reg_size(kconf, _, chosen, index=0, unit=None):
-  dt_node_reg_addr(kconf, _, path, index=0, unit=None):
-  dt_node_reg_size(kconf, _, path, index=0, unit=None):
+  dt_chosen_reg_addr_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_addr_hex(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_hex(kconf, _, chosen, index=0, unit=None):
+  dt_node_reg_addr_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_addr_hex(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_hex(kconf, _, path, index=0, unit=None):
   dt_compat_enabled(kconf, _, compat):
   dt_node_has_bool_prop(kconf, _, path, prop):
 
 Example Usage
 -------------
 
-The following example shows the usage of the ``dt_node_reg_addr`` function.
+The following example shows the usage of the ``dt_node_reg_addr_hex`` function.
 This function will take a path to a devicetree node and register the register
 address of that node:
 
@@ -839,7 +845,7 @@ address of that node:
    boards/riscv/hifive1_revb/Kconfig.defconfig
 
    config FLASH_BASE_ADDRESS
-      default $(dt_node_reg_addr,/soc/spi@10014000,1)
+      default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
 
 In this example if we examine the dts file for the board:
 
@@ -852,7 +858,7 @@ In this example if we examine the dts file for the board:
       ...
    };
 
-The ``dt_node_reg_addr`` will search the dts file for a node at the path
+The ``dt_node_reg_addr_hex`` will search the dts file for a node at the path
 ``/soc/spi@10014000``.  The function than will extract the register address
 at the index 1.  This effective gets the value of ``0x20010000`` and causes
 the above to look like:
