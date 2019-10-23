@@ -95,11 +95,11 @@ config FLASH_NATIVE_POSIX
 
 endif # FLASH
 
-endif # BOARD_NATIVE_POSIX
-
 if USB
 
 config USB_NATIVE_POSIX
 	default y
 
 endif # USB
+
+endif # BOARD_NATIVE_POSIX
