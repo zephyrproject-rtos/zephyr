@@ -77,8 +77,7 @@ static void loopback_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	usb_read(ep, loopback_buf, bytes_to_read, NULL);
 }
 
-static void loopback_in_cb(u8_t ep,
-				enum usb_dc_ep_cb_status_code ep_status)
+static void loopback_in_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	if (usb_write(ep, loopback_buf, CONFIG_LOOPBACK_BULK_EP_MPS, NULL)) {
 		LOG_DBG("ep 0x%x", ep);
