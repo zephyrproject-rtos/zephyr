@@ -1,0 +1,44 @@
+# Kconfig - QSPI driver configuration options
+
+#
+# Copyright (c) 2019, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# QSPI Drivers
+#
+menuconfig QSPI
+	bool "QSPI hardware bus support"
+	select HAS_DTS_QSPI
+	help
+	  Enable support for the QSPI hardware bus.
+
+if QSPI
+
+config QSPI_ASYNC
+	bool "Enable Asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
+
+config QSPI_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+module = QSPI
+module-str = qspi
+source "subsys/logging/Kconfig.template.log_config"
+
+
+config	QSPI_0
+	bool "QSPI port 0"
+	help
+	  Enable QSPI controller port 0.
+
+
+endif # QSPI
