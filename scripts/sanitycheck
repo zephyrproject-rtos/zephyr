@@ -1826,6 +1826,11 @@ class CMake():
             self.instance.reason = "Cmake build failure"
             results = {"returncode": p.returncode}
 
+            cmake_err = os.path.join(self.build_dir, "CMakeFiles", "CMakeError.log")
+            with open(cmake_err, "r") as ferr:
+                for line in ferr:
+                    print("[CMakeError] %s" % line.strip())
+
 
         if out:
             with open(os.path.join(self.build_dir, self.log), "a") as log:
