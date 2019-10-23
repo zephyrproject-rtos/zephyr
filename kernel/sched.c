@@ -1052,6 +1052,13 @@ void z_sched_abort(struct k_thread *thread)
 		return;
 	}
 
+	/* if the thread is already terminated in other
+	 * cores, e.g. in thread exit, just return
+	 */
+	if (thread->base.thread_state & _THREAD_DEAD) {
+		return;
+	}
+
 	/* First broadcast an IPI to the other CPUs so they can stop
 	 * it locally.  Not all architectures support that, alas.  If
 	 * we don't have it, we need to wait for some other interrupt.
