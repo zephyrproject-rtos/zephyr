@@ -78,6 +78,11 @@
 #include <stm32g4xx_ll_pwr.h>
 #endif
 
+#ifdef CONFIG_STM32_LPTIM_TIMER
+#include <stm32g4xx_ll_lptim.h>
+#include <stm32g4xx_ll_system.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */
