@@ -37,18 +37,14 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /soc/x86_64/                              @andyross
-/arch/x86/                                @andrewboie @gnuless
+/arch/x86/                                @andrewboie
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar
 /arch/riscv/                              @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar
 /soc/riscv/                               @kgugala @pgielda @nategraff-sifive
 /soc/riscv/openisa*/                      @MaureenHelm
-/arch/x86/core/                           @andrewboie @gnuless
-/arch/x86/core/ia32/crt0.S                @andrewboie @gnuless
-/arch/x86/core/pcie.c                     @gnuless
-/arch/x86/core/multiboot.c                @gnuless
-/soc/x86/                                 @andrewboie @gnuless
+/soc/x86/                                 @andrewboie
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
@@ -97,7 +93,6 @@
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
 /boards/x86/                              @andrewboie @nashif
-/boards/x86/up_squared/                   @gnuless
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
@@ -121,9 +116,9 @@
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/counter/                         @nordic-krch
-/drivers/counter/counter_cmos.c           @gnuless
+/drivers/counter/counter_cmos.c           @andrewboie
 /drivers/display/                         @vanwinkeljan
-/drivers/display/display_framebuf.c       @gnuless
+/drivers/display/display_framebuf.c       @andrewboie
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
@@ -146,7 +141,7 @@
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
 /drivers/modem/                           @mike-scott
-/drivers/pcie/                            @gnuless
+/drivers/pcie/                            @andrewboie
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/sensor/                          @MaureenHelm
@@ -158,7 +153,7 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
-/drivers/serial/*ns16550*                 @gnuless
+/drivers/serial/*ns16550*                 @andrewboie
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78
@@ -169,7 +164,7 @@
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
-/drivers/timer/apic_timer.c               @gnuless
+/drivers/timer/apic_timer.c               @andrewboie
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
@@ -181,7 +176,7 @@
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
-/drivers/i2c/i2c_dw*                      @gnuless
+/drivers/i2c/i2c_dw*                      @dcpleung
 /drivers/*/*xec*                     @franciscomunoz @albertofloyd @scottwcpg
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
@@ -204,7 +199,7 @@
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
-/dts/bindings/serial/ns16550.yaml         @gnuless
+/dts/bindings/serial/ns16550.yaml         @andrewboie
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/openisa*                  @MaureenHelm
@@ -227,8 +222,8 @@
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
-/include/drivers/interrupt_controller/    @andrewboie @gnuless
-/include/drivers/pcie/                    @gnuless
+/include/drivers/interrupt_controller/    @andrewboie
+/include/drivers/pcie/                    @andrewboie
 /include/drivers/hwinfo.h                 @alexanderwachter
 /include/drivers/led.h                    @Mani-Sadhasivam
 /include/drivers/led_strip.h              @mbolivar
@@ -246,18 +241,15 @@
 /include/arch/riscv/                      @nategraff-sifive @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
-/include/arch/x86/ia32/arch.h             @andrewboie
-/include/arch/x86/multiboot.h             @gnuless
 /include/arch/xtensa/                     @andrewboie
 /include/sys/atomic.h                     @andrewboie @andyross
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
 /include/device.h                         @wentongwu @nashif
 /include/display/                         @vanwinkeljan
-/include/display/framebuf.h               @gnuless
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
-/include/dt-bindings/pcie/                @gnuless
+/include/dt-bindings/pcie/                @andrewboie
 /include/dt-bindings/usb/usb.h            @galak @finikorg
 /include/fs/                              @nashif @wentongwu
 /include/init.h                           @andrewboie @andyross
