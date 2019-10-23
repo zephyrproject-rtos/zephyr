@@ -50,22 +50,13 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 
 	bool emptybit = (h->avail_buckets & (1 << bidx)) == 0;
 	bool emptylist = b->next == 0;
-	bool emptycount = b->list_size == 0;
-	bool empties_match = emptybit == emptylist && emptybit == emptycount;
+	bool empties_match = emptybit == emptylist;
 
 	(void)empties_match;
 	CHECK(empties_match);
 
 	if (b->next != 0) {
 		CHECK(valid_chunk(h, b->next));
-	}
-
-	if (b->list_size == 2) {
-		CHECK(next_free_chunk(h, b->next) == prev_free_chunk(h, b->next));
-		CHECK(next_free_chunk(h, b->next) != b->next);
-	} else if (b->list_size == 1) {
-		CHECK(next_free_chunk(h, b->next) == prev_free_chunk(h, b->next));
-		CHECK(next_free_chunk(h, b->next) == b->next);
 	}
 }
 
@@ -100,10 +91,6 @@ bool sys_heap_validate(struct sys_heap *heap)
 		}
 
 		if (empty && h->buckets[b].next != 0) {
-			return false;
-		}
-
-		if (n != h->buckets[b].list_size) {
 			return false;
 		}
 	}

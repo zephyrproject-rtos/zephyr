@@ -24,12 +24,10 @@ static void free_list_remove(struct z_heap *h, int bidx,
 
 	CHECK(!chunk_used(h, c));
 	CHECK(b->next != 0);
-	CHECK(b->list_size > 0);
 	CHECK(h->avail_buckets & (1 << bidx));
 
-	b->list_size--;
-
-	if (b->list_size == 0) {
+	if (next_free_chunk(h, c) == c) {
+		/* this is the last chunk */
 		h->avail_buckets &= ~(1 << bidx);
 		b->next = 0;
 	} else {
@@ -46,8 +44,7 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 {
 	int bi = bucket_idx(h, chunk_size(h, c));
 
-	if (h->buckets[bi].list_size++ == 0) {
-		CHECK(h->buckets[bi].next == 0);
+	if (h->buckets[bi].next == 0) {
 		CHECK((h->avail_buckets & (1 << bi)) == 0);
 
 		/* Empty list, first item */
@@ -56,6 +53,8 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 		set_prev_free_chunk(h, c, c);
 		set_next_free_chunk(h, c, c);
 	} else {
+		CHECK(h->avail_buckets & (1 << bi));
+
 		/* Insert before (!) the "next" pointer */
 		chunkid_t second = h->buckets[bi].next;
 		chunkid_t first = prev_free_chunk(h, second);
@@ -65,8 +64,6 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 		set_next_free_chunk(h, first, c);
 		set_prev_free_chunk(h, second, c);
 	}
-
-	CHECK(h->avail_buckets & (1 << bi));
 }
 
 /* Allocates (fit check has already been perfomred) from the next
@@ -179,14 +176,16 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	 * fragmentation waste of the order of the block allocated
 	 * only.
 	 */
-	int loops = MIN(b->list_size, CONFIG_SYS_HEAP_ALLOC_LOOPS);
-
-	for (int i = 0; i < loops; i++) {
-		CHECK(b->next != 0);
-		if (chunk_size(h, b->next) >= sz) {
-			return split_alloc(h, bi, sz);
-		}
-		b->next = next_free_chunk(h, b->next);
+	if (b->next) {
+		chunkid_t first = b->next;
+		int i = CONFIG_SYS_HEAP_ALLOC_LOOPS;
+		do {
+			if (chunk_size(h, b->next) >= sz) {
+				return split_alloc(h, bi, sz);
+			}
+			b->next = next_free_chunk(h, b->next);
+			CHECK(b->next != 0);
+		} while (--i && b->next != first);
 	}
 
 	/* Otherwise pick the smallest non-empty bucket guaranteed to
@@ -233,7 +232,6 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	CHECK(chunk0_size + min_chunk_size(h) < buf_sz);
 
 	for (int i = 0; i < nb_buckets; i++) {
-		h->buckets[i].list_size = 0;
 		h->buckets[i].next = 0;
 	}
 
