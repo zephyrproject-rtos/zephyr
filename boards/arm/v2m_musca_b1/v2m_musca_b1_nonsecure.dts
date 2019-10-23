@@ -42,14 +42,14 @@
 		};
 	};
 
-	flash0: flash@0a060400 {
+	flash0: flash@0a070400 {
 		/* Embedded flash */
-		reg = <0x0a060400 0x19fc00>;
+		reg = <0x0a070400 0x19fc00>;
 	};
 
-	sram0: memory@20070000 {
+	sram0: memory@20040000 {
 		compatible = "mmio-sram";
-		reg = <0x20070000 0x10000>;
+		reg = <0x20040000 0x40000>;
 	};
 
 	sysclk: system-clock {
