@@ -55,7 +55,6 @@ enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
 struct z_heap_bucket {
 	chunkid_t next;
-	size_t list_size;
 };
 
 struct z_heap {
