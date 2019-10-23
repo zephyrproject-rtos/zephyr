@@ -22,14 +22,15 @@ static int tcp_rto = 500; /* Retransmission timeout, msec */
 static int tcp_retries = 3;
 static int tcp_window = NET_IPV6_MTU;
 static bool tcp_echo;
-static bool _tcp_conn_delete = true;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
+
+static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
+				CONFIG_NET_MAX_CONTEXTS, 4);
 
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
-static void *tcp_conn_delete(struct tcp *conn);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
@@ -286,6 +287,66 @@ static void tcp_win_free(struct tcp_win *w, const char *name)
 	tcp_free(w);
 }
 
+static int tcp_conn_unref(struct tcp *conn)
+{
+	int ref_count = atomic_dec(&conn->ref_count) - 1;
+	int key;
+
+	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
+
+	if (ref_count) {
+		tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
+		goto out;
+	}
+
+	key = irq_lock();
+
+	if (conn->context->conn_handler) {
+		net_conn_unregister(conn->context->conn_handler);
+		conn->context->conn_handler = NULL;
+	}
+
+	if (conn->context->recv_cb) {
+		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
+					-ECONNRESET, conn->recv_user_data);
+	}
+
+	conn->context->tcp = NULL;
+
+	net_context_unref(conn->context);
+
+	tcp_send_queue_flush(conn);
+
+	tcp_win_free(conn->snd, "SND");
+	tcp_win_free(conn->rcv, "RCV");
+
+	tcp_free(conn->src);
+	tcp_free(conn->dst);
+
+	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *)conn);
+
+	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+
+	memset(conn, 0, sizeof(*conn));
+
+	irq_unlock(key);
+out:
+	return ref_count;
+}
+
+int net_tcp_unref(struct net_context *context)
+{
+	int ref_count = 0;
+
+	NET_DBG("context: %p, conn: %p", context, context->tcp);
+
+	if (context->tcp) {
+		ref_count = tcp_conn_unref(context->tcp);
+	}
+
+	return ref_count;
+}
+
 static void tcp_send_process(struct k_timer *timer)
 {
 	struct tcp *conn = k_timer_user_data_get(timer);
@@ -300,7 +361,8 @@ static void tcp_send_process(struct k_timer *timer)
 			tcp_send(tcp_pkt_clone(pkt));
 			conn->send_retries--;
 		} else {
-			conn = tcp_conn_delete(conn);
+			tcp_conn_unref(conn);
+			conn = NULL;
 		}
 	} else {
 		u8_t fl = th_get(pkt)->th_flags;
@@ -694,6 +756,70 @@ out:
 	return;
 }
 
+static void tcp_conn_ref(struct tcp *conn)
+{
+	int ref_count = atomic_inc(&conn->ref_count) + 1;
+
+	NET_DBG("conn: %p, ref_count: %d", conn, ref_count);
+}
+
+static struct tcp *tcp_conn_alloc(void)
+{
+	struct tcp *conn = NULL;
+	int ret;
+
+	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
+	if (ret) {
+		goto out;
+	}
+
+	memset(conn, 0, sizeof(*conn));
+
+	conn->state = TCP_LISTEN;
+
+	conn->win = tcp_window;
+
+	conn->rcv = tcp_win_new();
+	conn->snd = tcp_win_new();
+
+	sys_slist_init(&conn->send_queue);
+
+	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
+	k_timer_user_data_set(&conn->send_timer, conn);
+
+	tcp_conn_ref(conn);
+
+	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
+out:
+	NET_DBG("conn: %p", conn);
+
+	return conn;
+}
+
+int net_tcp_get(struct net_context *context)
+{
+	int ret = 0, key = irq_lock();
+	struct tcp *conn;
+
+	conn = tcp_conn_alloc();
+	if (conn == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	/* Mutually link the net_context and tcp connection */
+	conn->context = context;
+	context->tcp = conn;
+out:
+	irq_unlock(key);
+
+	NET_DBG("context: %p (local: %s, remote: %s), conn: %p", context,
+		tcp_endpoint_to_string((void *)&context->local),
+		tcp_endpoint_to_string((void *)&context->remote), conn);
+
+	return ret;
+}
+
 static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
 				int which)
 {
@@ -731,6 +857,127 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	}
 
 	return found ? conn : NULL;
+}
+
+void tcp_input(struct net_pkt *pkt)
+{
+	struct tcphdr *th = /*tp_tap_input(pkt) ? NULL :*/ th_get(pkt);
+
+	if (th) {
+		struct tcp *conn = tcp_conn_search(pkt);
+
+		if (conn == NULL && SYN == th->th_flags) {
+			struct net_context *context =
+				tcp_calloc(1, sizeof(struct net_context));
+			net_tcp_get(context);
+			conn = context->tcp;
+			conn->dst = tcp_endpoint_new(pkt, SRC);
+			conn->src = tcp_endpoint_new(pkt, DST);
+			/* Make an extra reference, the sanity check suite
+			 * will delete the connection explicitly
+			 */
+			tcp_conn_ref(conn);
+		}
+
+		if (conn) {
+			conn->iface = pkt->iface;
+			tcp_in(conn, pkt);
+		}
+	}
+}
+
+static struct tcp *tcp_conn_new(struct net_pkt *pkt);
+
+static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
+						struct net_pkt *pkt,
+						union net_ip_header *ip,
+						union net_proto_header *proto,
+						void *user_data)
+{
+	struct tcp *conn = ((struct net_context *)user_data)->tcp;
+	u8_t vhl = ip->ipv4->vhl;
+
+	ARG_UNUSED(net_conn);
+	ARG_UNUSED(proto);
+
+	if (vhl != 0x45) {
+		NET_ERR("conn: %p, Unsupported IP version: 0x%hx", conn, vhl);
+		goto out;
+	}
+
+	NET_DBG("conn: %p, %s", conn, tcp_th(pkt));
+
+	if (conn && TCP_LISTEN == conn->state) {
+		struct tcp *conn_old = conn;
+
+		conn = tcp_conn_new(pkt);
+
+		conn->context->iface = conn_old->context->iface;
+		conn->context->user_data = conn_old->context->user_data;
+
+		conn_old->context->remote = conn->dst->sa;
+
+		conn_old->accept_cb(conn->context,
+					&conn_old->context->remote,
+					sizeof(struct sockaddr), 0,
+					conn_old->context);
+	}
+
+	if (conn) {
+		tcp_in(conn, pkt);
+	}
+out:
+	return NET_DROP;
+}
+
+/* Create a new tcp connection, as a part of it, create and register
+ * net_context
+ */
+static struct tcp *tcp_conn_new(struct net_pkt *pkt)
+{
+	struct tcp *conn = NULL;
+	struct net_context *context = NULL;
+	sa_family_t af = net_pkt_family(pkt);
+	int ret;
+
+	ret = net_context_get(af, SOCK_STREAM, IPPROTO_TCP, &context);
+	if (ret < 0) {
+		NET_ERR("net_context_get(): %d", ret);
+		goto err;
+	}
+
+	conn = context->tcp;
+	conn->iface = pkt->iface;
+
+	conn->dst = tcp_endpoint_new(pkt, SRC);
+	conn->src = tcp_endpoint_new(pkt, DST);
+
+	NET_DBG("conn: src: %s, dst: %s", tcp_endpoint_to_string(conn->src),
+		tcp_endpoint_to_string(conn->dst));
+
+	memcpy(&context->remote, conn->dst, sizeof(context->remote));
+	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+
+	((struct sockaddr_in *)&context->local)->sin_family = af;
+
+	NET_DBG("context: local: %s, remote: %s",
+		tcp_endpoint_to_string((void *)&context->local),
+		tcp_endpoint_to_string((void *)&context->remote));
+
+	ret = net_conn_register(IPPROTO_TCP, af,
+				&context->remote, (void *)&context->local,
+				ntohs(conn->dst->sin.sin_port),/* local port */
+				ntohs(conn->src->sin.sin_port),/* remote port */
+				tcp_pkt_received, context,
+				&context->conn_handler);
+	if (ret < 0) {
+		NET_ERR("net_conn_register(): %d", ret);
+		net_context_unref(context);
+		conn = NULL;
+		goto err;
+	}
+err:
+	return conn;
 }
 
 /* TCP state machine, everything happens here */
@@ -850,7 +1097,7 @@ next_state:
 		break;
 	case TCP_CLOSED:
 		fl = 0;
-		tcp_conn_delete(conn);
+		tcp_conn_unref(conn);
 		break;
 	case TCP_TIME_WAIT:
 	case TCP_CLOSING:
@@ -889,23 +1136,6 @@ static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
 	tcp_in(conn, NULL);
 
 	return len;
-}
-
-/* API into the TCP stack as seen by the IP stack in net_context.c */
-
-/* Set up a new TCP state struct if one is available */
-int net_tcp_get(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
-}
-
-int net_tcp_unref(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
 }
 
 /* close() has been called on the socket */
@@ -992,23 +1222,6 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	}
 
 	return 0;
-}
-
-enum net_verdict tcp_pkt_received(struct net_conn *conn,
-				  struct net_pkt *pkt,
-				  union net_ip_header *ip_hdr,
-				  union net_proto_header *proto_hdr,
-				  void *user_data)
-{
-	ARG_UNUSED(conn);
-	ARG_UNUSED(ip_hdr);
-	ARG_UNUSED(proto_hdr);
-
-	struct net_context *context = (struct net_context *)user_data;
-
-	tcp_in(context->tcp, pkt);
-
-	return NET_OK;
 }
 
 /* When connect() is called on a TCP socket, register the socket for incoming
@@ -1324,7 +1537,17 @@ bool tp_input(struct net_pkt *pkt)
 						sizeof(data_to_send), tp->data);
 			tp_output(pkt->iface, buf, 1);
 			responded = true;
-			conn = tcp_conn_new(pkt);
+
+			{
+				struct net_context *context = tcp_calloc(1,
+						sizeof(struct net_context));
+				net_tcp_get(context);
+				conn = context->tcp;
+				conn->dst = tcp_endpoint_new(pkt, SRC);
+				conn->src = tcp_endpoint_new(pkt, DST);
+				conn->iface = pkt->iface;
+				tcp_conn_ref(conn);
+			}
 			conn->seq = tp->seq;
 			if (len > 0) {
 				tcp_win_append(conn->snd, "SND", data_to_send,
@@ -1333,18 +1556,25 @@ bool tp_input(struct net_pkt *pkt)
 			tcp_in(conn, NULL);
 		}
 		if (is("CLOSE", tp->op)) {
-			_tcp_conn_delete = true;
 			tp_trace = false;
-			tcp_conn_delete(tcp_conn_search(pkt));
+			{
+				struct net_context *context;
+
+				conn = (void *)sys_slist_peek_head(&tcp_conns);
+				context = conn->context;
+				tcp_conn_unref(conn);
+				tcp_conn_unref(conn);
+				tcp_free(context);
+			}
 			tp_mem_stat();
 			tp_nbuf_stat();
 			tp_pkt_stat();
 			tp_seq_stat();
 		}
 		if (is("CLOSE2", tp->op)) {
-			struct tcp *conn = (void *)
-				sys_slist_peek_head(&tp_conns);
-			tcp_close(conn);
+			struct tcp *conn =
+				(void *)sys_slist_peek_head(&tcp_conns);
+			net_tcp_put(conn->context);
 		}
 		if (is("RECV", tp->op)) {
 #define HEXSTR_SIZE 64
@@ -1377,8 +1607,6 @@ bool tp_input(struct net_pkt *pkt)
 					TP_INT);
 		tp_new_find_and_apply(tp_new, "tp_trace", &tp_trace, TP_BOOL);
 		tp_new_find_and_apply(tp_new, "tcp_echo", &tcp_echo, TP_BOOL);
-		tp_new_find_and_apply(tp_new, "tp_tcp_conn_delete",
-					&_tcp_conn_delete, TP_BOOL);
 		break;
 	case TP_INTROSPECT_REQUEST:
 		json_len = sizeof(buf);

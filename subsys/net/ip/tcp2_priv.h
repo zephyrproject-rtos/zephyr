@@ -158,6 +158,7 @@ union tcp_endpoint {
 
 struct tcp { /* TCP connection */
 	sys_snode_t next;
+	struct net_context *context;
 	void *recv_user_data;
 	enum tcp_state state;
 	u32_t seq;
@@ -173,6 +174,7 @@ struct tcp { /* TCP connection */
 	size_t send_retries;
 	struct net_if *iface;
 	net_tcp_accept_cb_t accept_cb;
+	atomic_t ref_count;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
