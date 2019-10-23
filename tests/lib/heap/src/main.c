@@ -15,13 +15,13 @@
  */
 
 #ifdef DT_SRAM_SIZE
-# define SZ1 DT_SRAM_SIZE
+# define SZ1 (DT_SRAM_SIZE  * 1024)
 #else
 # define SZ1 INT_MAX
 #endif
 
 #ifdef CONFIG_SRAM_SIZE
-# define SZ2 CONFIG_SRAM_SIZE
+# define SZ2 (CONFIG_SRAM_SIZE * 1024)
 #else
 # define SZ2 INT_MAX
 #endif
@@ -30,6 +30,7 @@
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 2)
 #define SMALL_HEAP_SZ 2048
+BUILD_ASSERT(BIG_HEAP_SZ > SMALL_HEAP_SZ);
 
 char heapmem[BIG_HEAP_SZ];
 
