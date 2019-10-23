@@ -100,7 +100,7 @@ DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_SRAM),0,K)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  This option specifies the size of the SRAM in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -108,7 +108,7 @@ config SRAM_SIZE
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_SRAM))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  This option specifies the base address of the SRAM on the board.  It is
 	  normally set by the board's defconfig file and the user should generally
@@ -119,7 +119,7 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -127,7 +127,7 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally

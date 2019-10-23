@@ -101,60 +101,60 @@ endif # SPI
 if CODE_ITCM
 
 config FLASH_SIZE
-	default $(dt_node_reg_size,/soc/flexram@400b0000/itcm@0,0,K)
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr,/soc/flexram@400b0000/itcm@0)
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0)
 
 endif # CODE_ITCM
 
 if CODE_FLEXSPI
 
 config FLASH_SIZE
-	default $(dt_node_reg_size,/soc/spi@402a8000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr,/soc/spi@402a8000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
 
 endif # CODE_FLEXSPI
 
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-	default $(dt_node_reg_size,/soc/spi@402a4000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr,/soc/spi@402a4000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1)
 
 endif # CODE_FLEXSPI2
 
 if DATA_DTCM
 
 config SRAM_SIZE
-	default $(dt_node_reg_size,/soc/flexram@400b0000/dtcm@20000000,0,K)
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/dtcm@20000000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr,/soc/flexram@400b0000/dtcm@20000000)
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/dtcm@20000000)
 
 endif # DATA_DTCM
 
 if DATA_SEMC
 
 config SRAM_SIZE
-	default $(dt_node_reg_size,/memory@80000000,0,K)
+	default $(dt_node_reg_size_int,/memory@80000000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr,/memory@80000000)
+	default $(dt_node_reg_addr_hex,/memory@80000000)
 
 endif # DATA_SEMC
 
 if DATA_OCRAM
 
 config SRAM_SIZE
-	default $(dt_node_reg_size,/memory@20200000,0,K)
+	default $(dt_node_reg_size_int,/memory@20200000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr,/memory@20200000)
+	default $(dt_node_reg_addr_hex,/memory@20200000)
 
 endif # DATA_OCRAM
 
