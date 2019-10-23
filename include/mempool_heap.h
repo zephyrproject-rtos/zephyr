@@ -35,8 +35,8 @@ struct k_mem_pool {
  * that k_heap does not.  We make space for the number of maximum
  * objects defined, and include extra so there's enough metadata space
  * available for the maximum number of minimum-sized objects to be
- * stored: 8 bytes for each desired chunk header, and a 24 word block
- * to reserve room for a "typical" set of bucket list heads and one heap
+ * stored: 8 bytes for each desired chunk header, and a 15 word block
+ * to reserve room for a "typical" set of bucket list heads and the heap
  * footer(this size was picked more to conform with existing test
  * expectations than any rigorous theory -- we have tests that rely on being
  * able to allocate the blocks promised and ones that make assumptions about
@@ -46,7 +46,7 @@ struct k_mem_pool {
 		K_HEAP_DEFINE(poolheap_##name,				\
 			      ((maxsz) * (nmax))			\
 			      + 8 * ((maxsz) * (nmax) / (minsz))	\
-			      + 25 * sizeof(void *));			\
+			      + 15 * sizeof(void *));			\
 		struct k_mem_pool name = {				\
 			.heap = &poolheap_##name			\
 		}
