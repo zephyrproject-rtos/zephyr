@@ -26,12 +26,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lp3943);
 
-#ifdef CONFIG_HAS_DTS_I2C
-#define CONFIG_LP3943_DEV_NAME			DT_INST_0_TI_LP3943_LABEL
-#define CONFIG_LP3943_I2C_ADDRESS		DT_INST_0_TI_LP3943_BASE_ADDRESS
-#define CONFIG_LP3943_I2C_MASTER_DEV_NAME	DT_INST_0_TI_LP3943_BUS_NAME
-#endif
-
 #include "led_context.h"
 
 /* LP3943 Registers */
@@ -113,7 +107,8 @@ static int lp3943_set_dim_states(struct lp3943_data *data, u32_t led, u8_t mode)
 	}
 
 	/* Set DIMx states for the LEDs */
-	if (i2c_reg_update_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS, reg,
+	if (i2c_reg_update_byte(data->i2c, DT_INST_0_TI_LP3943_BASE_ADDRESS,
+				reg,
 				LP3943_MASK << (led << 1),
 				mode << (led << 1))) {
 		LOG_ERR("LED reg update failed");
@@ -152,7 +147,7 @@ static int lp3943_led_blink(struct device *dev, u32_t led,
 	}
 
 	val = (period * 255U) / dev_data->max_period;
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP3943_BASE_ADDRESS,
 			       reg, val)) {
 		LOG_ERR("LED write failed");
 		return -EIO;
@@ -193,7 +188,7 @@ static int lp3943_led_set_brightness(struct device *dev, u32_t led,
 	}
 
 	val = (value * 255U) / dev_data->max_brightness;
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP3943_BASE_ADDRESS,
 			       reg, val)) {
 		LOG_ERR("LED write failed");
 		return -EIO;
@@ -220,7 +215,8 @@ static inline int lp3943_led_on(struct device *dev, u32_t led)
 
 	/* Set LED state to ON */
 	mode = LP3943_ON;
-	if (i2c_reg_update_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS, reg,
+	if (i2c_reg_update_byte(data->i2c, DT_INST_0_TI_LP3943_BASE_ADDRESS,
+				reg,
 				LP3943_MASK << (led << 1),
 				mode << (led << 1))) {
 		LOG_ERR("LED reg update failed");
@@ -242,7 +238,8 @@ static inline int lp3943_led_off(struct device *dev, u32_t led)
 	}
 
 	/* Set LED state to OFF */
-	if (i2c_reg_update_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS, reg,
+	if (i2c_reg_update_byte(data->i2c, DT_INST_0_TI_LP3943_BASE_ADDRESS,
+				reg,
 				LP3943_MASK << (led << 1), 0)) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
@@ -256,7 +253,7 @@ static int lp3943_led_init(struct device *dev)
 	struct lp3943_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 
-	data->i2c = device_get_binding(CONFIG_LP3943_I2C_MASTER_DEV_NAME);
+	data->i2c = device_get_binding(DT_INST_0_TI_LP3943_BUS_NAME);
 	if (data->i2c == NULL) {
 		LOG_DBG("Failed to get I2C device");
 		return -EINVAL;
@@ -280,7 +277,7 @@ static const struct led_driver_api lp3943_led_api = {
 	.off = lp3943_led_off,
 };
 
-DEVICE_AND_API_INIT(lp3943_led, CONFIG_LP3943_DEV_NAME,
+DEVICE_AND_API_INIT(lp3943_led, DT_INST_0_TI_LP3943_LABEL,
 		    &lp3943_led_init, &lp3943_led_data,
 		    NULL, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
 		    &lp3943_led_api);
