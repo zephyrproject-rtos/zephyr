@@ -119,6 +119,7 @@
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @andrewboie
 /drivers/dma/*sam0*                       @Sizurka
+/drivers/dma/dma_stm32*                   @cybertale
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
