@@ -1,5 +1,6 @@
 # Atmel SAM SPI
 
+# Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2018 qianfan Zhao
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,6 +18,67 @@ config SPI_SAM_PORT_0
 	  Enable SPI0 at boot
 
 if SPI_SAM_PORT_0
+
+choice SPI_SAM4_PORT_0_PIN_CS0
+	bool "CS0 pin"
+	optional
+	depends on SOC_SERIES_SAM4S
+
+	config SPI_SAM4_PORT_0_PIN_CS0_PA11
+		bool "PA11"
+
+endchoice
+
+choice SPI_SAM4_PORT_0_PIN_CS1
+	bool "CS1 pin"
+	optional
+	depends on SOC_SERIES_SAM4S
+
+	config SPI_SAM4_PORT_0_PIN_CS1_PA9
+		bool "PA9"
+
+	config SPI_SAM4_PORT_0_PIN_CS1_PA31
+		bool "PA31"
+
+	config SPI_SAM4_PORT_0_PIN_CS1_PB14
+		bool "PB14"
+
+	config SPI_SAM4_PORT_0_PIN_CS1_PC4
+		bool "PC4"
+
+endchoice
+
+choice SPI_SAM4_PORT_0_PIN_CS2
+	bool "CS2 pin"
+	optional
+	depends on SOC_SERIES_SAM4S
+
+	config SPI_SAM4_PORT_0_PIN_CS2_PA10
+		bool "PA10"
+
+	config SPI_SAM4_PORT_0_PIN_CS2_PA30
+		bool "PA30"
+
+	config SPI_SAM4_PORT_0_PIN_CS2_PB2
+		bool "PB2"
+
+endchoice
+
+choice SPI_SAM4_PORT_0_PIN_CS3
+	bool "CS3 pin"
+	optional
+	depends on SOC_SERIES_SAM4S
+
+	config SPI_SAM4_PORT_0_PIN_CS3_PA3
+		bool "PA3"
+
+	config SPI_SAM4_PORT_0_PIN_CS3_PA5
+		bool "PA5"
+
+	config SPI_SAM4_PORT_0_PIN_CS3_PA22
+		bool "PA22"
+
+endchoice
 
 config SPI_SAME70_PORT_0_PIN_CS0
 	bool "CS0 pin"
