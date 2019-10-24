@@ -251,6 +251,7 @@
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
+/include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/pcie/                @andrewboie
 /include/dt-bindings/usb/usb.h            @galak @finikorg
 /include/fs/                              @nashif @wentongwu
