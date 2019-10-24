@@ -25,6 +25,15 @@ config SPI_SLAVE
 	  Enables Driver SPI slave operations. Slave support depends
 	  on the driver and the hardware it runs on.
 
+config SPI_ENHANCED_MODES
+	bool "Enable enhanced modes (ddr/dual/quad/octal) [EXPERIMENTAL]"
+	help
+	  If the controller supports such modes and if some slave connected
+	  requires it, these will be made available via this option.
+	  Such modes are about dual, quad and octal MOSI lines but also about
+	  using double data rate, command/address/data based transactions as
+	  well as SPI flash hardware optimizations.
+
 config SPI_INIT_PRIORITY
 	int "Init priority"
 	default 70

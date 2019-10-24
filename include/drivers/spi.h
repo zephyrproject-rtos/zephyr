@@ -166,16 +166,119 @@ struct spi_config {
 };
 
 /**
+ * SPI Enhanced Mode flags: Double Data Rate, Dual/Quand/Octal modes
+ * (Respectively DDR and DQO)
+ */
+
+/**
+ * SPI Command phase is send via standard mode (single line)
+ * spi_config lines bit field will be superseded by this flag only
+ * for the command.
+ */
+#define SPI_EM_CMD_STD		BIT(0)
+
+/**
+ * SPI Command phase is send via enhanced modes (double/quad/octal)
+ * The mode will depend on the spi_config's lines bit field.
+ */
+#define SPI_EM_CMD_DQO		BIT(1)
+/**
+ * SPI Command phase will take advantage of Double Data Rate
+ * This flag is independent of SPI_EM_CMD_STD or SPI_EM_CMD_DQO.
+ */
+#define SPI_EM_CMD_DDR		BIT(2)
+/**
+ * SPI Addressing phase is send via standard mode (single line)
+ * spi_config's lines bit field will be superceded by this flag only
+ * for the address.
+ */
+#define SPI_EM_ADR_STD		BIT(3)
+/**
+ * SPI Addressing phase is send via enhanced modes (double/quad/octal)
+ * The mode will depend on the spi_config's lines bit field.
+ */
+#define SPI_EM_ADR_DQO		BIT(4)
+/**
+ * SPI Addressing phase will take advantage of Double Data Rate
+ * This flag is independent of SPI_EM_ADR_STD or SPI_EM_ADR_DQO.
+ */
+#define SPI_EM_ADR_DDR		BIT(5)
+/**
+ * SPI Data phase will take advantage of Double Data Rate
+ */
+#define SPI_EM_DATA_DDR		BIT(6)
+/**
+ * JEDEC standard is part of the transaction. This flag lets the SPI
+ * controller to know about it and take advantage of some hardware
+ * optimizations it may provide.
+ */
+#define SPI_EM_FLASH_JEDEC	BIT(7)
+
+enum spi_em_cmd_length {
+	SPI_EM_CMD_NONE		= 0,
+	SPI_EM_CMD_LEN_4_BITS,
+	SPI_EM_CMD_LEN_8_BITS,
+	SPI_EM_CMD_LEN_16_BITS
+};
+
+#define SPI_EM_CMD_LENGTH_SHIFT	(9)
+#define SPI_EM_CMD_LENGTH_MASK	(0x03 << SPI_EM_CMD_LENGTH_SHIFT)
+#define SPI_EM_CMD_LENGTH(_cfg_)		\
+	(((_cfg_) & SPI_EM_CMD_LENGTH_MASK) >> SPI_EM_CMD_LENGTH_SHIFT)
+
+#define SPI_EM_CMD_LENGTH_SET(_len_)		\
+	((_len_) << SPI_EM_CMD_LENGTH_SHIFT)
+
+enum spi_em_adr_length {
+	SPI_EM_ADR_NONE		= 0,
+	SPI_EM_ADR_LEN_4_BITS,
+	SPI_EM_ADR_LEN_8_BITS,
+	SPI_EM_ADR_LEN_12_BITS,
+	SPI_EM_ADR_LEN_16_BITS,
+	SPI_EM_ADR_LEN_20_BITS,
+	SPI_EM_ADR_LEN_24_BITS,
+	SPI_EM_ADR_LEN_28_BITS,
+	SPI_EM_ADR_LEN_32_BITS,
+	SPI_EM_ADR_LEN_36_BITS,
+	SPI_EM_ADR_LEN_40_BITS,
+	SPI_EM_ADR_LEN_44_BITS,
+	SPI_EM_ADR_LEN_48_BITS,
+	SPI_EM_ADR_LEN_52_BITS,
+	SPI_EM_ADR_LEN_56_BITS,
+	SPI_EM_ADR_LEN_60_BITS,
+	SPI_EM_ADR_LEN_64_BITS
+};
+
+#define SPI_EM_ADR_LENGTH_SHIFT	(11)
+#define SPI_EM_ADR_LENGTH_MASK	(0x1F << SPI_EM_ADR_LENGTH_SHIFT)
+#define SPI_EM_ADR_LENGTH(_cfg_)		\
+	(((_cfg_) & SPI_EM_ADR_LENGTH_MASK) >> SPI_EM_ADR_LENGTH_SHIFT)
+
+#define SPI_EM_ADR_LENGTH_SET(_len_)		\
+	((_len_) & SPI_EM_ADR_LENGTH_MASK)
+
+
+/**
  * @brief SPI buffer structure
  *
  * @param buf is a valid pointer on a data buffer, or NULL otherwise.
  * @param len is the length of the buffer or, if buf is NULL, will be the
  *    length which as to be sent as dummy bytes (as TX buffer) or
  *    the length of bytes that should be skipped (as RX buffer).
+ * @param flags is an optional attribute available if CONFIG_SPI_ENHANCED_MODES
+ *    has been enabled, and relates to ddr/dual/quad and octal modes.
+ *    This attribute is a bit field with following parts:
+ *     config          [0:8]  - See SPI enhanced mode flags above
+ *                              bits 8 and 9 are reserved for future use.
+ *     command length [9:10]  - 4 bits factor command length or 0 if none
+ *     address length [11:15] - 4 bits factor address length or 0 if none
  */
 struct spi_buf {
 	void *buf;
 	size_t len;
+#ifdef CONFIG_SPI_ENHANCED_MODES
+	u16_t flags;
+#endif
 };
 
 /**
