@@ -14,5 +14,6 @@ def test_runner_imports():
     runner_names = set(r.name() for r in ZephyrBinaryRunner.get_runners())
     expected = set(('arc-nsim', 'bossac', 'dfu-util', 'em-starterkit', 'esp32',
                     'hifive1', 'jlink', 'nios2', 'nrfjprog', 'openocd', 'pyocd',
-                    'qemu', 'xtensa', 'intel_s1000', 'blackmagicprobe'))
+                    'qemu', 'xtensa', 'intel_s1000', 'blackmagicprobe',
+                    'dediprog'))
     assert runner_names == expected

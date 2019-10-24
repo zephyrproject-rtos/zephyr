@@ -12,6 +12,7 @@ from runners.core import ZephyrBinaryRunner, MissingProgram
 # flake8: noqa: F401
 from runners import arc
 from runners import bossac
+from runners import dediprog
 from runners import dfu
 from runners import esp32
 from runners import hifive1
