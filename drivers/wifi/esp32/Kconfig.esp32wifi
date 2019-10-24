@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2019 Manulytica Ltd
+# Copyright (c) 2018 Linaro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig - ESP32 AT WiFi driver options
+
+menuconfig WIFI_ESP32
+	bool "ESP32 WiFi driver support"
+	default n
+	depends on WIFI
+	select NET_SOCKETS
+	select WIFI_OFFLOAD
+	select NET_L2_WIFI_MGMT
+	select MODEM
+	select MODEM_RECEIVER
+	select NET_OFFLOAD
+
+if WIFI_ESP32
+
+config WIFI_ESP32_UART_DEVICE
+	string "Serial device used for ESP32 connection"
+	default "UART_1"
+	help
+	Specify the device name of the serial device to which ESP32 is
+	connected.
+
+config WIFI_ESP32_HAS_ENABLE_PIN
+	bool "ESP32 device uses an enable pin"
+	default n
+	help
+	  This option defines whether or not the ESP32 device utilizes a
+	  enable pin
+
+if WIFI_ESP32_HAS_ENABLE_PIN
+
+config WIFI_ESP32_GPIO_DEVICE
+	string "GPIO driver's name to use to drive ESP32 enable"
+	default "GPIO_1"
+	help
+	  This option is mandatory to set which GPIO controller to use in
+	  order to drive the enable pin
+
+config WIFI_ESP32_GPIO_ENABLE_PIN
+	int "GPIO PIN to use to drive ESP32 enable"
+	help
+	  This option is mandatory to set which GPIO pin to use in order
+	  to enable the ESP32
+endif
+
+endif

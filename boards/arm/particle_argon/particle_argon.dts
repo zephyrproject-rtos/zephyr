@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Manulytica Ltd
  * Copyright (c) 2018 Matthias Boesl
  * Copyright (c) 2018 Peter Bigot Consulting, LLC
  *
@@ -23,10 +24,21 @@
 
 &uart1 { /* ESP32 */
 	compatible = "nordic,nrf-uarte";
-	current-speed = <921600>;
+	current-speed = <115200>;
 	status = "okay";
+
 	tx-pin = <37>;
 	rx-pin = <36>;
 	rts-pin = <39>;
 	cts-pin = <38>;
+
+	esp_32 {
+		compatible = "espressif,esp32-wifi";
+		label = "esp32-wifi";
+		status = "okay";
+
+		mdm-boot-gpios = <&gpio0 16 0>;
+		mdm-wifi-gpios = <&gpio0 24 0>;
+		mdm-host-wk-gpios = <&gpio0 7 0>;
+	};
 };

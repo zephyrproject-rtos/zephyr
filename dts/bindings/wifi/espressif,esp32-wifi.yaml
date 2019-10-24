@@ -1,0 +1,27 @@
+# Copyright (c) 2019, Manulytica Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+title: espressif ESP32 AT WiFi modem
+
+description: >
+    This is a representation of the espressif ESP32 AT WiFi modem.
+
+compatible: "espressif,esp32-wifi"
+
+include: uart-device.yaml
+
+properties:
+    label:
+      required: true
+
+    mdm-boot-gpios:
+      type: phandle-array
+      required: true
+
+    mdm-wifi-gpios:
+      type: phandle-array
+      required: true
+
+    mdm-host-wk-gpios:
+      type: phandle-array
+      required: false
