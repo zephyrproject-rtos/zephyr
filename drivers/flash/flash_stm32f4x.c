@@ -70,6 +70,17 @@ static int erase_sector(struct device *dev, u32_t sector)
 		return rc;
 	}
 
+#if FLASH_SECTOR_TOTAL == 24
+	/*
+	 * RM0090, §3.9.8: STM32F42xxx, STM32F43xxx
+	 * RM0386, §3.7.5: STM32F469xx, STM32F479xx
+	 */
+	if (sector >= 12) {
+		/* From sector 12, SNB is offset by 0b10000 */
+		sector += 4U;
+	}
+#endif
+
 	regs->cr &= STM32F4X_SECTOR_MASK;
 	regs->cr |= FLASH_CR_SER | (sector << 3);
 	regs->cr |= FLASH_CR_STRT;
