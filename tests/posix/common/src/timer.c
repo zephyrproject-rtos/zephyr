@@ -7,6 +7,8 @@
 #include <ztest.h>
 #include <time.h>
 #include <unistd.h>
+#include <posix/signal.h>
+#include <posix/time.h>
 
 #define SECS_TO_SLEEP 2
 #define DURATION_SECS 1
