@@ -802,32 +802,28 @@ void net_buf_simple_add_le16(struct net_buf_simple *buf, u16_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_le16(val);
-	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_le16(val, net_buf_simple_add(buf, sizeof(val)));
 }
 
 void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_be16(val);
-	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_be16(val, net_buf_simple_add(buf, sizeof(val)));
 }
 
 void net_buf_simple_add_le32(struct net_buf_simple *buf, u32_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_le32(val);
-	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_le32(val, net_buf_simple_add(buf, sizeof(val)));
 }
 
 void net_buf_simple_add_be32(struct net_buf_simple *buf, u32_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_be32(val);
-	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_be32(val, net_buf_simple_add(buf, sizeof(val)));
 }
 
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
@@ -845,16 +841,14 @@ void net_buf_simple_push_le16(struct net_buf_simple *buf, u16_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_le16(val);
-	memcpy(net_buf_simple_push(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_le16(val, net_buf_simple_push(buf, sizeof(val)));
 }
 
 void net_buf_simple_push_be16(struct net_buf_simple *buf, u16_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
-	val = sys_cpu_to_be16(val);
-	memcpy(net_buf_simple_push(buf, sizeof(val)), &val, sizeof(val));
+	sys_put_be16(val, net_buf_simple_push(buf, sizeof(val)));
 }
 
 void net_buf_simple_push_u8(struct net_buf_simple *buf, u8_t val)
