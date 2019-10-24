@@ -84,15 +84,23 @@ int z_clock_driver_init(struct device *device)
 
 #if defined(CONFIG_STM32_LPTIM_CLOCK_LSI)
 	/* enable LSI clock */
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	LL_RCC_LSI1_Enable();
+	while (!LL_RCC_LSI1_IsReady()) {
+#else
 	LL_RCC_LSI_Enable();
 	while (!LL_RCC_LSI_IsReady()) {
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 		/* Wait for LSI ready */
 	}
+
 	LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSI);
 
 #else /* CONFIG_STM32_LPTIM_CLOCK_LSI */
+#if defined(LL_APB1_GRP1_PERIPH_PWR)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif /* LL_APB1_GRP1_PERIPH_PWR */
 	/* enable backup domain */
 	LL_PWR_EnableBkUpAccess();
 	LL_RCC_ForceBackupDomainReset();
