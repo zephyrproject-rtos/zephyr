@@ -25,6 +25,14 @@
 		cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
 		};
 		cpu@1 {
 			compatible = "arm,cortex-m33";
@@ -58,9 +66,9 @@
 		reg = <0x20040000 DT_SIZE_K(16)>;
 	};
 
-	sramx: memory@04000000 {
+	sramx: memory@4000000 {
 		compatible = "mmio-sram";
-		reg = <0x04000000 DT_SIZE_K(32)>;
+		reg = <0x4000000 DT_SIZE_K(32)>;
 	};
 
 	soc {
@@ -72,10 +80,10 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@00000000 {
+			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
-				reg = <0x00000000 DT_SIZE_K(630)>;
+				reg = <0x0 DT_SIZE_K(630)>;
 				erase-block-size = <512>;
 				write-block-size = <512>;
 			};
