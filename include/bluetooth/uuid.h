@@ -90,8 +90,8 @@ struct bt_uuid_128 {
  * Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
  *
  * @code
- * BT_UUID_128_DECL(
- *       BT_UUID_128_ENC(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
+ * BT_UUID_DECLARE_128(
+ *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
  * @endcode
  *
  * Just replace the hyphen by the comma and add `0x` prefixes.
