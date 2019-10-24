@@ -84,6 +84,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&dma1 {
+	status = "okay";
+};
+
 &i2s2 {
 	status = "okay";
 };
