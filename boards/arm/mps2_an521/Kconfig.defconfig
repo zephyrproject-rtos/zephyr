@@ -3,19 +3,9 @@
 
 if BOARD_MPS2_AN521
 
-if !TRUSTED_EXECUTION_NONSECURE
-
 config BOARD
+	default "mps2_an521_nonsecure" if TRUSTED_EXECUTION_NONSECURE
 	default "mps2_an521"
-
-endif
-
-if TRUSTED_EXECUTION_NONSECURE
-
-config BOARD
-	default "mps2_an521_nonsecure"
-
-endif # !TRUSTED_EXECUTION_NONSECURE
 
 if GPIO
 

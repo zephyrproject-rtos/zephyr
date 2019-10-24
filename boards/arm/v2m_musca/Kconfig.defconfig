@@ -3,20 +3,9 @@
 
 if BOARD_MUSCA_A
 
-if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
-
 config BOARD
-	default "musca_a"
-
-endif
-
-if TRUSTED_EXECUTION_NONSECURE
-
-config BOARD
+	default "musca_a" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
 	default "musca_a_nonsecure"
-
-endif
-
 
 if GPIO
 
