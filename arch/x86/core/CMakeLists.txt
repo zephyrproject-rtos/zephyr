@@ -19,6 +19,11 @@ zephyr_library_sources_if_kconfig(x86_mmu.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/x86/include
+)
+
 if(CONFIG_X86_64)
   include(intel64.cmake)
 else()

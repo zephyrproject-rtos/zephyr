@@ -17,10 +17,10 @@
  * in the offsets.o module.
  */
 
-/* this file is only meant to be included by kernel_structs.h */
-
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
+
+#include <kernel_arch_data.h>
 
 #ifdef __cplusplus
 extern "C" {

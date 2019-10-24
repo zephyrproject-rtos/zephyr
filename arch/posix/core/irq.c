@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include "board_irq.h"
 
 #ifdef CONFIG_IRQ_OFFLOAD

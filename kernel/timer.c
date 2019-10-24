@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <debug/object_tracing_common.h>
 #include <init.h>
+#include <ksched.h>
 #include <wait_q.h>
 #include <syscall_handler.h>
 #include <stdbool.h>

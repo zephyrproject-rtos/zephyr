@@ -12,9 +12,8 @@
  * ARCv2 CPUs.
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 #include <offsets_short.h>
-#include <toolchain.h>
 #include <arch/cpu.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);

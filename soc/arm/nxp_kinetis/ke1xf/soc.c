@@ -13,7 +13,7 @@
 #include <init.h>
 #include <fsl_clock.h>
 #include <fsl_cache.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT_MSG(val >= min && val <= max, str)

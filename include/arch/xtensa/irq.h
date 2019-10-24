@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 
-#include <xtensa_api.h>
+#include <arch/xtensa/xtensa_api.h>
 #include <xtensa/xtruntime.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0

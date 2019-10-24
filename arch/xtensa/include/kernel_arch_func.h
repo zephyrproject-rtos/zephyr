@@ -10,9 +10,8 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
+#include <kernel_arch_data.h>
 #include <string.h>
-#include <stdbool.h>
-#include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,16 +22,6 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#define RSR(sr) \
-	({u32_t v; \
-	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
-	 v; })
-
-#define WSR(sr, v) \
-	do { \
-		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
-	} while (false)
-
 extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
@@ -41,15 +30,6 @@ extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 extern void z_xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-
-static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
-{
-	void *val;
-
-	val = (void *)RSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR);
-
-	return val;
-}
 
 static ALWAYS_INLINE void z_arch_kernel_init(void)
 {

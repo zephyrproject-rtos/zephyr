@@ -20,7 +20,6 @@
 #include <ztest.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <kernel_internal.h>
 
 #define BUF_LEN 10
 

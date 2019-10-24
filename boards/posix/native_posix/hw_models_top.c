@@ -18,7 +18,7 @@
 #include "timer_model.h"
 #include "irq_ctrl.h"
 #include "posix_board_if.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include "posix_arch_internal.h"
 #include "sdl_events.h"
 #include <sys/util.h>

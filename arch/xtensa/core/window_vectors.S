@@ -2,7 +2,7 @@
  * Copyright (c) 2016 Cadence Design Systems, Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "xtensa_rtos.h"
+#include <arch/xtensa/xtensa_rtos.h>
 
 /* WINDOW OVERFLOW AND UNDERFLOW EXCEPTION VECTORS AND ALLOCA EXCEPTION
  * HANDLER

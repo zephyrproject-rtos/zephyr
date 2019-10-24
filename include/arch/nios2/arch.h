@@ -15,10 +15,12 @@
 #define ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
 
 #include <system.h>
+
+#include <arch/nios2/thread.h>
 #include <arch/nios2/asm_inline.h>
 #include <arch/common/addr_types.h>
 #include <generated_dts_board.h>
-#include "nios2.h"
+#include <arch/nios2/nios2.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 

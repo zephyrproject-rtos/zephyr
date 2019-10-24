@@ -13,8 +13,7 @@
  */
 
 #include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_USERSPACE

@@ -6,7 +6,7 @@
 #include "zephyr/types.h"
 #include "fake_timer.h"
 #include "time_machine.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 
 #if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 /**

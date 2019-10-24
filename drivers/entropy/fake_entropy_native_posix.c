@@ -17,7 +17,7 @@
 #include <sys/util.h>
 #include <stdlib.h>
 #include <string.h>
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
 

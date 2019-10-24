@@ -12,7 +12,6 @@
 #include <kernel_structs.h>
 #include <sys/dlist.h>
 #include <sys/rb.h>
-#include <ksched.h>
 #include <sched_priq.h>
 #include <timeout_q.h>
 

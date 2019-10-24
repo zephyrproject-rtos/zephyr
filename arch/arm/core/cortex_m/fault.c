@@ -11,11 +11,8 @@
  * Common fault handler for ARM Cortex-M processors.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-
 #include <kernel.h>
-#include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>

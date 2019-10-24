@@ -5,16 +5,15 @@
  */
 
 
-#ifndef ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
-#define ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
+#ifndef ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
+#define ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
 
 #ifdef CONFIG_USERSPACE
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
+#include <sys/arch_interface.h>
 #include <sys/math_extras.h>
-#include <kernel_internal.h>
-#include <kernel_structs.h>
 #include <stdbool.h>
 #include <logging/log.h>
 
@@ -515,4 +514,4 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 
 #endif /* CONFIG_USERSPACE */
 
-#endif /* ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_ */
+#endif /* ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_ */

@@ -73,8 +73,6 @@ add_library(zephyr_interface INTERFACE)
 zephyr_library_named(zephyr)
 
 zephyr_include_directories(
-  kernel/include
-  ${ARCH_DIR}/${ARCH}/include
   include
   include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
@@ -632,6 +630,10 @@ set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
+target_include_directories(${OFFSETS_LIB} PRIVATE
+  kernel/include
+  ${ARCH_DIR}/${ARCH}/include
+  )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(     ${OFFSETS_LIB}
   ${SYSCALL_LIST_H_TARGET}

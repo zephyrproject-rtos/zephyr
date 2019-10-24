@@ -14,7 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

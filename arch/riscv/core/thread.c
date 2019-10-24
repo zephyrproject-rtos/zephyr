@@ -5,10 +5,7 @@
  */
 
 #include <kernel.h>
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <string.h>
+#include <ksched.h>
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg1,

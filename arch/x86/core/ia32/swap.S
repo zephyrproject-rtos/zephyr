@@ -11,8 +11,10 @@
  * This module implements the z_arch_swap() routine for the IA-32 architecture.
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
+#include <kernel.h>
+#include <arch/cpu.h>
+#include <kernel_arch_data.h>
 #include <offsets_short.h>
 
 	/* exports (internal APIs) */

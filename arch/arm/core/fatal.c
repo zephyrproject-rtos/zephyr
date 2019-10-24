@@ -12,12 +12,7 @@
  * and Cortex-R CPUs.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <inttypes.h>
-
 #include <kernel.h>
-#include <kernel_structs.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 

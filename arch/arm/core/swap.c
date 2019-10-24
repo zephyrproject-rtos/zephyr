@@ -5,8 +5,7 @@
  */
 
 #include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <kernel_internal.h>
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 extern void read_timer_start_of_swap(void);

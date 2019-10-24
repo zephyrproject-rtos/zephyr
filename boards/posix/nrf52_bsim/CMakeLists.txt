@@ -88,6 +88,8 @@ zephyr_library_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/HW_models/
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx_hal/
   $ENV{BSIM_COMPONENTS_PATH}/libRandv2/src/
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/posix/include
 )
 
 zephyr_ld_options(

@@ -6,8 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <kernel_structs.h>
-#include <ksched.h>
+#include <kernel.h>
 #include <cmsis_os2.h>
 
 /* Currently the timing implementations for timeouts and osDelay

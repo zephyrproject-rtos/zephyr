@@ -16,6 +16,7 @@
 #include <inttypes.h>
 
 #include <kernel.h>
+#include <kernel_internal.h>
 #include <kernel_structs.h>
 #include <exc_handle.h>
 #include <logging/log.h>

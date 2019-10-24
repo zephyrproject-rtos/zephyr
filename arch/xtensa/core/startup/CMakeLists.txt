@@ -10,8 +10,13 @@ if(CONFIG_XTENSA_RESET_VECTOR)
     )
 
   zephyr_library_sources(
-	reset-vector.S
-	memerror-vector.S
-	memctl_default.S
+    reset-vector.S
+    memerror-vector.S
+    memctl_default.S
+    )
+
+  zephyr_library_include_directories(
+    ${ZEPHYR_BASE}/kernel/include
+    ${ZEPHYR_BASE}/arch/xtensa/include
     )
 endif()

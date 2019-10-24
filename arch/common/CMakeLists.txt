@@ -29,3 +29,8 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   RAM_SECTIONS
   nocache.ld
 )
+
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+)

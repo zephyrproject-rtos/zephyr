@@ -22,6 +22,8 @@
 
 #if !defined(_ASMLANGUAGE)
 
+#include <kernel_arch_data.h>
+
 #ifdef CONFIG_CPU_ARCV2
 #include <v2/cache.h>
 #include <v2/irq.h>
@@ -30,19 +32,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
-{
-#ifdef CONFIG_SMP
-	u32_t core;
-
-	core = z_arc_v2_core_id();
-
-	return &_kernel.cpus[core];
-#else
-	return &_kernel.cpus[0];
-#endif
-}
 
 static ALWAYS_INLINE void z_arch_kernel_init(void)
 {

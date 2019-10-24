@@ -16,7 +16,7 @@
 #include <em_emu.h>
 #include <em_chip.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #include <logging/log.h>
 

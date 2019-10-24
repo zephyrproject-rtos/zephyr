@@ -18,14 +18,12 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include <kernel_arch_thread.h>
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include <sys/dlist.h>
-#include <kernel_internal.h>
 
 #ifdef __cplusplus
 extern "C" {

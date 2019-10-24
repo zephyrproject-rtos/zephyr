@@ -16,12 +16,12 @@
  * necessary to instantiate instances of struct k_thread.
  */
 
-#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_THREAD_H_
-#define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_THREAD_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_THREAD_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_THREAD_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <xtensa_context.h>
+#include <arch/xtensa/xtensa_context.h>
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.
@@ -112,5 +112,5 @@ typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_THREAD_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_THREAD_H_ */
 

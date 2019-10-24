@@ -5,10 +5,7 @@
  */
 
 #include <kernel.h>
-#include <kernel_internal.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <string.h>
+#include <ksched.h>
 
 /* forward declaration to asm function to adjust setup the arguments
  * to z_thread_entry() since this arch puts the first four arguments

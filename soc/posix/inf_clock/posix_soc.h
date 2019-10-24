@@ -7,7 +7,7 @@
 #ifndef _POSIX_POSIX_SOC_INF_CLOCK_H
 #define _POSIX_POSIX_SOC_INF_CLOCK_H
 
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 
 #ifdef __cplusplus
 extern "C" {

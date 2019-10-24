@@ -12,12 +12,9 @@
  * processor architecture.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
+#include <kernel.h>
+#include <ksched.h>
 #include <arch/x86/mmustructs.h>
-#include <sys/printk.h>
 
 /* forward declaration */
 
