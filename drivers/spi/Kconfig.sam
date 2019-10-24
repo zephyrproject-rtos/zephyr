@@ -23,8 +23,15 @@ if SPI_SAM_PORT_0
 choice SPI_SAM_PORT_0_PIN_CS0
 	bool "CS0 pin"
 	optional
-	depends on SOC_SERIES_SAME70 || \
+	depends on SOC_SERIES_SAM4S || \
+		   SOC_SERIES_SAM4E || \
+		   SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+
+	config SPI_SAM_PORT_0_PIN_CS0_PA11
+		bool "PA11"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
 
 	config SPI_SAM_PORT_0_PIN_CS0_PB2
 		bool "PB2"
@@ -36,13 +43,32 @@ endchoice
 choice SPI_SAM_PORT_0_PIN_CS1
 	bool "CS1 pin"
 	optional
-	depends on SOC_SERIES_SAME70 || \
+	depends on SOC_SERIES_SAM4S || \
+		   SOC_SERIES_SAM4E || \
+		   SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+
+	config SPI_SAM_PORT_0_PIN_CS1_PA9
+		bool "PA9"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
 
 	config SPI_SAM_PORT_0_PIN_CS1_PA31
 		bool "PA31"
-		depends on SOC_SERIES_SAME70 || \
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E || \
+			   SOC_SERIES_SAME70 || \
 			   SOC_SERIES_SAMV71
+
+	config SPI_SAM_PORT_0_PIN_CS1_PB14
+		bool "PB14"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
+
+	config SPI_SAM_PORT_0_PIN_CS1_PC4
+		bool "PC4"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
 
 	config SPI_SAM_PORT_0_PIN_CS1_PD25
 		bool "PD25"
@@ -54,8 +80,25 @@ endchoice
 choice SPI_SAM_PORT_0_PIN_CS2
 	bool "CS2 pin"
 	optional
-	depends on SOC_SERIES_SAME70 || \
+	depends on SOC_SERIES_SAM4S || \
+		   SOC_SERIES_SAM4E || \
+		   SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+
+	config SPI_SAM_PORT_0_PIN_CS2_PA10
+		bool "PA10"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
+
+	config SPI_SAM_PORT_0_PIN_CS2_PA30
+		bool "PA30"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
+
+	config SPI_SAM_PORT_0_PIN_CS2_PB2
+		bool "PB2"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
 
 	config SPI_SAM_PORT_0_PIN_CS2_PD12
 		bool "PD12"
@@ -67,12 +110,29 @@ endchoice
 choice SPI_SAM_PORT_0_PIN_CS3
 	bool "CS3 pin"
 	optional
-	depends on SOC_SERIES_SAME70 || \
+	depends on SOC_SERIES_SAM4S || \
+		   SOC_SERIES_SAM4E || \
+		   SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+
+	config SPI_SAM_PORT_0_PIN_CS3_PA3
+		bool "PA3"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
+
+	config SPI_SAM_PORT_0_PIN_CS3_PA5
+		bool "PA5"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
+
+	config SPI_SAM_PORT_0_PIN_CS3_PA22
+		bool "PA22"
+		depends on SOC_SERIES_SAM4S || \
+			   SOC_SERIES_SAM4E
 
 	config SPI_SAM_PORT_0_PIN_CS3_PD27
 		bool "PD27"
-		depends on SOC_SERIES_SAME70|| \
+		depends on SOC_SERIES_SAME70 || \
 			   SOC_SERIES_SAMV71
 
 endchoice
