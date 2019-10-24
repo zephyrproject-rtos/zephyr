@@ -16,3 +16,4 @@ Network APIs
    promiscuous.rst
    sntp.rst
    trickle.rst
+   websocket.rst
