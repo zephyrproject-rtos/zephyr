@@ -3,12 +3,12 @@
 zephyr_library_named(openthread_platform)
 zephyr_library_sources(
   alarm.c
+  entropy.c
   flash.c
   logging.c
   misc.c
   platform.c
   radio.c
-  random.c
   spi.c
   )
 

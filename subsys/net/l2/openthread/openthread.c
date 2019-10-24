@@ -64,6 +64,11 @@ static struct net_linkaddr *ll_addr;
 
 static struct net_mgmt_event_callback ip6_addr_cb;
 
+k_tid_t openthread_thread_id_get(void)
+{
+	return ot_tid;
+}
+
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    u32_t mgmt_event, struct net_if *iface)
 {
@@ -114,12 +119,12 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 		add_ipv6_addr_to_zephyr(ot_context);
 	}
 
-	if (flags & OT_CHANGED_IP6_MULTICAST_UNSUBSRCRIBED) {
+	if (flags & OT_CHANGED_IP6_MULTICAST_UNSUBSCRIBED) {
 		NET_DBG("Ipv6 multicast address removed");
 		rm_ipv6_maddr_from_zephyr(ot_context);
 	}
 
-	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSRCRIBED) {
+	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSCRIBED) {
 		NET_DBG("Ipv6 multicast address added");
 		add_ipv6_maddr_to_zephyr(ot_context);
 	}
