@@ -449,6 +449,29 @@ config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 	  This option is enabled when the MPU requires the active (i.e. enabled)
 	  MPU regions to be non-overlapping with each other.
 
+config MPU_GAP_FILLING
+	bool "Force MPU to be filling in background memory regions"
+	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	depends on USERSPACE
+	help
+	  This Kconfig option instructs the MPU driver to enforce
+	  a full kernel SRAM partitioning, when it programs the
+	  dynamic MPU regions (user thread stack, PRIV stack guard
+	  and application memory domains) during context-switch. We
+	  allow this to be a configurable option, in order to be able
+	  to switch the option off and have an increased number of MPU
+	  regions available for application memory domain programming.
+
+	  Notes:
+	  An increased number of MPU regions should only be required,
+	  when building with USERSPACE support.
+
+	  When the option is switched off, access to memory areas not
+	  covered by explicit MPU regions is restricted to privileged
+	  code on an ARCH-specific basis. Refer to ARCH-specific
+	  documentation for more information on how this option is
+	  used.
+
 menuconfig FLOAT
 	bool "Floating point"
 	depends on CPU_HAS_FPU
