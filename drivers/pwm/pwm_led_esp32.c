@@ -208,7 +208,7 @@ static void pwm_led_esp32_bind_channel_timer(int speed_mode,
 static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 				     int duty, int timer)
 {
-	const int pin_mode = GPIO_DIR_OUT;
+	const int pin_mode = GPIO_OUTPUT;
 
 	const char *device_name;
 	struct device *gpio;
