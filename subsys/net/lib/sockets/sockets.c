@@ -18,7 +18,11 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
-#include <net/socks.h>
+
+#if defined(CONFIG_SOCKS)
+#include "socks.h"
+#endif
+
 #include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
