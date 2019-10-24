@@ -75,6 +75,7 @@ void z_arc_slave_start(int cpu_num)
 	z_icache_setup();
 	z_irq_setup();
 
+	z_arc_connect_ici_clear();
 	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
 	irq_enable(IRQ_ICI);
 #endif
@@ -153,6 +154,7 @@ static int arc_smp_init(struct device *dev)
 
 	if (bcr.ipi) {
 	/* register ici interrupt, just need master core to register once */
+		z_arc_connect_ici_clear();
 		IRQ_CONNECT(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY,
 		    sched_ipi_handler, NULL, 0);
 
