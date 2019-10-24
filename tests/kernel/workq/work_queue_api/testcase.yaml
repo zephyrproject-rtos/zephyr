@@ -1,4 +1,4 @@
 tests:
-  kernel.workqueue:
+  kernel.workqueue.api:
     min_flash: 34
     tags: kernel userspace
