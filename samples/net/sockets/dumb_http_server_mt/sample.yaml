@@ -6,8 +6,6 @@ common:
   min_ram: 128
   min_flash: 128
   tags: net socket http
-  # Disable qemu_x86_64 because of SSE register return with SSE disabled error
-  platform_exclude: qemu_x86_64
 tests:
   sample.net.sockets.dumb_http_server_mt:
     extra_configs:

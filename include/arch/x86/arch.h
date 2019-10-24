@@ -198,7 +198,7 @@ extern unsigned char _irq_to_interrupt_vector[];
 
 #endif /* _ASMLANGUAGE */
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #include <arch/x86/intel64/arch.h>
 #else
 #include <arch/x86/ia32/arch.h>

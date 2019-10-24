@@ -199,7 +199,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
-	default 4096 if (X86 && X86_LONGMODE)
+	default 4096 if (X86 && X86_64)
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -407,12 +407,6 @@ config LOG_BACKEND_NATIVE_POSIX
 	depends on ARCH_POSIX
 	help
 	  Enable backend in native_posix
-
-config LOG_BACKEND_QEMU_X86_64
-	bool "Enable QEMU x86_64 backend"
-	depends on BOARD_QEMU_X86_64
-	help
-	  Enable backend for qemu_x86_64 board
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"

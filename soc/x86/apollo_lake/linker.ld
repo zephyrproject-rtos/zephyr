@@ -24,8 +24,8 @@ MEMORY
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
     }
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #include <arch/x86/intel64/linker.ld>
 #else
 #include <arch/x86/ia32/linker.ld>
-#endif /* CONFIG_X86_LONGMODE */
+#endif /* CONFIG_X86_64 */

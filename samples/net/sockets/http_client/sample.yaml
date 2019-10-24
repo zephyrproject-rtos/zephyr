@@ -1,8 +1,6 @@
 common:
   tags: net http http_client
   min_ram: 32
-  # Blacklist qemu_x86_64 because of SSE compile error, see #19066 for details
-  platform_exclude: qemu_x86_64
 sample:
   description: HTTP client sample
   name: http_client

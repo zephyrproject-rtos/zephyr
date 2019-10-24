@@ -20,7 +20,6 @@
 /arch/arm/include/cortex_m/cmse.h         @ioannisg
 /arch/arm/core/cortex_r/                  @MaureenHelm @galak @ioannisg @bbolen
 /arch/common/                             @andrewboie @ioannisg @andyross
-/arch/x86_64/                             @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
 /soc/nios2/                               @nashif @wentongwu
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
@@ -36,7 +35,6 @@
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
-/soc/x86_64/                              @andyross
 /arch/x86/                                @andrewboie
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar

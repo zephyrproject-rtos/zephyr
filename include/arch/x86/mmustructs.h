@@ -38,7 +38,7 @@
 #define Z_X86_MMU_G		BIT64(8)	/** Global */
 #define Z_X86_MMU_XD		BIT64(63)	/** Execute Disable */
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #define Z_X86_MMU_PROT_KEY_MASK		0x7800000000000000ULL
 #endif
 
@@ -54,11 +54,11 @@
  * reserved or ignored regions immediately above it, into a single area.
  * This will work as expected if valid memory addresses are written.
  */
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #define Z_X86_MMU_PML4E_PDPT_MASK	0x7FFFFFFFFFFFF000ULL
 #endif
 #define Z_X86_MMU_PDPTE_PD_MASK		0x7FFFFFFFFFFFF000ULL
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #define Z_X86_MMU_PDPTE_1G_MASK		0x07FFFFFFC0000000ULL
 #endif
 #define Z_X86_MMU_PDE_PT_MASK		0x7FFFFFFFFFFFF000ULL
@@ -163,7 +163,7 @@ struct mmu_region {
 #define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
 	Z_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #define Z_X86_NUM_PML4_ENTRIES	512U
 #define Z_X86_NUM_PDPT_ENTRIES	512U
 #else
@@ -179,7 +179,7 @@ struct mmu_region {
 
 typedef u64_t k_mem_partition_attr_t;
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 struct x86_mmu_pml4 {
 	u64_t entry[Z_X86_NUM_PML4_ENTRIES];
 };
@@ -198,7 +198,7 @@ struct x86_mmu_pt {
 };
 
 struct x86_page_tables {
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 	struct x86_mmu_pml4 pml4;
 #else
 	struct x86_mmu_pdpt pdpt;
@@ -208,7 +208,7 @@ struct x86_page_tables {
 /*
  * Inline functions for getting the next linked structure
  */
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 static inline u64_t *z_x86_pml4_get_pml4e(struct x86_mmu_pml4 *pml4,
 					  uintptr_t addr)
 {
@@ -237,7 +237,7 @@ static inline struct x86_mmu_pd *z_x86_pdpte_get_pd(u64_t pdpte)
 {
 	uintptr_t addr = pdpte & Z_X86_MMU_PDPTE_PD_MASK;
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 	__ASSERT((pdpte & Z_X86_MMU_PS) == 0, "PDPT is for 1GB page");
 #endif
 	return (struct x86_mmu_pd *)addr;
@@ -270,7 +270,7 @@ static inline u64_t *z_x86_pt_get_pte(struct x86_mmu_pt *pt, uintptr_t addr)
  * Inline functions for obtaining page table structures from the top-level
  */
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 static inline struct x86_mmu_pml4 *
 z_x86_get_pml4(struct x86_page_tables *ptables)
 {
@@ -296,7 +296,7 @@ z_x86_get_pdpt(struct x86_page_tables *ptables, uintptr_t addr)
 
 	return &ptables->pdpt;
 }
-#endif /* CONFIG_X86_LONGMODE */
+#endif /* CONFIG_X86_64 */
 
 static inline u64_t *z_x86_get_pdpte(struct x86_page_tables *ptables,
 				       uintptr_t addr)

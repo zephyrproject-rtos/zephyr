@@ -23,5 +23,5 @@ tests:
   tracing.openocd:
     extra_configs:
       - CONFIG_OPENOCD_SUPPORT=y
-    arch_exclude: posix xtensa x86_64
-    platform_exclude: qemu_x86_long
+    arch_exclude: posix xtensa
+    platform_exclude: qemu_x86_64

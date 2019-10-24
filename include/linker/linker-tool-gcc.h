@@ -25,7 +25,7 @@
 #elif defined(CONFIG_ARC)
 	OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
 #elif defined(CONFIG_X86)
-	#if defined (CONFIG_X86_LONGMODE)
+	#if defined(CONFIG_X86_64)
 		OUTPUT_FORMAT("elf64-x86-64")
 		OUTPUT_ARCH("i386:x86-64")
 	#else

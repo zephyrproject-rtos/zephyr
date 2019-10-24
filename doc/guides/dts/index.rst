@@ -357,7 +357,7 @@ Currently supported boards
 **************************
 
 Devicetree is currently supported on all embedded targets except posix
-(boards/posix) and qemu_x86_64 (boards/x86_64).
+(boards/posix).
 
 Adding support for a board
 **************************
