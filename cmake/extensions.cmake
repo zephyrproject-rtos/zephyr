@@ -752,7 +752,7 @@ function(zephyr_check_compiler_flag lang option check)
 
   # The 'cacheformat' must be bumped if a bug in the caching mechanism
   # is detected and all old keys must be invalidated.
-  set(cacheformat 3)
+  set(cacheformat 4)
 
   set(key_string "")
   set(key_string "${key_string}${cacheformat}_")
