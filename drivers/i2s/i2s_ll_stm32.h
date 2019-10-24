@@ -75,6 +75,12 @@
 #define I2S5_DMA_SLOT_RX	7
 #define I2S5_DMA_CHAN_TX	6
 #define I2S5_DMA_SLOT_TX	7
+#define I2S_DMA_SRC_ADDR_INC_RX	0
+#define I2S_DMA_DST_ADDR_INC_RX	1
+#define I2S_DMA_SRC_ADDR_INC_TX	1
+#define I2S_DMA_DST_ADDR_INC_TX	0
+#define I2S_DMA_FIFO_THRESHOLD	3	/* Full FIFO */
+#define I2S_DMA_CHAN_PRIORITY	0
 #endif
 
 #define DEV_CFG(dev) \
@@ -108,6 +114,11 @@ struct stream {
 	struct k_sem sem;
 	u32_t dma_channel;
 	struct dma_config dma_cfg;
+	u8_t priority;
+	bool src_addr_increment;
+	bool dst_addr_increment;
+	u8_t fifo_threshold;
+
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;
 	void *mem_block;
