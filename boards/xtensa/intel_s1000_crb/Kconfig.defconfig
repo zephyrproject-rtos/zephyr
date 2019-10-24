@@ -46,8 +46,6 @@ config CAVS_ISR_TBL_OFFSET
 config DW_ISR_TBL_OFFSET
 	default 3RD_LVL_ISR_TBL_OFFSET
 
-config I2C_0_DEFAULT_CFG
-	default 0x12
 if DMA_CAVS
 
 config HEAP_MEM_POOL_SIZE
