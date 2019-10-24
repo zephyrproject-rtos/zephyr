@@ -144,7 +144,7 @@ void system_thread_bench(void)
 	k_sleep(K_MSEC(1));
 	thread_abort_end_time = (z_arch_timing_value_swap_common);
 	z_arch_timing_swap_end = z_arch_timing_value_swap_common;
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#if defined(CONFIG_X86)
 	z_arch_timing_swap_start = z_arch_timing_value_swap_temp;
 	/* In the rest of ARCHes read_timer_start_of_swap() has already
 	 * registered the time-stamp of the start of context-switch in

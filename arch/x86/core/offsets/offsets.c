@@ -8,7 +8,7 @@
 #include <kernel_arch_data.h>
 #include <arch/x86/multiboot.h>
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #include "intel64_offsets.c"
 #else
 #include "ia32_offsets.c"

@@ -15,13 +15,6 @@ K_THREAD_STACK_EXTERN(ustack);
 
 void spin_for_ms(int ms)
 {
-#if defined(CONFIG_X86_64) && defined(CONFIG_QEMU_TARGET)
-	/* qemu-system-x86_64 has a known bug with the hpet device
-	 * where it will drop interrupts if you try to spin on the
-	 * counter.
-	 */
-	k_busy_wait(ms * 1000);
-#else
 	u32_t t32 = k_uptime_get_32();
 
 	while (k_uptime_get_32() - t32 < ms) {
@@ -32,7 +25,6 @@ void spin_for_ms(int ms)
 			k_busy_wait(50);
 		}
 	}
-#endif
 }
 
 /**

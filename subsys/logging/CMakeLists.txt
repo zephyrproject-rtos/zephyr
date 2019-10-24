@@ -43,11 +43,6 @@ if(NOT CONFIG_LOG_MINIMAL)
     CONFIG_LOG_BACKEND_SWO
     log_backend_swo.c
   )
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_QEMU_X86_64
-    log_backend_qemu_x86_64.c
-  )
 else()
   zephyr_sources(log_minimal.c)
 endif()

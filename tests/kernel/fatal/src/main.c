@@ -71,7 +71,7 @@ void alt_thread1(void)
 {
 	expected_reason = K_ERR_CPU_EXCEPTION;
 
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");

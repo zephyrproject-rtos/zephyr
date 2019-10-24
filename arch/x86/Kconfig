@@ -16,23 +16,23 @@ config ARCH
 config CPU_ATOM
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool # hidden
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
 config CPU_APOLLO_LAKE
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_LONGMODE
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_LONGMODE
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -40,9 +40,9 @@ config CPU_APOLLO_LAKE
 # Configuration common to both IA32 and Intel64 sub-architectures.
 #
 
-config X86_LONGMODE
+config X86_64
 	bool
-	prompt "Run in long (64-bit) mode"
+	prompt "Run in 64-bit mode"
 	default n
 	select 64BIT
 	select USE_SWITCH

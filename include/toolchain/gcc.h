@@ -390,13 +390,6 @@ do {                                                                    \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
-#elif defined(CONFIG_X86_64)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%0"                               \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
 #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
 
 /* No special prefixes necessary for constants in this arch AFAICT */

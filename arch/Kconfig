@@ -31,11 +31,6 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
-config X86_64
-	bool "x86_64 architecture"
-	select ATOMIC_OPERATIONS_BUILTIN
-	select SCHED_IPI_SUPPORTED
-
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
@@ -93,7 +88,7 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86 || X86_64
+if ARC || ARM || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
@@ -133,7 +128,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86 || X86_64
+endif # ARM || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 

@@ -60,7 +60,7 @@ endif # APIC_TIMER
 
 config HPET_TIMER
 	bool "HPET timer"
-	depends on (X86 || X86_64)
+	depends on X86
 	select IOAPIC if X86
 	select LOAPIC if X86
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME

@@ -1,5 +1,5 @@
-identifier: qemu_x86_long
-name: QEMU Emulation for X86 (long mode)
+identifier: qemu_x86_64
+name: QEMU Emulation for X86_64
 type: qemu
 arch: x86
 toolchain:
