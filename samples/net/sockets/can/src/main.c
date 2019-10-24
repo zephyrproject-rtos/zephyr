@@ -42,8 +42,8 @@ static struct can_filter filter;
 static void tx(int *can_fd)
 {
 	int fd = POINTER_TO_INT(can_fd);
-	struct zcan_frame msg = {0};
-	struct can_frame frame = {0};
+	struct zcan_frame msg = { 0 };
+	struct can_frame frame = { 0 };
 	int ret, i;
 
 	msg.dlc = 8U;
@@ -124,10 +124,24 @@ static void rx(int *can_fd, int *do_close_period,
 			continue;
 		}
 
+		if (frame.can_id & CAN_ERR_FLAG) {
+			if (frame.can_id & CAN_ERR_BUSOFF) {
+				/* Bus off */
+				LOG_ERR("[%d] Bus off", fd);
+			} else if (frame.can_id & CAN_ERR_CRTL) {
+				LOG_WRN("[%d] Bus error", fd);
+			} else {
+				LOG_INF("[%d] Unknown bus error: 0x%x", fd,
+					frame.can_id);
+			}
+			continue;
+		}
+
 		can_copy_frame_to_zframe(&frame, &msg);
 
 		LOG_INF("[%d] CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
-			fd, msg.id_type, msg.rtr, msg.std_id, msg.dlc);
+			fd,
+			msg.id_type, msg.rtr, msg.std_id, msg.dlc);
 
 		if (!msg.rtr) {
 			if (msg.dlc > 8) {
@@ -167,6 +181,7 @@ static int setup_socket(void)
 	struct net_if *iface;
 	int fd, rx_fd;
 	int ret;
+	canid_t err_mask = (CAN_ERR_BUSOFF);
 
 	can_copy_zfilter_to_filter(&zfilter, &filter);
 
@@ -199,6 +214,13 @@ static int setup_socket(void)
 		ret = -errno;
 		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
 		goto cleanup;
+	}
+
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
+			 sizeof(err_mask));
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot set error filter, error (%d)", errno);
 	}
 
 	/* Delay TX startup so that RX is ready to receive */

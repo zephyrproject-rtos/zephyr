@@ -98,19 +98,19 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
-		struct zcan_frame *zframe =
-			(struct zcan_frame *)net_pkt_data(pkt);
-		struct can_frame frame;
+		struct can_frame frame = *(struct can_frame *)net_pkt_data(pkt);
 
 		if (!receivers[i].ctx ||
 		    receivers[i].iface != net_pkt_iface(pkt)) {
 			continue;
 		}
 
-		can_copy_zframe_to_frame(zframe, &frame);
-
-		if ((frame.can_id & receivers[i].can_mask) !=
-		    (receivers[i].can_id & receivers[i].can_mask)) {
+		if ((receivers[i].can_mask & CAN_ERR_FLAG) == CAN_ERR_FLAG) {
+			if ((frame.can_id & receivers[i].can_mask) == 0) {
+				continue;
+			}
+		} else if ((frame.can_id & receivers[i].can_mask) !=
+			(receivers[i].can_id & receivers[i].can_mask)) {
 			continue;
 		}
 
@@ -167,9 +167,7 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		}
 	}
 
-	if (clone && clone != pkt) {
-		net_pkt_unref(pkt);
-	}
+	net_pkt_unref(pkt);
 }
 
 static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
@@ -213,7 +211,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			socklen_t addrlen)
 {
 	struct sockaddr_can can_addr;
-	struct zcan_frame zframe;
+	struct can_frame frame = *(struct can_frame *)buf;
 	s32_t timeout = K_FOREVER;
 	int ret;
 
@@ -243,9 +241,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 	NET_ASSERT(len == sizeof(struct can_frame));
 
-	can_copy_frame_to_zframe((struct can_frame *)buf, &zframe);
-
-	ret = net_context_sendto(ctx, (void *)&zframe, sizeof(zframe),
+	ret = net_context_sendto(ctx, (void *)&frame, sizeof(frame),
 				 dest_addr, addrlen, NULL, timeout,
 				 ctx->user_data);
 	if (ret < 0) {
@@ -261,7 +257,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 struct sockaddr *src_addr,
 				 socklen_t *addrlen)
 {
-	struct zcan_frame zframe;
+	struct can_frame frame;
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
@@ -298,7 +294,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read(pkt, (void *)&zframe, sizeof(zframe))) {
+	if (net_pkt_read(pkt, buf, sizeof(frame))) {
 		net_pkt_unref(pkt);
 
 		errno = EIO;
@@ -306,8 +302,6 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 	}
 
 	NET_ASSERT(recv_len == sizeof(struct can_frame));
-
-	can_copy_zframe_to_frame(&zframe, (struct can_frame *)buf);
 
 	net_pkt_unref(pkt);
 
@@ -597,14 +591,6 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		return zcan_setsockopt_ctx(obj, level, optname, optval, optlen);
 	}
 
-	/* The application must use CAN_filter and then we convert
-	 * it to zcan_filter as the CANBUS drivers expects that.
-	 */
-	if (optname == CAN_RAW_FILTER && optlen != sizeof(struct can_filter)) {
-		errno = EINVAL;
-		return -1;
-	}
-
 	if (optval == NULL) {
 		errno = EINVAL;
 		return -1;
@@ -637,7 +623,6 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 		for (i = 0; i < count; i++) {
 			struct can_filter *filter;
-			struct zcan_filter zfilter;
 			bool duplicate;
 
 			filter = &((struct can_filter *)optval)[i];
@@ -650,10 +635,8 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 				continue;
 			}
 
-			can_copy_filter_to_zfilter(filter, &zfilter);
-
-			ret = api->setsockopt(dev, obj, level, optname,
-					      &zfilter, sizeof(zfilter));
+			ret = api->setsockopt(dev, obj, level, optname, filter,
+					sizeof(filter));
 			if (ret < 0) {
 				break;
 			}
@@ -662,6 +645,25 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		if (ret < 0) {
 			can_unregister_filters(iface, obj, optval, count);
 
+			errno = -ret;
+			return -1;
+		}
+
+		return 0;
+	} else if (optname == CAN_RAW_ERR_FILTER) {
+		canid_t err_mask = 0;
+
+		if (optlen != sizeof(err_mask)) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		err_mask = *(canid_t *)optval;
+		err_mask &= CAN_ERR_MASK;
+
+		ret = can_register_receiver(iface, obj, 0,
+						err_mask | CAN_ERR_FLAG);
+		if (ret < 0) {
 			errno = -ret;
 			return -1;
 		}
