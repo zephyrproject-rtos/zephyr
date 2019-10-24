@@ -10,7 +10,6 @@ config SOC_SERIES
 	default "musca_a"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 50000000
 
 source "soc/arm/arm/musca_a/Kconfig.defconfig.musca_a"

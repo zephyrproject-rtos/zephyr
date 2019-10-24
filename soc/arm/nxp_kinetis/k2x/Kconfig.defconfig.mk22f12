@@ -8,7 +8,6 @@
 if SOC_MK22F51212
 
 config SOC
-	string
 	default "mk22f51212"
 
 if ADC

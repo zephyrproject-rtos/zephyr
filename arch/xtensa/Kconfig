@@ -27,7 +27,7 @@ config SIMULATOR_XTENSA
 	  Specify if the board configuration should be treated as a simulator.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int "Hardware clock cycles per second, 2000000 for ISS"
+	prompt "Hardware clock cycles per second, 2000000 for ISS"
 	default 2000000
 	range 1000000 1000000000
 	help

@@ -9,7 +9,6 @@
 if SOC_NRF52832_CIAA
 
 config SOC
-	string
 	default "nRF52832_CIAA"
 
 config NUM_IRQS

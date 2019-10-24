@@ -8,7 +8,6 @@
 if SOC_MKW40Z4
 
 config SOC
-	string
 	default "mkw40z4"
 
 config NUM_IRQS

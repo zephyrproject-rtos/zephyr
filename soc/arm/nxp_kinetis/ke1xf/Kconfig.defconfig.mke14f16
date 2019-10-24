@@ -8,7 +8,6 @@
 if SOC_MKE14F16
 
 config SOC
-	string
 	default "mke14f16"
 
 endif # SOC_MKE14F16

@@ -8,7 +8,6 @@
 if SOC_STM32L151XBA
 
 config SOC
-	string
 	default "stm32l151xba"
 
 config NUM_IRQS

@@ -8,7 +8,6 @@
 if SOC_STM32L471XX
 
 config SOC
-	string
 	default "stm32l471xx"
 
 config NUM_IRQS

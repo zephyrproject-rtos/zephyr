@@ -61,10 +61,10 @@ endif # SERIAL
 if I2C
 
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_3
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 endif # I2C
 

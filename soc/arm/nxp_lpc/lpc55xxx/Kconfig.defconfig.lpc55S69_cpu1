@@ -8,7 +8,6 @@
 if SOC_LPC55S69_CPU1
 
 config SOC
-	string
 	default "lpc55S69_cpu1"
 
 if PINMUX

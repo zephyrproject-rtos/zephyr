@@ -28,15 +28,12 @@ config NRF_RTC_TIMER
 endif # SYS_CLOCK_EXISTS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 1000000
 
 config SYS_CLOCK_TICKS_PER_SEC
-	int
 	default 100
 
 config ENTROPY_NRF_FORCE_ALT
-	bool
 	default y
 
 endif # BOARD_QEMU_CORTEX_M0

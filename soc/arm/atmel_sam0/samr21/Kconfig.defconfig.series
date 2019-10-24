@@ -24,7 +24,6 @@ config NUM_IRQS
 	default 28
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 48000000
 
 endif # SOC_SERIES_SAMR21
