@@ -818,352 +818,77 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 	return active_dma_tx_channel[dma_channel];
 }
 
-#ifdef CONFIG_I2S_1
-static struct device DEVICE_NAME_GET(i2s_stm32_1);
-
-static void i2s_stm32_irq_config_func_1(struct device *dev);
-
-static const struct i2s_stm32_cfg i2s_stm32_config_1 = {
-	.i2s = (SPI_TypeDef *) DT_I2S_1_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2S_1_CLOCK_BITS,
-		.bus = DT_I2S_1_CLOCK_BUS,
-	},
-	.i2s_clk_sel = CLK_SEL_2,
-	.irq_config = i2s_stm32_irq_config_func_1,
-};
-
-struct queue_item rx_1_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
-struct queue_item tx_1_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
-
-static struct i2s_stm32_data i2s_stm32_data_1 = {
-	.dma_name = I2S1_DMA_NAME,
-	.rx = {
-		.dma_channel = I2S1_DMA_CHAN_RX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S1_DMA_SLOT_RX,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 0, /* SINGLE transfer */
-			.dest_burst_length = 1,
-			.dma_callback = dma_rx_callback,
-		},
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.mem_block_queue.buf = rx_1_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_1_ring_buf),
-	},
-	.tx = {
-		.dma_channel = I2S1_DMA_CHAN_TX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S1_DMA_SLOT_TX,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 1,
-			.dest_burst_length = 0, /* SINGLE transfer */
-			.dma_callback = dma_tx_callback,
-		},
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.mem_block_queue.buf = tx_1_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_1_ring_buf),
-	},
-};
-DEVICE_AND_API_INIT(i2s_stm32_1, DT_I2S_1_NAME, &i2s_stm32_initialize,
-		    &i2s_stm32_data_1, &i2s_stm32_config_1, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
-
-static void i2s_stm32_irq_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2S_1_IRQ, DT_I2S_1_IRQ_PRI, i2s_stm32_isr,
-		    DEVICE_GET(i2s_stm32_1), 0);
-	irq_enable(DT_I2S_1_IRQ);
+#define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap)			\
+.dir = {								\
+	.dma_channel = I2S##index##_DMA_CHAN_##dir_cap,			\
+	.dma_cfg = {							\
+		.block_count = 1,					\
+		.dma_slot = I2S##index##_DMA_SLOT_##dir_cap,		\
+		.channel_direction = PERIPHERAL_TO_MEMORY,		\
+		.source_data_size = 1,  /* 16bit default */		\
+		.dest_data_size = 1,    /* 16bit default */		\
+		.source_burst_length = 0, /* SINGLE transfer */		\
+		.dest_burst_length = 1,					\
+		.dma_callback = dma_##dir##_callback,			\
+	},								\
+	.stream_start = dir##_stream_start,				\
+	.stream_disable = dir##_stream_disable,				\
+	.queue_drop = dir##_queue_drop,					\
+	.mem_block_queue.buf = dir##_##index##_ring_buf,		\
+	.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf),	\
 }
 
+#define I2S_INIT(index, clk_sel)					\
+static struct device DEVICE_NAME_GET(i2s_stm32_##index);		\
+									\
+static void i2s_stm32_irq_config_func_##index(struct device *dev);	\
+									\
+static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
+	.i2s = (SPI_TypeDef *) DT_I2S_##index##_BASE_ADDRESS,		\
+	.pclken = {							\
+		.enr = DT_I2S_##index##_CLOCK_BITS,			\
+		.bus = DT_I2S_##index##_CLOCK_BUS,			\
+	},								\
+	.i2s_clk_sel = CLK_SEL_##clk_sel,				\
+	.irq_config = i2s_stm32_irq_config_func_##index,		\
+};									\
+									\
+struct queue_item rx_##index##_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];\
+struct queue_item tx_##index##_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];\
+									\
+static struct i2s_stm32_data i2s_stm32_data_##index = {			\
+	.dma_name = I2S##index##_DMA_CHAN_RX,				\
+	I2S_DMA_CHANNEL_INIT(index, rx, RX),				\
+	I2S_DMA_CHANNEL_INIT(index, tx, TX),				\
+};									\
+DEVICE_AND_API_INIT(i2s_stm32_##index, DT_I2S_##index##_NAME,		\
+		    &i2s_stm32_initialize, &i2s_stm32_data_##index,	\
+		    &i2s_stm32_config_##index, POST_KERNEL,		\
+		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
+									\
+static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
+{									\
+	IRQ_CONNECT(DT_I2S_##index##_IRQ, DT_I2S_##index##_IRQ_PRI,	\
+		    i2s_stm32_isr, DEVICE_GET(i2s_stm32_##index), 0);	\
+	irq_enable(DT_I2S_##index##_IRQ);				\
+}
+
+#ifdef CONFIG_I2S_1
+I2S_INIT(1, 2)
 #endif /* CONFIG_I2S_1 */
 
 #ifdef CONFIG_I2S_2
-static struct device DEVICE_NAME_GET(i2s_stm32_2);
-
-static void i2s_stm32_irq_config_func_2(struct device *dev);
-
-static const struct i2s_stm32_cfg i2s_stm32_config_2 = {
-	.i2s = (SPI_TypeDef *) DT_I2S_2_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2S_2_CLOCK_BITS,
-		.bus = DT_I2S_2_CLOCK_BUS,
-	},
-	.i2s_clk_sel = CLK_SEL_1,
-	.irq_config = i2s_stm32_irq_config_func_2,
-};
-
-struct queue_item rx_2_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
-struct queue_item tx_2_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
-
-static struct i2s_stm32_data i2s_stm32_data_2 = {
-	.dma_name = I2S2_DMA_NAME,
-	.rx = {
-		.dma_channel = I2S2_DMA_CHAN_RX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S2_DMA_SLOT_RX,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 0, /* SINGLE transfer */
-			.dest_burst_length = 1,
-			.dma_callback = dma_rx_callback,
-		},
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.mem_block_queue.buf = rx_2_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_2_ring_buf),
-	},
-	.tx = {
-		.dma_channel = I2S2_DMA_CHAN_TX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S2_DMA_SLOT_TX,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 1,
-			.dest_burst_length = 0, /* SINGLE transfer */
-			.dma_callback = dma_tx_callback,
-		},
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.mem_block_queue.buf = tx_2_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_2_ring_buf),
-	},
-};
-DEVICE_AND_API_INIT(i2s_stm32_2, DT_I2S_2_NAME, &i2s_stm32_initialize,
-		    &i2s_stm32_data_2, &i2s_stm32_config_2, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
-
-static void i2s_stm32_irq_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2S_2_IRQ, DT_I2S_2_IRQ_PRI, i2s_stm32_isr,
-		    DEVICE_GET(i2s_stm32_2), 0);
-	irq_enable(DT_I2S_2_IRQ);
-}
-
+I2S_INIT(2, 1)
 #endif /* CONFIG_I2S_2 */
 
 #ifdef CONFIG_I2S_3
-static struct device DEVICE_NAME_GET(i2s_stm32_3);
-
-static void i2s_stm32_irq_config_func_3(struct device *dev);
-
-static const struct i2s_stm32_cfg i2s_stm32_config_3 = {
-	.i2s = (SPI_TypeDef *) DT_I2S_3_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2S_3_CLOCK_BITS,
-		.bus = DT_I2S_3_CLOCK_BUS,
-	},
-	.i2s_clk_sel = CLK_SEL_1,
-	.irq_config = i2s_stm32_irq_config_func_3,
-};
-
-struct queue_item rx_3_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
-struct queue_item tx_3_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
-
-static struct i2s_stm32_data i2s_stm32_data_3 = {
-	.dma_name = I2S3_DMA_NAME,
-	.rx = {
-		.dma_channel = I2S3_DMA_CHAN_RX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S3_DMA_SLOT_RX,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 0, /* SINGLE transfer */
-			.dest_burst_length = 1,
-			.dma_callback = dma_rx_callback,
-		},
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.mem_block_queue.buf = rx_3_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_3_ring_buf),
-	},
-	.tx = {
-		.dma_channel = I2S3_DMA_CHAN_TX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S3_DMA_SLOT_TX,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 1,
-			.dest_burst_length = 0, /* SINGLE transfer */
-			.dma_callback = dma_tx_callback,
-		},
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.mem_block_queue.buf = tx_3_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_3_ring_buf),
-	},
-};
-DEVICE_AND_API_INIT(i2s_stm32_3, DT_I2S_3_NAME, &i2s_stm32_initialize,
-		    &i2s_stm32_data_3, &i2s_stm32_config_3, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
-
-static void i2s_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2S_3_IRQ, DT_I2S_3_IRQ_PRI, i2s_stm32_isr,
-		    DEVICE_GET(i2s_stm32_3), 0);
-	irq_enable(DT_I2S_3_IRQ);
-}
-
+I2S_INIT(3, 1)
 #endif /* CONFIG_I2S_3 */
 
 #ifdef CONFIG_I2S_4
-static struct device DEVICE_NAME_GET(i2s_stm32_4);
-
-static void i2s_stm32_irq_config_func_4(struct device *dev);
-
-static const struct i2s_stm32_cfg i2s_stm32_config_4 = {
-	.i2s = (SPI_TypeDef *) DT_I2S_4_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2S_4_CLOCK_BITS,
-		.bus = DT_I2S_4_CLOCK_BUS,
-	},
-	.i2s_clk_sel = CLK_SEL_2,
-	.irq_config = i2s_stm32_irq_config_func_4,
-};
-
-struct queue_item rx_4_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
-struct queue_item tx_4_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
-
-static struct i2s_stm32_data i2s_stm32_data_4 = {
-	.dma_name = I2S4_DMA_NAME,
-	.rx = {
-		.dma_channel = I2S4_DMA_CHAN_RX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S4_DMA_SLOT_RX,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 0, /* SINGLE transfer */
-			.dest_burst_length = 1,
-			.dma_callback = dma_rx_callback,
-		},
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.mem_block_queue.buf = rx_4_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_4_ring_buf),
-	},
-	.tx = {
-		.dma_channel = I2S4_DMA_CHAN_TX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S4_DMA_SLOT_TX,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 1,
-			.dest_burst_length = 0, /* SINGLE transfer */
-			.dma_callback = dma_tx_callback,
-		},
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.mem_block_queue.buf = tx_4_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_4_ring_buf),
-	},
-};
-DEVICE_AND_API_INIT(i2s_stm32_4, DT_I2S_4_NAME, &i2s_stm32_initialize,
-		    &i2s_stm32_data_4, &i2s_stm32_config_4, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
-
-static void i2s_stm32_irq_config_func_4(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2S_4_IRQ, DT_I2S_4_IRQ_PRI, i2s_stm32_isr,
-		    DEVICE_GET(i2s_stm32_4), 0);
-	irq_enable(DT_I2S_4_IRQ);
-}
-
+I2S_INIT(4, 2)
 #endif /* CONFIG_I2S_4 */
 
 #ifdef CONFIG_I2S_5
-static struct device DEVICE_NAME_GET(i2s_stm32_5);
-
-static void i2s_stm32_irq_config_func_5(struct device *dev);
-
-static const struct i2s_stm32_cfg i2s_stm32_config_5 = {
-	.i2s = (SPI_TypeDef *) DT_I2S_5_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2S_5_CLOCK_BITS,
-		.bus = DT_I2S_5_CLOCK_BUS,
-	},
-	.i2s_clk_sel = CLK_SEL_2,
-	.irq_config = i2s_stm32_irq_config_func_5,
-};
-
-struct queue_item rx_5_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
-struct queue_item tx_5_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
-
-static struct i2s_stm32_data i2s_stm32_data_5 = {
-	.dma_name = I2S5_DMA_NAME,
-	.rx = {
-		.dma_channel = I2S5_DMA_CHAN_RX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S5_DMA_SLOT_RX,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 0, /* SINGLE transfer */
-			.dest_burst_length = 1,
-			.dma_callback = dma_rx_callback,
-		},
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.mem_block_queue.buf = rx_5_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_5_ring_buf),
-	},
-	.tx = {
-		.dma_channel = I2S5_DMA_CHAN_TX,
-		.dma_cfg = {
-			.block_count = 1,
-			.dma_slot = I2S5_DMA_SLOT_TX,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.source_data_size = 1,  /* 16bit default */
-			.dest_data_size = 1,    /* 16bit default */
-			.source_burst_length = 1,
-			.dest_burst_length = 0, /* SINGLE transfer */
-			.dma_callback = dma_tx_callback,
-		},
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.mem_block_queue.buf = tx_5_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_5_ring_buf),
-	},
-};
-DEVICE_AND_API_INIT(i2s_stm32_5, DT_I2S_5_NAME, &i2s_stm32_initialize,
-		    &i2s_stm32_data_5, &i2s_stm32_config_5, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
-
-static void i2s_stm32_irq_config_func_5(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2S_5_IRQ, DT_I2S_5_IRQ_PRI, i2s_stm32_isr,
-		    DEVICE_GET(i2s_stm32_5), 0);
-	irq_enable(DT_I2S_5_IRQ);
-}
-
+I2S_INIT(5, 2)
 #endif /* CONFIG_I2S_5 */
