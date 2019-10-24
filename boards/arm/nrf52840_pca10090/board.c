@@ -176,20 +176,16 @@ static int pins_configure(struct device *port, const struct pin_config cfg[],
 {
 	int err;
 
-	/* Write to the pins before configuring them as output,
-	 * to make sure we are driving them to the correct level
-	 * right after they are configured.
-	 */
 	for (size_t i = 0; i < pins; i++) {
-		/* The swiches on the board are active low, so we need
-		 * to negate the IS_ENABLED() value from the tables.
+		/* A given pin controlling the switch needs to be driven
+		 * to the low state to activate the routing indicated by
+		 * the corresponding IS_ENABLED() macro in the table,
+		 * so configure the pin as output with the proper initial
+		 * state.
 		 */
-		err = gpio_pin_set(port, cfg[i].pin, !cfg[i].val);
-		if (err) {
-			return cfg[i].pin;
-		}
-
-		err = gpio_pin_configure(port, cfg[i].pin, GPIO_OUTPUT);
+		u32_t flag = (cfg[i].val ? GPIO_OUTPUT_LOW
+					 : GPIO_OUTPUT_HIGH);
+		err = gpio_pin_configure(port, cfg[i].pin, flag);
 		if (err) {
 			return cfg[i].pin;
 		}
@@ -218,7 +214,7 @@ static void reset_pin_wait_low(struct device *port, u32_t pin)
 
 	/* Wait until the pin is pulled low */
 	do {
-		val = gpio_pin_get(port, pin);
+		val = gpio_pin_get_raw(port, pin);
 	} while (val > 0);
 }
 
