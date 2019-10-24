@@ -733,49 +733,6 @@ endfunction()
 # caching comes in addition to the caching that CMake does in the
 # build folder's CMakeCache.txt)
 function(zephyr_check_compiler_flag lang option check)
-  # Locate the cache directory
-  set_ifndef(
-    ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_DIR
-    ${USER_CACHE_DIR}/ToolchainCapabilityDatabase
-    )
-
-  # The toolchain capability database/cache is maintained as a
-  # directory of files. The filenames in the directory are keys, and
-  # the file contents are the values in this key-value store.
-
-  # We need to create a unique key wrt. testing the toolchain
-  # capability. This key must include everything that can affect the
-  # toolchain test.
-  #
-  # Also, to fit the key into a filename we calculate the MD5 sum of
-  # the key.
-
-  # The 'cacheformat' must be bumped if a bug in the caching mechanism
-  # is detected and all old keys must be invalidated.
-  set(cacheformat 3)
-
-  set(key_string "")
-  set(key_string "${key_string}${cacheformat}_")
-  set(key_string "${key_string}${TOOLCHAIN_SIGNATURE}_")
-  set(key_string "${key_string}${lang}_")
-  set(key_string "${key_string}${option}_")
-  set(key_string "${key_string}${CMAKE_REQUIRED_FLAGS}_")
-
-  string(MD5 key ${key_string})
-
-  # Check the cache
-  set(key_path ${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_DIR}/${key})
-  if(EXISTS ${key_path})
-    file(READ
-    ${key_path}   # File to be read
-    key_value     # Output variable
-    LIMIT 1       # Read at most 1 byte ('0' or '1')
-    )
-
-    set(${check} ${key_value} PARENT_SCOPE)
-    return()
-  endif()
-
   # Flags that start with -Wno-<warning> can not be tested by
   # check_compiler_flag, they will always pass, but -W<warning> can be
   # tested, so to test -Wno-<warning> flags we test -W<warning>
@@ -789,44 +746,6 @@ function(zephyr_check_compiler_flag lang option check)
   check_compiler_flag(${lang} "${possibly_translated_option}" inner_check)
 
   set(${check} ${inner_check} PARENT_SCOPE)
-
-  # Populate the cache
-  if(NOT (EXISTS ${key_path}))
-
-    # This is racy. As often with race conditions, this one can easily be
-    # made worse and demonstrated with a simple delay:
-    #    execute_process(COMMAND "sleep" "5")
-    # Delete the cache, add the sleep above and run sanitycheck with a
-    # large number of JOBS. Once it's done look at the log.txt file
-    # below and you will see that concurrent cmake processes created the
-    # same files multiple times.
-
-    # While there are a number of reasons why this race seems both very
-    # unlikely and harmless, let's play it safe anyway and write to a
-    # private, temporary file first. All modern filesystems seem to
-    # support at least one atomic rename API and cmake's file(RENAME
-    # ...) officially leverages that.
-    string(RANDOM LENGTH 8 tempsuffix)
-
-    file(
-      WRITE
-      "${key_path}_tmp_${tempsuffix}"
-      ${inner_check}
-      )
-    file(
-      RENAME
-      "${key_path}_tmp_${tempsuffix}" "${key_path}"
-      )
-
-    # Populate a metadata file (only intended for trouble shooting)
-    # with information about the hash, the toolchain capability
-    # result, and the toolchain test.
-    file(
-      APPEND
-      ${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_DIR}/log.txt
-      "${inner_check} ${key} ${key_string}\n"
-      )
-  endif()
 endfunction()
 
 # zephyr_linker_sources(<location> <files>)
