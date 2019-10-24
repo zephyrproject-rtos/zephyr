@@ -616,7 +616,8 @@ static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
 					    struct can_frame *frame)
 {
 	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |
-		zframe->ext_id;
+		(zframe->id_type == CAN_STANDARD_IDENTIFIER ? zframe->std_id :
+				    zframe->ext_id);
 	frame->can_dlc = zframe->dlc;
 	memcpy(frame->data, zframe->data, sizeof(frame->data));
 }
