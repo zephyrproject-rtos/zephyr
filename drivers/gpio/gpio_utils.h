@@ -11,6 +11,8 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
 
+#define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
+	((gpio_port_pins_t)(((u64_t)1 << (ngpios)) - 1U))
 
 /**
  * @brief Generic function to insert or remove a callback from a callback list
