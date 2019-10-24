@@ -17,7 +17,7 @@ menuconfig ADC_STM32
 if ADC_STM32
 
 config ADC_1
-	bool "ADC1"
+	prompt "ADC1"
 	default y
 	help
 	  Enable ADC1

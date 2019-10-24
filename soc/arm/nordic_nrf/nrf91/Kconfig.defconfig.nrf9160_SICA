@@ -9,7 +9,6 @@
 if SOC_NRF9160_SICA
 
 config SOC
-	string
 	default "nRF9160_SICA"
 
 config NUM_IRQS

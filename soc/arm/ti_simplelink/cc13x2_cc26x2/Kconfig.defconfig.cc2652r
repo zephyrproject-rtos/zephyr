@@ -8,7 +8,6 @@
 if SOC_CC2652R
 
 config SOC
-	string
 	default "cc2652r"
 
 endif # SOC_CC2652R

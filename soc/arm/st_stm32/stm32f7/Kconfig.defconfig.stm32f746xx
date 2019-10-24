@@ -8,7 +8,6 @@
 if SOC_STM32F746XX
 
 config SOC
-	string
 	default "stm32f746xx"
 
 if GPIO_STM32

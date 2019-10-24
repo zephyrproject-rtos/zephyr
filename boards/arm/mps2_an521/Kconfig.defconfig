@@ -23,19 +23,19 @@ endif # !TRUSTED_EXECUTION_NONSECURE
 if GPIO
 
 config GPIO_CMSDK_AHB
-	def_bool y
+	default y
 
 config GPIO_CMSDK_AHB_PORT0
-	def_bool y
+	default y
 
 config GPIO_CMSDK_AHB_PORT1
-	def_bool y
+	default y
 
 config GPIO_CMSDK_AHB_PORT2
-	def_bool y
+	default y
 
 config GPIO_CMSDK_AHB_PORT3
-	def_bool y
+	default y
 
 endif # GPIO
 
@@ -49,17 +49,17 @@ endif # PINMUX
 if SERIAL
 
 config UART_CMSDK_APB
-	def_bool y
+	default y
 
 config UART_INTERRUPT_DRIVEN
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if WATCHDOG
 
 config WDOG_CMSDK_APB
-	def_bool y
+	default y
 
 endif # WATCHDOG
 
@@ -88,7 +88,7 @@ endif # COUNTER
 if I2C
 
 config I2C_SBCON
-	def_bool y
+	default y
 
 endif # I2C
 

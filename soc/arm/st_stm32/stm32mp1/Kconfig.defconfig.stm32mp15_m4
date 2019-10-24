@@ -8,7 +8,6 @@
 if SOC_STM32MP15_M4
 
 config SOC
-	string
 	default "stm32mp157cxx"
 
 config NUM_IRQS

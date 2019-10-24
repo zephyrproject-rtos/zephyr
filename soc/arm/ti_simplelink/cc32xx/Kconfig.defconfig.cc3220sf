@@ -6,7 +6,6 @@
 if SOC_CC3220SF
 
 config SOC
-	string
 	default "cc3220sf"
 
 config NUM_IRQS
@@ -16,7 +15,6 @@ config NUM_IRQS
 	default 178
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 80000000
 
 config TEXT_SECTION_OFFSET

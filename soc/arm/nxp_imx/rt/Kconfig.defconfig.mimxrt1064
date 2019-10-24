@@ -8,7 +8,6 @@
 if SOC_MIMXRT1064
 
 config SOC
-	string
 	default "mimxrt1064"
 
 config NUM_IRQS

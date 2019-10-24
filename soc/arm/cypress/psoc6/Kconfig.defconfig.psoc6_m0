@@ -8,7 +8,6 @@
 if SOC_PSOC6_M0
 
 config SOC
-	string
 	default "psoc6_m0"
 
 if SERIAL
