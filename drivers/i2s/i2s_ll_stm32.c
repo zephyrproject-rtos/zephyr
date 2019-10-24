@@ -439,7 +439,9 @@ static int reload_dma(struct device *dev_dma, u32_t channel,
 }
 
 static int start_dma(struct device *dev_dma, u32_t channel,
-		     struct dma_config *dcfg, void *src, void *dst,
+		     struct dma_config *dcfg, void *src,
+		     bool src_addr_increment, void *dst,
+		     bool dst_addr_increment, u8_t fifo_threshold,
 		     u32_t blk_size)
 {
 	struct dma_block_config blk_cfg;
@@ -449,6 +451,17 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 	blk_cfg.block_size = blk_size / sizeof(u16_t);
 	blk_cfg.source_address = (u32_t)src;
 	blk_cfg.dest_address = (u32_t)dst;
+	if (src_addr_increment) {
+		blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+	if (dst_addr_increment) {
+		blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+	blk_cfg.fifo_mode_control = fifo_threshold;
 
 	dcfg->head_block = &blk_cfg;
 
@@ -686,7 +699,8 @@ static int rx_stream_start(struct stream *stream, struct device *dev)
 	ret = start_dma(dev_data->dev_dma_rx, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
-			stream->mem_block,
+			stream->src_addr_increment, stream->mem_block,
+			stream->dst_addr_increment, stream->fifo_threshold,
 			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start RX DMA transfer: %d", ret);
@@ -729,8 +743,9 @@ static int tx_stream_start(struct stream *stream, struct device *dev)
 
 	ret = start_dma(dev_data->dev_dma_tx, stream->dma_channel,
 			&stream->dma_cfg,
-			stream->mem_block,
+			stream->mem_block, stream->src_addr_increment,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
+			stream->dst_addr_increment, stream->fifo_threshold,
 			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
@@ -834,8 +849,12 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 		.dest_data_size = 1,    /* 16bit default */		\
 		.source_burst_length = 0, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
+		.channel_priority = I2S_DMA_CHAN_PRIORITY,		\
 		.dma_callback = dma_##dir##_callback,			\
 	},								\
+	.src_addr_increment = I2S_DMA_SRC_ADDR_INC_##dir_cap,		\
+	.dst_addr_increment = I2S_DMA_DST_ADDR_INC_##dir_cap,		\
+	.fifo_threshold = I2S_DMA_FIFO_THRESHOLD,			\
 	.stream_start = dir##_stream_start,				\
 	.stream_disable = dir##_stream_disable,				\
 	.queue_drop = dir##_queue_drop,					\
