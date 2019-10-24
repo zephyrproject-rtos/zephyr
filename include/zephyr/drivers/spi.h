@@ -133,7 +133,10 @@ extern "C" {
  * @name SPI MISO lines
  * @{
  *
- * Some controllers support dual, quad or octal MISO lines connected to slaves.
+ * Some controllers, in addition to standard single line, support dual, quad
+ * or octal MISO lines connected to slaves. Note that these SPI API modes are
+ * not meant to be used by QSPI flash controllers: for these, a dedicated
+ * flash controller driver will still be the preferred solution.
  * Default is single, which is the case most of the time.
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
@@ -145,6 +148,16 @@ extern "C" {
 
 #define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
 
+/** @} */
+
+/**
+ * @name SPI extended modes enabler bit
+ * @{
+ * In order to use the extended modes, this bit must be set. Or else, the
+ * SPI controller driver will not look at the added struct spi_buf's flags
+ * attribute.
+ */
+#define SPI_EXTENDED_MODES	BIT(18)
 /** @} */
 
 /**
@@ -317,7 +330,8 @@ struct spi_config {
 	 * If @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled:
 	 *
 	 * - 16..17: MISO lines (Single/Dual/Quad/Octal).
-	 * - 18..31: Reserved for future use.
+	 * - 18      Extended modes are in use
+	 * - 19..31: Reserved for future use.
 	 */
 	spi_operation_t operation;
 	/** @brief Slave number from 0 to host controller slave limit. */
@@ -418,6 +432,131 @@ struct spi_dt_spec {
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
 
 /**
+ * @name SPI Extended Mode flags: Double Data Rate, Dual/Quad/Octal modes
+ * (Respectively DDR and DQO)
+ * @{
+ */
+
+/**
+ * SPI Command phase is send via standard mode (single line)
+ * spi_config lines bit field will be superseded by this flag only
+ * for the command.
+ */
+#define SPI_EM_CMD_STD		BIT(0)
+/**
+ * SPI Command phase is send via extended modes (double/quad/octal)
+ * The mode will depend on the spi_config's lines bit field.
+ */
+#define SPI_EM_CMD_DQO		BIT(1)
+/**
+ * SPI Command phase will take advantage of Double Data Rate
+ * Use it with SPI_EM_CMD_STD or SPI_EM_CMD_DQO relevantly. Or prefer using
+ * SPI_EM_CMD_STD_DDR or SPI_EM_CMD_DQO_DDR below.
+ */
+#define SPI_EM_CMD_DDR		BIT(2)
+/**
+ * SPI Command phase is send via standard mode in Double Data Rate
+ */
+#define SPI_EM_CMD_STD_DDR	(SPI_EM_CMD_STD | SPI_EM_CMD_DDR)
+/**
+ * SPI Command phase is send via extended modes in Double Data Rate
+ */
+#define SPI_EM_CMD_DQO_DDR	(SPI_EM_CMD_DBO | SPI_EM_CMD_DDR)
+
+/**
+ * SPI Addressing phase is send via standard mode (single line)
+ * spi_config's lines bit field will be superseded by this flag only
+ * for the address.
+ */
+#define SPI_EM_ADDR_STD		BIT(3)
+/**
+ * SPI Addressing phase is send via extended modes (double/quad/octal)
+ * The mode will depend on the spi_config's lines bit field.
+ */
+#define SPI_EM_ADDR_DQO		BIT(4)
+/**
+ * SPI Addressing phase will take advantage of Double Data Rate
+ * Use it with SPI_EM_ADDR_STD or SPI_EM_ADDR_DQO relevantly. Or prefer using
+ * SPI_EM_ADDR_STD_DDR or SPI_EM_ADDR_DQO_DDR.
+ */
+#define SPI_EM_ADDR_DDR		BIT(5)
+/**
+ * SPI Addressing phase is send via standard mode in Double Data Rate
+ */
+#define SPI_EM_ADDR_STD_DDR	(SPI_EM_ADDR_STD | SPI_EM_ADDR_DDR)
+/**
+ * SPI Addressing phase is send via extended modes in Double Data Rate
+ */
+#define SPI_EM_ADDR_DQO_DDR	(SPI_EM_ADDR_DQO | SPI_EM_ADDR_DDR)
+
+/**
+ * SPI Data phase will take advantage of Double Data Rate
+ */
+#define SPI_EM_DATA_DDR		BIT(6)
+
+/**
+ * SPI Command phase length configuration
+ */
+enum spi_em_cmd_length {
+	SPI_EM_CMD_NONE			= 0,
+	SPI_EM_CMD_LEN_4_BITS,
+	SPI_EM_CMD_LEN_8_BITS,
+	SPI_EM_CMD_LEN_16_BITS
+};
+
+#define SPI_EM_CMD_LENGTH_SHIFT		(20)
+#define SPI_EM_CMD_LENGTH_MASK		(0x03 << SPI_EM_CMD_LENGTH_SHIFT)
+
+#define SPI_EM_CMD_LENGTH(_cfg_)		\
+	(((_cfg_) & SPI_EM_CMD_LENGTH_MASK) >> SPI_EM_CMD_LENGTH_SHIFT)
+
+#define SPI_EM_CMD_LENGTH_SET(_len_)		\
+	((_len_) << SPI_EM_CMD_LENGTH_SHIFT)
+
+/**
+ * SPI Addressing phase length configuration
+ */
+enum spi_em_adr_length {
+	SPI_EM_ADDR_NONE		= 0,
+	SPI_EM_ADDR_LEN_4_BITS,
+	SPI_EM_ADDR_LEN_8_BITS,
+	SPI_EM_ADDR_LEN_12_BITS,
+	SPI_EM_ADDR_LEN_16_BITS,
+	SPI_EM_ADDR_LEN_20_BITS,
+	SPI_EM_ADDR_LEN_24_BITS,
+	SPI_EM_ADDR_LEN_28_BITS,
+	SPI_EM_ADDR_LEN_32_BITS,
+	SPI_EM_ADDR_LEN_36_BITS,
+	SPI_EM_ADDR_LEN_40_BITS,
+	SPI_EM_ADDR_LEN_44_BITS,
+	SPI_EM_ADDR_LEN_48_BITS,
+	SPI_EM_ADDR_LEN_52_BITS,
+	SPI_EM_ADDR_LEN_56_BITS,
+	SPI_EM_ADDR_LEN_60_BITS,
+	SPI_EM_ADDR_LEN_64_BITS
+};
+
+#define SPI_EM_ADDR_LENGTH_SHIFT	(22)
+#define SPI_EM_ADDR_LENGTH_MASK		(0x1F << SPI_EM_ADDR_LENGTH_SHIFT)
+
+#define SPI_EM_ADDR_LENGTH(_cfg_)		\
+	(((_cfg_) & SPI_EM_ADDR_LENGTH_MASK) >> SPI_EM_ADDR_LENGTH_SHIFT)
+
+#define SPI_EM_ADDR_LENGTH_SET(_len_)		\
+	((_len_) << SPI_EM_ADDR_LENGTH_SHIFT)
+
+#define SPI_EM_WAIT_CYCLE_SHIFT		(27)
+#define SPI_EM_WAIT_CYCLE_MASK		(0x1F << SPI_EM_WAIT_CYCLE_SHIFT)
+
+#define SPI_EM_WAIT_CYCLE(_cfg_)		\
+	(((_cfg_) & SPI_EM_WAIT_CYCLE_MASK) >> SPI_EM_WAIT_CYCLE_SHIFT)
+
+#define SPI_EM_WAIT_CYCLE_SET(_wc_)		\
+	((_wc_) << SPI_EM_WAIT_CYCLE_SHIFT)
+
+/** @} */
+
+/**
  * @brief SPI buffer structure
  */
 struct spi_buf {
@@ -428,6 +567,19 @@ struct spi_buf {
 	 * buffer) or the length of bytes that should be skipped (as RX buffer).
 	 */
 	size_t len;
+#ifdef CONFIG_SPI_EXTENDED_MODES
+	/** Optional attribute for ddr/dual/quad and octal modes.
+	 * The SPI controller driver will only look at it if, and only if,
+	 * extended_modes bit in struct spi_config's operation attribute if set.
+	 * This attribute is a bit field with following parts:
+	 * config         [0:19]  - See SPI extended mode flags above
+	 *                          bits 7 to 19 are reserved for future use.
+	 * command length [20:21] - 2 bits factor command length
+	 * address length [22:26] - 5 bits factor address length
+	 * wait cycles    [27:31] - 5 bits RX wait cycles (from 0 to 32)
+	 */
+	uint32_t flags;
+#endif
 };
 
 /**
