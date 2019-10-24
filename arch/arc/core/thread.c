@@ -12,8 +12,7 @@
  */
 
 #include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <ksched.h>
 #include <offsets_short.h>
 #include <wait_q.h>
 

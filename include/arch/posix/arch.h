@@ -23,9 +23,10 @@
 #include <toolchain.h>
 #include <irq.h>
 #include <arch/posix/asm_inline.h>
+#include <arch/posix/thread.h>
 #include <board_irq.h> /* Each board must define this */
 #include <sw_isr_table.h>
-#include <posix_soc_if.h>
+#include <arch/posix/posix_soc_if.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -15,7 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
-#include "exp.h"
+#include <arch/riscv/thread.h>
+#include <arch/riscv/exp.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 

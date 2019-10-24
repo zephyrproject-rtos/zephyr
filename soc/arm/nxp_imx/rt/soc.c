@@ -11,7 +11,7 @@
 #include <linker/sections.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"

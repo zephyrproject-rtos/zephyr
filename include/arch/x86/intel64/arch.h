@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 
-#include <kernel_arch_thread.h>
+#include <arch/x86/intel64/thread.h>
 
 #define STACK_ALIGN 16
 #define STACK_SIZE_ALIGN 16

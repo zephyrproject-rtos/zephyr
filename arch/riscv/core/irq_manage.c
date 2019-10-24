@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <kernel_internal.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 

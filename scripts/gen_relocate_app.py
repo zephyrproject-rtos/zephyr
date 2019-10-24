@@ -99,6 +99,7 @@ SOURCE_CODE_INCLUDES = """
 #include <zephyr.h>
 #include <linker/linker-defs.h>
 #include <kernel_structs.h>
+#include <string.h>
 """
 
 EXTERN_LINKER_VAR_DECLARATION = """

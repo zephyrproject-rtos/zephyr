@@ -16,6 +16,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <string.h>
+#include <ksched.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
 #include <sys/math_extras.h>

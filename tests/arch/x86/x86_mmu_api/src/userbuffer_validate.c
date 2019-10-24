@@ -9,7 +9,6 @@
 #include <arch/x86/mmustructs.h>
 #include <linker/linker-defs.h>
 #include <ztest.h>
-#include <kernel_internal.h>
 
 #define SKIP_SIZE 5
 #define BUFF_SIZE 10

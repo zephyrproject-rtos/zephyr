@@ -22,8 +22,9 @@
  * completeness.
  */
 
+#include <kernel.h>
+#include <kernel_arch_data.h>
 #include <gen_offset.h>
-#include <kernel_structs.h>
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, relinquish_cause);

@@ -44,6 +44,11 @@ zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN  connection.c
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
 endif()
 
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  )
+
 if(CONFIG_NET_SHELL)
 zephyr_library_sources(net_shell.c)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)

@@ -44,7 +44,7 @@
 
 #include "posix_core.h"
 #include "posix_arch_internal.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include "kernel_internal.h"
 #include "kernel_structs.h"
 #include "ksched.h"

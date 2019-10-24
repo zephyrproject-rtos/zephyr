@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <irq.h>
-#include <kernel_structs.h>
+#include <toolchain.h>
+#include <linker/sections.h>
 #include <offsets_short.h>
+#include <arch/cpu.h>
 
 /* exports */
 GTEXT(z_arch_swap)

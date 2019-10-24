@@ -22,6 +22,7 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
+#include <arch/arm/thread.h>
 #include <arch/arm/exc.h>
 #include <arch/arm/irq.h>
 #include <arch/arm/error.h>

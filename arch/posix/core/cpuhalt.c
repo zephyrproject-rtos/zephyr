@@ -21,7 +21,7 @@
  */
 
 #include "posix_core.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include <debug/tracing.h>
 
 void z_arch_cpu_idle(void)

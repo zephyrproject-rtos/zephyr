@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <irq_offload.h>
 #include <arch/xtensa/arch.h>
-#include <xtensa_api.h>
+#include <arch/xtensa/xtensa_api.h>
 
 /*
  * Xtensa core should support software interrupt in order to allow using

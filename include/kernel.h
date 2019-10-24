@@ -4841,6 +4841,13 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * private APIs that are utilized by one or more public APIs
  */
 
+/**
+ * @internal
+ */
+extern void z_init_thread_base(struct _thread_base *thread_base,
+			      int priority, u32_t initial_state,
+			      unsigned int options);
+
 #ifdef CONFIG_MULTITHREADING
 /**
  * @internal

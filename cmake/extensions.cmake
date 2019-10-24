@@ -1148,6 +1148,12 @@ function(zephyr_library_sources_ifdef feature_toggle source)
   endif()
 endfunction()
 
+function(zephyr_library_sources_ifndef feature_toggle source)
+  if(NOT ${feature_toggle})
+    zephyr_library_sources(${source} ${ARGN})
+  endif()
+endfunction()
+
 function(zephyr_sources_ifdef feature_toggle)
   if(${${feature_toggle}})
     zephyr_sources(${ARGN})

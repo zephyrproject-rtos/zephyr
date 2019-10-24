@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa_context.h>
+#include <arch/xtensa/xtensa_context.h>
 /**
  *
  * @brief Atomically clear a memory location

@@ -10,9 +10,7 @@
 #ifndef ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#include "kernel.h"
-#include <toolchain/common.h>
-#include "posix_core.h"
+#include <kernel_arch_data.h>
 
 #ifndef _ASMLANGUAGE
 

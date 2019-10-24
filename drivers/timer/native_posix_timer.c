@@ -17,7 +17,7 @@
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 static u64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */

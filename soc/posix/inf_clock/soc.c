@@ -28,7 +28,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include "posix_soc.h"
 #include "posix_board_if.h"
 #include "posix_core.h"

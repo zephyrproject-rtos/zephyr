@@ -29,12 +29,10 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <ia32/exception.h>
-#include <kernel_arch_thread.h>
 #include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
-#include <kernel_internal.h>
 #include <zephyr/types.h>
 #include <sys/dlist.h>
 #endif

@@ -15,7 +15,8 @@
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
 #include <kernel.h>
-#include <stdbool.h>
+#include <kernel_arch_interface.h>
+#include <string.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -44,6 +45,51 @@ extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, const char *name);
+
+static ALWAYS_INLINE void z_new_thread_init(struct k_thread *thread,
+					    char *pStack, size_t stackSize,
+					    int prio, unsigned int options)
+{
+#if !defined(CONFIG_INIT_STACKS) && !defined(CONFIG_THREAD_STACK_INFO)
+	ARG_UNUSED(pStack);
+	ARG_UNUSED(stackSize);
+#endif
+
+#ifdef CONFIG_INIT_STACKS
+	memset(pStack, 0xaa, stackSize);
+#endif
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((u32_t *)pStack) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
+	/* Initialize various struct k_thread members */
+	z_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
+
+	/* static threads overwrite it afterwards with real value */
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
+
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	thread->custom_data = NULL;
+#endif
+
+#ifdef CONFIG_THREAD_NAME
+	thread->name[0] = '\0';
+#endif
+
+#if defined(CONFIG_USERSPACE)
+	thread->mem_domain_info.mem_domain = NULL;
+#endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+	thread->stack_info.start = (uintptr_t)pStack;
+	thread->stack_info.size = (u32_t)stackSize;
+#endif /* CONFIG_THREAD_STACK_INFO */
+}
 
 #ifdef CONFIG_USERSPACE
 /**
@@ -82,6 +128,26 @@ extern void z_thread_monitor_exit(struct k_thread *thread);
 	do {/* nothing */    \
 	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
+
+#ifdef CONFIG_USE_SWITCH
+/* This is a arch function traditionally, but when the switch-based
+ * z_swap() is in use it's a simple inline provided by the kernel.
+ */
+static ALWAYS_INLINE void
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+{
+	thread->swap_retval = value;
+}
+#endif
+
+static ALWAYS_INLINE void
+z_thread_return_value_set_with_data(struct k_thread *thread,
+				   unsigned int value,
+				   void *data)
+{
+	z_arch_thread_return_value_set(thread, value);
+	thread->base.swap_data = data;
+}
 
 extern void z_smp_init(void);
 

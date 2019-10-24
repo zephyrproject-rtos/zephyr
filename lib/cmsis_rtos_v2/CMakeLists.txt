@@ -19,4 +19,9 @@ zephyr_library_sources_ifdef(
   thread_flags.c
 )
 
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+)
+
 zephyr_library_link_libraries(CMSIS)

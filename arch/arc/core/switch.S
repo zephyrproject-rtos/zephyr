@@ -17,6 +17,7 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <v2/irq.h>
 #include <swap_macros.h>

@@ -14,7 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 static int stm32h7_m4_wakeup(struct device *arg)

@@ -6,175 +6,320 @@
 
 /**
  * @defgroup arch-interface Architecture Interface
- * @brief Internal kernel APIs implemented at the architecture layer.
+ * @brief Internal kernel APIs with public scope
  *
- * Not all architecture-specific defines are here, APIs that are used
- * by public inline functions and macros are described in
- * include/sys/arch_inlines.h.
+ * Any public kernel APIs that are implemented as inline functions and need to
+ * call architecture-specific API so will have the prototypes for the
+ * architecture-specific APIs here. Architecture APIs that aren't used in this
+ * way go in kernel/include/kernel_arch_interface.h.
  *
- * For all inline functions prototyped here, the implementation is expected
- * to be provided by arch/ARCH/include/kernel_arch_func.h
+ * The set of architecture-specific APIs used internally by public macros and
+ * inline functions in public headers are also specified and documented.
  *
- * This header is not intended for general use; like kernel_arch_func.h,
- * it is intended to be pulled in by internal kernel headers, specifically
- * kernel/include/kernel_structs.h
+ * For all macros and inline function prototypes described herein, <arch/cpu.h>
+ * must eventually pull in full definitions for all of them (the actual macro
+ * defines and inline function bodies)
+ *
+ * include/kernel.h and other public headers depend on definitions in this
+ * header.
  */
 #ifndef ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
 #define ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <toolchain.h>
+#include <stddef.h>
+#include <zephyr/types.h>
+#include <arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* NOTE: We cannot pull in kernel.h here, need some forward declarations  */
+struct k_thread;
+struct k_mem_domain;
+
+typedef struct _k_thread_stack_element k_thread_stack_t;
+
+typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
 /**
  * @defgroup arch-timing Architecture timing APIs
  * @ingroup arch-interface
  * @{
  */
-#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+
 /**
- * Architecture-specific implementation of busy-waiting
+ * Obtain the current cycle count, in units that are hardware-specific
  *
- * @param usec_to_wait Wait period, in microseconds
+ * @see k_cycle_get_32()
  */
-void z_arch_busy_wait(u32_t usec_to_wait);
-#endif
+static inline u32_t z_arch_k_cycle_get_32(void);
 
 /** @} */
 
+
 /**
- * @defgroup arch-threads Architecture thread APIs
- * @ingroup arch-interface
+ * @addtogroup arch-threads
  * @{
  */
 
-/** Handle arch-specific logic for setting up new threads
- *
- * The stack and arch-specific thread state variables must be set up
- * such that a later attempt to switch to this thread will succeed
- * and we will enter z_thread_entry with the requested thread and
- * arguments as its parameters.
- *
- * At some point in this function's implementation, z_setup_new_thread() must
- * be called with the true bounds of the available stack buffer within the
- * thread's stack object.
- *
- * @param thread Pointer to uninitialized struct k_thread
- * @param pStack Pointer to the stack space.
- * @param stackSize Stack size in bytes.
- * @param entry Thread entry function.
- * @param p1 1st entry point parameter.
- * @param p2 2nd entry point parameter.
- * @param p3 3rd entry point parameter.
- * @param prio Thread priority.
- * @param options Thread options.
- */
-void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
-		       size_t stackSize, k_thread_entry_t entry,
-		       void *p1, void *p2, void *p3,
-		       int prio, unsigned int options);
-
-#ifdef CONFIG_USE_SWITCH
 /**
- * Cooperatively context switch
+ * @def Z_ARCH_THREAD_STACK_DEFINE(sym, size)
  *
- * Architectures have considerable leeway on what the specific semantics of
- * the switch handles are, but optimal implementations should do the following
- * if possible:
- *
- * 1) Push all thread state relevant to the context switch to the current stack
- * 2) Update the switched_from parameter to contain the current stack pointer,
- *    after all context has been saved. switched_from is used as an output-
- *    only parameter and its current value is ignored (and can be NULL, see
- *    below).
- * 3) Set the stack pointer to the value provided in switch_to
- * 4) Pop off all thread state from the stack we switched to and return.
- *
- * Some arches may implement thread->switch handle as a pointer to the thread
- * itself, and save context somewhere in thread->arch. In this case, on initial
- * context switch from the dummy thread, thread->switch handle for the outgoing
- * thread is NULL. Instead of dereferencing switched_from all the way to get
- * the thread pointer, subtract ___thread_t_switch_handle_OFFSET to obtain the
- * thread pointer instead.
- *
- * @param switch_to Incoming thread's switch handle
- * @param switched_from Pointer to outgoing thread's switch handle storage
- *        location, which may be updated.
+ * @see K_THREAD_STACK_DEFINE()
  */
-static inline void z_arch_switch(void *switch_to, void **switched_from);
-#else
-/**
- * Cooperatively context switch
- *
- * Must be called with interrupts locked with the provided key.
- * This is the older-style context switching method, which is incompatible
- * with SMP. New arch ports, either SMP or UP, are encouraged to implement
- * z_arch_switch() instead.
- *
- * @param key Interrupt locking key
- * @return If woken from blocking on some kernel object, the result of that
- *         blocking operation.
- */
-int z_arch_swap(unsigned int key);
 
 /**
- * Set the return value for the specified thread.
+ * @def Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, size)
  *
- * It is assumed that the specified @a thread is pending.
- *
- * @param thread Pointer to thread object
- * @param value value to set as return value
+ * @see K_THREAD_STACK_ARRAY_DEFINE()
  */
-static ALWAYS_INLINE void
-z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH i*/
 
-#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**
- * Custom logic for entering main thread context at early boot
+ * @def Z_ARCH_THREAD_STACK_LEN(size)
  *
- * Used by architectures where the typical trick of setting up a dummy thread
- * in early boot context to "switch out" of isn't workable.
- *
- * @param main_thread main thread object
- * @param main_stack main thread's stack object
- * @param main_stack_size Size of the stack object's buffer
- * @param _main Entry point for application main function.
+ * @see K_THREAD_STACK_LEN()
  */
-void z_arch_switch_to_main_thread(struct k_thread *main_thread,
-				  k_thread_stack_t *main_stack,
-				  size_t main_stack_size,
-				  k_thread_entry_t _main);
-#endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 /**
- * @brief Disable floating point context preservation
+ * @def Z_ARCH_THREAD_STACK_MEMBER(sym, size)
  *
- * The function is used to disable the preservation of floating
- * point context information for a particular thread.
- *
- * @note For ARM architecture, disabling floating point preservation may only
- * be requested for the current thread and cannot be requested in ISRs.
- *
- * @retval 0       On success.
- * @retval -EINVAL If the floating point disabling could not be performed.
+ * @see K_THREAD_STACK_MEMBER()
  */
-int z_arch_float_disable(struct k_thread *thread);
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
+/*
+ * @def Z_ARCH_THREAD_STACK_SIZEOF(sym)
+ *
+ * @see K_THREAD_STACK_SIZEOF()
+ */
+
+/**
+ * @def Z_ARCH_THREAD_STACK_RESERVED
+ *
+ * @see K_THREAD_STACK_RESERVED
+ */
+
+/**
+ * @def Z_ARCH_THREAD_STACK_BUFFER(sym)
+ *
+ * @see K_THREAD_STACK_RESERVED
+ */
 
 /** @} */
 
+
 /**
- * @defgroup arch-pm Architecture-specific power management APIs
- * @ingroup arch-interface
+ * @addtogroup arch-pm
  * @{
  */
-/** Halt the system, optionally propagating a reason code */
-FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
+
+/**
+ * @brief Power save idle routine
+ *
+ * This function will be called by the kernel idle loop or possibly within
+ * an implementation of z_sys_power_save_idle in the kernel when the
+ * '_sys_power_save_flag' variable is non-zero.
+ *
+ * Architectures that do not implement power management instructions may
+ * immediately return, otherwise a power-saving instruction should be
+ * issued to wait for an interrupt.
+ *
+ * @see k_cpu_idle()
+ */
+void z_arch_cpu_idle(void);
+
+/**
+ * @brief Atomically re-enable interrupts and enter low power mode
+ *
+ * The requirements for z_arch_cpu_atomic_idle() are as follows:
+ *
+ * 1) Enabling interrupts and entering a low-power mode needs to be
+ *    atomic, i.e. there should be no period of time where interrupts are
+ *    enabled before the processor enters a low-power mode.  See the comments
+ *    in k_lifo_get(), for example, of the race condition that
+ *    occurs if this requirement is not met.
+ *
+ * 2) After waking up from the low-power mode, the interrupt lockout state
+ *    must be restored as indicated in the 'key' input parameter.
+ *
+ * @see k_cpu_atomic_idle()
+ *
+ * @param key Lockout key returned by previous invocation of z_arch_irq_lock()
+ */
+void z_arch_cpu_atomic_idle(unsigned int key);
+
+/** @} */
+
+
+/**
+ * @addtogroup arch-smp
+ * @{
+ */
+
+/**
+ * @brief Start a numbered CPU on a MP-capable system
+ *
+ * This starts and initializes a specific CPU.  The main thread on startup is
+ * running on CPU zero, other processors are numbered sequentially.  On return
+ * from this function, the CPU is known to have begun operating and will enter
+ * the provided function.  Its interrupts will be initialized but disabled such
+ * that irq_unlock() with the provided key will work to enable them.
+ *
+ * Normally, in SMP mode this function will be called by the kernel
+ * initialization and should not be used as a user API.  But it is defined here
+ * for special-purpose apps which want Zephyr running on one core and to use
+ * others for design-specific processing.
+ *
+ * @param cpu_num Integer number of the CPU
+ * @param stack Stack memory for the CPU
+ * @param sz Stack buffer size, in bytes
+ * @param fn Function to begin running on the CPU.  First argument is
+ *        an irq_unlock() key.
+ * @param arg Untyped argument to be passed to "fn"
+ */
+void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+		      void (*fn)(int key, void *data), void *arg);
+/** @} */
+
+
+/**
+ * @addtogroup arch-irq
+ * @{
+ */
+
+/**
+ * Lock interrupts on the current CPU
+ *
+ * @see irq_lock()
+ */
+static inline unsigned int z_arch_irq_lock(void);
+
+/**
+ * Unlock interrupts on the current CPU
+ *
+ * @see irq_unlock()
+ */
+static inline void z_arch_irq_unlock(unsigned int key);
+
+/**
+ * Test if calling z_arch_irq_unlock() with this key would unlock irqs
+ *
+ * @param key value returned by z_arch_irq_lock()
+ * @return true if interrupts were unlocked prior to the z_arch_irq_lock()
+ * call that produced the key argument.
+ */
+static inline bool z_arch_irq_unlocked(unsigned int key);
+
+/**
+ * Disable the specified interrupt line
+ *
+ * @see irq_disable()
+ */
+void z_arch_irq_disable(unsigned int irq);
+
+/**
+ * Enable the specified interrupt line
+ *
+ * @see irq_enable()
+ */
+void z_arch_irq_enable(unsigned int irq);
+
+/**
+ * Test if an interrupt line is enabled
+ *
+ * @see irq_is_enabled()
+ */
+int z_arch_irq_is_enabled(unsigned int irq);
+
+/**
+ * Arch-specific hook to install a dynamic interrupt.
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return The vector assigned to this interrupt
+ */
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			       void (*routine)(void *parameter),
+			       void *parameter, u32_t flags);
+
+/**
+ * @def Z_ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
+ *
+ * @see IRQ_CONNECT()
+ */
+
+/**
+ * @def Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+ *
+ * @see IRQ_DIRECT_CONNECT()
+ */
+
+/**
+ * @def Z_ARCH_ISR_DIRECT_PM()
+ *
+ * @see ISR_DIRECT_PM()
+ */
+
+/**
+ * @def Z_ARCH_ISR_DIRECT_HEADER()
+ *
+ * @see ISR_DIRECT_HEADER()
+ */
+
+/**
+ * @def Z_ARCH_ISR_DIRECT_FOOTER(swap)
+ *
+ * @see ISR_DIRECT_FOOTER()
+ */
+
+/**
+ * @def Z_ARCH_ISR_DIRECT_DECLARE(name)
+ *
+ * @see ISR_DIRECT_DECLARE()
+ */
+
+/**
+ * @def Z_ARCH_EXCEPT(reason_p)
+ *
+ * Generate a software induced fatal error.
+ *
+ * If the caller is running in user mode, only K_ERR_KERNEL_OOPS or
+ * K_ERR_STACK_CHK_FAIL may be induced.
+ *
+ * This should ideally generate a software trap, with exception context
+ * indicating state when this was invoked. General purpose register state at
+ * the time of trap should not be disturbed from the calling context.
+ *
+ * @param reason_p K_ERR_ scoped reason code for the fatal error.
+ */
+
+#ifdef CONFIG_IRQ_OFFLOAD
+typedef void (*irq_offload_routine_t)(void *parameter);
+
+/**
+ * Run a function in interrupt context.
+ *
+ * Implementations should invoke an exception such that the kernel goes through
+ * its interrupt handling dispatch path, to include switching to the interrupt
+ * stack, and runs the provided routine and parameter.
+ *
+ * The only intended use-case for this function is for test code to simulate
+ * the correctness of kernel APIs in interrupt handling context. This API
+ * is not intended for real applications.
+ *
+ * @see irq_offload()
+ *
+ * @param routine Function to run in interrupt context
+ * @param parameter Value to pass to the function when invoked
+ */
+void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter);
+#endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
 
@@ -200,30 +345,141 @@ void z_arch_sched_ipi(void);
 
 
 /**
- * @defgroup arch-irq Architecture-specific IRQ APIs
- * @ingroup arch-interface
- * @{
- */
-
-/**
- * Test if the current context is in interrupt context
- *
- * XXX: This is inconsistently handled among arches wrt exception context
- * See: #17656
- *
- * @return true if we are in interrupt context
- */
-static inline bool z_arch_is_in_isr(void);
-
-/** @} */
-
-
-/**
  * @defgroup arch-userspace Architecture-specific userspace APIs
  * @ingroup arch-interface
  * @{
  */
+
 #ifdef CONFIG_USERSPACE
+/**
+ * Invoke a system call with 0 arguments.
+ *
+ * No general-purpose register state other than return value may be preserved
+ * when transitioning from supervisor mode back down to user mode for
+ * security reasons.
+ *
+ * It is required that all arguments be stored in registers when elevating
+ * privileges from user to supervisor mode.
+ *
+ * Processing of the syscall takes place on a separate kernel stack. Interrupts
+ * should be enabled when invoking the system call marshallers from the
+ * dispatch table. Thread preemption may occur when handling system calls.
+ *
+ * Call ids are untrusted and must be bounds-checked, as the value is used to
+ * index the system call dispatch table, containing function pointers to the
+ * specific system call code.
+ *
+ * @param call_id System call ID
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke0(uintptr_t call_id);
+
+/**
+ * Invoke a system call with 1 argument.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke1(uintptr_t arg1,
+					       uintptr_t call_id);
+
+/**
+ * Invoke a system call with 2 arguments.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param arg2 Second argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t call_id);
+
+/**
+ * Invoke a system call with 3 arguments.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param arg2 Second argument to the system call.
+ * @param arg3 Third argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3,
+					       uintptr_t call_id);
+
+/**
+ * Invoke a system call with 4 arguments.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param arg2 Second argument to the system call.
+ * @param arg3 Third argument to the system call.
+ * @param arg4 Fourth argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t call_id);
+
+/**
+ * Invoke a system call with 5 arguments.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param arg2 Second argument to the system call.
+ * @param arg3 Third argument to the system call.
+ * @param arg4 Fourth argument to the system call.
+ * @param arg5 Fifth argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t arg5,
+					       uintptr_t call_id);
+
+/**
+ * Invoke a system call with 6 arguments.
+ *
+ * @see z_arch_syscall_invoke0()
+ *
+ * @param arg1 First argument to the system call.
+ * @param arg2 Second argument to the system call.
+ * @param arg3 Third argument to the system call.
+ * @param arg4 Fourth argument to the system call.
+ * @param arg5 Fifth argument to the system call.
+ * @param arg6 Sixth argument to the system call.
+ * @param call_id System call ID, will be bounds-checked and used to reference
+ *	          kernel-side dispatch table
+ * @return Return value of the system call. Void system calls return 0 here.
+ */
+static inline uintptr_t z_arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t arg5, uintptr_t arg6,
+					       uintptr_t call_id);
+
+/**
+ * Indicate whether we are currently running in user mode
+ *
+ * @return true if the CPU is currently running with user permissions
+ */
+static inline bool z_arch_is_user_context(void);
+
 /**
  * @brief Get the maximum number of partitions for a memory domain
  *
@@ -380,51 +636,12 @@ size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 
 /** @} */
 
-
-/**
- * @defgroup arch-benchmarking Architecture-specific benchmarking globals
- * @ingroup arch-interface
- */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern u64_t z_arch_timing_swap_start;
-extern u64_t z_arch_timing_swap_end;
-extern u64_t z_arch_timing_irq_start;
-extern u64_t z_arch_timing_irq_end;
-extern u64_t z_arch_timing_tick_start;
-extern u64_t z_arch_timing_tick_end;
-extern u64_t z_arch_timing_user_mode_end;
-extern u32_t z_arch_timing_value_swap_end;
-extern u64_t z_arch_timing_value_swap_common;
-extern u64_t z_arch_timing_value_swap_temp;
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-
-/** @} */
-
-
-/**
- * @defgroup arch-misc Miscellaneous architecture APIs
- * @ingroup arch-interface
- */
-
-/**
- * Architecture-specific kernel initialization hook
- *
- * This function is invoked near the top of _Cstart, for additional
- * architecture-specific setup before the rest of the kernel is brought up.
- *
- * TODO: Deprecate, most arches are using a prep_c() function to do the same
- * thing in a simpler way
- */
-static inline void z_arch_kernel_init(void);
-
-/** Do nothing and return. Yawn. */
-static inline void z_arch_nop(void);
-
-/** @} */
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#include <arch/arch_inlines.h>
+
 #endif /* _ASMLANGUAGE */
+
 #endif /* ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_ */

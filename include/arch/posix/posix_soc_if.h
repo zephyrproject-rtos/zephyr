@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
-#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_POSIX_POSIX_SOC_IF_H_
+#define ZEPHYR_INCLUDE_ARCH_POSIX_POSIX_SOC_IF_H_
 
 /*
  * This file lists the functions the POSIX architecture core expects the
@@ -14,7 +14,7 @@
  * or all its boards
  */
 
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 #include "soc_irq.h" /* Must exist and define _ARCH_IRQ/ISR_* macros */
 
 #ifdef __cplusplus
@@ -39,4 +39,4 @@ void posix_irq_offload(void (*routine)(void *), void *parameter);
 }
 #endif
 
-#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_POSIX_POSIX_SOC_IF_H_ */
