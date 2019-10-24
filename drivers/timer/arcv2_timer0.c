@@ -235,7 +235,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * that interrupts are already disabled)
 	 */
 #ifdef CONFIG_SMP
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	/* as 64-bits GFRC is used as wall clock, it's ok to ignore idle
+	 * systick will not be missed.
+	 * However for single core using 32-bits arc timer, idle cannot
+	 * be ignored, as 32-bits timer will overflow in a not-long time.
+	 */
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && ticks == K_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -246,7 +251,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	u32_t delay;
 	u32_t key;
 
-	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
+	ticks = MIN(MAX_TICKS, ticks);
 
 	/* Desired delay in the future */
 	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
