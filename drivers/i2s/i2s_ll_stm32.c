@@ -500,7 +500,7 @@ static void dma_rx_callback(void *arg, u32_t channel, int status)
 		goto rx_disable;
 	}
 
-	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma_rx, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -583,7 +583,7 @@ static void dma_tx_callback(void *arg, u32_t channel, int status)
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma_tx, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
@@ -646,9 +646,14 @@ static int i2s_stm32_initialize(struct device *dev)
 	}
 
 	/* Get the binding to the DMA device */
-	dev_data->dev_dma = device_get_binding(dev_data->dma_name);
-	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", dev_data->dma_name);
+	dev_data->dev_dma_tx = device_get_binding(dev_data->tx.dma_name);
+	if (!dev_data->dev_dma_tx) {
+		LOG_ERR("%s device not found", dev_data->tx.dma_name);
+		return -ENODEV;
+	}
+	dev_data->dev_dma_rx = device_get_binding(dev_data->rx.dma_name);
+	if (!dev_data->dev_dma_rx) {
+		LOG_ERR("%s device not found", dev_data->rx.dma_name);
 		return -ENODEV;
 	}
 
@@ -678,7 +683,7 @@ static int rx_stream_start(struct stream *stream, struct device *dev)
 	/* remember active RX DMA channel (used in callback) */
 	active_dma_rx_channel[stream->dma_channel] = dev;
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = start_dma(dev_data->dev_dma_rx, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -722,7 +727,7 @@ static int tx_stream_start(struct stream *stream, struct device *dev)
 	/* remember active TX DMA channel (used in callback) */
 	active_dma_tx_channel[stream->dma_channel] = dev;
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = start_dma(dev_data->dev_dma_tx, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
@@ -744,7 +749,7 @@ static void rx_stream_disable(struct stream *stream, struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma;
+	struct device *dev_dma = dev_data->dev_dma_rx;
 
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);
@@ -764,7 +769,7 @@ static void tx_stream_disable(struct stream *stream, struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma;
+	struct device *dev_dma = dev_data->dev_dma_tx;
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);

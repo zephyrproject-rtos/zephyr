@@ -120,8 +120,8 @@ struct stream {
 
 /* Device run time data */
 struct i2s_stm32_data {
-	struct device *dev_dma;
-	const char *dma_name;
+	struct device *dev_dma_tx;
+	struct device *dev_dma_rx;
 	struct stream rx;
 	struct stream tx;
 };
