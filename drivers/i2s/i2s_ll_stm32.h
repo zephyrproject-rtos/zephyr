@@ -49,40 +49,6 @@
 
 #endif /* CONFIG_I2S_STM32_USE_PLLI2S_ENABLE */
 
-#ifdef CONFIG_SOC_SERIES_STM32F4X
-#define I2S1_DMA_NAME		CONFIG_DMA_2_NAME
-#define I2S1_DMA_CHAN_RX	2
-#define I2S1_DMA_SLOT_RX	3
-#define I2S1_DMA_CHAN_TX	3
-#define I2S1_DMA_SLOT_TX	3
-#define I2S2_DMA_NAME		CONFIG_DMA_1_NAME
-#define I2S2_DMA_CHAN_RX	3
-#define I2S2_DMA_SLOT_RX	0
-#define I2S2_DMA_CHAN_TX	4
-#define I2S2_DMA_SLOT_TX	0
-#define I2S3_DMA_NAME		CONFIG_DMA_1_NAME
-#define I2S3_DMA_CHAN_RX	0
-#define I2S3_DMA_SLOT_RX	0
-#define I2S3_DMA_CHAN_TX	5
-#define I2S3_DMA_SLOT_TX	0
-#define I2S4_DMA_NAME		CONFIG_DMA_2_NAME
-#define I2S4_DMA_CHAN_RX	0
-#define I2S4_DMA_SLOT_RX	4
-#define I2S4_DMA_CHAN_TX	1
-#define I2S4_DMA_SLOT_TX	4
-#define I2S5_DMA_NAME		CONFIG_DMA_2_NAME
-#define I2S5_DMA_CHAN_RX	5
-#define I2S5_DMA_SLOT_RX	7
-#define I2S5_DMA_CHAN_TX	6
-#define I2S5_DMA_SLOT_TX	7
-#define I2S_DMA_SRC_ADDR_INC_RX	0
-#define I2S_DMA_DST_ADDR_INC_RX	1
-#define I2S_DMA_SRC_ADDR_INC_TX	1
-#define I2S_DMA_DST_ADDR_INC_TX	0
-#define I2S_DMA_FIFO_THRESHOLD	3	/* Full FIFO */
-#define I2S_DMA_CHAN_PRIORITY	0
-#endif
-
 #define DEV_CFG(dev) \
 	(const struct i2s_stm32_cfg * const)((dev)->config->config_info)
 #define DEV_DATA(dev) \
@@ -112,6 +78,8 @@ struct i2s_stm32_cfg {
 struct stream {
 	s32_t state;
 	struct k_sem sem;
+
+	const char *dma_name;
 	u32_t dma_channel;
 	struct dma_config dma_cfg;
 	u8_t priority;

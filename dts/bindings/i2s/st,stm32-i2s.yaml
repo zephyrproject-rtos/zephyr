@@ -8,11 +8,14 @@ description: |
 
 compatible: "st,stm32-i2s"
 
-include: i2s-controller.yaml
+include: [i2s-controller.yaml, dma.yaml]
 
 properties:
     reg:
       required: true
 
     interrupts:
+      required: true
+
+    dma-names:
       required: true
