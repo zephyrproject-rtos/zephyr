@@ -432,23 +432,23 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 	"msr   PSP, %1\n\t"	/* __set_PSP(start_of_main_stack) */
 #endif
 
+	"movs r1, #0\n\t"
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
 			|| defined(CONFIG_ARMV7_R)
 	"cpsie i\n\t"		/* __enable_irq() */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
-	"mov   r1,  #0\n\t"
 	"msr   BASEPRI, r1\n\t"	/* __set_BASEPRI(0) */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	"isb\n\t"
-	"movs r1, #0\n\t"
 	"movs r2, #0\n\t"
 	"movs r3, #0\n\t"
 	"bl z_thread_entry\n\t"	/* z_thread_entry(_main, 0, 0, 0); */
 	:
 	: "r" (_main), "r" (start_of_main_stack)
+	: "r0" /* not to be overwritten by msr PSP, %1 */
 	);
 
 	CODE_UNREACHABLE;
