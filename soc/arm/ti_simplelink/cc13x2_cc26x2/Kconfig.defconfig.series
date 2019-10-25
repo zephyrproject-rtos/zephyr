@@ -23,7 +23,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
 config NUM_IRQS
-	int
 	default 38
 
 config TI_CCFG_PRESENT

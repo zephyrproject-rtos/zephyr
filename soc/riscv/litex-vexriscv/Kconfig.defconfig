@@ -19,7 +19,6 @@ config RISCV_HAS_PLIC
 	bool
 
 config NUM_IRQS
-	int
 	default 12
 
 endif # SOC_RISCV32_LITEX_VEXRISCV

@@ -76,6 +76,9 @@ config ISA_ARM
 	  processor start-up. Much of its functionality was subsumed into T32 with
 	  the introduction of Thumb-2 technology.
 
+config NUM_IRQS
+	int
+
 config DATA_ENDIANNESS_LITTLE
 	bool
 	default y if CPU_CORTEX

@@ -37,7 +37,6 @@ config SOC_PART_NUMBER
 # are used).
 #
 config NUM_IRQS
-	int
 	default 74 if SOC_ATMEL_SAME70_REVB
 	default 71
 

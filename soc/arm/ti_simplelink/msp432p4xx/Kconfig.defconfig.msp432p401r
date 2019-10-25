@@ -14,7 +14,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
 
 config NUM_IRQS
-	int
 	default 64
 
 endif # SOC_MSP432P401R

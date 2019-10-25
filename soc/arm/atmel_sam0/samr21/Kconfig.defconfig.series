@@ -20,7 +20,6 @@ config SOC_PART_NUMBER
 	default "samr21g18a" if SOC_PART_NUMBER_SAMR21G18A
 
 config NUM_IRQS
-	int
 	default 28
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

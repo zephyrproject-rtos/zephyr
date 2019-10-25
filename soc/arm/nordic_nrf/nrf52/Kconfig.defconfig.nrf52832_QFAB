@@ -12,7 +12,6 @@ config SOC
 	default "nRF52832_QFAB"
 
 config NUM_IRQS
-	int
 	default 39
 
 endif # SOC_NRF52832_QFAB

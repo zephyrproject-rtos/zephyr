@@ -28,7 +28,6 @@ config MAX_IRQ_PER_AGGREGATOR
 	default 52
 
 config NUM_IRQS
-	int
 	default 64
 
 config XIP

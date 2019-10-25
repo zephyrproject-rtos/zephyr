@@ -11,7 +11,6 @@ config SOC
 	default "stm32f103xb"
 
 config NUM_IRQS
-	int
 	default 43
 
 if GPIO_STM32
@@ -29,7 +28,6 @@ config SOC
 	default "stm32f103xe"
 
 config NUM_IRQS
-	int
 	default 60
 
 if GPIO_STM32

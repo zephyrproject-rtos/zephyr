@@ -11,7 +11,6 @@ config SOC
 	default "stm32f415xx"
 
 config NUM_IRQS
-	int
 	default 82
 
 endif # SOC_STM32F415XX

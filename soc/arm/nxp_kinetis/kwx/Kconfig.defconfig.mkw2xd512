@@ -22,7 +22,6 @@ config SOC
 endif # SOC_MKW24D5
 
 config NUM_IRQS
-	int
 	default 65
 
 if ADC
