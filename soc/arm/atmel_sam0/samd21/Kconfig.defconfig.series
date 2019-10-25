@@ -10,7 +10,6 @@ config SOC_SERIES
 	default "samd21"
 
 config SOC_PART_NUMBER
-	string
 	default "samd21e15a" if SOC_PART_NUMBER_SAMD21E15A
 	default "samd21e16a" if SOC_PART_NUMBER_SAMD21E16A
 	default "samd21e17a" if SOC_PART_NUMBER_SAMD21E17A

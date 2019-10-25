@@ -11,7 +11,6 @@ config SOC_SERIES
 	default "same70"
 
 config SOC_PART_NUMBER
-	string
 	default "same70q21" if SOC_PART_NUMBER_SAME70Q21
 	default "same70q20" if SOC_PART_NUMBER_SAME70Q20
 	default "same70q19" if SOC_PART_NUMBER_SAME70Q19
