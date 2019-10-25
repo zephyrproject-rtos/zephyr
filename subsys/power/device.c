@@ -9,6 +9,7 @@
 #include <string.h>
 #include <soc.h>
 #include <device.h>
+#include <sys/atomic.h>
 #include "policy/pm_policy.h"
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
@@ -68,6 +69,35 @@ void sys_pm_clock_gate_devices(void)
 void sys_pm_resume_devices(void)
 {
 	sys_pm_set_devices_power_state(DEVICE_PM_ACTIVE_STATE);
+}
+#elif defined(CONFIG_DEVICE_PM_DISTRIBUTED_METHOD)
+static atomic_t suspend_lock;
+
+void sys_pm_suspend_lock_acquire(void)
+{
+	atomic_inc(&suspend_lock);
+}
+
+void sys_pm_suspend_lock_release(void)
+{
+	atomic_dec(&suspend_lock);
+}
+
+bool sys_pm_allow_suspend(void)
+{
+	return (atomic_get(&suspend_lock) == 0);
+}
+
+void sys_pm_power_state_notify_devices(enum power_states state)
+{
+	for (int i = device_count - 1; i >= 0; i--) {
+		int idx = device_ordered_list[i];
+		struct device *device = &pm_device_list[idx];
+
+		if (device->config->device_pm_notify) {
+			device->config->device_pm_notify(device, state);
+		}
+	}
 }
 #endif
 

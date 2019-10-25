@@ -62,3 +62,10 @@ config DEVICE_PM_CENTRAL_METHOD
 	default y
 	help
 	  This option enables the device power management central method.
+
+config DEVICE_PM_DISTRIBUTED_METHOD
+	bool "Device power management distributed method"
+	depends on DEVICE_POWER_MANAGEMENT
+	depends on !DEVICE_PM_CENTRAL_METHOD
+	help
+	  This option enables the device power management distributed method.

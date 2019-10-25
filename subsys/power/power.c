@@ -110,6 +110,15 @@ enum power_states _sys_suspend(s32_t ticks)
 			sys_pm_clock_gate_devices();
 		}
 	}
+#elif defined(CONFIG_DEVICE_PM_DISTRIBUTED_METHOD)
+	if (sys_pm_allow_suspend()) {
+		sys_pm_power_state_notify_devices(pm_state);
+	} else {
+		LOG_ERR("some devices don't allow suspend!");
+		sys_pm_notify_power_state_exit(pm_state);
+		pm_state = SYS_POWER_STATE_ACTIVE;
+		return pm_state;
+	}
 #endif
 
 	if (deep_sleep) {
@@ -130,6 +139,8 @@ enum power_states _sys_suspend(s32_t ticks)
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();
 	}
+#elif defined(CONFIG_DEVICE_PM_DISTRIBUTED_METHOD)
+	sys_pm_power_state_notify_devices(SYS_POWER_STATE_ACTIVE);
 #endif
 	sys_pm_log_debug_info(pm_state);
 

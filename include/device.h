@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
 #include <kernel.h>
+#include <power/power.h>
 
 /**
  * @brief Device Driver APIs
@@ -260,6 +261,9 @@ struct device_config {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
 				 void *context, device_pm_cb cb, void *arg);
+#ifdef CONFIG_DEVICE_PM_DISTRIBUTED_METHOD
+	int (*device_pm_notify)(struct device *device, enum power_states state);
+#endif
 	struct device_pm *pm;
 #endif
 	const void *config_info;

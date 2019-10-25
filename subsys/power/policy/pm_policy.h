@@ -40,6 +40,30 @@ void sys_pm_resume_devices(void);
  *        power state(clock gate device), given the system PM state.
  */
 bool sys_pm_policy_clock_gate_devices(enum power_states pm_state);
+#elif defined(CONFIG_DEVICE_PM_DISTRIBUTED_METHOD)
+/**
+ * @brief Function to acquire system suspend lock. Any device
+ *        should acquire suspend lock before any transfer.
+ */
+void sys_pm_suspend_lock_acquire(void);
+
+/**
+ * @brief Function to release system suspend lock. Any device
+ *        should release suspend lock after done any transfer.
+ */
+void sys_pm_suspend_lock_release(void);
+
+/**
+ * @brief Function to determine whether to put whole system in
+ *        suspend state based on suspend lock.
+ */
+bool sys_pm_allow_suspend(void);
+
+/**
+ * @brief Function to notify system pm state to the devices in
+ *        PM device list if no any device hold suspend lock.
+ */
+void sys_pm_power_state_notify_devices(enum power_states state)
 #endif
 
 /**
