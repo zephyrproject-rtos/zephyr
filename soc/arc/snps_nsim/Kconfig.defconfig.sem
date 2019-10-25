@@ -7,7 +7,7 @@
 if SOC_NSIM_SEM
 
 config CPU_EM4_FPUDA
-	def_bool y
+	default y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
