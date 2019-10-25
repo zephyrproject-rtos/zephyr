@@ -60,6 +60,11 @@ void sys_pm_suspend_devices(void)
 	sys_pm_set_devices_power_state(DEVICE_PM_SUSPEND_STATE);
 }
 
+void sys_pm_clock_gate_devices(void)
+{
+	sys_pm_set_devices_power_state(DEVICE_PM_LOW_POWER_STATE);
+}
+
 void sys_pm_resume_devices(void)
 {
 	sys_pm_set_devices_power_state(DEVICE_PM_ACTIVE_STATE);

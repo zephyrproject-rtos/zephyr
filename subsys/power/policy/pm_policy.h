@@ -25,9 +25,21 @@ void sys_pm_create_device_list(void);
 void sys_pm_suspend_devices(void);
 
 /**
+ * @brief Function to put the devices in PM device list in
+ *        low power state(clock gate device).
+ */
+void sys_pm_clock_gate_devices(void);
+
+/**
  * @brief Function to resume the devices in PM device list
  */
 void sys_pm_resume_devices(void);
+
+/**
+ * @brief Function to determine whether to put devices in low
+ *        power state(clock gate device), given the system PM state.
+ */
+bool sys_pm_policy_clock_gate_devices(enum power_states pm_state);
 #endif
 
 /**

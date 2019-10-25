@@ -38,3 +38,10 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 	LOG_DBG("No suitable power state found!");
 	return SYS_POWER_STATE_ACTIVE;
 }
+
+#ifdef CONFIG_DEVICE_PM_CENTRAL_METHOD
+bool sys_pm_policy_clock_gate_devices(enum power_states pm_state)
+{
+	return sys_pm_is_sleep_state(pm_state);
+}
+#endif

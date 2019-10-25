@@ -104,6 +104,11 @@ enum power_states _sys_suspend(s32_t ticks)
 #if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
 	if (deep_sleep) {
 		sys_pm_suspend_devices();
+	} else {
+		if (sys_pm_policy_clock_gate_devices(pm_state)) {
+			/* clock gate peripherals. */
+			sys_pm_clock_gate_devices();
+		}
 	}
 #endif
 
@@ -121,7 +126,7 @@ enum power_states _sys_suspend(s32_t ticks)
 	sys_pm_debug_stop_timer();
 
 #if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
-	if (deep_sleep) {
+	if (deep_sleep || sys_pm_policy_clock_gate_devices(pm_state)) {
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();
 	}
