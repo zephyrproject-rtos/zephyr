@@ -57,6 +57,11 @@
 			status = "disabled";
 		};
 
+		pinmux: pinmux@3ff49000 {
+			compatible = "espressif,esp32-pinmux";
+			reg = <0x3ff49000 0x94>;
+		};
+
 		gpio0: gpio@3ff44000 {
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;
