@@ -199,7 +199,7 @@ int settings_subsys_init(void)
 	int err = 0;
 
 	if (settings_subsys_initialized) {
-		return 0;
+		return -EALREADY;
 	}
 
 	settings_init();
