@@ -12,7 +12,6 @@ config SOC_SERIES
 	default "mec1701"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
 	#for the moment 42 needs to be corrected in terms of devices added

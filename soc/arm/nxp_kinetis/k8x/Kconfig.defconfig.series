@@ -11,7 +11,6 @@ config SOC_SERIES
 	default "k8x"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 106
 

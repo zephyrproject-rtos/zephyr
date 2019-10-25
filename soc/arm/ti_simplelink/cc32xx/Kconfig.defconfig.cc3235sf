@@ -11,7 +11,6 @@ config SOC
 	default "cc3235sf"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	# This includes the NWP interrupt
 	default 179

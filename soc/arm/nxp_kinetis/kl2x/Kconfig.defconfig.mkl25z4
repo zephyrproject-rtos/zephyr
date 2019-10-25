@@ -11,7 +11,6 @@ config SOC
 	default "mkl25z4"
 
 config NUM_IRQS
-	int
 	default 32
 
 if ADC

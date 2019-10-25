@@ -14,7 +14,6 @@ config SOC_SERIES
 	default "nrf51"
 
 config NUM_IRQS
-	int
 	default 26
 
 config TEMP_NRF5

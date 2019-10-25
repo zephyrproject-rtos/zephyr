@@ -8,7 +8,6 @@ config SOC
 	default "xilinx_zynqmp"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
 	default 220

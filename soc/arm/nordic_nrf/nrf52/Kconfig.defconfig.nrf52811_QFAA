@@ -12,7 +12,6 @@ config SOC
 	default "nRF52811_QFAA"
 
 config NUM_IRQS
-	int
 	default 30
 
 endif # SOC_NRF52811_QFAA

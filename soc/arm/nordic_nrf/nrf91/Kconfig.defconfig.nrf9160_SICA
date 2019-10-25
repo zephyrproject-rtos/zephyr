@@ -12,7 +12,6 @@ config SOC
 	default "nRF9160_SICA"
 
 config NUM_IRQS
-	int
 	default 65
 
 endif # SOC_NRF9160_SICA

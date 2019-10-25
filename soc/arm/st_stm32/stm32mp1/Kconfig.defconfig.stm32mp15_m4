@@ -11,6 +11,6 @@ config SOC
 	default "stm32mp157cxx"
 
 config NUM_IRQS
-	int
 	default 150
+
 endif # SOC_STM32MP15_M4

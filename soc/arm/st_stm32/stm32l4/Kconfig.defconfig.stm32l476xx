@@ -12,7 +12,6 @@ config SOC
 	default "stm32l476xx"
 
 config NUM_IRQS
-	int
 	default 82
 
 if GPIO_STM32

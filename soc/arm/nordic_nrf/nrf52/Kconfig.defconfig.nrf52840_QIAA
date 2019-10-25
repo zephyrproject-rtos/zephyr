@@ -12,7 +12,6 @@ config SOC
 	default "nRF52840_QIAA"
 
 config NUM_IRQS
-	int
 	default 48
 
 config NET_CONFIG_IEEE802154_DEV_NAME
