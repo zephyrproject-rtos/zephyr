@@ -11,12 +11,9 @@ config SOC
 config FLOAT
 	default y
 
-if CLOCK_CONTROL
-
 config CLOCK_CONTROL_IMX_CCM
-	def_bool y
-
-endif # CLOCK_CONTROL
+	default y
+	depends on CLOCK_CONTROL
 
 if GPIO
 

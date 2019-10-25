@@ -18,4 +18,10 @@ config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_IMX_6X_M4 if SOC_SERIES_IMX_6X_M4
 	default SOC_PART_NUMBER_IMX7_M4 if SOC_SERIES_IMX7_M4
 
+config CLOCK_CONTROL_IMX_CCM
+	bool
+	depends on CLOCK_CONTROL
+	help
+	  If selected, support for the IMX CCM (Clock Controller Module) is enabled
+
 endif # SOC_FAMILY_IMX
