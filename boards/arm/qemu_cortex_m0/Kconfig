@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_M0
+
+config NRF_TIMER_TIMER
+	bool "nRF Timer Counter (NRF_TIMER0) Timer"
+	depends on CLOCK_CONTROL
+	depends on SOC_COMPATIBLE_NRF
+	depends on SYS_CLOCK_EXISTS
+	select TICKLESS_CAPABLE
+	default y
+	help
+	  This module implements a kernel device driver for the nRF Timer
+	  Counter NRF_TIMER0 and provides the standard "system clock driver"
+	  interfaces.
+
+endif # BOARD_QEMU_CORTEX_M0

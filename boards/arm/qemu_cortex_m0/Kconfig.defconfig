@@ -11,17 +11,6 @@ config BOARD
 
 if SYS_CLOCK_EXISTS
 
-config NRF_TIMER_TIMER
-	bool "nRF Timer Counter (NRF_TIMER0) Timer"
-	depends on CLOCK_CONTROL
-	depends on SOC_COMPATIBLE_NRF
-	select TICKLESS_CAPABLE
-	default y
-	help
-	  This module implements a kernel device driver for the nRF Timer
-	  Counter NRF_TIMER0 and provides the standard "system clock driver"
-	  interfaces.
-
 config NRF_RTC_TIMER
 	default n
 
