@@ -318,11 +318,20 @@ static int region_allocate_and_init(const u8_t index,
 static int mpu_configure_region(const u8_t index,
 	const struct k_mem_partition *new_region);
 
+#if !defined(CONFIG_MPU_GAP_FILLING)
+static int mpu_configure_regions(const struct k_mem_partition
+	*regions[], u8_t regions_num, u8_t start_reg_index,
+	bool do_sanity_check);
+#endif
+
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
  * sanity check of the memory regions to be programmed.
+ *
+ * The function performs a full partition of the background memory
+ * area, effectively, leaving no space in this area uncovered by MPU.
  */
-static int mpu_configure_regions(const struct k_mem_partition
+static int mpu_configure_regions_and_partition(const struct k_mem_partition
 	*regions[], u8_t regions_num, u8_t start_reg_index,
 	bool do_sanity_check)
 {
@@ -472,7 +481,7 @@ static int mpu_configure_static_mpu_regions(const struct k_mem_partition
 	ARG_UNUSED(background_area_base);
 	ARG_UNUSED(background_area_end);
 
-	mpu_reg_index = mpu_configure_regions(static_regions,
+	mpu_reg_index = mpu_configure_regions_and_partition(static_regions,
 		regions_num, mpu_reg_index, true);
 
 	static_regions_num = mpu_reg_index;
@@ -539,6 +548,7 @@ static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 		ARM_MPU_ClrRegion(i);
 	}
 
+#if defined(CONFIG_MPU_GAP_FILLING)
 	/* Reset MPU regions inside which dynamic memory regions may
 	 * be programmed.
 	 */
@@ -551,10 +561,25 @@ static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	 * forming a full partition of the background area, specified by the
 	 * given boundaries.
 	 */
+	mpu_reg_index = mpu_configure_regions_and_partition(dynamic_regions,
+		regions_num, mpu_reg_index, true);
+#else
 
+	/* We are going to skip the full partition of the background areas.
+	 * So we can disable MPU regions inside which dynamic memroy regions
+	 * may be programmed.
+	 */
+	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
+		ARM_MPU_ClrRegion(dyn_reg_info[i].index);
+	}
+
+	/* The dynamic regions are now programmed on top of
+	 * existing SRAM region configuration.
+	 */
 	mpu_reg_index = mpu_configure_regions(dynamic_regions,
 		regions_num, mpu_reg_index, true);
 
+#endif /* CONFIG_MPU_GAP_FILLING */
 	return mpu_reg_index;
 }
 
