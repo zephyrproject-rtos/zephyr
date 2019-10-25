@@ -6,7 +6,6 @@
 if SOC_SERIES_SAMD20
 
 config SOC_SERIES
-	string
 	default "samd20"
 
 config SOC_PART_NUMBER

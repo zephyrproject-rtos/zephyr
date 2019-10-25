@@ -6,7 +6,6 @@
 if SOC_SERIES_SAMR21
 
 config SOC_SERIES
-	string
 	default "samr21"
 
 config SOC_PART_NUMBER

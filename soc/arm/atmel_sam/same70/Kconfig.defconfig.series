@@ -7,7 +7,6 @@
 if SOC_SERIES_SAME70
 
 config SOC_SERIES
-	string
 	default "same70"
 
 config SOC_PART_NUMBER

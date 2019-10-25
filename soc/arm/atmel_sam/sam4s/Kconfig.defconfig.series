@@ -9,7 +9,6 @@
 if SOC_SERIES_SAM4S
 
 config SOC_SERIES
-	string
 	default "sam4s"
 
 config SOC_PART_NUMBER
