@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
 
-#include <updatehub.h>
+#include "include/updatehub.h"
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"

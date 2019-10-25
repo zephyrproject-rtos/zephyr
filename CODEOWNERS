@@ -272,7 +272,6 @@
 /include/sys/sys_io.h                     @andrewboie @andyross
 /include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
-/include/updatehub.h                      @chtavares592 @otavio
 /include/zephyr.h                         @andrewboie @andyross
 /kernel/                                  @andrewboie @andyross
 /lib/gui/                                 @vanwinkeljan
