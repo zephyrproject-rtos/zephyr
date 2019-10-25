@@ -21,4 +21,5 @@ API Reference
    storage/index.rst
    usb/index.rst
    usermode/index.rst
+   runtime_conf/index.rst
 
