@@ -278,7 +278,7 @@ void posix_sw_clear_pending_IRQ(unsigned int IRQn)
 /**
  * Storage for functions offloaded to IRQ
  */
-static irq_offload_routine_t off_routine;
+static void (*off_routine)(void *);
 static void *off_parameter;
 
 /**
@@ -295,7 +295,7 @@ static void offload_sw_irq_handler(void *a)
  *
  * Raise the SW IRQ assigned to handled this
  */
-void posix_irq_offload(irq_offload_routine_t routine, void *parameter)
+void posix_irq_offload(void (*routine)(void *), void *parameter)
 {
 	off_routine = routine;
 	off_parameter = parameter;

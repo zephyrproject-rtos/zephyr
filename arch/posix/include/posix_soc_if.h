@@ -16,7 +16,6 @@
 
 #include "posix_trace.h"
 #include "soc_irq.h" /* Must exist and define _ARCH_IRQ/ISR_* macros */
-#include "irq_offload.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,19 +32,8 @@ void posix_irq_unlock(unsigned int key);
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
 #ifdef CONFIG_IRQ_OFFLOAD
-void posix_irq_offload(irq_offload_routine_t routine, void *parameter);
+void posix_irq_offload(void (*routine)(void *), void *parameter);
 #endif
-
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
-{
-	return posix_irq_lock();
-}
-
-
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
-{
-	posix_irq_unlock(key);
-}
 
 #ifdef __cplusplus
 }
