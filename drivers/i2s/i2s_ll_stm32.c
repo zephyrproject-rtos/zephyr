@@ -848,8 +848,8 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 		.block_count = 1,					\
 		.dma_slot = DT_I2S_##index##_DMA_SLOT_##dir_cap,	\
 		.channel_direction = PERIPHERAL_TO_MEMORY,		\
-		.source_data_size = 1,  /* 16bit default */		\
-		.dest_data_size = 1,    /* 16bit default */		\
+		.source_data_size = 2,  /* 16bit default */		\
+		.dest_data_size = 2,    /* 16bit default */		\
 		.source_burst_length = 0, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
