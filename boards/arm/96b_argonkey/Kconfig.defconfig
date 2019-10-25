@@ -67,13 +67,6 @@ config I2S_5
 
 endif # I2S
 
-if DMA
-
-config DMA_STM32F4X
-	default y
-
-endif # DMA
-
 if LSM6DSL
 
 choice LSM6DSL_TRIGGER_MODE
