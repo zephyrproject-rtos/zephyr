@@ -428,8 +428,7 @@ static int reload_dma(struct device *dev_dma, u32_t channel,
 {
 	int ret;
 
-	ret = dma_reload(dev_dma, channel, (u32_t)src, (u32_t)dst,
-			 blk_size / sizeof(u16_t));
+	ret = dma_reload(dev_dma, channel, (u32_t)src, (u32_t)dst, blk_size);
 	if (ret < 0) {
 		return ret;
 	}
@@ -449,7 +448,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 	int ret;
 
 	memset(&blk_cfg, 0, sizeof(blk_cfg));
-	blk_cfg.block_size = blk_size / sizeof(u16_t);
+	blk_cfg.block_size = blk_size;
 	blk_cfg.source_address = (u32_t)src;
 	blk_cfg.dest_address = (u32_t)dst;
 	if (src_addr_increment) {
@@ -845,7 +844,7 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 	.dma_name = DT_I2S_##index##_DMA_CONTROLLER_##dir_cap,		\
 	.dma_channel = DT_I2S_##index##_DMA_CHANNEL_##dir_cap,		\
 	.dma_cfg = {							\
-		.block_count = 1,					\
+		.block_count = 2,					\
 		.dma_slot = DT_I2S_##index##_DMA_SLOT_##dir_cap,	\
 		.channel_direction = PERIPHERAL_TO_MEMORY,		\
 		.source_data_size = 2,  /* 16bit default */		\
