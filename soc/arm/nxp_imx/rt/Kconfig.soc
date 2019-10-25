@@ -91,6 +91,7 @@ config SOC_MIMXRT1052
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -136,6 +137,7 @@ config SOC_MIMXRT1062
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -160,6 +162,7 @@ config SOC_MIMXRT1064
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -267,6 +270,13 @@ config INIT_USB1_PLL
 
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
+
+config INIT_ENET_PLL
+	bool
+	help
+	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
+	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
+	  for MIMXRT1021").
 
 config ARM_DIV
 	int "ARM clock divider"
