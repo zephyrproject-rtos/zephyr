@@ -62,6 +62,7 @@
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/frdm*/                        @MaureenHelm
 /boards/arm/frdm*/doc/                    @MaureenHelm @MeganHansen
+/boards/arm/google_*/                     @jackrosenthal
 /boards/arm/hexiwear*/                    @MaureenHelm
 /boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
 /boards/arm/lpcxpresso*/                  @MaureenHelm
