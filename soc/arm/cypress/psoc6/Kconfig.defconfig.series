@@ -12,7 +12,6 @@ config SOC_SERIES
 	default "psoc6"
 
 config SOC_PART_NUMBER
-	string
 	default "CY8C6247BZI_D54" if SOC_PART_NUMBER_CY8C6247BZI_D54
 
 config NUM_IRQS
