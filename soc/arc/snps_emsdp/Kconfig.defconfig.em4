@@ -28,7 +28,7 @@ config CACHE_FLUSHING
 	default n
 
 config FP_FPU_DA
-	def_bool n
+	default n
 
 config MAIN_STACK_SIZE
 	default 2048

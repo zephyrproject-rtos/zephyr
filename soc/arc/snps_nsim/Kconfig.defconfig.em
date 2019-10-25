@@ -37,7 +37,7 @@ config CACHE_FLUSHING
 	default y
 
 config FP_FPU_DA
-	def_bool y
+	default y
 
 if (ARC_MPU_VER = 2)
 
