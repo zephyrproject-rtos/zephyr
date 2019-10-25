@@ -8,7 +8,6 @@
 if SOC_SERIES_MEC1501X
 
 config SOC_SERIES
-	string
 	default "mec1501"
 
 config NUM_IRQS

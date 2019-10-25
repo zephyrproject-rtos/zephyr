@@ -10,7 +10,6 @@ if SOC_SERIES_CC13X2_CC26X2
 source "soc/arm/ti_simplelink/cc13x2_cc26x2/Kconfig.defconfig.cc*"
 
 config SOC_SERIES
-	string
 	default "cc13x2_cc26x2"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

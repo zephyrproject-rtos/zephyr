@@ -3,7 +3,6 @@
 if SOC_SERIES_RISCV_SIFIVE_FREEDOM
 
 config SOC_SERIES
-	string
 	default "sifive-freedom"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
