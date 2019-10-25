@@ -32,6 +32,33 @@ config	CPU_ARCHS
 
 endchoice
 
+config CPU_EM4
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 CPU
+
+config CPU_EM4_DMIPS
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU
+
+config CPU_EM4_FPUS
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
+	  floating-point extension
+
+config CPU_EM4_FPUDA
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
+	  floating-point and double assist instructions
+
+config CPU_EM6
+	bool
+	help
+	  If y, the SoC uses an ARC EM6 CPU
+
 menu "ARCv2 Family Options"
 
 config	CPU_ARCV2

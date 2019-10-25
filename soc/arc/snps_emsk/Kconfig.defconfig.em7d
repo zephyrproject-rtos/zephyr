@@ -8,7 +8,7 @@
 if SOC_EMSK_EM7D
 
 config CPU_EM4_DMIPS
-	def_bool y
+	default y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
