@@ -25,6 +25,7 @@
 #include <arch/posix/asm_inline.h>
 #include <board_irq.h> /* Each board must define this */
 #include <sw_isr_table.h>
+#include <posix_soc_if.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +60,17 @@ static ALWAYS_INLINE void z_arch_nop(void)
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	return key == false;
+}
+
+static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+{
+	return posix_irq_lock();
+}
+
+
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+{
+	posix_irq_unlock(key);
 }
 
 #ifdef __cplusplus

@@ -8,6 +8,8 @@
 #include "board_irq.h"
 
 #ifdef CONFIG_IRQ_OFFLOAD
+#include "irq_offload.h"
+
 void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	posix_irq_offload(routine, parameter);
