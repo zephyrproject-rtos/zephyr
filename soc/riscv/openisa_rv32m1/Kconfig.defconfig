@@ -41,17 +41,6 @@ config RISCV_SOC_INTERRUPT_INIT
 config WDOG_INIT
 	def_bool y
 
-# The event unit looks for vector tables at the end of each core's
-# flash space. These vector tables are not relocatable.
-config RISCV_RV32M1_VECTOR_BASE_ADDR
-	hex
-	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x0103FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV_RV32M1_VECTOR_SIZE
-	hex
-	default 0x100
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 8000000
 
