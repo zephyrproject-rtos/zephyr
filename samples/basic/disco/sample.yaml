@@ -2,7 +2,8 @@ sample:
   name: Disco Lights
 tests:
   sample.disco:
-    filter: DT_GPIO_LEDS_LED0_GPIOS_CONTROLLER and DT_GPIO_LEDS_LED1_GPIOS_CONTROLLER
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-leds", "led1")
     tags: LED gpio
     depends_on: gpio
     harness: led
