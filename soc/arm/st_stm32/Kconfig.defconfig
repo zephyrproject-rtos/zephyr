@@ -1,3 +1,12 @@
+# Kconfig - ST Microelectronics STM32 MCU line
+#
+# Copyright (c) 2019 STMicroelectronics.
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
 source "soc/arm/st_stm32/*/Kconfig.defconfig.series"
+
+config SYS_POWER_MANAGEMENT
+	default y
+
