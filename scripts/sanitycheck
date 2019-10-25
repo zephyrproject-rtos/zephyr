@@ -1709,7 +1709,6 @@ class CMake():
 
         self.defconfig = {}
         self.cmake_cache = {}
-        self.devicetree = {}
 
         self.instance = None
         self.testcase = testcase
@@ -1852,10 +1851,7 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        _generated_dt_confg = "include/generated/generated_dts_board.conf"
-
         cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-        dt_config_path = os.path.join(self.build_dir, "zephyr", _generated_dt_confg)
         defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
 
         with open(defconfig_path, "r") as fp:
@@ -1881,18 +1877,6 @@ class FilterBuilder(CMake):
 
         self.cmake_cache = cmake_conf
 
-        dt_conf = {}
-        if os.path.exists(dt_config_path):
-            with open(dt_config_path, "r") as fp:
-                for line in fp.readlines():
-                    m = self.dt_re.match(line)
-                    if not m:
-                        if line.strip() and not line.startswith("#"):
-                            sys.stderr.write("Unrecognized line %s\n" % line)
-                        continue
-                    dt_conf[m.group(1)] = m.group(2).strip()
-        self.devicetree = dt_conf
-
         filter_data = {
             "ARCH": self.platform.arch,
             "PLATFORM": self.platform.name
@@ -1900,7 +1884,6 @@ class FilterBuilder(CMake):
         filter_data.update(os.environ)
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
-        filter_data.update(self.devicetree)
 
         if self.testcase and self.testcase.tc_filter:
             try:
