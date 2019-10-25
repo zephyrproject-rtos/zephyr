@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(soc);
    Set general purpose retention register and reboot */
 void sys_arch_reboot(int type)
 {
-	nrf_power_gpregret_set((uint8_t)type);
+	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
 	NVIC_SystemReset();
 }
 
@@ -63,7 +63,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 #endif
 
 #if defined(CONFIG_SOC_DCDC_NRF52X)
-	nrf_power_dcdcen_set(true);
+	nrf_power_dcdcen_set(NRF_POWER, true);
 #endif
 
 	/* Install default handler that simply resets the CPU

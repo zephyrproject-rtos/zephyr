@@ -10,6 +10,17 @@
 #include <soc.h>
 #include <hal/nrf_rng.h>
 
+/* Temporary hacks to make this file compile successfully for boards simulated
+ * with BabbleSim, without updating now nrfx HAL derived files in the BabbleSim
+ * repository.
+ */
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	#define nrf_rng(op, ...)  nrf_rng_##op(GET_ARGS_LESS_1(__VA_ARGS__))
+	#define nrf_rng_event_check  nrf_rng_event_get
+#else
+	#define nrf_rng(op, ...)  nrf_rng_##op(__VA_ARGS__)
+#endif
+
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
  * into account by the driver to achieve energy efficient generation
@@ -102,9 +113,9 @@ static int random_byte_get(void)
 
 	key = irq_lock();
 
-	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
-		retval = nrf_rng_random_value_get();
-		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+	if (nrf_rng(event_check, NRF_RNG, NRF_RNG_EVENT_VALRDY)) {
+		retval = nrf_rng(random_value_get, NRF_RNG);
+		nrf_rng(event_clear, NRF_RNG, NRF_RNG_EVENT_VALRDY);
 	}
 
 	irq_unlock(key);
@@ -166,7 +177,7 @@ static u16_t rng_pool_get(struct rng_pool *rngp, u8_t *buf, u16_t len)
 	len = dst - buf;
 	available = available - len;
 	if (available <= rngp->threshold) {
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		nrf_rng(task_trigger, NRF_RNG, NRF_RNG_TASK_START);
 	}
 
 	return len;
@@ -215,7 +226,7 @@ static void isr(void *arg)
 		ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.thr),
 				   byte);
 		if (ret < 0) {
-			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+			nrf_rng(task_trigger, NRF_RNG, NRF_RNG_TASK_STOP);
 		}
 
 		k_sem_give(&entropy_nrf5_data.sem_sync);
@@ -270,13 +281,14 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		irq_disable(RNG_IRQn);
 		irq_unlock(key);
 
-		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		nrf_rng(event_clear, NRF_RNG, NRF_RNG_EVENT_VALRDY);
+		nrf_rng(task_trigger, NRF_RNG, NRF_RNG_TASK_START);
 
 		do {
 			int byte;
 
-			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
+			while (!nrf_rng(event_check, NRF_RNG,
+						     NRF_RNG_EVENT_VALRDY)) {
 				__WFE();
 				__SEV();
 				__WFE();
@@ -332,14 +344,14 @@ static int entropy_nrf5_init(struct device *device)
 
 	/* Enable or disable bias correction */
 	if (IS_ENABLED(CONFIG_ENTROPY_NRF5_BIAS_CORRECTION)) {
-		nrf_rng_error_correction_enable();
+		nrf_rng(error_correction_enable, NRF_RNG);
 	} else {
-		nrf_rng_error_correction_disable();
+		nrf_rng(error_correction_disable, NRF_RNG);
 	}
 
-	nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
-	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
-	nrf_rng_task_trigger(NRF_RNG_TASK_START);
+	nrf_rng(event_clear, NRF_RNG, NRF_RNG_EVENT_VALRDY);
+	nrf_rng(int_enable, NRF_RNG, NRF_RNG_INT_VALRDY_MASK);
+	nrf_rng(task_trigger, NRF_RNG, NRF_RNG_TASK_START);
 
 	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr,
 		    &entropy_nrf5_data, 0);

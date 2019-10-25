@@ -14,6 +14,16 @@
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+/* Temporary hack to make this file compile successfully for boards simulated
+ * with BabbleSim, without updating now nrfx HAL derived files in the BabbleSim
+ * repository.
+ */
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	#define nrf_clock(op, ...)  nrf_clock_##op(__VA_ARGS__)
+#else
+	#define nrf_clock(op, ...)  nrf_clock_##op(NRF_CLOCK, __VA_ARGS__)
+#endif
+
 /* Helper logging macros which prepends device name to the log. */
 #define CLOCK_LOG(lvl, dev, ...) \
 	LOG_##lvl("%s: " GET_ARG1(__VA_ARGS__), dev->config->name \
@@ -50,11 +60,11 @@ struct nrf_clock_control_config {
  */
 static bool clock_event_check_and_clean(nrf_clock_event_t evt, u32_t intmask)
 {
-	bool ret = nrf_clock_event_check(evt) &&
-			nrf_clock_int_enable_check(intmask);
+	bool ret = nrf_clock(event_check, evt) &&
+			nrf_clock(int_enable_check, intmask);
 
 	if (ret) {
-		nrf_clock_event_clear(evt);
+		nrf_clock(event_clear, evt);
 	}
 
 	return ret;
@@ -96,14 +106,14 @@ static int clock_stop(struct device *dev, clock_control_subsys_t sub_system)
 				config->stop_handler(dev) : true;
 
 		if (do_stop) {
-			nrf_clock_task_trigger(config->stop_tsk);
+			nrf_clock(task_trigger, config->stop_tsk);
 			/* It may happen that clock is being stopped when it
 			 * has just been started and start is not yet handled
 			 * (due to irq_lock). In that case after stopping the
 			 * clock, started event is cleared to prevent false
 			 * interrupt being triggered.
 			 */
-			nrf_clock_event_clear(config->started_evt);
+			nrf_clock(event_clear, config->started_evt);
 		}
 
 		data->started = false;
@@ -160,7 +170,7 @@ static int clock_async_start(struct device *dev,
 			do_start =  (config->start_handler) ?
 					config->start_handler(dev) : true;
 			if (do_start) {
-				nrf_clock_task_trigger(config->start_tsk);
+				nrf_clock(task_trigger, config->start_tsk);
 				DBG(dev, "Triggered start task");
 			} else if (data) {
 				data->cb(dev, data->user_data);
@@ -205,19 +215,19 @@ static int hfclk_init(struct device *dev)
 
 	irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
-	nrf_clock_lf_src_set(CLOCK_CONTROL_NRF_K32SRC);
+	nrf_clock(lf_src_set, CLOCK_CONTROL_NRF_K32SRC);
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
 		z_nrf_clock_calibration_init(dev);
 	}
 
-	nrf_clock_int_enable((
-		NRF_CLOCK_INT_HF_STARTED_MASK |
-		NRF_CLOCK_INT_LF_STARTED_MASK |
-		COND_CODE_1(CONFIG_USB_NRF52840,
+	nrf_clock(int_enable,
+		(NRF_CLOCK_INT_HF_STARTED_MASK |
+		 NRF_CLOCK_INT_LF_STARTED_MASK |
+		 COND_CODE_1(CONFIG_USB_NRF52840,
 			(NRF_POWER_INT_USBDETECTED_MASK |
-			NRF_POWER_INT_USBREMOVED_MASK |
-			NRF_POWER_INT_USBPWRRDY_MASK),
+			 NRF_POWER_INT_USBREMOVED_MASK |
+			 NRF_POWER_INT_USBPWRRDY_MASK),
 			(0))));
 
 	sys_slist_init(&((struct nrf_clock_control *)dev->driver_data)->list);
@@ -291,11 +301,11 @@ static void clkstarted_handle(struct device *dev)
 #if defined(CONFIG_USB_NRF52840)
 static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
 {
-	bool ret = nrf_power_event_check(evt) &&
-			nrf_power_int_enable_check(intmask);
+	bool ret = nrf_power_event_check(NRF_POWER, evt) &&
+			nrf_power_int_enable_check(NRF_POWER, intmask);
 
 	if (ret) {
-		nrf_power_event_clear(evt);
+		nrf_power_event_clear(NRF_POWER, evt);
 	}
 
 	return ret;
@@ -369,10 +379,10 @@ void nrf5_power_usb_power_int_enable(bool enable)
 	       NRF_POWER_INT_USBPWRRDY_MASK;
 
 	if (enable) {
-		nrf_power_int_enable(mask);
+		nrf_power_int_enable(NRF_POWER, mask);
 		irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 	} else {
-		nrf_power_int_disable(mask);
+		nrf_power_int_disable(NRF_POWER, mask);
 	}
 #endif
 }

@@ -834,11 +834,11 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	 */
 	usbd_setup = (struct usb_setup_packet *)ep_ctx->buf.data;
 	memset(usbd_setup, 0, sizeof(struct usb_setup_packet));
-	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get();
-	usbd_setup->bRequest = nrf_usbd_setup_brequest_get();
-	usbd_setup->wValue = nrf_usbd_setup_wvalue_get();
-	usbd_setup->wIndex = nrf_usbd_setup_windex_get();
-	usbd_setup->wLength = nrf_usbd_setup_wlength_get();
+	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get(NRF_USBD);
+	usbd_setup->bRequest = nrf_usbd_setup_brequest_get(NRF_USBD);
+	usbd_setup->wValue = nrf_usbd_setup_wvalue_get(NRF_USBD);
+	usbd_setup->wIndex = nrf_usbd_setup_windex_get(NRF_USBD);
+	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
 
 	LOG_DBG("SETUP: r:%d rt:%d v:%d i:%d l:%d",
@@ -1092,7 +1092,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 				return;
 			}
 
-			ep_ctx->buf.len = nrf_usbd_ep_amount_get(
+			ep_ctx->buf.len = nrf_usbd_ep_amount_get(NRF_USBD,
 				p_event->data.eptransfer.ep);
 
 			LOG_DBG("read complete, ep 0x%02x, len %d",
@@ -1331,7 +1331,7 @@ int usb_dc_attach(void)
 		usbd_work_schedule();
 	}
 
-	if (nrf_power_usbregstatus_vbusdet_get()) {
+	if (nrf_power_usbregstatus_vbusdet_get(NRF_POWER)) {
 		/* USBDETECTED event is be generated on cable attachment and
 		 * when cable is already attached during reset, but not when
 		 * the peripheral is re-enabled.

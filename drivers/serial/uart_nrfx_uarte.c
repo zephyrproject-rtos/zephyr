@@ -273,23 +273,24 @@ static int baudrate_set(struct device *dev, u32_t baudrate)
 static int uarte_nrfx_configure(struct device *dev,
 				const struct uart_config *cfg)
 {
-	nrf_uarte_parity_t parity;
-	nrf_uarte_hwfc_t hwfc;
-#ifdef UARTE_CONFIG_STOP_Two
-	bool two_stop_bits = false;
-#endif
+	nrf_uarte_config_t uarte_cfg;
 
+#if defined(UARTE_CONFIG_STOP_Msk)
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
+		uarte_cfg.stop = NRF_UARTE_STOP_ONE;
 		break;
-#ifdef UARTE_CONFIG_STOP_Two
 	case UART_CFG_STOP_BITS_2:
-		two_stop_bits = true;
+		uarte_cfg.stop = NRF_UARTE_STOP_TWO;
 		break;
-#endif
 	default:
 		return -ENOTSUP;
 	}
+#else
+	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
+		return -ENOTSUP;
+	}
+#endif
 
 	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
 		return -ENOTSUP;
@@ -297,11 +298,11 @@ static int uarte_nrfx_configure(struct device *dev,
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		hwfc = NRF_UARTE_HWFC_DISABLED;
+		uarte_cfg.hwfc = NRF_UARTE_HWFC_DISABLED;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		if (get_dev_config(dev)->rts_cts_pins_set) {
-			hwfc = NRF_UARTE_HWFC_ENABLED;
+			uarte_cfg.hwfc = NRF_UARTE_HWFC_ENABLED;
 		} else {
 			return -ENOTSUP;
 		}
@@ -310,13 +311,22 @@ static int uarte_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+	uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_EVEN;
+#endif
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		parity = NRF_UARTE_PARITY_EXCLUDED;
+		uarte_cfg.parity = NRF_UARTE_PARITY_EXCLUDED;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		parity = NRF_UARTE_PARITY_INCLUDED;
+		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		break;
+#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+	case UART_CFG_PARITY_ODD:
+		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
+		uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_ODD;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -325,15 +335,8 @@ static int uarte_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	nrf_uarte_configure(get_uarte_instance(dev), parity, hwfc);
+	nrf_uarte_configure(get_uarte_instance(dev), &uarte_cfg);
 
-#ifdef UARTE_CONFIG_STOP_Two
-	if (two_stop_bits) {
-		/* TODO Change this to nrfx HAL function when available */
-		get_uarte_instance(dev)->CONFIG |=
-			UARTE_CONFIG_STOP_Two << UARTE_CONFIG_STOP_Pos;
-	}
-#endif
 	get_dev_data(dev)->uart_config = *cfg;
 
 	return 0;
