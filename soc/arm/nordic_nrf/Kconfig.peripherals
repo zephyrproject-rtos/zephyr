@@ -245,3 +245,9 @@ config HAS_HW_NRF_USBD
 
 config HAS_HW_NRF_WDT
 	bool
+
+config HAS_HW_NRF_WDT0
+	bool
+
+config HAS_HW_NRF_WDT1
+	bool
