@@ -11,9 +11,7 @@
 #include <soc.h>
 #include <device.h>
 #include <drivers/clock_control.h>
-#ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <drivers/clock_control/nrf_clock_control.h>
-#endif
 #include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
