@@ -1,3 +1,4 @@
 tests:
   lib.heap:
     tags: heap
+    min_ram: 32
