@@ -5,7 +5,7 @@
  */
 
 /**
- * @file
+ * @defgroup arch-interface Architecture Interface
  * @brief Internal kernel APIs implemented at the architecture layer.
  *
  * Not all architecture-specific defines are here, APIs that are used
@@ -31,6 +31,7 @@ extern "C" {
 
 /**
  * @defgroup arch-timing Architecture timing APIs
+ * @ingroup arch-interface
  * @{
  */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -46,6 +47,7 @@ void z_arch_busy_wait(u32_t usec_to_wait);
 
 /**
  * @defgroup arch-threads Architecture thread APIs
+ * @ingroup arch-interface
  * @{
  */
 
@@ -168,6 +170,7 @@ int z_arch_float_disable(struct k_thread *thread);
 
 /**
  * @defgroup arch-pm Architecture-specific power management APIs
+ * @ingroup arch-interface
  * @{
  */
 /** Halt the system, optionally propagating a reason code */
@@ -178,6 +181,7 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
 
 /**
  * @defgroup arch-smp Architecture-specific SMP APIs
+ * @ingroup arch-interface
  * @{
  */
 #ifdef CONFIG_SMP
@@ -197,6 +201,7 @@ void z_arch_sched_ipi(void);
 
 /**
  * @defgroup arch-irq Architecture-specific IRQ APIs
+ * @ingroup arch-interface
  * @{
  */
 
@@ -215,6 +220,7 @@ static inline bool z_arch_is_in_isr(void);
 
 /**
  * @defgroup arch-userspace Architecture-specific userspace APIs
+ * @ingroup arch-interface
  * @{
  */
 #ifdef CONFIG_USERSPACE
@@ -377,6 +383,7 @@ size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 
 /**
  * @defgroup arch-benchmarking Architecture-specific benchmarking globals
+ * @ingroup arch-interface
  */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -397,6 +404,7 @@ extern u64_t z_arch_timing_value_swap_temp;
 
 /**
  * @defgroup arch-misc Miscellaneous architecture APIs
+ * @ingroup arch-interface
  */
 
 /**
