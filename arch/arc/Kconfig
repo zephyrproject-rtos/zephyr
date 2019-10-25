@@ -59,6 +59,9 @@ config CPU_EM6
 	help
 	  If y, the SoC uses an ARC EM6 CPU
 
+config FP_FPU_DA
+	bool
+
 menu "ARCv2 Family Options"
 
 config	CPU_ARCV2
