@@ -157,7 +157,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  */
 u8_t flash_area_align(const struct flash_area *fa);
 
-/*
+/**
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa_id    Given flash area ID
