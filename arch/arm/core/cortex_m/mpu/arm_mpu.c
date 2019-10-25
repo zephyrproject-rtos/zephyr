@@ -101,7 +101,7 @@ static int mpu_configure_region(const u8_t index,
 }
 
 #if !defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) || \
-	!defined(CONFIG_MPU_SRAM_GAP_FILLING)
+	!defined(CONFIG_MPU_GAP_FILLING)
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
  * sanity check of the memory regions to be programmed.
