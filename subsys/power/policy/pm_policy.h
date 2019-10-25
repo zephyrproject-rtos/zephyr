@@ -18,20 +18,17 @@ extern "C" {
  */
 void sys_pm_create_device_list(void);
 
+#if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
 /**
  * @brief Function to suspend the devices in PM device list
  */
-int sys_pm_suspend_devices(void);
-
-/**
- * @brief Function to force suspend the devices in PM device list
- */
-int sys_pm_force_suspend_devices(void);
+void sys_pm_suspend_devices(void);
 
 /**
  * @brief Function to resume the devices in PM device list
  */
 void sys_pm_resume_devices(void);
+#endif
 
 /**
  * @brief Function to get the next PM state based on the ticks

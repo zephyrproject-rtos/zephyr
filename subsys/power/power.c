@@ -101,16 +101,13 @@ enum power_states _sys_suspend(s32_t ticks)
 	post_ops_done = 0;
 	sys_pm_notify_power_state_entry(pm_state);
 
+#if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
 	if (deep_sleep) {
-#if CONFIG_DEVICE_POWER_MANAGEMENT
-		/* Suspend peripherals. */
-		if (sys_pm_suspend_devices()) {
-			LOG_ERR("System level device suspend failed!");
-			sys_pm_notify_power_state_exit(pm_state);
-			pm_state = SYS_POWER_STATE_ACTIVE;
-			return pm_state;
-		}
+		sys_pm_suspend_devices();
+	}
 #endif
+
+	if (deep_sleep) {
 		/*
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
@@ -123,7 +120,7 @@ enum power_states _sys_suspend(s32_t ticks)
 	sys_set_power_state(pm_state);
 	sys_pm_debug_stop_timer();
 
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
 	if (deep_sleep) {
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();

@@ -41,62 +41,30 @@ static const char core_devices[NUM_CORE_DEVICES][MAX_DEV_NAME_LEN] = {
  * device power policies would be executed.
  */
 static int device_ordered_list[MAX_PM_DEVICES];
-static int device_retval[MAX_PM_DEVICES];
 static struct device *pm_device_list;
 static int device_count;
 
-int sys_pm_suspend_devices(void)
+#if defined(CONFIG_DEVICE_PM_CENTRAL_METHOD)
+static void sys_pm_set_devices_power_state(int dev_state)
 {
 	for (int i = device_count - 1; i >= 0; i--) {
 		int idx = device_ordered_list[i];
 
-		/* TODO: Improve the logic by checking device status
-		 * and set the device states accordingly.
-		 */
-		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_SUSPEND_STATE,
-						NULL, NULL);
-		if (device_retval[i]) {
-			LOG_ERR("%s suspend operation failed\n",
-					pm_device_list[idx].config->name);
-			return device_retval[i];
-		}
+		device_set_power_state(&pm_device_list[idx],
+					dev_state, NULL, NULL);
 	}
-
-	return 0;
 }
 
-int sys_pm_force_suspend_devices(void)
+void sys_pm_suspend_devices(void)
 {
-	for (int i = device_count - 1; i >= 0; i--) {
-		int idx = device_ordered_list[i];
-
-		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-					DEVICE_PM_FORCE_SUSPEND_STATE,
-					NULL, NULL);
-		if (device_retval[i]) {
-			LOG_ERR("%s force suspend operation failed\n",
-				pm_device_list[idx].config->name);
-			return device_retval[i];
-		}
-	}
-
-	return 0;
+	sys_pm_set_devices_power_state(DEVICE_PM_SUSPEND_STATE);
 }
 
 void sys_pm_resume_devices(void)
 {
-	int i;
-
-	for (i = 0; i < device_count; i++) {
-		if (!device_retval[i]) {
-			int idx = device_ordered_list[i];
-
-			device_set_power_state(&pm_device_list[idx],
-					DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-		}
-	}
+	sys_pm_set_devices_power_state(DEVICE_PM_ACTIVE_STATE);
 }
+#endif
 
 void sys_pm_create_device_list(void)
 {
