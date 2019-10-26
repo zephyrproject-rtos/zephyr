@@ -5,7 +5,10 @@
 		compatible = "atmel,at24";
 		reg = <0x54>;
 		label = "EEPROM_SLAVE_0";
-		size = <1>;
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
 	};
 };
 
@@ -15,6 +18,9 @@
 		compatible = "atmel,at24";
 		reg = <0x56>;
 		label = "EEPROM_SLAVE_1";
-		size = <1>;
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
 	};
 };
