@@ -703,7 +703,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		evt = HDR_LLL2EVT(lll);
 		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(evt->ticks_slot) -
 				  502 - EVENT_OVERHEAD_START_US -
-				  (EVENT_JITTER_US << 1))) {
+				  EVENT_TICKER_RES_MARGIN_US)) {
 			return -ETIME;
 		}
 

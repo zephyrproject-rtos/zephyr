@@ -232,7 +232,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_offset_us = ftr->us_radio_end;
 	conn_offset_us += ((u64_t)win_offset + 1) * 1250U;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
-	conn_offset_us -= EVENT_JITTER_US << 1;
+	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
 	conn_offset_us -= ftr->us_radio_rdy;
 
@@ -317,7 +317,7 @@ void ull_slave_done(struct node_rx_event_done *done, u32_t *ticks_drift_plus,
 		done->extra.slave.preamble_to_addr_us;
 
 	start_to_address_expected_us = EVENT_JITTER_US +
-				       (EVENT_JITTER_US << 1) +
+				       EVENT_TICKER_RES_MARGIN_US +
 				       window_widening_event_us +
 				       preamble_to_addr_us;
 
@@ -332,7 +332,7 @@ void ull_slave_done(struct node_rx_event_done *done, u32_t *ticks_drift_plus,
 			HAL_TICKER_US_TO_TICKS(start_to_address_actual_us);
 		*ticks_drift_minus =
 			HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US +
-					       (EVENT_JITTER_US << 1) +
+					       EVENT_TICKER_RES_MARGIN_US +
 					       preamble_to_addr_us);
 	}
 }
