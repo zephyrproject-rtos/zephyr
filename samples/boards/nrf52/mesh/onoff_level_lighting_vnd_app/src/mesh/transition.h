@@ -8,6 +8,8 @@
 #ifndef _TRANSITION_H
 #define _TRANSITION_H
 
+#include "device_composition.h"
+
 #define UNKNOWN_VALUE 0x3F
 #define DEVICE_SPECIFIC_RESOLUTION 10
 
@@ -50,21 +52,13 @@ extern struct transition transition;
 extern struct k_timer dummy_timer;
 
 void calculate_rt(struct transition *transition);
+void set_transition_values(u8_t type);
 
-
-void onoff_tt_values(struct generic_onoff_state *state);
-void level_tt_values(struct generic_level_state *state);
-void level_move_tt_values(struct generic_level_state *state);
-void light_lightness_actual_tt_values(struct light_lightness_state *state);
-void light_lightness_linear_tt_values(struct light_lightness_state *state);
-void light_ctl_tt_values(struct light_ctl_state *state);
-void light_ctl_temp_tt_values(struct light_ctl_state *state);
-
-void onoff_handler(struct generic_onoff_state *state);
-void level_lightness_handler(struct generic_level_state *state);
-void level_temp_handler(struct generic_level_state *state);
-void light_lightness_actual_handler(struct light_lightness_state *state);
-void light_lightness_linear_handler(struct light_lightness_state *state);
+void onoff_handler(struct light_ctl_state *state);
+void level_lightness_handler(struct light_ctl_state *state);
+void level_temp_handler(struct light_ctl_state *state);
+void light_lightness_actual_handler(struct light_ctl_state *state);
+void light_lightness_linear_handler(struct light_ctl_state *state);
 void light_ctl_handler(struct light_ctl_state *state);
 void light_ctl_temp_handler(struct light_ctl_state *state);
 
