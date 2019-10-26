@@ -1,3 +1,4 @@
+# Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
 CONFIG_ARM=y
@@ -19,3 +20,5 @@ CONFIG_SOC_ATMEL_SAMD_XOSC32K=y
 CONFIG_SOC_ATMEL_SAMD_XOSC32K_AS_MAIN=y
 CONFIG_PINMUX=y
 CONFIG_PINMUX_SAM0=y
+CONFIG_SPI=y
+CONFIG_IEEE802154_RF2XX=y
