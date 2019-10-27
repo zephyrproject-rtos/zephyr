@@ -1,7 +1,7 @@
-.. _boardname_linkname:
+.. pinetime_devkit0:
 
-[Pine64 PineTime nrf52832]
-#############
+Pine64 PineTime DevKit0
+#######################
 
 Overview
 ********

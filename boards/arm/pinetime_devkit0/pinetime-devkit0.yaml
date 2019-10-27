@@ -1,5 +1,5 @@
-identifier: nrf52832_pinetime
-name: Pine64 PineTime nrf52832
+identifier: pinetime_devkit0
+name: Pine64 PineTime DevKit0
 type: mcu
 arch: arm
 toolchain:

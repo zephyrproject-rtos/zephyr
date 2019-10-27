@@ -2,15 +2,18 @@
  * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * DTS for Pine64 PineTime DevKit-0 board
+ * Further info: https://wiki.pine64.org/index.php/PineTime
+ *
  */
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 
 / {
-	model = "Pine64 PineTime nrf52832";
-	compatible = "pine64,pinetime-nrf52832", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	model = "Pine64 PineTime DevKit0";
+	compatible = "pine64,pinetime-devkit0", "nordic,nrf52832-qfaa", "nordic,nrf52832";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -33,7 +36,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 27 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 27 0>;
 			label = "Green LED";
 		};
 	};
@@ -41,8 +44,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 13 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&gpio0 13 GPIO_INT_ACTIVE_HIGH>;
 			label = "Button";
 		};
 	};
@@ -69,12 +71,30 @@
 	status = "okay";
 	sda-pin = <6>;
 	scl-pin = <7>;
+	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
 
+	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
 		label = "BMA421";
-		int1-gpios = <&gpio0 8 0>;
+		int1-gpios = <&gpio0 8 GPIO_INT_ACTIVE_LOW>;
+	};
+
+	/* TianYiHeXin HRS3300 PPG Hear Rate Sensor (800KHz) */
+	hrs3300: hrs3300@44 {
+		compatible = "tian-yi-he-xin,hrs3300";
+		reg = <0x44>;
+		label = "HRS3300";
+	};
+
+	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
+	cst816s: cst816s@37 {
+		compatible = "hynitron,cst816s";
+		reg = <0x37>; /* datasheet pending! */
+		label = "CST816S";
+		irq-gpios = <&gpio0 28 GPIO_INT_ACTIVE_LOW>;
+		rst-gpios = <&gpio0 10 GPIO_INT_ACTIVE_LOW>;
 	};
 };
 
@@ -92,22 +112,31 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/* MCUboot bootloader */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
+		/* main firmware partition */
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
+		/* next firmware update */
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
+		/* needed to slot0-slot1 swapping */
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
+
+		/* to be used in firmware */
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;

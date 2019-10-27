@@ -1,10 +1,9 @@
-# Kconfig - nRF52832 PineTime board configuration
+# Kconfig - PineTime DevKit0 board configuration
 #
 # Copyright (c) 2016 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-
-config BOARD_NRF52832_PINETIME
-	bool "nRF52832 PINETIME"
+config BOARD_PINETIME_DEVKIT0
+	bool "PineTime DevKit0"
 	depends on SOC_NRF52832_QFAA
