@@ -110,6 +110,13 @@ static inline void socket_can_change_state(struct socket_can_context *ctx,
 	}
 }
 
+static inline void tx_irq_callback (u32_t error_flags, void *arg)
+{
+	ARG_UNUSED(error_flags);
+	ARG_UNUSED(arg);
+
+	/* This is needed to make can_send non-blocking */
+}
 
 /* This is called by net_if.c when packet is about to be sent */
 static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
@@ -126,7 +133,7 @@ static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 								&zframe);
 
 	ret = can_send(socket_context->can_dev, (struct zcan_frame *)&zframe,
-		       SEND_TIMEOUT, NULL, NULL);
+		       SEND_TIMEOUT, tx_irq_callback, NULL);
 	if (ret) {
 		LOG_DBG("Cannot send socket CAN msg (%d)", ret);
 	}
