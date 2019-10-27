@@ -52,6 +52,11 @@ config ASAN
 	  recent-ish compiler with the ``-fsanitize=address`` command line option,
 	  and the libasan library.
 
+	  Note that at exit leak detection is disabled for 64-bit boards when
+	  GCC is used due to potential risk of a deadlock in libasan.
+	  This behavior can be changes by adding leak_check_at_exit=1 to the
+	  environment variable ASAN_OPTIONS.
+
 config UBSAN
 	bool "Build with undefined behavior sanitizer"
 	depends on ARCH_POSIX
