@@ -1,0 +1,13 @@
+description: >
+    per-core ARM architected timer
+
+compatible: "arm,arm-timer"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    label:
+      required: true
