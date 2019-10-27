@@ -19,7 +19,18 @@ properties:
   has-be32k:
     type: boolean
     required: false
-    description: Indicates the device supports the BE32K command
+    description: Indicates the device supports the BE32K (0xD8) command
+
+  requires-ulbpr:
+    type: boolean
+    required: false
+    description: |
+      Indicates the device requires the ULBPR (0x98) command.
+
+      Some flash chips such as the Microchip SST26VF series have a block
+      protection register that initializes to write-protected.  Use this
+      property to indicate that the BPR must be unlocked before write
+      operations can proceed.
 
   size:
     type: int
