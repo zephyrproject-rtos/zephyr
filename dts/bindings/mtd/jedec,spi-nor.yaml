@@ -23,7 +23,7 @@ properties:
 
   size:
     type: int
-    required: false
+    required: true
     description: flash capacity in bits
 
   wp-gpios:
