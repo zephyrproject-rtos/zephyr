@@ -190,6 +190,8 @@ def write_props(node):
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
                 out_dev(node, "{}_{}".format(ident, i), val)
+            out_dev(node, ident,
+                    "{" + ", ".join(map(str, prop.val)) + "}")
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
                 out_dev_s(node, "{}_{}".format(ident, i), val)
