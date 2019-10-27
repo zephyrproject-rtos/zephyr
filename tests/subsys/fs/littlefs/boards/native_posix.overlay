@@ -19,11 +19,11 @@
 			label = "small";
 			reg = <0x00000000 0x00010000>;
 		};
-		partition@200000 {
+		partition@10000 {
 			label = "medium";
 			reg = <0x00010000 0x000F0000>;
 		};
-		partition@220000 {
+		partition@100000 {
 			label = "large";
 			reg = <0x00100000 0x00300000>;
 		};
