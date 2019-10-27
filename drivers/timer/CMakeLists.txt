@@ -3,6 +3,7 @@
 zephyr_sources(                         sys_clock_init.c)
 zephyr_sources_ifdef(CONFIG_HPET_TIMER  hpet.c)
 zephyr_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)
+zephyr_sources_ifdef(CONFIG_ARM_ARCH_TIMER arm_arch_timer.c)
 zephyr_sources_if_kconfig(              loapic_timer.c)
 zephyr_sources_if_kconfig(              apic_timer.c)
 zephyr_sources_ifdef(CONFIG_ALTERA_AVALON_TIMER altera_avalon_timer_hal.c)
