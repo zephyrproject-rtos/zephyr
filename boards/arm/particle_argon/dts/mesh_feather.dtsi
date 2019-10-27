@@ -142,6 +142,9 @@
 		hold-gpios = <&gpio0 23 0>;
 		size = <0x2000000>;
 		has-be32k;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <100000>;
 		jedec-id = [c2 20 16];
 	};
 };
