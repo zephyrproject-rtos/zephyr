@@ -167,7 +167,9 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		}
 	}
 
-	net_pkt_unref(pkt);
+	if (!clone || clone != pkt) {
+		net_pkt_unref(pkt);
+	}
 }
 
 static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
