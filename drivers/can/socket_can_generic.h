@@ -27,6 +27,7 @@ struct socket_can_context {
 	struct device *can_dev;
 	struct net_if *iface;
 	struct k_msgq *msgq;
+	enum can_state state;
 
 	/* TODO: remove the thread and push data to net directly from rx isr */
 	k_tid_t rx_tid;
@@ -82,21 +83,31 @@ static inline void socket_can_change_state(struct socket_can_context *ctx,
 						enum can_state rx_state)
 {
 	enum can_state new_state = MAX(tx_state, rx_state);
-	struct can_frame msg = {.can_id = CAN_ERR_FLAG, .can_dlc = CAN_ERR_DLC};
 
-	LOG_DBG("New error state: %d", new_state);
+	if (new_state != ctx->state) {
+		struct can_frame msg = {
+			.can_id = CAN_ERR_FLAG,
+			.can_dlc = CAN_ERR_DLC
+		};
 
-	if (new_state == CAN_BUS_OFF) {
-		msg.can_id |= CAN_ERR_BUSOFF;
-	} else {
-		msg.can_id |= CAN_ERR_CRTL;
-		msg.data[1] |= tx_state >= rx_state ?
-				socket_can_tx_state_to_frame(tx_state) : 0;
-		msg.data[1] |= tx_state <= rx_state ?
-				socket_can_rx_state_to_frame(rx_state) : 0;
+		LOG_DBG("New error state: %d", new_state);
+
+		if (new_state == CAN_BUS_OFF) {
+			msg.can_id |= CAN_ERR_BUSOFF;
+		} else {
+			msg.can_id |= CAN_ERR_CRTL;
+			msg.data[1] |= tx_state >= rx_state ?
+					socket_can_tx_state_to_frame(tx_state) :
+					0;
+			msg.data[1] |= tx_state <= rx_state ?
+					socket_can_rx_state_to_frame(rx_state) :
+					0;
+		}
+
+		ctx->state = new_state;
+
+		k_msgq_put(ctx->msgq, &msg, K_NO_WAIT);
 	}
-
-	k_msgq_put(ctx->msgq, &msg, K_NO_WAIT);
 }
 
 
