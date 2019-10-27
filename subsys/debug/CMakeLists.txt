@@ -5,4 +5,9 @@ zephyr_sources_ifdef(
   openocd.c
   )
 
+zephyr_sources_ifdef(
+  CONFIG_ASAN
+  asan.c
+  )
+
 add_subdirectory(tracing)
