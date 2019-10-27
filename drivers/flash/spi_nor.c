@@ -18,7 +18,43 @@
 
 LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
+/* Device Power Management Notes
+ *
+ * These flash devices have several modes during operation:
+ * * When CSn is asserted (during a SPI operation) the device is
+ *   active.
+ * * When CSn is deasserted the device enters a standby mode.
+ * * Some devices support a Deep Power-Down mode which reduces current
+ *   to as little as 0.1% of standby.
+ *
+ * The power reduction from DPD is sufficent to warrant allowing its
+ * use even in cases where Zephyr's device power management is not
+ * available.  This is selected through the SPI_NOR_IDLE_IN_DPD
+ * Kconfig option.
+ *
+ * When mapped to the Zephyr Device Power Management states:
+ * * DEVICE_PM_ACTIVE_STATE covers both active and standby modes;
+ * * DEVICE_PM_LOW_POWER_STATE, DEVICE_PM_SUSPEND_STATE, and
+ *   DEVICE_PM_OFF_STATE all correspond to deep-power-down mode.
+ */
+
 #define SPI_NOR_MAX_ADDR_WIDTH 4
+
+#ifndef NSEC_PER_MSEC
+#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
+#endif
+
+#ifdef DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD
+#define T_DP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD, NSEC_PER_MSEC)
+#endif /* T_ENTER_DPD */
+#ifdef DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD
+#define T_RES1_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD, NSEC_PER_MSEC)
+#endif /* T_EXIT_DPD */
+#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
+#define T_DPDD_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_0, NSEC_PER_MSEC)
+#define T_CRDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_1, NSEC_PER_MSEC)
+#define T_RDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_2, NSEC_PER_MSEC)
+#endif /* DPD_WAKEUP_SEQUENCE */
 
 /**
  * struct spi_nor_data - Structure for defining the SPI NOR access
@@ -33,8 +69,58 @@ struct spi_nor_data {
 #ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
 	struct spi_cs_control cs_ctrl;
 #endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
+#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+	/* Low 32-bits of uptime counter at which device last entered
+	 * deep power-down.
+	 */
+	u32_t ts_enter_dpd;
+#endif
 	struct k_sem sem;
 };
+
+/* Capture the time at which the device entered deep power-down. */
+static inline void record_entered_dpd(const struct device *const dev)
+{
+#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+	struct spi_nor_data *const driver_data = dev->driver_data;
+
+	driver_data->ts_enter_dpd = k_uptime_get_32();
+#endif
+}
+
+/* Check the current time against the time DPD was entered and delay
+ * until it's ok to initiate the DPD exit process.
+ */
+static inline void delay_until_exit_dpd_ok(const struct device *const dev)
+{
+#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+	struct spi_nor_data *const driver_data = dev->driver_data;
+	s32_t since = (s32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
+
+	/* If the time is negative the 32-bit counter has wrapped,
+	 * which is certainly long enough no further delay is
+	 * required.  Otherwise we have to check whether it's been
+	 * long enough.
+	 */
+	if (since >= 0) {
+#ifdef DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD
+		/* Subtract time required for DPD to be reached */
+		since -= T_DP_MS;
+#endif /* T_ENTER_DPD */
+#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
+		/* Subtract time required in DPD before exit */
+		since -= T_DPDD_MS;
+#endif /* DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE */
+
+		/* If the adjusted time is negative we have to wait
+		 * until it reaches zero before we can proceed.
+		 */
+		if (since < 0) {
+			k_sleep(K_MSEC((u32_t)-since));
+		}
+	}
+#endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_DPD */
+}
 
 /*
  * @brief Send an SPI command
@@ -99,9 +185,56 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
+static int enter_dpd(const struct device *const dev)
+{
+	int ret = 0;
+
+	if (IS_ENABLED(DT_INST_0_JEDEC_SPI_NOR_HAS_DPD)) {
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
+		if (ret == 0) {
+			record_entered_dpd(dev);
+		}
+	}
+	return ret;
+}
+
+static int exit_dpd(const struct device *const dev)
+{
+	int ret = 0;
+
+	if (IS_ENABLED(DT_INST_0_JEDEC_SPI_NOR_HAS_DPD)) {
+		delay_until_exit_dpd_ok(dev);
+
+#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
+		/* Assert CSn and wait for tCRDP.
+		 *
+		 * Unfortunately the SPI API doesn't allow us to
+		 * control CSn so fake it by writing a known-supported
+		 * single-byte command, hoping that'll hold the assert
+		 * long enough.  This is highly likely, since the
+		 * duration is usually less than two SPI clock cycles.
+		 */
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDID);
+
+		/* Deassert CSn and wait for tRDP */
+		k_sleep(K_MSEC(T_RDP_MS));
+#else /* DPD_WAKEUP_SEQUENCE */
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
+
+		if (ret == 0) {
+#ifdef DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD
+			k_sleep(K_MSEC(T_RES1_MS));
+#endif /* T_EXIT_DPD */
+		}
+#endif /* DPD_WAKEUP_SEQUENCE */
+	}
+	return ret;
+}
+
 /* Everything necessary to acquire owning access to the device.
  *
- * For now this means taking the lock.
+ * This means taking the lock and, if necessary, waking the device
+ * from deep power-down mode.
  */
 static void acquire_device(struct device *dev)
 {
@@ -110,14 +243,23 @@ static void acquire_device(struct device *dev)
 
 		k_sem_take(&driver_data->sem, K_FOREVER);
 	}
+
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
+		exit_dpd(dev);
+	}
 }
 
 /* Everything necessary to release access to the device.
  *
- * For now, this means releasing the lock.
+ * This means (optionally) putting the device into deep power-down
+ * mode, and releasing the lock.
  */
 static void release_device(struct device *dev)
 {
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
+		enter_dpd(dev);
+	}
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->driver_data;
 
@@ -348,8 +490,16 @@ static int spi_nor_configure(struct device *dev)
 	data->spi_cfg.cs = &data->cs_ctrl;
 #endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
 
+	/* Might be in DPD if system restarted without power cycle. */
+	exit_dpd(dev);
+
 	/* now the spi bus is configured, we can verify the flash id */
 	if (spi_nor_read_id(dev, params) != 0) {
+		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
+	    && (enter_dpd(dev) != 0)) {
 		return -ENODEV;
 	}
 

@@ -16,3 +16,10 @@ tests:
             - "Data read 55 aa"
             - "Data read matches with data written. Good!!"
     depends_on: spi
+  sample.driver.spi_flash_dpd:
+    tags: spi flash
+    filter: dt_compat_enabled("jedec,spi-nor")
+    build_only: true
+    extra_configs:
+      - CONFIG_SPI_NOR_IDLE_IN_DPD=y
+    depends_on: spi

@@ -31,4 +31,16 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  size (65536).  Other options include the 32K-byte erase size
 	  (32768), and the sector size (4096).
 
+config SPI_NOR_IDLE_IN_DPD
+	bool "Use Deep Power-Down mode when flash is not being accessed."
+	help
+	  Where supported deep power-down mode can reduce current draw
+	  to as little as 0.1% of standby current.  However it takes
+	  some milliseconds to enter and exit from this mode.
+
+	  Select this option for applications where device power
+	  management is not enabled, the flash remains inactive for
+	  long periods, and when used the impact of waiting for mode
+	  enter and exit delays is acceptable.
+
 endif # SPI_NOR
