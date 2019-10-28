@@ -350,6 +350,12 @@ config LOG_BACKEND_RTT_MODE_BLOCK
 	help
 	  Waits until there is enough space in the up-buffer for a message.
 
+config LOG_BACKEND_RTT_SYST_ENABLE
+	bool "Enable RTT syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using RTT to output syst format logs.
+
 endchoice
 
 if LOG_BACKEND_RTT_MODE_DROP
