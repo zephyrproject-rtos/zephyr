@@ -27,8 +27,6 @@ struct gpio_pcal9535a_config {
 
 	/** The slave address of the chip */
 	u16_t i2c_slave_addr;
-
-	u8_t stride[2];
 };
 
 /** Store the port 0/1 data for each register pair. */
@@ -46,21 +44,12 @@ struct gpio_pcal9535a_drv_data {
 	/** Master I2C device */
 	struct device *i2c_master;
 
-	/**
-	 * Specify polarity inversion of pin. This is used for output as
-	 * the polarity inversion registers on chip affects inputs only.
-	 */
-	u32_t out_pol_inv;
-
 	struct {
 		union gpio_pcal9535a_port_data output;
-		union gpio_pcal9535a_port_data pol_inv;
 		union gpio_pcal9535a_port_data dir;
 		union gpio_pcal9535a_port_data pud_en;
 		union gpio_pcal9535a_port_data pud_sel;
 	} reg_cache;
-
-	u8_t stride[2];
 };
 
 #ifdef __cplusplus
