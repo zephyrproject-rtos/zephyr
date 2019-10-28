@@ -8,6 +8,7 @@
 *.swo
 *~
 build*/
+!doc/guides/build
 cscope.*
 .dir
 
