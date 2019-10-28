@@ -1,4 +1,4 @@
-.. pinetime_devkit0:
+.. _pinetime_devkit0:
 
 Pine64 PineTime DevKit0
 #######################
@@ -20,6 +20,8 @@ app developers/communities.
 
 References
 **********
+
+.. target-notes::
 
 .. _Pine64 wiki: https://wiki.pine64.org/index.php/PineTime
 
