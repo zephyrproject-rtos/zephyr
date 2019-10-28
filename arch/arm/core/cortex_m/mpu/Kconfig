@@ -76,8 +76,8 @@ config CUSTOM_SECTION_MIN_ALIGN_SIZE
 	int "Custom Section Align Size"
 	default 32
 	help
-	  Custom algin size of memory section in linker scripts. Usually
-	  it should consume less alignment memory. Alougth this alignment
+	  Custom align size of memory section in linker scripts. Usually
+	  it should consume less alignment memory. Although this alignment
 	  size is configured by users, it must also respect the power of
 	  two regulation if hardware requires.
 

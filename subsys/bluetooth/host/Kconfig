@@ -364,7 +364,7 @@ config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	help
 	  With this option enabled, aging counter will be stored in settings every
 	  time a successful pairing occurs. This increases flash wear out but offers
-	  a more correct finding of the oldest unused paiting info.
+	  a more correct finding of the oldest unused pairing info.
 
 endif # BT_SMP
 

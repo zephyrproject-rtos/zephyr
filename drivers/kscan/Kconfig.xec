@@ -19,14 +19,14 @@ config KSCAN_XEC_COLUMN_SIZE
 	default 16
 	help
 	 Adjust the value to your keyboard columns. The maximum
-	 colum size for the Microchip XEC family is 18 (from 0 to 17).
+	 column size for the Microchip XEC family is 18 (from 0 to 17).
 
 config KSCAN_XEC_ROW_SIZE
 	int "KSCAN_XEC_ROW_SIZE"
 	default 8
 	help
 	 Adjust the value to your keyboard rows. The maximum
-	 colum size for the Microchip XEC family is 8 (from 0 to 7).
+	 column size for the Microchip XEC family is 8 (from 0 to 7).
 
 config KSCAN_XEC_DEBOUNCE_DOWN
 	int "KSCAN_XEC_DEBOUNCE_DOWN"
