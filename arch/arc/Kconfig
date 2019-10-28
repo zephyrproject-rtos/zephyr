@@ -74,14 +74,6 @@ config	CPU_ARCV2
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
-config	DATA_ENDIANNESS_LITTLE
-	bool
-	default y
-	help
-	  This is driven by the processor implementation, since it is fixed in
-	  hardware. The BSP should set this value to 'n' if the data is
-	  implemented as big endian.
-
 config	NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
 	range 1 16
