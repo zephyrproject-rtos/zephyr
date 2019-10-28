@@ -88,38 +88,63 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #
 # These types are available:
 #
+#   - 'type: int' is for properties that are assigned a single 32-bit value,
+#     like
+#
+#         frequency = <100>;
+#
+#   - 'type: array' is for properties that are assigned zero or more 32-bit
+#     values, like
+#
+#         pin-config = <1 2 3>;
+#
+#   - 'type: uint8-array' is for properties that are assigned zero or more
+#     bytes with the [] syntax, like
+#
+#         lookup-table = [89 AB CD EF];
+#
+#     Each byte is given in hex.
+#
+#     This type is called 'bytestring' in the Devicetree specification.
+#
+#   - 'type: string' is for properties that are assigned a single string, like
+#
+#         ident = "foo";
+#
+#   - 'type: string-array' if for properties that are assigned zero or more
+#     strings, like
+#
+#         idents = "foo", "bar", "baz";
+#
 #   - 'type: boolean' is for properties used as flags that don't take a value,
-#     e.g. 'hw-flow-control;'. The macro generated for the property gets set to
-#     1 if the property exists on the node, and to 0 otherwise. When combined
-#     with 'required: true', this type just forces the flag to appear on the
-#     node, though the output will always be the same in that case (1).
+#     like
 #
-#     Warning: Since a macro is always generated, don't use #ifdef in tests.
-#     Do this instead:
+#         hw-flow-control;
 #
-#       #if DT_SOME_BOOLEAN_PROP == 1
+#     The macro generated for the property gets set to 1 if the property exists
+#     on the node, and to 0 otherwise. When combined with 'required: true',
+#     this type just forces the flag to appear on the node. The output will
+#     always be 1 in that case.
 #
-#   - 'type: uint8-array' is for what the device tree specification calls
-#     'bytestring'. Properties of type 'uint8-array' should be set like this:
+#     Warning: Since a macro is always generated for 'type: boolean'
+#     properties, don't use #ifdef in tests. Do this instead:
 #
-#       foo = [89 AB CD];
-#
-#     Each value is a byte in hex.
+#         #if DT_SOME_BOOLEAN_PROP == 1
 #
 #   - 'type: phandle' is for properties that are assigned a single phandle,
-#     like this:
+#     like
 #
-#       foo = <&label>;
+#         foo = <&label>;
 #
-#   - 'type: phandles' is for properties that are assigned a list of (just)
-#     phandles, like this:
+#   - 'type: phandles' is for properties that are assigned zero or more
+#     phandles, like
 #
-#       foo = <&label1 &label2 ...>;
+#         foo = <&label1 &label2 ...>;
 #
 #   - 'type: phandle-array' is for properties that take a list of phandles and
-#     (possibly) 32-bit numbers, like this:
+#     (possibly) 32-bit numbers, like
 #
-#       pwms = <&ctrl-1 1 2 &ctrl-2 3 4>;
+#         pwms = <&ctrl-1 1 2 &ctrl-2 3 4>;
 #
 #     This type requires that the property works in the standard way that
 #     devicetree properties like pwms, clocks, *-gpios, and io-channels work.
@@ -146,15 +171,15 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #
 #   - 'type: compound' is a catch-all for more complex types, e.g.
 #
-#       foo = <&label1>, [01 02];
+#         foo = <&label1>, [01 02];
 #
 # 'type: array' and the other array types also allow splitting the value into
 # several <> blocks, e.g. like this:
 #
-#   foo = <1 2>, <3 4>;                         // Okay for 'type: array'
-#   foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
-#   foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
-#   etc.
+#     foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+#     foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+#     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+#     etc.
 #
 # The optional 'default:' setting gives a value that will be used if the
 # property is missing from the device tree node. If 'default: <default>' is
