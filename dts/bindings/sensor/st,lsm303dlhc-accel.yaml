@@ -8,4 +8,4 @@ description: |
 
 compatible: "st,lsm303dlhc-accel"
 
-include: i2c-device.yaml
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]
