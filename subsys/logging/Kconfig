@@ -81,6 +81,12 @@ config LOG_MAX_LEVEL
 	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
+config LOG_MIPI_SYST_ENABLE
+	bool "Enable mipi syst format output"
+	select MIPI_SYST_LIB
+	help
+	  Enable mipi syst format output for the logger system.
+
 if !LOG_MINIMAL
 
 menu "Prepend log message with function name"
