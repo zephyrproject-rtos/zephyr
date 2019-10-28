@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors IIS3DHHC SPI
 
-description: >
+description: |
     This binding gives a base representation of IIS3DHHC 3-axis accelerometer
     accessed through SPI bus
 

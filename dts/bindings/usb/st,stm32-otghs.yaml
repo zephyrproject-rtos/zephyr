@@ -3,7 +3,7 @@
 
 title: STM32 OTGHS
 
-description: >
+description: |
     This binding gives a base representation of the STM32 OTG HS controller
 
 compatible: "st,stm32-otghs"

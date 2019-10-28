@@ -1,6 +1,6 @@
 title: RV32M1 Pinmux
 
-description: >
+description: |
     This is a representation of the RV32M1 Pinmux node
 
 compatible: "openisa,rv32m1-pinmux"

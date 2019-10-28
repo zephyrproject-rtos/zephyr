@@ -3,7 +3,7 @@
 
 title: STM32 I2C V2
 
-description: >
+description: |
     This binding gives a base representation of the STM32 I2C V2 controller
 
 compatible: "st,stm32-i2c-v2"

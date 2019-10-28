@@ -3,7 +3,7 @@
 
 title: Synopsys ARC EM CPU
 
-description: >
+description: |
     This binding gives a base representation for Synopsys ARC EM CPU.
 
 compatible: "snps,arcem"

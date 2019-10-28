@@ -3,7 +3,7 @@
 
 title: LPC USART
 
-description: >
+description: |
     This binding gives a base representation of the LPC USART
 
 compatible: "nxp,lpc-usart"

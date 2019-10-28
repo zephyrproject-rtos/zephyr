@@ -1,6 +1,6 @@
 title: Kinetis LPUART
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis LPUART
 
 compatible: "nxp,kinetis-lpuart"

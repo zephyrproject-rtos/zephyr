@@ -3,7 +3,7 @@
 
 title: AMS (Austria Mikro Systeme) Indoor Air Quality Sensor iAQ-core
 
-description: >
+description: |
     This binding gives a base representation of iAQ-core indoor air quality
     sensor
 

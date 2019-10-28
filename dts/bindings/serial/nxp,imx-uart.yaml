@@ -3,7 +3,7 @@
 
 title: iMX Uart
 
-description: >
+description: |
     This binding gives a base representation of the iMX UART
 
 compatible: "nxp,imx-uart"

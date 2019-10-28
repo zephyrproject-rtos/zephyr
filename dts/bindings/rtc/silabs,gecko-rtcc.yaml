@@ -3,7 +3,7 @@
 
 title: Silabs Gecko Real Time Counter
 
-description: >
+description: |
     This is a representation of the Silabs Gecko RTCC node
 
 compatible: "silabs,gecko-rtcc"

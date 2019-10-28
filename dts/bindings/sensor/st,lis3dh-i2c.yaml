@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LIS3DH
 
-description: >
+description: |
     This binding gives a base representation of LIS3DH 3-axis accelerometer
 
 compatible: "st,lis3dh"

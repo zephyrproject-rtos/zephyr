@@ -3,7 +3,7 @@
 
 title: BMI160 Inertial measurement unit
 
-description: >
+description: |
     This is a representation of the BMI160 Inertial measurement unit
 
 compatible: "bosch,bmi160"

@@ -4,7 +4,7 @@
 
 title: ADXL372 Three Axis High-g I2C/SPI accelerometer
 
-description: >
+description: |
     This is a representation of the ADXL372 Three Axis High-g accelerometer,
     accessed through SPI bus
 

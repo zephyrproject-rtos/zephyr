@@ -3,7 +3,7 @@
 
 title: STM32 USB HS PHY
 
-description: >
+description: |
     This binding gives a base representation of the STM32 USB HS PHY controller
 
 compatible: "st,stm32-usbphyc"

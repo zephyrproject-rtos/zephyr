@@ -3,7 +3,7 @@
 
 title: NXP i.MXRT USDHC module
 
-description: >
+description: |
     This binding specifies the NXP i.MXRT USDHC module.
 
 compatible: "nxp,imx-usdhc"

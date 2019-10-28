@@ -3,7 +3,7 @@
 
 title: Nordic nRF Real Time Counter
 
-description: >
+description: |
     This is a representation of the Nordic nRF RTC node
 
 compatible: "nordic,nrf-rtc"

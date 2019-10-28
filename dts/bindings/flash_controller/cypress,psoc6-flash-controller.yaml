@@ -3,7 +3,7 @@
 
 title: Cypress Flash Controller
 
-description: >
+description: |
     This binding gives a base representation of the Cypress Flash Controller
 
 compatible: "cypress,psoc6-flash-controller"

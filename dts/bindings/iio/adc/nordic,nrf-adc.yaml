@@ -3,7 +3,7 @@
 
 title: Nordic Semiconductor nRF Family ADC
 
-description: >
+description: |
     This is a representation of the nRF ADC node
 
 compatible: "nordic,nrf-adc"

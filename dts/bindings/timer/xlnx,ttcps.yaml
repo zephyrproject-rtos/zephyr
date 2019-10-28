@@ -1,6 +1,6 @@
 title: Xilinx ZynqMP PS TTC TIMERS
 
-description: >
+description: |
     This binding gives a base representation of the Xilinx ZynqMP PS TTC TIMERS
 
 compatible: "cdns,ttc"

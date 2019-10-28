@@ -1,6 +1,6 @@
 title: Nordic SPU (System Protection Unit)
 
-description: >
+description: |
     Binding for the Nordic SPU (System Protection Unit)
 
 compatible: "nordic,nrf-spu"

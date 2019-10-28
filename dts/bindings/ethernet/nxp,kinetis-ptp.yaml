@@ -3,7 +3,7 @@
 
 title: NXP Kinetis Ethernet PTP
 
-description: >
+description: |
     This binding gives a base representation of the NXP Kinetis Ethernet PTP
 
 compatible: "nxp,kinetis-ptp"

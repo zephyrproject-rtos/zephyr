@@ -3,7 +3,7 @@
 
 title: LPC MAILBOX
 
-description: >
+description: |
     This binding gives a base representation of the LPC MAILBOX
 
 compatible: "nxp,lpc-mailbox"

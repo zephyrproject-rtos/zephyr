@@ -3,7 +3,7 @@
 
 title: Atmel SAM SPI driver
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM SPI controller
 
 compatible: "atmel,sam-spi"

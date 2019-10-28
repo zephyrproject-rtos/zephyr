@@ -3,7 +3,7 @@
 
 title: NOP USB Transceiver
 
-description: >
+description: |
     This binding is to be used by all the usb transceivers which are built-in
     with USB IP
 

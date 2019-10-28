@@ -6,7 +6,7 @@
 
 title: Texas Instruments Temperature Sensor TMP116
 
-description: >
+description: |
     This is a representation of the TI Temperature sensor TMP116
 
 compatible: "ti,tmp116"

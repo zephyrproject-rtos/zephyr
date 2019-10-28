@@ -6,7 +6,7 @@
 
 title: Microchip XEC basic timer
 
-description: >
+description: |
     This binding gives a base representation of the Microchip XEC basic timer
 
 compatible: "microchip,xec-timer"

@@ -3,7 +3,7 @@
 
 title: i.MX7D PWM
 
-description: >
+description: |
     This binding gives a base representation of the i.MX7D PWM
 
 compatible: "fsl,imx7d-pwm"

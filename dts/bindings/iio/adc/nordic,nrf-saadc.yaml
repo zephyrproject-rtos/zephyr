@@ -3,7 +3,7 @@
 
 title: Nordic Semiconductor nRF Family SAADC
 
-description: >
+description: |
     This is a representation of the nRF SAADC node
 
 compatible: "nordic,nrf-saadc"

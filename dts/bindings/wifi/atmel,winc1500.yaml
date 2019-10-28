@@ -3,7 +3,7 @@
 
 title: Atmel WINC1500 Wifi module
 
-description: >
+description: |
     This binding gives the base representation of the Atmel WINC1500 Wifi module
 
 compatible: "atmel,winc1500"

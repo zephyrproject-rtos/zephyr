@@ -3,7 +3,7 @@
 
 title: MCUX PWM
 
-description: >
+description: |
     This binding gives a base representation of the NXP eFLEX PWM module which
     is supposed to contain mcux-pwm submodules.
 

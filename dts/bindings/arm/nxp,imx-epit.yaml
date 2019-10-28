@@ -3,7 +3,7 @@
 
 title: IMX EPIT COUNTER
 
-description: >
+description: |
     This binding gives a base representation of the i.MX Enhanced Periodic Interrupt Timer (EPIT)
 
 compatible: "nxp,imx-epit"

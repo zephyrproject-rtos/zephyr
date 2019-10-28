@@ -3,7 +3,7 @@
 
 title: Synopsys Designware GPIO controller
 
-description: >
+description: |
     This is a representation of the Synopsys DesignWare gpio node
 
 compatible: "snps,designware-gpio"

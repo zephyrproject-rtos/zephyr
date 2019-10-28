@@ -3,7 +3,7 @@
 
 title: STM32 I2S
 
-description: >
+description: |
     This binding gives a base representation of the STM32 I2S controller
 
 compatible: "st,stm32-i2s"

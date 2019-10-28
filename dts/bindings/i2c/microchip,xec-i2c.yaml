@@ -3,7 +3,7 @@
 
 title: MICROCHIP I2C
 
-description: >
+description: |
     This binding gives a base representation for I2C/SMB controller for Microchip
 
 compatible: "microchip,xec-i2c"

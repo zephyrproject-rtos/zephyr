@@ -3,7 +3,7 @@
 
 title: MCUX PWM
 
-description: >
+description: |
     This binding gives a base representation of the NXP MCUX PWM
 
 compatible: "nxp,imx-pwm"

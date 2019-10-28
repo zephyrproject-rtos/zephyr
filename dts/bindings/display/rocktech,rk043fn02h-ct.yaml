@@ -3,7 +3,7 @@
 
 title: Rocktech LCD Module
 
-description: >
+description: |
     This binding gives a base representation of the Rocktech LCD module with
     LED backlight and capacitive touch panel.
 

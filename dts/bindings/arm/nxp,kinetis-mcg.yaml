@@ -3,7 +3,7 @@
 
 title: NXP Kinetis Multipurpose Clock Generator (MCG)
 
-description: >
+description: |
     This is a representation of the NXP Kinetis MCG IP node
 
 compatible: "nxp,kinetis-mcg"

@@ -3,7 +3,7 @@
 
 title: NXP Kinetis PCC (Peripheral Clock Controller)
 
-description: >
+description: |
     This is a representation of the NXP Kinetis PCC IP node
 
 compatible: "nxp,kinetis-pcc"

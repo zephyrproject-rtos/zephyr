@@ -3,7 +3,7 @@
 
 title: STM32 SPI
 
-description: >
+description: |
     This binding gives a base representation of the STM32 SPI controller
 
 compatible: "st,stm32-spi"

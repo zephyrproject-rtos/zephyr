@@ -3,7 +3,7 @@
 
 title: ARM MHU
 
-description: >
+description: |
     This binding gives a base representation of the ARM MHU
 
 compatible: "arm,mhu"

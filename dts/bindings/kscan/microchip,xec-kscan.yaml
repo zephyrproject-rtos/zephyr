@@ -3,7 +3,7 @@
 
 title: Microchip XEC Keyboard Scan Matrix
 
-description: >
+description: |
     This is a representation of the Microchip XEC Keyboard Matrix controller
 
 compatible: "microchip,xec-kscan"

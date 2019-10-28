@@ -1,6 +1,6 @@
 title: nRF SW PWM
 
-description: >
+description: |
     This binding gives a base representation of the nRFx S/W PWM
 
 compatible: "nordic,nrf-sw-pwm"

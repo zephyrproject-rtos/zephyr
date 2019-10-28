@@ -1,6 +1,6 @@
 title: STM32 CAN
 
-description: >
+description: |
     This binding gives a base representation of the STM32 CAN controller
 
 compatible: "st,stm32-can"

@@ -3,7 +3,7 @@
 
 title: Keyboard Scan Matrix  Base Structure
 
-description: >
+description: |
     This binding gives the base structures for all Keyboard Matrix devices
 
 include: base.yaml

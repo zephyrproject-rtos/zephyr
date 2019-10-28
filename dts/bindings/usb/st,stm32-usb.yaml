@@ -3,7 +3,7 @@
 
 title: STM32 USB
 
-description: >
+description: |
     This binding gives a base representation of the STM32 USB controller
 
 compatible: "st,stm32-usb"

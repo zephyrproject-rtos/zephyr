@@ -3,7 +3,7 @@
 
 title: Atmel SAM TRNG (True Random Number Generator)
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM RNG
 
 compatible: "atmel,sam-trng"

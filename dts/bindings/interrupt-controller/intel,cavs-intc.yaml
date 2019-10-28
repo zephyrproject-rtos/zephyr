@@ -1,6 +1,6 @@
 title: CAVS Interrupt Controller
 
-description: >
+description: |
     This binding describes CAVS Interrupt controller
 
 compatible: "intel,cavs-intc"

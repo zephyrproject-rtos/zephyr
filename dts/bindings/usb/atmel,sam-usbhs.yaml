@@ -3,7 +3,7 @@
 
 title: Atmel SAM USBHS
 
-description: >
+description: |
     Atmel SAM Family USB (USBHS) in device mode
 
 compatible: "atmel,sam-usbhs"

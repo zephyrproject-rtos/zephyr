@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LPS22HB
 
-description: >
+description: |
     This binding gives a base representation of LPS22HB pressure sensor
 
 compatible: "st,lps22hb-press"

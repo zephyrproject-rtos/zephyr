@@ -3,7 +3,7 @@
 
 title: ESP32 I2C
 
-description: >
+description: |
     This is a representation of the ESP32 I2C
 
 compatible: "espressif,esp32-i2c"

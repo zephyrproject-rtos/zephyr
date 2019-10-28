@@ -3,7 +3,7 @@
 
 title: i.MX ITCM (Instruction Tightly Coupled Memory)
 
-description: >
+description: |
   This binding gives a base representation of the i.MX ITCM
 
 compatible: "nxp,imx-itcm"

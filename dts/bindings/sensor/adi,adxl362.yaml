@@ -3,7 +3,7 @@
 
 title: ADXL362 Three Axis SPI accelerometer
 
-description: >
+description: |
     This is a representation of the ADXL362 Three Axis SPI accelerometer
 
 compatible: "adi,adxl362"

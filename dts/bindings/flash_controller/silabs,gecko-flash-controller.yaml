@@ -3,7 +3,7 @@
 
 title: Silicon Labs Gecko Flash Controller
 
-description: >
+description: |
     This binding gives a base representation of the Silicon Labs Gecko Flash Controller
 
 compatible: "silabs,gecko-flash-controller"

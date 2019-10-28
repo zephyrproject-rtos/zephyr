@@ -3,7 +3,7 @@
 
 title: Intel E1000 Ethernet controller
 
-description: >
+description: |
      This is a representation of the Intel E1000 Ethernet controller
 
 compatible: "intel,e1000"

@@ -3,7 +3,7 @@
 
 title: ADT7420 16-Bit Digital I2C Temperature Sensor
 
-description: >
+description: |
     This is a representation of the ADT7420 16-Bit Digital I2C Temperature Sensor
 
 compatible: "adi,adt7420"

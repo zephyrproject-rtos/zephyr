@@ -3,7 +3,7 @@
 
 title: Generic fixed rate clock provider
 
-description: >
+description: |
     This is a representation of a generic fixed rate clock provider.
 
 compatible: "fixed-clock"

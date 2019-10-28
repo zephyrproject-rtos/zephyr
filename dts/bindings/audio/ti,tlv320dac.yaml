@@ -3,7 +3,7 @@
 
 title: Texas Instruments TLV320DAC Audio DAC
 
-description: >
+description: |
     This binding gives a base representation of TLV320DAC310x Audio DAC
 
 compatible: "ti,tlv320dac"

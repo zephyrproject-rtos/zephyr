@@ -3,7 +3,7 @@
 
 title: ST Microelectronics MPXXDTYY digital pdm microphone family
 
-description: >
+description: |
     This binding gives a base representation of MPXXDTYY digital microphone family
 
 compatible: "st,mpxxdtyy"

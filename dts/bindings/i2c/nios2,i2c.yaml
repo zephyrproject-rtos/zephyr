@@ -3,7 +3,7 @@
 
 title: NIOS2 i2c
 
-description: >
+description: |
     This binding gives a base representation of the NIOS2 i2c
 
 compatible: "nios2,i2c"

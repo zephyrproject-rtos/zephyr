@@ -1,6 +1,6 @@
 title: DesignWare Interrupt Controller
 
-description: >
+description: |
     This binding describes DesignWare Programmable Interrupt controller
 
 compatible: "snps,designware-intc"

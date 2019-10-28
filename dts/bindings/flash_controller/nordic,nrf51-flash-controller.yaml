@@ -1,6 +1,6 @@
 title: Nordic NVMC
 
-description: >
+description: |
     This binding gives a base representation of the Nordic NVMC
 
 compatible: "nordic,nrf51-flash-controller"

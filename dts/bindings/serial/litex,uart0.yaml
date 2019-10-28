@@ -3,7 +3,7 @@
 
 title: LiteX UART
 
-description: >
+description: |
     This binding gives a base representation of the LiteX UART
 
 compatible: "litex,uart0"

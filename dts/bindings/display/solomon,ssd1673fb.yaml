@@ -3,7 +3,7 @@
 
 title: SSD16XX 250x150 EPD Display Controller
 
-description: >
+description: |
     This is a representation of the SSD16XX 250x150 EPD Display Controller
 
 compatible: "solomon,ssd16xxfb"

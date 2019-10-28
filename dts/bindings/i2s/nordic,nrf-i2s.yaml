@@ -3,7 +3,7 @@
 
 title: Nordic I2S
 
-description: >
+description: |
     Binding for the Nordic I2S (Inter-IC sound interface)
 
 compatible: "nordic,nrf-i2s"

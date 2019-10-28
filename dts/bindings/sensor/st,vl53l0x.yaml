@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors VL53L0X
 
-description: >
+description: |
     This binding gives a base representation of VL53L0X Time Of Flight sensor
 
 compatible: "st,vl53l0x"

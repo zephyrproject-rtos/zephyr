@@ -3,7 +3,7 @@
 
 title: Kinetis KE1xF System Integration Module (SIM)
 
-description: >
+description: |
     This is a representation of the Kinetis SIM IP node
 
 compatible: "nxp,kinetis-ke1xf-sim"

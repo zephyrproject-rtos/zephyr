@@ -3,7 +3,7 @@
 
 title: i.MX Clock Controller Module (CCM)
 
-description: >
+description: |
     This is a representation of the i.MX CCM IP node
 
 compatible: "nxp,imx-ccm"

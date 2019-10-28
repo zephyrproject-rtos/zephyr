@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors HTS221
 
-description: >
+description: |
     This binding gives a base representation of HTS221 humidity and temperature
     sensor
 

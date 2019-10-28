@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LSM303DLHC
 
-description: >
+description: |
     This binding gives a base representation of LSM303DLHC magnetometer sensor
 
 compatible: "st,lsm303dlhc-magn"

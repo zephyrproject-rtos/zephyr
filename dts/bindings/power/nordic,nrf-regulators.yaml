@@ -3,7 +3,7 @@
 
 title: Nordic REGULATORS
 
-description: >
+description: |
     Binding for the Nordic REGULATORS (voltage regulators control module)
 
 compatible: "nordic,nrf-regulators"

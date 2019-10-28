@@ -3,7 +3,7 @@
 
 title: Kinetis I2C Controller
 
-description: >
+description: |
     This is a representation of the Kinetis I2C nodes
 
 compatible: "nxp,kinetis-i2c"

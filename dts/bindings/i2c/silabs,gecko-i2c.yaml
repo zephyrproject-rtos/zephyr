@@ -3,7 +3,7 @@
 
 title: Silabs Gecko I2C Controller
 
-description: >
+description: |
     This is a representation of the Silabs Gecko I2C nodes
 
 compatible: "silabs,gecko-i2c"

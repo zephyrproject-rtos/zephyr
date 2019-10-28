@@ -3,7 +3,7 @@
 
 title: Native POSIX UART
 
-description: >
+description: |
     This binding gives a base representation of the Native POSIX UART
 
 compatible: "zephyr,native-posix-uart"

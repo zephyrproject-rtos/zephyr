@@ -3,7 +3,7 @@
 
 title: SPI NOR FLASH
 
-description: >
+description: |
     This binding gives a base representation of SPI slave NOR FLASH
 
 compatible: "winbond,w25q16"

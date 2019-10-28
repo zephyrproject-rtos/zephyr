@@ -3,7 +3,7 @@
 
 title: Data Tightly-Integrated Memory
 
-description: >
+description: |
     This bindings describes the SiFive Data Tightly-Integrated Memory
 
 compatible: "sifive,dtim0"

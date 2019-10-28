@@ -3,7 +3,7 @@
 
 title: ARM Cortex-R5F CPU
 
-description: >
+description: |
     This is a representation of ARM Cortex-R5F CPU.
 
 compatible: "arm,cortex-r5f"

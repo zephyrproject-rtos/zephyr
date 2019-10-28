@@ -3,7 +3,7 @@
 
 title: CYPRESS UART
 
-description: >
+description: |
     This binding gives a base representation of the Cypress UART
 
 compatible: "cypress,psoc6-uart"

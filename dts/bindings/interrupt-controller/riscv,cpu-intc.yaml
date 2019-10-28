@@ -3,7 +3,7 @@
 
 title: RISC-V CPU INTC
 
-description: >
+description: |
     This binding describes the RISC-V CPU Interrupt Controller
 
 compatible: "riscv,cpu-intc"
