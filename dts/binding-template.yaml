@@ -1,8 +1,10 @@
 title: Short description of the node
 
-description: >
-    Longer free-form description of the node.
-    Can go over multiple lines.
+description: |
+    Longer free-form description of the node. Can have multiple
+    lines/paragraphs.
+
+    See https://yaml-multiline.info/ for formatting help.
 
 # Used to map nodes to bindings
 compatible: "manufacturer,device"
