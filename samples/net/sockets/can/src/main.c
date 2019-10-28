@@ -21,7 +21,7 @@ static K_THREAD_STACK_DEFINE(tx_stack, STACKSIZE);
 static struct k_thread tx_data;
 
 /* For testing purposes, we create another RX receiver if configured so */
-#if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
+#if CONFIG_NET_SOCKETS_CAN_RECEIVERS > 2
 static k_tid_t rx_tid;
 static K_THREAD_STACK_DEFINE(rx_stack, STACKSIZE);
 static struct k_thread rx_data;
@@ -216,6 +216,7 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
+	/* This error mask filters only for bus off */
 	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
 			 sizeof(err_mask));
 	if (ret < 0) {
@@ -241,9 +242,19 @@ static int setup_socket(void)
 
 	rx_fd = fd;
 
-#if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
+#if CONFIG_NET_SOCKETS_CAN_RECEIVERS > 2
+	err_mask = (CAN_ERR_CRTL);
 	fd = create_socket(&filter);
 	if (fd >= 0) {
+
+		/* Set error mask to filter bus errors (no bus-off) */
+		ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
+				 sizeof(err_mask));
+		if (ret < 0) {
+			ret = -errno;
+			LOG_ERR("Cannot set error filter, error (%d)", errno);
+		}
+
 		rx_tid = k_thread_create(&rx_data, rx_stack,
 					 K_THREAD_STACK_SIZEOF(rx_stack),
 					 (k_thread_entry_t)rx,
@@ -265,7 +276,7 @@ static int setup_socket(void)
 
 	return rx_fd;
 
-#if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
+#if CONFIG_NET_SOCKETS_CAN_RECEIVERS > 2
 cleanup2:
 	(void)close(rx_fd);
 #endif

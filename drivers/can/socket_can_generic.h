@@ -110,7 +110,7 @@ static inline void socket_can_change_state(struct socket_can_context *ctx,
 	}
 }
 
-static inline void tx_irq_callback (u32_t error_flags, void *arg)
+static inline void tx_irq_callback(u32_t error_flags, void *arg)
 {
 	ARG_UNUSED(error_flags);
 	ARG_UNUSED(arg);
