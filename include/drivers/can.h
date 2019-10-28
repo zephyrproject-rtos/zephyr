@@ -576,7 +576,7 @@ static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
  * @brief Register an ISR callback for state change interrupt
  *
  * Only one callback can be registered per controller.
- * Calling this function again, overrides the previos call.
+ * Calling this function again, overrides the previous call.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param isr Pointer to ISR

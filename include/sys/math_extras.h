@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Extra arithmetic and bitmanipulation functions.
+ * @brief Extra arithmetic and bit manipulation functions.
  *
  * @details This header file provides portable wrapper functions for a number of
  * arithmetic and bit-counting functions that are often provided by compiler

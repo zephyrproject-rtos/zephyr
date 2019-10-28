@@ -1330,7 +1330,7 @@ const char *k_thread_name_get(k_tid_t thread_id);
  *
  * @param thread_id Thread to obtain name information
  * @param buf Destination buffer
- * @param size Destinatiomn buffer size
+ * @param size Destination buffer size
  * @retval -ENOSPC Destination buffer too small
  * @retval -EFAULT Memory access error
  * @retval -ENOSYS Thread name feature not enabled
@@ -3106,7 +3106,7 @@ extern void k_work_poll_init(struct k_work_poll *work,
  * Submitting a previously submitted triggered work item that is still
  * waiting for the event cancels the existing submission and reschedules it
  * the using the new event list. Note that this behavior is inherently subject
- * to race conditions with the pre-existig triggered work item and work queue,
+ * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
  * @note Can be called by ISRs.
@@ -3146,7 +3146,7 @@ extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * Submitting a previously submitted triggered work item that is still
  * waiting for the event cancels the existing submission and reschedules it
  * the using the new event list. Note that this behavior is inherently subject
- * to race conditions with the pre-existig triggered work item and work queue,
+ * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
  * @note Can be called by ISRs.
@@ -3185,7 +3185,7 @@ static inline int k_work_poll_submit(struct k_work_poll *work,
  *
  * @param work Address of delayed work item.
  *
- * @retval 0 Work tiem canceled.
+ * @retval 0 Work item canceled.
  * @retval -EINVAL Work item is being processed or has completed its work.
  */
 extern int k_work_poll_cancel(struct k_work_poll *work);
