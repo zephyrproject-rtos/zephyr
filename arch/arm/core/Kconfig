@@ -79,14 +79,6 @@ config ISA_ARM
 config NUM_IRQS
 	int
 
-config DATA_ENDIANNESS_LITTLE
-	bool
-	default y if CPU_CORTEX
-	help
-	  This is driven by the processor implementation, since it is fixed in
-	  hardware. The board should set this value to 'n' if the data is
-	  implemented as big endian.
-
 config STACK_ALIGN_DOUBLE_WORD
 	bool "Align stacks on double-words (8 octets)"
 	default y
