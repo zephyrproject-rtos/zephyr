@@ -312,6 +312,12 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	  reset. To ensure flawless operation the frequency configured here and
 	  by the SWO viewer program has to match.
 
+config LOG_BACKEND_SWO_SYST_ENABLE
+	bool "Enable SWO syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using SWO to output syst format logs.
+
 endif # LOG_BACKEND_SWO
 
 config LOG_BACKEND_RTT
