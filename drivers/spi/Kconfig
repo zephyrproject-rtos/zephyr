@@ -244,4 +244,6 @@ source "drivers/spi/Kconfig.oc_simple"
 
 source "drivers/spi/Kconfig.xec_qmspi"
 
+source "drivers/spi/Kconfig.gecko"
+
 endif # SPI
