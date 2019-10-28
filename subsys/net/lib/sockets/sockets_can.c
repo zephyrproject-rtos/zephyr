@@ -106,7 +106,8 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		}
 
 		if ((receivers[i].can_mask & CAN_ERR_FLAG) == CAN_ERR_FLAG) {
-			if ((frame.can_id & receivers[i].can_mask) == 0) {
+			u32_t id = frame.can_id & receivers[i].can_mask;
+			if ((id & CAN_ERR_MASK) == 0) {
 				continue;
 			}
 		} else if ((frame.can_id & receivers[i].can_mask) !=
