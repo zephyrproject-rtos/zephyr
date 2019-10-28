@@ -1714,9 +1714,6 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
-	/* Invalidate the connection context */
-	lll->handle = 0xFFFF;
-
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
 }
@@ -1745,6 +1742,9 @@ static void tx_lll_flush(void *param)
 	memq_link_t *link;
 
 	lll_conn_flush(lll);
+
+	/* Invalidate the connection context */
+	lll->handle = 0xFFFF;
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 			    (void **)&tx);
