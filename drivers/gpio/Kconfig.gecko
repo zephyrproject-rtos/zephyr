@@ -49,4 +49,29 @@ config GPIO_GECKO_PORTF
 	help
 	  Enable Port F.
 
+config GPIO_GECKO_PORTG
+	bool "Port G"
+	help
+	  Enable Port G.
+
+config GPIO_GECKO_PORTH
+	bool "Port H"
+	help
+	  Enable Port H.
+
+config GPIO_GECKO_PORTI
+	bool "Port I"
+	help
+	  Enable Port I.
+
+config GPIO_GECKO_PORTJ
+	bool "Port J"
+	help
+	  Enable Port J.
+
+config GPIO_GECKO_PORTK
+	bool "Port K"
+	help
+	  Enable Port K.
+
 endif # GPIO_GECKO
