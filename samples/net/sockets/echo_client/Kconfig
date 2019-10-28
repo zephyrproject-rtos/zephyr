@@ -51,4 +51,11 @@ config NET_SAMPLE_PSK_HEADER_FILE
 	  Name of a header file containing a
 	  pre-shared key.
 
+config NET_SAMPLE_SEND_ITERATIONS
+	int "Send sample data this many times"
+	default 0
+	help
+	  Send sample data this many times before exiting. A value of
+	  zero means that the sample application is run forever.
+
 source "Kconfig.zephyr"
