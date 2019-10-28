@@ -162,18 +162,34 @@
 				#gpio-cells = <2>;
 			};
 
-			gpioe: gpio@4000a0c0 {
-				compatible = "silabs,efr32mg-gpio-port";
-				reg = <0x4000a0c0 0x30>;
-				label = "GPIO_E";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
 			gpiof: gpio@4000a0f0 {
 				compatible = "silabs,efr32mg-gpio-port";
 				reg = <0x4000a0f0 0x30>;
 				label = "GPIO_F";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioi: gpio@4000a180 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a180 0x30>;
+				label = "GPIO_I";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioj: gpio@4000a1b0 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a1b0 0x30>;
+				label = "GPIO_J";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiok: gpio@4000a1e0 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a1e0 0x30>;
+				label = "GPIO_K";
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
