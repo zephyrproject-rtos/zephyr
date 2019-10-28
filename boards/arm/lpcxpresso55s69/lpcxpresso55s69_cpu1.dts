@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S6x_ns.dtsi>
+#include "lpcxpresso55s69.dtsi"
+
+/ {
+	model = "NXP LPCXpresso55S69 board";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
