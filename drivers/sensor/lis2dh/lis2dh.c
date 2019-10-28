@@ -21,10 +21,17 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * multiplied by 100.
  */
 static const u32_t lis2dh_reg_val_to_scale[] = {
+#if defined(DT_INST_0_ST_LSM303AGR_ACCEL)
+	ACCEL_SCALE(1563),
+	ACCEL_SCALE(3126),
+	ACCEL_SCALE(6252),
+	ACCEL_SCALE(18758),
+#else
 	ACCEL_SCALE(1600),
 	ACCEL_SCALE(3200),
 	ACCEL_SCALE(6400),
 	ACCEL_SCALE(19200),
+#endif
 };
 
 #if defined(DT_ST_LIS2DH_BUS_SPI)
