@@ -64,10 +64,6 @@
 	status = "okay";
 };
 
-&blue_led {
-	status = "okay";
-};
-
 &red_led {
 	status = "okay";
 };
