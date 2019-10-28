@@ -421,6 +421,110 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 }
 #endif
 
+/** Handler: +UULOC:
+ * <date>[1](10),<time>[2](12),<lat>[3](10),
+ * <long>[4](10),<alt>[5](10?),<uncertainty>[6](8)
+ *       ONLY for <response_type>=0:
+ * example +UULOC: 13/04/2011,09:54:51.000,45.6334520,-1.5420349,49,1  **/
+static void on_cmd_sockread_localization(struct net_buf **buf, u16_t len)
+{
+	struct net_buf *frag = NULL;
+	u16_t offset;
+
+	int i = 0, ii = 0, param_count = 0;
+	s32_t loc_data;
+	size_t value_size, out_len;
+	char value[80];
+
+	value_size = sizeof(value);
+
+	/* make sure IMEI data is received */
+	if (len < value_size) {
+		LOG_DBG("Waiting for Localization data");
+		/* wait for more data */
+		k_sleep(K_MSEC(50));
+		modem_read_rx(buf);
+	}
+
+	/* skip CR/LF */
+	net_buf_skipcrlf(buf);
+	if (!*buf) {
+		LOG_DBG("Unable to find Localization data (net_buf_skipcrlf)");
+		return;
+	}
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag, &offset);
+	if (!frag) {
+		LOG_DBG("Unable to find Localization data (net_buf_findcrlf)");
+		return;
+	}
+
+	while (*buf && len > 0 && param_count < 6) {
+		i = 0;
+		(void)memset(value, 0, value_size);
+
+		while (*buf && len > 0 && i < value_size) {
+			value[i] = net_buf_pull_u8(*buf);
+			len--;
+			if (!(*buf)->len) {
+				*buf = net_buf_frag_del(NULL, *buf);
+			}
+
+			/* "," marks the end of each value */
+			if (value[i] == ',') {
+				value[i] = '\0';
+				break;
+			}
+
+			i++;
+		}
+
+		if (i == value_size) {
+			i = -1;
+			break;
+		}
+
+		param_count++;
+
+		if (param_count == 1) {
+			memcpy(ictx.mdm_date, value, i);
+
+		} else if (param_count == 2) {
+			memcpy(ictx.mdm_time, value, i);
+
+		} else if (param_count == 3) {
+			memcpy(ictx.mdm_lat, value, i);
+
+		} else if (param_count == 4) {
+			memcpy(ictx.mdm_lon, value, i);
+
+		}
+
+		if (param_count == 5 && i > 0) {
+			loc_data = atoi(value);
+			ictx.mdm_alt = loc_data;
+		}
+
+		if (param_count == 6 && i > 0) {
+			loc_data = atoi(value);
+			if (loc_data >= 0) {
+				ictx.mdm_loc_uncertainty = loc_data;
+			} else {
+				ictx.mdm_loc_uncertainty = 0;
+			}
+		}
+	}
+
+	/* Added for UBlox localization data to modem context data */
+	ictx.mdm_ctx.data_locaization.date = ictx.mdm_date;
+	ictx.mdm_ctx.data_locaization.time = ictx.mdm_time;
+	ictx.mdm_ctx.data_locaization.lat = ictx.mdm_lat;
+	ictx.mdm_ctx.data_locaization.lon = ictx.mdm_lon;
+	ictx.mdm_ctx.data_locaization.alt = ictx.mdm_alt;
+	ictx.mdm_ctx.data_locaization.uncertainty = ictx.mdm_loc_uncertainty;
+}
+
 /*
  * Modem Socket Command Handlers
  */
@@ -853,6 +957,15 @@ restart:
 		goto restart;
 	}
 
+	/* configure UBlox LOCATION FINDER service */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+ULOCCELL=1",
+			     &mdata.sem_response,
+			     MDM_REGISTRATION_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to invoke localization data (UBlox)");
+	}
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   u2_setup_cmds,
@@ -1243,6 +1356,7 @@ static struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSOCL: ", on_cmd_socknotifyclose, 1U, ""),
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
+	MODEM_CMD("+UULOC: ", on_cmd_sockread_localization, 8U, ","),
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
 };
 
