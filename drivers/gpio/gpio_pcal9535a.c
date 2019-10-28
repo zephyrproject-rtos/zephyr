@@ -49,25 +49,6 @@ LOG_MODULE_REGISTER(gpio_pcal9535a);
 #define REG_OUTPUT_PORT_CONF		0x4F
 
 /**
- * @brief Check to see if a I2C master is identified for communication.
- *
- * @param dev Device struct.
- * @return 1 if I2C master is identified, 0 if not.
- */
-static inline int has_i2c_master(struct device *dev)
-{
-	struct gpio_pcal9535a_drv_data * const drv_data =
-		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
-	struct device * const i2c_master = drv_data->i2c_master;
-
-	if (i2c_master) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-/**
  * @brief Read both port 0 and port 1 registers of certain register function.
  *
  * Given the register in reg, read the pair of port 0 and port 1.
@@ -157,38 +138,49 @@ static int setup_pin_dir(struct device *dev, int access_op,
 {
 	struct gpio_pcal9535a_drv_data * const drv_data =
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
-	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.dir;
-	u16_t bit_mask;
-	u16_t new_value = 0U;
+	union gpio_pcal9535a_port_data *reg_dir = &drv_data->reg_cache.dir;
+	union gpio_pcal9535a_port_data *reg_out = &drv_data->reg_cache.output;
 	int ret;
 
+	/* For each pin, 0 == output, 1 == input */
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		bit_mask = 1 << pin;
-
-		/* Config 0 == output, 1 == input */
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			new_value = 1 << pin;
+		if ((flags & GPIO_OUTPUT) != 0U) {
+			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+				reg_out->all |= BIT(pin);
+			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+				reg_out->all &= ~BIT(pin);
+			}
+			reg_dir->all &= ~BIT(pin);
+		} else {
+			reg_dir->all |= BIT(pin);
 		}
-
-		port->all &= ~bit_mask;
-		port->all |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		/* Config 0 == output, 1 == input */
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			port->all = 0xFFFF;
+		if ((flags & GPIO_OUTPUT) != 0U) {
+			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+				reg_out->all = 0xFFFF;
+			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+				reg_out->all = 0x0;
+			}
+			reg_dir->all = 0x0;
 		} else {
-			port->all = 0x0;
+			reg_dir->all = 0xFFFF;
 		}
+
 		break;
 	default:
 		ret = -ENOTSUP;
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_CONF_PORT0, port);
+	ret = write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+	if (ret != 0) {
+		goto done;
+	}
+
+	ret = write_port_regs(dev, REG_CONF_PORT0, reg_dir);
 
 done:
 	return ret;
@@ -209,7 +201,7 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 {
 	struct gpio_pcal9535a_drv_data * const drv_data =
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
-	union gpio_pcal9535a_port_data *port;
+	union gpio_pcal9535a_port_data *reg_pud;
 	u16_t bit_mask;
 	u16_t new_value = 0U;
 	int ret;
@@ -217,31 +209,31 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 	/* If disabling pull up/down, there is no need to set the selection
 	 * register. Just go straight to disabling.
 	 */
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) == 0U) {
 		goto en_dis;
 	}
 
 	/* Setup pin pull up or pull down */
-	port = &drv_data->reg_cache.pud_sel;
+	reg_pud = &drv_data->reg_cache.pud_sel;
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		bit_mask = 1 << pin;
 
-		/* pull down == 0, pull up == 1*/
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+		/* pull down == 0, pull up == 1 */
+		if ((flags & GPIO_PULL_UP) != 0U) {
 			new_value = 1 << pin;
 		}
 
-		port->all &= ~bit_mask;
-		port->all |= new_value;
+		reg_pud->all &= ~bit_mask;
+		reg_pud->all |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		/* pull down == 0, pull up == 1*/
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-			port->all = 0xFFFF;
+		if ((flags & GPIO_PULL_UP) != 0U) {
+			reg_pud->all = 0xFFFF;
 		} else {
-			port->all = 0x0;
+			reg_pud->all = 0x0;
 		}
 		break;
 	default:
@@ -249,31 +241,31 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_PUD_SEL_PORT0, port);
+	ret = write_port_regs(dev, REG_PUD_SEL_PORT0, reg_pud);
 	if (ret) {
 		goto done;
 	}
 
 en_dis:
 	/* enable/disable pull up/down */
-	port = &drv_data->reg_cache.pud_en;
+	reg_pud = &drv_data->reg_cache.pud_en;
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		bit_mask = 1 << pin;
 
-		if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
+		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
 			new_value = 1 << pin;
 		}
 
-		port->all &= ~bit_mask;
-		port->all |= new_value;
+		reg_pud->all &= ~bit_mask;
+		reg_pud->all |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
-			port->all = 0xFFFF;
+		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
+			reg_pud->all = 0xFFFF;
 		} else {
-			port->all = 0x0;
+			reg_pud->all = 0x0;
 		}
 		break;
 	default:
@@ -281,62 +273,7 @@ en_dis:
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_PUD_EN_PORT0, port);
-
-done:
-	return ret;
-}
-
-/**
- * @brief Setup the polarity of pin or port
- *
- * @param dev Device struct of the PCAL9535A
- * @param access_op Access operation (pin or port)
- * @param pin The pin number
- * @param flags Flags of pin or port
- *
- * @return 0 if successful, failed otherwise
- */
-static int setup_pin_polarity(struct device *dev, int access_op,
-			       u32_t pin, int flags)
-{
-	struct gpio_pcal9535a_drv_data * const drv_data =
-		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
-	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.pol_inv;
-	u16_t bit_mask;
-	u16_t new_value = 0U;
-	int ret;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		bit_mask = BIT(pin);
-
-		/* normal == 0, invert == 1 */
-		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-			new_value = BIT(pin);
-		}
-
-		port->all &= ~bit_mask;
-		port->all |= new_value;
-
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		/* normal == 0, invert == 1 */
-		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-			port->all = 0xFFFF;
-		} else {
-			port->all = 0x0;
-		}
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto done;
-	}
-
-	ret = write_port_regs(dev, REG_POL_INV_PORT0, port);
-	if (!ret) {
-		drv_data->out_pol_inv = port->all;
-	}
+	ret = write_port_regs(dev, REG_PUD_EN_PORT0, reg_pud);
 
 done:
 	return ret;
@@ -363,24 +300,21 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 	u16_t i2c_addr = config->i2c_slave_addr;
 #endif
 
-	if (flags & GPIO_INT) {
+	/* Does not support disconnected pin */
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
 	}
 
-	if (!has_i2c_master(dev)) {
-		return -EINVAL;
+	/* Open-drain support is per port, not per pin.
+	 * So can't really support the API as-is.
+	 */
+	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
+		return -ENOTSUP;
 	}
 
 	ret = setup_pin_dir(dev, access_op, pin, flags);
 	if (ret) {
 		LOG_ERR("PCAL9535A[0x%X]: error setting pin direction (%d)",
-			i2c_addr, ret);
-		goto done;
-	}
-
-	ret = setup_pin_polarity(dev, access_op, pin, flags);
-	if (ret) {
-		LOG_ERR("PCAL9535A[0x%X]: error setting pin polarity (%d)",
 			i2c_addr, ret);
 		goto done;
 	}
@@ -411,46 +345,27 @@ static int gpio_pcal9535a_write(struct device *dev, int access_op,
 {
 	struct gpio_pcal9535a_drv_data * const drv_data =
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
-	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.output;
-	u16_t bit_mask;
-	u16_t new_value;
+	union gpio_pcal9535a_port_data *reg_out = &drv_data->reg_cache.output;
 	int ret;
-
-	if (!has_i2c_master(dev)) {
-		return -EINVAL;
-	}
 
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		bit_mask = BIT(pin);
-
-		new_value = (value << pin) & bit_mask;
-		new_value ^= (drv_data->out_pol_inv & bit_mask);
-		new_value &= bit_mask;
-
-		port->all &= ~bit_mask;
-		port->all |= new_value;
-
+		if (value) {
+			reg_out->all |= BIT(pin);
+		} else {
+			reg_out->all &= ~BIT(pin);
+		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		port->all = value;
-		bit_mask = drv_data->out_pol_inv;
-
-		new_value = value & bit_mask;
-		new_value ^= drv_data->out_pol_inv;
-		new_value &= bit_mask;
-
-		port->all &= ~bit_mask;
-		port->all |= new_value;
-
+		reg_out->all = value;
 		break;
 	default:
 		ret = -ENOTSUP;
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_OUTPUT_PORT0, port);
+	ret = write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
 
 done:
 	return ret;
@@ -471,10 +386,6 @@ static int gpio_pcal9535a_read(struct device *dev, int access_op,
 {
 	union gpio_pcal9535a_port_data buf;
 	int ret;
-
-	if (!has_i2c_master(dev)) {
-		return -EINVAL;
-	}
 
 	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
 	if (ret != 0) {
@@ -497,10 +408,73 @@ done:
 	return ret;
 }
 
+static int gpio_pcal9535a_port_get_raw(struct device *dev, u32_t *value)
+{
+	union gpio_pcal9535a_port_data buf;
+	int ret;
+
+	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
+	if (ret != 0) {
+		goto done;
+	}
+
+	*value = buf.all;
+
+done:
+	return ret;
+}
+
+static int gpio_pcal9535a_port_set_masked_raw(struct device *dev,
+					      u32_t mask, u32_t value)
+{
+	struct gpio_pcal9535a_drv_data * const drv_data =
+		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
+	union gpio_pcal9535a_port_data *reg_out = &drv_data->reg_cache.output;
+
+	reg_out->all = (reg_out->all & ~mask) | (mask & value);
+
+	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+}
+
+static int gpio_pcal9535a_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	return gpio_pcal9535a_port_set_masked_raw(dev, mask, mask);
+}
+
+static int gpio_pcal9535a_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	return gpio_pcal9535a_port_set_masked_raw(dev, mask, 0);
+}
+
+static int gpio_pcal9535a_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	struct gpio_pcal9535a_drv_data * const drv_data =
+		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
+	union gpio_pcal9535a_port_data *reg_out = &drv_data->reg_cache.output;
+
+	reg_out->all ^= mask;
+
+	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+}
+
+static int gpio_pcal9535a_pin_interrupt_configure(struct device *dev,
+						  unsigned int pin,
+						  enum gpio_int_mode mode,
+						  enum gpio_int_trig trig)
+{
+	return -ENOTSUP;
+}
+
 static const struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.config = gpio_pcal9535a_config,
 	.write = gpio_pcal9535a_write,
 	.read = gpio_pcal9535a_read,
+	.port_get_raw = gpio_pcal9535a_port_get_raw,
+	.port_set_masked_raw = gpio_pcal9535a_port_set_masked_raw,
+	.port_set_bits_raw = gpio_pcal9535a_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_pcal9535a_port_clear_bits_raw,
+	.port_toggle_bits = gpio_pcal9535a_port_toggle_bits,
+	.pin_interrupt_configure = gpio_pcal9535a_pin_interrupt_configure,
 };
 
 /**
@@ -537,7 +511,6 @@ static const struct gpio_pcal9535a_config gpio_pcal9535a_0_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -562,7 +535,6 @@ static const struct gpio_pcal9535a_config gpio_pcal9535a_1_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -587,7 +559,6 @@ static const struct gpio_pcal9535a_config gpio_pcal9535a_2_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -612,7 +583,6 @@ static const struct gpio_pcal9535a_config gpio_pcal9535a_3_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
