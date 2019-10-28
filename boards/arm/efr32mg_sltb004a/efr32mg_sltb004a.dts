@@ -63,6 +63,31 @@
 	status = "okay";
 };
 
+&usart2 {
+	compatible = "silabs,gecko-spi-usart";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	location-rx = <GECKO_LOCATION(30) GECKO_PORT_K GECKO_PIN(2)>;
+	location-tx = <GECKO_LOCATION(29) GECKO_PORT_K GECKO_PIN(0)>;
+	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
+
+	cs-gpios = <&gpiok 1 0>;
+
+	status = "okay";
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		label = "MX25R8035F";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <0x800000>;
+		has-be32k;
+		jedec-id = [c2 28 14];
+	};
+};
+
 &leuart0 {
 	current-speed = <9600>;
 	location-rx = <GECKO_LOCATION(27) GECKO_PORT_F GECKO_PIN(4)>;

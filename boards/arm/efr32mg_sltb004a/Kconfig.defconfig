@@ -25,6 +25,9 @@ config GPIO_GECKO_PORTD
 config GPIO_GECKO_PORTF
 	default y
 
+config GPIO_GECKO_PORTK
+	default y
+
 endif # GPIO_GECKO
 
 if COUNTER

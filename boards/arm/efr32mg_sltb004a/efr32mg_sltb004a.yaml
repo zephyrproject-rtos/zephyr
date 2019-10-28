@@ -12,6 +12,7 @@ supported:
   - gpio
   - i2c
   - nvs
+  - spi
 testing:
   ignore_tags:
     - net
