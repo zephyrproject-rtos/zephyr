@@ -3,7 +3,7 @@
 
 title: Atmel SAM0 Family ADC
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM0 ADC
 
 compatible: "atmel,sam0-adc"

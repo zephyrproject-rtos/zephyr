@@ -3,7 +3,7 @@
 
 title: Panasonic AMG88XX 8x8 (64) pixel infrared array sensor
 
-description: >
+description: |
     This is a representation of the AMG88XX sensor
 
 compatible: "panasonic,amg88xx"

@@ -3,7 +3,7 @@
 
 title: Synopys DesignWare I2C controller
 
-description: >
+description: |
     This is a representation of the Synopsys DesignWare i2c node
 
 compatible: "snps,designware-i2c"

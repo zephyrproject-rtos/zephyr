@@ -3,7 +3,7 @@
 
 title: TI Stellaris Ethernet
 
-description: >
+description: |
     This binding gives a base representation of the TI Stellaris Ethernet
 
 compatible: "ti,stellaris-ethernet"

@@ -3,7 +3,7 @@
 
 title: Synopsys Designware SPI Controller
 
-description: >
+description: |
      This is a representation of the Synopsys DesignWare spi node
 
 compatible: "snps,designware-spi"

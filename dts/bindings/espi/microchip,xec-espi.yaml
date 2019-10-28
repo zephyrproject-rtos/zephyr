@@ -3,7 +3,7 @@
 
 title: MICROCHIP ESPI
 
-description: >
+description: |
     This binding gives a base representation of ESPI controller for Microchip
 
 compatible: "microchip,xec-espi"

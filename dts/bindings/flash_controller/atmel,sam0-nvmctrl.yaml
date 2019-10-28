@@ -1,6 +1,6 @@
 title: Atmel SAM0 Non-Volatile Memory Controller
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM0 NVMC
 
 compatible: "atmel,sam0-nvmctrl"

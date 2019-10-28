@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors STTS751
 
-description: >
+description: |
     This binding gives a base representation of STTS751
     temperature sensor connected to I2C bus
 

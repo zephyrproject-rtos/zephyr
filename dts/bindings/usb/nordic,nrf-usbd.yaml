@@ -3,7 +3,7 @@
 
 title: Nordic nRF52 USBD
 
-description: >
+description: |
     This binding gives a base representation of the Nordic nRF52 USB device controller
 
 compatible: "nordic,nrf-usbd"

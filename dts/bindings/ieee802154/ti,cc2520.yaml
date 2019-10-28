@@ -3,7 +3,7 @@
 
 title: CC2520 802.15.4 Wireless Transceiver
 
-description: >
+description: |
     This is a representation of the CC2520 wireless transceiver.
 
 compatible: "ti,cc2520"

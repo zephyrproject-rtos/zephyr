@@ -6,7 +6,7 @@
 
 title: NXP MCUX CSI module
 
-description: >
+description: |
     This binding gives a base representation of NXP MCUX CMOS Sensor Interface
 
 compatible: "nxp,imx-csi"

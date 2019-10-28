@@ -6,7 +6,7 @@
 
 title: LiteX SPI
 
-description: >
+description: |
     This binding gives a base representation of the LiteX SPI
 
 compatible: "litex,spi"

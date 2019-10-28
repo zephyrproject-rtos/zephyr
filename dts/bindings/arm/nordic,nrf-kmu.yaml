@@ -3,7 +3,7 @@
 
 title: Nordic KMU
 
-description: >
+description: |
     Binding for the Nordic KMU (Key Management Unit)
 
 compatible: "nordic,nrf-kmu"

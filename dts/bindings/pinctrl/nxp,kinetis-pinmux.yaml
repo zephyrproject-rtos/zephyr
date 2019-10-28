@@ -1,6 +1,6 @@
 title: Kinetis Pinmux
 
-description: >
+description: |
     This is a representation of the Kinetis Pinmux node
 
 compatible: "nxp,kinetis-pinmux"

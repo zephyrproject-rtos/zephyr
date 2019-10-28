@@ -3,7 +3,7 @@
 
 title: Microchip XEC PS/2
 
-description: >
+description: |
     This is a representation of the Microchip XEC PS/2 controller
 
 compatible: "microchip,xec-ps2"

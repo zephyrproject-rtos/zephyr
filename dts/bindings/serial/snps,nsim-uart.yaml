@@ -3,7 +3,7 @@
 
 title: Synopsys ARC nSIM UART
 
-description: >
+description: |
     This binding gives a base representation of the Synopsys ARC nSIM UART
 
 compatible: "snps,nsim-uart"

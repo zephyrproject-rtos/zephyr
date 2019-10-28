@@ -3,7 +3,7 @@
 
 title: Atmel SAM PWM
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM PWM
 
 compatible: "atmel,sam-pwm"

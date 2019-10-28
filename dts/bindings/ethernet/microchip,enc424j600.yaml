@@ -3,7 +3,7 @@
 
 title: 100Base-T Ethernet Controller with SPI Interface
 
-description: >
+description: |
     This binding gives a base representation of the ENC424J600 Stand-Alone
     Ethernet Controller
 

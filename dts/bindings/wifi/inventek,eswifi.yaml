@@ -3,7 +3,7 @@
 
 title: Inventek eS-WiFi WiFi module
 
-description: >
+description: |
     This binding gives the base representation of es-WiFi module
 
 compatible: "inventek,eswifi"

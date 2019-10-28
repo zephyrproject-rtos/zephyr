@@ -3,7 +3,7 @@
 
 title: TI SimpleLink CC13xx / CC26xx True Random Number Generator (TRNG)
 
-description: >
+description: |
     This is a representation of the TI SimpleLink CC13xx / CC26xx TRNG node
 
 compatible: "ti,cc13xx-cc26xx-trng"

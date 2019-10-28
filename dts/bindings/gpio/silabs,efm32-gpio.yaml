@@ -1,6 +1,6 @@
 title: EFM32 GPIO
 
-description: >
+description: |
     This is a representation of the EFM32 GPIO nodes
 
 compatible: "silabs,efm32-gpio"

@@ -1,6 +1,6 @@
 title: STM32 RCC
 
-description: >
+description: |
     This binding gives a base representation of the STM32 Clock control
 
 compatible: "st,stm32-rcc"

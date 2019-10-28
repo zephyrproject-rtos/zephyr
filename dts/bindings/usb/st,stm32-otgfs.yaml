@@ -3,7 +3,7 @@
 
 title: STM32 OTGFS
 
-description: >
+description: |
     This binding gives a base representation of the STM32 OTGFS controller
 
 compatible: "st,stm32-otgfs"

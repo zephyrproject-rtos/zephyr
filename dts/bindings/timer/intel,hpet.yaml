@@ -3,7 +3,7 @@
 
 title: HPET
 
-description: >
+description: |
     This binding represents the High-Precision Event Timer
 
 compatible: "intel,hpet"

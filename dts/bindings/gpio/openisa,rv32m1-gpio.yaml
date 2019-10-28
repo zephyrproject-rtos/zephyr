@@ -1,6 +1,6 @@
 title: OpenISA GPIO
 
-description: >
+description: |
     This is a representation of the OpenISA GPIO nodes
 
 compatible: "openisa,rv32m1-gpio"

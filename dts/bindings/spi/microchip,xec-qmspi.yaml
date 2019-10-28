@@ -6,7 +6,7 @@
 
 title: Microchip XEC Quad Master SPI driver
 
-description: >
+description: |
     This binding gives a base representation of the Microchip XEC QMSPI controller
 
 compatible: "microchip,xec-qmspi"

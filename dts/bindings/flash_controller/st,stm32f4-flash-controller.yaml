@@ -1,6 +1,6 @@
 title: STM32 F4 Flash Controller
 
-description: >
+description: |
     This binding gives a base representation of the STM32 F4 Flash Controller
 
 compatible: "st,stm32f4-flash-controller"

@@ -3,7 +3,7 @@
 
 title: NXP FlexSPI
 
-description: >
+description: |
     This binding gives a base representation of the NXP FlexSPI controller
 
 compatible: "nxp,imx-flexspi"

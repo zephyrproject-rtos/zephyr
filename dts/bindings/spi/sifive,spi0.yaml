@@ -3,7 +3,7 @@
 
 title: Sifive SPI driver
 
-description: >
+description: |
     This binding gives a base representation of the Sifive SPI controller
 
 compatible: "sifive,spi0"

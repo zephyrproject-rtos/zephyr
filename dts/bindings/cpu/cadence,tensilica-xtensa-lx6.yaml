@@ -3,7 +3,7 @@
 
 title: Cadence Tensilica Xtensa LX6 CPU
 
-description: >
+description: |
     This binding gives a base representation for Cadence Tensilica Xtensa LX6 CPU.
 
 compatible: "cadence,tensilica-xtensa-lx6"

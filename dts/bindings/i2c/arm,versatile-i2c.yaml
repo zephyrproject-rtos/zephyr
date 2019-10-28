@@ -3,7 +3,7 @@
 
 title: ARM SBCon two-wire serial bus interface
 
-description: >
+description: |
     This is a representation of the ARM SBCon two-wire serial bus interface
 
 compatible: "arm,versatile-i2c"

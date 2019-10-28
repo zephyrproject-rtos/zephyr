@@ -3,7 +3,7 @@
 
 title: BME680 integrated environmental sensor
 
-description: >
+description: |
     The BME680 is an integrated environmental sensor that measures
     temperature, pressure, humidity and air quality
 

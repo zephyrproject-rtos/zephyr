@@ -6,7 +6,7 @@
 
 title: Microchip XEC ADC
 
-description: >
+description: |
     This binding gives a base representation of the Microchip XEC ADC
 
 compatible: "microchip,xec-adc"

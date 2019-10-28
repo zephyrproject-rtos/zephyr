@@ -3,7 +3,7 @@
 
 title: STMicroelectronics STM32 watchdog driver
 
-description: >
+description: |
     This is a representation of the STM32 watchdog
 
 compatible: "st,stm32-watchdog"

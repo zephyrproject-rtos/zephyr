@@ -3,7 +3,7 @@
 
 title: ARC DCCM
 
-description: >
+description: |
     This binding gives a base representation of the ARC DCCM
 
 compatible: "arc,dccm"

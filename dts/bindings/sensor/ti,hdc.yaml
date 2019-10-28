@@ -3,7 +3,7 @@
 
 title: Texas Instruments Temperature and Humidity Sensor
 
-description: >
+description: |
     This is a representation of the TI Temperature and Humidity sensor (e.g. HDC1008)
 
 compatible: "ti,hdc"

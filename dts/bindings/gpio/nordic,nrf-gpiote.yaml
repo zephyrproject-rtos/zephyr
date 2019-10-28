@@ -3,7 +3,7 @@
 
 title: NRF5 GPIOTE
 
-description: >
+description: |
     This is a representation of the NRF GPIOTE node
 
 compatible: "nordic,nrf-gpiote"

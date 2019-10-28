@@ -3,7 +3,7 @@
 
 title: Kinetis ADC16
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis ADC16
 
 compatible: "nxp,kinetis-adc16"

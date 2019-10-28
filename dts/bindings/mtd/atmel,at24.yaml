@@ -3,7 +3,7 @@
 
 title: Virtual I2C slave eeprom
 
-description: >
+description: |
     This binding gives a base representation of a generic I2C slave EEPROM
 
 compatible: "atmel,at24"

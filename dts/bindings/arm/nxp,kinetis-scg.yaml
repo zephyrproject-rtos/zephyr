@@ -3,7 +3,7 @@
 
 title: NXP Kinetis SCG (System Clock Generator)
 
-description: >
+description: |
     This is a representation of the NXP Kinetis SCG IP node
 
 compatible: "nxp,kinetis-scg"

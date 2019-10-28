@@ -3,7 +3,7 @@
 
 title: Nordic VMC
 
-description: >
+description: |
     Binding for the Nordic VMC (Volatile Memory Controller)
 
 compatible: "nordic,nrf-vmc"

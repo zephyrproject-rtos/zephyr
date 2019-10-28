@@ -3,7 +3,7 @@
 
 title: i.MX GPIO
 
-description: >
+description: |
     This is a representation of the i.MX GPIO nodes
 
 compatible: "nxp,imx-gpio"

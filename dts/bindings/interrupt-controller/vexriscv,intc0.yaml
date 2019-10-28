@@ -3,7 +3,7 @@
 
 title: LiteX VexRiscV Interrupt Controller
 
-description: >
+description: |
     This binding describes LiteX VexRiscV Interrupt Controller
 
 compatible: "vexriscv,intc0"

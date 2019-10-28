@@ -3,7 +3,7 @@
 
 title: NRF5 GPIO
 
-description: >
+description: |
     This is a representation of the NRF GPIO nodes
 
 compatible: "nordic,nrf-gpio"

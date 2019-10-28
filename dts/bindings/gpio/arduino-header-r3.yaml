@@ -3,7 +3,7 @@
 
 title: ARDUINO GPIO HEADER
 
-description: >
+description: |
     This is a representation of GPIO pin nodes exposed as headers on Arduino R3
 
 compatible: "arduino-header-r3"

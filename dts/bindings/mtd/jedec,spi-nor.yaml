@@ -3,7 +3,7 @@
 
 title: SPI NOR flash devices (JEDEC CFI interface)
 
-description: >
+description: |
   Any SPI NOR flash that supports the JEDEC CFI interface.
 
 compatible: "jedec,spi-nor"

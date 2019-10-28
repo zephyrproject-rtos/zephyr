@@ -3,7 +3,7 @@
 
 title: ILI9340 320x240 Display Controller
 
-description: >
+description: |
     This is a representation of the ILI9340 320x240 Display Controller
 
 compatible: "ilitek,ili9340"

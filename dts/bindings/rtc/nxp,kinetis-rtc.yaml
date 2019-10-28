@@ -3,7 +3,7 @@
 
 title: Kinetis RTC
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis RTC
 
 compatible: "nxp,kinetis-rtc"

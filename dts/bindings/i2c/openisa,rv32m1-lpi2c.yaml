@@ -3,7 +3,7 @@
 
 title: OpenISA LPI2C
 
-description: >
+description: |
     This binding gives a base representation of the OpenISA LPI2C controller
 
 compatible: "openisa,rv32m1-lpi2c"

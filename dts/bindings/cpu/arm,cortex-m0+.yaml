@@ -3,7 +3,7 @@
 
 title: ARM Cortex-M0+ CPU
 
-description: >
+description: |
     This binding gives a base representation for ARM Cortex-M0+ CPU.
 
 compatible: "arm,cortex-m0+"

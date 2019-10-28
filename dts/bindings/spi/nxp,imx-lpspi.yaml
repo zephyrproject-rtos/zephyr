@@ -3,7 +3,7 @@
 
 title: NXP LPSPI
 
-description: >
+description: |
     This binding gives a base representation of the NXP i.MX LPSPI controller
 
 compatible: "nxp,imx-lpspi"

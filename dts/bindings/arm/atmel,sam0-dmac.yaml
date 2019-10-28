@@ -1,6 +1,6 @@
 title: Atmel DMAC binding
 
-description: >
+description: |
     Binding for the Atmel SAM0 DMA controller.
 
 compatible: "atmel,sam0-dmac"

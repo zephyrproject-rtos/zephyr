@@ -1,6 +1,6 @@
 title: OpenISA RV32M1 LPTMR
 
-description: >
+description: |
     This binding represents the OpenISA RV32M1 LPTMR peripheral.
 
 compatible: "openisa,rv32m1-lptmr"

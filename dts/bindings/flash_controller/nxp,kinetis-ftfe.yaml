@@ -1,6 +1,6 @@
 title: NXP Kinetis Flash Memory Module (FTFE)
 
-description: >
+description: |
     This binding gives for the NXP Kinetis Flash Memory Module E (FTFE)
 
 compatible: "nxp,kinetis-ftfe"

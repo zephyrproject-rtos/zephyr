@@ -3,7 +3,7 @@
 
 title: Skyworks SKY13351 GaAs FET I/C switch
 
-description: >
+description: |
     This binding allows control of the output selectors of the SKY13351
     SPDT switch.
 

@@ -3,7 +3,7 @@
 
 title: SMSC/Microchip LAN9220 Ethernet controller
 
-description: >
+description: |
      This is a representation of the formerly SMSC, now Microchip, LAN9220
      Ethernet controller.
 

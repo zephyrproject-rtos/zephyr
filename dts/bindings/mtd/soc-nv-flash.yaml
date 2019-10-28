@@ -1,6 +1,6 @@
 title: Flash base node description
 
-description: >
+description: |
     This binding gives a base FLASH description
 
 compatible: "soc-nv-flash"

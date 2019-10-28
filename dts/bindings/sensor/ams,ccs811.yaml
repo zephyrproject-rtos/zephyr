@@ -3,7 +3,7 @@
 
 title: AMS (Austria Mikro Systeme) Digital Air Quality Sensor CCS811
 
-description: >
+description: |
     This binding gives a base representation of CCS811 digital air quality
     sensor
 

@@ -1,6 +1,6 @@
 title: Altera JTAG UART
 
-description: >
+description: |
     This binding gives a base representation of the Altera Jtag UART
 
 compatible: "altera,jtag-uart"

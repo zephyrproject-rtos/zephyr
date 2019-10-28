@@ -3,7 +3,7 @@
 
 title: ARCV2 Interrupt Controller
 
-description: >
+description: |
     This binding describes the ARCV2 IRQ controller
 
 compatible: "snps,arcv2-intc"

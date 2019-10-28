@@ -1,6 +1,6 @@
 title: Nordic UART
 
-description: >
+description: |
     This binding gives a base representation of the Nordic UART
 
 compatible: "nordic,nrf-uart"

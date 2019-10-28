@@ -3,7 +3,7 @@
 
 title: ARM Serial Configuration Control
 
-description: >
+description: |
     This binding gives a base representation of the ARM SCC
 
 compatible: "arm,scc"

@@ -3,7 +3,7 @@
 
 title: Nordic EGU
 
-description: >
+description: |
     Binding for the Nordic EGU (Event Generator Unit)
 
 compatible: "nordic,nrf-egu"

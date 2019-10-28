@@ -3,7 +3,7 @@
 
 title: Nordic nRF power control
 
-description: >
+description: |
     This is a representation of the Nordic nRF power control node
 
 compatible: "nordic,nrf-power"

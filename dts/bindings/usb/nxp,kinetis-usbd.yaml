@@ -3,7 +3,7 @@
 
 title: NXP Kinetis USBD
 
-description: >
+description: |
     NPX Kinetis USBFSOTG Controller in device mode
 
 compatible: "nxp,kinetis-usbd"

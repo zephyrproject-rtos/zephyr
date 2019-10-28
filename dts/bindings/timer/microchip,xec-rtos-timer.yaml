@@ -3,7 +3,7 @@
 
 title: Microchip XEC RTOS timer
 
-description: >
+description: |
     This is a representation of the Microchip XEC RTOS timer node
 
 compatible: "microchip,xec-rtos-timer"

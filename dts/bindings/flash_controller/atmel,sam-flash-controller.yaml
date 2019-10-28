@@ -3,7 +3,7 @@
 
 title: Atmel SAM Flash Controller
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM Enhanced Embedded Flash Controller
 
 compatible: "atmel,sam-flash-controller"

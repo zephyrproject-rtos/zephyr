@@ -1,6 +1,6 @@
 title: Nordic UARTE
 
-description: >
+description: |
     This binding gives a base representation of the Nordic UARTE
 
 compatible: "nordic,nrf-uarte"

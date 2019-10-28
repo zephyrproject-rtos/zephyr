@@ -3,7 +3,7 @@
 
 title: Nordic nRF timer
 
-description: >
+description: |
     This is a representation of the Nordic nRF timer node
 
 compatible: "nordic,nrf-timer"

@@ -3,7 +3,7 @@
 
 title: WNC-M14A2A LTE-M Modem
 
-description: >
+description: |
     This is a representation of the WNC-M14A2A LTE-M modem.
 
 compatible: "wnc,m14a2a"

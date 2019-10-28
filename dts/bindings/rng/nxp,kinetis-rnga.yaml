@@ -3,7 +3,7 @@
 
 title: Kinetis RNGA (Random Number Generator Accelerator)
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis RNGA
 
 compatible: "nxp,kinetis-rnga"

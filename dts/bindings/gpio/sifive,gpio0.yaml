@@ -3,7 +3,7 @@
 
 title: SiFive GPIO
 
-description: >
+description: |
     This is a representation of the SiFive GPIO nodes
 
 compatible: "sifive,gpio0"

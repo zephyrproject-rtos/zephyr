@@ -3,7 +3,7 @@
 
 title: ARM Cortex-M4F CPU
 
-description: >
+description: |
     This binding gives a base representation for ARM Cortex-M4F CPU.
 
 compatible: "arm,cortex-m4f"

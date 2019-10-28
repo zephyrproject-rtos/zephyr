@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 GPIO
 
-description: >
+description: |
     This is a representation of the TI CC2650 GPIO node
 
 compatible: "ti,cc2650-gpio"
