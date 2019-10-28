@@ -492,6 +492,12 @@ config LOG_BACKEND_NET_MAX_BUF_SIZE
 	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
 	  should be selected so that typical messages will fit the buffer.
 
+config LOG_BACKEND_NET_SYST_ENABLE
+	bool "Enable networking syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using networking to output syst format logs.
+
 endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_SHOW_COLOR
