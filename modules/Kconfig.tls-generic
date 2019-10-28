@@ -292,7 +292,7 @@ config MBEDTLS_HAVE_ASM
 	default y if !ARM
 	help
 	  Enable use of assembly code in mbedTLS. This improves the performances
-	  of asymetric cryptography, however this might have an impact on the
+	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
 config MBEDTLS_ENTROPY_ENABLED

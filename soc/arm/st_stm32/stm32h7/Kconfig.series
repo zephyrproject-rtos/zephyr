@@ -39,6 +39,6 @@ config STM32H7_BOOT_CM7_CM4GATED
 	  Cortex-M7 and Cortex-M4 running from the flash (each from a bank)
 	  Cortex-M7 boots , performs the System configuration then enable the
 	  Cortex-M4 boot using RCC.
-	  This mode requires option byte setting update (BCM4 uncheked)
+	  This mode requires option byte setting update (BCM4 unchecked)
 
 endchoice

@@ -23,7 +23,7 @@ config ESPI_PERIPHERAL_UART
 	def_bool y
 
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
-	int "SoC port exposed as logcial eSPI UART"
+	int "SoC port exposed as logical eSPI UART"
 	default 2
 	depends on ESPI_PERIPHERAL_UART
 	help
