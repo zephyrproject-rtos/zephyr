@@ -21,11 +21,13 @@
 #include "hal/cntr.h"
 #include "hal/ticker.h"
 #include "hal/swi.h"
+#include "fsl_cau3_ble.h"	/* must be after irq.h */
 
 
 static radio_isr_cb_t isr_cb;
 static void *isr_cb_param;
 
+#define RADIO_AESCCM_HDR_MASK 0xE3 /* AES-CCM: NESN, SN, and MD bits masked to 0 */
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
 
 /* us values */
@@ -77,6 +79,12 @@ static u8_t MALIGN(4) _pkt_scratch[
 
 static s8_t rssi;
 
+static struct {
+	u64_t nonce[2];
+	struct pdu_data *rx_pkt_ccm_output;
+	struct pdu_data *rx_pkt_ccm_input;
+	int auth_mic_valid;
+} cauv3_ctx_ccm;
 
 static void tmp_cb(void *param)
 {
@@ -102,7 +110,6 @@ static void get_isr_latency(void)
 	}
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
 }
-
 
 static void pkt_rx(void)
 {
@@ -149,6 +156,9 @@ static void pkt_rx(void)
 	/* Wait for Rx to finish */
 	while (*sts & GENFSK_XCVR_STS_RX_IN_PROGRESS_MASK) {
 	}
+
+	if (cauv3_ctx_ccm.rx_pkt_ccm_output)
+		*(u16_t *)cauv3_ctx_ccm.rx_pkt_ccm_output = pb[0];
 
 	/* Copy the PDU */
 	for (idx = 0; idx < len / 2; idx++) {
@@ -318,6 +328,7 @@ static void hpmcal_disable(void)
 
 void radio_setup(void)
 {
+	CAU3_Init(CAU3);
 	XCVR_Init(GFSK_BT_0p5_h_0p5, DR_1MBPS);
 	XCVR_SetXtalTrim(41);
 
@@ -955,28 +966,221 @@ u32_t radio_tmr_sample_get(void)
 	return 0;
 }
 
+void *radio_ccm_rx_pkt_set_ut(struct ccm *ccm, u8_t phy, void *pkt)
+{
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05:0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99:
+	 * */
+	u8_t key_local[16] __attribute__((aligned)) =
+		{0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		 0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66};
+	void * result;
+
+	/* ccm.key[16] is stored in MSO to LSO format, as retrieved from e function */
+	memcpy(ccm->key, (u8_t *)key_local, sizeof(key_local));
+
+	/* Input std sample data, vol 6, part C, ch 1 */
+	_pkt_scratch[0] = 0x0f;
+	_pkt_scratch[1] = 0x05;
+	_pkt_scratch[2] = 0x9f; /* cleartext = 0x06*/
+	_pkt_scratch[3] = 0xcd;
+	_pkt_scratch[4] = 0xa7;
+	_pkt_scratch[5] = 0xf4;
+	_pkt_scratch[6] = 0x48;
+
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO to MSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+
+	result = radio_ccm_rx_pkt_set(ccm, phy, pkt);
+	radio_ccm_is_done();
+
+	if (cauv3_ctx_ccm.auth_mic_valid == 1 && ((u8_t *)pkt)[2] == 0x06)
+		printk("Passed decrypt\n");
+	else
+		printk("Failed decrypt\n");
+
+	return result;
+}
+
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __attribute__((aligned));
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll};
+	ARG_UNUSED(phy);
+
+	/* ccm.key[16] is stored in MSO to LSO format, as retrieved from e function */
+	memcpy((u8_t *)key_local, ccm->key, sizeof(key_local));
+	cauv3_ctx_ccm.auth_mic_valid = 0;
+	cauv3_ctx_ccm.rx_pkt_ccm_input = (struct pdu_data *)_pkt_scratch;
+	cauv3_ctx_ccm.rx_pkt_ccm_output = (struct pdu_data *)pkt;
+	cauv3_ctx_ccm.nonce[0] = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit shall be set to 1 for Data Physical Channel PDUs sent by
+	 * the master and set to 0 for Data Physical Channel PDUs sent by the slave.
+	 * */
+	*((u8_t *)cauv3_ctx_ccm.nonce + 4) |= ccm->direction << 7;
+	memcpy((u8_t *)cauv3_ctx_ccm.nonce + 5, ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM memory and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		printk("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	return _pkt_scratch;
+}
+
+void *radio_ccm_tx_pkt_set_ut(struct ccm *ccm, void *pkt)
+{
+	/* Clear 17 00 37 36 35 34 33 32 31 30 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51 */
+	u8_t data_in[29] =
+		{0x06, 0x1b, 0x17, 0x00, 0x37, 0x36, 0x35, 0x34,
+		 0x33, 0x32, 0x31, 0x30, 0x41, 0x42, 0x43, 0x44,
+		 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
+		 0x4d, 0x4e, 0x4f, 0x50, 0x51};
+	/* LL_DATA2 06 1f f3 88 81 e7 bd 94 c9 c3 69 b9 a6 68 46 dd 47 86 aa 8c 39 ce 54 0d 0d ae 3a dc df 89 b9 60 88 */
+	u8_t data_ref_out[33] =
+		{0x06, 0x1f, 0xf3, 0x88, 0x81, 0xe7, 0xbd, 0x94,
+		 0xc9, 0xc3, 0x69, 0xb9, 0xa6, 0x68, 0x46, 0xdd,
+		 0x47, 0x86, 0xaa, 0x8c, 0x39, 0xce, 0x54, 0x0d,
+		 0x0d, 0xae, 0x3a, 0xdc, 0xdf,
+		 0x89, 0xb9, 0x60, 0x88};
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05:0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99:
+	 * */
+	u8_t key_local[16] __attribute__((aligned)) =
+		{0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		 0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66};
+	void * result;
+
+	/* ccm.key[16] is stored in MSO to LSO format, as retrieved from e function */
+	memcpy(ccm->key, (u8_t *)key_local, sizeof(key_local));
+	memcpy(pkt, data_in, sizeof(data_in));
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO to MSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+	/* 4. Data packet2 (packet 1, S --> M) */
+	ccm->counter = 1;
+	ccm->direction = 0;
+
+	result = radio_ccm_tx_pkt_set(ccm, pkt);
+
+	if (memcmp(result, data_ref_out, sizeof(data_ref_out)))
+		printk("Failed encrypt\n");
+	else
+		printk("Passed encrypt\n");
+
+	return result;
 }
 
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __attribute__((aligned));
+	u8_t aad;
+	u8_t *auth_mic;
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll};
+
+	/* Test for Empty PDU and bypass encryption */
+	if (((struct pdu_data *)pkt)->len == 0)
+		return pkt;
+
+	/* ccm.key[16] is stored in MSO to LSO format, as retrieved from e function */
+	memcpy((u8_t *)key_local, ccm->key, sizeof(key_local));
+	cauv3_ctx_ccm.nonce[0] = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit shall be set to 1 for Data Physical Channel PDUs sent by
+	 * the master and set to 0 for Data Physical Channel PDUs sent by the slave.
+	 * */
+	*((u8_t *)cauv3_ctx_ccm.nonce + 4) |= ccm->direction << 7;
+	memcpy((u8_t *)cauv3_ctx_ccm.nonce + 5, ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM memory and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		printk("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	auth_mic = _pkt_scratch + 2 + ((struct pdu_data *)pkt)->len;
+	aad = *(u8_t *)pkt & RADIO_AESCCM_HDR_MASK;
+
+	status = CAU3_AES_CCM_EncryptTag(CAU3, &handle,
+						 (u8_t *)pkt + 2, ((struct pdu_data *)pkt)->len,
+						 _pkt_scratch + 2,
+						 (const u8_t *)cauv3_ctx_ccm.nonce, 13,
+						 &aad, 1, auth_mic, 4);
+	if (status != kStatus_Success) {
+		printk("CAUv3 AES CCM decrypt failed %d", status);
+		return 0;
+	}
+	_pkt_scratch[0] = *(u8_t *)pkt;
+	_pkt_scratch[1] = ((struct pdu_data *)pkt)->len + 4;
+
+	return _pkt_scratch;
 }
 
 u32_t radio_ccm_is_done(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	status_t status;
+	u8_t *auth_mic;
+	u8_t aad;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll};
+
+	if (cauv3_ctx_ccm.rx_pkt_ccm_input->len > 4) {
+		auth_mic = (u8_t *)cauv3_ctx_ccm.rx_pkt_ccm_input + 2 +
+				cauv3_ctx_ccm.rx_pkt_ccm_input->len - 4;
+		aad = *(u8_t *)cauv3_ctx_ccm.rx_pkt_ccm_input & RADIO_AESCCM_HDR_MASK;
+		status = CAU3_AES_CCM_DecryptTag(CAU3, &handle,
+							(u8_t *)cauv3_ctx_ccm.rx_pkt_ccm_input + 2,
+							(u8_t *)cauv3_ctx_ccm.rx_pkt_ccm_output + 2,
+							cauv3_ctx_ccm.rx_pkt_ccm_input->len - 4,
+							(const u8_t *)cauv3_ctx_ccm.nonce, 13,
+							&aad, 1, auth_mic, 4);
+		if (status != kStatus_Success) {
+			printk("CAUv3 AES CCM decrypt failed %d", status);
+			return 0;
+		}
+		cauv3_ctx_ccm.auth_mic_valid = handle.micPassed;
+		cauv3_ctx_ccm.rx_pkt_ccm_output->len -= 4;
+
+	} else if (cauv3_ctx_ccm.rx_pkt_ccm_input->len == 0) {
+		/* Just copy input into output */
+		*cauv3_ctx_ccm.rx_pkt_ccm_output = *cauv3_ctx_ccm.rx_pkt_ccm_input;
+		cauv3_ctx_ccm.auth_mic_valid = 1;
+	} else {
+		while(1); // only 0, not 1,2,3,4
+	}
+
+	return 1;
 }
 
 u32_t radio_ccm_mic_is_valid(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	return cauv3_ctx_ccm.auth_mic_valid;
 }
 
 void radio_ar_configure(u32_t nirk, void *irk)
