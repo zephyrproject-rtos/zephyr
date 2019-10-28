@@ -282,6 +282,13 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_UART_SYST_ENABLE
+	bool "Enable UART syst backend"
+	depends on LOG_BACKEND_UART
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using UART to output syst format logs.
+
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
