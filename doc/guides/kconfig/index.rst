@@ -817,7 +817,7 @@ Devicetree Related Functions
 
 See the Python docstrings in ``scripts/kconfig/kconfigfunctions.py`` for more
 details on the functions.  The ``*_int`` version of each function returns the
-value as a decimal integer, while the ``*_hex`` version returns a hexidecimal
+value as a decimal integer, while the ``*_hex`` version returns a hexadecimal
 value starting with ``0x``.
 
 .. code-block:: none
