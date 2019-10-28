@@ -10,7 +10,7 @@ The PINE64 SmartWatch, dubbed "PineTime", is a product of a community effort
 for an open source smartwatch in collaboration with wearable RTOS and Linux
 app developers/communities.
 
-.. figure:: PineTime_Devkit-1.jpg
+.. figure:: PineTime_DevKit0.jpg
    :width: 600px
    :align: center
    :alt: Pine64 PineTime
