@@ -56,7 +56,7 @@ struct video_format {
  *
  * Used to describe a video endpoint format capability.
  *
- * @param pixelformat is a list of suported pixel formats (0 terminated).
+ * @param pixelformat is a list of supported pixel formats (0 terminated).
  * @param width_min is the minimum supported frame width.
  * @param width_max is the maximum supported frame width.
  * @param height_min is the minimum supported frame width.

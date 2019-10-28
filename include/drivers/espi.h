@@ -90,7 +90,7 @@ enum espi_io_mode {
  * @brief eSPI channel.
  *
  * Identifies each eSPI logical channel supported by eSPI controller
- * Each channel allows idependent traffic, but the assignment of channel
+ * Each channel allows independent traffic, but the assignment of channel
  * type to channel number is fixed.
  *
  * Note that generic commands are not associated with any channel, so traffic

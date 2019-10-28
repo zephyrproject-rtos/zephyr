@@ -636,7 +636,7 @@ void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
 /* Internal function used by log_from_user(). */
 __syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
 
-/** @brief Log binary data (displayed as hexdump) from user mode conext.
+/** @brief Log binary data (displayed as hexdump) from user mode context.
  *
  * @note This function is intended to be used internally
  *	 by the logging subsystem.

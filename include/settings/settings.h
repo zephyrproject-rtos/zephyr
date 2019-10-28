@@ -172,7 +172,7 @@ struct settings_handler_static {
  * @param _commit commit routine (can be NULL)
  * @param _export export routine (can be NULL)
  *
- * This createa a variable _hname prepended by settings_handler_.
+ * This creates a variable _hname prepended by settings_handler_.
  *
  */
 
