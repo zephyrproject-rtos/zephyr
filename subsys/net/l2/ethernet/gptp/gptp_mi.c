@@ -739,6 +739,13 @@ static void gptp_update_local_port_clock(void)
 		key = irq_lock();
 		ptp_clock_get(clk, &tm);
 
+		if (second_diff < 0 && tm.second < -second_diff) {
+			NET_DBG("Do not set local clock because %lu < %ld",
+				(unsigned long int)tm.second,
+				(long int)-second_diff);
+			goto skip_clock_set;
+		}
+
 		tm.second += second_diff;
 
 		if (nanosecond_diff < 0 &&
@@ -756,7 +763,18 @@ static void gptp_update_local_port_clock(void)
 			tm.nanosecond -= NSEC_PER_SEC;
 		}
 
+		/* This prints too much data normally but can be enabled to see
+		 * what time we are setting to the local clock.
+		 */
+		if (0) {
+			NET_INFO("Set local clock %lu.%lu",
+				 (unsigned long int)tm.second,
+				 (unsigned long int)tm.nanosecond);
+		}
+
 		ptp_clock_set(clk, &tm);
+
+	skip_clock_set:
 		irq_unlock(key);
 	} else {
 		if (nanosecond_diff < -200) {
