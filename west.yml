@@ -100,6 +100,9 @@ manifest:
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
+    - name: mipi-sys-t
+      path: modules/debug/mipi-sys-t
+      revision: baf51863f19f009b92e762115ba5572a5b996b92
 
   self:
     path: zephyr
