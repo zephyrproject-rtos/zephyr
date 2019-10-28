@@ -1,0 +1,7 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: false
