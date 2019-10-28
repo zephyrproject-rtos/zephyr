@@ -565,7 +565,8 @@ class Node:
 
     description:
       The description string from the binding for the node, or None if the node
-      has no binding. Trailing whitespace (including newlines) is removed.
+      has no binding. Leading and trailing whitespace (including newlines) is
+      removed.
 
     path:
       The devicetree path of the node
@@ -664,7 +665,7 @@ class Node:
     def description(self):
         "See the class docstring."
         if self._binding and "description" in self._binding:
-            return self._binding["description"].rstrip()
+            return self._binding["description"].strip()
         return None
 
     @property
@@ -884,7 +885,7 @@ class Node:
         prop.name = name
         prop.description = options.get("description")
         if prop.description:
-            prop.description = prop.description.rstrip()
+            prop.description = prop.description.strip()
         prop.val = val
         prop.type = prop_type
         prop.enum_index = None if enum is None else enum.index(val)
@@ -1224,7 +1225,8 @@ class Property:
 
     description:
       The description string from the property as given in the binding, or None
-      if missing. Trailing whitespace (including newlines) is removed.
+      if missing. Leading and trailing whitespace (including newlines) is
+      removed.
 
     type:
       A string with the type of the property, as given in the binding.
