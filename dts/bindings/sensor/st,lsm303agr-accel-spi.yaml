@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics MEMS sensors LSM303AGR SPI
+
+description: >
+    This binding gives a base representation of LSM303AGR 3-axis accelerometer
+    accessed through SPI bus
+
+compatible: "st,lsm303agr-accel"
+
+include: ["spi-device.yaml", "st,lis2dh-common.yaml"]
