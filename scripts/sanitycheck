@@ -2151,9 +2151,6 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
             future.add_done_callback(lambda x: self.semaphore.release())
             return future
 
-    def shutdown(self, wait=True):
-        super().shutdown(wait)
-
 
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
