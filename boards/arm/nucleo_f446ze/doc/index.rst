@@ -10,7 +10,7 @@ The Nucleo F446ZE board features an ARM Cortex-M4 based STM32F446ZE MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F446ZE board:
 
-- STM32 microcontroller in QFP144 package
+- STM32 microcontroller in QFP144 package 
 - Two types of extension resources:
 
   - Arduino Uno V3 connectivity
