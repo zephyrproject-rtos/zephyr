@@ -1361,7 +1361,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate null timeout delay.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * not to wait if the requested operation cannot be performed immediately.
  *
  * @return Timeout delay value.
@@ -1371,7 +1371,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from milliseconds.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a ms milliseconds to perform the requested operation.
  *
  * @param ms Duration in milliseconds.
@@ -1383,7 +1383,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from seconds.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a s seconds to perform the requested operation.
  *
  * @param s Duration in seconds.
@@ -1394,8 +1394,8 @@ const char *k_thread_state_str(k_tid_t thread_id);
 
 /**
  * @brief Generate timeout delay from minutes.
- *
- * This macro generates a timeout delay that that instructs a kernel API
+
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a m minutes to perform the requested operation.
  *
  * @param m Duration in minutes.
@@ -1407,7 +1407,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from hours.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a h hours to perform the requested operation.
  *
  * @param h Duration in hours.
@@ -1419,7 +1419,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate infinite timeout delay.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait as long as necessary to perform the requested operation.
  *
  * @return Timeout delay value.
