@@ -426,6 +426,110 @@ the message), and severity level. Once all backends are iterated, the message
 is considered processed by the logger, but the message may still be in use by a
 backend.
 
+Multi-domain support
+====================
+
+More complex systems may consist of multiple domains where domain is an
+independent binary. An example of a domain is a core in the multicore SoC or one
+of the binaries on ARM TrustZone core (Secure and Nonsecure). Tracing and
+debugging on multidomain system is more complex and requires efficent logging
+system. One option is to log in each domain independently. However, this option
+is not always possible if not all domains have available backends (e.g. UART).
+Additionally, in that approach logs are presented on independent backends which
+is troublesome to use and not scalable. Another option is to use multi-domain
+logger where log messages from each domain end up in one root domain where
+they are processed in the same way as in single domain case.
+
+Log messages are passed between domains using a connection between domains which
+is created from backend on one side and link on the other. Log link is an
+interface introduced in multi-domain appraoch. Log link is responsible for
+receiving log message from another domain, create a copy and put that local
+log message (but with remote data) into log message queue. Specific log link
+implementation matches complementary backend implementation to allow log
+messages exchange and logger control like configuring filtering, getting log
+source names, etc.
+
+There are 3 types of domains in the multi-domain system:
+
+- ``End domain`` which has the logger core implementation and cross domain
+  backend. It can also have other backends in parallel.
+- ``Relay domain`` which has one or more links to other domains but does not
+  have backend(s) which outputs logs to the user. It has cross domain backend to
+  another relay or root domain.
+- ``Root domain`` which has one or multiple links and backend which outputs logs
+  to the user.
+
+In that architecture a link can handle multiple domains. Lets consider an
+example of SoC with two ARM Cortex-M33 cores with TrustZone: core A and B. There
+can be four domains in the system since each core can have Secure and Nonsecure
+domain. If cora A nonsecure (``A_NS``) is a root domain then it will have two
+links: to core A secure (``A_NS-A_S``) and to core B nonsecure (``A_NS-B_NS``).
+``B_NS`` domain has 1 link: to core B secure ``B_NS-B_S``) and backend to
+``A_NS``.
+
+Domain ID
+---------
+
+Source of each log message can be identified by pair of fields in the header:
+``source_id`` and ``domain_id``. However, ``domain_id`` is relative. Whenever
+log message is created it has ``domain_id`` set to 0. When message is crossing
+the domain, ``domain_id`` changes as it is increased by the link offset. Link
+offset is assigned during the initialization where the logger core is iterating
+over all registered links and assignes offsets. First link has offset set to 1,
+next offset equals previous link offset plus number of domains in the previous
+link.
+
+Lets consider already described two core SoC example. Core B_NS has one link:
+``B_NS-B_S`` and core A_NS has two links: ``A_NS-A_S`` and ``A_NS-B_NS``. Links
+reside in the dedicated memory section thus ordering depends on binary linking.
+Lets assume that on core A ``A_NS-A_S`` link is the first one. Given that
+following offsets will be asigned:
+- link ``A_NS-A_S``: 1
+- link ``A_NS-B_NS``: 2 (``A_NS-A_S`` offset [1] +  A_S_domains [1])
+- link ``B_NS-B_S``: 1
+
+Lets consider a log message created on ``B_S`` domain. Initially, it will have
+``domain_id`` set to 0. When ``B_NS-B_S`` link receives the message it will
+increase the ``domain_id`` to 1 by adding ``B_NS-B_S`` offset. Then message is
+passed to ``A_NS``. When ``A_NS-B_NS`` links receives the message it will add
+offset (2) to the ``domain_id`` and message will end up with ``domain_id`` set
+to 3 which uniquely identifies message originator.
+
+Cross domain log message
+------------------------
+
+In majority of the cases address space of each domain is unique and one domain
+cannot access directly data in another domain. Because of that, logger allows to
+partially process the message before it is passed to another domain. Partial
+processing includes log message string formatting (prefixed with source name but
+not with domain name, log level and timestamp). Formatted string is placed
+in the log message (maybe consist of mulitple chunks). Such log message can be
+transferred between the domains chunk by chunk as long as all domains has the
+same chunk size. Log core exposes API to get domain_name, source_name and
+compiled log level which can be used during message processing. Since domain
+names are used frequently log core caches them in dynamically allocated buffer
+during links initialization.
+
+Each domain may have different timestamp source in terms of frequency and
+offset. When message crosses domains link translates timstamp. Note that it is
+not yet settled how to handle timestmap wrapping.
+
+Runtime filtering
+-----------------
+
+In single domain case each log source has dedicated variable with runtime
+filtering for each backend in the system. In multi-domain case, originator of
+the log message is not aware of number of backends in the root domain thus in
+order to filter logs in multiple domains, each source requires runtime
+filtering setting in each domain on the way to the root domain. Number of
+sources in other domain is not known during compilation thus runtime filtering
+of remote sources must use dynamically allocated memory (one word per each
+source). When a backend in the root domain changes filtering of the module from
+remote domain, local filter is updated. After the update, aggregate (maximum
+from all local backends) filter is checked and if changed then remote domain is
+informed about this change. With this approach, runtime filtering works the
+same way in multi-domain scenario as in single domain.
+
 .. _logger_strings:
 
 Logging strings
