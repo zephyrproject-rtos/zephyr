@@ -27,6 +27,12 @@ import re
 import sys
 
 import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # This makes e.g. gen_defines.py more than twice as fast.
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
                   TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
@@ -168,10 +174,10 @@ class EDT:
         # Only bindings for 'compatible' strings that appear in the devicetree
         # are loaded.
 
-        # Add legacy '!include foo.yaml' handling. Do
-        # yaml.Loader.add_constructor() instead of yaml.add_constructor() to be
-        # compatible with both version 3.13 and version 5.1 of PyYAML.
-        yaml.Loader.add_constructor("!include", _binding_include)
+        # Add legacy '!include foo.yaml' handling. Do Loader.add_constructor()
+        # instead of yaml.add_constructor() to be compatible with both version
+        # 3.13 and version 5.1 of PyYAML.
+        Loader.add_constructor("!include", _binding_include)
 
         dt_compats = _dt_compats(self._dt)
         # Searches for any 'compatible' string mentioned in the devicetree
@@ -188,9 +194,7 @@ class EDT:
                 contents = f.read()
 
             # As an optimization, skip parsing files that don't contain any of
-            # the .dts 'compatible' strings, which should be reasonably safe.
-            # This optimization shaves 5+ seconds off 'cmake' configuration
-            # time on my system. Using yaml.CParser would probably help too.
+            # the .dts 'compatible' strings, which should be reasonably safe
             if not dt_compats_search(contents):
                 continue
 
@@ -201,7 +205,7 @@ class EDT:
             try:
                 # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
                 # representing the file)
-                binding = yaml.load(contents, Loader=yaml.Loader)
+                binding = yaml.load(contents, Loader=Loader)
             except yaml.YAMLError as e:
                 self._warn("'{}' appears in binding directories but isn't "
                            "valid YAML: {}".format(binding_path, e))
@@ -367,7 +371,7 @@ class EDT:
 
         with open(paths[0], encoding="utf-8") as f:
             return self._merge_included_bindings(
-                yaml.load(f, Loader=yaml.Loader),
+                yaml.load(f, Loader=Loader),
                 paths[0])
 
     def _init_nodes(self):
