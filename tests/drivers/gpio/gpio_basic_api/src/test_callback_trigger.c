@@ -18,16 +18,6 @@
 static struct drv_data data;
 static int cb_cnt;
 
-static int pin_num(u32_t pins)
-{
-	int ret = 0;
-
-	while (pins >>= 1) {
-		ret++;
-	}
-	return ret;
-}
-
 static void callback(struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
@@ -35,7 +25,8 @@ static void callback(struct device *dev,
 						 struct drv_data, gpio_cb);
 
 	/*= checkpoint: pins should be marked with correct pin number bit =*/
-	zassert_true(pin_num(pins) == PIN_IN, NULL);
+	zassert_equal(pins, BIT(PIN_IN),
+		      "unexpected pins %x", pins);
 	++cb_cnt;
 	TC_PRINT("callback triggered: %d\n", cb_cnt);
 	if ((cb_cnt == 1)
