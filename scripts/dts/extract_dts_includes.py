@@ -16,9 +16,16 @@
 
 import os, fnmatch
 import re
-import yaml
 import argparse
 from collections import defaultdict
+
+import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # It's much faster.
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 from devicetree import parse_file
 from extract.globals import *
@@ -336,7 +343,7 @@ def load_bindings(root, binding_dirs):
     compats = []
 
     # Add '!include foo.yaml' handling
-    yaml.Loader.add_constructor('!include', yaml_include)
+    Loader.add_constructor('!include', yaml_include)
 
     # Code below is adapated from edtlib.py
 
@@ -353,7 +360,7 @@ def load_bindings(root, binding_dirs):
         if not dt_compats_search(contents):
             continue
 
-        binding = yaml.load(contents, Loader=yaml.Loader)
+        binding = yaml.load(contents, Loader=Loader)
 
         binding_compats = _binding_compats(binding)
         if not binding_compats:
@@ -361,7 +368,7 @@ def load_bindings(root, binding_dirs):
 
         with open(file, 'r', encoding='utf-8') as yf:
             binding = merge_included_bindings(file,
-                                              yaml.load(yf, Loader=yaml.Loader))
+                                              yaml.load(yf, Loader=Loader))
 
         for compat in binding_compats:
             if compat not in compats:
@@ -456,7 +463,7 @@ def load_binding_file(fname):
                        "!include statement: {}".format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
-        return yaml.load(f, Loader=yaml.Loader)
+        return yaml.load(f, Loader=Loader)
 
 
 def yaml_inc_error(msg):
