@@ -286,10 +286,6 @@ static int port_set_masked(struct device *dev,
 		return -EWOULDBLOCK;
 	}
 
-	if (mask & ~(gpio_port_pins_t)ALL_PINS) {
-		return -EINVAL;
-	}
-
 	return port_write(dev, mask, value);
 }
 
@@ -313,10 +309,6 @@ static int port_toggle_bits(struct device *dev,
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
-	}
-
-	if (pins & ~(gpio_port_pins_t)ALL_PINS) {
-		return -EINVAL;
 	}
 
 	return port_write(dev, pins,
