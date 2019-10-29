@@ -1,5 +1,5 @@
 Pillow
-PyYAML>=3.13
+PyYAML>=5.1
 breathe>=4.9.1
 colorama
 docutils>=0.14
