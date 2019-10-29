@@ -1522,6 +1522,9 @@ class TestCase(object):
         with open(inf_name) as inf:
             with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
                                               mmap.PROT_READ, 0)) as main_c:
+                # contextlib makes pylint think main_c isn't subscriptable
+                # pylint: disable=unsubscriptable-object
+
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
