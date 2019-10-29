@@ -73,7 +73,7 @@ This is the current list of built-in styles:
     - default       classic Kconfiglib theme with a yellow accent
     - monochrome    colorless theme (uses only bold and standout) attributes,
                     this style is used if the terminal doesn't support colors
-    - aquatic       blue tinted style loosely resembling the lxdialog theme
+    - aquatic       blue-tinted style loosely resembling the lxdialog theme
 
 It is possible to customize the current style by changing colors of UI
 elements on the screen. This is the list of elements that can be stylized:
@@ -174,21 +174,40 @@ Other features
 Limitations
 ===========
 
-Doesn't work out of the box on Windows, but can be made to work with 'pip
-install windows-curses'. See the
-https://github.com/zephyrproject-rtos/windows-curses repository.
+Doesn't work out of the box on Windows, but can be made to work with
 
-'pip install kconfiglib' on Windows automatically installs windows-curses
-to make the menuconfig usable.
+    pip install windows-curses
+
+See the https://github.com/zephyrproject-rtos/windows-curses repository.
 """
 from __future__ import print_function
 
-import curses
+import sys
+
+try:
+    import curses
+except ImportError as e:
+    if sys.platform != "win32":
+        raise
+    sys.exit("""\
+menuconfig failed to import the standard Python 'curses' library. Try
+installing a package like windows-curses
+(https://github.com/zephyrproject-rtos/windows-curses) by running this command
+in cmd.exe:
+
+    pip install windows-curses
+
+Starting with Kconfiglib 13.0.0, windows-curses is no longer automatically
+installed when installing Kconfiglib via pip on Windows (because it breaks
+installation on MSYS2).
+
+Exception:
+{}: {}""".format(type(e).__name__, e))
+
 import errno
 import locale
 import os
 import re
-import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
@@ -628,7 +647,7 @@ def _style_attr(fg_color, bg_color, attribs, color_attribs={}):
 
 
 def _main():
-    menuconfig(standard_kconfig())
+    menuconfig(standard_kconfig(__doc__))
 
 
 def menuconfig(kconf):
@@ -2194,9 +2213,7 @@ def _sorted_sc_nodes(cached_nodes=[]):
                          key=lambda choice: choice.name or "")
 
         cached_nodes += sorted(
-            [node
-             for choice in choices
-                 for node in choice.nodes],
+            [node for choice in choices for node in choice.nodes],
             key=lambda node: node.prompt[0] if node.prompt else "")
 
     return cached_nodes
