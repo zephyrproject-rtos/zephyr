@@ -4061,21 +4061,17 @@ static int reject_ext_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ  || PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
-					    struct node_rx_pdu *rx,
-					    struct pdu_data *pdu_rx)
+static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
+					   struct node_rx_pdu *rx,
+					   struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
 	struct node_rx_cu *cu;
 	struct lll_conn *lll;
 
-	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-	if (rej_ext_ind->reject_opcode != PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ) {
-		goto reject_ind_conn_upd_recv_exit;
-	}
-
 	/* Unsupported remote feature */
 	lll = &conn->lll;
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 	if (!lll->role && (rej_ext_ind->error_code ==
 			   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE)) {
 		LL_ASSERT(conn->llcp_req == conn->llcp_ack);
@@ -4094,7 +4090,7 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 		conn->llcp_type = LLCP_CONN_UPD;
 		conn->llcp_ack -= 2U;
 
-		goto reject_ind_conn_upd_recv_exit;
+		return -EINVAL;
 	}
 	/* FIXME: handle unsupported LL parameters error */
 	else if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
@@ -4122,7 +4118,7 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 
 	/* skip event generation if not cmd initiated */
 	if (!conn->llcp_conn_param.cmd) {
-		goto reject_ind_conn_upd_recv_exit;
+		return -EINVAL;
 	}
 
 	/* generate conn update complete event with error code */
@@ -4136,154 +4132,159 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 	cu->timeout = conn->supervision_reload *
 		      lll->interval * 125U / 1000;
 
-	return;
-
-reject_ind_conn_upd_recv_exit:
-	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-static inline void reject_ind_dle_recv(struct ll_conn *conn,
+static inline int reject_ind_dle_recv(struct ll_conn *conn,
+				      struct pdu_data *pdu_rx)
+{
+	struct pdu_data_llctrl_length_req *lr;
+
+	/* Procedure complete */
+	conn->llcp_length.ack = conn->llcp_length.req;
+	conn->procedure_expire = 0U;
+
+	/* prepare length rsp structure */
+	pdu_rx->len = offsetof(struct pdu_data_llctrl, length_rsp) +
+		      sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+
+	lr = (void *)&pdu_rx->llctrl.length_req;
+	lr->max_rx_octets = sys_cpu_to_le16(conn->lll.max_rx_octets);
+	lr->max_tx_octets = sys_cpu_to_le16(conn->lll.max_tx_octets);
+#if !defined(CONFIG_BT_CTLR_PHY)
+	lr->max_rx_time =
+		sys_cpu_to_le16(PKT_US(conn->lll.max_rx_octets, 0));
+	lr->max_tx_time =
+		sys_cpu_to_le16(PKT_US(conn->lll.max_tx_octets, 0));
+#else /* CONFIG_BT_CTLR_PHY */
+	lr->max_rx_time = sys_cpu_to_le16(conn->lll.max_rx_time);
+	lr->max_tx_time = sys_cpu_to_le16(conn->lll.max_tx_time);
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+static inline int reject_ind_phy_upd_recv(struct ll_conn *conn,
+					  struct node_rx_pdu *rx,
+					  struct pdu_data *pdu_rx)
+{
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+	struct node_rx_pu *p;
+
+	/* Same Procedure or Different Procedure Collision */
+
+	/* If not same procedure, stop procedure timeout, else
+	 * continue timer until phy upd ind is received.
+	 */
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
+	if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
+		/* Procedure complete */
+		conn->llcp_phy.ack = conn->llcp_phy.req;
+
+		/* Reset packet timing restrictions */
+		conn->lll.phy_tx_time = conn->lll.phy_tx;
+		conn->llcp_phy.pause_tx = 0U;
+
+		/* Stop procedure timeout */
+		conn->procedure_expire = 0U;
+	}
+
+	/* skip event generation if not cmd initiated */
+	if (!conn->llcp_phy.cmd) {
+		return -EINVAL;
+	}
+
+	/* generate phy update complete event with error code */
+	rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+
+	p = (void *)pdu_rx;
+	p->status = rej_ext_ind->error_code;
+	p->tx = conn->lll.phy_tx;
+	p->rx = conn->lll.phy_rx;
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+static inline int reject_ind_enc_recv(struct ll_conn *conn,
+				      struct pdu_data *pdu_rx)
+{
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
+
+	/* resume data packet rx and tx */
+	conn->llcp_enc.pause_rx = 0U;
+	conn->llcp_enc.pause_tx = 0U;
+
+	/* Procedure complete */
+	conn->llcp_ack = conn->llcp_req;
+	conn->procedure_expire = 0U;
+
+	/* enqueue as if it were a reject ind */
+	pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+	pdu_rx->llctrl.reject_ind.error_code = rej_ext_ind->error_code;
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+static inline void reject_ext_ind_recv(struct ll_conn *conn,
 				       struct node_rx_pdu *rx,
 				       struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+	int err = -EINVAL;
 
 	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
-		struct pdu_data_llctrl_length_req *lr;
 
-		/* Procedure complete */
-		conn->llcp_length.ack = conn->llcp_length.req;
-		conn->procedure_expire = 0U;
-
-		/* prepare length rsp structure */
-		pdu_rx->len = offsetof(struct pdu_data_llctrl, length_rsp) +
-			      sizeof(struct pdu_data_llctrl_length_rsp);
-		pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
-
-		lr = (void *)&pdu_rx->llctrl.length_req;
-		lr->max_rx_octets = sys_cpu_to_le16(conn->lll.max_rx_octets);
-		lr->max_tx_octets = sys_cpu_to_le16(conn->lll.max_tx_octets);
-#if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time =
-			sys_cpu_to_le16(PKT_US(conn->lll.max_rx_octets, 0));
-		lr->max_tx_time =
-			sys_cpu_to_le16(PKT_US(conn->lll.max_tx_octets, 0));
-#else /* CONFIG_BT_CTLR_PHY */
-		lr->max_rx_time = sys_cpu_to_le16(conn->lll.max_rx_time);
-		lr->max_tx_time = sys_cpu_to_le16(conn->lll.max_tx_time);
-#endif /* CONFIG_BT_CTLR_PHY */
-
-		return;
-	}
-
-	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
-}
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	switch (rej_ext_ind->reject_opcode) {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		if ((conn->llcp_ack != conn->llcp_req) &&
+		    (conn->llcp_type == LLCP_ENCRYPTION)) {
+			err = reject_ind_enc_recv(conn, pdu_rx);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-static inline void reject_ind_phy_upd_recv(struct ll_conn *conn,
-					   struct node_rx_pdu *rx,
-					   struct pdu_data *pdu_rx)
-{
-	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
-
-	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) {
-		struct node_rx_pu *p;
-
-		/* Same Procedure or Different Procedure Collision */
-
-		/* If not same procedure, stop procedure timeout, else
-		 * continue timer until phy upd ind is received.
-		 */
-		if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
-			/* Procedure complete */
-			conn->llcp_phy.ack = conn->llcp_phy.req;
-			conn->llcp_phy.pause_tx = 0U;
-
-			/* Reset packet timing restrictions */
-			conn->lll.phy_tx_time = conn->lll.phy_tx;
-
-			/* Stop procedure timeout */
-			conn->procedure_expire = 0U;
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		if (conn->llcp_phy.ack != conn->llcp_phy.req) {
+			err = reject_ind_phy_upd_recv(conn, rx, pdu_rx);
 		}
-
-		/* skip event generation if not cmd initiated */
-		if (!conn->llcp_phy.cmd) {
-			goto reject_ind_phy_upd_recv_exit;
-		}
-
-		/* generate phy update complete event with error code */
-		rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
-
-		p = (void *)pdu_rx;
-		p->status = rej_ext_ind->error_code;
-		p->tx = conn->lll.phy_tx;
-		p->rx = conn->lll.phy_rx;
-
-		return;
-	}
-
-reject_ind_phy_upd_recv_exit:
-	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
-}
-#endif /* CONFIG_BT_CTLR_PHY */
-
-static void reject_ext_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
-				struct pdu_data *pdu_rx)
-{
-	if (0) {
-#if defined(CONFIG_BT_CTLR_PHY)
-	} else if (conn->llcp_phy.ack != conn->llcp_phy.req) {
-		reject_ind_phy_upd_recv(conn, rx, pdu_rx);
+		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	} else if (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) {
-		reject_ind_conn_upd_recv(conn, rx, pdu_rx);
+	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
+		if (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) {
+			err = reject_ind_conn_upd_recv(conn, rx, pdu_rx);
+		}
+		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	} else if (conn->llcp_length.ack != conn->llcp_length.req) {
-		reject_ind_dle_recv(conn, rx, pdu_rx);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	} else {
-		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
-
-		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-
-		switch (rej_ext_ind->reject_opcode) {
-		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-			/* resume data packet rx and tx */
-			conn->llcp_enc.pause_rx = 0U;
-			conn->llcp_enc.pause_tx = 0U;
-
-			/* Procedure complete */
-			conn->llcp_ack = conn->llcp_req;
-			conn->procedure_expire = 0U;
-
-			/* enqueue as if it were a reject ind */
-			pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
-			pdu_rx->llctrl.reject_ind.error_code =
-				rej_ext_ind->error_code;
-			break;
-
-		default:
-			/* Ignore */
-
-			/* Mark for buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
-			break;
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
+		if (conn->llcp_length.ack != conn->llcp_length.req) {
+			err = reject_ind_dle_recv(conn, pdu_rx);
 		}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	default:
+		/* Ignore */
+		break;
+	}
+
+	if (err) {
+		/* Mark for buffer for release */
+		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 	}
 }
 
