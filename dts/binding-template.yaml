@@ -29,19 +29,35 @@ compatible: "manufacturer,device"
 #
 # If more than one binding for a compatible is found, an error is raised.
 
-# Many bindings have common fields. These are stored in files given in
-# 'include', which are merged into the binding (with a recursive dictionary
-# merge).
+# Bindings can include other files, which can be used to share common
+# definitions between bindings.
 #
-# If a key appears both in the binding and in a file it includes, then the
-# value in the binding takes precedence. This can be used to change a
-# 'required: false' from an inherited file to a 'required: true' (see the
-# 'properties' description below).
+# Included files are merged into bindings with a simple recursive dictionary
+# merge. It is up to the binding author to make sure that the final merged
+# binding is well-formed, though it is checked by the code as well.
 #
-# An error is raised if this binding has 'required: false' for some property
-# for which the included file(s) have 'required: true'. Bindings can only
-# "strengthen" requirements from files they include. This is meant to keep the
+# It is an error if a key appears with a different value in a binding and in a
+# file it includes, with one exception: A binding can have 'required: true' for
+# some property for which the included file has 'required: false' (see the
+# description of 'properties' below). The 'required: true' from the binding
+# takes precedence, allowing bindings to strengthen requirements from included
+# files.
+#
+# Note that weakening requirements by having 'required: false' where the
+# included file has 'required: true' is an error. This is meant to keep the
 # organization clean.
+#
+# The file base.yaml contains definitions for many common properties. When
+# writing a new binding, it is a good idea to check if base.yaml already
+# defines some of the needed properties, and including it in that case. Note
+# that you can make a property defined in base.yaml obligatory like this
+# (taking 'reg' as an example):
+#
+#     reg:
+#         required: true
+#
+# This relies on the dictionary merge to fill in the other keys for 'reg', like
+# 'type'.
 #
 # When including multiple files, any overlapping 'required' keys on properties
 # in the included files are ORed together. This makes sure that a
