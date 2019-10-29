@@ -632,13 +632,13 @@ static void rx_timeout(struct k_timer *timer)
 	}
 
 	/* Check if there is data that was not sent to user yet */
-	if (data->async->rx_total_byte_cnt
-	    != data->async->rx_total_user_byte_cnt) {
+
+	s32_t len = data->async->rx_total_byte_cnt
+		    - data->async->rx_total_user_byte_cnt;
+	if (len > 0) {
 		if (data->async->rx_timeout_left
 		    < data->async->rx_timeout_slab) {
 			/* rx_timeout ms elapsed since last receiving */
-			u32_t len = data->async->rx_total_byte_cnt
-				    - data->async->rx_total_user_byte_cnt;
 			struct uart_event evt = {
 				.type = UART_RX_RDY,
 				.data.rx.buf = data->async->rx_buf,
