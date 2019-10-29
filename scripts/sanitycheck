@@ -2009,20 +2009,6 @@ class ProjectBuilder(FilterBuilder):
             with report_lock:
                 self.report_out()
 
-    def log_info_file(self, instance):
-
-        build_dir = instance.build_dir
-        h_log = "{}/handler.log".format(build_dir)
-        b_log = "{}/build.log".format(build_dir)
-        v_log = "{}/valgrind.log".format(build_dir)
-
-        if os.path.exists(v_log) and "Valgrind" in instance.reason:
-            log_info("{}".format(v_log))
-        elif os.path.exists(h_log):
-            log_info("{}".format(h_log))
-        else:
-            log_info("{}".format(b_log))
-
     def report_out(self):
         total_tests_width = len(str(self.suite.total_tests))
         self.suite.total_done += 1
@@ -2041,7 +2027,7 @@ class ProjectBuilder(FilterBuilder):
                         COLOR_NORMAL,
                         instance.reason), False)
             if not VERBOSE:
-                self.log_info_file(instance)
+                log_info_file(instance)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
             status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
@@ -2067,7 +2053,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["failed", "timeout"]:
-                self.log_info_file(instance)
+                log_info_file(instance)
         else:
             sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
@@ -3394,6 +3380,21 @@ def log_info(filename):
         info("{:-^100}".format(filename))
     else:
         info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+
+
+def log_info_file(instance):
+    build_dir = instance.build_dir
+    h_log = "{}/handler.log".format(build_dir)
+    b_log = "{}/build.log".format(build_dir)
+    v_log = "{}/valgrind.log".format(build_dir)
+
+    if os.path.exists(v_log) and "Valgrind" in instance.reason:
+        log_info("{}".format(v_log))
+    elif os.path.exists(h_log):
+        log_info("{}".format(h_log))
+    else:
+        log_info("{}".format(b_log))
+
 
 def size_report(sc):
     info(sc.filename)
