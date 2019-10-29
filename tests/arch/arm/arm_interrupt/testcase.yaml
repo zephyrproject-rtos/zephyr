@@ -10,3 +10,4 @@ tests:
     extra_configs:
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_IDLE_STACK_SIZE=512
+      - CONFIG_MAIN_STACK_SIZE=1024
