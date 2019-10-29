@@ -16,6 +16,7 @@ ram: 32768
 flash: 8192
 supported:
   - display
+  - gpio
   - hwinfo
   - i2c
   - netif:eth
