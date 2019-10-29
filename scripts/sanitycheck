@@ -189,17 +189,25 @@ import queue
 import time
 import datetime
 import csv
-import yaml
 import glob
 import serial
 import concurrent
 import xml.etree.ElementTree as ET
+import logging
 from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
 
-import logging
+import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # It's much faster.
+    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
+    from yaml import CDumper as Dumper
+except ImportError:
+    from yaml import Loader, SafeLoader, Dumper
 
 
 hw_map_local = threading.Lock()
@@ -2370,7 +2378,7 @@ class TestSuite:
     def load_hardware_map(self, map_file):
         with open(map_file, 'r') as stream:
             try:
-                self.connected_hardware = yaml.safe_load(stream)
+                self.connected_hardware = yaml.load(stream, loader=SafeLoader)
             except yaml.YAMLError as exc:
                 print(exc)
         for i in self.connected_hardware:
@@ -3604,7 +3612,7 @@ def main():
             # use existing map
 
             with open(options.generate_hardware_map, 'r') as yaml_file:
-                hwm = yaml.load(yaml_file, Loader=yaml.FullLoader)
+                hwm = yaml.load(yaml_file, Loader=Loader)
                 # disconnect everything
                 for h in hwm:
                     h['connected'] = False
@@ -3623,13 +3631,15 @@ def main():
                 #import pprint
                 #pprint.pprint(hwm)
             with open(options.generate_hardware_map, 'w') as yaml_file:
-                yaml.dump(hwm, yaml_file, default_flow_style=False)
+                yaml.dump(hwm, yaml_file, Dumper=Dumper,
+                          default_flow_style=False)
 
 
         else:
             # create new file
             with open(options.generate_hardware_map, 'w') as yaml_file:
-                yaml.dump(filtered, yaml_file, default_flow_style=False)
+                yaml.dump(filtered, yaml_file, Dumper=Dumper,
+                          default_flow_style=False)
 
         return
 
