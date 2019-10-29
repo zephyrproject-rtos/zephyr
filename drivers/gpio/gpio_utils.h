@@ -59,7 +59,7 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
 		if (cb->pin_mask & pins) {
 			__ASSERT(cb->handler, "No callback handler!");
-			cb->handler(port, cb, pins);
+			cb->handler(port, cb, cb->pin_mask & pins);
 		}
 	}
 }
