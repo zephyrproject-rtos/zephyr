@@ -27,10 +27,12 @@ GTEXT(z_arm_int_exit);
 GTEXT(z_arch_irq_enable)
 GTEXT(z_arch_irq_disable)
 GTEXT(z_arch_irq_is_enabled)
+GTEXT(z_arch_irq_line_get)
 #else
 extern void z_arch_irq_enable(unsigned int irq);
 extern void z_arch_irq_disable(unsigned int irq);
 extern int z_arch_irq_is_enabled(unsigned int irq);
+extern unsigned int z_arch_irq_line_get(void);
 
 extern void z_arm_int_exit(void);
 
@@ -123,14 +125,15 @@ static inline void z_arch_isr_direct_footer(int maybe_swap)
 
 #define Z_ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
-	__attribute__ ((interrupt ("IRQ"))) void name(void) \
+	__attribute__ ((interrupt ("IRQ"))) void name(void *unused) \
 	{ \
+		ARG_UNUSED(unused);\
 		int check_reschedule; \
 		ISR_DIRECT_HEADER(); \
-		check_reschedule = name##_body(); \
+		check_reschedule = name##_body(NULL); \
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
-	static inline int name##_body(void)
+	static inline int name##_body(void *unused)
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
@@ -141,6 +144,11 @@ extern void z_irq_spurious(void *unused);
  * and parameter from the _sw_isr_table and executes it.
  */
 extern void _isr_wrapper(void);
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+extern void z_sw_isr_direct(void);
+#define Z_ARCH_IRQ_DIRECT_DYNAMIC(irq_p, priority_p, flags_p) \
+	Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, z_sw_isr_direct, flags_p)
+#endif
 #endif
 
 #endif /* _ASMLANGUAGE */

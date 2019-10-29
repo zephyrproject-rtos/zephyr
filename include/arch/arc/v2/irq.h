@@ -35,11 +35,13 @@ extern void z_arc_firq_stack_set(void);
 extern void z_arch_irq_enable(unsigned int irq);
 extern void z_arch_irq_disable(unsigned int irq);
 extern int z_arch_irq_is_enabled(unsigned int irq);
+extern int z_arch_irq_line_get(void);
 
 extern void _irq_exit(void);
 extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 			      u32_t flags);
 extern void _isr_wrapper(void);
+extern void z_sw_isr_direct(void);
 extern void z_irq_spurious(void *unused);
 
 /* Z_ISR_DECLARE will populate the .intList section with the interrupt's
@@ -91,6 +93,8 @@ extern void z_irq_spurious(void *unused);
 	irq_p; \
 })
 
+#define Z_ARCH_IRQ_DIRECT_DYNAMIC(irq_p, priority_p, flags_p) \
+	Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, z_sw_isr_direct, flags_p) \
 
 static inline void z_arch_isr_direct_header(void)
 {
@@ -121,14 +125,15 @@ extern void z_arch_isr_direct_header(void);
  * aware interrupt handling
  */
 #define Z_ARCH_ISR_DIRECT_DECLARE(name) \
-	static inline int name##_body(void); \
+	static inline int name##_body(void *unused); \
 	__attribute__ ((interrupt("ilink")))void name(void) \
 	{ \
+		ARG_UNUSED(unused); \
 		ISR_DIRECT_HEADER(); \
-		name##_body(); \
+		name##_body(NULL); \
 		ISR_DIRECT_FOOTER(0); \
 	} \
-	static inline int name##_body(void)
+	static inline int name##_body(void *unused)
 
 
 /**

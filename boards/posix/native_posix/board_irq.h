@@ -51,6 +51,9 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
 	irq_p; \
 })
 
+#define Z_ARCH_IRQ_DIRECT_DYNAMIC(irq_p, priority_p, flags_p) \
+	Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, NULL, flags_p)
+
 /**
  * POSIX Architecture (board) specific ISR_DIRECT_DECLARE(),
  * See include/irq.h for more information.
@@ -64,14 +67,15 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
  * posix_irq_handler() both for direct and normal interrupts together
  */
 #define Z_ARCH_ISR_DIRECT_DECLARE(name) \
-	static inline int name##_body(void); \
+	static inline int name##_body(void *unused); \
 	int name(void) \
 	{ \
+		ARG_UNUSED(unused);\
 		int check_reschedule; \
-		check_reschedule = name##_body(); \
+		check_reschedule = name##_body(NULL); \
 		return check_reschedule; \
 	} \
-	static inline int name##_body(void)
+	static inline int name##_body(void *unused)
 
 #define Z_ARCH_ISR_DIRECT_HEADER()   do { } while (0)
 #define Z_ARCH_ISR_DIRECT_FOOTER(a)  do { } while (0)

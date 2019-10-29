@@ -25,6 +25,17 @@ void z_isr_install(unsigned int irq, void (*routine)(void *), void *param)
 	_sw_isr_table[table_idx].isr = routine;
 }
 
+void z_sw_isr_direct(void)
+{
+	unsigned int irqn = irq_line_get();
+
+	if (irqn < IRQ_TABLE_SIZE) {
+		struct _isr_table_entry *irq = &_sw_isr_table[irqn];
+
+		irq->isr(irq->arg);
+	}
+}
+
 /* Some architectures don't/can't interpret flags or priority and have
  * no more processing to do than this.  Provide a generic fallback.
  */

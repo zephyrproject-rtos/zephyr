@@ -223,6 +223,8 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
+#define Z_ARCH_IRQ_DIRECT_DYNAMIC(irq_p, priority_p, flags_p) \
+	Z_ARCH_IRQ_CONNECT(irq_p, priority_p, NULL, flags_p)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void z_arch_irq_direct_pm(void);

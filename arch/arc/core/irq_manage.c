@@ -129,6 +129,11 @@ int z_arch_irq_is_enabled(unsigned int irq)
 	return z_arc_v2_irq_unit_int_enabled(irq);
 }
 
+unsigned int z_arch_irq_line_get(void)
+{
+	return Z_INTERRUPT_CAUSE() - 16;
+}
+
 /*
  * @internal
  *

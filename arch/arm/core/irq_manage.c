@@ -52,6 +52,16 @@ int z_arch_irq_is_enabled(unsigned int irq)
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
 
+unsigned int z_arch_irq_line_get(void)
+{
+	unsigned int irqn;
+
+	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(irqn));
+
+	/* Adjust from ARM exception to interrupt number. */
+	return irqn - 16;
+}
+
 /**
  * @internal
  *
@@ -117,6 +127,15 @@ int z_arch_irq_is_enabled(unsigned int irq)
 	struct device *dev = _sw_isr_table[0].arg;
 
 	return irq_is_enabled_next_level(dev);
+}
+
+unsigned int z_arch_irq_line_get(void)
+{
+	/*
+	 * Cortex-R only has one IRQ line so the main handler will be at
+	 * offset 0 of the table.
+	 */
+	return 0U;
 }
 
 /**
