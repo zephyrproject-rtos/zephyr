@@ -60,7 +60,3 @@ if(CONFIG_ALTERA_AVALON_QSPI)
     )
 endif()
 
-if(CONFIG_ALTERA_AVALON_PIO)
-  zephyr_include_directories(drivers/altera_avalon_pio/inc)
-endif()
-
