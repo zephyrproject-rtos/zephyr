@@ -33,7 +33,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 
 .. zephyr-app-commands::
    :zephyr-app: samples/video/mt9m114
-   :board: mimxrt1064
+   :board: mimxrt1064_evk
    :goals: build
    :compact:
 
