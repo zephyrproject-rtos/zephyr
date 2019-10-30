@@ -341,6 +341,12 @@ static int gpio_sifive_pin_interrupt_configure(struct device *dev,
 		irq_disable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
 		break;
 	case GPIO_INT_MODE_LEVEL:
+		/* TODO: The interrupt functionality of this driver is incomplete,
+		 * but for the sake of not slowing down the GPIO API refactor,
+		 * I'm just returning -ENOTSUP until we can track down the issue.
+		 */
+		return -ENOTSUP;
+
 		gpio->rise_ie &= ~BIT(pin);
 		gpio->fall_ie &= ~BIT(pin);
 
@@ -356,6 +362,12 @@ static int gpio_sifive_pin_interrupt_configure(struct device *dev,
 		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
 		break;
 	case GPIO_INT_MODE_EDGE:
+		/* TODO: The interrupt functionality of this driver is incomplete,
+		 * but for the sake of not slowing down the GPIO API refactor,
+		 * I'm just returning -ENOTSUP until we can track down the issue.
+		 */
+		return -ENOTSUP;
+
 		gpio->high_ie &= ~BIT(pin);
 		gpio->low_ie  &= ~BIT(pin);
 
