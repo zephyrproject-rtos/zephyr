@@ -252,15 +252,22 @@ handler (:option:`CONFIG_SETTINGS_CUSTOM`).
         //...
     }
 
+    /* custom backend interface */
     static struct settings_store_itf settings_custom_itf = {
         .csi_load = settings_custom_load,
         .csi_save = settings_custom_save,
     };
 
+    /* custom backend node */
+    static struct settings_store settings_custom_store = {
+        .cs_itf = &settings_custom_itf
+    }
+
     int settings_backend_init(void)
     {
-        settings_dst_register(&settings_custom_itf);
-        settings_src_register(&settings_custom_itf);
+        /* register custom backend */
+        settings_dst_register(&settings_custom_store);
+        settings_src_register(&settings_custom_store);
         return 0;
     }
 
