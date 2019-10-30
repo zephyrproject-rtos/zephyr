@@ -36,13 +36,16 @@ struct ll_conn {
 		} common;
 
 		struct {
-			u8_t fex_valid:1;
+			u8_t  fex_valid:1;
+			u8_t  latency_cancel:1;
+			u8_t  sca:3;
 			u32_t force;
 			u32_t ticks_to_offset;
 		} slave;
 
 		struct {
 			u8_t fex_valid:1;
+			u8_t terminate_ack:1;
 		} master;
 	};
 

@@ -605,7 +605,6 @@ u8_t ll_adv_enable(u8_t enable)
 		conn_lll->latency_prepare = 0;
 		conn_lll->latency_event = 0;
 		conn_lll->slave.latency_enabled = 0;
-		conn_lll->slave.latency_cancel = 0;
 		conn_lll->slave.window_widening_prepare_us = 0;
 		conn_lll->slave.window_widening_event_us = 0;
 		conn_lll->slave.window_size_prepare_us = 0;
@@ -619,6 +618,7 @@ u8_t ll_adv_enable(u8_t enable)
 		conn->procedure_expire = 0;
 
 		conn->common.fex_valid = 0;
+		conn->slave.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;

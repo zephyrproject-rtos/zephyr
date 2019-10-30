@@ -949,7 +949,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	 * Slave received terminate ind or MIC failure
 	 */
 	reason_peer = conn->llcp_terminate.reason_peer;
-	if (reason_peer && (lll->role || lll->master.terminate_ack)) {
+	if (reason_peer && (lll->role || conn->master.terminate_ack)) {
 		conn_cleanup(conn, reason_peer);
 
 		return;
@@ -977,7 +977,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 				lll->latency_event = lll->latency;
 			}
 		} else if (reason_peer) {
-			lll->master.terminate_ack = 1;
+			conn->master.terminate_ack = 1;
 		}
 
 		/* Reset connection failed to establish countdown */
@@ -2125,7 +2125,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 
 			lll->slave.window_widening_periodic_us =
 				(((lll_conn_ppm_local_get() +
-				   lll_conn_ppm_get(lll->slave.sca)) *
+				   lll_conn_ppm_get(conn->slave.sca)) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000U;
 			lll->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
