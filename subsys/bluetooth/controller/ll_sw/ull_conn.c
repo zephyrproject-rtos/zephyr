@@ -48,6 +48,12 @@
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 static int init_reset(void);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_update_latency_cancel_op_cb(u32_t ticker_status,
+					       void *params);
+#endif /* CONFIG_BT_PERIPHERAL */
+
 static void ticker_update_conn_op_cb(u32_t status, void *param);
 static void ticker_stop_conn_op_cb(u32_t status, void *param);
 static void ticker_start_conn_op_cb(u32_t status, void *param);
@@ -230,6 +236,26 @@ int ll_tx_mem_enqueue(u16_t handle, void *tx)
 	lll_tx->node = tx;
 
 	MFIFO_ENQUEUE(conn_tx, idx);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	/* break slave latency */
+	if (conn->lll.role && conn->lll.latency_event &&
+	    !conn->slave.latency_cancel) {
+		u32_t ticker_status;
+
+		conn->slave.latency_cancel = 1U;
+
+		ticker_status =
+			ticker_update(TICKER_INSTANCE_ID_CTLR,
+				      TICKER_USER_ID_THREAD,
+				      (TICKER_ID_CONN_BASE + handle),
+				      0, 0, 0, 0, 1, 0,
+				      ticker_update_latency_cancel_op_cb,
+				      (void *)conn);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
@@ -1560,6 +1586,18 @@ static int init_reset(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_update_latency_cancel_op_cb(u32_t ticker_status,
+					       void *params)
+{
+	struct ll_conn *conn = params;
+
+	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+
+	conn->slave.latency_cancel = 0U;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static void ticker_update_conn_op_cb(u32_t status, void *param)
 {
