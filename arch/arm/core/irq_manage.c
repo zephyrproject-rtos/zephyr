@@ -135,6 +135,9 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	struct device *dev = _sw_isr_table[0].arg;
 
+	if (irq == 0)
+		return;
+
 	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
 }
 
