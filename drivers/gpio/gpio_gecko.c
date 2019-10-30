@@ -345,13 +345,13 @@ static void gpio_gecko_common_isr(void *arg)
 		port_dev = data->ports[i];
 		port_data = port_dev->driver_data;
 		enabled_int = int_status & port_data->pin_callback_enables;
-		int_status &= ~enabled_int;
-
-		gpio_fire_callbacks(&port_data->callbacks, port_dev,
-				     enabled_int);
+		if (enabled_int != 0) {
+			int_status &= ~enabled_int;
+			GPIO->IFC = enabled_int;
+			gpio_fire_callbacks(&port_data->callbacks, port_dev,
+					    enabled_int);
+		}
 	}
-	/* Clear the pending interrupts */
-	GPIO->IFC = 0xFFFF;
 }
 
 
