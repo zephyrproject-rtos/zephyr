@@ -69,6 +69,7 @@
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
 /boards/arm/96b_carbon/                   @idlethread
+/boards/arm/96b_ivy5661/                  @Mani-Sadhasivam
 /boards/arm/96b_meerkat96/                @Mani-Sadhasivam
 /boards/arm/96b_nitrogen/                 @idlethread
 /boards/arm/96b_neonkey/                  @Mani-Sadhasivam
@@ -249,6 +250,7 @@
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
 /drivers/serial/*npcx*                    @MulinChao
+/drivers/serial/*uwp*                     @Mani-Sadhasivam
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -303,6 +305,7 @@
 /dts/arm/silabs/efm32jg12b*               @chrta
 /dts/arm/silabs/efm32pg12b*               @chrta
 /dts/arm/silabs/efr32mg21*                @l-alfred
+/dts/arm/unisoc/                          @Mani-Sadhasivam
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
@@ -324,6 +327,7 @@
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
+/dts/bindings/*/unisoc*                   @Mani-Sadhasivam
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
