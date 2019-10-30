@@ -348,10 +348,11 @@ static void gpio_rv32m1_port_isr(void *arg)
 	int_status = config->port_base->ISFR;
 	enabled_int = int_status & data->pin_callback_enables;
 
+	/* Clear the port interrupts before invoking callbacks */
+	config->port_base->ISFR = enabled_int;
+
 	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
-	/* Clear the port interrupts */
-	config->port_base->ISFR = enabled_int;
 }
 
 static int gpio_rv32m1_init(struct device *dev)
