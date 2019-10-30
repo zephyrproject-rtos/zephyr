@@ -27,6 +27,7 @@ from runners import xtensa
 from runners import intel_s1000
 from runners import blackmagicprobe
 from runners import stm32flash
+from runners import misc
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''
