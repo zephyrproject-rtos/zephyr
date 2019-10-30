@@ -87,10 +87,10 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_interval_us = interval * 1250U;
 
 	/* calculate the window widening */
-	lll->slave.sca = pdu_adv->connect_ind.sca;
+	conn->slave.sca = pdu_adv->connect_ind.sca;
 	lll->slave.window_widening_periodic_us =
 		(((lll_conn_ppm_local_get() +
-		   lll_conn_ppm_get(lll->slave.sca)) *
+		   lll_conn_ppm_get(conn->slave.sca)) *
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
@@ -162,7 +162,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;
 	cc->timeout = timeout;
-	cc->sca = lll->slave.sca;
+	cc->sca = conn->slave.sca;
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;

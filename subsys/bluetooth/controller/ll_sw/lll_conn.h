@@ -61,11 +61,10 @@ struct lll_conn {
 	u16_t interval;
 	u16_t latency;
 
-	/* FIXME: BEGIN: Move to ULL? */
 	u16_t latency_prepare;
 	u16_t latency_event;
-
 	u16_t event_counter;
+
 	u8_t data_chan_map[5];
 	u8_t data_chan_count:6;
 	u8_t data_chan_sel:1;
@@ -80,24 +79,17 @@ struct lll_conn {
 		u16_t data_chan_id;
 	};
 
-	union {
-		struct {
-			u8_t terminate_ack:1;
-		} master;
-
-		struct {
-			u8_t  latency_enabled:1;
-			u8_t  latency_cancel:1;
-			u8_t  sca:3;
-			u32_t window_widening_periodic_us;
-			u32_t window_widening_max_us;
-			u32_t window_widening_prepare_us;
-			u32_t window_widening_event_us;
-			u32_t window_size_prepare_us;
-			u32_t window_size_event_us;
-		} slave;
-	};
-	/* FIXME: END: Move to ULL? */
+#if defined(CONFIG_BT_PERIPHERAL)
+	struct {
+		u8_t  latency_enabled:1;
+		u32_t window_widening_periodic_us;
+		u32_t window_widening_max_us;
+		u32_t window_widening_prepare_us;
+		u32_t window_widening_event_us;
+		u32_t window_size_prepare_us;
+		u32_t window_size_event_us;
+	} slave;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	u16_t max_tx_octets;
