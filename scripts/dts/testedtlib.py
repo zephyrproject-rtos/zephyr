@@ -84,6 +84,13 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "[<Register, addr: 0x30000000200000001, size: 0x1>]")
 
     #
+    # Test 'pinctrl-<index>'
+    #
+
+    verify_streq(edt.get_node("/pinctrl/dev").pinctrls,
+                 "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', no binding>]>]")
+
+    #
     # Test Node.parent and Node.children
     #
 
