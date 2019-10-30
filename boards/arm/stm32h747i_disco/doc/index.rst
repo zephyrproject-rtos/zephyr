@@ -190,7 +190,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h747i_disco
+   :board: stm32h747i_disco_m7
    :goals: debug
 
 
