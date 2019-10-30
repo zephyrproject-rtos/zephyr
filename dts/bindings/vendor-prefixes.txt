@@ -433,6 +433,7 @@ u-blox	u-blox
 ucrobotics	uCRobotics
 ubnt	Ubiquiti Networks
 udoo	Udoo
+unisoc	UNISOC Communications, Inc.
 uniwest	United Western Technologies Corp (UniWest)
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
