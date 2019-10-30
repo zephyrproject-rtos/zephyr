@@ -55,6 +55,7 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
 		"i"(_ARC_V2_FPU_DPFP2L), "i"(_ARC_V2_FPU_DPFP2H)
 		: "memory"
 		);
+	(void)temp;
 #endif
 }
 
@@ -88,6 +89,7 @@ static inline void _store_all_float_registers(struct fp_register_set *regs)
 		"i"(_ARC_V2_FPU_DPFP1L), "i"(_ARC_V2_FPU_DPFP1H),
 		"i"(_ARC_V2_FPU_DPFP2L), "i"(_ARC_V2_FPU_DPFP2H)
 		);
+	(void)temp;
 #endif
 }
 
