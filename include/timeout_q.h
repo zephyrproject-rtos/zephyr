@@ -63,7 +63,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout);
 
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
 #define z_init_thread_timeout(t) do {} while (false)
-#define z_add_thread_timeout(th, to) do {} while (false && (void *)to && (void *)th)
+#define z_add_thread_timeout(th, to) do {} while (false && to && (void *)th)
 #define z_abort_thread_timeout(t) (0)
 #define z_is_inactive_timeout(t) 0
 #define z_get_next_timeout_expiry() (K_FOREVER)
