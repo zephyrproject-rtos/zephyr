@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: intel
+      url-base: https://github.com/intel
 
   #
   # Please add items below based on alphabetical order
@@ -100,9 +102,10 @@ manifest:
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
-    - name: wamr
-      path: modules/lib/wasm-micro-runtime
-      revision: f43c5d76707baf9777a4b6671a47b1d6a485439a
+    - name: wasm-micro-runtime
+      remote: intel
+      path: wasm-micro-runtime
+      revision: b8c81511c8459553cce64d183d9c0e89bbf4e3f9
 
   self:
     path: zephyr
