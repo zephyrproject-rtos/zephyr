@@ -186,6 +186,26 @@
 	};
 
 	//
+	// 'pinctrl-<index>'
+	//
+
+	pinctrl {
+		dev {
+			pinctrl-0 = <>;
+			pinctrl-1 = <&{/pinctrl/pincontroller/state-1}>;
+			pinctrl-2 = <&{/pinctrl/pincontroller/state-1}
+				     &{/pinctrl/pincontroller/state-2}>;
+			pinctrl-names = "zero", "one", "two";
+		};
+		pincontroller {
+			state-1 {
+			};
+			state-2 {
+			};
+		};
+	};
+
+	//
 	// For testing Node.parent and Node.children
 	//
 
