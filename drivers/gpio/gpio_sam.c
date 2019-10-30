@@ -84,22 +84,24 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 
 	/* Note: Input is always enabled. */
 
-	/* Setup Pull-up resistor. */
+	/* Setup selected Pull resistor.
+	 *
+	 * A pull cannot be enabled if the opposite pull is enabled.
+	 * Clear both pulls, then enable the one we need.
+	 */
+	pio->PIO_PUDR = mask;
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
+	pio->PIO_PPDDR = mask;
+#endif
 	if (flags & GPIO_PULL_UP) {
 		/* Enable pull-up. */
 		pio->PIO_PUER = mask;
-	} else {
-		pio->PIO_PUDR = mask;
-	}
-
 #if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
-	/* Setup Pull-down resistor. */
-	if (flags & GPIO_PULL_DOWN) {
+	} else if (flags & GPIO_PULL_DOWN) {
+		/* Enable pull-down. */
 		pio->PIO_PPDER = mask;
-	} else {
-		pio->PIO_PPDDR = mask;
-	}
 #endif
+	}
 
 #if defined(CONFIG_SOC_SERIES_SAM3X)
 	/* Setup debounce. */
