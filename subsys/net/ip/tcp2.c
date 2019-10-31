@@ -192,7 +192,8 @@ static const char *tcp_th(struct net_pkt *pkt)
 	*s = '\0';
 
 	if (th->th_off < 5) {
-		s += snprintf(s, buf_size, "Bogus th_off: %hu", th->th_off);
+		s += snprintf(s, buf_size, "Bogus th_off: %hu",
+				(u16_t)th->th_off);
 		buf_size -= s - buf;
 		goto end;
 	}
@@ -505,7 +506,7 @@ static bool tcp_options_check(void *buf, ssize_t len)
 		opt = options[0];
 		opt_len = options[1];
 
-		NET_DBG("opt: %hu, opt_len: %hu", opt, opt_len);
+		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
 		if (opt == TCPOPT_PAD) {
 			break;
@@ -900,7 +901,8 @@ static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 	ARG_UNUSED(proto);
 
 	if (vhl != 0x45) {
-		NET_ERR("conn: %p, Unsupported IP version: 0x%hx", conn, vhl);
+		NET_ERR("conn: %p, Unsupported IP version: 0x%hx", conn,
+			(u16_t)vhl);
 		goto out;
 	}
 
