@@ -43,6 +43,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 static int init_reset(void);
 static void ticker_update_conn_op_cb(u32_t status, void *param);
 static void ticker_stop_conn_op_cb(u32_t status, void *param);
@@ -100,9 +104,15 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx);
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn);
+
+#if !defined(BT_CTLR_USER_TX_BUFFER_OVERHEAD)
+#define BT_CTLR_USER_TX_BUFFER_OVERHEAD 0
+#endif /* BT_CTLR_USER_TX_BUFFER_OVERHEAD */
+
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
-				CONFIG_BT_CTLR_TX_BUFFER_SIZE)
+				(CONFIG_BT_CTLR_TX_BUFFER_SIZE + \
+				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
 #define CONN_TX_CTRL_BUFFERS 2
 #define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
