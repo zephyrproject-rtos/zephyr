@@ -14,4 +14,18 @@ module = EEPROM
 module-str = eeprom
 source "subsys/logging/Kconfig.template.log_config"
 
+config EEPROM_SHELL
+	bool "Enable EEPROM shell"
+	depends on SHELL
+	help
+	  Enable the EEPROM shell with EEPROM related commands.
+
+config EEPROM_SHELL_BUFFER_SIZE
+	int "EEPROM shell buffer size"
+	default 256
+	depends on EEPROM_SHELL
+	help
+	  Size of the buffer used for EEPROM read/write commands in
+	  the EEPROM shell.
+
 endif # EEPROM
