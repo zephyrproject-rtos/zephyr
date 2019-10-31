@@ -90,6 +90,7 @@
 		label = "GPIO_P0";
 		gpio-controller;
 		#gpio-cells = <2>;
+		ngpios = <16>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {
