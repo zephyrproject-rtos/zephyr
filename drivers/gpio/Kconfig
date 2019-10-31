@@ -21,7 +21,7 @@ config GPIO_SHELL
 
 source "drivers/gpio/Kconfig.dw"
 
-source "drivers/gpio/Kconfig.pcal9535a"
+source "drivers/gpio/Kconfig.pca95xx"
 
 source "drivers/gpio/Kconfig.mcux"
 
