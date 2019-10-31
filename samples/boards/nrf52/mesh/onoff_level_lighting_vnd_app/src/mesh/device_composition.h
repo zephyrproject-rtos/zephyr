@@ -77,9 +77,9 @@ struct delta_uv {
 };
 
 struct light_ctl_state {
-	struct lightness *const light;
-	struct temperature *const temp;
-	struct delta_uv *const duv;
+	struct lightness *light;
+	struct temperature *temp;
+	struct delta_uv *duv;
 
 	u8_t onpowerup, tt;
 
@@ -91,7 +91,7 @@ struct light_ctl_state {
 	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
-	struct transition *const transition;
+	struct transition *transition;
 };
 
 extern struct light_ctl_state *const ctl;
