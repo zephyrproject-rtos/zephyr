@@ -5,7 +5,7 @@
  */
 #include <ztest.h>
 #include <zephyr/types.h>
-#include <time_units.h>
+#include <sys/time_units.h>
 
 #define NUM_RANDOM 100
 
