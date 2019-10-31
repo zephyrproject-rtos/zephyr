@@ -13,7 +13,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-r4";
+			compatible = "arm,cortex-r5f";
 			reg = <0>;
 		};
 	};
@@ -21,10 +21,10 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		gic: interrupt-controller@f9010000 {
+		gic: interrupt-controller@f9000000 {
 			compatible = "arm,gic";
-			reg = <0xf9010000 0x1000>,
-					<0xf9020000 0x100>;
+			reg = <0xf9000000 0x1000>,
+					<0xf9001000 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			label = "GIC";
