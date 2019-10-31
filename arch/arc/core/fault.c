@@ -23,10 +23,10 @@
 LOG_MODULE_DECLARE(os);
 
 #ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_arch_user_string_nlen);
+Z_EXC_DECLARE(z_arc_user_string_nlen);
 
 static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_arch_user_string_nlen)
+	Z_EXC_HANDLE(z_arc_user_string_nlen)
 };
 #endif
 

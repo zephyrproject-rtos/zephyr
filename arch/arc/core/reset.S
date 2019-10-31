@@ -146,7 +146,7 @@ _slave_core_wait:
 #if defined(CONFIG_ARC_FIRQ_STACK)
 	jl z_arc_firq_stack_set
 #endif
-	j z_arch_slave_start
+	j z_arc_slave_start
 
 _master_core_startup:
 #endif
