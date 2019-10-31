@@ -53,6 +53,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
 &trng {
 	status = "okay";
 };
