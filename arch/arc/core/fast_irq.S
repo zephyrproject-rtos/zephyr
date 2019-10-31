@@ -158,7 +158,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 #ifdef CONFIG_PREEMPT_ENABLED
 
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
 	brne r0, 0, _firq_reschedule
 #else

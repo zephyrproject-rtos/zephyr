@@ -269,7 +269,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 #ifdef CONFIG_PREEMPT_ENABLED
 
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
 	cmp_s r0, 0
 	beq _rirq_no_reschedule

@@ -38,7 +38,7 @@ static void sched_ipi_handler(void *unused)
  *  use register r0 and register r1 as return value, r0 has
  *  new thread, r1 has old thread. If r0 == 0, it means no thread switch.
  */
-u64_t z_arch_smp_switch_in_isr(void)
+u64_t z_arc_smp_switch_in_isr(void)
 {
 	u64_t ret = 0;
 	u32_t new_thread;
@@ -99,7 +99,7 @@ void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 }
 
 /* the C entry of slave cores */
-void z_arch_slave_start(int cpu_num)
+void z_arc_slave_start(int cpu_num)
 {
 	void (*fn)(int, void*);
 
