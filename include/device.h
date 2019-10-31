@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
 #include <kernel.h>
+#include <generated_dts_board.h>
 
 /**
  * @brief Device Driver APIs
@@ -125,6 +126,12 @@ extern "C" {
 		      device_pm_control_nop, data, cfg_info, level,	 \
 		      prio, api)
 #endif
+
+#define DEVICE_AND_API_INIT_DT(dev_name, inst, init_fn, data, cfg_info, \
+			    level, prio, api)				 \
+	DEVICE_AND_API_INIT(DT_ZDID_INST_##inst##_##dev_name,\
+			    DT_INST_##inst##_##dev_name##_LABEL,\
+			    init_fn, data, cfg_info, level, prio, api)
 
 /**
  * @def DEVICE_DEFINE
