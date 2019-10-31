@@ -29,6 +29,7 @@ import edtlib
 def main():
     global conf_file
     global header_file
+    global node2zdid
 
     args = parse_args()
 
@@ -52,6 +53,28 @@ Directories with bindings:
 ), blank_before=False)
 
     active_compats = set()
+
+    zdid = 1
+    node2zdid = {}
+
+    # Assign a ZDID (Zephyr Device ID) to all nodes before we start
+    # we do this as references to nodes like bus parents or via phandles
+    # may happen before we've iterated the referenced node, so we assign
+    # the ZDID for everyone first.
+
+    print("\n#ifndef _ASMLANGUAGE", file=header_file)
+    for node in edt.nodes:
+        if node.enabled and node.matching_compat:
+            # Skip 'fixed-partitions' devices since they are handled by
+            # write_flash() and would generate extra spurious #defines
+            if node.matching_compat == "fixed-partitions":
+                continue
+
+            node2zdid[node] = zdid
+            zdid += 1
+            print("extern struct device __device_{}; /* {}*/"
+                  .format(node2zdid[node], node.path), file=header_file)
+    print("#endif", file=header_file)
 
     for node in edt.nodes:
         if node.enabled and node.matching_compat:
@@ -81,6 +104,8 @@ Description:
             write_spi_dev(node)
             write_bus(node)
             write_existence_flags(node)
+
+            out_dev_zdid(node, "", node2zdid[node])
 
             active_compats.update(node.compats)
 
@@ -228,6 +253,9 @@ def write_bus(node):
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
     out_dev_s(node, "BUS_NAME", str2ident(node.parent.label))
+
+    # #define DT_ZDID_<DEV-IDENT>_BUS
+    out_dev_zdid(node, "BUS", node2zdid[node.parent])
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
@@ -553,6 +581,8 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         initializer_vals.append(quote_str(entry.controller.label))
         out_dev_s(node, ctrl_ident, entry.controller.label)
 
+        out_dev_zdid(node, ctrl_ident, node2zdid[entry.controller])
+
     for cell, val in entry.data.items():
         cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
@@ -660,6 +690,30 @@ def out_dev_s(node, ident, s):
     # Returns the generated macro name for 'ident'.
 
     return out_dev(node, ident, quote_str(s))
+
+
+def out_dev_zdid(node, ident, val):
+    # Writes an
+    #
+    #   ZDID_<device prefix>_<ident> = <val>
+    #
+    # assignment, along with a set of
+    #
+    #   ZDID_<device alias>_<ident>
+    #
+    # aliases, for each device alias.
+    #
+    # Returns the identifier used for the macro that provides the value
+    # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
+
+    dev_prefix = dev_ident(node)
+
+    if ident:
+       ident = "_" + ident
+
+    aliases = ["ZDID_" + alias + ident for alias in dev_aliases(node)]
+
+    return out("ZDID_" + dev_prefix + ident, val, aliases)
 
 
 def out_s(ident, val):
