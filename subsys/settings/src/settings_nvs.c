@@ -38,7 +38,7 @@ static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
 	rd_fn_arg = (struct settings_nvs_read_fn_arg *)back_end;
 
 	rc = nvs_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
-	if (rc > len) {
+	if (rc > (ssize_t)len) {
 		/* nvs_read signals that not all bytes were read
 		 * align read len to what was requested
 		 */
