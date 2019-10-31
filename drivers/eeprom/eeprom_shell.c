@@ -11,6 +11,7 @@
 
 #include <shell/shell.h>
 #include <drivers/eeprom.h>
+#include <stdlib.h>
 
 struct args_index {
 	u8_t device;
