@@ -73,17 +73,17 @@ extern void z_enable_sys_clock(void);
 #endif
 
 #define __ticks_to_ms(t) __DEPRECATED_MACRO \
-	k_ticks_to_ms_floor64(t)
+	k_ticks_to_ms_floor64((u64_t)(t))
 #define z_ms_to_ticks(t) \
-	k_ms_to_ticks_ceil32(t)
+	((s32_t)k_ms_to_ticks_ceil32((u32_t)(t)))
 #define __ticks_to_us(t) __DEPRECATED_MACRO \
-	k_ticks_to_us_floor64(t)
+	((s32_t)k_ticks_to_us_floor32((u32_t)(t)))
 #define z_us_to_ticks(t) __DEPRECATED_MACRO \
-	k_us_to_ticks_ceil64(t)
+	((s32_t)k_us_to_ticks_ceil32((u32_t)(t)))
 #define sys_clock_hw_cycles_per_tick() __DEPRECATED_MACRO \
-	k_ticks_to_cyc_floor32(1)
+	((int)k_ticks_to_cyc_floor32(1U))
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(t) __DEPRECATED_MACRO \
-	k_cyc_to_ns_floor64(t)
+	k_cyc_to_ns_floor64((u64_t)(X))
 #define SYS_CLOCK_HW_CYCLES_TO_NS(t) __DEPRECATED_MACRO \
 	((u32_t)k_cyc_to_ns_floor64(t))
 
