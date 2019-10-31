@@ -22,7 +22,7 @@
 #include <toolchain.h>
 #include <zephyr/types.h>
 
-#include <time_units.h>
+#include <sys/time_units.h>
 
 #ifdef __cplusplus
 extern "C" {
