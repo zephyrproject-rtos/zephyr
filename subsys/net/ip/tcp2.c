@@ -228,7 +228,7 @@ static const char *tcp_th(struct net_pkt *pkt)
 	}
 
 	if (data_len) {
-		s += snprintf(s, buf_size, ", len=%zd", data_len);
+		s += snprintf(s, buf_size, ", len=%ld", (long int)data_len);
 		buf_size -= s - buf;
 	}
 
