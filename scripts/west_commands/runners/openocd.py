@@ -25,11 +25,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
         super(OpenOcdBinaryRunner, self).__init__(cfg)
 
-        if config is not None:
-            self.openocd_config = config
-        else:
-            self.openocd_config = path.join(cfg.board_dir, 'support',
-                                            'openocd.cfg')
+        if not config:
+            default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
+            if path.exists(default):
+                config = default
+        self.openocd_config = config
 
         search_args = []
         if cfg.openocd_search is not None:
@@ -93,6 +93,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
+
+        self.cfg_cmd = []
+        if self.openocd_config is not None:
+            self.cfg_cmd = ['-f', self.openocd_config]
+
         if command == 'flash':
             self.do_flash(**kwargs)
         elif command == 'debug':
@@ -124,7 +129,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
         self.logger.info('Flashing file: {}'.format(self.hex_name))
         cmd = (self.openocd_cmd +
-               ['-f', self.openocd_config] +
+               self.cfg_cmd +
                pre_init_cmd +
                ['-c', 'init',
                 '-c', 'targets'] +
@@ -145,8 +150,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot debug; no .elf specified')
 
         server_cmd = (self.openocd_cmd +
-                      ['-f', self.openocd_config,
-                       '-c', 'tcl_port {}'.format(self.tcl_port),
+                      self.cfg_cmd +
+                      ['-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
                        '-c', 'gdb_port {}'.format(self.gdb_port),
                        '-c', 'init',
@@ -160,8 +165,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_debugserver(self, **kwargs):
         cmd = (self.openocd_cmd +
-               ['-f', self.openocd_config,
-                '-c', 'init',
+               self.cfg_cmd +
+               ['-c', 'init',
                 '-c', 'targets',
                 '-c', 'reset halt'])
         self.check_call(cmd)
