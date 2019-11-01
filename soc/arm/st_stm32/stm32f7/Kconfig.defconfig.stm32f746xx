@@ -1,9 +1,7 @@
-# Kconfig - ST STM32F746XG MCU configuration options
-#
+# ST STM32F746XG MCU configuration options
+
 # Copyright (c) 2018 Yurii Hamann
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F746XX
 

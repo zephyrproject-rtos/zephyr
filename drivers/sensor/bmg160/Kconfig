@@ -1,10 +1,7 @@
-# Kconfig - Bosch BMG160 gyroscope configuration options
+# Bosch BMG160 gyroscope configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMG160
 	bool "Bosch BMG160 gyroscope support"

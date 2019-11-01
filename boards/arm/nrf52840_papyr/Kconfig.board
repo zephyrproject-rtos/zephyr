@@ -1,7 +1,6 @@
-# Kconfig - Electronut Labs Papyr board configuration
-#
+# Electronut Labs Papyr board configuration
+
 # Copyright (c) 2018 Electronut Labs
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config  BOARD_NRF52840_PAPYR

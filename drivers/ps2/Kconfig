@@ -1,10 +1,7 @@
-# Kconfig - PS/2 configuration options
+# PS/2 configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PS2
 	bool "PS/2 Drivers"

@@ -1,10 +1,7 @@
 # ARC options
 
-#
 # Copyright (c) 2014, 2019 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "ARC Options"
 	depends on ARC

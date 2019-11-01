@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config PINMUX_HSDK
 	bool "ARC HSDK I/O pin mux driver"

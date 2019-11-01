@@ -1,10 +1,7 @@
-# Kconfig.esp32 - ESP32 PWM LED configuration options
-#
-#
+# ESP32 PWM LED configuration options
+
 # Copyright (c) 2017 Vitor Massaru Iha <vitor@massaru.org>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM_LED_ESP32
 	bool "ESP32 PWM LED driver"

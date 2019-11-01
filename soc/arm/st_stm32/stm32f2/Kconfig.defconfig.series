@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F2 MCU line
-#
+# ST Microelectronics STM32F2 MCU line
+
 # Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32F2 series
 

@@ -1,9 +1,7 @@
-# Kconfig - 96Boards Neonkey Board Configuration
-#
+# 96Boards Neonkey Board Configuration
+
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_96B_NEONKEY
 

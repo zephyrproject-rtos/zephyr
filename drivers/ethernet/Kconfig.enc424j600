@@ -1,10 +1,7 @@
-# Kconfig - ENC424J600 Ethernet driver configuration options
+# ENC424J600 Ethernet driver configuration options
 
-#
 # Copyright (c) 2019 PHYTEC Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_ENC424J600
 	bool "ENC424J600C Ethernet Controller"

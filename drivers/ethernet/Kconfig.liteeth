@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Antmicro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_LITEETH
 	bool "LiteEth Ethernet core driver"

@@ -1,7 +1,6 @@
-# Kconfig - Virtual UART RTT driver option
-#
+# Virtual UART RTT driver option
+
 # Copyright (c) 2019 omSquare s.r.o.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig UART_RTT

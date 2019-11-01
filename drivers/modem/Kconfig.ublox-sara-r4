@@ -1,10 +1,7 @@
-# Kconfig - u-blox SARA R4 driver options
+# u-blox SARA R4 driver options
 
-#
 # Copyright (c) 2019 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config MODEM_UBLOX_SARA
 	bool "Enable u-blox SARA modem driver"

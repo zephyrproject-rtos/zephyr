@@ -1,10 +1,7 @@
-# Kconfig.dw - DesignWare PWM configuration options
-#
-#
+# DesignWare PWM configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM_DW
 	bool "DesignWare PWM"

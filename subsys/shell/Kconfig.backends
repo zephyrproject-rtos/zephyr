@@ -1,10 +1,7 @@
-# Kconfig.backends - Shell badckends configuration options
+# Shell badckends configuration options
 
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SHELL_BACKENDS
 	bool "Enable shell backends"

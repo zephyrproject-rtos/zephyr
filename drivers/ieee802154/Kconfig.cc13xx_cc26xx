@@ -1,9 +1,7 @@
-# Kconfig.cc13xx_cc26xx - TI CC13xx / CC26xx IEEE 802.15.4 configuration options
-#
+# TI CC13xx / CC26xx IEEE 802.15.4 configuration options
+
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig IEEE802154_CC13XX_CC26XX
 	bool "TI CC13xx / CC26xx IEEE 802.15.4 driver support"

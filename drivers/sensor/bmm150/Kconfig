@@ -1,10 +1,7 @@
-# Kconfig - BMM150 Geomagnetic sensor configuration options
+# BMM150 Geomagnetic sensor configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMM150
 	bool "BMM150 I2C Geomagnetic Chip"

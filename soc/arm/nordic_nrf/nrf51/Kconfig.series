@@ -1,10 +1,8 @@
-# Kconfig.series - Nordic Semiconductor nRF51 MCU line
-#
+# Nordic Semiconductor nRF51 MCU line
+
 # Copyright (c) 2016 Linaro Limited
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config  SOC_SERIES_NRF51X
 	bool "Nordic Semiconductor nRF51 series MCU"

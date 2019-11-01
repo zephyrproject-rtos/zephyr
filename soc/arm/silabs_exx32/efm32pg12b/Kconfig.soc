@@ -1,9 +1,7 @@
-# Kconfig - EFM32PG12B (Pearl Gecko) MCU line
-#
+# EFM32PG12B (Pearl Gecko) MCU line
+
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFM32PG12B
 

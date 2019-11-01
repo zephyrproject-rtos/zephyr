@@ -1,7 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# TI SimpleLink CC3220SF SoC
 
-# Kconfig.defconfig.cc3220sf - TI SimpleLink CC3220SF SoC
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_CC3220SF
 

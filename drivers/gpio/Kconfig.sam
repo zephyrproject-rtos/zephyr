@@ -1,5 +1,5 @@
-# Kconfig.sam - Atmel SAM GPIO configuration options
-#
+# Atmel SAM GPIO configuration options
+
 # Copyright (c) 2018 Justin Watson
 # SPDX-License-Identifier: Apache-2.0
 

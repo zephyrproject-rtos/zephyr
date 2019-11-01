@@ -1,9 +1,7 @@
-# Kconfig.defconfig.series - ST Microelectronics STM32F7 MCU line
-#
+# ST Microelectronics STM32F7 MCU line
+
 # Copyright (c) 2018 Yurii Hamann
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32F7 series
 

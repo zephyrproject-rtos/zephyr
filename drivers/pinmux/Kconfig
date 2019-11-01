@@ -1,10 +1,7 @@
-# Kconfig - Pinmux configuration options
+# Pinmux configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # PinMux options

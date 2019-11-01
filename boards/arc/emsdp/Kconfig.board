@@ -1,9 +1,8 @@
-# Kconfig - DesignWare ARC EM Software Development Platform board configuration
-#
+# DesignWare ARC EM Software Development Platform board configuration
+
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config BOARD_EMSDP
 	bool "EM Software Development Platform"
 	depends on SOC_ARC_EMSDP

@@ -1,7 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# CC32XX GPIO configuration options
 
-# Kconfig.cc32xx- CC32XX GPIO configuration options
-#
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_CC32XX
 	bool "TI CC32XX GPIO driver"

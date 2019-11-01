@@ -1,9 +1,7 @@
-# Kconfig.rv32m1 - RV32M1 GPIO configuration options
-#
+# RV32M1 GPIO configuration options
+
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_RV32M1
 	bool "RV32M1 GPIO driver"

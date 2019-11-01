@@ -1,10 +1,7 @@
-# Kconfig - nRF5 temperature sensor configuration options
+# nRF5 temperature sensor configuration options
 
-#
 # Copyright (c) 2016 ARM Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig TEMP_NRF5
 	bool "nRF5 Temperature Sensor"

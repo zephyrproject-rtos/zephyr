@@ -1,9 +1,7 @@
-# Kconfig - Hexiwear KW40Z board
-#
+# Hexiwear KW40Z board
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_HEXIWEAR_KW40Z
 	bool "Hexiwear KW40Z"

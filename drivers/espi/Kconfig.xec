@@ -1,9 +1,7 @@
-# Kconfig.xec - Microchip XEC ESPI configuration options
-#
+# Microchip XEC ESPI configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config ESPI_XEC
 	bool "XEC Microchip ESPI driver"

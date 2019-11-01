@@ -1,7 +1,6 @@
-# Kconfig - STM32F412G-DISCO board configuration
-#
+# STM32F412G-DISCO board configuration
+
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F412G_DISCO
 

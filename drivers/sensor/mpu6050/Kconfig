@@ -1,10 +1,7 @@
-# Kconfig - MPU6050 Six-Axis Motion Tracking device configuration options
+# MPU6050 Six-Axis Motion Tracking device configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MPU6050
 	bool "MPU6050 Six-Axis Motion Tracking Device"

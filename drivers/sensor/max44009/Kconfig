@@ -1,10 +1,7 @@
-# Kconfig - MAX44009 light sensor configuration options
+# MAX44009 light sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MAX44009
 	bool "MAX44009 Light Sensor"

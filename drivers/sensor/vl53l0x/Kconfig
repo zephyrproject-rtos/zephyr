@@ -1,10 +1,7 @@
-# Kconfig - VL53L0X time of flight sensor configuration options
+# VL53L0X time of flight sensor configuration options
 
-#
 # Copyright (c) 2017 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"

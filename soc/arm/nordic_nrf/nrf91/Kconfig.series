@@ -1,9 +1,7 @@
-# Kconfig.series - Nordic Semiconductor nRF91 MCU line
-#
+# Nordic Semiconductor nRF91 MCU line
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config  SOC_SERIES_NRF91X
 	bool "Nordic Semiconductor nRF91 series MCU"

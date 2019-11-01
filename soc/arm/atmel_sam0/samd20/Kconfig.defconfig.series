@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAMD MCU series configuration options
-#
+# Atmel SAMD MCU series configuration options
+
 # Copyright (c) 2018 Sean Nyekjaer
 # SPDX-License-Identifier: Apache-2.0
 

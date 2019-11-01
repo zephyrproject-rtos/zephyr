@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM0 SERCOM SPI
-#
+# Atmel SAM0 SERCOM SPI
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

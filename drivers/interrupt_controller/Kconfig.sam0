@@ -1,9 +1,7 @@
-# Kconfig - SAM0 EIC configuration
-#
+# SAM0 EIC configuration
+
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_SAM0
 

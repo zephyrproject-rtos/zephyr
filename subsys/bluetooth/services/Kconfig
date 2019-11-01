@@ -1,9 +1,7 @@
-# Kconfig - GATT Services
-#
+# GATT Services
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BT_CONN
 

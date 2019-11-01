@@ -1,9 +1,7 @@
-# Kconfig - FXOS8700 6-axis accelerometer/magnetometer
-#
+# FXOS8700 6-axis accelerometer/magnetometer
+
 # Copyright (c) 2016 Freescale Semiconductor, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"

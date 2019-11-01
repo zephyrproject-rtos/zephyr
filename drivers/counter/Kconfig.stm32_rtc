@@ -1,9 +1,7 @@
-# Kconfig - STM32 Cube LL RTC
-#
+# STM32 Cube LL RTC
+
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig COUNTER_RTC_STM32
 	bool "STM32 Counter RTC driver"

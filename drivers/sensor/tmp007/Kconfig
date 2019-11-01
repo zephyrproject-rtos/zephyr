@@ -1,10 +1,7 @@
-# Kconfig - TMP007 infrared thermopile sensor configuration options
+# TMP007 infrared thermopile sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig TMP007
 	bool "TMP007 Infrared Thermopile Sensor"

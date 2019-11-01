@@ -1,9 +1,7 @@
-# Kconfig - Cypress UART configuration
-#
+# Cypress UART configuration
+
 # Copyright (c) 2018 Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_PSOC6
 	bool "PSoC6 MCU serial driver"

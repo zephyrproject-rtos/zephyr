@@ -1,9 +1,7 @@
-# Kconfig - RV31M1 SDK pinmux
-#
+# RV31M1 SDK pinmux
+
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PINMUX_RV32M1
 	bool "RV32M1 pinmux driver"

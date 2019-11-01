@@ -1,12 +1,10 @@
-# Kconfig - ST Microelectronics STM32L4 MCU line
-#
+# ST Microelectronics STM32L4 MCU line
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
 # Copyright (c) 2019 Centaur Analytics, Inc
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "STM32L4x MCU Selection"

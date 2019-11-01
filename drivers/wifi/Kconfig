@@ -1,10 +1,7 @@
-# Kconfig - WiFi drivers configuration options
+# WiFi drivers configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig WIFI
 	bool "add support for Wi-Fi Drivers"

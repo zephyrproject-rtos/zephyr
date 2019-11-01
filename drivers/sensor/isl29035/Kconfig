@@ -1,10 +1,7 @@
-# Kconfig - ISL29035 light sensor configuration options
+# ISL29035 light sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ISL29035
 	bool "ISL29035 light sensor"

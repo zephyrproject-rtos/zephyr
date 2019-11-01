@@ -1,10 +1,7 @@
-# Kconfig - MCP9808 temperature sensor configuration options
+# MCP9808 temperature sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MCP9808
 	bool "MCP9808 temperature sensor"

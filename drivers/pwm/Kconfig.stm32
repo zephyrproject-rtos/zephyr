@@ -1,10 +1,7 @@
-# Kconfig.stm32 - STM32 PWM configuration options
-#
-#
+# STM32 PWM configuration options
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM_STM32
 	bool "STM32 MCU PWM driver"

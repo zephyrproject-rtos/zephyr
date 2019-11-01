@@ -1,9 +1,7 @@
-# Kconfig - Watchdog configuration options
-#
+# Watchdog configuration options
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config WDT_MCUX_WDOG
 	bool "MCUX WDOG driver"

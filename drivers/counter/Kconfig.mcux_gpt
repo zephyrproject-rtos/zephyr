@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK RTC
-#
+# MCUXpresso SDK RTC
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig COUNTER_MCUX_GPT
 	bool "MCUX GPT driver"

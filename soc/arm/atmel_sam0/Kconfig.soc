@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM0 MCU series selection
-#
+# Atmel SAM0 MCU series selection
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

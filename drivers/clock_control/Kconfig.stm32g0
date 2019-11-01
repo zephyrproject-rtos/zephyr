@@ -1,9 +1,7 @@
-# Kconfig - STM32G0 PLL configuration options
-#
+# STM32G0 PLL configuration options
+
 # Copyright (c) 2019 Linaro
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32G0X
 

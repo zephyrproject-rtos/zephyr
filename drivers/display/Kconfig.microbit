@@ -1,10 +1,7 @@
-# Kconfig - Microbit display driver configuration options
+# Microbit display driver configuration options
 
-#
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"

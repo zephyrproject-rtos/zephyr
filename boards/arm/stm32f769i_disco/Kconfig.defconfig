@@ -1,9 +1,7 @@
-# Kconfig - STM32F769I DISCOVERY board configuration
-#
+# STM32F769I DISCOVERY board configuration
+
 # Copyright (c) 2018 Yong Jin
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F769I_DISCO
 

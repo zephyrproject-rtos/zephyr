@@ -1,9 +1,7 @@
-# Kconfig - FXAS21002 3-axis gyroscope
-#
+# FXAS21002 3-axis gyroscope
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"

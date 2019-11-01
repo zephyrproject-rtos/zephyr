@@ -1,9 +1,7 @@
-# Kconfig - Intel S1000 I2S configuration options
-#
+# Intel S1000 I2S configuration options
+
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2S_CAVS
 	bool "Intel I2S (SSP) Bus Driver"

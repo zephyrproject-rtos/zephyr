@@ -1,6 +1,6 @@
+# TI CC2650 SoC pinmux driver.
+
 # SPDX-License-Identifier: Apache-2.0
-#
-# Kconfig for TI CC2650 SoC pinmux driver.
 
 config PINMUX_CC2650
 	bool "Pinmux driver for CC2650 SoC"

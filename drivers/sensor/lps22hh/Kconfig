@@ -1,9 +1,7 @@
 # ST Microelectronics LPS22HH pressure and temperature sensor
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"

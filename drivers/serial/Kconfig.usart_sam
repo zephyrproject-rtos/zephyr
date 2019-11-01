@@ -1,8 +1,7 @@
-# Kconfig - Atmel SAM USART configuration options
-#
+# Atmel SAM USART configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig USART_SAM
 	bool "Atmel SAM MCU family USART driver"

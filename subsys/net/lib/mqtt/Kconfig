@@ -1,9 +1,7 @@
-# Kconfig - Socket MQTT Library for Zephyr
-#
+# Socket MQTT Library for Zephyr
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config MQTT_LIB
 	bool "Socket MQTT Library Support"

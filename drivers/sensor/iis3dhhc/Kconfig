@@ -1,9 +1,7 @@
 # ST Microelectronics IIS3DHHC accelerometer sensor
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig IIS3DHHC
 	bool "IIS3DHHC accelerometer sensor"

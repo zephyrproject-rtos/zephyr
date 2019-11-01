@@ -1,7 +1,6 @@
-# Kconfig - nrfx WDT support
-#
+# nrfx WDT support
+
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config WDT_NRFX

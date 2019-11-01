@@ -1,9 +1,7 @@
-# Kconfig - ST STM32F437XX MCU configuration options
-#
+# ST STM32F437XX MCU configuration options
+
 # Copyright (c) 2019, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F437XX
 

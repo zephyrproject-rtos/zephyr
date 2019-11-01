@@ -1,9 +1,7 @@
-# Kconfig - LPCXpresso55S69 board
-#
+# LPCXpresso55S69 board
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
 
