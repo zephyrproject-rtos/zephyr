@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "LPC LPC54XXX MCU Selection"
-depends on SOC_SERIES_LPC54XXX
+	prompt "LPC LPC54XXX MCU Selection"
+	depends on SOC_SERIES_LPC54XXX
 
 config SOC_LPC54114_M4
 	bool "SOC_LPC54114_M4"

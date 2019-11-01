@@ -18,4 +18,4 @@ config  SOC_SERIES_NRF91X
 	select HAS_NRFX
 	select HAS_SEGGER_RTT
 	help
-	 Enable support for NRF91 MCU series
+	  Enable support for NRF91 MCU series

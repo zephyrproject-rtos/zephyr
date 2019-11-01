@@ -11,7 +11,7 @@ menuconfig BME280
 	depends on I2C || SPI
 	default	n
 	help
-	 Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
+	  Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
 
 if BME280
 

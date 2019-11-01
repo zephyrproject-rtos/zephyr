@@ -16,4 +16,4 @@ config  SOC_SERIES_NRF52X
 	select HAS_NRFX
 	select HAS_SEGGER_RTT
 	help
-	 Enable support for NRF52 MCU series
+	  Enable support for NRF52 MCU series

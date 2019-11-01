@@ -70,7 +70,8 @@ module-dep = NET_LOG
 module-str = Log level for CANbus L2 layer
 module-help = Enables CANbus L2 to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
-endif #NET_L2_CANBUS
+
+endif # NET_L2_CANBUS
 
 config NET_L2_CANBUS_RAW
 	bool "Enable CANBUS RAW l2 layer"

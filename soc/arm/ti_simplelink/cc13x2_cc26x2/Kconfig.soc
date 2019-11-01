@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "TI SimpleLink MCU Selection"
-depends on SOC_SERIES_CC13X2_CC26X2
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_CC13X2_CC26X2
 
 config SOC_CC2652R
 	bool "CC2652R"

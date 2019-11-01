@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "Kinetis KWx MCU Selection"
-depends on SOC_SERIES_KINETIS_KWX
+	prompt "Kinetis KWx MCU Selection"
+	depends on SOC_SERIES_KINETIS_KWX
 
 config SOC_MKW22D5
 	bool "SOC_MKW22D5"

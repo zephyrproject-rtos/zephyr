@@ -113,7 +113,7 @@ config SHELL_BACKEND_SERIAL_LOG_LEVEL
 	default 4 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DBG
 	default 5 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
 
-endif #SHELL_BACKEND_SERIAL
+endif # SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
 	bool "Enable RTT backend"
@@ -180,7 +180,7 @@ module = SHELL_RTT
 module-str = RTT shell backend
 source "subsys/logging/Kconfig.template.log_config"
 
-endif #SHELL_BACKEND_RTT
+endif # SHELL_BACKEND_RTT
 
 config SHELL_BACKEND_TELNET
 	bool "Enable TELNET backend."

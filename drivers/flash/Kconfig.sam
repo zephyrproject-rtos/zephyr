@@ -11,6 +11,6 @@ config SOC_FLASH_SAM
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
-	 Enable the Atmel SAM series internal flash driver.
+	  Enable the Atmel SAM series internal flash driver.
 
 endif

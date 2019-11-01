@@ -7,8 +7,8 @@
 #
 
 choice
-prompt "ARM Beetle SoC"
-depends on SOC_SERIES_BEETLE
+	prompt "ARM Beetle SoC"
+	depends on SOC_SERIES_BEETLE
 
 config SOC_BEETLE_R0
 	bool "ARM BEETLE R0"

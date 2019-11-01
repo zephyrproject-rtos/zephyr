@@ -24,7 +24,7 @@ config SPI_NOR_CS_WAIT_DELAY
 	int "Delay time in us"
 	default 0
 	help
-	This is the wait delay (in us) to allow for CS switching to take effect
+	  This is the wait delay (in us) to allow for CS switching to take effect
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"

@@ -25,4 +25,4 @@ config KSCAN_INIT_PRIORITY
 	help
 	  Keyboard scan device driver initialization priority.
 
-endif #KSCAN
+endif # KSCAN

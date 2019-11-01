@@ -8,8 +8,8 @@
 #
 
 choice
-prompt "Kinetis K2x MCU Selection"
-depends on SOC_SERIES_KINETIS_K2X
+	prompt "Kinetis K2x MCU Selection"
+	depends on SOC_SERIES_KINETIS_K2X
 
 config SOC_MK22F51212
 	bool "SOC_MK22F51212"

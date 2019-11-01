@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "Microsemi Mi-V system implementation"
-depends on SOC_SERIES_RISCV32_MIV
+	prompt "Microsemi Mi-V system implementation"
+	depends on SOC_SERIES_RISCV32_MIV
 
 config SOC_RISCV32_MIV
 	bool "Microsemi Mi-V system implementation"

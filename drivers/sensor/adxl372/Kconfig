@@ -220,4 +220,4 @@ config ADXL372_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif #ADXL372
+endif # ADXL372

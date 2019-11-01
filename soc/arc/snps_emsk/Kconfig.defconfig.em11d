@@ -35,4 +35,4 @@ config CACHE_FLUSHING
 config FP_FPU_DA
 	default y
 
-endif #SOC_EMSK_EM11D
+endif # SOC_EMSK_EM11D

@@ -111,7 +111,7 @@ config CPU_CORTEX_M_HAS_SPLIM
 
 	  In an ARMv8-M Mainline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have additional Secure instances.
-  	  In an ARMv8-M Baseline implementation with the Security Extension
+	  In an ARMv8-M Baseline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have only Secure instances.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS

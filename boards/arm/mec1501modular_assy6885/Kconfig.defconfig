@@ -99,7 +99,6 @@ if !RTOS_TIMER
 # If RTOS timer is not enabled we use ARM Cortex-M
 # SYSTICK. SYSTICK frequency is 48MHz divided by
 # SOC_MEC1501_PROC_CLK_DIV.
-#
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
@@ -117,6 +116,5 @@ config PS2_XEC_0
 config PS2_XEC_1
 	default y
 
-endif #PS2
+endif # PS2
 endif # BOARD_MEC1501MODULAR_ASSY6885
-

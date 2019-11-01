@@ -231,8 +231,8 @@ config SOC_NRF52840
 	select HAS_HW_NRF_WDT
 
 choice
-prompt "nRF52x MCU Selection"
-depends on SOC_SERIES_NRF52X
+	prompt "nRF52x MCU Selection"
+	depends on SOC_SERIES_NRF52X
 
 config SOC_NRF52810_QFAA
 	bool "NRF52810_QFAA"

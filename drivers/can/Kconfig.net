@@ -34,4 +34,4 @@ config CAN_NET_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-endif #CAN_NET
+endif # CAN_NET

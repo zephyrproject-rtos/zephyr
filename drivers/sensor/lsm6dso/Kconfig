@@ -98,7 +98,7 @@ config LSM6DSO_EXT_HTS221
 config LSM6DSO_EXT_LPS22HB
 	bool "Enable LPS22HB as external sensor"
 
-endif #LSM6DSO_SENSORHUB
+endif # LSM6DSO_SENSORHUB
 
 menu "Attributes"
 

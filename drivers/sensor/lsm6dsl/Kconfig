@@ -78,7 +78,7 @@ config LSM6DSL_EXT0_LPS22HB
 
 endchoice
 
-endif #LSM6DSL_SENSORHUB
+endif # LSM6DSL_SENSORHUB
 
 menu "Attributes"
 

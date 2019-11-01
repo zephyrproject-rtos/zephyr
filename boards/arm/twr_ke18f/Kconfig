@@ -27,4 +27,4 @@ config BOARD_TWR_KE18F_SPI_1_PCS2
 	depends on SPI_1
 	default y
 
-endif #BOARD_TWR_KE18F
+endif # BOARD_TWR_KE18F

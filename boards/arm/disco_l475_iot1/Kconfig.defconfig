@@ -77,7 +77,7 @@ config VL53L0X_XSHUT_GPIO_DEV_NAME
 config VL53L0X_XSHUT_GPIO_PIN_NUM
 	default 6
 
-endif #VL53L0X
+endif # VL53L0X
 
 if LSM6DSL
 
@@ -107,7 +107,7 @@ config BT_HCI_ACL_FLOW_CONTROL
 config BT_HCI_VS_EXT
 	default n
 
-endif #BT
+endif # BT
 
 if WIFI
 
@@ -117,6 +117,6 @@ config SPI
 config WIFI_ESWIFI
 	default y
 
-endif #WIFI
+endif # WIFI
 
 endif # BOARD_DISCO_L475_IOT1

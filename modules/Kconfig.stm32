@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_STM32CUBE
-    bool
-    select HAS_CMSIS_CORE
-    depends on SOC_FAMILY_STM32
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_STM32
 
 if HAS_STM32CUBE
 

@@ -4,7 +4,7 @@
 if BOARD_QEMU_RISCV64
 
 config BUILD_OUTPUT_BIN
-        default n
+	default n
 
 config BOARD
 	default "qemu_riscv64"

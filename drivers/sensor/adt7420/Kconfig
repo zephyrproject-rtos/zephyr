@@ -69,4 +69,4 @@ config ADT7420_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif #ADT7420
+endif # ADT7420

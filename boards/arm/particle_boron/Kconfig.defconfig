@@ -26,7 +26,7 @@ endif # I2C
 if SPI
 
 config SPI_2
-       default y
+	default y
 
 endif # SPI
 

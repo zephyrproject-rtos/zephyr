@@ -17,8 +17,10 @@ config QEMU_TARGET
 # Note: $BOARD_DIR might be a glob pattern
 
 choice
-prompt "Board Selection"
+	prompt "Board Selection"
+
 source "$(BOARD_DIR)/Kconfig.board"
+
 endchoice
 
 

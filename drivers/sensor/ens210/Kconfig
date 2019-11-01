@@ -17,19 +17,19 @@ config ENS210_CRC_CHECK
 	bool "Enable CRC Check"
 	default y
 	help
-	 Check the crc value after data reading.
+	  Check the crc value after data reading.
 
 config ENS210_MAX_STAT_RETRIES
 	int "Number of status read retries"
 	default 4
 	help
-	 Number of retries when status reading failed or device not ready.
+	  Number of retries when status reading failed or device not ready.
 
 config ENS210_MAX_READ_RETRIES
 	int "Number of value reading retries"
 	default 4
 	help
-	 Number of retries when value reading failed, value not valid
-	 or crc not ok.
+	  Number of retries when value reading failed, value not valid
+	  or crc not ok.
 
 endif # ENS210

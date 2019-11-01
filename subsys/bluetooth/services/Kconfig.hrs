@@ -25,4 +25,4 @@ config BT_GATT_HRS_LOG_LEVEL
 	  3 INFO, write LOG_INF in addition to previous levels
 	  4 DEBUG, write LOG_DBG in addition to previous levels
 
-endif #BT_GATT_BAS
+endif # BT_GATT_BAS

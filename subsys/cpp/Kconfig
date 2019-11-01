@@ -73,6 +73,6 @@ config ZEPHYR_CPLUSPLUS
 	  Use Zephyr implementation for operator new, delete, pure virtual
 	  functions and vtables.
 
-endif #LIB_CPLUSPLUS
+endif # LIB_CPLUSPLUS
 
 endif # CPLUSPLUS

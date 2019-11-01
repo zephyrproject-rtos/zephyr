@@ -10,7 +10,7 @@ menuconfig MCP9808
 	bool "MCP9808 temperature sensor"
 	depends on I2C
 	help
-	 Enable driver for MCP9808 temperature sensor.
+	  Enable driver for MCP9808 temperature sensor.
 
 if MCP9808
 
@@ -18,19 +18,18 @@ config MCP9808_DEV_NAME
 	string "MCP9808 device name"
 	default "MCP9808"
 
-
 config MCP9808_I2C_ADDR
 	hex "MCP9808 I2C slave address"
 	default 0x18
 	help
-	 Specify the I2C slave address for the MCP9808.
+	  Specify the I2C slave address for the MCP9808.
 
 config MCP9808_I2C_DEV_NAME
 	string "I2C master where MCP9808 is connected"
 	default "I2C_0"
 	help
-	 Specify the device name of the I2C master device to which MCP9808 is
-	 connected.
+	  Specify the device name of the I2C master device to which MCP9808 is
+	  connected.
 
 choice
 	prompt "MCP9808 trigger mode"

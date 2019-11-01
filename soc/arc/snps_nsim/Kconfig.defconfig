@@ -17,4 +17,4 @@ source "soc/arc/snps_nsim/Kconfig.defconfig.sem"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs_smp"
 
-endif #SOC_NSIM
+endif # SOC_NSIM

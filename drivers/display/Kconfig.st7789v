@@ -63,6 +63,6 @@ config ST7789V_REVERSE_Y
 	help
 	  Address pixels from bottom to top.
 
-endif #ST7789V_RGB565
+endif # ST7789V_RGB565
 
-endif #ST7789V
+endif # ST7789V

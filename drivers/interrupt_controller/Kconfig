@@ -76,7 +76,7 @@ config IOAPIC_MASK_RTE
 	  when the OS starts up, or a previous boot stage has done some IOAPIC
 	  configuration that needs to be preserved.
 
-endif #LOAPIC
+endif # LOAPIC
 
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"

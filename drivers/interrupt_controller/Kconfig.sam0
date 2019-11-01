@@ -11,7 +11,7 @@ config SAM0_EIC
 	bool "External Interrupt Controller (EIC) Driver for SAM0 series devices"
 	default y
 	help
-	 Enable EIC driver for SAM0 series of devices.  This is required for
-	 GPIO interrupt support.
+	  Enable EIC driver for SAM0 series of devices.  This is required for
+	  GPIO interrupt support.
 
 endif # SOC_FAMILY_SAM0

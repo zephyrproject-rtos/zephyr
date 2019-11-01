@@ -18,14 +18,14 @@ if CLOCK_CONTROL
 config CLOCK_CONTROL_STM32_CUBE
 	default y
 
-endif #CLOCK_CONTROL
+endif # CLOCK_CONTROL
 
 if SERIAL
 
 config UART_STM32
 	default y
 
-endif #SERIAL
+endif # SERIAL
 
 if GPIO
 
@@ -41,14 +41,14 @@ config GPIO_STM32_PORTB
 config GPIO_STM32_PORTC
 	default y
 
-endif #GPIO
+endif # GPIO
 
 if PINMUX
 
 config PINMUX_STM32
 	default y
 
-endif #PINMUX
+endif # PINMUX
 
 if WATCHDOG
 

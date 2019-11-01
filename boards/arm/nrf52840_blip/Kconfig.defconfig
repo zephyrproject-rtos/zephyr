@@ -12,7 +12,7 @@ config BOARD
 if ADC
 
 config ADC_0
-        default y
+	default y
 
 endif # ADC
 

@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "nRF51x MCU Selection"
-depends on SOC_SERIES_NRF51X
+	prompt "nRF51x MCU Selection"
+	depends on SOC_SERIES_NRF51X
 
 config SOC_NRF51822_QFAA
 	bool "NRF51822_QFAA"

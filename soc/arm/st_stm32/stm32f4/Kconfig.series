@@ -14,4 +14,4 @@ config SOC_SERIES_STM32F4X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	help
-	 Enable support for STM32F4 MCU series
+	  Enable support for STM32F4 MCU series

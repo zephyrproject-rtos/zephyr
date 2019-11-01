@@ -11,8 +11,8 @@ if BOARD_UP_SQUARED
 comment "UP Squared Board Options"
 
 choice
-prompt "UP Squared SoC variant"
-default BOARD_UP_SQUARED_ATOM
+	prompt "UP Squared SoC variant"
+	default BOARD_UP_SQUARED_ATOM
 
 config BOARD_UP_SQUARED_ATOM
 	bool "Atom E3940"

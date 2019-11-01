@@ -314,7 +314,7 @@ config LVGL_OBJ_LIST_FOCUS_TIME
 	int "List focus time"
 	default 100
 	help
-		List focus animation time in milliseconds
+	  List focus animation time in milliseconds
 
 endif
 
