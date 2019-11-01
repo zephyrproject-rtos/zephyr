@@ -39,7 +39,7 @@ module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
 
 
-config	SPI_0
+config SPI_0
 	bool "SPI port 0"
 	help
 	  Enable SPI controller port 0.

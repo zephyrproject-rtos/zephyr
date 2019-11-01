@@ -117,4 +117,4 @@ endchoice
 
 endif # I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
-endif #I2C_NRFX
+endif # I2C_NRFX

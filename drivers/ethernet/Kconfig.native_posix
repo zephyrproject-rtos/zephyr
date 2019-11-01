@@ -104,7 +104,7 @@ config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
 
 if ! ETH_NATIVE_POSIX_RANDOM_MAC
 
-config	ETH_NATIVE_POSIX_MAC_ADDR
+config ETH_NATIVE_POSIX_MAC_ADDR
 	string "MAC address for the interface"
 	default ""
 	help

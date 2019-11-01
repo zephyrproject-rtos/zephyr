@@ -34,7 +34,7 @@ config NET_PPP_VERIFY_FCS
 	  to disable this as it takes some time to verify the received
 	  packet.
 
-config	PPP_MAC_ADDR
+config PPP_MAC_ADDR
 	string "MAC address for the interface"
 	help
 	  Specify a MAC address for the PPP interface in the form of
@@ -63,7 +63,7 @@ menuconfig SLIP
 
 if SLIP
 
-config	SLIP_DRV_NAME
+config SLIP_DRV_NAME
 	string "SLIP Driver name"
 	default "slip"
 	help
@@ -75,7 +75,7 @@ module-str = Log level for slip driver
 module-help = Sets log level for slip driver.
 source "subsys/net/Kconfig.template.log_config.net"
 
-config	SLIP_STATISTICS
+config SLIP_STATISTICS
 	bool "SLIP network connection statistics"
 	help
 	  This option enables statistics support for SLIP driver.
@@ -87,8 +87,7 @@ config  SLIP_TAP
 	help
 	  In TAP the Ethernet frames are transferred over SLIP.
 
-
-config	SLIP_MAC_ADDR
+config SLIP_MAC_ADDR
 	string "MAC address for the interface"
 	help
 	  Specify a MAC address for the SLIP interface in the form of

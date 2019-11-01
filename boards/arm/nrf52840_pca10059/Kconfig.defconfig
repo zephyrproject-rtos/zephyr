@@ -23,7 +23,7 @@ if BOARD_HAS_NRF5_BOOTLOADER && !USE_CODE_PARTITION
 # so no override is necessary.
 
 config FLASH_LOAD_OFFSET
-        default 0x1000
+	default 0x1000
 
 endif # BOARD_HAS_NRF5_BOOTLOADER && !USE_CODE_PARTITION
 

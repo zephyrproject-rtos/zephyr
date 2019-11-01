@@ -10,4 +10,4 @@ config SOC_SERIES_RISCV32_MIV
 	depends on RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	Enable support for Microsemi Mi-V
+	  Enable support for Microsemi Mi-V

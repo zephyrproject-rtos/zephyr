@@ -14,4 +14,4 @@ source "soc/arc/snps_emsk/Kconfig.defconfig.em7d"
 source "soc/arc/snps_emsk/Kconfig.defconfig.em11d"
 source "soc/arc/snps_emsk/Kconfig.defconfig.em9d"
 
-endif #SOC_EMSK
+endif # SOC_EMSK

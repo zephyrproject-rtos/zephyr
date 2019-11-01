@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "SiFive Freedom SOC implementation"
-depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
+	prompt "SiFive Freedom SOC implementation"
+	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
 
 config SOC_RISCV_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"

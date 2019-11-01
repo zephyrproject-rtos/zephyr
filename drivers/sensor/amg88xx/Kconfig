@@ -52,4 +52,4 @@ config AMG88XX_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif #if AMG88XX
+endif # AMG88XX

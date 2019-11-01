@@ -12,4 +12,4 @@ config SOC_SERIES_STM32F1X
 	select HAS_STM32CUBE
 	select HAS_SWO
 	help
-	 Enable support for STM32F1 MCU series
+	  Enable support for STM32F1 MCU series

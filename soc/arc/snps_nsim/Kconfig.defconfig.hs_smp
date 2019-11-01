@@ -36,4 +36,4 @@ config ARC_CONNECT
 config MP_NUM_CPUS
 	default 2
 
-endif #SOC_NSIM_HS_SMP
+endif # SOC_NSIM_HS_SMP

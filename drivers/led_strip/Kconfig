@@ -10,7 +10,7 @@
 menuconfig LED_STRIP
 	bool "LED strip drivers"
 	help
-		Include LED strip drivers in the system configuration.
+	  Include LED strip drivers in the system configuration.
 
 if LED_STRIP
 

@@ -27,4 +27,4 @@ config PS2_INIT_PRIORITY
 	  There isn't any critical component relying on this priority at
 	  the moment.
 
-endif #PS2
+endif # PS2

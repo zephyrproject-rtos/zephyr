@@ -40,4 +40,4 @@ config SSD1306_REVERSE_MODE
 	help
 	  SSD16XX reverse video mode.
 
-endif #SSD1306
+endif # SSD1306

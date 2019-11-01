@@ -58,4 +58,4 @@ endif # ZTEST
 
 endif # ARC_MPU_VER
 
-endif #SOC_EMSK_EM7D
+endif # SOC_EMSK_EM7D

@@ -112,12 +112,12 @@ endif # RTOS_TIMER
 if PS2
 
 config PS2_XEC_0
-        default y
+	default y
 
 config PS2_XEC_1
-        default y
+	default y
 
-endif #PS2
+endif # PS2
 
 if SPI
 

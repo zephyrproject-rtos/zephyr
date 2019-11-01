@@ -7,8 +7,8 @@
 #
 
 choice
-prompt "MEC1501 Selection"
-depends on SOC_SERIES_MEC1501X
+	prompt "MEC1501 Selection"
+	depends on SOC_SERIES_MEC1501X
 
 config SOC_MEC1501_HSZ
 	bool "MEC1501_HSZ"

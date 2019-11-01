@@ -30,4 +30,4 @@ config CACHE_FLUSHING
 config FP_FPU_DA
 	default y
 
-endif #SOC_EMSDP_EM7D_ESP
+endif # SOC_EMSDP_EM7D_ESP

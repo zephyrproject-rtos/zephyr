@@ -97,7 +97,7 @@ config TSC_CYCLES_PER_SEC
 	  value of CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC will be used instead;
 	  many MCUs these values are the same.
 
-endif #LOAPIC_TIMER
+endif # LOAPIC_TIMER
 
 menuconfig ARCV2_TIMER
 	bool "ARC Timer"

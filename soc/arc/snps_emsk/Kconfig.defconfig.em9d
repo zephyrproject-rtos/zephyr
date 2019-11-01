@@ -29,4 +29,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config HARVARD
 	default y
 
-endif #SOC_EMSK_EM9D
+endif # SOC_EMSK_EM9D

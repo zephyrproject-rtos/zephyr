@@ -72,7 +72,7 @@ config NATIVE_POSIX_CONSOLE
 config UART_CONSOLE
 	default y if SERIAL
 
-endif #CONSOLE
+endif # CONSOLE
 
 if DISPLAY
 

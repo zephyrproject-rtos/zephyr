@@ -7,8 +7,8 @@
 if SOC_NSIM
 
 choice
-prompt "ARC nSIM SoC Selection"
-default SOC_NSIM_EM
+	prompt "ARC nSIM SoC Selection"
+	default SOC_NSIM_EM
 
 config SOC_NSIM_EM
 	bool "Synopsys ARC EM in nSIM"
@@ -31,4 +31,4 @@ config SOC_NSIM_HS_SMP
 
 endchoice
 
-endif #SOC_NSIM
+endif # SOC_NSIM

@@ -25,4 +25,4 @@ config DUMMY_DISPLAY_Y_RES
 	int "Y resolution for dummy display"
 	default 240
 
-endif #DUMMY_DISPLAY
+endif # DUMMY_DISPLAY

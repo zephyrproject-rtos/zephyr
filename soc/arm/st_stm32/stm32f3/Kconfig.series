@@ -13,4 +13,4 @@ config SOC_SERIES_STM32F3X
 	select HAS_STM32CUBE
 	select HAS_SWO
 	help
-	 Enable support for STM32F3 MCU series
+	  Enable support for STM32F3 MCU series

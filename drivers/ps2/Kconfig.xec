@@ -16,11 +16,11 @@ if PS2_XEC
 config PS2_XEC_0
 	bool "PS2_XEC_0"
 	help
-	Enable PS2 0.
+	  Enable PS2 0.
 
 config PS2_XEC_1
 	bool "PS2_XEC_1"
 	help
-	Enable PS2 1.
+	  Enable PS2 1.
 
-endif #PS2_XEC
+endif # PS2_XEC

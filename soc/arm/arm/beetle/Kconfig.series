@@ -13,4 +13,4 @@ config SOC_SERIES_BEETLE
 	select SOC_FAMILY_ARM
 	select CPU_HAS_ARM_MPU
 	help
-	 Enable support for Beetle MCU Series
+	  Enable support for Beetle MCU Series

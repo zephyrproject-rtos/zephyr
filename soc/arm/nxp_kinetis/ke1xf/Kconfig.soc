@@ -89,7 +89,7 @@ config WDOG_INIT
 	  handling.
 
 config KINETIS_KE1XF_ENABLE_CODE_CACHE
-        bool "Enable the code cache"
-        default y
+	bool "Enable the code cache"
+	default y
 
 endif # SOC_SERIES_KINETIS_KE1XF

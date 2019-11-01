@@ -179,7 +179,7 @@ config IPM_CONSOLE_STACK_SIZE
 	  thread to print out incoming messages from the remote CPU. Specify the
 	  stack size for these threads here.
 
-config	UART_PIPE
+config UART_PIPE
 	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help

@@ -9,5 +9,5 @@ config APA102_STRIP
 	depends on SPI
 	select LED_STRIP_RGB_SCRATCH
 	help
-	 Enable the LED strip driver for a chain of APA102 RGB LEDs.
-	 These are sold as DotStar by Adafruit and Superled by others.
+	  Enable the LED strip driver for a chain of APA102 RGB LEDs.
+	  These are sold as DotStar by Adafruit and Superled by others.

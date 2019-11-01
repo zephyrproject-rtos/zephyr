@@ -30,4 +30,4 @@ config ARC_FIRQ
 config CACHE_FLUSHING
 	default y
 
-endif #SOC_NSIM_HS
+endif # SOC_NSIM_HS

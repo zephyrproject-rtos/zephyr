@@ -43,4 +43,4 @@ config ZTEST_STACKSIZE
 
 endif # ZTEST
 
-endif #SOC_EMSDP_EM11D
+endif # SOC_EMSDP_EM11D

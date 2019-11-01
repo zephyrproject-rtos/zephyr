@@ -12,4 +12,4 @@ config SOC_SERIES_STM32MP1X
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
 	help
-		Enable support for STM32MP1 MPU series
+	  Enable support for STM32MP1 MPU series

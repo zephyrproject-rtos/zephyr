@@ -56,4 +56,4 @@ endif # ZTEST
 
 endif # ARC_MPU_VER
 
-endif #SOC_NSIM_EM
+endif # SOC_NSIM_EM

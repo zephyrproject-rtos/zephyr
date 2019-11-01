@@ -112,7 +112,7 @@ config SHELL_HISTORY_BUFFER
 	help
 	  Number of bytes dedicated for storing executed commands.
 
-endif #SHELL_HISTORY
+endif # SHELL_HISTORY
 
 config SHELL_STATS
 	bool "Enable shell statistics"

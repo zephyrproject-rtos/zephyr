@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "LPC5500 Series MCU Selection"
-depends on SOC_SERIES_LPC55XXX
+	prompt "LPC5500 Series MCU Selection"
+	depends on SOC_SERIES_LPC55XXX
 
 config SOC_LPC55S69_CPU0
 	bool "SOC_LPC55S69 M33 [CPU 0]"

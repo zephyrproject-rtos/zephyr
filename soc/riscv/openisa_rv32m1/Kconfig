@@ -16,7 +16,7 @@
 if SOC_OPENISA_RV32M1_RISCV32
 
 choice
-prompt "OpenISA RV32M1 RISC-V Core Selection"
+	prompt "OpenISA RV32M1 RISC-V Core Selection"
 
 config SOC_OPENISA_RV32M1_RI5CY
 	bool "OpenISA RV32M1 RI5CY core"

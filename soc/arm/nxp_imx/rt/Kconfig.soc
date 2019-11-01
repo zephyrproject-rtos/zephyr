@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "i.MX RT Selection"
-depends on SOC_SERIES_IMX_RT
+	prompt "i.MX RT Selection"
+	depends on SOC_SERIES_IMX_RT
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -346,7 +346,7 @@ config CODE_FLEXSPI
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-        select NXP_IMX_RT_BOOT_HEADER
+	select NXP_IMX_RT_BOOT_HEADER
 
 endchoice
 

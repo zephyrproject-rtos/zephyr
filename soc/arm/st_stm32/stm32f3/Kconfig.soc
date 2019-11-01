@@ -6,8 +6,8 @@
 #
 
 choice
-prompt "STM32F3x MCU Selection"
-depends on SOC_SERIES_STM32F3X
+	prompt "STM32F3x MCU Selection"
+	depends on SOC_SERIES_STM32F3X
 
 config SOC_STM32F302X8
 	bool "STM32F302X8"
