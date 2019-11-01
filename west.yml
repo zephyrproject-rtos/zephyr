@@ -103,9 +103,9 @@ manifest:
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
     - name: wasm-micro-runtime
+      path: modules/lib/wasm-micro-runtime
       remote: intel
-      path: wasm-micro-runtime
-      revision: b8c81511c8459553cce64d183d9c0e89bbf4e3f9
+      revision: 7375acdc6ef5b3892c2a60d2bdd695f7d6327c7c
 
   self:
     path: zephyr
