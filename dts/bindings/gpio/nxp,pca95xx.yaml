@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: PCA95xx series I2C-based GPIO expander
+
+description: >
+    This is a representation of the PCA95xx GPIO expander
+
+compatible: "nxp,pca95xx"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+    label:
+      required: true
+
+    has-pud:
+      type: boolean
+      required: false
+      description: Supports pull-up/pull-down
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags
