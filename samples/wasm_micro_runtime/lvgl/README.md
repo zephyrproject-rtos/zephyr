@@ -99,5 +99,6 @@ $ ninja flash
 
 - Install WASM application to Zephyr using host_tool</br>
 First, connect PC and STM32 with UART. Then install to use host_tool. Assume the UART device is /dev/ttyUSB0.</br>
+`cd ../../out`
 `sudo ./host_tool -D /dev/ttyUSB0 -i ui_app -f ui_app.wasm`
 
