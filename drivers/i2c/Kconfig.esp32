@@ -1,10 +1,7 @@
-# Kconfig.esp32 - ESP32 I2C configuration options
-#
-#
+# ESP32 I2C configuration options
+
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2C_ESP32
 	bool "ESP32 I2C"

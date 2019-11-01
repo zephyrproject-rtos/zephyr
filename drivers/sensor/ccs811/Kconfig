@@ -1,10 +1,7 @@
-# Kconfig - CCS811 Digital Gas sensor configuration options
+# CCS811 Digital Gas sensor configuration options
 
-#
 # Copyright (c) 2018 Linaro Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig CCS811
 	bool "CCS811 Digital Gas Sensor"

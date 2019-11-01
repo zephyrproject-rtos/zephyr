@@ -1,10 +1,7 @@
-# Kconfig - Silicon Labs EFR32FG1P platform configuration options
+# Silicon Labs EFR32FG1P platform configuration options
 
-#
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if GPIO || LOG_BACKEND_SWO
 

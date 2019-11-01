@@ -1,9 +1,7 @@
-# Kconfig.cc13xx_cc26xx - TI CC13xx / CC26xx UART configuration options
-#
+# TI CC13xx / CC26xx UART configuration options
+
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_CC13XX_CC26XX
 	bool "TI SimpleLink CC13xx / CC26xx UART driver"

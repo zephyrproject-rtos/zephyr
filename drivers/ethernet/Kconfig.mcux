@@ -1,7 +1,6 @@
-# Kconfig - ETH_MCUX Ethernet driver configuration options
+# ETH_MCUX Ethernet driver configuration options
 
 # Copyright (c) 2016-2017 ARM Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_MCUX

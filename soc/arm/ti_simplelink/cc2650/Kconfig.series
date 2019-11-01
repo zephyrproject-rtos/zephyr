@@ -1,7 +1,6 @@
+# TI SimpleLink CC2650
+
 # SPDX-License-Identifier: Apache-2.0
-#
-# Kconfig.series - TI SimpleLink CC2650
-#
 
 config  SOC_SERIES_CC2650
 	bool "TI SimpleLink Family CC2650"

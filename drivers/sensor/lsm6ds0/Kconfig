@@ -1,11 +1,8 @@
-# Kconfig - LSM6DS0 accelerometer and gyroscope sensor configuration
+# LSM6DS0 accelerometer and gyroscope sensor configuration
 # options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LSM6DS0
 	bool "LSM6DS0 I2C accelerometer and gyroscope Chip"

@@ -1,10 +1,7 @@
-# Kconfig - SX9500 SAR proximity sensor configuration options
+# SX9500 SAR proximity sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SX9500
 	bool "SX9500 I2C SAR Proximity Chip"

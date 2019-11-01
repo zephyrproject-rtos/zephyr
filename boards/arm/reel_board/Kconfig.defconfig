@@ -1,7 +1,6 @@
-# Kconfig - reel board configuration
-#
+# reel board configuration
+
 # Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2

@@ -1,10 +1,7 @@
-# Kconfig - Cryptography primitive options for TinyCrypt version 2.0
+# Cryptography primitive options for TinyCrypt version 2.0
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config TINYCRYPT
 	bool "TinyCrypt Support"

@@ -1,9 +1,7 @@
-# Kconfig - Neural network accelerator driver configuration options
-#
+# Neural network accelerator driver configuration options
+
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NEURAL_NET_ACCEL
 	bool "Neural Network Accelerator Drivers"

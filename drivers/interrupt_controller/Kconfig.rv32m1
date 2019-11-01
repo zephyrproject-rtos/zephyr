@@ -1,7 +1,6 @@
-# Kconfig - RV32M1 INTMUX config
-#
+# RV32M1 INTMUX config
+
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config RV32M1_INTMUX

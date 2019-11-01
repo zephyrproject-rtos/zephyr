@@ -1,10 +1,7 @@
-# Kconfig - CAN configuration options
+# CAN configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # CAN options

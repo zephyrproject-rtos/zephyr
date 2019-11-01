@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F3 MCU line
-#
+# ST Microelectronics STM32F3 MCU line
+
 # Copyright (c) 2016 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32F3 series
 

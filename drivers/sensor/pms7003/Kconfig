@@ -1,10 +1,7 @@
-# Kconfig - PMS7003 particulate matter sensor configuration options
+# PMS7003 particulate matter sensor configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PMS7003
 	bool "PMS7003 particulate matter sensor"

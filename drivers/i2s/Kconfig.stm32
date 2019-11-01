@@ -1,9 +1,7 @@
-# Kconfig - STM32 I2S driver configuration options
-#
+# STM32 I2S driver configuration options
+
 # Copyright (c) 2018 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2S_STM32
 	bool "STM32 MCU I2S controller driver"

@@ -1,10 +1,8 @@
-# Kconfig - STMicroelectronics STM32G0 MCU line
-#
+# STMicroelectronics STM32G0 MCU line
+
 # Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_STM32G0X
 

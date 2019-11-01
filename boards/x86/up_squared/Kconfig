@@ -1,10 +1,7 @@
 # UP Squared board options
 
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_UP_SQUARED
 

@@ -1,7 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# TI CC3220SF LaunchXL board configuration
 
-# Kconfig - TI CC3220SF LaunchXL board configuration
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if BOARD_CC3220SF_LAUNCHXL
 

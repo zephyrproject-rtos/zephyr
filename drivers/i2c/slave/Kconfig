@@ -1,10 +1,7 @@
-# Kconfig - I2C Slave configuration options
+# I2C Slave configuration options
 
-#
 # Copyright (c) 2017 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # I2C options

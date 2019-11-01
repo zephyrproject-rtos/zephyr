@@ -1,9 +1,7 @@
-# Kconfig.gecko - Gecko GPIO configuration options
-#
+# Gecko GPIO configuration options
+
 # Copyright (c) 2017 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_GECKO
 	bool "Gecko GPIO driver"

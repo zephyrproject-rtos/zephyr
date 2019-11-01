@@ -1,8 +1,6 @@
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 if BOARD_MEC1501MODULAR_ASSY6885
 
 config BOARD

@@ -1,10 +1,7 @@
-# Kconfig - LSM9DS0 gyroscope sensor configuration options
+# LSM9DS0 gyroscope sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LSM9DS0_GYRO
 	bool "LSM9DS0 I2C gyroscope Chip"

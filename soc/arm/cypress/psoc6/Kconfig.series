@@ -1,9 +1,7 @@
-# Kconfig.series - Cypress PSoC6 MCU line
-#
+# Cypress PSoC6 MCU line
+
 # Copyright (c) 2018, Cypress Semiconductor
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_PSOC62
 	bool "Cypress PSoC6 series MCU"

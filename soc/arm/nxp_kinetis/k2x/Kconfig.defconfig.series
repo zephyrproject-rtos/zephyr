@@ -1,5 +1,5 @@
-# Kconfig - Kinetis K2x series configuration options
-#
+# Kinetis K2x series configuration options
+
 # Copyright (c) 2018 Prevas A/S
 # Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
 

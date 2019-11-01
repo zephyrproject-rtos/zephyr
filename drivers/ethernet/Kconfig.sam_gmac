@@ -1,8 +1,7 @@
-# Kconfig - Atmel SAM Ethernet (GMAC) driver configuration options
-#
+# Atmel SAM Ethernet (GMAC) driver configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"

@@ -1,9 +1,8 @@
-# Kconfig - DesignWare ARC HS Development Kit board configuration
-#
+# DesignWare ARC HS Development Kit board configuration
+
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config BOARD_HSDK
 	bool "ARC HS Development Kit"
 	depends on SOC_ARC_HSDK

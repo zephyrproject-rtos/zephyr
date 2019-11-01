@@ -1,9 +1,7 @@
-# Kconfig.nrfx - nrfx UART configuration
-#
+# nrfx UART configuration
+
 # Copyright (c) 2016 - 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_NRFX
 	bool "nRF UART nrfx drivers"

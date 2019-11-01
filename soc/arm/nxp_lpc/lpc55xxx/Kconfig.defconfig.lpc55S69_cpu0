@@ -1,9 +1,7 @@
-# Kconfig - NXP LPC55XXX CPU0 platform configuration options
-#
+# NXP LPC55XXX CPU0 platform configuration options
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_LPC55S69_CPU0
 

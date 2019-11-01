@@ -1,9 +1,7 @@
-# Kconfig - eSPI configuration options
-#
+# eSPI configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ESPI
 	bool "ESPI Driver"

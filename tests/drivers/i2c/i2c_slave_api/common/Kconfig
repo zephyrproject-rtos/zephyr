@@ -1,10 +1,7 @@
-# Kconfig - I2C slave tests common configuration options
+# I2C slave tests common configuration options
 
-#
 # Copyright (c) 2017 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config I2C_VIRTUAL
 	bool "Virtual I2C Driver for Slave development"

@@ -1,9 +1,7 @@
-# Kconfig.soc - ST Microelectronics STM32F7 MCU line
-#
+# ST Microelectronics STM32F7 MCU line
+
 # Copyright (c) 2018 Yurii Hamann
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "STM32F7x MCU Selection"

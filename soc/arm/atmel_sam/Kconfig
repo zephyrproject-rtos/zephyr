@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM MCU family configuration options
-#
+# Atmel SAM MCU family configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 

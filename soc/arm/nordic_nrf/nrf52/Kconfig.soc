@@ -1,9 +1,7 @@
-# Kconfig.soc - Nordic Semiconductor nRF52 MCU line
-#
+# Nordic Semiconductor nRF52 MCU line
+
 # Copyright (c) 2016-2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_NRF52810
 	depends on SOC_SERIES_NRF52X

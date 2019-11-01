@@ -1,10 +1,7 @@
-# Kconfig.stack - Stack usage related options
+# Stack usage related options
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Stack usage"
 

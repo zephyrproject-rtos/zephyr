@@ -1,4 +1,4 @@
-# Kconfig - CC3220/CC32XX SDK HAL configuration
+# CC3220/CC32XX SDK HAL configuration
 
 config HAS_CC3220SDK
 	bool
@@ -19,13 +19,13 @@ config SIMPLELINK_HOST_DRIVER
 	help
 	  Build the SimpleLink host driver
 
-# Kconfig - MSP432 SDK HAL configuration
+# MSP432 SDK HAL configuration
 
 config HAS_MSP432P4XXSDK
 	bool
 	select HAS_CMSIS_CORE
 
-# Kconfig - CC13X2 / CC26X2 SDK HAL configuration
+# CC13X2 / CC26X2 SDK HAL configuration
 
 config HAS_CC13X2_CC26X2_SDK
 	bool

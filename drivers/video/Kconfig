@@ -1,10 +1,7 @@
-# Kconfig - VIDEO driver configuration options
+# VIDEO driver configuration options
 
-#
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # VIDEO Drivers

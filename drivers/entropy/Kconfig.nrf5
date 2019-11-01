@@ -1,8 +1,7 @@
-# Kconfig.nrf5 - nRF5 entropy generator driver configuration
-#
+# nRF5 entropy generator driver configuration
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # Copyright (c) 2017 Exati Tecnologia Ltda.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config ENTROPY_NRF_FORCE_ALT

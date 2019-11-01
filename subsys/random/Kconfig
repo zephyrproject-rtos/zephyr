@@ -1,9 +1,7 @@
-# Kconfig - random configuration options
-#
+# Random configuration options
+
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config TEST_RANDOM_GENERATOR
 	bool "Non-random number generator"

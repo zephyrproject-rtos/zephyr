@@ -1,10 +1,7 @@
-# Kconfig - TMP112 temperature sensor configuration options
+# TMP112 temperature sensor configuration options
 
-#
 # Copyright (c) 2016 Firmwave
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig TMP112
 	bool "TMP112 Temperature Sensor"

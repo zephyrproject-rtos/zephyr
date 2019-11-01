@@ -1,10 +1,7 @@
-# Kconfig - C++ configuration options
+# C++ configuration options
 
-#
 # Copyright (c) 2018 B. Leforestier
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig CPLUSPLUS
 	bool "C++ support for the application"

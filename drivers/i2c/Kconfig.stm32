@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2C_STM32
 	bool "STM32 I2C driver"

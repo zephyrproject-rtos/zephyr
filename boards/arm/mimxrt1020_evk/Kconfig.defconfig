@@ -1,9 +1,7 @@
-# Kconfig - MIMXRT1020-EVK board
-#
+# MIMXRT1020-EVK board
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MIMXRT1020_EVK
 

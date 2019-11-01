@@ -1,10 +1,7 @@
-# Kconfig - drivers configuration options for SeeedStudio Grove Devices
+# Drivers configuration options for SeeedStudio Grove Devices
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config GROVE_LIGHT_SENSOR
 	bool "Enable the Seeed Grove Light Sensor"

@@ -1,9 +1,7 @@
-# Kconfig.xec - Microchip XEC PS2 configuration options
-#
+# Microchip XEC PS2 configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PS2_XEC
 	bool "XEC Microchip PS2 driver"

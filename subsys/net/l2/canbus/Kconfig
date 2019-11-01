@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config NET_L2_CANBUS
 	bool "Enable CANBUS L2 layer [EXPERIMENTAL]"

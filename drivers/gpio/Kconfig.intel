@@ -1,10 +1,7 @@
-# Kconfig.dw - Intel SoC GPIO configuration options
-#
-#
+# Intel SoC GPIO configuration options
+
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_INTEL_APL
 	bool "Intel Apollo Lake SoC GPIO"

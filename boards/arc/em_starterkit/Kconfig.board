@@ -1,9 +1,8 @@
-# Kconfig - DesignWare ARC EM Starter Kit board configuration
-#
+# DesignWare ARC EM Starter Kit board configuration
+
 # Copyright (c) 2016 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config BOARD_EM_STARTERKIT
 	bool "ARC EM Starter Kit"
 	depends on SOC_EMSK

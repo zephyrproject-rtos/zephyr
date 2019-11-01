@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KW2xD SoC configuration options
-#
+# Kinetis KW2xD SoC configuration options
+
 # Copyright (c) 2017, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW22D5 || SOC_MKW24D5
 

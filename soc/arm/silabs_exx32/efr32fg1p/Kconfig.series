@@ -1,9 +1,7 @@
-# Kconfig - EFR32FG1P MCU line
-#
+# EFR32FG1P MCU line
+
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_EFR32FG1P
 	bool "EFR32FG1P Series MCU"

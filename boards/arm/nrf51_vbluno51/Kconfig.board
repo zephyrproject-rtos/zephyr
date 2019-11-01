@@ -1,7 +1,6 @@
-# Kconfig - nRF51-VBLUNO51 board configuration
-#
+# nRF51-VBLUNO51 board configuration
+
 # Copyright (c) 2017 VNG IoT Lab Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51_VBLUNO51

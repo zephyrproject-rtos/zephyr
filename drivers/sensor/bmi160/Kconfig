@@ -1,10 +1,7 @@
-# Kconfig - Bosch BMI160 inertial measurement configuration options
+# Bosch BMI160 inertial measurement configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMI160
 	bool "Bosch BMI160 inertial measurement unit"

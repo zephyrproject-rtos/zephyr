@@ -1,10 +1,7 @@
-# Kconfig.beetle - ARM V2M Beetle PINMUX configuration options
-#
-#
+# ARM V2M Beetle PINMUX configuration options
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config PINMUX_BEETLE
 	bool "ARM V2M Beetle Pin multiplexer driver"

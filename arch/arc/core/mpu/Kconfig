@@ -1,10 +1,8 @@
-# Kconfig - Memory Protection Unit (MPU) configuration options
+# Memory Protection Unit (MPU) configuration options
 
-#
 # Copyright (c) 2017 Synopsys
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config ARC_MPU_VER
 	int "ARC MPU version"
 	range 2 4

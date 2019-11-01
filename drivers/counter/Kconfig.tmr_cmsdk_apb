@@ -1,10 +1,7 @@
-# Kconfig - counter and timer configuration options
-#
-#
+# Counter and timer configuration options
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_ARM
 

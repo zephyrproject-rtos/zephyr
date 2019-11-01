@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F2X MCU series
-#
+# ST Microelectronics STM32F2X MCU series
+
 # Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32F2X
 	bool "stm32f2x Series MCU"

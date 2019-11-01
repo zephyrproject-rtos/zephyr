@@ -1,9 +1,7 @@
-# Kconfig.defconfig.series - Nordic Semiconductor nRF52 MCU line
-#
+# Nordic Semiconductor nRF52 MCU line
+
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_NRF52X
 

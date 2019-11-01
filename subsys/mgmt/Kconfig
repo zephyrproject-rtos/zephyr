@@ -1,10 +1,7 @@
-# Kconfig - mcumgr configuration options
+# mcumgr configuration options
 
-#
 # Copyright Runtime.io 2018. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Management"
 

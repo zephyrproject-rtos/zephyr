@@ -1,10 +1,7 @@
-# Kconfig - USB class drivers configuration options
+# USB class drivers configuration options
 
-#
 # Copyright (c) 2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config USB_CDC_ACM
 	bool "USB CDC ACM Device Class Driver"

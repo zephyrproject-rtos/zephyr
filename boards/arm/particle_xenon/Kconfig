@@ -1,7 +1,6 @@
-# Kconfig - Particle Xenon configuration
-#
+# Particle Xenon configuration
+
 # Copyright (c) 2018 Endre Karlson
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_PARTICLE_XENON

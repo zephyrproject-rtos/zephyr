@@ -1,9 +1,7 @@
-# Kconfig - FRDM-KW41Z board
-#
+# FRDM-KW41Z board
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_FRDM_KW41Z
 	bool "NXP FRDM-KW41Z"

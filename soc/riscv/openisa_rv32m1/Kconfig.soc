@@ -1,5 +1,4 @@
 # Copyright (c) 2018 Foundries.io Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_OPENISA_RV32M1_RISCV32

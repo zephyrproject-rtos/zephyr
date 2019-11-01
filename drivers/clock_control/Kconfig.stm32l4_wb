@@ -1,9 +1,7 @@
-# Kconfig - STM32L4 and STM32WB PLL configuration options
-#
+# STM32L4 and STM32WB PLL configuration options
+
 # Copyright (c) 2019 Linaro
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 

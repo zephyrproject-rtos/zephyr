@@ -1,7 +1,6 @@
-# Kconfig - Silicon Labs Gecko Counter driver config
-#
+# Silicon Labs Gecko Counter driver config
+
 # Copyright (c) 2019, Piotr Mienkowski
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_GECKO_RTCC

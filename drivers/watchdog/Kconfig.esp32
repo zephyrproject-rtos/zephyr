@@ -1,9 +1,7 @@
-# Kconfig - ESP32 WDT configuration
-#
+# ESP32 WDT configuration
+
 # Copyright (C) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig WDT_ESP32
 	bool "ESP32 Watchdog (WDT) Driver"

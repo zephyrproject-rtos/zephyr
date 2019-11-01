@@ -1,10 +1,7 @@
-# Kconfig - Silicon Labs EFM32PG-STK3402A platform configuration options
+# Silicon Labs EFM32PG-STK3402A platform configuration options
 
-#
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if GPIO || LOG_BACKEND_SWO
 

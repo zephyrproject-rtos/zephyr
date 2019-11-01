@@ -1,7 +1,6 @@
-# Kconfig - nRF52811 PCA10056 board configuration
-#
+# nRF52811 PCA10056 board configuration
+
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF52811_PCA10056
