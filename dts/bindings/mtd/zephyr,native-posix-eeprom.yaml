@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+title: Zephyr Native POSIX EEPROM device
+
+description: >
+    Zephyr Native POSIX EEPROM device
+
+compatible: "zephyr,native-posix-eeprom"
+
+include: eeprom-base.yaml
+
+properties:
+    size:
+      required: true
