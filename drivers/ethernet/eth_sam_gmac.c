@@ -1930,7 +1930,7 @@ static const struct ethernet_api eth_api = {
 #endif
 };
 
-static struct device DEVICE_NAME_GET(eth0_sam_gmac);
+struct device DEVICE_NAME_GET(eth0_sam_gmac);
 
 static void eth0_irq_config(void)
 {

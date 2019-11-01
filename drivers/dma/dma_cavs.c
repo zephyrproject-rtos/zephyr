@@ -362,7 +362,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 
 /* DMA0 */
 
-static struct device DEVICE_NAME_GET(dw_dma0);
+struct device DEVICE_NAME_GET(dw_dma0);
 
 static void dw_dma0_irq_config(void)
 {

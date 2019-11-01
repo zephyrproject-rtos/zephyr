@@ -202,7 +202,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a0_config = {
 	.irq_num = DT_GPIO_CC32XX_A0_IRQ+16,
 };
 
-static struct device DEVICE_NAME_GET(gpio_cc32xx_a0);
+struct device DEVICE_NAME_GET(gpio_cc32xx_a0);
 static struct gpio_cc32xx_data gpio_cc32xx_a0_data;
 
 static int gpio_cc32xx_a0_init(struct device *dev)
@@ -232,7 +232,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a1_config = {
 	.irq_num = DT_GPIO_CC32XX_A1_IRQ+16,
 };
 
-static struct device DEVICE_NAME_GET(gpio_cc32xx_a1);
+struct device DEVICE_NAME_GET(gpio_cc32xx_a1);
 static struct gpio_cc32xx_data gpio_cc32xx_a1_data;
 
 static int gpio_cc32xx_a1_init(struct device *dev)
@@ -262,7 +262,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a2_config = {
 	.irq_num = DT_GPIO_CC32XX_A2_IRQ+16,
 };
 
-static struct device DEVICE_NAME_GET(gpio_cc32xx_a2);
+struct device DEVICE_NAME_GET(gpio_cc32xx_a2);
 static struct gpio_cc32xx_data gpio_cc32xx_a2_data;
 
 static int gpio_cc32xx_a2_init(struct device *dev)
@@ -292,7 +292,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a3_config = {
 	.irq_num = DT_GPIO_CC32XX_A3_IRQ+16,
 };
 
-static struct device DEVICE_NAME_GET(gpio_cc32xx_a3);
+struct device DEVICE_NAME_GET(gpio_cc32xx_a3);
 static struct gpio_cc32xx_data gpio_cc32xx_a3_data;
 
 static int gpio_cc32xx_a3_init(struct device *dev)

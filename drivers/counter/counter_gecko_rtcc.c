@@ -320,7 +320,7 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 
 /* RTCC0 */
 
-static struct device DEVICE_NAME_GET(counter_gecko_0);
+struct device DEVICE_NAME_GET(counter_gecko_0);
 
 ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 {

@@ -326,7 +326,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 /* I2C0 */
 
 #ifdef CONFIG_I2C_0
-static struct device DEVICE_NAME_GET(i2c0_sam);
+struct device DEVICE_NAME_GET(i2c0_sam);
 
 static void i2c0_sam_irq_config(void)
 {
@@ -356,7 +356,7 @@ DEVICE_AND_API_INIT(i2c0_sam, DT_I2C_0_NAME, &i2c_sam_twihs_initialize,
 /* I2C1 */
 
 #ifdef CONFIG_I2C_1
-static struct device DEVICE_NAME_GET(i2c1_sam);
+struct device DEVICE_NAME_GET(i2c1_sam);
 
 static void i2c1_sam_irq_config(void)
 {
@@ -386,7 +386,7 @@ DEVICE_AND_API_INIT(i2c1_sam, DT_I2C_1_NAME, &i2c_sam_twihs_initialize,
 /* I2C2 */
 
 #ifdef CONFIG_I2C_2
-static struct device DEVICE_NAME_GET(i2c2_sam);
+struct device DEVICE_NAME_GET(i2c2_sam);
 
 static void i2c2_sam_irq_config(void)
 {

@@ -819,7 +819,7 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 }
 
 #ifdef CONFIG_I2S_1
-static struct device DEVICE_NAME_GET(i2s_stm32_1);
+struct device DEVICE_NAME_GET(i2s_stm32_1);
 
 static void i2s_stm32_irq_config_func_1(struct device *dev);
 
@@ -889,7 +889,7 @@ static void i2s_stm32_irq_config_func_1(struct device *dev)
 #endif /* CONFIG_I2S_1 */
 
 #ifdef CONFIG_I2S_2
-static struct device DEVICE_NAME_GET(i2s_stm32_2);
+struct device DEVICE_NAME_GET(i2s_stm32_2);
 
 static void i2s_stm32_irq_config_func_2(struct device *dev);
 
@@ -959,7 +959,7 @@ static void i2s_stm32_irq_config_func_2(struct device *dev)
 #endif /* CONFIG_I2S_2 */
 
 #ifdef CONFIG_I2S_3
-static struct device DEVICE_NAME_GET(i2s_stm32_3);
+struct device DEVICE_NAME_GET(i2s_stm32_3);
 
 static void i2s_stm32_irq_config_func_3(struct device *dev);
 
@@ -1029,7 +1029,7 @@ static void i2s_stm32_irq_config_func_3(struct device *dev)
 #endif /* CONFIG_I2S_3 */
 
 #ifdef CONFIG_I2S_4
-static struct device DEVICE_NAME_GET(i2s_stm32_4);
+struct device DEVICE_NAME_GET(i2s_stm32_4);
 
 static void i2s_stm32_irq_config_func_4(struct device *dev);
 
@@ -1099,7 +1099,7 @@ static void i2s_stm32_irq_config_func_4(struct device *dev)
 #endif /* CONFIG_I2S_4 */
 
 #ifdef CONFIG_I2S_5
-static struct device DEVICE_NAME_GET(i2s_stm32_5);
+struct device DEVICE_NAME_GET(i2s_stm32_5);
 
 static void i2s_stm32_irq_config_func_5(struct device *dev);
 

@@ -655,7 +655,7 @@ done:
 
 /* Bindings to the platform */
 
-static struct device DEVICE_NAME_GET(eth_smsc911x_0);
+struct device DEVICE_NAME_GET(eth_smsc911x_0);
 
 int eth_init(struct device *dev)
 {

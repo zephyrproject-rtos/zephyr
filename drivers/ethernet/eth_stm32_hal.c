@@ -489,7 +489,7 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-static struct device DEVICE_NAME_GET(eth0_stm32_hal);
+struct device DEVICE_NAME_GET(eth0_stm32_hal);
 
 static void eth0_irq_config(void)
 {
