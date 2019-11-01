@@ -1397,6 +1397,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		/* Confirm match if cfg is managed by application */
 		if (ccc->cfg_match && !ccc->cfg_match(conn, attr)) {
+			bt_conn_unref(conn);
 			continue;
 		}
 
