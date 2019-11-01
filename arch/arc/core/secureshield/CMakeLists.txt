@@ -10,8 +10,3 @@ zephyr_library_sources(
   arc_secure.S
   secure_sys_services.c
   )
-
-zephyr_library_include_directories(
-  ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/arc/include
-  )

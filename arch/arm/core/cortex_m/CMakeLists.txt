@@ -15,8 +15,3 @@ zephyr_linker_sources_ifdef(CONFIG_SW_VECTOR_RELAY
   RAM_SECTIONS
   vt_pointer_section.ld
   )
-
-zephyr_library_include_directories(
-  ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/arm/include
-)

@@ -14,9 +14,4 @@ if(CONFIG_XTENSA_RESET_VECTOR)
     memerror-vector.S
     memctl_default.S
     )
-
-  zephyr_library_include_directories(
-    ${ZEPHYR_BASE}/kernel/include
-    ${ZEPHYR_BASE}/arch/xtensa/include
-    )
 endif()

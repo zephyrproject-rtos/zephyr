@@ -20,11 +20,6 @@ zephyr_library_sources(
   prep_c.c
 )
 
-zephyr_library_include_directories(
-  ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/arm/include
-)
-
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_CPLUSPLUS __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
