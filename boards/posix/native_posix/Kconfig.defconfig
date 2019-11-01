@@ -102,4 +102,11 @@ config USB_NATIVE_POSIX
 
 endif # USB
 
+if EEPROM
+
+config EEPROM_NATIVE_POSIX
+	default y
+
+endif # EEPROM
+
 endif # BOARD_NATIVE_POSIX

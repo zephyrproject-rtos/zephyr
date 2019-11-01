@@ -18,6 +18,9 @@
 		zephyr,flash = &flash0;
 	};
 
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
 
 	flashcontroller0: flash-controller@0 {
 		compatible = "zephyr,native-posix-flash-controller";
@@ -63,6 +66,13 @@
 				};
 			};
 		};
+	};
+
+	eeprom0: eeprom {
+		status = "okay";
+		compatible = "zephyr,native-posix-eeprom";
+		label = "EEPROM_0";
+		size = <DT_SIZE_K(32)>;
 	};
 
 	uart0: uart {
