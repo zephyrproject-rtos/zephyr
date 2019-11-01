@@ -87,4 +87,8 @@ source "drivers/espi/Kconfig"
 
 source "drivers/ps2/Kconfig"
 
+source "drivers/kscan/Kconfig"
+
+source "drivers/video/Kconfig"
+
 endmenu

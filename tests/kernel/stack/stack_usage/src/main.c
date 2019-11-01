@@ -157,7 +157,7 @@ static void test_single_stack_play(void)
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, TSTACK_SIZE,
 				      thread_entry_fn_single, &stack1, NULL,
 				      NULL, K_PRIO_PREEMPT(0), K_USER |
-				      K_INHERIT_PERMS, 0);
+				      K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* Let the child thread run */
 	k_sem_take(&end_sema, K_FOREVER);
@@ -186,7 +186,7 @@ static void test_dual_stack_play(void)
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, TSTACK_SIZE,
 				      thread_entry_fn_dual, &stack1, &stack2,
 				      NULL, K_PRIO_PREEMPT(0), K_USER |
-				      K_INHERIT_PERMS, 0);
+				      K_INHERIT_PERMS, K_NO_WAIT);
 
 	for (i = 0U; i < STACK_LEN; i++) {
 		/* Push items to stack2 */
@@ -215,7 +215,7 @@ static void test_isr_stack_play(void)
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, TSTACK_SIZE,
 				      thread_entry_fn_isr, &stack1, &stack2,
 				      NULL, K_PRIO_PREEMPT(0),
-				      K_INHERIT_PERMS, 0);
+				      K_INHERIT_PERMS, K_NO_WAIT);
 
 
 	/* Push items to stack2 */
@@ -246,7 +246,7 @@ void test_main(void)
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_user_unit_test(test_single_stack_play),
-			 ztest_user_unit_test(test_dual_stack_play),
-			 ztest_unit_test(test_isr_stack_play));
+			 ztest_1cpu_user_unit_test(test_dual_stack_play),
+			 ztest_1cpu_unit_test(test_isr_stack_play));
 	ztest_run_test_suite(test_stack_usage);
 }

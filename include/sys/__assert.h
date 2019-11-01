@@ -20,6 +20,12 @@
 #define __ASSERT_ON 0
 #endif
 
+#ifdef CONFIG_ASSERT_NO_FILE_INFO
+#define __ASSERT_FILE_INFO ""
+#else  /* CONFIG_ASSERT_NO_FILE_INFO */
+#define __ASSERT_FILE_INFO __FILE__
+#endif /* CONFIG_ASSERT_NO_FILE_INFO */
+
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
 #error "Invalid __ASSERT() level: must be between 0 and 2"
@@ -40,26 +46,26 @@ void assert_post_action(const char *file, unsigned int line);
 #endif
 
 #define __ASSERT_LOC(test)                               \
-	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
-	       Z_STRINGIFY(test),                         \
-	       __FILE__,                                 \
+	printk("ASSERTION FAIL [%s] @ %s:%d\n",          \
+	       Z_STRINGIFY(test),                        \
+	       __ASSERT_FILE_INFO,                       \
 	       __LINE__)                                 \
 
-#define __ASSERT_NO_MSG(test)                                            \
-	do {                                                             \
-		if (!(test)) {                                           \
-			__ASSERT_LOC(test);                              \
-			assert_post_action(__FILE__, __LINE__);          \
-		}                                                        \
+#define __ASSERT_NO_MSG(test)                                             \
+	do {                                                              \
+		if (!(test)) {                                            \
+			__ASSERT_LOC(test);                               \
+			assert_post_action(__ASSERT_FILE_INFO, __LINE__); \
+		}                                                         \
 	} while (false)
 
-#define __ASSERT(test, fmt, ...)                                         \
-	do {                                                             \
-		if (!(test)) {                                           \
-			__ASSERT_LOC(test);                              \
-			printk("\t" fmt "\n", ##__VA_ARGS__);            \
-			assert_post_action(__FILE__, __LINE__);          \
-		}                                                        \
+#define __ASSERT(test, fmt, ...)                                          \
+	do {                                                              \
+		if (!(test)) {                                            \
+			__ASSERT_LOC(test);                               \
+			printk("\t" fmt "\n", ##__VA_ARGS__);             \
+			assert_post_action(__ASSERT_FILE_INFO, __LINE__); \
+		}                                                         \
 	} while (false)
 
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...)                \

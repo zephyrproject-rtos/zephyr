@@ -3,7 +3,7 @@
 
 title: SiFive Freedom I2C
 
-description: >
+description: |
     This is a binding for the SiFive Freedom I2C interface
 
 compatible: "sifive,i2c0"

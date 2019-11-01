@@ -82,7 +82,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	z_ready_thread(thread);
 
-	z_set_thread_return_value(thread, 0);
+	z_arch_thread_return_value_set(thread, 0);
 }
 
 
@@ -95,7 +95,7 @@ void k_timer_init(struct k_timer *timer,
 	timer->status = 0U;
 
 	z_waitq_init(&timer->wait_q);
-	z_init_timeout(&timer->timeout, z_timer_expiration_handler);
+	z_init_timeout(&timer->timeout);
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->user_data = NULL;
@@ -184,7 +184,7 @@ static inline u32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 
 u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t result = timer->status;

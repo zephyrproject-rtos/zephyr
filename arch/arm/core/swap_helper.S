@@ -1,27 +1,28 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Thread context switching for ARM Cortex-M
+ * @brief Thread context switching for ARM Cortex-M and Cortex-R
  *
  * This module implements the routines necessary for thread context switching
- * on ARM Cortex-M CPUs.
+ * on ARM Cortex-M and Cortex-R CPUs.
  */
 
-#include <kernel_structs.h>
-#include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(__svc)
-GTEXT(__pendsv)
+GTEXT(z_arm_svc)
+GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
 GTEXT(z_arm_do_syscall)
 GDATA(_k_neg_eagain)
@@ -37,16 +38,22 @@ GDATA(_kernel)
  * switch contexts, it pends the PendSV exception.
  *
  * When PendSV is pended, the decision that a context switch must happen has
- * already been taken. In other words, when __pendsv() runs, we *know* we have
- * to swap *something*.
+ * already been taken. In other words, when z_arm_pendsv() runs, we *know* we
+ * have to swap *something*.
+ *
+ * For Cortex-M, z_arm_pendsv() is invoked with no arguments.
+ *
+ * For Cortex-R, PendSV exception is not supported by the architecture and this
+ * function is directly called either by _IntExit in case of preemption, or
+ * z_arm_svc in case of cooperative switching.
  */
 
-SECTION_FUNC(TEXT, __pendsv)
+SECTION_FUNC(TEXT, z_arm_pendsv)
 
 #ifdef CONFIG_TRACING
     /* Register the context switch */
     push {r0, lr}
-    bl z_sys_trace_thread_switched_out
+    bl sys_trace_thread_switched_out
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1
@@ -118,7 +125,7 @@ out_fp_endif:
     isb /* Make the effect of disabling interrupts be realized immediately */
 #elif defined(CONFIG_ARMV7_R)
     /*
-     * Interrupts are still disabled from __swap so empty clause
+     * Interrupts are still disabled from z_arch_swap so empty clause
      * here to avoid the preprocessor error below
      */
 #else
@@ -158,7 +165,9 @@ out_fp_endif:
     str v3, [v4, #0]
 #endif
 
-    /* Restore previous interrupt disable state (irq_lock key) */
+    /* Restore previous interrupt disable state (irq_lock key)
+     * (We clear the arch.basepri field after restoring state)
+     */
 #if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0)) && \
 	    _thread_offset_to_basepri > 124
     /* Doing it this way since the offset to thread->arch.basepri can in
@@ -188,6 +197,34 @@ out_fp_endif:
     bne _thread_irq_disabled
     cpsie i
 _thread_irq_disabled:
+
+#if defined(CONFIG_ARM_MPU)
+    /* Re-program dynamic memory map */
+    push {r2,lr}
+    mov r0, r2
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2,r3}
+    mov lr, r3
+#endif
+
+#ifdef CONFIG_USERSPACE
+    /* restore mode */
+    ldr r3, =_thread_offset_to_mode
+    adds r3, r2, r3
+    ldr r0, [r3]
+    mrs r3, CONTROL
+    movs.n r1, #1
+    bics r3, r1
+    orrs r3, r0
+    msr CONTROL, r3
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
+#endif
 
     ldr r4, =_thread_offset_to_callee_saved
     adds r0, r2, r4
@@ -244,9 +281,8 @@ in_fp_endif:
 #if defined (CONFIG_ARM_MPU)
     /* Re-program dynamic memory map */
     push {r2,lr}
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
-    bl z_arch_configure_dynamic_mpu_regions
+    mov r0, r2 /* _current thread */
+    bl z_arm_configure_dynamic_mpu_regions
     pop {r2,lr}
 #endif
 
@@ -319,7 +355,7 @@ _thread_irq_disabled:
 #ifdef CONFIG_TRACING
     /* Register the context switch */
     push {r0, lr}
-    bl z_sys_trace_thread_switched_in
+    bl sys_trace_thread_switched_in
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1
@@ -328,68 +364,14 @@ _thread_irq_disabled:
 #endif
 #endif /* CONFIG_TRACING */
 
-    /* exc return */
+    /*
+     * Cortex-M: return from PendSV exception
+     * Cortex-R: return to the caller (_IntExit or z_arm_svc)
+     */
     bx lr
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-
-/**
- *
- * @brief Service call handler
- *
- * The service call (svc) is used in the following occasions:
- * - IRQ offloading
- * - Kernel run-time exceptions
- *
- * @return N/A
- */
-SECTION_FUNC(TEXT, __svc)
-    /* Use EXC_RETURN state to find out if stack frame is on the
-     * MSP or PSP
-     */
-    ldr r0, =0x4
-    mov r1, lr
-    tst r1, r0
-    beq _stack_frame_msp
-    mrs r0, PSP
-    bne _stack_frame_endif
-_stack_frame_msp:
-    mrs r0, MSP
-_stack_frame_endif:
-
-    /* Figure out what SVC call number was invoked */
-    ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    /* SVC is a two-byte instruction, point to it and read  encoding */
-    subs r1, r1, #2
-    ldrb r1, [r1, #0]
-
-   /*
-    * grab service call number:
-    * 1: irq_offload (if configured)
-    * 2: kernel panic or oops (software generated fatal exception)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
-    */
-
-    cmp r1, #2
-    beq _oops
-
-#if defined(CONFIG_IRQ_OFFLOAD)
-    push {r0, lr}
-    bl z_irq_do_offload  /* call C routine which executes the offload */
-    pop {r0, r1}
-    mov lr, r1
-#endif /* CONFIG_IRQ_OFFLOAD */
-
-    /* exception return is done in _IntExit() */
-    b _IntExit
-
-_oops:
-    push {r0, lr}
-    bl z_do_kernel_oops
-    pop {r0, pc}
-
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+  defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 /**
  *
@@ -402,15 +384,40 @@ _oops:
  *
  * @return N/A
  */
-SECTION_FUNC(TEXT, __svc)
+SECTION_FUNC(TEXT, z_arm_svc)
+  /* Use EXC_RETURN state to find out if stack frame is on the
+   * MSP or PSP
+   */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+  movs r0, #0x4
+  mov r1, lr
+  tst r1, r0
+  beq _stack_frame_msp
+  mrs r0, PSP
+  bne _stack_frame_endif
+_stack_frame_msp:
+  mrs r0, MSP
+_stack_frame_endif:
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     tst lr, #0x4    /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */
+#endif
+
+
+    /* Figure out what SVC call number was invoked */
 
     ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    /* SVC is a two-byte instruction, point to it and read encoding */
-    ldrh r1, [r1, #-2]
+    /* SVC is a two-byte instruction, point to it and read the
+     * SVC number (lower byte of SCV instruction)
+     */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    subs r1, r1, #2
+    ldrb r1, [r1]
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    ldrb r1, [r1, #-2]
+#endif
 
    /*
     * grab service call number:
@@ -418,10 +425,7 @@ SECTION_FUNC(TEXT, __svc)
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
     * 3: System call (if user mode supported)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
     */
-    ands r1, #0xff
 #if defined(CONFIG_USERSPACE)
     mrs r2, CONTROL
 
@@ -432,10 +436,15 @@ SECTION_FUNC(TEXT, __svc)
      * check that we are privileged before invoking other SVCs
      * oops if we are unprivileged
      */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    movs r3, #0x1
+    tst r2, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     tst r2, #0x1
+#endif
     bne _oops
 
-#endif
+#endif /* CONFIG_USERSPACE */
 
     cmp r1, #2
     beq _oops
@@ -443,15 +452,21 @@ SECTION_FUNC(TEXT, __svc)
 #if defined(CONFIG_IRQ_OFFLOAD)
     push {r0, lr}
     bl z_irq_do_offload  /* call C routine which executes the offload */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    pop {r0, r3}
+    mov lr, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     pop {r0, lr}
+#endif
 
-    /* exception return is done in _IntExit() */
-    b _IntExit
+    /* exception return is done in z_arm_int_exit() */
+    b z_arm_int_exit
 #endif
 
 _oops:
     push {r0, lr}
     bl z_do_kernel_oops
+    /* return from SVC exception is done here */
     pop {r0, pc}
 
 #if defined(CONFIG_USERSPACE)
@@ -477,25 +492,53 @@ _oops:
      * r8 - saved link register
      */
 _do_syscall:
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    movs r3, #24
+    ldr r1, [r0, r3]   /* grab address of PC from stack frame */
+    mov r8, r1
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r8, [r0, #24]   /* grab address of PC from stack frame */
+#endif
     ldr r1, =z_arm_do_syscall
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    str r1, [r0, r3]   /* overwrite the PC to point to z_arm_do_syscall */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     str r1, [r0, #24]   /* overwrite the PC to point to z_arm_do_syscall */
+#endif
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    ldr r3, =K_SYSCALL_LIMIT
+    cmp r6, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* validate syscall limit */
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
+#endif
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
-    str r6, [r0, #0]
+    str r6, [r0]
     ldr r6, =K_SYSCALL_BAD
 
     /* Bad syscalls treated as valid syscalls with ID K_SYSCALL_BAD. */
 
 valid_syscall_id:
-    push {r0, r1}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    mov ip, r2
+    ldr r1, =_thread_offset_to_mode
+    ldr r3, [r0, r1]
+    movs r2, #1
+    bics r3, r2
+    /* Store (privileged) mode in thread's mode state variable */
+    str r3, [r0, r1]
+    mov r2, ip
+    dsb
+    /* set mode to privileged, r2 still contains value from CONTROL */
+    movs r3, #1
+    bics r2, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r1, [r0, #_thread_offset_to_mode]
     bic r1, #1
     /* Store (privileged) mode in thread's mode state variable */
@@ -503,6 +546,7 @@ valid_syscall_id:
     dsb
     /* set mode to privileged, r2 still contains value from CONTROL */
     bic r2, #1
+#endif
     msr CONTROL, r2
 
     /* ISB is not strictly necessary here (stack pointer is not being
@@ -510,17 +554,28 @@ valid_syscall_id:
      * instructions with the previous privilege.
      */
     isb
-    pop {r0, r1}
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #elif defined(CONFIG_ARMV7_R)
-SECTION_FUNC(TEXT, __svc)
+
+/**
+ *
+ * @brief Service call handler
+ *
+ * The service call (svc) is used in the following occasions:
+ * - Cooperative context switching
+ * - IRQ offloading
+ * - Kernel run-time exceptions
+ *
+ * @return N/A
+ */
+SECTION_FUNC(TEXT, z_arm_svc)
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
-     * Save r12 and the lr as we will be swapping in another process and
+     * Save r12 and the lr as we could be swapping in another process and
      * returning to a different location.
      */
     push {r4, r5}
@@ -560,23 +615,19 @@ demux:
     beq _oops
 
 #if CONFIG_IRQ_OFFLOAD
-    push {r0, lr}
     blx z_irq_do_offload  /* call C routine which executes the offload */
-    pop {r0, lr}
 
-    /* exception return is done in _IntExit() */
+    /* exception return is done in z_arm_int_exit() */
     mov r0, #RET_FROM_SVC
-    b _IntExit
+    b z_arm_int_exit
 #endif
 
 _context_switch:
     /* handler mode exit, to PendSV */
-    push {r0, lr}
-    bl __pendsv
-    pop {r0, lr}
+    bl z_arm_pendsv
 
     mov r0, #RET_FROM_SVC
-    b _IntExit
+    b z_arm_int_exit
 
 _oops:
     push {r0, lr}
@@ -585,8 +636,8 @@ _oops:
     cpsie i
     movs pc, lr
 
-GTEXT(cortex_r_svc)
-SECTION_FUNC(TEXT, cortex_r_svc)
+GTEXT(z_arm_cortex_r_svc)
+SECTION_FUNC(TEXT, z_arm_cortex_r_svc)
     svc #0
     bx lr
 

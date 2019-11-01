@@ -55,15 +55,15 @@ static void init_timer_data(void)
 static void duration_expire(struct k_timer *timer)
 {
 	/** TESTPOINT: expire function */
+	s64_t interval = k_uptime_delta(&tdata.timestamp);
+
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
-		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= DURATION,
-			     timer);
+		TIMER_ASSERT(interval >= DURATION, timer);
 	} else {
-		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= PERIOD, timer);
+		TIMER_ASSERT(interval >= PERIOD, timer);
 	}
 
-	tdata.timestamp = k_uptime_get();
 	if (tdata.expire_cnt >= EXPIRE_TIMES) {
 		k_timer_stop(timer);
 	}
@@ -159,7 +159,7 @@ void test_timer_period_0(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
-	k_timer_start(&period0_timer, DURATION, 0);
+	k_timer_start(&period0_timer, DURATION, K_NO_WAIT);
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + 1);
 
@@ -208,7 +208,7 @@ void test_timer_expirefn_null(void)
  */
 static void tick_sync(void)
 {
-	k_timer_start(&sync_timer, 0, 1);
+	k_timer_start(&sync_timer, K_NO_WAIT, K_MSEC(1));
 	k_timer_status_sync(&sync_timer);
 	k_timer_stop(&sync_timer);
 }
@@ -242,7 +242,7 @@ void test_timer_periodicity(void)
 
 	init_timer_data();
 	/** TESTPOINT: set duration 0 */
-	k_timer_start(&periodicity_timer, 0, PERIOD);
+	k_timer_start(&periodicity_timer, K_NO_WAIT, PERIOD);
 
 	/* clear the expiration that would have happened due to
 	 * whatever duration that was set. Since timer is likely
@@ -485,7 +485,7 @@ void test_timer_user_data(void)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		k_timer_start(user_data_timer[ii], 50 + ii * 50, 0);
+		k_timer_start(user_data_timer[ii], 50 + ii * 50, K_NO_WAIT);
 	}
 
 	k_sleep(50 * ii + 50);
@@ -519,7 +519,7 @@ void test_timer_remaining_get(void)
 	u32_t remaining;
 
 	init_timer_data();
-	k_timer_start(&remain_timer, DURATION, 0);
+	k_timer_start(&remain_timer, DURATION, K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
 	remaining = k_timer_remaining_get(&remain_timer);
 	k_timer_stop(&remain_timer);

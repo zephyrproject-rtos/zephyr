@@ -1,6 +1,6 @@
 title: STM32 PWM
 
-description: >
+description: |
     This binding gives a base representation of the STM32 PWM
 
 compatible: "st,stm32-pwm"
@@ -19,7 +19,7 @@ properties:
     "#pwm-cells":
       const: 2
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

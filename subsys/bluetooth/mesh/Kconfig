@@ -32,6 +32,26 @@ config BT_MESH_PB_ADV
 	  Enable this option to allow the device to be provisioned over
 	  the advertising bearer.
 
+config BT_MESH_PROVISIONER
+	bool "Provisioner support"
+	select BT_ECC
+	select BT_MESH_PROV
+	default n
+	help
+	  Enable this option to have support for provisioning remote devices.
+
+if BT_MESH_PROVISIONER
+
+config BT_MESH_NODE_COUNT
+	int "Maximum number of saved nodes per network"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many nodes each network can at most
+	  save in the provisioning database.
+
+endif # BT_MESH_PROVISIONER
+
 if BT_CONN
 
 # Virtual option enabled whenever any Proxy protocol is needed

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig COUNTER_MCUX_RTC
+config COUNTER_MCUX_RTC
 	bool "MCUX RTC driver"
 	depends on HAS_MCUX_RTC
 	help

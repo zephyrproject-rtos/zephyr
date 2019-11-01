@@ -56,7 +56,7 @@
  *
  */
 
-#include <test_ecc_utils.h>
+#include "test_ecc_utils.h"
 #include <tinycrypt/constants.h>
 #include <sys/util.h>
 

@@ -15,8 +15,7 @@
 
 #include "lis2dw12.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LIS2DW12);
+LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * lis2dw12_enable_int - enable selected int pin to generate interrupt
@@ -79,7 +78,7 @@ int lis2dw12_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	axis3bit16_t raw;
+	union axis3bit16_t raw;
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 	switch (trig->type) {

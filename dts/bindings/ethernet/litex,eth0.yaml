@@ -3,7 +3,7 @@
 
 title: LiteX Ethernet
 
-description: >
+description: |
     This binding gives a base representation of LiteX Ethernet
 
 compatible: "litex,eth0"

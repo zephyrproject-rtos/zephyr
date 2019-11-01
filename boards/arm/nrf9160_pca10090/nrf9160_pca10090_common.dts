@@ -35,6 +35,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 2>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -61,6 +68,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button2;
 		sw1 = &button3;
 		sw2 = &button0;
@@ -104,6 +112,7 @@
 };
 
 &i2c2 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	sda-pin = <30>;
 	scl-pin = <31>;
@@ -115,6 +124,7 @@
 };
 
 &spi3 {
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <18>;

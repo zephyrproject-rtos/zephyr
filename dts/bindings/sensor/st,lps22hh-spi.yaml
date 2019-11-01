@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LPS22HH
 
-description: >
+description: |
     This binding gives a base representation of LPS22HH pressure and
     temperature sensor connected to SPI bus
 

@@ -3,7 +3,7 @@
 
 title: Generic on-chip SRAM
 
-description: >
+description: |
     This binding gives a generic on-chip SRAM description
 
 compatible: "mmio-sram"

@@ -8,11 +8,9 @@
 if SOC_STM32F417XX
 
 config SOC
-	string
 	default "stm32f417xx"
 
 config NUM_IRQS
-	int
 	default 82
 
 if GPIO_STM32

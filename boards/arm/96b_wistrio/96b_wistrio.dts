@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include <st/l1/stm32l151Xb.dtsi>
+#include <st/l1/stm32l151Xb-a.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
@@ -57,4 +58,12 @@
 		reg = <0x32>;
 		label = "LIS3DH";
 	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
 };

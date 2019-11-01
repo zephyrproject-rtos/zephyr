@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l496Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L496ZG-NUCLEO board";
@@ -58,10 +59,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-arduino_serial: &lpuart1 {};
 
 &usart2 {
 	current-speed = <115200>;

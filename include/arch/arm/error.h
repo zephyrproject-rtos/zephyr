@@ -31,15 +31,15 @@ extern "C" {
  * schedule a new thread until they are unlocked which is not what we want.
  * Force them unlocked as well.
  */
-#define Z_ARCH_EXCEPT(reason_p) do { \
+#define Z_ARCH_EXCEPT(reason_p) \
+register u32_t r0 __asm__("r0") = reason_p; \
+do { \
 	__asm__ volatile ( \
 		"cpsie i\n\t" \
-		"movs r0, %[reason]\n\t" \
 		"svc %[id]\n\t" \
 		: \
-		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
+		: "r" (r0), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
-	CODE_UNREACHABLE; \
 } while (false)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #define Z_ARCH_EXCEPT(reason_p) do { \
@@ -51,7 +51,6 @@ extern "C" {
 		: \
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
-	CODE_UNREACHABLE; \
 } while (false)
 #elif defined(CONFIG_ARMV7_R)
 /* Pick up the default definition in kernel.h for now */

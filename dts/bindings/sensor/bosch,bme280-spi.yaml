@@ -3,7 +3,7 @@
 
 title: BME280 Integrated environmental sensor
 
-description: >
+description: |
     This is a representation of the BME280 Integrated environmental sensor
 
 compatible: "bosch,bme280"

@@ -1,0 +1,11 @@
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+title: ARM Cortex-R5 CPU
+
+description: |
+    This is a representation of ARM Cortex-R5 CPU.
+
+compatible: "arm,cortex-r5"
+
+include: cpu.yaml

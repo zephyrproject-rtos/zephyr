@@ -20,20 +20,29 @@ config BOARD
 
 endif
 
+if GPIO
+
+config GPIO_CMSDK_AHB
+	default y
+
+config GPIO_CMSDK_AHB_PORT0
+	default y
+
+endif
 
 if SERIAL
 
 config UART_PL011
-	def_bool y
+	default y
 
 config UART_INTERRUPT_DRIVEN
-	def_bool y
+	default y
 
 config UART_PL011_PORT0
-	def_bool y
+	default y
 
 config UART_PL011_PORT1
-	def_bool y
+	default y
 
 endif # SERIAL
 

@@ -38,41 +38,40 @@ extern volatile irq_offload_routine_t offload_routine;
  * to the Vector Key field, otherwise the writes are ignored.
  */
 #define AIRCR_VECT_KEY_PERMIT_WRITE 0x05FAUL
-/**
- *
- * @brief Find out if running in an ISR context
- *
- * The current executing vector is found in the IPSR register. We consider the
- * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions to be
- * interrupts. Taking a fault within an exception is also considered in
- * interrupt context.
- *
- * @return 1 if in ISR, 0 if not.
- */
-static ALWAYS_INLINE bool z_IsInIsr(void)
-{
-	u32_t vector = __get_IPSR();
 
-	/* IRQs + PendSV (14) + SYSTICK (15) are interrupts. */
-	return (vector > 13)
-#ifdef CONFIG_IRQ_OFFLOAD
-		/* Only non-NULL if currently running an offloaded function */
-		|| offload_routine != NULL
-#endif
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-		/* On ARMv6-M there is no nested execution bit, so we check
-		 * exception 3, hard fault, to a detect a nested exception.
-		 */
-		|| (vector == 3U)
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-		/* If not in thread mode, and if RETTOBASE bit in ICSR is 0,
-		 * then there are preempted active exceptions to execute.
-		 */
-		|| (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk))
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-		;
+/*
+ * The current executing vector is found in the IPSR register. All
+ * IRQs and system exceptions are considered as interrupt context.
+ */
+static ALWAYS_INLINE bool z_arch_is_in_isr(void)
+{
+	return (__get_IPSR()) ? (true) : (false);
+}
+
+/**
+ * @brief Find out if we were in ISR context
+ *        before the current exception occurred.
+ *
+ * A function that determines, based on inspecting the current
+ * ESF, whether the processor was in handler mode before entering
+ * the current exception state (i.e. nested exception) or not.
+ *
+ * Notes:
+ * - The function shall only be called from ISR context.
+ * - We do not use ARM processor state flags to determine
+ *   whether we are in a nested exception; we rely on the
+ *   RETPSR value stacked on the ESF. Hence, the function
+ *   assumes that the ESF stack frame has a valid RETPSR
+ *   value.
+ *
+ * @param esf the exception stack frame (cannot be NULL)
+ * @return true if execution state was in handler mode, before
+ *              the current exception occurred, otherwise false.
+ */
+static ALWAYS_INLINE bool z_arch_is_in_nested_exception(
+	const z_arch_esf_t *esf)
+{
+	return (esf->basic.xpsr & IPSR_ISR_Msk) ? (true) : (false);
 }
 
 /**
@@ -85,7 +84,7 @@ static ALWAYS_INLINE bool z_IsInIsr(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_ExcSetup(void)
+static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
 	NVIC_SetPriority(PendSV_IRQn, 0xff);
 
@@ -137,7 +136,7 @@ static ALWAYS_INLINE void z_ExcSetup(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_clearfaults(void)
+static ALWAYS_INLINE void z_arm_clear_faults(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

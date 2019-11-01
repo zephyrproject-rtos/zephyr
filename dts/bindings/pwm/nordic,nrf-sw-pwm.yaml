@@ -1,16 +1,13 @@
 title: nRF SW PWM
 
-description: >
+description: |
     This binding gives a base representation of the nRFx S/W PWM
 
 compatible: "nordic,nrf-sw-pwm"
 
-include: base.yaml
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    label:
-      required: true
-
     timer-instance:
       type: int
       description: Timer instance to use for generating the PWM output signals
@@ -35,3 +32,9 @@ properties:
       type: int
       description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
       required: true
+
+    "#pwm-cells":
+      const: 1
+
+pwm-cells:
+  - channel

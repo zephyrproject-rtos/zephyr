@@ -9,7 +9,6 @@
 if SOC_MK64F12
 
 config SOC
-	string
 	default "mk64f12"
 
 if ADC

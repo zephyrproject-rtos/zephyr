@@ -6,7 +6,7 @@
 
 title: Microchip XEC watchdog timer
 
-description: >
+description: |
     This binding gives a base representation of the Microchip XEC watchdog timer
 
 include: base.yaml

@@ -18,7 +18,6 @@
 
 #include <spinlock.h>
 #include <kernel_structs.h>
-#include <sys/printk.h>
 #include <sys/math_extras.h>
 #include <sys_clock.h>
 #include <drivers/timer/system_timer.h>
@@ -61,7 +60,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 bool k_is_in_isr(void)
 {
-	return z_is_in_isr();
+	return z_arch_is_in_isr();
 }
 
 /*
@@ -412,8 +411,8 @@ static inline size_t adjust_stack_size(size_t stack_size)
 		random_val = sys_rand32_get();
 	}
 
-	/* Don't need to worry about alignment of the size here, z_new_thread()
-	 * is required to do it
+	/* Don't need to worry about alignment of the size here,
+	 * z_arch_new_thread() is required to do it.
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
@@ -462,12 +461,12 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
-	z_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-		    prio, options);
+	z_arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+			  prio, options);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in z_new_thread() has
+	/* don't set again if the arch's own code in z_arch_new_thread() has
 	 * already set the pointer.
 	 */
 	new_thread->userspace_local_data =
@@ -531,7 +530,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!z_is_in_isr(), "Threads may not be created in ISRs");
+	__ASSERT(!z_arch_is_in_isr(), "Threads may not be created in ISRs");
 
 	/* Special case, only for unit tests */
 #if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
@@ -775,6 +774,10 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 	thread_base->sched_locked = 0U;
 
+#ifdef CONFIG_SMP
+	thread_base->is_idle = 0;
+#endif
+
 	/* swap_data does not need to be initialized */
 
 	z_init_thread_timeout(thread_base);
@@ -805,8 +808,10 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 #ifdef SPIN_VALIDATE
 bool z_spin_lock_valid(struct k_spinlock *l)
 {
-	if (l->thread_cpu) {
-		if ((l->thread_cpu & 3) == _current_cpu->id) {
+	uintptr_t thread_cpu = l->thread_cpu;
+
+	if (thread_cpu) {
+		if ((thread_cpu & 3) == _current_cpu->id) {
 			return false;
 		}
 	}

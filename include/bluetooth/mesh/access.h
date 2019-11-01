@@ -31,6 +31,12 @@ extern "C" {
 
 #define BT_MESH_KEY_UNUSED        0xffff
 #define BT_MESH_KEY_DEV           0xfffe
+#define BT_MESH_KEY_DEV_LOCAL     BT_MESH_KEY_DEV
+#define BT_MESH_KEY_DEV_REMOTE    0xfffd
+#define BT_MESH_KEY_DEV_ANY       0xfffc
+
+#define BT_MESH_IS_DEV_KEY(key) (key == BT_MESH_KEY_DEV_LOCAL || \
+				 key == BT_MESH_KEY_DEV_REMOTE)
 
 /** Helper to define a mesh element within an array.
  *
@@ -176,6 +182,55 @@ struct bt_mesh_model_op {
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
+/** Length of a short Mesh MIC. */
+#define BT_MESH_MIC_SHORT 4
+/** Length of a long Mesh MIC. */
+#define BT_MESH_MIC_LONG 8
+
+/** @def BT_MESH_MODEL_OP_LEN
+ *
+ * @brief Helper to determine the length of an opcode.
+ *
+ * @param _op Opcode.
+ */
+#define BT_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
+
+/** @def BT_MESH_MODEL_BUF_LEN
+ *
+ * @brief Helper for model message buffer length.
+ *
+ * Returns the length of a Mesh model message buffer, including the opcode
+ * length and a short MIC.
+ *
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model payload.
+ */
+#define BT_MESH_MODEL_BUF_LEN(_op, _payload_len)                               \
+	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_SHORT)
+
+/** @def BT_MESH_MODEL_BUF_LEN_LONG_MIC
+ *
+ * @brief Helper for model message buffer length.
+ *
+ * Returns the length of a Mesh model message buffer, including the opcode
+ * length and a long MIC.
+ *
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model payload.
+ */
+#define BT_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)                      \
+	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_LONG)
+
+/** @def BT_MESH_MODEL_BUF_DEFINE
+ *
+ * @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
+ *
+ * @param _buf Buffer name.
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model message payload.
+ */
+#define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
+	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
 
 /** @def BT_MESH_MODEL_CB
  *

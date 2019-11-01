@@ -556,7 +556,7 @@ void test_sem_measure_timeouts(void)
 	/* With 0 as the timeout */
 	start_ticks = k_uptime_get();
 
-	ret_value = k_sem_take(&simple_sem, 0);
+	ret_value = k_sem_take(&simple_sem, K_NO_WAIT);
 
 	end_ticks = k_uptime_get();
 
@@ -769,16 +769,16 @@ void test_main(void)
 			 ztest_user_unit_test(test_simple_sem_from_task),
 			 ztest_user_unit_test(test_sem_take_no_wait),
 			 ztest_user_unit_test(test_sem_take_no_wait_fails),
-			 ztest_user_unit_test(test_sem_take_timeout_fails),
+			 ztest_1cpu_user_unit_test(test_sem_take_timeout_fails),
 			 ztest_user_unit_test(test_sem_take_timeout),
-			 ztest_user_unit_test(test_sem_take_timeout_forever),
+			 ztest_1cpu_user_unit_test(test_sem_take_timeout_forever),
 			 ztest_unit_test(test_sem_take_timeout_isr),
-			 ztest_user_unit_test(test_sem_take_multiple),
+			 ztest_1cpu_user_unit_test(test_sem_take_multiple),
 			 ztest_unit_test(test_sem_give_take_from_isr),
 			 ztest_unit_test(test_sem_multiple_threads_wait),
 			 ztest_unit_test(test_sem_measure_timeouts),
 			 ztest_unit_test(test_sem_measure_timeout_from_thread),
-			 ztest_unit_test(test_sem_multiple_take_and_timeouts),
+			 ztest_1cpu_unit_test(test_sem_multiple_take_and_timeouts),
 			 ztest_unit_test(test_sem_multi_take_timeout_diff_sem));
 	ztest_run_test_suite(test_semaphore);
 }

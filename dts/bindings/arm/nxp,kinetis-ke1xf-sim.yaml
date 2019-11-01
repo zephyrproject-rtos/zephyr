@@ -3,7 +3,7 @@
 
 title: Kinetis KE1xF System Integration Module (SIM)
 
-description: >
+description: |
     This is a representation of the Kinetis SIM IP node
 
 compatible: "nxp,kinetis-ke1xf-sim"
@@ -19,10 +19,10 @@ properties:
 
     clkout-source:
       type: int
-      required: true
+      required: false
       description: clkout clock source
 
     clkout-divider:
       type: int
-      required: true
+      required: false
       description: clkout divider

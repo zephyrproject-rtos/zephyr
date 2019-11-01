@@ -3,10 +3,10 @@
 
 title: u-blox SARA-R4 modem
 
-description: >
+description: |
     This is a representation of the u-blox SARA-R4 modem.
 
-compatible: "ubloc,sara-r4"
+compatible: "ublox,sara-r4"
 
 include: uart-device.yaml
 

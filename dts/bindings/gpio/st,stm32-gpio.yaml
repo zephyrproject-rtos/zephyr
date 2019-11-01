@@ -3,7 +3,7 @@
 
 title: STM32 GPIO
 
-description: >
+description: |
     This is a representation of the STM32 GPIO nodes
 
 compatible: "st,stm32-gpio"
@@ -23,6 +23,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

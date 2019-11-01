@@ -33,6 +33,13 @@ struct bt_mesh_app_key {
 	} keys[2];
 };
 
+struct bt_mesh_node {
+	u16_t addr;
+	u16_t net_idx;
+	u8_t  dev_key[16];
+	u8_t  num_elem;
+};
+
 struct bt_mesh_subnet {
 	u32_t beacon_sent;        /* Timestamp of last sent beacon */
 	u8_t  beacons_last;       /* Number of beacons during last
@@ -215,6 +222,8 @@ enum {
 	BT_MESH_HB_PUB_PENDING,
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
+	BT_MESH_VA_PENDING,
+	BT_MESH_NODES_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -246,6 +255,10 @@ struct bt_mesh_net {
 	struct k_delayed_work ivu_timer;
 
 	u8_t dev_key[16];
+
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	struct bt_mesh_node nodes[CONFIG_BT_MESH_NODE_COUNT];
+#endif
 
 	struct bt_mesh_app_key app_keys[CONFIG_BT_MESH_APP_KEY_COUNT];
 
@@ -344,6 +357,8 @@ u32_t bt_mesh_next_seq(void);
 void bt_mesh_net_start(void);
 
 void bt_mesh_net_init(void);
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+			      struct bt_mesh_net_rx *rx);
 
 /* Friendship Credential Management */
 struct friend_cred {

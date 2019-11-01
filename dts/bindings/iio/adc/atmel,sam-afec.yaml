@@ -1,6 +1,6 @@
 title: Atmel SAM Family AFEC
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM AFEC
 
 compatible: "atmel,sam-afec"
@@ -22,5 +22,5 @@ properties:
     "#io-channel-cells":
       const: 1
 
-"#cells":
+io-channel-cells:
     - input

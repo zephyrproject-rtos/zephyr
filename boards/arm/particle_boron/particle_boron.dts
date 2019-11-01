@@ -25,6 +25,7 @@
 };
 
 &i2c1 { /* power monitoring */
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <24>;

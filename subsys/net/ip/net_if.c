@@ -150,14 +150,12 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct net_context *context;
 	int status;
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-	/* Timestamp of the current network packet sent */
+	/* Timestamp of the current network packet sent if enabled */
 	struct net_ptp_time start_timestamp;
 	u32_t curr_time = 0;
 
-	/* We collect send statistics for each socket priority */
+	/* We collect send statistics for each socket priority if enabled */
 	u8_t pkt_priority;
-#endif
 
 	if (!pkt) {
 		return false;
@@ -175,8 +173,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_set_queued(pkt, false);
 		}
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-		if (context) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && context) {
 			if (net_context_get_timestamp(context, pkt,
 						      &start_timestamp) < 0) {
 				start_timestamp.nanosecond = 0;
@@ -184,17 +181,28 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 				pkt_priority = net_pkt_priority(pkt);
 			}
 		}
-#endif
+
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+			memcpy(&start_timestamp, net_pkt_timestamp(pkt),
+			       sizeof(start_timestamp));
+			pkt_priority = net_pkt_priority(pkt);
+		}
 
 		status = net_if_l2(iface)->send(iface, pkt);
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-		if (status >= 0 && context) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
+		    context) {
 			if (start_timestamp.nanosecond > 0) {
 				curr_time = k_cycle_get_32();
 			}
 		}
-#endif
+
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) && status >= 0) {
+			net_stats_update_tc_tx_time(iface,
+						    pkt_priority,
+						    start_timestamp.nanosecond,
+						    k_cycle_get_32());
+		}
 
 	} else {
 		/* Drop packet if interface is not up */
@@ -214,9 +222,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		net_context_send_cb(context, status);
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-		if (status >= 0 && start_timestamp.nanosecond &&
-		    curr_time > 0) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
+		    start_timestamp.nanosecond && curr_time > 0) {
 			/* So we know now how long the network packet was in
 			 * transit from when it was allocated to when we
 			 * got information that it was sent successfully.
@@ -226,7 +233,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 						    start_timestamp.nanosecond,
 						    curr_time);
 		}
-#endif
 	}
 
 	if (dst->addr) {
@@ -261,6 +267,31 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 #endif
 
 	net_tc_submit_to_tx_queue(tc, pkt);
+}
+
+void net_if_stats_reset(struct net_if *iface)
+{
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	struct net_if *tmp;
+
+	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
+		if (iface == tmp) {
+			memset(&iface->stats, 0, sizeof(iface->stats));
+			return;
+		}
+	}
+#endif
+}
+
+void net_if_stats_reset_all(void)
+{
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		memset(&iface->stats, 0, sizeof(iface->stats));
+	}
+#endif
 }
 
 static inline void init_iface(struct net_if *iface)
@@ -3408,7 +3439,10 @@ int net_if_up(struct net_if *iface)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+	if ((IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+	     net_if_is_ip_offloaded(iface)) ||
+	    (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD) &&
+	     net_if_is_socket_offloaded(iface))) {
 		net_if_flag_set(iface, NET_IF_UP);
 		goto exit;
 	}
@@ -3633,7 +3667,7 @@ void net_if_init(void)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
 			K_THREAD_STACK_SIZEOF(tx_ts_stack),
 			(k_thread_entry_t)net_tx_ts_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_ts, "tx_tstamp");
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 

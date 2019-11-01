@@ -1,6 +1,6 @@
 title: SAM Family UART
 
-description: >
+description: |
     This binding gives a base representation of the SAM UART
 
 compatible: "atmel,sam-uart"

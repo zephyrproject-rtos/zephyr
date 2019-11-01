@@ -60,20 +60,20 @@ void test_main(void)
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(msgq_api,
-			 ztest_unit_test(test_msgq_thread),
+			 ztest_1cpu_unit_test(test_msgq_thread),
 			 ztest_unit_test(test_msgq_thread_overflow),
 			 ztest_user_unit_test(test_msgq_user_thread),
 			 ztest_user_unit_test(test_msgq_user_thread_overflow),
 			 ztest_unit_test(test_msgq_isr),
-			 ztest_unit_test(test_msgq_put_fail),
-			 ztest_unit_test(test_msgq_get_fail),
+			 ztest_1cpu_unit_test(test_msgq_put_fail),
+			 ztest_1cpu_unit_test(test_msgq_get_fail),
 			 ztest_user_unit_test(test_msgq_user_put_fail),
 			 ztest_user_unit_test(test_msgq_user_get_fail),
 			 ztest_unit_test(test_msgq_attrs_get),
 			 ztest_user_unit_test(test_msgq_user_attrs_get),
-			 ztest_unit_test(test_msgq_purge_when_put),
+			 ztest_1cpu_unit_test(test_msgq_purge_when_put),
 			 ztest_user_unit_test(test_msgq_user_purge_when_put),
-			 ztest_unit_test(test_msgq_pend_thread),
+			 ztest_1cpu_unit_test(test_msgq_pend_thread),
 			 ztest_unit_test(test_msgq_alloc));
 	ztest_run_test_suite(msgq_api);
 }

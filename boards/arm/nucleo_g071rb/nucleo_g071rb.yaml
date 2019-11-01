@@ -9,5 +9,6 @@ toolchain:
 ram: 36
 flash: 128
 supported:
+  - arduino_gpio
   - uart
   - gpio

@@ -1,6 +1,6 @@
 title: EFR32XG1 GPIO
 
-description: >
+description: |
     This is a representation of the EFR32XG1 GPIO nodes
 
 compatible: "silabs,efr32xg1-gpio"

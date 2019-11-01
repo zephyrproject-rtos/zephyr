@@ -6,7 +6,6 @@
 if SOC_ESP32
 
 config SOC
-	string
 	default "esp32"
 
 config IRQ_OFFLOAD_INTNUM

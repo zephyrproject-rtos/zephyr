@@ -26,6 +26,7 @@
 
 #define X86_EFER_MSR			0xC0000080
 #define X86_EFER_MSR_LME		BIT(8)
+#define X86_EFER_MSR_NXE		BIT(11)
 
 #ifndef _ASMLANGUAGE
 #ifdef __cplusplus
@@ -45,7 +46,7 @@ static inline void z_x86_msr_write(unsigned int msr, u64_t data)
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 
 static inline u64_t z_x86_msr_read(unsigned int msr)
 {

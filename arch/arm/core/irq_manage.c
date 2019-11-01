@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M interrupt management
+ * @brief ARM Cortex-M and Cortex-R interrupt management
  *
  *
  * Interrupt management: enabling/disabling and dynamic ISR
@@ -30,47 +30,23 @@
 #include <kernel_structs.h>
 #include <debug/tracing.h>
 
-extern void __reserved(void);
+extern void z_arm_reserved(void);
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
-/**
- *
- * @brief Enable an interrupt line
- *
- * Enable the interrupt. After this call, the CPU will receive interrupts for
- * the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
 
-/**
- *
- * @brief Disable an interrupt line
- *
- * Disable an interrupt line. After this call, the CPU will stop receiving
- * interrupts for the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
 
-/**
- * @brief Return IRQ enable state
- *
- * @param irq IRQ line
- * @return interrupt enable state, true or false
- */
 int z_arch_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
@@ -87,7 +63,7 @@ int z_arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -122,16 +98,6 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 }
 
 #elif defined(CONFIG_CPU_CORTEX_R)
-
-/**
- *
- * @brief Enable an interrupt line
- *
- * Enable the interrupt. After this call, the CPU will receive interrupts for
- * the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_enable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
@@ -139,15 +105,6 @@ void z_arch_irq_enable(unsigned int irq)
 	irq_enable_next_level(dev, (irq >> 8) - 1);
 }
 
-/**
- *
- * @brief Disable an interrupt line
- *
- * Disable an interrupt line. After this call, the CPU will stop receiving
- * interrupts for the specified <irq>.
- *
- * @return N/A
- */
 void z_arch_irq_disable(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
@@ -155,12 +112,6 @@ void z_arch_irq_disable(unsigned int irq)
 	irq_disable_next_level(dev, (irq >> 8) - 1);
 }
 
-/**
- * @brief Return IRQ enable state
- *
- * @param irq IRQ line
- * @return interrupt enable state, true or false
- */
 int z_arch_irq_is_enabled(unsigned int irq)
 {
 	struct device *dev = _sw_isr_table[0].arg;
@@ -180,9 +131,12 @@ int z_arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	struct device *dev = _sw_isr_table[0].arg;
+
+	if (irq == 0)
+		return;
 
 	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
 }
@@ -196,14 +150,14 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  * Installed in all dynamic interrupt slots at boot time. Throws an error if
  * called.
  *
- * See __reserved().
+ * See z_arm_reserved().
  *
  * @return N/A
  */
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	__reserved();
+	z_arm_reserved();
 }
 
 /* FIXME: IRQ direct inline functions have to be placed here and not in
@@ -255,7 +209,7 @@ void _arch_isr_direct_pm(void)
 
 void z_arch_isr_direct_header(void)
 {
-	z_sys_trace_isr_enter();
+	sys_trace_isr_enter();
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -320,7 +274,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      u32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	z_irq_priority_set(irq, priority, flags);
+	z_arm_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

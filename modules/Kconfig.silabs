@@ -5,5 +5,5 @@
 
 config HAS_SILABS_GECKO
 	bool
-	select HAS_CMSIS
+	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_EXX32

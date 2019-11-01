@@ -2,7 +2,7 @@
 
 title: simulated flash
 
-description: >
+description: |
     This binding gives a base representation of a simulated flash memory
 
 compatible: "zephyr,sim-flash"

@@ -8,11 +8,9 @@
 if SOC_STM32F723XX
 
 config SOC
-	string
 	default "stm32f723xx"
 
 config NUM_IRQS
-	int
 	default 104
 
 endif # SOC_STM32F723XX

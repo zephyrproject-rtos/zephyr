@@ -17,6 +17,7 @@
 # 3.1. *_ifdef
 # 3.2. *_ifndef
 # 3.3. *_option compiler compatibility checks
+# 3.3.1 Toolchain integration
 # 3.4. Debugging CMake
 # 3.5. File system management
 
@@ -344,15 +345,15 @@ endmacro()
 
 # Constructor with a directory-inferred name
 macro(zephyr_library)
-  zephyr_library_get_current_dir_lib_name(lib_name)
+  zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} lib_name)
   zephyr_library_named(${lib_name})
 endmacro()
 
-# Determines what the current directory's lib name would be and writes
-# it to the argument "lib_name"
-macro(zephyr_library_get_current_dir_lib_name lib_name)
+# Determines what the current directory's lib name would be according to the
+# provided base and writes it to the argument "lib_name"
+macro(zephyr_library_get_current_dir_lib_name base lib_name)
   # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
-  file(RELATIVE_PATH name ${ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
+  file(RELATIVE_PATH name ${base} ${CMAKE_CURRENT_LIST_FILE})
 
   # Remove the filename (driver/serial/CMakeLists.txt => driver/serial)
   get_filename_component(name ${name} DIRECTORY)
@@ -375,6 +376,34 @@ macro(zephyr_library_named name)
   target_link_libraries(${name} PUBLIC zephyr_interface)
 endmacro()
 
+# Provides amend functionality to a Zephyr library for out-of-tree usage.
+#
+# When called from a Zephyr module, the corresponding zephyr library defined
+# within Zephyr will be looked up.
+#
+# Note, in order to ensure correct library when amending, the folder structure in the
+# Zephyr module must resemble the structure used in Zephyr, as example:
+#
+# Example: to amend the zephyr library created in
+# ZEPHYR_BASE/drivers/entropy/CMakeLists.txt
+# add the following file:
+# ZEPHYR_MODULE/drivers/entropy/CMakeLists.txt
+# with content:
+# zephyr_library_amend()
+# zephyr_libray_add_sources(...)
+#
+macro(zephyr_library_amend)
+  # This is a macro because we need to ensure the ZEPHYR_CURRENT_LIBRARY and
+  # following zephyr_library_* calls are executed within the scope of the
+  # caller.
+  if(NOT ZEPHYR_CURRENT_MODULE_DIR)
+    message(FATAL_ERROR "Function only available for Zephyr modules.")
+  endif()
+
+  zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
+
+  set(ZEPHYR_CURRENT_LIBRARY ${lib_name})
+endmacro()
 
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)
@@ -1216,7 +1245,7 @@ function(zephyr_compile_options_ifndef feature_toggle)
   endif()
 endfunction()
 
-# 3.2. *_option Compiler-compatibility checks
+# 3.3. *_option Compiler-compatibility checks
 #
 # Utility functions for silently omitting compiler flags when the
 # compiler lacks support. *_cc_option was ported from KBuild, see
@@ -1304,6 +1333,45 @@ function(target_ld_options target scope)
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
   endforeach()
+endfunction()
+
+# 3.3.1 Toolchain integration
+#
+# 'toolchain_parse_make_rule' is a function that parses the output of
+# 'gcc -M'.
+#
+# The argument 'input_file' is in input parameter with the path to the
+# file with the dependency information.
+#
+# The argument 'include_files' is an output parameter with the result
+# of parsing the include files.
+function(toolchain_parse_make_rule input_file include_files)
+  file(READ ${input_file} input)
+
+  # The file is formatted like this:
+  # empty_file.o: misc/empty_file.c \
+  # nrf52840_pca10056/nrf52840_pca10056.dts \
+  # nrf52840_qiaa.dtsi
+
+  # Get rid of the backslashes
+  string(REPLACE "\\" ";" input_as_list ${input})
+
+  # Pop the first line and treat it specially
+  list(GET input_as_list 0 first_input_line)
+  string(FIND ${first_input_line} ": " index)
+  math(EXPR j "${index} + 2")
+  string(SUBSTRING ${first_input_line} ${j} -1 first_include_file)
+  list(REMOVE_AT input_as_list 0)
+
+  list(APPEND result ${first_include_file})
+
+  # Add the other lines
+  list(APPEND result ${input_as_list})
+
+  # Strip away the newlines and whitespaces
+  list(TRANSFORM result STRIP)
+
+  set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
 # 3.4. Debugging CMake

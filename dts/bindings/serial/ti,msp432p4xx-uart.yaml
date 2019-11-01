@@ -1,6 +1,6 @@
 title: TI MSP432P4XX UART
 
-description: >
+description: |
     This binding gives a base representation of the TI MSP432P4XX UART
 
 compatible: "ti,msp432p4xx-uart"

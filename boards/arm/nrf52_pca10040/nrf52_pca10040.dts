@@ -44,6 +44,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 17>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -67,6 +74,8 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
 			   <1 0 &gpio0 4 0>,	/* A1 */
 			   <2 0 &gpio0 28 0>,	/* A2 */
@@ -97,6 +106,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -127,12 +137,14 @@ arduino_serial: &uart0 {
 };
 
 arduino_i2c: &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
 };
 
 &i2c1 {
+	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
 	sda-pin = <30>;
@@ -146,6 +158,7 @@ arduino_i2c: &i2c0 {
 };
 
 &spi0 {
+	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
 	sck-pin = <27>;
@@ -154,6 +167,7 @@ arduino_i2c: &i2c0 {
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <31>;
 	mosi-pin = <30>;
@@ -161,6 +175,7 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi2 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <25>;
 	mosi-pin = <23>;

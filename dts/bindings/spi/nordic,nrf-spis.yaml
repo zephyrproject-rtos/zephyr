@@ -1,37 +1,15 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Family SPIS (SPI Slave)
+title: Nordic nRF family SPIS
 
-description: >
-    This is a representation of the Nordic nRF SPIS node
+description: Nordic nRF family SPIS (SPI slave with EasyDMA)
 
 compatible: "nordic,nrf-spis"
 
-include: spi-controller.yaml
+include: nordic,nrf-spi-common.yaml
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
-
-    sck-pin:
-      type: int
-      required: true
-      description: SCK pin
-
-    mosi-pin:
-      type: int
-      required: true
-      description: MOSI pin
-
-    miso-pin:
-      type: int
-      required: true
-      description: MISO pin
-
     csn-pin:
       type: int
       required: true
@@ -40,6 +18,6 @@ properties:
     def-char:
       type: int
       required: true
-      description: >
+      description: |
           Default character. Character clocked out when the slave was not
           provided with buffers and is ignoring the transaction.

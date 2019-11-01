@@ -51,7 +51,7 @@ static void CLOCK_SYS_FllStableDelay(void)
 	}
 }
 
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
@@ -84,7 +84,7 @@ static int kwx_init(struct device *arg)
 	SIM->COPC = 0;
 
 	/* Initialize system clock to 40 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

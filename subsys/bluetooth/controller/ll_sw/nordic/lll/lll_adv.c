@@ -27,6 +27,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_adv.h"
+#include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
 
@@ -361,7 +362,8 @@ static void isr_tx(void *param)
 	 */
 	radio_tmr_end_capture();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_CONN_RSSI)) {
 		radio_rssi_measure();
 	}
 
@@ -544,6 +546,18 @@ static void isr_done(void *param)
 
 static void isr_abort(void *param)
 {
+	/* Clear radio status and events */
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+
 	radio_filter_disable();
 
 	isr_cleanup(param);
@@ -703,6 +717,12 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
 		}
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		if (rssi_ready) {
+			lll->conn->rssi_latest =  radio_rssi_get();
+		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Stop further LLL radio events */
 		ret = lll_stop(lll);

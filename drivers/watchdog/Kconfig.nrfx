@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig WDT_NRFX
+config WDT_NRFX
 	bool "nRF WDT nrfx driver"
 	default y
 	depends on SOC_FAMILY_NRF

@@ -3,7 +3,7 @@
 
 title: ARM TrustZone CryptoCell 310
 
-description: >
+description: |
     This is a representation of the ARM TrustZone CryptoCell 310
 
 compatible: "arm,cryptocell-310"

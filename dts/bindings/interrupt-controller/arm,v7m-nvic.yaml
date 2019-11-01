@@ -1,6 +1,6 @@
 title: ARMv7-M NVIC Interrupt Controller
 
-description: >
+description: |
     This binding describes the ARMv7-M Nested Vectored Interrupt Controller.
 
 compatible: "arm,v7m-nvic"
@@ -19,6 +19,6 @@ properties:
     "#interrupt-cells":
       const: 2
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

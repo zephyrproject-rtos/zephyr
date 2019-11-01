@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f401Xe.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "Seeed Studio Carbon 96boards";

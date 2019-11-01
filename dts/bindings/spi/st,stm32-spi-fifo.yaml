@@ -3,7 +3,7 @@
 
 title: STM32 SPI FIFO
 
-description: >
+description: |
     This binding gives a base representation of the STM32 SPI controller with
     embedded Rx and Tx FIFOs
 

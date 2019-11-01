@@ -10,7 +10,6 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/uart.h>
-#include <arch/arm/cortex_m/cmsis.h>
 
 
 /*
@@ -328,6 +327,7 @@ static void pl011_irq_callback_set(struct device *dev,
 	DEV_DATA(dev)->irq_cb = cb;
 	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct uart_driver_api pl011_driver_api = {
 	.poll_in = pl011_poll_in,
@@ -354,7 +354,6 @@ static int pl011_init(struct device *dev)
 {
 	int ret;
 	u32_t lcrh;
-	const struct uart_device_config *config = dev->config->config_info;
 
 	/* disable the uart */
 	pl011_disable(dev);
@@ -387,12 +386,14 @@ static int pl011_init(struct device *dev)
 	__ISB();
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
+	DEV_CFG(dev)->irq_config_func(dev);
 #endif
 	pl011_enable(dev);
 
 	return 0;
 }
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(void *arg)
 {
 	struct device *dev = arg;

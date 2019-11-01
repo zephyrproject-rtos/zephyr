@@ -211,7 +211,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 #endif
 
 	/* synchronous send: wake up sending thread */
-	z_set_thread_return_value(sending_thread, 0);
+	z_arch_thread_return_value_set(sending_thread, 0);
 	z_mark_thread_as_not_pending(sending_thread);
 	z_ready_thread(sending_thread);
 	z_reschedule_unlocked();
@@ -257,7 +257,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			z_unpend_thread(receiving_thread);
 
 			/* ready receiver for execution */
-			z_set_thread_return_value(receiving_thread, 0);
+			z_arch_thread_return_value_set(receiving_thread, 0);
 			z_ready_thread(receiving_thread);
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)

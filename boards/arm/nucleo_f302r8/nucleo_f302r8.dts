@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f3/stm32f302X8.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F302R8-NUCLEO board";
@@ -39,9 +40,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi2 {};
 
 &i2c1 {
       status = "okay";

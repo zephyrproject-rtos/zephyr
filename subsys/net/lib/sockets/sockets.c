@@ -18,7 +18,12 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
-#include <net/socks.h>
+
+#if defined(CONFIG_SOCKS)
+#include "socks.h"
+#endif
+
+#include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
 
@@ -401,15 +406,12 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 {
 	s32_t timeout = K_FOREVER;
 	struct net_context *ctx;
+	struct net_pkt *last_pkt;
 	int fd;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
-	}
-
-	if (net_context_get_ip_proto(parent) == IPPROTO_TCP) {
-		net_context_set_state(parent, NET_CONTEXT_LISTENING);
 	}
 
 	if (sock_is_nonblock(parent)) {
@@ -421,6 +423,23 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		errno = EAGAIN;
 		return -1;
 	}
+
+	/* Check if the connection is already disconnected */
+	last_pkt = k_fifo_peek_tail(&ctx->recv_q);
+	if (last_pkt) {
+		if (net_pkt_eof(last_pkt)) {
+			sock_set_eof(ctx);
+			errno = ECONNABORTED;
+			return -1;
+		}
+	}
+
+	if (net_context_is_closing(ctx)) {
+		errno = ECONNABORTED;
+		return -1;
+	}
+
+	net_context_set_accepting(ctx, false);
 
 #ifdef CONFIG_USERSPACE
 	z_object_recycle(ctx);
@@ -765,6 +784,11 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		return -1;
 	}
 
+	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
+				    net_pkt_priority(pkt),
+				    net_pkt_timestamp(pkt)->nanosecond,
+				    k_cycle_get_32());
+
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
 	} else {
@@ -845,6 +869,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 				if (net_pkt_eof(pkt)) {
 					sock_set_eof(ctx);
 				}
+
+				net_stats_update_tc_rx_time(
+					net_pkt_iface(pkt),
+					net_pkt_priority(pkt),
+					net_pkt_timestamp(pkt)->nanosecond,
+					k_cycle_get_32());
 
 				net_pkt_unref(pkt);
 			}

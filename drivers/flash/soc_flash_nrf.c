@@ -92,13 +92,12 @@ static inline bool is_regular_addr_valid(off_t addr, size_t len)
 {
 	size_t flash_size = nrfx_nvmc_flash_size_get();
 
-	if (addr >= flash_size ||
-	    addr < 0 ||
+	if (addr >= DT_FLASH_BASE_ADDRESS + flash_size ||
+	    addr < DT_FLASH_BASE_ADDRESS ||
 	    len > flash_size ||
-	    addr + len > flash_size) {
+	    (addr - DT_FLASH_BASE_ADDRESS) + len > flash_size) {
 		return false;
 	}
-
 	return true;
 }
 

@@ -103,6 +103,7 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
@@ -114,6 +115,7 @@
 };
 
 &spi0 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <41>;
 	mosi-pin = <40>;
@@ -122,6 +124,7 @@
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;

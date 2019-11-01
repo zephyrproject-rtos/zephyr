@@ -19,7 +19,7 @@
 #include "hci_core.h"
 #include "settings.h"
 
-#if defined(BT_SETTINGS_USE_PRINTK)
+#if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    bt_addr_le_t *addr, const char *key)
 {

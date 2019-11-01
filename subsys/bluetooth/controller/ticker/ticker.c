@@ -791,8 +791,11 @@ void ticker_worker(void *param)
 		if (ticker->ticks_slot != 0U &&
 		   (slot_reserved || ticker_resolve_collision(node, ticker))) {
 			ticker->lazy_current++;
-			if (ticker->must_expire == 0U) {
-				/* Skip this ticker node */
+			if ((ticker->must_expire == 0U) ||
+			    (ticker->lazy_periodic >= ticker->lazy_current)) {
+				/* Not a must-expire case or this is programmed
+				 * latency. Skip this ticker node
+				 */
 				continue;
 			}
 			/* Continue but perform shallow expiry */
@@ -1109,8 +1112,15 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		ticker->req = ticker->ack;
 
 		if (instance->ticker_id_slot_previous == user_op->id) {
+			u32_t ticks_now = cntr_cnt_get();
+			u32_t ticks_used;
+
 			instance->ticker_id_slot_previous = TICKER_NULL;
-			instance->ticks_slot_previous = 0U;
+			ticks_used = ticks_elapsed +
+				ticker_ticks_diff_get(ticks_now,
+						      instance->ticks_current);
+			instance->ticks_slot_previous =	MIN(ticker->ticks_slot,
+							    ticks_used);
 		}
 	}
 

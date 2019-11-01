@@ -10,7 +10,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 50000000
 
 config CPU_EM6
-	def_bool y
+	default y
 
 config ARC_MPU_VER
 	default 2
@@ -28,7 +28,7 @@ config CACHE_FLUSHING
 	default y
 
 config FP_FPU_DA
-	def_bool n
+	default n
 
 config MAIN_STACK_SIZE
 	default 2048

@@ -9,12 +9,12 @@
  * clock.
  *
  * Therefore, the code will always run until completion after each interrupt,
- * after which k_cpu_idle() will be called releasing the execution back to the
+ * after which z_arch_cpu_idle() will be called releasing the execution back to the
  * HW models.
  *
  * The HW models raising an interrupt will "awake the cpu" by calling
  * poisix_interrupt_raised() which will transfer control to the irq handler,
- * which will run inside SW/Zephyr contenxt. After which a __swap() to whatever
+ * which will run inside SW/Zephyr contenxt. After which a z_arch_swap() to whatever
  * Zephyr thread may follow.
  * Again, once Zephyr is done, control is given back to the HW models.
  *
@@ -125,7 +125,7 @@ void posix_interrupt_raised(void)
 
 
 /**
- * Normally called from k_cpu_idle():
+ * Normally called from z_arch_cpu_idle():
  *   the idle loop will call this function to set the CPU to "sleep".
  * Others may also call this function with care. The CPU will be set to sleep
  * until some interrupt awakes it.
@@ -143,7 +143,7 @@ void posix_halt_cpu(void)
 	 * => let the "irq handler" check if/what interrupt was raised
 	 * and call the appropriate irq handler.
 	 *
-	 * Note that, the interrupt handling may trigger a __swap() to another
+	 * Note that, the interrupt handling may trigger a z_arch_swap() to another
 	 * Zephyr thread. When posix_irq_handler() returns, the Zephyr
 	 * kernel has swapped back to this thread again
 	 */
@@ -156,7 +156,7 @@ void posix_halt_cpu(void)
 
 
 /**
- * Implementation of k_cpu_atomic_idle() for this SOC
+ * Implementation of z_arch_cpu_atomic_idle() for this SOC
  */
 void posix_atomic_halt_cpu(unsigned int imask)
 {

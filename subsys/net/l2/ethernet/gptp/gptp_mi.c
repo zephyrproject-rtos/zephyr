@@ -356,7 +356,8 @@ static void start_rcv_sync_timer(struct gptp_port_ds *port_ds,
 
 	duration = port_ds->sync_receipt_timeout_time_itv;
 
-	k_timer_start(&state->rcv_sync_receipt_timeout_timer, duration, 0);
+	k_timer_start(&state->rcv_sync_receipt_timeout_timer, duration,
+		      K_NO_WAIT);
 }
 
 static void gptp_mi_pss_rcv_state_machine(int port)
@@ -506,7 +507,8 @@ static void gptp_mi_pss_send_state_machine(int port)
 						&port_ds->half_sync_itv);
 
 		/* Start 0.5 * syncInterval timeout timer. */
-		k_timer_start(&state->half_sync_itv_timer, duration, 0);
+		k_timer_start(&state->half_sync_itv_timer, duration,
+			      K_NO_WAIT);
 
 		gptp_mi_pss_send_md_sync_send(port);
 
@@ -548,7 +550,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 				(NSEC_PER_USEC * USEC_PER_MSEC);
 
 			k_timer_start(&state->send_sync_receipt_timeout_timer,
-				      duration, 0);
+				      duration, K_NO_WAIT);
 
 		} else if (state->send_sync_receipt_timeout_timer_expired) {
 			state->state = GPTP_PSS_SEND_SYNC_RECEIPT_TIMEOUT;
@@ -1474,7 +1476,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		k_timer_start(&state->ann_rcpt_expiry_timer,
 			      gptp_uscaled_ns_to_timer_ms(
 				   &bmca_data->ann_rcpt_timeout_time_interval),
-			      0);
+			      K_NO_WAIT);
 		/* Fallthrough. */
 
 	case GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT:
@@ -1872,7 +1874,7 @@ static void gptp_mi_port_announce_transmit_state_machine(int port)
 		k_timer_start(&state->ann_send_periodic_timer,
 			      gptp_uscaled_ns_to_timer_ms(
 				      &bmca_data->announce_interval),
-			      0);
+			      K_NO_WAIT);
 
 		state->state = GPTP_PA_TRANSMIT_POST_IDLE;
 		/* Fallthrough. */

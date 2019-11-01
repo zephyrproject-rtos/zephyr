@@ -111,7 +111,7 @@ static void tqueue_thread_thread(struct k_queue *pqueue)
 	/**TESTPOINT: thread-thread data passing via queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_entry, pqueue, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	tqueue_append(pqueue);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
@@ -192,14 +192,14 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 	k_sem_init(&end_sema, 0, 1);
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_get, pqueue, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
 				       tThread_get, pqueue, NULL, NULL,
-				       K_PRIO_PREEMPT(0), 0, 0);
+				       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	/* Wait threads to initialize */
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 
 	k_queue_append(pqueue, (void *)&data[0]);
 	k_queue_append(pqueue, (void *)&data[1]);

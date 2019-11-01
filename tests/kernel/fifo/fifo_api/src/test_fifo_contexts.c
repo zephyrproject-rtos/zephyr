@@ -90,7 +90,7 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 	/**TESTPOINT: thread-thread data passing via fifo*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_entry, pfifo, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	tfifo_put(pfifo);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);

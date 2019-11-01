@@ -3,7 +3,7 @@
 
 title: Kinetis System Integration Module (SIM)
 
-description: >
+description: |
     This is a representation of the Kinetis SIM IP node
 
 compatible: "nxp,kinetis-sim"
@@ -32,7 +32,7 @@ properties:
       required: false
       const: 3
 
-"#cells":
+clock-cells:
   - name
   - offset
   - bits

@@ -8,7 +8,6 @@
 if SOC_STM32F746XX
 
 config SOC
-	string
 	default "stm32f746xx"
 
 if GPIO_STM32
@@ -22,7 +21,6 @@ config GPIO_STM32_PORTK
 endif # GPIO_STM32
 
 config NUM_IRQS
-	int
 	default 98
 
 endif # SOC_STM32F746XX

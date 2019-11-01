@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LIS2MDL SPI
 
-description: >
+description: |
     This binding gives a base representation of LIS2MDL magnetometer
     accessed through SPI bus
 

@@ -7,7 +7,7 @@ Overview
 ********
 
 ODROID-GO Game Kit is a "Do it yourself" ("DIY") portable game console by
-HardKernel. It fetaures a custom ESP32-WROVER with 16 MB flash and it operates
+HardKernel. It features a custom ESP32-WROVER with 16 MB flash and it operates
 from 80 MHz - 240 MHz [1]_.
 
 The features include the following:
@@ -56,6 +56,24 @@ External Connector
 +-------+------------------+-------------------------+
 | 10    | VBUS             | USB VBUS (5V)           |
 +-------+------------------+-------------------------+
+
+Supported Features
+******************
+
+The Zephyr odroid_go board configuration supports the following hardware
+features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| I2C        | on-chip    | i2c                                 |
++------------+------------+-------------------------------------+
 
 Programming
 ***********

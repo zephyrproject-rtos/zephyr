@@ -8,7 +8,6 @@
 if SOC_EMSK
 
 config SOC
-	string
 	default "snps_emsk"
 
 source "soc/arc/snps_emsk/Kconfig.defconfig.em7d"

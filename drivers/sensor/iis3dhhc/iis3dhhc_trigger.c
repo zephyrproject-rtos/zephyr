@@ -15,8 +15,7 @@
 
 #include "iis3dhhc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(IIS3DHHC);
+LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * iis3dhhc_enable_int - enable selected int pin to generate interrupt
@@ -41,7 +40,7 @@ int iis3dhhc_trigger_set(struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
-	axis3bit16_t raw;
+	union axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis3dhhc->handler_drdy = handler;

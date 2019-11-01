@@ -4,18 +4,6 @@
 
 find_program(CMAKE_C_COMPILER gcc)
 
-# -march={pentium,lakemont,...} do not automagically imply -m32, so
-# adding it here.
-
-# Maybe the -m32/-miamcu FLAGS should all be next to -march= in the
-# longer term?
-if (CONFIG_X86)
-  string(PREPEND CMAKE_ASM_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_C_FLAGS               "-m32 ")
-  string(PREPEND CMAKE_CXX_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_SHARED_LINKER_FLAGS   "-m32 ") # unused?
-endif()
-
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler g++)
 else()
@@ -77,3 +65,4 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_warnings.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_imacros.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_base.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_coverage.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_sanitizers.cmake)

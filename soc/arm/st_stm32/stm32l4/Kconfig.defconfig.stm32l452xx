@@ -8,11 +8,9 @@
 if SOC_STM32L452XX
 
 config SOC
-	string
 	default "stm32l452xx"
 
 config NUM_IRQS
-	int
 	default 85
 
 if GPIO_STM32

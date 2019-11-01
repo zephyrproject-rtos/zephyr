@@ -243,7 +243,7 @@ static void external_log_system_showcase(void)
 static void wait_on_log_flushed(void)
 {
 	while (log_buffered_cnt()) {
-		k_sleep(5);
+		k_sleep(K_MSEC(5));
 	}
 }
 
@@ -251,7 +251,7 @@ static void log_demo_thread(void *p1, void *p2, void *p3)
 {
 	bool usermode = _is_user_context();
 
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	printk("\n\t---=< RUNNING LOGGER DEMO FROM %s THREAD >=---\n\n",
 		(usermode) ? "USER" : "KERNEL");
@@ -313,4 +313,4 @@ static void log_demo_supervisor(void *p1, void *p2, void *p3)
 
 K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_supervisor,
 		NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 1);
+		K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_MSEC(1));

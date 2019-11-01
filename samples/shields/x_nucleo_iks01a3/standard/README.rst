@@ -25,7 +25,7 @@ Requirements
 This sample communicates over I2C with the X-NUCLEO-IKS01A3 shield
 stacked on a board with an Arduino connector. The board's I2C must be
 configured for the I2C Arduino connector (both for pin muxing
-and device tree). See for example the :ref:`nucleo_f401re_board` board
+and devicetree). See for example the :ref:`nucleo_f401re_board` board
 source code:
 
 - :file:`$ZEPHYR_BASE/boards/arm/nucleo_f401re/nucleo_f401re.dts`
@@ -67,11 +67,13 @@ Sample Output
     LPS22HH: Pressure:99.150 kpa
     STTS751: Temperature: 27.6 C
     LIS2MDL: Magn (gauss): x: -0.445, y: -0.054, z: -0.066
+    LIS2MDL: Temperature: 26.8 C
     LIS2DW12: Accel (m.s-2): x: -0.413, y: 0.077, z: 10.337
     LSM6DSO: Accel (m.s-2): x: 0.133, y: -0.133, z: 10.102
     LSM6DSO: GYro (dps): x: 0.000, y: -0.006, z: -0.058
-    1:: lps22hh trig 200
-    1:: lsm6dso acc trig 200
-    1:: lsm6dso gyr trig 200
+    1:: lis2mdl trig 208
+    1:: lps22hh trig 214
+    1:: lsm6dso acc trig 426
+    1:: lsm6dso gyr trig 426
 
     <updated endlessly every 2 seconds>

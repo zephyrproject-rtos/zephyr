@@ -35,7 +35,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 		attr = &init_event_flags_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_event_flags_slab, (void **)&events, 100)
+	if (k_mem_slab_alloc(&cv2_event_flags_slab, (void **)&events, K_MSEC(100))
 	    == 0) {
 		memset(events, 0, sizeof(struct cv2_event_flags));
 	} else {

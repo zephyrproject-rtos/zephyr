@@ -18,11 +18,9 @@ zephyr_library_sources(
   ia32/swap.S
   ia32/thread.c
   ia32/spec_ctrl.c
-  ia32/prep_c.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)
-zephyr_library_sources_ifdef(CONFIG_X86_MMU		ia32/x86_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	ia32/userspace.S)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FP_SHARING	ia32/float.c)
 

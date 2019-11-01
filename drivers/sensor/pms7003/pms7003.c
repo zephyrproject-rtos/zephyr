@@ -20,8 +20,7 @@
 #include <drivers/uart.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(PMS7003);
+LOG_MODULE_REGISTER(PMS7003, CONFIG_SENSOR_LOG_LEVEL);
 
 /* wait serial output with 1000ms timeout */
 #define CFG_PMS7003_SERIAL_TIMEOUT 1000

@@ -45,7 +45,7 @@ enum k_fatal_error_reason {
  * @brief Halt the system on a fatal error
  *
  * Invokes architecture-specific code to power off or halt the system in
- * a low power state. Lacking that, lock interupts and sit in an idle loop.
+ * a low power state. Lacking that, lock interrupts and sit in an idle loop.
  *
  * @param reason Fatal exception reason code
  */

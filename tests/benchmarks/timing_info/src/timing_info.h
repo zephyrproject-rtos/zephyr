@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <timestamp.h>
-
+#include <kernel_internal.h>
 
 #define CALCULATE_TIME(special_char, profile, name)			     \
 	{								     \
@@ -201,15 +201,6 @@ void mutex_bench(void);
 void msg_passing_bench(void);
 void userspace_bench(void);
 
-/******************************************************************************/
-/* External variables */
-extern u64_t __start_swap_time;
-extern u64_t __end_swap_time;
-extern u64_t __start_intr_time;
-extern u64_t __end_intr_time;
-extern u64_t __start_tick_time;
-extern u64_t __end_tick_time;
-/******************************************************************************/
 #ifdef CONFIG_USERSPACE
 #include <syscall_handler.h>
 __syscall int k_dummy_syscall(void);

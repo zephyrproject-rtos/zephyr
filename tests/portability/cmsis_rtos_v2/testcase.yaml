@@ -1,0 +1,6 @@
+tests:
+  portability.cmsis_rtos_v2:
+    platform_exclude: qemu_x86_64 m2gl025_miv
+    tags: cmsis_rtos_v2
+    min_ram: 32
+    min_flash: 34

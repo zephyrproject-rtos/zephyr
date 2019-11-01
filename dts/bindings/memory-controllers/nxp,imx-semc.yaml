@@ -3,7 +3,7 @@
 
 title: NXP SEMC
 
-description: >
+description: |
     This binding gives a base representation of the NXP smart external memory
     controller (SEMC)
 

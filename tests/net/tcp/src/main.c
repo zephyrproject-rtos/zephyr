@@ -345,7 +345,7 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 				      u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET6, IPPROTO_TCP, K_FOREVER);
@@ -374,7 +374,7 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 				      u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET, IPPROTO_TCP, K_FOREVER);
@@ -430,7 +430,7 @@ static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 					   u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hop_by_hop_ext_hdr) +
 					sizeof(data),

@@ -44,7 +44,7 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
 #endif
 }
 
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	z_irq_setup();
 	_current_cpu->irq_stack =
@@ -66,7 +66,10 @@ static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 	return irq_num;
 }
 
-#define z_is_in_isr	z_arc_v2_irq_unit_is_in_isr
+static inline bool z_arch_is_in_isr(void)
+{
+	return z_arc_v2_irq_unit_is_in_isr();
+}
 
 extern void z_thread_entry_wrapper(void);
 extern void z_user_thread_entry_wrapper(void);

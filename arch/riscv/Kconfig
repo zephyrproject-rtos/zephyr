@@ -92,6 +92,9 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config NUM_IRQS
+	int
+
 endmenu
 
 endmenu

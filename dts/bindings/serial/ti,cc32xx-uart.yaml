@@ -1,6 +1,6 @@
 title: TI CC32XX Uart
 
-description: >
+description: |
     This binding gives a base representation of the TI CC32XX UART
 
 compatible: "ti,cc32xx-uart"

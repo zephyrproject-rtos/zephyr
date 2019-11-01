@@ -24,7 +24,7 @@ if not doc_mode:
 
     # if a board port doesn't use DTS than these might not be set
     if os.path.isfile(DTS_POST_CPP) and BINDINGS_DIRS is not None:
-        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split(";"))
+        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split("?"))
     else:
         edt = None
 
@@ -121,54 +121,54 @@ def dt_str_val(kconf, _, name):
 def dt_chosen_label(kconf, _, chosen):
     """
     This function takes a 'chosen' property and treats that property as a path
-    to a EDT device.  If it finds a EDT device, it will look to see if that
-    device has a "label" property and return the value of that "label", if not
-    we return an empty string.
+    to an EDT node.  If it finds an EDT node, it will look to see if that node
+    has a "label" property and return the value of that "label", if not we
+    return an empty string.
     """
     if doc_mode or edt is None:
         return ""
 
-    dev = edt.chosen_dev(chosen)
-    if not dev:
+    node = edt.chosen_node(chosen)
+    if not node:
         return ""
 
-    if "label" not in dev.props:
+    if "label" not in node.props:
         return ""
 
-    return dev.props["label"].val
+    return node.props["label"].val
 
 
-def _dev_reg_addr(dev, index, unit):
-    if not dev:
-        return "0x0"
+def _node_reg_addr(node, index, unit):
+    if not node:
+        return 0
 
-    if not dev.regs:
-        return "0x0"
+    if not node.regs:
+        return 0
 
-    if int(index) >= len(dev.regs):
-        return "0x0"
+    if int(index) >= len(node.regs):
+        return 0
 
-    return hex(dev.regs[int(index)].addr >> _dt_units_to_scale(unit))
-
-
-def _dev_reg_size(dev, index, unit):
-    if not dev:
-        return "0"
-
-    if not dev.regs:
-        return "0"
-
-    if int(index) >= len(dev.regs):
-        return "0"
-
-    return str(dev.regs[int(index)].size >> _dt_units_to_scale(unit))
+    return node.regs[int(index)].addr >> _dt_units_to_scale(unit)
 
 
-def dt_chosen_reg_addr(kconf, _, chosen, index=0, unit=None):
+def _node_reg_size(node, index, unit):
+    if not node:
+        return 0
+
+    if not node.regs:
+        return 0
+
+    if int(index) >= len(node.regs):
+        return 0
+
+    return node.regs[int(index)].size >> _dt_units_to_scale(unit)
+
+
+def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
     """
     This function takes a 'chosen' property and treats that property as a path
-    to a EDT device.  If it finds a EDT device, it will look to see if that
-    device has a register at the give 'index' and return the address value of
+    to an EDT node.  If it finds an EDT node, it will look to see if that
+    nodnode has a register at the given 'index' and return the address value of
     that reg, if not we return 0.
 
     The function will divide the value based on 'unit':
@@ -178,19 +178,19 @@ def dt_chosen_reg_addr(kconf, _, chosen, index=0, unit=None):
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
     if doc_mode or edt is None:
-        return "0x0"
+        return 0
 
-    dev = edt.chosen_dev(chosen)
+    node = edt.chosen_node(chosen)
 
-    return _dev_reg_addr(dev, index, unit)
+    return _node_reg_addr(node, index, unit)
 
 
-def dt_chosen_reg_size(kconf, _, chosen, index=0, unit=None):
+def _dt_chosen_reg_size(kconf, chosen, index=0, unit=None):
     """
     This function takes a 'chosen' property and treats that property as a path
-    to a EDT device.  If it finds a EDT device, it will look to see if that
-    device has a register at the give 'index' and return the size value of
-    that reg, if not we return 0.
+    to an EDT node.  If it finds an EDT node, it will look to see if that node
+    has a register at the given 'index' and return the size value of that reg,
+    if not we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
@@ -199,19 +199,33 @@ def dt_chosen_reg_size(kconf, _, chosen, index=0, unit=None):
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
     if doc_mode or edt is None:
-        return "0"
+        return 0
 
-    dev = edt.chosen_dev(chosen)
+    node = edt.chosen_node(chosen)
 
-    return _dev_reg_size(dev, index, unit)
+    return _node_reg_size(node, index, unit)
 
 
-def dt_node_reg_addr(kconf, _, path, index=0, unit=None):
+def dt_chosen_reg(kconf, name, chosen, index=0, unit=None):
     """
-    This function takes a 'path' and looks for a EDT device at that path.
-    If it finds a EDT device, it will look to see if that device has a
-    register at the give 'index' and return the address value of that reg, if
-    not we return 0.
+    This function just routes to the proper function and converts
+    the result to either a string int or string hex value.
+    """
+    if name == "dt_chosen_reg_size_int":
+        return str(_dt_chosen_reg_size(kconf, chosen, index, unit))
+    if name == "dt_chosen_reg_size_hex":
+        return hex(_dt_chosen_reg_size(kconf, chosen, index, unit))
+    if name == "dt_chosen_reg_addr_int":
+        return str(_dt_chosen_reg_addr(kconf, chosen, index, unit))
+    if name == "dt_chosen_reg_addr_hex":
+        return hex(_dt_chosen_reg_addr(kconf, chosen, index, unit))
+
+
+def _dt_node_reg_addr(kconf, path, index=0, unit=None):
+    """
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look to see if that node has a register at the
+    given 'index' and return the address value of that reg, if not we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
@@ -220,22 +234,21 @@ def dt_node_reg_addr(kconf, _, path, index=0, unit=None):
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
     if doc_mode or edt is None:
-        return "0"
+        return 0
 
     try:
-        dev = edt.get_dev(path)
+        node = edt.get_node(path)
     except edtlib.EDTError:
-        return "0"
+        return 0
 
-    return _dev_reg_addr(dev, index, unit)
+    return _node_reg_addr(node, index, unit)
 
 
-def dt_node_reg_size(kconf, _, path, index=0, unit=None):
+def _dt_node_reg_size(kconf, path, index=0, unit=None):
     """
-    This function takes a 'path' and looks for a EDT device at that path.
-    If it finds a EDT device, it will look to see if that device has a
-    register at the give 'index' and return the size value of that reg, if
-    not we return 0.
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look to see if that node has a register at the
+    given 'index' and return the size value of that reg, if not we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
@@ -244,38 +257,53 @@ def dt_node_reg_size(kconf, _, path, index=0, unit=None):
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
     if doc_mode or edt is None:
-        return "0"
+        return 0
 
     try:
-        dev = edt.get_dev(path)
+        node = edt.get_node(path)
     except edtlib.EDTError:
-        return "0"
+        return 0
 
-    return _dev_reg_size(dev, index, unit)
+    return _node_reg_size(node, index, unit)
+
+
+def dt_node_reg(kconf, name, path, index=0, unit=None):
+    """
+    This function just routes to the proper function and converts
+    the result to either a string int or string hex value.
+    """
+    if name == "dt_node_reg_size_int":
+        return str(_dt_node_reg_size(kconf, path, index, unit))
+    if name == "dt_node_reg_size_hex":
+        return hex(_dt_node_reg_size(kconf, path, index, unit))
+    if name == "dt_node_reg_addr_int":
+        return str(_dt_node_reg_addr(kconf, path, index, unit))
+    if name == "dt_node_reg_addr_hex":
+        return hex(_dt_node_reg_addr(kconf, path, index, unit))
 
 
 def dt_node_has_bool_prop(kconf, _, path, prop):
     """
-    This function takes a 'path' and looks for a EDT device at that path.
-    If it finds a EDT device, it will look to see if that device has a
-    boolean property by the name of 'prop'.  If the 'prop' exists it will
-    return "y" otherwise we return "n".
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look to see if that node has a boolean property
+    by the name of 'prop'.  If the 'prop' exists it will return "y" otherwise
+    we return "n".
     """
     if doc_mode or edt is None:
         return "n"
 
     try:
-        dev = edt.get_dev(path)
+        node = edt.get_node(path)
     except edtlib.EDTError:
         return "n"
 
-    if prop not in dev.props:
+    if prop not in node.props:
         return "n"
 
-    if dev.props[prop].type != "boolean":
+    if node.props[prop].type != "boolean":
         return "n"
 
-    if dev.props[prop].val:
+    if node.props[prop].val:
         return "y"
 
     return "n"
@@ -284,13 +312,13 @@ def dt_node_has_bool_prop(kconf, _, path, prop):
 def dt_compat_enabled(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if we find an "enabled"
-    compatible device in the EDT otherwise we return "n"
+    compatible node in the EDT otherwise we return "n"
     """
     if doc_mode or edt is None:
         return "n"
 
-    for dev in edt.devices:
-        if compat in dev.compats and dev.enabled:
+    for node in edt.nodes:
+        if compat in node.compats and node.enabled:
             return "y"
 
     return "n"
@@ -302,9 +330,13 @@ functions = {
         "dt_str_val": (dt_str_val, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
-        "dt_chosen_reg_addr": (dt_chosen_reg_addr, 1, 3),
-        "dt_chosen_reg_size": (dt_chosen_reg_size, 1, 3),
-        "dt_node_reg_addr": (dt_node_reg_addr, 1, 3),
-        "dt_node_reg_size": (dt_node_reg_size, 1, 3),
+        "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 4),
+        "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 4),
+        "dt_chosen_reg_size_int": (dt_chosen_reg, 1, 4),
+        "dt_chosen_reg_size_hex": (dt_chosen_reg, 1, 4),
+        "dt_node_reg_addr_int": (dt_node_reg, 1, 4),
+        "dt_node_reg_addr_hex": (dt_node_reg, 1, 4),
+        "dt_node_reg_size_int": (dt_node_reg, 1, 4),
+        "dt_node_reg_size_hex": (dt_node_reg, 1, 4),
         "dt_node_has_bool_prop": (dt_node_has_bool_prop, 2, 2),
 }

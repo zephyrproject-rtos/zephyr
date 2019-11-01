@@ -18,8 +18,7 @@
 
 #include "adxl372.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ADXL372);
+LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
 static int adxl372_bus_access(struct device *dev, u8_t reg,
 			      void *data, size_t length)
@@ -502,7 +501,7 @@ static int adxl372_reset(struct device *dev)
 	}
 	/* Writing code 0x52 resets the device */
 	ret = adxl372_reg_write(dev, ADXL372_RESET, ADXL372_RESET_CODE);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	return ret;
 }

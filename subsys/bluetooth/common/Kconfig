@@ -54,7 +54,6 @@ config BT_WAIT_NOP
 	  ready to receive commands.
 
 config BT_RPA
-	# Virtual/hidden option
 	bool
 	select TINYCRYPT
 	select TINYCRYPT_AES
@@ -85,7 +84,7 @@ config BT_ASSERT_PANIC
 endif # BT_ASSERT
 
 config BT_DEBUG
-	# Virtual/hidden option to make the conditions more intuitive
+	# Hidden option to make the conditions more intuitive
 	bool
 
 choice

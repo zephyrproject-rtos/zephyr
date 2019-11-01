@@ -3,7 +3,7 @@
 
 title: ST7789V 320x240 Display Controller
 
-description: >
+description: |
     This is a representation of the ST7789V 320x240 Display Controller
 
 compatible: "sitronix,st7789v"

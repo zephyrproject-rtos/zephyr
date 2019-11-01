@@ -53,9 +53,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
-#endif
 
 	if (is_spinlock) {
 		k_spin_release(lock);
@@ -64,6 +62,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	new_thread = z_get_next_ready_thread();
 
 	if (new_thread != old_thread) {
+#ifdef CONFIG_TIMESLICING
+		z_reset_time_slice();
+#endif
+
 		old_thread->swap_retval = -EAGAIN;
 
 #ifdef CONFIG_SMP
@@ -80,9 +82,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			     &old_thread->switch_handle);
 	}
 
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
-#endif
 
 	if (is_spinlock) {
 		z_arch_irq_unlock(key);
@@ -113,7 +113,7 @@ static inline void z_swap_unlocked(void)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern int __swap(unsigned int key);
+extern int z_arch_swap(unsigned int key);
 
 static inline int z_swap_irqlock(unsigned int key)
 {
@@ -121,15 +121,11 @@ static inline int z_swap_irqlock(unsigned int key)
 	z_check_stack_sentinel();
 
 #ifndef CONFIG_ARM
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
 #endif
-#endif
-	ret = __swap(key);
+	ret = z_arch_swap(key);
 #ifndef CONFIG_ARM
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
-#endif
 #endif
 
 	return ret;

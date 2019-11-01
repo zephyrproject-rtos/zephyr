@@ -586,15 +586,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			case 'G':
 			{
 				uint64_t double_val;
-#ifdef CONFIG_X86_64
-				/*
-				 * Can't use a double here because
-				 * we're operating in -mno-sse and
-				 * va_arg() will expect this to be a
-				 * register argument.
-				 */
-				double_val = va_arg(vargs, uint64_t);
-#else
+
 				/* standard platforms which supports double */
 				union {
 					double d;
@@ -603,7 +595,6 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 
 				u.d = va_arg(vargs, double);
 				double_val = u.i;
-#endif
 
 				clen = _to_float(buf, double_val, c, falt,
 						 fplus, fspace, precision,

@@ -22,7 +22,8 @@
 #include <sys/printk.h>
 #include <sys/util.h>
 #include <net/buf.h>
-#include <bluetooth/hci.h>
+#include <bluetooth/gap.h>
+#include <bluetooth/addr.h>
 #include <bluetooth/crypto.h>
 
 #ifdef __cplusplus
@@ -419,9 +420,17 @@ enum {
 	BT_LE_SCAN_FILTER_EXTENDED = BIT(2),
 };
 
+enum {
+	/* Scan without requesting additional information from advertisers. */
+	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
+
+	/* Scan and request additional information from advertisers. */
+	BT_LE_SCAN_TYPE_ACTIVE = 0x01,
+};
+
 /** LE scan parameters */
 struct bt_le_scan_param {
-	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
+	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	u8_t  type;
 
 	/** Bit-field of scanning filter options. */
@@ -436,7 +445,8 @@ struct bt_le_scan_param {
 
 /** Helper to declare scan parameters inline
   *
-  * @param _type     Scan Type (BT_HCI_LE_SCAN_ACTIVE/BT_HCI_LE_SCAN_PASSIVE)
+  * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+  *                  BT_LE_SCAN_TYPE_PASSIVE.
   * @param _filter   Filter options
   * @param _interval Scan Interval (N * 0.625 ms)
   * @param _window   Scan Window (N * 0.625 ms)
@@ -450,7 +460,7 @@ struct bt_le_scan_param {
 		 })
 
 /** Helper macro to enable active scanning to discover new devices. */
-#define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_ACTIVE, \
+#define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
 					   BT_LE_SCAN_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
@@ -460,7 +470,7 @@ struct bt_le_scan_param {
  * This macro should be used if information required for device identification
  * (e.g., UUID) are known to be placed in Advertising Data.
  */
-#define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_PASSIVE, \
+#define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
 					    BT_LE_SCAN_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)

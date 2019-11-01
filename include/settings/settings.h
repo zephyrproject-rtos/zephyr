@@ -172,7 +172,7 @@ struct settings_handler_static {
  * @param _commit commit routine (can be NULL)
  * @param _export export routine (can be NULL)
  *
- * This createa a variable _hname prepended by settings_handler_.
+ * This creates a variable _hname prepended by settings_handler_.
  *
  */
 
@@ -390,6 +390,12 @@ struct settings_store_itf {
 	 * Parameters:
 	 *  - cs - Corresponding backend handler node,
 	 *  - arg - Structure that holds additional data for data loading.
+	 *
+	 * @note
+	 * Backend is expected not to provide duplicates of the entities.
+	 * It means that if the backend does not contain any functionality to
+	 * really delete old keys, it has to filter out old entities and call
+	 * load callback only on the final entity.
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);

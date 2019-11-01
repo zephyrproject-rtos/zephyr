@@ -3,7 +3,7 @@
 
 title: Kinetis FTM
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis FTM
 
 compatible: "nxp,kinetis-ftm"
@@ -20,7 +20,7 @@ properties:
     "#pwm-cells":
       const: 2
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

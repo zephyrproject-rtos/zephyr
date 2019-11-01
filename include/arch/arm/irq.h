@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
-GTEXT(_IntExit);
+GTEXT(z_arm_int_exit);
 GTEXT(z_arch_irq_enable)
 GTEXT(z_arch_irq_disable)
 GTEXT(z_arch_irq_is_enabled)
@@ -32,14 +32,14 @@ extern void z_arch_irq_enable(unsigned int irq);
 extern void z_arch_irq_disable(unsigned int irq);
 extern int z_arch_irq_is_enabled(unsigned int irq);
 
-extern void _IntExit(void);
+extern void z_arm_int_exit(void);
 
 #if defined(CONFIG_ARMV7_R)
-static ALWAYS_INLINE void z_IntLibInit(void)
+static ALWAYS_INLINE void z_arm_int_lib_init(void)
 {
 }
 #else
-extern void z_IntLibInit(void);
+extern void z_arm_int_lib_init(void);
 #endif
 
 /* macros convert value of it's argument to a string */
@@ -51,8 +51,8 @@ extern void z_IntLibInit(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
-			      u32_t flags);
+extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
+				   u32_t flags);
 
 
 /* Flags for use with IRQ_CONNECT() */
@@ -66,10 +66,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 #endif
 
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
+/* All arguments must be computable by the compiler at build time.
  *
  * Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
@@ -78,33 +75,18 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * We additionally set the priority in the interrupt controller at
  * runtime.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
-
-/**
- * Configure a 'direct' static interrupt.
- *
- * See include/irq.h for details.
- * All arguments must be computable at build time.
- */
 #define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
@@ -122,20 +104,20 @@ extern void z_arch_isr_direct_header(void);
 #define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
 
 /* arch/arm/core/exc_exit.S */
-extern void _IntExit(void);
+extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING
-extern void z_sys_trace_isr_exit(void);
+extern void sys_trace_isr_exit(void);
 #endif
 
 static inline void z_arch_isr_direct_footer(int maybe_swap)
 {
 
 #ifdef CONFIG_TRACING
-	z_sys_trace_isr_exit();
+	sys_trace_isr_exit();
 #endif
 	if (maybe_swap) {
-		_IntExit();
+		z_arm_int_exit();
 	}
 }
 

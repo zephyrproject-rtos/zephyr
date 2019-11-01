@@ -3,7 +3,7 @@
 
 title: RV32M1 INTMUX Channel
 
-description: >
+description: |
     This binding describes the RV32M1 INTMUX Channel
 
 compatible: "openisa,rv32m1-intmux-ch"
@@ -20,5 +20,5 @@ properties:
   interrupts:
       required: true
 
-"#cells":
+interrupt-cells:
   - irq

@@ -198,7 +198,7 @@ void test_sleep(void)
 					 THREAD_STACK,
 					 (k_thread_entry_t) test_thread,
 					 0, 0, NULL, TEST_THREAD_PRIORITY,
-					 0, 0);
+					 0, K_NO_WAIT);
 
 	TC_PRINT("Test thread started: id = %p\n", test_thread_id);
 
@@ -206,7 +206,7 @@ void test_sleep(void)
 					   helper_thread_stack, THREAD_STACK,
 					   (k_thread_entry_t) helper_thread,
 					   0, 0, NULL, HELPER_THREAD_PRIORITY,
-					   0, 0);
+					   0, K_NO_WAIT);
 
 	TC_PRINT("Helper thread started: id = %p\n", helper_thread_id);
 
@@ -239,7 +239,7 @@ extern void test_usleep(void);
 void test_main(void)
 {
 	ztest_test_suite(sleep,
-			 ztest_unit_test(test_sleep),
-			 ztest_user_unit_test(test_usleep));
+			 ztest_1cpu_unit_test(test_sleep),
+			 ztest_1cpu_user_unit_test(test_usleep));
 	ztest_run_test_suite(sleep);
 }

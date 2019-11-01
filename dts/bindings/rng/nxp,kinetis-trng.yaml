@@ -3,7 +3,7 @@
 
 title: Kinetis TRNG (True Random Number Generator)
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis RNGA
 
 compatible: "nxp,kinetis-trng"

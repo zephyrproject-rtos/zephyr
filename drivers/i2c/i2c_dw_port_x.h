@@ -20,7 +20,8 @@ static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
 };
 
 static struct i2c_dw_dev_config i2c_@NUM@_runtime = {
-	.base_address = DT_INST_@NUM@_SNPS_DESIGNWARE_I2C_BASE_ADDRESS
+	.regs = (struct i2c_dw_registers *)
+		DT_INST_@NUM@_SNPS_DESIGNWARE_I2C_BASE_ADDRESS
 };
 
 DEVICE_AND_API_INIT(i2c_@NUM@, DT_INST_@NUM@_SNPS_DESIGNWARE_I2C_LABEL,

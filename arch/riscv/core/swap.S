@@ -9,18 +9,18 @@
 #include <offsets_short.h>
 
 /* exports */
-GTEXT(__swap)
+GTEXT(z_arch_swap)
 GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
 /*
- * unsigned int __swap(unsigned int key)
+ * unsigned int z_arch_swap(unsigned int key)
  *
  * Always called with interrupts locked
  * key is stored in a0 register
  */
-SECTION_FUNC(exception.other, __swap)
+SECTION_FUNC(exception.other, z_arch_swap)
 
 	/* Make a system call to perform context switch */
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -76,16 +76,16 @@ SECTION_FUNC(exception.other, __swap)
 	 * Restored register a0 contains IRQ lock state of thread.
 	 *
 	 * Prior to unlocking irq, load return value of
-	 * __swap to temp register t2 (from
+	 * z_arch_swap to temp register t2 (from
 	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
-	 * unless someone has previously called z_set_thread_return_value(..).
+	 * unless someone has previously called z_arch_thread_return_value_set(..).
 	 */
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 
-	/* Load return value of __swap function in temp register t2 */
+	/* Load return value of z_arch_swap function in temp register t2 */
 	lw t2, _thread_offset_to_swap_return_value(t1)
 
 	/*
@@ -108,7 +108,7 @@ SECTION_FUNC(exception.other, __swap)
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/*
 	 * z_thread_entry_wrapper is called for every new thread upon the return
-	 * of __swap or ISR. Its address, as well as its input function
+	 * of z_arch_swap or ISR. Its address, as well as its input function
 	 * arguments thread_entry_t, void *, void *, void * are restored from
 	 * the thread stack (initialized via function _thread).
 	 * In this case, thread_entry_t, * void *, void * and void * are stored

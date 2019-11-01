@@ -8,22 +8,6 @@
 
 #include <sys/atomic.h>
 
-/* These stubs aren't provided by the mocking framework, and I can't
- * find a proper place to put them as mocking seems not to have a
- * proper "arch" layer.
- */
-#ifdef ZTEST_UNITTEST
-static inline int z_arch_irq_lock(void)
-{
-	return 0;
-}
-
-static inline void z_arch_irq_unlock(int key)
-{
-	ARG_UNUSED(key);
-}
-#endif
-
 /* There's a spinlock validation framework available when asserts are
  * enabled.  It adds a relatively hefty overhead (about 3k or so) to
  * kernel code size, don't use on platforms known to be small. (Note

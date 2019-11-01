@@ -63,6 +63,12 @@ features:
 +-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
+| PS/2      | on-chip    | ps2                                 |
++-----------+------------+-------------------------------------+
+| KSCAN     | on-chip    | kscan                               |
++-----------+------------+-------------------------------------+
+
+
 
 Other hardware features are not currently supported by Zephyr (at the moment)
 
@@ -236,6 +242,13 @@ Setup
       export EVERGLADES_SPI_GEN=<path to tool>/everglades_spi_gen_lin64
 
    Note that the tools for Linux and Windows have different file names.
+
+#. If needed, a custom SPI image configuration file can be specified
+   to override the default one.
+
+   .. code-block:: console
+
+      export EVERGLADES_SPI_CFG=custom_spi_cfg.txt
 
 Building
 ========

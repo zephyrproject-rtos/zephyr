@@ -1,0 +1,12 @@
+# Kconfig - Microchip XEC QMSPI
+#
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_XEC_QMSPI
+	bool "Microchip XEC QMSPI driver"
+	default y
+	depends on SOC_FAMILY_MEC
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for the Microchip XEC QMSPI driver.

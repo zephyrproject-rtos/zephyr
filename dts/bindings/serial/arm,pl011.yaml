@@ -1,6 +1,6 @@
 title: ARM PL011 UART
 
-description: >
+description: |
     This binding gives a base representation of the ARM PL011 UART
 
 compatible: "arm,pl011"

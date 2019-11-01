@@ -17,14 +17,13 @@
 
 #include "iis3dhhc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(IIS3DHHC);
+LOG_MODULE_REGISTER(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 static int iis3dhhc_sample_fetch(struct device *dev,
 				 enum sensor_channel chan)
 {
 	struct iis3dhhc_data *data = dev->driver_data;
-	axis3bit16_t raw_accel;
+	union axis3bit16_t raw_accel;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -36,16 +35,13 @@ static int iis3dhhc_sample_fetch(struct device *dev,
 	return 0;
 }
 
-#define IIS3DHHC_FROM_LSB_TO_ums2(lsb)	\
-		((IIS3DHHC_FROM_LSB_TO_mg((s64_t)lsb) * SENSOR_G) / 1000LL)
-
 static inline void iis3dhhc_convert(struct sensor_value *val,
 					s16_t raw_val)
 {
 	s64_t micro_ms2;
 
 	/* Convert to m/s^2 */
-	micro_ms2 = IIS3DHHC_FROM_LSB_TO_ums2((s64_t)raw_val);
+	micro_ms2 = ((iis3dhhc_from_lsb_to_mg(raw_val) * SENSOR_G) / 1000LL);
 	val->val1 = micro_ms2 / 1000000LL;
 	val->val2 = micro_ms2 % 1000000LL;
 }

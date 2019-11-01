@@ -1,0 +1,13 @@
+identifier: qemu_x86_64
+name: QEMU Emulation for X86_64
+type: qemu
+arch: x86
+toolchain:
+  - zephyr
+  - xtools
+simulation: qemu
+testing:
+  default: true
+  ignore_tags:
+     - net
+     - bluetooth

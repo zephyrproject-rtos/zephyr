@@ -1,6 +1,6 @@
 title: Kinetis GPIO
 
-description: >
+description: |
     This is a representation of the Kinetis GPIO nodes
 
 compatible: "nxp,kinetis-gpio"
@@ -17,6 +17,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

@@ -17,10 +17,10 @@
 #include "sys_io.h"
 #include <drivers/interrupt_controller/sysapic.h>
 #include <kernel_arch_thread.h>
-#include <ia32/mmustructs.h>
 #include <stdbool.h>
 #include <arch/common/ffs.h>
 #include <misc/util.h>
+#include <arch/x86/ia32/syscall.h>
 
 #ifndef _ASMLANGUAGE
 #include <stddef.h>	/* for size_t */
@@ -168,12 +168,7 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * Internally this function does a few things:
+/* Internally this function does a few things:
  *
  * 1. There is a declaration of the interrupt parameters in the .intList
  * section, used by gen_idt to create the IDT. This does the same thing
@@ -190,14 +185,6 @@ typedef struct s_isrList {
  *
  * 4. z_irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options, as defined in sysapic.h
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -228,11 +215,6 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-/** Configure a 'direct' static interrupt
- *
- * All arguments must be computable by the compiler at build time
- *
- */
 #define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
@@ -307,38 +289,6 @@ struct _x86_syscall_stack_frame {
 	u32_t ss;
 };
 
-/**
- * @brief Disable all interrupts on the CPU (inline)
- *
- * This routine disables interrupts.  It can be called from either interrupt
- * or thread level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock() to re-enable interrupts.
- *
- * The lock-out key should only be used as the argument to the irq_unlock()
- * API.  It should never be used to manually re-enable interrupts or to inspect
- * or manipulate the contents of the source register.
- *
- * This function can be called recursively: it will return a key to return the
- * state of interrupt locking to the previous level.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * thread executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * thread disables interrupts and subsequently invokes a kernel
- * routine that causes the calling thread to block, the interrupt
- * disable state will be restored when the thread is later rescheduled
- * for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- *
- */
-
 static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key;
@@ -398,8 +348,6 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 /**
  * @}
  */
-
-extern void	k_cpu_idle(void);
 
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
@@ -488,7 +436,10 @@ extern struct task_state_segment _main_tss;
 #endif
 
 struct z_x86_kernel_stack_data {
-	struct x86_mmu_pdpt pdpt;
+	/* For 32-bit, a single four-entry page directory pointer table, that
+	 * needs to be aligned to 32 bytes.
+	 */
+	struct x86_page_tables ptables;
 } __aligned(0x20);
 
 /* With both hardware stack protection and userspace enabled, stacks are
@@ -583,64 +534,6 @@ struct z_x86_thread_stack_header {
 	CODE_UNREACHABLE; \
 } while (false)
 #endif
-
-#ifdef CONFIG_X86_MMU
-/* Kernel's page table. Always active when threads are running in supervisor
- * mode, or handling an interrupt.
- *
- * If KPTI is not enabled, this is used as a template to create per-thread
- * page tables for when threads run in user mode.
- */
-extern struct x86_mmu_pdpt z_x86_kernel_pdpt;
-#ifdef CONFIG_X86_KPTI
-/* Separate page tables for user mode threads. The top-level PDPT is never
- * installed into the CPU; instead used as a template for creating per-thread
- * page tables.
- */
-extern struct x86_mmu_pdpt z_x86_user_pdpt;
-#define USER_PDPT	z_x86_user_pdpt
-#else
-#define USER_PDPT	z_x86_kernel_pdpt
-#endif
-/**
- * @brief Fetch page table flags for a particular page
- *
- * Given a memory address, return the flags for the containing page's
- * PDE and PTE entries. Intended for debugging.
- *
- * @param pdpt Which page table to use
- * @param addr Memory address to example
- * @param pde_flags Output parameter for page directory entry flags
- * @param pte_flags Output parameter for page table entry flags
- */
-void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
-			x86_page_entry_data_t *pde_flags,
-			x86_page_entry_data_t *pte_flags);
-
-
-/**
- * @brief set flags in the MMU page tables
- *
- * Modify bits in the existing page tables for a particular memory
- * range, which must be page-aligned
- *
- * @param pdpt Which page table to use
- * @param ptr Starting memory address which must be page-aligned
- * @param size Size of the region, must be page size multiple
- * @param flags Value of bits to set in the page table entries
- * @param mask Mask indicating which particular bits in the page table entries to
- *	 modify
- * @param flush Whether to flush the TLB for the modified pages, only needed
- *        when modifying the active page tables
- */
-void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
-			 size_t size,
-			 x86_page_entry_data_t flags,
-			 x86_page_entry_data_t mask, bool flush);
-
-int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
-		       int write);
-#endif /* CONFIG_X86_MMU */
 
 #ifdef __cplusplus
 }

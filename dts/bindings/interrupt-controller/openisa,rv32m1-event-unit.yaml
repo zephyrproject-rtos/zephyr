@@ -4,7 +4,7 @@
 
 title: RV32M1 Event Unit
 
-description: >
+description: |
     This binding describes the RV32M1 Event Unit
 
 compatible: "openisa,rv32m1-event-unit"
@@ -18,5 +18,5 @@ properties:
   "#interrupt-cells":
       const: 1
 
-"#cells":
+interrupt-cells:
   - irq

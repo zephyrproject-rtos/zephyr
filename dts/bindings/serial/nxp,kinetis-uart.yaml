@@ -1,6 +1,6 @@
 title: Kinetis UART
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis UART
 
 compatible: "nxp,kinetis-uart"

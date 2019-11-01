@@ -1,6 +1,6 @@
 title: EFM32 GPIO
 
-description: >
+description: |
     This is a representation of the EFM32 GPIO Port nodes
 
 compatible: "silabs,efm32-gpio-port"
@@ -17,6 +17,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

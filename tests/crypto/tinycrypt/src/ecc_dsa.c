@@ -65,7 +65,7 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <test_utils.h>
-#include <test_ecc_utils.h>
+#include "test_ecc_utils.h"
 #include <sys/util.h>
 
 #include <stdio.h>

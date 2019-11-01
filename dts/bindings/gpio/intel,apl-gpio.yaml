@@ -3,7 +3,7 @@
 
 title: Intel Apollo Lake GPIO controller
 
-description: >
+description: |
     This is a representation of the Intel Apollo Lake GPIO node
 
 compatible: "intel,apl-gpio"
@@ -23,6 +23,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

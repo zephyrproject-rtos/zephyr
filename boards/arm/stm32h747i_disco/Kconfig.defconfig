@@ -38,7 +38,7 @@ config CLOCK_STM32_D3PPRE
 	default 2
 
 config STM32H7_DUAL_CORE
-	def_bool y
+	default y
 
 # Dual core boot configuration
 if STM32H7_DUAL_CORE

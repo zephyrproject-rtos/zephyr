@@ -15,7 +15,7 @@ Requirements
 
 The demo assumes that an LED is connected to one of GPIO lines. The
 sample code is configured to work on boards that have defined the led0
-alias in their board device tree description file. Doing so will generate
+alias in their board devicetree description file. Doing so will generate
 these variables:
 
 - DT_ALIAS_LED0_GPIOS_CONTROLLER

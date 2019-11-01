@@ -34,15 +34,6 @@ static void unsolicitedly_publish_states_timer_handler(struct k_timer *dummy)
 K_TIMER_DEFINE(unsolicitedly_publish_states_timer,
 	       unsolicitedly_publish_states_timer_handler, NULL);
 
-
-static void save_lightness_temp_last_values_timer_handler(struct k_timer *dummy)
-{
-	save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
-}
-
-K_TIMER_DEFINE(save_lightness_temp_last_values_timer,
-	       save_lightness_temp_last_values_timer_handler, NULL);
-
 static void no_transition_work_handler(struct k_work *work)
 {
 	bool readjust_light_state;
@@ -69,15 +60,8 @@ static void no_transition_work_handler(struct k_work *work)
 		update_led_gpio();
 	}
 
-	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
-
-	/* If Lightness & Temperature values remains stable for
-	 * 10 Seconds then & then only get stored on SoC flash.
-	 */
-	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		k_timer_start(&save_lightness_temp_last_values_timer,
-			      K_MSEC(10000), 0);
-	}
+	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000),
+		      K_NO_WAIT);
 }
 
 K_WORK_DEFINE(no_transition_work, no_transition_work_handler);

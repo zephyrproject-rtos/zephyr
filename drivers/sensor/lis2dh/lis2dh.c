@@ -10,8 +10,7 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(lis2dh);
+LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 #if defined(DT_ST_LIS2DH_BUS_SPI)
@@ -144,7 +143,7 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	for (i = 0; i < (3 * sizeof(s16_t)); i += sizeof(s16_t)) {
 		s16_t *sample =
-			(s16_t *)&lis2dh->sample.raw[LIS2DH_DATA_OFS + 1 + i];
+			(s16_t *)&lis2dh->sample.raw[1 + i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -316,7 +315,7 @@ int lis2dh_init(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
-	u8_t raw[LIS2DH_DATA_OFS + 6];
+	u8_t raw[6];
 
 	status = lis2dh_bus_configure(dev);
 	if (status < 0) {
@@ -329,7 +328,7 @@ int lis2dh_init(struct device *dev)
 	 * Default values see LIS2DH documentation page 30, chapter 6.
 	 */
 	(void)memset(raw, 0, sizeof(raw));
-	raw[LIS2DH_DATA_OFS] = LIS2DH_ACCEL_EN_BITS;
+	raw[0] = LIS2DH_ACCEL_EN_BITS;
 
 	status = lis2dh_burst_write(dev, LIS2DH_REG_CTRL1, raw,
 				    sizeof(raw));

@@ -3,7 +3,7 @@
 
 title: Atmel SAM PWM
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM PWM
 
 compatible: "atmel,sam-pwm"
@@ -35,7 +35,7 @@ properties:
     "#pwm-cells":
       const: 2
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

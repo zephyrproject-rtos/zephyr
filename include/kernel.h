@@ -23,11 +23,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-extern u32_t __main_time_stamp; /* timestamp when main task starts */
-extern u32_t __idle_time_stamp; /* timestamp when CPU goes idle */
-#endif
-
 /**
  * @brief Kernel APIs
  * @defgroup kernel_apis Kernel APIs
@@ -1335,7 +1330,7 @@ const char *k_thread_name_get(k_tid_t thread_id);
  *
  * @param thread_id Thread to obtain name information
  * @param buf Destination buffer
- * @param size Destinatiomn buffer size
+ * @param size Destination buffer size
  * @retval -ENOSPC Destination buffer too small
  * @retval -EFAULT Memory access error
  * @retval -ENOSYS Thread name feature not enabled
@@ -1366,7 +1361,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate null timeout delay.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * not to wait if the requested operation cannot be performed immediately.
  *
  * @return Timeout delay value.
@@ -1376,7 +1371,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from milliseconds.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a ms milliseconds to perform the requested operation.
  *
  * @param ms Duration in milliseconds.
@@ -1388,7 +1383,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from seconds.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a s seconds to perform the requested operation.
  *
  * @param s Duration in seconds.
@@ -1399,8 +1394,8 @@ const char *k_thread_state_str(k_tid_t thread_id);
 
 /**
  * @brief Generate timeout delay from minutes.
- *
- * This macro generates a timeout delay that that instructs a kernel API
+
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a m minutes to perform the requested operation.
  *
  * @param m Duration in minutes.
@@ -1412,7 +1407,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate timeout delay from hours.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a h hours to perform the requested operation.
  *
  * @param h Duration in hours.
@@ -1424,7 +1419,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 /**
  * @brief Generate infinite timeout delay.
  *
- * This macro generates a timeout delay that that instructs a kernel API
+ * This macro generates a timeout delay that instructs a kernel API
  * to wait as long as necessary to perform the requested operation.
  *
  * @return Timeout delay value.
@@ -1819,7 +1814,10 @@ static inline u32_t k_uptime_delta_32(s64_t *reftime)
  *
  * @return Current hardware clock up-counter (in cycles).
  */
-#define k_cycle_get_32()	z_arch_k_cycle_get_32()
+static inline u32_t k_cycle_get_32(void)
+{
+	return z_arch_k_cycle_get_32();
+}
 
 /**
  * @}
@@ -2686,6 +2684,15 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeo
 /** @} */
 
 struct k_work;
+struct k_work_poll;
+
+/* private, used by k_poll and k_work_poll */
+typedef int (*_poller_cb_t)(struct k_poll_event *event, u32_t state);
+struct _poller {
+	volatile bool is_polling;
+	struct k_thread *thread;
+	_poller_cb_t cb;
+};
 
 /**
  * @addtogroup thread_apis
@@ -2729,6 +2736,16 @@ struct k_delayed_work {
 	struct k_work work;
 	struct _timeout timeout;
 	struct k_work_q *work_q;
+};
+
+struct k_work_poll {
+	struct k_work work;
+	struct _poller poller;
+	struct k_poll_event *events;
+	int num_events;
+	k_work_handler_t real_handler;
+	struct _timeout timeout;
+	int poll_result;
 };
 
 extern struct k_work_q k_sys_work_q;
@@ -3062,6 +3079,116 @@ static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
 	return __ticks_to_ms(z_timeout_remaining(&work->timeout));
 }
+
+/**
+ * @brief Initialize a triggered work item.
+ *
+ * This routine initializes a workqueue triggered work item, prior to
+ * its first use.
+ *
+ * @param work Address of triggered work item.
+ * @param handler Function to invoke each time work item is processed.
+ *
+ * @return N/A
+ */
+extern void k_work_poll_init(struct k_work_poll *work,
+			     k_work_handler_t handler);
+
+/**
+ * @brief Submit a triggered work item.
+ *
+ * This routine schedules work item @a work to be processed by workqueue
+ * @a work_q when one of the given @a events is signaled. The routine
+ * initiates internal poller for the work item and then returns to the caller.
+ * Only when one of the watched events happen the work item is actually
+ * submitted to the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted triggered work item that is still
+ * waiting for the event cancels the existing submission and reschedules it
+ * the using the new event list. Note that this behavior is inherently subject
+ * to race conditions with the pre-existing triggered work item and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @warning
+ * Provided array of events as well as a triggered work item must be placed
+ * in persistent memory (valid until work handler execution or work
+ * cancellation) and cannot be modified after submission.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of delayed work item.
+ * @param events An array of pointers to events which trigger the work.
+ * @param num_events The number of events in the array.
+ * @param timeout Timeout after which the work will be scheduled for
+ *		  execution even if not triggered.
+ *
+ *
+ * @retval 0 Work item started watching for events.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ */
+extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
+				       struct k_work_poll *work,
+				       struct k_poll_event *events,
+				       int num_events,
+				       s32_t timeout);
+
+/**
+ * @brief Submit a triggered work item to the system workqueue.
+ *
+ * This routine schedules work item @a work to be processed by system
+ * workqueue when one of the given @a events is signaled. The routine
+ * initiates internal poller for the work item and then returns to the caller.
+ * Only when one of the watched events happen the work item is actually
+ * submitted to the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted triggered work item that is still
+ * waiting for the event cancels the existing submission and reschedules it
+ * the using the new event list. Note that this behavior is inherently subject
+ * to race conditions with the pre-existing triggered work item and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @warning
+ * Provided array of events as well as a triggered work item must not be
+ * modified until the item has been processed by the workqueue.
+ *
+ * @param work Address of delayed work item.
+ * @param events An array of pointers to events which trigger the work.
+ * @param num_events The number of events in the array.
+ * @param timeout Timeout after which the work will be scheduled for
+ *		  execution even if not triggered.
+ *
+ * @retval 0 Work item started watching for events.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ */
+static inline int k_work_poll_submit(struct k_work_poll *work,
+				     struct k_poll_event *events,
+				     int num_events,
+				     s32_t timeout)
+{
+	return k_work_poll_submit_to_queue(&k_sys_work_q, work,
+						events, num_events, timeout);
+}
+
+/**
+ * @brief Cancel a triggered work item.
+ *
+ * This routine cancels the submission of triggered work item @a work.
+ * A triggered work item can only be canceled if no event triggered work
+ * submission.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ *
+ * @retval 0 Work item canceled.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ */
+extern int k_work_poll_cancel(struct k_work_poll *work);
 
 /** @} */
 /**
@@ -4194,7 +4321,7 @@ struct k_mem_pool {
 			.flags = SYS_MEM_POOL_KERNEL			\
 		} \
 	}; \
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK)
 
 /**
  * @brief Allocate memory from a memory pool.
@@ -4317,12 +4444,6 @@ extern void *k_calloc(size_t nmemb, size_t size);
 #else
 #define _INIT_OBJ_POLL_EVENT(obj) do { } while (false)
 #endif
-
-/* private - implementation data created as needed, per-type */
-struct _poller {
-	struct k_thread *thread;
-	volatile bool is_polling;
-};
 
 /* private - types bit positions */
 enum _poll_types_bits {
@@ -4474,8 +4595,8 @@ struct k_poll_event {
 #define K_POLL_EVENT_STATIC_INITIALIZER(event_type, event_mode, event_obj, \
 					event_tag) \
 	{ \
-	.type = event_type, \
 	.tag = event_tag, \
+	.type = event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
 	.mode = event_mode, \
 	.unused = 0, \
@@ -4629,7 +4750,6 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * @ingroup kernel_apis
  * @{
  */
-
 /**
  * @brief Make the CPU idle.
  *
@@ -4643,7 +4763,10 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * @return N/A
  * @req K-CPU-IDLE-001
  */
-extern void k_cpu_idle(void);
+static inline void k_cpu_idle(void)
+{
+	z_arch_cpu_idle();
+}
 
 /**
  * @brief Make the CPU idle in an atomic fashion.
@@ -4656,7 +4779,10 @@ extern void k_cpu_idle(void);
  * @return N/A
  * @req K-CPU-IDLE-002
  */
-extern void k_cpu_atomic_idle(unsigned int key);
+static inline void k_cpu_atomic_idle(unsigned int key)
+{
+	z_arch_cpu_atomic_idle(key);
+}
 
 /**
  * @}
@@ -4668,7 +4794,7 @@ extern void k_cpu_atomic_idle(unsigned int key);
 extern void z_sys_power_save_idle_exit(s32_t ticks);
 
 #ifdef Z_ARCH_EXCEPT
-/* This archtecture has direct support for triggering a CPU exception */
+/* This architecture has direct support for triggering a CPU exception */
 #define z_except_reason(reason)	Z_ARCH_EXCEPT(reason)
 #else
 
@@ -5034,32 +5160,6 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @req K-MISC-006
  */
 __syscall void k_str_out(char *c, size_t n);
-
-/**
- * @brief Start a numbered CPU on a MP-capable system
-
- * This starts and initializes a specific CPU.  The main thread on
- * startup is running on CPU zero, other processors are numbered
- * sequentially.  On return from this function, the CPU is known to
- * have begun operating and will enter the provided function.  Its
- * interrupts will be initialized but disabled such that irq_unlock()
- * with the provided key will work to enable them.
- *
- * Normally, in SMP mode this function will be called by the kernel
- * initialization and should not be used as a user API.  But it is
- * defined here for special-purpose apps which want Zephyr running on
- * one core and to use others for design-specific processing.
- *
- * @param cpu_num Integer number of the CPU
- * @param stack Stack memory for the CPU
- * @param sz Stack buffer size, in bytes
- * @param fn Function to begin running on the CPU.  First argument is
- *        an irq_unlock() key.
- * @param arg Untyped argument to be passed to "fn"
- */
-extern void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-			    void (*fn)(int key, void *data), void *arg);
-
 
 /**
  * @brief Disable preservation of floating point context information.

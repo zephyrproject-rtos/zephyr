@@ -1,6 +1,6 @@
 title: EFR32MG GPIO
 
-description: >
+description: |
     This is a representation of the EFR32MG GPIO nodes
 
 compatible: "silabs,efr32mg-gpio"

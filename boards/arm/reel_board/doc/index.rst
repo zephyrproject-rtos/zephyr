@@ -131,6 +131,8 @@ hardware features:
 +-----------+------------+----------------------+
 | I2C       | on-chip    | i2c                  |
 +-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
 | GPIO      | on-chip    | gpio                 |
@@ -181,7 +183,7 @@ Port P0
 +-------+----------------------------+---------------------------+
 | P0.12 | RGB LED (green)            | GPIO                      |
 +-------+----------------------------+---------------------------+
-| P0.13 | LED1 (yellow)              | GPIO                      |
+| P0.13 | PWM LED | Buzzer           | GPIO                      |
 +-------+----------------------------+---------------------------+
 | P0.14 | EPD Busy output            | GPIO                      |
 +-------+----------------------------+---------------------------+
@@ -420,7 +422,7 @@ third party shields in two ways:
         NOTM.2 adapter is removed from the reel board and
         connected to NOTM.2 connector on the link board BASE.
         The wiring to the shield connector is identical to the
-        configuraiton above and no software modifications for the shield
+        configuration above and no software modifications for the shield
         are necessary.
         Stand-alone configuration is more suitable for applications where
         peripherals on the reel board are not used or in conflict,

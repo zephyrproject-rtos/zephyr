@@ -17,7 +17,7 @@
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
-#define HEXDUMP_BYTES_IN_LINE 8
+#define HEXDUMP_BYTES_IN_LINE 16
 
 #define  DROPPED_COLOR_PREFIX \
 	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
@@ -49,6 +49,14 @@ typedef int (*out_func_t)(int c, void *ctx);
 extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
 extern void z_vprintk(out_func_t out, void *log_output,
 		     const char *fmt, va_list ap);
+extern void log_output_msg_syst_process(const struct log_output *log_output,
+				struct log_msg *msg, u32_t flag);
+extern void log_output_string_syst_process(const struct log_output *log_output,
+				struct log_msg_ids src_level,
+				const char *fmt, va_list ap, u32_t flag);
+extern void log_output_hexdump_syst_process(const struct log_output *log_output,
+				struct log_msg_ids src_level,
+				const u8_t *data, u32_t length, u32_t flag);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -366,6 +374,10 @@ static void hexdump_line_print(const struct log_output *log_output,
 	}
 
 	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			print_formatted(log_output, " ");
+		}
+
 		if (i < length) {
 			print_formatted(log_output, "%02x ", data[i]);
 		} else {
@@ -376,6 +388,10 @@ static void hexdump_line_print(const struct log_output *log_output,
 	print_formatted(log_output, "|");
 
 	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			print_formatted(log_output, " ");
+		}
+
 		if (i < length) {
 			char c = (char)data[i];
 
@@ -506,6 +522,12 @@ void log_output_msg_process(const struct log_output *log_output,
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	int prefix_offset;
 
+	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
+		log_output_msg_syst_process(log_output, msg, flags);
+		return;
+	}
+
 	prefix_offset = raw_string ?
 			0 : prefix_print(log_output, flags, std_msg, timestamp,
 					 level, domain_id, source_id);
@@ -547,6 +569,13 @@ void log_output_string(const struct log_output *log_output,
 	u16_t source_id = (u16_t)src_level.source_id;
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 
+	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
+		log_output_string_syst_process(log_output,
+				src_level, fmt, ap, flags);
+		return;
+	}
+
 	if (!raw_string) {
 		prefix_print(log_output, flags, true, timestamp,
 				level, domain_id, source_id);
@@ -582,6 +611,13 @@ void log_output_hexdump(const struct log_output *log_output,
 	u8_t level = (u8_t)src_level.level;
 	u8_t domain_id = (u8_t)src_level.domain_id;
 	u16_t source_id = (u16_t)src_level.source_id;
+
+	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
+		log_output_hexdump_syst_process(log_output,
+				src_level, data, length, flags);
+		return;
+	}
 
 	prefix_offset = prefix_print(log_output, flags, true, timestamp,
 				     level, domain_id, source_id);

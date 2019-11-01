@@ -51,17 +51,7 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
 	return val;
 }
 
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the
- * kernel.  Trivial stuff is done inline; more complex initialization is
- * done via function calls.
- *
- * @return N/A
- */
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
@@ -83,14 +73,21 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 #endif
 }
 
-extern void k_cpu_atomic_idle(unsigned int key);
+void xtensa_switch(void *switch_to, void **switched_from);
+
+static inline void z_arch_switch(void *switch_to, void **switched_from)
+{
+	return xtensa_switch(switch_to, switched_from);
+}
 
 #ifdef __cplusplus
 }
 #endif
 
-#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
-
+static inline bool z_arch_is_in_isr(void)
+{
+	return z_arch_curr_cpu()->nested != 0U;
+}
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_ */

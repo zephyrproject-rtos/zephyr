@@ -1,0 +1,49 @@
+# Kconfig.xec - Microchip XEC Keyboard Scan Matrix configuration options
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig KSCAN_XEC
+	bool "XEC Microchip KSCAN driver"
+	depends on SOC_FAMILY_MEC
+	select MULTITHREADING
+	help
+	  Enable the Microchip XEC Kscan IO driver.
+
+if KSCAN_XEC
+
+config KSCAN_XEC_COLUMN_SIZE
+	int "KSCAN_XEC_COLUMN_SIZE"
+	default 16
+	help
+	 Adjust the value to your keyboard columns. The maximum
+	 column size for the Microchip XEC family is 18 (from 0 to 17).
+
+config KSCAN_XEC_ROW_SIZE
+	int "KSCAN_XEC_ROW_SIZE"
+	default 8
+	help
+	 Adjust the value to your keyboard rows. The maximum
+	 column size for the Microchip XEC family is 8 (from 0 to 7).
+
+config KSCAN_XEC_DEBOUNCE_DOWN
+	int "KSCAN_XEC_DEBOUNCE_DOWN"
+	default 10
+	help
+	 Determines the time in msecs for debouncing a key press.
+
+config KSCAN_XEC_DEBOUNCE_UP
+	int "KSCAN_XEC_DEBOUNCE_UP"
+	default 20
+	help
+	 Determines the time in msecs for debouncing a key release.
+
+config KSCAN_XEC_POLL_PERIOD
+	int "KSCAN_XEC_POLL_PERIOD"
+	default 5
+	help
+	 Defines the poll period in msecs between between matrix scans.
+
+endif #KSCAN_XEC

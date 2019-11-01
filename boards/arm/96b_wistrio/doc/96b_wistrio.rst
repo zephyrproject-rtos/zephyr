@@ -7,7 +7,7 @@ Overview
 ********
 
 96Boards WisTrio LoRa Tracker board is based on the RAK Wireless RAK5205
-chipset integrating SX1276 LoRaWAN Modem, STM32L151CB MCU and GPS module.
+chipset integrating SX1276 LoRaWAN Modem, STM32L151CB-A MCU and GPS module.
 Zephyr applications use the 96b_wistrio configuration to run on these
 boards.
 
@@ -19,7 +19,7 @@ boards.
 
      96Boards WisTrio
 
-This board is one of the 96Boards IoT Edition platform providing LoRa
+This board is one of the `96Boards IoT Edition`_ platforms providing LoRa
 connectivity.
 
 Hardware
@@ -65,6 +65,10 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 The default board configuration can be found in the defconfig file:
 
@@ -102,6 +106,17 @@ The default I2C mapping is:
 
 I2C1 also goes to the J22 connector and can be used to attach external
 sensors.
+
+SPI
+---
+
+96Boards WisTrio board has 1 SPI connected to on-chip LoRa Radio.
+The default SPI mapping is:
+
+- SPI1_SCLK  : PA5
+- SPI1_MISO  : PA6
+- SPI1_MOSI  : PA7
+- SPI1_NSS   : PB0
 
 Programming and Debugging
 *************************
@@ -197,3 +212,6 @@ References
 
 .. _Getting started page:
    https://github.com/blacksphere/blackmagic/wiki/Getting-Started
+
+.. _96Boards IoT Edition:
+    https://linaro.co/ie-specification

@@ -3,7 +3,7 @@
 
 title: RV32M1 PCC (Peripheral Clock Control)
 
-description: >
+description: |
     This is a representation of the RV32M1 PCC IP node
 
 compatible: "openisa,rv32m1-pcc"
@@ -20,5 +20,5 @@ properties:
     "#clock-cells":
       const: 1
 
-"#cells":
+clock-cells:
   - name

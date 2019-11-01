@@ -124,7 +124,7 @@ static void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 	u32_t start_time;
 	void *packet;
 
-	k_sleep(1); /* Align to ticks */
+	k_sleep(K_MSEC(1)); /* Align to ticks */
 
 	start_time = k_cycle_get_32();
 	packet = k_fifo_get(d->fifo, d->timeout);
@@ -144,7 +144,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 		tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_timeout,
 				&test_data[ii], NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* In general, there is no guarantee of wakeup order when multiple
@@ -218,13 +218,13 @@ static int test_multiple_threads_get_data(struct timeout_order_data *test_data,
 		tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_get_data,
 				&test_data[ii], NULL, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	tid[ii] = k_thread_create(&ttdata[ii], ttstack[ii], TSTACK_SIZE,
 				test_thread_pend_and_timeout,
 				&test_data[ii], NULL, NULL,
-				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
+				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, K_NO_WAIT);
 
 	for (ii = 0; ii < test_data_size-1; ii++) {
 		k_fifo_put(test_data[ii].fifo, get_scratch_packet());
@@ -300,7 +300,7 @@ static void test_timeout_empty_fifo(void)
 	void *packet;
 	u32_t start_time, timeout;
 
-	k_sleep(1); /* Align to ticks */
+	k_sleep(K_MSEC(1)); /* Align to ticks */
 
 	/* Test empty fifo with timeout */
 	timeout = 10U;
@@ -353,7 +353,7 @@ static void test_timeout_fifo_thread(void)
 	struct reply_packet reply_packet;
 	u32_t start_time, timeout;
 
-	k_sleep(1); /* Align to ticks */
+	k_sleep(K_MSEC(1)); /* Align to ticks */
 
 	/*
 	 * Test fifo with some timeout and child thread that puts
@@ -365,7 +365,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_put_timeout, &fifo_timeout[0],
 				&timeout, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_fifo_get(&fifo_timeout[0], timeout + 10);
 	zassert_true(packet != NULL, NULL);
@@ -381,7 +381,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 	packet = k_fifo_get(&timeout_order_fifo, K_NO_WAIT);
@@ -400,7 +400,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 	packet = k_fifo_get(&timeout_order_fifo, K_NO_WAIT);
@@ -420,7 +420,7 @@ static void test_timeout_fifo_thread(void)
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values_wfe,
 				&reply_packet, NULL, NULL,
-				FIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
+				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_fifo_get(&timeout_order_fifo, K_FOREVER);
 	zassert_true(packet != NULL, NULL);
@@ -520,11 +520,11 @@ void test_main(void)
 	test_timeout_setup();
 
 	ztest_test_suite(test_fifo_timeout,
-		ztest_unit_test(test_timeout_empty_fifo),
+		ztest_1cpu_unit_test(test_timeout_empty_fifo),
 		ztest_unit_test(test_timeout_non_empty_fifo),
-		ztest_unit_test(test_timeout_fifo_thread),
-		ztest_unit_test(test_timeout_threads_pend_on_fifo),
-		ztest_unit_test(test_timeout_threads_pend_on_dual_fifos),
-		ztest_unit_test(test_timeout_threads_pend_fail_on_fifo));
+		ztest_1cpu_unit_test(test_timeout_fifo_thread),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_on_fifo),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_on_dual_fifos),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_fail_on_fifo));
 	ztest_run_test_suite(test_fifo_timeout);
 }

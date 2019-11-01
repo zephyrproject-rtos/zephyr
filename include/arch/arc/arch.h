@@ -226,10 +226,7 @@ extern "C" {
 /* Typedef for the k_mem_partition attribute*/
 typedef u32_t k_mem_partition_attr_t;
 
-/**
- * @brief Explicitly nop operation.
- */
-static ALWAYS_INLINE void arch_nop(void)
+static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

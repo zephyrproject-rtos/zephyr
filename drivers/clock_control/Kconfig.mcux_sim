@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig CLOCK_CONTROL_MCUX_SIM
+config CLOCK_CONTROL_MCUX_SIM
 	bool "MCUX SIM driver"
 	depends on HAS_MCUX_SIM
 	help

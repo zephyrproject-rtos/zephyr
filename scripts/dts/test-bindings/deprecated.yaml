@@ -26,6 +26,11 @@ properties:
 # Deprecated older 'child-binding'-alike
 sub-node:
     properties:
-        child-prop:
-            type: int
+        foos:
+            type: phandle-array
             required: true
+
+# Deprecated older catch-all version of *-cells
+"#cells":
+    - foo
+    - bar

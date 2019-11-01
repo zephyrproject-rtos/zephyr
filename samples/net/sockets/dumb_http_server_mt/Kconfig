@@ -1,0 +1,18 @@
+# Kconfig - Private config options for this sample app
+
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Networking dumb-http-server-mt sample application"
+
+config NET_SAMPLE_NUM_HANDLERS
+	int "How many connections to serve at the same time"
+	default 2
+	help
+	  Each connection is served by a thread which needs
+	  memory. Only increase the value here if really needed.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,4 @@
+tests:
+  misc.crc:
+    tags: net crc
+    type: unit

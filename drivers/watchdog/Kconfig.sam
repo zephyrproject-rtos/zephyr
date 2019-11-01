@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig WDT_SAM
+config WDT_SAM
 	bool "Atmel SAM MCU Family Watchdog (WDT) Driver"
 	depends on SOC_FAMILY_SAM
 	select HAS_DTS_WDT

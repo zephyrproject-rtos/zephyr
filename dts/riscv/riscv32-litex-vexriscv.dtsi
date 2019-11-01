@@ -44,6 +44,17 @@
 			label = "uart0";
 			status = "disabled";
 		};
+		spi0: spi@e0002000 {
+			compatible = "litex,spi";
+			interrupt-parent = <&intc0>;
+			interrupts = <5 0>;
+			reg = <0xe0002000 0x34>;
+			reg-names = "control";
+			label = "spi0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 		timer0: serial@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;

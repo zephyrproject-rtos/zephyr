@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-if X86_LONGMODE
+if X86_64
 
 config MAIN_STACK_SIZE
 	default 8192
@@ -32,6 +32,12 @@ config EXCEPTION_STACK_SIZE
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config SCHED_IPI_VECTOR
+	int "IDT vector to use for scheduler IPI"
+	default 33
+	range 33 255
+	depends on SMP
+
 # We should really only have to provide one of the following two values,
 # but a bug in the Zephyr SDK for x86 precludes the use of division in
 # the assembler. For now, we require that these values be specified manually,
@@ -52,4 +58,4 @@ config ISR_SUBSTACK_SIZE
 	  CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH must be equal to
 	  CONFIG_ISR_STACK_SIZE.
 
-endif # X86_LONGMODE
+endif # X86_64

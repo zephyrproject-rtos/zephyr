@@ -3,7 +3,7 @@
 
 title: TI SimpleLink CC13xx / CC26xx UART
 
-description: >
+description: |
     This is a representation of the TI SimpleLink CC13xx / CC26xx UART node
 
 compatible: "ti,cc13xx-cc26xx-uart"

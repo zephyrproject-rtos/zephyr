@@ -18,9 +18,7 @@
 
 #include "hp206c.h"
 
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(HP206C);
+LOG_MODULE_REGISTER(HP206C, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int hp206c_bus_config(struct device *dev)
 {
@@ -168,7 +166,7 @@ static int hp206c_wait_dev_ready(struct device *dev, u32_t timeout_ms)
 	struct hp206c_device_data *hp206c = dev->driver_data;
 	u8_t int_src;
 
-	k_timer_start(&hp206c->tmr, timeout_ms, 0);
+	k_timer_start(&hp206c->tmr, timeout_ms, K_NO_WAIT);
 	k_timer_status_sync(&hp206c->tmr);
 
 	if (hp206c_read_reg(dev, HP206C_REG_INT_SRC, &int_src) < 0) {

@@ -53,7 +53,7 @@ Building and running
    does not support native 32-bit binaries.
 
 To target this board you need to have `BabbleSim`_ compiled in your system.
-If you do not have it yet, in `its webpage <https://BabbleSim.github.io>`_
+If you do not have it yet, in `its web page <https://BabbleSim.github.io>`_
 you can find instructions on how to
 `fetch <https://babblesim.github.io/fetching.html>`_ and
 `build <https://babblesim.github.io/building.html>`_ it.

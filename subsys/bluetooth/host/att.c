@@ -171,9 +171,9 @@ void att_cfm_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
-	atomic_clear_bit(att->flags, ATT_PENDING_CFM);
-#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
+	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
+		atomic_clear_bit(att->flags, ATT_PENDING_CFM);
+	}
 
 	att_pdu_sent(conn, user_data);
 }
@@ -184,9 +184,9 @@ void att_rsp_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
-	atomic_clear_bit(att->flags, ATT_PENDING_RSP);
-#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
+	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
+		atomic_clear_bit(att->flags, ATT_PENDING_RSP);
+	}
 
 	att_pdu_sent(conn, user_data);
 }
@@ -2054,18 +2054,18 @@ static void att_reset(struct bt_att *att)
 {
 	struct bt_att_req *req, *tmp;
 	int i;
-#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
 	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 	while ((buf = k_fifo_get(&att->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
-#endif
 
 	atomic_set_bit(att->flags, ATT_DISCONNECTED);
 

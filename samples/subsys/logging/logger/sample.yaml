@@ -5,7 +5,6 @@ sample:
 tests:
   samples.logger:
     tags: logging
-    platform_exclude: qemu_x86_64
     harness: console
     harness_config:
       type: one_line

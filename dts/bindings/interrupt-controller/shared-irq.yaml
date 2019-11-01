@@ -1,6 +1,6 @@
 title: Shared IRQ interrupt dispatcher
 
-description: >
+description: |
     This binding describes Shared IRQ interrupt dispatcher
 
 compatible: "shared-irq"

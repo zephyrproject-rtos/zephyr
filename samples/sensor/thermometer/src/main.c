@@ -43,6 +43,6 @@ void main(void)
 		printf("Temperature is %gC\n",
 		       sensor_value_to_double(&temp_value));
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

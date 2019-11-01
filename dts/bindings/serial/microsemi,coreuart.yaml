@@ -3,7 +3,7 @@
 
 title: SIFIVE UART
 
-description: >
+description: |
     This binding gives a base representation of the SIFIVE UART
 
 compatible: "microsemi,coreuart"

@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LIS3MDL
 
-description: >
+description: |
     This binding gives a base representation of LIS3MDL magnetometer
 
 compatible: "st,lis3mdl-magn"

@@ -187,7 +187,7 @@ static void posix_preexit_cleanup(void)
 /**
  * Let the ready thread run and block this thread until it is allowed again
  *
- * called from __swap() which does the picking from the kernel structures
+ * called from z_arch_swap() which does the picking from the kernel structures
  */
 void posix_swap(int next_allowed_thread_nbr, int this_th_nbr)
 {
@@ -256,7 +256,7 @@ static void posix_cleanup_handler(void *arg)
 
 /**
  * Helper function to start a Zephyr thread as a POSIX thread:
- *  It will block the thread until a __swap() is called for it
+ *  It will block the thread until a z_arch_swap() is called for it
  *
  * Spawned from posix_new_thread() below
  */
@@ -361,10 +361,10 @@ static int ttable_get_empty_slot(void)
 }
 
 /**
- * Called from z_new_thread(),
+ * Called from z_arch_new_thread(),
  * Create a new POSIX thread for the new Zephyr thread.
- * z_new_thread() picks from the kernel structures what it is that we need to
- * call with what parameters
+ * z_arch_new_thread() picks from the kernel structures what it is that we need
+ * to call with what parameters
  */
 void posix_new_thread(posix_thread_status_t *ptr)
 {

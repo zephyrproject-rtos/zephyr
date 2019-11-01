@@ -3,7 +3,7 @@
 
 title: SiFive PWM
 
-description: >
+description: |
     This binding gives a base representation of the SiFive PWM
 
 compatible: "sifive,pwm0"
@@ -30,7 +30,7 @@ properties:
     "#pwm-cells":
       const: 2
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

@@ -3,7 +3,7 @@
 
 title: IMX MESSAGING UNIT
 
-description: >
+description: |
     This binding gives a base representation of the i.MX Messaging Unit
 
 compatible: "nxp,imx-mu"

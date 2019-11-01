@@ -3,7 +3,7 @@
 
 title: ARC-HS Interrupt Distribution Unit
 
-description: >
+description: |
     This binding describes the 2nd level interrupt controller can be used in
     SMP configurations for dynamic IRQ routing, load balancing of
     common/external IRQs towards core intc
@@ -12,6 +12,6 @@ compatible: "snps,archs-idu-intc"
 
 include: [interrupt-controller.yaml, base.yaml]
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

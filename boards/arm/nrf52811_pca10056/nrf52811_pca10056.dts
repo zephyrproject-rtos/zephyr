@@ -43,6 +43,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 13>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -69,6 +76,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -90,8 +98,8 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
 	tx-pin = <6>;
 	rx-pin = <8>;
 	rts-pin = <5>;
@@ -99,8 +107,9 @@
 };
 
 &i2c0 {
-	/* Arduino compatible PINs */
+	compatible = "nordic,nrf-twi";
 	status = "okay";
+	/* Arduino compatible PINs */
 	sda-pin = <26>;
 	scl-pin = <27>;
 };
@@ -112,6 +121,7 @@
 };
 
 &spi0 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <0>;
 	mosi-pin = <1>;
@@ -119,6 +129,7 @@
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	/* cannot be used with i2c0 */
 	sck-pin = <19>;
 	mosi-pin = <20>;

@@ -3,7 +3,7 @@
 
 title: MCP2515 CAN
 
-description: >
+description: |
     This binding gives a base representation of the MCP2515 SPI CAN controller
 
 compatible: "microchip,mcp2515"
@@ -11,6 +11,10 @@ compatible: "microchip,mcp2515"
 include: [spi-device.yaml, can-controller.yaml]
 
 properties:
+    osc-freq:
+      type: int
+      required: true
+      description: Frequency of the external oscillator
     int-gpios:
       type: phandle-array
       required: true

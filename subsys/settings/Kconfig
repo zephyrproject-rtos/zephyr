@@ -45,8 +45,9 @@ config SETTINGS_USE_BASE64
 
 choice
 	prompt "Storage back-end"
-	optional
+	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
+	default SETTINGS_FS if FILE_SYSTEM
 	default SETTINGS_NONE
 	depends on SETTINGS
 	help
@@ -67,7 +68,8 @@ config SETTINGS_FS
 
 config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
-	depends on SETTINGS
+	depends on NVS
+	depends on FLASH_MAP
 	help
 	  Enables NVS storage support
 

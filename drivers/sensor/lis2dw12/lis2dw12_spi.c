@@ -17,8 +17,7 @@
 
 #define LIS2DW12_SPI_READ		(1 << 7)
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LIS2DW12);
+LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct spi_config lis2dw12_spi_conf = {
 	.frequency = DT_INST_0_ST_LIS2DW12_SPI_MAX_FREQUENCY,
@@ -91,9 +90,9 @@ static int lis2dw12_spi_write(struct lis2dw12_data *ctx, u8_t reg,
 	return 0;
 }
 
-lis2dw12_ctx_t lis2dw12_spi_ctx = {
-	.read_reg = (lis2dw12_read_ptr) lis2dw12_spi_read,
-	.write_reg = (lis2dw12_write_ptr) lis2dw12_spi_write,
+stmdev_ctx_t lis2dw12_spi_ctx = {
+	.read_reg = (stmdev_read_ptr) lis2dw12_spi_read,
+	.write_reg = (stmdev_write_ptr) lis2dw12_spi_write,
 };
 
 int lis2dw12_spi_init(struct device *dev)

@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LSM6DSL
 
-description: >
+description: |
     This binding gives a base representation of LSM6DSL 6-axis accelerometer
     and gyrometer
 

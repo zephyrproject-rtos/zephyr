@@ -1,0 +1,46 @@
+# Kconfig - STMicroelectronics STM32G4 MCU line
+#
+# Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32G4X
+
+source "soc/arm/st_stm32/stm32g4/Kconfig.defconfig.stm32g4*"
+
+config SOC_SERIES
+	default "stm32g4"
+
+if GPIO_STM32
+
+# GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+if I2C_STM32
+
+config I2C_STM32_V2
+	default y
+
+endif # I2C_STM32
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
+endif # GPIO_STM32
+endif # SOC_SERIES_STM32G4X

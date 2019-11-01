@@ -124,7 +124,7 @@ static u16_t xec_select_div(u32_t freq, u32_t max_freq[16])
 static void xec_compute_on_off(u32_t freq, u32_t dc, u32_t clk,
 			       u32_t *on, u32_t *off)
 {
-	u32_t on_off;
+	u64_t on_off;
 
 	on_off = (clk * 10) / freq;
 
@@ -136,7 +136,8 @@ static u32_t xec_compute_dc(u32_t on, u32_t off)
 {
 	int dc = (on + 1) + (off + 1);
 
-	dc = (((on + 1) * XEC_PWM_DC_PF) / dc);
+	/* Make calculation in u64_t since XEC_PWM_DC_PF is large */
+	dc = (((u64_t)(on + 1) * XEC_PWM_DC_PF) / dc);
 
 	return (u32_t)dc;
 }
@@ -339,7 +340,7 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cyclet_per_sec(struct device *dev, u32_t pwm,
+static int pwm_xec_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				      u64_t *cycles)
 {
 	ARG_UNUSED(dev);
@@ -367,7 +368,7 @@ static int pwm_xec_init(struct device *dev)
 
 static struct pwm_driver_api pwm_xec_api = {
 	.pin_set = pwm_xec_pin_set,
-	.get_cycles_per_sec = pwm_xec_get_cyclet_per_sec
+	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
 #if defined(DT_INST_0_MICROCHIP_XEC_PWM)

@@ -51,7 +51,7 @@
 #define CR4_PAE		0x00000020	/* enable PAE */
 #define CR4_OSFXSR	0x00000200	/* enable SSE (OS FXSAVE/RSTOR) */
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_data.h>
 #else
 #include <ia32/kernel_arch_data.h>

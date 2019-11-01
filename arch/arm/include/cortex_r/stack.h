@@ -26,7 +26,7 @@ extern "C" {
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
-extern void init_stacks(void);
+extern void z_arm_init_stacks(void);
 
 /**
  *
@@ -36,7 +36,7 @@ extern void init_stacks(void);
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_InterruptStackSetup(void)
+static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
 }
 

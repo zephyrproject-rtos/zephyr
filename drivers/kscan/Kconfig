@@ -1,0 +1,28 @@
+# Kconfig - Keyboard scan configuration options
+
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig KSCAN
+	bool "Keyboard Scan Drivers"
+	help
+	  Include Keyboard scan drivers in system config.
+
+if KSCAN
+
+source "drivers/kscan/Kconfig.xec"
+
+module = KSCAN
+module-str = kscan
+source "subsys/logging/Kconfig.template.log_config"
+
+config KSCAN_INIT_PRIORITY
+	int "Keyboard scan driver init priority"
+	default 40
+	help
+	  Keyboard scan device driver initialization priority.
+
+endif #KSCAN

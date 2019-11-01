@@ -59,7 +59,8 @@ static void spawn_threads(int sleep_sec)
 					       STACK_SIZE, thread_entry,
 					       INT_TO_POINTER(i),
 					       INT_TO_POINTER(sleep_sec),
-					       NULL, tdata[i].priority, 0, 0);
+					       NULL, tdata[i].priority, 0,
+					       K_NO_WAIT);
 	}
 }
 
@@ -80,7 +81,7 @@ static void timer_handler(struct k_timer *timer)
 static void thread_handler(void *p1, void *p2, void *p3)
 {
 	k_timer_init(&timer, timer_handler, NULL);
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, DURATION, K_NO_WAIT);
 }
 
 /*test cases*/
@@ -130,7 +131,7 @@ void test_sleep_cooperative(void)
 
 	spawn_threads(0);
 	/* checkpoint: all ready threads get executed when k_sleep */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);
 	}
@@ -188,7 +189,7 @@ void test_sleep_wakeup_preemptible(void)
 static int executed;
 static void coop_thread(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&pend_sema, 100);
+	k_sem_take(&pend_sema, K_MSEC(100));
 	executed = 1;
 }
 
@@ -212,7 +213,7 @@ void test_pending_thread_wakeup(void)
 	k_tid_t tid = k_thread_create(&t, tstack, STACK_SIZE,
 				      (k_thread_entry_t)coop_thread,
 				      NULL, NULL, NULL,
-				      K_PRIO_COOP(1), 0, 0);
+				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 
 	zassert_false(executed == 1, "The thread didn't wait"
 		      " for semaphore acquisition");
@@ -324,7 +325,7 @@ void test_lock_preemptible(void)
 		zassert_true(tdata[i].executed == 0, NULL);
 	}
 	/* make current thread unready */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/* checkpoint: all other threads get executed */
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);
@@ -356,11 +357,15 @@ void test_unlock_preemptible(void)
 	k_busy_wait(100000);
 
 	k_sched_unlock();
-	/* checkpoint: higher threads get executed */
+
+	/* ensure threads of equal priority can run */
+	k_yield();
+
+	/* checkpoint: higher and equal threads get executed */
 	zassert_true(tdata[0].executed == 1, NULL);
-	for (int i = 1; i < THREADS_NUM; i++) {
-		zassert_true(tdata[i].executed == 0, NULL);
-	}
+	zassert_true(tdata[1].executed == 1, NULL);
+	zassert_true(tdata[2].executed == 0, NULL);
+
 	/* restore environment */
 	teardown_threads();
 }
@@ -404,11 +409,13 @@ void test_unlock_nested_sched_lock(void)
 	/* unlock another; this let the higher thread to run */
 	k_sched_unlock();
 
+	/* Ensure threads of equal priority run */
+	k_yield();
+
 	/* checkpoint: higher threads NOT get executed */
 	zassert_true(tdata[0].executed == 1, NULL);
-	for (int i = 1; i < THREADS_NUM; i++) {
-		zassert_true(tdata[i].executed == 0, NULL);
-	}
+	zassert_true(tdata[1].executed == 1, NULL);
+	zassert_true(tdata[2].executed == 0, NULL);
 
 	/* restore environment */
 	teardown_threads();
@@ -428,7 +435,7 @@ void test_wakeup_expired_timer_thread(void)
 {
 	k_tid_t tid = k_thread_create(&tthread[0], tstack, STACK_SIZE,
 					thread_handler, NULL, NULL, NULL,
-					K_PRIO_PREEMPT(0), 0, 0);
+					K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	k_sem_take(&timer_sema, K_FOREVER);
 	/* wakeup a thread if the timer is expired */
 	k_wakeup(tid);

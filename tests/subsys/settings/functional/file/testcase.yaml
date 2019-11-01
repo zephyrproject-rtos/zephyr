@@ -1,0 +1,4 @@
+tests:
+  system.settings.file:
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 native_posix native_posix_64
+    tags: settings_file

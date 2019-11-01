@@ -3,7 +3,7 @@
 
 title: NXP Kinetis ADC12
 
-description: >
+description: |
     This binding gives a base representation of the NXP Kinetis ADC12
 
 compatible: "nxp,kinetis-adc12"
@@ -40,5 +40,5 @@ properties:
     "#io-channel-cells":
       const: 1
 
-"#cells":
+io-channel-cells:
     - input

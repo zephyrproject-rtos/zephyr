@@ -10,7 +10,6 @@ config SOC
 	default "musca_b1"
 
 config NUM_IRQS
-	int
 	default 96
 
 endif

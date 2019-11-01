@@ -1,5 +1,5 @@
 tests:
-  bluetooth.general:
+  bluetooth.general.tester:
     platform_whitelist: qemu_x86
     tags: bluetooth
     harness: bluetooth

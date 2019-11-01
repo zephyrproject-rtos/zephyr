@@ -5,7 +5,7 @@
 
 config HAS_IMX_HAL
 	bool
-	select HAS_CMSIS
+	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_IMX
 
 if HAS_IMX_HAL

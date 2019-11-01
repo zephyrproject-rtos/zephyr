@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <timeout_q.h>
 #include <debug/tracing.h>
 #include <stdbool.h>
@@ -17,7 +18,7 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 
 #ifdef CONFIG_MULTITHREADING
 #define Z_VALID_PRIO(prio, entry_point)				     \
-	(((prio) == K_IDLE_PRIO && z_is_idle_thread(entry_point)) || \
+	(((prio) == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) || \
 	 ((K_LOWEST_APPLICATION_THREAD_PRIO			     \
 	   >= K_HIGHEST_APPLICATION_THREAD_PRIO)		     \
 	  && (prio) >= K_HIGHEST_APPLICATION_THREAD_PRIO	     \
@@ -57,6 +58,7 @@ struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
 void z_time_slice(int ticks);
+void z_reset_time_slice(void);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 
@@ -81,9 +83,18 @@ static ALWAYS_INLINE struct k_thread *z_get_next_ready_thread(void)
 }
 #endif
 
-static inline bool z_is_idle_thread(void *entry_point)
+static inline bool z_is_idle_thread_entry(void *entry_point)
 {
 	return entry_point == idle;
+}
+
+static inline bool z_is_idle_thread_object(struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	return thread->base.is_idle;
+#else
+	return thread == &z_idle_thread;
+#endif
 }
 
 static inline bool z_is_thread_pending(struct k_thread *thread)
@@ -216,7 +227,7 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
-	if (prio == K_IDLE_PRIO && z_is_idle_thread(entry_point)) {
+	if (prio == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) {
 		return true;
 	}
 
@@ -254,7 +265,7 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 1, "");
 
 	--_current->base.sched_locked;
@@ -269,7 +280,7 @@ static inline void z_sched_lock(void)
 static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 0, "");
 
 	compiler_barrier();

@@ -5,7 +5,7 @@
 
 config HAS_STM32CUBE
     bool
-    select HAS_CMSIS
+    select HAS_CMSIS_CORE
     depends on SOC_FAMILY_STM32
 
 if HAS_STM32CUBE

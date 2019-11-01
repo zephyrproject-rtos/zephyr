@@ -3,7 +3,7 @@
 
 title: MICROCHIP GPIO
 
-description: >
+description: |
     This is a representation of the CEC/MEC GPIO nodes for Microchip
 
 compatible: "microchip,xec-gpio"
@@ -23,6 +23,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

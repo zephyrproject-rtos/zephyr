@@ -1,0 +1,12 @@
+tests:
+  arch.interrupt:
+    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    tags: arm interrupt ignore_faults
+    arch_whitelist: arm
+  arch.interrupt.no_optimizations:
+    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    tags: arm interrupt ignore_faults
+    arch_whitelist: arm
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_IDLE_STACK_SIZE=512

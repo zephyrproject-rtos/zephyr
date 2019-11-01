@@ -1,0 +1,19 @@
+# Kconfig - Simple SPI Driver configuration options
+
+#
+# Copyright (c) 2019 Western Digital Corporation or its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SPI_OC_SIMPLE
+	bool "OpenCores Simple SPI controller driver"
+	help
+	  Enable the Simple SPI controller
+
+if SPI_OC_SIMPLE
+
+config SPI_OC_SIMPLE_BUS_WIDTH
+	def_int 8
+
+endif # SPI_OC_SIMPLE

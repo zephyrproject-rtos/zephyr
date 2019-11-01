@@ -16,8 +16,7 @@
 
 #include "ccs811.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(CCS811);
+LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -38,7 +37,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	if (!(status & CCS811_STATUS_DATA_READY)) {
@@ -180,7 +179,7 @@ int ccs811_init(struct device *dev)
 			   GPIO_DIR_OUT);
 	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_RESET_PIN_NUM, 1);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 #endif
 
 	/*
@@ -192,7 +191,7 @@ int ccs811_init(struct device *dev)
 			   GPIO_DIR_OUT);
 	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_WAKEUP_PIN_NUM, 0);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 #endif
 
 	/* Switch device to application mode */

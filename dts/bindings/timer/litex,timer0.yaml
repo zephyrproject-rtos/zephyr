@@ -3,7 +3,7 @@
 
 title: LiteX timer
 
-description: >
+description: |
     This binding gives a base representation of the LiteX timer
 
 compatible: "litex,timer0"

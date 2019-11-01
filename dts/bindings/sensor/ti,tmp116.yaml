@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2019 Centaur Analytics, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Texas Instruments Temperature Sensor TMP116
+
+description: |
+    This is a representation of the TI Temperature sensor TMP116
+
+compatible: "ti,tmp116"
+
+include: i2c-device.yaml
+
+properties:
+    alert-gpios:
+      type: compound
+      category: optional
+      description: ALERT pin

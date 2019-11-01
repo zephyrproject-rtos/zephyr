@@ -1,6 +1,6 @@
 title: Intel I/O Advanced Programmable Interrupt Controller
 
-description: >
+description: |
     This binding describes the Intel I/O Advanced Programmable Interrupt
     controller
 
@@ -15,7 +15,7 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+interrupt-cells:
   - irq
   - sense
   - priority

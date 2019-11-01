@@ -8,7 +8,6 @@
 if SOC_MIMXRT1021
 
 config SOC
-	string
 	default "mimxrt1021"
 
 config NUM_IRQS

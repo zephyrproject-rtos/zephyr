@@ -579,7 +579,7 @@ static void k_yield_entry(void *arg0, void *arg1, void *arg2)
 
 	k_thread_create(&thread_data2, thread_stack2, THREAD_STACKSIZE,
 			thread_helper, NULL, NULL, NULL,
-			K_PRIO_COOP(THREAD_PRIORITY - 1), 0, 0);
+			K_PRIO_COOP(THREAD_PRIORITY - 1), 0, K_NO_WAIT);
 
 	zassert_equal(thread_evidence, 0,
 		      "Helper created at higher priority ran prematurely.");
@@ -740,7 +740,7 @@ static void test_busy_wait(void)
 	k_thread_create(&timeout_threads[0], timeout_stacks[0],
 			THREAD_STACKSIZE2, busy_wait_thread,
 			INT_TO_POINTER(timeout), NULL,
-			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 
@@ -767,7 +767,7 @@ static void test_k_sleep(void)
 	k_thread_create(&timeout_threads[0], timeout_stacks[0],
 			THREAD_STACKSIZE2, thread_sleep,
 			INT_TO_POINTER(timeout), NULL,
-			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 	zassert_equal(rv, 0, " *** thread timed out waiting for thread on "
@@ -888,7 +888,7 @@ void test_k_yield(void)
 
 	k_thread_create(&thread_data1, thread_stack1, THREAD_STACKSIZE,
 			k_yield_entry, NULL, NULL,
-			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	zassert_equal(thread_evidence, 1,
 		      "Thread did not execute as expected!: %d", thread_evidence);
@@ -910,26 +910,27 @@ void test_kernel_thread(void)
 
 	k_thread_create(&thread_data3, thread_stack3, THREAD_STACKSIZE,
 			kernel_thread_entry, NULL, NULL,
-			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
 }
 
 /*test case main entry*/
 void test_main(void)
 {
+	(void)test_k_sleep;
 
 	kernel_init_objects();
 
 	ztest_test_suite(context,
 			 ztest_unit_test(test_kernel_interrupts),
-			 ztest_unit_test(test_kernel_timer_interrupts),
+			 ztest_1cpu_unit_test(test_kernel_timer_interrupts),
 			 ztest_unit_test(test_kernel_ctx_thread),
-			 ztest_unit_test(test_busy_wait),
-			 ztest_unit_test(test_k_sleep),
+			 ztest_1cpu_unit_test(test_busy_wait),
+			 ztest_1cpu_unit_test(test_k_sleep),
 			 ztest_unit_test(test_kernel_cpu_idle_atomic),
 			 ztest_unit_test(test_kernel_cpu_idle),
-			 ztest_unit_test(test_k_yield),
-			 ztest_unit_test(test_kernel_thread)
+			 ztest_1cpu_unit_test(test_k_yield),
+			 ztest_1cpu_unit_test(test_kernel_thread)
 			 );
 	ztest_run_test_suite(context);
 }

@@ -31,11 +31,6 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
-config X86_64
-	bool "x86_64 architecture"
-	select ATOMIC_OPERATIONS_BUILTIN
-	select SCHED_IPI_SUPPORTED
-
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
@@ -93,14 +88,14 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86 || X86_64
+if ARC || ARM || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_SRAM),0,K)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  This option specifies the size of the SRAM in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -108,7 +103,7 @@ config SRAM_SIZE
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_SRAM))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  This option specifies the base address of the SRAM on the board.  It is
 	  normally set by the board's defconfig file and the user should generally
@@ -119,7 +114,7 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -127,13 +122,13 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86 || X86_64
+endif # ARM || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -354,6 +349,9 @@ config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 config ARCH_HAS_RAMFUNC_SUPPORT
 	bool
 
+config ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	bool
+
 #
 # Other architecture related options
 #
@@ -433,13 +431,11 @@ config CPU_HAS_FPU
 
 config CPU_HAS_MPU
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
 config MEMORY_PROTECTION
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when Memory Protection features are supported.
 	  Memory protection support is currently available on ARC, ARM, and x86
@@ -447,14 +443,12 @@ config MEMORY_PROTECTION
 
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires a power of two alignment
 	  and size for MPU regions.
 
 config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires the active (i.e. enabled)
 	  MPU regions to be non-overlapping with each other.

@@ -10,10 +10,10 @@
 
 extern void x86_sse_init(struct k_thread *); /* in locore.S */
 
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-			size_t stack_size, k_thread_entry_t entry,
-			void *parameter1, void *parameter2, void *parameter3,
-			int priority, unsigned int options)
+void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		       size_t stack_size, k_thread_entry_t entry,
+		       void *parameter1, void *parameter2, void *parameter3,
+		       int priority, unsigned int options)
 {
 	Z_ASSERT_VALID_PRIO(priority, entry);
 	z_new_thread_init(thread, Z_THREAD_STACK_BUFFER(stack),

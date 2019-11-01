@@ -96,6 +96,35 @@ static void syscmd_status_not(SHCI_TL_CmdStatus_t status)
 	BT_DBG("status:%d", status);
 }
 
+/*
+ * https://github.com/zephyrproject-rtos/zephyr/issues/19509
+ * Tested on nucleo_wb55rg (stm32wb55rg) BLE stack (v1.2.0)
+ * Unresolved Resolvable Private Addresses (RPA)
+ * is reported in the peer_rpa field, and not in the peer address,
+ * as it should, when this happens the peer address is set to all FFs
+ * 0A 00 01 08 01 01 FF FF FF FF FF FF 00 00 00 00 00 00 0C AA C5 B3 3D 6B ...
+ * If such message is passed to HCI core than pairing will essentially fail.
+ * Solution: Rewrite the event with the RPA in the PEER address field
+ */
+static void tryfix_event(TL_Evt_t *tev)
+{
+	struct bt_hci_evt_le_meta_event *mev = (void *)&tev->payload;
+
+	if (tev->evtcode != BT_HCI_EVT_LE_META_EVENT ||
+	    mev->subevent != BT_HCI_EVT_LE_ENH_CONN_COMPLETE) {
+		return;
+	}
+
+	struct bt_hci_evt_le_enh_conn_complete *evt =
+			(void *)((u8_t *)mev + (sizeof(*mev)));
+
+	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
+		BT_WARN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
+		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
+		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
+	}
+}
+
 void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 {
 	struct net_buf *buf;
@@ -119,6 +148,7 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 					     K_FOREVER);
 			break;
 		}
+		tryfix_event(&hcievt->evtserial.evt);
 		net_buf_add_mem(buf, &hcievt->evtserial.evt,
 				hcievt->evtserial.evt.plen + 2);
 		break;
@@ -297,6 +327,7 @@ static void start_ble_rf(void)
 		LL_RCC_ReleaseBackupDomainReset();
 	}
 
+#ifdef CONFIG_CLOCK_STM32_LSE
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
@@ -307,7 +338,17 @@ static void start_ble_rf(void)
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
 	/* Switch OFF LSI */
-	LL_RCC_LSI1_Disable();
+	LL_RCC_LSI2_Disable();
+#else
+	LL_RCC_LSI2_Enable();
+	while (!LL_RCC_LSI2_IsReady()) {
+	}
+
+	/* Select wakeup source of BLE RF */
+	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSI);
+	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
+#endif
+
 	/* Set RNG on HSI48 */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {

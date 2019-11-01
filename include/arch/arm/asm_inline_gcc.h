@@ -26,40 +26,7 @@
 extern "C" {
 #endif
 
-/**
- *
- * @brief Disable all interrupts on the CPU
- *
- * This routine disables interrupts.  It can be called from either interrupt or
- * thread level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock() to re-enable interrupts.
- *
- * The lock-out key should only be used as the argument to the irq_unlock()
- * API.  It should never be used to manually re-enable interrupts or to inspect
- * or manipulate the contents of the source register.
- *
- * This function can be called recursively: it will return a key to return the
- * state of interrupt locking to the previous level.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * thread executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * thread disables interrupts and subsequently invokes a kernel
- * routine that causes the calling thread to block, the interrupt
- * disable state will be restored when the thread is later rescheduled
- * for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- *
- * @internal
- *
- * On ARMv7-M and ARMv8-M Mainline CPUs, this function prevents regular
+/* On ARMv7-M and ARMv8-M Mainline CPUs, this function prevents regular
  * exceptions (i.e. with interrupt priority lower than or equal to
  * _EXC_IRQ_DEFAULT_PRIO) from interrupting the CPU. NMI, Faults, SVC,
  * and Zero Latency IRQs (if supported) may still interrupt the CPU.
@@ -104,23 +71,8 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 }
 
 
-/**
- *
- * @brief Enable all interrupts on the CPU (inline)
- *
- * This routine re-enables interrupts on the CPU.  The @a key parameter is an
- * architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock().
- *
- * This routine can be called from either interrupt or thread level.
- *
- * @param key architecture-dependent lock-out key
- *
- * @return N/A
- *
- * On Cortex-M0/M0+, this enables all interrupts if they were not
+/* On Cortex-M0/M0+, this enables all interrupts if they were not
  * previously disabled.
- *
  */
 
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
@@ -148,10 +100,6 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	/* This convention works for both PRIMASK and BASEPRI */

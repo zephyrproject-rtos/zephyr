@@ -19,6 +19,11 @@
 #include <sys/util.h>
 #include "iis3dhhc_reg.h"
 
+union axis3bit16_t {
+	s16_t i16bit[3];
+	u8_t u8bit[6];
+};
+
 struct iis3dhhc_config {
 	char *master_dev_name;
 	int (*bus_init)(struct device *dev);
@@ -39,10 +44,10 @@ struct iis3dhhc_data {
 	struct device *bus;
 	s16_t acc[3];
 
-	iis3dhhc_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 
 #ifdef DT_ST_IIS3DHHC_BUS_SPI
-	iis3dhhc_ctx_t ctx_spi;
+	stmdev_ctx_t ctx_spi;
 #endif
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER

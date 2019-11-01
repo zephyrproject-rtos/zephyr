@@ -31,7 +31,8 @@ static void purge_when_put(struct k_msgq *q)
 	/*create another thread waiting to put msg*/
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			tThread_entry, q, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS, 0);
+			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
 	k_sleep(TIMEOUT >> 1);
 	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
 	k_msgq_purge(q);
@@ -41,6 +42,8 @@ static void purge_when_put(struct k_msgq *q)
 		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
 		zassert_equal(ret, 0, NULL);
 	}
+
+	k_thread_abort(&tdata);
 }
 
 /**

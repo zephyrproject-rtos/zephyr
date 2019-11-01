@@ -1,6 +1,6 @@
 title: Xtensa Core Interrupt Controller
 
-description: >
+description: |
     This binding describes Xtensa Core Interrupt controller
 
 compatible: "xtensa,core-intc"
@@ -14,7 +14,7 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+interrupt-cells:
   - irq
   - sense
   - priority

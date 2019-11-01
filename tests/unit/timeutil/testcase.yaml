@@ -1,0 +1,10 @@
+common:
+  tags: timeutils
+  type: unit
+
+tests:
+  lib.os.timeutil:
+    extra_args: M64_MODE=0
+
+  lib.os.timeutil_64bit:
+    extra_args: M64_MODE=1

@@ -1,0 +1,12 @@
+# Kconfig - SI7060 temperature sensor configuration options #
+#
+# Copyright (c) 2019 Actinius
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SI7060
+	bool "SI7060 Temperature Sensor"
+	depends on (I2C && HAS_DTS_I2C)
+	help
+	  Enable driver for SI7060 temperature sensors.

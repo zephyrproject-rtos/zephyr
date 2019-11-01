@@ -22,7 +22,6 @@ config SOC_MK22F51212
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_CMSIS
 	select CPU_HAS_FPU
 
 endchoice
@@ -73,7 +72,6 @@ config K22_FLASH_CLOCK_DIVIDER
 
 config WDOG_INIT
 	def_bool y
-	# omit prompt to signify a "hidden" option
 	help
 	  This processor enables the watchdog timer with a short timeout
 	  upon reset. Therefore, this requires that the watchdog be configured

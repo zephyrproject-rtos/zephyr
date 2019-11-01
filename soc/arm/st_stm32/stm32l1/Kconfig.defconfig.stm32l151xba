@@ -1,0 +1,29 @@
+# Kconfig - ST Microelectronics STM32L151XB-A MCU
+#
+# Copyright (c) 2019 Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32L151XBA
+
+config SOC
+	default "stm32l151xba"
+
+config NUM_IRQS
+	default 45
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_STM32L151XBA

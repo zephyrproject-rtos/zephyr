@@ -1,6 +1,6 @@
 title: STM32 PINMUX
 
-description: >
+description: |
     This binding gives a base representation of the STM32 PINMUX
 
 compatible: "st,stm32-pinmux"
@@ -11,6 +11,6 @@ properties:
     reg:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

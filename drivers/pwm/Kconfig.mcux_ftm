@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PWM_MCUX_FTM
+config PWM_MCUX_FTM
 	bool "MCUX FTM PWM driver"
 	depends on HAS_MCUX_FTM
 	help

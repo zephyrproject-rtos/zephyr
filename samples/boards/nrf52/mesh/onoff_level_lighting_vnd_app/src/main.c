@@ -38,22 +38,12 @@ static void light_default_var_init(void)
 	light_ctl_srv_user_data.lightness_def = LIGHTNESS_MAX;
 	light_ctl_srv_user_data.temp_def = TEMP_MIN;
 
-	light_ctl_srv_user_data.lightness_temp_last =
+	light_ctl_srv_user_data.lightness_temp_last_tgt =
 		(u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MIN);
 }
 
 static void light_default_status_init(void)
 {
-	u16_t lightness;
-
-	lightness = (u16_t) (light_ctl_srv_user_data.lightness_temp_last >> 16);
-
-	if (lightness) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-	}
-
 	/* Retrieve Default Lightness & Temperature Values */
 
 	if (light_ctl_srv_user_data.lightness_temp_def) {
@@ -97,11 +87,11 @@ static void light_default_status_init(void)
 		state_binding(ONOFF, ONOFF_TEMP);
 		break;
 	case STATE_RESTORE:
-		light_lightness_srv_user_data.last = (u16_t)
-			(light_ctl_srv_user_data.lightness_temp_last >> 16);
+		light_ctl_srv_user_data.lightness =
+			(u16_t) (light_ctl_srv_user_data.lightness_temp_last_tgt >> 16);
 
 		light_ctl_srv_user_data.temp =
-			(u16_t) (light_ctl_srv_user_data.lightness_temp_last);
+			(u16_t) (light_ctl_srv_user_data.lightness_temp_last_tgt);
 
 		state_binding(ONPOWERUP, ONOFF_TEMP);
 		break;
@@ -210,12 +200,12 @@ void main(void)
 	update_light_state();
 
 	short_time_multireset_bt_mesh_unprovisioning();
-	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
+	k_timer_start(&reset_counter_timer, K_MSEC(7000), K_NO_WAIT);
 
 #if defined(CONFIG_MCUMGR)
 	/* Initialize the Bluetooth mcumgr transport. */
 	smp_bt_register();
 
-	k_timer_start(&smp_svr_timer, 0, K_MSEC(1000));
+	k_timer_start(&smp_svr_timer, K_NO_WAIT, K_MSEC(1000));
 #endif
 }

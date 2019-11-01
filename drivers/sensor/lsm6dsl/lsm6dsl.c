@@ -19,8 +19,7 @@
 
 #include "lsm6dsl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM6DSL);
+LOG_MODULE_REGISTER(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
@@ -794,17 +793,17 @@ static int lsm6dsl_init(struct device *dev)
 	lsm6dsl_i2c_init(dev);
 #endif
 
+	if (lsm6dsl_init_chip(dev) < 0) {
+		LOG_DBG("failed to initialize chip");
+		return -EIO;
+	}
+
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	if (lsm6dsl_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
-
-	if (lsm6dsl_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
-	}
 
 #ifdef CONFIG_LSM6DSL_SENSORHUB
 	if (lsm6dsl_shub_init_external_chip(dev) < 0) {

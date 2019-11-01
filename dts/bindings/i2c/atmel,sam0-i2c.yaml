@@ -3,7 +3,7 @@
 
 title: Atmel SAM0 series SERCOM I2C controller
 
-description: >
+description: |
     This is a representation of the Atmel SAM0 series SERCOM I2C nodes
 
 compatible: "atmel,sam0-i2c"

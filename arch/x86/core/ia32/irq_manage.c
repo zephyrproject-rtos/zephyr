@@ -61,10 +61,10 @@ void z_arch_irq_direct_pm(void)
 
 void z_arch_isr_direct_header(void)
 {
-	z_sys_trace_isr_enter();
+	sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that z_is_in_isr() works
+	 * so that z_arch_is_in_isr() works
 	 */
 	++_kernel.nested;
 }
@@ -249,49 +249,6 @@ static void idt_vector_install(int vector, void *irq_handler)
 		       (u32_t)irq_handler, 0);
 	irq_unlock(key);
 }
-
-/**
- *
- * @brief Connect a C routine to a hardware interrupt
- *
- * @param irq virtualized IRQ to connect to
- * @param priority requested priority of interrupt
- * @param routine the C interrupt handler
- * @param parameter parameter passed to C routine
- * @param flags IRQ flags
- *
- * This routine connects an interrupt service routine (ISR) coded in C to
- * the specified hardware <irq>.  An interrupt vector will be allocated to
- * satisfy the specified <priority>.
- *
- * The specified <irq> represents a virtualized IRQ, i.e. it does not
- * necessarily represent a specific IRQ line on a given interrupt controller
- * device.  The platform presents a virtualized set of IRQs from 0 to N, where
- * N is the total number of IRQs supported by all the interrupt controller
- * devices on the board.  See the platform's documentation for the mapping of
- * virtualized IRQ to physical IRQ.
- *
- * When the device asserts an interrupt on the specified <irq>, a switch to
- * the interrupt stack is performed (if not already executing on the interrupt
- * stack), followed by saving the integer (i.e. non-floating point) thread of
- * the currently executing thread or ISR.  The ISR specified by <routine>
- * will then be invoked with the single <parameter>.  When the ISR returns, a
- * context switch may occur.
- *
- * On some platforms <flags> parameter needs to be specified to indicate if
- * the irq is triggered by low or high level or by rising or falling edge.
- *
- * The routine searches for the first available element in the dynamic_stubs
- * array and uses it for the stub.
- *
- * @return the allocated interrupt vector
- *
- * WARNINGS
- * This routine does not perform range checking on the requested <priority>
- * and thus, depending on the underlying interrupt controller, may result
- * in the assignment of an interrupt vector located in the reserved range of
- * the processor.
- */
 
 int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,

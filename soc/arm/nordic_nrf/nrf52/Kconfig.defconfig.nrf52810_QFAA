@@ -9,11 +9,9 @@
 if SOC_NRF52810_QFAA
 
 config SOC
-	string
 	default "nRF52810_QFAA"
 
 config NUM_IRQS
-	int
 	default 30
 
 endif # SOC_NRF52810_QFAA

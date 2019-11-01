@@ -23,7 +23,7 @@
 #endif
 
 
-#define TICK_SYNCH()  k_sleep(1)
+#define TICK_SYNCH()  k_sleep(K_MSEC(1))
 
 #define OS_GET_TIME() k_cycle_get_32()
 

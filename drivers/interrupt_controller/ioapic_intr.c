@@ -117,7 +117,7 @@ int _ioapic_init(struct device *unused)
 		   IOAPIC_PHYSICAL | 0 /* dummy vector */;
 
 	for (ix = 0; ix < CONFIG_IOAPIC_NUM_RTES; ix++) {
-		ioApicRedSetHi(ix, 0);
+		ioApicRedSetHi(ix, 0xFF000000);
 		ioApicRedSetLo(ix, rteValue);
 	}
 #endif
@@ -242,7 +242,7 @@ int ioapic_resume_from_suspend(struct device *port)
 				IOAPIC_FIXED | IOAPIC_INT_MASK |
 				IOAPIC_PHYSICAL | 0 ; /* dummy vector*/
 		}
-		ioApicRedSetHi(irq, 0);
+		ioApicRedSetHi(irq, 0xFF000000);
 		ioApicRedSetLo(irq, rteValue);
 	}
 	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -295,7 +295,7 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
 
 	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_PHYSICAL |
 		   (vector & IOAPIC_VEC_MASK) | flags;
-	ioApicRedSetHi(irq, 0);
+	ioApicRedSetHi(irq, 0xFF000000);
 	ioApicRedSetLo(irq, rteValue);
 }
 

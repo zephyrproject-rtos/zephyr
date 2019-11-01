@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: GPIO destination for mapping test
+description: GPIO destination for mapping test
+
+compatible: "gpio-dst"
+
+gpio-cells:
+    - val

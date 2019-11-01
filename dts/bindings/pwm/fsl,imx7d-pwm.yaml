@@ -3,7 +3,7 @@
 
 title: i.MX7D PWM
 
-description: >
+description: |
     This binding gives a base representation of the i.MX7D PWM
 
 compatible: "fsl,imx7d-pwm"
@@ -30,7 +30,7 @@ properties:
     "#pwm-cells":
      const: 2
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

@@ -44,7 +44,7 @@ manifest:
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
     - name: hal_nordic
-      revision: db6277a1266cbcbd5588959bbacc1cd5670aed0e
+      revision: e0bfd6f253ca6a5e87b6f53a8bb317bd6f483511
       path: modules/hal/nordic
     - name: hal_openisa
       revision: be5c01f86c96500def5079bcc58d2baefdffb6c8
@@ -56,10 +56,10 @@ manifest:
       revision: 9151e614c23997074acd1096a3e8a9e5c255d5b9
       path: modules/hal/silabs
     - name: hal_st
-      revision: 0ec40aed8087f26bd9ac1b70fb5a6c326a6451aa
+      revision: fa481784b3c49780f18d50bafe00390ccb62b2ec
       path: modules/hal/st
     - name: hal_stm32
-      revision: 272281a1990ec7097f1844778955ed60fe28662a
+      revision: 20776221282b6447c6330a041bc27758c8f593f3
       path: modules/hal/stm32
     - name: hal_ti
       revision: 7a82e93e14766ef6e42df9915ea2ab8e3b952a8b
@@ -71,7 +71,7 @@ manifest:
       revision: d4708d0a432e95f51bdc712591ba5295b751140c
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: bbcb1b14285ac1b694d8c7e47c2f139c80b7fc4c
+      revision: 4f1e8f5a78dc08aa42a47cc1ad059cce558c26c3
       path: modules/crypto/mbedtls
     - name: mcumgr
       revision: 84934959d2d1722a23b7e7e200191ae4a6f96168
@@ -83,23 +83,26 @@ manifest:
       revision: bc62a2fa9d98ddb5d633c932ea199bc68e10f194
       path: modules/fs/nffs
     - name: hal_nxp
-      revision: 48a59fb436931d44d7595ec6deb42be41ff2f22b
+      revision: 97265a5396edc6a9de5f2fb643d505f37064e606
       path: modules/hal/nxp
     - name: open-amp
       revision: 9b591b289e1f37339bd038b5a1f0e6c8ad39c63a
       path: modules/lib/open-amp
     - name: openthread
-      revision: 3c32244f098f8daf8741efe0a2ad839b67f8567f
+      revision: 882e7074b5986027b85cb4f3ba1dc563a11ca013
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
+      revision: 0fc68fceacd1efc1ce809c5880c380f3d98b7b6e
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
+    - name: mipi-sys-t
+      path: modules/debug/mipi-sys-t
+      revision: baf51863f19f009b92e762115ba5572a5b996b92
 
   self:
     path: zephyr

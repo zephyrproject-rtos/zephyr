@@ -9,8 +9,6 @@ if BOARD_EFM32HG_SLSTK3400A
 
 config BOARD_INIT_PRIORITY
 	int
-
-	# omit prompt to signify a "hidden" option
 	default KERNEL_INIT_PRIORITY_DEFAULT
 	depends on GPIO
 	help

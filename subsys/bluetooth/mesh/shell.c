@@ -208,10 +208,21 @@ static const struct bt_mesh_comp comp = {
 
 static void prov_complete(u16_t net_idx, u16_t addr)
 {
+
 	shell_print(ctx_shell, "Local node provisioned, net_idx 0x%04x address "
 		    "0x%04x", net_idx, addr);
-	net.net_idx = net_idx,
+
 	net.local = addr;
+	net.net_idx = net_idx,
+	net.dst = addr;
+}
+
+static void prov_node_added(u16_t net_idx, u16_t addr, u8_t num_elem)
+{
+	shell_print(ctx_shell, "Node provisioned, net_idx 0x%04x address "
+		    "0x%04x elements %d", net_idx, addr, num_elem);
+
+	net.net_idx = net_idx,
 	net.dst = addr;
 }
 
@@ -352,6 +363,7 @@ static struct bt_mesh_prov prov = {
 	.link_open = link_open,
 	.link_close = link_close,
 	.complete = prov_complete,
+	.node_added = prov_node_added,
 	.reset = prov_reset,
 	.static_val = NULL,
 	.static_val_len = 0,
@@ -1516,6 +1528,34 @@ static int cmd_pb_adv(const struct shell *shell, size_t argc, char *argv[])
 {
 	return cmd_pb(BT_MESH_PROV_ADV, shell, argc, argv);
 }
+
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+static int cmd_provision_adv(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	u8_t uuid[16];
+	u8_t attention_duration;
+	u16_t net_idx;
+	u16_t addr;
+	size_t len;
+	int err;
+
+	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
+	(void)memset(uuid + len, 0, sizeof(uuid) - len);
+
+	net_idx = strtoul(argv[2], NULL, 0);
+	addr = strtoul(argv[3], NULL, 0);
+	attention_duration = strtoul(argv[4], NULL, 0);
+
+	err = bt_mesh_provision_adv(uuid, net_idx, addr, attention_duration);
+	if (err) {
+		shell_error(shell, "Provisioning failed (err %d)", err);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_MESH_PROVISIONER */
+
 #endif /* CONFIG_BT_MESH_PB_ADV */
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
@@ -1919,6 +1959,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	SHELL_CMD_ARG(pb-adv, NULL, "<val: off, on>", cmd_pb_adv, 2, 0),
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	SHELL_CMD_ARG(provision-adv, NULL, "<UUID> <NetKeyIndex> <addr> "
+		      "<AttentionDuration>", cmd_provision_adv, 5, 0),
+#endif
 #endif
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	SHELL_CMD_ARG(pb-gatt, NULL, "<val: off, on>", cmd_pb_gatt, 2, 0),

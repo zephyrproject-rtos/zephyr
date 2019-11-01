@@ -245,6 +245,7 @@ static void usb_data_to_host(u16_t len)
 		usb_dev.data_buf += chunk;
 		usb_dev.data_buf_residue -= chunk;
 
+#ifndef CONFIG_USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
 		/*
 		 * Set ZLP flag when host asks for a bigger length and the
 		 * last chunk is wMaxPacketSize long, to indicate the last
@@ -259,6 +260,7 @@ static void usb_data_to_host(u16_t len)
 				usb_dev.zlp_flag = true;
 			}
 		}
+#endif
 
 	} else {
 		usb_dev.zlp_flag = false;
@@ -299,10 +301,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		length = sys_le16_to_cpu(setup->wLength);
 		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 			if (REQTYPE_GET_DIR(setup->bmRequestType)
-			    == REQTYPE_DIR_TO_HOST) {
-				/* Limit wLength */
-				length = CONFIG_USB_REQUEST_BUFFER_SIZE;
-			} else {
+			    != REQTYPE_DIR_TO_HOST) {
 				LOG_ERR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);

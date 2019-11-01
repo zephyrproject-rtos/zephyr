@@ -9,14 +9,12 @@
 #include <drivers/i2c.h>
 #include <sys/util.h>
 #include <kernel.h>
-
+#include <logging/log.h>
 #include "isl29035.h"
 
 extern struct isl29035_driver_data isl29035_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(ISL29035);
+LOG_MODULE_DECLARE(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
 static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {
@@ -180,7 +178,7 @@ int isl29035_init_interrupt(struct device *dev)
 			CONFIG_ISL29035_THREAD_STACK_SIZE,
 			(k_thread_entry_t)isl29035_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = isl29035_work_cb;
 	drv_data->dev = dev;

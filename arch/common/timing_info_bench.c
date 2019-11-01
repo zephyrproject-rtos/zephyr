@@ -4,21 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
+#include <kernel_internal.h>
 
-/* #include <kernel_structs.h> */
-
-u64_t  __start_swap_time;
-u64_t  __end_swap_time;
-u64_t  __start_intr_time;
-u64_t  __end_intr_time;
-u64_t  __start_tick_time;
-u64_t  __end_tick_time;
-u64_t  __end_drop_to_usermode_time;
+u64_t  z_arch_timing_swap_start;
+u64_t  z_arch_timing_swap_end;
+u64_t  z_arch_timing_irq_start;
+u64_t  z_arch_timing_irq_end;
+u64_t  z_arch_timing_tick_start;
+u64_t  z_arch_timing_tick_end;
+u64_t  z_arch_timing_enter_user_mode_end;
 
 /* location of the time stamps*/
-u32_t __read_swap_end_time_value;
-u64_t __common_var_swap_end_time;
-u64_t __temp_start_swap_time;
+u32_t z_arch_timing_value_swap_end;
+u64_t z_arch_timing_value_swap_common;
+u64_t z_arch_timing_value_swap_temp;
 
 #ifdef CONFIG_NRF_RTC_TIMER
 #include <nrfx.h>
@@ -80,18 +79,18 @@ u64_t __temp_start_swap_time;
 
 void read_timer_start_of_swap(void)
 {
-	if (__read_swap_end_time_value == 1U) {
+	if (z_arch_timing_value_swap_end == 1U) {
 		TIMING_INFO_PRE_READ();
-		__start_swap_time = (u32_t) TIMING_INFO_OS_GET_TIME();
+		z_arch_timing_swap_start = (u32_t) TIMING_INFO_OS_GET_TIME();
 	}
 }
 
 void read_timer_end_of_swap(void)
 {
-	if (__read_swap_end_time_value == 1U) {
+	if (z_arch_timing_value_swap_end == 1U) {
 		TIMING_INFO_PRE_READ();
-		__read_swap_end_time_value = 2U;
-		__common_var_swap_end_time = (u64_t)TIMING_INFO_OS_GET_TIME();
+		z_arch_timing_value_swap_end = 2U;
+		z_arch_timing_value_swap_common = (u64_t)TIMING_INFO_OS_GET_TIME();
 	}
 }
 
@@ -101,29 +100,29 @@ void read_timer_end_of_swap(void)
 void read_timer_start_of_isr(void)
 {
 	TIMING_INFO_PRE_READ();
-	__start_intr_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+	z_arch_timing_irq_start  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_isr(void)
 {
 	TIMING_INFO_PRE_READ();
-	__end_intr_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+	z_arch_timing_irq_end  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }
 
 void read_timer_start_of_tick_handler(void)
 {
 	TIMING_INFO_PRE_READ();
-	__start_tick_time  = (u32_t)TIMING_INFO_GET_TIMER_VALUE();
+	z_arch_timing_tick_start  = (u32_t)TIMING_INFO_GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_tick_handler(void)
 {
 	TIMING_INFO_PRE_READ();
-	 __end_tick_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+	 z_arch_timing_tick_end  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_userspace_enter(void)
 {
 	TIMING_INFO_PRE_READ();
-	__end_drop_to_usermode_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+	z_arch_timing_enter_user_mode_end  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }

@@ -6,6 +6,7 @@
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>
+#include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>
 #include <Global.h>
@@ -23,34 +24,42 @@ u32_t sysview_get_interrupt(void)
 	return interrupt;
 }
 
-void z_sys_trace_idle(void)
+void sys_trace_thread_switched_in(void)
 {
-	sys_trace_idle();
+	struct k_thread *thread;
+
+	thread = k_current_get();
+
+	if (z_is_idle_thread_object(thread)) {
+		SEGGER_SYSVIEW_OnIdle();
+	} else {
+		SEGGER_SYSVIEW_OnTaskStartExec((u32_t)(uintptr_t)thread);
+	}
 }
 
-void z_sys_trace_isr_enter(void)
+void sys_trace_thread_switched_out(void)
 {
-	sys_trace_isr_enter();
+	SEGGER_SYSVIEW_OnTaskStopExec();
 }
 
-void z_sys_trace_isr_exit(void)
+void sys_trace_isr_enter(void)
 {
-	sys_trace_isr_exit();
+	SEGGER_SYSVIEW_RecordEnterISR();
 }
 
-void z_sys_trace_isr_exit_to_scheduler(void)
+void sys_trace_isr_exit(void)
 {
-	sys_trace_isr_exit_to_scheduler();
+	SEGGER_SYSVIEW_RecordExitISR();
 }
 
-void z_sys_trace_thread_switched_in(void)
+void sys_trace_isr_exit_to_scheduler(void)
 {
-	sys_trace_thread_switched_in();
+	SEGGER_SYSVIEW_RecordExitISRToScheduler();
 }
 
-void z_sys_trace_thread_switched_out(void)
+void sys_trace_idle(void)
 {
-	sys_trace_thread_switched_out();
+	SEGGER_SYSVIEW_OnIdle();
 }
 
 static void send_task_list_cb(void)
@@ -61,7 +70,7 @@ static void send_task_list_cb(void)
 		char name[20];
 		const char *tname = k_thread_name_get(thread);
 
-		if (is_idle_thread(thread)) {
+		if (z_is_idle_thread_object(thread)) {
 			continue;
 		}
 

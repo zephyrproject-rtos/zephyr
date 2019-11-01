@@ -33,33 +33,8 @@
 extern "C" {
 #endif
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * Internally this function does a few things:
- *
- * 1. The enum statement has no effect but forces the compiler to only
- * accept constant values for the irq_p parameter, very important as the
- * numerical IRQ line is used to create a named section.
- *
- * 2. An instance of struct _isr_table_entry is created containing the ISR and
- * its parameter. If you look at how _sw_isr_table is created, each entry in
- * the array is in its own section named by the IRQ line number. What we are
- * doing here is to override one of the default entries (which points to the
- * spurious IRQ handler) with what was supplied here.
- *
- * There is no notion of priority with the Nios II internal interrupt
+/* There is no notion of priority with the Nios II internal interrupt
  * controller and no flags are currently supported.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority (ignored)
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options (currently unused)
- *
- * @return The vector assigned to this interrupt
  */
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
@@ -116,10 +91,6 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
 static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 {
 	return key & 1;
@@ -199,12 +170,13 @@ enum nios2_exception_cause {
 
 
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
-/**
- * @brief Explicitly nop operation.
- */
-static ALWAYS_INLINE void arch_nop(void)
+static inline u32_t z_arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
+
+static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

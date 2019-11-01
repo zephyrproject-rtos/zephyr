@@ -142,7 +142,7 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  Socket-CAN interface.
 
 config NET_SOCKETS_NET_MGMT
-	bool "Enable network mangement socket support [EXPERIMENTAL]"
+	bool "Enable network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	help

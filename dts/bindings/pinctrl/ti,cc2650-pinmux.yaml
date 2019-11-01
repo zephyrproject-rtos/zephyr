@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 Pinmux
 
-description: >
+description: |
     This is a representation of the TI CC2650 pinmux node
 
 compatible: "ti,cc2650-pinmux"
@@ -12,6 +12,6 @@ properties:
     reg:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

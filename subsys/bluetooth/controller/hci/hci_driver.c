@@ -45,6 +45,10 @@
 #include "ll_sw/lll.h"
 #include "ll.h"
 
+#if (!defined(CONFIG_BT_LL_SW_SPLIT))
+#include "ll_sw/ctrl.h"
+#endif /* CONFIG_BT_LL_SW_SPLIT */
+
 #include "hci_internal.h"
 
 #include "hal/debug.h"
@@ -70,6 +74,32 @@ static sys_slist_t hbuf_pend;
 static s32_t hbuf_count;
 #endif
 
+static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
+{
+/* Currently the only event processed */
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	struct pdu_data *pdu_data = PDU_DATA(node_rx);
+	struct net_buf *buf;
+	u16_t handle;
+
+	/* Avoid using hci_get_class() to speed things up */
+	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_LLCP) {
+
+		handle = node_rx->hdr.handle;
+		if (pdu_data->llctrl.opcode ==
+		    PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
+
+			buf = bt_buf_get_evt(BT_HCI_EVT_REMOTE_VERSION_INFO,
+					     false, K_FOREVER);
+			hci_remote_version_info_encode(buf, pdu_data, handle);
+			return buf;
+		}
+	}
+
+#endif /* CONFIG_BT_CONN */
+	return NULL;
+}
+
 /**
  * @brief Handover from Controller thread to Host thread
  * @details Execution context: Controller thread
@@ -81,14 +111,14 @@ static s32_t hbuf_count;
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
-		void *node_rx;
+		struct node_rx_pdu *node_rx;
+		struct net_buf *buf;
 		u8_t num_cmplt;
 		u16_t handle;
 
 		/* While there are completed rx nodes */
-		while ((num_cmplt = ll_rx_get(&node_rx, &handle))) {
+		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
 #if defined(CONFIG_BT_CONN)
-			struct net_buf *buf;
 
 			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 					     false, K_FOREVER);
@@ -105,15 +135,27 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			 */
 			ll_rx_dequeue();
 
-			/* Send the rx node up to Host thread, recv_thread() */
-			BT_DBG("RX node enqueue");
-			k_fifo_put(&recv_fifo, node_rx);
+			/* Find out and store the class for this node */
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
+
+			buf = process_prio_evt(node_rx);
+			if (buf) {
+				BT_DBG("Priority event");
+				bt_recv_prio(buf);
+			} else {
+				/* Send the rx node up to Host thread,
+				 * recv_thread()
+				 */
+				BT_DBG("RX node enqueue");
+				k_fifo_put(&recv_fifo, node_rx);
+			}
 
 			/* There may still be completed nodes, continue
-			 * pushing all those up to Host before waiting for
-			 * ULL mayfly
+			 * pushing all those up to Host before waiting
+			 * for ULL mayfly
 			 */
 			continue;
+
 		}
 
 		BT_DBG("sem take...");
@@ -145,6 +187,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	case HCI_CLASS_EVT_DISCARDABLE:
 	case HCI_CLASS_EVT_REQUIRED:
 	case HCI_CLASS_EVT_CONNECTION:
+	case HCI_CLASS_EVT_LLCP:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
 			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true,
 					     K_NO_WAIT);
@@ -183,7 +226,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
-	s8_t class = hci_get_class(node_rx);
+	u8_t class = node_rx->hdr.user_meta;
 	struct net_buf *buf = NULL;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -196,6 +239,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 		case HCI_CLASS_EVT_REQUIRED:
 			break;
 		case HCI_CLASS_EVT_CONNECTION:
+		case HCI_CLASS_EVT_LLCP:
 			/* for conn-related events, only pend is relevant */
 			hbuf_count = 1;
 			/* fallthrough */
@@ -226,7 +270,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	struct node_rx_pdu *node_rx = NULL;
 	s32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
-	s8_t class;
+	u8_t class;
 	int reset;
 
 	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -250,9 +294,10 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	}
 
 	/* Return early if this iteration already has a node to process */
-	class = hci_get_class(node_rx);
+	class = node_rx->hdr.user_meta;
 	if (n) {
 		if (class == HCI_CLASS_EVT_CONNECTION ||
+		    class == HCI_CLASS_EVT_LLCP ||
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 			/* node to process later, schedule an iteration */
 			BT_DBG("FC: signalling");
@@ -263,6 +308,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 
 	switch (class) {
 	case HCI_CLASS_EVT_CONNECTION:
+	case HCI_CLASS_EVT_LLCP:
 		BT_DBG("FC: dequeueing event");
 		(void) sys_slist_get(&hbuf_pend);
 		break;
@@ -289,9 +335,10 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 		/* next node */
 		node_rx = (void *)sys_slist_peek_head(&hbuf_pend);
 		if (node_rx) {
-			class = hci_get_class(node_rx);
+			class = node_rx->hdr.user_meta;
 
 			if (class == HCI_CLASS_EVT_CONNECTION ||
+			    class == HCI_CLASS_EVT_LLCP ||
 			    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 				/* more to process, schedule an
 				 * iteration
@@ -380,16 +427,17 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 static int cmd_handle(struct net_buf *buf)
 {
-	void *node_rx = NULL;
+	struct node_rx_pdu *node_rx = NULL;
 	struct net_buf *evt;
 
-	evt = hci_cmd_handle(buf, &node_rx);
+	evt = hci_cmd_handle(buf, (void **) &node_rx);
 	if (evt) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 
 		if (node_rx) {
 			BT_DBG("RX node enqueue");
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
 		}
 	}

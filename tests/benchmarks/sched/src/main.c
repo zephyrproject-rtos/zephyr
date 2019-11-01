@@ -105,10 +105,10 @@ void main(void)
 	k_tid_t th = k_thread_create(&partner_thread, partner_stack,
 				     K_THREAD_STACK_SIZEOF(partner_stack),
 				     partner_fn, NULL, NULL, NULL,
-				     partner_prio, 0, 0);
+				     partner_prio, 0, K_NO_WAIT);
 
 	/* Let it start running and pend */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	u64_t tot = 0U;
 	u32_t runs = 0U;

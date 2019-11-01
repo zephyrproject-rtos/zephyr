@@ -3,7 +3,7 @@
 
 title: NXP Kinetis PCC (Peripheral Clock Controller)
 
-description: >
+description: |
     This is a representation of the NXP Kinetis PCC IP node
 
 compatible: "nxp,kinetis-pcc"
@@ -18,7 +18,8 @@ properties:
       required: true
 
     "#clock-cells":
-      const: 1
+      const: 2
 
-"#cells":
+clock-cells:
   - name
+  - ip-source

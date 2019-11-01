@@ -1,5 +1,5 @@
 tests:
-  libraries.libc.minimal:
+  libraries.libc.minimal.mem_alloc:
     extra_args: CONF_FILE=prj.conf
     arch_exclude: posix
     platform_exclude: twr_ke18f

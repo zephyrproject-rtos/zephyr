@@ -21,8 +21,7 @@
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(VL53L0X);
+LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:
@@ -224,7 +223,7 @@ static int vl53l0x_init(struct device *dev)
 	}
 
 	gpio_pin_write(gpio, CONFIG_VL53L0X_XSHUT_GPIO_PIN_NUM, 1);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 #endif
 
 	drv_data->i2c = device_get_binding(DT_INST_0_ST_VL53L0X_BUS_NAME);

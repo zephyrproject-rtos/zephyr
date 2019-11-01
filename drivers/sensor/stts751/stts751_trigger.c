@@ -15,8 +15,7 @@
 
 #include "stts751.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(STTS751);
+LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * stts751_enable_int - enable selected int pin to generate interrupt

@@ -17,8 +17,34 @@ Building and Running
 In loopback mode, the board receives its own messages. This could be used for
 standalone testing.
 
-The sample can be built and executed on boards supporting CAN.
-The LED output pin is defined in the board's device tree.
+The LED output pin is defined in the board's devicetree.
+
+The sample can be built and executed for boards with a SoC that have an
+integrated CAN controller or for boards with a SoC that has been augmented
+with a stand alone CAN controller.
+
+Integrated CAN controller
+=========================
+
+For the NXP TWR-KE18F board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/CAN
+   :board: twr_ke18f
+   :goals: build flash
+
+Stand alone CAN controller
+==========================
+
+For the nRF52_PCA10040 board combined with the DFRobot CAN bus V2.0 shield that
+provides the MCP2515 CAN controller:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/CAN
+   :board: nrf52_pca10040
+   :shield: dfrobot_can_bus_v2_0
+   :conf: prj.mcp2515.conf
+   :goals: build flash
 
 Sample output
 =============

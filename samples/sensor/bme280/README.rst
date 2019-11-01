@@ -20,7 +20,7 @@ at page 38.
 
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/bme280
+   :zephyr-app: samples/sensor/bme280
    :board: nrf52840_pca10056
    :goals: flash
    :compact:

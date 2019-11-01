@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f2/stm32f207Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F207ZG-NUCLEO board";
@@ -49,8 +50,6 @@
 		sw0 = &user_button;
 	};
 };
-
-arduino_serial: &usart6 {};
 
 &usart3 {
 	current-speed = <115200>;

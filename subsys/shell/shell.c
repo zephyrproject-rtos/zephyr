@@ -1120,7 +1120,7 @@ static int instance_uninit(const struct shell *shell)
 		return -EBUSY;
 	}
 
-	if (IS_ENABLED(CONFIG_LOG)) {
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		/* todo purge log queue */
 		shell_log_backend_disable(shell->log_backend);
 	}
@@ -1174,7 +1174,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		return;
 	}
 
-	if (log_backend && IS_ENABLED(CONFIG_LOG)) {
+	if (log_backend && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		shell_log_backend_enable(shell->log_backend, (void *)shell,
 					 log_level);
 	}
@@ -1204,7 +1204,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
-		if (IS_ENABLED(CONFIG_LOG)) {
+		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
 		}

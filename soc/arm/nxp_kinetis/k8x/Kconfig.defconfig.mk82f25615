@@ -8,7 +8,6 @@
 if SOC_MK82F25615
 
 config SOC
-	string
 	default "mk82f25615"
 
 endif # SOC_MK82F25615

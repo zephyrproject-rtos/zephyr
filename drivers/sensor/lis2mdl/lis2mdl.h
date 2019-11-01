@@ -1,114 +1,64 @@
-/*
- * Copyright (c) 2018 STMicroelectronics
+/* ST Microelectronics LIS2MDL 3-axis magnetometer sensor
  *
- * LIS2MDL mag header file
+ * Copyright (c) 2018-2019 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Datasheet:
+ * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
 #ifndef __MAG_LIS2MDL_H
 #define __MAG_LIS2MDL_H
 
+#include <drivers/spi.h>
 #include <drivers/gpio.h>
+#include <drivers/sensor.h>
 #include <sys/util.h>
-#include <drivers/i2c.h>
+#include "lis2mdl_reg.h"
 
-#define LIS2MDL_EN_BIT                  1
-#define LIS2MDL_DIS_BIT                 0
-#define LIS2MDL_I2C_ADDR(__x)           (__x << 1)
+union axis3bit16_t {
+	s16_t i16bit[3];
+	u8_t u8bit[6];
+};
 
-#define LIS2MDL_AUTO_INCREMENT          0x80
+union axis1bit16_t {
+	s16_t i16bit;
+	u8_t u8bit[2];
+};
 
-/* Registers */
-#define LIS2MDL_WHO_AM_I_REG            0x4f
-#define LIS2MDL_WHOAMI_VAL              0x40
-
-#define LIS2MDL_CFG_REG_A               0x60
-/* Device supported modes */
-#define LIS2MDL_MD_CONT_MODE            0x00
-#define LIS2MDL_MD_SINGLE_MODE          0x01
-#define LIS2MDL_MD_IDLE1_MODE           0x02
-#define LIS2MDL_MD_IDLE2_MODE           0x03
-#define LIS2MDL_MAG_MODE_MASK           0x03
-/* Device supported ODRs */
-#define LIS2MDL_ODR10_HZ                0x00
-#define LIS2MDL_ODR20_HZ                0x04
-#define LIS2MDL_ODR50_HZ                0x08
-#define LIS2MDL_ODR100_HZ               0x0c
-#define LIS2MDL_ODR_MASK                0x0c
-
-#if defined(CONFIG_LIS2MDL_MAG_ODR_10) || \
-	defined(CONFIG_LIS2MDL_MAG_ODR_RUNTIME)
-	#define LIS2MDL_DEFAULT_ODR       LIS2MDL_ODR10_HZ
-#elif defined(CONFIG_LIS2MDL_MAG_ODR_20)
-	#define LIS2MDL_DEFAULT_ODR       LIS2MDL_ODR20_HZ
-#elif defined(CONFIG_LIS2MDL_MAG_ODR_50)
-	#define LIS2MDL_DEFAULT_ODR       LIS2MDL_ODR50_HZ
-#elif defined(CONFIG_LIS2MDL_MAG_ODR_100)
-	#define LIS2MDL_DEFAULT_ODR       LIS2MDL_ODR100_HZ
-#endif
-
-/* Sensors registers */
-#define LIS2MDL_OFFSET_X_REG_L          0x45
-#define LIS2MDL_OFFSET_X_REG_H          0x46
-#define LIS2MDL_OFFSET_Y_REG_L          0x47
-#define LIS2MDL_OFFSET_Y_REG_H          0x48
-#define LIS2MDL_OFFSET_Z_REG_L          0x49
-#define LIS2MDL_OFFSET_Z_REG_H          0x4A
-#define LIS2MDL_CFG_REG_B               0x61
-#define LIS2MDL_CFG_REG_C               0x62
-#define LIS2MDL_INT_CTRL_REG            0x63
-#define LIS2MDL_STATUS_REG              0x67
-#define LIS2MDL_OUT_REG                 0x68
-#define LIS2MDL_TEMP_OUT_L_REG          0x6E
-#define LIS2MDL_TEMP_OUT_H_REG          0x6F
-
-/* Registers bitmask */
-#define LIS2MDL_STS_MDA_UP              0x08
-#define LIS2MDL_REBOOT                  0x40
-#define LIS2MDL_SOFT_RST                0x20
-#define LIS2MDL_BDU_MASK                0x10
-#define LIS2MDL_BDU_BIT                 0x10
-#define LIS2MDL_INT_MAG_PIN             0x40
-#define LIS2MDL_INT_MAG_PIN_MASK        0x40
-#define LIS2MDL_INT_MAG                 0x01
-#define LIS2MDL_INT_MAG_MASK            0x01
-#define LIS2MDL_MODE_MASK               0x03
-#define LIS2MDL_LP_MASK                 0x10
-#define LIS2MDL_IEA                     0x04
-#define LIS2MDL_IEL                     0x02
-#define LIS2MDL_IEN                     0x01
-#define LIS2MDL_COMP_TEMP_MASK          0x80
-
-/* Output data size */
-#define LIS2MDL_OUT_REG_SIZE            6
-#define LIS2MDL_NUM_AXIS                3
-
-/* Define ODR supported range */
-#define LIS2MDL_MAX_ODR                 100
-#define LIS2MDL_MIN_ODR                 10
-
-/* Sensor sensitivity in uGa/LSB */
-#define LIS2MDL_SENSITIVITY             1500
-
-struct lis2mdl_device_config {
+struct lis2mdl_config {
 	char *master_dev_name;
+	int (*bus_init)(struct device *dev);
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	char *gpio_name;
 	u32_t gpio_pin;
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
-	u16_t i2c_addr_config;
+#ifdef DT_ST_LIS2MDL_BUS_I2C
+	u16_t i2c_slv_addr;
+#elif DT_ST_LIS2MDL_BUS_SPI
+	struct spi_config spi_conf;
+#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
+	const char *gpio_cs_port;
+	u8_t cs_gpio;
+#endif /* DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER */
+#endif /* DT_ST_LIS2MDL_BUS_SPI */
 };
 
 /* Sensor data */
 struct lis2mdl_data {
-	struct device *i2c;
+	struct device *bus;
 	u16_t i2c_addr;
 	s16_t mag[3];
 	s32_t temp_sample;
 
-	/* save sensitivity */
-	u16_t mag_fs_sensitivity;
+	stmdev_ctx_t *ctx;
+
+#ifdef DT_ST_LIS2MDL_BUS_I2C
+	stmdev_ctx_t ctx_i2c;
+#elif DT_ST_LIS2MDL_BUS_SPI
+	stmdev_ctx_t ctx_spi;
+#endif
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	struct device *gpio;
@@ -125,7 +75,13 @@ struct lis2mdl_data {
 	struct device *dev;
 #endif  /* CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD */
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
+#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
+	struct spi_cs_control cs_ctrl;
+#endif /* DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER */
 };
+
+int lis2mdl_spi_init(struct device *dev);
+int lis2mdl_i2c_init(struct device *dev);
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
 int lis2mdl_init_interrupt(struct device *dev);

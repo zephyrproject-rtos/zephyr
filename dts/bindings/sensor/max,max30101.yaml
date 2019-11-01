@@ -3,7 +3,7 @@
 
 title: MAX30101 heart rate sensor
 
-description: >
+description: |
     This is a representation of the MAX30101 heart rate sensor
 
 compatible: "max,max30101"

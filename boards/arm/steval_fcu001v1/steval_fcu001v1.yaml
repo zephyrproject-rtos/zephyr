@@ -1,0 +1,16 @@
+identifier: steval_fcu001v1
+name: FLIGHT-CONTROLLER-BOARD
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - pwm
+  - i2c
+  - rtc
+  - watchdog
+ram: 64
+flash: 256

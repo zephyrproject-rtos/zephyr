@@ -8,7 +8,7 @@
 #include <spinlock.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-void z_ExcExit(void);
+void z_arm_exc_exit(void);
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -29,8 +29,7 @@ void z_ExcExit(void);
  */
 #define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&			\
-		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
+#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
 /* VAL value above which we assume that a subsequent COUNTFLAG
  * overflow seen in CTRL is real and not an artifact of wraparound
@@ -96,7 +95,7 @@ void z_clock_isr(void *arg)
 	overflow_cyc = 0U;
 
 	z_clock_announce(TICKLESS ? dticks : 1);
-	z_ExcExit();
+	z_arm_exc_exit();
 }
 
 int z_clock_driver_init(struct device *device)
@@ -126,7 +125,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		return;
 	}
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
 
 	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));

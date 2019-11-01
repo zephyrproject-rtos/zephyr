@@ -41,7 +41,7 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 {
 	u32_t start, end;
 
-	if (z_is_in_isr()) {
+	if (z_arch_is_in_isr()) {
 		/* We were servicing an interrupt */
 		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
@@ -273,25 +273,25 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 #define SGX	BIT(15)
 
 #ifdef CONFIG_X86_MMU
-static void dump_entry_flags(const char *name, x86_page_entry_data_t flags)
+static void dump_entry_flags(const char *name, u64_t flags)
 {
 	LOG_ERR("%s: 0x%x%x %s, %s, %s, %s", name, (u32_t)(flags>>32),
 		(u32_t)(flags),
-		flags & (x86_page_entry_data_t)MMU_ENTRY_PRESENT ?
+		flags & MMU_ENTRY_PRESENT ?
 		"Present" : "Non-present",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_WRITE ?
+		flags & MMU_ENTRY_WRITE ?
 		"Writable" : "Read-only",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_USER ?
+		flags & MMU_ENTRY_USER ?
 		"User" : "Supervisor",
-		flags & (x86_page_entry_data_t)MMU_ENTRY_EXECUTE_DISABLE ?
+		flags & MMU_ENTRY_EXECUTE_DISABLE ?
 		"Execute Disable" : "Execute Enabled");
 }
 
-static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
+static void dump_mmu_flags(struct x86_page_tables *ptables, void *addr)
 {
-	x86_page_entry_data_t pde_flags, pte_flags;
+	u64_t pde_flags, pte_flags;
 
-	z_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
+	z_x86_mmu_get_flags(ptables, addr, &pde_flags, &pte_flags);
 
 	dump_entry_flags("PDE", pde_flags);
 	dump_entry_flags("PTE", pte_flags);
@@ -317,20 +317,20 @@ static void dump_page_fault(z_arch_esf_t *esf)
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_X86_KPTI
 	if (err & US) {
-		dump_mmu_flags(&z_x86_user_pdpt, (void *)cr2);
+		dump_mmu_flags(&z_x86_user_ptables, (void *)cr2);
 		return;
 	}
 #endif
-	dump_mmu_flags(&z_x86_kernel_pdpt, (void *)cr2);
+	dump_mmu_flags(&z_x86_kernel_ptables, (void *)cr2);
 #endif
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_arch_user_string_nlen);
+Z_EXC_DECLARE(z_x86_user_string_nlen);
 
 static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_arch_user_string_nlen)
+	Z_EXC_HANDLE(z_x86_user_string_nlen)
 };
 #endif
 
@@ -396,7 +396,7 @@ struct task_state_segment _df_tss = {
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
 	.eip = (u32_t)df_handler_top,
-	.cr3 = (u32_t)&z_x86_kernel_pdpt
+	.cr3 = (u32_t)&z_x86_kernel_ptables
 };
 
 static __used void df_handler_bottom(void)
@@ -444,7 +444,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (u32_t)df_handler_bottom;
-	_main_tss.cr3 = (u32_t)&z_x86_kernel_pdpt;
+	_main_tss.cr3 = (u32_t)&z_x86_kernel_ptables;
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

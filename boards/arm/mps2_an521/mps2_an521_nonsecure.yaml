@@ -6,3 +6,5 @@ toolchain:
   - gnuarmemb
   - zephyr
   - xtools
+supported:
+  - gpio

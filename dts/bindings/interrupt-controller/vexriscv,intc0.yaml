@@ -3,7 +3,7 @@
 
 title: LiteX VexRiscV Interrupt Controller
 
-description: >
+description: |
     This binding describes LiteX VexRiscV Interrupt Controller
 
 compatible: "vexriscv,intc0"
@@ -22,6 +22,6 @@ properties:
   "#interrupt-cells":
       const: 2
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

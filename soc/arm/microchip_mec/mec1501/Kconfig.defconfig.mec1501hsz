@@ -8,13 +8,12 @@
 if SOC_MEC1501_HSZ
 
 config SOC
-	string
 	default "mec1501hsz"
 
 if SERIAL
 
 config UART_NS16550
-	def_bool y
+	default y
 
 endif # SERIAL
 
@@ -45,14 +44,14 @@ endif # GPIO
 if I2C
 
 config I2C_XEC
-	def_bool y
+	default y
 
 endif # I2C
 
 if COUNTER
 
 config COUNTER_XEC
-	def_bool y
+	default y
 
 endif # COUNTER
 
@@ -66,8 +65,22 @@ endif # PS2
 if PWM
 
 config PWM_XEC
-	def_bool y
+	default y
 
 endif # PWM
+
+if KSCAN
+
+config KSCAN_XEC
+	default y
+
+endif # KSCAN
+
+if SPI
+
+config SPI_XEC_QMSPI
+	default y
+
+endif # SPI
 
 endif # SOC_MEC1501_HSZ

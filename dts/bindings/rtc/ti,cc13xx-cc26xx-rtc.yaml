@@ -6,7 +6,7 @@
 
 title: TI SimpleLink CC13xx/CC26xx RTC
 
-description: >
+description: |
     This binding gives a base representation of the TI SimpleLink CC13xx/CC26xx RTC
 
 compatible: "ti,cc13xx-cc26xx-rtc"

@@ -1,0 +1,41 @@
+# Kconfig - board configuration
+#
+# Copyright (c) 2019 eTactica ehf
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32L1_DISCO
+
+config BOARD
+	default "stm32l1_disco"
+
+if UART_CONSOLE
+
+config UART_1
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_2
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_2
+	default y
+
+endif # SPI
+
+
+endif # BOARD_STM32L1_DISCO

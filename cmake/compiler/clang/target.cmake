@@ -86,6 +86,7 @@ include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_warnings.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_imacros.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_base.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_coverage.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_sanitizers.cmake)
 
 macro(toolchain_cc_security_fortify)
   # No op, clang doesn't understand fortify at all

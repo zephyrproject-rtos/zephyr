@@ -647,6 +647,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+	ethernet_init(iface);
 }
 
 static const struct ethernet_api api_funcs = {

@@ -3,7 +3,7 @@
 
 title: i.MX DTCM (Data Tightly Coupled Memory)
 
-description: >
+description: |
   This binding gives a base representation of the i.MX DTCM
 
 compatible: "nxp,imx-dtcm"

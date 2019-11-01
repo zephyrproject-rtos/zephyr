@@ -121,9 +121,9 @@ SECTIONS
 
 #ifdef CONFIG_X86_MMU
 	. = ALIGN(4);
-	z_x86_mmulist_start = .;
-	KEEP(*(.mmulist))
-	z_x86_mmulist_end = .;
+	_mmu_region_list_start = .;
+	KEEP(*("._mmu_region.static.*"))
+	_mmu_region_list_end = .;
 #endif /* CONFIG_X86_MMU */
 
 #ifndef CONFIG_DYNAMIC_INTERRUPTS

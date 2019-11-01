@@ -71,7 +71,7 @@ void alt_thread1(void)
 {
 	expected_reason = K_ERR_CPU_EXCEPTION;
 
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");
@@ -122,6 +122,19 @@ void alt_thread4(void)
 
 	__ASSERT(0, "intentionally failed assertion");
 	rv = TC_FAIL;
+}
+
+void alt_thread5(void)
+{
+	unsigned int key;
+
+	expected_reason = INT_MAX;
+
+	key = irq_lock();
+	z_except_reason(INT_MAX);
+	TC_ERROR("SHOULD NEVER SEE THIS\n");
+	rv = TC_FAIL;
+	irq_unlock(key);
 }
 
 #ifndef CONFIG_ARCH_POSIX
@@ -175,7 +188,7 @@ void stack_sentinel_timer(void)
 
 	blow_up_stack();
 	k_timer_init(&timer, NULL, NULL);
-	k_timer_start(&timer, 1, 0);
+	k_timer_start(&timer, K_MSEC(1), K_NO_WAIT);
 	while (true) {
 	}
 }
@@ -297,6 +310,14 @@ void test_fatal(void)
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
+	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			(k_thread_entry_t)alt_thread5,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
+			K_NO_WAIT);
+	k_thread_abort(&alt_thread);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 #ifndef CONFIG_ARCH_POSIX
 

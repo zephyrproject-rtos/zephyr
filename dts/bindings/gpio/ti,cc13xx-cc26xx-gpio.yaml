@@ -3,7 +3,7 @@
 
 title: TI SimpleLink CC13xx / CC26xx GPIO
 
-description: >
+description: |
     This is a representation of the TI SimpleLink CC13xx / CC26xx GPIO node
 
 compatible: "ti,cc13xx-cc26xx-gpio"
@@ -23,6 +23,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

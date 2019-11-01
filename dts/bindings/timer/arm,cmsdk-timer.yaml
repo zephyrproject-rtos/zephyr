@@ -1,6 +1,6 @@
 title: ARM CMSDK TIMER
 
-description: >
+description: |
     This binding gives a base representation of the ARM CMSDK TIMER
 
 compatible: "arm,cmsdk-timer"

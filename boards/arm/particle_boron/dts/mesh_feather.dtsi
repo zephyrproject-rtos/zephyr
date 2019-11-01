@@ -117,6 +117,7 @@
 };
 
 &i2c0 { /* feather I2C */
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <26>;
@@ -126,6 +127,7 @@
 /* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;

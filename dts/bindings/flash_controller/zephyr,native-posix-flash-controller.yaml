@@ -1,6 +1,6 @@
 title: Native POSIX Flash Controller
 
-description: >
+description: |
     This binding gives a base representation of the Native POSIX flash
     controller
 

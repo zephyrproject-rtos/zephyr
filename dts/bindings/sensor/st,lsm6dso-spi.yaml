@@ -3,7 +3,7 @@
 
 title: STMicroelectronics MEMS sensors LSM6DSO SPI
 
-description: >
+description: |
     This binding gives a base representation of LSM6DSO 6-axis IMU
     sensor accessed through SPI bus
 

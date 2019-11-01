@@ -1,6 +1,6 @@
 title: Atmel SAM0 PINMUX
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM0 PINMUX
 
 compatible: "atmel,sam0-pinmux"
@@ -14,6 +14,6 @@ properties:
     label:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

@@ -4,5 +4,5 @@ tests:
   sample.driver.spi_fujitsu_fram:
     tags: drivers fram
     harness: fram
-    depends_on: spi
+    depends_on: gpio spi
     filter: CONFIG_SPI_1

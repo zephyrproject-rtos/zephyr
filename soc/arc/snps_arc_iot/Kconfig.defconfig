@@ -8,11 +8,10 @@
 if SOC_ARC_IOT
 
 config SOC
-	string
 	default "snps_arc_iot"
 
 config CPU_EM4_FPUS
-	def_bool y
+	default y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:

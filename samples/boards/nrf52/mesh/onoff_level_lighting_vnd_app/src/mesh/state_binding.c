@@ -10,6 +10,7 @@
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
+#include "storage.h"
 #include "transition.h"
 
 #define MINDIFF 2.25e-308
@@ -139,6 +140,8 @@ void readjust_lightness(void)
 {
 	if (lightness != 0U) {
 		light_lightness_srv_user_data.last = lightness;
+
+		save_on_flash(LIGHTNESS_LAST_STATE);
 	}
 
 	if (lightness) {
@@ -180,11 +183,7 @@ void state_binding(u8_t light, u8_t temp)
 
 	switch (light) {
 	case ONPOWERUP:
-		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
-			lightness = 0U;
-		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			lightness = light_lightness_srv_user_data.last;
-		}
+		lightness = light_ctl_srv_user_data.lightness;
 		break;
 	case ONOFF:
 		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
@@ -295,6 +294,10 @@ void calculate_lightness_target_values(u8_t type)
 		actual_to_linear(target_lightness);
 
 	light_ctl_srv_user_data.target_lightness = target_lightness;
+
+	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
+		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
+	}
 }
 
 void init_temp_target_values(void)
@@ -331,6 +334,10 @@ void calculate_temp_target_values(u8_t type)
 
 		light_ctl_srv_user_data.target_delta_uv =
 			light_ctl_srv_user_data.delta_uv;
+	}
+
+	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
+		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
 	}
 }
 

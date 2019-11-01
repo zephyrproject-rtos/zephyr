@@ -89,6 +89,7 @@
 };
 
 &i2c2 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -104,6 +105,7 @@
 };
 
 &spi3 {
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 
 	sck-pin = <20>;

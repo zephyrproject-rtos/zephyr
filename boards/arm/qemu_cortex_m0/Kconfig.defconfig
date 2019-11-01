@@ -1,0 +1,39 @@
+# Kconfig - QEMU Cortex-M0 board configuration
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_M0
+
+config BOARD
+	default "qemu_cortex_m0"
+
+if SYS_CLOCK_EXISTS
+
+config NRF_TIMER_TIMER
+	bool "nRF Timer Counter (NRF_TIMER0) Timer"
+	depends on CLOCK_CONTROL
+	depends on SOC_COMPATIBLE_NRF
+	select TICKLESS_CAPABLE
+	default y
+	help
+	  This module implements a kernel device driver for the nRF Timer
+	  Counter NRF_TIMER0 and provides the standard "system clock driver"
+	  interfaces.
+
+config NRF_RTC_TIMER
+	default n
+
+endif # SYS_CLOCK_EXISTS
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100
+
+config ENTROPY_NRF_FORCE_ALT
+	default y
+
+endif # BOARD_QEMU_CORTEX_M0

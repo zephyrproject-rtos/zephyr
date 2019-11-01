@@ -32,6 +32,36 @@ config	CPU_ARCHS
 
 endchoice
 
+config CPU_EM4
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 CPU
+
+config CPU_EM4_DMIPS
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU
+
+config CPU_EM4_FPUS
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
+	  floating-point extension
+
+config CPU_EM4_FPUDA
+	bool
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
+	  floating-point and double assist instructions
+
+config CPU_EM6
+	bool
+	help
+	  If y, the SoC uses an ARC EM6 CPU
+
+config FP_FPU_DA
+	bool
+
 menu "ARCv2 Family Options"
 
 config	CPU_ARCV2
@@ -43,14 +73,6 @@ config	CPU_ARCV2
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
-
-config	DATA_ENDIANNESS_LITTLE
-	bool
-	default y
-	help
-	  This is driven by the processor implementation, since it is fixed in
-	  hardware. The BSP should set this value to 'n' if the data is
-	  implemented as big endian.
 
 config	NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
@@ -94,6 +116,21 @@ config ARC_FIRQ
 	  other regs will be saved according to the number of register bank;
 	  If FIRQ is disabled, the handle of interrupts with highest priority
 	  will be same with other interrupts.
+
+config ARC_FIRQ_STACK
+	bool "Enable separate firq stack"
+	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
+	default n
+	help
+	  Use separate stack for FIRQ handing. When the fast irq is also a direct
+	  irq, this will get the minimal interrupt latency.
+
+config ARC_FIRQ_STACK_SIZE
+	int "FIRQ stack size"
+	depends on ARC_FIRQ_STACK
+	default 1024
+	help
+	  The size of firq stack.
 
 config 	ARC_HAS_STACK_CHECKING
 	bool "ARC has STACK_CHECKING"
@@ -279,6 +316,15 @@ config CACHE_FLUSHING
 	  way to flush multiple lines of the d-cache.
 	  If the d-cache is present, set this to y.
 	  If the d-cache is NOT present, set this to n.
+
+config ARC_EXCEPTION_STACK_SIZE
+	int "ARC exception handling stack size"
+	default 768
+	help
+	  Size in bytes of exception handling stack which is at the top of
+	  interrupt stack to get smaller memory footprint because exception
+	  is not frequent. To reduce the impact on interrupt handling,
+	  especially nested interrupt, it cannot be too large.
 
 endmenu
 

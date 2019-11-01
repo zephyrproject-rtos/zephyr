@@ -1,4 +1,4 @@
 tests:
-  kernel.memory_pool:
+  kernel.memory_pool.sys:
     min_ram: 32
     tags: kernel userspace mem_pool

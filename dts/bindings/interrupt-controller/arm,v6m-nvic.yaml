@@ -1,6 +1,6 @@
 title: ARMv6-M NVIC Interrupt Controller
 
-description: >
+description: |
     This binding describes the ARMv6-M Nested Vectored Interrupt Controller.
 
 compatible: "arm,v6m-nvic"
@@ -19,6 +19,6 @@ properties:
     "#interrupt-cells":
       const: 2
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

@@ -7,21 +7,8 @@
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>
+#include <kernel_internal.h>
 #include "ctf_top.h"
-
-
-#ifndef CONFIG_SMP
-extern k_tid_t const _idle_thread;
-#endif
-
-static inline int is_idle_thread(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == _idle_thread;
-#endif
-}
 
 void sys_trace_thread_switched_out(void)
 {
@@ -152,33 +139,6 @@ void sys_trace_end_call(unsigned int id)
 {
 	ctf_top_end_call(id);
 }
-
-
-void z_sys_trace_thread_switched_out(void)
-{
-	sys_trace_thread_switched_out();
-}
-void z_sys_trace_thread_switched_in(void)
-{
-	sys_trace_thread_switched_in();
-}
-void z_sys_trace_isr_enter(void)
-{
-	sys_trace_isr_enter();
-}
-void z_sys_trace_isr_exit(void)
-{
-	sys_trace_isr_exit();
-}
-void z_sys_trace_isr_exit_to_scheduler(void)
-{
-	sys_trace_isr_exit_to_scheduler();
-}
-void z_sys_trace_idle(void)
-{
-	sys_trace_idle();
-}
-
 
 static int ctf_top_init(struct device *arg)
 {

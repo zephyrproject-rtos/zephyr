@@ -167,7 +167,7 @@ void main(void)
 	 * main thread idle while the mcumgr server runs.
 	 */
 	while (1) {
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 		STATS_INC(smp_svr_stats, ticks);
 	}
 }

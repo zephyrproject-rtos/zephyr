@@ -1,0 +1,16 @@
+# Kconfig - ST STM32F401CC MCU configuration options
+#
+# Copyright (c) 2019 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F401XC
+
+config SOC
+	default	"stm32f401xc"
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32F401XC

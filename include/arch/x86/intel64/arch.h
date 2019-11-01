@@ -33,6 +33,10 @@
 		__aligned(STACK_ALIGN) \
 		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
+#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
+	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
+		sym[Z_ARCH_THREAD_STACK_LEN(size)]
+
 #define Z_ARCH_THREAD_STACK_SIZEOF(sym)	sizeof(sym)
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) ((char *) sym)
 

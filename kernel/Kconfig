@@ -695,13 +695,13 @@ config MAX_DOMAIN_PARTITIONS
 menu "SMP Options"
 
 config USE_SWITCH
-	bool "Use new-style _arch_switch instead of __swap"
+	bool "Use new-style _arch_switch instead of z_arch_swap"
 	depends on USE_SWITCH_SUPPORTED
 	help
 	  The _arch_switch() API is a lower level context switching
-	  primitive than the original __swap mechanism.  It is required
+	  primitive than the original z_arch_swap mechanism.  It is required
 	  for an SMP-aware scheduler, or if the architecture does not
-	  provide __swap.  In uniprocess situations where the
+	  provide z_arch_swap.  In uniprocess situations where the
 	  architecture provides both, _arch_switch incurs more somewhat
 	  overhead and may be slower.
 
@@ -722,6 +722,7 @@ config SMP
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
 	default 1
+	range 1 4
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.

@@ -125,14 +125,13 @@ static void write_control(void)
 
 	expect_fault = false;
 	BARRIER();
-	__asm__ volatile (
-		"mrs %0, CONTROL;\n\t"
-		"bic %0, #1;\n\t"
-		"msr CONTROL, %0;\n\t"
-		"mrs %0, CONTROL;\n\t"
-		: "=r" (msr_value)::
-	);
-	zassert_true((msr_value & 1),
+	msr_value = __get_CONTROL();
+	msr_value &= ~(CONTROL_nPRIV_Msk);
+	__set_CONTROL(msr_value);
+	__DSB();
+	__ISB();
+	msr_value = __get_CONTROL();
+	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
@@ -696,7 +695,7 @@ static void domain_add_thread_drop_to_user(void)
 	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -716,7 +715,7 @@ static void domain_add_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -738,7 +737,7 @@ static void domain_remove_thread_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -761,7 +760,7 @@ static void domain_remove_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -804,7 +803,7 @@ static void domain_add_thread_context_switch(void)
 	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
 
 	spawn_user();
@@ -824,7 +823,7 @@ static void domain_add_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
 
 	spawn_user();
@@ -846,7 +845,7 @@ static void domain_remove_thread_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	spawn_user();
@@ -870,7 +869,7 @@ static void domain_remove_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_ctx_dom, &access_part);
 
 	spawn_user();

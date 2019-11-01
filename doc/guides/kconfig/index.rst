@@ -14,10 +14,10 @@ behaviors and features that might be cryptic or that are easily overlooked.
 
 .. note::
 
-   The official Kconfig documentation is `kconfig-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-language.txt>`_
-   and `kconfig-macro-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
+   The official Kconfig documentation is `kconfig-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-language.html>`_
+   and `kconfig-macro-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-macro-language.html>`_.
 
 
 What to turn into Kconfig options
@@ -34,7 +34,7 @@ sense for the user to change its value.
 In Zephyr, Kconfig configuration is done after selecting a machine, so in
 general, it does not make sense to put a prompt on a symbol that corresponds to
 a fixed machine-specific setting. Usually, such settings should be handled via
-device tree (``.dts``) files instead.
+devicetree (``.dts``) files instead.
 
 Symbols without prompts can't be configured directly by the user (they derive
 their value from other symbols), so less restrictions apply to them. If some
@@ -808,30 +808,36 @@ Kconfig Functions
 *****************
 
 Kconfiglib provides user-defined preprocessor functions that
-we use in Zephyr to expose Device Tree information to Kconfig.
+we use in Zephyr to expose devicetree information to Kconfig.
 For example, we can get the default value for a Kconfig symbol
-from the device tree.
+from the devicetree.
 
-Device Tree Related Functions
-=============================
+Devicetree Related Functions
+============================
 
 See the Python docstrings in ``scripts/kconfig/kconfigfunctions.py`` for more
-details on the functions.
+details on the functions.  The ``*_int`` version of each function returns the
+value as a decimal integer, while the ``*_hex`` version returns a hexadecimal
+value starting with ``0x``.
 
 .. code-block:: none
 
-  dt_chosen_reg_addr(kconf, _, chosen, index=0, unit=None):
-  dt_chosen_reg_size(kconf, _, chosen, index=0, unit=None):
-  dt_node_reg_addr(kconf, _, path, index=0, unit=None):
-  dt_node_reg_size(kconf, _, path, index=0, unit=None):
+  dt_chosen_reg_addr_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_addr_hex(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_hex(kconf, _, chosen, index=0, unit=None):
+  dt_node_reg_addr_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_addr_hex(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_hex(kconf, _, path, index=0, unit=None):
   dt_compat_enabled(kconf, _, compat):
   dt_node_has_bool_prop(kconf, _, path, prop):
 
 Example Usage
 -------------
 
-The following example shows the usage of the ``dt_node_reg_addr`` function.
-This function will take a path to a device tree node and register the register
+The following example shows the usage of the ``dt_node_reg_addr_hex`` function.
+This function will take a path to a devicetree node and register the register
 address of that node:
 
 .. code-block:: none
@@ -839,7 +845,7 @@ address of that node:
    boards/riscv/hifive1_revb/Kconfig.defconfig
 
    config FLASH_BASE_ADDRESS
-      default $(dt_node_reg_addr,/soc/spi@10014000,1)
+      default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
 
 In this example if we examine the dts file for the board:
 
@@ -852,7 +858,7 @@ In this example if we examine the dts file for the board:
       ...
    };
 
-The ``dt_node_reg_addr`` will search the dts file for a node at the path
+The ``dt_node_reg_addr_hex`` will search the dts file for a node at the path
 ``/soc/spi@10014000``.  The function than will extract the register address
 at the index 1.  This effective gets the value of ``0x20010000`` and causes
 the above to look like:

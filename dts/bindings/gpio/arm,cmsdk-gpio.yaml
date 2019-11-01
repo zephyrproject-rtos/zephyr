@@ -1,6 +1,6 @@
 title: ARM CMSDK GPIO
 
-description: >
+description: |
     This binding gives a base representation of the ARM CMSDK GPIO
 
 compatible: "arm,cmsdk-gpio"
@@ -17,6 +17,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

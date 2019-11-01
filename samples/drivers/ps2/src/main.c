@@ -40,7 +40,7 @@ static void saturate_ps2(struct k_timer *timer)
 	LOG_DBG("block host\n");
 	host_blocked = true;
 	ps2_disable_callback(ps2_0_dev);
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 	host_blocked = false;
 	ps2_enable_callback(ps2_0_dev);
 }

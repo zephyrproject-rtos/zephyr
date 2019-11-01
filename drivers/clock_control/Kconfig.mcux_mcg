@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig CLOCK_CONTROL_MCUX_MCG
+config CLOCK_CONTROL_MCUX_MCG
 	bool "MCUX MCG driver"
 	depends on HAS_MCG
 	help

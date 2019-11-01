@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 title: TI Stellaris GPIO
 
-description: >
+description: |
     This is a representation of the TI Stellaris GPIO node
 
 compatible: "ti,stellaris-gpio"
@@ -21,6 +21,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

@@ -26,15 +26,6 @@ config NET_PPP_UART_PIPE_BUF_LEN
 	  This options sets the size of the UART pipe buffer where data
 	  is being read to.
 
-config NET_PPP_MTU
-	int "PPP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the PPP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's.
-
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"
 	default y
@@ -42,14 +33,6 @@ config NET_PPP_VERIFY_FCS
 	  If you have a reliable link, then it might make sense
 	  to disable this as it takes some time to verify the received
 	  packet.
-
-config NET_PPP_CALC_FCS
-	bool "Calculate FCS for the sent packet"
-	default y
-	help
-	  If you have a reliable link, then it might make sense
-	  to disable this as it takes some time to calculate the FCS for
-	  the sent packet.
 
 config	PPP_MAC_ADDR
 	string "MAC address for the interface"
@@ -85,16 +68,6 @@ config	SLIP_DRV_NAME
 	default "slip"
 	help
 	  This option sets the driver name
-
-config	SLIP_MTU
-	int "SLIP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the SLIP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's. The actual SLIP connection
-	  does not use this value.
 
 module = SLIP
 module-dep = LOG

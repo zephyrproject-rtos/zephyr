@@ -6,36 +6,36 @@
 
 /**
  * @file
- * @brief ARM Cortex-M wrapper for ISRs with parameter
+ * @brief ARM Cortex-M and Cortex-R wrapper for ISRs with parameter
  *
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
  */
 
-#include <offsets_short.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <arch/cpu.h>
+#include <sw_isr_table.h>
+
 
 _ASM_FILE_PROLOGUE
 
 GDATA(_sw_isr_table)
 
 GTEXT(_isr_wrapper)
-GTEXT(_IntExit)
+GTEXT(z_arm_int_exit)
 
 /**
  *
  * @brief Wrapper around ISRs when inserted in software ISR table
  *
- * When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
- * the running interrupt number as the index, and invokes the registered ISR
- * with its corresponding argument. When returning from the ISR, it determines
- * if a context switch needs to happen (see documentation for __pendsv()) and
- * pends the PendSV exception if so: the latter will perform the context switch
- * itself.
+ * When inserted in the vector table, _isr_wrapper() demuxes the ISR table
+ * using the running interrupt number as the index, and invokes the registered
+ * ISR with its corresponding argument. When returning from the ISR, it
+ * determines if a context switch needs to happen (see documentation for
+ * z_arm_pendsv()) and pends the PendSV exception if so: the latter will
+ * perform the context switch itself.
  *
  * @return N/A
  */
@@ -45,9 +45,9 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	push {r0,lr}		/* r0, lr are now the first items on the stack */
 #elif defined(CONFIG_CPU_CORTEX_R)
 	/*
-	 * Save away r0-r3 from previous context to the process stack since they
-	 * are clobbered here.  Also, save away lr since we may swap processes
-	 * and return to a different thread.
+	 * Save away r0-r3 from previous context to the process stack since
+	 * they are clobbered here.  Also, save away lr since we may swap
+	 * processes and return to a different thread.
 	 */
 	push {r4, r5}
 	mov r4, r12
@@ -65,17 +65,17 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 #ifdef CONFIG_TRACING
-	bl z_sys_trace_isr_enter
+	bl sys_trace_isr_enter
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
-	 * idle, this ensures that the calculation and programming of the device
-	 * for the next timer deadline is not interrupted.  For non-tickless idle,
-	 * this ensures that the clearing of the kernel idle state is not
-	 * interrupted.  In each case, z_sys_power_save_idle_exit is called with
-	 * interrupts disabled.
+	 * idle, this ensures that the calculation and programming of the
+	 * device for the next timer deadline is not interrupted.  For
+	 * non-tickless idle, this ensures that the clearing of the kernel idle
+	 * state is not interrupted.  In each case, z_sys_power_save_idle_exit
+	 * is called with interrupts disabled.
 	 */
 	cpsid i  /* PRIMASK = 1 */
 
@@ -152,7 +152,7 @@ _idle_state_cleared:
 	blx r3		/* call ISR */
 
 #ifdef CONFIG_TRACING
-	bl z_sys_trace_isr_exit
+	bl sys_trace_isr_exit
 #endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -177,6 +177,6 @@ _idle_state_cleared:
 
 	/* Use 'bx' instead of 'b' because 'bx' can jump further, and use
 	 * 'bx' instead of 'blx' because exception return is done in
-	 * _IntExit() */
-	ldr r1, =_IntExit
+	 * z_arm_int_exit() */
+	ldr r1, =z_arm_int_exit
 	bx r1

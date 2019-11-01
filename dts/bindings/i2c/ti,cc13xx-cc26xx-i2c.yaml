@@ -3,7 +3,7 @@
 
 title: TI CC13xx / CC26xx I2C
 
-description: >
+description: |
     This is a representation of the TI CC13xx / CC26xx I2C node
 
 compatible: "ti,cc13xx-cc26xx-i2c"

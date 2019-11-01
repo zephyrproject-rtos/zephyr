@@ -8,7 +8,6 @@
 if SOC_MCIMX6X_M4
 
 config SOC
-	string
 	default "mcimx6x"
 
 config FLOAT

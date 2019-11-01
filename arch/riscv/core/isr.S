@@ -25,8 +25,8 @@ GTEXT(_is_next_thread_current)
 GTEXT(z_get_next_ready_thread)
 
 #ifdef CONFIG_TRACING
-GTEXT(z_sys_trace_thread_switched_in)
-GTEXT(z_sys_trace_isr_enter)
+GTEXT(sys_trace_thread_switched_in)
+GTEXT(sys_trace_isr_enter)
 #endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -211,6 +211,7 @@ on_irq_stack:
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
 
+#ifdef CONFIG_IRQ_OFFLOAD
 	/*
 	 * If we are here due to a system call, t1 register should != 0.
 	 * In this case, perform IRQ offloading, otherwise jump to call_irq
@@ -226,8 +227,9 @@ on_irq_stack:
 	tail z_irq_do_offload
 
 call_irq:
+#endif /* CONFIG_IRQ_OFFLOAD */
 #ifdef CONFIG_TRACING
-	call z_sys_trace_isr_enter
+	call sys_trace_isr_enter
 #endif
 
 	/* Get IRQ causing interrupt */
@@ -305,7 +307,7 @@ on_thread_stack:
 
 reschedule:
 #if CONFIG_TRACING
-	call z_sys_trace_thread_switched_in
+	call sys_trace_thread_switched_in
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel

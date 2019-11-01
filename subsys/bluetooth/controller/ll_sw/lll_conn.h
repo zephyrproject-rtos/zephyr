@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+#include "lll_conn_meta.h"
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 #define LLL_CONN_RSSI_SAMPLE_COUNT 10
 #define LLL_CONN_RSSI_THRESHOLD    4
@@ -136,6 +139,10 @@ struct lll_conn {
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	struct lll_conn_meta conn_meta;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 };
 
 int lll_conn_init(void);
@@ -153,5 +160,6 @@ void lll_conn_isr_abort(void *param);
 void lll_conn_rx_pkt_set(struct lll_conn *lll);
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);
+void lll_conn_flush(struct lll_conn *lll);
 
 extern void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx);

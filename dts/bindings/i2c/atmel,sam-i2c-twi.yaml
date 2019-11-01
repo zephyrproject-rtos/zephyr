@@ -3,7 +3,7 @@
 
 title: Atmel SAM Family I2C (TWI) node
 
-description: >
+description: |
     This is a representation of the Atmel SAM Family I2C (TWI) node
 
 compatible: "atmel,sam-i2c-twi"

@@ -15,8 +15,7 @@
 
 #include "ak8975.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(AK8975);
+LOG_MODULE_REGISTER(AK8975, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

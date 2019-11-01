@@ -20,7 +20,8 @@
 #include <stdbool.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <bluetooth/hci_err.h>
+#include <bluetooth/addr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -326,6 +327,9 @@ typedef enum __packed {
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
  *  capabilities), or if the maximum number of paired devices has been reached.
+ *
+ *  This function may return error if the pairing procedure has already been
+ *  initiated by the local device or the peer device.
  *
  *  @param conn Connection object.
  *  @param sec Requested security level.

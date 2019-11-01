@@ -131,7 +131,7 @@ void test_main(void)
 {
 	ztest_test_suite(profiling_api,
 			 ztest_unit_test(test_call_stacks_analyze_main),
-			 ztest_unit_test(test_call_stacks_analyze_idle),
-			 ztest_unit_test(test_call_stacks_analyze_workq));
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_idle),
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_workq));
 	ztest_run_test_suite(profiling_api);
 }

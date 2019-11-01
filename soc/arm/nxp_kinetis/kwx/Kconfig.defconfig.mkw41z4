@@ -8,11 +8,9 @@
 if SOC_MKW41Z4
 
 config SOC
-	string
 	default "mkw41z4"
 
 config NUM_IRQS
-	int
 	default 32
 
 if ADC

@@ -1,0 +1,19 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip XEC Keyboard Scan Matrix
+
+description: |
+    This is a representation of the Microchip XEC Keyboard Matrix controller
+
+compatible: "microchip,xec-kscan"
+
+include: kscan.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+...

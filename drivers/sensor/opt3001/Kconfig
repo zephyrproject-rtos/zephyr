@@ -1,0 +1,12 @@
+# Kconfig - OPT3001 light sensor configuration options
+#
+# Copyright (c) 2019 Actinius
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config OPT3001
+	bool "OPT3001 Light Sensor"
+	depends on (I2C && HAS_DTS_I2C)
+	help
+	  Enable driver for OPT3001 light sensors.

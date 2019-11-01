@@ -16,8 +16,7 @@
 
 #ifdef DT_ST_STTS751_BUS_I2C
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(STTS751);
+LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 static int stts751_i2c_read(struct device *dev, u8_t reg_addr,
 				 u8_t *value, u16_t len)
@@ -43,8 +42,8 @@ int stts751_i2c_init(struct device *dev)
 {
 	struct stts751_data *data = dev->driver_data;
 
-	data->ctx_i2c.read_reg = (stts751_read_ptr) stts751_i2c_read;
-	data->ctx_i2c.write_reg = (stts751_write_ptr) stts751_i2c_write;
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) stts751_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) stts751_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = dev;

@@ -18,13 +18,20 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
+if DISK_ACCESS_USDHC
+
+config DISK_ACCESS_USDHC1
+	default y
+
+endif # DISK_ACCESS_USDHC
+
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
 	default y
 
 config GPIO_MCUX_IGPIO_2
-	default n
+	default y if DISK_ACCESS_USDHC1
 
 config GPIO_MCUX_IGPIO_3
 	default n
