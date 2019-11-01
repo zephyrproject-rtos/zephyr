@@ -17,8 +17,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
     def __init__(self, cfg,
-                 pre_init_cmd=None, pre_cmd=None, load_cmd=None, verify_cmd=None,
-                 post_cmd=None,
+                 pre_init_cmd=None, pre_cmd=None, load_cmd=None,
+                 verify_cmd=None, post_cmd=None,
                  tui=None, config=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
@@ -29,7 +29,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.openocd_config = config
         else:
             self.openocd_config = path.join(cfg.board_dir, 'support',
-                    'openocd.cfg')
+                                            'openocd.cfg')
 
         search_args = []
         if cfg.openocd_search is not None:
