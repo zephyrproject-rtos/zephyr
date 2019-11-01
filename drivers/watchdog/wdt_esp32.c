@@ -13,6 +13,26 @@
 #include <drivers/watchdog.h>
 #include <device.h>
 
+/* FIXME: This struct shall be removed from here, when esp32 timer driver got
+ * implemented.
+ * That's why the type name starts with `timer` not `wdt`
+ */
+struct timer_esp32_irq_regs_t {
+	u32_t *timer_int_ena;
+	u32_t *timer_int_clr;
+};
+
+struct wdt_esp32_regs_t {
+	u32_t config0;
+	u32_t config1;
+	u32_t config2;
+	u32_t config3;
+	u32_t config4;
+	u32_t config5;
+	u32_t feed;
+	u32_t wprotect;
+};
+
 enum wdt_mode {
 	WDT_MODE_RESET = 0,
 	WDT_MODE_INTERRUPT_RESET
@@ -22,135 +42,120 @@ struct wdt_esp32_data {
 	u32_t timeout;
 	enum wdt_mode mode;
 	wdt_callback_t callback;
-	struct device *dev;
 };
 
-static struct wdt_esp32_data shared_data;
+struct wdt_esp32_config {
+	void (*connect_irq)(void);
+	const struct wdt_esp32_regs_t *base;
+	const struct timer_esp32_irq_regs_t irq_regs;
+
+	const struct {
+		int source;
+		int line;
+	} irq;
+};
+
+#define DEV_CFG(dev) \
+	((const struct wdt_esp32_config *const)(dev)->config->config_info)
+#define DEV_DATA(dev) \
+	((struct wdt_esp32_data *)(dev)->driver_data)
+#define DEV_BASE(dev) \
+	((volatile struct wdt_esp32_regs_t  *)(DEV_CFG(dev))->base)
 
 /* ESP32 ignores writes to any register if WDTWPROTECT doesn't contain the
  * magic value of TIMG_WDT_WKEY_VALUE.  The datasheet recommends unsealing,
  * making modifications, and sealing for every watchdog modification.
  */
-static inline void wdt_esp32_seal(void)
+static inline void wdt_esp32_seal(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(1);
+	DEV_BASE(dev)->wprotect = 0U;
 
-	*reg = 0U;
 }
 
-static inline void wdt_esp32_unseal(void)
+static inline void wdt_esp32_unseal(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(1);
-
-	*reg = TIMG_WDT_WKEY_VALUE;
+	DEV_BASE(dev)->wprotect = TIMG_WDT_WKEY_VALUE;
 }
 
-static void wdt_esp32_enable(void)
+static void wdt_esp32_enable(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
+	wdt_esp32_unseal(dev);
+	DEV_BASE(dev)->config0 |= BIT(TIMG_WDT_EN_S);
+	wdt_esp32_seal(dev);
 
-	wdt_esp32_unseal();
-	*reg |= BIT(TIMG_WDT_EN_S);
-	wdt_esp32_seal();
 }
 
 static int wdt_esp32_disable(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
-
-	ARG_UNUSED(dev);
-
-	wdt_esp32_unseal();
-	*reg &= ~BIT(TIMG_WDT_EN_S);
-	wdt_esp32_seal();
+	wdt_esp32_unseal(dev);
+	DEV_BASE(dev)->config0 &= ~BIT(TIMG_WDT_EN_S);
+	wdt_esp32_seal(dev);
 
 	return 0;
 }
 
-static void adjust_timeout(u32_t timeout)
+static void adjust_timeout(struct device *dev, u32_t timeout)
 {
-	volatile u32_t *reg;
-	u32_t ticks = timeout;
-
-	 reg = (u32_t *)TIMG_WDTCONFIG1_REG(1);
 	/* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
 	 * counter for each watchdog stage is decremented every 0.5ms.
 	 */
-	 *reg = 40000U;
-
-	 reg = (u32_t *)TIMG_WDTCONFIG2_REG(1);
-	 *reg = ticks;
-
-	 reg = (u32_t *)TIMG_WDTCONFIG3_REG(1);
-	 *reg = ticks;
+	DEV_BASE(dev)->config1 = 40000U;
+	DEV_BASE(dev)->config2 = timeout;
+	DEV_BASE(dev)->config3 = timeout;
 }
 
-static void wdt_esp32_isr(void *param);
+static void wdt_esp32_isr(struct device *dev);
 
-static int wdt_esp32_reload(struct device *dev, int channel_id)
+static int wdt_esp32_feed(struct device *dev, int channel_id)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTFEED_REG(1);
-
-	ARG_UNUSED(dev);
-
-	wdt_esp32_unseal();
-	*reg = 0xABAD1DEA; /* Writing any value to WDTFEED will reload it. */
-	wdt_esp32_seal();
+	wdt_esp32_unseal(dev);
+	DEV_BASE(dev)->feed = 0xABAD1DEA; /* Writing any value to WDTFEED will reload it. */
+	wdt_esp32_seal(dev);
 
 	return 0;
 }
 
-static void set_interrupt_enabled(bool setting)
+static void set_interrupt_enabled(struct device *dev, bool setting)
 {
-	volatile u32_t *intr_enable_reg = (u32_t *)TIMG_INT_ENA_TIMERS_REG(1);
-	volatile u32_t *intr_clear_timers = (u32_t *)TIMG_INT_CLR_TIMERS_REG(1);
-
-	*intr_clear_timers |= TIMG_WDT_INT_CLR;
+	*DEV_CFG(dev)->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
 
 	if (setting) {
-		*intr_enable_reg |= TIMG_WDT_INT_ENA;
-
-		IRQ_CONNECT(CONFIG_WDT_ESP32_IRQ, 4, wdt_esp32_isr,
-			    &shared_data, 0);
-		irq_enable(CONFIG_WDT_ESP32_IRQ);
+		*DEV_CFG(dev)->irq_regs.timer_int_ena |= TIMG_WDT_INT_ENA;
+		irq_enable(DEV_CFG(dev)->irq.line);
 	} else {
-		*intr_enable_reg &= ~TIMG_WDT_INT_ENA;
-
-		irq_disable(CONFIG_WDT_ESP32_IRQ);
+		*DEV_CFG(dev)->irq_regs.timer_int_ena &= ~TIMG_WDT_INT_ENA;
+		irq_disable(DEV_CFG(dev)->irq.line);
 	}
 }
 
 static int wdt_esp32_set_config(struct device *dev, u8_t options)
 {
-	struct wdt_esp32_data *data = dev->driver_data;
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
-	u32_t v;
+	struct wdt_esp32_data *data = DEV_DATA(dev);
+	u32_t v = DEV_BASE(dev)->config0;
 
 	if (!data) {
 		return -EINVAL;
 	}
 
-	v = *reg;
-
 	/* Stages 3 and 4 are not used: disable them. */
-	v |= TIMG_WDT_STG_SEL_OFF<<TIMG_WDT_STG2_S;
-	v |= TIMG_WDT_STG_SEL_OFF<<TIMG_WDT_STG3_S;
+	v |= TIMG_WDT_STG_SEL_OFF << TIMG_WDT_STG2_S;
+	v |= TIMG_WDT_STG_SEL_OFF << TIMG_WDT_STG3_S;
 
 	/* Wait for 3.2us before booting again. */
-	v |= 7<<TIMG_WDT_SYS_RESET_LENGTH_S;
-	v |= 7<<TIMG_WDT_CPU_RESET_LENGTH_S;
+	v |= 7 << TIMG_WDT_SYS_RESET_LENGTH_S;
+	v |= 7 << TIMG_WDT_CPU_RESET_LENGTH_S;
 
 	if (data->mode == WDT_MODE_RESET) {
 		/* Warm reset on timeout */
-		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM<<TIMG_WDT_STG0_S;
-		v |= TIMG_WDT_STG_SEL_OFF<<TIMG_WDT_STG1_S;
+		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM << TIMG_WDT_STG0_S;
+		v |= TIMG_WDT_STG_SEL_OFF << TIMG_WDT_STG1_S;
 
 		/* Disable interrupts for this mode. */
 		v &= ~(TIMG_WDT_LEVEL_INT_EN | TIMG_WDT_EDGE_INT_EN);
 	} else if (data->mode == WDT_MODE_INTERRUPT_RESET) {
 		/* Interrupt first, and warm reset if not reloaded */
-		v |= TIMG_WDT_STG_SEL_INT<<TIMG_WDT_STG0_S;
-		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM<<TIMG_WDT_STG1_S;
+		v |= TIMG_WDT_STG_SEL_INT << TIMG_WDT_STG0_S;
+		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM << TIMG_WDT_STG1_S;
 
 		/* Use level-triggered interrupts. */
 		v |= TIMG_WDT_LEVEL_INT_EN;
@@ -159,23 +164,21 @@ static int wdt_esp32_set_config(struct device *dev, u8_t options)
 		return -EINVAL;
 	}
 
-	wdt_esp32_unseal();
-	*reg = v;
-	adjust_timeout(data->timeout);
-	set_interrupt_enabled(data->mode == WDT_MODE_INTERRUPT_RESET);
-	wdt_esp32_seal();
+	wdt_esp32_unseal(dev);
+	DEV_BASE(dev)->config0 = v;
+	adjust_timeout(dev, data->timeout);
+	set_interrupt_enabled(dev, data->mode == WDT_MODE_INTERRUPT_RESET);
+	wdt_esp32_seal(dev);
 
-	wdt_esp32_reload(dev, 0);
+	wdt_esp32_feed(dev, 0);
 
 	return 0;
 }
 
 static int wdt_esp32_install_timeout(struct device *dev,
-				    const struct wdt_timeout_cfg *cfg)
+				     const struct wdt_timeout_cfg *cfg)
 {
-	struct wdt_esp32_data *data = dev->driver_data;
-
-	ARG_UNUSED(dev);
+	struct wdt_esp32_data *data = DEV_DATA(dev);
 
 	if (cfg->flags != WDT_FLAG_RESET_SOC) {
 		return -ENOTSUP;
@@ -185,12 +188,10 @@ static int wdt_esp32_install_timeout(struct device *dev,
 		return -EINVAL;
 	}
 
-	data->dev = dev;
-
 	data->timeout = cfg->window.max;
 
 	data->mode = (cfg->callback == NULL) ?
-			WDT_MODE_RESET : WDT_MODE_INTERRUPT_RESET;
+		     WDT_MODE_RESET : WDT_MODE_INTERRUPT_RESET;
 
 	data->callback = cfg->callback;
 
@@ -206,11 +207,10 @@ static int wdt_esp32_init(struct device *dev)
 	/* This is a level 4 interrupt, which is handled by _Level4Vector,
 	 * located in xtensa_vectors.S.
 	 */
-	irq_disable(CONFIG_WDT_ESP32_IRQ);
-	esp32_rom_intr_matrix_set(0, ETS_TG1_WDT_LEVEL_INTR_SOURCE,
-				  CONFIG_WDT_ESP32_IRQ);
+	irq_disable(DEV_CFG(dev)->irq.line);
+	DEV_CFG(dev)->connect_irq();
 
-	wdt_esp32_enable();
+	wdt_esp32_enable(dev);
 
 	return 0;
 }
@@ -219,23 +219,59 @@ static const struct wdt_driver_api wdt_api = {
 	.setup = wdt_esp32_set_config,
 	.disable = wdt_esp32_disable,
 	.install_timeout = wdt_esp32_install_timeout,
-	.feed = wdt_esp32_reload
+	.feed = wdt_esp32_feed
 };
 
-DEVICE_AND_API_INIT(wdt_esp32, CONFIG_WDT_0_NAME, wdt_esp32_init,
-		    &shared_data, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &wdt_api);
+#define ESP32_WDT_INIT(idx)										   \
+	DEVICE_DECLARE(wdt_esp32_##idx);								   \
+	static void wdt_esp32_connect_irq_func##idx(void)						   \
+	{												   \
+		esp32_rom_intr_matrix_set(0, ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,			   \
+					  CONFIG_WDT##idx##_ESP32_IRQ);					   \
+		IRQ_CONNECT(CONFIG_WDT##idx##_ESP32_IRQ,						   \
+			    4,										   \
+			    wdt_esp32_isr,								   \
+			    DEVICE_GET(wdt_esp32_##idx),						   \
+			    0);										   \
+	}												   \
+													   \
+	static struct wdt_esp32_data wdt##idx##_data;							   \
+	static struct wdt_esp32_config wdt_esp32_config##idx = {					   \
+		.base = (struct wdt_esp32_regs_t *) DT_INST_##idx##_ESPRESSIF_ESP32_WATCHDOG_BASE_ADDRESS, \
+		.irq_regs = {										   \
+			.timer_int_ena = (u32_t *)TIMG_INT_ENA_TIMERS_REG(idx),				   \
+			.timer_int_clr = (u32_t *)TIMG_INT_CLR_TIMERS_REG(idx),				   \
+		},											   \
+		.irq = {										   \
+			.source =  ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,					   \
+			.line =  CONFIG_WDT##idx##_ESP32_IRQ,						   \
+		},											   \
+		.connect_irq = wdt_esp32_connect_irq_func##idx						   \
+	};												   \
+													   \
+	DEVICE_AND_API_INIT(wdt_esp32_##idx, DT_INST_##idx##_ESPRESSIF_ESP32_WATCHDOG_LABEL,		   \
+			    wdt_esp32_init,								   \
+			    &wdt##idx##_data,								   \
+			    &wdt_esp32_config##idx,							   \
+			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \
+			    &wdt_api)
 
-static void wdt_esp32_isr(void *param)
+static void wdt_esp32_isr(struct device *dev)
 {
-	struct wdt_esp32_data *data = param;
-	volatile u32_t *reg = (u32_t *)TIMG_INT_CLR_TIMERS_REG(1);
+	struct wdt_esp32_data *data = DEV_DATA(dev);
 
-
-	if (shared_data.callback) {
-		shared_data.callback(data->dev, 0);
+	if (data->callback) {
+		data->callback(dev, 0);
 	}
 
-	*reg |= TIMG_WDT_INT_CLR;
+	*DEV_CFG(dev)->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
 }
+
+
+#ifdef DT_INST_0_ESPRESSIF_ESP32_WATCHDOG
+ESP32_WDT_INIT(0);
+#endif
+
+#ifdef DT_INST_1_ESPRESSIF_ESP32_WATCHDOG
+ESP32_WDT_INIT(1);
+#endif
