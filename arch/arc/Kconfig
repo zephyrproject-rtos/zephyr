@@ -144,7 +144,7 @@ config ARC_CONNECT
 	  ARC is configured with ARC CONNECT which is a hardware for connecting
 	  multi cores.
 
-config  ARC_STACK_CHECKING
+config ARC_STACK_CHECKING
 	bool
 	help
 	  Use ARC STACK_CHECKING to do stack protection

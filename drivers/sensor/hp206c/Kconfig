@@ -12,7 +12,7 @@ menuconfig HP206C
 
 if HP206C
 
-config  HP206C_DRV_NAME
+config HP206C_DRV_NAME
 	string "Driver's name"
 	default "hp206c"
 	help

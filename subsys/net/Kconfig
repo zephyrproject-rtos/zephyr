@@ -64,7 +64,7 @@ config NET_BUF_POOL_USAGE
 
 endif # NET_BUF
 
-config  NETWORKING
+config NETWORKING
 	bool "Link layer and IP networking support"
 	select NET_BUF
 	select POLL
