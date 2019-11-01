@@ -588,12 +588,12 @@ static int gpio_pca95xx_init(struct device *dev)
 }
 
 /* Initialization for PCA95XX_0 */
-#ifdef CONFIG_GPIO_PCA95XX_0
+#ifdef DT_INST_0_NXP_PCA95XX
 static const struct gpio_pca95xx_config gpio_pca95xx_0_cfg = {
-	.i2c_master_dev_name = CONFIG_GPIO_PCA95XX_0_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_GPIO_PCA95XX_0_I2C_ADDR,
+	.i2c_master_dev_name = DT_INST_0_NXP_PCA95XX_BUS_NAME,
+	.i2c_slave_addr = DT_INST_0_NXP_PCA95XX_BASE_ADDRESS,
 	.capabilities =
-		(CONFIG_GPIO_PCA95XX_0_HAS_PUD ?  PCA_HAS_PUD : 0) |
+		(DT_INST_0_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
 		0,
 };
 
@@ -606,21 +606,21 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_0_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_0, CONFIG_GPIO_PCA95XX_0_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pca95xx_0, DT_INST_0_NXP_PCA95XX_LABEL,
 	    gpio_pca95xx_init,
 	    &gpio_pca95xx_0_drvdata, &gpio_pca95xx_0_cfg,
 	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
 	    &gpio_pca95xx_drv_api_funcs);
 
-#endif /* CONFIG_GPIO_PCA95XX_0 */
+#endif /* DT_INST_0_NXP_PCA95XX */
 
 /* Initialization for PCA95XX_1 */
-#ifdef CONFIG_GPIO_PCA95XX_1
+#ifdef DT_INST_1_NXP_PCA95XX
 static const struct gpio_pca95xx_config gpio_pca95xx_1_cfg = {
-	.i2c_master_dev_name = CONFIG_GPIO_PCA95XX_1_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_GPIO_PCA95XX_1_I2C_ADDR,
+	.i2c_master_dev_name = DT_INST_1_NXP_PCA95XX_BUS_NAME,
+	.i2c_slave_addr = DT_INST_1_NXP_PCA95XX_BASE_ADDRESS,
 	.capabilities =
-		(CONFIG_GPIO_PCA95XX_1_HAS_PUD ?  PCA_HAS_PUD : 0) |
+		(DT_INST_1_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
 		0,
 };
 
@@ -633,21 +633,21 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_1_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_1, CONFIG_GPIO_PCA95XX_1_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pca95xx_1, DT_INST_1_NXP_PCA95XX_LABEL,
 	    gpio_pca95xx_init,
 	    &gpio_pca95xx_1_drvdata, &gpio_pca95xx_1_cfg,
 	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
 	    &gpio_pca95xx_drv_api_funcs);
 
-#endif /* CONFIG_GPIO_PCA95XX_1 */
+#endif /* DT_INST_1_NXP_PCA95XX */
 
 /* Initialization for PCA95XX_2 */
-#ifdef CONFIG_GPIO_PCA95XX_2
+#ifdef DT_INST_2_NXP_PCA95XX
 static const struct gpio_pca95xx_config gpio_pca95xx_2_cfg = {
-	.i2c_master_dev_name = CONFIG_GPIO_PCA95XX_2_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_GPIO_PCA95XX_2_I2C_ADDR,
+	.i2c_master_dev_name = DT_INST_2_NXP_PCA95XX_BUS_NAME,
+	.i2c_slave_addr = DT_INST_2_NXP_PCA95XX_BASE_ADDRESS,
 	.capabilities =
-		(CONFIG_GPIO_PCA95XX_2_HAS_PUD ?  PCA_HAS_PUD : 0) |
+		(DT_INST_2_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
 		0,
 };
 
@@ -660,21 +660,21 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_2_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_2, CONFIG_GPIO_PCA95XX_2_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pca95xx_2, DT_INST_2_NXP_PCA95XX_LABEL,
 	    gpio_pca95xx_init,
 	    &gpio_pca95xx_2_drvdata, &gpio_pca95xx_2_cfg,
 	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
 	    &gpio_pca95xx_drv_api_funcs);
 
-#endif /* CONFIG_GPIO_PCA95XX_2 */
+#endif /* DT_INST_2_NXP_PCA95XX */
 
 /* Initialization for PCA95XX_3 */
-#ifdef CONFIG_GPIO_PCA95XX_3
+#ifdef DT_INST_3_NXP_PCA95XX
 static const struct gpio_pca95xx_config gpio_pca95xx_3_cfg = {
-	.i2c_master_dev_name = CONFIG_GPIO_PCA95XX_3_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_GPIO_PCA95XX_3_I2C_ADDR,
+	.i2c_master_dev_name = DT_INST_3_NXP_PCA95XX_BUS_NAME,
+	.i2c_slave_addr = DT_INST_3_NXP_PCA95XX_BASE_ADDRESS,
 	.capabilities =
-		(CONFIG_GPIO_PCA95XX_3_HAS_PUD ?  PCA_HAS_PUD : 0) |
+		(DT_INST_3_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
 		0,
 };
 
@@ -687,10 +687,10 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_3_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_3, CONFIG_GPIO_PCA95XX_3_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pca95xx_3, DT_INST_3_NXP_PCA95XX_LABEL,
 	    gpio_pca95xx_init,
 	    &gpio_pca95xx_3_drvdata, &gpio_pca95xx_3_cfg,
 	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
 	    &gpio_pca95xx_drv_api_funcs);
 
-#endif /* CONFIG_GPIO_PCA95XX_3 */
+#endif /* DT_INST_3_NXP_PCA95XX */
