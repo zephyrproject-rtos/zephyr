@@ -41,6 +41,8 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -x assembler-with-cpp
     ${NOSYSDEF_CFLAG}
     -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+    -D_LINKER
+    -D_ASMLANGUAGE
     ${current_includes}
     ${current_defines}
     ${linker_pass_define}

@@ -11,9 +11,6 @@
  * Generic Linker script for the riscv platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <soc.h>
 
 #include <autoconf.h>

@@ -10,9 +10,6 @@
  * Linker script for the Xtensa platform.
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <autoconf.h>
 #include <linker/sections.h>
 

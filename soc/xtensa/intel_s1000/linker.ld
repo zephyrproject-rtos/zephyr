@@ -12,8 +12,6 @@
  */
 
 OUTPUT_ARCH(xtensa)
-#define _LINKER
-#define _ASMLANGUAGE
 
 #include <generated_dts_board.h>
 #include "memory.h"

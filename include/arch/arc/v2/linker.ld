@@ -8,9 +8,6 @@
  * @brief Common parts of the linker scripts for the ARCv2/EM targets.
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <linker/sections.h>
 
 #if defined(CONFIG_UART_NSIM)

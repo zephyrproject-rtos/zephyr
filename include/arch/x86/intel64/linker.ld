@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
