@@ -254,7 +254,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events > 0, "zero events\n");
+	__ASSERT(num_events >= 0, "<0 events\n");
 
 	events_registered = register_events(events, num_events, &poller,
 					    (timeout == K_NO_WAIT));
@@ -311,7 +311,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 	/* Validate the events buffer and make a copy of it in an
 	 * allocated kernel-side buffer.
 	 */
-	if (Z_SYSCALL_VERIFY(num_events > 0)) {
+	if (Z_SYSCALL_VERIFY(num_events >= 0)) {
 		ret = -EINVAL;
 		goto out;
 	}
