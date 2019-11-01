@@ -32,4 +32,8 @@ zephyr_link_libraries_ifdef(CONFIG_ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
   ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME}
   )
 
-zephyr_sources_ifdef(CONFIG_ARM_SECURE_FIRMWARE arm_core_tz.c)
+if(CONFIG_ARM_SECURE_FIRMWARE)
+  zephyr_library()
+
+  zephyr_library_sources(arm_core_tz.c)
+endif()
