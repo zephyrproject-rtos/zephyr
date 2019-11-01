@@ -9,10 +9,14 @@
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <drivers/spi.h>
+#include <power/power.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>
 #include <driverlib/ioc.h>
+
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26X2.h>
 
 #include "spi_context.h"
 
@@ -26,6 +30,9 @@ struct spi_cc13xx_cc26xx_config {
 
 struct spi_cc13xx_cc26xx_data {
 	struct spi_context ctx;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	u32_t pm_state;
+#endif
 };
 
 static inline struct spi_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
@@ -137,6 +144,10 @@ static int spi_cc13xx_cc26xx_transceive(struct device *dev,
 
 	spi_context_lock(ctx, false, NULL);
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
+#endif
+
 	err = spi_cc13xx_cc26xx_configure(dev, config);
 	if (err) {
 		goto done;
@@ -169,6 +180,9 @@ static int spi_cc13xx_cc26xx_transceive(struct device *dev,
 	spi_context_cs_control(ctx, false);
 
 done:
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
+#endif
 	spi_context_release(ctx, err);
 	return err;
 }
@@ -191,6 +205,72 @@ static int spi_cc13xx_cc26xx_release(struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int spi_cc13xx_cc26xx_set_power_state(struct device *dev,
+	u32_t new_state)
+{
+	int ret = 0;
+
+	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
+		(new_state != get_dev_data(dev)->pm_state)) {
+		if (get_dev_config(dev)->base ==
+			DT_TI_CC13XX_CC26XX_SPI_40000000_BASE_ADDRESS) {
+			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
+		} else {
+			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
+		}
+		get_dev_data(dev)->pm_state = new_state;
+	} else {
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+			new_state == DEVICE_PM_SUSPEND_STATE ||
+			new_state == DEVICE_PM_OFF_STATE);
+
+		if (get_dev_data(dev)->pm_state == DEVICE_PM_ACTIVE_STATE) {
+			SSIDisable(get_dev_config(dev)->base);
+			/*
+			 * Release power dependency
+			 */
+			if (get_dev_config(dev)->base ==
+				DT_TI_CC13XX_CC26XX_SPI_40000000_BASE_ADDRESS) {
+				Power_releaseDependency(
+					PowerCC26XX_PERIPH_SSI0);
+			} else {
+				Power_releaseDependency(
+					PowerCC26XX_PERIPH_SSI1);
+			}
+			get_dev_data(dev)->pm_state = new_state;
+		}
+	}
+
+	return ret;
+}
+
+static int spi_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
+	void *context, device_pm_cb cb, void *arg)
+{
+	int ret = 0;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t new_state = *((const u32_t *)context);
+
+		if (new_state != get_dev_data(dev)->pm_state) {
+			ret = spi_cc13xx_cc26xx_set_power_state(dev,
+				new_state);
+		}
+	} else {
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
+
 #if defined(CONFIG_SPI_0) || defined(CONFIG_SPI_1)
 static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	.transceive = spi_cc13xx_cc26xx_transceive,
@@ -203,6 +283,14 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_SPI_0
 static int spi_cc13xx_cc26xx_init_0(struct device *dev)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	/* Set Power dependencies & constraints */
+	Power_setDependency(PowerCC26XX_PERIPH_SSI0);
+#else
 	/* Enable SSI0 power domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL);
 
@@ -223,6 +311,7 @@ static int spi_cc13xx_cc26xx_init_0(struct device *dev)
 	       PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}
+#endif
 
 	spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);
 
@@ -246,15 +335,32 @@ static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_0 = {
 	SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_0, ctx),
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+DEVICE_DEFINE(spi_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_SPI_40000000_LABEL,
+		spi_cc13xx_cc26xx_init_0,
+		spi_cc13xx_cc26xx_pm_control,
+		&spi_cc13xx_cc26xx_data_0, &spi_cc13xx_cc26xx_config_0,
+		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+		&spi_cc13xx_cc26xx_driver_api);
+#else
 DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_SPI_40000000_LABEL,
 		    spi_cc13xx_cc26xx_init_0, &spi_cc13xx_cc26xx_data_0,
 		    &spi_cc13xx_cc26xx_config_0, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_cc13xx_cc26xx_driver_api);
+#endif
 #endif /* CONFIG_SPI_0 */
 
 #ifdef CONFIG_SPI_1
 static int spi_cc13xx_cc26xx_init_1(struct device *dev)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	/* Set Power dependencies & constraints */
+	Power_setDependency(PowerCC26XX_PERIPH_SSI1);
+#else
 	/* Enable SSI1 power domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
 
@@ -275,6 +381,7 @@ static int spi_cc13xx_cc26xx_init_1(struct device *dev)
 	       PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}
+#endif
 
 	spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);
 
@@ -298,8 +405,17 @@ static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_1 = {
 	SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_1, ctx),
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+DEVICE_DEFINE(spi_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_SPI_40008000_LABEL,
+		spi_cc13xx_cc26xx_init_1,
+		spi_cc13xx_cc26xx_pm_control,
+		&spi_cc13xx_cc26xx_data_1, &spi_cc13xx_cc26xx_config_1,
+		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+		&spi_cc13xx_cc26xx_driver_api);
+#else
 DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_SPI_40008000_LABEL,
 		    spi_cc13xx_cc26xx_init_1, &spi_cc13xx_cc26xx_data_1,
 		    &spi_cc13xx_cc26xx_config_1, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_cc13xx_cc26xx_driver_api);
+#endif
 #endif /* CONFIG_SPI_1 */
