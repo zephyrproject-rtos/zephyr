@@ -23,6 +23,7 @@ choice LIBC_IMPLEMENTATION
 config MINIMAL_LIBC
 	bool "Minimal C library"
 	depends on !NATIVE_APPLICATION
+	depends on !REQUIRES_FULL_LIBC
 	help
 	  Build with minimal C library.
 
