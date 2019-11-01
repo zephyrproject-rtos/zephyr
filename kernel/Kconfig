@@ -179,7 +179,7 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
-config  THREAD_CUSTOM_DATA
+config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help
 	  This option allows each thread to store 32 bits of custom data,

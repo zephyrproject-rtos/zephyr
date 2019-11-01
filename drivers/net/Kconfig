@@ -80,7 +80,7 @@ config SLIP_STATISTICS
 	help
 	  This option enables statistics support for SLIP driver.
 
-config  SLIP_TAP
+config SLIP_TAP
 	bool "Use TAP interface to host"
 	default y
 	select NET_L2_ETHERNET

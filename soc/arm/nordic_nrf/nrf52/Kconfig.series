@@ -3,7 +3,7 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config  SOC_SERIES_NRF52X
+config SOC_SERIES_NRF52X
 	bool "Nordic Semiconductor nRF52 series MCU"
 	select SOC_COMPATIBLE_NRF52X
 	select CPU_CORTEX_M4
