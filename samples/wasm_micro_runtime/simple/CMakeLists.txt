@@ -25,6 +25,28 @@ add_definitions (-DNVALGRIND
                  -Dattr_container_malloc=bh_malloc
                  -Dattr_container_free=bh_free)
 
+# Build as ARM_32 by default, change to "X86_32", "MIPS_32" or "XTENSA_32"
+# if we want to support x86, mips or xtensa
+if (NOT BUILD_TARGET)
+  set (BUILD_TARGET "ARM_32")
+endif ()
+
+string(TOUPPER ${BUILD_TARGET} BUILD_TARGET)
+
+if (BUILD_TARGET STREQUAL "X86_32")
+  add_definitions(-DBUILD_TARGET_X86_32)
+elseif (BUILD_TARGET STREQUAL "ARM_32")
+  add_definitions(-DBUILD_TARGET_ARM_32)
+elseif (BUILD_TARGET STREQUAL "MIPS_32")
+  add_definitions(-DBUILD_TARGET_MIPS_32)
+elseif (BUILD_TARGET STREQUAL "XTENSA_32")
+  add_definitions(-DBUILD_TARGET_XTENSA_32)
+else ()
+  message (FATAL_ERROR "-- Build target isn't set")
+endif ()
+
+message ("-- Build as target ${BUILD_TARGET}")
+
 set (WAMR_ROOT $ENV{ZEPHYR_BASE}/../modules/lib/wasm-micro-runtime)
 set (IWASM_ROOT ${WAMR_ROOT}/core/iwasm)
 set (SHARED_LIB_ROOT ${WAMR_ROOT}/core/shared-lib)
