@@ -236,6 +236,7 @@
 /include/drivers/led.h                    @Mani-Sadhasivam
 /include/drivers/led_strip.h              @mbolivar
 /include/drivers/rtio.h                   @bfrog
+/include/drivers/rtio_sensor.h            @bfrog
 /include/drivers/sensor.h                 @MaureenHelm
 /include/drivers/spi.h                    @tbursztyka
 /include/app_memory/                      @andrewboie
