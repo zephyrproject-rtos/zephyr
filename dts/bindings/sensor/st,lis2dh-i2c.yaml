@@ -8,5 +8,9 @@ description: |
     accessed through I2C bus
 
 compatible: "st,lis2dh"
+variant-compatible:
+    - st,lis2dh12
+    - st,lis3dh
+    - st,lsm303dlhc-accel
 
 include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]
