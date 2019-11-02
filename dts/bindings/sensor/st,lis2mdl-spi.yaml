@@ -8,6 +8,8 @@ description: |
     accessed through SPI bus
 
 compatible: "st,lis2mdl"
+variant-compatible:
+    - st,lsm303agr-magn
 
 include: spi-device.yaml
 

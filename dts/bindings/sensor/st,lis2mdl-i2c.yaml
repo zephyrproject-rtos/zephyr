@@ -8,6 +8,8 @@ description: |
     accessed through I2C bus
 
 compatible: "st,lis2mdl"
+variant-compatible:
+    - st,lsm303agr-magn
 
 include: i2c-device.yaml
 
