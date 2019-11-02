@@ -88,12 +88,12 @@ static void uart_line_set(struct device *dev)
 	int ret;
 
 	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DCD, ret code %d", ret);
 	}
 
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DSR, ret code %d", ret);
 	}
@@ -101,7 +101,7 @@ static void uart_line_set(struct device *dev)
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(1000000);
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_DBG("Failed to get baudrate, ret code %d", ret);
 	} else {
@@ -131,7 +131,7 @@ void main(void)
 	LOG_INF("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev0, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev0, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -140,7 +140,7 @@ void main(void)
 	}
 
 	while (1) {
-		uart_line_ctrl_get(dev1, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev1, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}

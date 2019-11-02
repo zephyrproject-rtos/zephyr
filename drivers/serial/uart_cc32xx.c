@@ -120,7 +120,7 @@ static int uart_cc32xx_err_check(struct device *dev)
 	/* Map cc32xx SDK uart.h defines to zephyr uart.h defines */
 	z_err = ((cc32xx_errs & UART_RXERROR_OVERRUN) ?
 		  UART_ERROR_OVERRUN : 0) |
-		((cc32xx_errs & UART_RXERROR_BREAK) ? UART_ERROR_BREAK : 0) |
+		((cc32xx_errs & UART_RXERROR_BREAK) ? UART_BREAK : 0) |
 		((cc32xx_errs & UART_RXERROR_PARITY) ? UART_ERROR_PARITY : 0) |
 		((cc32xx_errs & UART_RXERROR_FRAMING) ? UART_ERROR_FRAMING : 0);
 

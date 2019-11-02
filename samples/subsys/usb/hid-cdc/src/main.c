@@ -627,7 +627,7 @@ void main(void)
 
 	LOG_INF("Wait for DTR on CDC ACM 0");
 	while (1) {
-		uart_line_ctrl_get(cdc0_dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(cdc0_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -636,7 +636,7 @@ void main(void)
 
 	LOG_INF("Wait for DTR on CDC ACM 1");
 	while (1) {
-		uart_line_ctrl_get(cdc1_dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(cdc1_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
