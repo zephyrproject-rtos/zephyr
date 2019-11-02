@@ -481,9 +481,9 @@ class EDT:
                 _err("missing, malformed, or empty '{}' in {}"
                      .format(prop, binding_path))
 
-        ok_top = {"title", "description", "compatible", "properties", "#cells",
-                  "parent-bus", "child-bus", "parent", "child",
-                  "child-binding", "sub-node"}
+        ok_top = {"title", "description", "compatible", "variant-compatible",
+                  "properties", "#cells", "parent-bus", "child-bus", "parent",
+                  "child", "child-binding", "sub-node"}
 
         for prop in binding:
             if prop not in ok_top and not prop.endswith("-cells"):
@@ -515,6 +515,13 @@ class EDT:
                          .format(pc, binding_path))
 
         self._check_binding_properties(binding, binding_path)
+
+        if "variant-compatible" in binding:
+            var_comp = binding["variant-compatible"]
+            if not (isinstance(var_comp, list) and
+                    all(isinstance(elm, str) for elm in var_comp)):
+                _err("malformed 'variant-compatible:' in {}, expected "
+                     "list of strings".format(binding_path))
 
         if "child-binding" in binding:
             if not isinstance(binding["child-binding"], dict):

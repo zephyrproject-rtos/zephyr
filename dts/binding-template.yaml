@@ -29,6 +29,14 @@ compatible: "manufacturer,device"
 #
 # If more than one binding for a compatible is found, an error is raised.
 
+# Used to identify variants known to work with the driver for 'compatible'.
+#
+# At this time this is used only for documentation and to avoid warnings
+# from checkpatch about undocumented compatibles.
+variant-compatible:
+    - manufacturer,device-v2
+    - clone,altdevice
+
 # Bindings can include other files, which can be used to share common
 # definitions between bindings.
 #
