@@ -51,7 +51,8 @@ struct sht3xd_config {
 
 	u8_t base_address;
 #ifdef CONFIG_SHT3XD_TRIGGER
-	s8_t alert_pin;
+	u8_t alert_pin;
+	u8_t alert_flags;
 #endif /* CONFIG_SHT3XD_TRIGGER */
 };
 
