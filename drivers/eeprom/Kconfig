@@ -34,4 +34,24 @@ config EEPROM_NATIVE_POSIX
 	help
 	  Enable Native POSIX EEPROM driver.
 
+config EEPROM_AT2X
+	bool # hidden
+	help
+	  Enable support for Atmel AT2x (and compatible) I2C/SPI
+	  EEPROMs.
+
+config EEPROM_AT24
+	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	depends on (I2C && HAS_DTS_I2C)
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.
+
+config EEPROM_AT25
+	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	depends on SPI
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+
 endif # EEPROM
