@@ -17,7 +17,7 @@
 #if defined(__GNUC__)
 #include <arch/arm/asm_inline_gcc.h>
 #else
-#include <arch/arm/asm_inline_other.h>
+#error Unknown compiler.
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_H_ */
