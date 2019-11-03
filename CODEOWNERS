@@ -345,7 +345,7 @@
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
-/subsys/debug/asan.c                      @vanwinkeljan @aescolar
+/subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
