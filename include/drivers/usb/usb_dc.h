@@ -34,23 +34,37 @@
  */
 
 /**
- * @brief USB Driver Status Codes
+ * @brief USB Device Controller Status Codes
  *
- * Status codes reported by the registered device status callback.
+ * Status codes reported by the registered device controller status callback.
+ * This enum represents USB device controller status extended
+ * by statuses reported by registered driver. Those extensions are
+ * made to properly handle usb stack.
  */
 enum usb_dc_status_code {
+	/** USB device specific states */
+	/** USB device is attached to the USB, but is not powered */
+	USB_DC_ATTACHED,
+	/** USB device is attached and powered, but has not been reset */
+	USB_DC_POWERED,
+	/** USB device is attached, powered and has been reset, but has not been
+	 *  assigned a unique address. Device responds at the default address
+	 */
+	USB_DC_DEFAULT,
+	/** USB device has been assigned a unique address */
+	USB_DC_ADDRESS,
+	/** USB device was chosen a configuration */
+	USB_DC_CONFIGURED,
+	/** USB device has been suspended due to bus inactivity */
+	USB_DC_SUSPENDED,
+
+	/** USB device controller specific statuses */
 	/** USB error reported by the controller */
 	USB_DC_ERROR,
 	/** USB reset */
 	USB_DC_RESET,
-	/** USB connection established, hardware enumeration is completed */
-	USB_DC_CONNECTED,
-	/** USB configuration done */
-	USB_DC_CONFIGURED,
 	/** USB connection lost */
 	USB_DC_DISCONNECTED,
-	/** USB connection suspended by the HOST */
-	USB_DC_SUSPEND,
 	/** USB connection resumed by the HOST */
 	USB_DC_RESUME,
 	/** USB interface selected */

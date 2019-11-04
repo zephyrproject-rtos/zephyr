@@ -961,7 +961,7 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 
-	if (status == USB_DC_DISCONNECTED || status == USB_DC_SUSPEND) {
+	if (status == USB_DC_DISCONNECTED || status == USB_DC_SUSPENDED) {
 		if (usb_dev.configured) {
 			usb_cancel_transfers();
 			if (status == USB_DC_DISCONNECTED) {

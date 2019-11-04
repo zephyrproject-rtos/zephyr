@@ -81,6 +81,31 @@ extern "C" {
  *  USB application interface
  **************************************************************************/
 
+/**
+ * @brief USB device State Codes
+ *
+ * State Codes gives an overview to user application what is USB device state
+ * For more information refer to chapter 9 from USB 2.0 spec.
+ */
+enum usb_device_state {
+	/** USB device is attached to the USB, but is not powered */
+	USB_DEVICE_ATTACHED,
+	/** USB device is attached and powered, but has not been reset */
+	USB_DEVICE_POWERED,
+	/** USB device is attached, powered and has been reset, but has not been
+	 * assigned a unique address. Device responds at the default address
+	 */
+	USB_DEVICE_DEFAULT,
+	/** USB device has been assigned a unique address */
+	USB_DEVICE_ADDRESS,
+	/** USB device was chosen a configuration */
+	USB_DEVICE_CONFIGURED,
+	/** USB device has been suspended due to bus inactivity */
+	USB_DEVICE_SUSPENDED,
+	/** USB device number of states */
+	USB_DEVICE_NUM
+};
+
 /** setup packet definitions */
 struct usb_setup_packet {
 	u8_t bmRequestType;  /**< characteristics of the specific request */

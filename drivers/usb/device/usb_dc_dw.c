@@ -533,9 +533,9 @@ static void usb_dw_handle_enum_done(void)
 	LOG_DBG("USB ENUM DONE event, %s speed detected",
 		speed == USB_DW_DSTS_ENUM_LS ? "Low" : "Full");
 
-	/* Inform upper layers */
+	/* Inform upper layers about controller state*/
 	if (usb_dw_ctrl.status_cb) {
-		usb_dw_ctrl.status_cb(USB_DC_CONNECTED, NULL);
+		usb_dw_ctrl.status_cb(USB_DC_POWERED, NULL);
 	}
 }
 
@@ -572,7 +572,7 @@ static void usb_dw_isr_handler(void)
 			USB_DW->gintsts = USB_DW_GINTSTS_USB_SUSP;
 
 			if (usb_dw_ctrl.status_cb) {
-				usb_dw_ctrl.status_cb(USB_DC_SUSPEND, NULL);
+				usb_dw_ctrl.status_cb(USB_DC_SUSPENDED, NULL);
 			}
 		}
 

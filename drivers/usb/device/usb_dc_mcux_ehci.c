@@ -499,7 +499,7 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 		s_Device.status_callback(USB_DC_ERROR, NULL);
 		break;
 	case kUSB_DeviceNotifySuspend:
-		s_Device.status_callback(USB_DC_SUSPEND, NULL);
+		s_Device.status_callback(USB_DC_SUSPENDED, NULL);
 		break;
 	case kUSB_DeviceNotifyResume:
 		s_Device.status_callback(USB_DC_RESUME, NULL);

@@ -348,8 +348,8 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 		hid_clear_idle_ctx(dev_data);
 #endif
 		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+	case USB_DC_POWERED:
+		LOG_DBG("USB device powered");
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
@@ -357,7 +357,7 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
 		break;
-	case USB_DC_SUSPEND:
+	case USB_DC_SUSPENDED:
 		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:

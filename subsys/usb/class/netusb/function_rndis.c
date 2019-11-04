@@ -1133,8 +1133,8 @@ static void rndis_status_cb(struct usb_cfg_data *cfg,
 
 	case USB_DC_ERROR:
 	case USB_DC_RESET:
-	case USB_DC_CONNECTED:
-	case USB_DC_SUSPEND:
+	case USB_DC_POWERED:
+	case USB_DC_SUSPENDED:
 	case USB_DC_RESUME:
 	case USB_DC_INTERFACE:
 		LOG_DBG("USB unhandlded state: %d", status);

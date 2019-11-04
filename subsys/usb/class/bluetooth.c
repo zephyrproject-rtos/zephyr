@@ -221,8 +221,8 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected");
 		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+	case USB_DC_POWERED:
+		LOG_DBG("USB device powered");
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
@@ -236,7 +236,7 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
 		break;
-	case USB_DC_SUSPEND:
+	case USB_DC_SUSPENDED:
 		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:

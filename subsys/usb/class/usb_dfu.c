@@ -610,7 +610,7 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 			dfu_data.state = dfuIDLE;
 		}
 		break;
-	case USB_DC_CONNECTED:
+	case USB_DC_POWERED:
 		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
@@ -619,7 +619,7 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
 		break;
-	case USB_DC_SUSPEND:
+	case USB_DC_SUSPENDED:
 		LOG_DBG("USB device supended");
 		break;
 	case USB_DC_RESUME:

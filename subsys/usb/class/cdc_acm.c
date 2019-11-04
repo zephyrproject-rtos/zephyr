@@ -399,8 +399,8 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		LOG_DBG("USB device reset detected");
 		cdc_acm_reset_port(dev_data);
 		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+	case USB_DC_POWERED:
+		LOG_DBG("USB device powered");
 		break;
 	case USB_DC_CONFIGURED:
 		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
@@ -414,7 +414,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		LOG_INF("USB device disconnected");
 		cdc_acm_reset_port(dev_data);
 		break;
-	case USB_DC_SUSPEND:
+	case USB_DC_SUSPENDED:
 		LOG_INF("USB device suspended");
 		break;
 	case USB_DC_RESUME:

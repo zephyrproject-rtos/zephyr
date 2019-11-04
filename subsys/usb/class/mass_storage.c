@@ -818,8 +818,8 @@ static void mass_storage_status_cb(struct usb_cfg_data *cfg,
 		msd_state_machine_reset();
 		msd_init();
 		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+	case USB_DC_POWERED:
+		LOG_DBG("USB device powered");
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
@@ -827,7 +827,7 @@ static void mass_storage_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
 		break;
-	case USB_DC_SUSPEND:
+	case USB_DC_SUSPENDED:
 		LOG_DBG("USB device supended");
 		break;
 	case USB_DC_RESUME:

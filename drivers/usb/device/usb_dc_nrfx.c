@@ -764,14 +764,14 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 	switch (pwr_evt->state) {
 	case USBD_ATTACHED:
 		if (!nrfx_usbd_is_enabled()) {
-			LOG_DBG("USB detected");
+			LOG_DBG("USB Attached");
 			nrfx_usbd_enable();
 			(void) hf_clock_enable(true, false);
 		}
 
-		/* No callback here.
-		 * Stack will be notified when the peripheral is ready.
-		 */
+		if (ctx->status_cb) {
+			ctx->status_cb(USB_DC_ATTACHED, NULL);
+		}
 		break;
 
 	case USBD_POWERED:
@@ -782,7 +782,7 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		LOG_DBG("USB Powered");
 
 		if (ctx->status_cb) {
-			ctx->status_cb(USB_DC_CONNECTED, NULL);
+			ctx->status_cb(USB_DC_POWERED, NULL);
 		}
 		break;
 
@@ -804,13 +804,13 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 			LOG_DBG("USB Suspend state");
 
 			if (ctx->status_cb) {
-				ctx->status_cb(USB_DC_SUSPEND, NULL);
+				ctx->status_cb(USB_DC_SUSPENDED, NULL);
 			}
 		}
 		break;
 	case USBD_RESUMED:
 		if (ctx->status_cb && dev_ready()) {
-			LOG_DBG("USB resume");
+			LOG_DBG("USB Resume");
 			ctx->status_cb(USB_DC_RESUME, NULL);
 		}
 		break;
@@ -1410,7 +1410,9 @@ int usb_dc_set_address(const u8_t addr)
 
 	ctx = get_usbd_ctx();
 
-	LOG_DBG("Address set to: %d", addr);
+	if (ctx->status_cb) {
+		ctx->status_cb(USB_DC_ADDRESS, NULL);
+	}
 
 	return 0;
 }

@@ -107,7 +107,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-		if (usb_status == USB_DC_SUSPEND) {
+		if (usb_status == USB_DC_SUSPENDED) {
 			usb_wakeup_request();
 			return;
 		}
@@ -134,7 +134,7 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-		if (usb_status == USB_DC_SUSPEND) {
+		if (usb_status == USB_DC_SUSPENDED) {
 			usb_wakeup_request();
 			return;
 		}

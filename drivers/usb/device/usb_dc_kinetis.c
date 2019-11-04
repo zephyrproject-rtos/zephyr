@@ -962,7 +962,7 @@ static void usb_kinetis_isr_handler(void)
 		USB0->INTEN |= USB_INTEN_RESUMEEN_MASK;
 		msg.ep = 0U;
 		msg.type = USB_DC_CB_TYPE_MGMT;
-		msg.cb = USB_DC_SUSPEND;
+		msg.cb = USB_DC_SUSPENDED;
 		k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
 	}
 
@@ -1029,8 +1029,8 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 			case USB_DC_ERROR:
 				dev_data.status_cb(USB_DC_ERROR, NULL);
 				break;
-			case USB_DC_SUSPEND:
-				dev_data.status_cb(USB_DC_SUSPEND, NULL);
+			case USB_DC_SUSPENDED:
+				dev_data.status_cb(USB_DC_SUSPENDED, NULL);
 				break;
 			case USB_DC_RESUME:
 				dev_data.status_cb(USB_DC_RESUME, NULL);

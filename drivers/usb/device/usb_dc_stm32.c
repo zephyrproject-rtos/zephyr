@@ -901,7 +901,8 @@ void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
 	LOG_DBG("");
 
 	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_CONNECTED, NULL);
+		usb_dc_stm32_state.status_cb(USB_DC_POWERED, NULL);
+	}
 	}
 }
 
@@ -919,7 +920,8 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 	LOG_DBG("");
 
 	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_SUSPEND, NULL);
+		usb_dc_stm32_state.status_cb(USB_DC_SUSPENDED, NULL);
+	}
 	}
 }
 

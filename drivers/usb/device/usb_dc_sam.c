@@ -236,7 +236,7 @@ static void usb_dc_isr(void)
 		USBHS->USBHS_DEVICR = USBHS_DEVICR_SUSPC;
 
 		/* Callback function */
-		dev_data.status_cb(USB_DC_SUSPEND, NULL);
+		dev_data.status_cb(USB_DC_SUSPENDED, NULL);
 	}
 
 #ifdef CONFIG_USB_DEVICE_SOF
