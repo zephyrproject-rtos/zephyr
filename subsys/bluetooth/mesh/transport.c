@@ -34,7 +34,6 @@
 #include "foundation.h"
 #include "settings.h"
 #include "transport.h"
-#include "nodes.h"
 
 /* The transport layer needs at least three buffers for itself to avoid
  * deadlocks. Ensure that there are a sufficient number of advertising
@@ -653,7 +652,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
-			struct bt_mesh_node *node;
+			struct bt_mesh_cdb_node *node;
 
 			/*
 			 * There is no way of knowing if we should use our
@@ -661,7 +660,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 			 * message so we must try both.
 			 */
 
-			node = bt_mesh_node_find(rx->ctx.addr);
+			node = bt_mesh_cdb_node_get(rx->ctx.addr);
 			if (node == NULL) {
 				BT_ERR("No node found for addr 0x%04x",
 				       rx->ctx.addr);
@@ -1718,18 +1717,16 @@ int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
 {
 	struct bt_mesh_app_key *app_key;
 
-	if (app_idx == BT_MESH_KEY_DEV_LOCAL ||
-	    (app_idx == BT_MESH_KEY_DEV_REMOTE &&
-	     bt_mesh_elem_find(addr) != NULL)) {
+	if (app_idx == BT_MESH_KEY_DEV_LOCAL) {
 		*aid = 0;
 		*key = bt_mesh.dev_key;
 		return 0;
 	} else if (app_idx == BT_MESH_KEY_DEV_REMOTE) {
-		if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
+		if (!IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 			return -EINVAL;
 		}
 
-		struct bt_mesh_node *node = bt_mesh_node_find(addr);
+		struct bt_mesh_cdb_node *node = bt_mesh_cdb_node_get(addr);
 		if (!node) {
 			return -EINVAL;
 		}
