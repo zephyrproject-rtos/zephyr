@@ -13,6 +13,8 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		watchdog0 = &wdog0;
+		watchdog1 = &wdog1;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -83,6 +85,15 @@
 	location-swo = <0>;
 	status = "okay";
 };
+
+&wdog0 {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
 
 &flash0 {
 	/*

@@ -59,6 +59,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c port-polling                    |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
