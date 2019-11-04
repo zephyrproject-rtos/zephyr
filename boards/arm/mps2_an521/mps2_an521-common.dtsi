@@ -81,6 +81,7 @@ wdog0: wdog@81000 {
 	compatible = "arm,cmsdk-watchdog";
 	reg = <0x81000 0x1000>;
 	clocks = <&sysclk>;
+	label = "WATCHDOG";
 };
 
 uart0: uart@200000 {
