@@ -592,10 +592,11 @@ static void isr_done(void *param)
 	e->mic_state = mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	if (trx_cnt) {
 		struct lll_conn *lll = param;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
+		if (lll->role) {
 			u32_t preamble_to_addr_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -617,6 +618,7 @@ static void isr_done(void *param)
 			lll->slave.window_size_event_us = 0;
 		}
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	isr_cleanup(param);
 }
@@ -655,12 +657,14 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		/* Increment serial number */
 		lll->sn++;
 
+#if defined(CONFIG_BT_PERIPHERAL)
 		/* First ack (and redundantly any other ack) enable use of
 		 * slave latency.
 		 */
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
+		if (lll->role) {
 			lll->slave.latency_enabled = 1;
 		}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 		if (!lll->empty) {
 			struct pdu_data *pdu_data_tx;
