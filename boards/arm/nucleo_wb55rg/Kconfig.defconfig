@@ -11,6 +11,15 @@ config BOARD
 config CLOCK_STM32_LSE
 	default y
 
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+
+endchoice
+
+endif #STM32_LPTIM_TIMER
+
 if UART_CONSOLE
 
 config UART_1
