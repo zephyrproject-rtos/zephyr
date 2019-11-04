@@ -17,8 +17,6 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 
-#include "gpio_pca95xx.h"
-
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca95xx);
@@ -50,6 +48,40 @@ LOG_MODULE_REGISTER(gpio_pca95xx);
 
 /* Driver flags */
 #define PCA_HAS_PUD			BIT(0)
+
+/** Configuration data */
+struct gpio_pca95xx_config {
+	/** The master I2C device's name */
+	const char * const i2c_master_dev_name;
+
+	/** The slave address of the chip */
+	u16_t i2c_slave_addr;
+
+	u8_t capabilities;
+};
+
+/** Store the port 0/1 data for each register pair. */
+union gpio_pca95xx_port_data {
+	u16_t all;
+	u8_t port[2];
+	u8_t byte[2];
+};
+
+/** Runtime driver data */
+struct gpio_pca95xx_drv_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
+
+	/** Master I2C device */
+	struct device *i2c_master;
+
+	struct {
+		union gpio_pca95xx_port_data output;
+		union gpio_pca95xx_port_data dir;
+		union gpio_pca95xx_port_data pud_en;
+		union gpio_pca95xx_port_data pud_sel;
+	} reg_cache;
+};
 
 /**
  * @brief Read both port 0 and port 1 registers of certain register function.
