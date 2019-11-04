@@ -484,6 +484,19 @@ function(zephyr_library_import library_name library_path)
   zephyr_append_cmake_library(${library_name})
 endfunction()
 
+# Place the current zephyr library in the application memory partition.
+#
+# The partition argument is the name of the partition where the library shall
+# be placed.
+#
+# Note: Ensure the given partition has been define using
+#       K_APPMEM_PARTITION_DEFINE in source code.
+function(zephyr_library_app_memory partition)
+  set_property(TARGET zephyr_property_target
+               APPEND PROPERTY COMPILE_OPTIONS
+               "-l" $<TARGET_FILE_NAME:${ZEPHYR_CURRENT_LIBRARY}> "${partition}")
+endfunction()
+
 # 1.2.1 zephyr_interface_library_*
 #
 # A Zephyr interface library is a thin wrapper over a CMake INTERFACE

@@ -284,8 +284,13 @@ top-level ``CMakeLists.txt`` adds the following:
 
     gen_app_partitions.py ... --library libc.a z_libc_partition ..
 
-There is no support for expressing this in the project-level configuration
-or build files; the toplevel ``CMakeLists.txt`` must be edited.
+For pre-compiled libraries there is no support for expressing this in the
+project-level configuration or build files; the toplevel ``CMakeLists.txt`` must
+be edited.
+
+For Zephyr libraries created using ``zephyr_library`` or ``zephyr_library_named``
+the ``zephyr_library_app_memory`` function can be used to specify the memory
+partition where all globals in the library should be placed.
 
 Pre-defined Memory Partitions
 -----------------------------
