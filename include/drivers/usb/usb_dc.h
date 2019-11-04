@@ -18,6 +18,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
 
 #include <device.h>
+#include <usb/usb_device.h>
 
 /**
  * USB endpoint direction and number.
@@ -108,6 +109,53 @@ enum usb_dc_ep_type {
 };
 
 /**
+ * @brief Function for interface runtime configuration
+ */
+typedef void (*usb_dc_interface_config)(struct usb_desc_header *head,
+				     u8_t bInterfaceNumber);
+
+/**
+ * @brief Callback function signature for the USB Endpoint status
+ */
+typedef void (*usb_dc_ep_callback)(u8_t ep,
+				   enum usb_dc_ep_cb_status_code cb_status);
+
+/**
+ * Callback function signature for the device
+ */
+typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
+				       const u8_t *param);
+
+/**
+ * @brief Transfer management endpoint callback
+ *
+ * If a USB class driver wants to use high-level transfer functions, driver
+ * needs to register this callback as usb endpoint callback.
+ */
+void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code);
+
+/**
+ * @brief USB Endpoint Configuration
+ *
+ * This structure contains configuration for the endpoint.
+ */
+struct usb_ep_cfg_data {
+	/**
+	 * Callback function for notification of data received and
+	 * available to application or transmit done, NULL if callback
+	 * not required by application code
+	 */
+	usb_dc_ep_callback ep_cb;
+	/**
+	 * The number associated with the EP in the device configuration
+	 * structure
+	 *   IN  EP = 0x80 | \<endpoint number\>
+	 *   OUT EP = 0x00 | \<endpoint number\>
+	 */
+	u8_t ep_addr;
+};
+
+/**
  * @brief USB Endpoint Configuration.
  *
  * Structure containing the USB endpoint configuration.
@@ -128,16 +176,40 @@ struct usb_dc_ep_cfg_data {
 };
 
 /**
- * Callback function signature for the USB Endpoint status
+ * @brief USB device configuration
+ *
+ * The Application instantiates this with given parameters added
+ * using the "usb_set_config" function. Once this function is called
+ * changes to this structure will result in undefined behavior. This structure
+ * may only be updated after calls to usb_deconfig
  */
-typedef void (*usb_dc_ep_callback)(u8_t ep,
-				   enum usb_dc_ep_cb_status_code cb_status);
+struct usb_cfg_data {
+	/**
+	 * USB device description, see
+	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
+	 */
+	const u8_t *usb_device_description;
+	/** Pointer to interface descriptor */
+	const void *interface_descriptor;
+	/** Function for interface runtime configuration */
+	usb_dc_interface_config interface_config;
+	/** Callback to be notified on USB connection status change */
+	void (*cb_usb_status)(struct usb_cfg_data *cfg,
+			      enum usb_dc_status_code cb_status,
+			      const u8_t *param);
+	/** USB interface (Class) handler and storage space */
+	struct usb_interface_cfg_data interface;
+	/** Number of individual endpoints in the device configuration */
+	u8_t num_endpoints;
+	/**
+	 * Pointer to an array of endpoint structs of length equal to the
+	 * number of EP associated with the device description,
+	 * not including control endpoints
+	 */
+	struct usb_ep_cfg_data *endpoint;
+};
 
-/**
- * Callback function signature for the device
- */
-typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
-				       const u8_t *param);
+
 
 /**
  * @brief Attach USB for device connection

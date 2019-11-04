@@ -36,7 +36,6 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 #define ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 
-#include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
 #include <logging/log.h>
 
@@ -128,12 +127,6 @@ struct usb_setup_packet {
 typedef void (*usb_device_state_callback)(enum usb_device_state cb_state);
 
 /**
- * @brief Callback function signature for the USB Endpoint status
- */
-typedef void (*usb_ep_callback)(u8_t ep,
-				enum usb_dc_ep_cb_status_code cb_status);
-
-/**
  * @brief Callback function signature for class specific requests
  *
  * Function which handles Class specific requests corresponding to an
@@ -146,33 +139,6 @@ typedef void (*usb_ep_callback)(u8_t ep,
  */
 typedef int (*usb_request_handler)(struct usb_setup_packet *setup,
 				   s32_t *transfer_len, u8_t **payload_data);
-
-/**
- * @brief Function for interface runtime configuration
- */
-typedef void (*usb_interface_config)(struct usb_desc_header *head,
-				     u8_t bInterfaceNumber);
-
-/**
- * @brief USB Endpoint Configuration
- *
- * This structure contains configuration for the endpoint.
- */
-struct usb_ep_cfg_data {
-	/**
-	 * Callback function for notification of data received and
-	 * available to application or transmit done, NULL if callback
-	 * not required by application code
-	 */
-	usb_ep_callback ep_cb;
-	/**
-	 * The number associated with the EP in the device configuration
-	 * structure
-	 *   IN  EP = 0x80 | \<endpoint number\>
-	 *   OUT EP = 0x00 | \<endpoint number\>
-	 */
-	u8_t ep_addr;
-};
 
 /**
  * @brief USB Interface Configuration
@@ -192,39 +158,7 @@ struct usb_interface_cfg_data {
 	usb_request_handler custom_handler;
 };
 
-/**
- * @brief USB device configuration
- *
- * The Application instantiates this with given parameters added
- * using the "usb_set_config" function. Once this function is called
- * changes to this structure will result in undefined behavior. This structure
- * may only be updated after calls to usb_deconfig
- */
-struct usb_cfg_data {
-	/**
-	 * USB device description, see
-	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
-	 */
-	const u8_t *usb_device_description;
-	/** Pointer to interface descriptor */
-	const void *interface_descriptor;
-	/** Function for interface runtime configuration */
-	usb_interface_config interface_config;
-	/** Callback to be notified on USB connection status change */
-	void (*cb_usb_status)(struct usb_cfg_data *cfg,
-			      enum usb_dc_status_code cb_status,
-			      const u8_t *param);
-	/** USB interface (Class) handler and storage space */
-	struct usb_interface_cfg_data interface;
-	/** Number of individual endpoints in the device configuration */
-	u8_t num_endpoints;
-	/**
-	 * Pointer to an array of endpoint structs of length equal to the
-	 * number of EP associated with the device description,
-	 * not including control endpoints
-	 */
-	struct usb_ep_cfg_data *endpoint;
-};
+
 
 /**
  * @brief Configure USB controller
@@ -277,7 +211,7 @@ int usb_disable(void);
  * @brief Write data to the specified endpoint
  *
  * Function to write data to the specified endpoint. The supplied
- * usb_ep_callback will be called when transmission is done.
+ * usb_dc_ep_callback will be called when transmission is done.
  *
  * @param[in]  ep        Endpoint address corresponding to the one listed in the
  *                       device configuration table
@@ -296,7 +230,7 @@ int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret);
  *
  * This function is called by the Endpoint handler function, after an
  * OUT interrupt has been received for that EP. The application must
- * only call this function through the supplied usb_ep_callback function.
+ * only call this function through the supplied usb_dc_ep_callback function.
  *
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
@@ -383,13 +317,7 @@ typedef void (*usb_transfer_callback)(u8_t ep, int tsize, void *priv);
 #define USB_TRANS_WRITE      BIT(1)   /** Write transfer flag */
 #define USB_TRANS_NO_ZLP     BIT(2)   /** No zero-length packet flag */
 
-/**
- * @brief Transfer management endpoint callback
- *
- * If a USB class driver wants to use high-level transfer functions, driver
- * needs to register this callback as usb endpoint callback.
- */
-void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code);
+
 
 /**
  * @brief Start a transfer

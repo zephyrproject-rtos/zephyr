@@ -65,6 +65,7 @@
 #include <drivers/gpio.h>
 #endif
 #include <sys/byteorder.h>
+#include <drivers/usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <usb/usbstruct.h>
 #include <usb/usb_common.h>

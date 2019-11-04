@@ -18,6 +18,8 @@
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
 
+#include <drivers/usb/usb_dc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

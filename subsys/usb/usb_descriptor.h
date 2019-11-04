@@ -9,6 +9,9 @@
 #ifndef __USB_DESCRIPTOR_H__
 #define __USB_DESCRIPTOR_H__
 
+#include <device.h>
+#include <drivers/usb/usb_dc.h>
+
 /*
  * The USB Unicode bString is encoded in UTF16LE, which means it takes up
  * twice the amount of bytes than the same string encoded in ASCII7.
