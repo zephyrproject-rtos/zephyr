@@ -633,6 +633,27 @@ usually be clear in the context of an option that can be toggled on/off, and
 makes things consistent.
 
 
+Header comments and other nits
+==============================
+
+A few formatting nits, to help keep things consistent:
+
+- Use this format for any header comments at the top of ``Kconfig`` files:
+
+  .. code-block:: none
+
+     # <Overview of symbols defined in the file, preferably in plain English>
+     (Blank line)
+     # Copyright (c) 2019 ...
+     # SPDX-License-Identifier: <License>
+     (Blank line)
+     (Kconfig definitions)
+
+- Format comments as ``# Comment`` rather than ``#Comment``
+
+- Put a blank line before/after each top-level ``if`` and ``endif``
+
+
 Lesser-known/used Kconfig features
 **********************************
 
