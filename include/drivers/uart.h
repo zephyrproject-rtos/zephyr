@@ -1069,7 +1069,7 @@ static inline void uart_irq_callback_set(struct device *dev,
  * @brief Manipulate line control for UART.
  *
  * @param dev UART device structure.
- * @param ctrl The line control to manipulate.
+ * @param ctrl The line control to manipulate (see enum uart_line_ctrl).
  * @param val Value to set to the line control.
  *
  * @retval 0 If successful.
@@ -1095,8 +1095,8 @@ static inline int z_impl_uart_line_ctrl_set(struct device *dev,
  * @brief Retrieve line control for UART.
  *
  * @param dev UART device structure.
- * @param ctrl The line control to manipulate.
- * @param val Value to get for the line control.
+ * @param ctrl The line control to retrieve (see enum uart_line_ctrl).
+ * @param val Pointer to variable where to store the line control value.
  *
  * @retval 0 If successful.
  * @retval failed Otherwise.
