@@ -14,6 +14,13 @@ reaches 64 Hz, the blinking frequency will be halved every 4 seconds
 until the blinking frequency reaches 1 Hz. This completes a whole
 blinking cycle. This faster-then-slower LED blinking cycle repeats forever.
 
+Since for some PWM hardware it might be not possible to set the PWM period of
+1 second (to achieve the blinking frequency of 1 Hz), this application at its
+beginning tries to determine what is available for the used PWM hardware,
+and accordingly decreases the maximum PWM period (thus increases the initial
+blinking frequency) if needed.
+
+
 Wiring
 ******
 
