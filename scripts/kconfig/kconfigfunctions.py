@@ -138,6 +138,17 @@ def dt_chosen_label(kconf, _, chosen):
     return node.props["label"].val
 
 
+def dt_chosen_enabled(kconf, _, chosen):
+    """
+    This function returns "y" if /chosen contains a property named 'chosen'
+    that points to an enabled node, and "n" otherwise
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.chosen_node(chosen)
+    return "y" if node and node.enabled else "n"
+
 def _node_reg_addr(node, index, unit):
     if not node:
         return 0
@@ -330,6 +341,7 @@ functions = {
         "dt_str_val": (dt_str_val, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
+        "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 4),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 4),
         "dt_chosen_reg_size_int": (dt_chosen_reg, 1, 4),

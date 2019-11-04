@@ -852,6 +852,7 @@ value starting with ``0x``.
   dt_node_reg_size_int(kconf, _, path, index=0, unit=None):
   dt_node_reg_size_hex(kconf, _, path, index=0, unit=None):
   dt_compat_enabled(kconf, _, compat):
+  dt_chosen_enabled(kconf, _, chosen):
   dt_node_has_bool_prop(kconf, _, path, prop):
 
 Example Usage
