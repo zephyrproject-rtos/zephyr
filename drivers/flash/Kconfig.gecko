@@ -9,6 +9,7 @@ config SOC_FLASH_GECKO
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select SOC_GECKO_MSC
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Silicon Labs Gecko series internal flash driver.
 
