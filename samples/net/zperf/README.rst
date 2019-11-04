@@ -12,9 +12,9 @@ evaluate network bandwidth.
 Features
 *********
 
-- Compatible with iPerf_2.0.9. Note that UDP uploader (client) testing did
-  not work properly in iPerf_2.0.13: an error message like this is printed
-  and the server reported statistics are missing.
+- Compatible with iPerf_2.0.5. Note that in newer iPerf versions,
+  an error message like this is printed and the server reported statistics
+  are missing.
 
 .. code-block:: console
 
