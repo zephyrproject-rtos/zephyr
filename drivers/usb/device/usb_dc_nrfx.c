@@ -239,6 +239,7 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  * @brief USBD control structure
  *
  * @param status_cb	Status callback for USB DC notifications
+ * @param state_cb	State callback of USB device.
  * @param attached	USBD Attached flag
  * @param ready		USBD Ready flag set after pullup
  * @param usb_work	USBD work item
@@ -248,6 +249,7 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  */
 struct nrf_usbd_ctx {
 	usb_dc_status_callback status_cb;
+	usb_device_state_callback state_cb;
 
 	bool attached;
 	bool ready;
@@ -772,6 +774,11 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_ATTACHED, NULL);
 		}
+
+		if (ctx->state_cb) {
+			ctx->state_cb(USB_DEVICE_ATTACHED);
+		}
+
 		break;
 
 	case USBD_POWERED:
@@ -784,6 +791,11 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_POWERED, NULL);
 		}
+
+		if (ctx->state_cb) {
+			ctx->state_cb(USB_DEVICE_POWERED);
+		}
+
 		break;
 
 	case USBD_DETACHED:
@@ -805,6 +817,10 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 			if (ctx->status_cb) {
 				ctx->status_cb(USB_DC_SUSPENDED, NULL);
+			}
+
+			if (ctx->state_cb) {
+				ctx->state_cb(USB_DEVICE_SUSPENDED);
 			}
 		}
 		break;
@@ -1413,6 +1429,9 @@ int usb_dc_set_address(const u8_t addr)
 	if (ctx->status_cb) {
 		ctx->status_cb(USB_DC_ADDRESS, NULL);
 	}
+	if (ctx->state_cb) {
+		ctx->state_cb(USB_DEVICE_ADDRESS);
+	}
 
 	return 0;
 }
@@ -1861,6 +1880,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	get_usbd_ctx()->status_cb = cb;
+}
+
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	get_usbd_ctx()->state_cb = cb;
 }
 
 int usb_dc_ep_mps(const u8_t ep)

@@ -28,6 +28,7 @@ struct usb_sam0_data {
 	UsbDeviceDescriptor descriptors[USB_NUM_ENDPOINTS];
 
 	usb_dc_status_callback cb;
+	usb_device_state_callback state_cb;
 	usb_dc_ep_callback ep_cb[2][USB_NUM_ENDPOINTS];
 
 	u8_t addr;
@@ -257,6 +258,13 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	struct usb_sam0_data *data = usb_sam0_get_data();
 
 	data->cb = cb;
+}
+
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	struct usb_sam0_data *data = usb_sam0_get_data();
+
+	data->state_cb = cb;
 }
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)

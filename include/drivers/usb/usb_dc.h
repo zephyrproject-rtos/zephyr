@@ -263,6 +263,17 @@ int usb_dc_set_address(const u8_t addr);
 void usb_dc_set_status_callback(const usb_dc_status_callback cb);
 
 /**
+ * @brief Set USB device controller state callback
+ *
+ * Function to set USB device controller state callback. The registered
+ * callback is used to report changes in the state of the  USB device.
+ * The status code are described by the usb_device_state enumeration.
+ *
+ * @param[in] cb Callback function
+ */
+void usb_dc_set_state_callback(const usb_device_state_callback cb);
+
+/**
  * @brief check endpoint capabilities
  *
  * Function to check capabilities of an endpoint. usb_dc_ep_cfg_data structure

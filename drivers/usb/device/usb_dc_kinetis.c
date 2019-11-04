@@ -106,6 +106,7 @@ struct usb_ep_ctrl_data {
 
 struct usb_device_data {
 	usb_dc_status_callback status_cb;
+	usb_device_state_callback state_cb;
 	u8_t address;
 	u32_t bd_active;
 	struct usb_ep_ctrl_data ep_ctrl[NUM_OF_EP_MAX];
@@ -838,6 +839,13 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	dev_data.status_cb = cb;
 }
 
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	LOG_DBG("");
+
+	dev_data.state_cb = cb;
+}
+
 int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
@@ -1031,6 +1039,9 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 				break;
 			case USB_DC_SUSPENDED:
 				dev_data.status_cb(USB_DC_SUSPENDED, NULL);
+				if (dev_data.state_cb) {
+					dev_data.state_cb(USB_DEVICE_SUSPENDED);
+				}
 				break;
 			case USB_DC_RESUME:
 				dev_data.status_cb(USB_DC_RESUME, NULL);

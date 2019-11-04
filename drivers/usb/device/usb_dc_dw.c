@@ -52,6 +52,7 @@ struct usb_ep_ctrl_prv {
  */
 struct usb_dw_ctrl_prv {
 	usb_dc_status_callback status_cb;
+	usb_device_state_callback state_cb;
 	struct usb_ep_ctrl_prv in_ep_ctrl[USB_DW_IN_EP_NUM];
 	struct usb_ep_ctrl_prv out_ep_ctrl[USB_DW_OUT_EP_NUM];
 	int n_tx_fifos;
@@ -537,6 +538,10 @@ static void usb_dw_handle_enum_done(void)
 	if (usb_dw_ctrl.status_cb) {
 		usb_dw_ctrl.status_cb(USB_DC_POWERED, NULL);
 	}
+	/* Inform user app about USB device state */
+	if (usb_dw_ctrl.state_cb) {
+		usb_dw_ctrl.state_cb(USB_DEVICE_POWERED);
+	}
 }
 
 /* USB ISR handler */
@@ -573,6 +578,9 @@ static void usb_dw_isr_handler(void)
 
 			if (usb_dw_ctrl.status_cb) {
 				usb_dw_ctrl.status_cb(USB_DC_SUSPENDED, NULL);
+			}
+			if (usb_dw_ctrl.state_cb) {
+				usb_dw_ctrl.state_cb(USB_DEVICE_SUSPENDED);
 			}
 		}
 
@@ -1177,6 +1185,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	usb_dw_ctrl.status_cb = cb;
+}
+
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	usb_dw_ctrl.state_cb = cb;
 }
 
 int usb_dc_ep_mps(const u8_t ep)

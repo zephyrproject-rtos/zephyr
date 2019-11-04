@@ -149,7 +149,8 @@ struct usb_dc_stm32_ep_state {
 /* Driver state */
 struct usb_dc_stm32_state {
 	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
-	usb_dc_status_callback status_cb; /* Status callback */
+	usb_dc_status_callback status_cb; /* USB DC Status callback */
+	usb_device_state_callback state_cb; /* USB device state callback */
 	struct usb_dc_stm32_ep_state out_ep_state[DT_USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[DT_USB_NUM_BIDIR_ENDPOINTS];
 	u8_t ep_buf[DT_USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
@@ -462,6 +463,13 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	LOG_DBG("");
 
 	usb_dc_stm32_state.status_cb = cb;
+}
+
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	LOG_DBG("");
+
+	usb_dc_stm32_state.state_cb = cb;
 }
 
 int usb_dc_set_address(const u8_t addr)
@@ -903,6 +911,8 @@ void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
 	if (usb_dc_stm32_state.status_cb) {
 		usb_dc_stm32_state.status_cb(USB_DC_POWERED, NULL);
 	}
+	if (usb_dc_stm32_state.state_cb) {
+		usb_dc_stm32_state.state_cb(USB_DEVICE_POWERED);
 	}
 }
 
@@ -922,6 +932,8 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 	if (usb_dc_stm32_state.status_cb) {
 		usb_dc_stm32_state.status_cb(USB_DC_SUSPENDED, NULL);
 	}
+	if (usb_dc_stm32_state.state_cb) {
+		usb_dc_stm32_state.state_cb(USB_DEVICE_SUSPENDED);
 	}
 }
 

@@ -34,6 +34,7 @@ struct usb_device_ep_data {
 struct usb_device_data {
 	bool addr_enabled;
 	usb_dc_status_callback status_cb;
+	usb_device_state_callback state_cb;
 	struct usb_device_ep_data ep_data[DT_USBHS_NUM_BIDIR_EP];
 };
 
@@ -237,6 +238,9 @@ static void usb_dc_isr(void)
 
 		/* Callback function */
 		dev_data.status_cb(USB_DC_SUSPENDED, NULL);
+		if (dev_data.state_cb) {
+			dev_data.state_cb(USB_DEVICE_SUSPENDED);
+		}
 	}
 
 #ifdef CONFIG_USB_DEVICE_SOF
@@ -377,6 +381,11 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	LOG_DBG("");
 
 	dev_data.status_cb = cb;
+}
+
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	dev_data.state_cb = cb;
 }
 
 /* Check endpoint capabilities */

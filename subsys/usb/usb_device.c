@@ -1577,6 +1577,7 @@ int usb_enable(usb_device_state_callback cb)
 	}
 	/** Register global state callback */
 	usb_register_state_callback(cb);
+	usb_dc_set_state_callback(cb);
 	/** Register forward status callback */
 	usb_register_forward_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);

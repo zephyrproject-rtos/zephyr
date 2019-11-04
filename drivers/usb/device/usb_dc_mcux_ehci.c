@@ -447,6 +447,13 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	s_Device.status_callback = cb;
 }
 
+void usb_dc_set_state_callback(const usb_device_state_callback cb)
+{
+	BUILD_ASSERT_MSG(cb == NULL,
+			 "device state callback is not supported for mcux");
+}
+
+
 int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
@@ -500,6 +507,9 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 		break;
 	case kUSB_DeviceNotifySuspend:
 		s_Device.status_callback(USB_DC_SUSPENDED, NULL);
+		if (s_Device.state_callback) {
+			s_Device.state_callback(USB_DEVICE_SUSPENDED);
+		}
 		break;
 	case kUSB_DeviceNotifyResume:
 		s_Device.status_callback(USB_DC_RESUME, NULL);
