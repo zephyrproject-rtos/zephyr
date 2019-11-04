@@ -7,7 +7,6 @@ config WDT_NRFX
 	bool "nRF WDT nrfx driver"
 	default y
 	depends on SOC_FAMILY_NRF
-	select HAS_DTS_WDT
 	select NRFX_WDT
 	help
 	  Enable support for nrfx WDT driver for nRF MCU series.
