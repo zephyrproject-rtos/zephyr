@@ -199,14 +199,12 @@ static inline int update_pul_en_regs(struct device *dev, u16_t value)
  * @brief Setup the pin direction (input or output)
  *
  * @param dev Device struct of the PCA95XX
- * @param access_op Access operation (pin or port)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
  * @return 0 if successful, failed otherwise
  */
-static int setup_pin_dir(struct device *dev, int access_op,
-			  u32_t pin, int flags)
+static int setup_pin_dir(struct device *dev, u32_t pin, int flags)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
@@ -215,46 +213,24 @@ static int setup_pin_dir(struct device *dev, int access_op,
 	int ret;
 
 	/* For each pin, 0 == output, 1 == input */
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if ((flags & GPIO_OUTPUT) != 0U) {
-			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				reg_out |= BIT(pin);
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				reg_out &= ~BIT(pin);
-			}
-			reg_dir &= ~BIT(pin);
-		} else {
-			reg_dir |= BIT(pin);
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			reg_out |= BIT(pin);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			reg_out &= ~BIT(pin);
 		}
-
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		if ((flags & GPIO_OUTPUT) != 0U) {
-			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				reg_out = 0xFFFF;
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				reg_out = 0x0;
-			}
-			reg_dir = 0x0;
-		} else {
-			reg_dir = 0xFFFF;
-		}
-
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto done;
+		reg_dir &= ~BIT(pin);
+	} else {
+		reg_dir |= BIT(pin);
 	}
 
 	ret = update_output_regs(dev, reg_out);
 	if (ret != 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = update_direction_regs(dev, reg_dir);
 
-done:
 	return ret;
 }
 
@@ -262,109 +238,57 @@ done:
  * @brief Setup the pin pull up/pull down status
  *
  * @param dev Device struct of the PCA95XX
- * @param access_op Access operation (pin or port)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
  * @return 0 if successful, failed otherwise
  */
-static int setup_pin_pullupdown(struct device *dev, int access_op,
-				 u32_t pin, int flags)
+static int setup_pin_pullupdown(struct device *dev, u32_t pin, int flags)
 {
 	const struct gpio_pca95xx_config * const config =
 		dev->config->config_info;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	u16_t reg_pud;
-	u16_t bit_mask;
-	u16_t new_value = 0U;
 	int ret;
 
 	if ((config->capabilities & PCA_HAS_PUD) == 0) {
 		/* Chip does not support pull up/pull down */
 		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
-			ret = -ENOTSUP;
-			goto done;
+			return -ENOTSUP;
 		}
 
 		/* If both GPIO_PULL_UP and GPIO_PULL_DOWN are not set,
 		 * we should disable them in hardware. But need to skip
 		 * if the chip does not support pull up/pull down.
 		 */
-		ret = 0;
-		goto done;
+		return 0;
 	}
 
 	/* If disabling pull up/down, there is no need to set the selection
 	 * register. Just go straight to disabling.
 	 */
-	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) == 0U) {
-		goto en_dis;
-	}
-
-	/* Setup pin pull up or pull down */
-	reg_pud = drv_data->reg_cache.pud_sel;
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		bit_mask = 1 << pin;
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
+		/* Setup pin pull up or pull down */
+		reg_pud = drv_data->reg_cache.pud_sel;
 
 		/* pull down == 0, pull up == 1 */
-		if ((flags & GPIO_PULL_UP) != 0U) {
-			new_value = 1 << pin;
-		}
+		WRITE_BIT(reg_pud, pin, (flags & GPIO_PULL_UP) != 0U);
 
-		reg_pud &= ~bit_mask;
-		reg_pud |= new_value;
-
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		/* pull down == 0, pull up == 1*/
-		if ((flags & GPIO_PULL_UP) != 0U) {
-			reg_pud = 0xFFFF;
-		} else {
-			reg_pud = 0x0;
+		ret = update_pul_sel_regs(dev, reg_pud);
+		if (ret) {
+			return ret;
 		}
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto done;
 	}
 
-	ret = update_pul_sel_regs(dev, reg_pud);
-	if (ret) {
-		goto done;
-	}
-
-en_dis:
 	/* enable/disable pull up/down */
 	reg_pud = drv_data->reg_cache.pud_en;
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		bit_mask = 1 << pin;
 
-		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
-			new_value = 1 << pin;
-		}
-
-		reg_pud &= ~bit_mask;
-		reg_pud |= new_value;
-
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
-			reg_pud = 0xFFFF;
-		} else {
-			reg_pud = 0x0;
-		}
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto done;
-	}
+	WRITE_BIT(reg_pud, pin,
+		  (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U);
 
 	ret = update_pul_en_regs(dev, reg_pud);
 
-done:
 	return ret;
 }
 
@@ -391,6 +315,11 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 	u16_t i2c_addr = config->i2c_slave_addr;
 #endif
 
+	/* only support config by pin */
+	if (access_op != GPIO_ACCESS_BY_PIN) {
+		return -ENOTSUP;
+	}
+
 	/* Does not support disconnected pin */
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
@@ -410,14 +339,14 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	ret = setup_pin_dir(dev, access_op, pin, flags);
+	ret = setup_pin_dir(dev, pin, flags);
 	if (ret) {
 		LOG_ERR("PCA95XX[0x%X]: error setting pin direction (%d)",
 			i2c_addr, ret);
 		goto done;
 	}
 
-	ret = setup_pin_pullupdown(dev, access_op, pin, flags);
+	ret = setup_pin_pullupdown(dev, pin, flags);
 	if (ret) {
 		LOG_ERR("PCA95XX[0x%X]: error setting pin pull up/down "
 			"(%d)", i2c_addr, ret);
