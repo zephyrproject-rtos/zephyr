@@ -96,6 +96,17 @@ Build and Infrastructure
   Use new functions that utilize eDTS info such as dt_node_reg_addr.
   See :zephyr_file:`scripts/kconfig/kconfigfunctions.py` for details.
 
+* Deprecated direct use of the ``DT_`` Kconfig symbols from the generated
+  ``generated_dts_board.conf``.  This was done to have a single source of
+  Kconfig symbols coming from only Kconfig (additionally the build should
+  be slightly faster).  For Kconfig files we should utilize functions from
+  :zephyr_file:`scripts/kconfig/kconfigfunctions.py`.  See
+  :ref:`kconfig-functions` for usage details.  For sanitycheck yaml usage
+  we should utilize functions from
+  :zephyr_file:`scripts/sanity_chk/expr_parser.py`.  Its possible that a
+  new function might be required for a particular use pattern that isn't
+  currently supported.
+
 * Various parts of the binding format have been simplified. The format is
   better documented now too.
 
