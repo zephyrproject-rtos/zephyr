@@ -19,8 +19,8 @@ void test_config_empty_file(void)
 
 	config_wipe_srcs();
 
-	cf_mfg.cf_name = TEST_CONFIG_DIR "/mfg";
-	cf_running.cf_name = TEST_CONFIG_DIR "/running";
+	cf_mfg.cf_name = TEST_CONFIG_DIR"/mfg";
+	cf_running.cf_name = TEST_CONFIG_DIR"/running";
 
 	rc = settings_file_src(&cf_mfg);
 	zassert_true(rc == 0, "can't register FS as configuration source");
@@ -36,11 +36,11 @@ void test_config_empty_file(void)
 	rc = fs_mkdir(TEST_CONFIG_DIR);
 	zassert_true(rc == 0, "can't create directory");
 
-	rc = fsutil_write_file(TEST_CONFIG_DIR "/mfg", cf_mfg_test,
+	rc = fsutil_write_file(TEST_CONFIG_DIR"/mfg", cf_mfg_test,
 			       0);
 	zassert_true(rc == 0, "can't write to file");
 
-	rc = fsutil_write_file(TEST_CONFIG_DIR "/running", cf_running_test,
+	rc = fsutil_write_file(TEST_CONFIG_DIR"/running", cf_running_test,
 			       sizeof(cf_running_test));
 	zassert_true(rc == 0, "can't write to file");
 

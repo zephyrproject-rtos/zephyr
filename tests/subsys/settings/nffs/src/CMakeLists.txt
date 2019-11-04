@@ -4,9 +4,11 @@
 zephyr_library_named(settings_nffs_test)
 
 add_subdirectory(../../src settings_test_bindir)
-target_link_libraries(settings_nffs_test PRIVATE settings_test)
+add_subdirectory(../../fs/src settings_test_fs_bindir)
 
 target_link_libraries(settings_nffs_test PRIVATE NFFS)
+target_link_libraries(settings_nffs_test PRIVATE settings_test)
+target_link_libraries(settings_nffs_test PRIVATE settings_test_fs)
 
 zephyr_include_directories(
 	$ENV{ZEPHYR_BASE}/subsys/settings/include
