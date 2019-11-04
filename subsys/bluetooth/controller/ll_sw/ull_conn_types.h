@@ -35,6 +35,7 @@ struct ll_conn {
 			u8_t fex_valid:1;
 		} common;
 
+#if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			u8_t  fex_valid:1;
 			u8_t  latency_cancel:1;
@@ -42,11 +43,14 @@ struct ll_conn {
 			u32_t force;
 			u32_t ticks_to_offset;
 		} slave;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 		struct {
 			u8_t fex_valid:1;
 			u8_t terminate_ack:1;
 		} master;
+#endif /* CONFIG_BT_CENTRAL */
 	};
 
 	u8_t llcp_req;

@@ -949,7 +949,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 	 * Slave received terminate ind or MIC failure
 	 */
 	reason_peer = conn->llcp_terminate.reason_peer;
-	if (reason_peer && (lll->role || conn->master.terminate_ack)) {
+	if (reason_peer && (
+#if defined(CONFIG_BT_PERIPHERAL)
+			    lll->role ||
+#else /* CONFIG_BT_PERIPHERAL */
+			    0 ||
+#endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CENTRAL)
+			    conn->master.terminate_ack
+#else /* CONFIG_BT_CENTRAL */
+			    1
+#endif /* CONFIG_BT_CENTRAL */
+			    )) {
 		conn_cleanup(conn, reason_peer);
 
 		return;
@@ -965,7 +976,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 	ticks_drift_plus = 0U;
 	ticks_drift_minus = 0U;
 	if (done->extra.trx_cnt) {
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
+		if (0) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->role) {
 			ull_slave_done(done, &ticks_drift_plus,
 				       &ticks_drift_minus);
 
@@ -976,8 +989,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 			} else if (lll->slave.latency_enabled) {
 				lll->latency_event = lll->latency;
 			}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
 		} else if (reason_peer) {
 			conn->master.terminate_ack = 1;
+#endif /* CONFIG_BT_CENTRAL */
+
 		}
 
 		/* Reset connection failed to establish countdown */
@@ -1025,6 +1043,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if (conn->supervision_expire <= 6U) {
 				force = 1U;
 			}
+#if defined(CONFIG_BT_PERIPHERAL)
 			/* use randomness to force slave role when anchor
 			 * points are being missed.
 			 */
@@ -1041,6 +1060,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 					}
 				}
 			}
+#endif /* CONFIG_BT_PERIPHERAL */
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
@@ -2014,10 +2034,10 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		ctrl_tx_enqueue(conn, tx);
 
 	} else if (instant_latency <= 0x7FFF) {
+		u32_t ticks_win_offset = 0;
 		u32_t ticks_slot_overhead;
 		u16_t conn_interval_old;
 		u16_t conn_interval_new;
-		u32_t ticks_win_offset;
 		u32_t conn_interval_us;
 		struct node_rx_pdu *rx;
 		u8_t ticker_id_conn;
@@ -2118,7 +2138,10 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		/* calculate the window widening and interval */
 		conn_interval_us = conn->llcp.conn_upd.interval * 1250U;
 		periodic_us = conn_interval_us;
-		if (lll->role) {
+
+		if (0) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->role) {
 			lll->slave.window_widening_prepare_us -=
 				lll->slave.window_widening_periodic_us *
 				instant_latency;
@@ -2149,7 +2172,10 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 				(conn->llcp.conn_upd.win_offset_us / 1250U) *
 				1250U);
 			periodic_us -= lll->slave.window_widening_periodic_us;
-		} else {
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+		} else if (!lll->role) {
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
 				conn->llcp.conn_upd.win_offset_us);
 
@@ -2158,7 +2184,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 			 * tick so as to use the ceiled value.
 			 */
 			ticks_win_offset += 1U;
+#endif /* CONFIG_BT_CENTRAL */
+
+		} else {
+			LL_ASSERT(0);
 		}
+
 		lll->interval = conn->llcp.conn_upd.interval;
 		lll->latency = conn->llcp.conn_upd.latency;
 		conn->supervision_reload =
@@ -3925,11 +3956,13 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 	}
 	/* FIXME: handle unsupported LL parameters error */
 	else if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
+#if defined(CONFIG_BT_PERIPHERAL)
 		/* update to next ticks offset */
 		if (lll->role) {
 			conn->slave.ticks_to_offset =
 			    conn->llcp_conn_param.ticks_to_offset_next;
 		}
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	if (conn->llcp_conn_param.state == LLCP_CPR_STATE_RSP_WAIT) {
