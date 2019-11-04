@@ -122,6 +122,12 @@ struct usb_setup_packet {
  */
 
 /**
+ * @brief Callback function for USB device state to user APP
+ */
+
+typedef void (*usb_device_state_callback)(enum usb_device_state cb_state);
+
+/**
  * @brief Callback function signature for the USB Endpoint status
  */
 typedef void (*usb_ep_callback)(u8_t ep,
@@ -249,9 +255,12 @@ int usb_deconfig(void);
  * it is now capable of transmitting and receiving on the USB bus and
  * of generating interrupts.
  *
+ * @param[in] cb Callback registered by user to notify
+ *               about USB device state.
+ *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_enable(void);
+int usb_enable(usb_device_state_callback cb);
 
 /**
  * @brief Disable the USB device

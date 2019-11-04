@@ -148,8 +148,10 @@ static struct usb_dev_priv {
 	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
-	/** USB stack status clalback */
-	usb_dc_status_callback status_callback;
+	/** USB stack forward status callback */
+	usb_dc_status_callback forward_status;
+	/** USB stack state callback */
+	usb_device_state_callback state_callback;
 	/** Pointer to registered descriptors */
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
@@ -571,8 +573,17 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 		p += p[DESC_bLength];
 	}
 
-	if (usb_dev.status_callback) {
-		usb_dev.status_callback(USB_DC_CONFIGURED, &config_index);
+	if (usb_dev.forward_status) {
+		usb_dev.forward_status(USB_DC_CONFIGURED, &config_index);
+	}
+
+	/**
+	 * Call USB device state callback
+	 * This callback is for user APP to know the global state
+	 * of the USB device.
+	 */
+	if (usb_dev.state_callback) {
+		usb_dev.state_callback(USB_DEVICE_CONFIGURED);
 	}
 
 	return found;
@@ -626,8 +637,8 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 		p += p[DESC_bLength];
 	}
 
-	if (usb_dev.status_callback) {
-		usb_dev.status_callback(USB_DC_INTERFACE, if_desc);
+	if (usb_dev.forward_status) {
+		usb_dev.forward_status(USB_DC_INTERFACE, if_desc);
 	}
 
 	return found;
@@ -814,8 +825,8 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 			/* clear HALT by unstalling */
 			LOG_INF("... EP clear halt %x", ep);
 			usb_dc_ep_clear_stall(ep);
-			if (usb_dev.status_callback) {
-				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);
+			if (usb_dev.forward_status) {
+				usb_dev.forward_status(USB_DC_CLEAR_HALT, &ep);
 			}
 			break;
 		}
@@ -827,8 +838,8 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 			/* set HALT by stalling */
 			LOG_INF("--- EP SET halt %x", ep);
 			usb_dc_ep_set_stall(ep);
-			if (usb_dev.status_callback) {
-				usb_dev.status_callback(USB_DC_SET_HALT, &ep);
+			if (usb_dev.forward_status) {
+				usb_dev.forward_status(USB_DC_SET_HALT, &ep);
 			}
 			break;
 		}
@@ -922,13 +933,26 @@ static void usb_register_custom_req_handler(usb_request_handler handler)
  * @brief register a callback for device status
  *
  * This function registers a callback for device status. The registered callback
- * is used to report changes in the status of the device controller.
+ * is used to forwards changes in the status of the device controller.
  *
  * @param [in] cb Callback function pointer
  */
-static void usb_register_status_callback(usb_dc_status_callback cb)
+static void usb_register_forward_status_callback(usb_dc_status_callback cb)
 {
-	usb_dev.status_callback = cb;
+	usb_dev.forward_status = cb;
+}
+
+/*
+ * @brief register a callback for device status
+ *
+ * This function registers a callback for device status. The registered callback
+ * is used to report changes in the status of the device controller to App.
+ *
+ * @param [in] cb Callback function pointer
+ */
+static void usb_register_state_callback(usb_device_state_callback cb)
+{
+	usb_dev.state_callback = cb;
 }
 
 static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
@@ -1031,8 +1055,11 @@ int usb_deconfig(void)
 	/* unregister class request handlers for each interface*/
 	usb_register_custom_req_handler(NULL);
 
+	/* unregister forward status callback */
+	usb_register_forward_status_callback(NULL);
+
 	/* unregister status callback */
-	usb_register_status_callback(NULL);
+	usb_register_state_callback(NULL);
 
 	/* Reset USB controller */
 	usb_dc_reset();
@@ -1532,7 +1559,7 @@ int usb_set_config(const u8_t *device_descriptor)
 	return 0;
 }
 
-int usb_enable(void)
+int usb_enable(usb_device_state_callback cb)
 {
 	int ret;
 	u32_t i;
@@ -1547,8 +1574,10 @@ int usb_enable(void)
 	if (ret < 0) {
 		return ret;
 	}
-
-	usb_register_status_callback(forward_status_cb);
+	/** Register global state callback */
+	usb_register_state_callback(cb);
+	/** Register forward status callback */
+	usb_register_forward_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
 
 	ret = usb_dc_attach();
@@ -1635,7 +1664,7 @@ static int usb_device_init(struct device *dev)
 	usb_set_config(device_descriptor);
 
 #ifdef CONFIG_USB_DEVICE_AUTO_ENABLE
-	usb_enable();
+	usb_enable(NULL);
 #endif
 	return 0;
 }
