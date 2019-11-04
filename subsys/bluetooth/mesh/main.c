@@ -59,6 +59,53 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		pb_gatt_enabled = false;
 	}
 
+	/*
+	 * FIXME:
+	 * Should net_key and iv_index be over-ridden?
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		const struct bt_mesh_comp *comp;
+		const struct bt_mesh_prov *prov;
+		struct bt_mesh_cdb_node *node;
+
+		if (!atomic_test_bit(bt_mesh_cdb.flags,
+				     BT_MESH_CDB_VALID)) {
+			BT_ERR("No valid network");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -EINVAL;
+		}
+
+		comp = bt_mesh_comp_get();
+		if (comp == NULL) {
+			BT_ERR("Failed to get node composition");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -EINVAL;
+		}
+
+		if (!bt_mesh_cdb_subnet_get(net_idx)) {
+			BT_ERR("No subnet with idx %d", net_idx);
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -ENOENT;
+		}
+
+		prov = bt_mesh_prov_get();
+		node = bt_mesh_cdb_node_alloc(prov->uuid, addr,
+					      comp->elem_count, net_idx);
+		if (node == NULL) {
+			BT_ERR("Failed to allocate database node");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -ENOMEM;
+		}
+
+		addr = node->addr;
+		iv_index = bt_mesh_cdb.iv_index;
+		memcpy(node->dev_key, dev_key, 16);
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_cdb_node(node);
+		}
+	}
+
 	err = bt_mesh_net_create(net_idx, flags, net_key, iv_index);
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);

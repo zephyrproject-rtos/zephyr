@@ -33,5 +33,4 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL shell.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROVISIONER nodes.c)
-
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_CDB cdb.c)
