@@ -602,7 +602,7 @@ static int uart_console_init(struct device *arg)
 #ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
 	int ret;
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret < 0) {
 		printk("Failed to enable USB device");
 		return ret;

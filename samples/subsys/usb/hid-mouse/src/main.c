@@ -271,7 +271,7 @@ void main(void)
 #ifndef CONFIG_USB_DEVICE_AUTO_ENABLE
 	int ret;
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable USB device");
 		return;
