@@ -27,6 +27,7 @@
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/sam3x/                 @ioannisg
+/soc/arm/atmel_sam/sam4e/                 @nandojve
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
 /soc/arm/atmel_sam/samv71/                @nandojve
 /soc/arm/bcm*/                            @sbranden
@@ -81,6 +82,7 @@
 /boards/arm/nucleo_f401re/                @rsalveti @idlethread
 /boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_m*/               @ioannisg
+/boards/arm/sam4e_xpro/                   @nandojve
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/sam_v71_xult/                 @nandojve
 /boards/arm/v2m_beetle/                   @fvincenzo
@@ -212,6 +214,7 @@
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arc/                                 @vonhust @ruuddw @iriszzw
+/dts/arm/atmel/sam4e*                     @nandojve
 /dts/arm/atmel/samr21.dtsi                @benpicco
 /dts/arm/atmel/sam*5*.dtsi                @benpicco
 /dts/arm/atmel/samv71*                    @nandojve
