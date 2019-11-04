@@ -17,7 +17,7 @@ if [ -n "${ZSH_VERSION:-}" ]; then
 	if [ $options[posixargzero] != "on" ]; then
 		setopt posixargzero
 		NAME=$(basename -- "$0")
-		setopt posixargzero
+		unsetopt posixargzero
 	else
 		NAME=$(basename -- "$0")
 	fi
