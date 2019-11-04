@@ -75,6 +75,8 @@ struct gpio_pca95xx_drv_data {
 		u16_t pud_en;
 		u16_t pud_sel;
 	} reg_cache;
+
+	struct k_sem lock;
 };
 
 /**
@@ -380,6 +382,8 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 				 u32_t pin, int flags)
 {
 	int ret;
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 
 #if (CONFIG_GPIO_LOG_LEVEL >= LOG_LEVEL_DEBUG)
 	const struct gpio_pca95xx_config * const config =
@@ -399,6 +403,13 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
 	ret = setup_pin_dir(dev, access_op, pin, flags);
 	if (ret) {
 		LOG_ERR("PCA95XX[0x%X]: error setting pin direction (%d)",
@@ -414,6 +425,7 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 	}
 
 done:
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
@@ -432,8 +444,17 @@ static int gpio_pca95xx_write(struct device *dev, int access_op,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t reg_out = drv_data->reg_cache.output;
+	u16_t reg_out;
 	int ret;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	reg_out = drv_data->reg_cache.output;
 
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
@@ -455,6 +476,7 @@ static int gpio_pca95xx_write(struct device *dev, int access_op,
 	ret = update_output_regs(dev, reg_out);
 
 done:
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
@@ -471,8 +493,17 @@ done:
 static int gpio_pca95xx_read(struct device *dev, int access_op,
 			       u32_t pin, u32_t *value)
 {
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	u16_t buf;
 	int ret;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
 	if (ret != 0) {
@@ -492,13 +523,23 @@ static int gpio_pca95xx_read(struct device *dev, int access_op,
 	}
 
 done:
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
 static int gpio_pca95xx_port_get_raw(struct device *dev, u32_t *value)
 {
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	u16_t buf;
 	int ret;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
 	if (ret != 0) {
@@ -508,6 +549,7 @@ static int gpio_pca95xx_port_get_raw(struct device *dev, u32_t *value)
 	*value = buf;
 
 done:
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
@@ -516,11 +558,24 @@ static int gpio_pca95xx_port_set_masked_raw(struct device *dev,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t reg_out = drv_data->reg_cache.output;
+	u16_t reg_out;
+	int ret;
 
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	reg_out = drv_data->reg_cache.output;
 	reg_out = (reg_out & ~mask) | (mask & value);
 
-	return update_output_regs(dev, reg_out);
+	ret = update_output_regs(dev, reg_out);
+
+	k_sem_give(&drv_data->lock);
+
+	return ret;
 }
 
 static int gpio_pca95xx_port_set_bits_raw(struct device *dev, u32_t mask)
@@ -537,11 +592,24 @@ static int gpio_pca95xx_port_toggle_bits(struct device *dev, u32_t mask)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t reg_out = drv_data->reg_cache.output;
+	u16_t reg_out;
+	int ret;
 
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	reg_out = drv_data->reg_cache.output;
 	reg_out ^= mask;
 
-	return update_output_regs(dev, reg_out);
+	ret = update_output_regs(dev, reg_out);
+
+	k_sem_give(&drv_data->lock);
+
+	return ret;
 }
 
 static int gpio_pca95xx_pin_interrupt_configure(struct device *dev,
@@ -584,6 +652,8 @@ static int gpio_pca95xx_init(struct device *dev)
 		return -EINVAL;
 	}
 	drv_data->i2c_master = i2c_master;
+
+	k_sem_init(&drv_data->lock, 1, 1);
 
 	return 0;
 }
