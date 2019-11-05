@@ -457,6 +457,50 @@ hardware resources:
       uart-1 = &uart1;
    };
 
+To have a generic name in various Zephyr sample and test code we define some
+common aliases.
+
+The full set of Zephyr-specific ``aliases`` properties follows:
+
+.. list-table::
+   :header-rows: 1
+
+   * - ``aliases`` property name
+     - Generated symbol
+
+   * - ``led0``
+     - a ``gpio-leds`` compatiable LED device - instance 0
+   * - ``led1``
+     - a ``gpio-leds`` compatiable LED device - instance 1
+   * - ``sw0``
+     - a ``gpio-keys`` compatiable button device - instance 0
+   * - ``pwm-led0``
+     - a pwm device connected to a LED
+   * - ``red-pwm-led``
+     - a pwm device connected to a red LED
+   * - ``green-pwm-led``
+     - a pwm device connected to a green LED
+   * - ``blue-pwm-led``
+     - a pwm device connected to a blue LED
+   * - ``pwm-0``
+     - a pwm controller device - instance 0
+   * - ``pwm-1``
+     - a pwm controller device - instance 1
+   * - ``pwm-2``
+     - a pwm controller device - instance 2
+   * - ``pwm-3``
+     - a pwm controller device - instance 3
+   * - ``i2c-0``
+     - an i2c controller device - instance 0
+   * - ``i2c-1``
+     - an i2c controller device - instance 1
+   * - ``i2c-2``
+     - an i2c controller device - instance 2
+   * - ``gpio-0``
+     - a gpio controller device - instance 0
+   * - ``gpio-1``
+     - a gpio controller device - instance 1
+
 Certain software subsystems require a specific hardware resource to bind to in
 order to function properly. Some of those subsystems are used with many
 different boards, which makes using the devicetree ``chosen`` nodes very
