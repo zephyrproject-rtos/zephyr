@@ -11,11 +11,14 @@
 	model = "Silabs EFR32MG SLTB004A board (aka Thunderboard Sense 2)";
 	compatible = "silabs,efr32mg_sltb004a", "silabs,efr32mg";
 
+	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
+		watchdog1 = &wdog1;
 	};
 
 	chosen {
@@ -114,6 +117,14 @@
 
 &gpio {
 	location-swo = <0>;
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&wdog1 {
 	status = "okay";
 };
 
