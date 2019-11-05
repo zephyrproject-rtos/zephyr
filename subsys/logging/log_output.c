@@ -25,6 +25,11 @@
 #define DROPPED_COLOR_POSTFIX \
 	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
+struct log_output_ctx {
+	u32_t offset;
+	struct log_msg *msg;
+};
+
 static const char *const severity[] = {
 	NULL,
 	"err",
@@ -535,7 +540,8 @@ void log_output_msg_process(const struct log_output *log_output,
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
-	} else if (raw_string) {
+	} else if (raw_string || msg->hdr.params.generic.ext) {
+		log_output_flush(log_output);
 		raw_string_print(msg, log_output);
 	} else {
 		hexdump_print(msg, log_output, prefix_offset, flags);
@@ -671,4 +677,53 @@ void log_output_timestamp_freq_set(u32_t frequency)
 	}
 
 	freq = frequency;
+}
+
+int log_output_ext_msg_data_out(u8_t *data, size_t length, void *ctx)
+{
+	int err = 0;
+	struct log_output_ctx *out_ctx = (struct log_output_ctx *)ctx;
+
+	err = log_msg_hexdump_extend(out_ctx->msg, length);
+	if (err != 0) {
+		return length;
+	}
+
+	log_msg_hexdump_data_put(out_ctx->msg, data, &length, out_ctx->offset);
+
+	out_ctx->offset += length;
+
+	return length;
+}
+
+struct log_msg *log_output_convert_to_ext_msg(
+				const struct log_output *converter,
+				struct log_msg *msg)
+{
+	struct log_msg *out_msg = (struct log_msg *)log_msg_chunk_alloc();
+
+	if (out_msg == NULL) {
+		return NULL;
+	}
+
+	memcpy(&out_msg->hdr.params, &msg->hdr.params, sizeof(msg->hdr.params));
+	out_msg->hdr.params.generic.type = LOG_MSG_TYPE_HEXDUMP;
+	out_msg->hdr.params.generic.ext = 1;
+	out_msg->hdr.ref_cnt = 1;
+	out_msg->hdr.timestamp = msg->hdr.timestamp;
+	out_msg->hdr.ids = msg->hdr.ids;
+	out_msg->hdr.params.hexdump.length = 0;
+
+	if (out_msg != NULL) {
+		struct log_output_ctx out_ctx = {
+			.offset = 0,
+			.msg = out_msg
+		};
+
+		log_output_ctx_set(converter, &out_ctx);
+		log_output_msg_process(converter, msg,
+					LOG_OUTPUT_FLAG_CRLF_NONE);
+	}
+
+	return out_msg;
 }
