@@ -122,11 +122,13 @@ static int read_port_regs(struct device *dev, u8_t reg, u16_t *buf)
  *
  * @param dev Device struct of the PCA95XX.
  * @param reg Register to write into (the PORT0 of the pair of registers).
- * @param buf Buffer to write data from.
+ * @param cache Pointer to the cache to be updated after successful write.
+ * @param value New value to set.
  *
  * @return 0 if successful, failed otherwise.
  */
-static int write_port_regs(struct device *dev, u8_t reg, u16_t *buf)
+static int write_port_regs(struct device *dev, u8_t reg,
+			   u16_t *cache, u16_t value)
 {
 	const struct gpio_pca95xx_config * const config =
 		dev->config->config_info;
@@ -138,19 +140,57 @@ static int write_port_regs(struct device *dev, u8_t reg, u16_t *buf)
 	int ret;
 
 	LOG_DBG("PCA95XX[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
-		"0x%X", i2c_addr, reg, (*buf & 0xFF), (reg + 1),
-		(*buf >> 8));
+		"0x%X", i2c_addr, reg, (value & 0xFF),
+		(reg + 1), (value >> 8));
 
-	port_data = sys_cpu_to_le16(*buf);
+	port_data = sys_cpu_to_le16(value);
 
 	ret = i2c_burst_write(i2c_master, i2c_addr, reg,
 			      (u8_t *)&port_data, sizeof(port_data));
-	if (ret != 0) {
+	if (ret == 0) {
+		*cache = value;
+	} else {
 		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
 			"(%d)", i2c_addr, reg, ret);
 	}
 
 	return ret;
+}
+
+static inline int update_output_regs(struct device *dev, u16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
+
+	return write_port_regs(dev, REG_OUTPUT_PORT0,
+			       &drv_data->reg_cache.output, value);
+}
+
+static inline int update_direction_regs(struct device *dev, u16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
+
+	return write_port_regs(dev, REG_CONF_PORT0,
+			       &drv_data->reg_cache.dir, value);
+}
+
+static inline int update_pul_sel_regs(struct device *dev, u16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
+
+	return write_port_regs(dev, REG_PUD_SEL_PORT0,
+			       &drv_data->reg_cache.pud_sel, value);
+}
+
+static inline int update_pul_en_regs(struct device *dev, u16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
+
+	return write_port_regs(dev, REG_PUD_EN_PORT0,
+			       &drv_data->reg_cache.pud_en, value);
 }
 
 /**
@@ -168,8 +208,8 @@ static int setup_pin_dir(struct device *dev, int access_op,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t *reg_dir = &drv_data->reg_cache.dir;
-	u16_t *reg_out = &drv_data->reg_cache.output;
+	u16_t reg_dir = drv_data->reg_cache.dir;
+	u16_t reg_out = drv_data->reg_cache.output;
 	int ret;
 
 	/* For each pin, 0 == output, 1 == input */
@@ -177,26 +217,26 @@ static int setup_pin_dir(struct device *dev, int access_op,
 	case GPIO_ACCESS_BY_PIN:
 		if ((flags & GPIO_OUTPUT) != 0U) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				*reg_out |= BIT(pin);
+				reg_out |= BIT(pin);
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				*reg_out &= ~BIT(pin);
+				reg_out &= ~BIT(pin);
 			}
-			*reg_dir &= ~BIT(pin);
+			reg_dir &= ~BIT(pin);
 		} else {
-			*reg_dir |= BIT(pin);
+			reg_dir |= BIT(pin);
 		}
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		if ((flags & GPIO_OUTPUT) != 0U) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				*reg_out = 0xFFFF;
+				reg_out = 0xFFFF;
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				*reg_out = 0x0;
+				reg_out = 0x0;
 			}
-			*reg_dir = 0x0;
+			reg_dir = 0x0;
 		} else {
-			*reg_dir = 0xFFFF;
+			reg_dir = 0xFFFF;
 		}
 
 		break;
@@ -205,12 +245,12 @@ static int setup_pin_dir(struct device *dev, int access_op,
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+	ret = update_output_regs(dev, reg_out);
 	if (ret != 0) {
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_CONF_PORT0, reg_dir);
+	ret = update_direction_regs(dev, reg_dir);
 
 done:
 	return ret;
@@ -233,7 +273,7 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 		dev->config->config_info;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t *reg_pud;
+	u16_t reg_pud;
 	u16_t bit_mask;
 	u16_t new_value = 0U;
 	int ret;
@@ -261,7 +301,7 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 	}
 
 	/* Setup pin pull up or pull down */
-	reg_pud = &drv_data->reg_cache.pud_sel;
+	reg_pud = drv_data->reg_cache.pud_sel;
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		bit_mask = 1 << pin;
@@ -271,16 +311,16 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 			new_value = 1 << pin;
 		}
 
-		*reg_pud &= ~bit_mask;
-		*reg_pud |= new_value;
+		reg_pud &= ~bit_mask;
+		reg_pud |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		/* pull down == 0, pull up == 1*/
 		if ((flags & GPIO_PULL_UP) != 0U) {
-			*reg_pud = 0xFFFF;
+			reg_pud = 0xFFFF;
 		} else {
-			*reg_pud = 0x0;
+			reg_pud = 0x0;
 		}
 		break;
 	default:
@@ -288,14 +328,14 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_PUD_SEL_PORT0, reg_pud);
+	ret = update_pul_sel_regs(dev, reg_pud);
 	if (ret) {
 		goto done;
 	}
 
 en_dis:
 	/* enable/disable pull up/down */
-	reg_pud = &drv_data->reg_cache.pud_en;
+	reg_pud = drv_data->reg_cache.pud_en;
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		bit_mask = 1 << pin;
@@ -304,15 +344,15 @@ en_dis:
 			new_value = 1 << pin;
 		}
 
-		*reg_pud &= ~bit_mask;
-		*reg_pud |= new_value;
+		reg_pud &= ~bit_mask;
+		reg_pud |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
-			*reg_pud = 0xFFFF;
+			reg_pud = 0xFFFF;
 		} else {
-			*reg_pud = 0x0;
+			reg_pud = 0x0;
 		}
 		break;
 	default:
@@ -320,7 +360,7 @@ en_dis:
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_PUD_EN_PORT0, reg_pud);
+	ret = update_pul_en_regs(dev, reg_pud);
 
 done:
 	return ret;
@@ -392,27 +432,27 @@ static int gpio_pca95xx_write(struct device *dev, int access_op,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t *reg_out = &drv_data->reg_cache.output;
+	u16_t reg_out = drv_data->reg_cache.output;
 	int ret;
 
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		if (value) {
-			*reg_out |= BIT(pin);
+			reg_out |= BIT(pin);
 		} else {
-			*reg_out &= ~BIT(pin);
+			reg_out &= ~BIT(pin);
 		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		*reg_out = value;
+		reg_out = value;
 		break;
 	default:
 		ret = -ENOTSUP;
 		goto done;
 	}
 
-	ret = write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+	ret = update_output_regs(dev, reg_out);
 
 done:
 	return ret;
@@ -476,11 +516,11 @@ static int gpio_pca95xx_port_set_masked_raw(struct device *dev,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t *reg_out = &drv_data->reg_cache.output;
+	u16_t reg_out = drv_data->reg_cache.output;
 
-	*reg_out = (*reg_out & ~mask) | (mask & value);
+	reg_out = (reg_out & ~mask) | (mask & value);
 
-	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+	return update_output_regs(dev, reg_out);
 }
 
 static int gpio_pca95xx_port_set_bits_raw(struct device *dev, u32_t mask)
@@ -497,11 +537,11 @@ static int gpio_pca95xx_port_toggle_bits(struct device *dev, u32_t mask)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t *reg_out = &drv_data->reg_cache.output;
+	u16_t reg_out = drv_data->reg_cache.output;
 
-	*reg_out ^= mask;
+	reg_out ^= mask;
 
-	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
+	return update_output_regs(dev, reg_out);
 }
 
 static int gpio_pca95xx_pin_interrupt_configure(struct device *dev,
