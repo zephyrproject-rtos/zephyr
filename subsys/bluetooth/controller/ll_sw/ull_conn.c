@@ -2657,19 +2657,18 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		struct node_rx_pdu *rx;
 		struct pdu_data *pdu;
 
-		/* procedure request acked */
-		conn->llcp_feature.ack = conn->llcp_feature.req;
-
 		/* get a rx node for ULL->LL */
 		rx = ll_pdu_rx_alloc();
 		if (!rx) {
 			return;
 		}
 
-		rx->hdr.handle = conn->lll.handle;
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+		/* procedure request acked */
+		conn->llcp_feature.ack = conn->llcp_feature.req;
 
 		/* prepare feature rsp structure */
+		rx->hdr.handle = conn->lll.handle;
+		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 		pdu = (void *)rx->pdu;
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
