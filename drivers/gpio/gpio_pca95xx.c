@@ -13,6 +13,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
+#include <sys/byteorder.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
@@ -60,13 +61,6 @@ struct gpio_pca95xx_config {
 	u8_t capabilities;
 };
 
-/** Store the port 0/1 data for each register pair. */
-union gpio_pca95xx_port_data {
-	u16_t all;
-	u8_t port[2];
-	u8_t byte[2];
-};
-
 /** Runtime driver data */
 struct gpio_pca95xx_drv_data {
 	/* gpio_driver_data needs to be first */
@@ -76,10 +70,10 @@ struct gpio_pca95xx_drv_data {
 	struct device *i2c_master;
 
 	struct {
-		union gpio_pca95xx_port_data output;
-		union gpio_pca95xx_port_data dir;
-		union gpio_pca95xx_port_data pud_en;
-		union gpio_pca95xx_port_data pud_sel;
+		u16_t output;
+		u16_t dir;
+		u16_t pud_en;
+		u16_t pud_sel;
 	} reg_cache;
 };
 
@@ -94,8 +88,7 @@ struct gpio_pca95xx_drv_data {
  *
  * @return 0 if successful, failed otherwise.
  */
-static int read_port_regs(struct device *dev, u8_t reg,
-			   union gpio_pca95xx_port_data *buf)
+static int read_port_regs(struct device *dev, u8_t reg, u16_t *buf)
 {
 	const struct gpio_pca95xx_config * const config =
 		dev->config->config_info;
@@ -103,20 +96,23 @@ static int read_port_regs(struct device *dev, u8_t reg,
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
 	u16_t i2c_addr = config->i2c_slave_addr;
+	u16_t port_data;
 	int ret;
 
-	ret = i2c_burst_read(i2c_master, i2c_addr, reg, buf->byte, 2);
-	if (ret) {
+	ret = i2c_burst_read(i2c_master, i2c_addr, reg,
+			     (u8_t *)&port_data, sizeof(port_data));
+	if (ret != 0) {
 		LOG_ERR("PCA95XX[0x%X]: error reading register 0x%X (%d)",
 			i2c_addr, reg, ret);
-		goto error;
+		return ret;
 	}
 
-	LOG_DBG("PCA95XX[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
-		i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
+	*buf = sys_le16_to_cpu(port_data);
 
-error:
-	return ret;
+	LOG_DBG("PCA95XX[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
+		i2c_addr, reg, (*buf & 0xFF), (reg + 1), (*buf >> 8));
+
+	return 0;
 }
 
 /**
@@ -130,8 +126,7 @@ error:
  *
  * @return 0 if successful, failed otherwise.
  */
-static int write_port_regs(struct device *dev, u8_t reg,
-			    union gpio_pca95xx_port_data *buf)
+static int write_port_regs(struct device *dev, u8_t reg, u16_t *buf)
 {
 	const struct gpio_pca95xx_config * const config =
 		dev->config->config_info;
@@ -139,14 +134,18 @@ static int write_port_regs(struct device *dev, u8_t reg,
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
 	u16_t i2c_addr = config->i2c_slave_addr;
+	u16_t port_data;
 	int ret;
 
 	LOG_DBG("PCA95XX[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
-		"0x%X", i2c_addr, reg, buf->byte[0], (reg + 1),
-		buf->byte[1]);
+		"0x%X", i2c_addr, reg, (*buf & 0xFF), (reg + 1),
+		(*buf >> 8));
 
-	ret = i2c_burst_write(i2c_master, i2c_addr, reg, buf->byte, 2);
-	if (ret) {
+	port_data = sys_cpu_to_le16(*buf);
+
+	ret = i2c_burst_write(i2c_master, i2c_addr, reg,
+			      (u8_t *)&port_data, sizeof(port_data));
+	if (ret != 0) {
 		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
 			"(%d)", i2c_addr, reg, ret);
 	}
@@ -169,8 +168,8 @@ static int setup_pin_dir(struct device *dev, int access_op,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	union gpio_pca95xx_port_data *reg_dir = &drv_data->reg_cache.dir;
-	union gpio_pca95xx_port_data *reg_out = &drv_data->reg_cache.output;
+	u16_t *reg_dir = &drv_data->reg_cache.dir;
+	u16_t *reg_out = &drv_data->reg_cache.output;
 	int ret;
 
 	/* For each pin, 0 == output, 1 == input */
@@ -178,26 +177,26 @@ static int setup_pin_dir(struct device *dev, int access_op,
 	case GPIO_ACCESS_BY_PIN:
 		if ((flags & GPIO_OUTPUT) != 0U) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				reg_out->all |= BIT(pin);
+				*reg_out |= BIT(pin);
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				reg_out->all &= ~BIT(pin);
+				*reg_out &= ~BIT(pin);
 			}
-			reg_dir->all &= ~BIT(pin);
+			*reg_dir &= ~BIT(pin);
 		} else {
-			reg_dir->all |= BIT(pin);
+			*reg_dir |= BIT(pin);
 		}
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		if ((flags & GPIO_OUTPUT) != 0U) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				reg_out->all = 0xFFFF;
+				*reg_out = 0xFFFF;
 			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				reg_out->all = 0x0;
+				*reg_out = 0x0;
 			}
-			reg_dir->all = 0x0;
+			*reg_dir = 0x0;
 		} else {
-			reg_dir->all = 0xFFFF;
+			*reg_dir = 0xFFFF;
 		}
 
 		break;
@@ -234,7 +233,7 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 		dev->config->config_info;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	union gpio_pca95xx_port_data *reg_pud;
+	u16_t *reg_pud;
 	u16_t bit_mask;
 	u16_t new_value = 0U;
 	int ret;
@@ -272,16 +271,16 @@ static int setup_pin_pullupdown(struct device *dev, int access_op,
 			new_value = 1 << pin;
 		}
 
-		reg_pud->all &= ~bit_mask;
-		reg_pud->all |= new_value;
+		*reg_pud &= ~bit_mask;
+		*reg_pud |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		/* pull down == 0, pull up == 1*/
 		if ((flags & GPIO_PULL_UP) != 0U) {
-			reg_pud->all = 0xFFFF;
+			*reg_pud = 0xFFFF;
 		} else {
-			reg_pud->all = 0x0;
+			*reg_pud = 0x0;
 		}
 		break;
 	default:
@@ -305,15 +304,15 @@ en_dis:
 			new_value = 1 << pin;
 		}
 
-		reg_pud->all &= ~bit_mask;
-		reg_pud->all |= new_value;
+		*reg_pud &= ~bit_mask;
+		*reg_pud |= new_value;
 
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
-			reg_pud->all = 0xFFFF;
+			*reg_pud = 0xFFFF;
 		} else {
-			reg_pud->all = 0x0;
+			*reg_pud = 0x0;
 		}
 		break;
 	default:
@@ -393,20 +392,20 @@ static int gpio_pca95xx_write(struct device *dev, int access_op,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	union gpio_pca95xx_port_data *reg_out = &drv_data->reg_cache.output;
+	u16_t *reg_out = &drv_data->reg_cache.output;
 	int ret;
 
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		if (value) {
-			reg_out->all |= BIT(pin);
+			*reg_out |= BIT(pin);
 		} else {
-			reg_out->all &= ~BIT(pin);
+			*reg_out &= ~BIT(pin);
 		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		reg_out->all = value;
+		*reg_out = value;
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -432,7 +431,7 @@ done:
 static int gpio_pca95xx_read(struct device *dev, int access_op,
 			       u32_t pin, u32_t *value)
 {
-	union gpio_pca95xx_port_data buf;
+	u16_t buf;
 	int ret;
 
 	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
@@ -442,10 +441,10 @@ static int gpio_pca95xx_read(struct device *dev, int access_op,
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		*value = (buf.all >> pin) & 0x01;
+		*value = (buf >> pin) & 0x01;
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		*value = buf.all;
+		*value = buf;
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -458,7 +457,7 @@ done:
 
 static int gpio_pca95xx_port_get_raw(struct device *dev, u32_t *value)
 {
-	union gpio_pca95xx_port_data buf;
+	u16_t buf;
 	int ret;
 
 	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
@@ -466,7 +465,7 @@ static int gpio_pca95xx_port_get_raw(struct device *dev, u32_t *value)
 		goto done;
 	}
 
-	*value = buf.all;
+	*value = buf;
 
 done:
 	return ret;
@@ -477,9 +476,9 @@ static int gpio_pca95xx_port_set_masked_raw(struct device *dev,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	union gpio_pca95xx_port_data *reg_out = &drv_data->reg_cache.output;
+	u16_t *reg_out = &drv_data->reg_cache.output;
 
-	reg_out->all = (reg_out->all & ~mask) | (mask & value);
+	*reg_out = (*reg_out & ~mask) | (mask & value);
 
 	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
 }
@@ -498,9 +497,9 @@ static int gpio_pca95xx_port_toggle_bits(struct device *dev, u32_t mask)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	union gpio_pca95xx_port_data *reg_out = &drv_data->reg_cache.output;
+	u16_t *reg_out = &drv_data->reg_cache.output;
 
-	reg_out->all ^= mask;
+	*reg_out ^= mask;
 
 	return write_port_regs(dev, REG_OUTPUT_PORT0, reg_out);
 }
@@ -561,10 +560,10 @@ static const struct gpio_pca95xx_config gpio_pca95xx_0_cfg = {
 
 static struct gpio_pca95xx_drv_data gpio_pca95xx_0_drvdata = {
 	/* Default for registers according to datasheet */
-	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.dir = { .all = 0xFFFF },
-	.reg_cache.pud_en = { .all = 0x0 },
-	.reg_cache.pud_sel = { .all = 0xFFFF },
+	.reg_cache.output = 0xFFFF,
+	.reg_cache.dir = 0xFFFF,
+	.reg_cache.pud_en = 0x0,
+	.reg_cache.pud_sel = 0xFFFF,
 };
 
 /* This has to init after I2C master */
@@ -588,10 +587,10 @@ static const struct gpio_pca95xx_config gpio_pca95xx_1_cfg = {
 
 static struct gpio_pca95xx_drv_data gpio_pca95xx_1_drvdata = {
 	/* Default for registers according to datasheet */
-	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.dir = { .all = 0xFFFF },
-	.reg_cache.pud_en = { .all = 0x0 },
-	.reg_cache.pud_sel = { .all = 0xFFFF },
+	.reg_cache.output = 0xFFFF,
+	.reg_cache.dir = 0xFFFF,
+	.reg_cache.pud_en = 0x0,
+	.reg_cache.pud_sel = 0xFFFF,
 };
 
 /* This has to init after I2C master */
@@ -615,10 +614,10 @@ static const struct gpio_pca95xx_config gpio_pca95xx_2_cfg = {
 
 static struct gpio_pca95xx_drv_data gpio_pca95xx_2_drvdata = {
 	/* Default for registers according to datasheet */
-	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.dir = { .all = 0xFFFF },
-	.reg_cache.pud_en = { .all = 0x0 },
-	.reg_cache.pud_sel = { .all = 0xFFFF },
+	.reg_cache.output = 0xFFFF,
+	.reg_cache.dir = 0xFFFF,
+	.reg_cache.pud_en = 0x0,
+	.reg_cache.pud_sel = 0xFFFF,
 };
 
 /* This has to init after I2C master */
@@ -642,10 +641,10 @@ static const struct gpio_pca95xx_config gpio_pca95xx_3_cfg = {
 
 static struct gpio_pca95xx_drv_data gpio_pca95xx_3_drvdata = {
 	/* Default for registers according to datasheet */
-	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.dir = { .all = 0xFFFF },
-	.reg_cache.pud_en = { .all = 0x0 },
-	.reg_cache.pud_sel = { .all = 0xFFFF },
+	.reg_cache.output = 0xFFFF,
+	.reg_cache.dir = 0xFFFF,
+	.reg_cache.pud_en = 0x0,
+	.reg_cache.pud_sel = 0xFFFF,
 };
 
 /* This has to init after I2C master */
