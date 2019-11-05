@@ -2760,7 +2760,8 @@ class TestSuite:
                     try:
                         data = future.result()
                     except Exception as exc:
-                        print('%r generated an exception: %s' % (test, exc))
+                        sys.exit('%r generated an exception: %s' % (test, exc))
+
                     else:
                         if data:
                             verbose(data)
