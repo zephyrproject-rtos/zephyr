@@ -21,93 +21,6 @@ LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
-#ifdef CONFIG_THREAD_STACK_INFO
-/**
- * @brief Check if a memory address range falls within the stack
- *
- * Given a memory address range, ensure that it falls within the bounds
- * of the faulting context's stack.
- *
- * @param addr Starting address
- * @param size Size of the region, or 0 if we just want to see if addr is
- *             in bounds
- * @param cs Code segment of faulting context
- * @return true if addr/size region is not within the thread stack
- */
-static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
-{
-	u32_t start, end;
-
-	if (z_arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
-		end = start + CONFIG_ISR_STACK_SIZE;
-	} else if ((cs & 0x3U) != 0U ||
-		   (_current->base.user_options & K_USER) == 0) {
-		/* Thread was in user mode, or is not a user mode thread.
-		 * The normal stack buffer is what we will check.
-		 */
-		start = _current->stack_info.start;
-		end = STACK_ROUND_DOWN(_current->stack_info.start +
-				       _current->stack_info.size);
-	} else {
-		/* User thread was doing a syscall, check kernel stack bounds */
-		start = _current->stack_info.start - MMU_PAGE_SIZE;
-		end = _current->stack_info.start;
-	}
-
-	return (addr <= start) || (addr + size > end);
-}
-#endif
-
-#if defined(CONFIG_EXCEPTION_STACK_TRACE)
-struct stack_frame {
-	u32_t next;
-	u32_t ret_addr;
-	u32_t args;
-};
-
-#define MAX_STACK_FRAMES 8
-
-static void unwind_stack(u32_t base_ptr, u16_t cs)
-{
-	struct stack_frame *frame;
-	int i;
-
-	if (base_ptr == 0U) {
-		LOG_ERR("NULL base ptr");
-		return;
-	}
-
-	for (i = 0; i < MAX_STACK_FRAMES; i++) {
-		if (base_ptr % sizeof(base_ptr) != 0U) {
-			LOG_ERR("unaligned frame ptr");
-			return;
-		}
-
-		frame = (struct stack_frame *)base_ptr;
-		if (frame == NULL) {
-			break;
-		}
-
-#ifdef CONFIG_THREAD_STACK_INFO
-		/* Ensure the stack frame is within the faulting context's
-		 * stack buffer
-		 */
-		if (check_stack_bounds((u32_t)frame, sizeof(*frame), cs)) {
-			LOG_ERR("     corrupted? (bp=%p)", frame);
-			break;
-		}
-#endif
-
-		if (frame->ret_addr == 0U) {
-			break;
-		}
-		LOG_ERR("     0x%08x (0x%x)", frame->ret_addr, frame->args);
-		base_ptr = frame->next;
-	}
-}
-#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 #ifdef CONFIG_BOARD_QEMU_X86
 FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
@@ -121,29 +34,6 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
 	CODE_UNREACHABLE;
 }
 #endif
-
-FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
-{
-	if (esf != NULL) {
-		LOG_ERR("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x",
-			esf->eax, esf->ebx, esf->ecx, esf->edx);
-		LOG_ERR("esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x",
-			esf->esi, esf->edi, esf->ebp, esf->esp);
-		LOG_ERR("eflags: 0x%08x cs: 0x%04x cr3: %p", esf->eflags,
-			esf->cs & 0xFFFFU, z_x86_page_tables_get());
-
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-		LOG_ERR("call trace:");
-#endif
-		LOG_ERR("eip: 0x%08x", esf->eip);
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-		unwind_stack(esf->ebp, esf->cs);
-#endif
-	}
-
-	z_fatal_error(reason, esf);
-	CODE_UNREACHABLE;
-}
 
 void z_x86_spurious_irq(const z_arch_esf_t *esf)
 {
@@ -348,7 +238,7 @@ void page_fault_handler(z_arch_esf_t *esf)
 	dump_page_fault(esf);
 #endif
 #ifdef CONFIG_THREAD_STACK_INFO
-	if (check_stack_bounds(esf->esp, 0, esf->cs)) {
+	if (z_x86_check_stack_bounds(esf->esp, 0, esf->cs)) {
 		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
 	}
 #endif
@@ -407,7 +297,7 @@ static __used void df_handler_bottom(void)
 
 	LOG_ERR("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
-	if (check_stack_bounds(_df_esf.esp, 0, _df_esf.cs)) {
+	if (z_x86_check_stack_bounds(_df_esf.esp, 0, _df_esf.cs)) {
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
 #endif
