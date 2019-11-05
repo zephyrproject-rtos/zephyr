@@ -9,3 +9,8 @@ description: |
 compatible: "st,lis3mdl-magn"
 
 include: i2c-device.yaml
+
+properties:
+    irq-gpios:
+      required: false
+      type: phandle-array
