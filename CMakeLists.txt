@@ -1061,9 +1061,6 @@ if(CONFIG_USERSPACE)
   if(CONFIG_NEWLIB_LIBC_NANO)
     set(NEWLIB_PART -l libc_nano.a z_libc_partition)
   endif()
-  if(CONFIG_MBEDTLS)
-    set(MBEDTLS_PART -l lib..__modules__crypto__mbedtls.a k_mbedtls_partition)
-  endif()
 
   add_custom_command(
     OUTPUT ${APP_SMEM_UNALIGNED_LD}
@@ -1071,7 +1068,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_UNALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
@@ -1122,7 +1119,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
     -o ${APP_SMEM_ALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
