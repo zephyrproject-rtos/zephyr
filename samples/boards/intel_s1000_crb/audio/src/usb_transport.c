@@ -98,7 +98,7 @@ int usb_transport_init(usb_transport_receive_callback_t callback)
 
 	receive_data_cb = callback;
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return;

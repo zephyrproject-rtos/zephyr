@@ -16,7 +16,7 @@ void main(void)
 {
 	int ret;
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return;

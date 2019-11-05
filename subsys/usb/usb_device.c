@@ -150,8 +150,10 @@ static struct usb_dev_priv {
 	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
-	/** USB stack status clalback */
+	/** USB stack status callback */
 	usb_dc_status_callback status_callback;
+	/** USB user status callback */
+	usb_dc_status_callback user_status_callback;
 	/** Pointer to registered descriptors */
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
@@ -979,6 +981,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 			cfg->cb_usb_status(cfg, status, param);
 		}
 	}
+
+	if (usb_dev.user_status_callback) {
+		usb_dev.user_status_callback(status, param);
+	}
 }
 
 /**
@@ -1034,6 +1040,9 @@ int usb_deconfig(void)
 
 	/* unregister status callback */
 	usb_register_status_callback(NULL);
+
+	/* unregister user status callback */
+	usb_dev.user_status_callback = NULL;
 
 	/* Reset USB controller */
 	usb_dc_reset();
@@ -1533,7 +1542,7 @@ int usb_set_config(const u8_t *device_descriptor)
 	return 0;
 }
 
-int usb_enable(void)
+int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
 	u32_t i;
@@ -1556,6 +1565,7 @@ int usb_enable(void)
 		goto out;
 	}
 
+	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
 

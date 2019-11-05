@@ -109,7 +109,6 @@ static void protocol_cb(u8_t protocol)
 
 static const struct hid_ops ops = {
 	.int_in_ready = in_ready_cb,
-	.status_cb = status_cb,
 	.on_idle = idle_cb,
 	.protocol_change = protocol_cb,
 };
@@ -120,7 +119,7 @@ void main(void)
 
 	LOG_DBG("Starting application");
 
-	ret = usb_enable();
+	ret = usb_enable(status_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return;

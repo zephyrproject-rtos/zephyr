@@ -551,6 +551,11 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 	return 0;
 }
 
+static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	LOG_INF("Status %d", status);
+}
+
 void main(void)
 {
 	int ret;
@@ -626,7 +631,7 @@ void main(void)
 	usb_hid_init(hid0_dev);
 	usb_hid_init(hid1_dev);
 
-	ret = usb_enable();
+	ret = usb_enable(status_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return;
