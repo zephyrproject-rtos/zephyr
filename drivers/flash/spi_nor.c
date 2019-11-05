@@ -36,17 +36,6 @@ struct spi_nor_data {
 	struct k_sem sem;
 };
 
-#if defined(CONFIG_MULTITHREADING)
-#define SYNC_INIT() k_sem_init(	\
-		&((struct spi_nor_data *)dev->driver_data)->sem, 1, UINT_MAX)
-#define SYNC_LOCK() k_sem_take(&driver_data->sem, K_FOREVER)
-#define SYNC_UNLOCK() k_sem_give(&driver_data->sem)
-#else
-#define SYNC_INIT()
-#define SYNC_LOCK()
-#define SYNC_UNLOCK()
-#endif
-
 /*
  * @brief Send an SPI command
  *
@@ -110,6 +99,32 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
+/* Everything necessary to acquire owning access to the device.
+ *
+ * For now this means taking the lock.
+ */
+static void acquire_device(struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		struct spi_nor_data *const driver_data = dev->driver_data;
+
+		k_sem_take(&driver_data->sem, K_FOREVER);
+	}
+}
+
+/* Everything necessary to release access to the device.
+ *
+ * For now, this means releasing the lock.
+ */
+static void release_device(struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		struct spi_nor_data *const driver_data = dev->driver_data;
+
+		k_sem_give(&driver_data->sem);
+	}
+}
+
 /**
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
  *
@@ -155,7 +170,6 @@ static int spi_nor_wait_until_ready(struct device *dev)
 static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
-	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 	int ret;
 
@@ -164,29 +178,28 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	SYNC_LOCK();
+	acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
 	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
-	SYNC_UNLOCK();
+	release_device(dev);
 	return ret;
 }
 
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 			 size_t size)
 {
-	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
-	int ret;
+	int ret = 0;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -EINVAL;
 	}
 
-	SYNC_LOCK();
+	acquire_device(dev);
 
 	while (size > 0) {
 		size_t to_write = size;
@@ -206,8 +219,7 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
 					     src, to_write);
 		if (ret != 0) {
-			SYNC_UNLOCK();
-			return ret;
+			goto out;
 		}
 
 		size -= to_write;
@@ -217,21 +229,22 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		spi_nor_wait_until_ready(dev);
 	}
 
-	SYNC_UNLOCK();
-	return 0;
+out:
+	release_device(dev);
+	return ret;
 }
 
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
-	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
+	int ret = 0;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -ENODEV;
 	}
 
-	SYNC_LOCK();
+	acquire_device(dev);
 
 	while (size) {
 		/* write enable */
@@ -264,26 +277,26 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 			size -= SPI_NOR_SECTOR_SIZE;
 		} else {
 			/* minimal erase size is at least a sector size */
-			SYNC_UNLOCK();
 			LOG_DBG("unsupported at 0x%lx size %zu", (long)addr,
 				size);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 
 		spi_nor_wait_until_ready(dev);
 	}
 
-	SYNC_UNLOCK();
+out:
+	release_device(dev);
 
-	return 0;
+	return ret;
 }
 
 static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 {
-	struct spi_nor_data *const driver_data = dev->driver_data;
 	int ret;
 
-	SYNC_LOCK();
+	acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
@@ -296,7 +309,7 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
-	SYNC_UNLOCK();
+	release_device(dev);
 
 	return ret;
 }
@@ -340,7 +353,6 @@ static int spi_nor_configure(struct device *dev)
 		return -ENODEV;
 	}
 
-
 	return 0;
 }
 
@@ -352,7 +364,11 @@ static int spi_nor_configure(struct device *dev)
  */
 static int spi_nor_init(struct device *dev)
 {
-	SYNC_INIT();
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		struct spi_nor_data *const driver_data = dev->driver_data;
+
+		k_sem_init(&driver_data->sem, 1, UINT_MAX);
+	}
 
 	return spi_nor_configure(dev);
 }
