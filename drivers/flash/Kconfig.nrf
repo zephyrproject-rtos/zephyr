@@ -33,4 +33,12 @@ config SOC_FLASH_NRF_UICR
 	  Enable operations on UICR. Once enabled UICR are written or read as
 	  ordinary flash memory. Erase is possible for whole UICR at once.
 
+config SOC_FLASH_NRF_OVERRIDE_WBS
+	bool "Override Write Block Size"
+	default n
+	help
+	  Override the standard write block size on nRF flash driver, sets the
+	  write block size to 1 byte. Using this option might reduce the number
+	  of writes that can be performed. If unsure, leave disabled.
+
 endif #!FLASH_NRF_FORCE_ALT
