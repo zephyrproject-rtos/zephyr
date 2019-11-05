@@ -587,110 +587,44 @@ static int gpio_pca95xx_init(struct device *dev)
 	return 0;
 }
 
-/* Initialization for PCA95XX_0 */
+#define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
+static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
+	.i2c_master_dev_name = DT_INST_##inst##_NXP_PCA95XX_BUS_NAME,	\
+	.i2c_slave_addr = DT_INST_##inst##_NXP_PCA95XX_BASE_ADDRESS,	\
+	.capabilities =							\
+		(DT_INST_##inst##_NXP_PCA95XX_HAS_PUD ?			\
+			PCA_HAS_PUD : 0) |				\
+		0,							\
+};									\
+									\
+static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
+	.reg_cache.output = 0xFFFF,					\
+	.reg_cache.dir = 0xFFFF,					\
+	.reg_cache.pud_en = 0x0,					\
+	.reg_cache.pud_sel = 0xFFFF,					\
+};									\
+									\
+DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\
+	DT_INST_##inst##_NXP_PCA95XX_LABEL,				\
+	gpio_pca95xx_init,						\
+	&gpio_pca95xx_##inst##_drvdata,					\
+	&gpio_pca95xx_##inst##_cfg,					\
+	POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,			\
+	&gpio_pca95xx_drv_api_funcs)
+
+
 #ifdef DT_INST_0_NXP_PCA95XX
-static const struct gpio_pca95xx_config gpio_pca95xx_0_cfg = {
-	.i2c_master_dev_name = DT_INST_0_NXP_PCA95XX_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_NXP_PCA95XX_BASE_ADDRESS,
-	.capabilities =
-		(DT_INST_0_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
-		0,
-};
-
-static struct gpio_pca95xx_drv_data gpio_pca95xx_0_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.output = 0xFFFF,
-	.reg_cache.dir = 0xFFFF,
-	.reg_cache.pud_en = 0x0,
-	.reg_cache.pud_sel = 0xFFFF,
-};
-
-/* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_0, DT_INST_0_NXP_PCA95XX_LABEL,
-	    gpio_pca95xx_init,
-	    &gpio_pca95xx_0_drvdata, &gpio_pca95xx_0_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
-	    &gpio_pca95xx_drv_api_funcs);
-
+GPIO_PCA95XX_DEVICE_INSTANCE(0);
 #endif /* DT_INST_0_NXP_PCA95XX */
 
-/* Initialization for PCA95XX_1 */
 #ifdef DT_INST_1_NXP_PCA95XX
-static const struct gpio_pca95xx_config gpio_pca95xx_1_cfg = {
-	.i2c_master_dev_name = DT_INST_1_NXP_PCA95XX_BUS_NAME,
-	.i2c_slave_addr = DT_INST_1_NXP_PCA95XX_BASE_ADDRESS,
-	.capabilities =
-		(DT_INST_1_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
-		0,
-};
-
-static struct gpio_pca95xx_drv_data gpio_pca95xx_1_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.output = 0xFFFF,
-	.reg_cache.dir = 0xFFFF,
-	.reg_cache.pud_en = 0x0,
-	.reg_cache.pud_sel = 0xFFFF,
-};
-
-/* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_1, DT_INST_1_NXP_PCA95XX_LABEL,
-	    gpio_pca95xx_init,
-	    &gpio_pca95xx_1_drvdata, &gpio_pca95xx_1_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
-	    &gpio_pca95xx_drv_api_funcs);
-
+GPIO_PCA95XX_DEVICE_INSTANCE(1);
 #endif /* DT_INST_1_NXP_PCA95XX */
 
-/* Initialization for PCA95XX_2 */
 #ifdef DT_INST_2_NXP_PCA95XX
-static const struct gpio_pca95xx_config gpio_pca95xx_2_cfg = {
-	.i2c_master_dev_name = DT_INST_2_NXP_PCA95XX_BUS_NAME,
-	.i2c_slave_addr = DT_INST_2_NXP_PCA95XX_BASE_ADDRESS,
-	.capabilities =
-		(DT_INST_2_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
-		0,
-};
-
-static struct gpio_pca95xx_drv_data gpio_pca95xx_2_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.output = 0xFFFF,
-	.reg_cache.dir = 0xFFFF,
-	.reg_cache.pud_en = 0x0,
-	.reg_cache.pud_sel = 0xFFFF,
-};
-
-/* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_2, DT_INST_2_NXP_PCA95XX_LABEL,
-	    gpio_pca95xx_init,
-	    &gpio_pca95xx_2_drvdata, &gpio_pca95xx_2_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
-	    &gpio_pca95xx_drv_api_funcs);
-
+GPIO_PCA95XX_DEVICE_INSTANCE(2);
 #endif /* DT_INST_2_NXP_PCA95XX */
 
-/* Initialization for PCA95XX_3 */
 #ifdef DT_INST_3_NXP_PCA95XX
-static const struct gpio_pca95xx_config gpio_pca95xx_3_cfg = {
-	.i2c_master_dev_name = DT_INST_3_NXP_PCA95XX_BUS_NAME,
-	.i2c_slave_addr = DT_INST_3_NXP_PCA95XX_BASE_ADDRESS,
-	.capabilities =
-		(DT_INST_3_NXP_PCA95XX_HAS_PUD ?  PCA_HAS_PUD : 0) |
-		0,
-};
-
-static struct gpio_pca95xx_drv_data gpio_pca95xx_3_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.output = 0xFFFF,
-	.reg_cache.dir = 0xFFFF,
-	.reg_cache.pud_en = 0x0,
-	.reg_cache.pud_sel = 0xFFFF,
-};
-
-/* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pca95xx_3, DT_INST_3_NXP_PCA95XX_LABEL,
-	    gpio_pca95xx_init,
-	    &gpio_pca95xx_3_drvdata, &gpio_pca95xx_3_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,
-	    &gpio_pca95xx_drv_api_funcs);
-
+GPIO_PCA95XX_DEVICE_INSTANCE(3);
 #endif /* DT_INST_3_NXP_PCA95XX */
