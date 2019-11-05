@@ -173,6 +173,15 @@ config BT_SETTINGS
 	  instead of each subsystem doing it independently.
 
 if BT_SETTINGS
+config BT_SETTINGS_CCC_LAZY_LOADING
+	bool "Load CCC values from settings when peer connects"
+	default y
+	help
+	  Load Client Configuration Characteristic setting right after a bonded
+	  device connects.
+	  Disabling this option will increase memory usage as CCC values for all
+	  bonded devices will be loaded when calling settings_load.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	help

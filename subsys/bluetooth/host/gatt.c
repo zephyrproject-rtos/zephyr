@@ -3585,6 +3585,11 @@ static void add_subscriptions(struct bt_conn *conn)
 
 #endif /* CONFIG_BT_GATT_CLIENT */
 
+#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
+			  void *cb_arg, void *param);
+#endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
+
 void bt_gatt_connected(struct bt_conn *conn)
 {
 	struct conn_data data;
@@ -3593,6 +3598,26 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
+
+#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+	/* Load CCC settings from backend if bonded */
+	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		char key[BT_SETTINGS_KEY_MAX];
+
+		if (conn->id) {
+			char id_str[4];
+
+			u8_to_dec(id_str, sizeof(id_str), conn->id);
+			bt_settings_encode_key(key, sizeof(key), "ccc",
+					       &conn->le.dst, id_str);
+		} else {
+			bt_settings_encode_key(key, sizeof(key), "ccc",
+					       &conn->le.dst, NULL);
+		}
+
+		settings_load_subtree_direct(key, ccc_set_direct, (void *)key);
+	}
+#endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
@@ -4124,7 +4149,27 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
+#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
+			  void *cb_arg, void *param)
+{
+	const char *name;
+
+	BT_DBG("key: %s", log_strdup((const char *)param));
+
+	/* Only "bt/ccc" settings should ever come here */
+	if (!settings_name_steq((const char *)param, "bt/ccc", &name)) {
+		BT_ERR("Invalid key");
+		return -EINVAL;
+	}
+
+	return ccc_set(name, len, read_cb, cb_arg);
+}
+#else
+/* Only register the ccc_set settings handler when not loading on-demand */
 SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set, NULL, NULL);
+#endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
+
 
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
