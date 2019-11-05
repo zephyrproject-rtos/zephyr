@@ -95,6 +95,37 @@ struct log_output {
 		.size = _size,						\
 	}
 
+/** @brief Put data into extended log message.
+ *
+ * @param data		Buffer with part of formatted string.
+ * @param length	Buffer length;
+ * @param ctx		Context.
+ *
+ * @return Number of processed bytes.
+ */
+int log_output_ext_msg_data_out(u8_t *data, size_t length, void *ctx);
+
+#define LOG_OUTPUT_EXT_MSG_CONVERTER_DEFINE(_name, _size) \
+	static u8_t _name##_buf[_size]; \
+	LOG_OUTPUT_DEFINE(_name, log_output_ext_msg_data_out, \
+			  _name##_buf, _size)
+
+/** @brief Convert log message to extended log message.
+ *
+ * Extended log message contains formatted string with log string prefixed with
+ * module name and optionally function name. Timestamp, level and domain name
+ * is not part of the string.
+ *
+ * @param converter	Log output instance created with
+ *			LOG_OUTPUT_EXT_MSG_CONVERTER_DEFINE macro.
+ * @param msg		Log message.
+ *
+ * @return Pointer to extended log message or NULL if failed to allocate buffer.
+ */
+struct log_msg *log_output_convert_to_ext_msg(
+				const struct log_output *converter,
+				struct log_msg *msg);
+
 /** @brief Process log messages to readable strings.
  *
  * Function is using provided context with the buffer and output function to
