@@ -219,12 +219,16 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'p':
-				  out('0', ctx);
-				  out('x', ctx);
-				  /* left-pad pointers with zeros */
-				  padding = PAD_ZERO_BEFORE;
-				  min_width = 8;
-				  /* Fall through */
+				out('0', ctx);
+				out('x', ctx);
+				/* left-pad pointers with zeros */
+				padding = PAD_ZERO_BEFORE;
+				if (IS_ENABLED(CONFIG_64BIT)) {
+					min_width = 16;
+				} else {
+					min_width = 8;
+				}
+				/* Fall through */
 			case 'x':
 			case 'X': {
 				unsigned long long x;
