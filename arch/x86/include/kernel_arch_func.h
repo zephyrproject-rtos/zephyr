@@ -24,6 +24,10 @@ static inline bool z_arch_is_in_isr(void)
 #endif
 }
 
+/* stack alignment related macros: STACK_ALIGN is defined in arch.h */
+#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
+#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
+
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
