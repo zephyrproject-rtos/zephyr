@@ -123,7 +123,7 @@ static int temp_nrf5_init(struct device *dev)
 static struct temp_nrf5_data temp_nrf5_driver;
 
 DEVICE_AND_API_INIT(temp_nrf5,
-		    CONFIG_TEMP_NRF5_NAME,
+		    DT_INST_0_NORDIC_NRF_TEMP_LABEL,
 		    temp_nrf5_init,
 		    &temp_nrf5_driver,
 		    NULL,
