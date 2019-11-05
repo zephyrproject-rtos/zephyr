@@ -352,7 +352,11 @@ static inline struct x86_page_tables *z_x86_page_tables_get(void)
 {
 	struct x86_page_tables *ret;
 
+#ifdef CONFIG_X86_64
+	__asm__ volatile("movq %%cr3, %0\n\t" : "=r" (ret));
+#else
 	__asm__ volatile("movl %%cr3, %0\n\t" : "=r" (ret));
+#endif
 
 	return ret;
 }
