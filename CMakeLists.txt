@@ -583,6 +583,14 @@ add_custom_command(
   )
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
+
+# 64-bit systems do not require special handling of 64-bit system call
+# parameters or return values, indicate this to the system call boilerplate
+# generation script.
+if(CONFIG_64BIT)
+  set(SYSCALL_LONG_REGISTERS_ARG --long-registers)
+endif()
+
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   # Also, some files are written to include/generated/syscalls/
   COMMAND
@@ -592,6 +600,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
   --syscall-list     ${syscall_list_h}
+  ${SYSCALL_LONG_REGISTERS_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${syscalls_json}
   )

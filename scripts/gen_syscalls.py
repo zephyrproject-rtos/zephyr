@@ -143,7 +143,7 @@ def typename_split(item):
     return (m[0].strip(), m[1])
 
 def need_split(argtype):
-    return argtype in types64
+    return (not args.long_registers) and (argtype in types64)
 
 # Note: "lo" and "hi" are named in little endian conventions,
 # but it doesn't matter as long as they are consistently
@@ -152,7 +152,7 @@ def union_decl(type):
     return "union { struct { uintptr_t lo, hi; } split; %s val; }" % type
 
 def wrapper_defs(func_name, func_type, args):
-    ret64 = func_type in types64
+    ret64 = need_split(func_type)
     mrsh_args = [] # List of rvalue expressions for the marshalled invocation
     split_args = []
     nsplit = 0
@@ -243,7 +243,7 @@ def marshall_defs(func_name, func_type, args):
             nmrsh += 1
 
     # Final argument for a 64 bit return value?
-    if func_type in types64:
+    if need_split(func_type):
         nmrsh += 1
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
@@ -287,7 +287,7 @@ def marshall_defs(func_name, func_type, args):
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
-        if func_type in types64:
+        if need_split(func_type):
             ptr = "((u64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
@@ -339,7 +339,9 @@ def parse_args():
     parser.add_argument("-o", "--base-output", required=True,
                         help="Base output directory for syscall macro headers")
     parser.add_argument("-s", "--split-type", action="append",
-                        help="A long type that must be split/marshalled")
+                        help="A long type that must be split/marshalled on 32-bit systems")
+    parser.add_argument("-x", "--long-registers", action="store_true",
+                        help="Indicates we are on system with 64-bit registers")
     args = parser.parse_args()
 
 
