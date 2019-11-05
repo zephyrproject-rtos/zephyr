@@ -523,3 +523,9 @@ test_i2c_mpr: mpr@18 {
 	label = "MPR";
 	reg = <0x18>;
 };
+
+test_i2c_dps310: dps310@48 {
+		compatible = "infineon,dps310";
+		label = "DPS310";
+		reg = <0x48>;
+};
