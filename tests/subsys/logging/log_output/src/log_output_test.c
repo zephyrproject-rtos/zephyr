@@ -145,10 +145,133 @@ void test_log_output_string(void)
 	validate_output_string(exp_str_no_crlf);
 }
 
+extern struct k_mem_slab log_msg_pool;
+
+static bool msg_content_match(struct log_msg *msg, const char *data)
+{
+	int len = msg->hdr.params.hexdump.length;
+	struct log_msg_cont *cont = msg->payload.ext.next;
+
+	if (len <= LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK) {
+		return memcmp(msg->payload.single.bytes, data, len) == 0;
+	}
+
+	if (memcmp(msg->payload.ext.data.bytes, data,
+			LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK) != 0) {
+		return false;
+	}
+
+	len -= LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
+	data += LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK;
+
+	while (len > 0) {
+		int cmp_len = MIN(len, HEXDUMP_BYTES_CONT_MSG);
+
+		if (memcmp(cont->payload.bytes, data, cmp_len) != 0) {
+			return false;
+		}
+
+		len -= cmp_len;
+		data += cmp_len;
+		cont = cont->next;
+	}
+
+	return true;
+}
+
+static void comp_message(struct log_msg *msg,
+			 const char *exp_str, u32_t exp_len)
+{
+	LOG_OUTPUT_EXT_MSG_CONVERTER_DEFINE(converter, 8);
+	struct log_msg *out_msg =
+			log_output_convert_to_ext_msg(&converter, msg);
+
+	zassert_equal(out_msg->hdr.ref_cnt, msg->hdr.ref_cnt,
+			"Wrong ref number");
+	zassert_equal(out_msg->hdr.timestamp, msg->hdr.timestamp,
+			"Wrong timestamp");
+	zassert_equal(out_msg->hdr.ids.domain_id, msg->hdr.ids.domain_id,
+			"Wrong domain ID");
+	zassert_equal(out_msg->hdr.ids.source_id, msg->hdr.ids.source_id,
+			"Wrong source ID");
+	zassert_equal(out_msg->hdr.ids.level, msg->hdr.ids.level,
+			"Wrong level");
+
+	zassert_equal(out_msg->hdr.params.hexdump.length, exp_len,
+				"Wrong number of bytes: %d (expected %d)",
+				out_msg->hdr.params.hexdump.length,
+				exp_len);
+	zassert_true(msg_content_match(out_msg, exp_str),
+			"Unexpected message content");
+	log_msg_put(out_msg);
+}
+
+/* Test validates correctness of function which converts log message to
+ * extended log message (string formatted log message).
+ */
+void test_msg_to_ext_message_convert(void)
+{
+#define TEST_STRING "test %d"
+#define EXP_STRING "test: test 5"
+#define EXP_STRING_LEN strlen(EXP_STRING)
+
+#define TEST_STRING_LONG \
+	"test %d abcd %d xyz %d fff %d aaaaaaaaaa bbbbbbbb"
+
+#define EXP_STRING_LONG "test: test 5 abcd 5 xyz 5 fff 5 aaaaaaaaaa bbbbbbbb"
+#define EXP_STRING_LONG_LEN strlen(EXP_STRING_LONG)
+
+#define TEST_HEXDUMP_STRING "metadata "
+#define EXP_HEXDUMP_STRING \
+	"test: metadata 30 31 32                                         " \
+	"|012              "
+#define EXP_HEXDUMP_STRING_LEN strlen(EXP_HEXDUMP_STRING)
+
+	log_arg_t args[] = {5, 5, 5, 5};
+	u8_t hexdump[] = {0x30, 0x31, 0x32};
+	u32_t slabs_state = k_mem_slab_num_used_get(&log_msg_pool);
+	struct log_msg *msg;
+
+	/* simple, one argument message. */
+	msg = log_msg_create_1(TEST_STRING, 5);
+	msg->hdr.ids.domain_id = 3;
+	msg->hdr.ids.source_id = log_const_source_id(
+					&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME));
+	msg->hdr.ids.level = 2;
+	msg->hdr.timestamp = 12345678;
+	msg->hdr.ref_cnt = 1;
+
+	comp_message(msg, EXP_STRING, EXP_STRING_LEN);
+	log_msg_put(msg);
+	/* long, multi-argument message. */
+	msg = log_msg_create_n(TEST_STRING_LONG, args, ARRAY_SIZE(args));
+	msg->hdr.ids.source_id = log_const_source_id(
+					&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME));
+	msg->hdr.ids.level = 2;
+
+	comp_message(msg, EXP_STRING_LONG, EXP_STRING_LONG_LEN);
+	log_msg_put(msg);
+
+	/* hexdump message */
+	msg = log_msg_hexdump_create(TEST_HEXDUMP_STRING,
+					hexdump, sizeof(hexdump));
+	msg->hdr.ids.source_id = log_const_source_id(
+					&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME));
+	msg->hdr.ids.level = 1;
+
+	comp_message(msg, EXP_HEXDUMP_STRING, EXP_HEXDUMP_STRING_LEN);
+	log_msg_put(msg);
+
+	zassert_equal(k_mem_slab_num_used_get(&log_msg_pool), slabs_state,
+			"Unexpected number of slabs in the pool");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_log_message,
+		ztest_unit_test_setup_teardown(test_msg_to_ext_message_convert,
+					       setup, teardown),
 		ztest_unit_test_setup_teardown(test_log_output_raw_string,
 					       setup, teardown),
 		ztest_unit_test_setup_teardown(test_log_output_string,
