@@ -350,7 +350,7 @@ void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter);
  * @param call_id System call ID
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke0(u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke0(uintptr_t call_id);
 
 /**
  * Invoke a system call with 1 argument.
@@ -362,7 +362,8 @@ static inline u32_t z_arch_syscall_invoke0(u32_t call_id);
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke1(uintptr_t arg1,
+					       uintptr_t call_id);
 
 /**
  * Invoke a system call with 2 arguments.
@@ -375,8 +376,8 @@ static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id);
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2,
-					   u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t call_id);
 
 /**
  * Invoke a system call with 3 arguments.
@@ -390,8 +391,9 @@ static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					   u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3,
+					       uintptr_t call_id);
 
 /**
  * Invoke a system call with 4 arguments.
@@ -406,8 +408,9 @@ static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					   u32_t arg4, u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t call_id);
 
 /**
  * Invoke a system call with 5 arguments.
@@ -423,9 +426,10 @@ static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					   u32_t arg4, u32_t arg5,
-					   u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t arg5,
+					       uintptr_t call_id);
 
 /**
  * Invoke a system call with 6 arguments.
@@ -442,9 +446,10 @@ static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					   u32_t arg4, u32_t arg5, u32_t arg6,
-					   u32_t call_id);
+static inline uintptr_t z_arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
+					       uintptr_t arg3, uintptr_t arg4,
+					       uintptr_t arg5, uintptr_t arg6,
+					       uintptr_t call_id);
 
 /**
  * Indicate whether we are currently running in user mode
