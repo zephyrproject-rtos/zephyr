@@ -1896,9 +1896,9 @@ class FilterBuilder(CMake):
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        if self.testcase and self.testcase.tc_filter:
+        dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
+        if self.testcase and self.testcase.tc_filter and os.path.exists(dts_path):
             try:
-                dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
                 edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
                 res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
 
