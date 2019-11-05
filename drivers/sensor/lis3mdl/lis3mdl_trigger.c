@@ -140,7 +140,7 @@ int lis3mdl_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LIS3MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis3mdl_thread, POINTER_TO_INT(dev),
+			(k_thread_entry_t)lis3mdl_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
