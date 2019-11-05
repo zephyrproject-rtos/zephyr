@@ -571,33 +571,40 @@ def write_phandle_val_list_entry(node, entry, i, ident):
     if entry.controller.label is not None:
         ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
-            ctrl_ident = str2ident(entry.name) + "_" + ctrl_ident
+            name_alias = str2ident(entry.name) + "_" + ctrl_ident
+        else:
+            name_alias = None
         # Ugly backwards compatibility hack. Only add the index if there's
         # more than one entry.
         if i is not None:
             ctrl_ident += "_{}".format(i)
         initializer_vals.append(quote_str(entry.controller.label))
-        out_dev_s(node, ctrl_ident, entry.controller.label)
+        out_dev_s(node, ctrl_ident, entry.controller.label, name_alias)
 
     for cell, val in entry.data.items():
         cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
-            cell_ident = str2ident(entry.name) + "_" + cell_ident
+            name_alias = str2ident(entry.name) + "_" + cell_ident
+        else:
+            name_alias = None
         # Backwards compatibility (see above)
         if i is not None:
             cell_ident += "_{}".format(i)
-        out_dev(node, cell_ident, val)
+        out_dev(node, cell_ident, val, name_alias)
 
     initializer_vals += entry.data.values()
 
     initializer_ident = ident
     if entry.name:
-        initializer_ident += "_" + str2ident(entry.name)
+        name_alias = initializer_ident + "_" + str2ident(entry.name)
+    else:
+        name_alias = None
     if i is not None:
         initializer_ident += "_{}".format(i)
     return out_dev(node, initializer_ident,
-                   "{" + ", ".join(map(str, initializer_vals)) + "}")
+                   "{" + ", ".join(map(str, initializer_vals)) + "}",
+                   name_alias)
 
 
 def write_clocks(node):
@@ -680,12 +687,12 @@ def out_dev(node, ident, val, name_alias=None):
     return out(dev_prefix + "_" + ident, val, aliases)
 
 
-def out_dev_s(node, ident, s):
+def out_dev_s(node, ident, s, name_alias=None):
     # Like out_dev(), but emits 's' as a string literal
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_dev(node, ident, quote_str(s))
+    return out_dev(node, ident, quote_str(s), name_alias)
 
 
 def out_s(ident, val):
