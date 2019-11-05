@@ -508,7 +508,6 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
-
 config LOG_BACKEND_OPEN_AMP
 	bool "Enable OpenAMP backend"
 	select IPM
@@ -517,6 +516,17 @@ config LOG_BACKEND_OPEN_AMP
 	select IPM_MSG_CH_0_ENABLE
 	select IPM_MSG_CH_0_TX
 	select IPM_MSG_CH_1_RX
+	select OPENAMP
+
+config LOG_LINK_OPEN_AMP
+	bool "Enable OpenAMP link"
+	select LOG_MULTIDOMAIN
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_0_RX
+	select IPM_MSG_CH_1_TX
 	select OPENAMP
 
 endif # LOG_MINIMAL

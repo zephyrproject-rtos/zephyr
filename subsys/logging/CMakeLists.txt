@@ -50,6 +50,12 @@ if(NOT CONFIG_LOG_MINIMAL)
   )
 
 zephyr_sources_ifdef(
+  CONFIG_LOG_LINK_OPEN_AMP
+  log_link_open_amp.c
+  log_link_oamp.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_OPEN_AMP
   log_backend_open_amp.c
   log_backend_oamp.c
