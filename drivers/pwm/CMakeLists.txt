@@ -16,3 +16,4 @@ zephyr_library_sources_ifdef(CONFIG_PWM_MCUX		pwm_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XEC		pwm_mchp_xec.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_SHELL   pwm_shell.c)
