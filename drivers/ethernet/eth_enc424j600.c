@@ -467,8 +467,13 @@ static void enc424j600_rx_thread(struct device *dev)
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
 				LOG_INF("Link up");
 				enc424j600_setup_mac(dev);
+				net_eth_carrier_on(context->iface);
 			} else {
 				LOG_INF("Link down");
+
+				if (context->iface_initialized) {
+					net_eth_carrier_off(context->iface);
+				}
 			}
 			goto done;
 		}
@@ -498,6 +503,9 @@ static void enc424j600_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
 	ethernet_init(iface);
+
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	context->iface_initialized = true;
 }
 
 static int enc424j600_start_device(struct device *dev)
