@@ -1060,7 +1060,7 @@ u32_t radio_ccm_is_done(void)
 		__WFE();
 	}
 	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
-	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
+	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_CCM));
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
 }
