@@ -153,7 +153,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00001000>;
 			interrupts = <25 3>;
 			status = "disabled";
 			label = "SPI_1";
@@ -177,7 +177,7 @@
 		timers1: timers@40012c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000800>;
 			status = "disabled";
 			label = "TIMERS_1";
 
@@ -257,7 +257,7 @@
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00010000>;
 			status = "disabled";
 			label = "TIMERS_15";
 
@@ -273,7 +273,7 @@
 		timers16: timers@40014400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00020000>;
 			status = "disabled";
 			label = "TIMERS_16";
 
@@ -289,7 +289,7 @@
 		timers17: timers@40014800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00040000>;
 			status = "disabled";
 			label = "TIMERS_17";
 
