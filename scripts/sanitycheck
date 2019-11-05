@@ -583,8 +583,8 @@ class BinaryHandler(Handler):
 
         start_time = time.time()
 
+        env = os.environ.copy()
         if options.enable_asan:
-            env = os.environ.copy()
             env["ASAN_OPTIONS"] = "log_path=stdout:" + \
                     env.get("ASAN_OPTIONS", "")
             if not options.enable_lsan:
