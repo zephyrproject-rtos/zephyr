@@ -64,19 +64,6 @@ choice HTS221_TRIGGER_MODE
 endchoice
 
 
-if VL53L0X
-
-config VL53L0X_XSHUT_CONTROL_ENABLE
-	default y
-
-config VL53L0X_XSHUT_GPIO_DEV_NAME
-	default "GPIOC"
-
-config VL53L0X_XSHUT_GPIO_PIN_NUM
-	default 6
-
-endif # VL53L0X
-
 if LSM6DSL
 
 choice LSM6DSL_TRIGGER_MODE
