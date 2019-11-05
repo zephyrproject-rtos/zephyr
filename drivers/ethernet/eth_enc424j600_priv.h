@@ -300,7 +300,8 @@ struct enc424j600_runtime {
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
 	u16_t next_pkt_ptr;
-	bool suspended;
+	bool suspended : 1;
+	bool iface_initialized : 1;
 };
 
 #endif /*_ENC424J600_*/
