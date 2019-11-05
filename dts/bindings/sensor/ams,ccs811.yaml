@@ -10,3 +10,16 @@ description: |
 compatible: "ams,ccs811"
 
 include: i2c-device.yaml
+
+properties:
+    wake-gpios:
+      type: phandle-array
+      required: false
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+
+    irq-gpios:
+      type: phandle-array
+      required: false

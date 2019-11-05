@@ -44,8 +44,11 @@
 
 struct ccs811_data {
 	struct device *i2c;
-#ifdef CONFIG_CCS811_GPIO_WAKEUP
-	struct device *gpio;
+#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
+	struct device *gpio_wakeup;
+#endif
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
+	struct device *gpio_reset;
 #endif
 	u16_t co2;
 	u16_t voc;
