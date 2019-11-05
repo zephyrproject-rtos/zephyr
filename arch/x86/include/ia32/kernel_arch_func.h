@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-/* stack alignment related macros: STACK_ALIGN_SIZE is defined above */
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
 static inline void z_arch_kernel_init(void)
 {
 	/* No-op on this arch */
