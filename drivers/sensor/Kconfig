@@ -65,6 +65,8 @@ source "drivers/sensor/ccs811/Kconfig"
 
 source "drivers/sensor/dht/Kconfig"
 
+source "drivers/sensor/dps310/Kconfig"
+
 source "drivers/sensor/ens210/Kconfig"
 
 source "drivers/sensor/fxas21002/Kconfig"
