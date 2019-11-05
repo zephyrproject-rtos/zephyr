@@ -599,7 +599,7 @@ static int uart_console_init(struct device *arg)
 #if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
 	int ret;
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret != 0) {
 		return ret;
 	}

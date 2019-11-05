@@ -247,7 +247,7 @@ void main(void)
 	usb_hid_register_device(hid_dev, hid_report_desc,
 				sizeof(hid_report_desc), NULL);
 
-	ret = usb_enable();
+	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return;

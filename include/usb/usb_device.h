@@ -227,9 +227,12 @@ int usb_deconfig(void);
  * before invoking this, so that any data or events on the bus are processed
  * correctly by the associated class handling code.
  *
+ * @param[in] status_cb Callback registered by user to notify
+ *                      about USB device controller state.
+ *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_enable(void);
+int usb_enable(usb_dc_status_callback status_cb);
 
 /**
  * @brief Disable the USB device

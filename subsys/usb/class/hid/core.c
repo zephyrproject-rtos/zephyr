@@ -376,9 +376,6 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 		break;
 	}
 
-	if (dev_data->ops && dev_data->ops->status_cb) {
-		dev_data->ops->status_cb(status, param);
-	}
 }
 
 static void hid_status_cb(struct usb_cfg_data *cfg,
