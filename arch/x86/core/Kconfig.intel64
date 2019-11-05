@@ -58,4 +58,13 @@ config ISR_SUBSTACK_SIZE
 	  CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH must be equal to
 	  CONFIG_ISR_STACK_SIZE.
 
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
+	help
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
+
 endif # X86_64
