@@ -17,7 +17,8 @@
  * even more poorly supported.
  */
 #if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
-#if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
+#if defined(CONFIG_ASSERT) && \
+	(CONFIG_MP_NUM_CPUS > 1) && (CONFIG_MP_NUM_CPUS < 4)
 #include <sys/__assert.h>
 #include <stdbool.h>
 struct k_spinlock;
