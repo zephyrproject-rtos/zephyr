@@ -195,6 +195,7 @@ extern "C" {
 #define MCHP_GPIO_252	(10U)
 #define MCHP_GPIO_253	(11U)
 #define MCHP_GPIO_254	(12U)
+#define MCHP_GPIO_255	(13U)
 /* End Port F */
 
 #ifdef __cplusplus
