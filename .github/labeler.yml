@@ -1,0 +1,135 @@
+"area: Modem":
+  - drivers/modem/**
+
+"area: PWM":
+  - drivers/pwm/**
+
+"area: C Library":
+  - lib/libc/**
+
+"area: Device Tree":
+  - dts/**
+  - "**/*.dts"
+
+"area: Watchdog":
+  - drivers/watchdog/**
+
+"area: Sensors":
+  - drivers/sensor/**
+
+"area: ADC":
+  - drivers/adc/**
+
+"area: Counter":
+  - drivers/counter/**
+
+"area: Timer":
+  - drivers/timer/**
+
+"area: I2S":
+  - drivers/i2s/**
+
+"area: I2C":
+  - drivers/i2c/**
+
+"area: SPI":
+  - drivers/spi/**
+
+"area: Boards":
+  - boards/**
+
+"area: POSIX":
+  - lib/posix/**
+
+"area: native port":
+  - arch/posix/**
+  - soc/posix/**
+  - "**/*native_posix.*"
+
+"area: X86":
+  - arch/x86/**
+
+"area: ARM":
+  - arch/arm/**
+
+"area: NIOS2":
+  - arch/nios2/**
+
+"area: Xtensa":
+  - arch/xtensa/**
+
+"area: RISCv32":
+  - arch/riscv32/**
+
+"area: ARC":
+  - arch/arc/**
+
+"area: Networking":
+  - subsys/net/**
+  - samples/net/**
+  - tests/net/**
+
+"area: Logging":
+  - subsys/logging/**
+
+"area: Shell":
+  - subsys/shell/**
+
+"area: Console":
+  - subsys/console/**
+
+"area: Testing Suite":
+  - subsys/testsuite/**
+
+"area: Settings":
+  - subsys/settings/**
+
+"area: File System":
+  - subsys/fs/**
+
+"area: Storage":
+  - subsys/storage/**
+
+"area: Bluetooth":
+  - subsys/bluetooth/**
+  - "**/*bluetooth.*"
+
+"area: Bluetooth Mesh":
+  - subsys/bluetooth/mesh/**
+
+"area: API":
+  - include/**
+
+"area: Samples":
+  - samples/**
+
+"area: Tests":
+  - tests/**
+
+"area: Kernel":
+  - kernel/**
+  - tests/kernel/**
+
+"EXT":
+  - ext/**
+
+"area: Documentation":
+  - doc/**
+  - "**/*.rst"
+  - "**/*.txt"
+
+"area: Build System":
+  - cmake/**
+  - CMakeLists.txt
+
+"area: Kconfig":
+  - scripts/kconfig/**
+  - Kconfig
+  - Kconfig.zephyr
+
+"area: Sanitycheck":
+  - scripts/sanitycheck
+  - scripts/sanity_chk/**
+
+"area: Modules":
+  - west.yml
