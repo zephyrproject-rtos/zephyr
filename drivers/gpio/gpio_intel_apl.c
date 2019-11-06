@@ -88,8 +88,14 @@ BUILD_ASSERT(DT_APL_GPIO_IRQ == 14);
 #define PAD_CFG1_TERM_POS		10
 #define PAD_CFG1_TERM_MASK		(0x0F << PAD_CFG1_TERM_POS)
 #define PAD_CFG1_TERM_NONE		(0x00 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PD		(0x04 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU		(0x0C << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PD_5K		(0x02 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PD_20K		(0x04 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_NONE2		(0x08 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_1K		(0x09 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_5K		(0x0A << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_2K		(0x0B << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_20K		(0x0C << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_1K_2K		(0x0D << PAD_CFG1_TERM_POS)
 
 #define PAD_CFG1_IOSSTATE_POS		14
 #define PAD_CFG1_IOSSTATE_MASK		(0x0F << PAD_CFG1_IOSSTATE_POS)
@@ -202,43 +208,23 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t raw_pin, reg, cfg0, cfg1, val;
+	u32_t raw_pin, reg, cfg0, cfg1;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	/*
-	 * Pin must be input for interrupt to work.
-	 * And there is no double-edge trigger according
-	 * to datasheet.
-	 */
-	if ((flags & GPIO_INT)
-		&& ((flags & GPIO_DIR_OUT)
-			|| (flags & GPIO_INT_DOUBLE_EDGE))) {
-		return -EINVAL;
+	/* Only support push-pull mode */
+	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
+		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-		/* hardware cannot invert signal */
-		return -EINVAL;
-	}
-
-	if (pin > cfg->num_pins) {
-		return -EINVAL;
-	}
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
 	if (!check_perm(dev, raw_pin)) {
-		return -EPERM;
-	}
-
-	/* Set GPIO to trigger legacy interrupt */
-	if (flags & GPIO_INT) {
-		reg = cfg->reg_base + REG_PAD_HOST_SW_OWNER;
-		sys_bitfield_set_bit(reg, raw_pin);
+		return -EINVAL;
 	}
 
 	/* read in pad configuration register */
@@ -246,60 +232,131 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
-	/* change direction */
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
-		/* pin to output */
-		cfg0 &= ~PAD_CFG0_TXDIS;
-		cfg0 |= PAD_CFG0_RXDIS;
-	} else {
-		/* pin to input */
-		cfg0 &= ~PAD_CFG0_RXDIS;
-		cfg0 |= PAD_CFG0_TXDIS;
+	/* don't override RX to 1 */
+	cfg0 &= ~(PAD_CFG0_RXRAW1);
 
-		/* don't override RX to 1 */
-		cfg0 &= ~PAD_CFG0_RXRAW1;
+	/* set input/output */
+	if ((flags & GPIO_INPUT) != 0U) {
+		/* clear RX disable bit */
+		cfg0 &= ~PAD_CFG0_RXDIS;
+	} else {
+		/* set RX disable bit */
+		cfg0 |= PAD_CFG0_RXDIS;
 	}
 
-	/* clear some bits first before interrupt setup */
-	cfg0 &= ~(PAD_CFG0_RXPADSTSEL | PAD_CFG0_RXINV
-		  | PAD_CFG0_RXEVCFG_MASK);
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		/* pin to output */
 
-	/* setup interrupt if desired */
-	if (flags & GPIO_INT) {
-		/* invert signal for interrupt controller */
-		if ((flags & GPIO_INT_ACTIVE_HIGH) == 0) {
-			cfg0 |= PAD_CFG0_RXINV;
+		/* set pin output if desired */
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			cfg0 |= PAD_CFG0_TXSTATE;
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			cfg0 &= ~PAD_CFG0_TXSTATE;
 		}
 
-		/* level == 0 / edge == 1*/
-		if (flags & GPIO_INT_EDGE) {
-			cfg0 |= PAD_CFG0_RXEVCFG_EDGE;
-		}
+		/* clear TX disable bit */
+		cfg0 &= ~PAD_CFG0_TXDIS;
 	} else {
-		/* set RX conf to drive 0 */
-		cfg0 |= PAD_CFG0_RXEVCFG_DRIVE0;
+		/* set TX disable bit */
+		cfg0 |= PAD_CFG0_TXDIS;
 	}
 
 	/* pull-up or pull-down */
-	val = flags & GPIO_PUD_MASK;
-	cfg1 &= ~PAD_CFG1_TERM_MASK;
-	if (val == GPIO_PUD_PULL_UP) {
-		cfg1 |= PAD_CFG1_TERM_PU;
-	} else if (val == GPIO_PUD_PULL_DOWN) {
-		cfg1 |= PAD_CFG1_TERM_PD;
+	cfg1 &= ~(PAD_CFG1_TERM_MASK | PAD_CFG1_IOSTERM_MASK);
+	if ((flags & GPIO_PULL_UP) != 0U) {
+		cfg1 |= (PAD_CFG1_TERM_PU_20K | PAD_CFG1_IOSTERM_PU);
+	} else if ((flags & GPIO_PULL_DOWN) != 0U) {
+		cfg1 |= (PAD_CFG1_TERM_PD_20K | PAD_CFG1_IOSTERM_PD);
 	} else {
-		cfg1 |= PAD_CFG1_TERM_NONE;
+		cfg1 |= (PAD_CFG1_TERM_NONE | PAD_CFG1_IOSTERM_FUNC);
 	}
-
-	/* set IO Standby Termination to function mode */
-	cfg1 &= ~PAD_CFG1_IOSTERM_MASK;
 
 	/* IO Standby state to TX,RX enabled */
 	cfg1 &= ~PAD_CFG1_IOSSTATE_MASK;
 
 	/* write back pad configuration register after all changes */
 	sys_write32(cfg0, reg);
-	sys_write32(cfg1, (reg + 4));
+	sys_write32(cfg1, reg + 4);
+
+	return 0;
+}
+
+static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
+	struct gpio_intel_apl_data *data = dev->driver_data;
+	u32_t raw_pin, cfg0, cfg1;
+	u32_t reg, reg_en, reg_sts;
+
+	/* no double-edge triggering according to data sheet */
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		return -ENOTSUP;
+	}
+
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
+
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
+		return -EINVAL;
+	}
+
+	/* set owner to GPIO driver mode for legacy interrupt mode */
+	reg = cfg->reg_base + REG_PAD_HOST_SW_OWNER;
+	sys_bitfield_set_bit(reg, raw_pin);
+
+	/* read in pad configuration register */
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+	cfg0 = sys_read32(reg);
+	cfg1 = sys_read32(reg + 4);
+
+	reg_en = cfg->reg_base + REG_GPI_INT_EN_BASE;
+
+	/* disable interrupt bit first before setup */
+	sys_bitfield_clear_bit(reg_en, raw_pin);
+
+	/* clear (by setting) interrupt status bit */
+	reg_sts = cfg->reg_base + REG_GPI_INT_STS_BASE;
+	sys_bitfield_set_bit(reg_sts, raw_pin);
+
+	/* clear level/edge configuration bits */
+	cfg0 &= ~PAD_CFG0_RXEVCFG_MASK;
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		/* set RX conf to drive 0 */
+		cfg0 |= PAD_CFG0_RXEVCFG_DRIVE0;
+	} else {
+		/* cannot enable interrupt without pin as input */
+		if ((cfg0 & PAD_CFG0_RXDIS) != 0U) {
+			return -ENOTSUP;
+		}
+
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			/* level trigger */
+			cfg0 |= PAD_CFG0_RXEVCFG_LEVEL;
+		} else {
+			/* edge trigger */
+			cfg0 |= PAD_CFG0_RXEVCFG_EDGE;
+		}
+
+		/* invert pin for active low triggering */
+		if (trig == GPIO_INT_TRIG_LOW) {
+			cfg0 |= PAD_CFG0_RXINV;
+		} else {
+			cfg0 &= ~PAD_CFG0_RXINV;
+		}
+	}
+
+	/* write back pad configuration register after all changes */
+	sys_write32(cfg0, reg);
+	sys_write32(cfg1, reg + 4);
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		/* enable interrupt bit */
+		sys_bitfield_set_bit(reg_en, raw_pin);
+	}
 
 	return 0;
 }
@@ -315,15 +372,12 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
-	if (pin > cfg->num_pins) {
-		return -EINVAL;
-	}
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
 	if (!check_perm(dev, raw_pin)) {
-		return -EPERM;
+		return -EINVAL;
 	}
 
 	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
@@ -351,27 +405,18 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
-	if (pin > cfg->num_pins) {
-		return -EINVAL;
-	}
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
 	if (!check_perm(dev, raw_pin)) {
-		return -EPERM;
+		return -EINVAL;
 	}
 
 	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	val = sys_read32(reg);
 
-	if (!(val & PAD_CFG0_TXDIS)) {
-		/* If TX is not disabled, return TX_STATE */
-		*value = (val & PAD_CFG0_TXSTATE) >> PAD_CFG0_TXSTATE_POS;
-	} else {
-		/* else just return RX_STATE */
-		*value = (val & PAD_CFG0_RXSTATE) >> PAD_CFG0_RXSTATE_POS;
-	}
+	*value = (val & PAD_CFG0_RXSTATE) >> PAD_CFG0_RXSTATE_POS;
 
 	return 0;
 }
@@ -395,15 +440,12 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (pin > cfg->num_pins) {
-		return -EINVAL;
-	}
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
 	if (!check_perm(dev, raw_pin)) {
-		return -EPERM;
+		return -EINVAL;
 	}
 
 	/* clear (by setting) interrupt status bit */
@@ -427,15 +469,12 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (pin > cfg->num_pins) {
-		return -EINVAL;
-	}
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
 	if (!check_perm(dev, raw_pin)) {
-		return -EPERM;
+		return -EINVAL;
 	}
 
 	/* disable interrupt bit */
@@ -445,6 +484,124 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 	return 0;
 }
 
+static int port_get_raw(struct device *dev, u32_t mask, u32_t *value,
+			bool read_tx)
+{
+	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
+	struct gpio_intel_apl_data *data = dev->driver_data;
+	u32_t pin, raw_pin, reg_addr, reg_val, cmp;
+
+	if (read_tx) {
+		cmp = PAD_CFG0_TXSTATE;
+	} else {
+		cmp = PAD_CFG0_RXSTATE;
+	}
+
+	*value = 0;
+	while (mask != 0U) {
+		pin = find_lsb_set(mask) - 1;
+
+		if (pin > cfg->num_pins) {
+			break;
+		}
+
+		mask &= ~BIT(pin);
+
+		raw_pin = cfg->pin_offset + pin;
+
+		if (!check_perm(dev, raw_pin)) {
+			continue;
+		}
+
+		reg_addr = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+		reg_val = sys_read32(reg_addr);
+
+		if ((reg_val & cmp) != 0U) {
+			*value |= BIT(pin);
+		}
+	}
+
+	return 0;
+}
+
+static int port_set_raw(struct device *dev, u32_t mask, u32_t value)
+{
+	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
+	struct gpio_intel_apl_data *data = dev->driver_data;
+	u32_t pin, raw_pin, reg_addr, reg_val;
+
+	while (mask != 0) {
+		pin = find_lsb_set(mask) - 1;
+
+		if (pin > cfg->num_pins) {
+			break;
+		}
+
+		mask &= ~BIT(pin);
+
+		raw_pin = cfg->pin_offset + pin;
+
+		if (!check_perm(dev, raw_pin)) {
+			continue;
+		}
+
+		reg_addr = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+		reg_val = sys_read32(reg_addr);
+
+		if ((value & BIT(pin)) != 0) {
+			reg_val |= PAD_CFG0_TXSTATE;
+		} else {
+			reg_val &= ~PAD_CFG0_TXSTATE;
+		}
+
+		sys_write32(reg_val, reg_addr);
+	}
+
+	return 0;
+}
+
+static int gpio_intel_apl_port_set_masked_raw(struct device *dev, u32_t mask,
+					      u32_t value)
+{
+	u32_t port_val;
+
+	port_get_raw(dev, mask, &port_val, true);
+
+	port_val = (port_val & ~mask) | (mask & value);
+
+	port_set_raw(dev, mask, port_val);
+
+	return 0;
+}
+
+static int gpio_intel_apl_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	return gpio_intel_apl_port_set_masked_raw(dev, mask, mask);
+}
+
+static int gpio_intel_apl_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	return gpio_intel_apl_port_set_masked_raw(dev, mask, 0);
+}
+
+static int gpio_intel_apl_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	u32_t port_val;
+
+	port_get_raw(dev, mask, &port_val, true);
+
+	port_val ^= mask;
+
+	port_set_raw(dev, mask, port_val);
+
+	return 0;
+}
+
+static int gpio_intel_apl_port_get_raw(struct device *dev, u32_t *value)
+{
+	return port_get_raw(dev, 0xFFFFFFFF, value, false);
+}
+
 static const struct gpio_driver_api gpio_intel_apl_api = {
 	.config = gpio_intel_apl_config,
 	.write = gpio_intel_apl_write,
@@ -452,6 +609,12 @@ static const struct gpio_driver_api gpio_intel_apl_api = {
 	.manage_callback = gpio_intel_apl_manage_callback,
 	.enable_callback = gpio_intel_apl_enable_callback,
 	.disable_callback = gpio_intel_apl_disable_callback,
+	.port_get_raw = gpio_intel_apl_port_get_raw,
+	.port_set_masked_raw = gpio_intel_apl_port_set_masked_raw,
+	.port_set_bits_raw = gpio_intel_apl_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_intel_apl_port_clear_bits_raw,
+	.port_toggle_bits = gpio_intel_apl_port_toggle_bits,
+	.pin_interrupt_configure = gpio_intel_apl_pin_interrupt_configure,
 };
 
 int gpio_intel_apl_init(struct device *dev)
