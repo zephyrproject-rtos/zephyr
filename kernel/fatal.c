@@ -81,6 +81,15 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 }
 /* LCOV_EXCL_STOP */
 
+static inline int get_cpu(void)
+{
+#if defined(CONFIG_SMP)
+	return z_arch_curr_cpu()->id;
+#else
+	return 0;
+#endif
+}
+
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	struct k_thread *thread = k_current_get();
@@ -88,7 +97,8 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating sanitycheck
 	 */
-	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s", reason, reason_to_str(reason));
+	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
+		reason_to_str(reason), get_cpu());
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
