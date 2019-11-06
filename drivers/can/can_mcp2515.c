@@ -388,6 +388,11 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	u8_t nnn;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
 
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
+
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
 		return CAN_TIMEOUT;
 	}

@@ -47,6 +47,9 @@ extern "C" {
 /** unexpected error */
 #define CAN_TX_UNKNOWN  (-5)
 
+/** invalid parameter */
+#define CAN_TX_EINVAL   (-22)
+
 /** attach_* failed because there is no unused filter left*/
 #define CAN_NO_FREE_FILTER (-1)
 
