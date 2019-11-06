@@ -12,6 +12,7 @@
 #include <drivers/clock_control/nrf_clock_control.h>
 
 #include <soc.h>
+#include <soc_irq.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
@@ -163,21 +164,23 @@ int lll_init(void)
 	hal_swi_init();
 
 	/* Connect ISRs */
-	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+	NRF_IRQ_DIRECT_DYNAMIC(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			       IRQ_CONNECT_FLAGS);
+	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			    (void (*)(void *))radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
-	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
-		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+			    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #else
-	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
-		    rtc0_nrf5_isr, NULL, 0);
+	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+			    rtc0_nrf5_isr, NULL, 0);
 #endif
-	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
-		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+			    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
-		    swi_ull_low_nrf5_isr, NULL, 0);
+	irq_connect_dynamic(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+			    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
 
 	/* Enable IRQs */
