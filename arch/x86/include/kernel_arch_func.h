@@ -53,6 +53,9 @@ void z_x86_paging_init(void);
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 				     const z_arch_esf_t *esf);
 
+/* Common handling for page fault exceptions */
+void z_x86_page_fault_handler(z_arch_esf_t *esf);
+
 #ifdef CONFIG_THREAD_STACK_INFO
 /**
  * @brief Check if a memory address range falls within the stack
