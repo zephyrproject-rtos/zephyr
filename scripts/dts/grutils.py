@@ -20,7 +20,7 @@ class Graph:
     already be available.
     """
 
-    def __init__ (self, root=None):
+    def __init__(self, root=None):
         self.__roots = None
         if root is not None:
             self.__roots = {root}
@@ -28,7 +28,7 @@ class Graph:
         self.__reverse_map = collections.defaultdict(set)
         self.__nodes = set()
 
-    def add_edge (self, source, target):
+    def add_edge(self, source, target):
         """
         Add a directed edge from the C{source} to the C{target}.
 
@@ -40,7 +40,7 @@ class Graph:
         self.__nodes.add(source)
         self.__nodes.add(target)
 
-    def roots (self):
+    def roots(self):
         """
         Return the set of nodes calculated to be roots (i.e., those
         that have no incoming edges).
@@ -56,7 +56,7 @@ class Graph:
                     self.__roots.add(n)
         return self.__roots
 
-    def _tarjan (self):
+    def _tarjan(self):
         # Execute Tarjan's algorithm on the graph.
         #
         # Tarjan's algorithm
@@ -93,7 +93,7 @@ class Graph:
                 scc[0].dep_ordinal = ordinal
                 ordinal += 1
 
-    def _tarjan_root (self, v):
+    def _tarjan_root(self, v):
         # Do the work of Tarjan's algorithm for a given root node.
 
         if self.__tarjan_index.get(v) is not None:
@@ -118,7 +118,7 @@ class Graph:
                     break
             self.__scc_order.append(scc)
 
-    def scc_order (self):
+    def scc_order(self):
         """Return the strongly-connected components in order.
 
         The data structure is a list, in dependency order, of strongly
@@ -133,10 +133,10 @@ class Graph:
         return self.__scc_order
     __scc_order = None
 
-    def depends_on (self, node):
+    def depends_on(self, node):
         """Get the nodes that 'node' directly depends on."""
         return sorted(self.__edge_map[node], key=attrgetter('path'))
 
-    def required_by (self, node):
+    def required_by(self, node):
         """Get the nodes that directly depend on 'node'."""
         return sorted(self.__reverse_map[node], key=attrgetter('path'))
