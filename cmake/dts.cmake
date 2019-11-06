@@ -33,6 +33,8 @@ list(APPEND
   ${ZEPHYR_BASE}
   )
 
+list(REMOVE_DUPLICATES DTS_ROOT)
+
 set(dts_files
   ${DTS_SOURCE}
   ${shield_dts_files}
