@@ -259,16 +259,27 @@
 			status = "disabled";
 		};
 
+#define K_PIN_DEFINE(k_name, k_port, k_pin, k_mux) \
+	k_name##_##pt##k_port##k_pin: k_name##_##pt##k_port##k_pin { \
+		pin = <k_pin>; \
+		mux = <k_mux>; \
+	}
+
 		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			K_PIN_DEFINE(uart0_rx, a, 1, 3);
+			K_PIN_DEFINE(uart0_tx, a, 2, 3);
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
+			K_PIN_DEFINE(uart0_rx, b, 16, 3);
+			K_PIN_DEFINE(uart0_tx, b, 17, 3);
 		};
 
 		portc: pinmux@4004b000 {
@@ -281,6 +292,11 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+
+			K_PIN_DEFINE(uart2_rts, d, 0, 3);
+			K_PIN_DEFINE(uart2_cts, d, 1, 3);
+			K_PIN_DEFINE(uart2_rx, d, 2, 3);
+			K_PIN_DEFINE(uart2_rx, d, 3, 3);
 		};
 
 		porte: pinmux@4004d000 {
