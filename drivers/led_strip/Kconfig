@@ -31,8 +31,6 @@ source "drivers/led_strip/Kconfig.lpd880x"
 
 source "drivers/led_strip/Kconfig.ws2812"
 
-source "drivers/led_strip/Kconfig.ws2812b_sw"
-
 source "drivers/led_strip/Kconfig.apa102"
 
 endif # LED_STRIP
