@@ -161,18 +161,6 @@ class EDT:
         return "<EDT for '{}', binding directories '{}'>".format(
             self.dts_path, self.bindings_dirs)
 
-    def required_by(self, node):
-        """
-        Returns a list of Nodes that have direct dependencies on 'node'.
-        """
-        return self._graph.required_by(node)
-
-    def depends_on(self, node):
-        """
-        Returns a list of Nodes on which 'node' directly depends.
-        """
-        return self._graph.depends_on(node)
-
     def scc_order(self):
         """
         Returns a list of lists of Nodes where all elements of each list
@@ -655,6 +643,12 @@ class Node:
       The ordinal is defined for all Nodes including those that are not
       'enabled', and is unique among nodes in its EDT 'nodes' list.
 
+    required_by:
+      A list with the nodes that directly depend on the node
+
+    depends_on:
+      A list with the nodes that the node directly depends on
+
     enabled:
       True unless the node has 'status = "disabled"'
 
@@ -770,6 +764,16 @@ class Node:
         # would need to be kept in mind.
         return {name: self.edt._node2enode[node]
                 for name, node in self._node.nodes.items()}
+
+    @property
+    def required_by(self):
+        "See the class docstring"
+        return self.edt._graph.required_by(self)
+
+    @property
+    def depends_on(self):
+        "See the class docstring"
+        return self.edt._graph.depends_on(self)
 
     @property
     def enabled(self):

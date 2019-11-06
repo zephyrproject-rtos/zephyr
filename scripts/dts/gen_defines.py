@@ -70,16 +70,16 @@ Directories with bindings:
                 continue
 
             requires_text = ""
-            if edt.depends_on(node):
+            if node.depends_on:
                 requires_text = "Requires:\n"
-                for depends in edt.depends_on(node):
+                for depends in node.depends_on:
                     requires_text += "  {} {}\n".format(depends.dep_ordinal, depends.path)
                 requires_text += "\n"
 
             supports_text = ""
-            if edt.required_by(node):
+            if node.required_by:
                 supports_text = "Supports:\n"
-                for required in edt.required_by(node):
+                for required in node.required_by:
                     supports_text += "  {} {}\n".format(required.dep_ordinal, required.path)
                 supports_text += "\n"
 
