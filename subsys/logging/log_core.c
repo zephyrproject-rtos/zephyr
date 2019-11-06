@@ -1179,6 +1179,11 @@ void log_free(void *str)
 	}
 }
 
+u32_t z_log_get_timestamp(void)
+{
+	return timestamp_func();
+}
+
 #if defined(CONFIG_USERSPACE)
 void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
 {

@@ -617,6 +617,12 @@ bool log_is_strdup(const void *buf);
  */
 void log_free(void *buf);
 
+/** @brief Get logger timestamp.
+ *
+ * @return Timestamp.
+ */
+u32_t z_log_get_timestamp(void);
+
 /**
  * @brief Get maximal number of simultaneously allocated buffers for string
  *	  duplicates.
