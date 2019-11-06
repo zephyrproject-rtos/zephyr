@@ -46,6 +46,7 @@ struct x86_esf {
 	unsigned long r12;
 	unsigned long r13;
 	unsigned long r14;
+	char fxsave[X86_FXSAVE_SIZE];
 	unsigned long r15;
 	unsigned long vector;
 	unsigned long code;
