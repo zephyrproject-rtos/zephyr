@@ -180,6 +180,17 @@ int usb_dc_attach(void)
 	UsbDevice *regs = &REGS->DEVICE;
 	struct usb_sam0_data *data = usb_sam0_get_data();
 
+#ifdef MCLK
+	/* Enable the clock in MCLK */
+	MCLK->APBBMASK.bit.USB_ = 1;
+
+	/* Enable the GCLK - use 48 MHz source */
+	GCLK->PCHCTRL[USB_GCLK_ID].reg = GCLK_PCHCTRL_GEN(2)
+				       | GCLK_PCHCTRL_CHEN;
+
+	while (GCLK->SYNCBUSY.reg) {
+	}
+#else
 	/* Enable the clock in PM */
 	PM->APBBMASK.bit.USB_ = 1;
 
@@ -189,6 +200,7 @@ int usb_dc_attach(void)
 
 	while (GCLK->STATUS.bit.SYNCBUSY) {
 	}
+#endif /* !MCLK */
 
 	/* Configure */
 	regs->CTRLA.bit.SWRST = 1;
