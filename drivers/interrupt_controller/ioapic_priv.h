@@ -42,7 +42,14 @@
 
 /* Redirection table entry bits: upper 32 bit */
 
+#ifdef CONFIG_QEMU_TARGET
+/* QEMU has special case in its interrupt handling code
+ * for 0xFF000000 to address all processors.
+ */
 #define IOAPIC_DESTINATION 0xff000000
+#else
+#define IOAPIC_DESTINATION 0x00000000
+#endif
 
 /* Redirection table entry bits: lower 32 bit */
 
