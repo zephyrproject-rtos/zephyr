@@ -4,4 +4,5 @@ add_subdirectory(${SOC_SERIES})
 
 zephyr_sources(
   validate_base_addresses.c
+  soc_irq.c
   )
