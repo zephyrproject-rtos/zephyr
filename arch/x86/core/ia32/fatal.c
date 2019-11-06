@@ -89,7 +89,6 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 #endif
 
 #if CONFIG_EXCEPTION_DEBUG
-
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const z_arch_esf_t *pEsf)
 {
@@ -149,103 +148,9 @@ EXC_FUNC_CODE(IV_GENERAL_PROTECTION);
 EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR);
 EXC_FUNC_CODE(IV_ALIGNMENT_CHECK);
 EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
-
-/* Page fault error code flags */
-#define PRESENT	BIT(0)
-#define WR	BIT(1)
-#define US	BIT(2)
-#define RSVD	BIT(3)
-#define ID	BIT(4)
-#define PK	BIT(5)
-#define SGX	BIT(15)
-
-#ifdef CONFIG_X86_MMU
-static void dump_entry_flags(const char *name, u64_t flags)
-{
-	LOG_ERR("%s: 0x%x%x %s, %s, %s, %s", name, (u32_t)(flags>>32),
-		(u32_t)(flags),
-		flags & MMU_ENTRY_PRESENT ?
-		"Present" : "Non-present",
-		flags & MMU_ENTRY_WRITE ?
-		"Writable" : "Read-only",
-		flags & MMU_ENTRY_USER ?
-		"User" : "Supervisor",
-		flags & MMU_ENTRY_EXECUTE_DISABLE ?
-		"Execute Disable" : "Execute Enabled");
-}
-
-static void dump_mmu_flags(struct x86_page_tables *ptables, void *addr)
-{
-	u64_t pde_flags, pte_flags;
-
-	z_x86_mmu_get_flags(ptables, addr, &pde_flags, &pte_flags);
-
-	dump_entry_flags("PDE", pde_flags);
-	dump_entry_flags("PTE", pte_flags);
-}
-#endif /* CONFIG_X86_MMU */
-
-static void dump_page_fault(z_arch_esf_t *esf)
-{
-	u32_t err, cr2;
-
-	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
-	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
-
-	err = esf->errorCode;
-	LOG_ERR("***** CPU Page Fault (error code 0x%08x)", err);
-
-	LOG_ERR("%s thread %s address 0x%08x",
-		(err & US) != 0U ? "User" : "Supervisor",
-		(err & ID) != 0U ? "executed" : ((err & WR) != 0U ?
-						 "wrote" :
-						 "read"), cr2);
-
-#ifdef CONFIG_X86_MMU
-#ifdef CONFIG_X86_KPTI
-	if (err & US) {
-		dump_mmu_flags(&z_x86_user_ptables, (void *)cr2);
-		return;
-	}
-#endif
-	dump_mmu_flags(&z_x86_kernel_ptables, (void *)cr2);
-#endif
-}
-#endif /* CONFIG_EXCEPTION_DEBUG */
-
-#ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_x86_user_string_nlen);
-
-static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_x86_user_string_nlen)
-};
 #endif
 
-void page_fault_handler(z_arch_esf_t *esf)
-{
-#ifdef CONFIG_USERSPACE
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		if ((void *)esf->eip >= exceptions[i].start &&
-		    (void *)esf->eip < exceptions[i].end) {
-			esf->eip = (unsigned int)(exceptions[i].fixup);
-			return;
-		}
-	}
-#endif
-#ifdef CONFIG_EXCEPTION_DEBUG
-	dump_page_fault(esf);
-#endif
-#ifdef CONFIG_THREAD_STACK_INFO
-	if (z_x86_check_stack_bounds(esf->esp, 0, esf->cs)) {
-		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
-	}
-#endif
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
-	CODE_UNREACHABLE;
-}
-_EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
+_EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT);
 
 #ifdef CONFIG_X86_ENABLE_TSS
 static __noinit volatile z_arch_esf_t _df_esf;

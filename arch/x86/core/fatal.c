@@ -7,8 +7,33 @@
 #include <ksched.h>
 #include <kernel_structs.h>
 #include <kernel_internal.h>
+#include <exc_handle.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
+
+#ifdef CONFIG_X86_64
+#define PR_UPTR	"0x%016lx"
+#else
+#define PR_UPTR "0x%08lx"
+#endif
+
+static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
+{
+#ifdef CONFIG_X86_64
+	return esf->rsp;
+#else
+	return esf->esp;
+#endif
+}
+
+static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
+{
+#ifdef CONFIG_X86_64
+	return esf->code;
+#else
+	return esf->errorCode;
+#endif
+}
 
 #ifdef CONFIG_THREAD_STACK_INFO
 bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
@@ -143,5 +168,136 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 	}
 
 	z_fatal_error(reason, esf);
+	CODE_UNREACHABLE;
+}
+
+/*
+ * PAGE FAULT HANDLING
+ */
+
+#ifdef CONFIG_EXCEPTION_DEBUG
+/* Page fault error code flags */
+#define PRESENT	BIT(0)
+#define WR	BIT(1)
+#define US	BIT(2)
+#define RSVD	BIT(3)
+#define ID	BIT(4)
+#define PK	BIT(5)
+#define SGX	BIT(15)
+
+#ifdef CONFIG_X86_MMU
+static bool dump_entry_flags(const char *name, u64_t flags)
+{
+	if ((flags & Z_X86_MMU_P) == 0) {
+		LOG_ERR("%s: Non-present", name);
+		return false;
+	} else {
+		LOG_ERR("%s: 0x%016llx %s, %s, %s", name, flags,
+			flags & MMU_ENTRY_WRITE ?
+			"Writable" : "Read-only",
+			flags & MMU_ENTRY_USER ?
+			"User" : "Supervisor",
+			flags & MMU_ENTRY_EXECUTE_DISABLE ?
+			"Execute Disable" : "Execute Enabled");
+		return true;
+	}
+}
+
+static void dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	u64_t entry;
+
+#ifdef CONFIG_X86_64
+	entry = *z_x86_get_pml4e(ptables, addr);
+	if (!dump_entry_flags("PML4E", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(entry), addr);
+	if (!dump_entry_flags("PDPTE", entry)) {
+		return;
+	}
+#else
+	/* 32-bit doesn't have anything interesting in the PDPTE except
+	 * the present bit
+	 */
+	entry = *z_x86_get_pdpte(ptables, addr);
+	if ((entry & Z_X86_MMU_P) == 0) {
+		LOG_ERR("PDPTE: Non-present");
+		return;
+	}
+#endif
+
+	entry = *z_x86_pd_get_pde(z_x86_pdpte_get_pd(entry), addr);
+	if (!dump_entry_flags("  PDE", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pt_get_pte(z_x86_pde_get_pt(entry), addr);
+	if (!dump_entry_flags("  PTE", entry)) {
+		return;
+	}
+}
+#endif /* CONFIG_X86_MMU */
+
+static void dump_page_fault(z_arch_esf_t *esf)
+{
+	uintptr_t err, cr2;
+
+	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
+	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
+
+	err = esf_get_code(esf);
+	LOG_ERR("***** CPU Page Fault (error code " PR_UPTR ")", err);
+
+	LOG_ERR("%s thread %s address " PR_UPTR,
+		(err & US) != 0U ? "User" : "Supervisor",
+		(err & ID) != 0U ? "executed" : ((err & WR) != 0U ?
+						 "wrote" :
+						 "read"), cr2);
+
+#ifdef CONFIG_X86_MMU
+#ifdef CONFIG_USERSPACE
+	if (err & US) {
+		dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		dump_mmu_flags(&z_x86_kernel_ptables, cr2);
+	}
+#endif /* CONFIG_X86_MMU */
+}
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_x86_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_x86_user_string_nlen)
+};
+#endif
+
+void z_x86_page_fault_handler(z_arch_esf_t *esf)
+{
+#ifdef CONFIG_USERSPACE
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		if ((void *)esf->eip >= exceptions[i].start &&
+		    (void *)esf->eip < exceptions[i].end) {
+			esf->eip = (unsigned int)(exceptions[i].fixup);
+			return;
+		}
+	}
+#endif
+#ifdef CONFIG_EXCEPTION_DEBUG
+	dump_page_fault(esf);
+#endif
+#ifdef CONFIG_THREAD_STACK_INFO
+	if (z_x86_check_stack_bounds(esf_get_sp(esf), 0, esf->cs)) {
+		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+	}
+#endif
+	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
