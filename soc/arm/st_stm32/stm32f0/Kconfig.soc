@@ -25,4 +25,7 @@ config SOC_STM32F072XB
 config SOC_STM32F091XC
 	bool "STM32F091XC"
 
+config SOC_STM32F098XX
+	bool "STM32F098XX"
+
 endchoice
