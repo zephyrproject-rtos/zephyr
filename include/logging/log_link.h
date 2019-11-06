@@ -8,6 +8,7 @@
 
 #include <zephyr/types.h>
 #include <sys/__assert.h>
+#include <logging/log_msg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,10 +42,11 @@ struct log_link_api {
 };
 
 struct log_link_ctrl_blk {
-	u8_t domain_cnt;
-	u8_t domain_offset;
 	u32_t *filters;
 	char **domain_names;
+	int timestamp_offset;
+	u8_t domain_cnt;
+	u8_t domain_offset;
 };
 
 struct log_link {
@@ -232,6 +234,22 @@ static inline int log_link_count(void)
 static inline const struct log_link *log_link_get(u32_t idx)
 {
 	return &__log_links_start[idx];
+}
+
+/**
+ * @brief Prepare remote log message.
+ *
+ * Align timestamp and reset reference counter.
+ *
+ * @param link	Log link instance.
+ * @param msg	Log message.
+ */
+static inline void log_link_msg_prepare(const struct log_link *link,
+					struct log_msg *msg)
+{
+	msg->hdr.ref_cnt = 1;
+	msg->hdr.timestamp += link->ctrl_blk->timestamp_offset;
+	msg->hdr.ids.domain_id += link->ctrl_blk->domain_offset;
 }
 
 /**
