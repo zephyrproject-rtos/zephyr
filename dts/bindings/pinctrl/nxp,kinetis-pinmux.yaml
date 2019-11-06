@@ -11,6 +11,42 @@ properties:
     clocks:
       required: true
 
-pinmux-cells:
-  - pin
-  - function
+child-binding:
+    title: foo
+    description: bar
+    properties:
+        pin:
+          required: true
+          type: int
+
+        mux:
+          required: true
+          type: int
+          enum:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+
+        open-drain-enable:
+          required: false
+          type: boolean
+
+        pass-filter-enable:
+          required: false
+          type: boolean
+
+        slew-rate-enable:
+          required: false
+          type: boolean
+
+        pull-enable:
+          required: false
+          type: boolean
+
+        pull-select:
+          required: false
+          type: boolean
