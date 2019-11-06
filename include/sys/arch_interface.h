@@ -31,6 +31,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
