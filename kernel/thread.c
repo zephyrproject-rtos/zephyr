@@ -26,6 +26,7 @@
 #include <debug/tracing.h>
 #include <string.h>
 #include <stdbool.h>
+#include <irq_offload.h>
 
 static struct k_spinlock lock;
 
@@ -903,3 +904,14 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 #include <syscalls/k_thread_abort_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_IRQ_OFFLOAD
+static K_SEM_DEFINE(offload_sem, 1, 1);
+
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	k_sem_take(&offload_sem, K_FOREVER);
+	arch_irq_offload(routine, parameter);
+	k_sem_give(&offload_sem);
+}
+#endif

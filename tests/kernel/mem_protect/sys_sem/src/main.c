@@ -283,8 +283,6 @@ void test_sem_take_timeout(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
-
-	k_thread_abort(&sem_tid);
 }
 
 /**
@@ -309,8 +307,6 @@ void test_sem_take_timeout_forever(void)
 	ret_value = sys_sem_take(&simple_sem, K_FOREVER);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
-
-	k_thread_abort(&sem_tid);
 }
 
 /**
@@ -329,8 +325,6 @@ void test_sem_take_timeout_isr(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
-
-	k_thread_abort(&sem_tid);
 }
 
 /**
