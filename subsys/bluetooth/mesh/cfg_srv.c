@@ -129,7 +129,7 @@ static void dev_comp_data_get(struct bt_mesh_model *model,
 
 	page = net_buf_simple_pull_u8(buf);
 	if (page != 0U) {
-		BT_WARN("Composition page %u not available", page);
+		BT_DBG("Composition page %u not available", page);
 		page = 0U;
 	}
 

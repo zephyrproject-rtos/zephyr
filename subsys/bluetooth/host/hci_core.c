@@ -4993,7 +4993,7 @@ static int bt_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		if (!bt_dev.id_count) {
-			BT_WARN("No ID address. App must call settings_load()");
+			BT_INFO("No ID address. App must call settings_load()");
 			return 0;
 		}
 
