@@ -268,6 +268,8 @@ except: /*
 	 */
 
 	pushq %r15
+	subq $X86_FXSAVE_SIZE, %rsp
+	fxsave (%rsp)
 	pushq %r14
 	pushq %r13
 	pushq %r12
@@ -284,9 +286,37 @@ except: /*
 	pushq %rax
 
 	movq %rsp, %rdi
+
+	/* TODO we don't need to push so many registers if we are not
+	 * dumping out exception info since RBX, RBP, R12-R15 are callee-saved
+	 */
 	call z_x86_exception
 
-	hlt /* should not return, but just in case .. */
+	/* If we returned, the exception was handled successfully and the
+	 * thread may resume (the pushed RIP may have been modified)
+	 */
+	popq %rax
+	popq %rbx
+	popq %rcx
+	popq %rdx
+	popq %rbp
+	popq %rsi
+	popq %rdi
+	popq %r8
+	popq %r9
+	popq %r10
+	popq %r11
+	popq %r12
+	popq %r13
+	popq %r14
+	fxrstor (%rsp)
+	addq $X86_FXSAVE_SIZE, %rsp
+	popq %r15
+
+	/* Drop the vector/err code pushed by the HW or EXCEPT_*() stub */
+	add $16, %rsp
+
+	iretq
 
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
