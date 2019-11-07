@@ -152,6 +152,7 @@ comment "BLE Controller configuration"
 config BT_CTLR_CRYPTO
 	bool "Enable crypto functions in Controller"
 	default y
+	select ENTROPY_GENERATOR
 	help
 	  Use random number generation and AES encryption support functions
 	  provided by the controller.
