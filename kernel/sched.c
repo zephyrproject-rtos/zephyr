@@ -329,7 +329,7 @@ void z_add_thread_to_ready_q(struct k_thread *thread)
 		z_mark_thread_as_queued(thread);
 		update_cache(0);
 #if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
-		z_arch_sched_ipi();
+		arch_sched_ipi();
 #endif
 	}
 }
@@ -523,7 +523,7 @@ static inline int resched(u32_t key)
 	_current_cpu->swap_ok = 0;
 #endif
 
-	return z_arch_irq_unlocked(key) && !z_arch_is_in_isr();
+	return arch_irq_unlocked(key) && !arch_is_in_isr();
 }
 
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
@@ -555,7 +555,7 @@ void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(_current->base.sched_locked != 0, "");
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
@@ -847,7 +847,7 @@ void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	struct k_thread *thread = (struct k_thread *)tid;
 
@@ -901,7 +901,7 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 
 void z_impl_k_yield(void)
 {
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	if (!z_is_idle_thread_object(_current)) {
 		LOCKED(&sched_spinlock) {
@@ -931,7 +931,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 #ifdef CONFIG_MULTITHREADING
 	u32_t expected_wakeup_time;
 
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
 
@@ -1018,7 +1018,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
-	if (!z_arch_is_in_isr()) {
+	if (!arch_is_in_isr()) {
 		z_reschedule_unlocked();
 	}
 
@@ -1060,7 +1060,7 @@ void z_sched_abort(struct k_thread *thread)
 	 */
 	thread->base.thread_state |= _THREAD_ABORTING;
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-	z_arch_sched_ipi();
+	arch_sched_ipi();
 #endif
 
 	/* Wait for it to be flagged dead either by the CPU it was
@@ -1109,7 +1109,7 @@ static inline k_tid_t z_vrfy_k_current_get(void)
 
 int z_impl_k_is_preempt_thread(void)
 {
-	return !z_arch_is_in_isr() && is_preempt(_current);
+	return !arch_is_in_isr() && is_preempt(_current);
 }
 
 #ifdef CONFIG_USERSPACE

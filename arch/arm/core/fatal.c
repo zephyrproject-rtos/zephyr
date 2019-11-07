@@ -86,7 +86,7 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 	z_arm_fatal_error(reason, esf);
 }
 
-FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
 	u32_t *ssf_contents = ssf_ptr;
 	z_arch_esf_t oops_esf = { 0 };

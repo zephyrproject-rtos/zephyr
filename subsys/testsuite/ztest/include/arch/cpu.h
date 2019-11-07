@@ -18,22 +18,22 @@ struct _thread_arch {
 typedef struct _thread_arch _thread_arch_t;
 
 /* Architecture functions */
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return 0;
 }
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	return 0;
 }
 
-static inline void z_arch_irq_unlock(unsigned int key)
+static inline void arch_irq_unlock(unsigned int key)
 {
 	ARG_UNUSED(key);
 }
 
-static inline bool z_arch_irq_unlocked(unsigned int key)
+static inline bool arch_irq_unlocked(unsigned int key)
 {
 	return 0;
 }

@@ -162,7 +162,7 @@ config X86_VERY_EARLY_CONSOLE
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
 	  very minimal serial driver which gets initialized at the very
-	  beginning of z_cstart(), via z_arch_kernel_init(). This driver enables
+	  beginning of z_cstart(), via arch_kernel_init(). This driver enables
 	  printk to emit messages to the 16550 UART port 0 instance in device
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
 

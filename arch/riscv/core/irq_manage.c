@@ -30,9 +30,9 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
 {
 	ARG_UNUSED(flags);
 

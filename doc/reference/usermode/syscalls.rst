@@ -149,7 +149,7 @@ Inside this header is the body of :c:func:`k_sem_init()`::
     {
     #ifdef CONFIG_USERSPACE
             if (z_syscall_trap()) {
-                    z_arch_syscall_invoke3(*(uintptr_t *)&sem, *(uintptr_t *)&initial_count, *(uintptr_t *)&limit, K_SYSCALL_K_SEM_INIT);
+                    arch_syscall_invoke3(*(uintptr_t *)&sem, *(uintptr_t *)&initial_count, *(uintptr_t *)&limit, K_SYSCALL_K_SEM_INIT);
                     return;
             }
             compiler_barrier();

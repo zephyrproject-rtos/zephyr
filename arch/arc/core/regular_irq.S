@@ -64,7 +64,7 @@ PRE-CONTEXT-SWITCH STACK
 
          --------------------------------------
   SP ->  | Return address; PC (Program Counter), in fact value taken from
-         | BLINK register in z_arch_switch()
+         | BLINK register in arch_switch()
          --------------------------------------
          | STATUS32 value, we explicitly save it here for later usage, read-on
          --------------------------------------

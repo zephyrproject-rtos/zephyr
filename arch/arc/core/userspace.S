@@ -48,7 +48,7 @@
 GTEXT(z_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
 GTEXT(z_user_thread_entry_wrapper)
-GTEXT(z_arch_user_string_nlen)
+GTEXT(arch_user_string_nlen)
 GTEXT(z_arc_user_string_nlen_fault_start)
 GTEXT(z_arc_user_string_nlen_fault_end)
 GTEXT(z_arc_user_string_nlen_fixup)
@@ -248,9 +248,9 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	rtie
 
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
 	/* int err; */
 	sub_s sp,sp,0x4
 

@@ -36,7 +36,7 @@ extern "C" {
  * except NMI.
  */
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -75,7 +75,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
  * previously disabled.
  */
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key) {
@@ -100,7 +100,7 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	/* This convention works for both PRIMASK and BASEPRI */
 	return key == 0;

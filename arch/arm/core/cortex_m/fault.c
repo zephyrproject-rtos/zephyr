@@ -607,7 +607,7 @@ static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	/* Workaround for #18712:
 	 * HardFault may be due to escalation, as a result of
 	 * an SVC instruction that could not be executed; this
-	 * can occur if Z_ARCH_EXCEPT() is called by an ISR,
+	 * can occur if ARCH_EXCEPT() is called by an ISR,
 	 * which executes at priority equal to the SVC handler
 	 * priority. We handle the case of Kernel OOPS and Stack
 	 * Fail here.
@@ -623,7 +623,7 @@ static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
 		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
 
-		PR_EXC("Z_ARCH_EXCEPT with reason %x\n", esf->basic.r0);
+		PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 		reason = esf->basic.r0;
 	}
 #undef _SVC_OPCODE
@@ -935,7 +935,7 @@ void z_arm_fault(u32_t msp, u32_t psp, u32_t exc_return)
 	z_arch_esf_t esf_copy;
 
 	/* Force unlock interrupts */
-	z_arch_irq_unlock(0);
+	arch_irq_unlock(0);
 
 	/* Retrieve the Exception Stack Frame (ESF) to be supplied
 	 * as argument to the remainder of the fault handling process.

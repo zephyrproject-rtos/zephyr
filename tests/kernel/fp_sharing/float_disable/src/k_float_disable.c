@@ -197,7 +197,7 @@ static void sup_fp_thread_entry(void)
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
-	z_arch_irq_connect_dynamic(i,
+	arch_irq_connect_dynamic(i,
 		0,
 		arm_test_isr_handler,
 		NULL,

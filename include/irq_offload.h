@@ -32,7 +32,7 @@ extern "C" {
  */
 static inline void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
-	z_arch_irq_offload(routine, parameter);
+	arch_irq_offload(routine, parameter);
 }
 #endif
 

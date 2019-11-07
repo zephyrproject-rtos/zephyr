@@ -232,7 +232,7 @@ static int k_poll_poller_cb(struct k_poll_event *event, u32_t state)
 	}
 
 	z_unpend_thread(thread);
-	z_arch_thread_return_value_set(thread,
+	arch_thread_return_value_set(thread,
 		state == K_POLL_STATE_CANCELLED ? -EINTR : 0);
 
 	if (!z_is_thread_ready(thread)) {
@@ -252,7 +252,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 				  .thread     = _current,
 				  .cb         = k_poll_poller_cb };
 
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 

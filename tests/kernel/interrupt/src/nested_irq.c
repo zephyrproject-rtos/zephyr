@@ -104,8 +104,8 @@ void test_nested_isr(void)
 #if defined(CONFIG_CPU_CORTEX_M)
 	irq_line_0 = get_available_nvic_line(CONFIG_NUM_IRQS);
 	irq_line_1 = get_available_nvic_line(irq_line_0);
-	z_arch_irq_connect_dynamic(irq_line_0, ISR0_PRIO, isr0, NULL, 0);
-	z_arch_irq_connect_dynamic(irq_line_1, ISR1_PRIO, isr1, NULL, 0);
+	arch_irq_connect_dynamic(irq_line_0, ISR0_PRIO, isr0, NULL, 0);
+	arch_irq_connect_dynamic(irq_line_1, ISR1_PRIO, isr1, NULL, 0);
 #else
 	IRQ_CONNECT(IRQ_LINE(ISR0_OFFSET), ISR0_PRIO, isr0, NULL, 0);
 	IRQ_CONNECT(IRQ_LINE(ISR1_OFFSET), ISR1_PRIO, isr1, NULL, 0);

@@ -16,8 +16,8 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_cpu_idle_init)
-GTEXT(z_arch_cpu_idle)
-GTEXT(z_arch_cpu_atomic_idle)
+GTEXT(arch_cpu_idle)
+GTEXT(arch_cpu_atomic_idle)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #define _SCB_SCR 0xE000ED10
@@ -32,7 +32,7 @@ GTEXT(z_arch_cpu_atomic_idle)
  *
  * @brief Initialization of CPU idle
  *
- * Only called by z_arch_kernel_init(). Sets SEVONPEND bit once for the system's
+ * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
  * duration.
  *
  * @return N/A
@@ -50,7 +50,7 @@ SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
 #endif
 	bx lr
 
-SECTION_FUNC(TEXT, z_arch_cpu_idle)
+SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
 	bl    sys_trace_idle
@@ -77,7 +77,7 @@ SECTION_FUNC(TEXT, z_arch_cpu_idle)
 
 	bx lr
 
-SECTION_FUNC(TEXT, z_arch_cpu_atomic_idle)
+SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
 	bl    sys_trace_idle

@@ -251,14 +251,14 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	/* Desired delay in the future */
 	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
 
-	key = z_arch_irq_lock();
+	key = arch_irq_lock();
 
 	timer0_limit_register_set(delay - 1);
 	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
 						_ARC_V2_TMR_CTRL_IE);
 
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 #endif
 #else
 	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {

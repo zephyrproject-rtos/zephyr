@@ -12,7 +12,7 @@
 /* Exports */
 GTEXT(z_x86_syscall_entry_stub)
 GTEXT(z_x86_userspace_enter)
-GTEXT(z_arch_user_string_nlen)
+GTEXT(arch_user_string_nlen)
 GTEXT(z_x86_user_string_nlen_fault_start)
 GTEXT(z_x86_user_string_nlen_fault_end)
 GTEXT(z_x86_user_string_nlen_fixup)
@@ -254,9 +254,9 @@ _bad_syscall:
 
 
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
 	push	%ebp
 	mov	%esp, %ebp
 
@@ -393,8 +393,8 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,z_arch_timing_enter_user_mode_end
-	mov %edx,z_arch_timing_enter_user_mode_end+4
+	mov %eax,arch_timing_enter_user_mode_end
+	mov %edx,arch_timing_enter_user_mode_end+4
 	pop %edx
 	pop %eax
 #endif

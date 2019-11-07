@@ -48,28 +48,28 @@ typedef struct __esf z_arch_esf_t;
 
 extern u32_t z_timer_cycle_get_32(void);
 
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }
 
-static ALWAYS_INLINE void z_arch_nop(void)
+static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return key == false;
 }
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	return posix_irq_lock();
 }
 
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	posix_irq_unlock(key);
 }

@@ -7,7 +7,7 @@
 #include <debug/tracing.h>
 #include <arch/cpu.h>
 
-void z_arch_cpu_idle(void)
+void arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile (
@@ -15,7 +15,7 @@ void z_arch_cpu_idle(void)
 	    "hlt\n\t");
 }
 
-void z_arch_cpu_atomic_idle(unsigned int key)
+void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 
@@ -30,7 +30,7 @@ void z_arch_cpu_atomic_idle(unsigned int key)
 	     *    external, maskable interrupts after the next instruction is
 	     *    executed."
 	     *
-	     * Thus the IA-32 implementation of z_arch_cpu_atomic_idle() will
+	     * Thus the IA-32 implementation of arch_cpu_atomic_idle() will
 	     * atomically re-enable interrupts and enter a low-power mode.
 	     */
 	    "hlt\n\t");

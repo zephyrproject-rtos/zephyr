@@ -93,7 +93,7 @@ void z_arc_firq_stack_set(void)
  * @return N/A
  */
 
-void z_arch_irq_enable(unsigned int irq)
+void arch_irq_enable(unsigned int irq)
 {
 	unsigned int key = irq_lock();
 
@@ -110,7 +110,7 @@ void z_arch_irq_enable(unsigned int irq)
  * @return N/A
  */
 
-void z_arch_irq_disable(unsigned int irq)
+void arch_irq_disable(unsigned int irq)
 {
 	unsigned int key = irq_lock();
 
@@ -124,7 +124,7 @@ void z_arch_irq_disable(unsigned int irq)
  * @param irq IRQ line
  * @return interrupt enable state, true or false
  */
-int z_arch_irq_is_enabled(unsigned int irq)
+int arch_irq_is_enabled(unsigned int irq)
 {
 	return z_arc_v2_irq_unit_int_enabled(irq);
 }
@@ -181,9 +181,9 @@ void z_irq_spurious(void *unused)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_irq_priority_set(irq, priority, flags);

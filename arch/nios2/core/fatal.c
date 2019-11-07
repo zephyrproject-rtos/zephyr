@@ -132,7 +132,7 @@ FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 }
 
 #ifdef ALT_CPU_HAS_DEBUG_STUB
-FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
 {
 	ARG_UNUSED(reason);
 

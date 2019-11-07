@@ -26,15 +26,15 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
-GTEXT(z_arch_irq_enable)
-GTEXT(z_arch_irq_disable)
+GTEXT(arch_irq_enable)
+GTEXT(arch_irq_disable)
 GTEXT(z_arc_firq_stack_set)
 #else
 
 extern void z_arc_firq_stack_set(void);
-extern void z_arch_irq_enable(unsigned int irq);
-extern void z_arch_irq_disable(unsigned int irq);
-extern int z_arch_irq_is_enabled(unsigned int irq);
+extern void arch_irq_enable(unsigned int irq);
+extern void arch_irq_disable(unsigned int irq);
+extern int arch_irq_is_enabled(unsigned int irq);
 
 extern void _irq_exit(void);
 extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
@@ -50,7 +50,7 @@ extern void z_irq_spurious(void *unused);
  * We additionally set the priority in the interrupt controller at
  * runtime.
  */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_irq_priority_set(irq_p, priority_p, flags_p); \
@@ -78,7 +78,7 @@ extern void z_irq_spurious(void *unused);
  * See include/irq.h for details.
  * All arguments must be computable at build time.
  */
-#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	BUILD_ASSERT_MSG(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
@@ -92,14 +92,14 @@ extern void z_irq_spurious(void *unused);
 })
 
 
-static inline void z_arch_isr_direct_header(void)
+static inline void arch_isr_direct_header(void)
 {
 #ifdef CONFIG_TRACING
 	z_sys_trace_isr_enter();
 #endif
 }
 
-static inline void z_arch_isr_direct_footer(int maybe_swap)
+static inline void arch_isr_direct_footer(int maybe_swap)
 {
 	/* clear SW generated interrupt */
 	if (z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) ==
@@ -111,16 +111,16 @@ static inline void z_arch_isr_direct_footer(int maybe_swap)
 #endif
 }
 
-#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
-extern void z_arch_isr_direct_header(void);
+#define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
+extern void arch_isr_direct_header(void);
 
-#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
+#define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
 /*
  * Scheduling can not be done in direct isr. If required, please use kernel
  * aware interrupt handling
  */
-#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt("ilink")))void name(void) \
 	{ \
@@ -163,7 +163,7 @@ extern void z_arch_isr_direct_header(void);
  * "interrupt disable state" prior to the call.
  */
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -171,12 +171,12 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 	return key;
 }
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("seti %0" : : "ir"(key) : "memory");
 }
 
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	/* ARC irq lock uses instruction "clri r0",
 	 * r0 ==  {26’d0, 1’b1, STATUS32.IE, STATUS32.E[3:0] }

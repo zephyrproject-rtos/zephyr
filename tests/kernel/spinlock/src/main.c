@@ -110,7 +110,7 @@ void cpu1_fn(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_spinlock_tests
  *
- * @see z_arch_start_cpu()
+ * @see arch_start_cpu()
  */
 void test_spinlock_bounce(void)
 {

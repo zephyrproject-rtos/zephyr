@@ -52,10 +52,10 @@ void log_msg_pool_init(void)
 /* Return true if interrupts were locked in the context of this call. */
 static bool is_irq_locked(void)
 {
-	unsigned int key = z_arch_irq_lock();
-	bool ret = z_arch_irq_unlocked(key);
+	unsigned int key = arch_irq_lock();
+	bool ret = arch_irq_unlocked(key);
 
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 	return ret;
 }
 

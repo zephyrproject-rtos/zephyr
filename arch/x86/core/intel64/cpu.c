@@ -97,7 +97,7 @@ struct x86_cpuboot x86_cpuboot[] = {
  * will enter the kernel at fn(---, arg), running on the specified stack.
  */
 
-void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 			void (*fn)(int key, void *data), void *arg)
 {
 	u8_t vector = ((unsigned long) x86_ap_start) >> 12;

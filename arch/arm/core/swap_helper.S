@@ -125,7 +125,7 @@ out_fp_endif:
     isb /* Make the effect of disabling interrupts be realized immediately */
 #elif defined(CONFIG_ARMV7_R)
     /*
-     * Interrupts are still disabled from z_arch_swap so empty clause
+     * Interrupts are still disabled from arch_swap so empty clause
      * here to avoid the preprocessor error below
      */
 #else

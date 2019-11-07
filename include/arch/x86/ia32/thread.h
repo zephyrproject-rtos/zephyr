@@ -202,7 +202,7 @@ typedef struct s_preempFloatReg {
  * The thread control structure definition.  It contains the
  * various fields to manage a _single_ thread. The TCS will be aligned
  * to the appropriate architecture specific boundary via the
- * z_arch_new_thread() call.
+ * arch_new_thread() call.
  */
 
 struct _thread_arch {

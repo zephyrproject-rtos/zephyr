@@ -18,20 +18,20 @@
 extern "C" {
 #endif
 
-static inline void z_arch_kernel_init(void)
+static inline void arch_kernel_init(void)
 {
 	/* No-op on this arch */
 }
 
 static ALWAYS_INLINE void
-z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	/* write into 'eax' slot created in z_swap() entry */
 
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void z_arch_cpu_atomic_idle(unsigned int key);
+extern void arch_cpu_atomic_idle(unsigned int key);
 
 #ifdef CONFIG_USERSPACE
 extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,

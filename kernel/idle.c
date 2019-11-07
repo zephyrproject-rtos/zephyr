@@ -156,7 +156,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		k_busy_wait(100);
 		k_yield();
 #else
-		(void)z_arch_irq_lock();
+		(void)arch_irq_lock();
 		sys_power_save_idle();
 		IDLE_YIELD_IF_COOP();
 #endif

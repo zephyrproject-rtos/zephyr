@@ -155,7 +155,7 @@ void test_string_nlen(void)
 	size_t ret;
 
 	ret = string_nlen(kernel_string, BUF_SIZE, &err);
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		zassert_equal(err, -1,
 			      "kernel string did not fault on user access");
 	} else {

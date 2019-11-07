@@ -187,8 +187,8 @@ typedef struct z_kernel _kernel_t;
 extern struct z_kernel _kernel;
 
 #ifdef CONFIG_SMP
-#define _current_cpu (z_arch_curr_cpu())
-#define _current (z_arch_curr_cpu()->current)
+#define _current_cpu (arch_curr_cpu())
+#define _current (arch_curr_cpu()->current)
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.current

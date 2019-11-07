@@ -176,7 +176,7 @@ typedef struct s_isrList {
  * 4. z_irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
  */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
@@ -205,7 +205,7 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
@@ -215,20 +215,20 @@ typedef struct s_isrList {
 
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-extern void z_arch_irq_direct_pm(void);
-#define Z_ARCH_ISR_DIRECT_PM() z_arch_irq_direct_pm()
+extern void arch_irq_direct_pm(void);
+#define ARCH_ISR_DIRECT_PM() arch_irq_direct_pm()
 #else
-#define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
+#define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
-#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
-#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
+#define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
+#define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
 /* FIXME prefer these inline, but see GH-3056 */
-extern void z_arch_isr_direct_header(void);
-extern void z_arch_isr_direct_footer(int maybe_swap);
+extern void arch_isr_direct_header(void);
+extern void arch_isr_direct_footer(int maybe_swap);
 
-#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt)) void name(void *stack_frame) \
 	{ \
@@ -279,7 +279,7 @@ struct _x86_syscall_stack_frame {
 	u32_t ss;
 };
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -344,7 +344,7 @@ extern struct task_state_segment _main_tss;
 #endif
 
 #if CONFIG_X86_KERNEL_OOPS
-#define Z_ARCH_EXCEPT(reason_p) do { \
+#define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \

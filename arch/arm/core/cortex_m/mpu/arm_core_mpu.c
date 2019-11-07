@@ -259,7 +259,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 }
 
 #if defined(CONFIG_USERSPACE)
-int z_arch_mem_domain_max_partitions_get(void)
+int arch_mem_domain_max_partitions_get(void)
 {
 	int available_regions = arm_core_mpu_get_max_available_dyn_regions();
 
@@ -274,7 +274,7 @@ int z_arch_mem_domain_max_partitions_get(void)
 	return ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(available_regions);
 }
 
-void z_arch_mem_domain_thread_add(struct k_thread *thread)
+void arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	if (_current != thread) {
 		return;
@@ -287,7 +287,7 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread)
 	z_arm_configure_dynamic_mpu_regions(thread);
 }
 
-void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
+void arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	/* This function will reset the access permission configuration
 	 * of the active partitions of the memory domain.
@@ -317,8 +317,8 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	}
 }
 
-void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t  partition_id)
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      u32_t partition_id)
 {
 	/* Request to remove a partition from a memory domain.
 	 * This resets the access permissions of the partition
@@ -334,22 +334,22 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		&domain->partitions[partition_id], &reset_attr);
 }
 
-void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				    u32_t partition_id)
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   u32_t partition_id)
 {
 	/* No-op on this architecture */
 }
 
-void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	if (_current != thread) {
 		return;
 	}
 
-	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
+	arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
-int z_arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return arm_core_mpu_buffer_validate(addr, size, write);
 }

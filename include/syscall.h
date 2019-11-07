@@ -100,7 +100,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 #elif defined(__ZEPHYR_USER__)
 	ret = true;
 #else
-	ret = z_arch_is_user_context();
+	ret = arch_is_user_context();
 #endif
 #endif
 	return ret;
@@ -114,7 +114,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 static inline bool _is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE
-	return z_arch_is_user_context();
+	return arch_is_user_context();
 #else
 	return false;
 #endif

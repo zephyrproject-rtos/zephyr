@@ -23,7 +23,7 @@ __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
 
 #ifdef CONFIG_BOARD_QEMU_X86
-FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
 {
 	ARG_UNUSED(reason);
 
@@ -46,7 +46,7 @@ void z_x86_spurious_irq(const z_arch_esf_t *esf)
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
 }
 
-void z_arch_syscall_oops(void *ssf_ptr)
+void arch_syscall_oops(void *ssf_ptr)
 {
 	struct _x86_syscall_stack_frame *ssf =
 		(struct _x86_syscall_stack_frame *)ssf_ptr;
@@ -229,7 +229,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
+	_main_tss.esp = (u32_t)(ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
 				CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;

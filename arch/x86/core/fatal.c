@@ -40,9 +40,9 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
 {
 	uintptr_t start, end;
 
-	if (z_arch_is_in_isr()) {
+	if (arch_is_in_isr()) {
 		/* We were servicing an interrupt */
-		start = (uintptr_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
+		start = (uintptr_t)ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
 	} else if ((cs & 0x3U) != 0U ||
 		   (_current->base.user_options & K_USER) == 0) {
