@@ -316,9 +316,11 @@ config GEN_IRQ_START_VECTOR
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
+	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
-	  run in interrupt context. Mainly useful for test cases.
+	  run in interrupt context. Only useful for test cases that need
+	  to validate the correctness of kernel objects in IRQ context.
 
 endmenu # Interrupt configuration
 
