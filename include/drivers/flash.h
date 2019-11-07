@@ -79,6 +79,7 @@ struct flash_driver_api {
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 	const size_t write_block_size;
+	const off_t base_address;
 };
 
 /**
@@ -187,8 +188,15 @@ static inline int z_impl_flash_write_protection_set(struct device *dev,
 	return api->write_protection(dev, enable);
 }
 
+/**
+ * @brief Flash page description
+ *
+ * @param start_offset  absolute offset of the flash page
+ * @param size          page size in byte unit
+ * @param index         index of the page within the flash memory
+ */
 struct flash_pages_info {
-	off_t start_offset; /* offset from the base of flash address */
+	off_t start_offset;
 	size_t size;
 	u32_t index;
 };

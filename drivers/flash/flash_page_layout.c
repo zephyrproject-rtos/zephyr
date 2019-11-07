@@ -19,6 +19,10 @@ static int flash_get_page_info(struct device *dev, off_t offs,
 
 	api->page_layout(dev, &layout, &layout_size);
 
+	if (use_addr) {
+		offs -= api->base_address;
+	}
+
 	while (layout_size--) {
 		if (use_addr) {
 			end += layout->pages_count * layout->pages_size;
@@ -36,7 +40,7 @@ static int flash_get_page_info(struct device *dev, off_t offs,
 				num_in_group = offs - page_count;
 			}
 
-			info->start_offset = group_offs +
+			info->start_offset = group_offs + api->base_address +
 					     num_in_group * layout->pages_size;
 			info->index = page_count + num_in_group;
 
@@ -87,7 +91,7 @@ void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data)
 	const struct flash_pages_layout *layout;
 	struct flash_pages_info page_info;
 	size_t block, num_blocks, page = 0, i;
-	off_t off = 0;
+	off_t off = api->base_address;
 
 	api->page_layout(dev, &layout, &num_blocks);
 

@@ -253,6 +253,7 @@ static const struct flash_driver_api flash_nrf_api = {
 	.page_layout = flash_nrf_pages_layout,
 #endif
 	.write_block_size = 1,
+	.base_address = DT_FLASH_BASE_ADDRESS,
 };
 
 static int nrf_flash_init(struct device *dev)
