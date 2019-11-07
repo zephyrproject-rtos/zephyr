@@ -251,6 +251,7 @@ static int pwm_nrfx_init(struct device *dev)
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
+					  NULL,
 					  NULL);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->config->name);
@@ -375,9 +376,9 @@ static int pwm_nrfx_pm_control(struct device *dev,
 				PWM_NRFX_OUTPUT_PIN(idx, 2),		      \
 				PWM_NRFX_OUTPUT_PIN(idx, 3),		      \
 			},						      \
-			.base_clock = NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK,     \
-			.count_mode = PWM_NRFX_COUNT_MODE(idx),               \
-			.top_value = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE,	      \
+			.base_clock = NRF_PWM_CLK_1MHz,			      \
+			.count_mode = PWM_NRFX_COUNT_MODE(idx),		      \
+			.top_value = 1000,				      \
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \

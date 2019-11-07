@@ -225,7 +225,7 @@ static int set_cc(struct device *dev, u8_t chan, u32_t val, u32_t flags)
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	bool irq_on_late;
 
-	__ASSERT(nrf_rtc_int_is_enabled(rtc, int_mask) == 0,
+	__ASSERT(nrf_rtc_int_enable_check(rtc, int_mask) == 0,
 			"Expected that CC interrupt is disabled.");
 
 	evt = RTC_CHANNEL_EVENT_ADDR(chan);
@@ -575,7 +575,7 @@ static void top_irq_handle(struct device *dev)
 		  NRF_RTC_EVENT_OVERFLOW :
 		  RTC_CHANNEL_EVENT_ADDR(counter_get_num_of_channels(dev));
 
-	if (nrf_rtc_event_pending(rtc, top_evt)) {
+	if (nrf_rtc_event_check(rtc, top_evt)) {
 		nrf_rtc_event_clear(rtc, top_evt);
 
 		/* Perform manual clear if custom top value is used and PPI
@@ -596,8 +596,8 @@ static void alarm_irq_handle(struct device *dev, u32_t chan)
 	NRF_RTC_Type *rtc = get_nrfx_config(dev)->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
 	u32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
-	bool hw_irq_pending = nrf_rtc_event_pending(rtc, evt) &&
-			      nrf_rtc_int_is_enabled(rtc, int_mask);
+	bool hw_irq_pending = nrf_rtc_event_check(rtc, evt) &&
+			      nrf_rtc_int_enable_check(rtc, int_mask);
 	bool sw_irq_pending = get_dev_data(dev)->ipend_adj & BIT(chan);
 
 	if (hw_irq_pending || sw_irq_pending) {

@@ -57,11 +57,11 @@ static K_WORK_DEFINE(temp_measure_work, measure_temperature);
 
 static bool clock_event_check_and_clean(u32_t evt, u32_t intmask)
 {
-	bool ret = nrf_clock_event_check(evt) &&
-			nrf_clock_int_enable_check(intmask);
+	bool ret = nrf_clock_event_check(NRF_CLOCK, evt) &&
+			nrf_clock_int_enable_check(NRF_CLOCK, intmask);
 
 	if (ret) {
-		nrf_clock_event_clear(evt);
+		nrf_clock_event_clear(NRF_CLOCK, evt);
 	}
 
 	return ret;
@@ -101,8 +101,8 @@ bool z_nrf_clock_calibration_stop(struct device *dev)
 
 	key = irq_lock();
 
-	nrf_clock_task_trigger(NRF_CLOCK_TASK_CTSTOP);
-	nrf_clock_event_clear(NRF_CLOCK_EVENT_CTTO);
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CTSTOP);
+	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO);
 
 	/* If calibration is active then pend until completed.
 	 * Currently (and most likely in the future), LFCLK is never stopped so
@@ -127,13 +127,13 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
 	 * reset, or pin reset EVENTS_DONE and EVENTS_CTTO are not reset.
 	 */
-	nrf_clock_event_clear(NRF_CLOCK_EVENT_DONE);
-	nrf_clock_event_clear(NRF_CLOCK_EVENT_CTTO);
+	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
+	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO);
 
-	nrf_clock_int_enable(NRF_CLOCK_INT_DONE_MASK |
-			     NRF_CLOCK_INT_CTTO_MASK |
-			     NRF_CLOCK_INT_CTSTOPPED_MASK);
-	nrf_clock_cal_timer_timeout_set(
+	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK |
+					NRF_CLOCK_INT_CTTO_MASK |
+					NRF_CLOCK_INT_CTSTOPPED_MASK);
+	nrf_clock_cal_timer_timeout_set(NRF_CLOCK,
 			CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD);
 
 	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
@@ -155,7 +155,7 @@ static void start_calibration(void)
 		*(volatile uint32_t *)0x40000C34 = 0x00000002;
 	}
 
-	nrf_clock_task_trigger(NRF_CLOCK_TASK_CAL);
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CAL);
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
 
@@ -164,7 +164,7 @@ static void to_idle(void)
 {
 	cal_state = CAL_IDLE;
 	clock_control_off(hfclk_dev, 0);
-	nrf_clock_task_trigger(NRF_CLOCK_TASK_CTSTART);
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CTSTART);
 }
 
 /* Convert sensor value to 0.25'C units. */
@@ -255,7 +255,7 @@ static void on_cal_done(void)
 
 	if (cal_state == CAL_ACTIVE_OFF) {
 		clock_control_off(hfclk_dev, 0);
-		nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTOP);
+		nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTOP);
 		cal_state = CAL_OFF;
 	} else {
 		to_idle();
@@ -307,7 +307,8 @@ void z_nrf_clock_calibration_isr(void)
 			 * started because it was not yet stopped.
 			 */
 			LOG_INF("restarting");
-			nrf_clock_task_trigger(NRF_CLOCK_TASK_CTSTART);
+			nrf_clock_task_trigger(NRF_CLOCK,
+					       NRF_CLOCK_TASK_CTSTART);
 		}
 	}
 }
