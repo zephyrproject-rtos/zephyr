@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@48000000 {
+			/* USART3_TX */
+			usart3_tx_pb10: usart3_tx_1 {
+				pinmux = <STM32_PINMUX('B', 10, AF7)>;
+				drive-push-pull;
+				bias-pull-up;
+			};
+			usart3_tx_pc4: usart3_tx_2 {
+				pinmux = <STM32_PINMUX('C', 5, AF7)>;
+				drive-push-pull;
+				bias-pull-up;
+			};
+			usart3_tx_pc11: usart3_tx_3 {
+				pinmux = <STM32_PINMUX('C', 10, AF7)>;
+				drive-push-pull;
+				bias-pull-up;
+			};
+			/* USART3_RX */
+			usart3_rx_pb10: usart3_rx_1 {
+				pinmux = <STM32_PINMUX('B', 11, AF7)>;
+				bias-pull-up;
+			};
+			usart3_rx_pc4: usart3_rx_2 {
+				pinmux = <STM32_PINMUX('C', 4, AF7)>;
+				bias-pull-up;
+			};
+			usart3_rx_pc11: usart3_rx_3 {
+				pinmux = <STM32_PINMUX('C', 11, AF7)>;
+				bias-pull-up;
+			};
+		};
+	};
+};

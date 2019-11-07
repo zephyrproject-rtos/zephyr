@@ -51,6 +51,8 @@
 
 &usart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
