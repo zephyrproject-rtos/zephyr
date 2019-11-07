@@ -684,6 +684,12 @@ static bool update_keys_check(struct bt_smp *smp)
 		return false;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_SMP_ALLOW_UNAUTH_OVERWRITE) &&
+	    (!(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)
+	     && smp->method == JUST_WORKS)) {
+		return false;
+	}
+
 	return true;
 }
 
