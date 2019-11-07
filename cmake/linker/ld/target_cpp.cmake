@@ -4,7 +4,7 @@
 
 macro(toolchain_ld_cpp)
 
-  zephyr_ld_options(
+  zephyr_link_libraries(
     -lstdc++
   )
 
