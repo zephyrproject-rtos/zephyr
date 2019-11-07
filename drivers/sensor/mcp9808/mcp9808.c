@@ -83,14 +83,15 @@ int mcp9808_init(struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 
-	data->i2c_master = device_get_binding(CONFIG_MCP9808_I2C_DEV_NAME);
+	data->i2c_master =
+	       device_get_binding(DT_INST_0_MICROCHIP_MCP9808_BUS_NAME);
 	if (!data->i2c_master) {
 		LOG_DBG("mcp9808: i2c master not found: %s",
-		    CONFIG_MCP9808_I2C_DEV_NAME);
+		    DT_INST_0_MICROCHIP_MCP9808_BUS_NAME);
 		return -EINVAL;
 	}
 
-	data->i2c_slave_addr = CONFIG_MCP9808_I2C_ADDR;
+	data->i2c_slave_addr = DT_INST_0_MICROCHIP_MCP9808_BASE_ADDRESS;
 
 	mcp9808_setup_interrupt(dev);
 
@@ -99,6 +100,6 @@ int mcp9808_init(struct device *dev)
 
 struct mcp9808_data mcp9808_data;
 
-DEVICE_AND_API_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init,
+DEVICE_AND_API_INIT(mcp9808, DT_INST_0_MICROCHIP_MCP9808_LABEL, mcp9808_init,
 		    &mcp9808_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);

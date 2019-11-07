@@ -179,15 +179,15 @@ void mcp9808_setup_interrupt(struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio = device_get_binding(CONFIG_MCP9808_GPIO_CONTROLLER);
-	gpio_pin_configure(gpio, CONFIG_MCP9808_GPIO_PIN,
+	gpio = device_get_binding(DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_CONTROLLER);
+	gpio_pin_configure(gpio, DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&data->gpio_cb,
 			   mcp9808_gpio_cb,
-			   BIT(CONFIG_MCP9808_GPIO_PIN));
+			   BIT(DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN));
 
 	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_enable_callback(gpio, CONFIG_MCP9808_GPIO_PIN);
+	gpio_pin_enable_callback(gpio, DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN);
 }
