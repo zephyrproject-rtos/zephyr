@@ -135,6 +135,7 @@ add_custom_target(
 # a superset of INPUT= and FILE_PATTERNS= in zephyr.doxyfile.in
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
+  ${ZEPHYR_BASE}/kernel/include/kernel_arch_interface.h
   ${ZEPHYR_BASE}/lib/libc/*.[c,h,S]
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/*.[h,c,S]
   ${ZEPHYR_BASE}/tests/*.[h,c,S]
