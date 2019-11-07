@@ -117,7 +117,7 @@ function on_complete() {
 
 
 function build_btsim() {
-	NRF_HW_MODELS_VERSION=`cat boards/posix/nrf52_bsim/hw_models_version`
+	NRF_HW_MODELS_VERSION=align_with_nrfx_2_0_0
 	pushd . ;
 	cd ${BSIM_COMPONENTS_PATH} ;
 	if [ -d ext_NRF52_hw_models ]; then
@@ -131,7 +131,7 @@ function build_btsim() {
 		)
 	else
 		git clone -b ${NRF_HW_MODELS_VERSION} \
-		https://github.com/BabbleSim/ext_NRF52_hw_models.git
+		https://github.com/anangl/ext_NRF52_hw_models.git
 	fi
 	cd ${BSIM_OUT_PATH}
 	make everything -j 8 -s
