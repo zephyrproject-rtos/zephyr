@@ -1,0 +1,3 @@
+&dma2 {
+	status = "okay";
+};

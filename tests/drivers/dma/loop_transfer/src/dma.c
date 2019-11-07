@@ -22,7 +22,15 @@
 static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
 static char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = {{ 0 } };
 
+#ifdef CONFIG_SOC_FAMILY_STM32
+#ifdef CONFIG_DMA_STM32_V1
+#define DMA_DEVICE_NAME CONFIG_DMA_2_NAME
+#else
+#define DMA_DEVICE_NAME CONFIG_DMA_1_NAME
+#endif
+#else
 #define DMA_DEVICE_NAME "DMA_0"
+#endif /* CONFIG_SOC_FAMILY_STM32 */
 
 volatile u8_t transfer_count;
 static struct dma_config dma_cfg = {0};
