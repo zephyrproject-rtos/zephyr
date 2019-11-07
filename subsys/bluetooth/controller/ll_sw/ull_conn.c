@@ -38,7 +38,8 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull_conn
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_conn
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
