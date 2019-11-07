@@ -43,7 +43,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	z_thread_single_abort(thread);
 	z_thread_monitor_exit(thread);
 
-	if (thread == _current && !z_arch_is_in_isr()) {
+	if (thread == _current && !arch_is_in_isr()) {
 		z_swap(&lock, key);
 	} else {
 		/* Really, there's no good reason for this to be a

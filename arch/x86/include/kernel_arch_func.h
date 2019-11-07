@@ -15,10 +15,10 @@
 #endif
 
 #ifndef _ASMLANGUAGE
-static inline bool z_arch_is_in_isr(void)
+static inline bool arch_is_in_isr(void)
 {
 #ifdef CONFIG_SMP
-	return z_arch_curr_cpu()->nested != 0;
+	return arch_curr_cpu()->nested != 0;
 #else
 	return _kernel.nested != 0U;
 #endif

@@ -40,7 +40,7 @@ extern "C" {
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 	irq_p; \
@@ -53,12 +53,12 @@ extern void z_irq_spurious(void *unused);
 
 extern u32_t z_timer_cycle_get_32(void);
 
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }
 
-static ALWAYS_INLINE void z_arch_nop(void)
+static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

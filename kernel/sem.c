@@ -110,7 +110,7 @@ static void do_sem_give(struct k_sem *sem)
 
 	if (thread != NULL) {
 		z_ready_thread(thread);
-		z_arch_thread_return_value_set(thread, 0);
+		arch_thread_return_value_set(thread, 0);
 	} else {
 		increment_count_up_to_limit(sem);
 		handle_poll_events(sem);
@@ -138,7 +138,7 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 
 int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
-	__ASSERT(((z_arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+	__ASSERT(((arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	k_spinlock_key_t key = k_spin_lock(&lock);

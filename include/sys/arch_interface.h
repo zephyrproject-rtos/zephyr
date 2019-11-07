@@ -55,7 +55,7 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  *
  * @see k_cycle_get_32()
  */
-static inline u32_t z_arch_k_cycle_get_32(void);
+static inline u32_t arch_k_cycle_get_32(void);
 
 /** @} */
 
@@ -66,43 +66,43 @@ static inline u32_t z_arch_k_cycle_get_32(void);
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_DEFINE(sym, size)
+ * @def ARCH_THREAD_STACK_DEFINE(sym, size)
  *
  * @see K_THREAD_STACK_DEFINE()
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, size)
+ * @def ARCH_THREAD_STACK_ARRAY_DEFINE(sym, size)
  *
  * @see K_THREAD_STACK_ARRAY_DEFINE()
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_LEN(size)
+ * @def ARCH_THREAD_STACK_LEN(size)
  *
  * @see K_THREAD_STACK_LEN()
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_MEMBER(sym, size)
+ * @def ARCH_THREAD_STACK_MEMBER(sym, size)
  *
  * @see K_THREAD_STACK_MEMBER()
  */
 
 /*
- * @def Z_ARCH_THREAD_STACK_SIZEOF(sym)
+ * @def ARCH_THREAD_STACK_SIZEOF(sym)
  *
  * @see K_THREAD_STACK_SIZEOF()
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_RESERVED
+ * @def ARCH_THREAD_STACK_RESERVED
  *
  * @see K_THREAD_STACK_RESERVED
  */
 
 /**
- * @def Z_ARCH_THREAD_STACK_BUFFER(sym)
+ * @def ARCH_THREAD_STACK_BUFFER(sym)
  *
  * @see K_THREAD_STACK_RESERVED
  */
@@ -128,12 +128,12 @@ static inline u32_t z_arch_k_cycle_get_32(void);
  *
  * @see k_cpu_idle()
  */
-void z_arch_cpu_idle(void);
+void arch_cpu_idle(void);
 
 /**
  * @brief Atomically re-enable interrupts and enter low power mode
  *
- * The requirements for z_arch_cpu_atomic_idle() are as follows:
+ * The requirements for arch_cpu_atomic_idle() are as follows:
  *
  * 1) Enabling interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
@@ -146,9 +146,9 @@ void z_arch_cpu_idle(void);
  *
  * @see k_cpu_atomic_idle()
  *
- * @param key Lockout key returned by previous invocation of z_arch_irq_lock()
+ * @param key Lockout key returned by previous invocation of arch_irq_lock()
  */
-void z_arch_cpu_atomic_idle(unsigned int key);
+void arch_cpu_atomic_idle(unsigned int key);
 
 /** @} */
 
@@ -179,8 +179,8 @@ void z_arch_cpu_atomic_idle(unsigned int key);
  *        an irq_unlock() key.
  * @param arg Untyped argument to be passed to "fn"
  */
-void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		      void (*fn)(int key, void *data), void *arg);
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+		    void (*fn)(int key, void *data), void *arg);
 /** @} */
 
 
@@ -194,44 +194,44 @@ void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
  *
  * @see irq_lock()
  */
-static inline unsigned int z_arch_irq_lock(void);
+static inline unsigned int arch_irq_lock(void);
 
 /**
  * Unlock interrupts on the current CPU
  *
  * @see irq_unlock()
  */
-static inline void z_arch_irq_unlock(unsigned int key);
+static inline void arch_irq_unlock(unsigned int key);
 
 /**
- * Test if calling z_arch_irq_unlock() with this key would unlock irqs
+ * Test if calling arch_irq_unlock() with this key would unlock irqs
  *
- * @param key value returned by z_arch_irq_lock()
- * @return true if interrupts were unlocked prior to the z_arch_irq_lock()
+ * @param key value returned by arch_irq_lock()
+ * @return true if interrupts were unlocked prior to the arch_irq_lock()
  * call that produced the key argument.
  */
-static inline bool z_arch_irq_unlocked(unsigned int key);
+static inline bool arch_irq_unlocked(unsigned int key);
 
 /**
  * Disable the specified interrupt line
  *
  * @see irq_disable()
  */
-void z_arch_irq_disable(unsigned int irq);
+void arch_irq_disable(unsigned int irq);
 
 /**
  * Enable the specified interrupt line
  *
  * @see irq_enable()
  */
-void z_arch_irq_enable(unsigned int irq);
+void arch_irq_enable(unsigned int irq);
 
 /**
  * Test if an interrupt line is enabled
  *
  * @see irq_is_enabled()
  */
-int z_arch_irq_is_enabled(unsigned int irq);
+int arch_irq_is_enabled(unsigned int irq);
 
 /**
  * Arch-specific hook to install a dynamic interrupt.
@@ -244,48 +244,48 @@ int z_arch_irq_is_enabled(unsigned int irq);
  *
  * @return The vector assigned to this interrupt
  */
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			       void (*routine)(void *parameter),
-			       void *parameter, u32_t flags);
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter),
+			     void *parameter, u32_t flags);
 
 /**
- * @def Z_ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
+ * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
  *
  * @see IRQ_CONNECT()
  */
 
 /**
- * @def Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+ * @def ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
  *
  * @see IRQ_DIRECT_CONNECT()
  */
 
 /**
- * @def Z_ARCH_ISR_DIRECT_PM()
+ * @def ARCH_ISR_DIRECT_PM()
  *
  * @see ISR_DIRECT_PM()
  */
 
 /**
- * @def Z_ARCH_ISR_DIRECT_HEADER()
+ * @def ARCH_ISR_DIRECT_HEADER()
  *
  * @see ISR_DIRECT_HEADER()
  */
 
 /**
- * @def Z_ARCH_ISR_DIRECT_FOOTER(swap)
+ * @def ARCH_ISR_DIRECT_FOOTER(swap)
  *
  * @see ISR_DIRECT_FOOTER()
  */
 
 /**
- * @def Z_ARCH_ISR_DIRECT_DECLARE(name)
+ * @def ARCH_ISR_DIRECT_DECLARE(name)
  *
  * @see ISR_DIRECT_DECLARE()
  */
 
 /**
- * @def Z_ARCH_EXCEPT(reason_p)
+ * @def ARCH_EXCEPT(reason_p)
  *
  * Generate a software induced fatal error.
  *
@@ -318,7 +318,7 @@ typedef void (*irq_offload_routine_t)(void *parameter);
  * @param routine Function to run in interrupt context
  * @param parameter Value to pass to the function when invoked
  */
-void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter);
+void arch_irq_offload(irq_offload_routine_t routine, void *parameter);
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
@@ -331,14 +331,14 @@ void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter);
  */
 #ifdef CONFIG_SMP
 /** Return the CPU struct for the currently executing CPU */
-static inline struct _cpu *z_arch_curr_cpu(void);
+static inline struct _cpu *arch_curr_cpu(void);
 
 /**
  * Broadcast an interrupt to all CPUs
  *
  * This will invoke z_sched_ipi() on other CPUs in the system.
  */
-void z_arch_sched_ipi(void);
+void arch_sched_ipi(void);
 #endif /* CONFIG_SMP */
 
 /** @} */
@@ -372,25 +372,25 @@ void z_arch_sched_ipi(void);
  * @param call_id System call ID
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke0(uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id);
 
 /**
  * Invoke a system call with 1 argument.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param call_id System call ID, will be bounds-checked and used to reference
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke1(uintptr_t arg1,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
+					     uintptr_t call_id);
 
 /**
  * Invoke a system call with 2 arguments.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param arg2 Second argument to the system call.
@@ -398,13 +398,13 @@ static inline uintptr_t z_arch_syscall_invoke1(uintptr_t arg1,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t call_id);
 
 /**
  * Invoke a system call with 3 arguments.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param arg2 Second argument to the system call.
@@ -413,14 +413,14 @@ static inline uintptr_t z_arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
-					       uintptr_t arg3,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3,
+					     uintptr_t call_id);
 
 /**
  * Invoke a system call with 4 arguments.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param arg2 Second argument to the system call.
@@ -430,14 +430,14 @@ static inline uintptr_t z_arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
-					       uintptr_t arg3, uintptr_t arg4,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t call_id);
 
 /**
  * Invoke a system call with 5 arguments.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param arg2 Second argument to the system call.
@@ -448,15 +448,15 @@ static inline uintptr_t z_arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
-					       uintptr_t arg3, uintptr_t arg4,
-					       uintptr_t arg5,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5,
+					     uintptr_t call_id);
 
 /**
  * Invoke a system call with 6 arguments.
  *
- * @see z_arch_syscall_invoke0()
+ * @see arch_syscall_invoke0()
  *
  * @param arg1 First argument to the system call.
  * @param arg2 Second argument to the system call.
@@ -468,24 +468,24 @@ static inline uintptr_t z_arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
  *	          kernel-side dispatch table
  * @return Return value of the system call. Void system calls return 0 here.
  */
-static inline uintptr_t z_arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
-					       uintptr_t arg3, uintptr_t arg4,
-					       uintptr_t arg5, uintptr_t arg6,
-					       uintptr_t call_id);
+static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5, uintptr_t arg6,
+					     uintptr_t call_id);
 
 /**
  * Indicate whether we are currently running in user mode
  *
  * @return true if the CPU is currently running with user permissions
  */
-static inline bool z_arch_is_user_context(void);
+static inline bool arch_is_user_context(void);
 
 /**
  * @brief Get the maximum number of partitions for a memory domain
  *
  * @return Max number of partitions, or -1 if there is no limit
  */
-int z_arch_mem_domain_max_partitions_get(void);
+int arch_mem_domain_max_partitions_get(void);
 
 /**
  * @brief Add a thread to a memory domain (arch-specific)
@@ -498,7 +498,7 @@ int z_arch_mem_domain_max_partitions_get(void);
  *
  * @param thread Thread which needs to be configured.
  */
-void z_arch_mem_domain_thread_add(struct k_thread *thread);
+void arch_mem_domain_thread_add(struct k_thread *thread);
 
 /**
  * @brief Remove a thread from a memory domain (arch-specific)
@@ -511,7 +511,7 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread);
  *
  * @param thread Thread being removed from its memory domain
  */
-void z_arch_mem_domain_thread_remove(struct k_thread *thread);
+void arch_mem_domain_thread_remove(struct k_thread *thread);
 
 /**
  * @brief Remove a partition from the memory domain (arch-specific)
@@ -526,8 +526,8 @@ void z_arch_mem_domain_thread_remove(struct k_thread *thread);
  * @param domain The memory domain structure
  * @param partition_id The partition index that needs to be deleted
  */
-void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					u32_t partition_id);
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      u32_t partition_id);
 
 /**
  * @brief Add a partition to the memory domain
@@ -538,8 +538,8 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
  */
-void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				     u32_t partition_id);
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   u32_t partition_id);
 
 /**
  * @brief Remove the memory domain
@@ -552,7 +552,7 @@ void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
  *
  * @param domain The memory domain structure which needs to be deleted.
  */
-void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
+void arch_mem_domain_destroy(struct k_mem_domain *domain);
 
 /**
  * @brief Check memory region permissions
@@ -580,7 +580,7 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
  *
  * @return nonzero if the permissions don't match.
  */
-int z_arch_buffer_validate(void *addr, size_t size, int write);
+int arch_buffer_validate(void *addr, size_t size, int write);
 
 /**
  * Perform a one-way transition from supervisor to kernel mode.
@@ -592,7 +592,7 @@ int z_arch_buffer_validate(void *addr, size_t size, int write);
  * - Set up any kernel stack region for the CPU to use during privilege
  *   elevation
  * - Put the CPU in whatever its equivalent of user mode is
- * - Transfer execution to z_arch_new_thread() passing along all the supplied
+ * - Transfer execution to arch_new_thread() passing along all the supplied
  *   arguments, in user mode.
  *
  * @param user_entry Entry point to start executing as a user thread
@@ -600,8 +600,8 @@ int z_arch_buffer_validate(void *addr, size_t size, int write);
  * @param p2 2nd parameter to user thread
  * @param p3 3rd parameter to user thread
  */
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-					  void *p1, void *p2, void *p3);
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3);
 
 /**
  * @brief Induce a kernel oops that appears to come from a specific location
@@ -617,7 +617,7 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
  *            to _k_syscall_handler_t functions and its contents are completely
  *            architecture specific.
  */
-FUNC_NORETURN void z_arch_syscall_oops(void *ssf);
+FUNC_NORETURN void arch_syscall_oops(void *ssf);
 
 /**
  * @brief Safely take the length of a potentially bad string
@@ -631,7 +631,7 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf);
  * @param err Error value to write
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
-size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
+size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
 /** @} */

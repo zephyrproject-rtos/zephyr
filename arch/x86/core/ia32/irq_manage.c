@@ -48,7 +48,7 @@ void *__attribute__((section(".spurNoErrIsr")))
  */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-void z_arch_irq_direct_pm(void)
+void arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
 		s32_t idle_val = _kernel.idle;
@@ -59,17 +59,17 @@ void z_arch_irq_direct_pm(void)
 }
 #endif
 
-void z_arch_isr_direct_header(void)
+void arch_isr_direct_header(void)
 {
 	sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that z_arch_is_in_isr() works
+	 * so that arch_is_in_isr() works
 	 */
 	++_kernel.nested;
 }
 
-void z_arch_isr_direct_footer(int swap)
+void arch_isr_direct_footer(int swap)
 {
 	z_irq_controller_eoi();
 	sys_trace_isr_exit();
@@ -250,7 +250,7 @@ static void idt_vector_install(int vector, void *irq_handler)
 	irq_unlock(key);
 }
 
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		u32_t flags)
 {

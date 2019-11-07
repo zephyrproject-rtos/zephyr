@@ -22,7 +22,7 @@ GTEXT(z_thread_entry_wrapper1)
  * @brief Wrapper for z_thread_entry
  *
  * The routine pops parameters for the z_thread_entry from stack frame, prepared
- * by the z_arch_new_thread() routine.
+ * by the arch_new_thread() routine.
  *
  * @return N/A
  */

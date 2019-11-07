@@ -10,11 +10,11 @@
  * This module provides:
  *
  * An implementation of the architecture-specific
- * z_arch_cpu_idle() primitive required by the kernel idle loop component.
+ * arch_cpu_idle() primitive required by the kernel idle loop component.
  * It can be called within an implementation of _sys_power_save_idle(),
  * which is provided for the kernel by the platform.
  *
- * An implementation of z_arch_cpu_atomic_idle(), which
+ * An implementation of arch_cpu_atomic_idle(), which
  * atomically re-enables interrupts and enters low power mode.
  *
  * A weak stub for sys_arch_reboot(), which does nothing
@@ -24,14 +24,14 @@
 #include <arch/posix/posix_soc_if.h>
 #include <debug/tracing.h>
 
-void z_arch_cpu_idle(void)
+void arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	posix_irq_full_unlock();
 	posix_halt_cpu();
 }
 
-void z_arch_cpu_atomic_idle(unsigned int key)
+void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 	posix_atomic_halt_cpu(key);

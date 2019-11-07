@@ -16,7 +16,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #endif
 
-static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
+static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #ifdef CONFIG_SMP
 	u32_t core;

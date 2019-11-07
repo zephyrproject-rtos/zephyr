@@ -295,7 +295,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
-	z_arch_nop();
+	arch_nop();
 }
 
 /* LCOV_EXCL_STOP */
@@ -411,9 +411,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	z_arch_switch_to_main_thread(&z_main_thread, z_main_stack,
-				     K_THREAD_STACK_SIZEOF(z_main_stack),
-				     bg_thread_main);
+	arch_switch_to_main_thread(&z_main_thread, z_main_stack,
+				   K_THREAD_STACK_SIZEOF(z_main_stack),
+				   bg_thread_main);
 #else
 	/*
 	 * Context switch to main task (entry function is _main()): the
@@ -513,7 +513,7 @@ FUNC_NORETURN void z_cstart(void)
 	LOG_CORE_INIT();
 
 	/* perform any architecture-specific initialization */
-	z_arch_kernel_init();
+	arch_kernel_init();
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_thread dummy_thread = {

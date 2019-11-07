@@ -18,7 +18,7 @@
 #endif
 
 #ifndef _ASMLANGUAGE
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned long key;
 
@@ -64,6 +64,6 @@ typedef struct x86_esf z_arch_esf_t;
  * All Intel64 interrupts are dynamically connected.
  */
 
-#define Z_ARCH_IRQ_CONNECT z_arch_irq_connect_dynamic
+#define ARCH_IRQ_CONNECT arch_irq_connect_dynamic
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

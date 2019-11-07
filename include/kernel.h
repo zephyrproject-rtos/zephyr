@@ -579,7 +579,7 @@ struct k_thread {
 	/** z_swap() return value */
 	int swap_retval;
 
-	/** Context handle returned via z_arch_switch() */
+	/** Context handle returned via arch_switch() */
 	void *switch_handle;
 #endif
 	/** resource pool */
@@ -1816,7 +1816,7 @@ static inline u32_t k_uptime_delta_32(s64_t *reftime)
  */
 static inline u32_t k_cycle_get_32(void)
 {
-	return z_arch_k_cycle_get_32();
+	return arch_k_cycle_get_32();
 }
 
 /**
@@ -4765,7 +4765,7 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  */
 static inline void k_cpu_idle(void)
 {
-	z_arch_cpu_idle();
+	arch_cpu_idle();
 }
 
 /**
@@ -4781,7 +4781,7 @@ static inline void k_cpu_idle(void)
  */
 static inline void k_cpu_atomic_idle(unsigned int key)
 {
-	z_arch_cpu_atomic_idle(key);
+	arch_cpu_atomic_idle(key);
 }
 
 /**
@@ -4793,13 +4793,13 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 extern void z_sys_power_save_idle_exit(s32_t ticks);
 
-#ifdef Z_ARCH_EXCEPT
+#ifdef ARCH_EXCEPT
 /* This architecture has direct support for triggering a CPU exception */
-#define z_except_reason(reason)	Z_ARCH_EXCEPT(reason)
+#define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
 /* NOTE: This is the implementation for arches that do not implement
- * Z_ARCH_EXCEPT() to generate a real CPU exception.
+ * ARCH_EXCEPT() to generate a real CPU exception.
  *
  * We won't have a real exception frame to determine the PC value when
  * the oops occurred, so print file and line number before we jump into
@@ -4885,17 +4885,17 @@ extern void z_timer_expiration_handler(struct _timeout *t);
  */
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
-#ifdef Z_ARCH_THREAD_STACK_DEFINE
-#define K_THREAD_STACK_DEFINE(sym, size) Z_ARCH_THREAD_STACK_DEFINE(sym, size)
+#ifdef ARCH_THREAD_STACK_DEFINE
+#define K_THREAD_STACK_DEFINE(sym, size) ARCH_THREAD_STACK_DEFINE(sym, size)
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-		Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
-#define K_THREAD_STACK_LEN(size) Z_ARCH_THREAD_STACK_LEN(size)
-#define K_THREAD_STACK_MEMBER(sym, size) Z_ARCH_THREAD_STACK_MEMBER(sym, size)
-#define K_THREAD_STACK_SIZEOF(sym) Z_ARCH_THREAD_STACK_SIZEOF(sym)
-#define K_THREAD_STACK_RESERVED Z_ARCH_THREAD_STACK_RESERVED
+		ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+#define K_THREAD_STACK_LEN(size) ARCH_THREAD_STACK_LEN(size)
+#define K_THREAD_STACK_MEMBER(sym, size) ARCH_THREAD_STACK_MEMBER(sym, size)
+#define K_THREAD_STACK_SIZEOF(sym) ARCH_THREAD_STACK_SIZEOF(sym)
+#define K_THREAD_STACK_RESERVED ARCH_THREAD_STACK_RESERVED
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
-	return Z_ARCH_THREAD_STACK_BUFFER(sym);
+	return ARCH_THREAD_STACK_BUFFER(sym);
 }
 #else
 /**
@@ -5176,7 +5176,7 @@ __syscall void k_str_out(char *c, size_t n);
  *
  * @warning
  * Some architectures apply restrictions on how the disabling of floating
- * point preservation may be requested, see z_arch_float_disable.
+ * point preservation may be requested, see arch_float_disable.
  *
  * @warning
  * This routine should only be used to disable floating point support for

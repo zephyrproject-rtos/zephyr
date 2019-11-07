@@ -55,7 +55,7 @@ u64_t z_arc_smp_switch_in_isr(void)
 	if (new_thread != old_thread) {
 		_current_cpu->swap_ok = 0;
 		((struct k_thread *)new_thread)->base.cpu =
-				z_arch_curr_cpu()->id;
+				arch_curr_cpu()->id;
 		_current = (struct k_thread *) new_thread;
 		ret = new_thread | ((u64_t)(old_thread) << 32);
 	}
@@ -83,8 +83,8 @@ volatile u32_t arc_cpu_wake_flag;
 volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
-void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		     void (*fn)(int, void *), void *arg)
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+		    void (*fn)(int, void *), void *arg)
 {
 	_curr_cpu[cpu_num] = &(_kernel.cpus[cpu_num]);
 	arc_cpu_init[cpu_num].fn = fn;
@@ -109,14 +109,14 @@ void z_arc_slave_start(int cpu_num)
 	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
 	irq_enable(IRQ_ICI);
 
-	/* call the function set by z_arch_start_cpu */
+	/* call the function set by arch_start_cpu */
 	fn = arc_cpu_init[cpu_num].fn;
 
 	fn(cpu_num, arc_cpu_init[cpu_num].arg);
 }
 
 /* arch implementation of sched_ipi */
-void z_arch_sched_ipi(void)
+void arch_sched_ipi(void)
 {
 	u32_t i;
 

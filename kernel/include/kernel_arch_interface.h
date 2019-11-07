@@ -36,7 +36,7 @@ extern "C" {
  *
  * @param usec_to_wait Wait period, in microseconds
  */
-void z_arch_busy_wait(u32_t usec_to_wait);
+void arch_busy_wait(u32_t usec_to_wait);
 #endif
 
 /** @} */
@@ -68,7 +68,7 @@ void z_arch_busy_wait(u32_t usec_to_wait);
  * @param prio Thread priority.
  * @param options Thread options.
  */
-void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
 		       size_t stackSize, k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
 		       int prio, unsigned int options);
@@ -100,7 +100,7 @@ void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
  * @param switched_from Pointer to outgoing thread's switch handle storage
  *        location, which may be updated.
  */
-static inline void z_arch_switch(void *switch_to, void **switched_from);
+static inline void arch_switch(void *switch_to, void **switched_from);
 #else
 /**
  * Cooperatively context switch
@@ -108,13 +108,13 @@ static inline void z_arch_switch(void *switch_to, void **switched_from);
  * Must be called with interrupts locked with the provided key.
  * This is the older-style context switching method, which is incompatible
  * with SMP. New arch ports, either SMP or UP, are encouraged to implement
- * z_arch_switch() instead.
+ * arch_switch() instead.
  *
  * @param key Interrupt locking key
  * @return If woken from blocking on some kernel object, the result of that
  *         blocking operation.
  */
-int z_arch_swap(unsigned int key);
+int arch_swap(unsigned int key);
 
 /**
  * Set the return value for the specified thread.
@@ -125,7 +125,7 @@ int z_arch_swap(unsigned int key);
  * @param value value to set as return value
  */
 static ALWAYS_INLINE void
-z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
 #endif /* CONFIG_USE_SWITCH i*/
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -140,7 +140,7 @@ z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
  * @param main_stack_size Size of the stack object's buffer
  * @param _main Entry point for application main function.
  */
-void z_arch_switch_to_main_thread(struct k_thread *main_thread,
+void arch_switch_to_main_thread(struct k_thread *main_thread,
 				  k_thread_stack_t *main_stack,
 				  size_t main_stack_size,
 				  k_thread_entry_t _main);
@@ -159,7 +159,7 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
  * @retval 0       On success.
  * @retval -EINVAL If the floating point disabling could not be performed.
  */
-int z_arch_float_disable(struct k_thread *thread);
+int arch_float_disable(struct k_thread *thread);
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
 /** @} */
@@ -170,7 +170,7 @@ int z_arch_float_disable(struct k_thread *thread);
  * @{
  */
 /** Halt the system, optionally propagating a reason code */
-FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
+FUNC_NORETURN void arch_system_halt(unsigned int reason);
 
 /** @} */
 
@@ -189,7 +189,7 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
  *
  * @return true if we are in interrupt context
  */
-static inline bool z_arch_is_in_isr(void);
+static inline bool arch_is_in_isr(void);
 
 /** @} */
 
@@ -200,16 +200,16 @@ static inline bool z_arch_is_in_isr(void);
  */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-extern u64_t z_arch_timing_swap_start;
-extern u64_t z_arch_timing_swap_end;
-extern u64_t z_arch_timing_irq_start;
-extern u64_t z_arch_timing_irq_end;
-extern u64_t z_arch_timing_tick_start;
-extern u64_t z_arch_timing_tick_end;
-extern u64_t z_arch_timing_user_mode_end;
-extern u32_t z_arch_timing_value_swap_end;
-extern u64_t z_arch_timing_value_swap_common;
-extern u64_t z_arch_timing_value_swap_temp;
+extern u64_t arch_timing_swap_start;
+extern u64_t arch_timing_swap_end;
+extern u64_t arch_timing_irq_start;
+extern u64_t arch_timing_irq_end;
+extern u64_t arch_timing_tick_start;
+extern u64_t arch_timing_tick_end;
+extern u64_t arch_timing_user_mode_end;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_common;
+extern u64_t arch_timing_value_swap_temp;
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
 /** @} */
@@ -229,10 +229,10 @@ extern u64_t z_arch_timing_value_swap_temp;
  * TODO: Deprecate, most arches are using a prep_c() function to do the same
  * thing in a simpler way
  */
-static inline void z_arch_kernel_init(void);
+static inline void arch_kernel_init(void);
 
 /** Do nothing and return. Yawn. */
-static inline void z_arch_nop(void);
+static inline void arch_nop(void);
 
 /** @} */
 

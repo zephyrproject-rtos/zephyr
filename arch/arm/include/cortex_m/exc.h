@@ -43,7 +43,7 @@ extern volatile irq_offload_routine_t offload_routine;
  * The current executing vector is found in the IPSR register. All
  * IRQs and system exceptions are considered as interrupt context.
  */
-static ALWAYS_INLINE bool z_arch_is_in_isr(void)
+static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
 	return (__get_IPSR()) ? (true) : (false);
 }
@@ -68,8 +68,7 @@ static ALWAYS_INLINE bool z_arch_is_in_isr(void)
  * @return true if execution state was in handler mode, before
  *              the current exception occurred, otherwise false.
  */
-static ALWAYS_INLINE bool z_arch_is_in_nested_exception(
-	const z_arch_esf_t *esf)
+static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
 {
 	return (esf->basic.xpsr & IPSR_ISR_Msk) ? (true) : (false);
 }

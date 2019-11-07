@@ -5,12 +5,12 @@
 
 #include <debug/tracing.h>
 
-void z_arch_cpu_idle(void)
+void arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile ("waiti 0");
 }
-void z_arch_cpu_atomic_idle(unsigned int key)
+void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 	__asm__ volatile ("waiti 0\n\t"

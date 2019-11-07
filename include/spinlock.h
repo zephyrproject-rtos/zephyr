@@ -73,7 +73,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 * implementation.  The "irq_lock()" API in SMP context is
 	 * actually a wrapper for a global spinlock!
 	 */
-	k.key = z_arch_irq_lock();
+	k.key = arch_irq_lock();
 
 #ifdef SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock");
@@ -108,7 +108,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 */
 	atomic_clear(&l->locked);
 #endif
-	z_arch_irq_unlock(key.key);
+	arch_irq_unlock(key.key);
 }
 
 /* Internal function: releases the lock, but leaves local interrupts

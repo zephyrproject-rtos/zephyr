@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-static ALWAYS_INLINE void z_arch_kernel_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_irq_setup();
 	_current_cpu->irq_stack =
@@ -55,7 +55,7 @@ static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 	return irq_num;
 }
 
-static inline bool z_arch_is_in_isr(void)
+static inline bool arch_is_in_isr(void)
 {
 	return z_arc_v2_irq_unit_is_in_isr();
 }
@@ -67,10 +67,10 @@ extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 		 void *p2, void *p3, u32_t stack, u32_t size);
 
 
-extern void z_arch_switch(void *switch_to, void **switched_from);
+extern void arch_switch(void *switch_to, void **switched_from);
 extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-extern void z_arch_sched_ipi(void);
+extern void arch_sched_ipi(void);
 
 #ifdef __cplusplus
 }

@@ -123,7 +123,7 @@ u32_t z_clock_elapsed(void)
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
  */
-void z_arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(u32_t usec_to_wait)
 {
 	u64_t time_end = hwm_get_time() + usec_to_wait;
 

@@ -15,7 +15,7 @@
 #include <arch/x86/intel64/thread.h>
 #include <kernel_structs.h>
 
-static inline struct _cpu *z_arch_curr_cpu(void)
+static inline struct _cpu *arch_curr_cpu(void)
 {
 	struct _cpu *cpu;
 

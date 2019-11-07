@@ -56,7 +56,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 bool k_is_in_isr(void)
 {
-	return z_arch_is_in_isr();
+	return arch_is_in_isr();
 }
 
 /*
@@ -109,7 +109,7 @@ void z_impl_k_busy_wait(u32_t usec_to_wait)
 		}
 	}
 #else
-	z_arch_busy_wait(usec_to_wait);
+	arch_busy_wait(usec_to_wait);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 }
 
@@ -408,7 +408,7 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	}
 
 	/* Don't need to worry about alignment of the size here,
-	 * z_arch_new_thread() is required to do it.
+	 * arch_new_thread() is required to do it.
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
@@ -502,12 +502,12 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
-	z_arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in z_arch_new_thread() has
+	/* don't set again if the arch's own code in arch_new_thread() has
 	 * already set the pointer.
 	 */
 	new_thread->userspace_local_data =
@@ -571,7 +571,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!z_arch_is_in_isr(), "Threads may not be created in ISRs");
+	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
 	/* Special case, only for unit tests */
 #if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
@@ -836,7 +836,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
-	z_arch_user_mode_enter(entry, p1, p2, p3);
+	arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */
 	z_thread_entry(entry, p1, p2, p3);
@@ -878,7 +878,7 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 int z_impl_k_float_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	return z_arch_float_disable(thread);
+	return arch_float_disable(thread);
 #else
 	return -ENOSYS;
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */

@@ -189,7 +189,7 @@ def wrapper_defs(func_name, func_type, args):
         mrsh_args[5:] = ["(uintptr_t) &more"]
 
     syscall_id = "K_SYSCALL_" + func_name.upper()
-    invoke = ("z_arch_syscall_invoke%d(%s)"
+    invoke = ("arch_syscall_invoke%d(%s)"
               % (len(mrsh_args),
                  ", ".join(mrsh_args + [syscall_id])))
 

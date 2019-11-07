@@ -9,7 +9,7 @@
  * @file
  * @brief Kernel swapper code for POSIX
  *
- * This module implements the z_arch_swap() routine for the POSIX architecture.
+ * This module implements the arch_swap() routine for the POSIX architecture.
  *
  */
 
@@ -19,7 +19,7 @@
 #include "irq.h"
 #include "kswap.h"
 
-int z_arch_swap(unsigned int key)
+int arch_swap(unsigned int key)
 {
 	/*
 	 * struct k_thread * _kernel.current is the currently runnig thread
@@ -34,7 +34,7 @@ int z_arch_swap(unsigned int key)
 	_kernel.current->callee_saved.retval = -EAGAIN;
 
 	/* retval may be modified with a call to
-	 * z_arch_thread_return_value_set()
+	 * arch_thread_return_value_set()
 	 */
 
 	posix_thread_status_t *ready_thread_ptr =
@@ -67,15 +67,15 @@ int z_arch_swap(unsigned int key)
 
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-/* This is just a version of z_arch_swap() in which we do not save anything
+/* This is just a version of arch_swap() in which we do not save anything
  * about the current thread.
  *
  * Note that we will never come back to this thread: posix_main_thread_start()
  * does never return.
  */
-void z_arch_switch_to_main_thread(struct k_thread *main_thread,
-		k_thread_stack_t *main_stack,
-		size_t main_stack_size, k_thread_entry_t _main)
+void arch_switch_to_main_thread(struct k_thread *main_thread,
+				k_thread_stack_t *main_stack,
+				size_t main_stack_size, k_thread_entry_t _main)
 {
 	posix_thread_status_t *ready_thread_ptr =
 			(posix_thread_status_t *)

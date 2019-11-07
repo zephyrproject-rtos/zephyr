@@ -12,7 +12,7 @@
 
 extern void z_x86_switch(void *switch_to, void **switched_from);
 
-static inline void z_arch_switch(void *switch_to, void **switched_from)
+static inline void arch_switch(void *switch_to, void **switched_from)
 {
 	z_x86_switch(switch_to, switched_from);
 }
@@ -25,7 +25,7 @@ static inline void z_arch_switch(void *switch_to, void **switched_from)
 
 extern void z_x86_ipi_setup(void);
 
-static inline void z_arch_kernel_init(void)
+static inline void arch_kernel_init(void)
 {
 	/* nothing */;
 }

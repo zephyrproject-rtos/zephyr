@@ -172,7 +172,7 @@ void z_object_recycle(void *obj);
 static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
 					int *err)
 {
-	return z_arch_user_string_nlen(src, maxlen, err);
+	return arch_user_string_nlen(src, maxlen, err);
 }
 
 /**
@@ -259,7 +259,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_OOPS(expr) \
 	do { \
 		if (expr) { \
-			z_arch_syscall_oops(_current_cpu->syscall_frame); \
+			arch_syscall_oops(_current_cpu->syscall_frame); \
 		} \
 	} while (false)
 
@@ -314,7 +314,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(z_arch_buffer_validate((void *)ptr, size, write) \
+	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
 			     "Memory region %p (size %u) %s access denied", \
 			     (void *)(ptr), (u32_t)(size), \

@@ -31,7 +31,7 @@ extern void z_xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
-static ALWAYS_INLINE void z_arch_kernel_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
@@ -55,7 +55,7 @@ static ALWAYS_INLINE void z_arch_kernel_init(void)
 
 void xtensa_switch(void *switch_to, void **switched_from);
 
-static inline void z_arch_switch(void *switch_to, void **switched_from)
+static inline void arch_switch(void *switch_to, void **switched_from)
 {
 	return xtensa_switch(switch_to, switched_from);
 }
@@ -64,9 +64,9 @@ static inline void z_arch_switch(void *switch_to, void **switched_from)
 }
 #endif
 
-static inline bool z_arch_is_in_isr(void)
+static inline bool arch_is_in_isr(void)
 {
-	return z_arch_curr_cpu()->nested != 0U;
+	return arch_curr_cpu()->nested != 0U;
 }
 #endif /* _ASMLANGUAGE */
 

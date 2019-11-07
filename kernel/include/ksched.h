@@ -64,12 +64,12 @@ void z_sched_ipi(void);
 
 static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, s32_t timeout)
 {
-	(void) z_pend_curr_irqlock(z_arch_irq_lock(), wait_q, timeout);
+	(void) z_pend_curr_irqlock(arch_irq_lock(), wait_q, timeout);
 }
 
 static inline void z_reschedule_unlocked(void)
 {
-	(void) z_reschedule_irqlock(z_arch_irq_lock());
+	(void) z_reschedule_irqlock(arch_irq_lock());
 }
 
 /* find which one is the next thread to run */
@@ -265,7 +265,7 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 1, "");
 
 	--_current->base.sched_locked;
@@ -280,7 +280,7 @@ static inline void z_sched_lock(void)
 static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 0, "");
 
 	compiler_barrier();

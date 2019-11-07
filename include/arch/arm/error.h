@@ -31,7 +31,7 @@ extern "C" {
  * schedule a new thread until they are unlocked which is not what we want.
  * Force them unlocked as well.
  */
-#define Z_ARCH_EXCEPT(reason_p) \
+#define ARCH_EXCEPT(reason_p) \
 register u32_t r0 __asm__("r0") = reason_p; \
 do { \
 	__asm__ volatile ( \
@@ -42,7 +42,7 @@ do { \
 		: "memory"); \
 } while (false)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-#define Z_ARCH_EXCEPT(reason_p) do { \
+#define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile ( \
 		"eors.n r0, r0\n\t" \
 		"msr BASEPRI, r0\n\t" \
