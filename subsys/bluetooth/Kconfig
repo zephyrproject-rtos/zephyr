@@ -157,6 +157,19 @@ source "subsys/bluetooth/shell/Kconfig"
 
 endif # BT_HCI
 
+config BT_COMPANY_ID
+	hex "Company Id"
+	default 0x05F1
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier for this device. The Linux
+	  Foundation's Company Identifier (0x05F1) is the default value for
+	  this option although silicon vendors and hardware manufacturers
+	  can set their own. Note that the controller's Company Identifier is
+	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
 source "subsys/bluetooth/mesh/Kconfig"
 
 endif # BT
