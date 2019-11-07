@@ -14,7 +14,7 @@
 	mcp2515@0 {
 		compatible = "microchip,mcp2515";
 		spi-max-frequency = <1000000>;
-		int-gpios = <&gpio1 7 GPIO_INT_ACTIVE_LOW>;
+		int-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		status = "okay";
 		label = "CAN_1";
 		reg = <0>;
