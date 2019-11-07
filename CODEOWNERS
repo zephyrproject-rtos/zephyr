@@ -483,3 +483,6 @@
 # Get all docs reviewed
 *.rst                                     @nashif
 *posix*.rst                               @aescolar @daor-oti
+# Temporary until we switch over
+MAINTAINERS.yml                           @nashif
+get_maintainer.py                         @nashif

@@ -1,0 +1,372 @@
+# This file contains information on who maintains what. It is parsed by
+# get_maintainer.py.
+#
+# File format
+# ###########
+#
+# "Area title" (the quotes are needed if the title has more than one word):
+#     status:
+#         One of the following:
+#
+#         * maintained:
+#             The area has a Maintainer (approved by the TSC) who
+#             looks after the area.
+#
+#         * orphaned:
+#             No current maintainer (but maybe you could take the role as you
+#             write your new code).
+#
+#         * obsolete:
+#             Old code. Something being marked obsolete generally means it has
+#             been replaced by something better that you should be using
+#             instead.
+#
+#     maintainers:
+#         List of GitHub handles for the people who maintain the area. Usually,
+#         there's only one maintainer.
+#
+#     collaborators (not to be confused with the GitHub collaborator role):
+#         Very involved contributors, who know the area well and contribute
+#         significantly to it.
+#
+#     labels:
+#         List of GitHub labels to add to pull requests that modify the area.
+#
+#     files:
+#         List of paths and/or glob patterns giving the files in the area,
+#         relative to the root directory.
+#
+#         If a path or glob pattern ends in a '/', it matches all files within
+#         the given directory or directories. Otherwise, an exact match is
+#         required.
+#
+#         Paths to directories should always have a trailing '/'.
+#
+#     files-regex:
+#         List of regular expressions applied to paths to determine if they
+#         belong to the area. The regular expression may match anywhere within
+#         the path, but can be anchored with ^ and $ as usual.
+#
+#         Can be combined with a 'files' key.
+#
+#         Note: Prefer plain 'files' patterns where possible. get_maintainer.py
+#         will check that they match some file, but won't check regexes
+#         (because it might be slow).
+#
+#     files-exclude:
+#         Like 'files', but any matching files will be excluded from the area.
+#
+#     files-regex-exclude:
+#         Like 'files-regex', but any matching files will be excluded from the
+#         area.
+#
+#     description: >-
+#         Plain-English description. Describe what the system is about, from an
+#         outsider's perspective.
+#
+#
+# All areas must have a 'status' key and a 'files' and/or 'files-regex' key.
+# The other keys are optional.
+#
+#
+# Workflow
+# ########
+#
+# Ideally, any file in the tree will be covered by some area.
+#
+# When a GitHub pull request is sent, this happens:
+#
+#     * A user mentioned in 'maintainers' is added as Assignee to
+#       the pull request
+#
+#     * Users mentioned in 'maintainers' and 'collaborators' are added as
+#       reviewers to the pull request
+#
+#     * The labels listed in 'labels' are automatically added to the pull
+#       request
+#
+#     * The bot posts this comment:
+#
+#         This PR affects the following areas:
+#         <area name>:
+#           Status: ...
+#           Maintainers: <list of maintainers>
+#           Collaborators: <list of sub-maintainers>
+#
+#         <area name>:
+#           ...
+#
+#
+# Changes to MAINTAINERS.yml need to be approved as follows:
+#
+#     * Changing the 'maintainers' for an area needs approval from the
+#       Technical Steering Committee
+#
+#     * Changing the 'collaborators' lines requires the maintainer and
+#       collaborators of that area to agree (or vote on it)
+
+# Areas are sorted by name
+
+"ARC arch":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - ruuddw
+    collaborators:
+        - vonhust
+    files:
+        - arch/arc/
+    labels:
+        - "area: ARC"
+
+"ARM arch":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - ioannisg
+    collaborators:
+        - MaureenHelm
+        - galak
+        - ioannisg
+    files:
+        - arch/arm/
+    labels:
+        - "area: ARM"
+
+Bluetooth:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - jhedberg
+    collaborators:
+        - joerchan
+        - Vudentz
+    files:
+        - doc/reference/bluetooth/
+        - doc/guides/bluetooth/
+        - drivers/bluetooth/
+        - include/bluetooth/
+        - include/drivers/bluetooth/
+        - samples/bluetooth/
+        - subsys/bluetooth/
+        - tests/bluetooth/
+    labels:
+        - "area: Bluetooth"
+
+"Bluetooth controller":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - cvinayak
+    collaborators:
+        - carlescufi
+        - thoh-ot
+    files:
+        - subsys/bluetooth/controller/
+
+"Bluetooth Mesh":
+    # Provisional entry, to be corrected
+    status: maintained
+    collaborators:
+        - trond-snekvik
+    files:
+        - subsys/bluetooth/mesh/
+    labels:
+        - "area: Bluetooth Mesh"
+
+"Build system":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - SebastianBoe
+    files:
+        - cmake/
+    files-regex:
+        - CMakeLists.txt$
+        - \.cmake$
+    labels:
+        - "area: Build System"
+
+"Display drivers":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/display/
+        - dts/bindings/display/
+        - include/display.h
+        - include/display/
+        - include/drivers/display.h
+    labels:
+        - "area: Display"
+
+Documentation:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - dbkinder
+    files:
+        - doc/
+    files-regex:
+        - \.rst$
+        - /doc/
+    labels:
+        - "area: Documentation"
+
+Flash:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - drivers/flash/
+        - dts/bindings/flash_controller/
+        - include/drivers/flash.h
+        - include/flash.h
+        - samples/drivers/flash_shell/
+    labels:
+        - "area: Flash"
+
+Kconfig:
+    status: maintained
+    maintainers:
+        - ulfalizer
+    files:
+        - scripts/kconfig/
+    files-regex:
+        - Kconfig[\w._-]*$
+    labels:
+        - "area: Kconfig"
+    description: >-
+        See https://docs.zephyrproject.org/latest/guides/kconfig/index.html and
+        https://docs.zephyrproject.org/latest/guides/porting/board_porting.html#default-board-configuration
+
+Logging:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nordic-krch
+    files:
+        - include/logging/
+        - samples/subsys/logging/
+        - subsys/logging/
+        - tests/subsys/logging/
+    labels:
+        - "area: Logging"
+
+"Native POSIX and POSIX arch":
+    status: maintained
+    maintainers:
+        - aescolar
+    files:
+        - arch/posix/
+        - boards/posix/native_posix/
+        - drivers/*/*native_posix*
+        - drivers/*/*/*native_posix*
+        - dts/posix/
+        - include/arch/posix/
+        - scripts/valgrind.supp
+        - soc/posix/
+        - tests/boards/native_posix/
+    labels:
+        - "area: native port"
+    description: >-
+        POSIX architecture and SOC, native_posix board, and related drivers
+
+"nRF52 BSIM":
+    status: maintained
+    maintainers:
+        - aescolar
+    files:
+        - boards/posix/nrf52_bsim/
+    labels:
+        - "platform: nrf52_bsim"
+
+"RISCV arch":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nategraff-sifive
+    collaborators:
+        - mgielda
+    files:
+        - arch/riscv/
+    labels:
+        - "area: RISCV"
+
+Sanitycheck:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - scripts/sanitycheck
+        - scripts/sanity_chk/
+    labels:
+        - "area: Sanitycheck"
+
+Settings:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - include/settings/
+        - subsys/settings/
+        - tests/subsys/settings/
+    labels:
+        - "area: Settings"
+
+Shell:
+    # Provisional entry, to be corrected
+    status: orphaned
+    collaborators:
+        - carlescufi
+    files:
+        - include/shell/
+        - samples/subsys/shell/
+        - subsys/shell/
+        - tests/shell/
+        - tests/subsys/shell/
+    labels:
+        - "area: Shell"
+
+USB:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - finikorg
+    collaborators:
+        - jfischer-phytec-iot
+    files:
+        - drivers/usb/
+        - dts/bindings/usb/
+        - include/*/usb/
+        - include/usb/
+        - samples/subsys/usb/
+        - subsys/usb/
+        - tests/subsys/usb/
+    labels:
+        - "area: USB"
+
+West:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - mbolivar
+    files:
+        - scripts/west-commands.yml
+        - scripts/west_commands/
+    labels:
+        - "area: West"
+
+"x86 arch":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - andrewboie
+    collaborators:
+        - andyross
+    files:
+        - arch/x86/
+    labels:
+        - "area: X86"
