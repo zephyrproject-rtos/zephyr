@@ -23,7 +23,16 @@
 #include <drivers/dma.h>
 #include <ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_0_NAME
+#ifdef CONFIG_SOC_FAMILY_STM32
+#ifdef CONFIG_DMA_STM32_V1
+#define DMA_DEVICE_NAME CONFIG_DMA_2_NAME
+#else
+#define DMA_DEVICE_NAME CONFIG_DMA_1_NAME
+#endif
+#else
+#define DMA_DEVICE_NAME "DMA_0"
+#endif /* CONFIG_SOC_FAMILY_STM32 */
+
 #define RX_BUFF_SIZE (48)
 
 static const char tx_data[] = "It is harder to be kind than to be wise";
