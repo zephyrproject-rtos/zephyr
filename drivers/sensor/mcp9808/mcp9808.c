@@ -21,27 +21,15 @@ LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 int mcp9808_reg_read(struct mcp9808_data *data, u8_t reg, u16_t *val)
 {
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = (u8_t *)val,
-			.len = 2,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
+	int rc = i2c_write_read(data->i2c_master, data->i2c_slave_addr,
+				&reg, sizeof(reg),
+				val, sizeof(*val));
 
-	if (i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr)
-			 < 0) {
-		return -EIO;
+	if (rc == 0) {
+		*val = sys_be16_to_cpu(*val);
 	}
 
-	*val = sys_be16_to_cpu(*val);
-
-	return 0;
+	return rc;
 }
 
 static int mcp9808_sample_fetch(struct device *dev, enum sensor_channel chan)
