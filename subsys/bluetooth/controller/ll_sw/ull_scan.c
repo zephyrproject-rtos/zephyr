@@ -37,7 +37,8 @@
 #include "ull_scan_internal.h"
 #include "ull_sched_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull_scan
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_scan
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"

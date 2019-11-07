@@ -27,7 +27,8 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_master
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_master
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
