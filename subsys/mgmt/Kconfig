@@ -14,6 +14,15 @@ config MCUMGR_SMP_BT
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 
+config MCUMGR_SMP_BT_AUTHEN
+	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
+	depends on MCUMGR_SMP_BT
+	select BT_SMP
+	default y
+	help
+	  Enables encrypted and authenticated connection requirement to
+	  Bluetooth SMP transport.
+
 config MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"
 	select MCUMGR
