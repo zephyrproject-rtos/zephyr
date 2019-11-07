@@ -69,7 +69,8 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 	isr_cb_param = param;
 	isr_cb = cb;
 
-	nrf_radio_int_enable(0 |
+	nrf_radio_int_enable(NRF_RADIO,
+			     0 |
 				/* RADIO_INTENSET_READY_Msk |
 				 * RADIO_INTENSET_ADDRESS_Msk |
 				 * RADIO_INTENSET_PAYLOAD_Msk |
@@ -108,10 +109,14 @@ void radio_reset(void)
 {
 	irq_disable(RADIO_IRQn);
 
-	nrf_radio_power_set((RADIO_POWER_POWER_Disabled
-			    << RADIO_POWER_POWER_Pos) & RADIO_POWER_POWER_Msk);
-	nrf_radio_power_set((RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos)
-			    & RADIO_POWER_POWER_Msk);
+	nrf_radio_power_set(
+		NRF_RADIO,
+		(RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos) &
+			RADIO_POWER_POWER_Msk);
+	nrf_radio_power_set(
+		NRF_RADIO,
+		(RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos) &
+			RADIO_POWER_POWER_Msk);
 
 	hal_radio_reset();
 
@@ -277,12 +282,12 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 
 void radio_rx_enable(void)
 {
-	nrf_radio_task_trigger(NRF_RADIO_TASK_RXEN);
+	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
 }
 
 void radio_tx_enable(void)
 {
-	nrf_radio_task_trigger(NRF_RADIO_TASK_TXEN);
+	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
 }
 
 void radio_disable(void)
@@ -295,7 +300,7 @@ void radio_disable(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	NRF_RADIO->SHORTS = 0;
-	nrf_radio_task_trigger(NRF_RADIO_TASK_DISABLE);
+	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_DISABLE);
 }
 
 void radio_status_reset(void)
@@ -473,10 +478,10 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 
 	if (delay <
 		SW_SWITCH_TIMER->CC[cc]) {
-		nrf_timer_cc_write(SW_SWITCH_TIMER, cc,
-				   SW_SWITCH_TIMER->CC[cc] - delay);
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc,
+				 SW_SWITCH_TIMER->CC[cc] - delay);
 	} else {
-		nrf_timer_cc_write(SW_SWITCH_TIMER, cc, 1);
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}
 
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
@@ -592,7 +597,7 @@ u32_t radio_filter_match_get(void)
 
 void radio_bc_configure(u32_t n)
 {
-	nrf_radio_bcc_set(n);
+	nrf_radio_bcc_set(NRF_RADIO, n);
 	NRF_RADIO->SHORTS |= RADIO_SHORTS_ADDRESS_BCSTART_Msk;
 }
 
@@ -634,8 +639,8 @@ void radio_tmr_tifs_set(u32_t tifs)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->TIFS = tifs;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	nrf_timer_cc_write(SW_SWITCH_TIMER,
-			   SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle), tifs);
+	nrf_timer_cc_set(SW_SWITCH_TIMER,
+			 SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle), tifs);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -652,7 +657,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	EVENT_TIMER->PRESCALER = 4;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
-	nrf_timer_cc_write(EVENT_TIMER, 0, remainder);
+	nrf_timer_cc_set(EVENT_TIMER, 0, remainder);
 
 	nrf_rtc_cc_set(NRF_RTC0, 2, ticks_start);
 	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
@@ -701,7 +706,7 @@ u32_t radio_tmr_start_tick(u8_t trx, u32_t tick)
 
 	/* Setup compare event with min. 1 us offset */
 	remainder_us = 1;
-	nrf_timer_cc_write(EVENT_TIMER, 0, remainder_us);
+	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
 
 	nrf_rtc_cc_set(NRF_RTC0, 2, tick);
 	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
@@ -722,7 +727,7 @@ u32_t radio_tmr_start_tick(u8_t trx, u32_t tick)
 
 void radio_tmr_start_us(u8_t trx, u32_t us)
 {
-	nrf_timer_cc_write(EVENT_TIMER, 0, us);
+	nrf_timer_cc_set(EVENT_TIMER, 0, us);
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 }
@@ -744,7 +749,7 @@ u32_t radio_tmr_start_now(u8_t trx)
 		start = (now << 1) - start;
 
 		/* Setup compare event with min. 1 us offset */
-		nrf_timer_cc_write(EVENT_TIMER, 0, start + 1);
+		nrf_timer_cc_set(EVENT_TIMER, 0, start + 1);
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
@@ -773,7 +778,7 @@ void radio_tmr_stop(void)
 
 void radio_tmr_hcto_configure(u32_t hcto)
 {
-	nrf_timer_cc_write(EVENT_TIMER, 1, hcto);
+	nrf_timer_cc_set(EVENT_TIMER, 1, hcto);
 
 	hal_radio_recv_timeout_cancel_ppi_config();
 	hal_radio_disable_on_hcto_ppi_config();
@@ -933,7 +938,7 @@ void radio_gpio_lna_off(void)
 
 void radio_gpio_pa_lna_enable(u32_t trx_us)
 {
-	nrf_timer_cc_write(EVENT_TIMER, 2, trx_us);
+	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
 
 	hal_enable_palna_ppi_config();
 	hal_disable_palna_ppi_config();
