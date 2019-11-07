@@ -31,14 +31,14 @@ static u32_t counter_sub(u32_t a, u32_t b)
 
 static void set_comparator(u32_t cyc)
 {
-	nrf_timer_cc_write(TIMER, 0, cyc & COUNTER_MAX);
+	nrf_timer_cc_set(TIMER, 0, cyc & COUNTER_MAX);
 }
 
 static u32_t counter(void)
 {
 	nrf_timer_task_trigger(TIMER, nrf_timer_capture_task_get(1));
 
-	return nrf_timer_cc_read(TIMER, 1);
+	return nrf_timer_cc_get(TIMER, 1);
 }
 
 void timer0_nrf_isr(void *arg)
@@ -84,7 +84,7 @@ int z_clock_driver_init(struct device *device)
 
 	nrf_timer_frequency_set(TIMER, NRF_TIMER_FREQ_1MHz);
 	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
-	nrf_timer_cc_write(TIMER, 0, CYC_PER_TICK);
+	nrf_timer_cc_set(TIMER, 0, CYC_PER_TICK);
 	nrf_timer_int_enable(TIMER, TIMER_INTENSET_COMPARE0_Msk);
 
 	/* Clear the event flag and possible pending interrupt */
