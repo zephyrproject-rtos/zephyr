@@ -2009,8 +2009,9 @@ static u8_t update_ccc(const struct bt_gatt_attr *attr, void *user_data)
 	ccc = attr->user_data;
 
 	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
-		/* Ignore configuration for different peer */
-		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
+		/* Ignore configuration for different peer or not active */
+		if (!ccc->cfg[i].value ||
+		    bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			continue;
 		}
 
@@ -2040,14 +2041,14 @@ static u8_t update_ccc(const struct bt_gatt_attr *attr, void *user_data)
 			}
 		}
 
-		if (ccc->cfg[i].value) {
-			gatt_ccc_changed(attr, ccc);
-			if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) &&
-			    ccc == &sc_ccc) {
-				sc_restore(conn);
-			}
-			return BT_GATT_ITER_CONTINUE;
+		gatt_ccc_changed(attr, ccc);
+
+		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) &&
+		    ccc == &sc_ccc) {
+			sc_restore(conn);
 		}
+
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
