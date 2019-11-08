@@ -17,6 +17,7 @@
 #include "sys_io.h"
 #include <drivers/interrupt_controller/sysapic.h>
 #include <stdbool.h>
+#include <kernel_structs.h>
 #include <arch/common/ffs.h>
 #include <misc/util.h>
 #include <arch/x86/ia32/thread.h>
@@ -213,9 +214,23 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-extern void arch_irq_direct_pm(void);
+/*
+ * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
+ *	  included here due to circular dependency
+ */
+extern void z_sys_power_save_idle_exit(s32_t ticks);
+
+static inline void arch_irq_direct_pm(void)
+{
+	if (_kernel.idle) {
+		s32_t idle_val = _kernel.idle;
+
+		_kernel.idle = 0;
+		z_sys_power_save_idle_exit(idle_val);
+	}
+}
+
 #define ARCH_ISR_DIRECT_PM() arch_irq_direct_pm()
 #else
 #define ARCH_ISR_DIRECT_PM() do { } while (false)
@@ -224,9 +239,61 @@ extern void arch_irq_direct_pm(void);
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* FIXME prefer these inline, but see GH-3056 */
-extern void arch_isr_direct_header(void);
-extern void arch_isr_direct_footer(int maybe_swap);
+/* FIXME: debug/tracing.h cannot be included here due to circular dependency */
+#if defined(CONFIG_TRACING)
+extern void sys_trace_isr_enter(void);
+extern void sys_trace_isr_exit(void);
+#endif
+
+static inline void arch_isr_direct_header(void)
+{
+#if defined(CONFIG_TRACING)
+	sys_trace_isr_enter();
+#endif
+
+	/* We're not going to unlock IRQs, but we still need to increment this
+	 * so that arch_is_in_isr() works
+	 */
+	++_kernel.nested;
+}
+
+/*
+ * FIXME: z_swap_irqlock is an inline function declared in a private header and
+ *	  cannot be referenced from a public header, so we move it to an
+ *	  external function.
+ */
+extern void arch_isr_direct_footer_swap(unsigned int key);
+
+static inline void arch_isr_direct_footer(int swap)
+{
+	z_irq_controller_eoi();
+#if defined(CONFIG_TRACING)
+	sys_trace_isr_exit();
+#endif
+	--_kernel.nested;
+
+	/* Call swap if all the following is true:
+	 *
+	 * 1) swap argument was enabled to this function
+	 * 2) We are not in a nested interrupt
+	 * 3) Next thread to run in the ready queue is not this thread
+	 */
+	if (swap != 0 && _kernel.nested == 0 &&
+	    _kernel.ready_q.cache != _current) {
+		unsigned int flags;
+
+		/* Fetch EFLAGS argument to z_swap() */
+		__asm__ volatile (
+			"pushfl\n\t"
+			"popl %0\n\t"
+			: "=g" (flags)
+			:
+			: "memory"
+			);
+
+		arch_isr_direct_footer_swap(flags);
+	}
+}
 
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
