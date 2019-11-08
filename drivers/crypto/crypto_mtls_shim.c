@@ -48,11 +48,13 @@ struct mtls_shim_session mtls_sessions[CRYPTO_MAX_SESSION];
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
+#define MTLS_GET_CTX(c, m) \
+	(&((struct mtls_shim_session *)c->drv_sessn_state)->mtls_ ## m)
+
 int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	int ret;
-	mbedtls_aes_context *ecb_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+	mbedtls_aes_context *ecb_ctx = MTLS_GET_CTX(ctx, aes);
 
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
@@ -77,8 +79,7 @@ int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	int ret;
-	mbedtls_aes_context *ecb_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+	mbedtls_aes_context *ecb_ctx = MTLS_GET_CTX(ctx, aes);
 
 	/* For security reasons, ECB mode should not be used to decrypt
 	 * more than one block. Use CBC mode instead.
@@ -103,8 +104,7 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 {
 	int ret;
-	mbedtls_aes_context *cbc_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	/* Prefix IV to ciphertext */
 	memcpy(pkt->out_buf, iv, 16);
@@ -123,8 +123,7 @@ int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 {
 	int ret;
-	mbedtls_aes_context *cbc_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len,
 				    iv, pkt->in_buf + 16, pkt->out_buf);
@@ -142,8 +141,7 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
 				 u8_t *nonce)
 {
-	mbedtls_ccm_context *mtls_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_ccm;
+	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
 
 	ret = mbedtls_ccm_encrypt_and_tag(mtls_ctx, apkt->pkt->in_len, nonce,
@@ -172,8 +170,7 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
 				 u8_t *nonce)
 {
-	mbedtls_ccm_context *mtls_ctx =
-		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_ccm;
+	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
 
 	ret = mbedtls_ccm_auth_decrypt(mtls_ctx, apkt->pkt->in_len, nonce,
