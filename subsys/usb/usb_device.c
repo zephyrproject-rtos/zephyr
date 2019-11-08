@@ -110,6 +110,8 @@ LOG_MODULE_REGISTER(usb_device);
 extern struct usb_cfg_data __usb_data_start[];
 extern struct usb_cfg_data __usb_data_end[];
 
+K_MUTEX_DEFINE(usb_enable_lock);
+
 struct usb_transfer_data {
 	/** endpoint associated to the transfer */
 	u8_t ep;
@@ -1542,10 +1544,16 @@ int usb_enable(void)
 		return 0;
 	}
 
+	/* Prevent from calling usb_enable form different contex.
+	 * This should only be called once.
+	 */
+	LOG_DBG("lock usb_enable_lock mutex");
+	k_mutex_lock(&usb_enable_lock, K_FOREVER);
+
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	usb_register_status_callback(forward_status_cb);
@@ -1553,7 +1561,7 @@ int usb_enable(void)
 
 	ret = usb_dc_attach();
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	/* Configure control EP */
@@ -1563,32 +1571,32 @@ int usb_enable(void)
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	/* Register endpoint 0 handlers*/
 	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	/* Register endpoint handlers*/
 	ret = composite_setup_ep_cb();
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	/* Init transfer slots */
@@ -1600,17 +1608,20 @@ int usb_enable(void)
 	/* Enable control EP */
 	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	ret = usb_dc_ep_enable(USB_CONTROL_IN_EP0);
 	if (ret < 0) {
-		return ret;
+		goto usb_enable_error;
 	}
 
 	usb_dev.enabled = true;
 
-	return 0;
+usb_enable_error:
+	LOG_DBG("unlock usb_enable_lock mutex");
+	k_mutex_unlock(&usb_enable_lock);
+	return ret;
 }
 
 /*
