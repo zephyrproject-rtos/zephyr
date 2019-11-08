@@ -1,0 +1,8 @@
+# STM32G0316 Discovery board configuration
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32G0316_DISCO
+	bool "STM32G0316 Discovery Development Board"
+	depends on SOC_STM32G031XX
