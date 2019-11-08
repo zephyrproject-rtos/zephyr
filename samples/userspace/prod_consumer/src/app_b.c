@@ -50,7 +50,7 @@ static void processor_thread(void *p1, void *p2, void *p3)
 	 * meanwhile data coming in from the driver will be buffered in the
 	 * incoming queue/
 	 */
-	k_sleep(4000);
+	k_sleep(K_MSEC(4000));
 
 	/* Consume data blobs from shared_queue_incoming.
 	 * Do some processing, and the put the processed data

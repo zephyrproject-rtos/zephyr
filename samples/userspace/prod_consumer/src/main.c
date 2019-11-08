@@ -62,7 +62,7 @@ void main(void *p1, void *p2, void *p3)
 	/* Spawn supervisor entry for application A */
 	k_thread_create(&app_a_thread, app_a_stack, APP_A_STACKSIZE,
 			app_a_entry, NULL, NULL, NULL,
-			-1, K_INHERIT_PERMS, 0);
+			-1, K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* Re-use main for app B supervisor mode setup */
 	app_b_entry(NULL, NULL, NULL);
