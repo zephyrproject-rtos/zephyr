@@ -8,6 +8,15 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default "disco_l475_iot1"
 
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+
+endchoice
+
+endif #STM32_LPTIM_TIMER
+
 if UART_CONSOLE
 
 config UART_1
