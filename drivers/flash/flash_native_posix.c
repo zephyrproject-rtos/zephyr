@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(flash_native_posix);
 static const char default_flash_path[] = "flash.bin";
 
 struct flash_native_posix_data {
-	struct k_sem mutex;
 	const char *flash_path;
 	int fd;
 	u8_t *flash;
@@ -130,8 +129,6 @@ static int flash_native_posix_init(struct device *dev)
 	const struct flash_native_posix_config *config = DEV_CONFIG(dev);
 
 	data->init_called = true;
-
-	k_sem_init(&data->mutex, 1, 1);
 
 	if (data->flash_path == NULL) {
 		data->flash_path = default_flash_path;
