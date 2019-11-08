@@ -159,15 +159,6 @@ void z_irq_spurious(void *unused)
 	z_arm_reserved();
 }
 
-/* FIXME: IRQ direct inline functions have to be placed here and not in
- * arch/cpu.h as inline functions due to nasty circular dependency between
- * arch/cpu.h and kernel_structs.h; the inline functions typically need to
- * perform operations on _kernel.  For now, leave as regular functions, a
- * future iteration will resolve this.
- *
- * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
- */
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 void _arch_isr_direct_pm(void)
 {
@@ -205,11 +196,6 @@ void _arch_isr_direct_pm(void)
 
 }
 #endif
-
-void arch_isr_direct_header(void)
-{
-	sys_trace_isr_enter();
-}
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /**
