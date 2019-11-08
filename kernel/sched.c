@@ -1020,6 +1020,9 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
+	__ASSERT((ms >= 0) || (ms == K_FOREVER),
+		 "Only non-negative values are accepted.");
+
 	if (ms == K_FOREVER) {
 		k_thread_suspend(_current);
 		return K_FOREVER;
@@ -1041,6 +1044,8 @@ static inline s32_t z_vrfy_k_sleep(int ms)
 s32_t z_impl_k_usleep(int us)
 {
 	s32_t ticks;
+
+	__ASSERT(us >= 0, "Only non-negative values are accepted.");
 
 	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);

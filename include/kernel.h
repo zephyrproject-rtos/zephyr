@@ -806,7 +806,7 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  *
  * This routine puts the current thread to sleep for @a duration milliseconds.
  *
- * @param ms Number of milliseconds to sleep.
+ * @param ms Non-negative number of milliseconds to sleep or K_FOREVER.
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
@@ -822,7 +822,7 @@ __syscall s32_t k_sleep(s32_t ms);
  * to achieve the resolution desired. The implications of doing this must
  * be understood before attempting to use k_usleep(). Use with caution.
  *
- * @param us Number of microseconds to sleep.
+ * @param us Non-negative number of microseconds to sleep.
  *
  * @return Zero if the requested time has elapsed or the number of microseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
