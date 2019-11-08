@@ -71,6 +71,8 @@ The efr32_slwstk6061a board configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | SPI(M)    | on-chip    | spi port-polling                    |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

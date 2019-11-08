@@ -25,6 +25,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
 	};
 
 	leds {
@@ -98,6 +99,10 @@
 
 &gpio {
 	location-swo = <0>;
+	status = "okay";
+};
+
+&wdog0 {
 	status = "okay";
 };
 
