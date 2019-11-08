@@ -96,7 +96,7 @@ void main(void)
 
 	/* Wait for all workers to finish their calculations */
 	while (counter)
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 
 	/* Capture final time stamp */
 	stop_time = k_cycle_get_32();

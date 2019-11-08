@@ -209,7 +209,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 	if (!cancel) {
 		/* wait for all buffer to be processed */
 		do {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 		} while (!k_fifo_is_empty(&data->fifo_in));
 	} else {
 		/* Flush driver ouput queue */
