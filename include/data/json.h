@@ -146,6 +146,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param sub_descr_ Array of json_obj_descr describing the subobject
  *
  * Here's an example of use:
+ *
  *      struct nested {
  *          int foo;
  *          struct {
@@ -189,6 +190,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param elem_type_ Element type, must be a primitive type
  *
  * Here's an example of use:
+ *
  *      struct example {
  *          int foo[10];
  *          size_t foo_len;
