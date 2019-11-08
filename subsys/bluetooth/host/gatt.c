@@ -278,10 +278,77 @@ static void sc_clear(struct gatt_sc_cfg *cfg)
 	memset(cfg, 0, sizeof(*cfg));
 }
 
-static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
-			 u16_t new_end);
+static void sc_reset(struct gatt_sc_cfg *cfg)
+{
+	BT_DBG("peer %s", bt_addr_le_str(&cfg->peer));
 
-static void sc_save(u8_t id, bt_addr_le_t *peer, u16_t start, u16_t end);
+	memset(&cfg->data, 0, sizeof(cfg->data));
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		sc_store(cfg);
+	}
+}
+
+static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
+			 u16_t new_end)
+{
+	BT_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x",
+	       *start, *end, new_start, new_end);
+
+	/* Check if inside existing range */
+	if (new_start >= *start && new_end <= *end) {
+		return false;
+	}
+
+	/* Update range */
+	if (*start > new_start) {
+		*start = new_start;
+	}
+
+	if (*end < new_end) {
+		*end = new_end;
+	}
+
+	return true;
+}
+
+static void sc_save(u8_t id, bt_addr_le_t *peer, u16_t start, u16_t end)
+{
+	struct gatt_sc_cfg *cfg;
+	bool modified = false;
+
+	BT_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(peer), start,
+	       end);
+
+	cfg = find_sc_cfg(id, peer);
+	if (!cfg) {
+		/* Find and initialize a free sc_cfg entry */
+		cfg = find_sc_cfg(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
+		if (!cfg) {
+			BT_ERR("unable to save SC: no cfg left");
+			return;
+		}
+
+		cfg->id = id;
+		bt_addr_le_copy(&cfg->peer, peer);
+	}
+
+	/* Check if there is any change stored */
+	if (!(cfg->data.start || cfg->data.end)) {
+		cfg->data.start = start;
+		cfg->data.end = end;
+		modified = true;
+		goto done;
+	}
+
+	modified = update_range(&cfg->data.start, &cfg->data.end, start, end);
+
+done:
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    modified && bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
+		sc_store(cfg);
+	}
+}
 
 static bool sc_ccc_cfg_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
@@ -888,29 +955,6 @@ void bt_gatt_init(void)
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	k_delayed_work_init(&gatt_ccc_store.work, ccc_delayed_store);
 #endif
-}
-
-static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
-			 u16_t new_end)
-{
-	BT_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x",
-	       *start, *end, new_start, new_end);
-
-	/* Check if inside existing range */
-	if (new_start >= *start && new_end <= *end) {
-		return false;
-	}
-
-	/* Update range */
-	if (*start > new_start) {
-		*start = new_start;
-	}
-
-	if (*end < new_end) {
-		*end = new_end;
-	}
-
-	return true;
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
@@ -1628,44 +1672,6 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
 
-static void sc_save(u8_t id, bt_addr_le_t *peer, u16_t start, u16_t end)
-{
-	struct gatt_sc_cfg *cfg;
-	bool modified = false;
-
-	BT_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(peer), start,
-	       end);
-
-	cfg = find_sc_cfg(id, peer);
-	if (!cfg) {
-		/* Find and initialize a free sc_cfg entry */
-		cfg = find_sc_cfg(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
-		if (!cfg) {
-			BT_ERR("unable to save SC: no cfg left");
-			return;
-		}
-
-		cfg->id = id;
-		bt_addr_le_copy(&cfg->peer, peer);
-	}
-
-	/* Check if there is any change stored */
-	if (!(cfg->data.start || cfg->data.end)) {
-		cfg->data.start = start;
-		cfg->data.end = end;
-		modified = true;
-		goto done;
-	}
-
-	modified = update_range(&cfg->data.start, &cfg->data.end, start, end);
-
-done:
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    modified && bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
-		sc_store(cfg);
-	}
-}
-
 static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct notify_data *data = user_data;
@@ -1948,17 +1954,6 @@ static void sc_restore_rsp(struct bt_conn *conn,
 }
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
-
-static void sc_reset(struct gatt_sc_cfg *cfg)
-{
-	BT_DBG("peer %s", bt_addr_le_str(&cfg->peer));
-
-	memset(&cfg->data, 0, sizeof(cfg->data));
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		sc_store(cfg);
-	}
-}
 
 static void sc_restore(struct bt_conn *conn)
 {
