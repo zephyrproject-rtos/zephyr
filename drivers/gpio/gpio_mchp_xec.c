@@ -11,6 +11,10 @@
 
 #include "gpio_utils.h"
 
+#define GPIO_TASK_STACK_SIZE 256
+/* 5 ms */
+#define GPIO_DEBOUNCE_TIME   5
+#define GPIO_DEBOUNCE_CNT    20
 
 static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
@@ -26,6 +30,17 @@ struct gpio_xec_data {
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
 	u32_t pin_callback_enables;
+	/* pin debounce enable flags, by pin number */
+	u32_t pin_debounce_enables;
+	/* pin debounce status, by pin number */
+	u32_t pin_debounce_status;
+	/* pin previous status */
+	u32_t pin_raw_status[GPIO_DEBOUNCE_CNT];
+	u8_t deb_index;
+
+	struct k_thread debounce_thread;
+
+	K_THREAD_STACK_MEMBER(debounce_thread_stack, GPIO_TASK_STACK_SIZE);
 };
 
 struct gpio_xec_config {
@@ -33,12 +48,44 @@ struct gpio_xec_config {
 	u8_t girq_id;
 	u32_t port_num;
 	u32_t flags;
+	/* Debounce time in msecs */
+	u32_t debounce_time;
 };
+
+void debounce_thread_task(void *arg, void *dummy2, void *dummy3)
+{
+	struct device *dev = (struct device *)arg;
+	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
+
+	u32_t port_n = config->port_num;
+	u32_t aux;
+
+	__IO u32_t *gpio_base = (__IO u32_t *)(GPIO_PARIN_BASE + (port_n << 2));
+
+	while (1) {
+		k_sleep(GPIO_DEBOUNCE_TIME);
+
+		data->pin_raw_status[data->deb_index] = *gpio_base;
+		++data->deb_index;
+		aux = 0xFFFFFFFF;
+		for (int i = 0; i < GPIO_DEBOUNCE_CNT; i++) {
+			aux = aux & data->pin_raw_status[i];
+		}
+
+		data->pin_debounce_status = aux;
+
+		if (data->deb_index >= GPIO_DEBOUNCE_CNT) {
+			data->deb_index = 0;
+		}
+	}
+}
 
 static int gpio_xec_configure(struct device *dev,
 			      int access_op, u32_t pin, int flags)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 	__IO u32_t *current_pcr1;
 	u32_t pcr1 = 0;
 	u32_t mask = 0;
@@ -55,8 +102,13 @@ static int gpio_xec_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0)) {
+	if (((flags & GPIO_INT) || (flags & GPIO_INT_DEBOUNCE)) &&
+	   ((config->flags & GPIO_INT) == 0)) {
 		return -EINVAL;
+	}
+
+	if (flags & GPIO_INT_DEBOUNCE) {
+		data->pin_debounce_enables |= BIT(pin);
 	}
 
 	/* The flags contain options that require touching registers in the
@@ -135,7 +187,6 @@ static int gpio_xec_configure(struct device *dev,
 	return 0;
 }
 
-
 static int gpio_xec_write(struct device *dev,
 			  int access_op, u32_t pin, u32_t value)
 {
@@ -209,6 +260,8 @@ static int gpio_xec_enable_callback(struct device *dev,
 		return -EINVAL;
 	}
 
+	GPIO_CTRL_REGS->CTRL_0013 = 0x0240ul;
+
 	return 0;
 }
 
@@ -232,17 +285,23 @@ static void gpio_gpio_xec_port_isr(void *arg)
 	struct gpio_xec_data *data = dev->driver_data;
 	u32_t girq_result;
 	u32_t enabled_int;
+	u32_t enabled_debounce;
 
 	/* Figure out which interrupts have been triggered from the EC
 	 * aggregator result register
 	 */
+	GPIO_CTRL_REGS->CTRL_0013 ^= (1ul << 16);
+
 	girq_result = MCHP_GIRQ_RESULT(config->girq_id);
-	enabled_int = girq_result  & data->pin_callback_enables;
+	enabled_int = girq_result & data->pin_callback_enables;
+	enabled_debounce = girq_result & data->pin_debounce_enables;
 
 	/* Clear source register in aggregator before firing callbacks */
 	REG32(MCHP_GIRQ_SRC_ADDR(config->girq_id)) = girq_result;
 
-	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	if (enabled_debounce && data->pin_debounce_status) {
+		gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	}
 }
 
 static const struct gpio_driver_api gpio_xec_driver_api = {
@@ -280,6 +339,7 @@ static int gpio_xec_port000_036_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO000_036_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -289,6 +349,12 @@ static int gpio_xec_port000_036_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port000_036), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO000_036_IRQ);
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
 #endif
 	return 0;
 }
@@ -320,6 +386,7 @@ static int gpio_xec_port040_076_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO040_076_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -329,6 +396,12 @@ static int gpio_xec_port040_076_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port040_076), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO040_076_IRQ);
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
 #endif
 	return 0;
 }
@@ -360,6 +433,7 @@ static int gpio_xec_port100_136_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO100_136_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -369,6 +443,12 @@ static int gpio_xec_port100_136_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port100_136), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO100_136_IRQ);
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
 #endif
 	return 0;
 }
@@ -400,6 +480,7 @@ static int gpio_xec_port140_176_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO140_176_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -409,7 +490,14 @@ static int gpio_xec_port140_176_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port140_176), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO140_176_IRQ);
-#endif
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
+
+#endif /* DT_GPIO_XEC_GPIO140_176_IRQ */
 	return 0;
 }
 #endif /* CONFIG_GPIO_XEC_GPIO140_176 */
@@ -440,6 +528,7 @@ static int gpio_xec_port200_236_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO200_236_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -449,6 +538,12 @@ static int gpio_xec_port200_236_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port200_236), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO200_236_IRQ);
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
 #endif
 	return 0;
 }
@@ -480,6 +575,7 @@ static int gpio_xec_port240_276_init(struct device *dev)
 {
 #ifdef DT_GPIO_XEC_GPIO240_276_IRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
+	struct gpio_xec_data *data = dev->driver_data;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
@@ -489,6 +585,12 @@ static int gpio_xec_port240_276_init(struct device *dev)
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port240_276), 0);
 
 	irq_enable(DT_GPIO_XEC_GPIO240_276_IRQ);
+
+	k_thread_create(&data->debounce_thread, data->debounce_thread_stack,
+			GPIO_TASK_STACK_SIZE,
+			debounce_thread_task, dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
+	k_thread_start(&data->debounce_thread);
 #endif
 	return 0;
 }
