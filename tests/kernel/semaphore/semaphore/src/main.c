@@ -15,7 +15,7 @@
 #define sem_take_from_isr(sema) irq_offload(isr_sem_take, sema)
 
 #define SEM_TIMEOUT (K_MSEC(100))
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define TOTAL_THREADS_WAITING (5)
 
 struct timeout_info {
@@ -41,22 +41,52 @@ K_PIPE_DEFINE(timeout_info_pipe,
 struct k_thread sem_tid, sem_tid_1, sem_tid_2;
 struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
+K_SEM_DEFINE(ksema, SEM_INIT_VAL, SEM_MAX_VAL);
+struct k_sem sema;
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+struct k_thread tdata;
+
 /******************************************************************************/
 /* Helper functions */
+
+void sem_give_task(void *p1, void *p2, void *p3)
+{
+	k_sem_give((struct k_sem *)p1);
+}
+
 void isr_sem_give(void *semaphore)
 {
 	k_sem_give((struct k_sem *)semaphore);
 }
+
+static void tsema_thread_thread(struct k_sem *psem)
+{
+	/**TESTPOINT: thread-thread sync via sema*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      sem_give_task, psem, NULL, NULL,
+				      K_PRIO_PREEMPT(0),
+				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
+
+	/*clean the spawn thread avoid side effect in next TC*/
+	k_thread_abort(tid);
+}
+
+static void tsema_thread_isr(struct k_sem *psem)
+{
+	/**TESTPOINT: thread-isr sync via sema*/
+	irq_offload(isr_sem_give, psem);
+	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
+}
+
 
 void isr_sem_take(void *semaphore)
 {
 	k_sem_take((struct k_sem *)semaphore, K_NO_WAIT);
 }
 
-void sem_give_task(void *p1, void *p2, void *p3)
-{
-	k_sem_give(&simple_sem);
-}
+
 
 void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
@@ -113,6 +143,78 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  * @{
  */
+
+
+/**
+ * @brief Test synchronization of threads with semaphore
+ * @see k_sem_init(), #K_SEM_DEFINE(x)
+ */
+void test_sema_thread2thread(void)
+{
+	/**TESTPOINT: test k_sem_init sema*/
+	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	tsema_thread_thread(&sema);
+
+	/**TESTPOINT: test K_SEM_DEFINE sema*/
+	tsema_thread_thread(&ksema);
+}
+
+/**
+ * @brief Test synchronization between thread and irq
+ * @see k_sem_init(), #K_SEM_DEFINE(x)
+ */
+void test_sema_thread2isr(void)
+{
+	/**TESTPOINT: test k_sem_init sema*/
+	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	tsema_thread_isr(&sema);
+
+	/**TESTPOINT: test K_SEM_DEFINE sema*/
+	tsema_thread_isr(&ksema);
+}
+
+/**
+ * @brief Test k_sem_reset() API
+ * @see k_sem_reset()
+ */
+void test_sema_reset(void)
+{
+	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	k_sem_give(&sema);
+	k_sem_reset(&sema);
+	zassert_false(k_sem_count_get(&sema), NULL);
+	/**TESTPOINT: sem take return -EBUSY*/
+	zassert_equal(k_sem_take(&sema, K_NO_WAIT), -EBUSY, NULL);
+	/**TESTPOINT: sem take return -EAGAIN*/
+	zassert_equal(k_sem_take(&sema, SEM_TIMEOUT), -EAGAIN, NULL);
+	k_sem_give(&sema);
+	zassert_false(k_sem_take(&sema, K_FOREVER), NULL);
+}
+
+/**
+ * @brief Test k_sem_count_get() API
+ * @see k_sem_count_get()
+ */
+void test_sema_count_get(void)
+{
+	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	/**TESTPOINT: sem count get upon init*/
+	zassert_equal(k_sem_count_get(&sema), SEM_INIT_VAL, NULL);
+	k_sem_give(&sema);
+	/**TESTPOINT: sem count get after give*/
+	zassert_equal(k_sem_count_get(&sema), SEM_INIT_VAL + 1, NULL);
+	k_sem_take(&sema, K_FOREVER);
+	/**TESTPOINT: sem count get after take*/
+	for (int i = 0; i < SEM_MAX_VAL; i++) {
+		zassert_equal(k_sem_count_get(&sema), SEM_INIT_VAL + i, NULL);
+		k_sem_give(&sema);
+	}
+	/**TESTPOINT: sem give above limit*/
+	k_sem_give(&sema);
+	zassert_equal(k_sem_count_get(&sema), SEM_MAX_VAL, NULL);
+}
+
 
 /**
  * @brief Test semaphore count when given by an ISR
@@ -262,7 +364,7 @@ void test_sem_take_timeout(void)
 	 * to be signalled, thus waking up this task.
 	 */
 	k_thread_create(&sem_tid, stack_1, STACK_SIZE,
-			sem_give_task, NULL, NULL, NULL,
+			sem_give_task, &simple_sem, NULL, NULL,
 			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS,
 			K_NO_WAIT);
 
@@ -755,9 +857,14 @@ void test_main(void)
 			      &simple_sem, &multiple_thread_sem,
 			      &low_prio_sem, &mid_prio_sem, &high_prio_sem,
 			      &stack_1, &stack_2, &stack_3, &timeout_info_pipe,
-			      &sem_tid, &sem_tid_1, &sem_tid_2);
+			      &sem_tid, &sem_tid_1, &sem_tid_2, &ksema, &sema,
+			      &tstack, &tdata);
 
 	ztest_test_suite(test_semaphore,
+			 ztest_user_unit_test(test_sema_thread2thread),
+			 ztest_unit_test(test_sema_thread2isr),
+			 ztest_user_unit_test(test_sema_reset),
+			 ztest_user_unit_test(test_sema_count_get),
 			 ztest_unit_test(test_simple_sem_from_isr),
 			 ztest_user_unit_test(test_simple_sem_from_task),
 			 ztest_user_unit_test(test_sem_take_no_wait),
