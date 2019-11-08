@@ -3585,10 +3585,188 @@ static void add_subscriptions(struct bt_conn *conn)
 
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
-static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
-			  void *cb_arg, void *param);
+#define CCC_STORE_MAX 48
+
+static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
+					    const bt_addr_le_t *addr,
+					    u8_t id)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		if (id == ccc->cfg[i].id &&
+		    !bt_addr_le_cmp(&ccc->cfg[i].peer, addr)) {
+			return &ccc->cfg[i];
+		}
+	}
+
+	return NULL;
+}
+
+struct addr_with_id {
+	const bt_addr_le_t *addr;
+	u8_t id;
+};
+
+struct ccc_load {
+	struct addr_with_id addr_with_id;
+	struct ccc_store *entry;
+	size_t count;
+};
+
+static void ccc_clear(struct _bt_gatt_ccc *ccc,
+		      const bt_addr_le_t *addr,
+		      u8_t id)
+{
+	struct bt_gatt_ccc_cfg *cfg;
+
+	cfg = ccc_find_cfg(ccc, addr, id);
+	if (!cfg) {
+		BT_DBG("Unable to clear CCC: cfg not found");
+		return;
+	}
+
+	clear_ccc_cfg(cfg);
+}
+
+static u8_t ccc_load(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct ccc_load *load = user_data;
+	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_cfg *cfg;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Clear if value was invalidated */
+	if (!load->entry) {
+		ccc_clear(ccc, load->addr_with_id.addr, load->addr_with_id.id);
+		return BT_GATT_ITER_CONTINUE;
+	} else if (!load->count) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Skip if value is not for the given attribute */
+	if (load->entry->handle != attr->handle) {
+		/* If attribute handle is bigger then it means
+		 * the attribute no longer exists and cannot
+		 * be restored.
+		 */
+		if (load->entry->handle < attr->handle) {
+			BT_DBG("Unable to restore CCC: handle 0x%04x cannot be"
+			       " found",  load->entry->handle);
+			goto next;
+		}
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
+	       load->entry->value);
+
+	cfg = ccc_find_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
+	if (!cfg) {
+		cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY, 0);
+		if (!cfg) {
+			BT_DBG("Unable to restore CCC: no cfg left");
+			goto next;
+		}
+		bt_addr_le_copy(&cfg->peer, load->addr_with_id.addr);
+		cfg->id = load->addr_with_id.id;
+	}
+
+	cfg->value = load->entry->value;
+
+next:
+	load->entry++;
+	load->count--;
+
+	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
+}
+
+static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
+{
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		struct ccc_store ccc_store[CCC_STORE_MAX];
+		struct ccc_load load;
+		bt_addr_le_t addr;
+		int len, err;
+		const char *next;
+
+		settings_name_next(name, &next);
+
+		if (!name) {
+			BT_ERR("Insufficient number of arguments");
+			return -EINVAL;
+		} else if (!next) {
+			load.addr_with_id.id = BT_ID_DEFAULT;
+		} else {
+			load.addr_with_id.id = strtol(next, NULL, 10);
+		}
+
+		err = bt_settings_decode_key(name, &addr);
+		if (err) {
+			BT_ERR("Unable to decode address %s", log_strdup(name));
+			return -EINVAL;
+		}
+
+		load.addr_with_id.addr = &addr;
+
+		if (len_rd) {
+			len = read_cb(cb_arg, ccc_store, sizeof(ccc_store));
+
+			if (len < 0) {
+				BT_ERR("Failed to decode value (err %d)", len);
+				return len;
+			}
+
+			load.entry = ccc_store;
+			load.count = len / sizeof(*ccc_store);
+
+			for (int i = 0; i < load.count; i++) {
+				BT_DBG("Read CCC: handle 0x%04x value 0x%04x",
+				       ccc_store[i].handle, ccc_store[i].value);
+			}
+		} else {
+			load.entry = NULL;
+			load.count = 0;
+		}
+
+		bt_gatt_foreach_attr(0x0001, 0xffff, ccc_load, &load);
+
+		BT_DBG("Restored CCC for id:%" PRIu8 " addr:%s",
+		       load.addr_with_id.id,
+		       bt_addr_le_str(load.addr_with_id.addr));
+	}
+
+	return 0;
+}
+
+#if !IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+/* Only register the ccc_set settings handler when not loading on-demand */
+SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set, NULL, NULL);
 #endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
+
+static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
+			  void *cb_arg, void *param)
+{
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		const char *name;
+
+		BT_DBG("key: %s", log_strdup((const char *)param));
+
+		/* Only "bt/ccc" settings should ever come here */
+		if (!settings_name_steq((const char *)param, "bt/ccc", &name)) {
+			BT_ERR("Invalid key");
+			return -EINVAL;
+		}
+
+		return ccc_set(name, len, read_cb, cb_arg);
+	}
+	return 0;
+}
 
 void bt_gatt_connected(struct bt_conn *conn)
 {
@@ -3599,9 +3777,9 @@ void bt_gatt_connected(struct bt_conn *conn)
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
 	/* Load CCC settings from backend if bonded */
-	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
+	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		char key[BT_SETTINGS_KEY_MAX];
 
 		if (conn->id) {
@@ -3617,7 +3795,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 		settings_load_subtree_direct(key, ccc_set_direct, (void *)key);
 	}
-#endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
@@ -3777,27 +3954,6 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_SETTINGS)
-
-#define CCC_STORE_MAX 48
-
-static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
-					    const bt_addr_le_t *addr,
-					    u8_t id)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
-		if (id == ccc->cfg[i].id &&
-		    !bt_addr_le_cmp(&ccc->cfg[i].peer, addr)) {
-			return &ccc->cfg[i];
-		}
-	}
-
-	return NULL;
-}
-
-struct addr_with_id {
-	const bt_addr_le_t *addr;
-	u8_t id;
-};
 
 struct ccc_save {
 	struct addr_with_id addr_with_id;
@@ -4013,163 +4169,6 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 
 	return 0;
 }
-
-static void ccc_clear(struct _bt_gatt_ccc *ccc,
-		      const bt_addr_le_t *addr,
-		      u8_t id)
-{
-	struct bt_gatt_ccc_cfg *cfg;
-
-	cfg = ccc_find_cfg(ccc, addr, id);
-	if (!cfg) {
-		BT_DBG("Unable to clear CCC: cfg not found");
-		return;
-	}
-
-	clear_ccc_cfg(cfg);
-}
-
-struct ccc_load {
-	struct addr_with_id addr_with_id;
-	struct ccc_store *entry;
-	size_t count;
-};
-
-static u8_t ccc_load(const struct bt_gatt_attr *attr, void *user_data)
-{
-	struct ccc_load *load = user_data;
-	struct _bt_gatt_ccc *ccc;
-	struct bt_gatt_ccc_cfg *cfg;
-
-	/* Check if attribute is a CCC */
-	if (attr->write != bt_gatt_attr_write_ccc) {
-		return BT_GATT_ITER_CONTINUE;
-	}
-
-	ccc = attr->user_data;
-
-	/* Clear if value was invalidated */
-	if (!load->entry) {
-		ccc_clear(ccc, load->addr_with_id.addr, load->addr_with_id.id);
-		return BT_GATT_ITER_CONTINUE;
-	} else if (!load->count) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	/* Skip if value is not for the given attribute */
-	if (load->entry->handle != attr->handle) {
-		/* If attribute handle is bigger then it means
-		 * the attribute no longer exists and cannot
-		 * be restored.
-		 */
-		if (load->entry->handle < attr->handle) {
-			BT_DBG("Unable to restore CCC: handle 0x%04x cannot be"
-			       " found",  load->entry->handle);
-			goto next;
-		}
-		return BT_GATT_ITER_CONTINUE;
-	}
-
-	BT_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
-	       load->entry->value);
-
-	cfg = ccc_find_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
-	if (!cfg) {
-		cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY, 0);
-		if (!cfg) {
-			BT_DBG("Unable to restore CCC: no cfg left");
-			goto next;
-		}
-		bt_addr_le_copy(&cfg->peer, load->addr_with_id.addr);
-		cfg->id = load->addr_with_id.id;
-	}
-
-	cfg->value = load->entry->value;
-
-next:
-	load->entry++;
-	load->count--;
-
-	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
-}
-
-static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
-		   void *cb_arg)
-{
-	struct ccc_store ccc_store[CCC_STORE_MAX];
-	struct ccc_load load;
-	bt_addr_le_t addr;
-	int len, err;
-	const char *next;
-
-	settings_name_next(name, &next);
-
-	if (!name) {
-		BT_ERR("Insufficient number of arguments");
-		return -EINVAL;
-	} else if (!next) {
-		load.addr_with_id.id = BT_ID_DEFAULT;
-	} else {
-		load.addr_with_id.id = strtol(next, NULL, 10);
-	}
-
-	err = bt_settings_decode_key(name, &addr);
-	if (err) {
-		BT_ERR("Unable to decode address %s", log_strdup(name));
-		return -EINVAL;
-	}
-
-	load.addr_with_id.addr = &addr;
-
-	if (len_rd) {
-		len = read_cb(cb_arg, ccc_store, sizeof(ccc_store));
-
-		if (len < 0) {
-			BT_ERR("Failed to decode value (err %d)", len);
-			return len;
-		}
-
-		load.entry = ccc_store;
-		load.count = len / sizeof(*ccc_store);
-
-		for (int i = 0; i < load.count; i++) {
-			BT_DBG("Read CCC: handle 0x%04x value 0x%04x",
-			       ccc_store[i].handle, ccc_store[i].value);
-		}
-	} else {
-		load.entry = NULL;
-		load.count = 0;
-	}
-
-	bt_gatt_foreach_attr(0x0001, 0xffff, ccc_load, &load);
-
-	BT_DBG("Restored CCC for id:%" PRIu8 " addr:%s", load.addr_with_id.id,
-	       bt_addr_le_str(load.addr_with_id.addr));
-
-	return 0;
-}
-
-#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
-static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
-			  void *cb_arg, void *param)
-{
-	const char *name;
-
-	BT_DBG("key: %s", log_strdup((const char *)param));
-
-	/* Only "bt/ccc" settings should ever come here */
-	if (!settings_name_steq((const char *)param, "bt/ccc", &name)) {
-		BT_ERR("Invalid key");
-		return -EINVAL;
-	}
-
-	return ccc_set(name, len, read_cb, cb_arg);
-}
-#else
-/* Only register the ccc_set settings handler when not loading on-demand */
-SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set, NULL, NULL);
-#endif /* CONFIG_BT_SETTINGS_CCC_LAZY_LOADING */
-
 
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
