@@ -55,6 +55,32 @@ static ZTEST_DMEM stack_data_t data_isr[STACK_LEN] = { 0xABCD, 0xABCD, 0xABCD,
 /* semaphore to sync threads */
 static struct k_sem end_sema;
 
+
+
+K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
+
+extern struct k_stack kstack;
+extern struct k_stack stack;
+extern struct k_sem end_sema;
+
+extern void test_stack_thread2thread(void);
+extern void test_stack_thread2isr(void);
+extern void test_stack_pop_fail(void);
+extern void test_stack_alloc_thread2thread(void);
+#ifdef CONFIG_USERSPACE
+extern void test_stack_user_thread2thread(void);
+extern void test_stack_user_pop_fail(void);
+#else
+#define dummy_test(_name)	   \
+	static void _name(void)	   \
+	{			   \
+		ztest_test_skip(); \
+	}
+
+dummy_test(test_stack_user_thread2thread);
+dummy_test(test_stack_user_pop_fail);
+#endif /* CONFIG_USERSPACE */
+
 /* entry of contexts */
 static void tIsr_entry_push(void *p)
 {
@@ -238,13 +264,26 @@ static void test_isr_stack_play(void)
  * @}
  */
 
+extern struct k_stack threadstack1;
+extern struct k_thread thread_data1;
+extern struct k_sem end_sema1;
+
 /*test case main entry*/
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &stack1, &stack2, &thread_data,
-			      &end_sema, &threadstack);
+			      &end_sema, &threadstack, &kstack, &stack, &thread_data1,
+			      &end_sema1, &threadstack1);
+
+	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(test_stack_usage,
+			 ztest_unit_test(test_stack_thread2thread),
+			 ztest_user_unit_test(test_stack_user_thread2thread),
+			 ztest_unit_test(test_stack_thread2isr),
+			 ztest_unit_test(test_stack_pop_fail),
+			 ztest_user_unit_test(test_stack_user_pop_fail),
+			 ztest_unit_test(test_stack_alloc_thread2thread),
 			 ztest_user_unit_test(test_single_stack_play),
 			 ztest_1cpu_user_unit_test(test_dual_stack_play),
 			 ztest_1cpu_unit_test(test_isr_stack_play));
