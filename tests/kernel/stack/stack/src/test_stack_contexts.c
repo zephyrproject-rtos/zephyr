@@ -14,10 +14,10 @@ K_STACK_DEFINE(kstack, STACK_LEN);
 K_STACK_DEFINE(kstack_test_alloc, STACK_LEN);
 struct k_stack stack;
 
-K_THREAD_STACK_DEFINE(threadstack, STACK_SIZE);
-struct k_thread thread_data;
+K_THREAD_STACK_DEFINE(threadstack1, STACK_SIZE);
+struct k_thread thread_data1;
 static ZTEST_DMEM stack_data_t data[STACK_LEN] = { 0xABCD, 0x1234 };
-struct k_sem end_sema;
+struct k_sem end_sema1;
 
 static void tstack_push(struct k_stack *pstack)
 {
@@ -52,23 +52,23 @@ static void tIsr_entry_pop(void *p)
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
 	tstack_pop((struct k_stack *)p1);
-	k_sem_give(&end_sema);
+	k_sem_give(&end_sema1);
 	tstack_push((struct k_stack *)p1);
-	k_sem_give(&end_sema);
+	k_sem_give(&end_sema1);
 }
 
 static void tstack_thread_thread(struct k_stack *pstack)
 {
-	k_sem_init(&end_sema, 0, 1);
+	k_sem_init(&end_sema1, 0, 1);
 	/**TESTPOINT: thread-thread data passing via stack*/
-	k_tid_t tid = k_thread_create(&thread_data, threadstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&thread_data1, threadstack1, STACK_SIZE,
 				      tThread_entry, pstack, NULL, NULL,
 				      K_PRIO_PREEMPT(0), K_USER |
 				      K_INHERIT_PERMS, K_NO_WAIT);
 	tstack_push(pstack);
-	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema1, K_FOREVER);
 
-	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema1, K_FOREVER);
 	tstack_pop(pstack);
 
 	/* clear the spawn thread to avoid side effect */
@@ -77,7 +77,7 @@ static void tstack_thread_thread(struct k_stack *pstack)
 
 static void tstack_thread_isr(struct k_stack *pstack)
 {
-	k_sem_init(&end_sema, 0, 1);
+	k_sem_init(&end_sema1, 0, 1);
 	/**TESTPOINT: thread-isr data passing via stack*/
 	irq_offload(tIsr_entry_push, pstack);
 	tstack_pop(pstack);
@@ -146,16 +146,16 @@ void test_stack_alloc_thread2thread(void)
 
 	k_stack_alloc_init(&kstack_test_alloc, STACK_LEN);
 
-	k_sem_init(&end_sema, 0, 1);
+	k_sem_init(&end_sema1, 0, 1);
 	/**TESTPOINT: thread-thread data passing via stack*/
-	k_tid_t tid = k_thread_create(&thread_data, threadstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&thread_data1, threadstack1, STACK_SIZE,
 					tThread_entry, &kstack_test_alloc,
 					NULL, NULL, K_PRIO_PREEMPT(0), 0,
 					K_NO_WAIT);
 	tstack_push(&kstack_test_alloc);
-	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema1, K_FOREVER);
 
-	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema1, K_FOREVER);
 	tstack_pop(&kstack_test_alloc);
 
 	/* clear the spawn thread to avoid side effect */
