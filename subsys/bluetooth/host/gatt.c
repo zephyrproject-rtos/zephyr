@@ -278,13 +278,21 @@ static void sc_clear(struct gatt_sc_cfg *cfg)
 	memset(cfg, 0, sizeof(*cfg));
 }
 
+static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
+			 u16_t new_end);
+
+static void sc_save(u8_t id, bt_addr_le_t *peer, u16_t start, u16_t end);
+
 static bool sc_ccc_cfg_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     u16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 
-	if (value != BT_GATT_CCC_INDICATE) {
+	if (value == BT_GATT_CCC_INDICATE) {
+		/* Create a new SC configuration entry if subscribed */
+		sc_save(conn->id, &conn->le.dst, 0, 0);
+	} else {
 		struct gatt_sc_cfg *cfg;
 
 		/* Clear SC configuration if unsubscribed */
@@ -1671,6 +1679,31 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	ccc = attr->user_data;
 
+	/* Save Service Changed data if peer is not connected */
+	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) && ccc == &sc_ccc) {
+		for (i = 0; i < ARRAY_SIZE(sc_cfg); i++) {
+			struct gatt_sc_cfg *cfg = &sc_cfg[i];
+			struct bt_conn *conn;
+
+			if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+				continue;
+			}
+
+			conn = bt_conn_lookup_state_le(&cfg->peer,
+						       BT_CONN_CONNECTED);
+			if (!conn) {
+				struct sc_data *sc;
+
+				sc = (struct sc_data *)data->ind_params->data;
+				sc_save(cfg->id, &cfg->peer,
+					sys_le16_to_cpu(sc->start),
+					sys_le16_to_cpu(sc->end));
+				continue;
+			}
+			bt_conn_unref(conn);
+		}
+	}
+
 	/* Notify all peers configured */
 	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
@@ -1686,15 +1719,6 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 		if (!conn) {
-			if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) &&
-			    ccc == &sc_ccc) {
-				struct sc_data *sc;
-
-				sc = (struct sc_data *)data->ind_params->data;
-				sc_save(cfg->id, &cfg->peer,
-					sys_le16_to_cpu(sc->start),
-					sys_le16_to_cpu(sc->end));
-			}
 			continue;
 		}
 
@@ -1925,6 +1949,17 @@ static void sc_restore_rsp(struct bt_conn *conn,
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
 
+static void sc_reset(struct gatt_sc_cfg *cfg)
+{
+	BT_DBG("peer %s", bt_addr_le_str(&cfg->peer));
+
+	memset(&cfg->data, 0, sizeof(cfg->data));
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		sc_store(cfg);
+	}
+}
+
 static void sc_restore(struct bt_conn *conn)
 {
 	struct gatt_sc_cfg *cfg;
@@ -1958,7 +1993,7 @@ static void sc_restore(struct bt_conn *conn)
 	}
 
 	/* Reset config data */
-	sc_clear(cfg);
+	sc_reset(cfg);
 }
 
 struct conn_data {
