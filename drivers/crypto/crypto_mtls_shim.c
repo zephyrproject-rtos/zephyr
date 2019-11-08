@@ -48,6 +48,58 @@ struct mtls_shim_session mtls_sessions[CRYPTO_MAX_SESSION];
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
+int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+{
+	int ret;
+	mbedtls_aes_context *ecb_ctx =
+		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+
+	/* For security reasons, ECB mode should not be used to encrypt
+	 * more than one block. Use CBC mode instead.
+	 */
+	if (pkt->in_len > 16) {
+		LOG_ERR("Cannot encrypt more than 1 block");
+		return -EINVAL;
+	}
+
+	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_ENCRYPT,
+				    pkt->in_buf, pkt->out_buf);
+	if (ret) {
+		LOG_ERR("Could not encrypt (%d)", ret);
+		return -EINVAL;
+	}
+
+	pkt->out_len = 16;
+
+	return 0;
+}
+
+int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+{
+	int ret;
+	mbedtls_aes_context *ecb_ctx =
+		&((struct mtls_shim_session *)ctx->drv_sessn_state)->mtls_aes;
+
+	/* For security reasons, ECB mode should not be used to decrypt
+	 * more than one block. Use CBC mode instead.
+	 */
+	if (pkt->in_len > 16) {
+		LOG_ERR("Cannot decrypt more than 1 block");
+		return -EINVAL;
+	}
+
+	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_DECRYPT,
+				    pkt->in_buf, pkt->out_buf);
+	if (ret) {
+		LOG_ERR("Could not encrypt (%d)", ret);
+		return -EINVAL;
+	}
+
+	pkt->out_len = 16;
+
+	return 0;
+}
+
 int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 {
 	int ret;
@@ -177,7 +229,8 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	}
 
 	if (mode != CRYPTO_CIPHER_MODE_CCM &&
-	    mode != CRYPTO_CIPHER_MODE_CBC) {
+	    mode != CRYPTO_CIPHER_MODE_CBC &&
+	    mode != CRYPTO_CIPHER_MODE_ECB) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
 	}
@@ -196,7 +249,26 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	switch (mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
+		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
+		mbedtls_aes_init(aes_ctx);
+		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+			ret = mbedtls_aes_setkey_enc(aes_ctx,
+					ctx->key.bit_stream, ctx->keylen * 8U);
+			ctx->ops.block_crypt_hndlr = mtls_ecb_encrypt;
+		} else {
+			ret = mbedtls_aes_setkey_dec(aes_ctx,
+					ctx->key.bit_stream, ctx->keylen * 8U);
+			ctx->ops.block_crypt_hndlr = mtls_ecb_decrypt;
+		}
+		if (ret) {
+			LOG_ERR("AES_ECB: failed at setkey (%d)", ret);
+			ctx->ops.block_crypt_hndlr = NULL;
+			mtls_sessions[ctx_idx].in_use = false;
+			return -EINVAL;
+		}
+		break;
 	case CRYPTO_CIPHER_MODE_CTR:
+		break;
 	case CRYPTO_CIPHER_MODE_CBC:
 		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
 		mbedtls_aes_init(aes_ctx);
