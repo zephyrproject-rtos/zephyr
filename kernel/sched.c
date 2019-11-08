@@ -975,6 +975,11 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
+	if (ms == K_FOREVER) {
+		k_thread_suspend(_current);
+		return K_FOREVER;
+	}
+
 	ticks = k_ms_to_ticks_ceil32(ms);
 	ticks = z_tick_sleep(ticks);
 	return k_ticks_to_ms_floor64(ticks);
@@ -1012,7 +1017,10 @@ void z_impl_k_wakeup(k_tid_t thread)
 	}
 
 	if (z_abort_thread_timeout(thread) < 0) {
-		return;
+		/* Might have just been sleeping forever */
+		if (thread->base.thread_state != _THREAD_SUSPENDED) {
+			return;
+		}
 	}
 
 	z_mark_thread_as_not_suspended(thread);
