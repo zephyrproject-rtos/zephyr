@@ -105,3 +105,12 @@ uext_serial: &usart1 {};
 &iwdg {
 	status = "okay";
 };
+
+&can1 {
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <5>;
+	phase-seg2 = <6>;
+	status = "okay";
+};
