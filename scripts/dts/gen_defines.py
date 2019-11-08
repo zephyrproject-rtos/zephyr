@@ -501,6 +501,20 @@ def write_irqs(node):
             alias += "_" + str2ident(cell_name)
         return alias
 
+    def map_arm_gic_irq_type(irq, irq_num):
+        # Maps ARM GIC IRQ (type)+(index) combo to linear IRQ number
+        if "type" not in irq.data:
+            err("Expected binding for {!r} to have 'type' in interrupt-cells"
+                .format(irq.controller))
+        irq_type = irq.data["type"]
+
+        if irq_type == 0:  # GIC_SPI
+            return irq_num + 32
+        if irq_type == 1:  # GIC_PPI
+            return irq_num + 16
+        err("Invalid interrupt type specified for {!r}"
+            .format(irq))
+
     def encode_zephyr_multi_level_irq(irq, irq_num):
         # See doc/reference/kernel/other/interrupts.rst for details
         # on how this encoding works
@@ -510,7 +524,7 @@ def write_irqs(node):
         while irq_ctrl.interrupts:
             irq_num = (irq_num + 1) << 8
             if "irq" not in irq_ctrl.interrupts[0].data:
-                err("Expected binding for {!r} to have 'irq' in *-cells"
+                err("Expected binding for {!r} to have 'irq' in interrupt-cells"
                     .format(irq_ctrl))
             irq_num |= irq_ctrl.interrupts[0].data["irq"]
             irq_ctrl = irq_ctrl.interrupts[0].controller
@@ -520,6 +534,8 @@ def write_irqs(node):
         for cell_name, cell_value in irq.data.items():
             ident = "IRQ_{}".format(irq_i)
             if cell_name == "irq":
+                if "arm,gic" in irq.controller.compats:
+                    cell_value = map_arm_gic_irq_type(irq, cell_value)
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
             else:
                 ident += "_" + str2ident(cell_name)
