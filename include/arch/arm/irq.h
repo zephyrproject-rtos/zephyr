@@ -90,7 +90,6 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
 	irq_p; \
 })
 
-/* FIXME prefer these inline, but see GH-3056 */
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void _arch_isr_direct_pm(void);
 #define ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
@@ -99,20 +98,25 @@ extern void _arch_isr_direct_pm(void);
 #endif
 
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
-extern void arch_isr_direct_header(void);
-
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
 /* arch/arm/core/exc_exit.S */
 extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING
+extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
+static inline void arch_isr_direct_header(void)
+{
+#ifdef CONFIG_TRACING
+	sys_trace_isr_enter();
+#endif
+}
+
 static inline void arch_isr_direct_footer(int maybe_swap)
 {
-
 #ifdef CONFIG_TRACING
 	sys_trace_isr_exit();
 #endif
