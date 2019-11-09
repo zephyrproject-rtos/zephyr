@@ -42,6 +42,7 @@ struct gpio_sifive_t {
 
 struct gpio_sifive_config {
 	uintptr_t            gpio_base_addr;
+	/* multi-level encoded interrupt corresponding to pin 0 */
 	u32_t                gpio_irq_base;
 	sifive_cfg_func_t    gpio_cfg_func;
 };
@@ -65,10 +66,10 @@ static void gpio_sifive_irq_handler(void *arg)
 	struct gpio_sifive_data *data = DEV_GPIO_DATA(dev);
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
-	int pin_mask;
 
-	/* Get the pin number generating the interrupt */
-	pin_mask = 1 << (riscv_plic_get_irq() - cfg->gpio_irq_base);
+	/* Calculate pin and mask from base level 2 line */
+	u8_t pin = 1 + (riscv_plic_get_irq() - (u8_t)(cfg->gpio_irq_base >> 8));
+	u32_t pin_mask = BIT(pin);
 
 	/* Call the corresponding callback registered for the pin */
 	gpio_fire_callbacks(&data->cb, dev, pin_mask);
@@ -305,8 +306,8 @@ static int gpio_sifive_enable_callback(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Enable interrupt for the pin at PLIC level */
-	irq_enable(cfg->gpio_irq_base + pin);
+	/* Enable interrupt for the pin at PLIC (level 2) */
+	irq_enable(cfg->gpio_irq_base + (pin << 8));
 
 	return 0;
 }
@@ -325,8 +326,8 @@ static int gpio_sifive_disable_callback(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Disable interrupt for the pin at PLIC level */
-	irq_disable(cfg->gpio_irq_base + pin);
+	/* Disable interrupt for the pin at PLIC (level 2) */
+	irq_disable(cfg->gpio_irq_base + (pin << 8));
 
 	return 0;
 }
