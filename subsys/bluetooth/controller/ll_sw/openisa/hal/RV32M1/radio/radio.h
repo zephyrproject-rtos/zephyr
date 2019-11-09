@@ -10,7 +10,7 @@
 
 typedef void (*radio_isr_cb_t) (void *param);
 
-void isr_radio(void);
+void isr_radio(void *arg);
 void radio_isr_set(radio_isr_cb_t cb, void *param);
 
 void radio_setup(void);

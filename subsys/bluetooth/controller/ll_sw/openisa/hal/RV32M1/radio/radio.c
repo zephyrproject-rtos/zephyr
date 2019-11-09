@@ -167,8 +167,10 @@ static void pkt_rx(void)
 #define IRQ_MASK ~(GENFSK_IRQ_CTRL_T2_IRQ_MASK | \
 		   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK | \
 		   GENFSK_IRQ_CTRL_TX_IRQ_MASK)
-void isr_radio(void)
+void isr_radio(void *arg)
 {
+	ARG_UNUSED(arg);
+
 	u32_t tmr = GENFSK->EVENT_TMR & GENFSK_EVENT_TMR_EVENT_TMR_MASK;
 	u32_t irq = GENFSK->IRQ_CTRL;
 
