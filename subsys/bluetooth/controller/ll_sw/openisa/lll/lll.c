@@ -136,8 +136,10 @@ int lll_init(void)
 	hal_swi_init();
 
 	/* Connect ISRs */
-	IRQ_CONNECT(LL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO, isr_radio, NULL, 0);
-	IRQ_CONNECT(LL_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	/* FIXME: should be LL_RADIO_IRQn */
+	IRQ_CONNECT(27, CONFIG_BT_CTLR_LLL_PRIO, isr_radio, NULL, 0);
+	/* FIXME: should be LL_RTC0_IRQn  */
+	IRQ_CONNECT(26, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_rv32m1_isr, NULL, 0);
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_rv32m1_isr, NULL, 0);
