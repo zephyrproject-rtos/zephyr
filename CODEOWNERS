@@ -16,9 +16,9 @@
 /.known-issues/                           @inakypg @nashif
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
-/arch/arm/core/cortex_m/cmse/             @ioannisg
-/arch/arm/include/cortex_m/cmse.h         @ioannisg
-/arch/arm/core/cortex_r/                  @MaureenHelm @galak @ioannisg @bbolen
+/arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
+/arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
+/arch/arm/core/aarch32/cortex_r/          @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @andrewboie @ioannisg @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
 /soc/nios2/                               @nashif @wentongwu
@@ -245,8 +245,8 @@
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
-/include/arch/arm/                        @MaureenHelm @galak @ioannisg
-/include/arch/arm/irq.h                   @andrewboie
+/include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
+/include/arch/arm/aarch32/irq.h           @andrewboie
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
 /include/arch/posix/                      @aescolar

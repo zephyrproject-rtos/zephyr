@@ -22,23 +22,23 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
-#include <arch/arm/thread.h>
-#include <arch/arm/exc.h>
-#include <arch/arm/irq.h>
-#include <arch/arm/error.h>
-#include <arch/arm/misc.h>
+#include <arch/arm/aarch32/thread.h>
+#include <arch/arm/aarch32/exc.h>
+#include <arch/arm/aarch32/irq.h>
+#include <arch/arm/aarch32/error.h>
+#include <arch/arm/aarch32/misc.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/ffs.h>
-#include <arch/arm/nmi.h>
-#include <arch/arm/asm_inline.h>
+#include <arch/arm/aarch32/nmi.h>
+#include <arch/arm/aarch32/asm_inline.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/cortex_m/cpu.h>
-#include <arch/arm/cortex_m/memory_map.h>
+#include <arch/arm/aarch32/cortex_m/cpu.h>
+#include <arch/arm/aarch32/cortex_m/memory_map.h>
 #include <arch/common/sys_io.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/cortex_r/cpu.h>
-#include <arch/arm/cortex_r/sys_io.h>
+#include <arch/arm/aarch32/cortex_r/cpu.h>
+#include <arch/arm/aarch32/cortex_r/sys_io.h>
 #endif
 
 #ifdef __cplusplus
@@ -245,10 +245,10 @@ extern "C" {
 /* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
-#include <arch/arm/cortex_m/mpu/arm_mpu.h>
+#include <arch/arm/aarch32/cortex_m/mpu/arm_mpu.h>
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
 #ifdef CONFIG_CPU_HAS_NXP_MPU
-#include <arch/arm/cortex_m/mpu/nxp_mpu.h>
+#include <arch/arm/aarch32/cortex_m/mpu/nxp_mpu.h>
 #endif /* CONFIG_CPU_HAS_NXP_MPU */
 #endif /* CONFIG_ARM_MPU */
 

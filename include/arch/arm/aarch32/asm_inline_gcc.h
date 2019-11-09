@@ -19,7 +19,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <arch/arm/exc.h>
+#include <arch/arm/aarch32/exc.h>
 #include <irq.h>
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <cortex_m/cmse.h>
+#include <aarch32/cortex_m/cmse.h>
 
 int arm_cmse_mpu_region_get(u32_t addr)
 {

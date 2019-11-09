@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <cortex_r/stack.h>
+#include <aarch32/cortex_r/stack.h>
 #include <string.h>
 
 K_THREAD_STACK_DEFINE(z_arm_fiq_stack,   CONFIG_ARMV7_FIQ_STACK_SIZE);

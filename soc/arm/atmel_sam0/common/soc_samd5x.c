@@ -10,7 +10,7 @@
  */
 
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <aarch32/cortex_m/exc.h>
 #include <device.h>
 #include <init.h>
 #include <kernel.h>

@@ -5,4 +5,4 @@
  *
  */
 
-#include <arch/arm/cortex_r/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_r/scripts/linker.ld>
