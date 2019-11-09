@@ -79,6 +79,9 @@ manifest:
     - name: hal_ti
       revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
       path: modules/hal/ti
+    - name: hal_unisoc
+      revision: pull/3/head
+      path: modules/hal/unisoc
     - name: libmetal
       revision: 0b23894a041bd00a0d3a2288bb34751bbbef790d
       path: modules/hal/libmetal
