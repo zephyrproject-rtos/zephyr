@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2018 qianfan Zhao.
+ * Copyright (c) 2019 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,11 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <soc.h>
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4
+
+#ifndef SPI_CSR_BITS
+#define SPI_CSR_BITS(value) ((SPI_CSR_BITS_Msk & \
+			       ((value) << SPI_CSR_BITS_Pos)))
+#endif
 
 /* Device constant configuration parameters */
 struct spi_sam_config {
