@@ -17,7 +17,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
 #include <device.h>
 #include <irq_nextlevel.h>
@@ -171,7 +171,7 @@ void _arch_isr_direct_pm(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
 	 * lower than BASEPRI, which is not what we want. See comments in
-	 * arch/arm/core/isr_wrapper.S
+	 * arch/arm/core/aarch32/isr_wrapper.S
 	 */
 	__asm__ volatile("cpsid i" : : : "memory");
 #else

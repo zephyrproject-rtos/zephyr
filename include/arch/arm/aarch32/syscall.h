@@ -26,7 +26,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {

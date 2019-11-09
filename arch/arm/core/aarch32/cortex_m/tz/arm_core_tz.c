@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm/cortex_m/cmsis.h>
-#include <cortex_m/tz.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <aarch32/cortex_m/tz.h>
+#include <aarch32/cortex_m/exc.h>
 
 static void configure_nonsecure_vtor_offset(u32_t vtor_ns)
 {

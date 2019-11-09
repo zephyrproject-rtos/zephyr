@@ -22,8 +22,8 @@
 
 #else
 
-#include <arch/arm/cortex_m/cmsis.h>
-#include <arch/arm/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/exc.h>
 #include <irq_offload.h>
 
 #ifdef __cplusplus

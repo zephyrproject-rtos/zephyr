@@ -12,7 +12,7 @@
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64)
 #include <arch/x86/ia32/syscall.h>
 #elif defined(CONFIG_ARM)
-#include <arch/arm/syscall.h>
+#include <arch/arm/aarch32/syscall.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/syscall.h>
 #endif

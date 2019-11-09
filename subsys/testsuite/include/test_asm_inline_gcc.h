@@ -24,14 +24,14 @@ static inline void timestamp_serialize(void)
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
 #elif defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 static inline void timestamp_serialize(void)
 {
 	/* isb is available in all Cortex-M  */
 	__ISB();
 }
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/cortex_r/cpu.h>
+#include <arch/arm/aarch32/cortex_r/cpu.h>
 static inline void timestamp_serialize(void)
 {
 	__ISB();
