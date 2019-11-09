@@ -11,8 +11,8 @@
  * ARM-specific kernel exception handling interface. Included by arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
 
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
@@ -72,4 +72,4 @@ extern void z_arm_exc_exit(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_ */
