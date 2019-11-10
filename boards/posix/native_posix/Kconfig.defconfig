@@ -104,7 +104,7 @@ endif # USB
 
 if EEPROM
 
-config EEPROM_NATIVE_POSIX
+config EEPROM_SIMULATOR
 	default y
 
 endif # EEPROM

@@ -28,12 +28,6 @@ config EEPROM_SHELL_BUFFER_SIZE
 	  Size of the buffer used for EEPROM read/write commands in
 	  the EEPROM shell.
 
-config EEPROM_NATIVE_POSIX
-	bool "Native POSIX EEPROM driver"
-	depends on BOARD_NATIVE_POSIX
-	help
-	  Enable Native POSIX EEPROM driver.
-
 config EEPROM_AT2X
 	bool
 	help
