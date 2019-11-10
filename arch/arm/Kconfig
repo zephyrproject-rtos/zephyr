@@ -6,9 +6,14 @@
 menu "ARM Options"
 	depends on ARM
 
-source "arch/arm/core/aarch32/Kconfig"
+rsource "core/aarch32/Kconfig"
+rsource "core/aarch64/Kconfig"
 
 config ARCH
 	default "arm"
+
+config ARM64
+	bool
+	select 64BIT
 
 endmenu
