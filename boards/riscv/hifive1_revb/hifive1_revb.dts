@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include <riscv32-fe310.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	model = "SiFive HiFive 1 Rev B";
@@ -123,8 +124,9 @@
 	clock-frequency = <16000000>;
 };
 
-&i2c0 {
+arduino_i2c: &i2c0 {
 	status = "okay";
+	label = "I2C_0";
 	input-frequency = <16000000>;
 	clock-frequency = <100000>;
 };
