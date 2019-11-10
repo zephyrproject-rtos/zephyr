@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,35 +7,10 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#include <offsets.h>
-
-/* kernel */
-
-/* nothing for now */
-
-/* end - kernel */
-
-/* threads */
-
-#define _thread_offset_to_basepri \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_basepri_OFFSET)
-
-#define _thread_offset_to_swap_return_value \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_swap_return_value_OFFSET)
-
-#define _thread_offset_to_preempt_float \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
-
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
-#define _thread_offset_to_mode \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
-
-#ifdef CONFIG_USERSPACE
-#define _thread_offset_to_priv_stack_start \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
+#if defined(CONFIG_ARM64)
+#include <aarch64/offsets_short_arch.h>
+#else
+#include <aarch32/offsets_short_arch.h>
 #endif
-#endif
-
-/* end - threads */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_OFFSETS_SHORT_ARCH_H_ */
