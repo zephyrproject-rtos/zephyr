@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Laczen
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -6,11 +7,22 @@
 
 #include <device.h>
 #include <drivers/eeprom.h>
+
 #include <init.h>
 #include <kernel.h>
 #include <sys/util.h>
 #include <stats/stats.h>
 #include <string.h>
+#include <errno.h>
+
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include "cmdline.h"
+#include "soc.h"
+#endif
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
 #include <logging/log.h>
@@ -70,7 +82,14 @@ STATS_NAME(eeprom_sim_thresholds, max_write_calls)
 STATS_NAME(eeprom_sim_thresholds, max_len)
 STATS_NAME_END(eeprom_sim_thresholds);
 
+#ifdef CONFIG_ARCH_POSIX
+static u8_t *mock_eeprom;
+static int eeprom_fd = -1;
+static const char *eeprom_file_path;
+static const char default_eeprom_file_path[] = "eeprom.bin";
+#else
 static u8_t mock_eeprom[DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE];
+#endif /* CONFIG_ARCH_POSIX */
 
 static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)
 {
@@ -83,8 +102,8 @@ static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)
 	return 0;
 }
 
-static int eeprom_sim_read(struct device *dev, const off_t offset, void *data,
-			  const size_t len)
+static int eeprom_sim_read(struct device *dev, off_t offset, void *data,
+			   size_t len)
 {
 	if (!len) {
 		return 0;
@@ -112,8 +131,8 @@ static int eeprom_sim_read(struct device *dev, const off_t offset, void *data,
 	return 0;
 }
 
-static int eeprom_sim_write(struct device *dev, const off_t offset,
-			   const void *data, const size_t len)
+static int eeprom_sim_write(struct device *dev, off_t offset, const void *data,
+			    size_t len)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
 
@@ -140,26 +159,22 @@ static int eeprom_sim_write(struct device *dev, const off_t offset,
 	if (eeprom_sim_thresholds.max_write_calls != 0) {
 		if (eeprom_sim_stats.eeprom_write_calls >
 			eeprom_sim_thresholds.max_write_calls) {
-			return 0;
+			goto end;
 		} else if (eeprom_sim_stats.eeprom_write_calls ==
 				eeprom_sim_thresholds.max_write_calls) {
 			if (eeprom_sim_thresholds.max_len == 0) {
-				return 0;
+				goto end;
 			}
 
 			data_part_ignored = true;
 		}
 	}
 
-	for (u32_t i = 0; i < len; i++) {
-		if (data_part_ignored) {
-			if (i >= eeprom_sim_thresholds.max_len) {
-				return 0;
-			}
-		}
-
-		*(EEPROM(offset + i)) = *((u8_t *)data + i);
+	if ((data_part_ignored) && (len > eeprom_sim_thresholds.max_len)) {
+		len = eeprom_sim_thresholds.max_len;
 	}
+
+	memcpy(EEPROM(offset), data, len);
 
 	STATS_INCN(eeprom_sim_stats, bytes_written, len);
 
@@ -170,8 +185,8 @@ static int eeprom_sim_write(struct device *dev, const off_t offset,
 		   CONFIG_EEPROM_SIMULATOR_MIN_WRITE_TIME_US);
 #endif
 
+end:
 	SYNC_UNLOCK();
-
 	return 0;
 }
 
@@ -193,17 +208,98 @@ static const struct eeprom_sim_config eeprom_sim_config_0 = {
 	.readonly = DT_INST_0_ZEPHYR_SIM_EEPROM_READ_ONLY,
 };
 
+#ifdef CONFIG_ARCH_POSIX
+
+static int eeprom_mock_init(struct device *dev)
+{
+	if (eeprom_file_path == NULL) {
+		eeprom_file_path = default_eeprom_file_path;
+	}
+
+	eeprom_fd = open(eeprom_file_path, O_RDWR | O_CREAT, (mode_t)0600);
+	if (eeprom_fd == -1) {
+		posix_print_warning("Failed to open eeprom device file ",
+				    "%s: %s\n",
+				    eeprom_file_path, strerror(errno));
+		return -EIO;
+	}
+
+	if (ftruncate(eeprom_fd, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE) == -1) {
+		posix_print_warning("Failed to resize eeprom device file ",
+				    "%s: %s\n",
+				    eeprom_file_path, strerror(errno));
+		return -EIO;
+	}
+
+	mock_eeprom = mmap(NULL, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE,
+			  PROT_WRITE | PROT_READ, MAP_SHARED, eeprom_fd, 0);
+	if (mock_eeprom == MAP_FAILED) {
+		posix_print_warning("Failed to mmap eeprom device file "
+				    "%s: %s\n",
+				    eeprom_file_path, strerror(errno));
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#else
+
+static int eeprom_mock_init(struct device *dev)
+{
+	memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
+	return 0;
+}
+
+#endif /* CONFIG_ARCH_POSIX */
+
 static int eeprom_sim_init(struct device *dev)
 {
 	SYNC_INIT();
 	STATS_INIT_AND_REG(eeprom_sim_stats, STATS_SIZE_32, "eeprom_sim_stats");
 	STATS_INIT_AND_REG(eeprom_sim_thresholds, STATS_SIZE_32,
 			   "eeprom_sim_thresholds");
-	memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
 
-	return 0;
+	return eeprom_mock_init(dev);
 }
 
 DEVICE_AND_API_INIT(eeprom_sim_0, DT_INST_0_ZEPHYR_SIM_EEPROM_LABEL,
 		    &eeprom_sim_init, NULL, &eeprom_sim_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_sim_api);
+
+#ifdef CONFIG_ARCH_POSIX
+
+static void eeprom_native_posix_cleanup(void)
+{
+	if ((mock_eeprom != MAP_FAILED) && (mock_eeprom != NULL)) {
+		munmap(mock_eeprom, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE);
+	}
+
+	if (eeprom_fd != -1) {
+		close(eeprom_fd);
+	}
+}
+
+static void eeprom_native_posix_options(void)
+{
+	static struct args_struct_t eeprom_options[] = {
+		{ .manual = false,
+		  .is_mandatory = false,
+		  .is_switch = false,
+		  .option = "eeprom",
+		  .name = "path",
+		  .type = 's',
+		  .dest = (void *)&eeprom_file_path,
+		  .call_when_found = NULL,
+		  .descript = "Path to binary file to be used as eeprom" },
+		ARG_TABLE_ENDMARKER
+	};
+
+	native_add_command_line_opts(eeprom_options);
+}
+
+
+NATIVE_TASK(eeprom_native_posix_options, PRE_BOOT_1, 1);
+NATIVE_TASK(eeprom_native_posix_cleanup, ON_EXIT, 1);
+
+#endif /* CONFIG_ARCH_POSIX */
