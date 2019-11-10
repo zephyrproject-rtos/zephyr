@@ -33,7 +33,7 @@
 void gpio_callback(struct device *port,
 		   struct gpio_callback *cb, u32_t pins)
 {
-	printk("Pin %d triggered\n", GPIO_INT_PIN);
+	printk("Pin %s.%d triggered\n", port->config->name, pins);
 }
 
 static struct gpio_callback gpio_cb;
@@ -59,7 +59,9 @@ void main(void)
 	/* Setup GPIO output */
 	ret = gpio_pin_configure(gpio_out_dev, GPIO_OUT_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		printk("Error configuring pin %d!\n", GPIO_OUT_PIN);
+		printk("Error configuring pin %s.%d!\n",
+		       gpio_out_dev->config->name,
+		       GPIO_OUT_PIN);
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
@@ -75,7 +77,9 @@ void main(void)
 				  GPIO_INT_DEBOUNCE));
 #endif
 	if (ret) {
-		printk("Error configuring pin %d!\n", GPIO_INT_PIN);
+		printk("Error configuring pin %s.%d!\n",
+		       gpio_in_dev->config->name,
+		       GPIO_INT_PIN);
 	}
 
 	gpio_init_callback(&gpio_cb, gpio_callback, BIT(GPIO_INT_PIN));
@@ -91,11 +95,15 @@ void main(void)
 	}
 
 	while (1) {
-		printk("Toggling pin %d\n", GPIO_OUT_PIN);
+		printk("Toggling pin %s.%d\n",
+		       gpio_out_dev->config->name,
+		       GPIO_OUT_PIN);
 
 		ret = gpio_pin_write(gpio_out_dev, GPIO_OUT_PIN, toggle);
 		if (ret) {
-			printk("Error set pin %d!\n", GPIO_OUT_PIN);
+			printk("Error set pin %s.%d!\n",
+			       gpio_out_dev->config->name,
+			       GPIO_OUT_PIN);
 		}
 
 		if (toggle) {
