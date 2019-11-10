@@ -385,10 +385,7 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	buf->__buf = data;
-	buf->data  = data;
-	buf->size  = size;
-	buf->len   = size;
+	net_buf_simple_init_with_data(&buf->b, data, size);
 	buf->flags = NET_BUF_EXTERNAL_DATA;
 
 	return buf;
@@ -425,6 +422,15 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout)
 	frag->frags = NULL;
 
 	return buf;
+}
+
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+				   void *data, size_t size)
+{
+	buf->__buf = data;
+	buf->data  = data;
+	buf->size  = size;
+	buf->len   = size;
 }
 
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
