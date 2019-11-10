@@ -23,7 +23,7 @@
 	};
 
 	flashcontroller0: flash-controller@0 {
-		compatible = "zephyr,native-posix-flash-controller";
+		compatible = "zephyr,sim-flash";
 		reg = <0x00000000 DT_SIZE_K(2048)>;
 
 		#address-cells = <1>;
@@ -35,7 +35,7 @@
 			status = "okay";
 			compatible = "soc-nv-flash";
 			label = "flash";
-			erase-block-size = <1>;
+			erase-block-size = <4096>;
 			write-block-size = <1>;
 			reg = <0x00000000 DT_SIZE_K(2048)>;
 
