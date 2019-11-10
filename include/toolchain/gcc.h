@@ -217,7 +217,7 @@ do {                                                                    \
 
 #if defined(_ASMLANGUAGE)
 
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
 
 #if defined(CONFIG_ISA_THUMB2)
 
@@ -370,7 +370,7 @@ do {                                                                    \
 
 #define GEN_ABS_SYM_END }
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -385,7 +385,7 @@ do {                                                                    \
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
-#elif defined(CONFIG_X86) || defined(CONFIG_ARC)
+#elif defined(CONFIG_X86) || defined(CONFIG_ARC) || defined(CONFIG_ARM64)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
