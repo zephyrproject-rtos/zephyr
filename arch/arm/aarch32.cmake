@@ -23,4 +23,6 @@ zephyr_ld_options(
   ${ARCH_FLAG}
   )
 
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
+
 add_subdirectory(core/aarch32)
