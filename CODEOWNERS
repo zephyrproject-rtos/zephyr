@@ -31,6 +31,7 @@
 /soc/arm/bcm*/                            @sbranden
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
+/soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
 /soc/arm/st_stm32/stm32mp1/               @arnopo
@@ -77,6 +78,7 @@
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @rsalveti @idlethread
+/boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_m*/               @ioannisg
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/v2m_beetle/                   @fvincenzo
@@ -210,6 +212,7 @@
 /dts/arm/atmel/samr21.dtsi                @benpicco
 /dts/arm/atmel/sam*5*.dtsi                @benpicco
 /dts/arm/broadcom/                        @sbranden
+/dts/arm/qemu-virt/                       @carlocaione
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
@@ -226,6 +229,7 @@
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/arm/armv7-r.dtsi                     @bbolen
+/dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/bindings/                            @galak
