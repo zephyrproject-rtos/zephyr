@@ -454,7 +454,7 @@ config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 config MPU_GAP_FILLING
 	bool "Force MPU to be filling in background memory regions"
 	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
-	depends on USERSPACE
+	default y if !USERSPACE
 	help
 	  This Kconfig option instructs the MPU driver to enforce
 	  a full kernel SRAM partitioning, when it programs the
@@ -466,7 +466,9 @@ config MPU_GAP_FILLING
 
 	  Notes:
 	  An increased number of MPU regions should only be required,
-	  when building with USERSPACE support.
+	  when building with USERSPACE support. As a result, when we
+	  build without USERSPACE support, gap filling should always
+	  be required.
 
 	  When the option is switched off, access to memory areas not
 	  covered by explicit MPU regions is restricted to privileged
