@@ -865,15 +865,15 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 {
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
-	u8_t idx;
+	u8_t rl_idx, idx;
 
 	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
 	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
 		return;
 	}
 
-	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
-	if (idx >= ARRAY_SIZE(rl)) {
+	rl_idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
+	if (rl_idx >= ARRAY_SIZE(rl)) {
 		return;
 	}
 
@@ -888,7 +888,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		pdu->chan_sel = 0;
 	}
 
-	ull_filter_adv_pdu_update(adv, idx, pdu);
+	ull_filter_adv_pdu_update(adv, rl_idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
 	       prev->len - BDADDR_SIZE);
