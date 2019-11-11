@@ -188,14 +188,30 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	cycle_count += elapsed();
+	u32_t pending = elapsed();
 
-	/* Round delay up to next tick boundary */
-	delay = delay + (cycle_count - announced_cycles);
-	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
-	last_load = delay - (cycle_count - announced_cycles);
-
+	cycle_count += pending;
 	overflow_cyc = 0U;
+
+	u32_t unannounced = cycle_count - announced_cycles;
+
+	if ((s32_t)unannounced < 0) {
+		/* We haven't announced for more than half the 32-bit
+		 * wrap duration, because new timeouts keep being set
+		 * before the existing one fires.  Force an announce
+		 * to avoid loss of a wrap event, making sure the
+		 * delay is at least the minimum delay possible.
+		 */
+		last_load = MIN_DELAY;
+	} else {
+		/* Round delay up to next tick boundary */
+		delay += unannounced;
+		delay =
+		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+		delay -= unannounced;
+		last_load = delay;
+
+	}
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 
