@@ -121,6 +121,7 @@ void main(void)
 			*(buf + idx + 1) = (color_rgb >> 0) & 0xFFU;
 		}
 #else
+		int color = cnt % 4;
 		u32_t color_rgb;
 		u32_t c = grey_count & 0xff;
 
