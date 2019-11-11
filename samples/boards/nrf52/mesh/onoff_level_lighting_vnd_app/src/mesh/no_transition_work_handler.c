@@ -68,7 +68,9 @@ static void no_transition_work_handler(struct k_work *work)
 		update_led_gpio();
 	}
 
-	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), K_NO_WAIT);
+	k_timer_start(&unsolicitedly_publish_states_timer,
+		      K_MSEC(5000),
+		      K_NO_WAIT);
 }
 
 K_WORK_DEFINE(no_transition_work, no_transition_work_handler);
