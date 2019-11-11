@@ -36,6 +36,12 @@ static inline void timestamp_serialize(void)
 {
 	__ISB();
 }
+#elif defined(CONFIG_CPU_CORTEX_A)
+#include <arch/arm/aarch64/cpu.h>
+static inline void timestamp_serialize(void)
+{
+	__ISB();
+}
 #elif defined(CONFIG_CPU_ARCV2)
 #define timestamp_serialize()
 #elif defined(CONFIG_ARCH_POSIX)
