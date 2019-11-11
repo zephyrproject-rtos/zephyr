@@ -173,9 +173,9 @@ static int build_reply(const char *name,
 		return ret;
 	}
 
-	LOG_DBG("sending %d bytes", ret);
+	LOG_DBG("sending %d bytes", reply_len);
 
-	return ret;
+	return reply_len;
 }
 
 static inline void pkt_sent(struct net_context *context,
