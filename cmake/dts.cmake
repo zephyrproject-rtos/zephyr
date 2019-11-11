@@ -126,10 +126,10 @@ if(SUPPORTS_DTS)
     -P
     -E   # Stop after preprocessing
     -MD  # Generate a dependency file as a side-effect
-    -MF ${BOARD}.dts.pre.d
-    -o ${BOARD}.dts.pre.tmp
+    -MF ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    -o  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp
     ${ZEPHYR_BASE}/misc/empty_file.c
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
