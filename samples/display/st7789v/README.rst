@@ -18,25 +18,26 @@ controller orientation.
 
 Building and Running
 ********************
-The sample has a board overlay for a nrf52832 based board with the following
-pin assignments:
 
-+-------------+-------------+
-| | nRF52832  | | LCD module|
-| | Pin       | | signal    |
-+=============+=============+
-| P0.03       | SPI_SCK     |
-+-------------+-------------+
-| P0.05       | SPI_MOSI    |
-+-------------+-------------+
-| P0.26       | SPI_MISO    |
-+-------------+-------------+
-| P0.27       | CS          |
-+-------------+-------------+
-| P0.25       | DATA/CMD    |
-+-------------+-------------+
-| P0.02       | RESET       |
-+-------------+-------------+
+The sample uses the :ref:`st7789v_generic` and the pin assignments on a
+:ref:`nrf52_pca10040` are as follows:
+
++-------------------+-------------+
+| | NRF52 PCA10040  | | LCD module|
+| | Pin             | | signal    |
++===================+=============+
+| P1.15 (D13)       | SPI_SCK     |
++-------------------+-------------+
+| P1.14 (D12)       | SPI_MISO    |
++-------------------+-------------+
+| P1.13 (D11)       | SPI_MOSI    |
++-------------------+-------------+
+| P1.12 (D10)       | CS          |
++-------------------+-------------+
+| P1.11 (D9)        | DATA/CMD    |
++-------------------+-------------+
+| P1.10 (D8)        | RESET       |
++-------------------+-------------+
 
 You might need to alter these according to your specific board/LCD configuration.
 
@@ -45,6 +46,7 @@ For :ref:`nrf52_pca10040`, build this sample application with the following comm
 .. zephyr-app-commands::
    :zephyr-app: samples/display/st7789v
    :board: nrf52_pca10040
+   :shield: st7789v_generic
    :goals: build
    :compact:
 
