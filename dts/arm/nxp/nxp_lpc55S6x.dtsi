@@ -55,6 +55,17 @@
 			reg = <0x10000000 DT_SIZE_K(630)>;
 		};
 
+		flash_reserved:flash@1009D800 {
+			compatible = "soc-nv-flash";
+			reg = <0x1009D800 DT_SIZE_K(10)>;
+			status = "disabled";
+		};
+
+		boot_rom:flash@13000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x13000000 DT_SIZE_K(128)>;
+		};
+
 		usart0:usart@50086000 {
 			compatible = "nxp,lpc-usart";
 			reg = <0x50086000 0xE44>;
