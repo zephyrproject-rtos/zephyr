@@ -1,0 +1,56 @@
+.. _st7789v_generic:
+
+Generic ST7789V Display Shield
+##############################
+
+Overview
+********
+
+This is a generic shield for display shields based on ST7789V display
+controller. More information about the controller can be found in
+`ST7789V Datasheet`_.
+
+Pins Assignment of the Generic ST7789V Display Shield
+=====================================================
+
++-----------------------+--------------------------------------------+
+| Arduino Connector Pin | Function                                   |
++=======================+===============+============================+
+| D8                    | ST7789V Reset |                            |
++-----------------------+---------------+----------------------------+
+| D9                    | ST7789V DC    | (Data/Command)             |
++-----------------------+---------------+----------------------------+
+| D10                   | SPI SS        | (Serial Slave Select)      |
++-----------------------+---------------+----------------------------+
+| D11                   | SPI MOSI      | (Serial Data Input)        |
++-----------------------+---------------+----------------------------+
+| D12                   | SPI MISO      | (Serial Data Out)          |
++-----------------------+---------------+----------------------------+
+| D13                   | SPI SCK       | (Serial Clock Input)       |
++-----------------------+---------------+----------------------------+
+
+Requirements
+************
+
+This shield can only be used with a board that provides a configuration
+for Arduino connectors and defines node aliases for SPI and GPIO interfaces
+(see :ref:`shields` for more details).
+
+Programming
+***********
+
+Set ``-DSHIELD=st7789v_generic`` when you invoke ``west build``. For example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/gui/lvgl
+   :board: nrf52840_pca10056
+   :shield: st7789v_generic
+   :goals: build
+
+References
+**********
+
+.. target-notes::
+
+.. _ST7789V Datasheet:
+   https://www.newhavendisplay.com/appnotes/datasheets/LCDs/ST7789V.pdf

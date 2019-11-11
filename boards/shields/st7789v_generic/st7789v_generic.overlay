@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 0>;	/* D10 */
+
+	st7789v@0 {
+		compatible = "sitronix,st7789v";
+		label = "ST7789V";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		cmd-data-gpios = <&arduino_header 15 0>;	/* D9 */
+		reset-gpios = <&arduino_header 14 0>;	/* D8 */
+		width = <320>;
+		height = <170>;
+		y-offset = <35>;
+	};
+};
