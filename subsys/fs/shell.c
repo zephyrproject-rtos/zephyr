@@ -85,7 +85,7 @@ static void create_abs_path(const char *name, char *path, size_t len)
 			if (plen < len) {
 				path += plen;
 				*path++ = '/';
-				len -= plen - 1U;
+				len -= plen + 1U;
 				strncpy(path, name, len);
 				path[len - 1] = '\0';
 			}
