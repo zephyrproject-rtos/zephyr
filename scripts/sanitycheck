@@ -2003,7 +2003,7 @@ class ProjectBuilder(FilterBuilder):
                 "test": self.instance,
                 "state": "executed",
                 "status": self.instance.status,
-                "reason": self.instance.status}
+                "reason": self.instance.reason}
                 )
 
         # Report results and output progress to screen
@@ -2125,6 +2125,10 @@ class ProjectBuilder(FilterBuilder):
                 verbose("Spawning QEMUHandler Thread for %s" % instance.name)
                 proc.wait()
                 self.returncode = proc.returncode
+
+            if self.returncode != 0:
+                instance.handler.set_state("failed", 0)
+                instance.reason = "Exited with {}".format(self.returncode)
 
         sys.stdout.flush()
 
