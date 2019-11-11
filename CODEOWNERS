@@ -139,6 +139,10 @@
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/interrupt_controller/            @andrewboie
 /drivers/ipm/ipm_mhu*                     @karl-zh
+/drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
+/drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
+/drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
+/drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnop2
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
