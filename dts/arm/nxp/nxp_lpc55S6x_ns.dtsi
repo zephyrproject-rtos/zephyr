@@ -72,7 +72,6 @@
 	};
 
 	soc {
-
 		flash-controller@40034000 {
 			compatible = "nxp,lpc-iap";
 			label = "FLASH_IAP";
@@ -87,17 +86,17 @@
 				erase-block-size = <512>;
 				write-block-size = <512>;
 			};
-		};
 
-		flash_reserved: flash@0009d800 {
-			compatible = "soc-nv-flash";
-			reg = <0x0009d800 DT_SIZE_K(10)>;
-			status = "disabled";
-		};
+			flash_reserved: flash@0009d800 {
+				compatible = "soc-nv-flash";
+				reg = <0x0009d800 DT_SIZE_K(10)>;
+				status = "disabled";
+			};
 
-		boot_rom: flash@3000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x3000000 DT_SIZE_K(128)>;
+			boot_rom: flash@3000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x3000000 DT_SIZE_K(128)>;
+			};
 		};
 
 		usart0: usart@40086000 {
