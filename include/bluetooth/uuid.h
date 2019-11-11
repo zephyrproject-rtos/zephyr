@@ -79,7 +79,6 @@ struct bt_uuid_128 {
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
-
 /**
  * @brief Encode 128 bit UUID into an array values
  *
@@ -123,6 +122,16 @@ struct bt_uuid_128 {
 	(((w32) >>  8) & 0xFF), \
 	(((w32) >> 16) & 0xFF), \
 	(((w32) >> 24) & 0xFF)
+
+/** @def BT_UUID_STR_LEN
+ *
+ *  @brief Recommended length of user string buffer for Bluetooth UUID.
+ *
+ *  @details The recommended length guarantee the output of UUID
+ *  conversion will not lose valuable information about the UUID being
+ *  processed. If the length of the UUID is known the string can be shorter.
+ */
+#define BT_UUID_STR_LEN 37
 
 /** @def BT_UUID_GAP
  *  @brief Generic Access
@@ -524,11 +533,10 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  */
 bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
 
-#if defined(CONFIG_BT_DEBUG)
 /** @brief Convert Bluetooth UUID to string.
  *
- *  Converts Bluetooth UUID to string. UUID has to be in 16 bits or 128 bits
- *  format.
+ *  Converts Bluetooth UUID to string.
+ *  UUID can be in any format, 16-bit, 32-bit or 128-bit.
  *
  *  @param uuid Bluetooth UUID
  *  @param str pointer where to put converted string
@@ -537,34 +545,6 @@ bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
  *  @return N/A
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
-
-const char *bt_uuid_str_real(const struct bt_uuid *uuid);
-
-/** @def bt_uuid_str
- *  @brief Convert Bluetooth UUID to string in place.
- *
- *  Converts Bluetooth UUID to string in place. UUID has to be in 16 bits or
- *  128 bits format.
- *
- *  @param uuid Bluetooth UUID
- *
- *  @return String representation of the UUID given
- */
-#define bt_uuid_str(_uuid) log_strdup(bt_uuid_str_real(_uuid))
-#else
-static inline void bt_uuid_to_str(const struct bt_uuid *uuid, char *str,
-				  size_t len)
-{
-	if (len > 0) {
-		str[0] = '\0';
-	}
-}
-
-static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
-{
-	return "";
-}
-#endif /* CONFIG_BT_DEBUG */
 
 #ifdef __cplusplus
 }

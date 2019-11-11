@@ -1850,12 +1850,15 @@ static void get_attrs(u8_t *data, u16_t len)
 	end_handle = sys_le16_to_cpu(cmd->end_handle);
 
 	if (cmd->type_length) {
+		char uuid_str[BT_UUID_STR_LEN];
+
 		if (btp2bt_uuid(cmd->type, cmd->type_length, &uuid.uuid)) {
 			goto fail;
 		}
 
+		bt_uuid_to_str(&uuid.uuid, uuid_str, sizeof(uuid_str));
 		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
-			end_handle, bt_uuid_str(&uuid.uuid));
+			end_handle, uuid_str);
 
 		foreach.uuid = &uuid.uuid;
 	} else {
