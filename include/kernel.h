@@ -364,7 +364,11 @@ static inline void k_obj_free(void *obj)
 struct __packed _k_thread_stack_element {
 	char data;
 };
+
+#ifndef ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
+/* Forward declaration in include/sys/arch_interface.h */
 typedef struct _k_thread_stack_element k_thread_stack_t;
+#endif
 
 /**
  * @typedef k_thread_entry_t
@@ -384,7 +388,10 @@ typedef struct _k_thread_stack_element k_thread_stack_t;
  *
  * @return N/A
  */
+#ifndef ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
+/* Forward declaration in include/sys/arch_interface.h */
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
+#endif
 
 #ifdef CONFIG_THREAD_MONITOR
 struct __thread_entry {
