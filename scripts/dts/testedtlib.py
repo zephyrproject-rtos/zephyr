@@ -53,19 +53,19 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     #
 
     verify_streq(edt.get_node("/interrupt-parent-test/node").interrupts,
-                 "[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 1, 'two': 2, 'three': 3}>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 1), ('two', 2), ('three', 3)])>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]")
 
     verify_streq(edt.get_node("/interrupts-extended-test/node").interrupts,
-                 "[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 2, 'two': 3}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 2), ('two', 3)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]")
 
     verify_streq(edt.get_node("/interrupt-map-test/node@0").interrupts,
-                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 0}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 1}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 2}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 0)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 0), ('two', 1)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 0), ('two', 0), ('three', 2)])>]")
 
     verify_streq(edt.get_node("/interrupt-map-test/node@1").interrupts,
-                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 3}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 4}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 5}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 3)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 0), ('two', 4)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 0), ('two', 0), ('three', 5)])>]")
 
     verify_streq(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts,
-                 "[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 3, 'two': 2}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 3), ('two', 2)])>]")
 
     #
     # Test 'reg'
@@ -103,7 +103,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "<Node /parent/child-2 in 'test.dts', no binding>")
 
     verify_streq(edt.get_node("/parent").children,
-                 "{'child-1': <Node /parent/child-1 in 'test.dts', no binding>, 'child-2': <Node /parent/child-2 in 'test.dts', no binding>}")
+                 "OrderedDict([('child-1', <Node /parent/child-1 in 'test.dts', no binding>), ('child-2', <Node /parent/child-2 in 'test.dts', no binding>)])")
 
     verify_eq(edt.get_node("/parent/child-1").children, {})
 
@@ -115,7 +115,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "Parent binding")
 
     verify_streq(edt.get_node("/binding-include").props,
-                 "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
+                 "OrderedDict([('foo', <Property, name: foo, type: int, value: 0>), ('bar', <Property, name: bar, type: int, value: 1>), ('baz', <Property, name: baz, type: int, value: 2>), ('qaz', <Property, name: qaz, type: int, value: 3>)])")
 
     #
     # Test 'child/parent-bus:'
@@ -137,15 +137,15 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
 
     verify_streq(child1.binding_path, "test-bindings/child-binding.yaml")
     verify_streq(child1.description, "child node")
-    verify_streq(child1.props, "{'child-prop': <Property, name: child-prop, type: int, value: 1>}")
+    verify_streq(child1.props, "OrderedDict([('child-prop', <Property, name: child-prop, type: int, value: 1>)])")
 
     verify_streq(child2.binding_path, "test-bindings/child-binding.yaml")
     verify_streq(child2.description, "child node")
-    verify_streq(child2.props, "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
+    verify_streq(child2.props, "OrderedDict([('child-prop', <Property, name: child-prop, type: int, value: 3>)])")
 
     verify_streq(grandchild.binding_path, "test-bindings/child-binding.yaml")
     verify_streq(grandchild.description, "grandchild node")
-    verify_streq(grandchild.props, "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}")
+    verify_streq(grandchild.props, "OrderedDict([('grandchild-prop', <Property, name: grandchild-prop, type: int, value: 2>)])")
 
     #
     # Test deprecated 'sub-node' key (replaced with 'child-binding') and
@@ -153,7 +153,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     #
 
     verify_streq(edt.get_node("/deprecated/sub-node").props,
-                 "{'foos': <Property, name: foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /deprecated in 'test.dts', binding test-bindings/deprecated.yaml>, data: {'foo': 1, 'bar': 2}>]>}")
+                 "OrderedDict([('foos', <Property, name: foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /deprecated in 'test.dts', binding test-bindings/deprecated.yaml>, data: OrderedDict([('foo', 1), ('bar', 2)])>]>)])")
 
     #
     # Test Node.props (derived from DT and 'properties:' in the binding)
@@ -187,24 +187,24 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "<Property, name: phandle-refs, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>]>")
 
     verify_streq(edt.get_node("/props").props["phandle-array-foos"],
-                 "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: {'one': 2, 'two': 3}>]>")
+                 "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: OrderedDict([('one', 2), ('two', 3)])>]>")
 
     verify_streq(edt.get_node("/props").props["foo-gpios"],
-                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'gpio-one': 1}>]>")
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: OrderedDict([('gpio-one', 1)])>]>")
 
     #
     # Test <prefix>-map, via gpio-map (the most common case)
     #
 
     verify_streq(edt.get_node("/gpio-map/source").props["foo-gpios"],
-                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: {'val': 6}>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: {'val': 5}>]>")
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: OrderedDict([('val', 6)])>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: OrderedDict([('val', 5)])>]>")
 
     #
     # Test property default values given in bindings
     #
 
     verify_streq(edt.get_node("/defaults").props,
-                 r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}")
+                 r"OrderedDict([('int', <Property, name: int, type: int, value: 123>), ('array', <Property, name: array, type: array, value: [1, 2, 3]>), ('uint8-array', <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>), ('string', <Property, name: string, type: string, value: 'hello'>), ('string-array', <Property, name: string-array, type: string-array, value: ['hello', 'there']>), ('default-not-used', <Property, name: default-not-used, type: int, value: 234>)])")
 
     #
     # Test having multiple directories with bindings, with a different .dts file

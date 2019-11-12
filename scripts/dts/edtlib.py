@@ -22,6 +22,7 @@ The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and a list of paths to directories containing bindings.
 """
 
+from collections import OrderedDict
 import os
 import re
 import sys
@@ -676,9 +677,9 @@ class Node:
       A list of Register objects for the node's registers
 
     props:
-      A dictionary that maps property names to Property objects. Property
-      objects are created for all devicetree properties on the node that are
-      mentioned in 'properties:' in the binding.
+      A collections.OrderedDict that maps property names to Property objects.
+      Property objects are created for all devicetree properties on the node
+      that are mentioned in 'properties:' in the binding.
 
     aliases:
       A list of aliases for the node. This is fetched from the /aliases node.
@@ -757,8 +758,8 @@ class Node:
         # Could be initialized statically too to preserve identity, but not
         # sure if needed. Parent nodes being initialized before their children
         # would need to be kept in mind.
-        return {name: self.edt._node2enode[node]
-                for name, node in self._node.nodes.items()}
+        return OrderedDict((name, self.edt._node2enode[node])
+                           for name, node in self._node.nodes.items())
 
     @property
     def required_by(self):
@@ -908,7 +909,7 @@ class Node:
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
-        self.props = {}
+        self.props = OrderedDict()
 
         if not self._binding:
             return
@@ -1225,7 +1226,7 @@ class Node:
                  .format(basename, controller._node, len(cell_names),
                          len(data_list)))
 
-        return dict(zip(cell_names, data_list))
+        return OrderedDict(zip(cell_names, data_list))
 
     def _set_instance_no(self):
         # Initializes self.instance_no
@@ -2093,3 +2094,15 @@ class _BindingLoader(Loader):
 
 # Add legacy '!include foo.yaml' handling
 _BindingLoader.add_constructor("!include", _binding_include)
+
+# Use OrderedDict instead of plain dict for YAML mappings, to preserve
+# insertion order on Python 3.5 and earlier (plain dicts only preserve
+# insertion order on Python 3.6+). This makes testing easier and avoids
+# surprises.
+#
+# Adapted from
+# https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts.
+# Hopefully this API stays stable.
+_BindingLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    lambda loader, node: OrderedDict(loader.construct_pairs(node)))
