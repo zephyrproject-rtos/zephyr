@@ -301,8 +301,6 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  */
 
 #ifdef CONFIG_IRQ_OFFLOAD
-typedef void (*irq_offload_routine_t)(void *parameter);
-
 /**
  * Run a function in interrupt context.
  *
