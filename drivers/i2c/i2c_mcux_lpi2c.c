@@ -21,6 +21,7 @@ struct mcux_lpi2c_config {
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(struct device *dev);
 	u32_t bitrate;
+	u32_t bus_idle_timeout_ns;
 };
 
 struct mcux_lpi2c_data {
@@ -193,6 +194,7 @@ static int mcux_lpi2c_init(struct device *dev)
 	}
 
 	LPI2C_MasterGetDefaultConfig(&master_config);
+	master_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
 	LPI2C_MasterInit(base, &master_config, clock_freq);
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
 			mcux_lpi2c_master_transfer_callback, dev);
@@ -224,6 +226,9 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_0 = {
 		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_0_CLOCK_SUBSYS,
 	.irq_config_func = mcux_lpi2c_config_func_0,
 	.bitrate = DT_I2C_MCUX_LPI2C_0_BITRATE,
+#if DT_I2C_MCUX_LPI2C_0_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_I2C_MCUX_LPI2C_0_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_0;
@@ -252,6 +257,9 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_1 = {
 		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_1_CLOCK_SUBSYS,
 	.irq_config_func = mcux_lpi2c_config_func_1,
 	.bitrate = DT_I2C_MCUX_LPI2C_1_BITRATE,
+#if DT_I2C_MCUX_LPI2C_1_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_I2C_MCUX_LPI2C_1_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_1;
@@ -280,6 +288,9 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_2 = {
 		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_2_CLOCK_SUBSYS,
 	.irq_config_func = mcux_lpi2c_config_func_2,
 	.bitrate = DT_I2C_MCUX_LPI2C_2_BITRATE,
+#if DT_I2C_MCUX_LPI2C_2_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_I2C_MCUX_LPI2C_2_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_2;
@@ -308,6 +319,9 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_3 = {
 		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_3_CLOCK_SUBSYS,
 	.irq_config_func = mcux_lpi2c_config_func_3,
 	.bitrate = DT_I2C_MCUX_LPI2C_3_BITRATE,
+#if DT_I2C_MCUX_LPI2C_3_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_I2C_MCUX_LPI2C_3_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_3;
@@ -336,6 +350,9 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_4 = {
 		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_4_CLOCK_SUBSYS,
 	.irq_config_func = mcux_lpi2c_config_func_4,
 	.bitrate = DT_I2C_MCUX_LPI2C_4_BITRATE,
+#if DT_I2C_MCUX_LPI2C_4_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_I2C_MCUX_LPI2C_4_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_4;
