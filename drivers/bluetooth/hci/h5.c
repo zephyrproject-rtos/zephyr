@@ -122,7 +122,7 @@ static const u8_t conf_rsp[] = { 0x04, 0x7b };
 /* H5 signal buffers pool */
 #define MAX_SIG_LEN	3
 #define SIGNAL_COUNT	2
-#define SIG_BUF_SIZE (CONFIG_BT_HCI_RESERVE + MAX_SIG_LEN)
+#define SIG_BUF_SIZE (BT_BUF_RESERVE + MAX_SIG_LEN)
 NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
 static struct device *h5_dev;
