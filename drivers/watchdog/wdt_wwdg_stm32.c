@@ -84,7 +84,7 @@ static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
 				    u32_t counter)
 {
 	u32_t divider = WWDG_INTERNAL_DIVIDER * (1 << (prescaler >> 7));
-	float f_wwdg = wwdg_stm32_get_pclk(dev) / divider;
+	float f_wwdg = (float)wwdg_stm32_get_pclk(dev) / divider;
 
 	return USEC_PER_SEC * (((counter & 0x3F) + 1) / f_wwdg);
 }
