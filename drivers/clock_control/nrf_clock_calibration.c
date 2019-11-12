@@ -174,14 +174,18 @@ static inline s16_t sensor_value_to_temp_unit(struct sensor_value *val)
 }
 
 /* Function reads from temperature sensor and converts to 0.25'C units. */
-static s16_t get_temperature(void)
+static int get_temperature(s16_t *tvp)
 {
 	struct sensor_value sensor_val;
+	int rc = sensor_sample_fetch(temp_sensor);
 
-	sensor_sample_fetch(temp_sensor);
-	sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP, &sensor_val);
-
-	return sensor_value_to_temp_unit(&sensor_val);
+	if (rc == 0) {
+		rc = sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP, &sensor_val);
+	}
+	if (rc == 0) {
+		*tvp = sensor_value_to_temp_unit(&sensor_val);
+	}
+	return rc;
 }
 
 /* Function determines if calibration should be performed based on temperature
@@ -190,15 +194,23 @@ static s16_t get_temperature(void)
  */
 static void measure_temperature(struct k_work *work)
 {
-	s16_t temperature;
+	s16_t temperature = 0;
 	s16_t diff;
 	bool started = false;
 	int key;
+	int rc;
 
-	temperature = get_temperature();
-	diff = abs(temperature - prev_temperature);
+	rc = get_temperature(&temperature);
 
 	key = irq_lock();
+
+	if (rc != 0) {
+		/* Temperature read failed: retry later */
+		to_idle();
+		goto out;
+	}
+
+	diff = abs(temperature - prev_temperature);
 
 	if (cal_state != CAL_OFF) {
 		if ((calib_skip_cnt == 0) ||
@@ -213,6 +225,7 @@ static void measure_temperature(struct k_work *work)
 		}
 	}
 
+out:
 	irq_unlock(key);
 
 	LOG_DBG("Calibration %s. Temperature diff: %d (in 0.25'C units).",
