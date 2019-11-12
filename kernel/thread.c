@@ -403,9 +403,9 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	size_t random_val;
 
 	if (!z_stack_adjust_initialized) {
-		random_val = z_early_boot_rand32_get();
+		z_early_boot_rand_get((u8_t *)&random_val, sizeof(random_val));
 	} else {
-		random_val = sys_rand32_get();
+		sys_rand_get((u8_t *)&random_val, sizeof(random_val));
 	}
 
 	/* Don't need to worry about alignment of the size here,
