@@ -15,7 +15,13 @@ macro(toolchain_cc_optimize_for_no_optimizations_flag dest_var_name)
 endmacro()
 
 macro(toolchain_cc_optimize_for_debug_flag dest_var_name)
-  set_ifndef(${dest_var_name}  "-Og")
+  # -Og optimisation flag is only supported from gcc 4.8.0 and above.
+  # Fall back to using -O0 flag if running an older gcc version.
+  if(CMAKE_C_COMPILER_VERSION VERSION_LESS "4.8.0")
+    set_ifndef(${dest_var_name}  "-O0")
+  else()
+    set_ifndef(${dest_var_name}  "-Og")
+  endif()
 endmacro()
 
 macro(toolchain_cc_optimize_for_speed_flag dest_var_name)
