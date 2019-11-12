@@ -33,8 +33,6 @@ struct transition {
 };
 
 extern u8_t default_tt;
-extern u32_t *ptr_counter;
-extern struct k_timer *ptr_timer;
 
 extern struct transition transition;
 
