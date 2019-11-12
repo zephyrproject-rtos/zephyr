@@ -13,20 +13,9 @@
 #define UNKNOWN_VALUE 0x3F
 #define DEVICE_SPECIFIC_RESOLUTION 10
 
-enum level_transition_types {
-	UNKNOWN_TT,
-	ONOFF_TT,
-	LEVEL_TT,
-	LEVEL_TT_DELTA,
-	LEVEL_TT_MOVE,
-	LIGHT_ACTUAL_TT,
-	LIGHT_LINEAR_TT,
-	LIGHT_CTL_TT,
-
-	LEVEL_TEMP_TT,
-	LEVEL_TEMP_TT_DELTA,
-	LEVEL_TEMP_TT_MOVE,
-	LIGHT_CTL_TEMP_TT,
+enum transition_types {
+	MOVE = 0x01,
+	NON_MOVE
 };
 
 struct transition {

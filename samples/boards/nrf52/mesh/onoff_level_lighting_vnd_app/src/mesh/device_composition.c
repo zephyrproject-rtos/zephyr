@@ -194,7 +194,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = ONOFF_TT;
+	state->transition->type = NON_MOVE;
 	set_target(ONOFF, &onoff);
 
 	if (state->light->target != state->light->current) {
@@ -263,7 +263,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = ONOFF_TT;
+	state->transition->type = NON_MOVE;
 	set_target(ONOFF, &onoff);
 
 	if (state->light->target != state->light->current) {
@@ -314,14 +314,9 @@ static void gen_level_get(struct bt_mesh_model *model,
 	}
 
 	if (state->transition->counter) {
-		if (state->transition->type == LEVEL_TT_MOVE) {
-			net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
-			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-		} else {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
+		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
 send:
@@ -344,14 +339,9 @@ void gen_level_publish(struct bt_mesh_model *model)
 	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL));
 
 	if (state->transition->counter) {
-		if (state->transition->type == LEVEL_TT_MOVE) {
-			net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
-			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-		} else {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
+		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
 	err = bt_mesh_model_publish(model);
@@ -406,7 +396,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LEVEL, &level);
 
 	if (state->light->target != state->light->current) {
@@ -422,7 +412,6 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_publish(model);
-	state->transition->type = LEVEL_TT;
 	level_lightness_handler(state);
 }
 
@@ -473,7 +462,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LEVEL, &level);
 
 	if (state->light->target != state->light->current) {
@@ -491,7 +480,6 @@ static void gen_level_set(struct bt_mesh_model *model,
 	state->transition->just_started = true;
 	gen_level_get(model, ctx, buf);
 	gen_level_publish(model);
-	state->transition->type = LEVEL_TT;
 	level_lightness_handler(state);
 }
 
@@ -550,7 +538,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 
 	if (target < INT16_MIN) {
 		target = INT16_MIN;
@@ -573,7 +561,6 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_publish(model);
-	state->transition->type = LEVEL_TT_DELTA;
 	level_lightness_handler(state);
 }
 
@@ -633,7 +620,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 
 	if (target < INT16_MIN) {
 		target = INT16_MIN;
@@ -658,7 +645,6 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	state->transition->just_started = true;
 	gen_level_get(model, ctx, buf);
 	gen_level_publish(model);
-	state->transition->type = LEVEL_TT_DELTA;
 	level_lightness_handler(state);
 }
 
@@ -708,7 +694,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = MOVE;
 	state->light->delta = delta;
 
 	if (delta < 0) {
@@ -732,7 +718,6 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	state->transition->type = LEVEL_TT_MOVE;
 	gen_level_publish(model);
 	level_lightness_handler(state);
 }
@@ -784,7 +769,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = MOVE;
 	state->light->delta = delta;
 
 	if (delta < 0) {
@@ -809,7 +794,6 @@ static void gen_move_set(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	state->transition->type = LEVEL_TT_MOVE;
 	gen_level_get(model, ctx, buf);
 	gen_level_publish(model);
 	level_lightness_handler(state);
@@ -1172,7 +1156,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_ACTUAL_TT;
+	state->transition->type = NON_MOVE;
 
 	if (actual > 0 && actual < state->light->range_min) {
 		actual = state->light->range_min;
@@ -1245,7 +1229,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_ACTUAL_TT;
+	state->transition->type = NON_MOVE;
 
 	if (actual > 0 && actual < state->light->range_min) {
 		actual = state->light->range_min;
@@ -1372,7 +1356,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_LINEAR_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LINEAR, &linear);
 
 	if (state->light->target != state->light->current) {
@@ -1438,7 +1422,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_LINEAR_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LINEAR, &linear);
 
 	if (state->light->target != state->light->current) {
@@ -1801,7 +1785,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_CTL_TT;
+	state->transition->type = NON_MOVE;
 	set_target(CTL, &lightness);
 
 	if (temp < state->temp->range_min) {
@@ -1887,7 +1871,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_CTL_TT;
+	state->transition->type = NON_MOVE;
 	set_target(CTL, &lightness);
 
 	if (temp < state->temp->range_min) {
@@ -2276,7 +2260,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_CTL_TEMP_TT;
+	state->transition->type = NON_MOVE;
 
 	if (temp < state->temp->range_min) {
 		temp = state->temp->range_min;
@@ -2358,7 +2342,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = LIGHT_CTL_TEMP_TT;
+	state->transition->type = NON_MOVE;
 
 	if (temp < state->temp->range_min) {
 		temp = state->temp->range_min;
@@ -2405,16 +2389,9 @@ static void gen_level_get_temp(struct bt_mesh_model *model,
 	}
 
 	if (state->transition->counter) {
-		if (state->transition->type == LEVEL_TEMP_TT_MOVE) {
-			net_buf_simple_add_le16(msg,
-						(s16_t) get_target(LEVEL_TEMP));
-			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-		} else {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg,
-						(s16_t) get_target(LEVEL_TEMP));
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL_TEMP));
+		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
 send:
@@ -2437,16 +2414,9 @@ void gen_level_publish_temp(struct bt_mesh_model *model)
 	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL_TEMP));
 
 	if (state->transition->counter) {
-		if (state->transition->type == LEVEL_TEMP_TT_MOVE) {
-			net_buf_simple_add_le16(msg,
-						(s16_t) get_target(LEVEL_TEMP));
-			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-		} else {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg,
-						(s16_t) get_target(LEVEL_TEMP));
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL_TEMP));
+		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
 	err = bt_mesh_model_publish(model);
@@ -2501,7 +2471,7 @@ static void gen_level_set_unack_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LEVEL_TEMP, &level);
 
 	if (state->temp->target != state->temp->current) {
@@ -2517,7 +2487,6 @@ static void gen_level_set_unack_temp(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_publish_temp(model);
-	state->transition->type = LEVEL_TEMP_TT;
 	level_temp_handler(state);
 }
 
@@ -2568,7 +2537,7 @@ static void gen_level_set_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 	set_target(LEVEL_TEMP, &level);
 
 	if (state->temp->target != state->temp->current) {
@@ -2586,7 +2555,6 @@ static void gen_level_set_temp(struct bt_mesh_model *model,
 	state->transition->just_started = true;
 	gen_level_get_temp(model, ctx, buf);
 	gen_level_publish_temp(model);
-	state->transition->type = LEVEL_TEMP_TT;
 	level_temp_handler(state);
 }
 
@@ -2645,7 +2613,7 @@ static void gen_delta_set_unack_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 
 	if (target < INT16_MIN) {
 		target = INT16_MIN;
@@ -2668,7 +2636,6 @@ static void gen_delta_set_unack_temp(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_publish_temp(model);
-	state->transition->type = LEVEL_TEMP_TT_DELTA;
 	level_temp_handler(state);
 }
 
@@ -2728,7 +2695,7 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = NON_MOVE;
 
 	if (target < INT16_MIN) {
 		target = INT16_MIN;
@@ -2753,7 +2720,6 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 	state->transition->just_started = true;
 	gen_level_get_temp(model, ctx, buf);
 	gen_level_publish_temp(model);
-	state->transition->type = LEVEL_TEMP_TT_DELTA;
 	level_temp_handler(state);
 }
 
@@ -2803,7 +2769,7 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = MOVE;
 	state->temp->delta = delta;
 
 	if (delta < 0) {
@@ -2828,7 +2794,6 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	state->transition->type = LEVEL_TEMP_TT_MOVE;
 	gen_level_publish_temp(model);
 	level_temp_handler(state);
 }
@@ -2880,7 +2845,7 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->transition->tt = tt;
 	state->transition->delay = delay;
-	state->transition->type = UNKNOWN_TT;
+	state->transition->type = MOVE;
 	state->temp->delta = delta;
 
 	if (delta < 0) {
@@ -2906,7 +2871,6 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	state->transition->type = LEVEL_TEMP_TT_MOVE;
 	gen_level_get_temp(model, ctx, buf);
 	gen_level_publish_temp(model);
 	level_temp_handler(state);

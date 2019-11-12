@@ -27,6 +27,11 @@ void calculate_rt(struct transition *transition)
 	s32_t duration_remainder;
 	s64_t now;
 
+	if (transition->type == MOVE) {
+		transition->rt = UNKNOWN_VALUE;
+		return;
+	}
+
 	if (transition->just_started) {
 		transition->rt = transition->tt;
 	} else {
@@ -99,6 +104,11 @@ static bool set_transition_counter(struct transition *transition)
 void set_transition_values(u8_t type)
 {
 	if (!set_transition_counter(ctl->transition)) {
+		return;
+	}
+
+	if (ctl->transition->type == MOVE) {
+		ctl->transition->quo_tt = ctl->transition->total_duration;
 		return;
 	}
 
@@ -175,14 +185,6 @@ static void level_move_lightness_work_handler(void)
 	s16_t level;
 
 	level = (s16_t) get_current(LEVEL) + ctl->light->delta;
-	if (level <= INT16_MIN || level >= INT16_MAX) {
-
-		if (level > 0) {
-			level = INT16_MAX;
-		} else if (level < 0) {
-			level = INT16_MIN;
-		}
-	}
 
 	ctl->light->current = constrain_lightness((u16_t) (level - INT16_MIN));
 	update_light_state();
@@ -196,14 +198,8 @@ static void level_lightness_work_handler(struct k_work *work)
 		return;
 	}
 
-	switch (ctl->transition->type) {
-	case LEVEL_TT:
-	case LEVEL_TT_DELTA:
-		break;
-	case LEVEL_TT_MOVE:
+	if (ctl->transition->type == MOVE) {
 		level_move_lightness_work_handler();
-		return;
-	default:
 		return;
 	}
 
@@ -227,14 +223,6 @@ static void level_move_temp_work_handler(void)
 	s16_t level;
 
 	level = (s16_t) get_current(LEVEL_TEMP) + ctl->temp->delta;
-	if (level <= INT16_MIN || level >= INT16_MAX) {
-
-		if (level > 0) {
-			level = INT16_MAX;
-		} else if (level < 0) {
-			level = INT16_MIN;
-		}
-	}
 
 	ctl->temp->current = level_to_light_ctl_temp(level);
 	update_light_state();
@@ -248,14 +236,8 @@ static void level_temp_work_handler(struct k_work *work)
 		return;
 	}
 
-	switch (ctl->transition->type) {
-	case LEVEL_TEMP_TT:
-	case LEVEL_TEMP_TT_DELTA:
-		break;
-	case LEVEL_TEMP_TT_MOVE:
+	if (ctl->transition->type == MOVE) {
 		level_move_temp_work_handler();
-		return;
-	default:
 		return;
 	}
 
