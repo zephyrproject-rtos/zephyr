@@ -27,7 +27,7 @@ set(pre_init_cmds
 )
 
 foreach(cmd ${pre_init_cmds})
-  board_runner_args(openocd --cmd-pre-init "-c ${cmd}")
+  board_runner_args(openocd --cmd-pre-init "${cmd}")
 endforeach()
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
