@@ -631,7 +631,6 @@ class BinaryHandler(Handler):
             self.set_state("timeout", handler_time)
             self.instance.reason = "Handler timeout"
 
-
         self.record(harness)
 
 class DeviceHandler(Handler):
@@ -821,6 +820,8 @@ class DeviceHandler(Handler):
             self.set_state(out_state, handler_time)
 
         self.make_device_available(serial_device)
+
+        self.record(harness)
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
