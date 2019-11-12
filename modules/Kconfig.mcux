@@ -68,6 +68,12 @@ config HAS_MCUX_FTM
 	help
 	  Set if the FlexTimer (FTM) module is present in the SoC.
 
+config HAS_MCUX_IAP
+	bool
+	help
+	  Set if the flash memory In Applcation Programming is present in
+	  the LPC family SoCs.
+
 config HAS_MCUX_IGPIO
 	bool
 	help
