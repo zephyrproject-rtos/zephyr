@@ -2073,7 +2073,7 @@ resend_ack:
 	}
 
 	if (!IS_ENABLED(CONFIG_NET_TCP_AUTO_ACCEPT) &&
-	    net_context_is_accepting(context)) {
+	    !net_context_is_accepting(context)) {
 		data_len = 0;
 		do_not_send_ack = true;
 	} else {
