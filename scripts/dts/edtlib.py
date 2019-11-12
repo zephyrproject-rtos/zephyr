@@ -22,23 +22,6 @@ The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and a list of paths to directories containing bindings.
 """
 
-from collections import OrderedDict
-import os
-import re
-import sys
-
-import yaml
-try:
-    # Use the C LibYAML parser if available, rather than the Python parser.
-    # This makes e.g. gen_defines.py more than twice as fast.
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
-from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
-                  TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
-from grutils import Graph
-
 # NOTE: testedtlib.py is the test suite for this library. It can be run
 # directly as a script:
 #
@@ -81,6 +64,23 @@ from grutils import Graph
 #
 # - Please use ""-quoted strings instead of ''-quoted strings, just to make
 #   things consistent (''-quoting is more common otherwise in Python)
+
+from collections import OrderedDict
+import os
+import re
+import sys
+
+import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # This makes e.g. gen_defines.py more than twice as fast.
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
+
+from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
+                  TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
+from grutils import Graph
 
 #
 # Public classes
