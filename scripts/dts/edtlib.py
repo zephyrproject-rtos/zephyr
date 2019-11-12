@@ -227,11 +227,6 @@ class EDT:
         # Only bindings for 'compatible' strings that appear in the devicetree
         # are loaded.
 
-        # Add legacy '!include foo.yaml' handling. Do Loader.add_constructor()
-        # instead of yaml.add_constructor() to be compatible with both version
-        # 3.13 and version 5.1 of PyYAML.
-        Loader.add_constructor("!include", _binding_include)
-
         dt_compats = _dt_compats(self._dt)
         # Searches for any 'compatible' string mentioned in the devicetree
         # files, with a regex
@@ -258,7 +253,7 @@ class EDT:
             try:
                 # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
                 # representing the file)
-                binding = yaml.load(contents, Loader=Loader)
+                binding = yaml.load(contents, Loader=_BindingLoader)
             except yaml.YAMLError as e:
                 self._warn("'{}' appears in binding directories but isn't "
                            "valid YAML: {}".format(binding_path, e))
@@ -424,7 +419,7 @@ class EDT:
 
         with open(paths[0], encoding="utf-8") as f:
             return self._merge_included_bindings(
-                yaml.load(f, Loader=Loader),
+                yaml.load(f, Loader=_BindingLoader),
                 paths[0])
 
     def _init_nodes(self):
@@ -2088,3 +2083,13 @@ def _check_dt(dt):
 
 def _err(msg):
     raise EDTError(msg)
+
+
+# Custom PyYAML binding loader class to avoid modifying yaml.Loader directly,
+# which could interfere with YAML loading in clients
+class _BindingLoader(Loader):
+    pass
+
+
+# Add legacy '!include foo.yaml' handling
+_BindingLoader.add_constructor("!include", _binding_include)
