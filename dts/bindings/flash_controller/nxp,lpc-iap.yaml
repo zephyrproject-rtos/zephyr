@@ -1,0 +1,11 @@
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP LPC In Application Programming Flash Memory (IAP)
+
+description: |
+    This binding gives for the NXP LPC Flash Memory Controller
+
+compatible: "nxp,lpc-iap"
+
+include: flash-controller.yaml
