@@ -47,10 +47,10 @@ static int nordicsemi_nrf53_init(struct device *arg)
 #ifdef CONFIG_NRF_ENABLE_CACHE
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
 	/* Enable the instruction & data cache */
-	NRF_CACHE_S->ENABLE = CACHE_ENABLE_ENABLE_Msk;
+	NRF_CACHE->ENABLE = CACHE_ENABLE_ENABLE_Msk;
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 #ifdef CONFIG_SOC_NRF5340_CPUNET
-	NRF_NVMC_NS->ICACHECNF |= NVMC_ICACHECNF_CACHEEN_Enabled;
+	NRF_NVMC->ICACHECNF |= NVMC_ICACHECNF_CACHEEN_Enabled;
 #endif /* CONFIG_SOC_NRF5340_CPUNET */
 #endif
 
