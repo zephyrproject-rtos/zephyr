@@ -24,6 +24,9 @@
 #include <clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_stm32);
+
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct uart_stm32_config * const)(dev)->config->config_info)
@@ -43,10 +46,12 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 	u32_t clock_rate;
 
 	/* Get clock rate */
-	clock_control_get_rate(data->clock,
+	if (clock_control_get_rate(data->clock,
 			       (clock_control_subsys_t *)&config->pclken,
-			       &clock_rate);
-
+			       &clock_rate) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return;
+	}
 
 
 #ifdef CONFIG_LPUART_1
