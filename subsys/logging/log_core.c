@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <logging/log_frontend.h>
 #include <syscall_handler.h>
+#include <kernel.h>
 
 LOG_MODULE_REGISTER(log);
 
@@ -1162,6 +1163,9 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	log_init();
 	thread_set(k_current_get());
 
+	k_thread_priority_set(k_current_get(),
+			K_LOWEST_APPLICATION_THREAD_PRIO);
+
 	while (true) {
 		if (log_process(false) == false) {
 			k_sem_take(&log_process_thread_sem, K_FOREVER);
@@ -1183,7 +1187,7 @@ static int enable_logger(struct device *arg)
 		k_thread_create(&logging_thread, logging_stack,
 				K_THREAD_STACK_SIZEOF(logging_stack),
 				log_process_thread_func, NULL, NULL, NULL,
-				K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+			K_HIGHEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 		k_thread_name_set(&logging_thread, "logging");
 	} else {
 		log_init();
