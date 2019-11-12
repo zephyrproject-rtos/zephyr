@@ -185,8 +185,8 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -254,8 +254,8 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -387,8 +387,8 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -453,8 +453,8 @@ static void gen_level_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -529,8 +529,8 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -611,8 +611,8 @@ static void gen_delta_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -685,8 +685,8 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -760,8 +760,8 @@ static void gen_move_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1147,8 +1147,8 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1220,8 +1220,8 @@ static void light_lightness_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1347,8 +1347,8 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1413,8 +1413,8 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1776,8 +1776,8 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -1862,8 +1862,8 @@ static void light_ctl_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2251,8 +2251,8 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2333,8 +2333,8 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2462,8 +2462,8 @@ static void gen_level_set_unack_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2528,8 +2528,8 @@ static void gen_level_set_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2604,8 +2604,8 @@ static void gen_delta_set_unack_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2686,8 +2686,8 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2760,8 +2760,8 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;
@@ -2836,8 +2836,8 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0U;
-	k_timer_stop(ptr_timer);
+	state->transition->counter = 0U;
+	k_timer_stop(&state->transition->timer);
 
 	state->last_tid = tid;
 	state->last_src_addr = ctx->addr;

@@ -133,7 +133,7 @@ void update_light_state(void)
 {
 	update_led_gpio();
 
-	if (*ptr_counter == 0 || reset == false) {
+	if (ctl->transition->counter == 0 || reset == false) {
 		reset = true;
 		k_work_submit(&no_transition_work);
 	}
