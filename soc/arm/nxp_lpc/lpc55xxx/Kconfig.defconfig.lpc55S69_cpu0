@@ -29,4 +29,11 @@ config UART_MCUX_FLEXCOMM
 
 endif # SERIAL
 
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
 endif # SOC_LPC55S69_CPU0
