@@ -5,9 +5,10 @@
 
 menuconfig PS2_XEC
 	bool "XEC Microchip PS2 driver"
-	depends on SOC_FAMILY_MEC
+	depends on SOC_FAMILY_MEC && ESPI_PERIPHERAL_8042_KBC
 	help
-	  Enable the Microchip XEC PS2 IO driver.
+	  Enable the Microchip XEC PS2 IO driver. The driver also
+	  depends on the KBC 8042 keyboard controller.
 
 if PS2_XEC
 
