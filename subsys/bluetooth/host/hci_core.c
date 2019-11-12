@@ -269,7 +269,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 
 	BT_DBG("buf %p", buf);
 
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+	net_buf_reserve(buf, BT_BUF_RESERVE);
 
 	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
@@ -6023,7 +6023,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 #endif
 
 	if (buf) {
-		net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+		net_buf_reserve(buf, BT_BUF_RESERVE);
 		bt_buf_set_type(buf, type);
 	}
 
@@ -6045,7 +6045,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 		buf->len = 0U;
-		net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+		net_buf_reserve(buf, BT_BUF_RESERVE);
 
 		return buf;
 	}
@@ -6063,7 +6063,7 @@ struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
 
 			buf = net_buf_alloc(&num_complete_pool, timeout);
 			if (buf) {
-				net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+				net_buf_reserve(buf, BT_BUF_RESERVE);
 				bt_buf_set_type(buf, BT_BUF_EVT);
 			}
 
@@ -6080,7 +6080,7 @@ struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
 
 			buf = net_buf_alloc(&discardable_pool, timeout);
 			if (buf) {
-				net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+				net_buf_reserve(buf, BT_BUF_RESERVE);
 				bt_buf_set_type(buf, BT_BUF_EVT);
 			}
 
