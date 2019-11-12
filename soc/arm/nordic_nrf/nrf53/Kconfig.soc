@@ -89,6 +89,27 @@ config SOC_NRF5340_CPUNET_QKAA
 
 endchoice
 
+
+if SOC_NRF5340_CPUAPP
+
+config SOC_DCDC_NRF53X_APP
+	bool
+	help
+	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
+
+config SOC_DCDC_NRF53X_NET
+	bool
+	help
+	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
+
+config SOC_DCDC_NRF53X_HV
+	bool
+	help
+	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
+
+endif # SOC_NRF5340_CPUAPP
+
+
 config NRF_ENABLE_CACHE
 	bool "Enable cache"
 	depends on (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) \

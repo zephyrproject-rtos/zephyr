@@ -59,6 +59,16 @@ static int nordicsemi_nrf53_init(struct device *arg)
 	*((u32_t *)0x500046D0) = 0x1;
 #endif
 
+#if defined(CONFIG_SOC_DCDC_NRF53X_APP)
+	NRF_REGULATORS->VREGMAIN.DCDCEN = 1;
+#endif
+#if defined(CONFIG_SOC_DCDC_NRF53X_NET)
+	NRF_REGULATORS->VREGRADIO.DCDCEN = 1;
+#endif
+#if defined(CONFIG_SOC_DCDC_NRF53X_HV)
+	NRF_REGULATORS->VREGH.DCDCEN = 1;
+#endif
+
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise
 	 */
