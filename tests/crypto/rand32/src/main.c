@@ -8,7 +8,7 @@
 
 /*
  * This tests the following random number routines:
- * u32_t z_early_boot_rand32_get(void);
+ * void z_early_boot_rand_get(u8_t *buf, size_t length)
  * u32_t sys_rand32_get(void);
  */
 
@@ -35,9 +35,10 @@ void test_rand32(void)
 	u32_t buf[N_VALUES];
 
 	/* Test early boot random number generation function */
-	last_gen = z_early_boot_rand32_get();
-	zassert_true(last_gen != z_early_boot_rand32_get(),
-			"z_early_boot_rand32_get failed");
+	z_early_boot_rand_get((u8_t *)&last_gen, sizeof(last_gen));
+	z_early_boot_rand_get((u8_t *)&gen, sizeof(gen));
+	zassert_true(last_gen != gen,
+			"z_early_boot_rand_get failed");
 
 	/*
 	 * Test subsequently calls sys_rand32_get(), checking

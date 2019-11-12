@@ -112,7 +112,7 @@ extern void z_smp_init(void);
 
 extern void smp_timer_init(void);
 
-extern u32_t z_early_boot_rand32_get(void);
+extern void z_early_boot_rand_get(u8_t *buf, size_t length);
 
 #if CONFIG_STACK_POINTER_RANDOM
 extern int z_stack_adjust_initialized;
