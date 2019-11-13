@@ -63,13 +63,6 @@ config RTTI
 	help
 	  This option enables support of C++ RTTI.
 
-
-config ZEPHYR_CPLUSPLUS
-	bool "Use Zephyr C++ Implementation"
-	help
-	  Use Zephyr implementation for operator new, delete, pure virtual
-	  functions and vtables.
-
 endif # LIB_CPLUSPLUS
 
 endif # ! MINIMAL_LIBC
