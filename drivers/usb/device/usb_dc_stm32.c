@@ -285,7 +285,34 @@ static int usb_dc_stm32_clock_enable(void)
 		LOG_ERR("Unable to set USB clock source to PLL.");
 	}
 #endif /* CONFIG_CLOCK_STM32_MSI_PLL_MODE && !CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI */
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
+
+#elif defined(RCC_CFGR_OTGFSPRE)
+	/* On STM32F105 and STM32F107 parts the USB OTGFSCLK is derived from
+	 * PLL1, and must result in a 48 MHz clock... the options to achieve
+	 * this are as below, controlled by the RCC_CFGR_OTGFSPRE bit.
+	 *   - PLLCLK * 2 / 2     i.e: PLLCLK == 48 MHz
+	 *   - PLLCLK * 2 / 3     i.e: PLLCLK == 72 MHz
+	 *
+	 * this requires that the system is running from PLLCLK
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		switch (sys_clock_hw_cycles_per_sec()) {
+		case 48000000U:
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_2);
+			break;
+		case 72000000U:
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_3);
+			break;
+		default:
+			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("Unable to set USB clock source (not using PLL1)");
+		return -EIO;
+	}
+
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
