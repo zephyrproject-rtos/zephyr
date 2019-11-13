@@ -626,30 +626,33 @@ gdt:
 	.word 0xFFFF, 0, 0x9200, 0x00CF	/* 0x10: 32-bit kernel data */
 	.word 0,      0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
 	.word 0,      0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
+	.word 0xFFFF, 0, 0xFA00, 0x00CF /* 0x28: 32-bit user code (unused) */
+	.word 0,      0, 0xF200, 0x0000	/* 0x30: 64-bit user data */
+	.word 0,      0, 0xF800, 0x0020	/* 0x38: 64-bit user code */
 
 	/* Remaining entries are TSS for each enabled CPU */
 
-	.word __X86_TSS64_SIZEOF-1	/* 0x28: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
 	.word tss0
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 
 #if CONFIG_MP_NUM_CPUS > 1
-	.word __X86_TSS64_SIZEOF-1	/* 0x38: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x50: 64-bit TSS (16-byte entry) */
 	.word tss1
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
-	.word __X86_TSS64_SIZEOF-1	/* 0x48: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
 	.word tss2
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
-	.word __X86_TSS64_SIZEOF-1	/* 0x58: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x70: 64-bit TSS (16-byte entry) */
 	.word tss3
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
