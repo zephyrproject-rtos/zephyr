@@ -122,7 +122,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#ifdef CONFIG_PWM_3
+#ifdef DT_NXP_KINETIS_FTM_PWM_3_BASE_ADDRESS
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
