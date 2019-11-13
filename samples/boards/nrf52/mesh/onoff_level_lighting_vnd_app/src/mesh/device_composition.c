@@ -2782,7 +2782,6 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 		state->temp->target = state->temp->current;
 	}
 
-
 	if (state->temp->target != state->temp->current) {
 		set_transition_values(MOVE_LEVEL_TEMP);
 	} else {
@@ -2857,7 +2856,6 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	} else if (delta == 0) {
 		state->temp->target = state->temp->current;
 	}
-
 
 	if (state->temp->target != state->temp->current) {
 		set_transition_values(MOVE_LEVEL_TEMP);

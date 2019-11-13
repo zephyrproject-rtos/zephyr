@@ -44,7 +44,7 @@ static void save_lightness_last_state(void)
 {
 	settings_save_one("ps/ll", &ctl->light->last, sizeof(ctl->light->last));
 
-	printk("Lightness Last values have beed saved !!\n");
+	printk("Lightness Last values have been saved !!\n");
 }
 
 static void save_lightness_temp_last_target_state(void)
@@ -55,7 +55,7 @@ static void save_lightness_temp_last_target_state(void)
 	settings_save_one("ps/ltlt", &ctl->light_temp_last_tgt,
 			  sizeof(ctl->light_temp_last_tgt));
 
-	printk("Lightness & Temp. Target values have beed saved !!\n");
+	printk("Lightness & Temp. Target values have been saved !!\n");
 }
 
 static void save_lightness_range(void)
