@@ -61,10 +61,13 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		u32_t pwm_freq;
 		status_t status;
 
-		LOG_WRN("Changing period cycles from %d to %d"
-			    " affects all %d channels in %s",
-			    data->period_cycles, period_cycles,
-			    config->channel_count, dev->config->name);
+		if (data->period_cycles != 0) {
+			/* Only warn when not changing from zero */
+			LOG_WRN("Changing period cycles from %d to %d"
+				" affects all %d channels in %s",
+				data->period_cycles, period_cycles,
+				config->channel_count, dev->config->name);
+		}
 
 		data->period_cycles = period_cycles;
 
