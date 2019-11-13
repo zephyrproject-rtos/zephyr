@@ -409,6 +409,15 @@ struct bt_conn_cb {
 	 *
 	 *  @param conn New connection object.
 	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 *
+	 *  @p err can mean either of the following:
+	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
+	 *    @ref bt_conn_create_le was canceled either by the user through
+	 *    @ref bt_conn_disconnect or by the timeout in the host through
+	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`.
+	 *  - @p BT_HCI_ERR_ADV_TIMEOUT Directed advertiser started by @ref
+	 *    bt_conn_create_slave_le with high duty cycle timed out after 1.28
+	 *    seconds.
 	 */
 	void (*connected)(struct bt_conn *conn, u8_t err);
 
