@@ -4,6 +4,8 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if MBEDTLS
+
 menu "TLS configuration"
 
 menu "Supported TLS version"
@@ -323,3 +325,5 @@ config MBEDTLS_USER_CONFIG_FILE
 	  covered by the generic config file.
 
 endmenu
+
+endif # MBEDTLS
