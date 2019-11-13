@@ -310,8 +310,10 @@ class EDT:
 
             compatible = binding["compatible"]
             if not isinstance(compatible, str):
-                _err("malformed 'compatible:' field in {} - should be a string"
-                     .format(binding_path))
+                _err("malformed 'compatible: {}' field in {} - "
+                     "should be a string, not {}"
+                     .format(compatible, binding_path,
+                             type(compatible).__name__))
 
             return compatible
 
