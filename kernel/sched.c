@@ -169,6 +169,25 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
+	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
+
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+	/* MetaIRQs must always attempt to return back to a
+	 * cooperative thread they preempted and not whatever happens
+	 * to be highest priority now. The cooperative thread was
+	 * promised it wouldn't be preempted (by non-metairq threads)!
+	 */
+	struct k_thread *mirqp = _current_cpu->metairq_preempted;
+
+	if (mirqp != NULL && (th == NULL || !is_metairq(th))) {
+		if (!z_is_thread_prevented_from_running(mirqp)) {
+			th = mirqp;
+		} else {
+			_current_cpu->metairq_preempted = NULL;
+		}
+	}
+#endif
+
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
 	 * the queue (actually we have to, otherwise the assembly
@@ -176,14 +195,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * responsible for putting it back in z_swap and ISR return!),
 	 * which makes this choice simple.
 	 */
-	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-
 	return th ? th : _current_cpu->idle_thread;
 #else
-
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
-	 * _current against the best choice from the queue.
+	 * _current against the best choice from the queue.  Here, the
+	 * thread selected above represents "the best thread that is
+	 * not current".
 	 *
 	 * Subtle note on "queued": in SMP mode, _current does not
 	 * live in the queue, so this isn't exactly the same thing as
@@ -193,8 +211,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	int queued = z_is_thread_queued(_current);
 	int active = !z_is_thread_prevented_from_running(_current);
 
-	/* Choose the best thread that is not current */
-	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
 	if (th == NULL) {
 		th = _current_cpu->idle_thread;
 	}
@@ -295,6 +311,23 @@ void z_time_slice(int ticks)
 }
 #endif
 
+/* Track cooperative threads preempted by metairqs so we can return to
+ * them specifically.  Called at the moment a new thread has been
+ * selected to run.
+ */
+static void update_metairq_preempt(struct k_thread *th)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+	if (is_metairq(th) && !is_metairq(_current) && !is_preempt(_current)) {
+		/* Record new preemption */
+		_current_cpu->metairq_preempted = _current;
+	} else if (!is_metairq(th)) {
+		/* Returning from existing preemption */
+		_current_cpu->metairq_preempted = NULL;
+	}
+#endif
+}
+
 static void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
@@ -306,6 +339,7 @@ static void update_cache(int preempt_ok)
 			z_reset_time_slice();
 		}
 #endif
+		update_metairq_preempt(th);
 		_kernel.ready_q.cache = th;
 	} else {
 		_kernel.ready_q.cache = _current;
@@ -609,6 +643,8 @@ void *z_get_next_switch_handle(void *interrupted)
 		struct k_thread *th = next_up();
 
 		if (_current != th) {
+			update_metairq_preempt(th);
+
 #ifdef CONFIG_TIMESLICING
 			z_reset_time_slice();
 #endif
