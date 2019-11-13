@@ -378,11 +378,19 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
+#ifdef CONFIG_X86_64
+		if ((void *)esf->rip >= exceptions[i].start &&
+		    (void *)esf->rip < exceptions[i].end) {
+			esf->rip = (u64_t)(exceptions[i].fixup);
+			return;
+		}
+#else
 		if ((void *)esf->eip >= exceptions[i].start &&
 		    (void *)esf->eip < exceptions[i].end) {
 			esf->eip = (unsigned int)(exceptions[i].fixup);
 			return;
 		}
+#endif /* CONFIG_X86_64 */
 	}
 #endif
 #ifdef CONFIG_EXCEPTION_DEBUG
