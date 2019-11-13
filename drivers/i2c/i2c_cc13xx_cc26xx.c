@@ -332,6 +332,9 @@ static int i2c_cc13xx_cc26xx_set_power_state(struct device *dev,
 	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		Power_setDependency(PowerCC26XX_PERIPH_I2C0);
+		IOCPinTypeI2c(get_dev_config(dev)->base,
+			get_dev_config(dev)->sda_pin,
+			get_dev_config(dev)->scl_pin);
 		ret = i2c_cc13xx_cc26xx_configure(dev,
 			get_dev_data(dev)->dev_config);
 		if (ret == 0) {
@@ -346,6 +349,11 @@ static int i2c_cc13xx_cc26xx_set_power_state(struct device *dev,
 		if (get_dev_data(dev)->pm_state == DEVICE_PM_ACTIVE_STATE) {
 			I2CMasterIntDisable(get_dev_config(dev)->base);
 			I2CMasterDisable(get_dev_config(dev)->base);
+			/* Reset pin type to default GPIO configuration */
+			IOCPortConfigureSet(get_dev_config(dev)->scl_pin,
+				IOC_PORT_GPIO, IOC_STD_OUTPUT);
+			IOCPortConfigureSet(get_dev_config(dev)->sda_pin,
+				IOC_PORT_GPIO, IOC_STD_OUTPUT);
 			Power_releaseDependency(PowerCC26XX_PERIPH_I2C0);
 			get_dev_data(dev)->pm_state = new_state;
 		}
