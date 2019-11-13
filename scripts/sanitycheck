@@ -3619,6 +3619,10 @@ def main():
                 s_dev['product'] = d.product
                 if s_dev['product'] in ['DAPLink CMSIS-DAP', 'MBED CMSIS-DAP']:
                     s_dev['runner'] = "pyocd"
+                elif s_dev['product'] in ['J-Link']:
+                    s_dev['runner'] = "jlink"
+                elif s_dev['product'] in ['STM32 STLink']:
+                    s_dev['runner'] = "openocd"
                 else:
                     s_dev['runner'] = "unknown"
                 s_dev['available'] = True
