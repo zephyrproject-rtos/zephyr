@@ -101,7 +101,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			__ASSERT(parts[i] != NULL, "");
 			__ASSERT((parts[i]->start + parts[i]->size) >
 				 parts[i]->start,
-				 "invalid partition %p size %d",
+				 "invalid partition %p size %zu",
 				 parts[i], parts[i]->size);
 
 #if defined(CONFIG_EXECUTE_XOR_WRITE) || \
@@ -151,7 +151,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(domain != NULL, "");
 	__ASSERT(part != NULL, "");
 	__ASSERT((part->start + part->size) > part->start,
-		 "invalid partition %p size %d", part, part->size);
+		 "invalid partition %p size %zu", part, part->size);
 
 #if defined(CONFIG_EXECUTE_XOR_WRITE) || \
 	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
