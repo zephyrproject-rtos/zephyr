@@ -65,7 +65,7 @@ extern struct x86_page_tables z_x86_flat_ptables;
 struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
-		.gs = X86_KERNEL_CPU0_GS,
+		.gs_base = &tss0,
 		.sp = (u64_t) _interrupt_stack + CONFIG_ISR_STACK_SIZE,
 		.fn = z_x86_prep_c,
 #ifdef CONFIG_X86_MMU
@@ -75,19 +75,19 @@ struct x86_cpuboot x86_cpuboot[] = {
 #if CONFIG_MP_NUM_CPUS > 1
 	{
 		.tr = X86_KERNEL_CPU1_TR,
-		.gs = X86_KERNEL_CPU1_GS,
+		.gs_base = &tss1
 	},
 #endif
 #if CONFIG_MP_NUM_CPUS > 2
 	{
 		.tr = X86_KERNEL_CPU2_TR,
-		.gs = X86_KERNEL_CPU2_GS,
+		.gs_base = &tss2
 	},
 #endif
 #if CONFIG_MP_NUM_CPUS > 3
 	{
 		.tr = X86_KERNEL_CPU3_TR,
-		.gs = X86_KERNEL_CPU3_GS,
+		.gs_base = &tss3
 	},
 #endif
 };

@@ -41,7 +41,6 @@ x86_ap_start:
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
-	movw %ax, %gs
 
 	/*
 	 * Now, reverse-map our local APIC ID to our logical CPU ID
@@ -135,16 +134,24 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
-	movw __x86_cpuboot_t_gs_OFFSET(%rbp), %ax
-	movw %ax, %gs
+
+	/* Set up MSRs for GS / KERNEL_GS base */
+	movq __x86_cpuboot_t_gs_base_OFFSET(%rbp), %rax
+	movq %rax, %rdx
+	shrq $32, %rdx
+	/* X86_KERNEL_GS_BASE and X86_GS_BASE are swapped by the 'swapgs'
+	 * instruction.
+	 */
+	movl $X86_KERNEL_GS_BASE, %ecx
+	wrmsr
+	/* X86_GS_BASE shadows base fields of %gs, effectively setting %gs */
+	movl $X86_GS_BASE, %ecx
+	wrmsr
 
 	movq __x86_cpuboot_t_sp_OFFSET(%rbp), %rsp
 	movq %rsp, %gs:__x86_tss64_t_ist1_OFFSET
 
-	/*
-	 * finally, complete environment for the C runtime and go.
-	 */
-
+	/* finally, complete environment for the C runtime and go. */
 	cld	/* GCC presumes a clear direction flag */
 
 #ifdef CONFIG_INIT_STACKS
@@ -602,85 +609,47 @@ pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
 
 /*
  * GDT - a single GDT is shared by all threads (and, eventually, all CPUs).
- * This layout must agree with the selectors in intel64/kernel_arch_data.h.
+ * This layout must agree with the selectors in
+ * include/arch/x86/intel64/thread.h.
+ *
+ * The 64-bit kernel code and data segment descriptors must be in sequence as
+ * required by 'syscall'
+ *
+ * The 32-bit user code, 64-bit user code, and 64-bit user data segment
+ * descriptors must be in sequence as required by 'sysret'
  */
-
 .align 8
 
 gdt:
-	.word 0, 0, 0, 0		/* 0x00: null descriptor */
+	.word 0,      0, 0,      0	/* 0x00: null descriptor */
 	.word 0xFFFF, 0, 0x9A00, 0x00CF	/* 0x08: 32-bit kernel code */
 	.word 0xFFFF, 0, 0x9200, 0x00CF	/* 0x10: 32-bit kernel data */
-	.word 0, 0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
-	.word 0, 0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
+	.word 0,      0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
+	.word 0,      0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
 
-	.word 0, 0, 0, 0		/* 0x28: unused */
+	/* Remaining entries are TSS for each enabled CPU */
 
-	/*
-	 * CPU 0 task state segment descriptors
-	 */
-
-	.word 0				/* 0x30: 64-bit TSS data (for GS) */
-	.word tss0
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x38: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x28: 64-bit TSS (16-byte entry) */
 	.word tss0
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 
 #if CONFIG_MP_NUM_CPUS > 1
-	/*
-	 * CPU 1 task state segment descriptors
-	 */
-
-	.word 0				/* 0x50: 64-bit TSS data (for GS) */
-	.word tss1
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x58: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x38: 64-bit TSS (16-byte entry) */
 	.word tss1
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
-	/*
-	 * CPU 2 task state segment descriptors
-	 */
-
-	.word 0				/* 0x70: 64-bit TSS data (for GS) */
-	.word tss2
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x78: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0x80: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x48: 64-bit TSS (16-byte entry) */
 	.word tss2
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
-	/*
-	 * CPU 3 task state segment descriptors
-	 */
-
-	.word 0				/* 0x90: 64-bit TSS data (for GS) */
-	.word tss3
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x98: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0xA0: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x58: 64-bit TSS (16-byte entry) */
 	.word tss3
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
