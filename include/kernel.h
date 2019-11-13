@@ -5128,7 +5128,7 @@ struct k_mem_partition {
 	/** start address of memory partition */
 	uintptr_t start;
 	/** size of memory partition */
-	u32_t size;
+	size_t size;
 #if defined(CONFIG_MEMORY_PROTECTION)
 	/** attribute of memory partition */
 	k_mem_partition_attr_t attr;
