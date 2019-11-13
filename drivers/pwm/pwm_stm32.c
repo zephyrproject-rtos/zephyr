@@ -71,7 +71,8 @@ static u32_t __get_tim_clk(u32_t bus_clk,
  * return 0, or negative errno code
  */
 static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
-			     u32_t period_cycles, u32_t pulse_cycles)
+			     u32_t period_cycles, u32_t pulse_cycles,
+			     pwm_flags_t flags)
 {
 	struct pwm_stm32_data *data = DEV_DATA(dev);
 	TIM_HandleTypeDef *TimerHandle = &data->hpwm;
@@ -81,6 +82,11 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	/* configure channel */

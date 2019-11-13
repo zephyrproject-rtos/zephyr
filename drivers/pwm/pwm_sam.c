@@ -36,12 +36,18 @@ static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 }
 
 static int sam_pwm_pin_set(struct device *dev, u32_t ch,
-			   u32_t period_cycles, u32_t pulse_cycles)
+			   u32_t period_cycles, u32_t pulse_cycles,
+			   pwm_flags_t flags)
 {
 	Pwm *const pwm = DEV_CFG(dev)->regs;
 
 	if (ch >= PWMCHNUM_NUMBER) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {

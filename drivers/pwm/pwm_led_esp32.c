@@ -311,7 +311,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 /* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 					u32_t pwm, u32_t period_cycles,
-					u32_t pulse_cycles)
+					u32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
@@ -321,6 +321,11 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 		(struct pwm_led_esp32_config *) dev->config->config_info;
 
 	ARG_UNUSED(period_cycles);
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {

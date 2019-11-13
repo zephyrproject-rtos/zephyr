@@ -123,7 +123,8 @@ static bool any_other_channel_is_active(u8_t channel,
 }
 
 static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
 	/* We assume here that period_cycles will always be 16MHz
 	 * peripheral clock. Since pwm_nrfx_get_cycles_per_sec() function might
@@ -133,6 +134,11 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	const struct pwm_nrfx_config *config = dev->config->config_info;
 	struct pwm_nrfx_data *data = dev->driver_data;
 	u8_t channel;
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	/* Check if PWM pin is one of the predefiend DTS config pins.
 	 * Return its array index (channel number),

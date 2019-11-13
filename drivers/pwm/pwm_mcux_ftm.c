@@ -34,7 +34,8 @@ struct mcux_ftm_data {
 };
 
 static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
 	const struct mcux_ftm_config *config = dev->config->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;
@@ -48,6 +49,11 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 
 	if (pwm >= config->channel_count) {
 		LOG_ERR("Invalid channel");
+		return -ENOTSUP;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
 		return -ENOTSUP;
 	}
 

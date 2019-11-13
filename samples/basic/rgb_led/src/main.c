@@ -46,7 +46,7 @@
 static int write_pin(struct device *pwm_dev, u32_t pwm_pin,
 		     u32_t pulse_width)
 {
-	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width);
+	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width, 0);
 }
 
 void main(void)
