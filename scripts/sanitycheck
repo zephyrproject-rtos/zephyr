@@ -3611,7 +3611,12 @@ def main():
         serial_devices = list_ports.comports()
         filtered = []
         for d in serial_devices:
-            if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics', 'Atmel Corp.']:
+            if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics',
+                                  'Atmel Corp.', 'Texas Instruments']:
+                # TI XDS110 can have multiple serial devices for a single board
+                # assume endpoint 0 is the serial, skip all others
+                if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
+                    continue
                 s_dev = {}
                 s_dev['platform'] = "unknown"
                 s_dev['id'] = d.serial_number
@@ -3622,6 +3627,8 @@ def main():
                 elif s_dev['product'] in ['J-Link']:
                     s_dev['runner'] = "jlink"
                 elif s_dev['product'] in ['STM32 STLink']:
+                    s_dev['runner'] = "openocd"
+                elif s_dev['product'].startswith('XDS110'):
                     s_dev['runner'] = "openocd"
                 else:
                     s_dev['runner'] = "unknown"
