@@ -61,6 +61,12 @@
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
+struct data_sent {
+	u16_t len;
+};
+
+#define data_sent(buf) ((struct data_sent *)net_buf_user_data(buf))
+
 static sys_slist_t servers;
 
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -1163,7 +1169,9 @@ segment:
 	return seg;
 }
 
-void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch);
+
+static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_l2cap_chan *chan = user_data;
 
@@ -1172,6 +1180,17 @@ void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 	if (chan->ops->sent) {
 		chan->ops->sent(chan);
 	}
+
+	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
+}
+
+static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_l2cap_chan *chan = user_data;
+
+	BT_DBG("conn %p chan %p", conn, chan);
+
+	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
 static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
@@ -1182,13 +1201,14 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 
 	/* Wait for credits */
 	if (k_sem_take(&ch->tx.credits, K_NO_WAIT)) {
-		BT_DBG("No credits to transmit packet");
+		BT_WARN("No credits to transmit packet");
 		return -EAGAIN;
 	}
 
 	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
 	if (!seg) {
-		return -ENOMEM;
+		k_sem_give(&ch->tx.credits);
+		return -EAGAIN;
 	}
 
 	/* Channel may have been disconnected while waiting for a buffer */
@@ -1209,7 +1229,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 		bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
 				 l2cap_chan_sdu_sent, &ch->chan);
 	} else {
-		bt_l2cap_send(ch->chan.conn, ch->tx.cid, seg);
+		bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
+				 l2cap_chan_seg_sent, &ch->chan);
 	}
 
 	/* Check if there is no credits left clear output status and notify its
@@ -1248,8 +1269,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(frag), &sent,
-				       sizeof(sent));
+				data_sent(frag)->len = sent;
 			}
 			*buf = frag;
 			return ret;
@@ -1268,8 +1288,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(frag), &sent,
-				       sizeof(sent));
+				data_sent(frag)->len = sent;
 			}
 			*buf = frag;
 			return ret;
@@ -1302,9 +1321,13 @@ static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf *buf;
 
+	if (!k_sem_count_get(&ch->tx.credits)) {
+		return;
+	}
+
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		u16_t sent = *((u16_t *)net_buf_user_data(buf));
+		u16_t sent = data_sent(buf)->len;
 
 		BT_DBG("buf %p sent %u", buf, sent);
 
@@ -1890,12 +1913,25 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
+	/* Attempt to resume first since there could be data from previous
+	 * packets pending.
+	 */
+	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
+
+	/* Check if there are still pending segments */
+	if (BT_L2CAP_LE_CHAN(chan)->tx_buf) {
+		/* Queue buffer to be sent later */
+		data_sent(buf)->len = 0;
+		net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
+		return 0;
+	}
+
 	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), &buf, 0);
 	if (err < 0) {
-		if (err == -EAGAIN) {
-			/* Queue buffer to be sent later */
+		if (err == -EAGAIN && data_sent(buf)->len) {
+			/* Queue buffer if at least one segment could be sent */
 			net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
-			return *((u16_t *)net_buf_user_data(buf));
+			return data_sent(buf)->len;
 		}
 		BT_ERR("failed to send message %d", err);
 	}
