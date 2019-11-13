@@ -87,7 +87,8 @@ static u8_t pwm_channel_map(struct pwm_data *data, u8_t map_size,
 }
 
 static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
-			       u32_t period_cycles, u32_t pulse_cycles)
+			       u32_t period_cycles, u32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	struct pwm_config *config;
 	NRF_TIMER_Type *timer;
@@ -100,6 +101,11 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	config = (struct pwm_config *)dev->config->config_info;
 	timer = config->timer;
 	data = dev->driver_data;
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	/* check if requested period is allowed while other channels are
 	 * active.

@@ -305,7 +305,8 @@ done:
 }
 
 static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
-			   u32_t period_cycles, u32_t pulse_cycles)
+			   u32_t period_cycles, u32_t pulse_cycles,
+			   pwm_flags_t flags)
 {
 	PWM_Type *pwm_regs = PWM_XEC_REG_BASE(dev);
 	u32_t target_freq;
@@ -317,6 +318,11 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 
 	if (pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	on = pulse_cycles;

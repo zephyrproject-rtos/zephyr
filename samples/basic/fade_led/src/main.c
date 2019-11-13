@@ -48,7 +48,7 @@ void main(void)
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-					PERIOD, pulse_width)) {
+					PERIOD, pulse_width, 0)) {
 			printk("pwm pin set fails\n");
 			return;
 		}

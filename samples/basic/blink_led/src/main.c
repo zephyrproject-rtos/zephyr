@@ -51,7 +51,7 @@ void main(void)
 	 */
 	max_period = MAX_PERIOD;
 	while (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				max_period, max_period / 2U)) {
+				max_period, max_period / 2U, 0)) {
 		max_period /= 2U;
 		if (max_period < (4U * MIN_PERIOD)) {
 			printk("This sample needs to set a period that is "
@@ -63,7 +63,7 @@ void main(void)
 	period = max_period;
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				     period, period / 2U)) {
+				     period, period / 2U, 0)) {
 			printk("pwm pin set fails\n");
 			return;
 		}
