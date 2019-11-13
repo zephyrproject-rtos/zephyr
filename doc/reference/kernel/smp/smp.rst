@@ -151,6 +151,14 @@ application code runs, and finally calls ``z_swap()`` to transfer
 control to the appropriate runnable thread via the standard scheduler
 API.
 
+.. figure:: smpinit.svg
+   :align: center
+   :alt: SMP Initialization
+   :figclass: align-center
+
+   Example SMP initialization process, showing a configuration with
+   two CPUs and two app threads which begin operating simultaneously.
+
 Interprocessor Interrupts
 *************************
 
