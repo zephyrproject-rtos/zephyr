@@ -34,7 +34,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef CONFIG_PWM_3
+#ifdef DT_NXP_KINETIS_FTM_PWM_3_BASE_ADDRESS
 	/* Red, green, blue LEDs as PWM channels */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
