@@ -623,7 +623,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	 * allocated for alignment constraints
 	 */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-				    "stack size %u is too big, max is %u",
+				    "stack size %u is too big, max is %lu",
 				    total_size, stack_object->data));
 
 	/* User threads may only create other user threads and they can't

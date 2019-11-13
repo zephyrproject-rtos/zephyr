@@ -172,7 +172,7 @@ struct _k_object {
 	u8_t perms[CONFIG_MAX_THREAD_BYTES];
 	u8_t type;
 	u8_t flags;
-	u32_t data;
+	uintptr_t data;
 } __packed __aligned(4);
 
 struct _k_object_assignment {
