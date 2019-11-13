@@ -226,19 +226,22 @@ void main(void)
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
-	if (gpio_dev0) {
-		printk("%s FOUND!\n", CONFIG_ESPI_GPIO_DEV0);
+	if (!gpio_dev0) {
+		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV0);
+		return;
 	}
 
 	gpio_dev1 = device_get_binding(CONFIG_ESPI_GPIO_DEV1);
-	if (gpio_dev1) {
-		printk("%s FOUND!\n", CONFIG_ESPI_GPIO_DEV1);
+	if (!gpio_dev1) {
+		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV1);
+		return;
 	}
 
 #endif
 	espi_dev = device_get_binding(CONFIG_ESPI_DEV);
-	if (espi_dev) {
-		printk("%s FOUND!\n", CONFIG_ESPI_DEV);
+	if (!espi_dev) {
+		printk("Fail to find %s!\n", CONFIG_ESPI_DEV);
+		return;
 	}
 
 	printk("Hello eSPI test! %s\n", CONFIG_BOARD);
