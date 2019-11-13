@@ -112,6 +112,11 @@ struct _cpu {
 	void *syscall_frame;
 #endif
 
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+	/* Coop thread preempted by current metairq, or NULL */
+	struct k_thread *metairq_preempted;
+#endif
+
 #ifdef CONFIG_TIMESLICING
 	/* number of ticks remaining in current time slice */
 	int slice_ticks;
