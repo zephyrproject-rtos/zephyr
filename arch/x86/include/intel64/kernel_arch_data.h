@@ -21,7 +21,7 @@ extern char _locore_start[], _locore_end[];
 struct x86_cpuboot {
 	volatile int ready;	/* CPU has started */
 	u16_t tr;		/* selector for task register */
-	u16_t gs;		/* selector for GS */
+	struct x86_tss64 *gs_base; /* Base address for GS segment */
 	u64_t sp;		/* initial stack pointer */
 	void *fn;		/* kernel entry function */
 	void *arg;		/* argument for above function */
