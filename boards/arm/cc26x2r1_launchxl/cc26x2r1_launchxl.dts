@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <ti/cc2652r.dtsi>
+#include "boosterpack_connector.dtsi"
 
 #define BTN_GPIO_FLAGS (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)
 
