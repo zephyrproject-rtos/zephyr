@@ -16,11 +16,14 @@
 #define X86_KERNEL_DS_32	0x10	/* 32-bit kernel data */
 #define X86_KERNEL_CS		0x18	/* 64-bit kernel code */
 #define X86_KERNEL_DS		0x20	/* 64-bit kernel data */
+#define X86_USER_CS_32		0x28	/* 32-bit user data (unused) */
+#define X86_USER_DS		0x30	/* 64-bit user mode data */
+#define X86_USER_CS		0x38	/* 64-bit user mode code */
 
-#define X86_KERNEL_CPU0_TR	0x28	/* 64-bit task state segment */
-#define X86_KERNEL_CPU1_TR	0x38	/* 64-bit task state segment */
-#define X86_KERNEL_CPU2_TR	0x48	/* 64-bit task state segment */
-#define X86_KERNEL_CPU3_TR	0x58	/* 64-bit task state segment */
+#define X86_KERNEL_CPU0_TR	0x40	/* 64-bit task state segment */
+#define X86_KERNEL_CPU1_TR	0x50	/* 64-bit task state segment */
+#define X86_KERNEL_CPU2_TR	0x60	/* 64-bit task state segment */
+#define X86_KERNEL_CPU3_TR	0x70	/* 64-bit task state segment */
 
 /*
  * Some SSE definitions. Ideally these will ultimately be shared with 32-bit.
