@@ -67,24 +67,13 @@ def main():
         #define DT_COMPAT_<COMPAT> 1
         out("COMPAT_{}".format(str2ident(compat)), 1)
 
-    # These are derived from /chosen
+    # Derived from /chosen
     write_addr_size(edt, "zephyr,sram", "SRAM")
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
     write_addr_size(edt, "zephyr,ipc_shm", "IPC_SHM")
 
-    write_flash(edt.chosen_node("zephyr,flash"))
-    write_code_partition(edt.chosen_node("zephyr,code-partition"))
-
-    flash_index = 0
-    for node in edt.nodes:
-        if node.name.startswith("partition@"):
-            write_flash_partition(node, flash_index)
-            flash_index += 1
-
-    if flash_index != 0:
-        out_comment("Number of flash partitions")
-        out("FLASH_AREA_NUM", flash_index)
+    write_flash(edt)
 
     print("Devicetree configuration written to " + args.conf_out)
 
@@ -390,57 +379,77 @@ def write_addr_size(edt, prop_name, prefix):
     out("{}_SIZE".format(prefix), node.regs[0].size//1024)
 
 
-def write_flash(flash_node):
-    # Writes output for the node pointed at by the zephyr,flash property in
-    # /chosen
+def write_flash(edt):
+    # Writes flash-related output
+
+    write_flash_node(edt)
+    write_code_partition(edt)
+
+    flash_index = 0
+    for node in edt.nodes:
+        if node.name.startswith("partition@"):
+            write_flash_partition(node, flash_index)
+            flash_index += 1
+
+    if flash_index != 0:
+        out_comment("Number of flash partitions")
+        out("FLASH_AREA_NUM", flash_index)
+
+
+def write_flash_node(edt):
+    # Writes output for the top-level flash node pointed at by
+    # zephyr,flash in /chosen
+
+    node = edt.chosen_node("zephyr,flash")
 
     out_comment("/chosen/zephyr,flash ({})"
-                .format(flash_node.path if flash_node else "missing"))
+                .format(node.path if node else "missing"))
 
-    if not flash_node:
+    if not node:
         # No flash node. Write dummy values.
         out("FLASH_BASE_ADDRESS", 0)
         out("FLASH_SIZE", 0)
         return
 
-    if len(flash_node.regs) != 1:
+    if len(node.regs) != 1:
         err("expected zephyr,flash to have a single register, has {}"
-            .format(len(flash_node.regs)))
+            .format(len(node.regs)))
 
-    if flash_node.bus == "spi" and len(flash_node.parent.regs) == 2:
-        reg = flash_node.parent.regs[1]  # QSPI flash
+    if node.bus == "spi" and len(node.parent.regs) == 2:
+        reg = node.parent.regs[1]  # QSPI flash
     else:
-        reg = flash_node.regs[0]
+        reg = node.regs[0]
 
     out("FLASH_BASE_ADDRESS", hex(reg.addr))
     if reg.size:
         out("FLASH_SIZE", reg.size//1024)
 
-    if "erase-block-size" in flash_node.props:
-        out("FLASH_ERASE_BLOCK_SIZE", flash_node.props["erase-block-size"].val)
+    if "erase-block-size" in node.props:
+        out("FLASH_ERASE_BLOCK_SIZE", node.props["erase-block-size"].val)
 
-    if "write-block-size" in flash_node.props:
-        out("FLASH_WRITE_BLOCK_SIZE", flash_node.props["write-block-size"].val)
+    if "write-block-size" in node.props:
+        out("FLASH_WRITE_BLOCK_SIZE", node.props["write-block-size"].val)
 
 
-def write_code_partition(code_node):
-    # Writes output for the node pointed at by the zephyr,code-partition
-    # property in /chosen
+def write_code_partition(edt):
+    # Writes output for the node pointed at by zephyr,code-partition in /chosen
+
+    node = edt.chosen_node("zephyr,code-partition")
 
     out_comment("/chosen/zephyr,code-partition ({})"
-                .format(code_node.path if code_node else "missing"))
+                .format(node.path if node else "missing"))
 
-    if not code_node:
+    if not node:
         # No code partition. Write dummy values.
         out("CODE_PARTITION_OFFSET", 0)
         out("CODE_PARTITION_SIZE", 0)
         return
 
-    if not code_node.regs:
-        err("missing 'regs' property on {!r}".format(code_node))
+    if not node.regs:
+        err("missing 'regs' property on {!r}".format(node))
 
-    out("CODE_PARTITION_OFFSET", code_node.regs[0].addr)
-    out("CODE_PARTITION_SIZE", code_node.regs[0].size)
+    out("CODE_PARTITION_OFFSET", node.regs[0].addr)
+    out("CODE_PARTITION_SIZE", node.regs[0].size)
 
 
 def write_flash_partition(partition_node, index):
