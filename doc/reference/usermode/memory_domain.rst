@@ -213,6 +213,12 @@ contiguous block of memory, zero any BSS variables at boot, and define
 a memory partition of appropriate base address and size which contains all
 the tagged data.
 
+.. figure:: auto_mem_domain.png
+   :alt: Automatic Memory Domain build flow
+   :align: center
+
+   Automatic Memory Domain build flow
+
 Automatic memory partitions are only configured as read-write
 regions. They are defined with :c:macro:`K_APPMEM_PARTITION_DEFINE()`.
 Global variables are then routed to this partition using
