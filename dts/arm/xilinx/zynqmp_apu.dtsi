@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/xilinx/zynqmp.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@f9010000 {
+			compatible = "arm,gic";
+			reg = <0xf9010000 0x1000>,
+					<0xf9020000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			label = "GIC";
+			status = "okay";
+		};
+
+		arch_timer: timer {
+			compatible = "arm,arm-timer";
+			interrupts = <GIC_PPI 13 IRQ_DEFAULT_PRIORITY
+					IRQ_TYPE_EDGE>,
+				     <GIC_PPI 14 IRQ_DEFAULT_PRIORITY
+					IRQ_TYPE_EDGE>,
+				     <GIC_PPI 11 IRQ_DEFAULT_PRIORITY
+					IRQ_TYPE_EDGE>,
+				     <GIC_PPI 10 IRQ_DEFAULT_PRIORITY
+					IRQ_TYPE_EDGE>;
+			label = "arch_timer";
+		};
+	};
+};

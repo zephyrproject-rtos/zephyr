@@ -1,0 +1,601 @@
+/*
+ * ZynqMP ARM include file
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "zynqmp.dtsh"
+
+#define APU_COMMON(n,p)											\
+	compatible = "cortex-a53-arm-cpu";								\
+	d-cache-line-size = <0x20>;									\
+	d-cache-size = <0x8000>;									\
+	device_type = "cpu";										\
+	i-cache-line-size = <0x20>;									\
+	i-cache-size = <0x8000>;									\
+	arm,midr = <0x410fd034>;									\
+	arm,ctr = <0x83338003>;										\
+	arm,clidr = <0x09200003>;									\
+	arm,id_pfr0 = <0x1231>;										\
+	arm,ccsidr0 = <0x701fe019>;									\
+	arm,ccsidr1 = <0x201fe019>;									\
+	arm,mp-affinity = <n>;										\
+	enable-method = "psci";										\
+	reg = <n>;											\
+	core-count = <4>;										\
+	arm,reset-hivecs = <1>;										\
+	arm,rvbar = <0xffff0000>;									\
+	#interrupt-cells = <1>;										\
+	arm,reset-cbar = <A9_SCU>;									\
+	mr = <&amba_apu>;										\
+	memory = <&amba_apu>;										\
+	gpios = <&crf n IS_MULTI_ARCH(&apu n &pmu_local p &pmu_local 0x8000001C &pmu_global 2)>;	\
+	gpio-names = "rst_cntrl" IS_MULTI_ARCH(LC "wfi" LC "pwr_cntrl" LC "pwr_cntrl" LC "rst_cntrl");
+
+#define APU_INTC_REDIRECT(n,a,p)								\
+	glue(apu_intc_redirect_, n): glue(apu_intc_redirect, n)@n {	\
+		#interrupt-cells = <1>;									\
+		compatible = "xlnx,zynqmp-intc-redirect";				\
+		interrupt-controller;									\
+		interrupts-extended = <glue(&cpu,n) 0>,					\
+				<glue(&cpu,n) 1>,								\
+				<glue(&cpu,n) 2>,								\
+				<glue(&cpu,n) 3>;								\
+		gpios = <&pmu_io_gpi1 p 0 &apu a>;						\
+};
+
+#define R5_CPU_COMMON(n)										\
+	compatible = "cortex-r5f-arm-cpu";								\
+	d-cache-line-size = <0x20>;									\
+	d-cache-size = <0x8000>;									\
+	device_type = "cpu";										\
+	i-cache-line-size = <0x20>;									\
+	i-cache-size = <0x8000>;									\
+	arm,midr=<0x411fc153>;										\
+	arm,tcmtr=<0x00010001>;										\
+	arm,ctr=<0x8003c003>;										\
+	arm,clidr=<0x09200003>;										\
+	arm,ccsidr0 = <0xf01fe019>;									\
+	arm,ccsidr1 = <0xf01fe019>;									\
+	arm,mp-affinity = <glue(0x10,n)>;								\
+	arm,id_pfr0 = <0x131>;										\
+	arm,reset-hivecs = <1>;										\
+	#interrupt-cells = <1>;
+
+#define RPU_INTC_REDIRECT(NCPU, PMUGPI, RPUN)							\
+glue(rpu_intc_redirect_, NCPU): glue(rpu_intc_redirect, NCPU)@NCPU {	\
+	#interrupt-cells = <1>;												\
+	compatible = "xlnx,zynqmp-intc-redirect";							\
+	interrupt-controller;												\
+	interrupts-extended = <glue(&rpu_cpu,NCPU) 0>;						\
+	gpios = <&pmu_io_gpi1 PMUGPI 0 &rpu_ctrl RPUN>;						\
+};
+
+#define TCM_MEM_CTRL(n, AB, hlt_line, pwr_line)									\
+glue(glue(glue(tcm_mem_ctrl_, n), _), AB): glue(glue(tcm_mem_ctrl_, AB), n)@n {	\
+    compatible = "qemu,memory-controller";										\
+    mr = <glue(glue(glue(&tcm_ram_r5_, n), _), AB)>;							\
+    gpios = <&pmu_local hlt_line &pmu_local pwr_line>;							\
+    gpio-names = "hlt_cntrl", "pwr_cntrl";										\
+};
+
+/ {
+	#address-cells = <MEMORY_ADDRESS_CELLS>;
+	#size-cells = <1>;
+
+	MEM_REGION(ddr_bank1_1, 0x0, 0x0, 0x0, 0x30000, &ddr3_ram)
+	MEM_REGION(ddr_bank1_2, 0x0, 0x30000, 0x30000, 0x10000, &ddr3_ram)
+	MEM_REGION(ddr_bank1_3, 0x0, 0x40000, 0x40000, 0x3FFC0000, &ddr3_ram)
+	MEM_REGION(ddr_bank2, 0x0, 0x40000000, 0x40000000, 0x40000000, &ddr3_ram)
+	MEM_SPEC(ddr_bank3, 0x8, 0x00000000, 0x800000000, 0x8, 0x00000000, &ddr3_ram)
+
+#ifdef MULTI_ARCH
+	pmu_rp_0: pmu@0 {
+		compatible = "remote-port";
+		#interrupt-cells = <2>;
+		chrdev-id = "pmu-apu-rp";
+	};
+	rp_memory_slave_pmu: rp_memory_slave_pmu@0 {
+		compatible = "remote-port-memory-slave";
+		remote-ports = <&pmu_rp_0 0>;
+		mr = <&lmb_pmu>;
+	};
+	pmu_cpu0: rp_gpio_pmu_intr@0 {
+		#interrupt-cells = <1>;
+		compatible = "remote-port-gpio";
+		remote-ports = <&pmu_rp_0 1>;
+		interrupt-controller;
+		num-gpios = <1>;
+	};
+	rp_gpio_pmu: rp_gpio_pmu@0 {
+		compatible = "remote-port-gpio";
+		remote-ports = <&pmu_rp_0 2>;
+		gpio-controller;
+		#gpio-cells = <1>;
+		num-gpios = <4>;
+		/* Client GPIOS are connected to 0 -2 */
+		gpios = <	&pmu_global	0		/* PMU Wake.	*/
+				&crl		2		/* SRST_B.		*/
+				&pmu_global	3		/* PS Reset.	*/
+				>;
+	};
+#endif
+
+	amba: amba@0 {
+		#interrupt-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges;
+
+		interrupt-map-mask = <0x0 0x0 0xffff>;
+		interrupt-map =
+			#define __intc__ &gic
+			#include "zynqmp-irq-map.dtsh"
+			#undef __intc__
+			,
+			#define __intc__ &rpu_gic
+			#include "zynqmp-irq-map.dtsh"
+			#undef __intc__
+
+		#if defined(MULTI_ARCH)
+			,
+			#define __intc__ &gic_proxy
+			#include "zynqmp-irq-map.dtsh"
+			#undef __intc__
+		#endif
+			;
+
+		apu: apu@APU {
+			compatible = "xlnx,apu";
+			#gpio-cells = <1>;
+			reg = <BASE_ADDR(APU) 0x1000>;
+			cpu0 = <&cpu0>;
+			cpu1 = <&cpu1>;
+			cpu2 = <&cpu2>;
+			cpu3 = <&cpu3>;
+#ifdef MULTI_ARCH
+			gpios = <&pmu_io_gpi2 1 0 &pmu_io_gpi2 2 0 &pmu_io_gpi2 3 0 &pmu_io_gpi2 4 0>;
+#endif
+		};
+
+		rpu_ctrl: rpu_control@RPU {
+			#gpio-cells = <1>;
+			compatible = "xlnx,rpu-control";
+			reg = <BASE_ADDR(RPU) 0x400>;
+			gpio-controller;
+			atcm1-for-rpu0 = <&atcm1_for_rpu0>;
+			btcm1-for-rpu0 = <&btcm1_for_rpu0>;
+			icache-for-rpu1 = <&icache_rpu1>;
+			dcache-for-rpu1 = <&dcache_rpu1>;
+			gic-for-rpu = <&rpu_gic>;
+			gpios = <&pmu_global 6
+					 &pmu_global 7
+#ifdef MULTI_ARCH
+					 &pmu_io_gpi2 5 0
+					 &pmu_io_gpi2 6 0
+#endif
+			>;
+		};
+
+	};
+};
+
+#include "zynqmp-pmu-dev.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: apu_cpu@0 {
+			APU_COMMON(0, 0x80000001)
+			gdb-id = "Cortex-A53 #0";
+			memattr_s = <&apu0_s_memattr>;
+			memattr_ns = <&apu0_ns_memattr>;
+		};
+		cpu1: apu_cpu@1 {
+			APU_COMMON(1, 0x80000002)
+			gdb-id = "Cortex-A53 #1";
+			memattr_s = <&apu1_s_memattr>;
+			memattr_ns = <&apu1_ns_memattr>;
+		};
+		cpu2: apu_cpu@2 {
+			APU_COMMON(2, 0x80000003)
+			gdb-id = "Cortex-A53 #2";
+			memattr_s = <&apu2_s_memattr>;
+			memattr_ns = <&apu2_ns_memattr>;
+		};
+		cpu3: apu_cpu@3 {
+			APU_COMMON(3, 0x80000004)
+			gdb-id = "Cortex-A53 #3";
+			memattr_s = <&apu3_s_memattr>;
+			memattr_ns = <&apu3_ns_memattr>;
+		};
+
+		rpu_cpu0: rpu_cpu@0 {
+			R5_CPU_COMMON(0)
+			reg = <0>;
+			mr = <&amba_rpu0>;
+			memory = <&amba_rpu0>;
+			gpios = <&crl 0 &rpu_ctrl 0 &rpu_ctrl 5 IS_MULTI_ARCH(&rpu_ctrl 7 &pmu_local 9)>;
+			gpio-names = "reset", "ncpuhalt", "vinithi" IS_MULTI_ARCH(LC "wfi" LC "pwr_cntrl");
+			gdb-id = "Cortex-R5 #0";
+			memattr_ns = <&rpu0_memattr>;
+		};
+		rpu_cpu1: rpu_cpu@1 {
+			R5_CPU_COMMON(1)
+			reg = <1>;
+			mr = <&amba_rpu1>;
+			memory = <&amba_rpu1>;
+			gpios = <&crl 1 &rpu_ctrl 2 &rpu_ctrl 1 &rpu_ctrl 6 IS_MULTI_ARCH(&rpu_ctrl 8 &pmu_local 9)>;
+			gpio-names = "reset", "halt", "ncpuhalt", "vinithi" IS_MULTI_ARCH(LC "wfi" LC "pwr_cntrl");
+			gdb-id = "Cortex-R5 #1";
+			memattr_ns = <&rpu1_memattr>;
+		};
+	};
+
+	aliases {
+		main_bus_for_apu {
+			compatible = "qemu:memory-region";
+			container = <&amba_apu>;
+			alias = <&cci_slave>;
+			priority = <0xFFFFFFFF>; /* -1 */
+		};
+	};
+
+	amba_apu: amba_apu@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges ;
+		timer {
+			compatible = "arm,armv8-timer";
+			interrupt-parent = <&gic>;
+			interrupts = <1 13 0xff01>,
+						 <1 14 0xff01>,
+						 <1 11 0xff01>,
+						 <1 10 0xff01>;
+			clock-frequency = <100000000>;
+		};
+		dummy: dymmy@0 {
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		IS_MULTI_ARCH(APU_INTC_REDIRECT(0,4,1))
+		IS_MULTI_ARCH(APU_INTC_REDIRECT(1,5,2))
+		IS_MULTI_ARCH(APU_INTC_REDIRECT(2,6,3))
+		IS_MULTI_ARCH(APU_INTC_REDIRECT(3,7,4))
+
+	};
+
+	amba_apu_gic: amba_apu_gic@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#priority-cells = <1>;
+		#size-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges ;
+		container = <&amba>;
+		priority = <0xFFFFFFFF>; /* -1 */
+		gic: interrupt-controller@APU_GIC_DIST {
+			#address-cells = <0>;
+			#size-cells = <0>;
+			#interrupt-cells = <3>;
+			#gpio-cells = <0>;
+
+			compatible = "xlnx,zynqmp-scugic", "arm,gic";
+			reg = < BASE_ADDR(ACPU_GIC_DIST) 0x1000 0
+					BASE_ADDR(ACPU_GIC) 0x20000 0
+					BASE_ADDR(ACPU_GIC_HYP) 0x20000 0
+					BASE_ADDR(ACPU_GIC_VCPU) 0x20000 0>;
+			interrupt-controller ;
+			IS_MULTI_ARCH(gpios = <&pmu_local 28 &pmu_global 2>;)
+			IS_MULTI_ARCH(gpio-names = "pwr_cntrl" LC "rst_cntrl";)
+			num-irq = <192>;
+			interrupts-extended =
+#ifdef MULTI_ARCH
+	#define GIC_INTERRUPT_TARGET_STEM apu_intc_redirect_
+#else
+	#define GIC_INTERRUPT_TARGET_STEM cpu
+#endif
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 0) 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 1) 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 2) 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 3) 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 0) 2>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 1) 2>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 2) 2>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 3) 2>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 0) 1>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 1) 1>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 2) 1>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 3) 1>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 0) 3>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 1) 3>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 2) 3>,
+				<&glue(GIC_INTERRUPT_TARGET_STEM, 3) 3>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&dummy 0>,
+				<&gic 0x1 0x9 0x104>,
+				<&gic 0x1 0x9 0x204>,
+				<&gic 0x1 0x9 0x404>,
+				<&gic 0x1 0x9 0x804>;
+			num-cpu = <4>;
+			revision = <2>;
+			has-security-extensions = <1>;
+			int-id = <0x0202143B>;
+		};
+
+		/* Alias the GIC CPU registers every 4kB over 64kB */
+		zynqmp-gic-cpu-alias@0xf9021000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9021000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9022000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9022000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9023000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9023000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9024000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9024000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9025000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9025000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9026000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9026000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9027000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9027000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9028000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9028000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf9029000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf9029000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902a000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf902a000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902b000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf902b000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902c000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf902c000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902d000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf902d000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902e000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			reg = <BASE_ADDR(0xf902e000) 0x1000 1>;
+		};
+		zynqmp-gic-cpu-alias@0xf902f000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 1>;
+			/* 8K to place GIC_DIR right at the 0x10000 offset.  */
+			reg = <BASE_ADDR(0xf902f000) 0x2000 1>;
+		};
+
+		/* Alias the VCPU as well */
+		zynqmp-gic-vcpu-alias@0xf9061000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9061000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9062000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9062000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9063000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9063000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9064000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9064000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9065000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9065000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9066000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9066000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9067000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9067000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9068000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9068000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf9069000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf9069000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906a000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf906a000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906b000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf906b000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906c000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf906c000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906d000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf906d000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906e000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			reg = <BASE_ADDR(0xf906e000) 0x1000 1>;
+		};
+		zynqmp-gic-vcpu-alias@0xf906f000 {
+			compatible = "qemu:memory-region";
+			alias = <&gic 3>;
+			/* 8K to place GIC_DIR right at the 0x10000 offset.  */
+			reg = <BASE_ADDR(0xf906f000) 0x2000 1>;
+		};
+	};
+
+	amba_rpu: amba_rpu@0 {
+#ifdef MULTI_ARCH
+		RPU_INTC_REDIRECT(0, 5, 3)
+		RPU_INTC_REDIRECT(1, 6, 4)
+
+		TCM_MEM_CTRL(0, A, 24, 20)
+		TCM_MEM_CTRL(0, B, 25, 21)
+		TCM_MEM_CTRL(1, A, 26, 22)
+		TCM_MEM_CTRL(1, B, 27, 23)
+#endif
+
+		rpu_gic: interrupt-controller@R5_GIC_DIST {
+			#address-cells = <0>;
+			#interrupt-cells = <3>;
+			#size-cells = <0>;
+			compatible = "xlnx,zynqmp-scugic", "arm,gic";
+			reg = <	BASE_ADDR(R5_GIC_DIST) 0x0 0x1000 0x0
+					BASE_ADDR(R5_GIC) 0x0 0x100 0x0>;
+			status = "disabled";
+			interrupt-controller ;
+			num-irq = <256>;
+			num-cpu = <2>;
+			interrupts-extended =
+#ifdef MULTI_ARCH
+				<&rpu_intc_redirect_0 0>,
+				<&rpu_intc_redirect_1 0>;
+#else
+				<&rpu_cpu0 0>,
+				<&rpu_cpu1 0>;
+#endif
+		};
+	};
+
+	amba: amba@0 {
+		EMIT_IPI_2PARENTS(apu_ipi, 0xFF300000, &gic, &rpu_gic, 0 APU_IPI0_IRQ_0, 0, 32)
+
+		EMIT_IPI_2PARENTS(rpu_0_ipi, 0xFF310000, &gic, &rpu_gic, 0 RPU_IPI0_IRQ_0, 8, 40)
+		EMIT_IPI_2PARENTS(rpu_1_ipi, 0xFF320000, &gic, &rpu_gic, 0 RPU_IPI1_IRQ_0, 9, 41)
+
+		EMIT_IPI(pmu_0_ipi, 0xFF330000, &pmu_io_intc, 19 0, 16, 48)
+		EMIT_IPI(pmu_1_ipi, 0xFF331000, &pmu_io_intc, 20 0, 17, 49)
+		EMIT_IPI(pmu_2_ipi, 0xFF332000, &pmu_io_intc, 21 0, 18, 50)
+		EMIT_IPI(pmu_3_ipi, 0xFF333000, &pmu_io_intc, 22 0, 19, 51)
+
+		EMIT_IPI_2PARENTS(pl_0_ipi, 0xFF340000, &gic, &rpu_gic, 0 29, 24, 52)
+		EMIT_IPI_2PARENTS(pl_1_ipi, 0xFF350000, &gic, &rpu_gic, 0 30, 25, 53)
+		EMIT_IPI_2PARENTS(pl_2_ipi, 0xFF360000, &gic, &rpu_gic, 0 31, 26, 54)
+		EMIT_IPI_2PARENTS(pl_3_ipi, 0xFF370000, &gic, &rpu_gic, 0 32, 27, 55)
+
+		xlnx_zynqmp_csu_core: csu_core {
+			compatible = "xlnx,zynqmp-csu-core";
+			reg = <BASE_ADDR(CSU) 0x100>;
+		};
+
+		lpd_slcr_0: zynqmp_lpd_slcr@LPD_SLCR {
+			compatible = "xlnx,lpd-slcr";
+			reg = <BASE_ADDR(LPD_SLCR) 0x9000>;
+			gic-for-rpu = <&rpu_gic>;
+			gic-for-apu = <&gic>;
+		};
+		lpd_slcr_secure: zynqmp_lpd_slcr_secure@LPD_SLCR_SECURE {
+			compatible = "xlnx.lpd-slcr-secure";
+			reg = <BASE_ADDR(LPD_SLCR_SECURE) 0x38>;
+		};
+	};
+};
+
+#include "zynqmp-iou.dtsi"
+#include "zynqmp-csu.dtsi"
+
+&amba_rpu {
+	ddr_memory_2_for_rpu: ddr_memory_2_for_rpu {
+		compatible = "qemu:memory-region";
+		alias = <&ddr_bank1_2>;
+		reg = <BASE_ADDR(0x30000) 0x00000000 0x00010000 0x0>;
+	};
+};
+
+&rpu_ctrl {
+	ddr-mem-for-rpu = <&ddr_memory_2_for_rpu>;
+};

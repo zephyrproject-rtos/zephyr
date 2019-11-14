@@ -1,0 +1,213 @@
+/*
+ * ZynqMP memory region definitions
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#define MEM_REGION(name, addrH, addrL, addr64, s, c)					\
+name: name@addr64 {														\
+	compatible = "qemu:memory-region";									\
+	container = <c>;													\
+	qemu,ram = <QEMU_RAM_PROPERTY>;										\
+	reg = <addrH addrL s>;												\
+};
+
+/* The MEM_SPEC macro tells QEMU that memory can be created here, but does
+ * NOT create memory regions.
+ * Do not change this macro without changing the QEMU code.
+ */
+#define MEM_SPEC(name, addrH, addrL, addr64, sizeH, sizeL, c)			\
+name: name@addr64 {														\
+	compatible = "qemu:memory-region-spec";								\
+	container = <c>;													\
+	qemu,ram = <QEMU_RAM_PROPERTY>;										\
+	reg = <addrH addrL sizeH sizeL>;									\
+};
+
+/* Memory Map Definitions */
+#define MEMORY_ADDRESS_CELLS 2
+#define BASE_ADDR(x) 0x0 x
+
+#define PMUIOM(a) 0xFFD400 ## a
+
+#define OCM_SIZE			0x40000
+#define OCM_RAM				0xFFFC0000
+
+#define LQSPI				0xC0000000
+#define LQSPI_SIZE			0x08000000
+#define QSPI_DMA			0xFF0F0800
+
+#define A9_SCU				0xFD3FE000
+#define APU_GIC_DIST		0xFD3FF000
+
+#define ACPU_GIC_STRIDE		0x10000
+#define ACPU_GIC_DIST		0xF9010000
+#define ACPU_GIC			0xF9020000
+#define ACPU_GIC_HYP		0xF9040000
+#define ACPU_GIC_VCPU		0xF9060000
+
+#define R5_GIC_DIST			0xF9000000
+#define R5_GIC				0xF9001000
+
+#define GDMA_0_BASE			0xFD500000
+#define GDMA_1_BASE			0xFD510000
+#define GDMA_2_BASE			0xFD520000
+#define GDMA_3_BASE			0xFD530000
+#define GDMA_4_BASE			0xFD540000
+#define GDMA_5_BASE			0xFD550000
+#define GDMA_6_BASE			0xFD560000
+#define GDMA_7_BASE			0xFD570000
+
+#define ADMA_0_BASE			0xFFA80000
+#define ADMA_1_BASE			0xFFA90000
+#define ADMA_2_BASE			0xFFAA0000
+#define ADMA_3_BASE			0xFFAB0000
+#define ADMA_4_BASE			0xFFAC0000
+#define ADMA_5_BASE			0xFFAD0000
+#define ADMA_6_BASE			0xFFAE0000
+#define ADMA_7_BASE			0xFFAF0000
+
+#define AFIFM0				0xFD360000
+#define AFIFM1				0xFD370000
+#define AFIFM2				0xFD380000
+#define AFIFM3				0xFD390000
+#define AFIFM4				0xFD3A0000
+#define AFIFM5				0xFD3B0000
+#define AFIFM6				0xFF9B0000
+#define AMS_CTRL			0xFFA50000
+#define AMS_PL_SYSMON		0xFFA50C00
+#define AMS_PS_SYSMON		0xFFA50800
+#define APM					0xFD0B0000
+#define APM0				0xFFA00000
+#define APM1				0xFFA10000
+#define APM2				0xFFA20000
+#define APM3				0xFFA30000
+#define APU					0xFD5C0000
+#define AXIPCIE_DMA0		0xFD0F0000
+#define AXIPCIE_DMA1		0xFD0F0080
+#define AXIPCIE_DMA2		0xFD0F0100
+#define AXIPCIE_DMA3		0xFD0F0180
+#define AXIPCIE_EGRESS0		0xFD0E0C00
+#define AXIPCIE_EGRESS1		0xFD0E0C20
+#define AXIPCIE_EGRESS2		0xFD0E0C40
+#define AXIPCIE_EGRESS3		0xFD0E0C60
+#define AXIPCIE_EGRESS4		0xFD0E0C80
+#define AXIPCIE_EGRESS5		0xFD0E0CA0
+#define AXIPCIE_EGRESS6		0xFD0E0CC0
+#define AXIPCIE_EGRESS7 	0xFD0E0CE0
+#define AXIPCIE_INGRESS0 	0xFD0E0800
+#define AXIPCIE_INGRESS1 	0xFD0E0820
+#define AXIPCIE_INGRESS2 	0xFD0E0840
+#define AXIPCIE_INGRESS3 	0xFD0E0860
+#define AXIPCIE_INGRESS4 	0xFD0E0880
+#define AXIPCIE_INGRESS5 	0xFD0E08A0
+#define AXIPCIE_INGRESS6 	0xFD0E08C0
+#define AXIPCIE_INGRESS7 	0xFD0E08E0
+#define AXIPCIE_MAIN		0xFD0E0000
+#define BBRAM				0xFFCD0000
+#define CAN0				0xFF060000
+#define CAN1				0xFF070000
+#define CCI_GPV				0xFD6E0000
+#define CCI_REG				0xFD5E0000
+#define CRF_APB				0xFD1A0000
+#define CRL_APB				0xFF5E0000
+#define CSU					0xFFCA0000
+#define CSU_AES				0xFFCA1000
+#define CSU_SHA3			0xFFCA2000
+#define CSU_PCAP			0xFFCA3000
+#define CSU_PUF				0xFFCA4000
+#define DDRC				0xFD070000
+#define DDR_PHY				0xFD080000
+#define DDR_QOS_CTRL		0xFD090000
+#define DDR_XMPU0_CFG		0xFD000000
+#define DDR_XMPU1_CFG		0xFD010000
+#define DDR_XMPU2_CFG		0xFD020000
+#define DDR_XMPU3_CFG		0xFD030000
+#define DDR_XMPU4_CFG		0xFD040000
+#define DDR_XMPU5_CFG		0xFD050000
+#define DP					0xFD4A0000
+#define DPDMA				0xFD4C0000
+#define EFUSE				0xFFCC0000
+#define FPD_GPV				0xFD700000
+#define FPD_SLCR			0xFD610000
+#define FPD_SLCR_SECURE		0xFD690000
+#define FPD_XMPU_CFG		0xFD5D0000
+#define FPD_XMPU_SINK		0xFD4F0000
+#define FPS_APM				0xFD490000
+#define GEM0				0xFF0B0000
+#define GEM1				0xFF0C0000
+#define GEM2				0xFF0D0000
+#define GEM3				0xFF0E0000
+#define GPIO				0xFF0A0000
+#define GPU					0xFD4B0000
+#define I2C0				0xFF020000
+#define I2C1				0xFF030000
+#define IOU_GPV				0xFE000000
+#define IOU_SCNTR			0xFF250000
+#define IOU_SCNTRS			0xFF260000
+#define IOU_SECURE_SLCR		0xFF240000
+#define IOU_SLCR			0xFF180000
+#define IPI					0xFF300000
+#define LPD_GPV				0xFE100000
+#define LPD_SLCR			0xFF410000
+#define LPD_SLCR_SECURE		0xFF4B0000
+#define MBISTJTAG			0xFFCF0000
+#define NAND				0xFF100000
+#define OCM					0xFF960000
+#define OCM_XMPU_CFG		0xFFA70000
+#define PCIE_ATTRIB			0xFD480000
+#define PMU_GLOBAL			0xFFD80000
+#define PMU_IOMODULE		0xFFD40000
+#define PMU_LOCAL			0xFFD60000
+#define QSPI				0xFF0F0000
+#define RPU					0xFF9A0000
+#define RSA					0xFFCE002C
+#define RSA_CORE			0xFFCE0000
+#define RTC					0xFFA60000
+#define SATA_AHCI_HBA		0xFD0C0000
+#define SATA_AHCI_PORT0_CNTRL	0xFD0C0100
+#define SATA_AHCI_PORT1_CNTRL	0xFD0C0180
+#define SATA_AHCI_VENDOR	0xFD0C00A0
+#define SD0					0xFF160000
+#define SD1					0xFF170000
+#define SIOU				0xFD3D0000
+#define SMMU_GPV			0xFD800000
+#define SMMU_REG			0xFD5F0000
+#define SPI0				0xFF040000
+#define SPI1				0xFF050000
+#define SWDT				0xFF150000
+#define TTC0				0xFF110000
+#define TTC1				0xFF120000
+#define TTC2				0xFF130000
+#define TTC3				0xFF140000
+#define UART0				0xFF000000
+#define UART1				0xFF010000
+#define USB3_0				0xFF9D0000
+#define USB3_0_XHCI			0xFE200000
+#define USB3_1				0xFF9E0000
+#define USB3_1_XHCI			0xFE300000
+#define WDT					0xFD4D0000
+#define SERDES				0xFD400000

@@ -1,0 +1,202 @@
+/*
+ * ZynqMP interrupt definitions
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#define RPU0_PERF_MON_IRQ_0			8
+#define RPU1_PERF_MON_IRQ_0			9
+#define OCMINTR_IRQ_0				10
+#define AIB_APB_IRQ_0				11
+#define IPI_APB_IRQ_0				11
+#define PMU_ADDR_IRQ_0				11
+#define CRL_int_IRQ_0				11
+#define AFI6_APB_IRQ_0				11
+#define RTC_APB_IRQ_0				11
+#define IOU_NS_APB_IRQ_0			11
+#define IOU_S_APB_IRQ_0				11
+#define RSA__APB_IRQ_0				11
+#define BBRAM__APB_IRQ_0			11
+#define USB3_0_APB_IRQ_0			11
+#define USB3_1_APB_IRQ_0			11
+#define LPD_S_APB_IRQ_0				11
+#define LPD_NS_APB_IRQ_0			11
+#define RPU0_ECC_IRQ_0				12
+#define RPU1_ECC_IRQ_0				13
+#define NAND_IRQ_0					14
+#define QSPI_IRQ_0					15
+#define GPIO_IRQ_0					16
+#define I2C0_IRQ_0					17
+#define I2C1_IRQ_0					18
+#define SPI0_IRQ_0					19
+#define SPI1_IRQ_0					20
+#define UART0_IRQ_0					21
+#define UART1_IRQ_0					22
+#define CAN0_IRQ_0					23
+#define CAN1_IRQ_0					24
+#define APM_INTC_OCM_IRQ_0			25
+#define APM_LPD_FPD_IRQ_0			25
+#define RTC_ALARM_IRQ_0				26
+#define RTC_SECONDS_IRQ_0			27
+#define CLKMON_IRQ_0				28
+#define PL_IPI0_IRQ_0				29
+#define PL_IPI1_IRQ_0				30
+#define PL_IPI2_IRQ_0				31
+#define PL_IPI3_IRQ_0				32
+#define RPU_IPI0_IRQ_0				33
+#define RPU_IPI1_IRQ_0				34
+#define APU_IPI0_IRQ_0				35
+#define TTC0_IRQ_0					36
+#define TTC0_IRQ_1					37
+#define TTC0_IRQ_2					38
+#define TTC1_IRQ_0					39
+#define TTC1_IRQ_1					40
+#define TTC1_IRQ_2					41
+#define TTC2_IRQ_0					42
+#define TTC2_IRQ_1					43
+#define TTC2_IRQ_2					44
+#define TTC3_IRQ_0					45
+#define TTC3_IRQ_1					46
+#define TTC3_IRQ_2					47
+#define SDIO0_IRQ_0					48
+#define SDIO1_IRQ_0					49
+#define SDIO0_wake_IRQ_0			50
+#define SDIO1_wake_IRQ_0			51
+#define LP_WDT_IRQ_0				52
+#define CSUPMU_WDT_IRQ_0			53
+#define ATB_Err_LPD_IRQ_0			54
+#define AIB_AXI_IRQ_0				55
+#define AMS_IRQ_0					56
+#define GigabitEth0_IRQ_0			57
+#define GigabitEth_Wake0_IRQ_0		58
+#define GigabitEth1_IRQ_0			59
+#define GigabitEth_wakeup1_IRQ_0	60
+#define GigabitEth2_IRQ_0			61
+#define GigabitEth2_wakeup_IRQ_0	62
+#define GigabitEth3_IRQ_0			63
+#define GigabitEth3_wakeup_IRQ_0	64
+#define USB3_0_Endpoint_IRQ_0		65
+#define USB3_0_Endpoint_IRQ_1		66
+#define USB3_0_Endpoint_IRQ_2		67
+#define USB3_0_Endpoint_IRQ_3		68
+#define USB3_0_OTG_IRQ_0			69
+#define USB3_1_Endpoint_IRQ_0		70
+#define USB3_1_Endpoint_IRQ_1		71
+#define USB3_1_Endpoint_IRQ_2		72
+#define USB3_1_Endpoint_IRQ_3		73
+#define USB3_1_OTG_IRQ_0			74
+#define USB3_0_1_PMU_WAKEUP_IRQ_0	75
+#define USB3_0_1_PMU_WAKEUP_IRQ_1	76
+#define ADMA_IRQ_0					77
+#define ADMA_IRQ_1					78
+#define ADMA_IRQ_2					79
+#define ADMA_IRQ_3					80
+#define ADMA_IRQ_4					81
+#define ADMA_IRQ_5					82
+#define ADMA_IRQ_6					83
+#define ADMA_IRQ_7					84
+#define CSU_IRQ_0					85
+#define CSU_DMA_IRQ_0				86
+#define EFUSE_IRQ_0					87
+#define XMPU_OCM_IRQ_0				88
+#define XMPU_SWITCH_IRQ_0			88
+#define PL_PS_GRP0_IRQ_0			89
+#define PL_PS_GRP0_IRQ_1			90
+#define PL_PS_GRP0_IRQ_2			91
+#define PL_PS_GRP0_IRQ_3			92
+#define PL_PS_GRP0_IRQ_4			93
+#define PL_PS_GRP0_IRQ_5			94
+#define PL_PS_GRP0_IRQ_6			95
+#define PL_PS_GRP0_IRQ_7			96
+#define PL_PS_GRP1_IRQ_0			104
+#define PL_PS_GRP1_IRQ_1			105
+#define PL_PS_GRP1_IRQ_2			106
+#define PL_PS_GRP1_IRQ_3			107
+#define PL_PS_GRP1_IRQ_4			108
+#define PL_PS_GRP1_IRQ_5			109
+#define PL_PS_GRP1_IRQ_6			110
+#define PL_PS_GRP1_IRQ_7			111
+#define DDR_SS_IRQ_0				112
+#define FP_WDT_IRQ_0				113
+#define PCIE_MSI_IRQ_0				114
+#define PCIE_MSI_IRQ_1				115
+#define PCIE_Legacy_IRQ_0			116
+#define PCIE_DMA_IRQ_0				117
+#define PCIE_MSC_IRQ_0				118
+#define DPORT_IRQ_0					119
+#define siou_irq_IRQ_0				120
+#define pcie_APB_IRQ_0				120
+#define AFI0_APB_IRQ_0				120
+#define AFI1_APB_IRQ_0				120
+#define AFI2_APB_IRQ_0				120
+#define AFI3_APB_IRQ_0				120
+#define AFI4_APB_IRQ_0				120
+#define AFI5_APB_IRQ_0				120
+#define SLCR_SECURE_FPD_APB_IRQ_0	120
+#define SLCR_FPD_APB_IRQ_0			120
+#define CRF_int_IRQ_0				120
+#define FPD_ATB_Error_IRQ_0			121
+#define DPDMA_interrupt_IRQ_0		122
+#define APM_CCI_INTC_IRQ_0			123
+#define APM_DDR_IRQ_0				123
+#define GDMA_IRQ_0					124
+#define GDMA_IRQ_1					125
+#define GDMA_IRQ_2					126
+#define GDMA_IRQ_3					127
+#define GDMA_IRQ_4					128
+#define GDMA_IRQ_5					129
+#define GDMA_IRQ_6					130
+#define GDMA_IRQ_7					131
+#define GPU_IRQ_0					132
+#define SATA_IRQ_0					133
+#define XMPU_DDR0_IRQ_0				134
+#define XMPU_DDR1_IRQ_0				134
+#define XMPU_DDR2_IRQ_0				134
+#define XMPU_DDR3_IRQ_0				134
+#define XMPU_DDR4_IRQ_0				134
+#define XMPU_DDR5_IRQ_0				134
+#define XMPU_FPD_SLAVE_IRQ_0		134
+#define APU_CPUMNT_IRQ_0			135
+#define APU_CPUMNT_IRQ_1			136
+#define APU_CPUMNT_IRQ_2			137
+#define APU_CPUMNT_IRQ_3			138
+#define APU_CTI_IRQ_0				139
+#define APU_CTI_IRQ_1				140
+#define APU_CTI_IRQ_2				141
+#define APU_CTI_IRQ_3				142
+#define APU_PMU_IRQ_0				143
+#define APU_PMU_IRQ_1				144
+#define APU_PMU_IRQ_2				145
+#define APU_PMU_IRQ_3				146
+#define APU_COMM_IRQ_0				147
+#define APU_COMM_IRQ_1				148
+#define APU_COMM_IRQ_2				149
+#define APU_COMM_IRQ_3				150
+#define APU_L2ERR_IRQ_0				151
+#define APU_EXTERR_IRQ_0			152
+#define APU_REGS_IRQ_0				153
+#define INTF_PPD_CCI_IRQ_0			154
+#define INTF_FPD_SMMU_IRQ_0			155

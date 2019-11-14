@@ -1,0 +1,248 @@
+/*
+ * ZynqMP memory region include file
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "zynqmp.dtsh"
+
+#define SECURE 1
+#define NON_SECURE 0
+
+#define MEMATTR(NAME, SEC, MASTERID)			\
+NAME ## _memattr: NAME ## _ma {				\
+	compatible = "qemu:memory-transaction-attr";	\
+	secure = <SEC>;					\
+	requester-id = <MASTERID>;			\
+}
+
+/ {
+	MEMATTR(pmu, SECURE, 0x40);
+
+	MEMATTR(apu0_s, SECURE, 0x80);
+	MEMATTR(apu0_ns, NON_SECURE, 0x80);
+	MEMATTR(apu1_s, SECURE, 0x8d);
+	MEMATTR(apu1_ns, NON_SECURE, 0x8d);
+	MEMATTR(apu2_s, SECURE, 0x8e);
+	MEMATTR(apu2_ns, NON_SECURE, 0x8e);
+	MEMATTR(apu3_s, SECURE, 0x8f);
+	MEMATTR(apu3_ns, NON_SECURE, 0x8f);
+
+	MEMATTR(rpu0, SECURE, 0x2e);
+	MEMATTR(rpu1, SECURE, 0x2f);
+
+	MEMATTR(gem0, NON_SECURE, 0x874);
+	MEMATTR(gem1, NON_SECURE, 0x875);
+	MEMATTR(gem2, NON_SECURE, 0x876);
+	MEMATTR(gem3, NON_SECURE, 0x877);
+	MEMATTR(qspi_dma, NON_SECURE, 0x873);
+
+	MEMATTR(pcie_ns, NON_SECURE, 0x4d0);
+	MEMATTR(csu_dma, NON_SECURE, 0x851);
+
+	/* Bus with XPPU TZ protection.  */
+	protected_amba: protected_amba@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges;
+		downstream {
+			compatible = "qemu:memory-region";
+			alias = <&amba>;
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+		};
+	};
+
+	amba: amba@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges ;
+			rpu0_for_main_bus {
+				compatible = "qemu:memory-region";
+				alias = <&tcm_cache_rpu0>;
+				reg = <BASE_ADDR(0xffe00000) 0x60000>;
+			};
+			rpu1_for_main_bus {
+				compatible = "qemu:memory-region";
+				alias = <&tcm_cache_rpu1>;
+				reg = <BASE_ADDR(0xffe90000) 0x50000>;
+			};
+	};
+
+	ddr3_ram: memory@00000000 {
+		compatible = "qemu:memory-region";
+		device_type = "memory";
+		container = <&amba>;
+	};
+
+	pmu_ram: pmu_ram@ffdc0000 {
+		compatible = "qemu:memory-region";
+		container = <&amba>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0xffdc0000) 0x00020000>;
+	};
+
+	MEM_REGION(tcm_ram_r5_0_A, 0x0, 0x00000, 0x00000, 0x10000, &tcm_cache_rpu0)
+	MEM_REGION(tcm_ram_r5_0_B, 0x0, 0x20000, 0x20000, 0x10000, &tcm_cache_rpu0)
+	MEM_REGION(tcm_ram_r5_1_A, 0x0, 0x00000, 0x00000, 0x10000, &tcm_cache_rpu1)
+	MEM_REGION(tcm_ram_r5_1_B, 0x0, 0x20000, 0x20000, 0x10000, &tcm_cache_rpu1)
+
+	icache_rpu0: icache_rpu0@0x40000 {
+		compatible = "qemu:memory-region";
+		container = <&tcm_cache_rpu0>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0x40000) 0x8000>;
+	};
+
+	dcache_rpu0: dcache_rpu0@0x50000 {
+		compatible = "qemu:memory-region";
+		container = <&tcm_cache_rpu0>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0x50000) 0x8000>;
+	};
+
+	icache_rpu1: icache_rpu1@0x30000 {
+		compatible = "qemu:memory-region";
+		container = <&tcm_cache_rpu1>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0x30000) 0x8000>;
+	};
+
+	dcache_rpu1: dcache_rpu1@0x40000 {
+		compatible = "qemu:memory-region";
+		container = <&tcm_cache_rpu1>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0x40000) 0x8000>;
+	};
+
+	ipibuf_ram: ipibuf@ff990000 {
+		compatible = "qemu:memory-region";
+		container = <&amba>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(0xff990000) 0x1000>;
+	};
+
+	ocm_ram: ocm_ram@0 {
+		compatible = "qemu:memory-region";
+	};
+
+	MEM_REGION(ocm_ram_bank_0, 0x0, 0x00000, 0x00000, 0x10000, &ocm_ram)
+	MEM_REGION(ocm_ram_bank_1, 0x0, 0x10000, 0x10000, 0x10000, &ocm_ram)
+	MEM_REGION(ocm_ram_bank_2, 0x0, 0x20000, 0x20000, 0x10000, &ocm_ram)
+	MEM_REGION(ocm_ram_bank_3, 0x0, 0x30000, 0x30000, 0x10000, &ocm_ram)
+
+	#ifdef LQSPI_XIP
+	lqspi_0: lqspi {
+		device_type = "memory";
+		compatible = "qemu:memory-region";
+		container = <&amba>;
+		qemu,ram = <QEMU_RAM_PROPERTY>;
+		reg = <BASE_ADDR(LQSPI) LQSPI_SIZE>;
+	};
+	#endif
+
+	tcm_cache_rpu0: tcm_cache_rpu0@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "qemu:memory-region";
+
+		atcm1_for_rpu0: atcm1_for_rpu0 {
+			compatible = "qemu:memory-region";
+			alias = <&tcm_ram_r5_1_A>;
+			reg = <BASE_ADDR(0x10000) 0x0 0x10000 0x1>;
+		};
+
+		btcm1_for_rpu0: btcm1_for_rpu0 {
+			compatible = "qemu:memory-region";
+			alias = <&tcm_ram_r5_1_B>;
+			reg = <BASE_ADDR(0x30000) 0x0 0x10000 0x1>;
+		};
+	};
+
+	amba_rpu0: amba_rpu0@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges;
+
+		tcm_cache_rpu0 {
+		    compatible = "qemu:memory-region";
+		    alias = <&tcm_cache_rpu0>;
+		    reg = <0x0 0x0 0xffffffff 0xffffffff 0x0>;
+		};
+
+		rpu_bus_for_rpu0 {
+			compatible = "qemu:memory-region";
+			alias = <&amba_rpu>;
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+		};
+	};
+
+	tcm_cache_rpu1: tcm_cache_rpu1@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "qemu:memory-region";
+	};
+
+	amba_rpu1: amba_rpu1@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges ;
+
+		tcm_cache_rpu1 {
+		    compatible = "qemu:memory-region";
+		    alias = <&tcm_cache_rpu1>;
+		    reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0x1>;
+		};
+
+		rpu_bus_for_rpu1 {
+			compatible = "qemu:memory-region";
+			alias = <&amba_rpu>;
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+		};
+	};
+
+	amba_rpu: amba_rpu@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges;
+		main_bus_for_rpu {
+			compatible = "qemu:memory-region";
+			alias = <&protected_amba>;
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+		};
+	};
+};
+

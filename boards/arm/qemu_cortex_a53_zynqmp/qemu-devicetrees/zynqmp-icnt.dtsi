@@ -1,0 +1,238 @@
+/*
+ * Describe common structure related to the ZynqMP interconnect.
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * SMMU_TBU_SLAVE:	Generates a memory region representing the slave
+ *                 	ports of a TBU.
+ *
+ * @x:			SMMU TBU instance number
+ */
+#define SMMU_TBU_SLAVE(x)					\
+	smmu_tbu ## x: tbu ## x ## _slave@0 {			\
+		#address-cells = <MEMORY_ADDRESS_CELLS>;	\
+		#size-cells = <2>;				\
+		compatible = "simple-bus";			\
+		ranges;						\
+	}
+
+#define SMMU_TBU_MASTER(x)					\
+	tbu ## x ##_master: tbu ## x ## _master@0 {		\
+		#address-cells = <MEMORY_ADDRESS_CELLS>;	\
+		#size-cells = <2>;				\
+		#priority-cells = <1>;				\
+		compatible = "simple-bus";			\
+		ranges;						\
+		main_bus_for_tbu ## x {				\
+			compatible = "qemu:memory-region";	\
+			alias = <&protected_amba>;		\
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>; \
+		};						\
+	}
+
+/*
+ * DDR_XMPU:	DDR XMPU generator
+ *
+ * @x:		DDR XMPU Instance number
+ * @map_mr:	MemoryRegion to map the protected are onto
+ * @prot_mr:	MemoryRegion under protection by this XMPU
+ * @prot_base:	Base address of the protected region
+ * @prot_size:	Size of the protected region
+ * @_align:	XMPU align configuration (1 = 1MB, 0 = 4KB)
+ */
+#define DDR_XMPU(x, map_mr, prot_mr, prot_base, prot_size, _align)		\
+	ddr_xmpu ## x: ddr_xmpu ## x ## _@_ ## DDR_XMPU ## x ## _CFG {		\
+		compatible = "xlnx,xmpu";					\
+		interrupts = <XMPU_DDR ## x ## _IRQ_0>;			\
+		reg-extended = <						\
+			&amba BASE_ADDR(DDR_XMPU ## x ## _CFG)\
+			0x1000							\
+			map_mr BASE_ADDR(prot_base) 0x0 prot_size 0x0>;	\
+		align = <_align>;						\
+		protected-mr = <prot_mr>;					\
+		protected-base = <prot_base>;					\
+		/* map-mr is used for flushing changes and poisoning.  */	\
+		mr-0 = <map_mr>;						\
+	}
+
+/ {
+	/* TBU Slave ports.  */
+	SMMU_TBU_SLAVE(0);
+	SMMU_TBU_SLAVE(1);
+	SMMU_TBU_SLAVE(2);
+	SMMU_TBU_SLAVE(3);
+	SMMU_TBU_SLAVE(4);
+	SMMU_TBU_SLAVE(5);
+
+	/* TBU Master MRs.  */
+	SMMU_TBU_MASTER(3);
+	SMMU_TBU_MASTER(4);
+	SMMU_TBU_MASTER(5);
+
+	cci_slave: cci_slave@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		/* Downstream area used when the CCI is disabled.  */
+                downstream {
+                        compatible = "qemu:memory-region";
+                        alias = <&protected_amba>;
+                        /* Full address range with -1 priority */
+                        reg = <0x0 0x0 0xffffffff 0xffffffff 0x1>;
+                };
+	};
+
+	amba: amba@0 {
+		xppu: xppu@0 {
+			compatible = "xlnx,xppu";
+			reg-extended = <
+					 &amba BASE_ADDR(0xff980000) 0x10000
+                                         /* 32B * 128 = 4K  */
+					 &protected_amba BASE_ADDR(0xFF990000) 0x0 0x1000 0x3
+                                         /* 64K * 256 = 16MB.  We reduce it not to cover OCM.  */
+					 &protected_amba BASE_ADDR(0xFF000000) 0x0 0xfc0000 0x2
+                                         /* 1MB * 16 = 16MB.  */
+					 &protected_amba BASE_ADDR(0xFE000000) 0x0 0x1000000 0x2
+                                         /* 256MB * 1 = 256MB.  */
+					 &protected_amba BASE_ADDR(0xC0000000) 0x0 0x20000000 0x2
+					>;
+			mr = <&amba>;
+			interrupts = <XMPU_OCM_IRQ_0>;
+		};
+
+#define SMMU_IRQ INTF_FPD_SMMU_IRQ_0
+		smmu0: smmu0@SMMU_GPV {
+			compatible = "arm,mmu-500";
+			reg-extended = <&amba BASE_ADDR(SMMU_GPV) 0x10000
+					&smmu_tbu0 BASE_ADDR(0) 0xffffffff 0xffffffff
+					&smmu_tbu1 BASE_ADDR(0) 0xffffffff 0xffffffff
+					&smmu_tbu2 BASE_ADDR(0) 0xffffffff 0xffffffff
+					&smmu_tbu3 BASE_ADDR(0) 0xffffffff 0xffffffff
+					&smmu_tbu4 BASE_ADDR(0) 0xffffffff 0xffffffff
+					&smmu_tbu5 BASE_ADDR(0) 0xffffffff 0xffffffff>;
+			interrupt-parent = <&smmu_reg>;
+			interrupts = <0 1 2 3 4 5 6 7
+					8 9 10 11 12 13 14 15 16
+					17>;
+
+			/* dma:  points to the MR used for PTWs.  */
+			/* mr-x: points to the per TBU down-stream MR.  */
+			dma = <&cci_slave>;
+			mr-0 = <&cci_slave>;
+			mr-1 = <&cci_slave>;
+			mr-2 = <&cci_slave>;
+			mr-3 = <&tbu3_master>;
+			mr-4 = <&tbu4_master>;
+			mr-5 = <&tbu5_master>;
+		};
+		smmu_reg: smmu0@SMMU_REG {
+			compatible = "xlnx,smmu-reg";
+			reg = <BASE_ADDR(SMMU_REG) 0x1000>;
+			interrupt-controller;
+			interrupts = <SMMU_IRQ>;
+		};
+
+		/* Anything mapped in this node will be treated as RAM by the CCI
+		 * and possibly accessed with striping.  */
+		cci_mem1: cci_mem1@0 {
+			#address-cells = <MEMORY_ADDRESS_CELLS>;
+			#size-cells = <2>;
+			#priority-cells = <1>;
+			compatible = "simple-bus";
+			ranges;
+		};
+
+		cci_mem2: cci_mem2@0 {
+			#address-cells = <MEMORY_ADDRESS_CELLS>;
+			#size-cells = <2>;
+			#priority-cells = <1>;
+			compatible = "simple-bus";
+			ranges;
+		};
+
+		cci: cci@CCI_GPV {
+			compatible = "arm,cci-400";
+			gpio-controller;
+			#gpio-cells = <1>;
+			reg-extended = <&amba BASE_ADDR(CCI_GPV) 0xF000
+							&cci_slave BASE_ADDR(0) 0xFFFFFFFF 0xFFFFFFFF 0x2>;
+
+			M0 = <&protected_amba>;
+			M1 = <&cci_mem1>;
+			M2 = <&cci_mem2>;
+		};
+
+		ocm_xmpu: ocm_xmpu@OCM_XMPU_CFG {
+			compatible = "xlnx,xmpu";
+			interrupts = <XMPU_OCM_IRQ_0>;
+			reg-extended = <
+				&amba BASE_ADDR(OCM_XMPU_CFG) 0x1000
+				&amba BASE_ADDR(OCM_RAM) 0x40000
+			>;
+			protected-mr = <&ocm_ram>;
+
+			/* As the down-stream memory-region is offset from zero,
+			 * the XMPU needs to know it's own base adress to be able
+			 * to handle poison offsetting.
+			 */
+			mr-0 = <&amba>;
+			protected-base = <OCM_RAM>;
+		};
+
+		DDR_XMPU(0, &amba_rpu, &ddr3_ram, 0x0, 0x80000000, 1);
+		DDR_XMPU(1, &cci_mem1, &ddr3_ram, 0x0, 0x80000000, 1);
+		DDR_XMPU(2, &cci_mem2, &ddr3_ram, 0x0, 0x80000000, 1);
+		DDR_XMPU(3, &tbu3_master, &ddr3_ram, 0x0, 0x80000000, 1);
+		DDR_XMPU(4, &tbu4_master, &ddr3_ram, 0x0, 0x80000000, 1);
+		DDR_XMPU(5, &tbu5_master, &ddr3_ram, 0x0, 0x80000000, 1);
+
+		downstream_amba_priority_bus {
+			compatible = "qemu:memory-region";
+			alias = <&amba_prio>;
+			reg = <0x0 0x0 0xffffffff>;
+			priority = <0xffffffff>;
+		};
+	};
+
+	amba_prio: amba_prio@0 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "qemu:memory-region";
+	};
+};
+
+&ddr_xmpu1 {
+	gpios = <&cci 0>;
+};
+&ddr_xmpu2 {
+	gpios = <&cci 1>;
+};

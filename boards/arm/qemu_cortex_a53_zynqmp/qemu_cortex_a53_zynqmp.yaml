@@ -1,0 +1,13 @@
+identifier: qemu_cortex_a53_zynqmp
+name: QEMU Emulation for Xilinx ZynqMQ APU
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+flash: 1024
+testing:
+  ignore_tags:
+    - interrupt

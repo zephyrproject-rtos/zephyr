@@ -1,0 +1,741 @@
+/*
+ * ZynqMP IO include file
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "zynqmp.dtsh"
+#include "zynqmp-icnt.dtsi"
+
+#define GEM(g_name, g_base, g_size, g_dma, g_irq)	\
+g_name: g_name@0 {		\
+	#address-cells = <1>;		\
+	#size-cells = <0>;		\
+	compatible = "cdns,gem";	\
+	interrupts = <g_irq g_irq>;		\
+	dma = <g_dma>;			\
+	memattr = <& ## g_name ## _memattr>;	\
+	reg = <0x0 g_base g_size>;	\
+	num-priority-queues = <2>;	\
+	revision = <0x40070106>;	\
+};
+
+/* SPI_FLASH : Helper macro for creating flash devices
+ * args:
+ * 	name : flash node name
+ * 	compat : flash part compatible string
+ * 	sizem : size of the flash
+ * 	regval: Value of two fields specifying addr and spi bus number
+ */
+#define SPI_FLASH(name, compat, sizem, regval)	\
+name: name@0 {									\
+	#address-cells = <1>;						\
+	#size-cells = <1>;							\
+	#bus-cells = <1>;							\
+	compatible = compat, "st,m25p80";			\
+	spi-max-frequency = <50000000>;				\
+	reg = <regval>;								\
+	name@0x00000000 {							\
+		label = #name;							\
+		reg = <0x00000000 sizem>;				\
+	};											\
+};
+
+#define ZDMA_CHANNEL(zname, zdomain, zbase, zirq, zbuswidth, zdma, mid)	\
+zname ## _mr: zname ## mr{						\
+	#address-cells = <MEMORY_ADDRESS_CELLS>;			\
+	#size-cells = <1>;						\
+	compatible = "simple-bus";					\
+	ranges ;							\
+};									\
+									\
+zname ## _mattr: zname ## mattr {					\
+	compatible = "qemu:memory-transaction-attr";			\
+	secure = <0>;							\
+	requester-id = <mid>;						\
+};									\
+									\
+zname: zname@zbase {							\
+	compatible = "xlnx,zdma";					\
+	reg = <BASE_ADDR(zbase) 0x1000>;				\
+	bus-width = <zbuswidth>;					\
+	interrupts = <zirq>;						\
+	#stream-id-cells = <0x1>;					\
+	dma = <zdma>;							\
+	memattr = <& ## zname ## _mattr>;				\
+}
+
+#define I2C_CLOCKS &misc_clk
+
+#define I2C_NODES(name, addressbase, irq, eeprom_addr)			\
+name: name@addressbase {												\
+	clocks = <I2C_CLOCKS>;												\
+	compatible = "xlnx,ps7-i2c-1.00.a", "cdns,i2c-r1p10";				\
+	interrupts = <irq>;													\
+	reg = <BASE_ADDR(addressbase) 0x1000>;								\
+	#address-cells = <1>;												\
+	#size-cells = <0>;													\
+	eeprom@54 {															\
+		compatible = "at,24c64";										\
+		reg = <eeprom_addr>;											\
+		size = <0x2000>;												\
+	};																	\
+};
+
+#define OCM_MEM_CTRL(n, hlt_line, pwr_line)								\
+glue(ocm_mem_ctrl_, n): glue(ocm_mem_ctrl_, n)@n {						\
+	compatible = "qemu,memory-controller";								\
+	mr = <glue(&ocm_ram_bank_, n)>;										\
+	gpios = <&pmu_local hlt_line &pmu_local pwr_line>;					\
+	gpio-names = "hlt_cntrl", "pwr_cntrl";								\
+};
+
+/ {
+	#address-cells = <MEMORY_ADDRESS_CELLS>;
+	#size-cells = <1>;
+	aliases {
+		serial0 = &ps7_uart_0;
+		serial1 = &ps7_uart_1;
+	};
+
+	/* FIXME: Total fabrication */
+	misc_clk: misc_clk {
+		#clock-cells = <0>;
+		clock-frequency = <50000000>;
+		compatible = "fixed-clock";
+	};
+
+	amba: amba@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <1>;
+		compatible = "xlnx,ps7-axi-interconnect-1.00.a", "simple-bus";
+		ranges ;
+
+		ps7_afi_0: ps7-afi@AFIFM0 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM0) 0x1000>;
+		};
+		ps7_afi_1: ps7-afi@AFIFM1 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM1) 0x1000>;
+		};
+		ps7_afi_2: ps7-afi@AFIFM2 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM2) 0x1000>;
+		};
+		ps7_afi_3: ps7-afi@AFIFM3 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM3) 0x1000>;
+		};
+		ps7_afi_4: ps7-afi@AFIFM4 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM4) 0x1000>;
+		};
+		ps7_afi_5: ps7-afi@AFIFM5 {
+			compatible = "xlnx,ps7-afi-1.00.a";
+			reg = <BASE_ADDR(AFIFM5) 0x1000>;
+		};
+
+		ZDMA_CHANNEL(gdma0, gdma, GDMA_0_BASE, GDMA_IRQ_0, 128, &smmu_tbu5, 0x14e8);
+		ZDMA_CHANNEL(gdma1, gdma, GDMA_1_BASE, GDMA_IRQ_1, 128, &smmu_tbu5, 0x14e9);
+		ZDMA_CHANNEL(gdma2, gdma, GDMA_2_BASE, GDMA_IRQ_2, 128, &smmu_tbu5, 0x14ea);
+		ZDMA_CHANNEL(gdma3, gdma, GDMA_3_BASE, GDMA_IRQ_3, 128, &smmu_tbu5, 0x14eb);
+		ZDMA_CHANNEL(gdma4, gdma, GDMA_4_BASE, GDMA_IRQ_4, 128, &smmu_tbu5, 0x14ec);
+		ZDMA_CHANNEL(gdma5, gdma, GDMA_5_BASE, GDMA_IRQ_5, 128, &smmu_tbu5, 0x14ed);
+		ZDMA_CHANNEL(gdma6, gdma, GDMA_6_BASE, GDMA_IRQ_6, 128, &smmu_tbu5, 0x14ee);
+		ZDMA_CHANNEL(gdma7, gdma, GDMA_7_BASE, GDMA_IRQ_7, 128, &smmu_tbu5, 0x14ef);
+
+		crf: crf@CRF_APB {
+			compatible = "xlnx,zynqmp_crf";
+			reg = <BASE_ADDR(CRF_APB) 0x110>;
+			gpio-controller;
+			#gpio-cells = <1>;
+		};
+
+		xlnx_dpdma: axidpdma@DPDMA {
+			compatible = "xlnx,axi-dpdma-1.0";
+			reg = <BASE_ADDR(DPDMA) 0x1000>;
+			clocks = <&dummy_clk>;
+			clock-names = "axi_clk";
+			xlnx,axi-clock-freq = <200000000>;
+			interrupts = <DPDMA_interrupt_IRQ_0>;
+			dma = <&protected_amba>;
+
+			dma-channels = <6>;
+
+			#dma-cells = <1>;
+			dma-video0channel@fe4c0000 {
+				compatible = "xlnx,video0";
+			};
+			dma-video1channel@fe4c0000 {
+				compatible = "xlnx,video1";
+			};
+			dma-video2channel@fe4c0000 {
+				compatible = "xlnx,video2";
+			};
+			dma-graphicschannel@fe4c0000 {
+				compatible = "xlnx,graphics";
+			};
+			dma-audio0channel@fe4c0000 {
+				compatible = "xlnx,audio0";
+			};
+			dma-audio1channel@fe4c0000 {
+				compatible = "xlnx,audio1";
+			};
+		};
+
+		dp_aclk: clock0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <50000000>;
+			clock-accuracy = <100>;
+		};
+
+		dummy_clk: clock1 {
+			compatible = "dummy-clk";
+			#clock-cells = <0>;
+			clock-frequency = <50000000>;
+		};
+
+		xlnx_dp_sub: dp_sub@fd4aa000 {
+			compatible = "xlnx,v-dp-sub-1.6";
+			reg = <BASE_ADDR(0xfd4aa000) 0x4000>;
+			xlnx,output-fmt = "rgb";
+		};
+
+		xlnx_dp: dp@DP {
+			compatible = "xlnx,v-dp-4.1";
+			reg = <BASE_ADDR(DP) 0x1000>;
+			interrupts = <DPORT_IRQ_0>;
+			clock-names = "aclk";
+			clocks = <&dp_aclk>;
+
+			dpdma = <&xlnx_dpdma>;
+			xlnx,dp-version = "v1.2";
+			xlnx,max-lanes = <2>;
+			xlnx,max-link-rate = <162000>;
+			xlnx,max-bpc = <16>;
+			xlnx,max-pclock = <30000>;
+			xlnx,enable-ycrcb;
+
+			xlnx,colormetry = "rgb";
+			xlnx,bpc = <8>;
+
+			xlnx,dp-sub = <&xlnx_dp_sub>;
+		};
+
+		xilinx_drm {
+			compatible = "xlnx,drm";
+			xlnx,encoder-slave = <&xlnx_dp>;
+			clocks = <&dummy_clk 0>;
+			xlnx,connector-type = "DisplayPort";
+			xlnx,dp-sub = <&xlnx_dp_sub>;
+			planes {
+				xlnx,pixel-format = "rgb565";
+				plane0 {
+					dmas = <&xlnx_dpdma 3>;
+					dma-names = "dma";
+				};
+				plane1 {
+					dmas = <&xlnx_dpdma 0>;
+					dma-names = "dma";
+				};
+			};
+		};
+
+		ddrphy_0: ddr-phy@DDR_PHY {
+			compatible = "xlnx,zynqmp-ddr-phy";
+			reg = <BASE_ADDR(DDR_PHY) 0x2000>;
+		};
+
+		ddrc_0: memory-controller@DDRC {
+			compatible = "xlnx,zynqmp-ddrc";
+			reg = <BASE_ADDR(DDRC) 0x1000>;
+		};
+
+		swdt@0xFF150000 {
+			compatible = "xlnx,swdt";
+			reg = <0x0 0xff150000 0x10>;
+			pclk = <1000000>;
+		};
+
+		wdt@0xFD4D0000 {
+			compatible = "xlnx,swdt";
+			reg = <0x0 0xfd4d0000 0x10>;
+			pclk = <1000000>;
+		};
+
+		csu_wdt@0xFFCB0000 {
+			compatible = "xlnx,swdt";
+			reg = <0x0 0xffcb0000 0x10>;
+			pclk = <1000000>;
+		};
+
+		iou_slcr_0: zynqmp_iou_slcr@IOU_SLCR {
+			compatible = "xilinx,zynqmp-iou-slcr";
+			reg = <BASE_ADDR(IOU_SLCR) 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		ps7_can_0: ps7-can@CAN0 {
+			compatible = "xlnx,zynqmp-can";
+			interrupts = <CAN0_IRQ_0>;
+			reg = <BASE_ADDR(CAN0) 0x1000>;
+			ctrl-idx = <0x0>;
+		};
+		ps7_can_1: ps7-can@CAN1 {
+			compatible = "xlnx,zynqmp-can";
+			interrupts = <CAN1_IRQ_0>;
+			reg = <BASE_ADDR(CAN1) 0x1000>;
+			ctrl-idx = <0x1>;
+		};
+
+		serdes_0: serdes@SERDES {
+			compatible = "xlnx,zynqmp-serdes";
+			reg = <BASE_ADDR(SERDES) 0x20000>;
+		};
+
+		GEM(gem0, GEM0, 0x1000, &smmu_tbu2, GigabitEth0_IRQ_0)
+		GEM(gem1, GEM1, 0x1000, &smmu_tbu2, GigabitEth1_IRQ_0)
+		GEM(gem2, GEM2, 0x1000, &smmu_tbu2, GigabitEth2_IRQ_0)
+		GEM(gem3, GEM3, 0x1000, &smmu_tbu2, GigabitEth3_IRQ_0)
+
+		sata: ahci@SATA_AHCI_HBA {
+			compatible = "generic-ahci", "sysbus-ahci";
+			reg = <BASE_ADDR(SATA_AHCI_HBA) 0x2000>;
+			interrupts = <SATA_IRQ_0>;
+			num-ports = <2>;
+			dma = <&protected_amba>;
+		};
+
+		lpd_gpv@0xFE100000 {
+			compatible = "xlnx,lpd-gpv";
+			reg = <BASE_ADDR(0xFE100000) 0xC8130>;
+		};
+
+		usb3_0: usb3@USB3_0_XHCI {
+			compatible = "qemu,irq-test-component";
+			reg = <BASE_ADDR(USB3_0_XHCI) 0x4000>;
+			interrupts = <USB3_0_1_PMU_WAKEUP_IRQ_0>;
+#ifdef MULTI_ARCH
+			gpios = <&pmu_io_gpi1 7 0 &pmu_local 7>;
+			gpio-names = "wake", "pwr_cntrl";
+#endif
+		};
+		usb3_1: usb3@USB3_1_XHCI {
+			compatible = "qemu,irq-test-component";
+			reg = <BASE_ADDR(USB3_1_XHCI) 0x4000>;
+			interrupts = <USB3_0_1_PMU_WAKEUP_IRQ_1>;
+#ifdef MULTI_ARCH
+			gpios = <&pmu_io_gpi1 8 0 &pmu_local 8>;
+			gpio-names = "wake", "pwr_cntrl";
+#endif
+		};
+
+		nand: arasan_nfc@NAND {
+			compatible = "arasan,nfc";
+			reg = <BASE_ADDR(NAND) 0x1000>;
+			interrupts = <NAND_IRQ_0>;
+			dma = <&protected_amba>;
+			has-mdma = <1>;
+			nand {
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "all";
+					reg   = <0x00000000 0x00100000>;
+				};
+			};
+		};
+
+		psu_gpio: psu_gpio@GPIO {
+			#gpio-cells = <1>;
+			compatible = "xlnx,zynqmp-gpio";
+			gpio-controller;
+			interrupts = <GPIO_IRQ_0>;
+			reg = <BASE_ADDR(GPIO) 0x1000>;
+		};
+
+		qspi_dma_0: csu_dma@QSPI_DMA {
+			compatible = "zynqmp,csu-dma";
+			interrupts = <QSPI_IRQ_0>;
+			#stream-id-cells = <0x1>;
+			reg = <BASE_ADDR(QSPI_DMA) 0x800>;
+			dma = <&smmu_tbu2>;
+			memattr = <&qspi_dma_memattr>;
+			is-dst = <1>;
+		};
+		ps7_qspi_0: ps7-qspi@QSPI {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#bus-cells = <1>;
+			clock-names = "ref_clk", "pclk";
+			compatible = "xlnx,usmp-gqspi", "cdns,spi-r1p6";
+			stream-connected-dma = <&qspi_dma_0>;
+			clocks = <&misc_clk>, <&misc_clk>;
+			dma = <&protected_amba>;
+			interrupts = <QSPI_IRQ_0>;
+			num-ss-bits = <2>;
+#ifdef LQSPI_XIP
+			reg = <BASE_ADDR(QSPI) 0x1000 BASE_ADDR(0xA0000000) LQSPI_SIZE>;
+#else
+			reg = <BASE_ADDR(QSPI) 0x1000 BASE_ADDR(LQSPI) LQSPI_SIZE>;
+#endif
+			speed-hz = <10000000>;
+			xlnx,fb-clk = <0x1>;
+			xlnx,qspi-clk-freq-hz = <0xbebc200>;
+			xlnx,qspi-mode = <0x2>;
+#ifdef LQSPI_XIP
+			qemu,lqspi-size = <LQSPI_SIZE>;
+			qemu,lqspi-src = <0xA0000000>;
+			qemu,lqspi-dst = <LQSPI>;
+#endif
+		};
+
+		sd_clk: sd_clk {
+			#clock-cells = <0>;
+			clock-frequency = <25000000>;
+			compatible = "fixed-clock";
+		};
+		ps7_sd_0: ps7-sdio@SD0 {
+			clock-names = "ref_clk", "aper_clk";
+			clock-frequency = <25000000>;
+			compatible = "xilinx,zynqmp-sdhci", "generic-sdhci";
+			clocks = <&sd_clk>, <&sd_clk>;
+			drive-index = <0>;
+			interrupts = <SDIO0_IRQ_0>;
+			reg = <BASE_ADDR(SD0) 0x1000>;
+			dma = <&protected_amba>;
+			gpios = <&iou_slcr_0 0 0>;
+			gpio-names = "SLOTTYPE";
+			is-mmc = <0x0>;
+			xlnx,has-cd = <0x1>;
+			xlnx,has-power = <0x0>;
+			xlnx,has-wp = <0x1>;
+			xlnx,sdio-clk-freq-hz = <50000000>;
+		};
+		ps7_sd_1: ps7-sdio@SD1 {
+			clock-names = "ref_clk", "aper_clk";
+			compatible = "xilinx,zynqmp-sdhci", "generic-sdhci";
+			clocks = <&misc_clk>, <&misc_clk>;
+			drive-index = <1>;
+			interrupts = <SDIO1_IRQ_0>;
+			reg = <BASE_ADDR(SD1) 0x1000>;
+			dma = <&protected_amba>;
+			gpios = <&iou_slcr_0 1 0>;
+			gpio-names = "SLOTTYPE";
+			is-mmc = <0x1>;
+			xlnx,has-cd = <0x1>;
+			xlnx,has-power = <0x0>;
+			xlnx,has-wp = <0x1>;
+			xlnx,sdio-clk-freq-hz = <50000000>;
+		};
+
+		ps7_spi_0: ps7-spi@SPI0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-names = "ref_clk", "pclk";
+			clocks = <&misc_clk>, <&misc_clk>;
+			compatible = "cdns,spi-r1p6";
+			interrupts = <SPI0_IRQ_0>;
+			num-ss-bits = <4>;
+			reg = <BASE_ADDR(SPI0) 0x1000>;
+			SPI_FLASH(spi0_flash0, "sst25wf080", 0x00100000, 0x0 0x0)
+		};
+		ps7_spi_1: ps7-spi@SPI1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-names = "ref_clk", "pclk";
+			clocks = <&misc_clk>, <&misc_clk>;
+			compatible = "cdns,spi-r1p6";
+			interrupts = <SPI1_IRQ_0>;
+			num-ss-bits = <4>;
+			reg = <BASE_ADDR(SPI1) 0x1000>;
+			SPI_FLASH(spi1_flash0, "sst25wf080", 0x00100000, 0x0 0x0)
+			SPI_FLASH(spi1_flash1, "sst25wf080", 0x00100000, 0x1 0x0)
+			SPI_FLASH(spi1_flash2, "sst25wf080", 0x00100000, 0x2 0x0)
+			SPI_FLASH(spi1_flash3, "sst25wf080", 0x00100000, 0x3 0x0)
+		};
+
+		ps7_ttc_0: ps7-ttc@TTC0 {
+			clocks = <&misc_clk>;
+			compatible = "xlnx,ps7-ttc-1.00.a";
+			interrupts = <TTC0_IRQ_0 TTC0_IRQ_1 TTC0_IRQ_2>;
+			reg = <BASE_ADDR(TTC0) 0x1000>;
+			width = <32>;
+		};
+		ps7_ttc_1: ps7-ttc@TTC1 {
+			clocks = <&misc_clk>;
+			compatible = "xlnx,ps7-ttc-1.00.a";
+			interrupts = <TTC1_IRQ_0 TTC1_IRQ_1 TTC1_IRQ_2>;
+			reg = <BASE_ADDR(TTC1) 0x1000>;
+			width = <32>;
+		};
+		ps7_ttc_2: ps7-ttc@TTC2 {
+			clocks = <&misc_clk>;
+			compatible = "xlnx,ps7-ttc-1.00.a";
+			interrupts = <TTC2_IRQ_0 TTC2_IRQ_1 TTC2_IRQ_2>;
+			reg = <BASE_ADDR(TTC2) 0x1000>;
+			width = <32>;
+		};
+		ps7_ttc_3: ps7-ttc@TTC3 {
+			clocks = <&misc_clk>;
+			compatible = "xlnx,ps7-ttc-1.00.a";
+			interrupts = <TTC3_IRQ_0 TTC3_IRQ_1 TTC3_IRQ_2>;
+			reg = <BASE_ADDR(TTC3) 0x1000>;
+			width = <32>;
+		};
+
+		uart_clk: uart_clk {
+			#clock-cells = <0>;
+			clock-frequency = <25000000>;
+			compatible = "fixed-clock";
+		};
+		ps7_uart_0: serial@UART0 {
+			compatible = "xlnx,ps7-uart-1.00.a", "xlnx,xuartps";
+			current-speed = <115200>;
+			interrupts = <UART0_IRQ_0>;
+			port-number = <1>;
+			reg = <BASE_ADDR(UART0) 0x1000>;
+			xlnx,has-modem = <0x0>;
+			xlnx,uart-clk-freq-hz = <50000000>;
+			clock-names = "uart_clk", "pclk";
+			clocks = <&uart_clk &uart_clk>;
+			ttrig-polarity = <1>;
+		};
+		ps7_uart_1: serial@UART1 {
+			compatible = "xlnx,ps7-uart-1.00.a", "xlnx,xuartps";
+			current-speed = <115200>;
+			interrupts = <UART1_IRQ_0>;
+			port-number = <0>;
+			reg = <BASE_ADDR(UART1) 0x1000>;
+			xlnx,has-modem = <0x0>;
+			xlnx,uart-clk-freq-hz = <50000000>;
+			clock-names = "uart_clk", "pclk";
+			clocks = <&uart_clk &uart_clk>;
+			ttrig-polarity = <1>;
+			status = "disabled";
+		};
+
+		ocm_ctrl0: ocm_ctrl@OCM {
+			compatible = "xlnx,zynqmp-ocmc";
+			memsize = <OCM_SIZE>;
+			reg = <BASE_ADDR(OCM) 0x1000>;
+		};
+
+#ifdef MULTI_ARCH
+		OCM_MEM_CTRL(0, 16, 12)
+		OCM_MEM_CTRL(1, 17, 13)
+		OCM_MEM_CTRL(2, 18, 14)
+		OCM_MEM_CTRL(3, 19, 15)
+#endif
+
+		ZDMA_CHANNEL(adma0, adma, ADMA_0_BASE, ADMA_IRQ_0, 64, &smmu_tbu2, 0x868);
+		ZDMA_CHANNEL(adma1, adma, ADMA_1_BASE, ADMA_IRQ_1, 64, &smmu_tbu2, 0x869);
+		ZDMA_CHANNEL(adma2, adma, ADMA_2_BASE, ADMA_IRQ_2, 64, &smmu_tbu2, 0x86a);
+		ZDMA_CHANNEL(adma3, adma, ADMA_3_BASE, ADMA_IRQ_3, 64, &smmu_tbu2, 0x86b);
+		ZDMA_CHANNEL(adma4, adma, ADMA_4_BASE, ADMA_IRQ_4, 64, &smmu_tbu2, 0x86c);
+		ZDMA_CHANNEL(adma5, adma, ADMA_5_BASE, ADMA_IRQ_5, 64, &smmu_tbu2, 0x86d);
+		ZDMA_CHANNEL(adma6, adma, ADMA_6_BASE, ADMA_IRQ_6, 64, &smmu_tbu2, 0x86e);
+		ZDMA_CHANNEL(adma7, adma, ADMA_7_BASE, ADMA_IRQ_7, 64, &smmu_tbu2, 0x86f);
+
+		crl: crl@CRL_APB {
+			compatible = "xlnx,zynqmp-crl";
+			reg = <BASE_ADDR(CRL_APB) 0x1000>;
+			gpio-controller;
+			#gpio-cells = <1>;
+			num-gpios = <3>;
+			gpios = <&pmu_global 26>;
+		};
+
+#ifdef MULTI_ARCH
+		gic_proxy: gic_proxy@0xff418000 {
+			#interrupt-cells = <3>;
+			reg = <BASE_ADDR(0xff418000) 0x100>;
+			compatible = "xlnx,zynqmp-gicp";
+			interrupt-controller;
+			gpios = <&pmu_io_gpi1 17 0>;
+		};
+#endif
+
+		zynqmp_anms: zynqmp_anms@AMS_CTRL {
+			compatible = "xlnx,zynqmp_ams";
+			reg = <BASE_ADDR(AMS_CTRL) 0x68>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		zynqmp_sysmon_ps: zynqmp_sysmon_ps@AMS_PS_SYSMON {
+			compatible = "xlnx,zynqmp_sysmon";
+			reg = <BASE_ADDR(AMS_PS_SYSMON) 0x200>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		zynqmp_sysmon_pl: zynqmp_sysmon_pl@AMS_PL_SYSMON {
+			compatible = "xlnx,zynqmp_sysmon";
+			reg = <BASE_ADDR(AMS_PL_SYSMON) 0x200>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		zynqmp_rtc: zynqmp_rtc@RTC {
+			compatible = "xlnx-zynmp.rtc";
+			reg = <0x00 RTC 0x100>;
+		};
+
+		/* Used for connections on reserved bits */
+		dummy_gpio: dummy_gpio@0 {
+			gpio-controller;
+			#gpio-cells = <1>;
+		};
+
+		pmu_global: pmu_global@PMU_GLOBAL {
+			compatible = "xlnx,pmu_global";
+			reg = <BASE_ADDR(PMU_GLOBAL) 0x40000>;
+			gpio-controller;
+			#gpio-cells = <1>;
+			num-gpios = <26>;
+#ifdef MULTI_ARCH
+			gpios = <&rp_gpio_pmu 3>;
+			gpio-names = "mb_sleep";
+			error-out-gpios = <&pmu_io_gpi1 29 0 &pmu_io_gpi1 30  0>;
+
+			pwr-state-gpios = <	&pmu_local 1		\
+								&pmu_local 2		\
+								&pmu_local 3		\
+								&pmu_local 4		\
+								&pmu_local 5		\
+								&pmu_local 6		\
+								&dummy_gpio 0		\
+								&pmu_local 10		\
+								&dummy_gpio 1		\
+								&dummy_gpio 2		\
+								&pmu_local 9		\
+								&pmu_local 9		\
+								&pmu_local 20		\
+								&pmu_local 21		\
+								&pmu_local 22		\
+								&pmu_local 23		\
+								&pmu_local 12		\
+								&pmu_local 13		\
+								&pmu_local 14		\
+								&pmu_local 15		\
+								&pmu_local 7		\
+								&pmu_local 8		\
+								&pmu_local 28		\
+							>;
+#else
+			ignore-pwr-req = <1>;
+#endif
+		};
+
+		cxtsgen: cxtsgen@IOU_SCNTR {
+			compatible = "arm.generic-timer";
+			reg = <BASE_ADDR(IOU_SCNTRS) 0x1000>;
+		};
+
+		ps_reset@0 {
+			compatible = "qemu,reset-device";
+			gpios = <&crl 2 &pmu_global 3>;
+		};
+
+		pcie_attrib: pcie_attrib@PCIE_ATTRIB {
+			compatible = "xlnx.nwl-pcie-attrib";
+			reg = <BASE_ADDR(PCIE_ATTRIB) 0x1000>;
+			interrupts = <PCIE_MSC_IRQ_0>;
+		};
+
+		pcie_main: pcie_main@AXIPCIE_MAIN {
+			compatible = "xlnx.nwl-pcie-main";
+			reg-extended = <&amba BASE_ADDR(AXIPCIE_MAIN) 0x1000
+					/* Wierdo. At AXIPEICE_MAIN, but on the ingress side,
+					 * we find the MSI forwarders.  */
+					&pcie_ingress BASE_ADDR(PCIE_ATTRIB) 0x0 0x1000 0x2
+
+					&amba 0x80 0x0 0x10000000
+					&pcie_overlay 0x0 0x0 0xFFFFFFFF 0xFFFFFFFF 0x0
+
+					>;
+			interrupts = < PCIE_Legacy_IRQ_0 PCIE_MSI_IRQ_0 PCIE_MSI_IRQ_1 >;
+			dma = <&pcie_ingress>;
+			memattr = <&pcie_ns_memattr>;
+		};
+
+		zynqmp_boot: zynqmp_boot@0 {
+			compatible = "xlnx,zynqmp-boot";
+			dma = <&amba>;
+#ifdef MULTI_ARCH
+			gpios = <&pmu_local 0>;
+			gpios-names = "reset";
+#endif
+		};
+
+		mio_in: rp_cosim_mio_in {
+				gpio-controller;
+				#gpio-cells = <2>;
+		};
+	};
+
+	/* This is the AS that PCI Devices access to reach the PS.  */
+	pcie_ingress: pcie_ingress@0 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "simple-bus";
+		downstream {
+			compatible = "qemu:memory-region";
+			alias = <&smmu_tbu1>;
+			reg = <BASE_ADDR(0x0) 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+		};
+	};
+
+	/* This is an overlay onto amba allowing us to map PCIe MMCFG ECAM.  */
+	pcie_overlay: pcie_overlay@0 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		priority = <2>;
+		compatible = "qemu:memory-region";
+		container = <&amba>;
+	};
+
+	/* QEMUs  VirtIO does not support IOMMUs nor selectable ASs.  */
+	ddr_alias: ddr_alias@0 {
+		compatible = "qemu:memory-region";
+		container = <&qemu_sysmem>;
+		alias = <&ddr3_ram>;
+		reg = <0x0 0x0 0xFFFFFFFF 0xFFFFFFFF 0x0>;
+	};
+
+	/* Magic node representing QEMU's default address-space.  */
+	qemu_sysmem: qemu_sysmem@0 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "qemu:system-memory";
+	};
+};

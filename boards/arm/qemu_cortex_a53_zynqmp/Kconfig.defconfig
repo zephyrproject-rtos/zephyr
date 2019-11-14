@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_A53_ZYNQMP
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_cortex_a53_zynqmp"
+
+endif # BOARD_QEMU_CORTEX_A53_ZYNQMP

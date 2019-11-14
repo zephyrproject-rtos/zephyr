@@ -1,0 +1,133 @@
+/*
+ * ZynqMP header file
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "loader.dtsh"
+#include "zynqmp-irqs.dtsh"
+#include "zynqmp-memmap.dtsh"
+
+/* QEMU RAM Settings */
+#if defined(MULTI_ARCH)
+	#define IS_MULTI_ARCH(a) a
+	#define QEMU_RAM_PROPERTY 2
+#else
+	#define IS_MULTI_ARCH(a)
+	#define QEMU_RAM_PROPERTY 1
+#endif
+
+#define xglue(a, b) a ## b
+#define glue(a, b) xglue(a, b)
+
+#define LC ,
+
+#define EMIT_IPI(NAME, BASE, INTC, IRQ, TLINE, TLINE_32)		\
+	NAME: NAME@BASE {											\
+		compatible = "xlnx,zynqmp_ipi";						\
+		gpio-controller;										\
+		#gpio-cells = <2>;										\
+		interrupt-parent = <INTC>;								\
+		interrupts = <IRQ>;										\
+		reg = <BASE_ADDR(BASE) 0x1000>;							\
+		num-gpios = <64>; 										\
+		interrupt-gpios = <	&apu_ipi TLINE 0					\
+							&rpu_0_ipi TLINE 0					\
+							&rpu_1_ipi TLINE 0					\
+							&pmu_0_ipi TLINE 0					\
+							&pmu_1_ipi TLINE 0					\
+							&pmu_2_ipi TLINE 0					\
+							&pmu_3_ipi TLINE 0					\
+							&pl_0_ipi TLINE 0					\
+							&pl_1_ipi TLINE 0					\
+							&pl_2_ipi TLINE 0					\
+							&pl_3_ipi TLINE 0					\
+						  >;									\
+		gpios =	<	&apu_ipi TLINE_32 0							\
+					&rpu_0_ipi TLINE_32 0						\
+					&rpu_1_ipi TLINE_32 0						\
+					&pmu_0_ipi TLINE_32 0						\
+					&pmu_1_ipi TLINE_32 0						\
+					&pmu_2_ipi TLINE_32 0						\
+					&pmu_3_ipi TLINE_32 0						\
+					&pl_0_ipi TLINE_32 0						\
+					&pl_1_ipi TLINE_32 0						\
+					&pl_2_ipi TLINE_32 0						\
+					&pl_3_ipi TLINE_32 0						\
+				>;												\
+	};
+
+#define CPU_NR_APU0 0
+#define CPU_NR_APU1 1
+#define CPU_NR_APU2 2
+#define CPU_NR_APU3 3
+
+#ifdef MULTI_ARCH
+#define IPI_INTERRUPT_MAP(INTC_1, INTC_2, IRQ)	interrupt-map =				\
+											<0 0 0 &gic_proxy IRQ 4>,		\
+											<0 0 0 INTC_1 IRQ 4>,			\
+											<0 0 0 INTC_2 IRQ 4>;
+#else
+#define IPI_INTERRUPT_MAP(INTC_1, INTC_2, IRQ)	interrupt-map =				\
+											<0 0 0 INTC_1 IRQ 4>,			\
+											<0 0 0 INTC_2 IRQ 4>;
+#endif
+
+#define EMIT_IPI_2PARENTS(NAME, BASE, INTC_1, INTC_2, IRQ, TLINE, TLINE_32)	\
+	NAME: NAME@BASE {														\
+		compatible = "xlnx,zynqmp_ipi";									\
+		gpio-controller;													\
+		#gpio-cells = <2>;													\
+		interrupts = <0>;													\
+		IPI_INTERRUPT_MAP(INTC_1, INTC_2, IRQ)								\
+		interrupt-map-mask = <0 0 0 0>;										\
+		reg = <BASE_ADDR(BASE) 0x1000>;										\
+		num-gpios = <64>;													\
+		interrupt-gpios = <	&apu_ipi TLINE 0								\
+							&rpu_0_ipi TLINE 0								\
+							&rpu_1_ipi TLINE 0								\
+							&pmu_0_ipi TLINE 0								\
+							&pmu_1_ipi TLINE 0								\
+							&pmu_2_ipi TLINE 0								\
+							&pmu_3_ipi TLINE 0								\
+							&pl_0_ipi TLINE 0								\
+							&pl_1_ipi TLINE 0								\
+							&pl_2_ipi TLINE 0								\
+							&pl_3_ipi TLINE 0								\
+					>;														\
+		gpios =	<	&apu_ipi TLINE_32 0										\
+					&rpu_0_ipi TLINE_32 0									\
+					&rpu_1_ipi TLINE_32 0									\
+					&pmu_0_ipi TLINE_32 0									\
+					&pmu_1_ipi TLINE_32 0									\
+					&pmu_2_ipi TLINE_32 0									\
+					&pmu_3_ipi TLINE_32 0									\
+					&pl_0_ipi TLINE_32 0									\
+					&pl_1_ipi TLINE_32 0									\
+					&pl_2_ipi TLINE_32 0									\
+					&pl_3_ipi TLINE_32 0									\
+				>;															\
+	};

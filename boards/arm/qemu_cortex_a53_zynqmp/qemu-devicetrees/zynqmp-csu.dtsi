@@ -1,0 +1,115 @@
+/*
+ * ZynqMP IO include file
+ *
+ * Copyright (c) 2018, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#define CSUSSS			0xffca0008
+#define CSUDMA_SRC		0xFFC80000
+#define CSUDMA_DST		0xFFC80800
+#define CSUDMA			0xFFC80000
+
+&amba {
+	zynqmp_csu_dma_dst: csu_dma_dst@CSUDMA_DST {
+		compatible = "zynqmp,csu-dma";
+		interrupts = <CSU_DMA_IRQ_0>;
+		reg = <0x0 CSUDMA_DST 0x800>;
+		dma = <&protected_amba>;
+		is-dst = <1>;
+		memattr = <&csu_dma_memattr>;
+	};
+	xlnx_csu_dma_src: csu_dma_src@CSUDMA_SRC {
+		compatible = "zynqmp,csu-dma";
+		interrupts = <CSU_DMA_IRQ_0>;
+		stream-connected-dma = <&zynqmp_csu_stream_switch> ;
+		reg = <0x0 CSUDMA_SRC 0x800>;
+		dma = <&protected_amba>;
+		memattr = <&csu_dma_memattr>;
+	};
+
+	zynqmp_csu_sha: csu_sha@CSU_SHA3 {
+		compatible = "zynqmp,csu-sha3";
+		reg = <BASE_ADDR(CSU_SHA3) 0x100>;
+	};
+
+	zynqmp_csu_aes: csu_aes@CSU_AES {
+		#gpio-cells = <1>;
+		gpio-controller;
+		compatible = "zynqmp,csu-aes";
+		stream-connected-aes = <&zynqmp_csu_stream_switch> ;
+		reg = <BASE_ADDR(CSU_AES) 0x100>;
+		gpios = <&xlnx_aes 0
+			 &xlnx_aes 1>;
+		gpio-names = "busy", "done";
+		aes-core = <&xlnx_aes>;
+		xlnx_aes: xlnx_aes@0 {
+			#gpio-cells = <1>;
+			compatible = "xlnx-aes";
+			gpios = <&zynqmp_csu_aes 5>;
+			gpio-names = "reset";
+		};
+	};
+
+	zynqmp_csu_efuse: csu_efuse@EFUSE {
+		compatible = "xlnx,zynqmp-efuse";
+		zynqmp-aes-key-sink-efuses = <&zynqmp_csu_aes>;
+		reg = <BASE_ADDR(EFUSE) 0x2000>;
+		efuse = <&xlnx_efuse>;
+		xlnx_efuse: xlnx_efuse@0 {
+			doc-ignore = <1>;
+			compatible = "xlnx,efuse";
+			efuse-nr = <3>;
+			efuse-size = <2048>;
+		};
+	};
+
+	zynqmp_csu_bbram: csu_bbram@BBRAM {
+		compatible = "xlnx,bbram-ctrl";
+		zynqmp-aes-key-sink-bbram = <&zynqmp_csu_aes>;
+		reg = <BASE_ADDR(BBRAM) 0x100>;
+	};
+
+	zynqmp_csu_rsa: csu_rsa@RSA_CORE {
+		compatible = "zynqmp,csu-rsa";
+		reg = <BASE_ADDR(RSA_CORE) 0x64>;
+	};
+};
+
+&amba_prio {
+	zynqmp_csu_stream_switch: csu_stream_switch@ffcc0200 {
+		compatible = "zynqmp,csu-sss";
+		reg = <0x0 CSUSSS 0x0 0x4 0x0>;
+		stream-connected-dma = <&zynqmp_csu_dma_dst> ;
+		stream-connected-pcap = <&zynqmp_csu_pcap> ;
+		stream-connected-aes = <&zynqmp_csu_aes> ;
+		stream-connected-sha = <&zynqmp_csu_sha> ;
+	};
+	zynqmp_csu_pcap: csu_pcap@CSU_PCAP {
+		compatible = "zynqmp,csu-pcap";
+		reg = <0x0 CSU_PCAP 0x0 0x10000 0x0>;
+		stream-connected-pcap = <&zynqmp_csu_stream_switch> ;
+	};
+};

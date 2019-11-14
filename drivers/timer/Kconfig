@@ -238,7 +238,7 @@ config CC13X2_CC26X2_RTC_TIMER
 config XLNX_PSTTC_TIMER
 	bool "Xilinx PS ttc timer support"
 	default y
-	depends on SOC_XILINX_ZYNQMP
+	depends on SOC_XILINX_ZYNQMP_RPU
 	help
 	  This module implements a kernel device driver for the Xilinx ZynqMP
 	  platform provides the standard "system clock driver" interfaces.

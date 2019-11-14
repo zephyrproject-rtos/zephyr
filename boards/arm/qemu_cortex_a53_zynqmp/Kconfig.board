@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_A53_ZYNQMP
+	bool "Xilinx ZynqMP APU (QEMU)"
+	depends on SOC_XILINX_ZYNQMP_APU
+	select ARM64
+	select QEMU_TARGET

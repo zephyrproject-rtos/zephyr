@@ -1,0 +1,287 @@
+/*
+ * ZynqMP PMU devices include file
+ *
+ * Copyright (c) 2016, Xilinx Inc
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "zynqmp.dtsh"
+
+/ {
+	lmb_pmu: lmb_pmu@0 {
+		#address-cells = <MEMORY_ADDRESS_CELLS>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+		compatible = "simple-bus";
+		ranges ;
+
+#ifdef MULTI_ARCH
+		main_bus_for_pmu {
+			compatible = "qemu:memory-region";
+			alias = <&protected_amba>;
+			/* Full address range with -1 priority */
+			reg = <0x0 0x0 0xffffffff 0xffffffff 0xffffffff>;
+		};
+#endif
+
+		/* FIXMEs:
+		 * Get rid of absolute addresses?
+		 * Use the real PMU setup.
+		 */
+		pmu_io_module: io-module@00 {
+			#address-cells = <MEMORY_ADDRESS_CELLS>;
+			#size-cells = <1>;
+			#priority-cells = <0>;
+			compatible = "xlnx,iomodule-1.02.a", "syscon", "simple-bus";
+			container = <&lmb_pmu>;
+			priority = <0xffffffff>;
+			xlnx,freq = <0x47868c0>;
+			xlnx,instance = "iomodule_1";
+			xlnx,io-mask = <0xfffe0000>;
+			xlnx,lmb-awidth = <0x20>;
+			xlnx,lmb-dwidth = <0x20>;
+			xlnx,mask = <0xffffff80>;
+			xlnx,use-io-bus = <0x1>;
+#ifdef MULTI_ARCH
+			pmu_io_intc: pmu_intc@0C {
+				#interrupt-cells = <2>;
+				compatible = "xlnx,io-intc-1.02.a", "xlnx,io_intc";
+				interrupt-controller ;
+				interrupts-extended = <&pmu_cpu0 0>;
+				reg = <BASE_ADDR(PMUIOM(0C)) 0x4 BASE_ADDR(PMUIOM(30)) 0x10 BASE_ADDR(PMUIOM(80)) 0x7C>;
+				xlnx,intc-addr-width = <0x20>;
+				xlnx,intc-base-vectors = <0x0>;
+				xlnx,intc-has-fast = <0x0>;
+				xlnx,intc-intr-size = <0x10>;
+				xlnx,intc-level-edge = <0x0>;
+				xlnx,intc-positive = <0xffff>;
+				xlnx,intc-use-ext-intr = <0x1>;
+			};
+#else
+			/* Dummy sink for interrupts.  */
+			pmu_io_intc: dummy_pmu_intc@0 {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+			};
+#endif
+			pmu_io_gpo0: pmu_gpo@10 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpo-1.02.a", "xlnx,io_gpo";
+				reg = <BASE_ADDR(PMUIOM(10)) 0x4>;
+				xlnx,gpo-init = <0x0>;
+				xlnx,gpo-size = <0x9>;
+				xlnx,use-gpo = <0x1>;
+			};
+			pmu_io_gpo1: pmu_gpo@14 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpo-1.02.a", "xlnx,io_gpo";
+				reg = <BASE_ADDR(PMUIOM(14)) 0x4>;
+				xlnx,gpo-init = <0x0>;
+				xlnx,gpo-size = <0x20>;
+				xlnx,use-gpo = <0x1>;
+			};
+			pmu_io_gpo2: pmu_gpo@18 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpo-1.02.a", "xlnx,io_gpo";
+				reg = <BASE_ADDR(PMUIOM(18)) 0x4>;
+				xlnx,gpo-init = <0x0>;
+				xlnx,gpo-size = <0x20>;
+				xlnx,use-gpo = <0x1>;
+			};
+			pmu_io_gpo3: pmu_gpo@1c {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpo-1.02.a", "xlnx,io_gpo";
+				reg = <BASE_ADDR(PMUIOM(1c)) 0x4>;
+				xlnx,gpo-init = <0x0>;
+				xlnx,gpo-size = <0x20>;
+				xlnx,use-gpo = <0x1>;
+			};
+			pmu_io_gpi0: pmu_gpi@20 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpi-1.02.a", "xlnx,io_gpi";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <11 0>;
+				reg = <BASE_ADDR(PMUIOM(20)) 0x4>;
+				xlnx,gpi-interrupt = <0x1>;
+				xlnx,gpi-size = <0x20>;
+				xlnx,use-gpi = <0x1>;
+			};
+			pmu_io_gpi1: pmu_gpi@24 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpi-1.02.a", "xlnx,io_gpi";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <12 0>;
+				reg = <BASE_ADDR(PMUIOM(24)) 0x4>;
+				xlnx,gpi-interrupt = <0x1>;
+				xlnx,gpi-size = <0x20>;
+				xlnx,use-gpi = <0x1>;
+				gpios = <&pmu_local 29
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&dummy_pmu_gpio 0 0
+						&mio_in 26 0
+						&mio_in 27 0
+						&mio_in 28 0
+						&mio_in 29 0
+						&mio_in 30 0
+						&mio_in 31 0>;
+			};
+			pmu_io_gpi2: pmu_gpi@28 {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpi-1.02.a", "xlnx,io_gpi";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <13 0>;
+				reg = <BASE_ADDR(PMUIOM(28)) 0x4>;
+				xlnx,gpi-interrupt = <0x1>;
+				xlnx,gpi-size = <0x20>;
+				xlnx,use-gpi = <0x1>;
+				gpios = <&pmu_local 30>;
+			};
+			pmu_io_gpi3: pmu_gpi@2c {
+				#gpio-cells = <2>;
+				gpio-controller;
+				compatible = "xlnx,io-gpi-1.02.a", "xlnx,io_gpi";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <14 0>;
+				reg = <BASE_ADDR(PMUIOM(2c)) 0x4>;
+				xlnx,gpi-interrupt = <0x1>;
+				xlnx,gpi-size = <0x20>;
+				xlnx,use-gpi = <0x1>;
+			};
+
+			pmu_io_pit0: pmu_pit@40 {
+				compatible = "xlnx,io-pit-1.02.a", "xlnx,io_pit";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <3 0>;
+				reg = <BASE_ADDR(PMUIOM(40)) 0xc>;
+				xlnx,pit-interrupt = <0x1>;
+				xlnx,pit-prescaler = <0x9>;
+				xlnx,pit-readable = <0x1>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x1>;
+				gpios = <&pmu_io_gpo0 2 0 &pmu_io_pit1 0>;
+				gpio-names = "ps_config","ps_hit_in";
+				gpio-controller;
+				#gpio-cells = <1>;
+			};
+			pmu_io_pit1: pmu_pit@50 {
+				compatible = "xlnx,io-pit-1.02.a", "xlnx,io_pit";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <4 0>;
+				reg = <BASE_ADDR(PMUIOM(50)) 0xc>;
+				xlnx,pit-interrupt = <0x1>;
+				xlnx,pit-prescaler = <0x9>;
+				xlnx,pit-readable = <0x1>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x1>;
+				gpio-controller;
+				#gpio-cells = <1>;
+			};
+			pmu_io_pit2: pmu_pit@60 {
+				compatible = "xlnx,io-pit-1.02.a", "xlnx,io_pit";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <5 0>;
+				reg = <BASE_ADDR(PMUIOM(60)) 0xc>;
+				xlnx,pit-interrupt = <0x1>;
+				xlnx,pit-prescaler = <0x9>;
+				xlnx,pit-readable = <0x1>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x1>;
+				gpios = <&pmu_io_gpo0 6 0 &pmu_io_pit2 0>;
+				gpio-names = "ps_config","ps_hit_in";
+				gpio-controller;
+				#gpio-cells = <1>;
+			};
+			pmu_io_pit3: pmu_pit@70 {
+				compatible = "xlnx,io-pit-1.02.a", "xlnx,io_pit";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <6 0>;
+				reg = <BASE_ADDR(PMUIOM(70)) 0xc>;
+				xlnx,pit-interrupt = <0x1>;
+				xlnx,pit-prescaler = <0x9>;
+				xlnx,pit-readable = <0x1>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x1>;
+				gpio-controller;
+				#gpio-cells = <1>;
+			};
+
+			pmu_io_uart: pmu_uart@00 {
+				compatible = "xlnx,io-uart-1.02.a", "xlnx,io_uart";
+				interrupt-parent = <&pmu_io_intc>;
+				interrupts = <0 0 1 0 2 0>;
+				reg = <BASE_ADDR(PMUIOM(00)) 0xC BASE_ADDR(PMUIOM(4c)) 0x4>;
+				xlnx,uart-baudrate = <0x2580>;
+				xlnx,uart-data-bits = <0x8>;
+				xlnx,uart-error-interrupt = <0x1>;
+				xlnx,uart-odd-parity = <0x0>;
+				xlnx,uart-prog-baudrate = <0x0>;
+				xlnx,uart-rx-interrupt = <0x1>;
+				xlnx,uart-tx-interrupt = <0x1>;
+				xlnx,uart-use-parity = <0x0>;
+				xlnx,use-uart-rx = <0x0>;
+				xlnx,use-uart-tx = <0x0>;
+			};
+
+			dummy_pmu_gpio: dummy_pmu_gpio {
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+		};
+
+		pmu_local: pmu_local@ffd60000 {
+			#gpio-cells = <1>;
+			compatible = "xlnx,pmu-local";
+			reg = <BASE_ADDR(PMU_LOCAL) 0x0 0x1000 0x0>;
+			gpio-controller;
+			num-gpios = <7>;
+		};
+	};
+
+	amba: amba@0 {
+		pmu_global: pmu_global@PMU_GLOBAL {
+			interrupt-parent = <&pmu_io_intc>;
+			interrupts = <23 0>,
+						 <24 0>, /* isolation requrest */
+						 <26 0>, /* sw reset request */
+						 <27 0>, /* power up request */
+						 <28 0>, /* power down request */
+						 <29 0>; /* address error */
+		};
+	};
+};

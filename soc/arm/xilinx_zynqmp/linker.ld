@@ -9,4 +9,6 @@
 
 #if defined(CONFIG_SOC_XILINX_ZYNQMP_RPU)
 #include <arch/arm/aarch32/cortex_r/scripts/linker.ld>
+#elif defined(CONFIG_SOC_XILINX_ZYNQMP_APU)
+#include <arch/arm/aarch64/scripts/linker.ld>
 #endif
