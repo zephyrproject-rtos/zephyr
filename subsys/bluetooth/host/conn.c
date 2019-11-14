@@ -1385,11 +1385,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	u16_t frag_len;
 
-#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
-	frag = bt_conn_create_pdu(&frag_pool, 0);
-#else
-	frag = bt_conn_create_pdu(NULL, 0);
-#endif
+	frag = bt_conn_create_frag(0);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
@@ -2305,8 +2301,35 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
+						  const char *func, int line)
+#else
+struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout)
+#endif
+{
+	struct net_buf_pool *pool = NULL;
+
+#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
+	pool = &frag_pool;
+#endif
+
+#if defined(CONFIG_NET_BUF_LOG)
+	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout,
+						func, line);
+#else
+	return bt_conn_create_pdu_timeout(pool, reserve, timeout);
+#endif /* CONFIG_NET_BUF_LOG */
+}
+
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
+						 size_t reserve, s32_t timeout,
+						 const char *func, int line)
+#else
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 					   size_t reserve, s32_t timeout)
+#endif
 {
 	struct net_buf *buf;
 
@@ -2321,13 +2344,27 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, K_NO_WAIT, func, line);
+#else
 		buf = net_buf_alloc(pool, K_NO_WAIT);
+#endif
 		if (!buf) {
 			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
+#if defined(CONFIG_NET_BUF_LOG)
+			buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
 			buf = net_buf_alloc(pool, timeout);
+#endif
 		}
 	} else {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
 		buf = net_buf_alloc(pool, timeout);
+#endif
 	}
 
 	if (!buf) {
