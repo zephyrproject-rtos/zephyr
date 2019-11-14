@@ -563,11 +563,6 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 				break;
 			}
 		} while (sdhc_retry_ok(&retry));
-
-		if (err != 0) {
-			/* Card never finished power-up */
-			return -ETIMEDOUT;
-		}
 	}
 
 	if ((ocr & SDHC_CCS) != 0U) {
