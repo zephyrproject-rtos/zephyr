@@ -17,6 +17,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
+#include "macro.h"
 
 GDATA(_kernel)
 GDATA(_k_neg_eagain)
@@ -46,7 +47,7 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
 
-	/* Store rest of process context including x30, SPSR_EL1 and ELR_EL1 */
+	/* Store rest of process context including x30, SPSR_ELn and ELR_ELn */
 	stp	x19, x20, [x0], #16
 	stp	x21, x22, [x0], #16
 	stp	x23, x24, [x0], #16
@@ -54,8 +55,19 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 	stp	x27, x28, [x0], #16
 	stp	x29, x30, [x0], #16
 
+	switch_el x3, 3f, 2f, 1f
+3:
+	mrs	x4, spsr_el3
+	mrs	x5, elr_el3
+	b	0f
+2:
+	mrs	x4, spsr_el2
+	mrs	x5, elr_el2
+	b	0f
+1:
 	mrs	x4, spsr_el1
 	mrs	x5, elr_el1
+0:
 	stp	x4, x5, [x0], #16
 
 	/* Save the current SP */
@@ -84,9 +96,19 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 
 	ldp	x4, x5, [x0], #16
 
+	switch_el x3, 3f, 2f, 1f
+3:
+	msr	spsr_el3, x4
+	msr	elr_el3, x5
+	b	0f
+2:
+	msr	spsr_el2, x4
+	msr	elr_el2, x5
+	b	0f
+1:
 	msr	spsr_el1, x4
 	msr	elr_el1, x5
-
+0:
 	ldr	x6, [x0]
 	mov	sp, x6
 
@@ -125,7 +147,7 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	ldp	x0, x1, [sp], #16
 	ldp	x2, x3, [sp], #16
 
-	/* ELR_EL1 was set in thread.c to z_thread_entry() */
+	/* ELR_ELn was set in thread.c to z_thread_entry() */
 	eret
 
 /**
@@ -155,7 +177,16 @@ SECTION_FUNC(TEXT, z_arm64_svc)
 	stp	x16, x17, [sp, #-16]!
 	stp	x18, x30, [sp, #-16]!
 
+	switch_el x3, 3f, 2f, 1f
+3:
+	mrs	x0, esr_el3
+	b	0f
+2:
+	mrs	x0, esr_el2
+	b	0f
+1:
 	mrs	x0, esr_el1
+0:
 	lsr	x1, x0, #26
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
@@ -205,7 +236,7 @@ inv:
  *
  * This is the common exit point for z_arm64_pendsv() and _isr_wrapper(). We
  * restore the registers saved on the process stack including X30. The return
- * address used by eret (in ELR_EL1) is either restored by z_arm64_pendsv() if
+ * address used by eret (in ELR_ELn) is either restored by z_arm64_pendsv() if
  * a context-switch happened or not touched at all by the ISR if there was no
  * context-switch.
  *
@@ -235,7 +266,7 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	ldp	x0, x1, [sp], #16
 
 	/*
-	 * In general in the  ELR_EL1 register we can find:
+	 * In general in the  ELR_ELn register we can find:
 	 *
 	 * - The address of ret in z_arm64_call_svc() in case of arch_swap()
 	 *   (see swap.c)
