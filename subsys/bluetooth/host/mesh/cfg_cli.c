@@ -1203,7 +1203,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 
 	net_buf_simple_add_le16(&msg, elem_addr);
 	net_buf_simple_add_le16(&msg, pub->addr);
-	net_buf_simple_add_le16(&msg, (pub->app_idx & (pub->cred_flag << 12)));
+	net_buf_simple_add_le16(&msg, (pub->app_idx | (pub->cred_flag << 12)));
 	net_buf_simple_add_u8(&msg, pub->ttl);
 	net_buf_simple_add_u8(&msg, pub->period);
 	net_buf_simple_add_u8(&msg, pub->transmit);
