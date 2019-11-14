@@ -17,6 +17,7 @@
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
+#include <sys/__assert.h>
 
 #include <driverlib/interrupt.h>
 #include <driverlib/aon_rtc.h>
@@ -38,8 +39,11 @@
 
 /*
  * Maximum number of ticks.
+ *
+ * Need to subtract one tick to avoid setting a threshold that exceeds
+ * 0x80000000 when rounding up to the next tick in z_clock_set_timeout().
  */
-#define MAX_TICKS (0x7FFFFFFFFFFFULL / RTC_COUNTS_PER_TICK)
+#define MAX_TICKS ((0x7FFFFFFFFFFFULL / RTC_COUNTS_PER_TICK) - 1)
 
 /*
  * Due to the nature of clock synchronization, the comparator cannot be set
@@ -219,6 +223,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		  * RTC_COUNTS_PER_TICK;
 
 	timeout += rtc_last;
+	__ASSERT_NO_MSG((timeout - count) <= 0x800000000000ULL);
 
 	/* Set the comparator */
 	setThreshold(timeout >> 16);
