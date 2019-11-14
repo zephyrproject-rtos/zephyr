@@ -185,6 +185,14 @@ static int clock_async_start(struct device *dev,
 
 static int clock_start(struct device *dev, clock_control_subsys_t sub_system)
 {
+	/*
+	 * Previous versions of this API used to ask for blocking
+	 * behavior by providing a non-null sub_system pointer. This
+	 * is no longer supported, and this assert was added as a
+	 * warning to any users who expect the old behavior.
+	 */
+	__ASSERT_NO_MSG(sub_system == NULL);
+
 	return clock_async_start(dev, sub_system, NULL);
 }
 
