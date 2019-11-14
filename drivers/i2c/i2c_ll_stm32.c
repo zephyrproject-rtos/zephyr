@@ -39,8 +39,12 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
 	clock = rcc_clocks.SYSCLK_Frequency;
 #else
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			(clock_control_subsys_t *) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t *) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
+
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	data->dev_config = config;
