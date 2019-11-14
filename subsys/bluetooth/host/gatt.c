@@ -191,11 +191,15 @@ struct sc_data {
 struct gatt_sc_cfg {
 	u8_t		id;
 	bt_addr_le_t	peer;
-	struct sc_data	data;
+	struct {
+		u16_t		start;
+		u16_t		end;
+	} data;
 };
 
 #define SC_CFG_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 static struct gatt_sc_cfg sc_cfg[SC_CFG_MAX];
+BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data));
 
 static struct gatt_sc_cfg *find_sc_cfg(u8_t id, bt_addr_le_t *addr)
 {
