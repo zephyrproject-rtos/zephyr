@@ -500,21 +500,19 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
-if BT_CTLR_PHY
 config BT_CTLR_PHY_2M
 	bool "2Mbps PHY Support"
-	depends on !SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF
+	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
 	default y
 	help
 	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
 
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
-	depends on BT_CTLR_ADV_EXT && HAS_HW_NRF_RADIO_BLE_CODED
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
-endif # BT_CTLR_PHY
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
