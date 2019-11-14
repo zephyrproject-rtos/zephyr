@@ -298,7 +298,7 @@ void z_nrf_clock_calibration_isr(void)
 		on_cal_done();
 	}
 
-	if (NRF_CLOCK_INT_CTSTOPPED_MASK &&
+	if ((NRF_CLOCK_INT_CTSTOPPED_MASK != 0) &&
 	    clock_event_check_and_clean(NRF_CLOCK_EVENT_CTSTOPPED,
 			NRF_CLOCK_INT_CTSTOPPED_MASK)) {
 		LOG_INF("CT stopped.");
