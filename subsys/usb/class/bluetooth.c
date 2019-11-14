@@ -151,7 +151,7 @@ static void hci_rx_thread(void)
 			usb_transfer_sync(
 				bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr,
 				buf->data, buf->len,
-				USB_TRANS_WRITE);
+				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);
 			break;
 		case BT_BUF_ACL_IN:
 			usb_transfer_sync(
