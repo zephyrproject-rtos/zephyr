@@ -173,7 +173,7 @@ static int mt9m114_read_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
 		*(u16_t *)value = sys_be16_to_cpu(*(u16_t *)value);
 		break;
 	case 4:
-		*(u16_t *)value = sys_be32_to_cpu(*(u16_t *)value);
+		*(u32_t *)value = sys_be32_to_cpu(*(u32_t *)value);
 		break;
 	case 1:
 		break;
