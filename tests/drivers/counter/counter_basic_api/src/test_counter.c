@@ -130,15 +130,19 @@ static bool set_top_value_capable(const char *dev_name)
 	struct counter_top_cfg cfg = {
 		.ticks = counter_get_top_value(dev) - 1
 	};
+	int err;
 
-	int err = counter_set_top_value(dev, &cfg);
-
+	err = counter_set_top_value(dev, &cfg);
 	if (err == -ENOTSUP) {
 		return false;
 	}
 
 	cfg.ticks++;
-	counter_set_top_value(dev, &cfg);
+	err = counter_set_top_value(dev, &cfg);
+	if (err == -ENOTSUP) {
+		return false;
+	}
+
 	return true;
 }
 
