@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_
 
 #include <stdbool.h>
+#include <toolchain/common.h>
 
 #ifndef CONFIG_OBJECT_TRACING
 
@@ -20,7 +21,12 @@
 #define SYS_TRACING_OBJ_INIT_DLL(name, obj) do { } while (false)
 #define SYS_TRACING_OBJ_REMOVE_DLL(name, obj) do { } while (false)
 
+#define Z_OBJECT_TRACING_ITERABLE(_struct_name, _obj_name) \
+	struct _struct_name _obj_name
 #else
+
+#define Z_OBJECT_TRACING_ITERABLE(_struct_name, _obj_name) \
+	Z_STRUCT_SECTION_ITERABLE(_struct_name, _obj_name)
 
 /**
  * @def SYS_TRACING_OBJ_INIT

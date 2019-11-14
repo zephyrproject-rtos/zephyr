@@ -55,13 +55,6 @@
 	_static_kernel_objects_begin = .;
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_DATA_PROLOGUE(_k_timer_area,,SUBALIGN(4))
-	{
-		_k_timer_list_start = .;
-		KEEP(*("._k_timer.static.*"))
-		_k_timer_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	SECTION_DATA_PROLOGUE(_k_mem_slab_area,,SUBALIGN(4))
 	{
 		_k_mem_slab_list_start = .;
@@ -74,6 +67,15 @@
 		_k_mem_pool_list_start = .;
 		KEEP(*("._k_mem_pool.static.*"))
 		_k_mem_pool_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#ifdef CONFIG_OBJECT_TRACING
+
+	SECTION_DATA_PROLOGUE(_k_timer_area,,SUBALIGN(4))
+	{
+		_k_timer_list_start = .;
+		KEEP(*("._k_timer.static.*"))
+		_k_timer_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_sem_area,,SUBALIGN(4))
@@ -127,6 +129,8 @@
 		KEEP(*("._k_pipe.static.*"))
 		_k_pipe_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#endif /* CONFIG_OBJECT_TRACING */
 
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
 	{

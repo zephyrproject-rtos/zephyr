@@ -1537,7 +1537,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param stop_fn   Function to invoke if the timer is stopped while running.
  */
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
-	Z_STRUCT_SECTION_ITERABLE(k_timer, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
@@ -2144,7 +2144,7 @@ static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
  * @param name Name of the queue.
  */
 #define K_QUEUE_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_queue, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_queue, name) = \
 		_K_QUEUE_INITIALIZER(name)
 
 /** @} */
@@ -2436,7 +2436,7 @@ struct k_fifo {
  * @req K-FIFO-002
  */
 #define K_FIFO_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_fifo, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_fifo, name) = \
 		Z_FIFO_INITIALIZER(name)
 
 /** @} */
@@ -2547,7 +2547,7 @@ struct k_lifo {
  * @req K-LIFO-002
  */
 #define K_LIFO_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_lifo, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_lifo, name) = \
 		_K_LIFO_INITIALIZER(name)
 
 /** @} */
@@ -2687,7 +2687,7 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	stack_data_t __noinit                                  \
 		_k_stack_buf_##name[stack_num_entries];        \
-	Z_STRUCT_SECTION_ITERABLE(k_stack, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_stack, name) = \
 		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
@@ -3253,7 +3253,7 @@ struct k_mutex {
  * @req K-MUTEX-001
  */
 #define K_MUTEX_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_mutex, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_mutex, name) = \
 		_K_MUTEX_INITIALIZER(name)
 
 /**
@@ -3456,7 +3456,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @req K-SEM-002
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
-	Z_STRUCT_SECTION_ITERABLE(k_sem, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_sem, name) = \
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
 		     ((initial_count) <= (count_limit)));
@@ -3546,7 +3546,7 @@ struct k_msgq_attrs {
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)		\
 	static char __noinit __aligned(q_align)				\
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
-	Z_STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
+	Z_OBJECT_TRACING_ITERABLE(k_msgq, q_name) =			\
 	       _K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  q_msg_size, q_max_msgs)
 
@@ -3812,7 +3812,7 @@ struct k_mbox {
  * @req K-MBOX-001
  */
 #define K_MBOX_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_mbox, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_mbox, name) = \
 		_K_MBOX_INITIALIZER(name) \
 
 /**
@@ -4015,7 +4015,7 @@ struct k_pipe {
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
 	static unsigned char __noinit __aligned(pipe_align)	\
 		_k_pipe_buf_##name[pipe_buffer_size];			\
-	Z_STRUCT_SECTION_ITERABLE(k_pipe, name) = \
+	Z_OBJECT_TRACING_ITERABLE(k_pipe, name) = \
 		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**

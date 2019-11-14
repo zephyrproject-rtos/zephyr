@@ -65,7 +65,7 @@ struct sys_sem {
  * are identical and can be treated as a k_sem in the boot initialization code
  */
 #define SYS_SEM_DEFINE(_name, _initial_count, _count_limit) \
-	Z_STRUCT_SECTION_ITERABLE(sys_sem, _name) = { \
+	Z_OBJECT_TRACING_ITERABLE(sys_sem, _name) = { \
 		.kernel_sem = Z_SEM_INITIALIZER(_name.kernel_sem, \
 						_initial_count, _count_limit) \
 	}; \
