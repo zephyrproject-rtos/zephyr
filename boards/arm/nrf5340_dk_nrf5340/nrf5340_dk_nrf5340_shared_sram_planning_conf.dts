@@ -12,6 +12,11 @@
  */
 
 / {
+    chosen {
+      /* shared memory reserved for the inter-processor communication */
+      zephyr,ipc_shm = &sram0_shared;
+    };
+
     /* SRAM allocated to shared memory */
     sram0_shared: memory@20010000 {
       device_type = "memory";
