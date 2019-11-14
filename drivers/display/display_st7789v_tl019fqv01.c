@@ -17,7 +17,18 @@ void st7789v_lcd_init(struct st7789v_data *p_st7789v)
 	 * display is 320x170, and so the effective LCD is offset
 	 * by 35 "rows".
 	 */
-	st7789v_set_lcd_margins(p_st7789v, 0, 35);
+	u16_t x_off = 0;
+	u16_t y_off = 0;
+
+#ifdef DT_INST_0_SITRONIX_ST7789V_X_OFFSET
+	x_off = DT_INST_0_SITRONIX_ST7789V_X_OFFSET;
+#endif
+
+#ifdef DT_INST_0_SITRONIX_ST7789V_X_OFFSET
+	y_off = DT_INST_0_SITRONIX_ST7789V_Y_OFFSET;
+#endif
+
+	st7789v_set_lcd_margins(p_st7789v, x_off, y_off);
 
 	u8_t cmd;
 	u8_t data[14];
