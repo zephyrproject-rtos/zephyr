@@ -30,6 +30,12 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+config BT_RPMSG
+	bool "HCI using RPMsg"
+	help
+	  Bluetooth HCI driver for communication with another CPU
+	  using RPMsg framework.
+
 config BT_SPI
 	bool "SPI HCI"
 	depends on SPI
@@ -92,3 +98,33 @@ config BT_SPI_BLUENRG
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
 endif # BT_SPI
+
+if BT_RPMSG
+
+config BT_RPMSG_NRF53
+	bool "nRF53 configuration of RPMsg"
+	default y if BOARD_NRF5340_DK_NRF5340_CPUAPP
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_0_TX
+	select IPM_MSG_CH_1_RX
+	select OPENAMP
+	help
+	  Enable RPMsg configuration for nRF53. Two channels of the IPM driver
+	  are used in the HCI driver: channel 0 for TX and channel 1 for RX.
+
+if BT_RPMSG_NRF53
+
+config BT_RPMSG_NRF53_RX_STACK_SIZE
+	int "RPMsg stack size for RX thread"
+	default 1024
+
+config BT_RPMSG_NRF53_RX_PRIO
+	int "RPMsg RX thread priority"
+	default 8
+
+endif # BT_RPMSG_NRF53
+
+endif # BT_RPMSG
