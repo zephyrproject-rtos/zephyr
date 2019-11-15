@@ -32,4 +32,7 @@ if BOARD_NRF5340_DK_NRF5340_CPUNET
 config BT_CTLR
 	default y if BT
 
+config BT_ECC
+	default y if BT
+
 endif # BOARD_NRF5340_DK_NRF5340_CPUNET
