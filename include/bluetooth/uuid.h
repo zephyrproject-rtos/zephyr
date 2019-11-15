@@ -555,6 +555,7 @@ const char *bt_uuid_str_real(const struct bt_uuid *uuid);
 static inline void bt_uuid_to_str(const struct bt_uuid *uuid, char *str,
 				  size_t len)
 {
+	ARG_UNUSED(uuid);
 	if (len > 0) {
 		str[0] = '\0';
 	}
@@ -562,6 +563,7 @@ static inline void bt_uuid_to_str(const struct bt_uuid *uuid, char *str,
 
 static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
 {
+	ARG_UNUSED(uuid);
 	return "";
 }
 #endif /* CONFIG_BT_DEBUG */
