@@ -3,7 +3,7 @@ Standard Libraries
 
 Description:
 
-This test verifies kernel access to the dynamic memory allocation funtions
+This test verifies kernel access to the dynamic memory allocation functions
 provided by standard C libraries supported in Zephyr:
 NEWLIB and MINIMAL_LIB.
 It is intended to catch issues in which a library is completely absent
@@ -23,7 +23,7 @@ on QEMU as follows:
 
 Troubleshooting:
 
-Problems caused by out-dated project information can be addressed by
+Problems caused by outdated project information can be addressed by
 issuing one of the following commands then rebuilding the project:
 
     make clean          # discard results of previous builds
