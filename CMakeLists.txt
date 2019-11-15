@@ -1519,7 +1519,7 @@ set(build_types None Debug Release RelWithDebInfo MinSizeRel)
 if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_uppercase)
 
-  if(NOT (${OPTIMIZATION_FLAG} IN_LIST ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase}}))
+  if(NOT (${OPTIMIZATION_FLAG} IN_LIST CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase}))
     message(WARNING "
       The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
       This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"
