@@ -486,18 +486,25 @@ out:
 
 static void tcp_win_append(struct tcp *conn, struct tcp_win *w,
 				const char *name, const void *data,
-				size_t len)
+				size_t data_len)
 {
-	struct net_buf *buf = tcp_nbuf_alloc(conn, len);
-	size_t prev_len = w->len;
+	size_t total = data_len, prev_len = w->len, len;
+	struct net_buf *buf;
 
-	NET_ASSERT(len, "Zero length data");
+	NET_ASSERT(data_len, "Zero length data");
 
-	memcpy(net_buf_add(buf, len), data, len);
+	while (total) {
+		len = (total <= 128) ? total : 128;
 
-	sys_slist_append(&w->bufs, (void *)&buf->user_data);
+		buf = tcp_nbuf_alloc(conn, len);
 
-	w->len += len;
+		memcpy(net_buf_add(buf, len), data, len);
+
+		sys_slist_append(&w->bufs, (void *)&buf->user_data);
+
+		total -= len;
+		w->len += len;
+	}
 
 	NET_DBG("%s %p %zu->%zu byte(s)", name, buf, prev_len, w->len);
 }
@@ -505,28 +512,31 @@ static void tcp_win_append(struct tcp *conn, struct tcp_win *w,
 static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
 					const char *name, size_t len)
 {
-	struct net_buf *out = tcp_nbuf_alloc(conn, len);
-	struct net_buf *buf = tcp_slist(&w->bufs, peek_head, struct net_buf,
-					user_data);
-	while (buf) {
+	size_t total = len;
+	struct net_buf *in, *out;
+	sys_slist_t list;
 
-		if (len <= 0) {
-			break;
-		}
+	sys_slist_init(&list);
 
-		memcpy(net_buf_add(out, buf->len), buf->data, buf->len);
+	in = tcp_slist(&w->bufs, peek_head, struct net_buf, user_data);
 
-		len -= buf->len;
+	while (in && total > 0) {
 
-		buf = tcp_slist((sys_snode_t *)&buf->user_data, peek_next,
+		out = net_buf_clone(in, K_NO_WAIT);
+
+		sys_slist_append(&list, (void *)out);
+
+		total -= out->len;
+
+		NET_DBG("total: %zd, out->len: %hu", total, out->len);
+
+		in = tcp_slist((sys_snode_t *)&in->user_data, peek_next,
 				struct net_buf, user_data);
 	}
 
-	NET_ASSERT(len == 0, "Unfulfilled request, len: %zu", len);
+	NET_ASSERT(total == 0);
 
-	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
-
-	return out;
+	return (void *)sys_slist_peek_head(&list);
 }
 
 static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
