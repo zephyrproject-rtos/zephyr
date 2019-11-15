@@ -118,25 +118,25 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@1000000 {
+		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x01000000 0xc000>;
+			reg = <0x00000000 0xc000>;
 		};
-		slot0_partition: partition@100c000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0100C000 0x12000>;
+			reg = <0x0000C000 0x12000>;
 		};
-		slot1_partition: partition@101e000 {
+		slot1_partition: partition@1e000 {
 			label = "image-1";
-			reg = <0x0101E000 0x12000>;
+			reg = <0x0001E000 0x12000>;
 		};
-		scratch_partition: partition@1030000 {
+		scratch_partition: partition@30000 {
 			label = "image-scratch";
-			reg = <0x01030000 0xa000>;
+			reg = <0x00030000 0xa000>;
 		};
-		storage_partition: partition@103a000 {
+		storage_partition: partition@3a000 {
 			label = "storage";
-			reg = <0x0103a000 0x6000>;
+			reg = <0x0003a000 0x6000>;
 		};
 	};
 };
