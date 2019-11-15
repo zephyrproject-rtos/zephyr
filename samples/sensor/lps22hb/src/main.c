@@ -41,35 +41,17 @@ static void process_sample(struct device *dev)
 
 }
 
-static void lps22hb_handler(struct device *dev,
-			   struct sensor_trigger *trig)
-{
-	process_sample(dev);
-}
-
 void main(void)
 {
-	struct device *dev = device_get_binding("LPS22HB");
+	struct device *dev = device_get_binding(DT_INST_0_ST_LPS22HB_PRESS_LABEL);
 
 	if (dev == NULL) {
 		printf("Could not get LPS22HB device\n");
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_LPS22HB_TRIGGER)) {
-		struct sensor_trigger trig = {
-			.type = SENSOR_TRIG_DATA_READY,
-			.chan = SENSOR_CHAN_ALL,
-		};
-		if (sensor_trigger_set(dev, &trig, lps22hb_handler) < 0) {
-			printf("Cannot configure trigger\n");
-			return;
-		};
-	}
-
-	while (!IS_ENABLED(CONFIG_LPS22HB_TRIGGER)) {
+	while (true) {
 		process_sample(dev);
 		k_sleep(K_MSEC(2000));
 	}
-	k_sleep(K_FOREVER);
 }
