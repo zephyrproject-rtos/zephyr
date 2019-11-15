@@ -36,16 +36,6 @@
 #endif
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
-#define tcp_nbuf_alloc(_pool, _len) \
-	tp_nbuf_alloc(_pool, _len, tp_basename(__FILE__), __LINE__, __func__)
-#define tcp_nbuf_unref(_nbuf) \
-	tp_nbuf_unref(_nbuf, tp_basename(__FILE__), __LINE__, __func__)
-#else
-#define tcp_nbuf_alloc(_pool, _len) net_buf_alloc_len(_pool, _len, K_NO_WAIT)
-#define tcp_nbuf_unref(_nbuf) net_buf_unref(_nbuf)
-#endif
-
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_pkt_alloc(_len) tp_pkt_alloc(_len, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
@@ -175,6 +165,8 @@ struct tcp { /* TCP connection */
 	struct net_if *iface;
 	net_tcp_accept_cb_t accept_cb;
 	atomic_t ref_count;
+	sys_slist_t rsv_bufs;
+	size_t rsv_bytes;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
@@ -191,3 +183,35 @@ struct tcp { /* TCP connection */
 
 #define FL(_fl, _op, _mask, _args...)					\
 	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
+
+
+extern struct net_buf_pool tcp_nbufs;
+
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
+#define tcp_nbuf_alloc(_conn, _len) \
+	tp_nbuf_alloc(&tcp_nbufs, _len, tp_basename(__FILE__), \
+			__LINE__, __func__)
+
+#define tcp_nbuf_unref(_nbuf) \
+	tp_nbuf_unref(_nbuf, tp_basename(__FILE__), __LINE__, __func__)
+#else
+static struct net_buf *tcp_nbuf_alloc(struct tcp *conn, size_t len)
+{
+	struct net_buf *buf;
+
+	if (conn->rsv_bytes >= len) {
+		buf = tcp_slist(&conn->rsv_bufs, get, struct net_buf, node);
+		conn->rsv_bytes -= buf->size;
+	} else {
+		buf = net_buf_alloc_len(&tcp_nbufs, len, K_NO_WAIT);
+	}
+
+	NET_ASSERT(buf && buf->size >= len);
+
+	NET_DBG("len: %zu, buf->size: %hu", len, buf->size);
+
+	return buf;
+}
+
+#define tcp_nbuf_unref(_nbuf) net_buf_unref(_nbuf)
+#endif
