@@ -25,14 +25,14 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	for (int i = 0; i < 16; i += 4) {
-		LOG_ERR("s[%d]:  0x%08x  s[%d]:  0x%08x"
-			"  s[%d]:  0x%08x  s[%d]:  0x%08x\n",
+		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
+			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
 			i, (u32_t)esf->s[i],
 			i + 1, (u32_t)esf->s[i + 1],
 			i + 2, (u32_t)esf->s[i + 2],
 			i + 3, (u32_t)esf->s[i + 3]);
 	}
-	LOG_ERR("fpscr:  0x%08x\n", esf->fpscr);
+	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
 #endif
 	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
