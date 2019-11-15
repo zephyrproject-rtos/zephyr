@@ -20,6 +20,13 @@ config BOARD_ENABLE_DCDC_HV
 	select SOC_DCDC_NRF53X_HV
 	default y
 
+choice BT_HCI_BUS_TYPE
+	default BT_RPMSG if BT
+endchoice
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if BT_RPMSG
+
 config BT_HAS_HCI_VS
 	default y if BT
 
