@@ -34,6 +34,49 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
+/* TODO: Add mutex/irq lock */
+static bool tcp_nbufs_reserve(struct tcp *conn, size_t len)
+{
+	size_t rsv_bytes = 0, rsv_bytes_old = conn->rsv_bytes;
+	bool result = false;
+	struct net_buf *buf;
+
+	while (rsv_bytes < len) {
+
+		buf = tcp_nbuf_alloc(conn, 128);
+
+		NET_ASSERT(buf);
+
+		sys_slist_append(&conn->rsv_bufs, &buf->node);
+
+		rsv_bytes += buf->size;
+	}
+
+	if (rsv_bytes >= len) {
+		result = true;
+	}
+
+	conn->rsv_bytes += rsv_bytes;
+
+	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
+
+	return result;
+}
+
+static void tcp_nbufs_unreserve(struct tcp *conn)
+{
+	size_t rsv_bytes_old = conn->rsv_bytes;
+	struct net_buf *buf;
+
+	while ((buf = tcp_slist(&conn->rsv_bufs, get, struct net_buf, node))) {
+		conn->rsv_bytes -= buf->size;
+		buf->frags = NULL;
+		tcp_nbuf_unref(buf);
+	}
+
+	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
+}
+
 /* TODO: IPv4 options may enlarge the IPv4 header */
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
@@ -316,6 +359,8 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	net_context_unref(conn->context);
 
+	tcp_nbufs_unreserve(conn);
+
 	tcp_send_queue_flush(conn);
 
 	tcp_win_free(conn->snd, "SND");
@@ -439,10 +484,11 @@ out:
 	return prefix ? s : (s + 4);
 }
 
-static void tcp_win_append(struct tcp_win *w, const char *name,
-				const void *data, size_t len)
+static void tcp_win_append(struct tcp *conn, struct tcp_win *w,
+				const char *name, const void *data,
+				size_t len)
 {
-	struct net_buf *buf = tcp_nbuf_alloc(&tcp_nbufs, len);
+	struct net_buf *buf = tcp_nbuf_alloc(conn, len);
 	size_t prev_len = w->len;
 
 	NET_ASSERT(len, "Zero length data");
@@ -456,10 +502,10 @@ static void tcp_win_append(struct tcp_win *w, const char *name,
 	NET_DBG("%s %p %zu->%zu byte(s)", name, buf, prev_len, w->len);
 }
 
-static struct net_buf *tcp_win_peek(struct tcp_win *w, const char *name,
-					size_t len)
+static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
+					const char *name, size_t len)
 {
-	struct net_buf *out = tcp_nbuf_alloc(&tcp_nbufs, len);
+	struct net_buf *out = tcp_nbuf_alloc(conn, len);
 	struct net_buf *buf = tcp_slist(&w->bufs, peek_head, struct net_buf,
 					user_data);
 	while (buf) {
@@ -563,16 +609,23 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 	ssize_t len = tcp_data_len(pkt);
 
 	if (len > 0) {
-		void *buf = tcp_malloc(len);
+		void *buf;
+
+		if (tcp_nbufs_reserve(conn, len) == false) {
+			len = 0;
+			goto out;
+		}
+
+		buf = tcp_malloc(len);
 
 		net_pkt_skip(pkt, sizeof(*ip) + th->th_off * 4);
 
 		net_pkt_read(pkt, buf, len);
 
-		tcp_win_append(conn->rcv, "RCV", buf, len);
+		tcp_win_append(conn, conn->rcv, "RCV", buf, len);
 
 		if (tcp_echo) {
-			tcp_win_append(conn->snd, "SND", buf, len);
+			tcp_win_append(conn, conn->snd, "SND", buf, len);
 		}
 
 		tcp_free(buf);
@@ -589,7 +642,7 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 				up, NULL, NULL, conn->recv_user_data);
 		}
 	}
-
+out:
 	return len;
 }
 
@@ -719,7 +772,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	if (PSH & flags) {
 		size_t len = conn->snd->len;
-		struct net_buf *buf = tcp_win_peek(conn->snd, "SND", len);
+		struct net_buf *buf = tcp_win_peek(conn, conn->snd, "SND", len);
 
 		{
 			va_list ap;
@@ -783,6 +836,8 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->snd = tcp_win_new();
 
 	sys_slist_init(&conn->send_queue);
+
+	sys_slist_init(&conn->rsv_bufs);
 
 	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
 	k_timer_user_data_set(&conn->send_timer, conn);
@@ -1132,7 +1187,7 @@ next_state:
 static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
 				int flags)
 {
-	tcp_win_append(conn->snd, "SND", buf, len);
+	tcp_win_append(conn, conn->snd, "SND", buf, len);
 
 	tcp_in(conn, NULL);
 
@@ -1551,8 +1606,8 @@ bool tp_input(struct net_pkt *pkt)
 			}
 			conn->seq = tp->seq;
 			if (len > 0) {
-				tcp_win_append(conn->snd, "SND", data_to_send,
-						len);
+				tcp_win_append(conn, conn->snd, "SND",
+						data_to_send, len);
 			}
 			tcp_in(conn, NULL);
 		}
