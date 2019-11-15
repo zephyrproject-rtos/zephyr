@@ -1,7 +1,7 @@
 /* buf.c - Buffer management */
 
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2015-2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,17 +26,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NET_BUF_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_BUF_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_BUF_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
-#define NET_BUF_ASSERT(cond) do { if (!(cond)) {			  \
-			NET_BUF_ERR("assert: '" #cond "' failed"); \
-		} } while (0)
 #else
 
 #define NET_BUF_DBG(fmt, ...)
 #define NET_BUF_ERR(fmt, ...)
 #define NET_BUF_WARN(fmt, ...)
 #define NET_BUF_INFO(fmt, ...)
-#define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_LOG */
+
+#define NET_BUF_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
 
 #if CONFIG_NET_BUF_WARN_ALLOC_INTERVAL > 0
 #define WARN_ALLOC_INTERVAL K_SECONDS(CONFIG_NET_BUF_WARN_ALLOC_INTERVAL)
