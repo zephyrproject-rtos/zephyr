@@ -103,6 +103,9 @@ manifest:
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       revision: baf51863f19f009b92e762115ba5572a5b996b92
+    - name: nrf_hw_models
+      path: modules/bsim_hw_models/nrf_hw_models
+      revision: fec69703cb1ca06fcdab6d5fde01274f0fc5c759
 
   self:
     path: zephyr

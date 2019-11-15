@@ -115,29 +115,6 @@ function on_complete() {
 	fi
 }
 
-
-function build_btsim() {
-	nrf_hw_models_version=`cat boards/posix/nrf52_bsim/hw_models_version`
-	pushd .
-	cd ${BSIM_COMPONENTS_PATH}
-	if [ -d ext_NRF52_hw_models ]; then
-		cd ext_NRF52_hw_models
-		git describe --tags --abbrev=0 ${NRF52_HW_MODELS_TAG}\
-		> /dev/null ||
-		(
-			echo "`pwd` seems to contain the nRF52 HW\
- models but they are out of date"
-			exit 1
-		)
-	else
-		git clone -b ${nrf_hw_models_version} \
-		https://github.com/BabbleSim/ext_NRF52_hw_models.git
-	fi
-	cd ${BSIM_OUT_PATH}
-	make everything -j 8 -s
-	popd
-}
-
 function run_bsim_bt_tests() {
 	WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
 	RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
@@ -250,10 +227,7 @@ if [ -n "$main_ci" ]; then
 	$short_git_log
 
 	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
-		echo "Build BT simulator tests"
-		# Build BT Simulator
-		build_btsim
-
+		echo "Build and run BT simulator tests"
 		# Run BLE tests in simulator on the 1st CI instance:
 		if [ "$matrix" = "1" ]; then
 			run_bsim_bt_tests
