@@ -85,9 +85,10 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
+if HAS_FLASH_LOAD_OFFSET
+
 config USE_DT_CODE_PARTITION
 	bool "Link application into /chosen/zephyr,code-partition from devicetree"
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  When enabled, the application will be linked into the flash partition
 	  selected by the zephyr,code-partition property in /chosen in devicetree.
@@ -102,7 +103,6 @@ config FLASH_LOAD_OFFSET
 	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  This option specifies the byte offset from the beginning of flash that
 	  the kernel should be loaded into. Changing this value from zero will
@@ -116,7 +116,6 @@ config FLASH_LOAD_SIZE
 	hex "Kernel load size" if !USE_DT_CODE_PARTITION
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  If non-zero, this option specifies the size, in bytes, of the flash
 	  area that the Zephyr image will be allowed to occupy.  If zero, the
@@ -124,6 +123,8 @@ config FLASH_LOAD_SIZE
 	  the device.
 
 	  If unsure, leave at the default value 0.
+
+endif # HAS_FLASH_LOAD_OFFSET
 
 config TEXT_SECTION_OFFSET
 	hex
