@@ -53,20 +53,20 @@ def main():
         # This won't work if zephyr/.config already exists (which means it's
         # being loaded), because zephyr/.config is a full configuration file
         # that includes values for promptless symbols.
-        verify_no_promptless_assign(kconf)
+        check_no_promptless_assign(kconf)
 
     # Print warnings for symbols whose actual value doesn't match the assigned
     # value
     for sym in kconf.unique_defined_syms:
         # Was the symbol assigned to? Choice symbols are checked separately.
         if sym.user_value is not None and not sym.choice:
-            verify_assigned_sym_value(sym)
+            check_assigned_sym_value(sym)
 
     # Print warnings for choices whose actual selection doesn't match the user
     # selection
     for choice in kconf.unique_choices:
         if choice.user_selection:
-            verify_assigned_choice_value(choice)
+            check_assigned_choice_value(choice)
 
     # Hack: Force all symbols to be evaluated, to catch warnings generated
     # during evaluation. Wait till the end to write the actual output files, so
@@ -107,7 +107,7 @@ def main():
     write_kconfig_filenames(kconf.kconfig_filenames, kconf.srctree, args.sources)
 
 
-def verify_no_promptless_assign(kconf):
+def check_no_promptless_assign(kconf):
     # Checks that no promptless symbols are assigned
 
     for sym in kconf.unique_defined_syms:
@@ -119,7 +119,7 @@ other symbols. \
 """ + SYM_INFO_HINT).format(sym))
 
 
-def verify_assigned_sym_value(sym):
+def check_assigned_sym_value(sym):
     # Verifies that the value assigned to 'sym' "took" (matches the value the
     # symbol actually got), printing a warning otherwise
 
@@ -137,7 +137,7 @@ def verify_assigned_sym_value(sym):
 """ + SYM_INFO_HINT).format(sym, user_value))
 
 
-def verify_assigned_choice_value(choice):
+def check_assigned_choice_value(choice):
     # Verifies that the choice symbol that was selected (by setting it to y)
     # ended up as the selection, printing a warning otherwise.
     #
