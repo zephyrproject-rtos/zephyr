@@ -1,0 +1,15 @@
+# Kinetis KL4x series configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_KINETIS_KL4X
+
+config SOC_SERIES
+	default "kl4x"
+
+source "soc/arm/nxp_kinetis/kl4x/Kconfig.defconfig.mk*"
+
+endif # SOC_SERIES_KINETIS_KL4X

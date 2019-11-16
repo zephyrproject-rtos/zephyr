@@ -1,0 +1,38 @@
+# Kinetis KL4x MCU series
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Kinetis KL4x MCU Selection"
+depends on SOC_SERIES_KINETIS_KL4X
+
+config SOC_MKL46Z4
+	bool "SOC_MKL46Z4"
+	select CPU_CORTEX_M0PLUS
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_LPSCI
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+
+endchoice
+
+if SOC_SERIES_KINETIS_KL4X
+
+config SOC_PART_NUMBER_MKL46Z256VLL4
+	bool
+
+config SOC_PART_NUMBER_KINETIS_KL4X
+	string
+	default "MKL46Z256VLL4" if SOC_PART_NUMBER_MKL46Z256VLL4
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_KINETIS_KL4X
