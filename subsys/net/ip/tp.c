@@ -165,6 +165,24 @@ struct net_buf *tp_nbuf_alloc(struct net_buf_pool *pool, size_t len,
 	return nbuf;
 }
 
+struct net_buf *tp_nbuf_clone(struct net_buf *buf, const char *file, int line,
+				const char *func)
+{
+	struct net_buf *clone = net_buf_clone(buf, K_NO_WAIT);
+	struct tp_nbuf *tb = k_malloc(sizeof(struct tp_nbuf));
+
+	tp_dbg("size=%d %p %s:%d %s()", clone->size, clone, file, line, func);
+
+	tb->nbuf = clone;
+	tb->file = file;
+	tb->line = line;
+
+	sys_slist_append(&tp_nbufs, &tb->next);
+
+	return clone;
+
+}
+
 void tp_nbuf_unref(struct net_buf *nbuf, const char *file, int line,
 			const char *func)
 {

@@ -522,7 +522,7 @@ static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
 
 	while (in && total > 0) {
 
-		out = net_buf_clone(in, K_NO_WAIT);
+		out = tcp_nbuf_clone(in);
 
 		sys_slist_append(&list, (void *)out);
 
