@@ -204,7 +204,7 @@ static int boot_flag_decode(u8_t flag)
 }
 
 /* TODO: this function should be moved to flash_area api in future */
-uint8_t flash_area_erased_val(const struct flash_area *fa)
+static uint8_t flash_area_erased_val(const struct flash_area *fa)
 {
 	#define ERASED_VAL 0xff
 
@@ -213,7 +213,7 @@ uint8_t flash_area_erased_val(const struct flash_area *fa)
 }
 
 /* TODO: this function should be moved to flash_area api in future */
-int flash_area_read_is_empty(const struct flash_area *fa, uint32_t off,
+static int flash_area_read_is_empty(const struct flash_area *fa, uint32_t off,
 	void *dst, uint32_t len)
 {
 	const u8_t erase_val = flash_area_erased_val(fa);
@@ -258,7 +258,7 @@ static int erased_flag_val(u8_t bank_id)
  * @return                      1 if the two values are compatible;
  *                              0 otherwise.
  */
-int boot_magic_compatible_check(u8_t tbl_val, u8_t val)
+static int boot_magic_compatible_check(u8_t tbl_val, u8_t val)
 {
 	switch (tbl_val) {
 	case BOOT_MAGIC_ANY:
@@ -568,7 +568,7 @@ static int boot_read_swap_state(const struct flash_area *fa,
 /**
  * Reads the image trailer from the scratch area.
  */
-int
+static int
 boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
 {
 	const struct flash_area *fap;
