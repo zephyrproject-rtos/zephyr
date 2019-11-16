@@ -86,10 +86,13 @@ config HAS_FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
 config USE_CODE_PARTITION
-	bool "link into code-partition"
+	bool "Link application into /chosen/zephyr,code-partition from devicetree"
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
-	  When selected application will be linked into chosen code-partition.
+	  When enabled, the application will be linked into the flash partition
+	  selected by the zephyr,code-partition property in /chosen in devicetree.
+	  When this is disabled, the flash load offset and size can be set manually
+	  below.
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
