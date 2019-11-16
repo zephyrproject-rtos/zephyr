@@ -420,13 +420,6 @@ To upload an application to the OLIMEXINO-STM32 board a TTL(3.3V)
 serial adapter is required. This tutorial uses the
 :ref:`button-sample` sample application.
 
-#. To build the Zephyr kernel and application, enter:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/basic/button
-      :board: olimexino_stm32
-      :goals: build
-
 #. Connect the serial cable to the UEXT lines of the UART
    interface (pin #3=TX and pin #4=RX).
 
@@ -434,16 +427,12 @@ serial adapter is required. This tutorial uses the
 
 #. Reset the board while holding the button (BUT).
 
-#. Flash the application using the stm32flash tool. Start
-   by navigating to the build directory containing zephyr.bin.
+#. To build the application and flash it, enter:
 
-   .. code-block:: console
-
-      $ stm32flash -w zephyr.bin -v -g 0x0 <tty_device>
-
-   Replace :code:`<tty_device>` with the port where the board
-   OLIMEXINO-STM32 can be found. For example, under Linux,
-   :code:`/dev/ttyUSB0`.
+   .. zephyr-app-commands::
+      :zephyr-app: samples/basic/button
+      :board: olimexino_stm32
+      :goals: flash
 
 #. Run your favorite terminal program to listen for output.
 
