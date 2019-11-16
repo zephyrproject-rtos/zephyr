@@ -91,13 +91,10 @@ def main():
     # now as well.
     for warning in kconf.warnings:
         if fatal(warning):
-            sys.exit("\n" + textwrap.fill(
-                "Error: Aborting due to non-whitelisted Kconfig "
-                "warning '{}'.\nNote: If this warning doesn't point "
-                "to an actual problem, you can add it to the "
-                "whitelist at the top of {}."
-                .format(warning, sys.argv[0]),
-                100) + "\n")
+            err("""\
+Aborting due to non-whitelisted Kconfig warning '{}'. If this warning doesn't
+point to an actual problem, you can add it to the whitelist at the top of {}.\
+""".format(warning, sys.argv[0]))
 
     # Write the merged configuration and the C header
     print(kconf.write_config(args.dotconfig))
