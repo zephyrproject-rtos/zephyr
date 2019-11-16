@@ -26,11 +26,11 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 
 static int write_byte(struct device *dev, off_t offset, u8_t val)
 {
-	struct stm32f7x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -40,7 +40,7 @@ static int write_byte(struct device *dev, off_t offset, u8_t val)
 	}
 
 	/* prepare to write a single byte */
-	regs->cr = (regs->cr & CR_PSIZE_MASK) |
+	regs->CR = (regs->CR & CR_PSIZE_MASK) |
 		   FLASH_PSIZE_BYTE | FLASH_CR_PG;
 	/* flush the register write */
 	__DSB();
@@ -51,18 +51,18 @@ static int write_byte(struct device *dev, off_t offset, u8_t val)
 	__DSB();
 
 	rc = flash_stm32_wait_flash_idle(dev);
-	regs->cr &= (~FLASH_CR_PG);
+	regs->CR &= (~FLASH_CR_PG);
 
 	return rc;
 }
 
 static int erase_sector(struct device *dev, u32_t sector)
 {
-	struct stm32f7x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -86,7 +86,7 @@ static int erase_sector(struct device *dev, u32_t sector)
 #endif /* CONFIG_FLASH_SIZE */
 #endif /* defined(FLASH_OPTCR_nDBANK) && FLASH_SECTOR_TOTAL == 24 */
 
-	regs->cr = (regs->cr & (CR_PSIZE_MASK | STM32F7X_SECTOR_MASK)) |
+	regs->CR = (regs->CR & (CR_PSIZE_MASK | STM32F7X_SECTOR_MASK)) |
 		   FLASH_PSIZE_BYTE |
 		   FLASH_CR_SER |
 		   (sector << FLASH_CR_SNB_Pos) |
@@ -95,7 +95,7 @@ static int erase_sector(struct device *dev, u32_t sector)
 	__DSB();
 
 	rc = flash_stm32_wait_flash_idle(dev);
-	regs->cr &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
 
 	return rc;
 }
@@ -210,7 +210,7 @@ void flash_stm32_page_layout(struct device *dev,
 			     size_t *layout_size)
 {
 #if FLASH_OPTCR_nDBANK
-	if (FLASH_STM32_REGS(dev)->optcr & FLASH_OPTCR_nDBANK) {
+	if (FLASH_STM32_REGS(dev)->OPTCR & FLASH_OPTCR_nDBANK) {
 		*layout = stm32f7_flash_layout_single_bank;
 		*layout_size = ARRAY_SIZE(stm32f7_flash_layout_single_bank);
 	} else {
