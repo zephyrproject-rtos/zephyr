@@ -95,7 +95,8 @@ config USE_CODE_PARTITION
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_OFFSET
-	hex "Kernel load offset"
+	# Only user-configurable when USE_CODE_PARTITION is disabled
+	hex "Kernel load offset" if !USE_CODE_PARTITION
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
@@ -108,7 +109,8 @@ config FLASH_LOAD_OFFSET
 	  If unsure, leave at the default value 0.
 
 config FLASH_LOAD_SIZE
-	hex "Kernel load size"
+	# Only user-configurable when USE_CODE_PARTITION is disabled
+	hex "Kernel load size" if !USE_CODE_PARTITION
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
