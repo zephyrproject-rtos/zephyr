@@ -185,16 +185,10 @@ def write_kconfig_filenames(paths, root_path, output_file_path):
     # to ensure that different representations of the same path does not end
     # up with two entries, as that could cause the build system to fail.
 
-    paths_uniq = sorted({os.path.realpath(os.path.join(root_path, path))
-                         for path in paths})
-
     with open(output_file_path, 'w') as out:
-        for path in paths_uniq:
-            # Assert that the file exists, since it was sourced, it
-            # must surely also exist.
-            assert os.path.isfile(path), "Internal error: '{}' does not exist".format(path)
-
-            out.write("{}\n".format(path))
+        for path in sorted({os.path.realpath(os.path.join(root_path, path))
+                            for path in paths}):
+            print(path, file=out)
 
 
 def parse_args():
