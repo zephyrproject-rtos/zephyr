@@ -14,3 +14,10 @@ toolchain:
   - xtools
 ram: 32768
 flash: 65536
+supported:
+  - counter
+  - display
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
