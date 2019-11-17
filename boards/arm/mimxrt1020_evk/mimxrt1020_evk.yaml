@@ -15,6 +15,6 @@ toolchain:
 ram: 32768
 flash: 8192
 supported:
-  - i2c
-  - hwinfo
   - counter
+  - hwinfo
+  - i2c

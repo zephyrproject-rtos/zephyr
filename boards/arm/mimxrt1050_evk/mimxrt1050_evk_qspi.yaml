@@ -15,7 +15,7 @@ toolchain:
 ram: 32768
 flash: 8192
 supported:
-  - spi
-  - netif:eth
-  - hwinfo
   - counter
+  - hwinfo
+  - netif:eth
+  - spi
