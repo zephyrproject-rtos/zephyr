@@ -16,5 +16,6 @@ ram: 32
 flash: 16384
 supported:
   - counter
+  - gpio
   - hwinfo
   - i2c
