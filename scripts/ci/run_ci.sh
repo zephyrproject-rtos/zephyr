@@ -21,7 +21,14 @@
 set -xe
 
 twister_options=" --inline-logs -M -N -v --integration"
+export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
+if [ ! -d "${BSIM_OUT_PATH}" ]; then
+        unset BSIM_OUT_PATH
+fi
+export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
+export EDTT_PATH="${EDTT_PATH:-../tools/edtt}"
 
+bsim_bt_test_results_file="./bsim_bt_out/bsim_results.xml"
 west_commands_results_file="./pytest_out/west_commands.xml"
 
 matrix_builds=1
@@ -37,6 +44,7 @@ function handle_coverage() {
 			--directory twister-out/native_posix/ \
 			--directory twister-out/nrf52_bsim/ \
 			--directory twister-out/unit_testing/ \
+			--directory bsim_bt_out/ \
 			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1
 
 		# Remove noise
@@ -87,8 +95,17 @@ function on_complete() {
 	fi
 }
 
+function run_bsim_bt_tests() {
+	WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
+	RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
+	SEARCH_PATH=tests/bluetooth/bsim_bt/ \
+	# TODO: To be enabled again when LLCP starts working
+	#tests/bluetooth/bsim_bt/run_parallel.sh
+}
+
 function build_test_file() {
 	# cleanup
+	rm -f test_file.txt
 	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 
@@ -141,6 +158,7 @@ function build_test_file() {
 	cat test_file_full_in.txt test_file_archs_in.txt test_file_tests_in.txt \
 		test_file_boards_in.txt >> test_file.txt
 }
+
 
 function west_setup() {
 	# West handling
@@ -239,8 +257,21 @@ if [ -n "$main_ci" ]; then
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
+	else
+		echo "Full Run"
+		SC="full"
 	fi
 	$short_git_log
+
+	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
+		echo "Build and run BT simulator tests"
+		# Run BLE tests in simulator on the 1st CI instance:
+		if [ "$matrix" = "1" ]; then
+			run_bsim_bt_tests
+		fi
+	else
+		echo "Skipping BT simulator tests"
+	fi
 
 	build_test_file
 
