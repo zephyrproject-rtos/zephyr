@@ -13,7 +13,6 @@ testing:
     - console
     - drivers
     - interrupt
-    - logging
     - net
     - nfc
     - shell
