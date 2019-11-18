@@ -31,10 +31,10 @@ the following devices:
      :align: center
      :alt: nRF52840 PCA10056 Preview DK
 
-     nRF52840 PCA10056 Preview DK (Credit: Nordic Semi)
+     nRF52840 PCA10056 Preview DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF52840 PDK website`_. The `Nordic Semiconductor Documentation library`_
+`nRF52840 PDK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -86,7 +86,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52840 PDK website`_ and `Nordic Semiconductor Documentation library`_
+See `nRF52840 PDK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52840 Development Kit board hardware features.
 
 Connections and IOs
@@ -225,6 +225,6 @@ References
 .. target-notes::
 
 .. _nRF52840 PDK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf

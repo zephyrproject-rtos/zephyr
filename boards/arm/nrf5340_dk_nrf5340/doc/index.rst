@@ -49,7 +49,7 @@ nRF5340 SoC provides support for the following devices:
 
 More information about the board can be found at the
 `nRF5340 DK website`_.
-The `Nordic Semiconductor Documentation library`_
+The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -136,7 +136,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `Nordic Semiconductor Documentation library`_
+See `Nordic Semiconductor Infocenter`_
 for a complete list of nRF5340 Development Kit board hardware features.
 
 Connections and IOs
@@ -268,4 +268,4 @@ References
    https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF5340 DK website:
    https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

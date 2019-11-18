@@ -32,7 +32,7 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
      nRF52840 PCA10059
 
 More information about the board can be found at the
-`nRF52840 Dongle website`_. The `Nordic Semiconductor Documentation library`_
+`nRF52840 Dongle website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -82,7 +82,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52840 Dongle website`_ and `Nordic Semiconductor Documentation library`_
+See `nRF52840 Dongle website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52840 PCA10059 Development Kit board hardware features.
 
 Connections and IOs
@@ -330,8 +330,8 @@ References
 
 .. _nRF52840 Dongle website:
    https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-Dongle
-.. _Nordic Semiconductor Documentation library:
-   https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter:
+   https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack:
    https://www.segger.com/jlink-software.html
 .. _Nordic Semiconductor USB DFU:
