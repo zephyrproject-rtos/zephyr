@@ -40,6 +40,15 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
+.. figure:: img/nrf5340_dk.png
+     :width: 711px
+     :align: center
+     :alt: nRF5340 DK
+
+     nRF5340 DK (Credit: Nordic Semiconductor)
+
+More information about the board can be found at the
+`nRF5340 DK website`_.
 The `Nordic Semiconductor Documentation library`_
 contains the processor's information and the datasheet.
 
@@ -257,4 +266,6 @@ References
 
 .. _IDAU:
    https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+.. _nRF5340 DK website:
+   https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
 .. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
