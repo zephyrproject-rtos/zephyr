@@ -147,29 +147,26 @@ export functionality, for example, writing to the shell console).
         .h_export = foo_settings_export
     };
 
-    static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
-                                void *cb_arg)
+    static int foo_settings_set(const char *name, size_t len,
+                                settings_read_cb read_cb, void *cb_arg)
     {
+        const char *next;
         int rc;
 
-        if (argc == 1) {
-            if (!strcmp(argv[0], "bar")) {
-                rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
-                if (rc >= 0) {
-                    /* key-value pair was properly read.
-                     * rc contains value length.
-                     * key-value is deleted if length equals 0.
-                     * Let's return success.
-                     */
-                    if (rc == 0) {
-                        /* set the default value as its key is deleted */
-                        foo_val = DEFAULT_FOO_VAL_VALUE;
-                    }
-                    return 0;
-                }
-                /* read-out error */
-                return rc;
+        if (settings_name_steq(name, "bar", &next) && !next) {
+            if (len != sizeof(foo_val)) {
+                return -EINVAL;
             }
+
+            rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
+            if (rc >= 0) {
+                /* key-value pair was properly read.
+                 * rc contains value length.
+                 */
+                return 0;
+            }
+            /* read-out error */
+            return rc;
         }
 
         return -ENOENT;
@@ -189,42 +186,48 @@ This is a simple example showing how to persist runtime state. In this example,
 only ``h_set`` is defined, which is used when restoring value from
 persisted storage.
 
-In this example, the ``foo_callout`` function increments ``foo_val``, and then
+In this example, the ``main`` function increments ``foo_val``, and then
 persists the latest number. When the system restarts, the application calls
 ``settings_load()`` while initializing, and ``foo_val`` will continue counting
 up from where it was before restart.
 
 .. code-block:: c
 
-    static int8 foo_val;
+    #define DEFAULT_FOO_VAL_VALUE 0
+
+    static int8 foo_val = DEFAULT_FOO_VAL_VALUE;
 
     struct settings_handler my_conf = {
         .name = "foo",
         .h_set = foo_settings_set
     };
 
-    static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
-                                void *cb_arg)
+    static int foo_settings_set(const char *name, size_t len,
+                                settings_read_cb read_cb, void *cb_arg)
     {
+        const char *next;
         int rc;
 
-        if (argc == 1) {
-            if (!strcmp(argv[0], "bar")) {
-                rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
-                if (rc >= 0) {
-                    return 0;
-                }
-
-                return rc;
+        if (settings_name_steq(name, "bar", &next) && !next) {
+            if (len != sizeof(foo_val)) {
+                return -EINVAL;
             }
+
+            rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
+            if (rc >= 0) {
+                return 0;
+            }
+
+            return rc;
         }
+
 
         return -ENOENT;
     }
 
-    static void foo_callout(struct os_event *ev)
+    void main(void)
     {
-        struct os_callout *c = (struct os_callout *)ev;
+        settings_subsys_init();
 
         foo_val++;
         settings_save_one("foo/bar", &foo_val, sizeof(foo_val));
