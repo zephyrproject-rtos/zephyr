@@ -47,6 +47,12 @@ void z_x86_early_serial_init(void);
 void z_x86_paging_init(void);
 #endif /* CONFIG_X86_MMU */
 
+/* Called upon CPU exception that is unhandled and hence fatal; dump
+ * interesting info and call z_x86_fatal_error()
+ */
+FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
+						 const z_arch_esf_t *esf);
+
 /* Called upon unrecoverable error; dump registers and transfer control to
  * kernel via z_fatal_error()
  */

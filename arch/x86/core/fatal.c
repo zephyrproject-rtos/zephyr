@@ -11,12 +11,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
-#ifdef CONFIG_X86_64
-#define PR_UPTR	"0x%016lx"
-#else
-#define PR_UPTR "0x%08lx"
-#endif
-
 static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
 {
 #ifdef CONFIG_X86_64
@@ -62,6 +56,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
 }
 #endif
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 #if defined(CONFIG_EXCEPTION_STACK_TRACE)
 struct stack_frame {
 	uintptr_t next;
@@ -160,30 +155,74 @@ static void dump_regs(const z_arch_esf_t *esf)
 }
 #endif /* CONFIG_X86_64 */
 
-FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
-				     const z_arch_esf_t *esf)
+static void log_exception(uintptr_t vector, uintptr_t code)
 {
-	if (esf != NULL) {
-		dump_regs(esf);
+	switch (vector) {
+	case IV_DIVIDE_ERROR:
+		LOG_ERR("Divide by zero");
+		break;
+	case IV_DEBUG:
+		LOG_ERR("Debug");
+		break;
+	case IV_NON_MASKABLE_INTERRUPT:
+		LOG_ERR("Non-maskable interrupt");
+		break;
+	case IV_BREAKPOINT:
+		LOG_ERR("Breakpoint");
+		break;
+	case IV_OVERFLOW:
+		LOG_ERR("Overflow");
+		break;
+	case IV_BOUND_RANGE:
+		LOG_ERR("Bound range exceeded");
+		break;
+	case IV_INVALID_OPCODE:
+		LOG_ERR("Invalid opcode");
+		break;
+	case IV_DEVICE_NOT_AVAILABLE:
+		LOG_ERR("Floating point unit device not available");
+		break;
+	case IV_DOUBLE_FAULT:
+		LOG_ERR("Double fault (code 0x%lx)", code);
+		break;
+	case IV_COPROC_SEGMENT_OVERRUN:
+		LOG_ERR("Co-processor segment overrun");
+		break;
+	case IV_INVALID_TSS:
+		LOG_ERR("Invalid TSS (code 0x%lx)", code);
+		break;
+	case IV_SEGMENT_NOT_PRESENT:
+		LOG_ERR("Segment not present (code 0x%lx)", code);
+		break;
+	case IV_STACK_FAULT:
+		LOG_ERR("Stack segment fault");
+		break;
+	case IV_GENERAL_PROTECTION:
+		LOG_ERR("General protection fault (code 0x%lx)", code);
+		break;
+	/* IV_PAGE_FAULT skipped, we have a dedicated handler */
+	case IV_X87_FPU_FP_ERROR:
+		LOG_ERR("x87 floating point exception");
+		break;
+	case IV_ALIGNMENT_CHECK:
+		LOG_ERR("Alignment check (code 0x%lx)", code);
+		break;
+	case IV_MACHINE_CHECK:
+		LOG_ERR("Machine check");
+		break;
+	case IV_SIMD_FP:
+		LOG_ERR("SIMD floating point exception");
+		break;
+	case IV_VIRT_EXCEPTION:
+		LOG_ERR("Virtualization exception");
+		break;
+	case IV_SECURITY_EXCEPTION:
+		LOG_ERR("Security exception");
+		break;
+	default:
+		break;
 	}
-
-	z_fatal_error(reason, esf);
-	CODE_UNREACHABLE;
 }
-
-/*
- * PAGE FAULT HANDLING
- */
-
-#ifdef CONFIG_EXCEPTION_DEBUG
-/* Page fault error code flags */
-#define PRESENT	BIT(0)
-#define WR	BIT(1)
-#define US	BIT(2)
-#define RSVD	BIT(3)
-#define ID	BIT(4)
-#define PK	BIT(5)
-#define SGX	BIT(15)
 
 #ifdef CONFIG_X86_MMU
 static bool dump_entry_flags(const char *name, u64_t flags)
@@ -240,6 +279,15 @@ static void dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
 }
 #endif /* CONFIG_X86_MMU */
 
+/* Page fault error code flags */
+#define PRESENT	BIT(0)
+#define WR	BIT(1)
+#define US	BIT(2)
+#define RSVD	BIT(3)
+#define ID	BIT(4)
+#define PK	BIT(5)
+#define SGX	BIT(15)
+
 static void dump_page_fault(z_arch_esf_t *esf)
 {
 	uintptr_t err, cr2;
@@ -248,13 +296,24 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
 
 	err = esf_get_code(esf);
-	LOG_ERR("***** CPU Page Fault (error code " PR_UPTR ")", err);
+	LOG_ERR("Page fault at address 0x%lx (error code 0x%lx)", cr2, err);
 
-	LOG_ERR("%s thread %s address " PR_UPTR,
-		(err & US) != 0U ? "User" : "Supervisor",
-		(err & ID) != 0U ? "executed" : ((err & WR) != 0U ?
-						 "wrote" :
-						 "read"), cr2);
+	if ((err & RSVD) != 0) {
+		LOG_ERR("Reserved bits set in page tables");
+	} else if ((err & PRESENT) == 0) {
+		LOG_ERR("Linear address not present in page tables");
+	} else {
+		LOG_ERR("Access violation: %s thread not allowed to %s",
+			(err & US) != 0U ? "user" : "supervisor",
+			(err & ID) != 0U ? "execute" : ((err & WR) != 0U ?
+							"write" :
+							"read"));
+		if ((err & PK) != 0) {
+			LOG_ERR("Protection key disallowed");
+		} else if ((err & SGX) != 0) {
+			LOG_ERR("SGX access control violation");
+		}
+	}
 
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_USERSPACE
@@ -268,6 +327,29 @@ static void dump_page_fault(z_arch_esf_t *esf)
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
+				     const z_arch_esf_t *esf)
+{
+#ifdef CONFIG_EXCEPTION_DEBUG
+	if (esf != NULL) {
+		dump_regs(esf);
+	}
+#endif
+	z_fatal_error(reason, esf);
+	CODE_UNREACHABLE;
+}
+
+FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
+						 const z_arch_esf_t *esf)
+{
+#ifdef CONFIG_EXCEPTION_DEBUG
+	log_exception(vector, esf_get_code(esf));
+#else
+	ARG_UNUSED(vector);
+#endif
+	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+}
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_x86_user_string_nlen);
