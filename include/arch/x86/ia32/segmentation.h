@@ -18,23 +18,6 @@
 extern "C" {
 #endif
 
-/*
- * Bitmask used to determine which exceptions result in an error code being
- * pushed onto the stack.  The following exception vectors push an error code:
- *
- *  Vector    Mnemonic    Description
- *  ------    -------     ----------------------
- *    8       #DF         Double Fault
- *    10      #TS         Invalid TSS
- *    11      #NP         Segment Not Present
- *    12      #SS         Stack Segment Fault
- *    13      #GP         General Protection Fault
- *    14      #PF         Page Fault
- *    17      #AC         Alignment Check
- */
-#define _EXC_ERROR_CODE_FAULTS	0x27d00U
-
-
 /* NOTE: We currently do not have definitions for 16-bit segment, currently
  * assume everything we are working with is 32-bit
  */
