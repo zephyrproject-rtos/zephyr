@@ -97,31 +97,6 @@ static void st7789v_reset_display(struct st7789v_data *data)
 #endif
 }
 
-int st7789v_cmd_read8(struct st7789v_data *data, int cmd, u8_t *pRet)
-{
-	u8_t sendbuff[4];
-
-	sendbuff[0] = cmd;
-
-	const struct spi_buf tx_buf[2] = {
-		{ .buf = sendbuff, .len = 1 },
-		{ .buf = 0, .len = 1 },
-	};
-	const struct spi_buf rx_buf[2] = {
-		{ .buf = 0, .len = 1 },
-		{ .buf = pRet, .len = 1 }
-	};
-	struct spi_buf_set tx_bufs = { .buffers = tx_buf, .count = 2 };
-	struct spi_buf_set rx_bufs = { .buffers = rx_buf, .count = 2 };
-
-	st7789v_set_cmd(data, 1);
-	int ret = spi_transceive(data->spi_dev, &data->spi_config, &tx_bufs,
-				 &rx_bufs);
-	st7789v_set_cmd(data, 0);
-
-	return ret;
-}
-
 static int st7789v_blanking_on(const struct device *dev)
 {
 	struct st7789v_data *driver = (struct st7789v_data *)dev->driver_data;
@@ -212,24 +187,24 @@ static int st7789v_write(const struct device *dev,
 	return 0;
 }
 
-void *st7789v_get_framebuffer(const struct device *dev)
+static void *st7789v_get_framebuffer(const struct device *dev)
 {
 	return NULL;
 }
 
-int st7789v_set_brightness(const struct device *dev,
+static int st7789v_set_brightness(const struct device *dev,
 			   const u8_t brightness)
 {
 	return -ENOTSUP;
 }
 
-int st7789v_set_contrast(const struct device *dev,
+static int st7789v_set_contrast(const struct device *dev,
 			 const u8_t contrast)
 {
 	return -ENOTSUP;
 }
 
-void st7789v_get_capabilities(const struct device *dev,
+static void st7789v_get_capabilities(const struct device *dev,
 			      struct display_capabilities *capabilities)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->driver_data;
@@ -248,7 +223,7 @@ void st7789v_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-int st7789v_set_pixel_format(const struct device *dev,
+static int st7789v_set_pixel_format(const struct device *dev,
 			     const enum display_pixel_format pixel_format)
 {
 #ifdef CONFIG_ST7789V_RGB565
@@ -262,7 +237,7 @@ int st7789v_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int st7789v_set_orientation(const struct device *dev,
+static int st7789v_set_orientation(const struct device *dev,
 			    const enum display_orientation orientation)
 {
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
