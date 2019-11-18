@@ -1693,6 +1693,19 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 
 	l2cap_chan_send_credits(chan, buf, 1);
 }
+
+static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
+				  struct net_buf *buf)
+{
+	if (chan->chan.state == BT_L2CAP_DISCONNECT) {
+		BT_WARN("Ignoring data received while disconnecting");
+		net_buf_unref(buf);
+		return;
+	}
+
+	net_buf_put(&chan->rx_queue, buf);
+	k_work_submit(&chan->rx_work);
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1701,8 +1714,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
-		net_buf_put(&ch->rx_queue, net_buf_ref(buf));
-		k_work_submit(&ch->rx_work);
+		l2cap_chan_recv_queue(ch, buf);
 		return;
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
