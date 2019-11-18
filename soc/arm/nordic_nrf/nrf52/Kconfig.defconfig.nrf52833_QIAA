@@ -1,10 +1,7 @@
-# Kconfig.defconfig.nrf52833 - Nordic Semiconductor nRF52833 MCU
-#
-# Copyright (c) 2019 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Nordic Semiconductor nRF52833 MCU
 
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_NRF52833_QIAA
 

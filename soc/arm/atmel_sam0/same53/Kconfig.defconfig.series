@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAME53 MCU series configuration options
-#
+# Atmel SAME53 MCU series configuration options
+
 # Copyright (c) 2019 ML!PA Consulting GmbH
 # SPDX-License-Identifier: Apache-2.0
 

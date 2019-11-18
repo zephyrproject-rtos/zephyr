@@ -1,9 +1,7 @@
-# Kconfig - STM32 LPTIM configuration options
-#
+# STM32 LPTIM configuration options
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer"
