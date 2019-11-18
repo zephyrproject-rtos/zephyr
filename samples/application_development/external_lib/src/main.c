@@ -17,4 +17,3 @@ void main(void)
 	printf("Hello World!\n");
 	mylib_hello_world();
 }
-

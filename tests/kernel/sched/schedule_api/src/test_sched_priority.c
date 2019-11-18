@@ -131,4 +131,3 @@ void test_bad_priorities(void)
 			      testcases[i].result, "failed check %d", i);
 	}
 }
-

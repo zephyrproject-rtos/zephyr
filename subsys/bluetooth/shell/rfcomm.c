@@ -256,4 +256,3 @@ static int cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(rfcomm, &rfcomm_cmds, "Bluetooth RFCOMM shell commands",
 		       cmd_rfcomm, 1, 1);
-

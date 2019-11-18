@@ -53,4 +53,3 @@
 void bt_ready(void);
 
 #endif
-

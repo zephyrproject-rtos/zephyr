@@ -192,4 +192,3 @@ References
 .. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
 .. _Black Magic Probe website: https://github.com/blacksphere/blackmagic
 .. _Bumpy website: https://docs.electronut.in/bumpy/
-

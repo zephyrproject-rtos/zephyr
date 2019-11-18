@@ -6,4 +6,3 @@
 config BOARD_STEVAL_FCU001V1
 	bool "STM32 Flight Controller Unit"
 	depends on SOC_STM32F401XC
-

@@ -937,6 +937,3 @@ int uECC_compute_public_key(const uint8_t *private_key, uint8_t *public_key,
 	curve->num_bytes, curve->num_bytes, _public + curve->num_words);
 	return 1;
 }
-
-
-

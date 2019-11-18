@@ -27,4 +27,3 @@ Build this sample application with the following commands:
    :compact:
 
 See :ref:`reel_board` on how to flash the build.
-

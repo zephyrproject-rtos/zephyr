@@ -203,4 +203,3 @@ References
 
 .. _DFU-UTIL website:
    http://dfu-util.sourceforge.net/
-

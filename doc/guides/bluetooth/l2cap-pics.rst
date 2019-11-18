@@ -143,4 +143,3 @@ TSPC_L2CAP_3_15		False (*)	Negotiate and support service type
 TSPC_L2CAP_3_16		True		Support Multiple Simultaneous LE Data
 					Channels
 ================	===========	=======================================
-

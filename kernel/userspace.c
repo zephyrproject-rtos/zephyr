@@ -774,4 +774,3 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 }
 
 #include <syscall_dispatch.c>
-

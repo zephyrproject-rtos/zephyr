@@ -56,4 +56,3 @@ References
 .. _nRF52832 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52832
 .. _Decawave DWM1001 website: https://www.decawave.com/product/dwm1001-module
 .. _Decawave DWM1001-DEV website: https://www.decawave.com/product/dwm1001-development-board
-

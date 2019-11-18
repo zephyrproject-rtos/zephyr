@@ -1,4 +1,3 @@
-
 .. _system_threads_v2:
 
 System Threads

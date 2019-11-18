@@ -130,4 +130,3 @@ int alt_avalon_spi_command(alt_u32 base, alt_u32 slave,
 
   return read_length;
 }
-

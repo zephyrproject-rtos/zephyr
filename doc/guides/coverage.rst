@@ -141,4 +141,3 @@ which will produce ``sanity-out/coverage/index.html`` with the report.
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
-

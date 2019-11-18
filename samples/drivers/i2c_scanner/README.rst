@@ -24,4 +24,3 @@ Building and Running
    :board: nrf52840_blip
    :conf: "prj.conf overlay-nrf52.conf"
    :goals: build flash
-

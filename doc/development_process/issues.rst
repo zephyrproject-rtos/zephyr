@@ -12,4 +12,3 @@ identifiers.
 
 At any time it should be possible to establish the origin of a change and the
 reason behind it by following the references in the code.
-

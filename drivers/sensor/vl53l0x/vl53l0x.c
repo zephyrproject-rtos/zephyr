@@ -283,4 +283,3 @@ static struct vl53l0x_data vl53l0x_driver;
 DEVICE_AND_API_INIT(vl53l0x, DT_INST_0_ST_VL53L0X_LABEL, vl53l0x_init, &vl53l0x_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &vl53l0x_api_funcs);
-

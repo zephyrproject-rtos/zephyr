@@ -164,4 +164,3 @@ void main(void)
 	k_timer_start(&block_matrix_timer, K_SECONDS(1), K_SECONDS(3));
 
 }
-

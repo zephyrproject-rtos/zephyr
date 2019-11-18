@@ -529,6 +529,3 @@ void light_ctl_temp_handler(struct light_ctl_state *state)
 		      K_MSEC(state->transition->quo_tt));
 }
 /* Messages handlers (End) */
-
-
-

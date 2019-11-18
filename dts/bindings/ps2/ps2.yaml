@@ -21,4 +21,3 @@ properties:
       description: should be 0.
     label:
       required: true
-

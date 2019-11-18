@@ -1,4 +1,3 @@
-
 .. _modules:
 
 Modules (External projects)

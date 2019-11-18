@@ -100,4 +100,3 @@ void arch_irq_disable(unsigned int irq)
 		z_loapic_irq_disable(irq - LOAPIC_IRQ_BASE);
 	}
 }
-

@@ -405,4 +405,3 @@ static int kscan_xec_init(struct device *dev)
 
 	return 0;
 }
-

@@ -161,5 +161,3 @@ Linux system.
 
 By default the flash partitions are accessible through the directory *flash*
 relative to the directory where the build is started.
-
-

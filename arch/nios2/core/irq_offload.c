@@ -41,4 +41,3 @@ void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 
 	irq_unlock(key);
 }
-

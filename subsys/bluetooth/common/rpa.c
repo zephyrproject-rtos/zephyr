@@ -100,4 +100,3 @@ int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_PRIVACY */
-

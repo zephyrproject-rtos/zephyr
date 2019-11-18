@@ -146,4 +146,3 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 }
 
 SYS_INIT(twr_ke18f_pinmux_init, PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY);
-

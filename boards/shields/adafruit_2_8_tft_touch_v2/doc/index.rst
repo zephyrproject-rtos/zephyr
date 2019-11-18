@@ -65,4 +65,3 @@ References
 
 .. _Adafruit 2.8" TFT Touch Shield v2 website:
    https://learn.adafruit.com/adafruit-2-8-tft-touch-shield-v2
-

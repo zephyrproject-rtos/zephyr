@@ -386,4 +386,3 @@ References
 
 .. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/Nordic-Thingy-52
 .. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
-

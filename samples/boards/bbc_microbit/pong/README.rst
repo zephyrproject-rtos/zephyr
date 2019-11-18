@@ -30,4 +30,3 @@ Building
    :board: bbc_microbit
    :goals: build
    :compact:
-

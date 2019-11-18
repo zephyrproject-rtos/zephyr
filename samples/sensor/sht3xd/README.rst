@@ -49,4 +49,3 @@ Sample Output
    SHT3XD: 19.75 Cel ; 42.08 %RH
 
 <repeats endlessly>
-

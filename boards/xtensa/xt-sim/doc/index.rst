@@ -180,4 +180,3 @@ References
 **********
 
 .. _Xtensa tools: https://ip.cadence.com/support/sdk-evaluation-request
-

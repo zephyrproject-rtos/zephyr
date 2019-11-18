@@ -269,5 +269,3 @@ void hw_irq_ctrl_timer_triggered(void)
 	irq_ctrl_timer = NEVER;
 	irq_raising_from_hw_now();
 }
-
-

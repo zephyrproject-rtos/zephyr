@@ -82,6 +82,3 @@ SYS_INIT(xt_sim_console_init,
 			POST_KERNEL,
 #endif
 			CONFIG_XTENSA_CONSOLE_INIT_PRIORITY);
-
-
-

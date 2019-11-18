@@ -277,7 +277,3 @@ void tc_ctr_prng_uninstantiate(TCCtrPrng_t * const ctx)
 		ctx->reseedCount = 0U;
 	}
 }
-
-
-
-

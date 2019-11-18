@@ -109,4 +109,3 @@ GATT Client
 
 .. doxygengroup:: bt_gatt_client
    :project: Zephyr
-

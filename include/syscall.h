@@ -126,4 +126,3 @@ static inline bool _is_user_context(void)
 #endif /* _ASMLANGUAGE */
 
 #endif
-

@@ -1514,8 +1514,3 @@ alt_32 static alt_qspi_poll_for_write_in_progress(alt_qspi_controller2_dev* qspi
 	return 0;
 
 }
-
-
-
-
-

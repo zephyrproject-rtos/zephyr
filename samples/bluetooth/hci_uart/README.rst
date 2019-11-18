@@ -113,4 +113,3 @@ BlueZ loads and initializes the attached controller.
 
 Once the controller is attached follow the instructions in the
 :ref:`bluetooth_ctlr_bluez` section to use BlueZ with it.
-

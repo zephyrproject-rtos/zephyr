@@ -355,4 +355,3 @@ Functions for invoking system calls are defined in
 * :c:func:`_arch_syscall_invoke4`
 * :c:func:`_arch_syscall_invoke5`
 * :c:func:`_arch_syscall_invoke6`
-

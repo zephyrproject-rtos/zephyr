@@ -105,4 +105,3 @@ components on the VBLUno52 board:
 * :ref:`button-sample`
 * :ref:`bluetooth-beacon-sample`
 * :ref:`peripheral_hr`
-

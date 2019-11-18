@@ -99,4 +99,3 @@ void test_thread_context(void)
 		rv = TC_FAIL;
 	}
 }
-
