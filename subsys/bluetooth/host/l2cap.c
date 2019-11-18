@@ -50,6 +50,12 @@
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 
+/* Dedicated pool for disconnect buffers so they are guaranteed to be send
+ * even in case of data congestion due to flooding.
+ */
+NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
+			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU), NULL);
+
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -376,9 +382,14 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 					       u16_t len)
 {
 	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf_pool *pool = NULL;
+
+	if (code == BT_L2CAP_DISCONN_REQ) {
+		pool = &disc_pool;
+	}
 
 	/* Don't wait more than the minimum RTX timeout of 2 seconds */
-	buf = bt_l2cap_create_pdu_timeout(NULL, 0, K_SECONDS(2));
+	buf = bt_l2cap_create_pdu_timeout(pool, 0, K_SECONDS(2));
 	if (!buf) {
 		/* If it was not possible to allocate a buffer within the
 		 * timeout return NULL.
