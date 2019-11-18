@@ -19,3 +19,4 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - usb_device

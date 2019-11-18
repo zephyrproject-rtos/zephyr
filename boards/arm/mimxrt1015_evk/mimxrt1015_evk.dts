@@ -70,3 +70,7 @@ arduino_serial: &uart4 {};
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&usbd1 {
+	status = "okay";
+};
