@@ -316,7 +316,7 @@
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
-/samples/subsys/power/                    @wentongwu @pizi-nordic
+/samples/subsys/power/                    @wentongwu @pabigot
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/kconfig/                         @ulfalizer
@@ -371,7 +371,7 @@
 /subsys/net/lib/tls_credentials/          @rlubos
 /subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/net/l2/canbus/                    @alexanderwachter @jukkar
-/subsys/power/                            @wentongwu @pizi-nordic
+/subsys/power/                            @wentongwu @pabigot
 /subsys/random/                           @dleach02
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
