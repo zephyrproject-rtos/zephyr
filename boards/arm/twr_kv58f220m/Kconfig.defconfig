@@ -1,9 +1,7 @@
-# Kconfig - TWR-KV58F220M board
-#
+# TWR-KV58F220M board
+
 # Copyright (c) 2019 SEAL AG
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_TWR_KV58F220M
 

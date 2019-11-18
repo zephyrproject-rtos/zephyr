@@ -1,11 +1,8 @@
-# Kconfig - DMA configuration options
-#
-#
+# DMA configuration options
+
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config DMA_STM32
 	bool "Enable STM32 DMA driver"

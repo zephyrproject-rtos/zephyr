@@ -1,7 +1,6 @@
-# Kconfig.rv32m1 - RV32M1 entropy generator driver configuration
-#
+# RV32M1 entropy generator driver configuration
+
 # Copyright 2019 NXP
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ENTROPY_RV32M1_TRNG
