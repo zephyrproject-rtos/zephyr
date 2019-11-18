@@ -724,6 +724,46 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	}
 }
 
+static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	/* Return current buffer */
+	if (ch->tx_buf) {
+		buf = ch->tx_buf;
+		ch->tx_buf = NULL;
+		return buf;
+	}
+
+	return net_buf_get(&ch->tx_queue, K_NO_WAIT);
+}
+
+static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
+				  struct net_buf **buf, u16_t sent);
+
+static void l2cap_chan_tx_process(struct k_work *work)
+{
+	struct bt_l2cap_le_chan *ch;
+	struct net_buf *buf;
+
+	ch = CONTAINER_OF(work, struct bt_l2cap_le_chan, tx_work);
+
+	/* Resume tx in case there are buffers in the queue */
+	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
+		int sent = data_sent(buf)->len;
+
+		BT_DBG("buf %p sent %u", buf, sent);
+
+		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
+		if (sent < 0) {
+			if (sent == -EAGAIN) {
+				ch->tx_buf = buf;
+			}
+			break;
+		}
+	}
+}
+
 static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 {
 	BT_DBG("chan %p", chan);
@@ -731,6 +771,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
 	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
 	k_fifo_init(&chan->tx_queue);
+	k_work_init(&chan->tx_work, l2cap_chan_tx_process);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -1180,7 +1221,15 @@ segment:
 	return seg;
 }
 
-static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch);
+static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
+{
+	if (!k_sem_count_get(&ch->tx.credits) ||
+	    (k_fifo_is_empty(&ch->tx_queue) && !ch->tx_buf)) {
+		return;
+	}
+
+	k_work_submit(&ch->tx_work);
+}
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 {
@@ -1192,7 +1241,7 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 		chan->ops->sent(chan);
 	}
 
-	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
+	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
@@ -1201,14 +1250,14 @@ static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p chan %p", conn, chan);
 
-	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
+	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
 static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 			      u16_t sdu_hdr_len)
 {
 	struct net_buf *seg;
-	int len;
+	int len, err;
 
 	/* Wait for credits */
 	if (k_sem_take(&ch->tx.credits, K_NO_WAIT)) {
@@ -1224,7 +1273,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 
 	/* Channel may have been disconnected while waiting for a buffer */
 	if (!ch->chan.conn) {
-		net_buf_unref(buf);
+		net_buf_unref(seg);
 		return -ECONNRESET;
 	}
 
@@ -1237,11 +1286,22 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	 * callback has been set.
 	 */
 	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
-		bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				 l2cap_chan_sdu_sent, &ch->chan);
+		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
+				       l2cap_chan_sdu_sent, &ch->chan);
 	} else {
-		bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				 l2cap_chan_seg_sent, &ch->chan);
+		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
+				       l2cap_chan_seg_sent, &ch->chan);
+	}
+
+	if (err) {
+		BT_WARN("Unable to send seg %d", err);
+		k_sem_give(&ch->tx.credits);
+
+		if (err == -ENOBUFS) {
+			return -EAGAIN;
+		}
+
+		return err;
 	}
 
 	/* Check if there is no credits left clear output status and notify its
@@ -1314,44 +1374,6 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	return ret;
 }
 
-static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
-{
-	struct net_buf *buf;
-
-	/* Return current buffer */
-	if (ch->tx_buf) {
-		buf = ch->tx_buf;
-		ch->tx_buf = NULL;
-		return buf;
-	}
-
-	return net_buf_get(&ch->tx_queue, K_NO_WAIT);
-}
-
-static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
-{
-	struct net_buf *buf;
-
-	if (!k_sem_count_get(&ch->tx.credits)) {
-		return;
-	}
-
-	/* Resume tx in case there are buffers in the queue */
-	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		u16_t sent = data_sent(buf)->len;
-
-		BT_DBG("buf %p sent %u", buf, sent);
-
-		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
-		if (sent < 0) {
-			if (sent == -EAGAIN) {
-				ch->tx_buf = buf;
-			}
-			break;
-		}
-	}
-}
-
 static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 		       struct net_buf *buf)
 {
@@ -1390,7 +1412,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 	BT_DBG("chan %p total credits %u", ch,
 	       k_sem_count_get(&ch->tx.credits));
 
-	l2cap_chan_le_send_resume(ch);
+	l2cap_chan_tx_resume(ch);
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, u8_t ident,
@@ -1491,13 +1513,15 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 		credits = chan->rx.init_credits;
 	}
 
-	l2cap_chan_rx_give_credits(chan, credits);
-
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
 	if (!buf) {
+		BT_ERR("Unable to send credits update");
+		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
+
+	l2cap_chan_rx_give_credits(chan, credits);
 
 	ev = net_buf_add(buf, sizeof(*ev));
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
@@ -1919,6 +1943,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 	int err;
 
 	if (!buf) {
@@ -1936,24 +1961,19 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	/* Attempt to resume first since there could be data from previous
-	 * packets pending.
-	 */
-	l2cap_chan_le_send_resume(BT_L2CAP_LE_CHAN(chan));
-
-	/* Check if there are still pending segments */
-	if (BT_L2CAP_LE_CHAN(chan)->tx_buf) {
-		/* Queue buffer to be sent later */
+	/* Queue if there pending segments left from previous packets */
+	if (ch->tx_buf || !k_fifo_is_empty(&ch->tx_queue)) {
 		data_sent(buf)->len = 0;
-		net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
+		net_buf_put(&ch->tx_queue, buf);
+		k_work_submit(&ch->tx_work);
 		return 0;
 	}
 
-	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), &buf, 0);
+	err = l2cap_chan_le_send_sdu(ch, &buf, 0);
 	if (err < 0) {
 		if (err == -EAGAIN && data_sent(buf)->len) {
 			/* Queue buffer if at least one segment could be sent */
-			net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
+			net_buf_put(&ch->tx_queue, buf);
 			return data_sent(buf)->len;
 		}
 		BT_ERR("failed to send message %d", err);
