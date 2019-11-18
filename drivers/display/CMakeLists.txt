@@ -21,7 +21,3 @@ zephyr_sources_ifdef(CONFIG_ILI9340_LCD_ADAFRUIT_1480
 zephyr_sources_ifdef(CONFIG_ILI9340_LCD_SEEED_TFTV2
 	display_ili9340_seeed_tftv2.c
 )
-
-zephyr_sources_ifdef(CONFIG_ST7789V_LCD_TL019FQV01
-	display_st7789v_tl019fqv01.c
-)
