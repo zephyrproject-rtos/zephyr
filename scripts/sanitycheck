@@ -3808,6 +3808,11 @@ def main():
             return
 
         if options.sub_test:
+            for st in options.sub_test:
+                subtests = suite.get_testcase(st)
+                for sti in subtests:
+                    run_individual_tests.append(sti.name)
+
             if run_individual_tests:
                 info("Running the following tests:")
                 for test in run_individual_tests:
