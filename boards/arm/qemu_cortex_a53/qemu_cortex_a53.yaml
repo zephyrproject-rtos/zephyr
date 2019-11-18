@@ -17,4 +17,3 @@ testing:
     - net
     - nfc
     - shell
-    - tracing

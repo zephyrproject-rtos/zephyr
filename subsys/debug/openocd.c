@@ -44,7 +44,10 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_USER_OPTIONS] = offsetof(struct _thread_base,
 						   user_options),
 	[OPENOCD_OFFSET_T_PRIO] = offsetof(struct _thread_base, prio),
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.sp),
+#elif defined(CONFIG_ARM)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.psp),
 #elif defined(CONFIG_ARC)
