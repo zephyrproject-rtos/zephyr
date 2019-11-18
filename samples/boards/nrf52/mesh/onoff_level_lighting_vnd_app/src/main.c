@@ -43,7 +43,7 @@ static void light_default_var_init(void)
 	ctl->light_temp_last_tgt = (u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MAX);
 }
 
-/* This function should only get call after reading persistent data storage */
+/* This function should only get call after execution of settings_load() */
 static void light_default_status_init(void)
 {
 	u16_t light_def;
