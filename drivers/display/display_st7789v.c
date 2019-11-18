@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2019 Marc Reilly
+ * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,14 @@ LOG_MODULE_REGISTER(display_st7789v);
 #define ST7789V_CS_PIN		DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_PIN
 #define ST7789V_CMD_DATA_PIN	DT_INST_0_SITRONIX_ST7789V_CMD_DATA_GPIOS_PIN
 #define ST7789V_RESET_PIN	DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_PIN
+
+static u8_t st7789v_porch_param[] = DT_INST_0_SITRONIX_ST7789V_PORCH_PARAM;
+static u8_t st7789v_cmd2en_param[] = DT_INST_0_SITRONIX_ST7789V_CMD2EN_PARAM;
+static u8_t st7789v_pwctrl1_param[] = DT_INST_0_SITRONIX_ST7789V_PWCTRL1_PARAM;
+static u8_t st7789v_pvgam_param[] = DT_INST_0_SITRONIX_ST7789V_PVGAM_PARAM;
+static u8_t st7789v_nvgam_param[] = DT_INST_0_SITRONIX_ST7789V_NVGAM_PARAM;
+static u8_t st7789v_ram_param[] = DT_INST_0_SITRONIX_ST7789V_RAM_PARAM;
+static u8_t st7789v_rgb_param[] = DT_INST_0_SITRONIX_ST7789V_RGB_PARAM;
 
 struct st7789v_data {
 	struct device *spi_dev;
@@ -46,7 +55,7 @@ struct st7789v_data {
 #define ST7789V_PIXEL_SIZE 3u
 #endif
 
-void st7789v_set_lcd_margins(struct st7789v_data *data,
+static void st7789v_set_lcd_margins(struct st7789v_data *data,
 			     u16_t x_offset, u16_t y_offset)
 {
 	data->x_offset = x_offset;
@@ -58,7 +67,7 @@ static void st7789v_set_cmd(struct st7789v_data *data, int is_cmd)
 	gpio_pin_write(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, !is_cmd);
 }
 
-void st7789v_transmit(struct st7789v_data *data, u8_t cmd,
+static void st7789v_transmit(struct st7789v_data *data, u8_t cmd,
 		u8_t *tx_data, size_t tx_count)
 {
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
@@ -245,6 +254,76 @@ static int st7789v_set_orientation(const struct device *dev,
 	}
 	LOG_ERR("Changing display orientation not implemented");
 	return -ENOTSUP;
+}
+
+static void st7789v_lcd_init(struct st7789v_data *p_st7789v)
+{
+	u8_t tmp;
+
+	st7789v_set_lcd_margins(p_st7789v, 0, 0);
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_PORCTRL, st7789v_porch_param,
+			 sizeof(st7789v_porch_param));
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
+			 sizeof(st7789v_cmd2en_param));
+
+	/* Digital Gamma Enable, default disabled */
+	tmp = 0x00;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_DGMEN, &tmp, 1);
+
+	/* Frame Rate Control in Normal Mode, default value */
+	tmp = 0x0f;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_FRCTRL2, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_GCTRL;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_GCTRL, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_VCOM;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_VCOMS, &tmp, 1);
+
+#if (defined(DT_INST_0_SITRONIX_ST7789V_VRHS) && \
+	defined(DT_INST_0_SITRONIX_ST7789V_VDVS))
+	tmp = 0x01;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_VRHS;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_VRH, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_VDVS;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_VDS, &tmp, 1);
+#endif
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_PWCTRL1, st7789v_pwctrl1_param,
+			 sizeof(st7789v_pwctrl1_param));
+
+	/* Memory Data Access Control */
+	tmp = DT_INST_0_SITRONIX_ST7789V_MDAC;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_MADCTL, &tmp, 1);
+
+	/* Interface Pixel Format */
+	tmp = DT_INST_0_SITRONIX_ST7789V_COLMOD;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_COLMOD, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_LCM;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_LCMCTRL, &tmp, 1);
+
+	tmp = DT_INST_0_SITRONIX_ST7789V_GAMMA;
+	st7789v_transmit(p_st7789v, ST7789V_CMD_GAMSET, &tmp, 1);
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_INV_ON, NULL, 0);
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_PVGAMCTRL, st7789v_pvgam_param,
+			 sizeof(st7789v_pvgam_param));
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_NVGAMCTRL, st7789v_nvgam_param,
+			 sizeof(st7789v_nvgam_param));
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_RAMCTRL, st7789v_ram_param,
+			 sizeof(st7789v_ram_param));
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_RGBCTRL, st7789v_rgb_param,
+			 sizeof(st7789v_rgb_param));
 }
 
 static int st7789v_init(struct device *dev)
