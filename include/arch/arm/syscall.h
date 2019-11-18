@@ -76,7 +76,7 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r6)
-			 : "r8", "memory");
+			 : "r8", "memory", "ip");
 
 	return ret;
 }
@@ -96,7 +96,7 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r6)
-			 : "r8", "memory");
+			 : "r8", "memory", "ip");
 
 	return ret;
 }
@@ -114,7 +114,7 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
-			 : "r8", "memory", "r3");
+			 : "r8", "memory", "r3", "ip");
 
 	return ret;
 }
@@ -130,7 +130,7 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
-			 : "r8", "memory", "r2", "r3");
+			 : "r8", "memory", "r2", "r3", "ip");
 
 	return ret;
 }
@@ -145,7 +145,7 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3", "ip");
 	return ret;
 }
 
@@ -158,7 +158,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3", "ip");
 
 	return ret;
 }
