@@ -735,8 +735,11 @@ static void tcp_chain(struct net_pkt *pkt, struct net_buf *head)
 	for ( ; head; head = head->frags) {
 		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 		memcpy(net_buf_add(buf, head->len), head->data, head->len);
+		NET_DBG("+%hu", head->len);
 		net_pkt_frag_add(pkt, buf);
 	}
+
+	NET_DBG("len=%zu byte(s)", net_pkt_get_len(pkt));
 }
 
 static void tcp_out(struct tcp *conn, u8_t flags, ...)
