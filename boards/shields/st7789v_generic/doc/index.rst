@@ -39,6 +39,9 @@ Current supported displays
 | TL019FQV01           | st7789v_tl019fqv01           |
 |                      |                              |
 +----------------------+------------------------------+
+| Waveshare 240x240    | st7789v_waveshare_240x240    |
+| 1.3inch IPS LCD      |                              |
++----------------------+------------------------------+
 
 Requirements
 ************
