@@ -39,6 +39,11 @@ GDATA(_k_neg_eagain)
  */
 GTEXT(z_arm64_pendsv)
 SECTION_FUNC(TEXT, z_arm64_pendsv)
+#ifdef CONFIG_TRACING
+	stp	xzr, x30, [sp, #-16]!
+	bl	sys_trace_thread_switched_in
+	ldp	xzr, x30, [sp], #16
+#endif
 	/* load _kernel into x1 and current k_thread into x2 */
 	ldr	x1, =_kernel
 	ldr	x2, [x1, #_kernel_offset_to_current]
@@ -111,6 +116,12 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 0:
 	ldr	x6, [x0]
 	mov	sp, x6
+
+#ifdef CONFIG_TRACING
+	stp	xzr, x30, [sp, #-16]!
+	bl	sys_trace_thread_switched_out
+	ldp	xzr, x30, [sp], #16
+#endif
 
 	/* We restored x30 from the process stack. There are three possible
 	 * cases:

@@ -58,10 +58,18 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add	x2, x2, #1
 	str	x2, [x1, #_kernel_offset_to_nested]
 
+#ifdef CONFIG_TRACING
+	bl	sys_trace_isr_enter
+#endif
+
 	/* Cortex-A has one IRQ line so the main handler will be at offset 0 */
 	ldr	x1, =_sw_isr_table
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
 	blr	x3
+
+#ifdef CONFIG_TRACING
+	bl	sys_trace_isr_exit
+#endif
 
 	/* --(_kernel->nested) */
 	ldr	x1, =_kernel

@@ -15,6 +15,11 @@
 
 GTEXT(arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_idle)
+#ifdef CONFIG_TRACING
+	stp	xzr, x30, [sp, #-16]!
+	bl	sys_trace_idle
+	ldp	xzr, x30, [sp], #16
+#endif
 	dsb	sy
 	wfi
 	msr	daifclr, #(DAIFSET_IRQ)
@@ -22,6 +27,11 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 
 GTEXT(arch_cpu_atomic_idle)
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
+#ifdef CONFIG_TRACING
+	stp	xzr, x30, [sp, #-16]!
+	bl	sys_trace_idle
+	ldp	xzr, x30, [sp], #16
+#endif
 	msr	daifset, #(DAIFSET_IRQ)
 	isb
 	wfe
