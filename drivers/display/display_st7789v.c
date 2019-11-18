@@ -282,13 +282,14 @@ static int st7789v_init(struct device *dev)
 		return -EPERM;
 	}
 
-	data->spi_config.frequency = DT_INST_0_SITRONIX_ST7789V_SPI_MAX_FREQUENCY;
+	data->spi_config.frequency =
+		DT_INST_0_SITRONIX_ST7789V_SPI_MAX_FREQUENCY;
 	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	data->spi_config.slave = DT_INST_0_SITRONIX_ST7789V_BASE_ADDRESS;
 
 #ifdef DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_CONTROLLER
-	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_CONTROLLER);
+	data->cs_ctrl.gpio_dev = device_get_binding(
+			DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_CONTROLLER);
 	data->cs_ctrl.gpio_pin = DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
@@ -297,21 +298,22 @@ static int st7789v_init(struct device *dev)
 #endif
 
 #ifdef DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_CONTROLLER
-	data->reset_gpio =
-		device_get_binding(DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_CONTROLLER);
+	data->reset_gpio = device_get_binding(
+			DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_CONTROLLER);
 	if (data->reset_gpio == NULL) {
 		LOG_ERR("Could not get GPIO port for display reset");
 		return -EPERM;
 	}
 
-	if (gpio_pin_configure(data->reset_gpio, ST7789V_RESET_PIN, GPIO_DIR_OUT)) {
+	if (gpio_pin_configure(data->reset_gpio, ST7789V_RESET_PIN,
+			       GPIO_DIR_OUT)) {
 		LOG_ERR("Couldn't configure reset pin");
 		return -EIO;
 	}
 #endif
 
-	data->cmd_data_gpio =
-		device_get_binding(DT_INST_0_SITRONIX_ST7789V_CMD_DATA_GPIOS_CONTROLLER);
+	data->cmd_data_gpio = device_get_binding(
+			DT_INST_0_SITRONIX_ST7789V_CMD_DATA_GPIOS_CONTROLLER);
 	if (data->cmd_data_gpio == NULL) {
 		LOG_ERR("Could not get GPIO port for cmd/DATA port");
 		return -EPERM;
@@ -321,18 +323,6 @@ static int st7789v_init(struct device *dev)
 		LOG_ERR("Couldn't configure cmd/DATA pin");
 		return -EIO;
 	}
-
-	data->width = 240;
-	data->height = 320;
-	data->x_offset = 0;
-	data->y_offset = 0;
-
-#ifdef DT_INST_0_SITRONIX_ST7789V_WIDTH
-	data->width = DT_INST_0_SITRONIX_ST7789V_WIDTH;
-#endif
-#ifdef DT_INST_0_SITRONIX_ST7789V_HEIGHT
-	data->height = DT_INST_0_SITRONIX_ST7789V_HEIGHT;
-#endif
 
 	st7789v_reset_display(data);
 
@@ -358,7 +348,12 @@ static const struct display_driver_api st7789v_api = {
 	.set_orientation = st7789v_set_orientation,
 };
 
-static struct st7789v_data st7789v_data;
+static struct st7789v_data st7789v_data = {
+	.width = DT_INST_0_SITRONIX_ST7789V_WIDTH,
+	.height = DT_INST_0_SITRONIX_ST7789V_HEIGHT,
+	.x_offset = DT_INST_0_SITRONIX_ST7789V_X_OFFSET,
+	.y_offset = DT_INST_0_SITRONIX_ST7789V_Y_OFFSET,
+};
 
 DEVICE_AND_API_INIT(st7789v, DT_INST_0_SITRONIX_ST7789V_LABEL, &st7789v_init,
 		    &st7789v_data, NULL, APPLICATION,
