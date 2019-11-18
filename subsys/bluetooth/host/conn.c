@@ -2279,7 +2279,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
 	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
