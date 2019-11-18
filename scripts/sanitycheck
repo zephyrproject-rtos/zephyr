@@ -2395,6 +2395,15 @@ class TestSuite:
                     error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
 
+
+    def get_all_tests(self):
+        tests = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                tests.append(case)
+
+        return tests
+
     @staticmethod
     def get_toolchain():
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
@@ -3570,19 +3579,6 @@ def export_tests(filename, tests):
                     }
             cw.writerow(rowdict)
 
-def get_unique_tests(suite):
-    unq = []
-    run_individual_tests = []
-    for _, tc in suite.testcases.items():
-        for c in tc.cases:
-            if options.sub_test and c in options.sub_test:
-                if tc.name not in run_individual_tests:
-                    run_individual_tests.append(tc.name)
-            unq.append(c)
-
-    return unq
-
-
 
 def native_and_unit_first(a, b):
     if a[0].startswith('unit_testing'):
@@ -3770,12 +3766,7 @@ def main():
 
     if options.export_tests:
         cnt = 0
-        unq = []
-        for _, tc in suite.testcases.items():
-            for c in tc.cases:
-                unq.append(c)
-
-        tests = sorted(set(unq))
+        tests = suite.get_all_tests()
         export_tests(options.export_tests, tests)
         return
 
@@ -3786,21 +3777,21 @@ def main():
 
     if options.list_tests or options.sub_test:
         cnt = 0
-        unq = get_unique_tests(suite)
+        all_tests = suite.get_all_tests()
 
         if options.sub_test:
             if run_individual_tests:
                 info("Running the following tests:")
-                for t in run_individual_tests:
-                    print(" - {}".format(t))
+                for test in run_individual_tests:
+                    print(" - {}".format(test))
             else:
                 info("Tests not found")
                 return
 
         elif options.list_tests:
-            for u in sorted(set(unq)):
+            for test in all_tests:
                 cnt = cnt + 1
-                print(" - {}".format(u))
+                print(" - {}".format(test))
             print("{} total.".format(cnt))
             return
 
@@ -3834,7 +3825,7 @@ def main():
                     reason))
 
     if options.report_excluded:
-        all_tests = set(get_unique_tests(suite))
+        all_tests = suite.get_all_tests()
         to_be_run = set()
         for i,p in suite.instances.items():
             to_be_run.update(p.testcase.cases)
