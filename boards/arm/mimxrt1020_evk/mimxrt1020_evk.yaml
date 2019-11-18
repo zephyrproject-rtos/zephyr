@@ -20,3 +20,4 @@ supported:
   - hwinfo
   - i2c
   - netif:eth
+  - usb_device
