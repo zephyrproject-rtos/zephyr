@@ -5,5 +5,5 @@ tests:
   sample.display.st7789v:
     build_only: true
     platform_whitelist: nrf52_pca10040
-    extra_args: SHIELD=st7789v_generic
+    extra_args: SHIELD=st7789v_tl019fqv01
     tags: display shield

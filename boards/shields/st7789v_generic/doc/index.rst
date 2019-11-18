@@ -29,6 +29,17 @@ Pins Assignment of the Generic ST7789V Display Shield
 | D13                   | SPI SCK       | (Serial Clock Input)       |
 +-----------------------+---------------+----------------------------+
 
+Current supported displays
+==========================
+
++----------------------+------------------------------+
+| Display              | Shield Designation           |
+|                      |                              |
++======================+==============================+
+| TL019FQV01           | st7789v_tl019fqv01           |
+|                      |                              |
++----------------------+------------------------------+
+
 Requirements
 ************
 
@@ -39,12 +50,12 @@ for Arduino connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=st7789v_generic`` when you invoke ``west build``. For example:
+Set ``-DSHIELD=st7789v_tl019fqv01`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
    :board: nrf52840_pca10056
-   :shield: st7789v_generic
+   :shield: st7789v_tl019fqv01
    :goals: build
 
 References
