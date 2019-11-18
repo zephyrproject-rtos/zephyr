@@ -1,4 +1,3 @@
-
 .. _workqueues_v2:
 
 Workqueue Threads

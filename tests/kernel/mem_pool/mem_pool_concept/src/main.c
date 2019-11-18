@@ -20,4 +20,3 @@ void test_main(void)
 		ztest_unit_test(test_mpool_alloc_merge_failed_diff_parent));
 	ztest_run_test_suite(mpool_concept);
 }
-

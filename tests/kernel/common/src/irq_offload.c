@@ -60,4 +60,3 @@ void test_irq_offload(void)
 	zassert_equal(sentinel, SENTINEL_VALUE,
 		"irq_offload() didn't work properly");
 }
-

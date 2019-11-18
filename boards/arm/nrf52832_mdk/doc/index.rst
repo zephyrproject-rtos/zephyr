@@ -23,5 +23,3 @@ References
 
 .. _nRF52832 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52832
 .. _nRF52832-mdk website: https://wiki.makerdiary.com/nrf52832-mdk
-
-

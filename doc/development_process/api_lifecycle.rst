@@ -134,4 +134,3 @@ the release notes, mailing lists, Github issues and pull-requests.
 If it's not OK to remove the API, the maintainers will continue to support
 migration and update the roadmap with the aim to remove the API in the next
 release.
-

@@ -613,4 +613,3 @@ Miscellaneous Architecture APIs
 
 .. doxygengroup:: arch-misc
    :project: Zephyr
-

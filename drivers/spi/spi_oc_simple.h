@@ -31,4 +31,3 @@ struct spi_oc_simple_cfg {
 struct spi_oc_simple_data {
 	struct spi_context ctx;
 };
-

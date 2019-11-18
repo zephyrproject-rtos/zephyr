@@ -281,4 +281,3 @@ new image and make the swap permanent by using this command:
 Note that if you try to send the very same image that is already flashed in
 slot-0 then the procedure will not complete successfully since the hash values
 for both slots will be identical.
-

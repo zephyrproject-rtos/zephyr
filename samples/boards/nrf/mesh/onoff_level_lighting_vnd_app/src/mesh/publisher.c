@@ -233,4 +233,3 @@ void publish(struct k_work *work)
 		printk("bt_mesh_model_publish: err: %d\n", err);
 	}
 }
-

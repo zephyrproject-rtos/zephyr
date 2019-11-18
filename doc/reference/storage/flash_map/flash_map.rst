@@ -34,4 +34,3 @@ flash_area API
 
 .. doxygengroup:: flash_area_api
    :project: Zephyr
-

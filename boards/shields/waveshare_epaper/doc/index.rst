@@ -85,4 +85,3 @@ References
 
 .. _Universal e-Paper Raw Panel Driver Shield website:
    https://www.waveshare.com/e-paper-shield.htm
-

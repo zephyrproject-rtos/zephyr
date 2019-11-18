@@ -1,4 +1,3 @@
-
 .. _native_posix:
 
 Native POSIX execution (native_posix)
@@ -657,4 +656,3 @@ these commands::
 
     $ sudo apt-get install pkg-config libfuse-dev:i386
     $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
-

@@ -26,4 +26,3 @@ config PCIE_SHELL
 	  Enable commands for debugging PCI(e) using the built-in shell.
 
 endif # PCIE
-

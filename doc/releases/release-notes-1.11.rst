@@ -502,4 +502,3 @@ release:
 * :github:`6471` - tests/crypto/aes results in Assertion failure on esp32
 * :github:`6472` - tests/crypto/sha256 results in Assertion failure on esp32
 * :github:`6505` - Userspace support: stack corruption for ARC em7d v2.3
-

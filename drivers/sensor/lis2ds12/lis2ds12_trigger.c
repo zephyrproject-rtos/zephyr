@@ -187,4 +187,3 @@ int lis2ds12_trigger_set(struct device *dev,
 
 	return 0;
 }
-

@@ -218,4 +218,3 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F756 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00124865.pdf
-

@@ -99,4 +99,3 @@ void test_control_callback(void)
 	zassert_true(test_disable_enable_callback() == TC_PASS, NULL);
 	k_sleep(K_MSEC(1000));
 }
-

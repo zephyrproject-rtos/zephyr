@@ -83,4 +83,3 @@ void cmd_print_switches_help(struct args_struct_t args_struct[]);
 #endif
 
 #endif /* _CMDLINE_COMMON_H */
-

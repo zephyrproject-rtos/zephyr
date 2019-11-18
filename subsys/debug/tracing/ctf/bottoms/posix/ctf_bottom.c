@@ -56,4 +56,3 @@ void add_ctf_option(void)
 	native_add_command_line_opts(ctf_options);
 }
 NATIVE_TASK(add_ctf_option, PRE_BOOT_1, 1);
-

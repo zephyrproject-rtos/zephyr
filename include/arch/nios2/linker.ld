@@ -299,4 +299,3 @@ SECTIONS
 #include <linker/debug-sections.ld>
 
     }
-

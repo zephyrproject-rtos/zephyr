@@ -23,4 +23,3 @@ passed-in parameters are all validated.  The user mode thread is then elevated
 to privileged mode, the stack is switched to use the privileged stack, and the
 call is made to the specified kernel API.  On return from the kernel API,  the
 thread is set back to user mode and the stack is restored to the user stack.
-

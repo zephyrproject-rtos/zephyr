@@ -440,4 +440,3 @@ static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(l2cap, &l2cap_cmds, "Bluetooth L2CAP shell commands",
 		       cmd_l2cap, 1, 1);
-

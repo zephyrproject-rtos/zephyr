@@ -47,4 +47,3 @@ Security Document Citations
 
 .. [CIIBPB] Core Infrastructure Initiative Best Practices Badge. [Online].
    Available: https://github.com/linuxfoundation/cii-best-practices-badge
-

@@ -454,5 +454,3 @@ JIRA Related Items
 * :jira:`ZEP-1877` - samples/net: the coaps_server sample app runs failed on Arduino 101
 * :jira:`ZEP-1883` - Enabling Console on ARC Genuino 101
 * :jira:`ZEP-1890` - Bluetooth IPSP sample: Too small user data size
-
-

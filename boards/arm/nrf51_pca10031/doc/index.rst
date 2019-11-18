@@ -142,4 +142,3 @@ References
 
 .. _nRF51 Dongle website: http://www.nordicsemi.com/eng/Products/nRF51-Dongle
 .. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
-
