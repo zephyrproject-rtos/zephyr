@@ -3020,6 +3020,15 @@ class TestSuite:
                 cw.writerow(rowdict)
 
 
+    def get_testcase(self, identifier):
+        results = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                if case == identifier:
+                    results.append(tc)
+        return results
+
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(
@@ -3155,6 +3164,10 @@ Artificially long but functional example:
         The output is flattened and reports --sub-test names only,
         not their directories. For instance net.socket.getaddrinfo_ok
         and net.socket.fd_set belong to different directories.
+        """)
+
+    case_select.add_argument("--list-test-duplicates", action="store_true",
+        help="""List tests with duplicate identifiers.
         """)
 
     parser.add_argument("--export-tests", action="store",
@@ -3570,14 +3583,17 @@ def export_tests(filename, tests):
         cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
         for test in tests:
             data = test.split(".")
-            subsec = " ".join(data[1].split("_")).title()
-            rowdict = {
-                    "section": data[0].capitalize(),
-                    "subsection": subsec,
-                    "title": test,
-                    "reference": test
-                    }
-            cw.writerow(rowdict)
+            if len(data) > 1:
+                subsec = " ".join(data[1].split("_")).title()
+                rowdict = {
+                        "section": data[0].capitalize(),
+                        "subsection": subsec,
+                        "title": test,
+                        "reference": test
+                        }
+                cw.writerow(rowdict)
+            else:
+                info("{} can't be exported".format(test))
 
 
 def native_and_unit_first(a, b):
@@ -3750,7 +3766,6 @@ def main():
                       platform is allowed""")
 
 
-
     if suite.load_errors:
         sys.exit(1)
 
@@ -3775,9 +3790,22 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    if options.list_tests or options.sub_test:
+    if options.list_tests or options.list_test_duplicates or options.sub_test:
         cnt = 0
         all_tests = suite.get_all_tests()
+
+        if options.list_test_duplicates:
+            import collections
+            dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+            if dupes:
+                print("Tests with duplicate identifiers:")
+                for dupe in dupes:
+                    print("- {}".format(dupe))
+                    for dc in suite.get_testcase(dupe):
+                        print("  - {}".format(dc))
+            else:
+                print("No duplicates found.")
+            return
 
         if options.sub_test:
             if run_individual_tests:
