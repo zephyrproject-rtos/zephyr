@@ -17,7 +17,6 @@
 /* change this to use another GPIO port */
 #define PORT		DT_ALIAS_SW0_GPIOS_CONTROLLER
 #define BUTTON_1	DT_ALIAS_SW0_GPIOS_PIN
-#define BUTTON_2	DT_ALIAS_SW1_GPIOS_PIN
 #define LED_1		DT_ALIAS_LED0_GPIOS_PIN
 #define LED_2		DT_ALIAS_LED1_GPIOS_PIN
 
@@ -27,3 +26,5 @@
 #define LED_OFF		HIGH
 
 extern struct device *gpio_port;
+
+const char *uptime_str(void);

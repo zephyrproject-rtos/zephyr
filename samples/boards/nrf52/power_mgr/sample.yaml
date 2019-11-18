@@ -3,7 +3,7 @@ sample:
 tests:
   sample.board.nrf52.pm.low_power_state:
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
-    timeout: 150
+    timeout: 40
     tags: power
     harness: console
     harness_config:
@@ -13,3 +13,4 @@ tests:
         - "--> Exited from SYS_POWER_STATE_SLEEP_2 state."
         - "--> Entering to SYS_POWER_STATE_SLEEP_1 state."
         - "--> Exited from SYS_POWER_STATE_SLEEP_1 state."
+        - "--> Entering to SYS_POWER_STATE_DEEP_SLEEP_1 state."

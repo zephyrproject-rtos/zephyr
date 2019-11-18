@@ -6,29 +6,23 @@ nRF5x Power management demo
 Overview
 ********
 
-This sample demonstrates a power manager app that uses the Zephyr
-power management infrastructure to enter into Low Power state.
+This sample demonstrates a power manager app that uses the Zephyr system
+power management infrastructure to manage multiple low-power states that
+are conditional on the duration of sleep.  The power mode selection is
+done automatically by residency-based policy implemented by the Zephyr
+Power Management Subsystem.
 
-This app will cycle through the following power schemes each time the system
-enters idle state:
+After all combinations have been completed the system falls of the end
+of main() resulting in the system being turned off.  Pressing button 1
+will wake the system.
 
-1. Low Power State: Low Power State could be SoC, board and/or application
-   specific. Being in this state is transparent to devices. SOC and devices
-   do not lose context in this Mode. This example implements two Low Power
-   states, which are signaled using LEDs on the development kit:
+Note that these sleep states are simulated by placing the CPU into idle:
+there is no reduction in microcontroller power consumption between
+(non-deep) sleep states.  Disabling/enabling peripherals based on selected
+power state is simulated by controlling LED state.
 
-   A. LED1: [X], LED2: [X]: System is active, no low power state is selected.
-   B. LED1: [X], LED2: [ ]: System is idle, and the SYS_POWER_STATE_SLEEP_1
-      state is selected.
-   C. LED1: [ ], LED2: [ ]: System is idle, and the SYS_POWER_STATE_SLEEP_2
-      state is selected.
-
-2. Deep Sleep: This Power State is mapped to SYSTEM OFF state. In this mode
-   all devices on board get suspended. All devices and SOC lose context on
-   wake up.
-
-The power mode selection is done automatically by residency-based policy
-implemented by the Zephyr Power Management Subsystem.
+However, a power monitor will be able to distinguish the system active
+(busy-wait), sleep, and system off (deep sleep) states.
 
 Requirements
 ************
@@ -48,10 +42,10 @@ Running:
 
 1. Open UART terminal.
 2. Power Cycle Device.
-3. Device will enter into Low Power Modes.
-4. Press Button 1 on device to enter deep sleep state.
-5. Press Button 2 on device to wake up from deep sleep state.
-
+3. Device will simulate the effect of power mode states on sleeps of
+   various durations.
+4. Device will turn itself off using deep sleep state 1.  Press Button 1
+   to wake the device.
 
 Sample Output
 =================
@@ -60,53 +54,43 @@ nRF52 core output
 
 .. code-block:: console
 
-  *** Power Management Demo on nrf52_pca10040 ***
-  Demo Description
-  Application creates idleness, due to which System Idle Thread is
-  scheduled and it enters into various Low Power States.
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 10 Sec -->
-  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
-  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 30 Sec -->
-  --> Entering to SYS_POWER_STATE_SLEEP_2 state.
-  --> Exited from SYS_POWER_STATE_SLEEP_2 state.
-
-  <-- Disabling SYS_POWER_STATE_SLEEP_2 state --->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 10 Sec -->
-  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
-  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 30 Sec -->
-  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
-  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
-
-  <-- Enabling SYS_POWER_STATE_SLEEP_2 state --->
-  <-- Disabling SYS_POWER_STATE_SLEEP_1 state --->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 10 Sec -->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 30 Sec -->
-  --> Entering to SYS_POWER_STATE_SLEEP_2 state.
-  --> Exited from SYS_POWER_STATE_SLEEP_2 state.
-
-  <-- Enabling SYS_POWER_STATE_SLEEP_1 state --->
-  <-- Forcing SYS_POWER_STATE_SLEEP_2 state --->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 10 Sec -->
+   *** Power Management Demo on nrf52_pca10040 ***
+   Simulate the effect of supporting system sleep states:
+   * Sleep for durations less than 1500 ms (S0) leaves LEDs on
+   * Sleep for durations between 1500 and 3500 ms (S1) turns off LED 1
+   * Sleep for durations above 3500 ms (S2) turns off LED 2
+   * Sleep above 60000 ms enters system off.
+   3 power states are supported
+   [  0.038]: Sys states for 03: +S1 +S2
+   [  0.041]: Busy-wait 1 s
+   [  1.058]: Sleep 1499 ms
+   [  2.559]: Sleep 2500 ms
+   [  2.561]:  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
+   [  5.061]:  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
+   [  5.066]: Sleep 3500 ms
+   [  5.069]:  --> Entering to SYS_POWER_STATE_SLEEP_2 state.
+   [  8.569]:  --> Exited from SYS_POWER_STATE_SLEEP_2 state.
+   [  8.574]: Sys states for 02: -S1 +S2
+   [  8.577]: Busy-wait 1 s
+   [  9.582]: Sleep 1499 ms
+   [ 11.084]: Sleep 2500 ms
+   [ 13.586]: Sleep 3500 ms
+   [ 13.588]:  --> Entering to SYS_POWER_STATE_SLEEP_2 state.
+   [ 17.088]:  --> Exited from SYS_POWER_STATE_SLEEP_2 state.
+   [ 17.094]: Sys states for 01: +S1 -S2
+   [ 17.097]: Busy-wait 1 s
+   [ 18.102]: Sleep 1499 ms
+   [ 19.604]: Sleep 2500 ms
+   [ 19.606]:  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
+   [ 22.106]:  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
+   [ 22.111]: Sleep 3500 ms
+   [ 22.114]:  --> Entering to SYS_POWER_STATE_SLEEP_1 state.
+   [ 25.614]:  --> Exited from SYS_POWER_STATE_SLEEP_1 state.
+   [ 25.619]: Sys states for 00: -S1 -S2
+   [ 25.622]: Busy-wait 1 s
+   [ 26.626]: Sleep 1499 ms
+   [ 28.128]: Sleep 2500 ms
+   [ 30.630]: Sleep 3500 ms
+   [ 34.132]: Completed cycle through sleep power state combinations
+   [ 34.138]: Falling off main(); press BUTTON1 to restart 3000c
+   [ 34.144]:  --> Entering to SYS_POWER_STATE_DEEP_SLEEP_1 state.
