@@ -17,6 +17,22 @@
 		reset-gpios = <&arduino_header 14 0>;	/* D8 */
 		width = <320>;
 		height = <170>;
+		x-offset = <0>;
 		y-offset = <35>;
+		vcom = <0x2b>;
+		gctrl = <0x35>;
+		vrhs = <0x0f>;
+		vdvs = <0x20>;
+		mdac = <0x20>;
+		gamma = <0x01>;
+		colmod = <0x66>;
+		lcm = <0x2c>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [52 a1];
+		pvgam-param = [D0 00 02 07 0B 1A 31 54 40 29 12 12 12 17];
+		nvgam-param = [D0 00 02 07 05 15 2D 44 44 1C 18 16 1C 1D];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
 	};
 };
