@@ -417,7 +417,6 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	u32_t conn_offset_us, conn_interval_us;
 	u8_t ticker_id_scan, ticker_id_conn;
 	u32_t ticks_slot_overhead;
-	u32_t mayfly_was_enabled;
 	u32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
@@ -551,8 +550,6 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	/* disable ticker job, in order to chain stop and start to avoid RTC
 	 * being stopped if no tickers active.
 	 */
-	mayfly_was_enabled = mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
-					       TICKER_USER_ID_ULL_LOW);
 	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
 #endif
 
@@ -589,13 +586,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		  (ticker_status == TICKER_STATUS_BUSY));
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	/* enable ticker job, if disabled in this function */
-	if (mayfly_was_enabled) {
-		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW,
-			      1);
-	}
-#else
-	ARG_UNUSED(mayfly_was_enabled);
+	/* enable ticker job, irrespective of disabled in this function so
+	 * first connection event can be scheduled as soon as possible.
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1);
 #endif
 }
 
