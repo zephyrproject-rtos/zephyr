@@ -90,9 +90,10 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool'], required=True,
-                           help='''image signing tool name; only imgtool is
-                           currently supported''')
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
+                           required=True,
+                           help='''image signing tool name; imgtool and rimage
+                           are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
@@ -166,6 +167,8 @@ class Sign(Forceable):
         # Delegate to the signer.
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
+        elif args.tool == 'rimage':
+            signer = RimageSigner()
         # (Add support for other signers here in elif blocks)
         else:
             raise RuntimeError("can't happen")
@@ -351,3 +354,40 @@ class ImgtoolSigner(Signer):
                     'DT image-0 partition size {}'.format(reg.size))
 
         return (align, reg.addr, reg.size)
+
+class RimageSigner(Signer):
+
+    def sign(self, command, build_dir, bcfg, formats):
+        args = command.args
+
+        if args.tool_path:
+            command.check_force(shutil.which(args.tool_path),
+                                '--tool-path {}: not an executable'.
+                                format(args.tool_path))
+            tool_path = args.tool_path
+        else:
+            tool_path = shutil.which('rimage')
+            if not tool_path:
+                log.die('rimage not found; either install it',
+                        'or provide --tool-path')
+
+        b = pathlib.Path(build_dir)
+        cache = CMakeCache.from_build_dir(build_dir)
+
+        board = cache['CACHED_BOARD']
+        if board != 'up_squared_adsp':
+            log.die('Supported only for up_squared_adsp board')
+
+        log.inf('Signing with tool {}'.format(tool_path))
+
+        bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
+        kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
+        out_bin = str(b / 'zephyr' / 'zephyr.ri')
+
+        sign_base = ([tool_path] + args.tool_args +
+                     ['-o', out_bin, '-m', 'apl', '-i', '3'] +
+                     [bootloader, kernel])
+
+
+        log.inf(quote_sh_list(sign_base))
+        subprocess.check_call(sign_base)
