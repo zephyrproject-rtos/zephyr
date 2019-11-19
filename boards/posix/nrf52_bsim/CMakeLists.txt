@@ -16,10 +16,6 @@ endif()
 zephyr_library()
 zephyr_library_compile_definitions(NO_POSIX_CHEATS)
 
-zephyr_include_directories(
-  fake
-)
-
 #Due to the BLE controller assumption about enum size
 zephyr_compile_options(
   -fshort-enums
@@ -36,7 +32,6 @@ zephyr_library_sources(
 )
 
 zephyr_library_include_directories(
-  fake
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libRandv2/src/
