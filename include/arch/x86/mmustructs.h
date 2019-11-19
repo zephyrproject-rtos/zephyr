@@ -329,6 +329,14 @@ static inline u64_t *z_x86_get_pte(struct x86_page_tables *ptables,
 }
 
 /**
+ * Dump out page table entries for a particular memory address
+ *
+ * For the provided memory address, dump out the P, W, XD, US flags
+ * at each paging level to the error log.
+ */
+void z_x86_dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr);
+
+/**
  * Debug function for dumping out page tables
  *
  * Iterates through the entire linked set of page table structures,

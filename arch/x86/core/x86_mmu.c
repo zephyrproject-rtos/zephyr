@@ -12,6 +12,8 @@
 #include <init.h>
 #include <ctype.h>
 #include <string.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 /* Despite our use of PAE page tables, we do not (and will never) actually
  * support PAE. Use a 64-bit x86 target if you have that much RAM.
@@ -116,6 +118,59 @@ static inline void pte_update_addr(u64_t *pte, uintptr_t addr)
  * Not trying to capture every flag, just the most interesting stuff,
  * Present, write, XD, user, in typically encountered combinations.
  */
+static bool dump_entry_flags(const char *name, u64_t flags)
+{
+	if ((flags & Z_X86_MMU_P) == 0) {
+		LOG_ERR("%s: Non-present", name);
+		return false;
+	}
+
+	LOG_ERR("%s: 0x%016llx %s, %s, %s", name, flags,
+		flags & MMU_ENTRY_WRITE ?
+		"Writable" : "Read-only",
+		flags & MMU_ENTRY_USER ?
+		"User" : "Supervisor",
+		flags & MMU_ENTRY_EXECUTE_DISABLE ?
+		"Execute Disable" : "Execute Enabled");
+	return true;
+}
+
+void z_x86_dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	u64_t entry;
+
+#ifdef CONFIG_X86_64
+	entry = *z_x86_get_pml4e(ptables, addr);
+	if (!dump_entry_flags("PML4E", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(entry), addr);
+	if (!dump_entry_flags("PDPTE", entry)) {
+		return;
+	}
+#else
+	/* 32-bit doesn't have anything interesting in the PDPTE except
+	 * the present bit
+	 */
+	entry = *z_x86_get_pdpte(ptables, addr);
+	if ((entry & Z_X86_MMU_P) == 0) {
+		LOG_ERR("PDPTE: Non-present");
+		return;
+	}
+#endif
+
+	entry = *z_x86_pd_get_pde(z_x86_pdpte_get_pd(entry), addr);
+	if (!dump_entry_flags("  PDE", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pt_get_pte(z_x86_pde_get_pt(entry), addr);
+	if (!dump_entry_flags("  PTE", entry)) {
+		return;
+	}
+}
+
 static char get_entry_code(u64_t value)
 {
 	char ret;
