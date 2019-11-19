@@ -1,0 +1,6 @@
+tests:
+  default_board_config:
+    build_only: true
+    build_on_all: true
+    tags: default_board_config
+    filter: not USING_OUT_OF_TREE_BOARD
