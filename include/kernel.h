@@ -1140,10 +1140,13 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
 /**
  * @brief Suspend a thread.
  *
- * This routine prevents the kernel scheduler from making @a thread the
- * current thread. All other internal operations on @a thread are still
- * performed; for example, any timeout it is waiting on keeps ticking,
- * kernel objects it is waiting on are still handed to it, etc.
+ * This routine prevents the kernel scheduler from making @a thread
+ * the current thread. All other internal operations on @a thread are
+ * still performed; for example, kernel objects it is waiting on are
+ * still handed to it.  Note that any existing timeouts
+ * (e.g. k_sleep(), or a timeout argument to k_sem_take() et. al.)
+ * will be canceled.  On resume, the thread will begin running
+ * immediately and return from the blocked call.
  *
  * If @a thread is already suspended, the routine has no effect.
  *
