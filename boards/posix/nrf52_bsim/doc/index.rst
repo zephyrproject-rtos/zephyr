@@ -63,7 +63,7 @@ In short, you can do:
 
    mkdir -p ${HOME}/bsim && cd ${HOME}/bsim
    curl https://storage.googleapis.com/git-repo-downloads/repo > ./repo  && chmod a+x ./repo
-   ./repo init -u git@github.com:BabbleSim/manifest.git -m everything.xml -b master
+   ./repo init -u https://github.com/BabbleSim/manifest.git -m everything.xml -b master
    ./repo sync
    make everything -j 8
 
