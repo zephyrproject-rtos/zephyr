@@ -112,8 +112,16 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	}
 #endif
 
-	LOG_ERR("Current thread: %p (%s)", thread,
-		log_strdup(thread_name_get(thread)));
+	LOG_ERR("Current thread: %p (%s)"
+#ifdef CONFIG_USERSPACE
+		" (%s mode)"
+#endif
+		, thread, log_strdup(thread_name_get(thread))
+#ifdef CONFIG_USERSPACE
+		, (thread->base.user_options & K_USER) != 0 ? "user"
+							    : "supervisor"
+#endif
+		);
 
 	k_sys_fatal_error_handler(reason, esf);
 
