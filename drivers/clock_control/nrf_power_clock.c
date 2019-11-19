@@ -45,6 +45,8 @@ struct nrf_clock_control_config {
 	nrf_clock_task_t stop_tsk;	/* Clock stop task */
 };
 
+static void clkstarted_handle(struct device *dev);
+
 /* Return true if given event has enabled interrupt and is triggered. Event
  * is cleared.
  */
@@ -145,38 +147,52 @@ static int clock_async_start(struct device *dev,
 	__ASSERT_NO_MSG((data == NULL) ||
 			((data != NULL) && (data->cb != NULL)));
 
+	/* if node is in the list it means that it is scheduled for
+	 * the second time.
+	 */
+	if ((data != NULL)
+	    && is_in_list(&clk_data->list, &data->node)) {
+		return -EBUSY;
+	}
+
 	key = irq_lock();
 	ref = ++clk_data->ref;
 	irq_unlock(key);
 
-	if (clk_data->started) {
-		if (data) {
+	if (data) {
+		bool already_started;
+
+		key = irq_lock();
+		already_started = clk_data->started;
+		if (!already_started) {
+			sys_slist_append(&clk_data->list, &data->node);
+		}
+		irq_unlock(key);
+
+		if (already_started) {
 			data->cb(dev, data->user_data);
 		}
-	} else {
-		if (ref == 1) {
-			bool do_start;
+	}
 
-			do_start =  (config->start_handler) ?
-					config->start_handler(dev) : true;
-			if (do_start) {
-				nrf_clock_task_trigger(NRF_CLOCK,
-						       config->start_tsk);
-				DBG(dev, "Triggered start task");
-			} else if (data) {
-				data->cb(dev, data->user_data);
-			}
-		}
+	if (ref == 1) {
+		bool do_start;
 
-		/* if node is in the list it means that it is scheduled for
-		 * the second time.
-		 */
-		if (data) {
-			if (is_in_list(&clk_data->list, &data->node)) {
-				return -EALREADY;
-			}
-
-			sys_slist_append(&clk_data->list, &data->node);
+		do_start =  (config->start_handler) ?
+				config->start_handler(dev) : true;
+		if (do_start) {
+			DBG(dev, "Triggering start task");
+			nrf_clock_task_trigger(NRF_CLOCK,
+					       config->start_tsk);
+		} else {
+			/* If external start_handler indicated that clcok is
+			 * still running (it may happen in case of LF RC clock
+			 * which was requested to be stopped during ongoing
+			 * calibration (clock will not be stopped in that case)
+			 * and requested to be started before calibration is
+			 * completed. In that case clock is still running and
+			 * we can notify enlisted requests.
+			 */
+			clkstarted_handle(dev);
 		}
 	}
 
