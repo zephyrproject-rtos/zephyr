@@ -169,17 +169,13 @@ static void onoff_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		ctl->light->current -= ctl->light->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->light->current = ctl->light->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
 }
@@ -214,19 +210,16 @@ static void level_lightness_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		ctl->light->current -= ctl->light->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->light->current = ctl->light->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
+
 }
 
 static void level_move_temp_work_handler(void)
@@ -259,17 +252,13 @@ static void level_temp_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		ctl->temp->current -= ctl->temp->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->temp->current = ctl->temp->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
 }
@@ -289,19 +278,16 @@ static void light_lightness_actual_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		ctl->light->current -= ctl->light->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->light->current = ctl->light->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
+
 }
 
 static void light_lightness_linear_work_handler(struct k_work *work)
@@ -319,17 +305,13 @@ static void light_lightness_linear_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		ctl->light->current -= ctl->light->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->light->current = ctl->light->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
 }
@@ -349,9 +331,8 @@ static void light_ctl_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		/* Lightness */
 		ctl->light->current -= ctl->light->delta;
 		/* Temperature */
@@ -359,14 +340,11 @@ static void light_ctl_work_handler(struct k_work *work)
 		/* Delta_UV */
 		ctl->duv->current -= ctl->duv->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->light->current = ctl->light->target;
 		ctl->temp->current = ctl->temp->target;
 		ctl->duv->current = ctl->duv->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
 }
@@ -386,24 +364,21 @@ static void light_ctl_temp_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (ctl->transition->counter != 0U) {
-		ctl->transition->counter--;
-
+	ctl->transition->counter--;
+	if (ctl->transition->counter) {
 		/* Temperature */
 		ctl->temp->current -= ctl->temp->delta;
-		/* Delta UV */
+		/* Delta_UV */
 		ctl->duv->current -= ctl->duv->delta;
 		update_light_state();
-	}
-
-	if (ctl->transition->counter == 0U) {
+	} else {
 		ctl->temp->current = ctl->temp->target;
 		ctl->duv->current = ctl->duv->target;
 		update_light_state();
-
 		k_timer_stop(&ctl->transition->timer);
 	}
 }
+
 
 K_WORK_DEFINE(onoff_work, onoff_work_handler);
 K_WORK_DEFINE(level_lightness_work, level_lightness_work_handler);
