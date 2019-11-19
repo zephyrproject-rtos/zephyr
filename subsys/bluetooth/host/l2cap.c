@@ -751,6 +751,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	/* Cancel ongoing work */
 	k_delayed_work_cancel(&chan->rtx_work);
 
+	if (ch->tx_buf) {
+		net_buf_unref(ch->tx_buf);
+		ch->tx_buf = NULL;
+	}
+
 	/* Remove buffers on the TX queue */
 	while ((buf = net_buf_get(&ch->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
