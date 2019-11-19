@@ -252,7 +252,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(K_FOREVER);
+	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {
