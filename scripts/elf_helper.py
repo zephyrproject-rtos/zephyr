@@ -353,6 +353,19 @@ def analyze_typedef(die):
     type_env[die.offset] = type_env[type_offset]
 
 
+def unpack_pointer(elf, data, offset):
+    endian_code = "<" if elf.little_endian else ">"
+    if elf.elfclass == 32:
+        size_code = "I"
+        size = 4
+    else:
+        size_code = "Q"
+        size = 8
+
+    return struct.unpack(endian_code + size_code,
+                         data[offset:offset + size])[0]
+
+
 def addr_deref(elf, addr):
     for section in elf.iter_sections():
         start = section['sh_addr']
@@ -361,14 +374,15 @@ def addr_deref(elf, addr):
         if start <= addr < end:
             data = section.data()
             offset = addr - start
-            return struct.unpack("<I" if elf.little_endian else ">I",
-                                 data[offset:offset + 4])[0]
+            return unpack_pointer(elf, data, offset)
 
     return 0
 
 
 def device_get_api_addr(elf, addr):
-    return addr_deref(elf, addr + 4)
+    # Read device->driver API
+    offset = 4 if elf.elfclass == 32 else 8
+    return addr_deref(elf, addr + offset)
 
 
 def get_filename_lineno(die):

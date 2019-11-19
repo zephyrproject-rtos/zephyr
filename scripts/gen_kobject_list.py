@@ -200,7 +200,17 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         initialized = static_begin <= obj_addr < static_end
         is_driver = obj_type.startswith("K_OBJ_DRIVER_")
 
-        byte_str = struct.pack("<I" if eh.little_endian else ">I", obj_addr)
+        if "CONFIG_64BIT" in syms:
+            format_code = "Q"
+        else:
+            format_code = "I"
+
+        if eh.little_endian:
+            endian = "<"
+        else:
+            endian = ">"
+
+        byte_str = struct.pack(endian + format_code, obj_addr)
         fp.write("\"")
         for byte in byte_str:
             val = "\\x%02x" % byte
