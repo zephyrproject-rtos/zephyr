@@ -88,6 +88,26 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf);
  */
 bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs);
 #endif /* CONFIG_THREAD_STACK_INFO */
+
+#ifdef CONFIG_USERSPACE
+extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
+					       void *p1, void *p2, void *p3,
+					       uintptr_t stack_end,
+					       uintptr_t stack_start);
+
+/* Preparation steps needed for all threads if user mode is turned on.
+ *
+ * Returns the initial entry point to swap into.
+ */
+void *z_x86_userspace_prepare_thread(struct k_thread *thread);
+
+void z_x86_thread_pt_init(struct k_thread *thread);
+
+void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
+			    struct k_mem_domain *mem_domain);
+
+#endif /* CONFIG_USERSPACE */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

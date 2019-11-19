@@ -17,6 +17,7 @@ zephyr_library_sources_if_kconfig(reboot_rst_cnt.c)
 zephyr_library_sources_if_kconfig(multiboot.c)
 zephyr_library_sources_if_kconfig(acpi.c)
 zephyr_library_sources_if_kconfig(x86_mmu.c)
+zephyr_library_sources_if_kconfig(userspace.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 
