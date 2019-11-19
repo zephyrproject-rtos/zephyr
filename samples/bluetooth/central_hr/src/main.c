@@ -180,6 +180,20 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 	}
 }
 
+static int scan_start(void)
+{
+	/* Use active scanning and disable duplicate filtering to handle any
+	 * devices that might update their advertising data at runtime. */
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
+		.window     = BT_GAP_SCAN_FAST_WINDOW,
+	};
+
+	return bt_le_scan_start(&scan_param, device_found);
+}
+
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -196,8 +210,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	/* This demo doesn't require active scan */
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	err = scan_start();
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 	}
@@ -222,7 +235,7 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	err = scan_start();
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
