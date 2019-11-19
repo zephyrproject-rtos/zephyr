@@ -2648,6 +2648,12 @@ bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv, u8_t *ltk)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_SMP_NO_SECURITY_REQ))
+static int smp_send_security_req(struct bt_conn *conn)
+{
+	return -ENOTSUP;
+}
+#else
 static int smp_send_security_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
@@ -2707,6 +2713,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 
 	return 0;
 }
+#endif /* defined(CONFIG_BT_SMP_NO_SECURITY_REQ) */
 
 static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {

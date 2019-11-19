@@ -383,6 +383,12 @@ config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	  time a successful pairing occurs. This increases flash wear out but offers
 	  a more correct finding of the oldest unused pairing info.
 
+config BT_SMP_NO_SECURITY_REQ
+	bool "Disable slave initated security request"
+	depends on BT_PERIPHERAL
+	  With this option security request from slave is disabled. This means
+	  that the slave has to wait for the central to initiate it if required.
+
 endif # BT_SMP
 
 source "subsys/bluetooth/host/Kconfig.l2cap"
