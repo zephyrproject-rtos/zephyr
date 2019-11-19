@@ -65,6 +65,7 @@ if BT_CTLR
 
 choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
+	default BT_LL_SW_SPLIT
 	help
 	  Select the Bluetooth Link Layer to compile.
 
