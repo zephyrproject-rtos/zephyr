@@ -255,6 +255,8 @@ destroy:
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
+
+	atomic_clear(chan->status);
 }
 
 static void l2cap_rtx_timeout(struct k_work *work)
@@ -1503,6 +1505,44 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf;
+
+	BT_DBG("chan %p", chan);
+
+	atomic_set_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN);
+
+	/* Destroy segmented SDU if it exists */
+	if (ch->_sdu) {
+		net_buf_unref(ch->_sdu);
+		ch->_sdu = NULL;
+		ch->_sdu_len = 0U;
+	}
+
+	/* Cleanup outstanding request */
+	if (ch->tx_buf) {
+		net_buf_unref(ch->tx_buf);
+		ch->tx_buf = NULL;
+	}
+
+	/* Remove buffers on the TX queue */
+	while ((buf = net_buf_get(&ch->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+
+	/* Remove buffers on the RX queue */
+	while ((buf = net_buf_get(&ch->rx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+
+	/* Update status */
+	if (chan->ops->status) {
+		chan->ops->status(chan, chan->status);
+	}
+}
+
 static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				    struct net_buf *buf, u16_t credits)
 {
@@ -1517,7 +1557,10 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				      sizeof(*ev));
 	if (!buf) {
 		BT_ERR("Unable to send credits update");
-		bt_l2cap_chan_disconnect(&chan->chan);
+		/* Disconnect would probably not work either so the only
+		 * option left is to shutdown the channel.
+		 */
+		l2cap_chan_shutdown(&chan->chan);
 		return;
 	}
 
@@ -1723,6 +1766,12 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 {
 	if (chan->chan.state == BT_L2CAP_DISCONNECT) {
 		BT_WARN("Ignoring data received while disconnecting");
+		net_buf_unref(buf);
+		return;
+	}
+
+	if (atomic_test_bit(chan->chan.status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		BT_WARN("Ignoring data received while channel has shutdown");
 		net_buf_unref(buf);
 		return;
 	}
@@ -1954,6 +2003,10 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		return -ESHUTDOWN;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
