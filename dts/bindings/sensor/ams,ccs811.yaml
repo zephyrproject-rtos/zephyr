@@ -1,11 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: AMS (Austria Mikro Systeme) Digital Air Quality Sensor CCS811
-
-description: |
-    This binding gives a base representation of CCS811 digital air quality
-    sensor
+description: CCS811 digital air quality sensor
 
 compatible: "ams,ccs811"
 

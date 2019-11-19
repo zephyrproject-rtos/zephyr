@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: NXP MCUX CSI module
-
-description: |
-    This binding gives a base representation of NXP MCUX CMOS Sensor Interface
+description: NXP MCUX CMOS sensor interface
 
 compatible: "nxp,imx-csi"
 

@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-title: SPI NOR flash devices (JEDEC CFI interface)
-
-description: |
-  Any SPI NOR flash that supports the JEDEC CFI interface.
+description: SPI NOR flash that supports the JEDEC CFI interface
 
 compatible: "jedec,spi-nor"
 

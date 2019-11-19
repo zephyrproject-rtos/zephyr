@@ -1,6 +1,4 @@
-title: NXP PCA9633 LED Driver
-
-description: NXP PCA9633 LED binding
+description: NXP PCA9633 LED
 
 compatible: "nxp,pca9633"
 

@@ -1,6 +1,4 @@
-title: Holtek HT16K33 LED Driver
-
-description: Holtek HT16K33 LEDs binding
+description: Holtek HT16K33 LEDs
 
 compatible: "holtek,ht16k33"
 

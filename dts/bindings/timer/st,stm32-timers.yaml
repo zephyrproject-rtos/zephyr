@@ -1,7 +1,4 @@
-title: STM32 TIMERS
-
-description: |
-    This binding gives a base representation of the STM32 TIMERS
+description: STM32 timers
 
 compatible: "st,stm32-timers"
 

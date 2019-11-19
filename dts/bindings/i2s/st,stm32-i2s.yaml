@@ -1,10 +1,7 @@
 # Copyright (c) 2018, STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-title: STM32 I2S
-
-description: |
-    This binding gives a base representation of the STM32 I2S controller
+description: STM32 I2S controller
 
 compatible: "st,stm32-i2s"
 
