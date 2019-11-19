@@ -62,6 +62,30 @@ static bool clock_event_check_and_clean(nrf_clock_event_t evt, u32_t intmask)
 	return ret;
 }
 
+static void clock_irqs_disable(void)
+{
+	nrf_clock_int_disable(NRF_CLOCK,
+			(NRF_CLOCK_INT_HF_STARTED_MASK |
+			 NRF_CLOCK_INT_LF_STARTED_MASK |
+			 COND_CODE_1(CONFIG_USB_NRFX,
+				(NRF_POWER_INT_USBDETECTED_MASK |
+				 NRF_POWER_INT_USBREMOVED_MASK |
+				 NRF_POWER_INT_USBPWRRDY_MASK),
+				(0))));
+}
+
+static void clock_irqs_enable(void)
+{
+	nrf_clock_int_enable(NRF_CLOCK,
+			(NRF_CLOCK_INT_HF_STARTED_MASK |
+			 NRF_CLOCK_INT_LF_STARTED_MASK |
+			 COND_CODE_1(CONFIG_USB_NRFX,
+				(NRF_POWER_INT_USBDETECTED_MASK |
+				 NRF_POWER_INT_USBREMOVED_MASK |
+				 NRF_POWER_INT_USBPWRRDY_MASK),
+				(0))));
+}
+
 static enum clock_control_status get_status(struct device *dev,
 					    clock_control_subsys_t sys)
 {
@@ -134,6 +158,30 @@ static bool is_in_list(sys_slist_t *list, sys_snode_t *node)
 	return false;
 }
 
+static void list_append(sys_slist_t *list, sys_snode_t *node)
+{
+	int key;
+
+	key = irq_lock();
+	sys_slist_append(list, node);
+	irq_unlock(key);
+}
+
+static struct clock_control_async_data *list_get(sys_slist_t *list)
+{
+	struct clock_control_async_data *async_data;
+	sys_snode_t *node;
+	int key;
+
+	key = irq_lock();
+	node = sys_slist_get(list);
+	irq_unlock(key);
+	async_data = CONTAINER_OF(node,
+		struct clock_control_async_data, node);
+
+	return async_data;
+}
+
 static int clock_async_start(struct device *dev,
 			     clock_control_subsys_t sub_system,
 			     struct clock_control_async_data *data)
@@ -162,12 +210,12 @@ static int clock_async_start(struct device *dev,
 	if (data) {
 		bool already_started;
 
-		key = irq_lock();
+		clock_irqs_disable();
 		already_started = clk_data->started;
 		if (!already_started) {
-			sys_slist_append(&clk_data->list, &data->node);
+			list_append(&clk_data->list, &data->node);
 		}
-		irq_unlock(key);
+		clock_irqs_enable();
 
 		if (already_started) {
 			data->cb(dev, data->user_data);
@@ -228,15 +276,7 @@ static int hfclk_init(struct device *dev)
 		z_nrf_clock_calibration_init(dev);
 	}
 
-	nrf_clock_int_enable(NRF_CLOCK,
-		(NRF_CLOCK_INT_HF_STARTED_MASK |
-		 NRF_CLOCK_INT_LF_STARTED_MASK |
-		 COND_CODE_1(CONFIG_USB_NRFX,
-			(NRF_POWER_INT_USBDETECTED_MASK |
-			 NRF_POWER_INT_USBREMOVED_MASK |
-			 NRF_POWER_INT_USBPWRRDY_MASK),
-			(0))));
-
+	clock_irqs_enable();
 	sys_slist_init(&((struct nrf_clock_control *)dev->driver_data)->list);
 
 	return 0;
@@ -292,16 +332,12 @@ static void clkstarted_handle(struct device *dev)
 {
 	struct clock_control_async_data *async_data;
 	struct nrf_clock_control *data = dev->driver_data;
-	sys_snode_t *node = sys_slist_get(&data->list);
 
 	DBG(dev, "Clock started");
 	data->started = true;
 
-	while (node != NULL) {
-		async_data = CONTAINER_OF(node,
-				struct clock_control_async_data, node);
+	while ((async_data = list_get(&data->list)) != NULL) {
 		async_data->cb(dev, async_data->user_data);
-		node = sys_slist_get(&data->list);
 	}
 }
 
