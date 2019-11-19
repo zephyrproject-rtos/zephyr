@@ -658,7 +658,13 @@ void z_thread_single_suspend(struct k_thread *thread)
 		z_remove_thread_from_ready_q(thread);
 	}
 
+	(void)z_abort_thread_timeout(thread);
+
 	z_mark_thread_as_suspended(thread);
+
+	if (thread == _current) {
+		z_reschedule_unlocked();
+	}
 }
 
 void z_impl_k_thread_suspend(struct k_thread *thread)
