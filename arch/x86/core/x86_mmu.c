@@ -783,6 +783,35 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 				  size, write != 0);
 }
 
+#ifdef CONFIG_X86_64
+static uintptr_t thread_pdpt_create(uintptr_t pages,
+				    struct x86_page_tables *thread_ptables,
+				    struct x86_page_tables *master_ptables)
+{
+	uintptr_t pos = pages, phys_addr = Z_X86_PDPT_START;
+
+	for (int i = 0; i < Z_X86_NUM_PDPT; i++, phys_addr += Z_X86_PDPT_AREA) {
+		u64_t *pml4e;
+		struct x86_mmu_pdpt *master_pdpt, *dest_pdpt;
+
+		/* obtain master PDPT tables for the address range and copy
+		 * into per-thread PDPT for this range
+		 */
+		master_pdpt = z_x86_get_pdpt(master_ptables, phys_addr);
+		dest_pdpt = (struct x86_mmu_pdpt *)pos;
+		(void)memcpy(dest_pdpt, master_pdpt,
+			     sizeof(struct x86_mmu_pdpt));
+
+		/* And then wire this up to the relevant per-thread PML4E */
+		pml4e = z_x86_get_pml4e(thread_ptables, phys_addr);
+		pml4e_update_pdpt(pml4e, dest_pdpt);
+		pos += MMU_PAGE_SIZE;
+	}
+
+	return pos;
+}
+#endif /* CONFIG_X86_64 */
+
 static uintptr_t thread_pd_create(uintptr_t pages,
 				  struct x86_page_tables *thread_ptables,
 				  struct x86_page_tables *master_ptables)
@@ -845,6 +874,65 @@ static uintptr_t thread_pt_create(uintptr_t pages,
 /* Initialize the page tables for a thread. This will contain, once done,
  * the boot-time configuration for a user thread page tables. There are
  * no pre-conditions on the existing state of the per-thread tables.
+ *
+ * pos represents the page we are working with in the reserved area
+ * in the stack buffer for per-thread tables. As we create tables in
+ * this area, pos is incremented to the next free page.
+ *
+ * The layout of the stack object, when this is done:
+ *
+ * For 32-bit:
+ *
+ * +---------------------------+  <- thread->stack_obj
+ * | PDE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PDE(Z_X86_NUM_PD - 1)     |
+ * +---------------------------+
+ * | PTE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PTE(Z_X86_NUM_PT - 1)     |
+ * +---------------------------+ <- pos once this logic completes
+ * | Stack guard               |
+ * +---------------------------+
+ * | Privilege elevation stack |
+ * | PDPT                      |
+ * +---------------------------+ <- thread->stack_info.start
+ * | Thread stack              |
+ * | ...                       |
+ *
+ * For 64-bit:
+ *
+ * +---------------------------+ <- thread->stack_obj
+ * | PML4		       |
+ * +---------------------------|
+ * | PDPT(0)		       |
+ * +---------------------------|
+ * | ...                       |
+ * +---------------------------|
+ * | PDPT(Z_X86_NUM_PDPT - 1)  |
+ * +---------------------------+
+ * | PDE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PDE(Z_X86_NUM_PD - 1)     |
+ * +---------------------------+
+ * | PTE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PTE(Z_X86_NUM_PT - 1)     |
+ * +---------------------------+ <- pos once this logic completes
+ * | Stack guard               |
+ * +---------------------------+
+ * | Privilege elevation stack |
+ * +---------------------------+ <- thread->stack_info.start
+ * | Thread stack              |
+ * | ...                       |
  */
 static void copy_page_tables(struct k_thread *thread,
 			     struct x86_page_tables *master_ptables)
@@ -864,36 +952,14 @@ static void copy_page_tables(struct k_thread *thread,
 	(void)memcpy(thread_ptables, master_ptables,
 		     sizeof(struct x86_page_tables));
 
-	/* pos represents the page we are working with in the reserved area
-	 * in the stack buffer for per-thread tables. As we create tables in
-	 * this area, pos is incremented to the next free page.
-	 *
-	 * The layout of the stack object, when this is done:
-	 *
-	 * +---------------------------+  <- thread->stack_obj
-	 * | PDE(0)                    |
-	 * +---------------------------+
-	 * | ...                       |
-	 * +---------------------------+
-	 * | PDE(Z_X86_NUM_PD - 1)     |
-	 * +---------------------------+
-	 * | PTE(0)                    |
-	 * +---------------------------+
-	 * | ...                       |
-	 * +---------------------------+
-	 * | PTE(Z_X86_NUM_PT - 1)     |
-	 * +---------------------------+ <- pos once this logic completes
-	 * | Stack guard               |
-	 * +---------------------------+
-	 * | Privilege elevation stack |
-	 * | PDPT                      |
-	 * +---------------------------+ <- thread->stack_info.start
-	 * | Thread stack              |
-	 * | ...                       |
-	 *
-	 */
 	start = (uintptr_t)(&header->page_tables);
-	pos = thread_pd_create(start, thread_ptables, master_ptables);
+#ifdef CONFIG_X86_64
+	pos = start + sizeof(struct x86_mmu_pml4);
+	pos = thread_pdpt_create(pos, thread_ptables, master_ptables);
+#else
+	pos = start;
+#endif
+	pos = thread_pd_create(pos, thread_ptables, master_ptables);
 	pos = thread_pt_create(pos, thread_ptables, master_ptables);
 
 	__ASSERT(pos == (start + Z_X86_THREAD_PT_AREA),
