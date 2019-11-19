@@ -26,5 +26,4 @@
 				  EVENT_RX_JITTER_US(phy))
 
 /* TODO - fix up numbers re. HW */
-#define EVENT_RX_TX_TURNARROUND(phy)  ((phy) == 1?100:((phy) == 2 ? 80:900))
-
+#define EVENT_RX_TX_TURNAROUND(phy)  ((phy) == 1?100:((phy) == 2 ? 80:900))
