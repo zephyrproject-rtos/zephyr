@@ -1,7 +1,4 @@
-title: OpenISA LPUART
-
-description: |
-    This binding gives a base representation of the OpenISA LPUART
+description: OpenISA LPUART
 
 compatible: "openisa,rv32m1-lpuart"
 

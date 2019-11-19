@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Actinius
 # SPDX-License-Identifier: Apache-2.0
 
-title: Texas Instruments OPT3001 Ambient light sensor
-
-description: |
-    This is a representation of the Texas Instruments OPT3001 Ambient light sensor
+description: Texas Instruments OPT3001 ambient light sensor
 
 compatible: "ti,opt3001"
 

@@ -1,13 +1,7 @@
-#
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP LPC SPI
-
-description: >
-    This binding gives a base representation of the NXP LPC SPI controller
+description: NXP LPC SPI controller
 
 compatible: "nxp,lpc-spi"
 
