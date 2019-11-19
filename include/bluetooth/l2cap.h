@@ -74,6 +74,13 @@ typedef enum bt_l2cap_chan_status {
 	/** Channel output status */
 	BT_L2CAP_STATUS_OUT,
 
+	/** Channel shutdown status
+	 *
+	 * Once this status is notified it means the channel will no longer be
+	 * able to transmit or receive data.
+	 */
+	BT_L2CAP_STATUS_SHUTDOWN,
+
 	/* Total number of status - must be at the end of the enum */
 	BT_L2CAP_NUM_STATUS,
 } __packed bt_l2cap_chan_status_t;
