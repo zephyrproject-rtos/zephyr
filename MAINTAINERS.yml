@@ -119,20 +119,20 @@
         - vonhust
     files:
         - arch/arc/
+        - include/arch/arc/
     labels:
         - "area: ARC"
 
 "ARM arch":
-    # Provisional entry, to be corrected
     status: maintained
     maintainers:
         - ioannisg
     collaborators:
         - MaureenHelm
         - galak
-        - ioannisg
     files:
         - arch/arm/
+        - include/arch/arm/
     labels:
         - "area: ARM"
 
@@ -178,10 +178,11 @@ Bluetooth:
         - "area: Bluetooth Mesh"
 
 "Build system":
-    # Provisional entry, to be corrected
     status: maintained
     maintainers:
         - SebastianBoe
+    collaborators:
+        - nashif
     files:
         - cmake/
     files-regex:
@@ -190,9 +191,65 @@ Bluetooth:
     labels:
         - "area: Build System"
 
-"Display drivers":
+"C library":
     # Provisional entry, to be corrected
     status: orphaned
+    collaborators:
+         - nashif
+         - andrewboie
+    files:
+         - lib/libc/
+         - tests/lib/c_lib/
+    labels:
+         - "area: C Library"
+
+"CMSIS API layer":
+    # Provisional entry, to be corrected
+    status: orphaned
+    collaborators:
+         - nashif
+    files:
+         - lib/cmsis_rtos_v*/
+
+Debug:
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - include/debug/
+        - subsys/debug/
+        - tests/subsys/debug/
+    labels:
+        - "area: Debugging"
+
+DFU:
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - include/dfu/
+        - subsys/dfu/
+        - tests/subsys/dfu/
+
+"Device Tree":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - galak
+    collaborators:
+        - ulfalizer
+    files:
+        - scripts/dts/
+        - dts/bindings/
+        - dts/common/
+    labels:
+        - "area: Device Tree"
+
+"Display drivers":
+    status: orphaned
+    collaborators:
+        - vanwinkeljan
     files:
         - drivers/display/
         - dts/bindings/display/
@@ -215,8 +272,164 @@ Documentation:
     labels:
         - "area: Documentation"
 
-Flash:
+"Drivers: ADC":
     # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - anangl
+    files:
+        - drivers/adc/
+        - include/drivers/adc.h
+        - tests/drivers/adc/
+    labels:
+        - "area: ADC"
+
+"Drivers: ADC stm32":
+    # Provisional entry, to be corrected
+    collaborators:
+        - cybertale
+    files:
+        - drivers/adc/adc_stm32.c
+        - dts/bindings/iio/adc/st*stm32-adc.yaml
+
+"Drivers: Audio":
+    # Provisional entry, to be corrected
+    # TODO: spreadsheet not matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - Vudentz
+    files:
+        - drivers/audio/
+        - include/audio/
+
+"Drivers: CAN":
+    status: maintained
+    maintainers:
+        - alexanderwachter
+    collaborators:
+        - henrikbrixandersen
+        - karstenkoenig
+    files:
+        - drivers/can/
+        - dts/bindings/can/
+        - include/drivers/can.h
+        - samples/drivers/CAN/
+        - tests/drivers/can/
+    labels:
+        - "area: CAN"
+
+"Drivers: Clock control":
+    status: orphaned
+    files:
+        - drivers/clock_control/
+        - dts/bindings/clock/
+        - include/clock_control.h
+        - include/dt-bindings/clock/
+        - tests/drivers/clock_control/
+    labels:
+        - "area: Clock control"
+
+"Drivers: Clock control: Nordic nRFx":
+    collaborators:
+        - nordic-krch
+    files:
+        - drivers/clock_control/*nrf*
+
+"Drivers: Console":
+    # Provisional entry, to be corrected
+    # TODO: spreadsheet not properly matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - pfalcon
+    files:
+        - drivers/console/
+    labels:
+        - "area: Console"
+
+"Drivers: Counter":
+    # Provisional entry, to be corrected
+    # TODO: spreadsheet not properly matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - nordic-krch
+    files:
+        - drivers/counter/
+        - include/drivers/counter.h
+        - tests/drivers/counter/
+    labels:
+        - "area: Counter"
+
+"Drivers: Crypto":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/crypto/
+        - dts/bindings/crypto/
+        - include/crypto/
+        - samples/drivers/crypto/
+    labels:
+        - "area: Crypto / RNG"
+
+"Drivers: DMA":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/dma/
+        - include/dt-bindings/dma/
+    labels:
+        - "area: DMA"
+
+"Drivers: Entropy":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/entropy/
+        - samples/drivers/entropy/
+        - tests/drivers/entropy/
+
+"Drivers: Entropy: OpenISA RV32M1":
+    # Provisional entry, to be corrected
+    collaborators:
+        - MaureenHelm
+    files:
+        - drivers/entropy/*rv32m1*
+
+"Drivers: EEPROM":
+    status: maintained
+    maintainers:
+        - henrikbrixandersen
+    files:
+        - drivers/eeprom/
+        - dts/bindings/mtd/*eeprom*
+        - include/drivers/eeprom.h
+        - tests/drivers/eeprom/
+    labels:
+        - "area: EEPROM"
+
+"Drivers: ESPI":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/espi/
+        - include/drivers/espi.h
+        - samples/drivers/espi/
+    labels:
+        - "eSPI"
+
+"Drivers: Ethernet":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+        - pfalcon
+    files:
+        - drivers/ethernet/
+    labels:
+        - "area: Ethernet"
+
+"Drivers: Flash":
     status: maintained
     maintainers:
         - nvlsianpu
@@ -228,6 +441,290 @@ Flash:
         - samples/drivers/flash_shell/
     labels:
         - "area: Flash"
+
+"Drivers: GPIO":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - mnkp
+    files:
+        - doc/reference/peripherals/gpio.rst 
+        - drivers/gpio/
+        - include/drivers/gpio/
+        - include/drivers/gpio.h
+        - include/gpio.h
+        - include/dt-bindings/gpio/
+        - tests/drivers/gpio/
+        - samples/drivers/gpio/
+    labels:
+        - "area: GPIO"
+
+"Drivers: HW Info":
+    status: orphaned
+    collaborators:
+        - alexanderwachter
+    files:
+        - drivers/hwinfo/
+        - dts/bindings/hwinfo/
+        - include/drivers/hwinfo.h
+        - include/hwinfo.h
+        - tests/drivers/hwinfo/
+    labels:
+        - "area: HWINFO"
+
+"Drivers: IEEE 802.15.4":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+    files:
+        - drivers/ieee802154/
+
+"Drivers: Interrupt controllers":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/interrupt_controller/
+        - dts/bindings/interrupt-controller/
+        - include/drivers/interrupt_controller/
+        - include/dt-bindings/interrupt-controller/
+
+"Drivers: IPM":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - andrewboie
+    files:
+        - drivers/ipm/
+    description: >-
+        Inter-processor mailboxes
+
+"Drivers: I2C":
+    # Provisional entry, to be corrected
+    # TODO: spreadsheet not matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - mbolivar
+    files:
+        - drivers/i2c/
+        - dts/bindings/i2c/
+        - include/i2c.h
+        - include/drivers/i2c.h
+        - include/drivers/i2c/
+    labels:
+        - "area: I2C"
+
+"Drivers: I2S":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - doc/reference/peripherals/i2s.rst
+        - drivers/i2s/
+        - dts/bindings/i2s/
+        - include/i2s.h
+        - include/drivers/i2s.h
+        - tests/drivers/i2s/
+    labels:
+        - "area: I2S"
+
+"Drivers: kscan":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/kscan/
+        - include/drivers/kscan.h
+        - samples/drivers/espi/
+        - tests/drivers/kscan/
+
+"Drivers: lora":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/lora/
+        - include/drivers/lora.h
+        - samples/drivers/lora/
+
+"Drivers: LED":
+    # Provisional entry, to be corrected
+    status: orphaned
+    collaborators:
+        - Mani-Sadhasivam
+    files:
+        - drivers/led/
+        - include/led.h
+        - include/drivers/led/
+        - include/drivers/led.h
+        - samples/drivers/led_*/
+    labels:
+        - "area: LED"
+
+"Drivers: LED Strip":
+    # Provisional entry, to be corrected
+    status: orphaned
+    collaborators:
+        - mbolivar
+    files:
+        - drivers/led_strip/
+        - dts/bindings/led_strip/
+        - include/led_strip.h
+        - include/drivers/led_strip.h
+
+"Drivers: Modem":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - mike-scott
+    files:
+        - drivers/modem/
+    labels:
+        - "area: Modem"
+
+"Drivers: Neural networking":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/neural_net/
+
+"Drivers: PCI":
+    # Provisional entry, to be corrected
+    # TODO: spreadsheet not matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - dcpleung
+    collaborators:
+        - andrewboie
+    files:
+        - drivers/pcie/
+        - include/drivers/pcie/
+    labels:
+        - "area: PCI"
+
+"Drivers: Pinmux":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - mnkp
+    files:
+        - doc/reference/peripherals/pinmux.rst 
+        - drivers/pinmux/
+        - include/drivers/pinmux.h
+        - include/pinmux.h
+        - tests/drivers/pinmux/
+    labels:
+        - "area: Pinmux"
+
+"Drivers: PWM":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/pwm/
+        - dts/bindings/pwm/
+        - include/drivers/pwm.h
+        - include/pwm.h
+        - tests/drivers/pwm/
+    labels:
+        - "area: PWM"
+
+"Drivers: Serial/UART":
+    status: maintained
+    maintainers:
+        - dcpleung
+    files:
+        - drivers/serial/
+        - dts/bindings/serial/
+    labels:
+        - "area: UART"
+
+"Drivers: Sensors":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - MaureenHelm
+    files:
+        - drivers/sensor/
+        - include/drivers/sensor.h
+        - samples/sensor/
+    labels:
+        - "area: Sensors"
+
+"Drivers: SPI":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - tbursztyka
+    files:
+        - drivers/spi/
+        - include/drivers/spi.h
+        - tests/drivers/spi/
+    labels:
+        - "area: SPI"
+
+"Drivers: System Timer":
+    # Provisional entry, to be corrected
+    # TODO: maintainers spreadsheet not matching CODEOWNERS
+    status: maintained
+    maintainers:
+        - andyross
+    files:
+        - drivers/timer/
+    labels:
+        - "area: Timer"
+
+"Drivers: Watchdog":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - doc/reference/peripherals/watchdog.rst
+        - drivers/watchdog/
+        - dts/bindings/watchdog/
+        - include/watchdog.h
+        - include/drivers/watchdog.h
+        - samples/drivers/watchdog/
+        - tests/drivers/watchdog/
+    labels:
+        - "area: Watchdog"
+
+"Drivers: WiFi":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+    files:
+        - drivers/wifi/
+    labels:
+        - "area: Wifi"
+
+"Drivers: WiFi es-WiFi":
+    # Provisional entry, to be corrected
+    collaborators:
+        - loicpoulain
+    files:
+        - drivers/wifi/eswifi/
+    description: >-
+        Inventek es-WiFi
+
+"File Systems":
+    # Provisional entry, to be corrected
+    status: orphaned
+    collaborators:
+        - nashif
+        - nvlsianpu
+        - pabigot
+        - vanwinkeljan
+        - Laczen
+        - wentongwu
+    files:
+        - include/fs/
+        - include/fs.h
+        - samples/subsys/fs/
+        - subsys/fs/
+        - tests/subsys/fs/
+    labels:
+        - "area: File System"
 
 Kconfig:
     status: maintained
@@ -242,6 +739,20 @@ Kconfig:
     description: >-
         See https://docs.zephyrproject.org/latest/guides/kconfig/index.html and
         https://docs.zephyrproject.org/latest/guides/porting/board_porting.html#default-board-configuration
+
+Kernel:
+    status: maintained
+    maintainers:
+        - andyross
+    collaborators:
+        - andrewboie
+    files:
+        - doc/reference/kernel/
+        - include/kernel*.h
+        - kernel/
+        - tests/kernel/
+    labels:
+        - "area: Kernel"
 
 Logging:
     # Provisional entry, to be corrected
@@ -269,11 +780,100 @@ Logging:
         - include/arch/posix/
         - scripts/valgrind.supp
         - soc/posix/
+        - subsys/debug/asan.c
         - tests/boards/native_posix/
     labels:
         - "area: native port"
     description: >-
         POSIX architecture and SOC, native_posix board, and related drivers
+
+"Networking":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - jukkar
+    collaborators:
+        - tbursztyka
+        - pfalcon
+    files:
+        - drivers/net/
+        - include/net/
+        - samples/net/
+        - subsys/net/
+    files-exclude:
+        - samples/net/sockets/coap_*/
+        - samples/net/lwm2m_client/
+        - subsys/net/lib/coap/
+        - subsys/net/lib/lwm2m/
+        - subsys/net/lib/openthread/
+        - subsys/net/lib/tls_credentials/
+    labels:
+        - "area: Networking"
+
+"Networking: BSD sockets":
+    # Provisional entry, to be corrected
+    maintainers:
+        - pfalcon
+    files:
+        - samples/net/sockets/
+        - subsys/net/lib/sockets/
+        - tests/net/socket/
+    labels:
+        - "area: Sockets"
+
+"Networking: Buffers":
+    # Provisional entry, to be corrected
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jhedberg
+    files:
+        - include/net/buf.h
+        - subsys/net/buf.c
+        - tests/net/buf/
+
+"Networking: CoAP":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - rveerama1
+    files:
+        - subsys/net/lib/coap/
+        - samples/net/sockets/coap_*/
+        - tests/net/lib/coap/
+
+"Networking: LWM2M":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - mike-scott
+    files:
+        - samples/net/lwm2m_client/
+        - subsys/net/lib/lwm2m/
+    labels:
+        - "area: LWM2M"
+
+"Networking: MQTT":
+    # Provisional entry, to be corrected
+    maintainers:
+        - rlubos
+    collaborators:
+        - jukkar
+    files:
+        - subsys/net/lib/mqtt/
+        - tests/net/lib/mqtt_packet/
+        - samples/net/mqtt_publisher/
+
+"NIOS-2 arch":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - arch/nios2/
+        - include/arch/nios2/
+    labels:
+        - "area: NIOS2"
 
 "nRF52 BSIM":
     status: maintained
@@ -284,6 +884,32 @@ Logging:
     labels:
         - "platform: nrf52_bsim"
 
+"POSIX API layer":
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - pfalcon
+    files:
+        - include/posix/
+        - lib/posix/
+        - tests/posix/
+    labels:
+        - "area: POSIX"
+
+"Power management":
+    # TSC : Note this entry differs from the spreadsheet:
+    # pizi-nordic is not anymore working in Zephyr, therefore he cannot be a
+    # maintainer, and the are is orphaned until a new maintainer is appointed
+    status: orphaned
+    collaborators:
+        - wentongwu
+    files:
+        - include/power/power.h
+        - samples/subsys/power/
+        - subsys/power/
+    labels:
+        - "area: Power Management"
+
 "RISCV arch":
     # Provisional entry, to be corrected
     status: maintained
@@ -293,6 +919,7 @@ Logging:
         - mgielda
     files:
         - arch/riscv/
+        - include/arch/riscv/
     labels:
         - "area: RISCV"
 
@@ -308,7 +935,6 @@ Sanitycheck:
         - "area: Sanitycheck"
 
 Settings:
-    # Provisional entry, to be corrected
     status: maintained
     maintainers:
         - nvlsianpu
@@ -316,6 +942,7 @@ Settings:
         - include/settings/
         - subsys/settings/
         - tests/subsys/settings/
+        - doc/reference/runtime_conf/
     labels:
         - "area: Settings"
 
@@ -332,6 +959,19 @@ Shell:
         - tests/subsys/shell/
     labels:
         - "area: Shell"
+
+"ZTest and unit test infrastructure":
+    # TODO @nashif is this what line 59 of the spreadsheet refers to?
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - subsys/testsuite/
+        - tests/ztest/
+        - tests/unit/util/
+    labels:
+        - "area: Debugging"
 
 USB:
     # Provisional entry, to be corrected
@@ -351,16 +991,44 @@ USB:
     labels:
         - "area: USB"
 
-West:
+Userspace:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
-        - mbolivar
+        - andrewboie
+    files:
+        - doc/reference/usermode/kernelobjects.rst
+        - include/app_memory/
+        - include/linker/app_smem*.ld
+    labels:
+        - "area: Userspace"
+
+West:
+    status: maintained
+    maintainers:
+        - mbolivar-nordic
+    collaborators:
+        - carlescufi
     files:
         - scripts/west-commands.yml
         - scripts/west_commands/
     labels:
         - "area: West"
+
+"Xtensa arch":
+    status: maintained
+    maintainers:
+        - dcpleung
+    collaborators:
+        - andyross
+        - andrewboie
+    files:
+        - arch/xtensa/
+        - include/arch/xtensa/
+        - dts/xtensa/
+        - tests/arch/xtensa_asm2/
+    labels:
+        - "area: Xtensa"
 
 "x86 arch":
     # Provisional entry, to be corrected
@@ -371,5 +1039,7 @@ West:
         - andyross
     files:
         - arch/x86/
+        - include/arch/x86/
+        - tests/arch/x86/
     labels:
         - "area: X86"
