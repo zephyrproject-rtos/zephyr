@@ -129,15 +129,19 @@ void lll_chan_sel_2_ut(void)
 }
 #endif /* RADIO_UNIT_TEST */
 
-/* Attribution:
- * http://graphics.stanford.edu/%7Eseander/bithacks.html#ReverseByteWith32Bits
- */
 static u8_t chan_rev_8(u8_t b)
 {
-	b = (((u32_t)b * 0x0802LU & 0x22110LU) |
-	     ((u32_t)b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+	u8_t iterate;
+	u8_t o;
 
-	return b;
+	o = 0U;
+	for (iterate = 0U; iterate < 8; iterate++) {
+		o <<= 1;
+		o |= (b & 1);
+		b >>= 1;
+	}
+
+	return o;
 }
 
 static u16_t chan_perm(u16_t i)
