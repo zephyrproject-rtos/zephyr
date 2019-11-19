@@ -459,12 +459,28 @@ class EDT:
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
         # self._warn().
 
-        for prop in "title", "description":
-            if prop not in binding:
-                _err("missing '{}' property in {}".format(prop, binding_path))
+        if "title" in binding:
+            # This message is the message that people copy-pasting the old
+            # format will see in practice
+            self._warn("'title:' in {} is deprecated and will be removed (and "
+                       "was never used). Just put a 'description:' that "
+                       "describes the device instead. Use other bindings as "
+                       "a reference, and note that all bindings were updated "
+                       "recently. Think about what information would be "
+                       "useful to other people (e.g. explanations of "
+                       "acronyms, or datasheet links), and put that in as "
+                       "well. The description text shows up as a comment "
+                       "in the generated header. See yaml-multiline.info for "
+                       "how to deal with multiple lines. You probably want "
+                       "'description: |'.".format(binding_path))
 
-            if not isinstance(binding[prop], str) or not binding[prop]:
-                _err("missing, malformed, or empty '{}' in {}"
+        if "description" not in binding:
+            _err("missing 'description' property in " + binding_path)
+
+        for prop in "title", "description":
+            if prop in binding and (not isinstance(binding[prop], str) or
+                                    not binding[prop]):
+                _err("malformed or empty '{}' in {}"
                      .format(prop, binding_path))
 
         ok_top = {"title", "description", "compatible", "properties", "#cells",
@@ -481,8 +497,8 @@ class EDT:
             bus_key = pc + "-bus"
             if bus_key in binding and \
                not isinstance(binding[bus_key], str):
-                self._warn("malformed '{}:' value in {}, expected string"
-                           .format(bus_key, binding_path))
+                _err("malformed '{}:' value in {}, expected string"
+                     .format(bus_key, binding_path))
 
             # Legacy 'child/parent: bus: ...' keys
             if pc in binding:

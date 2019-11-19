@@ -42,6 +42,7 @@ def run():
     verify_eq(warnings.getvalue(), """\
 warning: The 'properties: compatible: constraint: ...' way of specifying the compatible in test-bindings/deprecated.yaml is deprecated. Put 'compatible: "deprecated"' at the top level of the binding instead.
 warning: the 'inherits:' syntax in test-bindings/deprecated.yaml is deprecated and will be removed - please use 'include: foo.yaml' or 'include: [foo.yaml, bar.yaml]' instead
+warning: 'title:' in test-bindings/deprecated.yaml is deprecated and will be removed (and was never used). Just put a 'description:' that describes the device instead. Use other bindings as a reference, and note that all bindings were updated recently. Think about what information would be useful to other people (e.g. explanations of acronyms, or datasheet links), and put that in as well. The description text shows up as a comment in the generated header. See yaml-multiline.info for how to deal with multiple lines. You probably want 'description: |'.
 warning: please put 'required: true' instead of 'category: required' in properties: required: ...' in test-bindings/deprecated.yaml - 'category' will be removed
 warning: please put 'required: false' instead of 'category: optional' in properties: optional: ...' in test-bindings/deprecated.yaml - 'category' will be removed
 warning: 'sub-node: properties: ...' in test-bindings/deprecated.yaml is deprecated and will be removed - please give a full binding for the child node in 'child-binding:' instead (see binding-template.yaml)
