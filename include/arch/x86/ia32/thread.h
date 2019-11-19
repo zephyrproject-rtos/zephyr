@@ -208,6 +208,19 @@ typedef struct s_preempFloatReg {
 struct _thread_arch {
 	u8_t flags;
 
+#ifdef CONFIG_USERSPACE
+	/* Pointer to page tables used by this thread. Supervisor threads
+	 * always use the kernel's page table, user thread use per-thread
+	 * tables stored in the stack object
+	 */
+	struct x86_page_tables *ptables;
+
+	/* Initial privilege mode stack pointer when doing a system call.
+	 * Un-set for supervisor threads.
+	 */
+	char *psp;
+#endif
+
 #if defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across

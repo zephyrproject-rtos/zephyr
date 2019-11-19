@@ -990,11 +990,10 @@ static uintptr_t thread_pt_create(uintptr_t pages,
  * | ...                       |
  */
 static void copy_page_tables(struct k_thread *thread,
+			     struct x86_page_tables *thread_ptables,
 			     struct x86_page_tables *master_ptables)
 {
 	uintptr_t pos, start;
-	struct x86_page_tables *thread_ptables =
-		z_x86_thread_page_tables_get(thread);
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
@@ -1091,11 +1090,21 @@ void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
  * user mode.
  *
  * Sets up the per-thread page tables, such that when they are activated on
- * context switch, everything is ready to go.
+ * context switch, everything is ready to go. thread->arch.ptables is updated
+ * to the thread-level tables instead of the kernel's page tbales.
  */
 void z_x86_thread_pt_init(struct k_thread *thread)
 {
-	struct x86_page_tables *ptables = z_x86_thread_page_tables_get(thread);
+	struct x86_page_tables *ptables;
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)thread->stack_obj;
+
+#ifdef CONFIG_X86_64
+	ptables = (struct x86_page_tables *)(&header->page_tables);
+#else
+	ptables = &header->kernel_data.ptables;
+#endif
+	thread->arch.ptables = ptables;
 
 	/* USER_PDPT contains the page tables with the boot time memory
 	 * policy. We use it as a template to set up the per-thread page
@@ -1106,7 +1115,7 @@ void z_x86_thread_pt_init(struct k_thread *thread)
 	 * accessible pages except the trampoline page marked as non-present.
 	 * Without KPTI, they are the same object.
 	 */
-	copy_page_tables(thread, &USER_PTABLES);
+	copy_page_tables(thread, ptables, &USER_PTABLES);
 
 	/* Enable access to the thread's own stack buffer */
 	z_x86_mmu_set_flags(ptables, (void *)thread->stack_info.start,
