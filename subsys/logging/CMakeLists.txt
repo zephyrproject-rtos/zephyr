@@ -48,6 +48,11 @@ if(NOT CONFIG_LOG_MINIMAL)
     CONFIG_LOG_MIPI_SYST_ENABLE
     log_output_syst.c
   )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_ADSP
+    log_backend_adsp.c
+  )
 else()
   zephyr_sources(log_minimal.c)
 endif()
