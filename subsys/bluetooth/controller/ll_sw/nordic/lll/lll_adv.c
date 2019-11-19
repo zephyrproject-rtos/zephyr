@@ -479,7 +479,8 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	if (!lll->chan_map_curr && lll->is_hdcd) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll->is_hdcd &&
+	    !lll->chan_map_curr) {
 		lll->chan_map_curr = lll->chan_map;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
