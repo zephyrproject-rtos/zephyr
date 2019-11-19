@@ -8,7 +8,9 @@
 #include <toolchain.h>
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
+#include <soc.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -35,7 +37,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_scan
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -313,8 +314,14 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
 		 */
-		radio_isr_set(isr_abort, param);
-		radio_disable();
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll_is_stop(param)) {
+			while (!radio_has_disabled()) {
+				cpu_sleep();
+			}
+		} else {
+			radio_isr_set(isr_abort, param);
+			radio_disable();
+		}
 		return;
 	}
 
