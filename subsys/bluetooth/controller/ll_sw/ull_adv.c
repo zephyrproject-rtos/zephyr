@@ -734,7 +734,7 @@ u8_t ll_adv_enable(u8_t enable)
 		if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
 			adv_size += adv_data_len;
 			slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
-				    EVENT_IFS_MAX_US * (adv_chn_cnt - 1);
+				   rxtx_turn_us * (adv_chn_cnt - 1);
 		} else {
 			if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 				adv_size += TARGETA_SIZE;
