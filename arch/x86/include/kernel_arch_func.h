@@ -7,6 +7,7 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
+#include <arch/x86/mmustructs.h>
 
 #ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_func.h>
@@ -45,6 +46,16 @@ void z_x86_early_serial_init(void);
 #ifdef CONFIG_X86_MMU
 /* Create all page tables with boot configuration and enable paging */
 void z_x86_paging_init(void);
+
+static inline struct x86_page_tables *
+z_x86_thread_page_tables_get(struct k_thread *thread)
+{
+#ifdef CONFIG_USERSPACE
+	return thread->arch.ptables;
+#else
+	return &z_x86_kernel_ptables;
+#endif
+}
 #endif /* CONFIG_X86_MMU */
 
 /* Called upon CPU exception that is unhandled and hence fatal; dump

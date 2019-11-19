@@ -274,15 +274,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-#ifdef CONFIG_USERSPACE
-	if (err & US) {
-		z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current),
-				     cr2);
-	} else
-#endif /* CONFIG_USERSPACE */
-	{
-		z_x86_dump_mmu_flags(&z_x86_kernel_ptables, cr2);
-	}
+	z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */

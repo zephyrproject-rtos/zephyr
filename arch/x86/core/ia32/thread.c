@@ -64,7 +64,8 @@ static inline void page_tables_set(struct x86_page_tables *ptables)
  */
 void z_x86_swap_update_page_tables(struct k_thread *incoming)
 {
-	struct x86_page_tables *ptables;
+	struct x86_page_tables *ptables =
+		z_x86_thread_page_tables_get(incoming);
 
 	/* If we're a user thread, we want the active page tables to
 	 * be the per-thread instance.
@@ -73,15 +74,11 @@ void z_x86_swap_update_page_tables(struct k_thread *incoming)
 	 * kernel page tables instead.
 	 */
 	if ((incoming->base.user_options & K_USER) != 0) {
-		ptables = z_x86_thread_page_tables_get(incoming);
-
 		/* In case of privilege elevation, use the incoming
 		 * thread's kernel stack. This area starts immediately
 		 * before the PDPT.
 		 */
-		_main_tss.esp0 = (uintptr_t)ptables;
-	} else {
-		ptables = &z_x86_kernel_ptables;
+		_main_tss.esp0 = (uintptr_t)(incoming->arch.psp);
 	}
 
 	/* Check first that we actually need to do this, since setting
@@ -97,6 +94,11 @@ static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
 				       void *p1, void *p2, void *p3)
 {
 	u32_t stack_end;
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)_current->stack_obj;
+
+	_current->arch.psp =
+		header->privilege_stack + sizeof(header->privilege_stack);
 
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation
@@ -209,6 +211,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	} else
 #endif /* CONFIG_X86_USERSPACE */
 	{
+#ifdef CONFIG_X86_USERSPACE
+		thread->arch.ptables = &z_x86_kernel_ptables;
+#endif
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)z_thread_entry;
 		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
