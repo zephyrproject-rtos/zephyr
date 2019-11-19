@@ -823,7 +823,7 @@ u8_t ll_adv_enable(u8_t enable)
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
-				   adv->evt.ticks_slot,
+				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
