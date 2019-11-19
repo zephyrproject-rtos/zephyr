@@ -481,6 +481,10 @@ static void ipcp_down(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 
+	if (ctx->is_ipcp_up) {
+		net_if_ipv4_addr_rm(ctx->iface, &ctx->ipcp.my_options.address);
+	}
+
 	memset(&ctx->ipcp.my_options.address, 0,
 	       sizeof(ctx->ipcp.my_options.address));
 	memset(&ctx->ipcp.my_options.dns1_address, 0,
