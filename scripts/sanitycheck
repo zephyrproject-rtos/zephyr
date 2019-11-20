@@ -149,8 +149,8 @@ pairs:
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report (sanitycheck_discard.csv)
+can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
@@ -3126,9 +3126,11 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
-        help="Create the filtered list of test cases, but don't actually "
-        "run them. Useful if you're just interested in "
-        "--discard-report")
+        help="""Create the filtered list of test cases, but don't actually
+        run them. Useful if you're just interested in the discard report
+        generated for every run and saved in the specified output
+        directory (sanitycheck_discard.csv).
+        """)
 
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
