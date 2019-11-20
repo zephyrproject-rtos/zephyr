@@ -418,8 +418,9 @@ filter: <expression>
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report
+(:file:`sanitycheck_discard.csv`) can help show why particular test cases were
+skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
