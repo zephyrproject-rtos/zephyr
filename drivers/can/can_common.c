@@ -24,6 +24,14 @@ LOG_MODULE_REGISTER(can_driver);
 
 #define WORK_BUF_FULL 0xFFFF
 
+void can_common_isr_callback_handler(u32_t err, void *cb_arg)
+{
+	struct can_send_wait *send_wait = (struct can_send_wait *) cb_arg;
+
+	send_wait->err = err;
+	k_sem_give(&send_wait->sem);
+}
+
 static void can_msgq_put(struct zcan_frame *frame, void *arg)
 {
 	struct k_msgq *msgq = (struct k_msgq *)arg;
