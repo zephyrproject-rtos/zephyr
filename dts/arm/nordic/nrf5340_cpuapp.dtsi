@@ -61,7 +61,7 @@
 			cryptocell312: crypto@50845000 {
 				compatible = "arm,cryptocell-312";
 				reg = <0x50845000 0x1000>;
-				interrupts = <68 1>;
+				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
 				label = "CRYPTOCELL312";
 			};
 		};
@@ -77,7 +77,7 @@
 		spu: spu@50003000 {
 			compatible = "nordic,nrf-spu";
 			reg = <0x50003000 0x1000>;
-			interrupts = <3 1>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 		};
 
