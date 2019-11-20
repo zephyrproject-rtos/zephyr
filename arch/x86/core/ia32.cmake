@@ -17,7 +17,6 @@ zephyr_library_sources(
   ia32/irq_manage.c
   ia32/swap.S
   ia32/thread.c
-  ia32/spec_ctrl.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)

@@ -11,6 +11,7 @@ zephyr_library_sources(cpuhalt.c)
 zephyr_library_sources(memmap.c)
 zephyr_library_sources(prep_c.c)
 zephyr_library_sources(fatal.c)
+zephyr_library_sources(spec_ctrl.c)
 
 zephyr_library_sources_if_kconfig(pcie.c)
 zephyr_library_sources_if_kconfig(reboot_rst_cnt.c)
