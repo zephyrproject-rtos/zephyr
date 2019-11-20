@@ -136,13 +136,13 @@ void arch_cpu_idle(void);
  *
  * The requirements for arch_cpu_atomic_idle() are as follows:
  *
- * 1) Enabling interrupts and entering a low-power mode needs to be
+ * -# Enabling interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
  *    in k_lifo_get(), for example, of the race condition that
  *    occurs if this requirement is not met.
  *
- * 2) After waking up from the low-power mode, the interrupt lockout state
+ * -# After waking up from the low-power mode, the interrupt lockout state
  *    must be restored as indicated in the 'key' input parameter.
  *
  * @see k_cpu_atomic_idle()

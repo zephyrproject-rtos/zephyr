@@ -379,8 +379,8 @@ struct k_thread;
  * The @a options parameter indicates which floating point register sets
  * will be used by the specified thread:
  *
- *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
- *  b) K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
+ * - K_FP_REGS  indicates x87 FPU and MMX registers only
+ * - K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
  *
  * Invoking this routine initializes the thread's floating point context info
  * to that of an FPU that has been reset. The next time the thread is scheduled
