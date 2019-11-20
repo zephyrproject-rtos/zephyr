@@ -721,9 +721,12 @@ static uint16_t cs(int32_t s)
 static void tcp_csum(struct net_pkt *pkt)
 {
 	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct tcphdr *th = (void *) (ip + 1);
-	u16_t len = ntohs(ip->len) - 20;
+	struct tcphdr *th = (void *)(ip + 1);
+	struct net_buf *buf = pkt->frags;
+	size_t hlen = sizeof(struct net_ipv4_hdr);
+	u16_t len = ntohs(ip->len) - hlen;
 	u32_t s;
+	int i, j = 0;
 
 	ip->chksum = cs(sum(ip, sizeof(*ip)));
 
@@ -731,7 +734,16 @@ static void tcp_csum(struct net_pkt *pkt)
 	s += ntohs(ip->proto + len);
 
 	th->th_sum = 0;
-	s += sum(th, len);
+
+	s += sum(th, buf->len - hlen);
+
+	SYS_SLIST_FOR_EACH_CONTAINER((sys_slist_t *)&buf->node, buf, node) {
+
+		for (i = 0; i < buf->len; i++, j++) {
+
+			s += (j % 2) ? buf->data[i] << 8 : buf->data[i];
+		}
+	}
 
 	th->th_sum = cs(s);
 }
