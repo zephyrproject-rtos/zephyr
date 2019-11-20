@@ -134,9 +134,6 @@ static inline int clock_control_off(struct device *dev,
 /**
  * @brief Request clock to start with notification when clock has been started.
  *
- * User can request delayed start by providing exact information when clock
- * should be ready. Driver ensures that clock is ready before requested time.
- * It is the driver responsibility to take into account clock startup time.
  * When clock is already running user callback will be called from the context
  * of the function call else it is called from other context (e.g. clock
  * interrupt).
