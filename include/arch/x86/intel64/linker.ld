@@ -57,6 +57,9 @@ SECTIONS
 	_image_text_start = .;
 	*(.text)
 	*(.text.*)
+
+	#include <linker/kobject-text.ld>
+
 	MMU_PAGE_ALIGN
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -84,6 +87,7 @@ SECTIONS
 	_mmu_region_list_end = .;
 #endif /* CONFIG_X86_MMU */
 
+	#include <linker/kobject-rom.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
@@ -93,25 +97,27 @@ SECTIONS
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
 	_image_rom_end = .;
 
-	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
-	{
-	MMU_PAGE_ALIGN
-	_image_ram_start = .;
-	__kernel_ram_start = .;
-	*(.data)
-	*(.data.*)
-	#include <snippets-rwdata.ld>
-	#ifdef CONFIG_CUSTOM_RWDATA_LD
-	#include <custom-rwdata.ld>
-	#endif /* CONFIG_CUSTOM_RWDATA_LD */
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#ifdef CONFIG_USERSPACE
+	/* APP SHARED MEMORY REGION */
+#define SMEM_PARTITION_ALIGN(size) MMU_PAGE_ALIGN
+#define APP_SHARED_ALIGN  MMU_PAGE_ALIGN
 
-#include <snippets-ram-sections.ld>
-#include <linker/common-ram.ld>
-#include <linker/cplusplus-ram.ld>
+#include <app_smem.ld>
+
+	_image_ram_start = _app_smem_start;
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_num_words = _app_smem_size >> 2;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+	_app_smem_num_words = _app_smem_size >> 2;
+#endif /* CONFIG_USERSPACE */
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
+	MMU_PAGE_ALIGN
+#ifndef CONFIG_USERSPACE
+	_image_ram_start = .;
+#endif
+	__kernel_ram_start = .;
 	__bss_start = .;
 	*(.bss)
 	*(.bss.*)
@@ -134,7 +140,23 @@ SECTIONS
 #include <custom-sections.ld>
 #endif /* CONFIG_CUSTOM_SECTIONS_LD */
 
+	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
+	{
+	*(.data)
+	*(.data.*)
+	#include <snippets-rwdata.ld>
+	#ifdef CONFIG_CUSTOM_RWDATA_LD
+	#include <custom-rwdata.ld>
+	#endif /* CONFIG_CUSTOM_RWDATA_LD */
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#include <snippets-ram-sections.ld>
+#include <linker/common-ram.ld>
+#include <linker/cplusplus-ram.ld>
+#include <linker/kobject.ld>
+
 	. = ALIGN(8);
+	MMU_PAGE_ALIGN
 	_image_ram_end = .;
 	_end = .;
 
