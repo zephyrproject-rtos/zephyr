@@ -32,6 +32,14 @@ config EXCEPTION_STACK_SIZE
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	depends on NO_OPTIMIZATIONS
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
 	default 33
