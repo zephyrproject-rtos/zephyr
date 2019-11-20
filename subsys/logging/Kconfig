@@ -127,6 +127,17 @@ config LOG_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
+if LOG_IMMEDIATE
+config LOG_IMMEDIATE_CLEAN_OUTPUT
+	bool "Enable clean log output"
+	help
+	  If enabled, interrupts are locked during whole log message processing.
+	  As a result, processing on one log message cannot be interrupted by
+	  another one and output is clean, not interleaved. However, enabling
+	  this option is causing interrupts locking for significant amount of
+	  time (up to multiple milliseconds).
+endif
+
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
 	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
