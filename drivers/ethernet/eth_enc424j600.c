@@ -374,6 +374,11 @@ static int enc424j600_rx(struct device *dev)
 		context->next_pkt_ptr, frm_len, status);
 	/* frame length without FCS */
 	frm_len -= 4;
+	if (frm_len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("Maximum frame length exceeded");
+		eth_stats_update_errors_rx(context->iface);
+		goto done;
+	}
 
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
