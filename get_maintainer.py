@@ -150,7 +150,7 @@ class Maintainers:
         for area_name, area_dict in _load_maintainers(self.filename).items():
             area = Area()
             area.name = area_name
-            area.status = area_dict["status"]
+            area.status = area_dict.get("status")
             area.maintainers = area_dict.get("maintainers", [])
             area.collaborators = area_dict.get("collaborators", [])
             area.inform = area_dict.get("inform", [])
@@ -275,7 +275,8 @@ class Area:
     These attributes are available:
 
     status:
-        The status of the area, as a string. See MAINTAINERS.yml.
+        The status of the area, as a string. None if the area has no 'status'
+        key. See MAINTAINERS.yml.
 
     maintainers:
         List of maintainers. Empty if the area has no 'maintainers' key.
@@ -402,11 +403,8 @@ def _check_maintainers(maints_path, yaml):
                 ferr("unknown key '{}' in area '{}'"
                      .format(key, area_name))
 
-        if "status" not in area_dict:
-            ferr("missing 'status' key on area '{}', should be one of {}"
-                 .format(area_name, ok_status_s))
-
-        if area_dict["status"] not in ok_status:
+        if "status" in area_dict and \
+           area_dict["status"] not in ok_status:
             ferr("bad 'status' key on area '{}', should be one of {}"
                  .format(area_name, ok_status_s))
 

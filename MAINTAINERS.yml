@@ -65,8 +65,11 @@
 #         outsider's perspective.
 #
 #
-# All areas must have a 'status' key and a 'files' and/or 'files-regex' key.
+# All areas must have a 'files' and/or 'files-regex' key.
 # The other keys are optional.
+# It is very advisable to have a `status` key in all entries. Exceptions to this
+# would be sub-areas which add extra fields (for ex. more `collaborators` who
+# work only in that sub-area) to other areas.
 #
 #
 # Workflow
