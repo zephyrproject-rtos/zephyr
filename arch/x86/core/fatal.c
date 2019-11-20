@@ -70,7 +70,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
 #endif
 
 #ifdef CONFIG_EXCEPTION_DEBUG
-#if defined(CONFIG_EXCEPTION_STACK_TRACE)
+#if defined(CONFIG_X86_EXCEPTION_STACK_TRACE)
 struct stack_frame {
 	uintptr_t next;
 	uintptr_t ret_addr;
@@ -124,7 +124,7 @@ static void unwind_stack(uintptr_t base_ptr, u16_t cs)
 		base_ptr = frame->next;
 	}
 }
-#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+#endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
 
 #ifdef CONFIG_X86_64
 static void dump_regs(const z_arch_esf_t *esf)
@@ -140,11 +140,11 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: %p", esf->rsp,
 		esf->rflags, esf->cs & 0xFFFFU, z_x86_page_tables_get());
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
 #endif
 	LOG_ERR("RIP: 0x%016lx", esf->rip);
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	unwind_stack(esf->rbp, esf->cs);
 #endif
 }
@@ -158,11 +158,11 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: %p", esf->eflags,
 		esf->cs & 0xFFFFU, z_x86_page_tables_get());
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
 #endif
 	LOG_ERR("EIP: 0x%08x", esf->eip);
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	unwind_stack(esf->ebp, esf->cs);
 #endif
 }

@@ -274,4 +274,11 @@ config X86_DYNAMIC_IRQ_STUBS
 
 endmenu
 
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 endif # !X86_64
