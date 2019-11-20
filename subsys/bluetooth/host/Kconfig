@@ -22,6 +22,7 @@ config BT_HCI_CMD_COUNT
 
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 3 if BT_RECV_IS_RX_THREAD
 	default 20 if (BT_MESH && !(BT_DISCARDABLE_BUF_COUNT > 0))
 	default 10
@@ -233,6 +234,7 @@ if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 6
 	range 1 64
 	help
