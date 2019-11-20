@@ -17,13 +17,13 @@ This sample uses the LPS22HB sensor controlled using the I2C interface.
 References
 **********
 
- - LPS22HB: http://www.st.com/en/mems-and-sensors/lps22hb.html
+- LPS22HB: http://www.st.com/en/mems-and-sensors/lps22hb.html
 
 Building and Running
 ********************
 
- This project outputs sensor data to the console. It requires an LPS22HB
- sensor, which is present on the disco_l475_iot1 board.
+This project outputs sensor data to the console. It requires an LPS22HB
+sensor, which is present on the disco_l475_iot1 board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lps22hb
@@ -34,16 +34,16 @@ Building and Running
 Sample Output
 =============
 
- .. code-block:: console
+.. code-block:: console
 
-    Observation:1
-    Pressure:98.7 kPa
-    Temperature:22.5 C
-    Observation:2
-    Pressure:98.7 kPa
-    Temperature:22.5 C
-    Observation:3
-    Pressure:98.7 kPa
-    Temperature:22.5 C
+   Observation:1
+   Pressure:98.7 kPa
+   Temperature:22.5 C
+   Observation:2
+   Pressure:98.7 kPa
+   Temperature:22.5 C
+   Observation:3
+   Pressure:98.7 kPa
+   Temperature:22.5 C
 
-    <repeats endlessly every 2 seconds>
+   <repeats endlessly every 2 seconds>
