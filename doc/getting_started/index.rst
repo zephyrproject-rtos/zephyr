@@ -337,13 +337,20 @@ including: compiler, assembler, linker, and their dependencies.
 
    .. group-tab:: macOS
 
-      The Zephyr SDK is not supported on macOS.  See instructions for
+      #. The Zephyr SDK is not supported on macOS.  See instructions for
       :ref:`installing 3rd-party toolchains<gs_toolchain>`.
+
+      #. Do not forget to set environment variables (ZEPHYR_TOOLCHAIN_VARIANT and toolchain specific ones)
+         to let the build system know where to find the toolchain programs.
 
    .. group-tab:: Windows
 
-      The Zephyr SDK is not supported on Windows.  See instructions for
+      #. The Zephyr SDK is not supported on Windows.  See instructions for
       :ref:`installing 3rd-party toolchains<gs_toolchain>`.
+
+      #. Do not forget to set environment variables (ZEPHYR_TOOLCHAIN_VARIANT and toolchain specific ones)
+         to let the build system know where to find the toolchain programs.
+
 
 .. _getting_started_run_sample:
 
