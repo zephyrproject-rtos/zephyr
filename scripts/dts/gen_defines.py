@@ -45,6 +45,7 @@ def main():
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
     flash_area_num = 0
+    edtlib.dtc_flags = args.dtc_flags
 
     write_top_comment(edt)
 
@@ -89,6 +90,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dts", required=True, help="DTS file")
+    parser.add_argument("--dtc-flags", help="extra device tree parameters")
     parser.add_argument("--bindings-dirs", nargs='+', required=True,
                         help="directory with bindings in YAML format, "
                         "we allow multiple")

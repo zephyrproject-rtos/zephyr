@@ -82,6 +82,9 @@ from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
                   TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
 from grutils import Graph
 
+
+dtc_flags = ""
+
 #
 # Public classes
 #
@@ -776,6 +779,8 @@ class Node:
       The flash controller for the node. Only meaningful for nodes representing
       flash partitions.
     """
+    global dtc_flags
+
     @property
     def name(self):
         "See the class docstring"
@@ -797,9 +802,12 @@ class Node:
 
         addr = _translate(addr, self._node)
 
-        if self.regs and self.regs[0].addr != addr:
-            self.edt._warn("unit-address and first reg (0x{:x}) don't match "
-                           "for {}".format(self.regs[0].addr, self.name))
+        # This code is redundant, it checks the same thing as simple_bus_reg in
+        # dtc, we disable it in python if it's suppressed in dtc.
+        if "-Wno-simple_bus_reg" not in dtc_flags:
+            if self.regs and self.regs[0].addr != addr:
+                self.edt._warn("unit-address and first reg (0x{:x}) don't match "
+                               "for {}".format(self.regs[0].addr, self.name))
 
         return addr
 
