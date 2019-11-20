@@ -85,7 +85,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	struct evt_hdr *evt;
 	u16_t event_counter;
 	u32_t remainder_us;
-	u8_t data_chan_use = 0;
+	u8_t data_chan_use;
 	u32_t remainder;
 	u16_t lazy;
 
