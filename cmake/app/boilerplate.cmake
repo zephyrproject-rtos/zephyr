@@ -442,6 +442,9 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
+# Include board specific device-tree flags before parsing.
+include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
+
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 #
