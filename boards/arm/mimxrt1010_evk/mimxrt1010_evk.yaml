@@ -18,3 +18,4 @@ supported:
   - i2c
   - hwinfo
   - counter
+  - usb_device
