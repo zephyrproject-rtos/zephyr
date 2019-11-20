@@ -154,9 +154,10 @@ extern "C" {
  * @brief Define alignment of a stack buffer
  *
  * This is used for two different things:
- * 1) Used in checks for stack size to be a multiple of the stack buffer
+ *
+ * -# Used in checks for stack size to be a multiple of the stack buffer
  *    alignment
- * 2) Used to determine the alignment of a stack buffer
+ * -# Used to determine the alignment of a stack buffer
  *
  */
 #define STACK_ALIGN MAX(Z_THREAD_MIN_STACK_ALIGN, Z_MPU_GUARD_ALIGN)
