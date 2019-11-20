@@ -42,6 +42,32 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
+#ifdef CONFIG_SWITCH_TO_EL1
+	switch_el x1, 3f, 2f, 1f
+3:
+	/* Disable MMU and async exceptions routing to EL1 */
+	msr	sctlr_el1, xzr
+
+	/* Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
+	mov	x0, xzr
+	orr	x0, x0, #(SCR_EL3_RW)
+	msr	scr_el3, x0
+
+	/* On eret return to EL1 with DAIF masked */
+	mov	x0, xzr
+	orr	x0, x0, #(DAIF_MASK)
+	orr	x0, x0, #(SPSR_EL3_TO_EL1)
+	orr	x0, x0, #(SPSR_EL3_h)
+	msr	spsr_el3, x0
+
+	adr	x0, 1f
+	msr	elr_el3, x0
+	eret
+2:
+	/* Boot from EL2 not supported */
+	bl	.
+1:
+#endif
 	/* Setup vector table */
 	adr	x0, _vector_table
 
