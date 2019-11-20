@@ -3182,7 +3182,11 @@ static inline void event_len_prep(struct ll_conn *conn)
 #endif /* !CONFIG_BT_CTLR_PHY */
 		   ) {
 			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
+#if defined(CONFIG_BT_CTLR_PHY)
+			u16_t tx_time = conn->default_tx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
 			u16_t tx_time = PKT_US(conn->default_tx_octets, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
 
 			lr->max_rx_time = sys_cpu_to_le16(rx_time);
 			lr->max_tx_time = sys_cpu_to_le16(tx_time);
