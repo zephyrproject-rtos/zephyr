@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief DMA low level driver implementation for F0/F1/F3/L0/L4 series SoCs.
+ * @brief DMA low level driver implementation for F0/F1/F3/L0/L4/WB series SoCs.
  */
 
 #include <drivers/dma.h>

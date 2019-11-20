@@ -264,6 +264,13 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		return -ENOTSUP;
 	}
 
+ #ifdef CONFIG_SOC_SERIES_STM32WBX
+	if (stream->direction != MEMORY_TO_MEMORY) {
+		LOG_ERR("Only memory to memory supported on this series");
+		return -ENOTSUP;
+	}
+#endif
+
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
