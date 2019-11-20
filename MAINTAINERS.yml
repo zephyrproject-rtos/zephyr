@@ -232,7 +232,7 @@ DFU:
         - subsys/dfu/
         - tests/subsys/dfu/
 
-"Device Tree":
+Devicetree:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -448,7 +448,7 @@ Documentation:
     maintainers:
         - mnkp
     files:
-        - doc/reference/peripherals/gpio.rst 
+        - doc/reference/peripherals/gpio.rst
         - drivers/gpio/
         - include/drivers/gpio/
         - include/drivers/gpio.h
@@ -607,7 +607,7 @@ Documentation:
     maintainers:
         - mnkp
     files:
-        - doc/reference/peripherals/pinmux.rst 
+        - doc/reference/peripherals/pinmux.rst
         - drivers/pinmux/
         - include/drivers/pinmux.h
         - include/pinmux.h
@@ -661,7 +661,7 @@ Documentation:
     labels:
         - "area: SPI"
 
-"Drivers: System Timer":
+"Drivers: System timer":
     # Provisional entry, to be corrected
     # TODO: maintainers spreadsheet not matching CODEOWNERS
     status: maintained
@@ -787,7 +787,7 @@ Logging:
     description: >-
         POSIX architecture and SOC, native_posix board, and related drivers
 
-"Networking":
+Networking:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
