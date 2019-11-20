@@ -102,8 +102,8 @@ static void hwm_sleep_until_next_timer(void)
 		/* LCOV_EXCL_START */
 		posix_print_warning("next_timer_time corrupted (%"PRIu64"<= %"
 				PRIu64", timer idx=%i)\n",
-				next_timer_time,
-				simu_time,
+				(uint64_t)next_timer_time,
+				(uint64_t)simu_time,
 				next_timer_index);
 		/* LCOV_EXCL_STOP */
 	}
