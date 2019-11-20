@@ -72,6 +72,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1010_evk/mimxrt1010_evk_defconfig``
