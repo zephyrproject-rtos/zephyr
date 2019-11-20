@@ -3619,7 +3619,8 @@ def main():
         filtered = []
         for d in serial_devices:
             if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics',
-                                  'Atmel Corp.', 'Texas Instruments']:
+                                  'Atmel Corp.', 'Texas Instruments',
+                                  'Silicon Labs', 'NXP Semiconductors']:
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others
                 if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
@@ -3631,7 +3632,7 @@ def main():
                 s_dev['product'] = d.product
                 if s_dev['product'] in ['DAPLink CMSIS-DAP', 'MBED CMSIS-DAP']:
                     s_dev['runner'] = "pyocd"
-                elif s_dev['product'] in ['J-Link']:
+                elif s_dev['product'] in ['J-Link', 'J-Link OB']:
                     s_dev['runner'] = "jlink"
                 elif s_dev['product'] in ['STM32 STLink']:
                     s_dev['runner'] = "openocd"
