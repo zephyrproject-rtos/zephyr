@@ -42,8 +42,6 @@
 struct can_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
-	struct k_sem tx_int_sem;
-	u32_t error_flags;
 };
 
 

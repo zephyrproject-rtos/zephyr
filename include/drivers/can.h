@@ -325,6 +325,14 @@ struct can_driver_api {
 
 };
 
+/** @cond INTERNAL_HIDDEN */
+void can_common_isr_callback_handler(u32_t err, void *cb_arg);
+struct can_send_wait {
+	u32_t err;
+	struct k_sem sem;
+};
+/** @endcond */
+
 /**
  * @brief Perform data transfer to CAN bus.
  *
@@ -355,7 +363,22 @@ static inline int z_impl_can_send(struct device *dev,
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
-	return api->send(dev, msg, timeout, callback_isr, callback_arg);
+	if (callback_isr) {
+		return api->send(dev, msg, timeout, callback_isr, callback_arg);
+	} else {
+		struct can_send_wait send_wait;
+		int ret;
+
+		k_sem_init(&send_wait.sem, 0, 1);
+		ret = api->send(dev, msg, timeout,
+				can_common_isr_callback_handler, &send_wait);
+		if (ret != CAN_TX_OK) {
+			return ret;
+		}
+
+		k_sem_take(&send_wait.sem, K_FOREVER);
+		return send_wait.err;
+	}
 }
 
 /*

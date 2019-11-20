@@ -69,8 +69,6 @@ struct mcux_flexcan_rx_callback {
 };
 
 struct mcux_flexcan_tx_callback {
-	struct k_sem done;
-	int status;
 	flexcan_frame_t frame;
 	can_tx_callback_t function;
 	void *arg;
@@ -296,6 +294,8 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 	status_t status;
 	int alloc;
 
+	__ASSERT(callback_isr != NULL, "callback is null");
+
 	if (msg->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
 		return CAN_TX_EINVAL;
@@ -326,11 +326,6 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 						 &xfer);
 	if (status != kStatus_Success) {
 		return CAN_TX_ERR;
-	}
-
-	if (callback_isr == NULL) {
-		k_sem_take(&data->tx_cbs[alloc].done, K_FOREVER);
-		return data->tx_cbs[alloc].status;
 	}
 
 	return CAN_TX_OK;
@@ -546,13 +541,8 @@ static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 		if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
 			FLEXCAN_TransferAbortSend(config->base, &data->handle,
 						  ALLOC_IDX_TO_TXMB_IDX(alloc));
-			if (function != NULL) {
-				function(status, arg);
-			} else {
-				data->tx_cbs[alloc].status = status;
-				k_sem_give(&data->tx_cbs[alloc].done);
-			}
 
+			function(status, arg);
 			k_sem_give(&data->tx_allocs_sem);
 		}
 	}
@@ -573,12 +563,7 @@ static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
 	arg = data->tx_cbs[alloc].arg;
 
 	if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
-		if (function != NULL) {
-			function(CAN_TX_OK, arg);
-		} else {
-			data->tx_cbs[alloc].status = CAN_TX_OK;
-			k_sem_give(&data->tx_cbs[alloc].done);
-		}
+		function(CAN_TX_OK, arg);
 		k_sem_give(&data->tx_allocs_sem);
 	}
 }
@@ -658,14 +643,9 @@ static int mcux_flexcan_init(struct device *dev)
 	const struct mcux_flexcan_config *config = dev->config->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	int err;
-	int i;
 
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_allocs_sem, 0, 1);
-
-	for (i = 0; i < ARRAY_SIZE(data->tx_cbs); i++) {
-		k_sem_init(&data->tx_cbs[i].done, 0, 1);
-	}
 
 	err = mcux_flexcan_configure(dev, CAN_NORMAL_MODE, 0);
 	if (err) {

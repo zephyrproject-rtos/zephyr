@@ -389,6 +389,8 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	u8_t len;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
 
+	__ASSERT(callback != NULL, "callback is null");
+
 	if (msg->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
 		return CAN_TX_EINVAL;
@@ -431,10 +433,6 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	/* request tx slot transmission */
 	nnn = BIT(tx_idx);
 	mcp2515_cmd_rts(dev, nnn);
-
-	if (callback == NULL) {
-		k_sem_take(&dev_data->tx_cb[tx_idx].sem, K_FOREVER);
-	}
 
 	return 0;
 }
@@ -564,11 +562,7 @@ static void mcp2515_tx_done(struct device *dev, u8_t tx_idx)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
-	if (dev_data->tx_cb[tx_idx].cb == NULL) {
-		k_sem_give(&dev_data->tx_cb[tx_idx].sem);
-	} else {
-		dev_data->tx_cb[tx_idx].cb(0, dev_data->tx_cb[tx_idx].cb_arg);
-	}
+	dev_data->tx_cb[tx_idx].cb(CAN_TX_OK, dev_data->tx_cb[tx_idx].cb_arg);
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	dev_data->tx_busy_map &= ~BIT(tx_idx);
@@ -745,9 +739,6 @@ static int mcp2515_init(struct device *dev)
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
-	k_sem_init(&dev_data->tx_cb[0].sem, 0, 1);
-	k_sem_init(&dev_data->tx_cb[1].sem, 0, 1);
-	k_sem_init(&dev_data->tx_cb[2].sem, 0, 1);
 
 	/* SPI config */
 	dev_data->spi_cfg.operation = SPI_WORD_SET(8);

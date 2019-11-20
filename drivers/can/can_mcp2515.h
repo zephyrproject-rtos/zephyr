@@ -19,7 +19,6 @@
 #define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->driver_data)
 
 struct mcp2515_tx_cb {
-	struct k_sem sem;
 	can_tx_callback_t cb;
 	void *cb_arg;
 };
