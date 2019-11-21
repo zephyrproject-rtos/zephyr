@@ -81,8 +81,17 @@ Boards & SoC Support
      * waveshare_epaper
      * x_nucleo_idb05a1
 
+* Added CAN support for Olimexino STM32 board
+
 Drivers and Sensors
 *******************
+
+* CAN
+
+  * Added API to read the bus-state and error counters
+  * Added API for bus-off recovery
+  * Optimizations for the MCP2515 driver
+  * Bug fixes
 
 * EEPROM
 
