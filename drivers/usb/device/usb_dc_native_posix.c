@@ -561,6 +561,9 @@ int handle_usb_data(struct usbip_header *hdr)
 			return -EIO;
 		}
 	} else {
+		u8_t buf_len = usbip_ctrl.in_ep_ctrl[ep_idx].buf_len;
+		u8_t *buf = usbip_ctrl.in_ep_ctrl[ep_idx].buf;
+
 		if (ep_idx >= USBIP_IN_EP_NUM) {
 			return -EINVAL;
 		}
@@ -570,15 +573,18 @@ int handle_usb_data(struct usbip_header *hdr)
 
 		usbip_skip_setup();
 
-		LOG_DBG("Send %u bytes", usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
+		LOG_DBG("Send %u bytes", buf_len);
 
 		/* Send queued data */
-		usbip_send_common(ep, usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
-		usbip_send(ep, usbip_ctrl.in_ep_ctrl[ep_idx].buf,
-			   usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
+		if (!usbip_send_common(ep, buf_len)) {
+			return -EIO;
+		}
 
-		LOG_HEXDUMP_DBG(usbip_ctrl.in_ep_ctrl[ep_idx].buf,
-				usbip_ctrl.in_ep_ctrl[ep_idx].buf_len, ">");
+		if (usbip_send(ep, buf, buf_len) != buf_len) {
+			return -EIO;
+		}
+
+		LOG_HEXDUMP_DBG(buf, buf_len, ">");
 
 		/* Indicate data sent */
 		ep_cb(ep, USB_DC_EP_DATA_IN);
