@@ -401,6 +401,19 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		return -EINVAL;
 	}
 
+	if (!data && !max_data_len) {
+		/* When both buffer and max data to read are zero return
+		 * the available data in buffer
+		 */
+		if (read_bytes) {
+			u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+
+			*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
+		}
+
+		return 0;
+	}
+
 	LOG_DBG("ep %x max_data_len %u", ep, max_data_len);
 
 	bytes = usbip_recv(data, max_data_len);
