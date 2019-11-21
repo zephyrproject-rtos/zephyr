@@ -1279,6 +1279,20 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_VOLATILE,
 
+	/** No resubscribe flag
+	 *
+	 * By default when BT_GATT_SUBSCRIBE_FLAG_VOLATILE is unset, the
+	 * subscription will be automatically renewed when the client
+	 * reconnects, as a workaround for GATT servers that do not persist
+	 * subscriptions.
+	 *
+	 * This flag will disable the automatic resubscription. It is useful
+	 * if the application layer knows that the GATT server remembers
+	 * subscriptions from previous connections and wants to avoid renewing
+	 * the subscriptions.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_NO_RESUB,
+
 	/** Write pending flag
 	 *
 	 * If set, indicates write operation is pending waiting remote end to

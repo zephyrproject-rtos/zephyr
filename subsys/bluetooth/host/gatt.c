@@ -3570,11 +3570,15 @@ static void add_subscriptions(struct bt_conn *conn)
 			continue;
 		}
 
-		/* Force write to CCC to workaround devices that don't track
-		 * it properly.
-		 */
-		gatt_write_ccc(conn, params->ccc_handle, params->value,
-			       gatt_write_ccc_rsp, params);
+		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst) &&
+		    !atomic_test_bit(params->flags,
+				     BT_GATT_SUBSCRIBE_FLAG_NO_RESUB)) {
+			/* Force write to CCC to workaround devices that don't
+			 * track it properly.
+			 */
+			gatt_write_ccc(conn, params->ccc_handle, params->value,
+				       gatt_write_ccc_rsp, params);
+		}
 	}
 }
 
