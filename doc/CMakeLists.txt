@@ -205,7 +205,15 @@ add_custom_target(
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
-  ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
+      --keep-module-paths
+      --modules Architecture:arch:${ZEPHYR_BASE}/arch
+                Driver:drivers:${ZEPHYR_BASE}/drivers
+                Kernel:kernel:${ZEPHYR_BASE}/kernel
+                Library:lib:${ZEPHYR_BASE}/lib
+                Subsystem:subsys:${ZEPHYR_BASE}/subsys
+                'External Module':modules:${ZEPHYR_BASE}/modules
+
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Running genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/"
 )
