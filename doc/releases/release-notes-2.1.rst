@@ -21,7 +21,8 @@ Kernel
 Architectures
 *************
 
-* TBD
+* POSIX arch: native_posix & nrf52_bsim: Added support for
+  CONFIG_DYNAMIC_INTERRUPTS
 
 Boards & SoC Support
 ********************
