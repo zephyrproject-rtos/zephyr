@@ -27,6 +27,8 @@ Architectures
 Boards & SoC Support
 ********************
 
+* Added support for STM32G4 series
+
 * Added support for these ARM boards:
 
   .. rst-class:: rst-columns
