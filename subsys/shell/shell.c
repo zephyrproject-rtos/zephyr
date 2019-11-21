@@ -440,7 +440,7 @@ static u16_t common_beginning_find(const struct shell *shell,
 	shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 		      first, &match, &dynamic_entry);
 	strncpy(shell->ctx->temp_buff, match->syntax,
-			sizeof(shell->ctx->temp_buff));
+			sizeof(shell->ctx->temp_buff) - 1);
 
 	*str = match->syntax;
 
