@@ -165,7 +165,7 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		 * We are assuming here that the full HTTP request is received
 		 * in one TCP segment which in real life might not.
 		 */
-		if (strstr(buf, "\r\n\r\n")) {
+		if (strstr(buf, "\r\n\r\n\0")) {
 			break;
 		}
 	} while (true);
