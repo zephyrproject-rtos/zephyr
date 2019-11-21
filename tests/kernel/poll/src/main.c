@@ -13,7 +13,13 @@ extern void test_poll_multi(void);
 extern void test_poll_threadstate(void);
 extern void test_poll_grant_access(void);
 
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 4, 4);
+#ifdef CONFIG_64BIT
+#define MAX_SZ	256
+#else
+#define MAX_SZ	128
+#endif
+
+K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 4, 4);
 
 /*test case main entry*/
 void test_main(void)
