@@ -353,7 +353,10 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv6_create(pkt, remote_addr, local_addr);
+	if (net_ipv6_create(pkt, remote_addr, local_addr)) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
@@ -382,7 +385,10 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv4_create(pkt, remote_addr, local_addr);
+	if (net_ipv4_create(pkt, remote_addr, local_addr)) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
