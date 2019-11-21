@@ -3654,6 +3654,7 @@ def main():
                 # disconnect everything
                 for h in hwm:
                     h['connected'] = False
+                    h['serial'] = None
 
                 for d in filtered:
                     for h in hwm:
