@@ -100,6 +100,7 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 				LOG_ERR("Failed to set %s secure option (%d)",
 					family_str, -errno);
 				ret = -errno;
+				goto fail;
 			}
 
 			ret = setsockopt(*sock, SOL_TLS, TLS_HOSTNAME,
@@ -109,6 +110,7 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 				LOG_ERR("Failed to set %s TLS_HOSTNAME "
 					"option (%d)", family_str, -errno);
 				ret = -errno;
+				goto fail;
 			}
 		}
 	} else {
@@ -118,6 +120,14 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 	if (*sock < 0) {
 		LOG_ERR("Failed to create %s HTTP socket (%d)", family_str,
 			-errno);
+	}
+
+	return ret;
+
+fail:
+	if (*sock >= 0) {
+		close(*sock);
+		*sock = -1;
 	}
 
 	return ret;
