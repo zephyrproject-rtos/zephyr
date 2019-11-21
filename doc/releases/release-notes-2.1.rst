@@ -51,6 +51,17 @@ Boards & SoC Support
      * stm32l1_disco
      * twr_kv58f220m
 
+* Added support for these following shields:
+
+  .. rst-class:: rst-columns
+
+     * adafruit_2_8_tft_touch_v2
+     * dfrobot_can_bus_v2_0
+     * link_board_eth
+     * ssd1306_128x32
+     * ssd1306_128x64
+     * waveshare_epaper
+     * x_nucleo_idb05a1
 
 Drivers and Sensors
 *******************
