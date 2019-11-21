@@ -31,7 +31,10 @@ Architectures
   * Enhanced runtime MPU programming in ARMv8-M architecture, making
     the full partitioning of kernel SRAM memory a user-configurable
     feature.
+  * Added CMSIS support for Cortex-R architectures.
   * Updated CMSIS headers to version 5.6
+  * Added missing Cortex-R CPU device tree bindings.
+  * Fixed incorrect Cortex-R device tree specification.
   * Fixed several bugs in ARM architecture implementation
 
 * POSIX:
