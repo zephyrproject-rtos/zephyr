@@ -529,13 +529,17 @@ int handle_usb_control(struct usbip_header *hdr)
 	return 0;
 }
 
-static void usbip_skip_setup(void)
+static bool usbip_skip_setup(void)
 {
 	u64_t setup;
 
 	LOG_DBG("Skip 8 bytes");
 
-	usbip_recv((void *)&setup, sizeof(setup));
+	if (usbip_recv((void *)&setup, sizeof(setup)) != sizeof(setup)) {
+		return false;
+	}
+
+	return true;
 }
 
 int handle_usb_data(struct usbip_header *hdr)
@@ -571,7 +575,9 @@ int handle_usb_data(struct usbip_header *hdr)
 		ep = ep_idx | USB_EP_DIR_IN;
 		ep_cb = usbip_ctrl.in_ep_ctrl[ep_idx].cb;
 
-		usbip_skip_setup();
+		if (!usbip_skip_setup()) {
+			return -EIO;
+		}
 
 		LOG_DBG("Send %u bytes", buf_len);
 
