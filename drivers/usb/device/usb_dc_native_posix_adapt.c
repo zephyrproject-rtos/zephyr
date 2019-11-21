@@ -437,7 +437,7 @@ int usbip_send(u8_t ep, const u8_t *data, size_t len)
 	return send(connfd_global, data, len, 0);
 }
 
-int usbip_send_common(u8_t ep, u32_t data_len)
+bool usbip_send_common(u8_t ep, u32_t data_len)
 {
 	struct usbip_submit_rsp rsp;
 
@@ -455,5 +455,9 @@ int usbip_send_common(u8_t ep, u32_t data_len)
 
 	rsp.setup = htonl(0);
 
-	return usbip_send(ep, (u8_t *)&rsp, sizeof(rsp));
+	if (usbip_send(ep, (u8_t *)&rsp, sizeof(rsp)) == sizeof(rsp)) {
+		return true;
+	}
+
+	return false;
 }
