@@ -731,7 +731,7 @@ class DeviceHandler(Handler):
 
         runner = hardware.get('runner', None)
         if runner:
-            board_id = hardware.get("id", None)
+            board_id = hardware.get("probe_id", hardware.get("id", None))
             product = hardware.get("product", None)
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command.append("--runner")
