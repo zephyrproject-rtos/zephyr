@@ -233,18 +233,15 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
 	if (new_owner != NULL) {
-		z_ready_thread(new_owner);
-
-		k_spin_unlock(&lock, key);
-
-		arch_thread_return_value_set(new_owner, 0);
-
 		/*
 		 * new owner is already of higher or equal prio than first
 		 * waiter since the wait queue is priority-based: no need to
 		 * ajust its priority
 		 */
 		mutex->owner_orig_prio = new_owner->base.prio;
+		arch_thread_return_value_set(new_owner, 0);
+		z_ready_thread(new_owner);
+		z_reschedule(&lock, key);
 	} else {
 		mutex->lock_count = 0U;
 		k_spin_unlock(&lock, key);
