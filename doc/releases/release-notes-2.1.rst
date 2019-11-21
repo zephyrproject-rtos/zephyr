@@ -27,7 +27,28 @@ Architectures
 Boards & SoC Support
 ********************
 
-* TBD
+* Added support for these ARM boards:
+
+  .. rst-class:: rst-columns
+
+     * actinius_icarus
+     * cc3235sf_launchxl
+     * decawave_dwm1001_dev
+     * degu_evk
+     * frdm_k22f
+     * frdm_k82f
+     * mec1501modular_assy6885
+     * nrf52833_pca10100
+     * nrf5340_dk_nrf5340
+     * nucleo_g431rb
+     * pico_pi_m4
+     * qemu_cortex_r0
+     * sensortile_box
+     * steval_fcu001v1
+     * stm32f030_demo
+     * stm32l1_disco
+     * twr_kv58f220m
+
 
 Drivers and Sensors
 *******************
