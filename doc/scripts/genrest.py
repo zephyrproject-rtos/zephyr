@@ -281,19 +281,36 @@ def sym_table_rst(title, syms):
 
 .. list-table::
    :header-rows: 1
+   :widths: auto
 
    * - Symbol name
-     - Prompt
+     - Help/prompt
 """.format(title, len(title)*"*")
 
     for sym in sorted(syms, key=attrgetter("name")):
         rst += """\
    * - :option:`CONFIG_{}`
      - {}
-""".format(sym.name,
-           " / ".join(node.prompt[0] for node in sym.nodes if node.prompt))
+""".format(sym.name, sym_index_desc(sym))
 
     return rst
+
+
+def sym_index_desc(sym):
+    # Returns the description used for 'sym' on the index page
+
+    # Use the first help text, if available
+    for node in sym.nodes:
+        if node.help is not None:
+            return node.help.replace("\n", "\n       ")
+
+    # If there's no help, use the first prompt string
+    for node in sym.nodes:
+        if node.prompt:
+            return node.prompt[0]
+
+    # No help text or prompt
+    return ""
 
 
 def index_header(title, link, desc_path):
