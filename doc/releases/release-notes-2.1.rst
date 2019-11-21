@@ -21,8 +21,23 @@ Kernel
 Architectures
 *************
 
-* POSIX arch: native_posix & nrf52_bsim: Added support for
-  CONFIG_DYNAMIC_INTERRUPTS
+* ARM:
+
+  * Added support for memory protection features (user mode and
+    hardware-based stack overflow detection) in ARMv6-M architecture
+  * Added QEMU support for ARMv6-M architecture
+  * Extended test coverage for ARM-specific kernel features in ARMv6-M
+    architecture
+  * Enhanced runtime MPU programming in ARMv8-M architecture, making
+    the full partitioning of kernel SRAM memory a user-configurable
+    feature.
+  * Updated CMSIS headers to version 5.6
+  * Fixed several bugs in ARM architecture implementation
+
+* POSIX:
+
+  * Added support for CONFIG_DYNAMIC_INTERRUPTS (native_posix
+    & nrf52_bsim)
 
 Boards & SoC Support
 ********************
