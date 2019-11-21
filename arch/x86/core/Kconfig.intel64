@@ -75,4 +75,13 @@ config X86_STACK_PROTECTION
 	  bounds of the current process stack are overflowed. This is done
 	  by preceding all stack areas with a 4K guard page.
 
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	help
+	 This option enables APIs to drop a thread's privileges down to ring 3,
+	 supporting user-level threads that are protected from each other and
+	 from crashing the kernel.
+
 endif # X86_64
