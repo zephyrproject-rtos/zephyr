@@ -23,9 +23,35 @@
 int bt_rpmsg_platform_init(void);
 int bt_rpmsg_platform_send(struct net_buf *buf);
 
+static bool is_hci_event_discardable(const u8_t *evt_data)
+{
+	u8_t evt_type = evt_data[0];
+
+	switch (evt_type) {
+#if defined(CONFIG_BT_BREDR)
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		return true;
+#endif
+	case BT_HCI_EVT_LE_META_EVENT: {
+		u8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+
+		switch (subevt_type) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
 static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
 					 bool *prio)
 {
+	bool discardable;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
 
@@ -33,6 +59,8 @@ static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
 		BT_ERR("Not enough data for event header");
 		return NULL;
 	}
+
+	discardable = is_hci_event_discardable(data);
 
 	memcpy((void *)&hdr, data, sizeof(hdr));
 	data += sizeof(hdr);
@@ -44,9 +72,13 @@ static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
 	}
 	BT_DBG("len %u", hdr.len);
 
-	buf = bt_buf_get_evt(hdr.evt, false, K_NO_WAIT);
+	buf = bt_buf_get_evt(hdr.evt, discardable, K_NO_WAIT);
 	if (!buf) {
-		BT_ERR("No available event buffers!");
+		if (discardable) {
+			BT_DBG("Discardable buffer pool full, ignoring event");
+		} else {
+			BT_ERR("No available event buffers!");
+		}
 		return buf;
 	}
 
