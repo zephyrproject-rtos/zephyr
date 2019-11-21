@@ -455,8 +455,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 		/* RX */
 		delay = HAL_RADIO_NS2US_CEIL(
 			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) -
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			4; /* 4us as +/- active jitter */
+			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
 
 		hal_radio_rxen_on_sw_switch(ppi);
 
