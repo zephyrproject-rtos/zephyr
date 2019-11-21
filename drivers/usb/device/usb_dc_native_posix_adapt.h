@@ -97,7 +97,7 @@ struct usbip_header {
 /* Function definitions */
 
 int usbip_recv(u8_t *buf, size_t len);
-int usbip_send_common(u8_t ep, u32_t data_len);
+bool usbip_send_common(u8_t ep, u32_t data_len);
 int usbip_send(u8_t ep, const u8_t *data, size_t len);
 
 void usbip_start(void);

@@ -351,8 +351,13 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	}
 
 	if (USBIP_EP_ADDR2IDX(ep) == 0) {
-		usbip_send_common(ep, data_len);
-		usbip_send(ep, data, data_len);
+		if (!usbip_send_common(ep, data_len)) {
+			return -EIO;
+		}
+
+		if (usbip_send(ep, data, data_len) != data_len) {
+			return -EIO;
+		}
 	} else {
 		u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
 		struct usb_ep_ctrl_prv *ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
@@ -524,7 +529,6 @@ int handle_usb_data(struct usbip_header *hdr)
 {
 	u8_t ep_idx = ntohl(hdr->common.ep);
 	usb_dc_ep_callback ep_cb;
-	int bytes;
 	u8_t ep;
 
 	LOG_DBG("ep_idx %u", ep_idx);
@@ -540,7 +544,9 @@ int handle_usb_data(struct usbip_header *hdr)
 		ep_cb(ep, USB_DC_EP_DATA_OUT);
 
 		/* Send ACK reply */
-		bytes = usbip_send_common(ep, 0);
+		if (!usbip_send_common(ep, 0)) {
+			return -EIO;
+		}
 	} else {
 		if (ep_idx >= USBIP_IN_EP_NUM) {
 			return -EINVAL;
