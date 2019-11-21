@@ -211,13 +211,13 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 
 static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 {
-	struct usbip_unlink *req = &hdr->u.unlink;
 	u64_t setup_padding;
 	int read;
 
 	LOG_DBG("");
 
-	read = recv(connfd, req, sizeof(hdr->u), 0);
+	/* Need to read the whole structure */
+	read = recv(connfd, &hdr->u, sizeof(hdr->u), 0);
 	if (read != sizeof(hdr->u)) {
 		LOG_ERR("recv() failed: %s", strerror(errno));
 		return;
