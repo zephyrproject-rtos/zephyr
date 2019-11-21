@@ -165,11 +165,6 @@ Most everyday users will run with no arguments.
 """
 
 import os
-if os.name == 'nt':
-    print("Running sanitycheck on Windows is not supported yet.")
-    print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
-    exit(1)
-
 import contextlib
 import string
 import mmap
@@ -1543,8 +1538,12 @@ class TestCase(object):
         warnings = None
 
         with open(inf_name) as inf:
-            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
-                                              mmap.PROT_READ, 0)) as main_c:
+            if os.name == 'nt':
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'access':mmap.ACCESS_READ}
+            else:
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'flags':mmap.MAP_PRIVATE, 'prot':mmap.PROT_READ, 'offset':0}
+
+            with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
                 # contextlib makes pylint think main_c isn't subscriptable
                 # pylint: disable=unsubscriptable-object
 
@@ -1629,6 +1628,11 @@ class TestInstance:
         return self.name < other.name
 
     def check_build_or_run(self):
+        # right now we only support building on windows. running is still work
+        # in progress.
+
+        if os.name == 'nt':
+            return True
 
         build_only = True
 
