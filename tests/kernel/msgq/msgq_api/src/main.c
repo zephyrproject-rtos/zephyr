@@ -43,7 +43,12 @@ dummy_test(test_msgq_user_attrs_get);
 dummy_test(test_msgq_user_purge_when_put);
 #endif /* CONFIG_USERSPACE */
 
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
+#ifdef CONFIG_64BIT
+#define MAX_SZ	256
+#else
+#define MAX_SZ	128
+#endif
+K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 2, 4);
 
 extern struct k_msgq kmsgq;
 extern struct k_msgq msgq;
