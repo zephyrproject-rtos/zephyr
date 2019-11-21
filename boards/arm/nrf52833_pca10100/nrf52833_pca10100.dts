@@ -184,19 +184,11 @@ arduino_i2c: &i2c0 {
 	miso-pin = <40>;
 };
 
-&spi2 {
-	compatible = "nordic,nrf-spi";
-	status = "okay";
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
-};
-
 arduino_spi: &spi3 {
 	status = "okay";
-	sck-pin = <41>;
-	miso-pin = <43>;
-	mosi-pin = <42>;
+	sck-pin = <23>;
+	miso-pin = <22>;
+	mosi-pin = <21>;
 };
 
 &flash0 {
