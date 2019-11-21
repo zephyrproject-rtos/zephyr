@@ -31,7 +31,12 @@ Boards & SoC Support
 Drivers and Sensors
 *******************
 
-* TBD
+* EEPROM
+
+  * Added EEPROM device driver API
+  * Added Atmel AT24 (and compatible) I2C EEPROM driver
+  * Added Atmel AT25 (and compatible) SPI EEPROM driver
+  * Added native_posix EEPROM emulation driver
 
 Networking
 **********
