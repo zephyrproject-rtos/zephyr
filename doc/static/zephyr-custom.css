@@ -43,7 +43,7 @@ div.rst-other-versions dl {
    margin-bottom: 0;
 }
 
-/* tweak spacing after a toctree */
+/* tweak spacing after a toctree, fixing issue from sphinx-tabs */
 .toctree-wrapper ul, .section ul {
    margin-bottom: 24px !important;
 }
@@ -295,4 +295,11 @@ div.numbered-step h2::before {
 
 .tab div[class^='highlight']:last-child {
    margin-bottom: 1em;
+}
+
+/* force table content font-size in responsive tables to be 100%
+ * fixing larger font size for paragraphs in the kconfig tables */
+
+.wy-table-responsive td p {
+   font-size:100%;
 }
