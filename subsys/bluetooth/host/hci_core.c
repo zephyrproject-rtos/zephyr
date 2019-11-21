@@ -100,6 +100,20 @@ static size_t discovery_results_size;
 static size_t discovery_results_count;
 #endif /* CONFIG_BT_BREDR */
 
+struct cmd_state_set {
+	atomic_t *target;
+	int bit;
+	bool val;
+};
+
+void cmd_state_set_init(struct cmd_state_set *state, atomic_t *target, int bit,
+			bool val)
+{
+	state->target = target;
+	state->bit = bit;
+	state->val = val;
+}
+
 struct cmd_data {
 	/** BT_BUF_CMD */
 	u8_t  type;
@@ -109,6 +123,9 @@ struct cmd_data {
 
 	/** The command OpCode that the buffer contains */
 	u16_t opcode;
+
+	/** The state to update when command completes with success. */
+	struct cmd_state_set *state;
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
@@ -274,6 +291,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
+	cmd(buf)->state = NULL;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -386,6 +404,7 @@ const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr)
 static int set_advertise_enable(bool enable)
 {
 	struct net_buf *buf;
+	struct cmd_state_set state;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
@@ -399,12 +418,13 @@ static int set_advertise_enable(bool enable)
 		net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
 	}
 
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_ADVERTISING, enable);
+	cmd(buf)->state = &state;
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
 	}
-
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING, enable);
 
 	return 0;
 }
@@ -575,6 +595,7 @@ static int set_le_scan_enable(u8_t enable)
 {
 	struct bt_hci_cp_le_set_scan_enable *cp;
 	struct net_buf *buf;
+	struct cmd_state_set state;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*cp));
@@ -593,13 +614,14 @@ static int set_le_scan_enable(u8_t enable)
 
 	cp->enable = enable;
 
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
+				   enable == BT_HCI_LE_SCAN_ENABLE);
+	cmd(buf)->state = &state;
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
 	if (err) {
 		return err;
 	}
-
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCANNING,
-			  enable == BT_HCI_LE_SCAN_ENABLE);
 
 	return 0;
 }
@@ -706,6 +728,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
 {
 	struct net_buf *buf;
+	struct cmd_state_set state;
 	struct bt_hci_cp_le_create_conn *cp;
 	u8_t own_addr_type;
 	int err;
@@ -764,7 +787,23 @@ int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
 	cp->conn_latency = sys_cpu_to_le16(conn_param->latency);
 	cp->supervision_timeout = sys_cpu_to_le16(conn_param->timeout);
 
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_AUTO_CONN, true);
+	cmd(buf)->state = &state;
+
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+}
+
+int bt_le_auto_conn_cancel(void)
+{
+	struct net_buf *buf;
+	struct cmd_state_set state;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
+
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_AUTO_CONN, false);
+	cmd(buf)->state = &state;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
 }
 #endif /* defined(CONFIG_BT_WHITELIST) */
 
@@ -3341,6 +3380,12 @@ static void hci_cmd_done(u16_t opcode, u8_t status, struct net_buf *buf)
 	if (cmd(buf)->opcode != opcode) {
 		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
 			opcode, cmd(buf)->opcode);
+	}
+
+	if (cmd(buf)->state && !status) {
+		struct cmd_state_set *update = cmd(buf)->state;
+
+		atomic_set_bit_to(update->target, update->bit, update->val);
 	}
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */

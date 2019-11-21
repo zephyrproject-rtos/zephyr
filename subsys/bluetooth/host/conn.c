@@ -2054,13 +2054,13 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
-
 	return 0;
 }
 
 int bt_conn_create_auto_stop(void)
 {
+	int err;
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EINVAL;
 	}
@@ -2069,11 +2069,7 @@ int bt_conn_create_auto_stop(void)
 		return -EINVAL;
 	}
 
-	int err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL,
-				       NULL);
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
-
+	err = bt_le_auto_conn_cancel();
 	if (err) {
 		BT_ERR("Failed to stop initiator");
 		return err;
