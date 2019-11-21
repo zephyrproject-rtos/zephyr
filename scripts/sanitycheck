@@ -3868,6 +3868,12 @@ def main():
     info("%d test configurations selected, %d configurations discarded due to filters." %
         (len(suite.instances), len(discards)))
 
+    if options.device_testing:
+        print("\nDevice testing on:")
+        for p in suite.connected_hardware:
+            if p['connected']:
+                print("%s (%s) on %s" %(p['platform'], p.get('id', None), p['serial']))
+
     if options.dry_run:
         duration = time.time() - start_time
         info("Completed in %d seconds" % (duration))
