@@ -104,3 +104,4 @@ void usbip_start(void);
 
 int handle_usb_control(struct usbip_header *hdr);
 int handle_usb_data(struct usbip_header *hdr);
+bool usbip_skip_setup(void);
