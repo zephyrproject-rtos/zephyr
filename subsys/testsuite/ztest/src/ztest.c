@@ -98,7 +98,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	arch_irq_unlock(key);
 }
 
-void z_test_1cpu_start(void)
+void z_impl_z_test_1cpu_start(void)
 {
 	cpuhold_active = 1;
 
@@ -116,7 +116,7 @@ void z_test_1cpu_start(void)
 	}
 }
 
-void z_test_1cpu_stop(void)
+void z_impl_z_test_1cpu_stop(void)
 {
 	cpuhold_active = 0;
 
@@ -125,6 +125,19 @@ void z_test_1cpu_stop(void)
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+void z_vrfy_z_test_1cpu_start(void)
+{
+	z_impl_z_test_1cpu_start();
+}
+#include <syscalls/z_test_1cpu_start_mrsh.c>
+
+void z_vrfy_z_test_1cpu_stop(void)
+{
+	z_impl_z_test_1cpu_stop();
+}
+#include <syscalls/z_test_1cpu_stop_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 #endif
 
 static void run_test_functions(struct unit_test *test)
