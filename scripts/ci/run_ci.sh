@@ -35,7 +35,7 @@ matrix=1
 function handle_coverage() {
 	# this is for shippable coverage reports
 	echo "Calling gcovr"
-	gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
+	gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
 
 
 	# Upload to codecov.io only on merged builds or if CODECOV_IO variable
@@ -48,7 +48,7 @@ function handle_coverage() {
 			--directory sanity-out/nrf52_bsim/ \
 			--directory sanity-out/unit_testing/ \
 			--directory bsim_bt_out/ \
-			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
+			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1
 
 		# Remove noise
 		echo "Exclude data from coverage report..."
@@ -58,19 +58,19 @@ function handle_coverage() {
 			--remove lcov.pre.info samples/\* \
 			--remove lcov.pre.info ext/\* \
 			--remove lcov.pre.info *generated* \
-			-o lcov.info --rc lcov_branch_coverage=1;
+			-o lcov.info --rc lcov_branch_coverage=1
 
 		# Cleanup
-		rm lcov.pre.info;
-		rm -rf sanity-out out-2nd-pass;
+		rm lcov.pre.info
+		rm -rf sanity-out out-2nd-pass
 
 		# Upload to codecov.io
 		echo "Upload coverage reports to codecov.io"
-		bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-		rm -f lcov.info;
+		bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes
+		rm -f lcov.info
 	fi
 
-	rm -rf sanity-out out-2nd-pass;
+	rm -rf sanity-out out-2nd-pass
 
 }
 
@@ -79,7 +79,7 @@ function handle_compiler_cache() {
 	if [ -f "$HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake" ]; then
 		echo "Dumping the capability database in case we are affected by #9992"
 		cat $HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake
-	fi;
+	fi
 }
 
 function on_complete() {
@@ -94,32 +94,32 @@ function on_complete() {
 
 	if [ -e ./sanity-out/sanitycheck.xml ]; then
 		echo "Copy ./sanity-out/sanitycheck.xml"
-		cp ./sanity-out/sanitycheck.xml shippable/testresults/;
-	fi;
+		cp ./sanity-out/sanitycheck.xml shippable/testresults/
+	fi
 
 	if [ -e ${bsim_bt_test_results_file} ]; then
 		echo "Copy ${bsim_bt_test_results_file}"
-		cp ${bsim_bt_test_results_file} shippable/testresults/;
-	fi;
+		cp ${bsim_bt_test_results_file} shippable/testresults/
+	fi
 
 	if [ -e ${west_commands_results_file} ]; then
 		echo "Copy ${west_commands_results_file}"
-		cp ${west_commands_results_file} shippable/testresults;
-	fi;
+		cp ${west_commands_results_file} shippable/testresults
+	fi
 
 	if [ "$matrix" = "1" ]; then
 		echo "Skip handling coverage data..."
 		#handle_coverage
 	else
-		rm -rf sanity-out out-2nd-pass;
-	fi;
+		rm -rf sanity-out out-2nd-pass
+	fi
 }
 
 
 function build_btsim() {
 	nrf_hw_models_version=`cat boards/posix/nrf52_bsim/hw_models_version`
-	pushd . ;
-	cd ${BSIM_COMPONENTS_PATH} ;
+	pushd .
+	cd ${BSIM_COMPONENTS_PATH}
 	if [ -d ext_NRF52_hw_models ]; then
 		cd ext_NRF52_hw_models
 		git describe --tags --abbrev=0 ${NRF52_HW_MODELS_TAG}\
@@ -127,7 +127,7 @@ function build_btsim() {
 		(
 			echo "`pwd` seems to contain the nRF52 HW\
  models but they are out of date"
-			exit 1;
+			exit 1
 		)
 	else
 		git clone -b ${nrf_hw_models_version} \
@@ -135,7 +135,7 @@ function build_btsim() {
 	fi
 	cd ${BSIM_OUT_PATH}
 	make everything -j 8 -s
-	popd ;
+	popd
 }
 
 function run_bsim_bt_tests() {
@@ -146,16 +146,16 @@ function run_bsim_bt_tests() {
 }
 
 function get_tests_to_run() {
-	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args;
-	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args;
+	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
+	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
 
 	if [ -s modified_boards.args ]; then
-		${sanitycheck} ${sanitycheck_options} +modified_boards.args --save-tests test_file_1.txt || exit 1;
+		${sanitycheck} ${sanitycheck_options} +modified_boards.args --save-tests test_file_1.txt || exit 1
 	fi
 	if [ -s modified_tests.args ]; then
-		${sanitycheck} ${sanitycheck_options} +modified_tests.args --save-tests test_file_2.txt || exit 1;
+		${sanitycheck} ${sanitycheck_options} +modified_tests.args --save-tests test_file_2.txt || exit 1
 	fi
-	rm -f modified_tests.args modified_boards.args;
+	rm -f modified_tests.args modified_boards.args
 }
 
 
@@ -245,7 +245,7 @@ if [ -n "$main_ci" ]; then
 		# Now let's pray this script is being run from a
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
-		git rebase $remote/${branch};
+		git rebase $remote/${branch}
 	fi
 	$short_git_log
 
