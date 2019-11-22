@@ -252,20 +252,22 @@ void main(void)
 	int cnt = 1;
 
 	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
 
 	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
+			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
 
 	for (i = 0; i < 6; i++) {
-		gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, on);
-		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, !on);
+		gpio_pin_set(led0, DT_ALIAS_LED0_GPIOS_PIN, on);
+		gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, !on);
 		k_sleep(K_MSEC(100));
 		on = (on == 1) ? 0 : 1;
 	}
 
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 0);
-	gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
+	gpio_pin_set(led0, DT_ALIAS_LED0_GPIOS_PIN, 0);
+	gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
 
 	printk("SensorTile.box test!!\n");
 
