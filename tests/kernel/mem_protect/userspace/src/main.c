@@ -114,11 +114,18 @@ static void write_control(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
+#ifdef CONFIG_X86_64
+	__asm__ volatile (
+		"movq $0xFFFFFFFF, %rax;\n\t"
+		"movq %rax, %cr0;\n\t"
+		);
+#else
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0xfffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
+#endif
 	zassert_unreachable("Write to control register did not fault");
 #elif defined(CONFIG_ARM)
 	unsigned int msr_value;
@@ -162,11 +169,19 @@ static void disable_mmu_mpu(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
+#ifdef CONFIG_X86_64
+	__asm__ volatile (
+		"movq %cr0, %rax;\n\t"
+		"andq $0x7ffeffff, %rax;\n\t"
+		"movq %rax, %cr0;\n\t"
+		);
+#else
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0x7ffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
+#endif
 #elif defined(CONFIG_ARM)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
@@ -292,14 +307,8 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-K_APP_DMEM(part0) volatile int *priv_stack_ptr;
-#if defined(CONFIG_X86)
-/*
- * We can't inline this in the code or make it static
- * or local without triggering a warning on -Warray-bounds.
- */
-K_APP_DMEM(part0) size_t size = MMU_PAGE_SIZE;
-#elif defined(CONFIG_ARC)
+K_APP_DMEM(part0) volatile char *priv_stack_ptr;
+#if defined(CONFIG_ARC)
 K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 			       STACK_GUARD_SIZE);
 #endif
@@ -312,13 +321,12 @@ K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 static void read_priv_stack(void)
 {
 	/* Try to read from privileged stack. */
-#if defined(CONFIG_X86) || defined(CONFIG_ARC)
+#if defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	priv_stack_ptr = &s[0];
-	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
-#elif defined(CONFIG_ARM)
+	priv_stack_ptr = (char *)&s[0] - size;
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -326,7 +334,7 @@ static void read_priv_stack(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
-	printk("%d\n", *priv_stack_ptr);
+	printk("%c\n", *priv_stack_ptr);
 	zassert_unreachable("Read from privileged stack did not fault");
 }
 
@@ -338,13 +346,12 @@ static void read_priv_stack(void)
 static void write_priv_stack(void)
 {
 	/* Try to write to privileged stack. */
-#if defined(CONFIG_X86) || defined(CONFIG_ARC)
+#if defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	priv_stack_ptr = &s[0];
-	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
-#elif defined(CONFIG_ARM)
+	priv_stack_ptr = (char *)&s[0] - size;
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -654,8 +661,8 @@ static void access_other_memdomain(void)
 
 #if defined(CONFIG_ARM)
 extern u8_t *z_priv_stack_find(void *obj);
-extern k_thread_stack_t ztest_thread_stack[];
 #endif
+extern k_thread_stack_t ztest_thread_stack[];
 
 struct k_mem_domain add_thread_drop_dom;
 struct k_mem_domain add_part_drop_dom;
@@ -676,6 +683,8 @@ static void user_half(void *arg1, void *arg2, void *arg3)
 	if (!expect_fault) {
 		ztest_test_pass();
 	} else {
+		printk("Expecting a fatal error %d but succeeded instead\n",
+		       expected_reason);
 		ztest_test_fail();
 	}
 }
@@ -784,6 +793,8 @@ static void spawn_user(void)
 
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 	if (expect_fault) {
+		printk("Expecting a fatal error %d but succeeded instead\n",
+		       expected_reason);
 		ztest_test_fail();
 	}
 }
@@ -892,18 +903,19 @@ struct foo {
 
 struct foo stest_member_stack;
 
-void z_impl_stack_info_get(u32_t *start_addr, u32_t *size)
+void z_impl_stack_info_get(char **start_addr, size_t *size)
 {
-	*start_addr = k_current_get()->stack_info.start;
+	*start_addr = (char *)k_current_get()->stack_info.start;
 	*size = k_current_get()->stack_info.size;
 }
 
-static inline void z_vrfy_stack_info_get(u32_t *start_addr, u32_t *size)
+static inline void z_vrfy_stack_info_get(char **start_addr,
+					 size_t *size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(u32_t)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(u32_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
 
-	z_impl_stack_info_get((u32_t *)start_addr, (u32_t *)size);
+	z_impl_stack_info_get(start_addr, size);
 }
 #include <syscalls/stack_info_get_mrsh.c>
 
@@ -927,10 +939,8 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 
 	expect_fault = false;
 
-
 	/* Dump interesting information */
-
-	stack_info_get((u32_t *)&stack_start, (u32_t *)&stack_size);
+	stack_info_get(&stack_start, &stack_size);
 	printk("   - Thread reports buffer %p size %zu\n", stack_start,
 	       stack_size);
 
@@ -987,9 +997,11 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		 * and not the buffer.
 		 */
 		zassert_true(check_perms(obj_start - 1, 1, 0),
-			     "user mode access to memory before start of stack object");
+			     "user mode access to memory %p before start of stack object",
+			     obj_start - 1);
 		zassert_true(check_perms(obj_end, 1, 0),
-			     "user mode access past end of stack object");
+			     "user mode access to memory %p past end of stack object",
+			     obj_end);
 	}
 
 
@@ -1001,7 +1013,8 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 
 	if (arch_is_user_context()) {
 		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
-			      "bad stack size in thread struct");
+			      "bad stack size %zu in thread struct",
+			      stack_size);
 	}
 
 
@@ -1149,8 +1162,13 @@ void test_main(void)
 	k_mem_domain_add_thread(&dom0, k_current_get());
 
 #if defined(CONFIG_ARM)
-	priv_stack_ptr = (int *)z_priv_stack_find(ztest_thread_stack);
+	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
+#elif defined(CONFIG_X86)
+	struct z_x86_thread_stack_header *hdr;
 
+	hdr = ((struct z_x86_thread_stack_header *)ztest_thread_stack);
+	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
+			  (sizeof(hdr->privilege_stack) - 1));
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
