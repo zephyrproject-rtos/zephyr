@@ -177,6 +177,10 @@ static void uarte_nrfx_isr_int(void *arg)
 		return;
 	}
 
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
+	}
+
 	if (data->int_driven->cb) {
 		data->int_driven->cb(data->int_driven->cb_data);
 	}
@@ -348,15 +352,9 @@ static int uarte_nrfx_config_get(struct device *dev, struct uart_config *cfg)
 
 static int uarte_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0U;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
-		/* register bitfields maps to the defines in uart.h */
-		error = nrf_uarte_errorsrc_get_and_clear(uarte);
-	}
-
-	return error;
+	/* register bitfields maps to the defines in uart.h */
+	return nrf_uarte_errorsrc_get_and_clear(uarte);
 }
 
 #ifdef CONFIG_UART_ASYNC_API
