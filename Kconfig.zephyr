@@ -17,9 +17,12 @@ endmenu
 # (e.g. the first default) with a satisfied condition.
 #
 # Board defaults should be parsed before SoC defaults, because boards usually
-# overrides SoC values.
+# overrides SoC values. Similarly shields defaults should be parsed before
+# boards defaults, because shields defaults override boards defaults.
 #
 # Note: $ARCH and $BOARD_DIR might be glob patterns.
+source "boards/shields/*/Kconfig.defconfig"
+
 source "$(BOARD_DIR)/Kconfig.defconfig"
 
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"

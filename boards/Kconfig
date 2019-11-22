@@ -23,6 +23,9 @@ source "$(BOARD_DIR)/Kconfig.board"
 
 endchoice
 
+# Parse shields references
+# Don't do it as a menuconfig, as shield selection is a CMake feature.
+rsource "shields/*/Kconfig.shield"
 
 menu "Board Options"
 # There might not be any board options, hence the optional source
