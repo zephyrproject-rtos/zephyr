@@ -1048,7 +1048,7 @@ void scenario_entry(void *stack_obj, size_t obj_size)
 
 void test_stack_buffer(void)
 {
-	printk("Reserved space: %u\n", K_THREAD_STACK_RESERVED);
+	printk("Reserved space: %zu\n", K_THREAD_STACK_RESERVED);
 	printk("Provided stack size: %u\n", STEST_STACKSIZE);
 	scenario_entry(stest_stack, sizeof(stest_stack));
 
