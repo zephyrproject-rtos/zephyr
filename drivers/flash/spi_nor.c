@@ -112,6 +112,8 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 		since -= T_DPDD_MS;
 #endif /* DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE */
 
+#if defined(DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD) ||
+	defined(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE)
 		/* If the adjusted time is negative we have to wait
 		 * until it reaches zero before we can proceed.
 		 */
@@ -119,6 +121,8 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 			k_sleep(K_MSEC((u32_t)-since));
 		}
 	}
+#endif /* DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD ||
+	  DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE */
 #endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_DPD */
 }
 
