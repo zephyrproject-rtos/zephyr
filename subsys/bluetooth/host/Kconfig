@@ -240,13 +240,13 @@ config BT_ACL_RX_COUNT
 endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers"
-	default BT_CTLR_TX_BUFFERS if BT_CTLR
-	default 7
-	range 1 128
+	int "Maximum number of pending TX buffers with a callback"
+	default BT_L2CAP_TX_BUF_COUNT
+	range BT_L2CAP_TX_BUF_COUNT 255
 	help
-	  Maximum number of pending TX buffers that have not yet
-	  been acknowledged by the controller.
+	  Maximum number of pending TX buffers that have an associated
+	  callback. Normally this can be left to the default value, which
+	  is equal to the number of TX buffers in the stack-internal pool.
 
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"

@@ -68,7 +68,11 @@ const struct bt_conn_auth_cb *bt_auth;
 static struct bt_conn conns[CONFIG_BT_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
-#define conn_tx(buf) ((struct bt_conn_tx_data *)net_buf_user_data(buf))
+struct tx_meta {
+	struct bt_conn_tx *tx;
+};
+
+#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_tx);
@@ -307,8 +311,9 @@ static void tx_free(struct bt_conn_tx *tx)
 		tx->conn = NULL;
 	}
 
-	tx->data.cb = NULL;
-	tx->data.user_data = NULL;
+	tx->cb = NULL;
+	tx->user_data = NULL;
+	tx->pending_no_cb = 0U;
 	k_fifo_put(&free_tx, tx);
 }
 
@@ -316,14 +321,16 @@ static void tx_notify_cb(struct k_work *work)
 {
 	struct bt_conn_tx *tx = CONTAINER_OF(work, struct bt_conn_tx, work);
 	struct bt_conn *conn;
-	struct bt_conn_tx_data data;
+	bt_conn_tx_cb_t cb;
+	void *user_data;
 
-	BT_DBG("tx %p conn %p cb %p user_data %p", tx, tx->conn, tx->data.cb,
-	       tx->data.user_data);
+	BT_DBG("tx %p conn %p cb %p user_data %p", tx, tx->conn, tx->cb,
+	       tx->user_data);
 
 	/* Copy over the params */
 	conn = bt_conn_ref(tx->conn);
-	data = tx->data;
+	cb = tx->cb;
+	user_data = tx->user_data;
 
 	/* Free up TX notify since there may be user waiting */
 	tx_free(tx);
@@ -331,7 +338,7 @@ static void tx_notify_cb(struct k_work *work)
 	/* Run the callback, at this point it should be safe to allocate new
 	 * buffers since the TX should have been unblocked by tx_free.
 	 */
-	data.cb(conn, data.user_data);
+	cb(conn, user_data);
 
 	bt_conn_unref(conn);
 }
@@ -1188,9 +1195,27 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 	bt_l2cap_recv(conn, buf);
 }
 
+static struct bt_conn_tx *conn_tx_alloc(void)
+{
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+		struct bt_conn_tx *tx = k_fifo_get(&free_tx, K_NO_WAIT);
+
+		if (!tx) {
+			BT_WARN("Unable to get a free conn_tx, yielding...");
+			tx = k_fifo_get(&free_tx, K_FOREVER);
+		}
+
+		return tx;
+	}
+
+	return k_fifo_get(&free_tx, K_FOREVER);
+}
+
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
+	struct bt_conn_tx *tx;
+
 	BT_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle,
 	       buf->len, cb, user_data);
 
@@ -1200,118 +1225,30 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		return -ENOTCONN;
 	}
 
-	conn_tx(buf)->cb = cb;
-	conn_tx(buf)->user_data = user_data;
+	if (cb) {
+		tx = conn_tx_alloc();
+		tx->cb = cb;
+		tx->user_data = user_data;
+		tx->conn = bt_conn_ref(conn);
+		tx->pending_no_cb = 0U;
+		k_work_init(&tx->work, tx_notify_cb);
+
+		tx_data(buf)->tx = tx;
+	} else {
+		tx_data(buf)->tx = NULL;
+	}
 
 	net_buf_put(&conn->tx_queue, buf);
 	return 0;
 }
 
-static bool conn_tx_internal(bt_conn_tx_cb_t cb)
-{
-	/* Only functions which are known to not block on anything that may
-	 * depend on the TX thread itself, thereby causing a deadlock, are
-	 * considered internal in this context.
-	 * This means that e.g. SMP callbacks cannot be considered internal,
-	 * since they may perform application callbacks and dependency on the
-	 * TX thread is then out of our control.
-	 */
-	if (cb == att_pdu_sent || cb == att_cfm_sent || cb == att_rsp_sent ||
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	    cb == l2cap_chan_sdu_sent ||
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-	    cb == att_req_sent) {
-		return true;
-	}
-
-	return false;
-}
-
-void bt_conn_notify_tx(struct bt_conn *conn)
-{
-	struct bt_conn_tx *tx;
-
-	BT_DBG("conn %p", conn);
-
-	while ((tx = k_fifo_get(&conn->tx_notify, K_NO_WAIT))) {
-		BT_DBG("cb %p user_data %p", tx->data.cb, tx->data.user_data);
-
-		/* Only submit if there is a callback set */
-		if (tx->data.cb) {
-			/* Submit using TX thread if internal callback */
-			if (conn_tx_internal(tx->data.cb)) {
-				tx_notify_cb(&tx->work);
-			} else {
-				k_work_submit(&tx->work);
-			}
-		} else {
-			tx_free(tx);
-		}
-	}
-}
-
-static void notify_tx(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!atomic_get(&conns[i].ref)) {
-			continue;
-		}
-
-		if (conns[i].state == BT_CONN_CONNECTED ||
-		    conns[i].state == BT_CONN_DISCONNECT) {
-			bt_conn_notify_tx(&conns[i]);
-		}
-	}
-}
-
-static struct bt_conn_tx *add_pending_tx(struct bt_conn *conn,
-					 bt_conn_tx_cb_t cb, void *user_data)
-{
-	struct bt_conn_tx *tx;
-	unsigned int key;
-
-	BT_DBG("conn %p cb %p user_data %p", conn, cb, user_data);
-
-	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
-		tx = k_fifo_get(&free_tx, K_NO_WAIT);
-		if (!tx) {
-			BT_WARN("Unable to get a free conn_tx, yielding...");
-			tx = k_fifo_get(&free_tx, K_FOREVER);
-		}
-	} else {
-		tx = k_fifo_get(&free_tx, K_FOREVER);
-	}
-
-	tx->conn = bt_conn_ref(conn);
-	k_work_init(&tx->work, tx_notify_cb);
-	tx->data.cb = cb;
-	tx->data.user_data = user_data;
-
-	key = irq_lock();
-	sys_slist_append(&conn->tx_pending, &tx->node);
-	irq_unlock(key);
-
-	return tx;
-}
-
-static void remove_pending_tx(struct bt_conn *conn, struct bt_conn_tx *tx)
-{
-	unsigned int key;
-
-	key = irq_lock();
-	sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
-	irq_unlock(key);
-
-	tx_free(tx);
-}
-
 static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 		      bool always_consume)
 {
+	struct bt_conn_tx *tx = tx_data(buf)->tx;
 	struct bt_hci_acl_hdr *hdr;
-	struct bt_conn_tx *tx;
+	u32_t *pending_no_cb;
+	unsigned int key;
 	int err;
 
 	BT_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
@@ -1319,9 +1256,6 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 
 	/* Wait until the controller can accept ACL packets */
 	k_sem_take(bt_conn_get_pkts(conn), K_FOREVER);
-
-	/* Make sure we notify and free up any pending tx contexts */
-	notify_tx();
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -1333,14 +1267,37 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	/* Add to pending, it must be done before bt_buf_set_type */
-	tx = add_pending_tx(conn, conn_tx(buf)->cb, conn_tx(buf)->user_data);
+	key = irq_lock();
+	if (tx) {
+		sys_slist_append(&conn->tx_pending, &tx->node);
+	} else {
+		struct bt_conn_tx *tail_tx;
+
+		tail_tx = (void *)sys_slist_peek_tail(&conn->tx_pending);
+		if (tail_tx) {
+			pending_no_cb = &tail_tx->pending_no_cb;
+		} else {
+			pending_no_cb = &conn->pending_no_cb;
+		}
+
+		(*pending_no_cb)++;
+	}
+	irq_unlock(key);
 
 	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
 	err = bt_send(buf);
 	if (err) {
 		BT_ERR("Unable to send to driver (err %d)", err);
-		remove_pending_tx(conn, tx);
+		key = irq_lock();
+		/* Roll back the pending TX info */
+		if (tx) {
+			sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
+		} else {
+			__ASSERT_NO_MSG(*pending_no_cb > 0);
+			(*pending_no_cb)--;
+		}
+		irq_unlock(key);
 		goto fail;
 	}
 
@@ -1348,6 +1305,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 
 fail:
 	k_sem_give(bt_conn_get_pkts(conn));
+	if (tx) {
+		tx_free(tx);
+	}
+
 	if (always_consume) {
 		net_buf_unref(buf);
 	}
@@ -1382,8 +1343,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	/* Fragments never have a TX completion callback */
-	conn_tx(frag)->cb = NULL;
-	conn_tx(frag)->user_data = NULL;
+	tx_data(frag)->tx = NULL;
 
 	frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
 
@@ -1441,12 +1401,15 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
+		if (tx_data(buf)->tx) {
+			tx_free(tx_data(buf)->tx);
+		}
+
 		net_buf_unref(buf);
 	}
 
 	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
-
-	bt_conn_notify_tx(conn);
+	__ASSERT_NO_MSG(conn->pending_no_cb == 0);
 
 	bt_conn_reset_rx_state(conn);
 
@@ -1481,12 +1444,6 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 		}
 
 		BT_DBG("Adding conn %p to poll list", conn);
-
-		k_poll_event_init(&events[ev_count],
-				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_notify);
-		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
 
 		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -1544,10 +1501,19 @@ static void process_unack_tx(struct bt_conn *conn)
 {
 	/* Return any unacknowledged packets */
 	while (1) {
+		struct bt_conn_tx *tx;
 		sys_snode_t *node;
 		unsigned int key;
 
 		key = irq_lock();
+
+		if (conn->pending_no_cb) {
+			conn->pending_no_cb--;
+			irq_unlock(key);
+			k_sem_give(bt_conn_get_pkts(conn));
+			continue;
+		}
+
 		node = sys_slist_get(&conn->tx_pending);
 		irq_unlock(key);
 
@@ -1555,7 +1521,14 @@ static void process_unack_tx(struct bt_conn *conn)
 			break;
 		}
 
-		tx_free(CONTAINER_OF(node, struct bt_conn_tx, node));
+		tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+
+		key = irq_lock();
+		conn->pending_no_cb = tx->pending_no_cb;
+		tx->pending_no_cb = 0U;
+		irq_unlock(key);
+
+		tx_free(tx);
 
 		k_sem_give(bt_conn_get_pkts(conn));
 	}
@@ -1602,7 +1575,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 		k_fifo_init(&conn->tx_queue);
-		k_fifo_init(&conn->tx_notify);
 		k_poll_signal_raise(&conn_change, 0);
 
 		sys_slist_init(&conn->channels);
