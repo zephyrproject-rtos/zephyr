@@ -335,6 +335,20 @@ def dt_compat_enabled(kconf, _, compat):
     return "n"
 
 
+def shields_list_contains(kconf, _, shield):
+    """
+    Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
+    Return "y" if 'shield' is present list obtained after 'SHIELD_AS_LIST'
+    has been split using ";" as a separator and "n" otherwise.
+    """
+    try:
+        list = os.environ['SHIELD_AS_LIST']
+    except KeyError:
+        return "n"
+
+    return "y" if shield in list.split(";") else "n"
+
+
 functions = {
         "dt_int_val": (dt_int_val, 1, 2),
         "dt_hex_val": (dt_hex_val, 1, 2),
@@ -351,4 +365,5 @@ functions = {
         "dt_node_reg_size_int": (dt_node_reg, 1, 4),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 4),
         "dt_node_has_bool_prop": (dt_node_has_bool_prop, 2, 2),
+        "shields_list_contains": (shields_list_contains, 1, 1),
 }
