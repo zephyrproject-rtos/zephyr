@@ -251,14 +251,8 @@ static void uart_nrfx_poll_out(struct device *dev,
 /** Console I/O function */
 static int uart_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0U;
-
-	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
-		/* register bitfields maps to the defines in uart.h */
-		error = nrf_uart_errorsrc_get_and_clear(uart0_addr);
-	}
-
-	return error;
+	/* register bitfields maps to the defines in uart.h */
+	return nrf_uart_errorsrc_get_and_clear(uart0_addr);
 }
 
 static int uart_nrfx_configure(struct device *dev,
@@ -839,6 +833,10 @@ static void uart_nrfx_irq_callback_set(struct device *dev,
 static void uart_nrfx_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
+	}
 
 	if (irq_callback) {
 		irq_callback(irq_cb_data);
