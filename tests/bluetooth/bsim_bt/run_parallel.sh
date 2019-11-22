@@ -21,7 +21,7 @@ function display_help(){
 if [ $# -ge 1 ]; then
   if grep -Eiq "(\?|-\?|-h|help|-help|--help)" <<< $1 ; then
     display_help
-    exit 0;
+    exit 0
   fi
 fi
 
@@ -53,22 +53,22 @@ echo -n "" > $tmp_res_file
 
 if [ `command -v parallel` ]; then
   parallel '
-  echo "<testcase name=\"{}\" time=\"0\">";
-  {} $@ &> {#}.log ;
+  echo "<testcase name=\"{}\" time=\"0\">"
+  {} $@ &> {#}.log
   if [ $? -ne 0 ]; then
-    (>&2 echo -e "\e[91m{} FAILED\e[39m");
-    (>&2 cat {#}.log);
-    echo "<failure message=\"failed\" type=\"failure\">";
-    cat {#}.log | eval $CLEAN_XML;
-    echo "</failure>";
-    rm {#}.log ;
-    echo "</testcase>";
-    exit 1;
+    (>&2 echo -e "\e[91m{} FAILED\e[39m")
+    (>&2 cat {#}.log)
+    echo "<failure message=\"failed\" type=\"failure\">"
+    cat {#}.log | eval $CLEAN_XML
+    echo "</failure>"
+    rm {#}.log
+    echo "</testcase>"
+    exit 1
   else
-    (>&2 echo -e "{} PASSED");
-    rm {#}.log ;
-    echo "</testcase>";
-  fi;
+    (>&2 echo -e "{} PASSED")
+    rm {#}.log
+    echo "</testcase>"
+  fi
   ' ::: $all_cases >> $tmp_res_file ; err=$?
 else #fallback in case parallel is not installed
   for case in $all_cases; do
@@ -83,7 +83,7 @@ else #fallback in case parallel is not installed
       let "err++"
     else
       echo -e "$case PASSED"
-    fi;
+    fi
     echo "</testcase>" >> $tmp_res_file
     rm $i.log
     let i=i+1
