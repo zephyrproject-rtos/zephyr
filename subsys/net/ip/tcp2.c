@@ -28,7 +28,7 @@ static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
-NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
+NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, CONFIG_NET_BUF_DATA_SIZE, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
@@ -43,7 +43,7 @@ static bool tcp_nbufs_reserve(struct tcp *conn, size_t len)
 
 	while (rsv_bytes < len) {
 
-		buf = tcp_nbuf_alloc(conn, 128);
+		buf = tcp_nbuf_alloc(conn, CONFIG_NET_BUF_DATA_SIZE);
 
 		NET_ASSERT(buf);
 
@@ -494,7 +494,8 @@ static void tcp_win_append(struct tcp *conn, struct tcp_win *w,
 	NET_ASSERT(data_len, "Zero length data");
 
 	while (total) {
-		len = (total <= 128) ? total : 128;
+		len = (total <= CONFIG_NET_BUF_DATA_SIZE) ?
+			total : CONFIG_NET_BUF_DATA_SIZE;
 
 		buf = tcp_nbuf_alloc(conn, len);
 
@@ -1590,7 +1591,7 @@ bool tp_input(struct net_pkt *pkt)
 	switch (type) {
 	case TP_COMMAND:
 		if (is("CONNECT", tp->op)) {
-			u8_t data_to_send[128];
+			u8_t data_to_send[CONFIG_NET_BUF_DATA_SIZE];
 			size_t len = tp_str_to_hex(data_to_send,
 						sizeof(data_to_send), tp->data);
 			tp_output(pkt->iface, buf, 1);
