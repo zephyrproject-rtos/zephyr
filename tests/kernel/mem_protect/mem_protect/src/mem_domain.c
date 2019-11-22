@@ -91,7 +91,7 @@ static inline void set_valid_fault_value(int test_case_number)
 /* Userspace function */
 void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 {
-	set_valid_fault_value((uintptr_t)tc_number);
+	set_valid_fault_value((int)tc_number);
 
 	mem_domain_buf[0] = 10U;
 	if (valid_fault == false) {
@@ -523,7 +523,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			MEM_DOMAIN_STACK_SIZE,
 			mem_domain_test_6_1,
 			NULL, NULL, NULL,
-			10, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 
 	k_sem_take(&sync_sem, K_MSEC(100));
@@ -536,7 +536,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			MEM_DOMAIN_STACK_SIZE,
 			mem_domain_test_6_2,
 			NULL, NULL, NULL,
-			10, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
