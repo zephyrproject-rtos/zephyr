@@ -557,6 +557,10 @@ if(CONFIG_APPLICATION_DEFINED_SYSCALL)
   set(SYSCALL_INCLUDE_DIRECTORY --include ${APPLICATION_SOURCE_DIR})
 endif()
 
+if(CONFIG_ZTEST)
+  set(SYSCALL_ZTEST_DIRECTORY --include ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+endif()
+
 add_custom_command(
   OUTPUT
   ${syscalls_json}
@@ -565,6 +569,7 @@ add_custom_command(
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
   ${SYSCALL_INCLUDE_DIRECTORY}
+  ${SYSCALL_ZTEST_DIRECTORY}
   --json-file        ${syscalls_json}              # Write this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
