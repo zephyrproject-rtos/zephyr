@@ -79,18 +79,17 @@ struct bt_conn_sco {
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
 
-struct bt_conn_tx_data {
-	bt_conn_tx_cb_t cb;
-	void *user_data;
-};
-
 struct bt_conn_tx {
 	union {
 		sys_snode_t node;
 		struct k_work work;
 	};
 	struct bt_conn *conn;
-	struct bt_conn_tx_data data;
+	bt_conn_tx_cb_t cb;
+	void *user_data;
+
+	/* Number of pending packets without a callback after this one */
+	u32_t pending_no_cb;
 };
 
 struct bt_conn {
@@ -117,10 +116,12 @@ struct bt_conn {
 	u16_t		        rx_len;
 	struct net_buf		*rx;
 
-	/* Sent but not acknowledged TX packets */
+	/* Sent but not acknowledged TX packets with a callback */
 	sys_slist_t		tx_pending;
-	/* Acknowledged but not yet notified TX packets */
-	struct k_fifo		tx_notify;
+	/* Sent but not acknowledged TX packets without a callback before
+	 * the next packet (if any) in tx_pending.
+	 */
+	u32_t                   pending_no_cb;
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
@@ -240,4 +241,3 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);
 void bt_conn_process_tx(struct bt_conn *conn);
-void bt_conn_notify_tx(struct bt_conn *conn);

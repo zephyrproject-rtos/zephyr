@@ -22,7 +22,6 @@
 /* k_poll event tags */
 enum {
 	BT_EVENT_CMD_TX,
-	BT_EVENT_CONN_TX_NOTIFY,
 	BT_EVENT_CONN_TX_QUEUE,
 };
 

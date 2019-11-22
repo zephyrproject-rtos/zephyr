@@ -19,6 +19,7 @@ endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
+	default BT_CTLR_TX_BUFFERS if BT_CTLR
 	default 3
 	range 2 255
 	help
