@@ -311,6 +311,9 @@ success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
 	if (size) {
+#if __ASSERT_ON
+		size_t req_size = size;
+#endif
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 			u32_t diff = k_uptime_get_32() - alloc_start;
 
@@ -324,6 +327,8 @@ success:
 			net_buf_destroy(buf);
 			return NULL;
 		}
+
+		NET_BUF_ASSERT(req_size <= size);
 	} else {
 		buf->__buf = NULL;
 	}
@@ -338,7 +343,6 @@ success:
 	pool->avail_count--;
 	NET_BUF_ASSERT(pool->avail_count >= 0);
 #endif
-
 	return buf;
 }
 
