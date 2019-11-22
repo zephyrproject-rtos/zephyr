@@ -87,22 +87,8 @@ FUNC_NORETURN static void drop_to_user(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 
-static inline void
-set_privilege_stack_perms(struct z_x86_thread_stack_header *header,
-			  bool is_usermode)
-{
-	/* Set MMU properties for the privilege mode elevation stack. If we're
-	 * not in user mode, this functions as a guard area.
-	 */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
-			    MMU_PAGE_SIZE,
-			    is_usermode ? MMU_ENTRY_WRITE : MMU_ENTRY_READ,
-			    Z_X86_MMU_RW, true);
-}
-
 /* Does the following:
  *
- * - Allows the kernel to write to the privilege elevation stack area.
  * - Initialize per-thread page tables and update thread->arch.ptables to
  *   point to them.
  * - Set thread->arch.psp to point to the initial stack pointer for user
@@ -117,12 +103,6 @@ static void prepare_user_thread(struct k_thread *thread)
 	__ASSERT((thread->base.user_options & K_USER) != 0,
 		 "not a user thread");
 
-	/* Set privileve elevation stack area to writable. Need to do this
-	 * before calling z_x86_pt_init(), as on 32-bit the top-level PDPT
-	 * is in there as well.
-	 */
-	set_privilege_stack_perms(header, true);
-
 	/* Create and program into the MMU the per-thread page tables */
 	z_x86_thread_pt_init(thread);
 
@@ -132,16 +112,7 @@ static void prepare_user_thread(struct k_thread *thread)
 
 static void prepare_supervisor_thread(struct k_thread *thread)
 {
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)thread->stack_obj;
-
 	thread->arch.ptables = &z_x86_kernel_ptables;
-
-	/* Privilege elevation stack set to read-only to function
-	 * as a guard area. This gets made writable if we drop
-	 * to user mode later.
-	 */
-	set_privilege_stack_perms(header, false);
 }
 
 /* Preparation steps needed for all threads if user mode is turned on.
