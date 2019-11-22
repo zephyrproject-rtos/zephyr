@@ -318,6 +318,7 @@ struct i2s_driver_api {
 			 struct i2s_config *cfg);
 	struct i2s_config *(*config_get)(struct device *dev,
 					 enum i2s_dir dir);
+	enum i2s_state (*state_get)(struct device *dev, enum i2s_dir dir);
 	int (*read)(struct device *dev, void **mem_block, size_t *size);
 	int (*write)(struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(struct device *dev, enum i2s_dir dir,
@@ -371,6 +372,32 @@ static inline struct i2s_config *i2s_config_get(struct device *dev,
 	const struct i2s_driver_api *api = dev->driver_api;
 
 	return api->config_get(dev, dir);
+}
+
+/**
+ * @brief Get I2S controller state.
+ *
+ * The dir parameter specifies if the state of the Transmit (TX) or
+ * Receive (RX) direction will be returned.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dir Stream direction: RX or TX as defined by I2S_DIR_*.
+ *
+ * @note The state may change independently of API calls to the i2s driver.
+ *
+ * @retval -ENOTSUP If the underlying driver does not support i2s_state_get.
+ * @retval state A non-negative state value if returned successfully.
+ */
+static inline int i2s_state_get(struct device *dev, enum i2s_dir dir)
+{
+	const struct i2s_driver_api *api = dev->driver_api;
+	int rv = -ENOTSUP;
+
+	if (api->state_get) {
+		rv = api->state_get(dev, dir);
+	}
+
+	return rv;
 }
 
 /**
