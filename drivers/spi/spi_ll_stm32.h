@@ -125,6 +125,15 @@ static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
 #endif
 }
+
+static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
+{
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
+#else
+	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
+#endif
+}
 #endif
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
