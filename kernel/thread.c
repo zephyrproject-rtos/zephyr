@@ -599,7 +599,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       void *p1, void *p2, void *p3,
 			       int prio, u32_t options, s32_t delay)
 {
-	u32_t total_size;
+	size_t total_size;
 	struct _k_object *stack_object;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
@@ -613,17 +613,17 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!u32_add_overflow(K_THREAD_STACK_RESERVED,
-						      stack_size, &total_size),
-				    "stack size overflow (%u+%u)",
-				    (unsigned int) stack_size,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!size_add_overflow(K_THREAD_STACK_RESERVED,
+						       stack_size, &total_size),
+				    "stack size overflow (%zu+%zu)",
+				    stack_size,
 				    K_THREAD_STACK_RESERVED));
 
 	/* Testing less-than-or-equal since additional room may have been
 	 * allocated for alignment constraints
 	 */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-				    "stack size %u is too big, max is %lu",
+				    "stack size %zu is too big, max is %lu",
 				    total_size, stack_object->data));
 
 	/* User threads may only create other user threads and they can't

@@ -4973,7 +4973,7 @@ extern void z_timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_LEN(size) ARCH_THREAD_STACK_LEN(size)
 #define K_THREAD_STACK_MEMBER(sym, size) ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) ARCH_THREAD_STACK_SIZEOF(sym)
-#define K_THREAD_STACK_RESERVED ARCH_THREAD_STACK_RESERVED
+#define K_THREAD_STACK_RESERVED ((size_t)ARCH_THREAD_STACK_RESERVED)
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return ARCH_THREAD_STACK_BUFFER(sym);
@@ -5082,7 +5082,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * the stack object, and does not account for additional space used due to
  * enforce alignment.
  */
-#define K_THREAD_STACK_RESERVED		0
+#define K_THREAD_STACK_RESERVED		((size_t)0U)
 
 /**
  * @brief Get a pointer to the physical stack buffer
