@@ -15,7 +15,9 @@
 
 #define RTC NRF_RTC1
 
-#define COUNTER_MAX 0x00ffffff
+#define COUNTER_SPAN BIT(24)
+#define COUNTER_MAX (COUNTER_SPAN - 1U)
+#define COUNTER_HALF_SPAN (COUNTER_SPAN / 2U)
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS ((COUNTER_MAX - CYC_PER_TICK) / CYC_PER_TICK)
@@ -120,12 +122,22 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t cyc, dt, t = counter();
+	u32_t unannounced = counter_sub(t, last_count);
 	bool zli_fixup = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS);
+
+	/* If we haven't announced for more than half the 24-bit wrap
+	 * duration, then force an announce to avoid loss of a wrap
+	 * event.  This can happen if new timeouts keep being set
+	 * before the existing one triggers the interrupt.
+	 */
+	if (unannounced >= COUNTER_HALF_SPAN) {
+		ticks = 0;
+	}
 
 	/* Get the cycles from last_count to the tick boundary after
 	 * the requested ticks have passed starting now.
 	 */
-	cyc = ticks * CYC_PER_TICK + 1 + counter_sub(t, last_count);
+	cyc = ticks * CYC_PER_TICK + 1 + unannounced;
 	cyc += (CYC_PER_TICK - 1);
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 
