@@ -84,6 +84,7 @@
 /boards/arm/ip_k66f/                      @parthitce
 /boards/arm/lpcxpresso*/                  @MaureenHelm
 /boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
+/boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
 /boards/arm/mimxrt*/                      @MaureenHelm
 /boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
@@ -225,6 +226,8 @@
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
+/drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
+/drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78
 /drivers/serial/uart_rtt.c                @carlescufi @pkral78
 /drivers/serial/Kconfig.xlnx              @wjliang
