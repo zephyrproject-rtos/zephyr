@@ -1197,15 +1197,22 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 
 static struct bt_conn_tx *conn_tx_alloc(void)
 {
+	/* The TX context always get freed in the system workqueue,
+	 * so if we're in the same workqueue but there are no immediate
+	 * contexts available, there's no chance we'll get one by waiting.
+	 */
+	if (k_current_get() == &k_sys_work_q.thread) {
+		return k_fifo_get(&free_tx, K_NO_WAIT);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
 		struct bt_conn_tx *tx = k_fifo_get(&free_tx, K_NO_WAIT);
 
-		if (!tx) {
-			BT_WARN("Unable to get a free conn_tx, yielding...");
-			tx = k_fifo_get(&free_tx, K_FOREVER);
+		if (tx) {
+			return tx;
 		}
 
-		return tx;
+		BT_WARN("Unable to get an immediate free conn_tx");
 	}
 
 	return k_fifo_get(&free_tx, K_FOREVER);
@@ -1227,6 +1234,20 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	if (cb) {
 		tx = conn_tx_alloc();
+		if (!tx) {
+			BT_ERR("Unable to allocate TX context");
+			net_buf_unref(buf);
+			return -ENOBUFS;
+		}
+
+		/* Verify that we're still connected after blocking */
+		if (conn->state != BT_CONN_CONNECTED) {
+			BT_WARN("Disconnected while allocating context");
+			net_buf_unref(buf);
+			tx_free(tx);
+			return -ENOTCONN;
+		}
+
 		tx->cb = cb;
 		tx->user_data = user_data;
 		tx->conn = bt_conn_ref(conn);
@@ -2265,20 +2286,10 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 		pool = &acl_tx_pool;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN) ||
-	    (k_current_get() == &k_sys_work_q.thread && timeout == K_FOREVER)) {
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
 		buf = net_buf_alloc(pool, K_NO_WAIT);
 		if (!buf) {
 			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
-			/* Cannot block with K_FOREVER on k_sys_work_q as that
-			 * can cause a deadlock when trying to dispatch TX
-			 * notification.
-			 */
-			if (k_current_get() == &k_sys_work_q.thread) {
-				BT_WARN("Unable to allocate buffer: timeout %d",
-					 timeout);
-				return NULL;
-			}
 			buf = net_buf_alloc(pool, timeout);
 		}
 	} else {
