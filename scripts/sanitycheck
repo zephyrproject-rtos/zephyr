@@ -3690,8 +3690,9 @@ def main():
     if options.coverage:
         options.enable_coverage = True
         options.enable_slow = True
-        if not options.coverage_platform:
-            options.coverage_platform = options.platform
+
+    if not options.coverage_platform:
+        options.coverage_platform = options.platform
 
     if options.size:
         for fn in options.size:
