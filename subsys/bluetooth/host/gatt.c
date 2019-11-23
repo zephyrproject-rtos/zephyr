@@ -1767,6 +1767,10 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	attr = params->attr;
 
 	if (conn && conn->state != BT_CONN_CONNECTED) {
@@ -1828,6 +1832,10 @@ int bt_gatt_indicate(struct bt_conn *conn,
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
 
 	attr = params->attr;
 

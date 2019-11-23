@@ -2173,6 +2173,10 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 {
 	struct bt_conn *conn;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	if (param && !bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}

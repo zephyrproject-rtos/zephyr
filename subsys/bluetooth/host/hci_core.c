@@ -6425,6 +6425,10 @@ int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob)
 {
 	int err;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
@@ -6459,6 +6463,10 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	return bt_smp_le_oob_set_sc_data(conn, oobd_local, oobd_remote);
 }
 
@@ -6466,6 +6474,10 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	return bt_smp_le_oob_get_sc_data(conn, oobd_local, oobd_remote);
 }
 #endif
