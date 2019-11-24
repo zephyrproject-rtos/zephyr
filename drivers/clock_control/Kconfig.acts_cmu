@@ -1,0 +1,10 @@
+# Actions Semi Clock Kconfig
+
+# Copyright (c) 2019 Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_ACTS_CMU
+	bool "Actions Semi Clock Management Unit"
+	depends on SOC_FAMILY_ACTIONS
+	help
+	  Enable support for Actions Semi Clock Management Unit driver.

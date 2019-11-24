@@ -15,6 +15,13 @@ config NUM_IRQS
 config ISR_STACK_SIZE
 	default 640
 
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_ACTS_CMU
+	default y
+
+endif # CLOCK_CONTROL
+
 source "soc/arm/actions/atb110x/Kconfig.defconfig.atb1103"
 
 endif # SOC_SERIES_ATB110X

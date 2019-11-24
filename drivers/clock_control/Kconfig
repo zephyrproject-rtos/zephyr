@@ -40,4 +40,6 @@ source "drivers/clock_control/Kconfig.rv32m1"
 
 source "drivers/clock_control/Kconfig.esp32"
 
+source "drivers/clock_control/Kconfig.acts_cmu"
+
 endif # CLOCK_CONTROL

@@ -1,0 +1,22 @@
+# Copyright (c) 2019 Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This is a representation of the Actions Semi Clock Management Unit node
+
+compatible: "acts,cmu"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    label:
+      required: true
+
+    reg:
+      required: true
+
+    "#clock-cells":
+      const: 1
+
+clock-cells:
+  - name
