@@ -1520,7 +1520,7 @@ class TestCase(object):
             # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
             br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
             # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            br"ztest_(?:user_)?unit_test(?:_setup_teardown)?"
+            br"ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?"
             # Consume the argument that becomes the extra testcse
             br"\(\s*"
             br"(?P<stc_name>[a-zA-Z0-9_]+)"
@@ -1583,7 +1583,7 @@ class TestCase(object):
         return subcases
 
     def parse_subcases(self, test_path):
-        results = self.scan_path(os.path.dirname(test_path))
+        results = self.scan_path(test_path)
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
