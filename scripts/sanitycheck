@@ -3929,6 +3929,9 @@ def main():
     suite.misc_reports(options.compare_report, options.show_footprint,
                 options.all_deltas, options.footprint_threshold, options.last_metrics)
 
+    suite.duration = time.time() - start_time
+    suite.summary(options.disable_unrecognized_section_test)
+
     if options.coverage:
         if options.gcov_tool is None:
             use_system_gcov = False
@@ -3946,9 +3949,6 @@ def main():
 
         info("Generating coverage files...")
         generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
-
-    suite.duration = time.time() - start_time
-    suite.summary(options.disable_unrecognized_section_test)
 
     if options.device_testing:
         print("\nHardware distribution summary:\n")
