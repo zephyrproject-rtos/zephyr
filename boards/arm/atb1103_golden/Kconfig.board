@@ -1,0 +1,7 @@
+# Copyright (c) 2019 Actions (Zhuhai) Technology Co., Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATB1103_GOLDEN
+	bool "ATB1103 Golden Board"
+	depends on SOC_ATB1103

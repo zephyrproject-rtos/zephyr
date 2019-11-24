@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Actions (Zhuhai) Technology Co., Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ATB1103_GOLDEN
+
+config BOARD
+	default "atb1103_golden"
+
+if UART_ACTS
+
+config UART_ACTS_UART_0
+	default y
+
+endif # UART_ACTS
+
+endif # BOARD_ATB1103_GOLDEN
