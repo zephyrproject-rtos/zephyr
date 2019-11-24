@@ -3401,7 +3401,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
-                        "--enable_coverage and --enable-slow")
+                        "--enable_coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
@@ -3703,7 +3703,6 @@ def main():
 
     if options.coverage:
         options.enable_coverage = True
-        options.enable_slow = True
 
     if not options.coverage_platform:
         options.coverage_platform = options.platform
