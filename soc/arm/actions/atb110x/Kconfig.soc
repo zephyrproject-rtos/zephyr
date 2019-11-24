@@ -1,0 +1,20 @@
+# ATB110x core series
+
+# Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "ATB110x Selection"
+	depends on SOC_SERIES_ATB110X
+
+config SOC_ATB1103
+	bool "SOC_ATB1103"
+
+endchoice
+
+config ATB110X_BOOT_HEADER
+	bool "Enable the boot header for Actions Semi ATB110X MCUs"
+	default y
+	help
+	  Enable data structures required by the boot ROM to boot the
+	  application from integrated flash memory.

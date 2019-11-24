@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2019 Actions (Zhuhai) Technology Co., Ltd
+ * Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@1000000 {
+		compatible = "serial-flash";
+		reg = <0x01000000 DT_SIZE_K(512)>;
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(39)>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

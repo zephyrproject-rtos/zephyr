@@ -1,0 +1,16 @@
+# Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ACTIONS
+	bool
+	select BUILD_OUTPUT_HEX
+
+if SOC_FAMILY_ACTIONS
+
+config SOC_FAMILY
+	string
+	default "actions"
+
+source "soc/arm/actions/*/Kconfig.soc"
+
+endif # SOC_FAMILY_ACTIONS

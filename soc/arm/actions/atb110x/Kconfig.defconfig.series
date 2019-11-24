@@ -1,0 +1,20 @@
+# ATB110X series
+
+# Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ATB110X
+
+config SOC_SERIES
+	default "atb110x"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 32
+
+config ISR_STACK_SIZE
+	default 640
+
+source "soc/arm/actions/atb110x/Kconfig.defconfig.atb1103"
+
+endif # SOC_SERIES_ATB110X

@@ -1,0 +1,14 @@
+# ATB110X series
+
+# Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATB110X
+	bool "ATB110X Series"
+	select ARM
+	select CPU_CORTEX_M0
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select SOC_FAMILY_ACTIONS
+	select XIP
+	help
+	  Enable support for ATB110X MCU series

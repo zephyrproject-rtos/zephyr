@@ -1,0 +1,14 @@
+# ATB1103 SoC defconfig
+
+# Copyright (c) 2019, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ATB1103
+
+config SOC
+	default "atb1103"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+endif # SOC_ATB1103
