@@ -32,7 +32,7 @@ typedef bool (*nrf_clock_handler_t)(struct device *dev);
 /* Clock instance structure */
 struct nrf_clock_control {
 	sys_slist_t list;	/* List of users requesting callback */
-	s8_t ref;		/* Users counter */
+	u8_t ref;		/* Users counter */
 	bool started;		/* Indicated that clock is started */
 };
 
@@ -111,6 +111,10 @@ static int clock_stop(struct device *dev, clock_control_subsys_t sub_system)
 	int key;
 
 	key = irq_lock();
+	if (data->ref == 0) {
+		err = -EALREADY;
+		goto out;
+	}
 	data->ref--;
 	if (data->ref == 0) {
 		bool do_stop;
@@ -133,11 +137,9 @@ static int clock_stop(struct device *dev, clock_control_subsys_t sub_system)
 		}
 
 		data->started = false;
-	} else if (data->ref < 0) {
-		data->ref = 0;
-		err = -EALREADY;
 	}
 
+out:
 	irq_unlock(key);
 
 	return err;
@@ -190,7 +192,7 @@ static int clock_async_start(struct device *dev,
 						dev->config->config_info;
 	struct nrf_clock_control *clk_data = dev->driver_data;
 	int key;
-	s8_t ref;
+	u8_t ref;
 
 	__ASSERT_NO_MSG((data == NULL) ||
 			((data != NULL) && (data->cb != NULL)));
@@ -205,6 +207,7 @@ static int clock_async_start(struct device *dev,
 
 	key = irq_lock();
 	ref = ++clk_data->ref;
+	__ASSERT_NO_MSG(clk_data->ref > 0);
 	irq_unlock(key);
 
 	if (data) {
