@@ -257,6 +257,28 @@ config COMPILER_OPT
 
 endmenu
 
+choice
+	prompt "Error checking behavior for CHECK macro"
+	default RUNTIME_ERROR_CHECKS
+
+config ASSERT_ON_ERRORS
+	bool "Assert on all errors"
+	help
+	  Assert on errors covered with the CHECK macro.
+
+config NO_RUNTIME_CHECKS
+	bool "No runtime error checks"
+	help
+	  Do not do any runtime checks or asserts when using the CHECK macro.
+
+config RUNTIME_ERROR_CHECKS
+	bool "Enable runtime error checks"
+	help
+	  Always perform runtime checks covered with the CHECK macro. This
+	  option is the default and the only option used during testing.
+
+endchoice
+
 menu "Build Options"
 
 config KERNEL_BIN_NAME
