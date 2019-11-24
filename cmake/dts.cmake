@@ -126,6 +126,7 @@ if(SUPPORTS_DTS)
     -P
     -E   # Stop after preprocessing
     -MD  # Generate a dependency file as a side-effect
+    -MF ${BOARD}.dts.pre.d
     -o ${BOARD}.dts.pre.tmp
     ${ZEPHYR_BASE}/misc/empty_file.c
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
