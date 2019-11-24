@@ -7,6 +7,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <mem.h>
+#include <dt-bindings/clock/acts_cmu.h>
 
 / {
 	cpus {
@@ -37,6 +38,33 @@
 			reg = <0x40002000 0x1000>;
 			#clock-cells = <1>;
 			label = "CMU";
+		};
+
+		uart0: uart@4000d000 {
+			compatible = "acts,uart";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&cmu ACTS_CLOCK_UART0>;
+			label = "UART_0";
+			status = "disabled";
+		};
+
+		uart1: uart@4000e000 {
+			compatible = "actions,uart";
+			reg = <0x4000e000 0x1000>;
+			interrupts = <16 0>;
+			clocks = <&cmu ACTS_CLOCK_UART1>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: uart@4000f000 {
+			compatible = "actions,uart";
+			reg = <0x4000f000 0x1000>;
+			interrupts = <17 0>;
+			clocks = <&cmu ACTS_CLOCK_UART2>;
+			label = "UART_2";
+			status = "disabled";
 		};
 	};
 };

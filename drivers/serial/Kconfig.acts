@@ -1,0 +1,35 @@
+# Actions Semi UART
+
+# Copyright (c) 2019 Actions (Zhuhai) Technology Co., Ltd
+# Copyright (c) 2019 Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_ACTS
+	bool "Actions Semi UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_ACTIONS
+	help
+	  Enable the Actions Semi UART driver.
+
+config UART_ACTS_UART_0
+	bool "Enable Actions Semi UART0 port"
+	depends on UART_ACTS
+	help
+	  Enable support for UART0 port in the driver.
+	  Say y here if you want to use UART0 device.
+
+config UART_ACTS_UART_1
+	bool "Enable Actions Semi UART1 port"
+	depends on UART_ACTS
+	help
+	  Enable support for UART1 port in the driver.
+	  Say y here if you want to use UART1 device.
+
+config UART_ACTS_UART_2
+	bool "Enable Actions Semi UART2 port"
+	depends on UART_ACTS
+	help
+	  Enable support for UART2 port in the driver.
+	  Say y here if you want to use UART2 device.
