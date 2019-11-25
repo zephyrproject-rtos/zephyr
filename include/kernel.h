@@ -368,7 +368,13 @@ static inline void k_obj_free(void *obj)
 struct __packed _k_thread_stack_element {
 	char data;
 };
-typedef struct _k_thread_stack_element k_thread_stack_t;
+
+/**
+ * @typedef k_thread_stack_t
+ * @brief Typedef of struct _k_thread_stack_element
+ *
+ * @see _k_thread_stack_element
+ */
 
 /**
  * @typedef k_thread_entry_t
@@ -388,7 +394,6 @@ typedef struct _k_thread_stack_element k_thread_stack_t;
  *
  * @return N/A
  */
-typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_THREAD_MONITOR
 struct __thread_entry {
