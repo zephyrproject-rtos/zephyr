@@ -181,10 +181,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
 
-	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
-
-	/* Desired delay in the future */
-	delay = (ticks == 0) ? MIN_DELAY : ticks * CYC_PER_TICK;
+	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -204,13 +202,20 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		 */
 		last_load = MIN_DELAY;
 	} else {
+		/* Desired delay in the future */
+		delay = ticks * CYC_PER_TICK;
+
 		/* Round delay up to next tick boundary */
 		delay += unannounced;
 		delay =
 		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 		delay -= unannounced;
-		last_load = delay;
-
+		delay = MAX(delay, MIN_DELAY);
+		if (delay > MAX_CYCLES) {
+			last_load = MAX_CYCLES;
+		} else {
+			last_load = delay;
+		}
 	}
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
