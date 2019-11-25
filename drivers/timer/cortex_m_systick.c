@@ -31,12 +31,6 @@ void z_arm_exc_exit(void);
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
-/* VAL value above which we assume that a subsequent COUNTFLAG
- * overflow seen in CTRL is real and not an artifact of wraparound
- * timing.
- */
-#define VAL_ABOUT_TO_WRAP 8
-
 static struct k_spinlock lock;
 
 static u32_t last_load;
@@ -90,41 +84,34 @@ static volatile u32_t overflow_cyc;
  */
 static u32_t elapsed(void)
 {
-	u32_t val, ctrl1, ctrl2;
+	u32_t val1 = SysTick->VAL;	/* A */
+	u32_t ctrl = SysTick->CTRL;	/* B */
+	u32_t val2 = SysTick->VAL;	/* C */
 
-	/* SysTick is infuriatingly racy.  The counter wraps at zero
-	 * automatically, setting a 1 in the COUNTFLAG bit of the CTRL
-	 * register when it does.  But reading the control register
-	 * automatically resets that bit, so we need to save it for
-	 * future calls.  And ordering is critical and race-prone: if
-	 * we read CTRL first, then it is possible for VAL to wrap
-	 * after that read but before we read VAL and we'll miss the
-	 * overflow.  If we read VAL first, then it can wrap after we
-	 * read it and we'll see an "extra" overflow in CTRL.  And we
-	 * want to handle multiple overflows, so we effectively must
-	 * read CTRL first otherwise there will be no way to detect
-	 * the double-overflow if called at the end of a cycle.  There
-	 * is no safe algorithm here, so we split the difference by
-	 * reading CTRL twice, suppressing the second overflow bit if
-	 * VAL was "about to overflow".
+	/* SysTick behavior: The counter wraps at zero automatically,
+	 * setting the COUNTFLAG field of the CTRL register when it
+	 * does.  Reading the control register automatically clears
+	 * that field.
+	 *
+	 * If the count wrapped...
+	 * 1) Before A then COUNTFLAG will be set and val1 >= val2
+	 * 2) Between A and B then COUNTFLAG will be set and val1 < val2
+	 * 3) Between B and C then COUNTFLAG will be clear and val1 < val2
+	 * 4) After C we'll see it next time
+	 *
+	 * So the count in val2 is post-wrap and last_load needs to be
+	 * added if and only if COUNTFLAG is set or val1 < val2.
 	 */
-	ctrl1 = SysTick->CTRL;
-	val = SysTick->VAL;
-	ctrl2 = SysTick->CTRL;
+	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
+	    || (val1 < val2)) {
+		overflow_cyc += last_load;
 
-	/* overflow_cyc is reset to zero by
-	 * - _init()
-	 * - _isr()
-	 * - _set_timeout()
-	 */
-	overflow_cyc += (ctrl1 & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
-	if (val > VAL_ABOUT_TO_WRAP) {
-		int wrap = ctrl2 & SysTick_CTRL_COUNTFLAG_Msk;
-
-		overflow_cyc += (wrap != 0) ? last_load : 0;
+		/* We know there was a wrap, but we might not have
+		 * seen it in CTRL, so clear it. */
+		(void)SysTick->CTRL;
 	}
 
-	return (last_load - val) + overflow_cyc;
+	return (last_load - val2) + overflow_cyc;
 }
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
