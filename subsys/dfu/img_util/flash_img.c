@@ -75,6 +75,9 @@ static int flash_sector_from_off(struct flash_area const *fap, off_t off,
 	int rc = -ENODEV;
 
 	flash_dev = flash_area_get_device(fap);
+
+	off += fap->fa_off; /* flash driver uses offset from memory beginning */
+
 	if (flash_dev) {
 		rc = flash_get_page_info_by_offs(flash_dev, off, &page);
 		if (rc == 0) {
@@ -110,7 +113,9 @@ static int flash_progressive_erase(struct flash_img_context *ctx, off_t off)
 			ctx->off_last = sector.fs_off;
 			LOG_INF("Erasing sector at offset 0x%08lx",
 				(long)sector.fs_off);
-			rc = flash_area_erase(ctx->flash_area, sector.fs_off,
+			rc = flash_area_erase(ctx->flash_area,
+					      sector.fs_off -
+					      ctx->flash_area->fa_off,
 					      sector.fs_size);
 			if (rc) {
 				LOG_ERR("Error %d while erasing sector", rc);
