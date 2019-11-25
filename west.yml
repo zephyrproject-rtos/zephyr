@@ -41,7 +41,7 @@ manifest:
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
       path: modules/hal/esp-idf
     - name: fatfs
-      revision: 0c1288bb817c1976388e0f55e8483f671ae437ab
+      revision: 9ee6b9b9511151d0d64a74d532d39c6f2bbd4f16
       path: modules/fs/fatfs
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
