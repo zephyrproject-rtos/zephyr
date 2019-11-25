@@ -67,22 +67,24 @@ void metairq_thread(void)
 /* High-priority cooperative thread */
 void coop_thread1(void)
 {
+	int cnt1, cnt2;
+
 	k_sem_take(&coop_sem1, K_FOREVER);
 
 	/* Expect that low-priority thread has run to completion */
-	zassert_equal(coop_cnt1, 0,
-		      "Unexpected cnt1 at start: %d", coop_cnt1);
-	zassert_equal(coop_cnt2, LOOP_CNT,
-		      "Unexpected cnt2 at start: %d", coop_cnt2);
+	cnt1 = coop_cnt1;
+	zassert_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
+	cnt2 = coop_cnt2;
+	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at start: %d", cnt2);
 
 	printk("thread1\n");
 	coop_cnt1++;
 
 	/* Expect that both threads have run to completion */
-	zassert_equal(coop_cnt1, 1,
-		      "Unexpected cnt1 at end: %d", coop_cnt1);
-	zassert_equal(coop_cnt2, LOOP_CNT,
-		      "Unexpected cnt2 at end: %d", coop_cnt2);
+	cnt1 = coop_cnt1;
+	zassert_equal(cnt1, 1, "Unexpected cnt1 at end: %d", cnt1);
+	cnt2 = coop_cnt2;
+	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
 
 	k_sem_give(&coop_sem1);
 }
@@ -90,13 +92,15 @@ void coop_thread1(void)
 /* Low-priority cooperative thread */
 void coop_thread2(void)
 {
+	int cnt1, cnt2;
+
 	k_sem_take(&coop_sem2, K_FOREVER);
 
 	/* Expect that this is run first */
-	zassert_equal(coop_cnt1, 0,
-		      "Unexpected cnt1 at start: %d", coop_cnt1);
-	zassert_equal(coop_cnt2, 0,
-		      "Unexpected cnt2 at start: %d", coop_cnt2);
+	cnt1 = coop_cnt1;
+	zassert_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
+	cnt2 = coop_cnt2;
+	zassert_equal(cnt2, 0, "Unexpected cnt2 at start: %d", cnt2);
 
 	for (int i = 0; i < LOOP_CNT; i++) {
 		printk("thread2\n");
@@ -107,10 +111,10 @@ void coop_thread2(void)
 	/* Expect that this runs to completion before high-priority
 	 * thread is started
 	 */
-	zassert_equal(coop_cnt1, 0,
-		      "Unexpected cnt1 at end: %d", coop_cnt1);
-	zassert_equal(coop_cnt2, LOOP_CNT,
-		      "Unexpected cnt2 at end: %d", coop_cnt2);
+	cnt1 = coop_cnt1;
+	zassert_equal(cnt1, 0, "Unexpected cnt1 at end: %d", cnt1);
+	cnt2 = coop_cnt2;
+	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
 
 	k_sem_give(&coop_sem2);
 }
