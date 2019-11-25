@@ -31,6 +31,8 @@ static void nrfx_ipc_handler(u32_t event_mask, void *p_context)
 		while (event_mask) {
 			u8_t event_idx = __CLZ(__RBIT(event_mask));
 
+			__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
+				 "Illegal event_idx: %d", event_idx);
 			event_mask &= ~BIT(event_idx);
 			nrfx_ipm_data.callback(nrfx_ipm_data.callback_ctx,
 					       event_idx,
@@ -124,6 +126,8 @@ static void vipm_dispatcher(u32_t event_mask, void *p_context)
 	while (event_mask) {
 		u8_t event_idx = __CLZ(__RBIT(event_mask));
 
+		__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
+			 "Illegal event_idx: %d", event_idx);
 		event_mask &= ~BIT(event_idx);
 		if (nrfx_vipm_data.callback[event_idx] != NULL) {
 			nrfx_vipm_data.callback[event_idx]
