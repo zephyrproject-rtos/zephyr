@@ -33,7 +33,7 @@ extern "C" {
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #endif
 
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define BT_DBG(fmt, ...) LOG_DBG(fmt, ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
