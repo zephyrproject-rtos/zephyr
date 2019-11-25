@@ -20,6 +20,9 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #define SETTINGS_FCB_VERS		1
 
+int settings_backend_init(void);
+void settings_mount_fcb_backend(struct settings_fcb *cf);
+
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
@@ -368,4 +371,59 @@ void settings_mount_fcb_backend(struct settings_fcb *cf)
 	rbs = cf->cf_fcb.f_align;
 
 	settings_line_io_init(read_handler, write_handler, get_len_cb, rbs);
+}
+
+int settings_backend_init(void)
+{
+	static struct flash_sector
+		settings_fcb_area[CONFIG_SETTINGS_FCB_NUM_AREAS + 1];
+	static struct settings_fcb config_init_settings_fcb = {
+		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
+		.cf_fcb.f_sectors = settings_fcb_area,
+	};
+	u32_t cnt = sizeof(settings_fcb_area) /
+		    sizeof(settings_fcb_area[0]);
+	int rc;
+	const struct flash_area *fap;
+
+	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &cnt,
+				    settings_fcb_area);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc != 0 && rc != -ENOMEM) {
+		k_panic();
+	}
+
+	config_init_settings_fcb.cf_fcb.f_sector_cnt = cnt;
+
+	rc = settings_fcb_src(&config_init_settings_fcb);
+
+	if (rc != 0) {
+		rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
+
+		if (rc != 0) {
+			k_panic();
+		} else {
+			rc = settings_fcb_src(&config_init_settings_fcb);
+		}
+	}
+
+	if (rc != 0) {
+		k_panic();
+	}
+
+	rc = settings_fcb_dst(&config_init_settings_fcb);
+
+	if (rc != 0) {
+		k_panic();
+	}
+
+	settings_mount_fcb_backend(&config_init_settings_fcb);
+
+	return rc;
 }

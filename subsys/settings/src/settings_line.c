@@ -23,7 +23,7 @@ struct settings_io_cb_s {
 	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
 	size_t (*get_len_cb)(void *ctx);
 	u8_t rwbs;
-} settings_io_cb;
+} static settings_io_cb;
 
 #define MAX_ENC_BLOCK_SIZE 4
 
