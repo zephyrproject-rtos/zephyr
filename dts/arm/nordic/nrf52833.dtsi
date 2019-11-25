@@ -5,9 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-#include "nrf5_common.dtsi"
+#include "nrf_common.dtsi"
 
 / {
 	chosen {
@@ -368,17 +366,20 @@
 			label = "WDT";
 		};
 	};
+
+	sw_pwm: sw-pwm {
+		compatible = "nordic,nrf-sw-pwm";
+		status = "disabled";
+		label = "SW_PWM";
+		generator = <&timer2>;
+		channel-count = <3>;
+		clock-prescaler = <0>;
+		ppi-base = <0>;
+		gpiote-base = <0>;
+		#pwm-cells = <1>;
+	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
-};
-
-&sw_pwm {
-	generator = <&timer2>;
-	channel-count = <3>;
-	clock-prescaler = <0>;
-	ppi-base = <0>;
-	gpiote-base = <0>;
-	#pwm-cells = <1>;
 };
