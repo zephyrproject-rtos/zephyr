@@ -801,11 +801,26 @@ class DeviceHandler(Handler):
         t.start()
 
         logging.debug('Flash command: %s', command)
+
+        d_log = "{}/device.log".format(self.instance.build_dir)
         try:
-            if VERBOSE and not runner:
-                subprocess.check_call(command)
-            else:
-                subprocess.check_output(command, stderr=subprocess.PIPE)
+            stdout = stderr = None
+            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    if VERBOSE:
+                        print(stdout.decode())
+                    if proc.returncode != 0:
+                        self.instance.reason = "Device issue (Flash?)"
+                        with open(d_log, "w") as dlog_fp:
+                            dlog_fp.write(stderr.decode())
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr)  = proc.communicate()
+                    self.instance.reason = "Device issue (Timeout)"
+
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
 
         except subprocess.CalledProcessError:
             os.write(write_pipe, b'x')    # halt the thread
@@ -3448,9 +3463,12 @@ def log_info_file(instance):
     h_log = "{}/handler.log".format(build_dir)
     b_log = "{}/build.log".format(build_dir)
     v_log = "{}/valgrind.log".format(build_dir)
+    d_log = "{}/device.log".format(build_dir)
 
     if os.path.exists(v_log) and "Valgrind" in instance.reason:
         log_info("{}".format(v_log))
+    elif os.path.exists(d_log):
+        log_info("{}".format(d_log))
     elif os.path.exists(h_log):
         log_info("{}".format(h_log))
     else:
