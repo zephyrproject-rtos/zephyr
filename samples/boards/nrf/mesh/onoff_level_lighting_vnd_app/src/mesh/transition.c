@@ -114,14 +114,14 @@ void set_transition_values(u8_t type)
 
 	switch (type) {
 	case ONOFF:
-	case LEVEL:
+	case LEVEL_LIGHT:
 	case ACTUAL:
 	case LINEAR:
 		ctl->light->delta =
 			((float) (ctl->light->current - ctl->light->target) /
 			 ctl->transition->counter);
 		break;
-	case CTL:
+	case CTL_LIGHT:
 		ctl->light->delta =
 			((float) (ctl->light->current - ctl->light->target) /
 			 ctl->transition->counter);
@@ -184,7 +184,7 @@ static void level_move_lightness_work_handler(void)
 {
 	s16_t level;
 
-	level = (s16_t) get_current(LEVEL) + ctl->light->delta;
+	level = (s16_t) get_current(LEVEL_LIGHT) + ctl->light->delta;
 
 	ctl->light->current = constrain_lightness((u16_t) (level - INT16_MIN));
 	update_light_state();

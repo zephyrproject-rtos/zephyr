@@ -302,7 +302,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL));
+	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL_LIGHT));
 
 	if (ctl->light->current == ctl->light->target) {
 		goto send;
@@ -310,7 +310,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 
 	if (ctl->transition->counter) {
 		calculate_rt(ctl->transition);
-		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL_LIGHT));
 		net_buf_simple_add_u8(msg, ctl->transition->rt);
 	}
 
@@ -330,11 +330,11 @@ void gen_level_publish(struct bt_mesh_model *model)
 	}
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL));
+	net_buf_simple_add_le16(msg, (s16_t) get_current(LEVEL_LIGHT));
 
 	if (ctl->transition->counter) {
 		calculate_rt(ctl->transition);
-		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL));
+		net_buf_simple_add_le16(msg, (s16_t) get_target(LEVEL_LIGHT));
 		net_buf_simple_add_u8(msg, ctl->transition->rt);
 	}
 
@@ -390,10 +390,10 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-	set_target(LEVEL, &level);
+	set_target(LEVEL_LIGHT, &level);
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(LEVEL);
+		set_transition_values(LEVEL_LIGHT);
 	} else {
 		return;
 	}
@@ -455,10 +455,10 @@ static void gen_level_set(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-	set_target(LEVEL, &level);
+	set_target(LEVEL_LIGHT, &level);
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(LEVEL);
+		set_transition_values(LEVEL_LIGHT);
 	} else {
 		gen_level_get(model, ctx, buf);
 		return;
@@ -499,7 +499,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 		target = last_level + delta;
 
 	} else {
-		last_level = (s16_t) get_current(LEVEL);
+		last_level = (s16_t) get_current(LEVEL_LIGHT);
 		target = last_level + delta;
 	}
 
@@ -537,10 +537,10 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 		target = INT16_MAX;
 	}
 
-	set_target(DELTA_LEVEL, &target);
+	set_target(DELTA_LEVEL_LIGHT, &target);
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(LEVEL);
+		set_transition_values(LEVEL_LIGHT);
 	} else {
 		return;
 	}
@@ -580,7 +580,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 		target = last_level + delta;
 
 	} else {
-		last_level = (s16_t) get_current(LEVEL);
+		last_level = (s16_t) get_current(LEVEL_LIGHT);
 		target = last_level + delta;
 	}
 
@@ -618,10 +618,10 @@ static void gen_delta_set(struct bt_mesh_model *model,
 		target = INT16_MAX;
 	}
 
-	set_target(DELTA_LEVEL, &target);
+	set_target(DELTA_LEVEL_LIGHT, &target);
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(LEVEL);
+		set_transition_values(LEVEL_LIGHT);
 	} else {
 		gen_level_get(model, ctx, buf);
 		return;
@@ -688,16 +688,16 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 
 	if (delta < 0) {
 		target = INT16_MIN;
-		set_target(LEVEL, &target);
+		set_target(LEVEL_LIGHT, &target);
 	} else if (delta > 0) {
 		target = INT16_MAX;
-		set_target(LEVEL, &target);
+		set_target(LEVEL_LIGHT, &target);
 	} else if (delta == 0) {
 		ctl->light->target = ctl->light->current;
 	}
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(MOVE_LEVEL);
+		set_transition_values(MOVE_LIGHT);
 	} else {
 		return;
 	}
@@ -762,16 +762,16 @@ static void gen_move_set(struct bt_mesh_model *model,
 
 	if (delta < 0) {
 		target = INT16_MIN;
-		set_target(LEVEL, &target);
+		set_target(LEVEL_LIGHT, &target);
 	} else if (delta > 0) {
 		target = INT16_MAX;
-		set_target(LEVEL, &target);
+		set_target(LEVEL_LIGHT, &target);
 	} else if (delta == 0) {
 		ctl->light->target = ctl->light->current;
 	}
 
 	if (ctl->light->target != ctl->light->current) {
-		set_transition_values(MOVE_LEVEL);
+		set_transition_values(MOVE_LIGHT);
 	} else {
 		gen_level_get(model, ctx, buf);
 		return;
@@ -1640,7 +1640,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_STATUS);
-	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL));
+	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL_LIGHT));
 	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL_TEMP));
 
 	if (ctl->light->current == ctl->light->target &&
@@ -1650,7 +1650,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 
 	if (ctl->transition->counter) {
 		calculate_rt(ctl->transition);
-		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL));
+		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL_LIGHT));
 		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL_TEMP));
 		net_buf_simple_add_u8(msg, ctl->transition->rt);
 	}
@@ -1675,12 +1675,12 @@ void light_ctl_publish(struct bt_mesh_model *model)
 	/* Here, as per Model specification, status should be
 	 * made up of lightness & temperature values only
 	 */
-	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL));
+	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL_LIGHT));
 	net_buf_simple_add_le16(msg, (u16_t) get_current(CTL_TEMP));
 
 	if (ctl->transition->counter) {
 		calculate_rt(ctl->transition);
-		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL));
+		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL_LIGHT));
 		net_buf_simple_add_le16(msg, (u16_t) get_target(CTL_TEMP));
 		net_buf_simple_add_u8(msg, ctl->transition->rt);
 	}
@@ -1744,7 +1744,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-	set_target(CTL, &lightness);
+	set_target(CTL_LIGHT, &lightness);
 
 	if (temp < ctl->temp->range_min) {
 		temp = ctl->temp->range_min;
@@ -1758,7 +1758,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	if (ctl->light->target != ctl->light->current ||
 	    ctl->temp->target != ctl->temp->current ||
 	    ctl->duv->target != ctl->duv->current) {
-		set_transition_values(CTL);
+		set_transition_values(CTL_LIGHT);
 	} else {
 		return;
 	}
@@ -1829,7 +1829,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-	set_target(CTL, &lightness);
+	set_target(CTL_LIGHT, &lightness);
 
 	if (temp < ctl->temp->range_min) {
 		temp = ctl->temp->range_min;
@@ -1843,7 +1843,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	if (ctl->light->target != ctl->light->current ||
 	    ctl->temp->target != ctl->temp->current ||
 	    ctl->duv->target != ctl->duv->current) {
-		set_transition_values(CTL);
+		set_transition_values(CTL_LIGHT);
 	} else {
 		light_ctl_get(model, ctx, buf);
 		return;
@@ -2602,7 +2602,7 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 		target = last_level + delta;
 
 	} else {
-		last_level = (s16_t) get_current(LEVEL);
+		last_level = (s16_t) get_current(LEVEL_TEMP);
 		target = last_level + delta;
 	}
 
@@ -2719,7 +2719,7 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 	}
 
 	if (ctl->temp->target != ctl->temp->current) {
-		set_transition_values(MOVE_LEVEL_TEMP);
+		set_transition_values(MOVE_TEMP);
 	} else {
 		return;
 	}
@@ -2793,7 +2793,7 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	}
 
 	if (ctl->temp->target != ctl->temp->current) {
-		set_transition_values(MOVE_LEVEL_TEMP);
+		set_transition_values(MOVE_TEMP);
 	} else {
 		gen_level_get_temp(model, ctx, buf);
 		return;
