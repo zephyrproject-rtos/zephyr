@@ -946,11 +946,11 @@ void tcp_input(struct net_pkt *pkt)
 
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
-static enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
-						struct net_pkt *pkt,
-						union net_ip_header *ip,
-						union net_proto_header *proto,
-						void *user_data)
+static enum net_verdict tcp_recv(struct net_conn *net_conn,
+				 struct net_pkt *pkt,
+				 union net_ip_header *ip,
+				 union net_proto_header *proto,
+				 void *user_data)
 {
 	struct tcp *conn = ((struct net_context *)user_data)->tcp;
 	u8_t vhl = ip->ipv4->vhl;
@@ -1027,7 +1027,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 				&context->remote, (void *)&context->local,
 				ntohs(conn->dst->sin.sin_port),/* local port */
 				ntohs(conn->src->sin.sin_port),/* remote port */
-				tcp_pkt_received, context,
+				tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		NET_ERR("net_conn_register(): %d", ret);
@@ -1320,7 +1320,7 @@ int net_tcp_connect(struct net_context *context,
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
-				tcp_pkt_received, context,
+				tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		return ret;
@@ -1397,7 +1397,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 				 &context->remote : NULL,
 				 &local_addr,
 				 remote_port, local_port,
-				 tcp_pkt_received, context,
+				 tcp_recv, context,
 				 &context->conn_handler);
 }
 
