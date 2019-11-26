@@ -27,7 +27,7 @@ static struct spi_buf_set *copy_and_check(struct spi_buf_set *bufs,
 					   bufs->count,
 					   sizeof(struct spi_buf)));
 
-	/* Not worried abuot overflow here: _SYSCALL_MEMORY_ARRAY_READ()
+	/* Not worried about overflow here: _SYSCALL_MEMORY_ARRAY_READ()
 	 * takes care of it.
 	 */
 	bufs->buffers = memcpy(buf_copy,
