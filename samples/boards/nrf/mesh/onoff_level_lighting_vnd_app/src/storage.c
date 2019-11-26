@@ -27,17 +27,15 @@ static void save_gen_onpowerup_state(void)
 	settings_save_one("ps/gpo", &ctl->onpowerup, sizeof(ctl->onpowerup));
 
 	if (ctl->onpowerup == 0x02) {
-		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
+		save_on_flash(LAST_TARGET_STATES);
 	}
 }
 
-static void save_lightness_temp_def_state(void)
+static void save_def_states(void)
 {
-	ctl->light_temp_def = (u32_t) ((ctl->light->def << 16) |
-					   ctl->temp->def);
-
-	settings_save_one("ps/ltd", &ctl->light_temp_def,
-			  sizeof(ctl->light_temp_def));
+	settings_save_one("ps/ld", &ctl->light->def, sizeof(ctl->light->def));
+	settings_save_one("ps/td", &ctl->temp->def, sizeof(ctl->temp->def));
+	settings_save_one("ps/dd", &ctl->duv->def, sizeof(ctl->duv->def));
 }
 
 static void save_lightness_last_state(void)
@@ -47,15 +45,16 @@ static void save_lightness_last_state(void)
 	printk("Lightness Last values have been saved !!\n");
 }
 
-static void save_lightness_temp_last_target_state(void)
+static void save_last_target_states(void)
 {
-	ctl->light_temp_last_tgt =
-		(u32_t) ((ctl->light->target << 16) | ctl->temp->target);
+	settings_save_one("ps/llt", &ctl->light->target,
+			  sizeof(ctl->light->target));
 
-	settings_save_one("ps/ltlt", &ctl->light_temp_last_tgt,
-			  sizeof(ctl->light_temp_last_tgt));
+	settings_save_one("ps/tlt", &ctl->temp->target,
+			  sizeof(ctl->temp->target));
 
-	printk("Lightness & Temp. Target values have been saved !!\n");
+	settings_save_one("ps/dlt", &ctl->duv->target,
+			  sizeof(ctl->duv->target));
 }
 
 static void save_lightness_range(void)
@@ -87,14 +86,14 @@ static void storage_work_handler(struct k_work *work)
 	case GEN_ONPOWERUP_STATE:
 		save_gen_onpowerup_state();
 		break;
-	case LIGHTNESS_TEMP_DEF_STATE:
-		save_lightness_temp_def_state();
+	case DEF_STATES:
+		save_def_states();
 		break;
 	case LIGHTNESS_LAST_STATE:
 		save_lightness_last_state();
 		break;
-	case LIGHTNESS_TEMP_LAST_TARGET_STATE:
-		save_lightness_temp_last_target_state();
+	case LAST_TARGET_STATES:
+		save_last_target_states();
 		break;
 	case LIGHTNESS_RANGE:
 		save_lightness_range();
@@ -137,9 +136,19 @@ static int ps_set(const char *key, size_t len_rd,
 				      sizeof(ctl->onpowerup));
 		}
 
-		if (!strncmp(key, "ltd", key_len)) {
-			len = read_cb(cb_arg, &ctl->light_temp_def,
-				      sizeof(ctl->light_temp_def));
+		if (!strncmp(key, "ld", key_len)) {
+			len = read_cb(cb_arg, &ctl->light->def,
+				      sizeof(ctl->light->def));
+		}
+
+		if (!strncmp(key, "td", key_len)) {
+			len = read_cb(cb_arg, &ctl->temp->def,
+				      sizeof(ctl->temp->def));
+		}
+
+		if (!strncmp(key, "dd", key_len)) {
+			len = read_cb(cb_arg, &ctl->duv->def,
+				      sizeof(ctl->duv->def));
 		}
 
 		if (!strncmp(key, "ll", key_len)) {
@@ -147,9 +156,19 @@ static int ps_set(const char *key, size_t len_rd,
 				      sizeof(ctl->light->last));
 		}
 
-		if (!strncmp(key, "ltlt", key_len)) {
-			len = read_cb(cb_arg, &ctl->light_temp_last_tgt,
-				      sizeof(ctl->light_temp_last_tgt));
+		if (!strncmp(key, "llt", key_len)) {
+			len = read_cb(cb_arg, &ctl->light->target,
+				      sizeof(ctl->light->target));
+		}
+
+		if (!strncmp(key, "tlt", key_len)) {
+			len = read_cb(cb_arg, &ctl->temp->target,
+				      sizeof(ctl->temp->target));
+		}
+
+		if (!strncmp(key, "dlt", key_len)) {
+			len = read_cb(cb_arg, &ctl->duv->target,
+				      sizeof(ctl->duv->target));
 		}
 
 		if (!strncmp(key, "lr", key_len)) {

@@ -1495,7 +1495,7 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 		ctl->light->def = constrain_lightness(lightness);
 
 		light_lightness_default_publish(model);
-		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
+		save_on_flash(DEF_STATES);
 	}
 }
 
@@ -1946,7 +1946,7 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		ctl->duv->def = delta_uv;
 
 		light_ctl_default_publish(model);
-		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
+		save_on_flash(DEF_STATES);
 	}
 
 	return true;

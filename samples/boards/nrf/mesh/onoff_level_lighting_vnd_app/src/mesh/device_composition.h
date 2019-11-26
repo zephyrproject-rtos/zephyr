@@ -82,9 +82,6 @@ struct light_ctl_state {
 
 	u8_t onpowerup, tt;
 
-	u32_t light_temp_def;
-	u32_t light_temp_last_tgt;
-
 	u8_t last_tid;
 	u16_t last_src_addr;
 	u16_t last_dst_addr;
