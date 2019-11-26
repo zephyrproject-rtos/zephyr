@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp2_priv.h"
 
-static int tcp_rto = 500; /* Retransmission timeout, msec */
+static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = 3;
 static int tcp_window = NET_IPV6_MTU;
 static bool tcp_echo;
