@@ -166,11 +166,11 @@ static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 
 	switch (af) {
 	case 0:
-		snprintf(s, BUF_SIZE, ":%hu", ntohs(ep->sin.sin_port));
+		snprintk(s, BUF_SIZE, ":%hu", ntohs(ep->sin.sin_port));
 		break;
 	case AF_INET: case AF_INET6:
 		net_addr_ntop(af, &ep->sin.sin_addr, addr, sizeof(addr));
-		snprintf(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
+		snprintk(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
 		break;
 	default:
 		s = NULL;
@@ -191,27 +191,27 @@ static const char *tcp_flags(u8_t fl)
 
 	if (fl) {
 		if (fl & SYN) {
-			s += snprintf(s, buf_size, "SYN,");
+			s += snprintk(s, buf_size, "SYN,");
 			buf_size -= s - buf;
 		}
 		if (fl & FIN) {
-			s += snprintf(s, buf_size, "FIN,");
+			s += snprintk(s, buf_size, "FIN,");
 			buf_size -= s - buf;
 		}
 		if (fl & ACK) {
-			s += snprintf(s, buf_size, "ACK,");
+			s += snprintk(s, buf_size, "ACK,");
 			buf_size -= s - buf;
 		}
 		if (fl & PSH) {
-			s += snprintf(s, buf_size, "PSH,");
+			s += snprintk(s, buf_size, "PSH,");
 			buf_size -= s - buf;
 		}
 		if (fl & RST) {
-			s += snprintf(s, buf_size, "RST,");
+			s += snprintk(s, buf_size, "RST,");
 			buf_size -= s - buf;
 		}
 		if (fl & URG) {
-			s += snprintf(s, buf_size, "URG,");
+			s += snprintk(s, buf_size, "URG,");
 			buf_size -= s - buf;
 		}
 		s[strlen(s) - 1] = '\0';
@@ -235,7 +235,7 @@ static const char *tcp_th(struct net_pkt *pkt)
 	*s = '\0';
 
 	if (th->th_off < 5) {
-		s += snprintf(s, buf_size, "Bogus th_off: %hu",
+		s += snprintk(s, buf_size, "Bogus th_off: %hu",
 				(u16_t)th->th_off);
 		buf_size -= s - buf;
 		goto end;
@@ -243,27 +243,27 @@ static const char *tcp_th(struct net_pkt *pkt)
 
 	if (fl) {
 		if (fl & SYN) {
-			s += snprintf(s, buf_size, "SYN=%u,", th_seq(th));
+			s += snprintk(s, buf_size, "SYN=%u,", th_seq(th));
 			buf_size -= s - buf;
 		}
 		if (fl & FIN) {
-			s += snprintf(s, buf_size, "FIN=%u,", th_seq(th));
+			s += snprintk(s, buf_size, "FIN=%u,", th_seq(th));
 			buf_size -= s - buf;
 		}
 		if (fl & ACK) {
-			s += snprintf(s, buf_size, "ACK=%u,", th_ack(th));
+			s += snprintk(s, buf_size, "ACK=%u,", th_ack(th));
 			buf_size -= s - buf;
 		}
 		if (fl & PSH) {
-			s += snprintf(s, buf_size, "PSH,");
+			s += snprintk(s, buf_size, "PSH,");
 			buf_size -= s - buf;
 		}
 		if (fl & RST) {
-			s += snprintf(s, buf_size, "RST,");
+			s += snprintk(s, buf_size, "RST,");
 			buf_size -= s - buf;
 		}
 		if (fl & URG) {
-			s += snprintf(s, buf_size, "URG,");
+			s += snprintk(s, buf_size, "URG,");
 			buf_size -= s - buf;
 		}
 		s[strlen(s) - 1] = '\0';
@@ -271,7 +271,7 @@ static const char *tcp_th(struct net_pkt *pkt)
 	}
 
 	if (data_len) {
-		s += snprintf(s, buf_size, ", len=%ld", (long int)data_len);
+		s += snprintk(s, buf_size, ", len=%ld", (long int)data_len);
 		buf_size -= s - buf;
 	}
 
@@ -545,7 +545,7 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 #define BUF_SIZE 64
 	static char buf[BUF_SIZE];
 
-	snprintf(buf, BUF_SIZE, "%s %s %u/%u", pkt ? tcp_th(pkt) : "",
+	snprintk(buf, BUF_SIZE, "%s %s %u/%u", pkt ? tcp_th(pkt) : "",
 			tcp_state_to_str(conn->state, false),
 			conn->seq, conn->ack);
 #undef BUF_SIZE
