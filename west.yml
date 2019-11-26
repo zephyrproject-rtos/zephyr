@@ -68,7 +68,7 @@ manifest:
       revision: 45e630d6152824f807d3f919958605c4626cbdff
       path: modules/hal/libmetal
     - name: lvgl
-      revision: d4708d0a432e95f51bdc712591ba5295b751140c
+      revision: 74fc2e753a997bd71cefa34dd9c56dcb954b42e2
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 4f1e8f5a78dc08aa42a47cc1ad059cce558c26c3
