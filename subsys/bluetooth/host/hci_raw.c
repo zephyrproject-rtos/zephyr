@@ -22,8 +22,8 @@
 
 static struct k_fifo *raw_rx;
 
-NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
-		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
+			  BT_BUF_RX_SIZE, NULL);
 
 struct bt_dev_raw bt_dev;
 
