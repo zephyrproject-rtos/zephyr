@@ -4,4 +4,4 @@ description: Bar bus controller
 
 compatible: "bar-bus"
 
-child-bus: "bar"
+bus: "bar"

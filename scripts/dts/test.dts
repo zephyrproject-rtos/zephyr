@@ -294,7 +294,7 @@
 	};
 
 	//
-	// For testing 'child-bus:' and 'parent-bus:'
+	// For testing 'bus:' and 'on-bus:'
 	//
 
 	buses {

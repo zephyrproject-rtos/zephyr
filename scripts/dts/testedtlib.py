@@ -119,7 +119,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "OrderedDict([('foo', <Property, name: foo, type: int, value: 0>), ('bar', <Property, name: bar, type: int, value: 1>), ('baz', <Property, name: baz, type: int, value: 2>), ('qaz', <Property, name: qaz, type: int, value: 3>)])")
 
     #
-    # Test 'child/parent-bus:'
+    # Test 'bus:' and 'on-bus:'
     #
 
     verify_streq(edt.get_node("/buses/foo-bus/node").binding_path,
