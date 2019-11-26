@@ -315,6 +315,11 @@ config LVGL_OBJ_LIST_FOCUS_TIME
 
 endif
 
+config LVGL_OBJ_COLOR_PICKER
+	bool "Color picker object"
+	help
+	  Enable color picker object support
+
 config LVGL_OBJ_DROP_DOWN_LIST
 	bool "Drop Down List object"
 	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
