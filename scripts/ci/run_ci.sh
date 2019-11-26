@@ -20,7 +20,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs -N --timestamps"
+SANITYCHECK_OPTIONS=" --inline-logs -N --timestamps -b"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
