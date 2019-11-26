@@ -56,7 +56,6 @@ struct temperature {
 	u16_t target;
 
 	u16_t def;
-	u16_t last;
 
 	u8_t status_code;
 	u16_t range_min;

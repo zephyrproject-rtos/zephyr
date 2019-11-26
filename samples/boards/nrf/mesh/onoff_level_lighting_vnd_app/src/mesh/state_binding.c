@@ -125,10 +125,6 @@ u16_t level_to_light_ctl_temp(s16_t level)
 
 void set_target(u8_t type, void *dptr)
 {
-	bool set_light_ctl_delta_uv_target_value;
-
-	set_light_ctl_delta_uv_target_value = true;
-
 	switch (type) {
 	case ONOFF: {
 		u8_t onoff;
@@ -160,8 +156,7 @@ void set_target(u8_t type, void *dptr)
 		ctl->light->target = linear_to_actual(*((u16_t *) dptr));
 		constrain_target_lightness();
 		break;
-	case CTL:
-		set_light_ctl_delta_uv_target_value = false;
+	case CTL_LIGHT:
 		ctl->light->target = *((u16_t *) dptr);
 		constrain_target_lightness();
 		break;
@@ -169,7 +164,6 @@ void set_target(u8_t type, void *dptr)
 		ctl->temp->target = level_to_light_ctl_temp(*((s16_t *) dptr));
 		break;
 	case CTL_TEMP:
-		set_light_ctl_delta_uv_target_value = false;
 		ctl->temp->target = *((u16_t *) dptr);
 		break;
 	case CTL_DELTA_UV:
@@ -177,10 +171,6 @@ void set_target(u8_t type, void *dptr)
 		break;
 	default:
 		return;
-	}
-
-	if (set_light_ctl_delta_uv_target_value) {
-		ctl->duv->target = ctl->duv->current;
 	}
 
 	if (ctl->onpowerup == STATE_RESTORE) {
