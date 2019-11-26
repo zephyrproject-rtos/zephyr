@@ -2,6 +2,7 @@ tests:
   peripheral.watchdog:
     depends_on: watchdog
     tags: drivers watchdog
+    filter: not CONFIG_WDT_SAM
     platform_exclude: nucleo_l496zg nucleo_f401re
   peripheral.window_watchdog_nucleo_l496zg:
     depends_on: watchdog
