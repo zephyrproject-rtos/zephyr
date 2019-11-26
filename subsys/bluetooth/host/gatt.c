@@ -359,9 +359,8 @@ done:
 	}
 }
 
-static bool sc_ccc_cfg_write(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr,
-			     u16_t value)
+static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr, u16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 
@@ -378,7 +377,7 @@ static bool sc_ccc_cfg_write(struct bt_conn *conn,
 		}
 	}
 
-	return true;
+	return sizeof(value);
 }
 
 static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
@@ -1483,8 +1482,17 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	}
 
 	/* Confirm write if cfg is managed by application */
-	if (ccc->cfg_write && !ccc->cfg_write(conn, attr, value)) {
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	if (ccc->cfg_write) {
+		ssize_t write = ccc->cfg_write(conn, attr, value);
+
+		if (write < 0) {
+			return write;
+		}
+
+		/* Accept size=1 for backwards compatibility */
+		if (write != sizeof(value) && write != 1) {
+			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		}
 	}
 
 	cfg->value = value;
