@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(power);
  * to build the device list based on devices power
  * and clock domain dependencies.
  */
-#if defined(CONFIG_SOC_SERIES_NRF52X) || defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #define MAX_PM_DEVICES	15
 #define NUM_CORE_DEVICES	4
 #define MAX_DEV_NAME_LEN	16
