@@ -1658,4 +1658,4 @@ static int usb_device_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(usb_device_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
