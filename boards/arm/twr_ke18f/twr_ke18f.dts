@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_ke18f512vlx16.dtsi>
 #include <dt-bindings/clock/kinetis_scg.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP Kinetis KE18 MCU Tower System Module";
@@ -77,32 +78,32 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		orange_pwm_led: led_pwm_0 {
-			pwms = <&pwm3 7 60000>;
+			pwms = <&pwm3 7 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D9";
 		};
 		yellow_pwm_led: led_pwm_1 {
-			pwms = <&pwm3 6 60000>;
+			pwms = <&pwm3 6 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D8";
 		};
 		green_pwm_led: led_pwm_2 {
-			pwms = <&pwm3 5 60000>;
+			pwms = <&pwm3 5 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D7";
 		};
 		red_pwm_led: led_pwm_3 {
-			pwms = <&pwm3 4 60000>;
+			pwms = <&pwm3 4 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D6";
 		};
 
 		tri_red_pwm_led: led_pwm_4 {
-			pwms = <&pwm0 1 60000>;
+			pwms = <&pwm0 1 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Red)";
 		};
 		tri_green_pwm_led: led_pwm_5 {
-			pwms = <&pwm0 0 60000>;
+			pwms = <&pwm0 0 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Green)";
 		};
 		tri_blue_pwm_led: led_pwm_6 {
-			pwms = <&pwm0 5 60000>;
+			pwms = <&pwm0 5 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Blue)";
 		};
 	};
