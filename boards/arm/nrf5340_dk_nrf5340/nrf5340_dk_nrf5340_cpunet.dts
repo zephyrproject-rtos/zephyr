@@ -40,25 +40,25 @@
 			gpios = <&gpio0 31 GPIO_INT_ACTIVE_LOW>;
 			label = "Green LED 3";
 		};
+	};
 
-		buttons {
-			compatible = "gpio-keys";
-			button0: button_0 {
-				gpios = <&gpio0 23 GPIO_PUD_PULL_UP>;
-				label = "Push button 1";
-			};
-			button1: button_1 {
-				gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
-				label = "Push button 2";
-			};
-			button2: button_2 {
-				gpios = <&gpio0 8 GPIO_PUD_PULL_UP>;
-				label = "Push button 3";
-			};
-			button3: button_3 {
-				gpios = <&gpio0 9 GPIO_PUD_PULL_UP>;
-				label = "Push button 4";
-			};
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 23 GPIO_PUD_PULL_UP>;
+			label = "Push button 1";
+		};
+		button1: button_1 {
+			gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
+			label = "Push button 2";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 8 GPIO_PUD_PULL_UP>;
+			label = "Push button 3";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 9 GPIO_PUD_PULL_UP>;
+			label = "Push button 4";
 		};
 	};
 
