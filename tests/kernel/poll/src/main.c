@@ -7,6 +7,7 @@
 #include <ztest.h>
 extern void test_poll_no_wait(void);
 extern void test_poll_wait(void);
+extern void test_poll_zero_events(void);
 extern void test_poll_cancel_main_low_prio(void);
 extern void test_poll_cancel_main_high_prio(void);
 extern void test_poll_multi(void);
@@ -31,6 +32,7 @@ void test_main(void)
 	ztest_test_suite(poll_api,
 			 ztest_1cpu_user_unit_test(test_poll_no_wait),
 			 ztest_1cpu_unit_test(test_poll_wait),
+			 ztest_1cpu_unit_test(test_poll_zero_events),
 			 ztest_1cpu_unit_test(test_poll_cancel_main_low_prio),
 			 ztest_1cpu_unit_test(test_poll_cancel_main_high_prio),
 			 ztest_unit_test(test_poll_multi),
