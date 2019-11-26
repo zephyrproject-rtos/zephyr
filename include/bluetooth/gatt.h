@@ -571,15 +571,43 @@ struct bt_gatt_ccc_cfg {
 
 /* Internal representation of CCC value */
 struct _bt_gatt_ccc {
-	struct bt_gatt_ccc_cfg	cfg[BT_GATT_CCC_MAX];
-	u16_t			value;
-	void			(*cfg_changed)(const struct bt_gatt_attr *attr,
-					       u16_t value);
-	bool			(*cfg_write)(struct bt_conn *conn,
-					     const struct bt_gatt_attr *attr,
-					     u16_t value);
-	bool			(*cfg_match)(struct bt_conn *conn,
-					     const struct bt_gatt_attr *attr);
+	/** Configuration for each connection */
+	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
+
+	/** Highest value of all connected peer's subscriptions */
+	u16_t value;
+
+	/** CCC attribute changed callback
+	 *
+	 *  @param attr   The attribute that's changed value
+	 *  @param value  New value
+	 */
+	void (*cfg_changed)(const struct bt_gatt_attr *attr, u16_t value);
+
+	/** CCC attribute write validation callback
+	 *
+	 *  @param conn   The connection that is requesting to write
+	 *  @param attr   The attribute that's being written
+	 *  @param value  CCC value to write
+	 *
+	 *  @return Number of bytes to write, or in case of an error
+	 *          BT_GATT_ERR() with a specific error code.
+	 */
+	ssize_t (*cfg_write)(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, u16_t value);
+
+	/** CCC attribute match handler
+	 * Indicate if it is OK to send a notification or indication
+	 * to the subscriber.
+	 *
+	 *  @param conn   The connection that is being checked
+	 *  @param attr   The attribute that's being checked
+	 *
+	 *  @return true  if application has approved notification/indication,
+	 *          false if application does not approve.
+	 */
+	bool (*cfg_match)(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr);
 };
 
 /** @brief Read Client Characteristic Configuration Attribute helper.
