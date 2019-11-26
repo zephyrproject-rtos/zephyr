@@ -1223,19 +1223,46 @@ static int uarte_instance_init(struct device *dev,
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
+
+static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 {
+	if (!get_dev_config(dev)->gpio_mgmt) {
+		return;
+	}
+
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	u32_t tx_pin = nrf_uarte_tx_pin_get(uarte);
 	u32_t rx_pin = nrf_uarte_rx_pin_get(uarte);
+	u32_t cts_pin = nrf_uarte_cts_pin_get(uarte);
+	u32_t rts_pin = nrf_uarte_rts_pin_get(uarte);
+
+	if (enable) {
+		nrf_gpio_pin_write(tx_pin, 1);
+		nrf_gpio_cfg_output(tx_pin);
+		nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+
+		if (get_dev_config(dev)->rts_cts_pins_set) {
+			nrf_gpio_pin_write(rts_pin, 1);
+			nrf_gpio_cfg_output(rts_pin);
+			nrf_gpio_cfg_input(cts_pin,
+					   NRF_GPIO_PIN_NOPULL);
+		}
+	} else {
+		nrf_gpio_cfg_default(tx_pin);
+		nrf_gpio_cfg_default(rx_pin);
+		if (get_dev_config(dev)->rts_cts_pins_set) {
+			nrf_gpio_cfg_default(cts_pin);
+			nrf_gpio_cfg_default(rts_pin);
+		}
+	}
+}
+
+static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
+{
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
-		if (get_dev_config(dev)->gpio_mgmt) {
-			nrf_gpio_pin_write(tx_pin, 1);
-			nrf_gpio_cfg_output(tx_pin);
-			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
-		}
-
+		uarte_nrfx_pins_enable(dev, true);
 		nrf_uarte_enable(uarte);
 #ifdef CONFIG_UART_ASYNC_API
 		if (get_dev_data(dev)->async) {
@@ -1254,10 +1281,7 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 #ifdef CONFIG_UART_ASYNC_API
 		if (get_dev_data(dev)->async) {
 			nrf_uarte_disable(uarte);
-			if (get_dev_config(dev)->gpio_mgmt) {
-				nrf_gpio_cfg_default(tx_pin);
-				nrf_gpio_cfg_default(rx_pin);
-			}
+			uarte_nrfx_pins_enable(dev, false);
 			return;
 		}
 #endif
@@ -1267,10 +1291,7 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		}
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 		nrf_uarte_disable(uarte);
-		if (get_dev_config(dev)->gpio_mgmt) {
-			nrf_gpio_cfg_default(tx_pin);
-			nrf_gpio_cfg_default(rx_pin);
-		}
+		uarte_nrfx_pins_enable(dev, false);
 	}
 }
 
