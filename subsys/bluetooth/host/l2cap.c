@@ -1221,7 +1221,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, int sent)
+				  struct net_buf **buf, u16_t sent)
 {
 	int ret, total_len;
 	struct net_buf *frag;
@@ -1299,7 +1299,7 @@ static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
 
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		int sent = *((int *)net_buf_user_data(buf));
+		u16_t sent = *((u16_t *)net_buf_user_data(buf));
 
 		BT_DBG("buf %p sent %u", buf, sent);
 
@@ -1890,7 +1890,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (err == -EAGAIN) {
 			/* Queue buffer to be sent later */
 			net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
-			return *((int *)net_buf_user_data(buf));
+			return *((u16_t *)net_buf_user_data(buf));
 		}
 		BT_ERR("failed to send message %d", err);
 	}
