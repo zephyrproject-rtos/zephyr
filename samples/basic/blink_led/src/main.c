@@ -19,6 +19,11 @@
 /* get the defines from dt (based on alias 'pwm-led0') */
 #define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
 #define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
+#ifdef DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#define PWM_FLAGS	DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#else
+#define PWM_FLAGS	0
+#endif
 #else
 #error "Choose supported PWM driver"
 #endif
@@ -51,7 +56,7 @@ void main(void)
 	 */
 	max_period = MAX_PERIOD;
 	while (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				max_period, max_period / 2U, 0)) {
+				max_period, max_period / 2U, PWM_FLAGS)) {
 		max_period /= 2U;
 		if (max_period < (4U * MIN_PERIOD)) {
 			printk("This sample needs to set a period that is "
@@ -63,7 +68,7 @@ void main(void)
 	period = max_period;
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				     period, period / 2U, 0)) {
+				     period, period / 2U, PWM_FLAGS)) {
 			printk("pwm pin set fails\n");
 			return;
 		}
