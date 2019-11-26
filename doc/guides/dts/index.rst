@@ -618,6 +618,8 @@ The binding below shows various legacy syntax.
    parent:
        bus: spi
 
+   parent-bus: spi
+
    properties:
        compatible:
            constraint: "company,device"
@@ -650,7 +652,7 @@ This should now be written like this:
 
    include: foo.yaml
 
-   parent-bus: spi
+   bus: spi
 
    properties:
        frequency:

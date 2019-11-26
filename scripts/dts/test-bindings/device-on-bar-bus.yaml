@@ -4,4 +4,4 @@ description: Device on bar bus
 
 compatible: "on-bus"
 
-parent-bus: "bar"
+on-bus: "bar"

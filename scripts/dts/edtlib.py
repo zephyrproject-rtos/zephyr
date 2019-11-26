@@ -278,13 +278,13 @@ class EDT:
             bus = _binding_bus(binding)
 
             # Do not allow two different bindings to have the same
-            # 'compatible:'/'parent-bus:' combo
+            # 'compatible:'/'on-bus:' combo
             old_binding = self._compat2binding.get((binding_compat, bus))
             if old_binding:
                 msg = "both {} and {} have 'compatible: {}'".format(
                     old_binding[1], binding_path, binding_compat)
                 if bus is not None:
-                    msg += " and 'parent-bus: {}'".format(bus)
+                    msg += " and 'on-bus: {}'".format(bus)
                 _err(msg)
 
             self._compat2binding[binding_compat, bus] = (binding, binding_path)
@@ -484,7 +484,7 @@ class EDT:
                      .format(prop, binding_path))
 
         ok_top = {"title", "description", "compatible", "properties", "#cells",
-                  "parent-bus", "child-bus", "parent", "child",
+                  "bus", "on-bus", "parent-bus", "child-bus", "parent", "child",
                   "child-binding", "sub-node"}
 
         for prop in binding:
@@ -492,20 +492,39 @@ class EDT:
                 _err("unknown key '{}' in {}, expected one of {}, or *-cells"
                      .format(prop, binding_path, ", ".join(ok_top)))
 
-        for pc in "parent", "child":
-            # 'parent/child-bus:'
-            bus_key = pc + "-bus"
+        for bus_key in "bus", "on-bus":
             if bus_key in binding and \
                not isinstance(binding[bus_key], str):
                 _err("malformed '{}:' value in {}, expected string"
                      .format(bus_key, binding_path))
 
+        # There are two legacy syntaxes for 'bus:' and 'on-bus:':
+        #
+        #     child/parent-bus: foo
+        #     child/parent: bus: foo
+        #
+        # We support both, with deprecation warnings.
+        for pc in "parent", "child":
+            # Legacy 'parent/child-bus:' keys
+            bus_key = pc + "-bus"
+            if bus_key in binding:
+                self._warn("'{}:' in {} is deprecated and will be removed - "
+                           "please use a top-level '{}:' key instead (see "
+                           "binding-template.yaml)"
+                           .format(bus_key, binding_path,
+                                   "bus" if bus_key == "child-bus" else "on-bus"))
+
+                if not isinstance(binding[bus_key], str):
+                    _err("malformed '{}:' value in {}, expected string"
+                         .format(bus_key, binding_path))
+
             # Legacy 'child/parent: bus: ...' keys
             if pc in binding:
-                self._warn("'{0}: bus: ...' in {1} is deprecated and will be "
-                           "removed - please use a top-level '{0}-bus:' key "
-                           "instead (see binding-template.yaml)"
-                           .format(pc, binding_path))
+                self._warn("'{}: bus: ...' in {} is deprecated and will be "
+                           "removed - please use a top-level '{}' key instead "
+                           "(see binding-template.yaml)"
+                           .format(pc, binding_path,
+                                   "bus" if pc == "child" else "on-bus:"))
 
                 # Just 'bus:' is expected
                 if binding[pc].keys() != {"bus"}:
@@ -902,8 +921,8 @@ class Node:
         return None
 
     def _bus_from_parent_binding(self):
-        # _init_binding() helper. Returns the bus specified by 'child-bus: ...'
-        # in the parent binding (or the legacy 'child: bus: ...'), or None if
+        # _init_binding() helper. Returns the bus specified by 'bus:' in the
+        # parent binding (or the legacy 'child-bus:'/'child: bus:'), or None if
         # missing.
 
         if not self.parent:
@@ -913,6 +932,10 @@ class Node:
         if not binding:
             return None
 
+        if "bus" in binding:
+            return binding["bus"]
+
+        # Legacy key
         if "child-bus" in binding:
             return binding["child-bus"]
 
@@ -1481,12 +1504,16 @@ def _binding_paths(bindings_dirs):
 
 
 def _binding_bus(binding):
-    # Returns the bus specified by 'parent-bus: ...' in the binding (or the
-    # legacy 'parent: bus: ...'), or None if missing
+    # Returns the bus specified by 'on-bus:' in the binding (or the
+    # legacy 'parent-bus:' and 'parent: bus:'), or None if missing
 
     if not binding:
         return None
 
+    if "on-bus" in binding:
+        return binding["on-bus"]
+
+    # Legacy key
     if "parent-bus" in binding:
         return binding["parent-bus"]
 
