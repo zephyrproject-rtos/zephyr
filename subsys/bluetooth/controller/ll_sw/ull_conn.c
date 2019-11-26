@@ -2125,8 +2125,6 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		struct node_rx_pdu *rx;
 		struct node_tx *tx;
 
-		LL_ASSERT(!conn->llcp_rx);
-
 		rx = ll_pdu_rx_alloc_peek(1);
 		if (!rx) {
 			return -ENOBUFS;
@@ -2138,6 +2136,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		}
 
 		(void)ll_pdu_rx_alloc();
+		rx->hdr.link->mem = conn->llcp_rx;
 		conn->llcp_rx = rx;
 
 		pdu_ctrl_tx = (void *)tx->pdu;
@@ -3462,8 +3461,6 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct pdu_data *pdu_ctrl_tx;
 		struct node_rx_pdu *rx;
 		struct node_tx *tx;
-
-		LL_ASSERT(!conn->llcp_rx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		rx = ll_pdu_rx_alloc_peek(2);
