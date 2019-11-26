@@ -90,9 +90,6 @@ struct bt_l2cap_chan {
 	struct k_delayed_work		rtx_work;
 	ATOMIC_DEFINE(status, BT_L2CAP_NUM_STATUS);
 
-	struct k_work			rx_work;
-	struct k_fifo			rx_queue;
-
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
@@ -132,6 +129,9 @@ struct bt_l2cap_le_chan {
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	u16_t				_sdu_len;
+
+	struct k_work			rx_work;
+	struct k_fifo			rx_queue;
 };
 
 /** @def BT_L2CAP_LE_CHAN(_ch)

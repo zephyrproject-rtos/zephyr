@@ -27,7 +27,7 @@
 #include "l2cap_internal.h"
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
-#define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_chan, rx_work)
+#define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rx_work)
 
 #define L2CAP_LE_MIN_MTU		23
 
@@ -221,8 +221,6 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
-	struct net_buf *buf;
-
 	BT_DBG("conn %p chan %p", chan->conn, chan);
 
 	if (!chan->conn) {
@@ -242,11 +240,6 @@ destroy:
 	chan->psm = 0U;
 #endif
 
-	/* Remove buffers on the RX queue */
-	while ((buf = net_buf_get(&chan->rx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
-
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
@@ -262,19 +255,22 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	bt_l2cap_chan_del(&chan->chan);
 }
 
-static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
+			       struct net_buf *buf);
 
 static void l2cap_rx_process(struct k_work *work)
 {
-	struct bt_l2cap_chan *chan = CHAN_RX(work);
+	struct bt_l2cap_le_chan *ch = CHAN_RX(work);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&chan->rx_queue, K_NO_WAIT))) {
-		BT_DBG("chan %p buf %p", chan, buf);
-		l2cap_chan_recv(chan, buf);
+	while ((buf = net_buf_get(&ch->rx_queue, K_NO_WAIT))) {
+		BT_DBG("ch %p buf %p", ch, buf);
+		l2cap_chan_le_recv(ch, buf);
 		net_buf_unref(buf);
 	}
 }
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		       bt_l2cap_chan_destroy_t destroy)
@@ -304,15 +300,16 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
-	k_work_init(&chan->rx_work, l2cap_rx_process);
-	k_fifo_init(&chan->rx_queue);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
-	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) &&
-	    L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
+		k_work_init(&ch->rx_work, l2cap_rx_process);
+		k_fifo_init(&ch->rx_queue);
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	}
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	return true;
 }
@@ -756,6 +753,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Remove buffers on the TX queue */
 	while ((buf = net_buf_get(&ch->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+
+	/* Remove buffers on the RX queue */
+	while ((buf = net_buf_get(&ch->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -1660,7 +1662,8 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
-		l2cap_chan_le_recv(ch, buf);
+		net_buf_put(&ch->rx_queue, net_buf_ref(buf));
+		k_work_submit(&ch->rx_work);
 		return;
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -1668,13 +1671,6 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	BT_DBG("chan %p len %u", chan, buf->len);
 
 	chan->ops->recv(chan, buf);
-}
-
-static void l2cap_chan_recv_queue(struct bt_l2cap_chan *chan,
-				  struct net_buf *buf)
-{
-	net_buf_put(&chan->rx_queue, buf);
-	k_work_submit(&chan->rx_work);
 }
 
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
@@ -1707,7 +1703,8 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 		return;
 	}
 
-	l2cap_chan_recv_queue(chan, buf);
+	l2cap_chan_recv(chan, buf);
+	net_buf_unref(buf);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn,
