@@ -297,7 +297,7 @@ html_redirect_pages = [
         ('boards/boards', 'boards/index'),
         ('samples/samples', 'samples/index'),
         ('releases/release-notes', 'releases/index'),
-        ('getting_started/getting_starting', 'getting_started/index'),
+        ('getting_started/getting_started', 'getting_started/index'),
         ('introduction/introducing_zephyr', 'introduction/index'),
         ('api/index', 'reference/index'),
         ('api/api', 'reference/index'),
