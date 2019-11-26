@@ -282,7 +282,7 @@
 			interrupts = <42 0>;
 			label = "PWM_0";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm1: pwm@40039000{
@@ -291,7 +291,7 @@
 			interrupts = <43 0>;
 			label = "PWM_1";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@4003a000{
@@ -300,7 +300,7 @@
 			interrupts = <44 0>;
 			label = "PWM_2";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm3: pwm@400b9000{
@@ -309,7 +309,7 @@
 			interrupts = <71 0>;
 			label = "PWM_3";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{

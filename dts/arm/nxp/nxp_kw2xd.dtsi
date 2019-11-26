@@ -255,7 +255,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_0";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm1: pwm@40039000{
@@ -265,7 +265,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_1";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@4003a000{
@@ -275,7 +275,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_2";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{

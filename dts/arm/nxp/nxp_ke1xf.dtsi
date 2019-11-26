@@ -350,7 +350,7 @@
 			interrupts = <42 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "PWM_0";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -360,7 +360,7 @@
 			interrupts = <43 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "PWM_1";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -370,7 +370,7 @@
 			interrupts = <44 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "PWM_2";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -380,7 +380,7 @@
 			interrupts = <71 0>;
 			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "PWM_3";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
