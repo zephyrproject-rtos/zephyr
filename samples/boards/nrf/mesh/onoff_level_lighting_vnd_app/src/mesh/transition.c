@@ -425,108 +425,105 @@ static void light_ctl_temp_tt_handler(struct k_timer *dummy)
 K_TIMER_DEFINE(dummy_timer, NULL, NULL);
 
 /* Messages handlers (Start) */
-void onoff_handler(struct light_ctl_state *state)
+void onoff_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer, onoff_tt_handler, NULL);
+	k_timer_init(&ctl->transition->timer, onoff_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void level_lightness_handler(struct light_ctl_state *state)
+void level_lightness_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer,
+	k_timer_init(&ctl->transition->timer,
 		     level_lightness_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void level_temp_handler(struct light_ctl_state *state)
+void level_temp_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer, level_temp_tt_handler, NULL);
+	k_timer_init(&ctl->transition->timer, level_temp_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void light_lightness_actual_handler(struct light_ctl_state *state)
+void light_lightness_actual_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer,
+	k_timer_init(&ctl->transition->timer,
 		     light_lightness_actual_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void light_lightness_linear_handler(struct light_ctl_state *state)
+void light_lightness_linear_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer,
+	k_timer_init(&ctl->transition->timer,
 		     light_lightness_linear_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void light_ctl_handler(struct light_ctl_state *state)
+void light_ctl_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer, light_ctl_tt_handler, NULL);
+	k_timer_init(&ctl->transition->timer, light_ctl_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 
-void light_ctl_temp_handler(struct light_ctl_state *state)
+void light_ctl_temp_handler(void)
 {
-	if (state->transition->counter == 0U && state->transition->delay == 0) {
+	if (ctl->transition->counter == 0U && ctl->transition->delay == 0) {
 		update_light_state();
 		return;
 	}
 
-	k_timer_init(&state->transition->timer,
+	k_timer_init(&ctl->transition->timer,
 		     light_ctl_temp_tt_handler, NULL);
 
-	k_timer_start(&state->transition->timer,
-		      K_MSEC(state->transition->delay * 5U),
-		      K_MSEC(state->transition->quo_tt));
+	k_timer_start(&ctl->transition->timer,
+		      K_MSEC(ctl->transition->delay * 5U),
+		      K_MSEC(ctl->transition->quo_tt));
 }
 /* Messages handlers (End) */
-
-
-
