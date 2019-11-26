@@ -141,11 +141,11 @@ void set_target(u8_t type, void *dptr)
 		}
 	}
 	break;
-	case LEVEL:
+	case LEVEL_LIGHT:
 		ctl->light->target = *((s16_t *) dptr) - INT16_MIN;
 		constrain_target_lightness();
 		break;
-	case DELTA_LEVEL:
+	case DELTA_LEVEL_LIGHT:
 		ctl->light->target =  *((s16_t *) dptr) - INT16_MIN;
 		constrain_target_lightness2();
 		break;
@@ -191,13 +191,13 @@ int get_current(u8_t type)
 				return STATE_OFF;
 			}
 		}
-	case LEVEL:
+	case LEVEL_LIGHT:
 		return (s16_t) (ctl->light->current + INT16_MIN);
 	case ACTUAL:
 		return ctl->light->current;
 	case LINEAR:
 		return actual_to_linear(ctl->light->current);
-	case CTL:
+	case CTL_LIGHT:
 		return ctl->light->current;
 	case LEVEL_TEMP:
 		return light_ctl_temp_to_level(ctl->temp->current);
@@ -219,13 +219,13 @@ int get_target(u8_t type)
 		} else {
 			return STATE_OFF;
 		}
-	case LEVEL:
+	case LEVEL_LIGHT:
 		return (s16_t) (ctl->light->target + INT16_MIN);
 	case ACTUAL:
 		return ctl->light->target;
 	case LINEAR:
 		return actual_to_linear(ctl->light->target);
-	case CTL:
+	case CTL_LIGHT:
 		return ctl->light->target;
 	case LEVEL_TEMP:
 		return light_ctl_temp_to_level(ctl->temp->target);
