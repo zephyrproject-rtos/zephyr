@@ -348,6 +348,14 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_BONDING_REQUIRED
+	bool "Always require bonding"
+	depends on BT_BONDABLE
+	help
+	  When this option is enabled remote devices are required to always
+	  set the bondable flag in their pairing request. Any other kind of
+	  requests will be rejected.
+
 config BT_STORE_DEBUG_KEYS
 	bool "Store Debug Mode bonds"
 	help
