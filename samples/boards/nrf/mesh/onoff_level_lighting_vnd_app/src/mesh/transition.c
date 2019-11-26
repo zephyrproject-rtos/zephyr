@@ -219,7 +219,6 @@ static void level_lightness_work_handler(struct k_work *work)
 		update_light_state();
 		k_timer_stop(&ctl->transition->timer);
 	}
-
 }
 
 static void level_move_temp_work_handler(void)
@@ -287,7 +286,6 @@ static void light_lightness_actual_work_handler(struct k_work *work)
 		update_light_state();
 		k_timer_stop(&ctl->transition->timer);
 	}
-
 }
 
 static void light_lightness_linear_work_handler(struct k_work *work)

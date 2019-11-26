@@ -855,7 +855,6 @@ static bool gen_def_trans_time_setunack(struct bt_mesh_model *model,
 	u8_t tt;
 	struct light_ctl_state *state = model->user_data;
 	tt = net_buf_simple_pull_u8(buf);
-	/* Here, Model specification is silent about tid implementation */
 
 	if ((tt & 0x3F) == 0x3F) {
 		return false;
@@ -952,7 +951,6 @@ static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
 	u8_t onpowerup;
 	struct light_ctl_state *state = model->user_data;
 	onpowerup = net_buf_simple_pull_u8(buf);
-	/* Here, Model specification is silent about tid implementation */
 
 	if (onpowerup > STATE_RESTORE) {
 		return false;
@@ -1524,8 +1522,6 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 
 	lightness = net_buf_simple_pull_le16(buf);
 
-	/* Here, Model specification is silent about tid implementation */
-
 	if (state->light->def != lightness) {
 		state->light->def = constrain_lightness(lightness);
 
@@ -1572,8 +1568,6 @@ static bool light_lightness_range_setunack(struct bt_mesh_model *model,
 
 	min = net_buf_simple_pull_le16(buf);
 	max = net_buf_simple_pull_le16(buf);
-
-	/* Here, Model specification is silent about tid implementation */
 
 	if (min == 0U || max == 0U) {
 		return false;
@@ -1976,8 +1970,6 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 	temp = net_buf_simple_pull_le16(buf);
 	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
 
-	/* Here, Model specification is silent about tid implementation */
-
 	if (temp < TEMP_MIN || temp > TEMP_MAX) {
 		return false;
 	}
@@ -2047,8 +2039,6 @@ static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
 
 	min = net_buf_simple_pull_le16(buf);
 	max = net_buf_simple_pull_le16(buf);
-
-	/* Here, Model specification is silent about tid implementation */
 
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
 	if (min < TEMP_MIN || min > TEMP_MAX ||

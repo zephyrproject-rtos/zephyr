@@ -9,7 +9,6 @@
 #define _STATE_BINDING_H
 
 enum state_binding {
-	ONPOWERUP = 0x01,
 	ONOFF,
 	LEVEL,
 	DELTA_LEVEL,

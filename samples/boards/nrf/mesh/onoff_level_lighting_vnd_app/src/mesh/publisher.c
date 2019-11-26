@@ -8,7 +8,6 @@
 #include <drivers/gpio.h>
 
 #include "app_gpio.h"
-
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "publisher.h"
@@ -16,13 +15,7 @@
 #define ONOFF
 #define GENERIC_LEVEL
 
-#if (defined(ONOFF) || defined(ONOFF_TT))
-static u8_t tid_onoff;
-#elif defined(VND_MODEL_TEST)
-static u8_t tid_vnd;
-#endif
-
-static u8_t tid_level;
+static u8_t tid;
 
 static u32_t button_read(struct device *port, u32_t pin)
 {
@@ -41,13 +34,13 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x01);
-		net_buf_simple_add_u8(root_models[3].pub->msg, tid_onoff++);
+		net_buf_simple_add_u8(root_models[3].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[3]);
 #elif defined(ONOFF_TT)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x01);
-		net_buf_simple_add_u8(root_models[3].pub->msg, tid_onoff++);
+		net_buf_simple_add_u8(root_models[3].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x28);
 		err = bt_mesh_model_publish(&root_models[3]);
@@ -55,7 +48,7 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR));
 		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0001);
-		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
+		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
 	} else if (button_read(button_device[1], DT_ALIAS_SW1_GPIOS_PIN) ==
@@ -64,13 +57,13 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x00);
-		net_buf_simple_add_u8(root_models[3].pub->msg, tid_onoff++);
+		net_buf_simple_add_u8(root_models[3].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[3]);
 #elif defined(ONOFF_TT)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x00);
-		net_buf_simple_add_u8(root_models[3].pub->msg, tid_onoff++);
+		net_buf_simple_add_u8(root_models[3].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[3].pub->msg, 0x28);
 		err = bt_mesh_model_publish(&root_models[3]);
@@ -78,7 +71,7 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR));
 		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0000);
-		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
+		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
 	} else if (button_read(button_device[2], DT_ALIAS_SW2_GPIOS_PIN) ==
@@ -87,7 +80,7 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
 		net_buf_simple_add_le16(root_models[5].pub->msg, LEVEL_S25);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(ONOFF_GET)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
@@ -97,13 +90,13 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_DELTA_SET_UNACK);
 		net_buf_simple_add_le32(root_models[5].pub->msg, 100);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(GENERIC_MOVE_LEVEL_TT)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_MOVE_SET_UNACK);
 		net_buf_simple_add_le16(root_models[5].pub->msg, 655);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x41);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[5]);
@@ -111,7 +104,7 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[13].pub->msg,
 				       BT_MESH_MODEL_OP_2(0x82, 0x4D));
 		net_buf_simple_add_le16(root_models[13].pub->msg, LEVEL_U25);
-		net_buf_simple_add_u8(root_models[13].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[13].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[13].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[13].pub->msg, 0x28);
 		err = bt_mesh_model_publish(&root_models[13]);
@@ -125,7 +118,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0320);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #elif defined(LIGHT_CTL_TT)
 		bt_mesh_model_msg_init(root_models[16].pub->msg,
@@ -137,7 +130,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0320);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[16].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[16].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[16]);
@@ -149,7 +142,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0320);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
 	} else if (button_read(button_device[3], DT_ALIAS_SW3_GPIOS_PIN) ==
@@ -158,19 +151,19 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
 		net_buf_simple_add_le16(root_models[5].pub->msg, LEVEL_S100);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(GENERIC_DELTA_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_DELTA_SET_UNACK);
 		net_buf_simple_add_le32(root_models[5].pub->msg, -100);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(GENERIC_MOVE_LEVEL_TT)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_MOVE_SET_UNACK);
 		net_buf_simple_add_le16(root_models[5].pub->msg, -655);
-		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x41);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[5]);
@@ -178,7 +171,7 @@ void publish(struct k_work *work)
 		bt_mesh_model_msg_init(root_models[13].pub->msg,
 				       BT_MESH_MODEL_OP_2(0x82, 0x4D));
 		net_buf_simple_add_le16(root_models[13].pub->msg, LEVEL_U100);
-		net_buf_simple_add_u8(root_models[13].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[13].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[13].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[13].pub->msg, 0x28);
 		err = bt_mesh_model_publish(&root_models[13]);
@@ -192,7 +185,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x4E20);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #elif defined(LIGHT_CTL_TT)
 		bt_mesh_model_msg_init(root_models[16].pub->msg,
@@ -204,7 +197,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x4E20);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		net_buf_simple_add_u8(root_models[16].pub->msg, 0x45);
 		net_buf_simple_add_u8(root_models[16].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[16]);
@@ -216,7 +209,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x4E20);
 		/* Delta UV */
 		net_buf_simple_add_le16(root_models[16].pub->msg, 0x0000);
-		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
+		net_buf_simple_add_u8(root_models[16].pub->msg, tid++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
 	}
