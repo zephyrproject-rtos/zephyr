@@ -68,8 +68,8 @@ static u8_t num_services;
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
+			  BT_L2CAP_BUF_SIZE(SDP_MTU), NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 

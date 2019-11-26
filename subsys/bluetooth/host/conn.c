@@ -35,9 +35,15 @@
 #include "att_internal.h"
 #include "gatt_internal.h"
 
+struct tx_meta {
+	struct bt_conn_tx *tx;
+};
+
+#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
+
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
+		    sizeof(struct tx_meta), NULL);
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 
@@ -67,12 +73,6 @@ const struct bt_conn_auth_cb *bt_auth;
 
 static struct bt_conn conns[CONFIG_BT_MAX_CONN];
 static struct bt_conn_cb *callback_list;
-
-struct tx_meta {
-	struct bt_conn_tx *tx;
-};
-
-#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_tx);

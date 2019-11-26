@@ -148,11 +148,11 @@ static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
  * the same buffer is also used for the response.
  */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
-		    CMD_BUF_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
+			  CMD_BUF_SIZE, NULL);
 
-NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
-		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
+			  BT_BUF_RX_SIZE, NULL);
 
 #if defined(CONFIG_BT_CONN)
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
@@ -160,13 +160,12 @@ NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
  * Having a dedicated pool for it ensures that exhaustion of the RX pool
  * cannot block the delivery of this priority event.
  */
-NET_BUF_POOL_DEFINE(num_complete_pool, 1, BT_BUF_RX_SIZE,
-		    BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, BT_BUF_RX_SIZE, NULL);
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
-NET_BUF_POOL_DEFINE(discardable_pool, CONFIG_BT_DISCARDABLE_BUF_COUNT,
-		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_DISCARDABLE_BUF_COUNT,
+			  BT_BUF_RX_SIZE, NULL);
 #endif /* CONFIG_BT_DISCARDABLE_BUF_COUNT */
 
 struct event_handler {
@@ -270,7 +269,7 @@ static void report_completed_packet(struct net_buf *buf)
 
 #define ACL_IN_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_RX_MTU)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_ACL_RX_COUNT, ACL_IN_SIZE,
-		    BT_BUF_USER_DATA_MIN, report_completed_packet);
+		    sizeof(struct acl_data), report_completed_packet);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
