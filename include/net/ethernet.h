@@ -265,6 +265,11 @@ struct ethernet_api {
 	int (*send)(struct device *dev, struct net_pkt *pkt);
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * Ethernet API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
+
 /** @cond INTERNAL_HIDDEN */
 struct net_eth_hdr {
 	struct net_eth_addr dst;

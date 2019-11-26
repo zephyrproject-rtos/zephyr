@@ -110,6 +110,11 @@ struct net_can_api {
 	int (*enable)(struct device *dev, bool enable);
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * net_can_api struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct net_can_api, iface_api) == 0);
+
 /** @cond INTERNAL_HIDDEN */
 
 #define CANBUS_L2_CTX_TYPE	struct net_canbus_context *
