@@ -174,7 +174,7 @@ void set_target(u8_t type, void *dptr)
 	}
 
 	if (ctl->onpowerup == STATE_RESTORE) {
-		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
+		save_on_flash(LAST_TARGET_STATES);
 	}
 }
 

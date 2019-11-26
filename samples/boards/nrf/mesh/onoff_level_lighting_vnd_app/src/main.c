@@ -32,22 +32,20 @@ static void light_default_var_init(void)
 	ctl->light->range_max = LIGHTNESS_MAX;
 	ctl->light->last = LIGHTNESS_MAX;
 	ctl->light->def = LIGHTNESS_MAX;
+	ctl->light->target = ctl->light->def;
 
 	ctl->temp->range_min = TEMP_MIN;
 	ctl->temp->range_max = TEMP_MAX;
 	ctl->temp->def = TEMP_MAX;
+	ctl->temp->target = ctl->temp->def;
 
 	ctl->duv->def = DELTA_UV_DEF;
-
-	ctl->light_temp_def = (u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MAX);
-	ctl->light_temp_last_tgt = (u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MAX);
+	ctl->duv->target = ctl->duv->def;
 }
 
 /* This function should only get call after execution of settings_load() */
 static void light_default_status_init(void)
 {
-	u16_t light_def;
-
 	/* Retrieve Range of Lightness */
 	if (ctl->light->range) {
 		ctl->light->range_max = (u16_t) (ctl->light->range >> 16);
@@ -60,12 +58,9 @@ static void light_default_status_init(void)
 		ctl->temp->range_min = (u16_t) ctl->temp->range;
 	}
 
-	/* Retrieve Default Lightness Value */
-	light_def = (u16_t) (ctl->light_temp_def >> 16);
-	ctl->light->def = constrain_lightness(light_def);
-
-	/* Retrieve Default Temperature Value */
-	ctl->temp->def = (u16_t) ctl->light_temp_def;
+	ctl->light->last = constrain_lightness(ctl->light->last);
+	ctl->light->def = constrain_lightness(ctl->light->def);
+	ctl->light->target = constrain_lightness(ctl->light->target);
 
 	ctl->temp->current = ctl->temp->def;
 	ctl->duv->current = ctl->duv->def;
@@ -82,8 +77,9 @@ static void light_default_status_init(void)
 		}
 		break;
 	case STATE_RESTORE:
-		ctl->light->current = (u16_t) (ctl->light_temp_last_tgt >> 16);
-		ctl->temp->current = (u16_t) ctl->light_temp_last_tgt;
+		ctl->light->current = ctl->light->target;
+		ctl->temp->current = ctl->temp->target;
+		ctl->duv->current = ctl->duv->target;
 		break;
 	}
 
