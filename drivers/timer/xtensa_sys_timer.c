@@ -13,7 +13,8 @@
 
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
+#define MAX_CYC 0xffffffffu
+#define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
 static struct k_spinlock lock;
@@ -74,10 +75,16 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t curr = ccount(), cyc;
+	u32_t curr = ccount(), cyc, adj;
 
 	/* Round up to next tick boundary */
-	cyc = ticks * CYC_PER_TICK + (curr - last_count) + (CYC_PER_TICK - 1);
+	cyc = ticks * CYC_PER_TICK;
+	adj = (curr - last_count) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYC - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYC;
+	}
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 	cyc += last_count;
 
