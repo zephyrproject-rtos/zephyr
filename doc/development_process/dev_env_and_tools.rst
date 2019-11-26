@@ -105,14 +105,14 @@ Security
 Changes that appear to have an impact to the overall security of the system need
 to be reviewed by a security expert from the security working group.
 
-TSC
-++++
+TSC and Working Groups
+++++++++++++++++++++++
 
 Changes that introduce new features or functionality or change the way the
 overall system works need to be reviewed by the TSC or the responsible Working
-Group. For example for API changes, the API working group needs to be consulted
-and made aware of such changes.
-
+Group. For example for :ref:`stable API changes <stable_api_changes>`, the
+proposal needs to be presented in the API meeting so that the relevant
+stakeholders are made aware of the change.
 
 A Pull-Request should have an Assignee
 =======================================
@@ -277,6 +277,16 @@ Description    The issue is to be discussed in the following
 =============  ===============================================================
 
 .. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+
+Stable API changes
+==================
+
+=============  ===============================================================
+Labels         ``Stable API Change``
+Applicable to  PRs  and issues
+Description    The issue or PR describes a change to a stable API. See
+               additional information in :ref:`stable_api_changes`
+=============  ===============================================================
 
 Minimum PR review time
 ======================
