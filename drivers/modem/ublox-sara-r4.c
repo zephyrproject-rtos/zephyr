@@ -688,9 +688,17 @@ static int pin_init(void)
 #if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
-	do {
+	while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_DISABLE) {
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+		/* try to power off again */
+		LOG_DBG("MDM_POWER_PIN -> DISABLE");
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		k_sleep(K_SECONDS(1));
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+#endif
 		k_sleep(K_MSEC(100));
-	} while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_DISABLE);
+	}
 #else
 	k_sleep(K_SECONDS(8));
 #endif
