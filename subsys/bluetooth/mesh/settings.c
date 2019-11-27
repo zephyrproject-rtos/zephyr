@@ -1904,6 +1904,7 @@ void bt_mesh_clear_node(struct bt_mesh_node *node)
 		return;
 	}
 
+	free_slot->clear = true;
 	free_slot->addr = node->addr;
 
 	schedule_store(BT_MESH_NODES_PENDING);
