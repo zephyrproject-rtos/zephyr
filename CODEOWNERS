@@ -300,7 +300,7 @@
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/*microbit*     @jhe
 /lib/updatehub/                           @chtavares592 @otavio
-/samples/bluetooth/                       @sjanc @jhedberg @Vudentz @joerchan
+/samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/display/                         @vanwinkeljan
 /samples/drivers/CAN/                     @alexanderwachter
