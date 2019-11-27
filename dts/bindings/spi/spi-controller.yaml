@@ -5,7 +5,7 @@
 
 include: base.yaml
 
-child-bus: spi
+bus: spi
 
 properties:
     clock-frequency:

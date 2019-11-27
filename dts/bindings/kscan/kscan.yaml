@@ -5,7 +5,7 @@
 
 include: base.yaml
 
-child-bus: kscan
+bus: kscan
 
 properties:
     "#address-cells":
