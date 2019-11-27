@@ -204,6 +204,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 			continue;
 		}
 
+		BT_MESH_ADV(tx->seg[i])->busy = 0U;
 		net_buf_unref(tx->seg[i]);
 		tx->seg[i] = NULL;
 	}
