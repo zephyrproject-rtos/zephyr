@@ -181,41 +181,35 @@ static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 	return s;
 }
 
-static const char *tcp_flags(u8_t fl)
+static const char *tcp_flags(u8_t flags)
 {
-#define BUF_SIZE 80
+#define BUF_SIZE 25 /* 6 * 4 + 1 */
 	static char buf[BUF_SIZE];
-	size_t buf_size = BUF_SIZE;
-	char *s = buf;
-	*s = '\0';
+	int len = 0;
 
-	if (fl) {
-		if (fl & SYN) {
-			s += snprintk(s, buf_size, "SYN,");
-			buf_size -= s - buf;
+	buf[0] = '\0';
+
+	if (flags) {
+		if (flags & SYN) {
+			len += snprintk(buf + len, BUF_SIZE - len, "SYN,");
 		}
-		if (fl & FIN) {
-			s += snprintk(s, buf_size, "FIN,");
-			buf_size -= s - buf;
+		if (flags & FIN) {
+			len += snprintk(buf + len, BUF_SIZE - len, "FIN,");
 		}
-		if (fl & ACK) {
-			s += snprintk(s, buf_size, "ACK,");
-			buf_size -= s - buf;
+		if (flags & ACK) {
+			len += snprintk(buf + len, BUF_SIZE - len, "ACK,");
 		}
-		if (fl & PSH) {
-			s += snprintk(s, buf_size, "PSH,");
-			buf_size -= s - buf;
+		if (flags & PSH) {
+			len += snprintk(buf + len, BUF_SIZE - len, "PSH,");
 		}
-		if (fl & RST) {
-			s += snprintk(s, buf_size, "RST,");
-			buf_size -= s - buf;
+		if (flags & RST) {
+			len += snprintk(buf + len, BUF_SIZE - len, "RST,");
 		}
-		if (fl & URG) {
-			s += snprintk(s, buf_size, "URG,");
-			buf_size -= s - buf;
+		if (flags & URG) {
+			len += snprintk(buf + len, BUF_SIZE - len, "URG,");
 		}
-		s[strlen(s) - 1] = '\0';
-		s--;
+
+		buf[len - 1] = '\0'; /* delete the last comma */
 	}
 #undef BUF_SIZE
 	return buf;
