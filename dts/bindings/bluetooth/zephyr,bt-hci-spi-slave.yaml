@@ -9,7 +9,7 @@ compatible: "zephyr,bt-hci-spi-slave"
 
 include: base.yaml
 
-parent-bus: spi
+on-bus: spi
 
 properties:
     irq-gpios:

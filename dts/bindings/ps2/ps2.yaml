@@ -5,7 +5,7 @@
 
 include: base.yaml
 
-child-bus: ps2
+bus: ps2
 
 properties:
     "#address-cells":

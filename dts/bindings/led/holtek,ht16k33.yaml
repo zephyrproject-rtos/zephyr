@@ -4,7 +4,7 @@ compatible: "holtek,ht16k33"
 
 include: i2c-device.yaml
 
-child-bus: ht16k33
+bus: ht16k33
 
 properties:
     "#address-cells":
