@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <zephyr/types.h>
+#include <sys/__assert.h>
 #include <errno.h>
 #include <ctype.h>
 
@@ -597,6 +598,8 @@ static int uart_console_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+
+	__ASSERT_NO_MSG(uart_console_dev);
 
 #if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
 	int ret;

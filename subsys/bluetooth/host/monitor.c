@@ -328,6 +328,8 @@ static int bt_monitor_init(struct device *d)
 
 	monitor_dev = device_get_binding(CONFIG_BT_MONITOR_ON_DEV_NAME);
 
+	__ASSERT_NO_MSG(monitor_dev);
+
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_rx_disable(monitor_dev);
 	uart_irq_tx_disable(monitor_dev);
