@@ -45,7 +45,14 @@ Architectures
 Boards & SoC Support
 ********************
 
-* Added support for STM32G4 series
+* Added support for these SoC series:
+
+.. rst-class:: rst-columns
+
+   * Atmel SAMD51, SAME51, SAME53, SAME54
+   * Nordic Semiconductor nRF53
+   * NXP Kinetis KV5x
+   * STMicroelectronics STM32G4
 
 * Added support for these ARM boards:
 
