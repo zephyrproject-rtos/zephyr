@@ -90,6 +90,7 @@ struct light_ctl_state {
 	struct transition *transition;
 };
 
+extern struct vendor_state vnd_user_data;
 extern struct light_ctl_state *const ctl;
 
 extern struct bt_mesh_model root_models[];
