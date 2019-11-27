@@ -192,7 +192,7 @@ static int counter_xec_set_top_value(struct device *dev,
 		return -EINVAL;
 	}
 
-	restart = (counter->CTRL && MCHP_BTMR_CTRL_START);
+	restart = ((counter->CTRL & MCHP_BTMR_CTRL_START) != 0U);
 
 	counter->CTRL &= ~MCHP_BTMR_CTRL_START;
 
