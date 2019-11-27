@@ -1042,6 +1042,8 @@ next_state:
 		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
+			net_context_set_state(conn->context,
+					      NET_CONTEXT_CONNECTED);
 			if (FL(&fl, &, PSH)) {
 				tcp_data_get(conn, pkt);
 			}
@@ -1055,6 +1057,8 @@ next_state:
 		if (FL(&fl, &, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
+			net_context_set_state(conn->context,
+					      NET_CONTEXT_CONNECTED);
 			if (FL(&fl, &, PSH)) {
 				tcp_data_get(conn, pkt);
 			}
@@ -1065,7 +1069,6 @@ next_state:
 		}
 		break;
 	case TCP_ESTABLISHED:
-		net_context_set_state(conn->context, NET_CONTEXT_CONNECTED);
 		if (!th && conn->snd->len) { /* TODO: Out of the loop */
 			ssize_t data_len;
 
