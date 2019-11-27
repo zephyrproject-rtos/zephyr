@@ -1134,13 +1134,6 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-
-	if (actual > 0 && actual < ctl->light->range_min) {
-		actual = ctl->light->range_min;
-	} else if (actual > ctl->light->range_max) {
-		actual = ctl->light->range_max;
-	}
-
 	set_target(ACTUAL, &actual);
 
 	if (ctl->light->target != ctl->light->current) {
@@ -1206,13 +1199,6 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-
-	if (actual > 0 && actual < ctl->light->range_min) {
-		actual = ctl->light->range_min;
-	} else if (actual > ctl->light->range_max) {
-		actual = ctl->light->range_max;
-	}
-
 	set_target(ACTUAL, &actual);
 
 	if (ctl->light->target != ctl->light->current) {
@@ -1490,9 +1476,10 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 	u16_t lightness;
 
 	lightness = net_buf_simple_pull_le16(buf);
+	lightness = constrain_lightness(lightness);
 
 	if (ctl->light->def != lightness) {
-		ctl->light->def = constrain_lightness(lightness);
+		ctl->light->def = lightness;
 
 		light_lightness_default_publish(model);
 		save_on_flash(DEF_STATES);
@@ -1745,13 +1732,6 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
 	set_target(CTL_LIGHT, &lightness);
-
-	if (temp < ctl->temp->range_min) {
-		temp = ctl->temp->range_min;
-	} else if (temp > ctl->temp->range_max) {
-		temp = ctl->temp->range_max;
-	}
-
 	set_target(CTL_TEMP, &temp);
 	set_target(CTL_DELTA_UV, &delta_uv);
 
@@ -1830,13 +1810,6 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
 	set_target(CTL_LIGHT, &lightness);
-
-	if (temp < ctl->temp->range_min) {
-		temp = ctl->temp->range_min;
-	} else if (temp > ctl->temp->range_max) {
-		temp = ctl->temp->range_max;
-	}
-
 	set_target(CTL_TEMP, &temp);
 	set_target(CTL_DELTA_UV, &delta_uv);
 
@@ -1933,15 +1906,12 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (temp < ctl->temp->range_min) {
-		temp = ctl->temp->range_min;
-	} else if (temp > ctl->temp->range_max) {
-		temp = ctl->temp->range_max;
-	}
+	lightness = constrain_lightness(lightness);
+	temp = constrain_temperature(temp);
 
 	if (ctl->light->def != lightness || ctl->temp->def != temp ||
 	    ctl->duv->def != delta_uv) {
-		ctl->light->def = constrain_lightness(lightness);
+		ctl->light->def = lightness;
 		ctl->temp->def = temp;
 		ctl->duv->def = delta_uv;
 
@@ -2205,13 +2175,6 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-
-	if (temp < ctl->temp->range_min) {
-		temp = ctl->temp->range_min;
-	} else if (temp > ctl->temp->range_max) {
-		temp = ctl->temp->range_max;
-	}
-
 	set_target(CTL_TEMP, &temp);
 	set_target(CTL_DELTA_UV, &delta_uv);
 
@@ -2286,13 +2249,6 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	ctl->transition->tt = tt;
 	ctl->transition->delay = delay;
 	ctl->transition->type = NON_MOVE;
-
-	if (temp < ctl->temp->range_min) {
-		temp = ctl->temp->range_min;
-	} else if (temp > ctl->temp->range_max) {
-		temp = ctl->temp->range_max;
-	}
-
 	set_target(CTL_TEMP, &temp);
 	set_target(CTL_DELTA_UV, &delta_uv);
 
