@@ -275,19 +275,19 @@ class EDT:
             binding = self._merge_included_bindings(binding, binding_path)
             self._check_binding(binding, binding_path)
 
-            bus = _binding_bus(binding)
+            on_bus = _on_bus_from_binding(binding)
 
             # Do not allow two different bindings to have the same
             # 'compatible:'/'on-bus:' combo
-            old_binding = self._compat2binding.get((binding_compat, bus))
+            old_binding = self._compat2binding.get((binding_compat, on_bus))
             if old_binding:
                 msg = "both {} and {} have 'compatible: {}'".format(
                     old_binding[1], binding_path, binding_compat)
-                if bus is not None:
-                    msg += " and 'on-bus: {}'".format(bus)
+                if on_bus is not None:
+                    msg += " and 'on-bus: {}'".format(on_bus)
                 _err(msg)
 
-            self._compat2binding[binding_compat, bus] = (binding, binding_path)
+            self._compat2binding[binding_compat, on_bus] = (binding, binding_path)
 
     def _binding_compat(self, binding, binding_path):
         # Returns the string listed in 'compatible:' in 'binding', or None if
@@ -440,6 +440,7 @@ class EDT:
             node = Node()
             node.edt = self
             node._node = dt_node
+            node.bus_node = node._bus_node()
             node._init_binding()
             node._init_regs()
             node._set_instance_no()
@@ -731,8 +732,19 @@ class Node:
       pinctrl-<index> properties.
 
     bus:
-      The bus for the node as specified in its binding, e.g. "i2c" or "spi".
-      None if the binding doesn't specify a bus.
+      If the node is a bus node (has a 'bus:' key in its binding), then this
+      attribute holds the bus type, e.g. "i2c" or "spi". If the node is not a
+      bus node, then this attribute is None.
+
+    on_bus:
+      The bus the node appears on, e.g. "i2c" or "spi". The bus is determined
+      by searching upwards for a parent node whose binding has a 'bus:' key,
+      returning the value of the first 'bus:' key found. If none of the node's
+      parents has a 'bus:' key, this attribute is None.
+
+    bus_node:
+      Like on_bus, but contains the Node for the bus controller, or None if the
+      node is not on a bus.
 
     flash_controller:
       The flash controller for the node. Only meaningful for nodes representing
@@ -828,7 +840,29 @@ class Node:
     @property
     def bus(self):
         "See the class docstring"
-        return _binding_bus(self._binding)
+        binding = self._binding
+        if not binding:
+            return None
+
+        if "bus" in binding:
+            return binding["bus"]
+
+        # Legacy key
+        if "child-bus" in binding:
+            return binding["child-bus"]
+
+        # Legacy key
+        if "child" in binding:
+            # _check_binding() has checked that the "bus" key exists
+            return binding["child"]["bus"]
+
+        return None
+
+    @property
+    def on_bus(self):
+        "See the class docstring"
+        bus_node = self.bus_node
+        return bus_node.bus if bus_node else None
 
     @property
     def flash_controller(self):
@@ -870,14 +904,14 @@ class Node:
 
         if "compatible" in self._node.props:
             self.compats = self._node.props["compatible"].to_strings()
-            bus = self._bus_from_parent_binding()
+            on_bus = self.on_bus
 
             for compat in self.compats:
-                if (compat, bus) in self.edt._compat2binding:
+                if (compat, on_bus) in self.edt._compat2binding:
                     # Binding found
                     self.matching_compat = compat
                     self._binding, self.binding_path = \
-                        self.edt._compat2binding[compat, bus]
+                        self.edt._compat2binding[compat, on_bus]
 
                     return
         else:
@@ -920,31 +954,20 @@ class Node:
 
         return None
 
-    def _bus_from_parent_binding(self):
-        # _init_binding() helper. Returns the bus specified by 'bus:' in the
-        # parent binding (or the legacy 'child-bus:'/'child: bus:'), or None if
-        # missing.
+    def _bus_node(self):
+        # Returns the value for self.bus_node. Relies on parent nodes being
+        # initialized before their children.
 
         if not self.parent:
+            # This is the root node
             return None
 
-        binding = self.parent._binding
-        if not binding:
-            return None
+        if self.parent.bus:
+            # The parent node is a bus node
+            return self.parent
 
-        if "bus" in binding:
-            return binding["bus"]
-
-        # Legacy key
-        if "child-bus" in binding:
-            return binding["child-bus"]
-
-        # Legacy key
-        if "child" in binding:
-            # _check_binding() has checked that the "bus" key exists
-            return binding["child"]["bus"]
-
-        return None
+        # Same bus node as parent (possibly None)
+        return self.parent.bus_node
 
     def _init_props(self):
         # Creates self.props. See the class docstring. Also checks that all
@@ -1453,22 +1476,21 @@ def spi_dev_cs_gpio(node):
     # ControllerAndData instance, and None otherwise. See
     # Documentation/devicetree/bindings/spi/spi-bus.txt in the Linux kernel.
 
-    if not (node.bus == "spi" and node.parent and
-            "cs-gpios" in node.parent.props):
+    if not (node.on_bus == "spi" and "cs-gpios" in node.bus_node.props):
         return None
 
     if not node.regs:
         _err("{!r} needs a 'reg' property, to look up the chip select index "
              "for SPI".format(node))
 
-    parent_cs_lst = node.parent.props["cs-gpios"].val
+    parent_cs_lst = node.bus_node.props["cs-gpios"].val
 
     # cs-gpios is indexed by the unit address
     cs_index = node.regs[0].addr
     if cs_index >= len(parent_cs_lst):
         _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
              "in {!r} ({})".format(
-                 node, cs_index, node.parent, len(parent_cs_lst)))
+                 node, cs_index, node.bus_node, len(parent_cs_lst)))
 
     return parent_cs_lst[cs_index]
 
@@ -1503,7 +1525,7 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
-def _binding_bus(binding):
+def _on_bus_from_binding(binding):
     # Returns the bus specified by 'on-bus:' in the binding (or the
     # legacy 'parent-bus:' and 'parent: bus:'), or None if missing
 

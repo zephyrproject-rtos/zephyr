@@ -244,18 +244,18 @@ def write_props(node):
 def write_bus(node):
     # Generate bus-related #defines
 
-    if not node.bus:
+    if not node.bus_node:
         return
 
-    if node.parent.label is None:
-        err("missing 'label' property on {!r}".format(node.parent))
+    if node.bus_node.label is None:
+        err("missing 'label' property on bus node {!r}".format(node.bus_node))
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_dev_s(node, "BUS_NAME", str2ident(node.parent.label))
+    out_dev_s(node, "BUS_NAME", str2ident(node.bus_node.label))
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
-        out("{}_BUS_{}".format(str2ident(compat), str2ident(node.bus)), 1)
+        out("{}_BUS_{}".format(str2ident(compat), str2ident(node.on_bus)), 1)
 
 
 def write_existence_flags(node):
@@ -307,9 +307,9 @@ def dev_ident(node):
 
     ident = ""
 
-    if node.bus:
+    if node.bus_node:
         ident += "{}_{:X}_".format(
-            str2ident(node.parent.matching_compat), node.parent.unit_addr)
+            str2ident(node.bus_node.matching_compat), node.bus_node.unit_addr)
 
     ident += "{}_".format(str2ident(node.matching_compat))
 
@@ -415,8 +415,8 @@ def write_flash_node(edt):
         err("expected zephyr,flash to have a single register, has {}"
             .format(len(node.regs)))
 
-    if node.bus == "spi" and len(node.parent.regs) == 2:
-        reg = node.parent.regs[1]  # QSPI flash
+    if node.on_bus == "spi" and len(node.bus_node.regs) == 2:
+        reg = node.bus_node.regs[1]  # QSPI flash
     else:
         reg = node.regs[0]
 

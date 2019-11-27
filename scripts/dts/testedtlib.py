@@ -122,11 +122,29 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     # Test 'bus:' and 'on-bus:'
     #
 
+    verify_eq(edt.get_node("/buses/foo-bus").bus, "foo")
+    # foo-bus does not itself appear on a bus
+    verify_eq(edt.get_node("/buses/foo-bus").on_bus, None)
+    verify_eq(edt.get_node("/buses/foo-bus").bus_node, None)
+
+    # foo-bus/node is not a bus node...
+    verify_eq(edt.get_node("/buses/foo-bus/node").bus, None)
+    # ...but is on a bus
+    verify_eq(edt.get_node("/buses/foo-bus/node").on_bus, "foo")
+    verify_eq(edt.get_node("/buses/foo-bus/node").bus_node.path,
+                           "/buses/foo-bus")
+
+    # Same compatible string, but different bindings from being on different
+    # buses
     verify_streq(edt.get_node("/buses/foo-bus/node").binding_path,
                  "test-bindings/device-on-foo-bus.yaml")
-
     verify_streq(edt.get_node("/buses/bar-bus/node").binding_path,
                  "test-bindings/device-on-bar-bus.yaml")
+
+    # foo-bus/node/nested also appears on the foo-bus bus
+    verify_eq(edt.get_node("/buses/foo-bus/node/nested").on_bus, "foo")
+    verify_streq(edt.get_node("/buses/foo-bus/node/nested").binding_path,
+                 "test-bindings/device-on-foo-bus.yaml")
 
     #
     # Test 'child-binding:'

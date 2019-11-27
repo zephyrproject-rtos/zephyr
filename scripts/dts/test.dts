@@ -298,12 +298,15 @@
 	//
 
 	buses {
-		// The nodes below will map to different bindings since they
-		// appear on different buses
+		// The 'node' nodes below will map to different bindings since
+		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
 			node {
 				compatible = "on-bus";
+				nested {
+					compatible = "on-bus";
+				};
 			};
 		};
 		bar-bus {
