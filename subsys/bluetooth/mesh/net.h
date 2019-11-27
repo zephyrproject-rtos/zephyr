@@ -97,7 +97,6 @@ struct bt_mesh_friend {
 	u8_t  fsn:1,
 	      send_last:1,
 	      pending_req:1,
-	      sec_update:1,
 	      pending_buf:1,
 	      valid:1,
 	      established:1;

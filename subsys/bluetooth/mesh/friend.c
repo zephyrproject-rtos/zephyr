@@ -190,6 +190,8 @@ void bt_mesh_friend_clear_net_idx(u16_t net_idx)
 	}
 }
 
+static void enqueue_update(struct bt_mesh_friend *frnd, u8_t md);
+
 void bt_mesh_friend_sec_update(u16_t net_idx)
 {
 	int i;
@@ -204,7 +206,7 @@ void bt_mesh_friend_sec_update(u16_t net_idx)
 		}
 
 		if (net_idx == BT_MESH_KEY_ANY || frnd->net_idx == net_idx) {
-			frnd->sec_update = 1U;
+			enqueue_update(frnd, 0x00);
 		}
 	}
 }
@@ -653,7 +655,6 @@ static void enqueue_update(struct bt_mesh_friend *frnd, u8_t md)
 		return;
 	}
 
-	frnd->sec_update = 0U;
 	enqueue_buf(frnd, buf);
 }
 
@@ -1057,10 +1058,6 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 	BT_DBG("type %u", type);
 
 	if (type == BT_MESH_FRIEND_PDU_SINGLE) {
-		if (frnd->sec_update) {
-			enqueue_update(frnd, 1);
-		}
-
 		enqueue_buf(frnd, buf);
 		return;
 	}
@@ -1077,10 +1074,6 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 	net_buf_slist_put(&seg->queue, buf);
 
 	if (type == BT_MESH_FRIEND_PDU_COMPLETE) {
-		if (frnd->sec_update) {
-			enqueue_update(frnd, 1);
-		}
-
 		sys_slist_merge_slist(&frnd->queue, &seg->queue);
 
 		frnd->queue_size += seg->seg_count;
@@ -1127,6 +1120,38 @@ static void buf_send_end(int err, void *user_data)
 	}
 }
 
+static void update_overwrite(struct net_buf *buf, u8_t md)
+{
+	struct net_buf_simple_state state;
+	struct bt_mesh_ctl_friend_update *upd;
+
+	if (buf->len != 16) {
+		return;
+	}
+
+	net_buf_simple_save(&buf->b, &state);
+
+	net_buf_skip(buf, 1); /* skip IVI, NID */
+
+	if (!(net_buf_pull_u8(buf) >> 7)) {
+		goto end;
+	}
+
+	net_buf_skip(buf, 7); /* skip seqnum src dec*/
+
+	if (TRANS_CTL_OP((u8_t *) net_buf_pull_mem(buf, 1))
+			!= TRANS_CTL_OP_FRIEND_UPDATE) {
+		goto end;
+	}
+
+	upd = net_buf_pull_mem(buf, sizeof(*upd));
+	BT_DBG("Update Previous Friend Update MD 0x%02x -> 0x%02x", upd->md, md);
+	upd->md = md;
+
+end:
+	net_buf_simple_restore(&buf->b, &state);
+}
+
 static void friend_timeout(struct k_work *work)
 {
 	struct bt_mesh_friend *frnd = CONTAINER_OF(work, struct bt_mesh_friend,
@@ -1135,6 +1160,8 @@ static void friend_timeout(struct k_work *work)
 		.start = buf_send_start,
 		.end = buf_send_end,
 	};
+
+	u8_t md;
 
 	__ASSERT_NO_MSG(frnd->pending_buf == 0U);
 
@@ -1160,6 +1187,10 @@ static void friend_timeout(struct k_work *work)
 		friend_clear(frnd);
 		return;
 	}
+
+	md = (u8_t)(sys_slist_peek_head(&frnd->queue) != NULL);
+
+	update_overwrite(frnd->last, md);
 
 	if (encrypt_friend_pdu(frnd, frnd->last, false)) {
 		return;
