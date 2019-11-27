@@ -1435,17 +1435,25 @@ drop:
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
 
 static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
-					size_t len)
+				   size_t len)
 {
 	struct net_buf *buf, *out = NULL;
+	size_t req_len = len;
 
-	NET_ASSERT(len, "Invalid request, len: %zu", len);
+	while (len && (buf = tcp_slist(&w->bufs, peek_head, struct net_buf,
+				       user_data))) {
+		if (len >= buf->len) {
+			buf = tcp_slist(&w->bufs, get, struct net_buf,
+					user_data);
+		} else {
+			struct net_buf *old = buf;
 
-	NET_ASSERT(len <= w->len, "Insufficient window length, "
-		   "len: %zu, req: %zu", w->len, len);
-	while (len) {
+			buf = tcp_nbuf_clone(buf);
 
-		buf = tcp_slist(&w->bufs, get, struct net_buf, user_data);
+			buf->len = len;
+
+			net_buf_pull(old, buf->len);
+		}
 
 		w->len -= buf->len;
 
@@ -1454,9 +1462,8 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
 		len -= buf->len;
 	}
 
-	NET_ASSERT(len == 0, "Unfulfilled request, len: %zu", len);
-
-	NET_DBG("%s len=%zu", name, net_buf_frags_len(out));
+	NET_DBG("%s len=%zu (req_len=%zu)", name, net_buf_frags_len(out),
+		req_len);
 
 	return out;
 }
