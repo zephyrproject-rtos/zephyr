@@ -86,8 +86,6 @@ static void light_default_status_init(void)
 		break;
 	}
 
-	default_tt = ctl->tt;
-
 	ctl->light->target = ctl->light->current;
 	ctl->temp->target = ctl->temp->current;
 	ctl->duv->target = ctl->duv->current;
