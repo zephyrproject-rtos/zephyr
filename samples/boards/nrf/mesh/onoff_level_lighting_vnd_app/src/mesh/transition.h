@@ -32,8 +32,6 @@ struct transition {
 	struct k_timer timer;
 };
 
-extern u8_t default_tt;
-
 extern struct transition transition;
 
 extern struct k_timer dummy_timer;

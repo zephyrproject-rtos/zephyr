@@ -13,8 +13,6 @@
 #include "state_binding.h"
 #include "transition.h"
 
-u8_t default_tt;
-
 struct transition transition;
 
 /* Function to calculate Remaining Time (Start) */

@@ -166,7 +166,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -234,7 +234,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -364,7 +364,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -429,7 +429,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -504,7 +504,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -585,7 +585,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -658,7 +658,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -732,7 +732,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -847,7 +847,6 @@ static void gen_def_trans_time_set_unack(struct bt_mesh_model *model,
 
 	if (ctl->tt != tt) {
 		ctl->tt = tt;
-		default_tt = tt;
 
 		gen_def_trans_time_publish(model);
 		save_on_flash(GEN_DEF_TRANS_TIME_STATE);
@@ -868,7 +867,6 @@ static void gen_def_trans_time_set(struct bt_mesh_model *model,
 
 	if (ctl->tt != tt) {
 		ctl->tt = tt;
-		default_tt = tt;
 
 		gen_def_trans_time_get(model, ctx, buf);
 		gen_def_trans_time_publish(model);
@@ -1113,7 +1111,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -1178,7 +1176,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -1295,7 +1293,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -1360,7 +1358,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -1739,7 +1737,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -1817,7 +1815,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2216,7 +2214,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2290,7 +2288,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2409,7 +2407,7 @@ static void gen_level_set_unack_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2474,7 +2472,7 @@ static void gen_level_set_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2549,7 +2547,7 @@ static void gen_delta_set_unack_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2630,7 +2628,7 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2703,7 +2701,7 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
@@ -2777,7 +2775,7 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:      /* No optional fields are available */
-		tt = default_tt;
+		tt = ctl->tt;
 		delay = 0U;
 		break;
 	case 0x02:      /* Optional fields are available */
