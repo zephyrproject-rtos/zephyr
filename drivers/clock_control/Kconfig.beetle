@@ -1,10 +1,7 @@
-# Kconfig - Beetle MCU clock control driver config
-#
-#
+# Beetle MCU clock control driver config
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_ARM
 

@@ -110,7 +110,7 @@ static bool is_timeout_in_range(u32_t start_time, u32_t timeout)
 	u32_t stop_time, diff;
 
 	stop_time = k_cycle_get_32();
-	diff = SYS_CLOCK_HW_CYCLES_TO_NS(stop_time -
+	diff = (u32_t)k_cyc_to_ns_floor64(stop_time -
 					start_time) / NSEC_PER_USEC;
 	diff = diff / USEC_PER_MSEC;
 	return timeout <= diff;

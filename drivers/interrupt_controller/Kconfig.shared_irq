@@ -1,10 +1,7 @@
-# Kconfig - shared_irq configuration options
+# shared_irq configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SHARED_IRQ
 	bool "Shared interrupt driver"

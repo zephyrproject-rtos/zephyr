@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
-#include <cmsis_os.h>
+#include <kernel.h>
 #include <ksched.h>
+#include <cmsis_os.h>
 #include <kernel_internal.h>
 
 /**

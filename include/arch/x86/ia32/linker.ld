@@ -37,9 +37,6 @@
  * order when programming the MMU.
  */
 
-#define _LINKER
-
-#define _ASMLANGUAGE
 #include <linker/linker-defs.h>
 #include <offsets.h>
 #include <sys/util.h>

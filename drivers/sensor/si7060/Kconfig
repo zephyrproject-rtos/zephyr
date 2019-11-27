@@ -1,9 +1,7 @@
-# Kconfig - SI7060 temperature sensor configuration options #
-#
+# SI7060 temperature sensor configuration options
+
 # Copyright (c) 2019 Actinius
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SI7060
 	bool "SI7060 Temperature Sensor"

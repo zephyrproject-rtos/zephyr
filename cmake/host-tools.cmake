@@ -15,34 +15,36 @@ else()
   set(MIN_WEST_VERSION 0.6.0)
   execute_process(
     COMMAND
-    ${WEST} --version
-    OUTPUT_VARIABLE west_version_output
+    ${PYTHON_EXECUTABLE}
+    -c
+    "import west.version; print(west.version.__version__, end='')"
+    OUTPUT_VARIABLE west_version
+    RESULT_VARIABLE west_version_output_result
     )
 
-  # The west --version output is currently multiline: bootstrapper
-  # followed by installation version. Test both. This will still work
-  # when .west/west is eliminated from the installation and obtained
-  # via pypi, which will result in a single line of output.
-  string(REGEX REPLACE "\n" ";" west_version_output "${west_version_output}")
-  foreach(item ${west_version_output})
-    if("${item}" MATCHES "^[^\/\\]*v([0-9]+[.][0-9]+[.][0-9]+)")
-      set(west_version "${CMAKE_MATCH_1}")
-      if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
-        message(FATAL_ERROR "The detected west version is unsupported.\n\
+  if(west_version_output_result)
+    message(FATAL_ERROR "Unable to import west.version from '${PYTHON_EXECUTABLE}'")
+  endif()
+
+  if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
+    message(FATAL_ERROR "The detected west version is unsupported.\n\
   The version was found to be ${west_version}:\n\
     ${item}\n\
   But the minimum supported version is ${MIN_WEST_VERSION}\n\
-  Please upgrade, e.g. with:\n\
-      pip3 install --upgrade west\n\
-  if the version from pip is too old, or:\n\
-      west update\n\
-  if the version in the installation is too old.")
-      endif()
-    endif()
-  endforeach()
+  Please upgrade with:\n\
+      pip3 install --upgrade west")
+  endif()
   # Just output information for a single version. This will still work
   # even after output is one line.
   message(STATUS "Found west: ${WEST} (found suitable version \"${west_version}\", minimum required is \"${MIN_WEST_VERSION}\")")
+
+  if (${west_version} VERSION_GREATER_EQUAL "0.7.0")
+    execute_process(
+      COMMAND ${WEST}  topdir
+      OUTPUT_VARIABLE  WEST_TOPDIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  endif()
 endif()
 
 # Search for the must-have program dtc on PATH and in

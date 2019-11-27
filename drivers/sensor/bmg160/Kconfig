@@ -1,10 +1,7 @@
-# Kconfig - Bosch BMG160 gyroscope configuration options
+# Bosch BMG160 gyroscope configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMG160
 	bool "Bosch BMG160 gyroscope support"
@@ -13,25 +10,6 @@ menuconfig BMG160
 	  Enable Bosch BMG160 gyroscope support.
 
 if BMG160
-
-config BMG160_DRV_NAME
-	string "Driver's name"
-	default "bmg160"
-	help
-	  Name for the BMG160 driver which will be used for binding.
-
-config BMG160_I2C_PORT_NAME
-	string "I2C master controller port name"
-	default "I2C_0"
-	help
-	  Master I2C port name through which BMG160 chip is accessed.
-
-config BMG160_I2C_ADDR
-	hex "BMG160 I2C address"
-	default 0x68
-	help
-	  BMG160 chip's I2C address. Chip supports two addresses: 0x68 and 0x69 (if
-	  SDO pin is pulled to GND).
 
 choice
 	prompt "BMG160 I2C bus speed"
@@ -82,20 +60,6 @@ config BMG160_THREAD_STACK_SIZE
 	default 1024
 	help
 	  The thread stack size.
-
-config BMG160_GPIO_PORT_NAME
-	string "GPIO controller port name"
-	depends on BMG160_TRIGGER
-	default "GPIO_0"
-	help
-	  The gpio controller the interrupt pin is attached to.
-
-config BMG160_INT_PIN
-	hex "BMG160 INT PIN"
-	depends on BMG160_TRIGGER
-	default 2
-	help
-	  BMG160 interrupt pin.
 
 choice
 	prompt "Gyroscope range setting."

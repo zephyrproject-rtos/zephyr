@@ -58,7 +58,8 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
-	} else if (button_read(button_device[1], DT_ALIAS_SW1_GPIOS_PIN) == 0U) {
+	} else if (button_read(button_device[1], DT_ALIAS_SW1_GPIOS_PIN) ==
+		   0U) {
 #if defined(ONOFF)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
@@ -80,7 +81,8 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
-	} else if (button_read(button_device[2], DT_ALIAS_SW2_GPIOS_PIN) == 0U) {
+	} else if (button_read(button_device[2], DT_ALIAS_SW2_GPIOS_PIN) ==
+		   0U) {
 #if defined(GENERIC_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
@@ -100,9 +102,9 @@ void publish(struct k_work *work)
 #elif defined(GENERIC_MOVE_LEVEL_TT)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_MOVE_SET_UNACK);
-		net_buf_simple_add_le16(root_models[5].pub->msg, 13100);
+		net_buf_simple_add_le16(root_models[5].pub->msg, 655);
 		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
-		net_buf_simple_add_u8(root_models[5].pub->msg, 0x45);
+		net_buf_simple_add_u8(root_models[5].pub->msg, 0x41);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(LIGHT_LIGHTNESS_TT)
@@ -150,7 +152,8 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
-	} else if (button_read(button_device[3], DT_ALIAS_SW3_GPIOS_PIN) == 0U) {
+	} else if (button_read(button_device[3], DT_ALIAS_SW3_GPIOS_PIN) ==
+		   0U) {
 #if defined(GENERIC_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
@@ -166,9 +169,9 @@ void publish(struct k_work *work)
 #elif defined(GENERIC_MOVE_LEVEL_TT)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_MOVE_SET_UNACK);
-		net_buf_simple_add_le16(root_models[5].pub->msg, -13100);
+		net_buf_simple_add_le16(root_models[5].pub->msg, -655);
 		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
-		net_buf_simple_add_u8(root_models[5].pub->msg, 0x45);
+		net_buf_simple_add_u8(root_models[5].pub->msg, 0x41);
 		net_buf_simple_add_u8(root_models[5].pub->msg, 0x00);
 		err = bt_mesh_model_publish(&root_models[5]);
 #elif defined(LIGHT_LIGHTNESS_TT)

@@ -1209,18 +1209,14 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 static bool conn_tx_internal(bt_conn_tx_cb_t cb)
 {
+	/* Only functions which are known to not block on anything that may
+	 * depend on the TX thread itself, thereby causing a deadlock, are
+	 * considered internal in this context.
+	 * This means that e.g. SMP callbacks cannot be considered internal,
+	 * since they may perform application callbacks and dependency on the
+	 * TX thread is then out of our control.
+	 */
 	if (cb == att_pdu_sent || cb == att_cfm_sent || cb == att_rsp_sent ||
-#if defined(CONFIG_BT_SMP)
-#if defined(CONFIG_BT_PRIVACY)
-	    cb == smp_id_sent ||
-#endif /* CONFIG_BT_PRIVACY */
-#if defined(CONFIG_BT_SIGNING)
-	    cb == smp_sign_info_sent ||
-#endif /* CONFIG_BT_SIGNING */
-#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-	    cb == smp_ident_sent ||
-#endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
-#endif /* CONFIG_BT_SMP */
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	    cb == l2cap_chan_sdu_sent ||
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -1242,7 +1238,7 @@ void bt_conn_notify_tx(struct bt_conn *conn)
 
 		/* Only submit if there is a callback set */
 		if (tx->data.cb) {
-			/* Submit using RX thread if internal callback */
+			/* Submit using TX thread if internal callback */
 			if (conn_tx_internal(tx->data.cb)) {
 				tx_notify_cb(&tx->work);
 			} else {
@@ -2058,13 +2054,13 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
-
 	return 0;
 }
 
 int bt_conn_create_auto_stop(void)
 {
+	int err;
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EINVAL;
 	}
@@ -2073,11 +2069,7 @@ int bt_conn_create_auto_stop(void)
 		return -EINVAL;
 	}
 
-	int err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL,
-				       NULL);
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
-
+	err = bt_le_auto_conn_cancel();
 	if (err) {
 		BT_ERR("Failed to stop initiator");
 		return err;
@@ -2283,7 +2275,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
 	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
@@ -2326,7 +2318,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	reserve += sizeof(struct bt_hci_acl_hdr) + CONFIG_BT_HCI_RESERVE;
+	reserve += sizeof(struct bt_hci_acl_hdr) + BT_BUF_RESERVE;
 	net_buf_reserve(buf, reserve);
 
 	return buf;

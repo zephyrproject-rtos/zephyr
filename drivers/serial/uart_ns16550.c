@@ -451,7 +451,7 @@ static void uart_ns16550_poll_out(struct device *dev,
  * @param dev UART device struct
  *
  * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
- * UART_ERROR_BREAK if an error was detected, 0 otherwise.
+ * UART_BREAK if an error was detected, 0 otherwise.
  */
 static int uart_ns16550_err_check(struct device *dev)
 {
@@ -691,15 +691,15 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
 	u32_t mdc, chg;
 
 	switch (ctrl) {
-	case LINE_CTRL_BAUD_RATE:
+	case UART_LINE_CTRL_BAUD_RATE:
 		set_baud_rate(dev, val);
 		return 0;
 
-	case LINE_CTRL_RTS:
-	case LINE_CTRL_DTR:
+	case UART_LINE_CTRL_RTS:
+	case UART_LINE_CTRL_DTR:
 		mdc = INBYTE(MDC(dev));
 
-		if (ctrl == LINE_CTRL_RTS) {
+		if (ctrl == UART_LINE_CTRL_RTS) {
 			chg = MCR_RTS;
 		} else {
 			chg = MCR_DTR;

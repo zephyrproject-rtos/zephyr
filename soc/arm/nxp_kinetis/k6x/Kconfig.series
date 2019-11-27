@@ -1,9 +1,7 @@
-# Kconfig - Kinetis K6X MCU line
-#
+# Kinetis K6X MCU line
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_KINETIS_K6X
 	bool "Kinetis K6x Series MCU"

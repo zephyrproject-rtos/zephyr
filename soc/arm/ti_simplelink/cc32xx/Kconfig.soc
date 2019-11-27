@@ -1,7 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Texas Instruments CC32XX
 
-# Kconfig.soc - Texas Instruments CC32XX
-#
+# SPDX-License-Identifier: Apache-2.0
 
 choice
 	prompt "TI SimpleLink MCU Selection"

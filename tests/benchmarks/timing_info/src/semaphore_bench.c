@@ -43,8 +43,8 @@ void thread_sem1_give_test(void *p1, void *p2, void *p3);
 k_tid_t sem0_tid;
 k_tid_t sem1_tid;
 
-extern u64_t z_arch_timing_value_swap_common;
-extern u32_t z_arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_common;
+extern u32_t arch_timing_value_swap_end;
 
 void semaphore_bench(void)
 {
@@ -64,7 +64,7 @@ void semaphore_bench(void)
 
 
 	/* u64_t test_time1 = z_tsc_read(); */
-	sem_end_time = (z_arch_timing_value_swap_common);
+	sem_end_time = (arch_timing_value_swap_common);
 	u32_t sem_cycles = sem_end_time - sem_start_time;
 
 	sem0_tid = k_thread_create(&my_thread, my_stack_area,
@@ -77,7 +77,7 @@ void semaphore_bench(void)
 				   2 /*priority*/, 0, K_NO_WAIT);
 
 	k_sleep(K_MSEC(1000));
-	sem_give_end_time = (z_arch_timing_value_swap_common);
+	sem_give_end_time = (arch_timing_value_swap_common);
 	u32_t sem_give_cycles = sem_give_end_time - sem_give_start_time;
 
 
@@ -177,7 +177,7 @@ void thread_sem1_test(void *p1, void *p2, void *p3)
 
 	k_sem_give(&sem_bench); /* sync the 2 threads*/
 
-	z_arch_timing_value_swap_end = 1U;
+	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
 	sem_start_time =  TIMING_INFO_OS_GET_TIME();
 	k_sem_take(&sem_bench, K_MSEC(10));
@@ -207,7 +207,7 @@ void thread_sem0_give_test(void *p1, void *p2, void *p3)
 	/* To make sure that the sem give will cause a swap to occur */
 	k_thread_priority_set(sem1_tid, 1);
 
-	z_arch_timing_value_swap_end = 1U;
+	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
 	sem_give_start_time =  TIMING_INFO_OS_GET_TIME();
 	k_sem_give(&sem_bench_1);

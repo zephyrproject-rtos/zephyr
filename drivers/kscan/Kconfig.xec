@@ -1,9 +1,7 @@
-# Kconfig.xec - Microchip XEC Keyboard Scan Matrix configuration options
-#
+# Microchip XEC Keyboard Scan Matrix configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig KSCAN_XEC
 	bool "XEC Microchip KSCAN driver"

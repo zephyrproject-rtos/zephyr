@@ -87,7 +87,7 @@ void test_arm_interrupt(void)
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
-	z_arch_irq_connect_dynamic(i, 0 /* highest priority */,
+	arch_irq_connect_dynamic(i, 0 /* highest priority */,
 		arm_isr_handler,
 		NULL,
 		0);

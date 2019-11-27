@@ -1,13 +1,9 @@
-# Kconfig - timer driver configuration options
+# Timer driver configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menu "Timer Drivers"
 
@@ -143,6 +139,8 @@ config NRF_RTC_TIMER
 	  This module implements a kernel device driver for the nRF Real Time
 	  Counter NRF_RTC1 and provides the standard "system clock driver"
 	  interfaces.
+
+source "drivers/timer/Kconfig.stm32_lptim"
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"

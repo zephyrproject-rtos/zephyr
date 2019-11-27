@@ -20,6 +20,17 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 {
 	ARG_UNUSED(write);
 
+#if (FLASH_SECTOR_TOTAL == 12) && defined(FLASH_OPTCR_DB1M)
+	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+	/*
+	 * RM0090, table 7.1: STM32F42xxx, STM32F43xxx
+	 */
+	if (regs->optcr & FLASH_OPTCR_DB1M) {
+		/* Device configured in Dual Bank, but not supported for now */
+		return false;
+	}
+#endif
+
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
@@ -69,6 +80,17 @@ static int erase_sector(struct device *dev, u32_t sector)
 	if (rc < 0) {
 		return rc;
 	}
+
+#if FLASH_SECTOR_TOTAL == 24
+	/*
+	 * RM0090, §3.9.8: STM32F42xxx, STM32F43xxx
+	 * RM0386, §3.7.5: STM32F469xx, STM32F479xx
+	 */
+	if (sector >= 12) {
+		/* From sector 12, SNB is offset by 0b10000 */
+		sector += 4U;
+	}
+#endif
 
 	regs->cr &= STM32F4X_SECTOR_MASK;
 	regs->cr |= FLASH_CR_SER | (sector << 3);

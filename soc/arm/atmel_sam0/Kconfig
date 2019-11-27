@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM0 MCU family configuration options
-#
+# Atmel SAM0 MCU family configuration options
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,6 +14,7 @@ config SOC_FAMILY
 	default "atmel_sam0"
 
 source "soc/arm/atmel_sam0/common/Kconfig.samd2x"
+source "soc/arm/atmel_sam0/common/Kconfig.samd5x"
 source "soc/arm/atmel_sam0/*/Kconfig.soc"
 
 endif

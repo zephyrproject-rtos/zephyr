@@ -1,10 +1,7 @@
-# Kconfig - DHT Temperature and Himidity Sensor configuration options
+# DHT Temperature and Himidity Sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DHT
 	bool "DHT Temperature and Humidity Sensor"

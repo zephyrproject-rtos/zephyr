@@ -50,7 +50,8 @@
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull
 #include "common/log.h"
 #include "hal/debug.h"
 
@@ -406,14 +407,20 @@ void ll_reset(void)
 	/* Reset LLL via mayfly */
 	{
 		u32_t retval;
+		struct k_sem sem;
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL,
 					    perform_lll_reset};
 
-		mfy.param = NULL;
+		k_sem_init(&sem, 0, 1);
+		mfy.param = &sem;
 		retval = mayfly_enqueue(TICKER_USER_ID_THREAD,
 					TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!retval);
+		/* LLL reset must complete before returning - wait for
+		 * reset completion in LLL mayfly thread
+		 */
+		k_sem_take(&sem, K_FOREVER);
 	}
 
 	/* Common to init and reset */
@@ -1202,6 +1209,8 @@ static void perform_lll_reset(void *param)
 	err = lll_conn_reset();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CONN */
+
+	k_sem_give(param);
 }
 
 static inline void *mark_set(void **m, void *param)

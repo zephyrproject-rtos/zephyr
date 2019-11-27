@@ -1,10 +1,7 @@
-# Kconfig - entropy generator driver configuration options
+# Entropy generator driver configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ENTROPY_GENERATOR
 	bool "Entropy Drivers"
@@ -20,6 +17,7 @@ source "drivers/entropy/Kconfig.esp32"
 source "drivers/entropy/Kconfig.nrf5"
 source "drivers/entropy/Kconfig.sam"
 source "drivers/entropy/Kconfig.native_posix"
+source "drivers/entropy/Kconfig.rv32m1"
 
 config ENTROPY_HAS_DRIVER
 	bool

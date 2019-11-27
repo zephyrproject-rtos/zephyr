@@ -65,7 +65,7 @@ static void test_clock_calibration(void)
 	k_busy_wait(35000);
 
 	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
@@ -85,7 +85,7 @@ static void test_clock_calibration(void)
 
 	key = irq_lock();
 	cnt = 0;
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_DONE) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
@@ -104,7 +104,7 @@ static void test_clock_calibration(void)
 	key = irq_lock();
 	cnt = 0;
 
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
@@ -157,7 +157,7 @@ static void test_stopping_when_calibration(void)
 	k_busy_wait(35000);
 
 	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
@@ -179,9 +179,10 @@ static void test_stopping_when_calibration(void)
 	key = irq_lock();
 	clock_control_off(lfclk_dev, NULL);
 
-	zassert_true(nrf_clock_lf_is_running(), "Expected LF still on");
+	zassert_true(nrf_clock_lf_is_running(NRF_CLOCK),
+		"Expected LF still on");
 
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_DONE) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
@@ -196,7 +197,7 @@ static void test_stopping_when_calibration(void)
 	/* wait some time after which clock should be off. */
 	k_busy_wait(300);
 
-	zassert_false(nrf_clock_lf_is_running(), "Expected LF off");
+	zassert_false(nrf_clock_lf_is_running(NRF_CLOCK), "Expected LF off");
 
 	clock_control_off(lfclk_dev, NULL);
 }

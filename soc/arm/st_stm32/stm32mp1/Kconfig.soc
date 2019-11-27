@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32MP1 MPU line
-#
+# ST Microelectronics STM32MP1 MPU line
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "STM32MP1 MPU Selection"

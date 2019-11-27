@@ -1,9 +1,7 @@
-# Kconfig.soc - Nordic Semiconductor nRF51 MCU line
-#
+# Nordic Semiconductor nRF51 MCU line
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "nRF51x MCU Selection"

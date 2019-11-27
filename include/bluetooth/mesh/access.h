@@ -501,7 +501,7 @@ struct bt_mesh_model {
 	/* Internal information, mainly for persistent storage */
 	u8_t  elem_idx;   /* Belongs to Nth element */
 	u8_t  mod_idx;    /* Is the Nth model in the element */
-	u16_t flags;      /* Information about what has changed */
+	u16_t flags;      /* Model flags for internal bookkeeping */
 
 	/* Model Publication */
 	struct bt_mesh_model_pub * const pub;
@@ -517,6 +517,12 @@ struct bt_mesh_model {
 	/* Model callback structure. */
 	const struct bt_mesh_model_cb * const cb;
 
+#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
+	/* Pointer to the next model in a model extension tree. */
+	struct bt_mesh_model *next;
+	/* Pointer to the first model this model extends. */
+	struct bt_mesh_model *extends;
+#endif
 	/* Model-specific user data */
 	void *user_data;
 };
@@ -621,6 +627,30 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
  */
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 			     const void *data, size_t data_len);
+
+/** @brief Let a model extend another.
+ *
+ * Mesh models may be extended to reuse their functionality, forming a more
+ * complex model. A Mesh model may extend any number of models, in any element.
+ * The extensions may also be nested, ie a model that extends another may itself
+ * be extended. Extensions may not be cyclical, and a model can only be extended
+ * by one other model.
+ *
+ * A set of models that extend each other form a model extension tree.
+ *
+ * All models in an extension tree share one subscription list per element. The
+ * access layer will utilize the combined subscription list of all models in an
+ * extension tree and element, giving the models extended subscription list
+ * capacity.
+ *
+ * @param[in] mod Mesh model.
+ * @param[in] base_mod The model being extended.
+ *
+ * @retval 0 Successfully extended the base_mod model.
+ * @retval -EALREADY The base_mod model is already extended.
+ */
+int bt_mesh_model_extend(struct bt_mesh_model *mod,
+			 struct bt_mesh_model *base_mod);
 
 /** Node Composition */
 struct bt_mesh_comp {

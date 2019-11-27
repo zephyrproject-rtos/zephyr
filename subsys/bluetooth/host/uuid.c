@@ -23,7 +23,7 @@
  *  big endian 0x2800    : [28 00] -> swapping required
  */
 static const struct bt_uuid_128 uuid128_base = {
-	.uuid.type = BT_UUID_TYPE_128,
+	.uuid = { BT_UUID_TYPE_128 },
 	.val = { BT_UUID_128_ENCODE(
 		0x00000000, 0x0000, 0x1000, 0x8000, 0x00805F9B34FB) }
 };

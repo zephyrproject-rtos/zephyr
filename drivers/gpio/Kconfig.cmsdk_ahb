@@ -1,10 +1,7 @@
-# Kconfig.cmsdk_ahb - ARM CMSDK (Cortex-M System Design Kit) AHB GPIO cfg
-#
-#
+# ARM CMSDK (Cortex-M System Design Kit) AHB GPIO cfg
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_CMSDK_AHB
 	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"

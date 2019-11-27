@@ -807,7 +807,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* If no more data in the buffer, start a new read transaction.
 	 * DataOutStageCallback will called on transaction complete.
 	 */
-	if (ep != EP0_OUT && !ep_state->read_count) {
+	if (!ep_state->read_count) {
 		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
 				     EP_MPS);
 	}

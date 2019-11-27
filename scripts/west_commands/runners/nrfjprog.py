@@ -6,6 +6,7 @@
 '''Runner for flashing with nrfjprog.'''
 
 import os
+import shlex
 import sys
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
@@ -14,13 +15,18 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, cfg, family, softreset, snr, erase=False):
+    def __init__(self, cfg, family, softreset, snr, erase=False,
+        tool_opt=[]):
         super(NrfJprogBinaryRunner, self).__init__(cfg)
         self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
         self.snr = snr
         self.erase = erase
+
+        self.tool_opt = []
+        for opts in [shlex.split(opt) for opt in tool_opt]:
+            self.tool_opt += opts
 
     @classmethod
     def name(cls):
@@ -33,7 +39,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family', required=True,
-                            choices=['NRF51', 'NRF52', 'NRF91'],
+                            choices=['NRF51', 'NRF52', 'NRF53', 'NRF91'],
                             help='family of nRF MCU')
         parser.add_argument('--softreset', required=False,
                             action='store_true',
@@ -42,11 +48,15 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             help='if given, mass erase flash before loading')
         parser.add_argument('--snr', required=False,
                             help='serial number of board to use')
+        parser.add_argument('--tool-opt', default=[], action='append',
+                            help='''Additional options for nrfjprog,
+                            e.g. "--recover"''')
 
     @classmethod
     def create(cls, cfg, args):
         ret = NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                   args.snr, erase=args.erase)
+                                   args.snr, erase=args.erase,
+                                   tool_opt=args.tool_opt)
         ret.ensure_snr()
         return ret
 
@@ -104,7 +114,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                              'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
         program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
-                       '--snr', board_snr]
+                    '--snr', board_snr] + self.tool_opt
+
         self.logger.info('Flashing file: {}'.format(self.hex_))
         if self.erase:
             commands.extend([

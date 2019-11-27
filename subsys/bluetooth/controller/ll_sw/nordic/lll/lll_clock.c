@@ -10,7 +10,8 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_clock
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_clock
 #include "common/log.h"
 #include "hal/debug.h"
 

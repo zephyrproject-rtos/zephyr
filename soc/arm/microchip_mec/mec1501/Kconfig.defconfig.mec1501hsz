@@ -1,9 +1,7 @@
-# Kconfig - Microchip MEC1501HSZ MCU
-#
+# Microchip MEC1501HSZ MCU
+
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MEC1501_HSZ
 
@@ -47,6 +45,13 @@ config I2C_XEC
 	default y
 
 endif # I2C
+
+if ESPI
+
+config ESPI_XEC
+	default y
+
+endif #ESPI
 
 if COUNTER
 

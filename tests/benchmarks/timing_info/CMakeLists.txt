@@ -7,3 +7,8 @@ project(timing_info)
 FILE(GLOB app_sources src/[^u]*.c)
 target_sources(app PRIVATE ${app_sources})
 target_sources_ifdef(CONFIG_USERSPACE app PRIVATE src/userspace_bench.c)
+
+target_include_directories(app PRIVATE
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  )

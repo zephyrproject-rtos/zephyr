@@ -1,7 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# TI CC1200 configuration options
 
-# Kconfig.cc1200 - TI CC1200 configuration options
-#
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig IEEE802154_CC1200
 	bool "TI CC1200 Driver support"

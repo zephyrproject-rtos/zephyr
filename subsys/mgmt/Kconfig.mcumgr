@@ -1,7 +1,6 @@
-#
 # Copyright Runtime.io 2018. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF

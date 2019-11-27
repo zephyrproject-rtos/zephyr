@@ -17,8 +17,10 @@ API Reference
    networking/index.rst
    peripherals/index.rst
    power_management/index.rst
+   random/index.rst
    shell/index.rst
    storage/index.rst
    usb/index.rst
    usermode/index.rst
+   runtime_conf/index.rst
 

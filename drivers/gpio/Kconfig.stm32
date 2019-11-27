@@ -1,9 +1,7 @@
-# Kconfig - STM32 GPIO configuration
-#
+# STM32 GPIO configuration
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"

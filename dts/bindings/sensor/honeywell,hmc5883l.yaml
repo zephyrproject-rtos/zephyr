@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Honeywell MEMS sensors HMC5883L
+
+description: |
+    This binding gives a base representation of the HMC5883L 3-axis
+    magnetometer sensor
+
+compatible: "honeywell,hmc5883l"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false

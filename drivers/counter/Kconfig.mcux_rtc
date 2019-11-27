@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK RTC
-#
+# MCUXpresso SDK RTC
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config COUNTER_MCUX_RTC
 	bool "MCUX RTC driver"

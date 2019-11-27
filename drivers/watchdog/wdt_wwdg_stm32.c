@@ -13,6 +13,9 @@
 
 #include "wdt_wwdg_stm32.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(wdt_wwdg_stm32);
+
 #define WWDG_INTERNAL_DIVIDER   4096U
 #define WWDG_RESET_LIMIT    WWDG_COUNTER_MIN
 #define WWDG_COUNTER_MIN    0x40
@@ -66,8 +69,11 @@ static u32_t wwdg_stm32_get_pclk(struct device *dev)
 
 	__ASSERT_NO_MSG(clk);
 
-	clock_control_get_rate(clk, (clock_control_subsys_t *) &cfg->pclken,
-			       &pclk_rate);
+	if (clock_control_get_rate(clk, (clock_control_subsys_t *) &cfg->pclken,
+			       &pclk_rate) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	return pclk_rate;
 }
@@ -84,7 +90,7 @@ static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
 				    u32_t counter)
 {
 	u32_t divider = WWDG_INTERNAL_DIVIDER * (1 << (prescaler >> 7));
-	float f_wwdg = wwdg_stm32_get_pclk(dev) / divider;
+	float f_wwdg = (float)wwdg_stm32_get_pclk(dev) / divider;
 
 	return USEC_PER_SEC * (((counter & 0x3F) + 1) / f_wwdg);
 }

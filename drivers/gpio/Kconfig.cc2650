@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # GPIO configuration options for the CC2650 SoC (Texas Instruments).
 
 menuconfig GPIO_CC2650

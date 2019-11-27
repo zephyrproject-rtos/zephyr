@@ -51,6 +51,15 @@ Directories with bindings:
     args.dts, ", ".join(map(relativize, args.bindings_dirs))
 ), blank_before=False)
 
+    out_comment("Nodes in dependency order (ordinal : path):")
+    for scc in edt.scc_order():
+        if len(scc) > 1:
+            err("Cycle in devicetree involving: {}".format(
+                ", ".join([n.path for n in scc])))
+        node = scc[0]
+        out_comment("{} : {}".format(node.dep_ordinal, node.path),
+                    blank_before = False)
+
     active_compats = set()
 
     for node in edt.nodes:
@@ -60,6 +69,20 @@ Directories with bindings:
             if node.matching_compat == "fixed-partitions":
                 continue
 
+            requires_text = ""
+            if node.depends_on:
+                requires_text = "Requires:\n"
+                for depends in node.depends_on:
+                    requires_text += "  {} {}\n".format(depends.dep_ordinal, depends.path)
+                requires_text += "\n"
+
+            supports_text = ""
+            if node.required_by:
+                supports_text = "Supports:\n"
+                for required in node.required_by:
+                    supports_text += "  {} {}\n".format(required.dep_ordinal, required.path)
+                supports_text += "\n"
+
             out_comment("""\
 Devicetree node:
   {}
@@ -67,9 +90,12 @@ Devicetree node:
 Binding (compatible = {}):
   {}
 
-Description:
+Dependency Ordinal: {}
+
+{}{}Description:
 {}""".format(
     node.path, node.matching_compat, relativize(node.binding_path),
+    node.dep_ordinal, requires_text, supports_text,
     # Indent description by two spaces
     "\n".join("  " + line for line in node.description.splitlines())
 ))
@@ -93,6 +119,7 @@ Description:
     write_addr_size(edt, "zephyr,sram", "SRAM")
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
+    write_addr_size(edt, "zephyr,ipc_shm", "IPC_SHM")
 
     write_flash(edt.chosen_node("zephyr,flash"))
     write_code_partition(edt.chosen_node("zephyr,code-partition"))
@@ -545,33 +572,40 @@ def write_phandle_val_list_entry(node, entry, i, ident):
     if entry.controller.label is not None:
         ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
-            ctrl_ident = str2ident(entry.name) + "_" + ctrl_ident
+            name_alias = str2ident(entry.name) + "_" + ctrl_ident
+        else:
+            name_alias = None
         # Ugly backwards compatibility hack. Only add the index if there's
         # more than one entry.
         if i is not None:
             ctrl_ident += "_{}".format(i)
         initializer_vals.append(quote_str(entry.controller.label))
-        out_dev_s(node, ctrl_ident, entry.controller.label)
+        out_dev_s(node, ctrl_ident, entry.controller.label, name_alias)
 
     for cell, val in entry.data.items():
         cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
-            cell_ident = str2ident(entry.name) + "_" + cell_ident
+            name_alias = str2ident(entry.name) + "_" + cell_ident
+        else:
+            name_alias = None
         # Backwards compatibility (see above)
         if i is not None:
             cell_ident += "_{}".format(i)
-        out_dev(node, cell_ident, val)
+        out_dev(node, cell_ident, val, name_alias)
 
     initializer_vals += entry.data.values()
 
     initializer_ident = ident
     if entry.name:
-        initializer_ident += "_" + str2ident(entry.name)
+        name_alias = initializer_ident + "_" + str2ident(entry.name)
+    else:
+        name_alias = None
     if i is not None:
         initializer_ident += "_{}".format(i)
     return out_dev(node, initializer_ident,
-                   "{" + ", ".join(map(str, initializer_vals)) + "}")
+                   "{" + ", ".join(map(str, initializer_vals)) + "}",
+                   name_alias)
 
 
 def write_clocks(node):
@@ -654,12 +688,12 @@ def out_dev(node, ident, val, name_alias=None):
     return out(dev_prefix + "_" + ident, val, aliases)
 
 
-def out_dev_s(node, ident, s):
+def out_dev_s(node, ident, s, name_alias=None):
     # Like out_dev(), but emits 's' as a string literal
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_dev(node, ident, quote_str(s))
+    return out_dev(node, ident, quote_str(s), name_alias)
 
 
 def out_s(ident, val):

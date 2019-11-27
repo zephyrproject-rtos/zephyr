@@ -1,9 +1,7 @@
-# Kconfig - Bluetooth GATT Heart Rate service
-#
+# Bluetooth GATT Heart Rate service
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BT_GATT_HRS
 	bool "Enable GATT Heart Rate service"

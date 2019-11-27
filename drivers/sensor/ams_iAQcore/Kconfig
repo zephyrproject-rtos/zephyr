@@ -1,10 +1,7 @@
-# Kconfig - iAQ-core Digital VOC sensor configuration options
+# iAQ-core Digital VOC sensor configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig AMS_IAQ_CORE
 	bool "iAQ-core Digital VOC sensor"

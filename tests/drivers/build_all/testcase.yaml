@@ -66,3 +66,8 @@ tests:
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
     depends_on: gpio
+  test_build_eeprom:
+    build_only: true
+    extra_args: CONF_FILE=eeprom.conf
+    min_ram: 32
+    depends_on: gpio i2c spi

@@ -1,10 +1,7 @@
-# Kconfig - USB device stack configuration options
+# USB device stack configuration options
 
-#
 # Copyright (c) 2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig USB_DEVICE_STACK
 	bool "USB device stack"

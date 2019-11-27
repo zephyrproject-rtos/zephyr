@@ -1,10 +1,8 @@
-# Kconfig - ST Microelectronics STM32F1 MCU line
-#
+# ST Microelectronics STM32F1 MCU line
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "STM32F1x MCU Selection"

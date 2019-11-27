@@ -1,9 +1,7 @@
-# Kconfig - LPC LPC55XXX Series
-#
+# LPC LPC55XXX Series
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_LPC55XXX
 	bool "LPC5500 Series Family MCU"

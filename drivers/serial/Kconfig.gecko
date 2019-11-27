@@ -1,9 +1,7 @@
-# Kconfig - Gecko SDK UART
-#
+# Gecko SDK UART
+
 # Copyright (c) 2017, Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config UART_GECKO
 	bool "Gecko UART/USART driver"

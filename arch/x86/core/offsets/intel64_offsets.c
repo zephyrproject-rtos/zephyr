@@ -3,10 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_arch_thread.h>
-
-#include <kernel_offsets.h>
-
 GEN_OFFSET_SYM(_callee_saved_t, rsp);
 GEN_OFFSET_SYM(_callee_saved_t, rbp);
 GEN_OFFSET_SYM(_callee_saved_t, rbx);

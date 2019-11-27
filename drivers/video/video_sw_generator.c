@@ -56,7 +56,7 @@ static int video_sw_generator_stream_start(struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->driver_data;
 
-	return k_delayed_work_submit(&data->buf_work, 33);
+	return k_delayed_work_submit(&data->buf_work, K_MSEC(33));
 }
 
 static int video_sw_generator_stream_stop(struct device *dev)
@@ -166,7 +166,7 @@ static int video_sw_generator_flush(struct device *dev,
 	if (!cancel) {
 		/* wait for all buffer to be processed */
 		do {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 		} while (!k_fifo_is_empty(&data->fifo_in));
 	} else {
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {

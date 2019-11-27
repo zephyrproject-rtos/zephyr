@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
-#include <kernel_internal.h>
 #include <sys/errno_private.h>
 #include <sys/libc-hooks.h>
 #include <syscall_handler.h>

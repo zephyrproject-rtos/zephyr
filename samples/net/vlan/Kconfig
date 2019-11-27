@@ -1,10 +1,7 @@
-# Kconfig - Private config options for VLAN sample app
+# Private config options for VLAN sample app
 
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Networking VLAN sample application"
 

@@ -27,7 +27,7 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
      :align: center
      :alt: nRF51 PCA10031 Dongle
 
-     nRF51 PCA10031 Dongle (Credit: Nordic Semi)
+     nRF51 PCA10031 Dongle (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
 `nRF51 Dongle website`_. The `Nordic Semiconductor Infocenter`_

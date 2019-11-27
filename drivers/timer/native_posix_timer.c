@@ -17,7 +17,7 @@
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 static u64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
@@ -123,7 +123,7 @@ u32_t z_clock_elapsed(void)
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
  */
-void z_arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(u32_t usec_to_wait)
 {
 	u64_t time_end = hwm_get_time() + usec_to_wait;
 

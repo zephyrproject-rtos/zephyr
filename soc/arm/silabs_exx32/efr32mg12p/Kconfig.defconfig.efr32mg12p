@@ -1,17 +1,14 @@
-# Kconfig - Silicon Labs EFR32MG12P platform configuration options
+# Silicon Labs EFR32MG12P platform configuration options
 
-#
 # Copyright (c) 2018 Diego Sueiro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-if GPIO || LOG_BACKEND_SWO
+if GPIO
 
 config GPIO_GECKO
 	default y
 
-endif # GPIO || LOG_BACKEND_SWO
+endif # GPIO
 
 if SERIAL
 

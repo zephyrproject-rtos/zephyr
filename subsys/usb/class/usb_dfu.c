@@ -290,7 +290,6 @@ struct dfu_data_t {
 	/* Number of bytes sent during upload */
 	u32_t bytes_sent;
 	u32_t alt_setting;              /* DFU alternate setting */
-	u8_t buffer[USB_DFU_MAX_XFER_SIZE]; /* DFU data buffer */
 	struct flash_img_context ctx;
 	enum dfu_state state;              /* State of the DFU device */
 	enum dfu_status status;            /* Status of the DFU device */
@@ -521,7 +520,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 					break;
 				}
 				ret = flash_area_read(fa, dfu_data.bytes_sent,
-						      dfu_data.buffer, len);
+						      *data, len);
 				flash_area_close(fa);
 				if (ret) {
 					dfu_data.state = dfuERROR;

@@ -274,6 +274,17 @@ Flashing
 
    .. note:: Remember that SPI MISO/MOSI are swapped on dediprog headers!
 
+   - Flash your board using west:
+
+     .. code-block:: console
+
+        $ west flash
+
+     Make sure that the program ``dpcmd`` (on Linux) or
+     ``dpcmd.exe`` (on Windows) can be found in your ``PATH``.
+     The Windows version is installed with your DediProg software.
+     The source code of the Linux version can be found at `SF100 Linux GitHub`_.
+
 #. Run your favorite terminal program to listen for output. Under Linux the
    terminal should be :code:`/dev/ttyACM0`. For example:
 
@@ -324,3 +335,5 @@ References
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/SPI%20Dongles%20and%20Aardvark%20Interposer%20Assy%206791%20Rev%20A1p1%20-%20SCH.pdf
 .. _SPI Image Gen:
     https://github.com/MicrochipTech/CPGZephyrDocs/tree/master/MEC1501/SPI_image_gen
+.. _SF100 Linux GitHub:
+    https://github.com/DediProgSW/SF100Linux

@@ -5,6 +5,7 @@ include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
 add_subdirectory(../src nffs_test_bindir)
+
 target_link_libraries(app PRIVATE settings_nffs_test)
 
 # The code is in the library common to several tests.

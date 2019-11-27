@@ -1,9 +1,7 @@
-# Kconfig - LPC LPC54XXX MCU line
-#
+# LPC LPC54XXX MCU line
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_LPC54XXX
 	bool "LPC LPC54xxx Series MCU"

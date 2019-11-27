@@ -1,10 +1,7 @@
-# Kconfig - IP stack config
+# IP stack config
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "IP stack"
 

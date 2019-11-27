@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM SPI
-#
+# Atmel SAM SPI
+
 # Copyright (c) 2018 qianfan Zhao
 # SPDX-License-Identifier: Apache-2.0
 

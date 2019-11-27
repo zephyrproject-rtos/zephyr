@@ -27,7 +27,7 @@ void send_msg_thread(void *argument)
 	int i;
 	osStatus_t status;
 	struct sample_data sample;
-	struct sample_data data[Q_LEN] = { 0 };
+	struct sample_data data[Q_LEN] = { { 0 } };
 
 	/* Wait for message_recv to complete initial checks */
 	osDelay(TIMEOUT_TICKS);

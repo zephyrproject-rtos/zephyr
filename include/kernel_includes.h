@@ -26,9 +26,9 @@
 #include <sys/sflist.h>
 #include <sys/util.h>
 #include <sys/mempool_base.h>
+#include <kernel_structs.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
-#include <kernel_arch_thread.h>
 #include <syscall.h>
 #include <sys/printk.h>
 #include <arch/cpu.h>

@@ -407,9 +407,9 @@ CPU Idling/Power Management
 ***************************
 
 The kernel provides support for CPU power management with two functions:
-:c:func:`z_arch_cpu_idle` and :c:func:`z_arch_cpu_atomic_idle`.
+:c:func:`arch_cpu_idle` and :c:func:`arch_cpu_atomic_idle`.
 
-:c:func:`z_arch_cpu_idle` can be as simple as calling the power saving
+:c:func:`arch_cpu_idle` can be as simple as calling the power saving
 instruction for the architecture with interrupts unlocked, for example
 :code:`hlt` on x86, :code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC.
 This function can be called in a loop within a context that does not care if it
@@ -422,7 +422,7 @@ basically two scenarios when it is correct to use this function:
 
 * In the idle thread.
 
-:c:func:`z_arch_cpu_atomic_idle`, on the other hand, must be able to atomically
+:c:func:`arch_cpu_atomic_idle`, on the other hand, must be able to atomically
 re-enable interrupts and invoke the power saving instruction. It can thus be
 used in real application code, again in single-threaded systems.
 
@@ -511,32 +511,32 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`z_arch_buffer_validate()` to test whether the current thread has
+* :cpp:func:`arch_buffer_validate()` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`z_arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :cpp:func:`arch_user_mode_enter()` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`z_arch_syscall_oops()` which generates a kernel oops when system
+* :cpp:func:`arch_syscall_oops()` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`z_arch_syscall_invoke0()` through
-  :cpp:func:`z_arch_syscall_invoke6()` invoke a system call with the
+* :cpp:func:`arch_syscall_invoke0()` through
+  :cpp:func:`arch_syscall_invoke6()` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`z_arch_is_user_context()` return nonzero if the CPU is currently
+* :cpp:func:`arch_is_user_context()` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`z_arch_mem_domain_max_partitions_get()` which indicates the max
+* :cpp:func:`arch_mem_domain_max_partitions_get()` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`z_arch_mem_domain_partition_remove()` Remove a partition from
+* :cpp:func:`arch_mem_domain_partition_remove()` Remove a partition from
   a memory domain if the currently executing thread was part of that domain.
 
-* :cpp:func:`z_arch_mem_domain_destroy()` Reset the thread's memory domain
+* :cpp:func:`arch_mem_domain_destroy()` Reset the thread's memory domain
   configuration
 
 In addition to implementing these APIs, there are some other tasks as well:
@@ -564,3 +564,55 @@ In addition to implementing these APIs, there are some other tasks as well:
   be looked up in _k_syscall_table. Bad system call IDs should jump to the
   :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
+
+API Reference
+*************
+
+Timing
+======
+
+.. doxygengroup:: arch-timing
+   :project: Zephyr
+
+Threads
+=======
+
+.. doxygengroup:: arch-threads
+   :project: Zephyr
+
+Power Management
+================
+
+.. doxygengroup:: arch-pm
+   :project: Zephyr
+
+Symmetric Multi-Processing
+==========================
+
+.. doxygengroup:: arch-smp
+   :project: Zephyr
+
+Interrupts
+==========
+
+.. doxygengroup:: arch-irq
+   :project: Zephyr
+
+Userspace
+=========
+
+.. doxygengroup:: arch-userspace
+   :project: Zephyr
+
+Benchmarking
+============
+
+.. doxygengroup:: arch-benchmarking
+   :project: Zephyr
+
+Miscellaneous Architecture APIs
+===============================
+
+.. doxygengroup:: arch-misc
+   :project: Zephyr
+

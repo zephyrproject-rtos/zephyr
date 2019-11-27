@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F051X8 MCU
-#
+# ST Microelectronics STM32F051X8 MCU
+
 # Copyright (c) 2018 Nathan Tsoi
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F051X8
 

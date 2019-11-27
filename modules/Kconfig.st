@@ -1,4 +1,4 @@
-# Kconfig - STLIB config
+# STLIB config
 
 # Copyright (c) 2017 STMicroelectronics
 

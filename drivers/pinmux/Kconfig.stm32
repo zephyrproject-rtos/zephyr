@@ -1,9 +1,7 @@
-# Kconfig - configuration for STM32 pinmux
-#
+# Configuration for STM32 pinmux
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config PINMUX_STM32
 	bool "Pinmux driver for STM32 MCUs"

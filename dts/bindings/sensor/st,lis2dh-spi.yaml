@@ -9,9 +9,4 @@ description: |
 
 compatible: "st,lis2dh"
 
-include: spi-device.yaml
-
-properties:
-    irq-gpios:
-      type: phandle-array
-      required: false
+include: ["spi-device.yaml", "st,lis2dh-common.yaml"]

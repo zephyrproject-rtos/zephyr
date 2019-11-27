@@ -23,7 +23,6 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include <kernel_arch_thread.h>
 
 /* stacks */
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
@@ -31,7 +30,6 @@
 
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <kernel.h>            /* public kernel API */
-#include <kernel_internal.h>
 #include <zephyr/types.h>
 #include <sys/dlist.h>
 #include <sys/util.h>

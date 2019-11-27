@@ -33,6 +33,8 @@ static void exchange_func(struct bt_conn *conn, u8_t err,
 {
 	shell_print(ctx_shell, "Exchange %s", err == 0U ? "successful" :
 		    "failed");
+
+	(void)memset(params, 0, sizeof(*params));
 }
 
 static struct bt_gatt_exchange_params exchange_params;
@@ -44,6 +46,11 @@ static int cmd_exchange_mtu(const struct shell *shell,
 
 	if (!default_conn) {
 		shell_print(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (exchange_params.func) {
+		shell_print(shell, "MTU Exchange ongoing");
 		return -ENOEXEC;
 	}
 
@@ -159,6 +166,11 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (discover_params.func) {
+		shell_print(shell, "Discover ongoing");
+		return -ENOEXEC;
+	}
+
 	discover_params.func = discover_func;
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
@@ -227,6 +239,11 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (read_params.func) {
+		shell_print(shell, "Read ongoing");
+		return -ENOEXEC;
+	}
+
 	read_params.func = read_func;
 	read_params.handle_count = 1;
 	read_params.single.handle = strtoul(argv[1], NULL, 16);
@@ -253,6 +270,11 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (read_params.func) {
+		shell_print(shell, "Read ongoing");
 		return -ENOEXEC;
 	}
 
@@ -285,6 +307,11 @@ static int cmd_read_uuid(const struct shell *shell, size_t argc, char *argv[])
 
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (read_params.func) {
+		shell_print(shell, "Read ongoing");
 		return -ENOEXEC;
 	}
 
@@ -343,7 +370,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 		shell_error(shell, "Write ongoing");
 		return -ENOEXEC;
 	}
-
 
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
@@ -834,7 +860,7 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	memcpy(value + offset, buf, len);
 
 	delta = k_cycle_get_32() - cycle_stamp;
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);
+	delta = (u32_t)k_cyc_to_ns_floor64(delta);
 
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.

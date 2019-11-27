@@ -33,6 +33,8 @@ list(APPEND
   ${ZEPHYR_BASE}
   )
 
+list(REMOVE_DUPLICATES DTS_ROOT)
+
 set(dts_files
   ${DTS_SOURCE}
   ${shield_dts_files}
@@ -98,6 +100,11 @@ if(SUPPORTS_DTS)
     endif()
   endforeach()
 
+  # Cache the location of the root bindings so they can be used by
+  # scripts which use the build directory.
+  set(CACHED_DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} CACHE INTERNAL
+    "DT bindings root directories")
+
   # TODO: Cut down on CMake configuration time by avoiding
   # regeneration of generated_dts_board_unfixed.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
@@ -119,6 +126,7 @@ if(SUPPORTS_DTS)
     -P
     -E   # Stop after preprocessing
     -MD  # Generate a dependency file as a side-effect
+    -MF ${BOARD}.dts.pre.d
     -o ${BOARD}.dts.pre.tmp
     ${ZEPHYR_BASE}/misc/empty_file.c
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -211,8 +219,6 @@ if(SUPPORTS_DTS)
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
-
-  import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")

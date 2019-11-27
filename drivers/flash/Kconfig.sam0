@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM0 flash driver config
-#
+# Atmel SAM0 flash driver config
+
 # Copyright (c) 2018 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

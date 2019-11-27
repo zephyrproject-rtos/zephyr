@@ -1,9 +1,7 @@
-# Kconfig - Flash map abstraction module
-#
+# Flash map abstraction module
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # Flash map

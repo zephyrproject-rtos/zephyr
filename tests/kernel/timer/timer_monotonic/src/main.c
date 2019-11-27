@@ -54,8 +54,8 @@ void test_timer(void)
 
 	errors = 0U;
 
-	TC_PRINT("sys_clock_hw_cycles_per_tick() = %d\n",
-		 sys_clock_hw_cycles_per_tick());
+	TC_PRINT("k_ticks_to_cyc_floor32(1) = %d\n",
+		 k_ticks_to_cyc_floor32(1));
 	TC_PRINT("sys_clock_hw_cycles_per_sec() = %d\n",
 		 sys_clock_hw_cycles_per_sec());
 

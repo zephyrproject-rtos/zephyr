@@ -885,14 +885,14 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	switch (ctrl) {
-	case LINE_CTRL_BAUD_RATE:
+	case UART_LINE_CTRL_BAUD_RATE:
 		*val = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
 		return 0;
-	case LINE_CTRL_RTS:
+	case UART_LINE_CTRL_RTS:
 		*val = (dev_data->line_state &
 			SET_CONTROL_LINE_STATE_RTS) ? 1 : 0;
 		return 0;
-	case LINE_CTRL_DTR:
+	case UART_LINE_CTRL_DTR:
 		*val = (dev_data->line_state &
 			SET_CONTROL_LINE_STATE_DTR) ? 1 : 0;
 		return 0;

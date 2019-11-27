@@ -318,6 +318,7 @@ static int cmd_name(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc < 2) {
 		shell_print(shell, "Bluetooth Local Name: %s", bt_get_name());
+		return 0;
 	}
 
 	err = bt_set_name(argv[1]);

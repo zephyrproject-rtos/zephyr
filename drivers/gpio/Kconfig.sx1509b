@@ -1,10 +1,7 @@
-# Kconfig.sx1509b - SX1509B GPIO configuration options
-#
-#
+# SX1509B GPIO configuration options
+
 # Copyright (c) 2018 Aapo Vienamo
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_SX1509B
 	bool "SX1509B I2C GPIO chip"

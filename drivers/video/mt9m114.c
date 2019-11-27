@@ -173,7 +173,7 @@ static int mt9m114_read_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
 		*(u16_t *)value = sys_be16_to_cpu(*(u16_t *)value);
 		break;
 	case 4:
-		*(u16_t *)value = sys_be32_to_cpu(*(u16_t *)value);
+		*(u32_t *)value = sys_be32_to_cpu(*(u32_t *)value);
 		break;
 	case 1:
 		break;
@@ -222,7 +222,7 @@ static int mt9m114_set_state(struct device *dev, u8_t state)
 			break;
 		}
 
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 
 	/* Issue the Set State command. */
@@ -240,7 +240,7 @@ static int mt9m114_set_state(struct device *dev, u8_t state)
 			break;
 		}
 
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 	}
 
 	/* Check the 'OK' bit to see if the command was successful. */
@@ -349,7 +349,7 @@ static int mt9m114_init(struct device *dev)
 	int ret;
 
 	/* no power control, wait for camera ready */
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	ret = mt9m114_read_reg(dev, MT9M114_CHIP_ID, sizeof(val), &val);
 	if (ret) {

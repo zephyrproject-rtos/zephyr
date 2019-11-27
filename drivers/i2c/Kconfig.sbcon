@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Linaro Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config I2C_SBCON
 	bool "I2C driver for ARM's SBCon two-wire serial bus interface"

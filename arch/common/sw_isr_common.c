@@ -28,11 +28,11 @@ void z_isr_install(unsigned int irq, void (*routine)(void *), void *param)
 /* Some architectures don't/can't interpret flags or priority and have
  * no more processing to do than this.  Provide a generic fallback.
  */
-int __weak z_arch_irq_connect_dynamic(unsigned int irq,
-				      unsigned int priority,
-				      void (*routine)(void *),
-				      void *parameter,
-				      u32_t flags)
+int __weak arch_irq_connect_dynamic(unsigned int irq,
+				    unsigned int priority,
+				    void (*routine)(void *),
+				    void *parameter,
+				    u32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);

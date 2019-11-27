@@ -1,9 +1,7 @@
-# Kconfig - STM32F0 and STM32F3 PLL configuration options
-#
+# STM32F0 and STM32F3 PLL configuration options
+
 # Copyright (c) 2019 Linaro
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 

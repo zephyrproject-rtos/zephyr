@@ -20,7 +20,7 @@ Notes:
   The test verifies the correct behavior of the thread context-switch,
   when it is triggered indirectly (by setting the PendSV interrupt
   to pending state), as well as when the thread itself triggers its
-  swap-out (by calling z_arch_swap(.)).
+  swap-out (by calling arch_swap(.)).
 
   The test is currently supported in ARM Cortex-M Baseline and Mainline
   targets.

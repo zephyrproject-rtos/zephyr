@@ -1,10 +1,7 @@
-# Kconfig.ipv6 - IPv6 Options
+# IPv6 Options
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_IPV6
 	bool "IPv6"

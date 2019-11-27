@@ -44,7 +44,7 @@ static struct k_thread alt_thread_data;
  */
 void test_stack_pt_randomization(void)
 {
-	int i;
+	int i, sp_changed;
 	int old_prio = k_thread_priority_get(k_current_get());
 
 	/* Set preemptable priority */
@@ -64,7 +64,8 @@ void test_stack_pt_randomization(void)
 	printk("stack pointer changed %d times out of %d tests\n",
 	       changed, THREAD_COUNT);
 
-	zassert_not_equal(changed, 0, "Stack pointer is not randomized");
+	sp_changed = changed;
+	zassert_not_equal(sp_changed, 0, "Stack pointer is not randomized");
 
 	/* Restore priority */
 	k_thread_priority_set(k_current_get(), old_prio);

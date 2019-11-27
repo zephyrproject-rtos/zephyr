@@ -66,7 +66,7 @@ static int allocate_vector(unsigned int priority)
  * allocated. Whether it should simply __ASSERT instead is up for debate.
  */
 
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*func)(void *arg), void *arg, u32_t flags)
 {
 	u32_t key;
@@ -91,7 +91,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_IRQ_OFFLOAD
 #include <irq_offload.h>
 
-void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = routine;
 	x86_irq_args[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = parameter;
@@ -119,7 +119,7 @@ void z_x86_ipi_setup(void)
  * it is not clear exactly how/where/why to abstract this, as it
  * assumes the use of a local APIC (but there's no other mechanism).
  */
-void z_arch_sched_ipi(void)
+void arch_sched_ipi(void)
 {
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
 }

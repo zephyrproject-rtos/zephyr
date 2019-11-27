@@ -1,7 +1,6 @@
+# TI SimpleLink CC2650 SensorTag Board
+
 # SPDX-License-Identifier: Apache-2.0
-#
-# Kconfig - TI SimpleLink CC2650 SensorTag Board
-#
 
 config BOARD_CC2650_SENSORTAG
 	bool "TI CC2650 SensorTag"

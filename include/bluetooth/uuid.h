@@ -52,19 +52,19 @@ struct bt_uuid_128 {
 
 #define BT_UUID_INIT_16(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_16,	\
+	.uuid = { BT_UUID_TYPE_16 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_32(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_32,	\
+	.uuid = { BT_UUID_TYPE_32 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_128(value...)	\
 {					\
-	.uuid.type = BT_UUID_TYPE_128,	\
+	.uuid = { BT_UUID_TYPE_128 },	\
 	.val = { value },		\
 }
 

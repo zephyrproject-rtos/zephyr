@@ -30,6 +30,7 @@
 #include <kernel_structs.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <ksched.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
 #include <debug/object_tracing_common.h>
@@ -236,7 +237,7 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 		k_spin_unlock(&lock, key);
 
-		z_arch_thread_return_value_set(new_owner, 0);
+		arch_thread_return_value_set(new_owner, 0);
 
 		/*
 		 * new owner is already of higher or equal prio than first

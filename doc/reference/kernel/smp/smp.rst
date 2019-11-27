@@ -132,7 +132,7 @@ happens on a single CPU before other CPUs are brought online.
 Just before entering the application ``main()`` function, the kernel
 calls ``z_smp_init()`` to launch the SMP initialization process.  This
 enumerates over the configured CPUs, calling into the architecture
-layer using ``z_arch_start_cpu()`` for each one.  This function is
+layer using ``arch_start_cpu()`` for each one.  This function is
 passed a memory region to use as a stack on the foreign CPU (in
 practice it uses the area that will become that CPU's interrupt
 stack), the address of a local ``smp_init_top()`` callback function to
@@ -150,6 +150,14 @@ guarantee that all SMP initialization is complete before any Zephyr
 application code runs, and finally calls ``z_swap()`` to transfer
 control to the appropriate runnable thread via the standard scheduler
 API.
+
+.. figure:: smpinit.svg
+   :align: center
+   :alt: SMP Initialization
+   :figclass: align-center
+
+   Example SMP initialization process, showing a configuration with
+   two CPUs and two app threads which begin operating simultaneously.
 
 Interprocessor Interrupts
 *************************
@@ -172,7 +180,7 @@ handle the newly-runnable load.
 
 So where possible, Zephyr SMP architectures should implement an
 interprocessor interrupt.  The current framework is very simple: the
-architecture provides a ``z_arch_sched_ipi()`` call, which when invoked
+architecture provides a ``arch_sched_ipi()`` call, which when invoked
 will flag an interrupt on all CPUs (except the current one, though
 that is allowed behavior) which will then invoke the ``z_sched_ipi()``
 function implemented in the scheduler.  The expectation is that these
@@ -239,7 +247,7 @@ offsets.
 
 Note that an important requirement on the architecture layer is that
 the pointer to this CPU struct be available rapidly when in kernel
-context.  The expectation is that ``z_arch_curr_cpu()`` will be
+context.  The expectation is that ``arch_curr_cpu()`` will be
 implemented using a CPU-provided register or addressing mode that can
 store this value across arbitrary context switches or interrupts and
 make it available to any kernel-mode code.
@@ -270,7 +278,7 @@ Instead, the SMP "switch to" decision needs to be made synchronously
 with the swap call, and as we don't want per-architecture assembly
 code to be handling scheduler internal state, Zephyr requires a
 somewhat lower-level context switch primitives for SMP systems:
-``z_arch_switch()`` is always called with interrupts masked, and takes
+``arch_switch()`` is always called with interrupts masked, and takes
 exactly two arguments.  The first is an opaque (architecture defined)
 handle to the context to which it should switch, and the second is a
 pointer to such a handle into which it should store the handle
@@ -288,4 +296,4 @@ in the interrupted thread struct.
 Note that while SMP requires :option:`CONFIG_USE_SWITCH`, the reverse is not
 true.  A uniprocessor architecture built with :option:`CONFIG_SMP` = n might
 still decide to implement its context switching using
-``z_arch_switch()``.
+``arch_switch()``.

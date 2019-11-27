@@ -9,9 +9,9 @@
 
 #include <init.h>
 #include <sys/util.h>
-
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+#include "bluetooth/addr.h"
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"
@@ -54,7 +54,19 @@ struct aci_set_tx_power {
 	u8_t value[2];
 };
 
+struct aci_set_ble_addr {
+	u8_t config_offset;
+	u8_t length;
+	u8_t value[6];
+} __packed;
+
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
+#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
+
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
+#define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
+
+static bt_addr_t bd_addr_udn;
 
 static void stm32wb_start_ble(void)
 {
@@ -357,6 +369,73 @@ static void start_ble_rf(void)
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
 }
 
+bt_addr_t *bt_get_ble_addr(void)
+{
+	bt_addr_t *bd_addr;
+	u32_t udn;
+	u32_t company_id;
+	u32_t device_id;
+
+	/* Get the 64 bit Unique Device Number UID */
+	/* The UID is used by firmware to derive   */
+	/* 48-bit Device Address EUI-48 */
+	udn = LL_FLASH_GetUDN();
+
+	if (udn != 0xFFFFFFFF) {
+		/* Get the ST Company ID */
+		company_id = LL_FLASH_GetSTCompanyID();
+		/* Get the STM32 Device ID */
+		device_id = LL_FLASH_GetDeviceID();
+		bd_addr_udn.val[0] = (uint8_t)(udn & 0x000000FF);
+		bd_addr_udn.val[1] = (uint8_t)((udn & 0x0000FF00) >> 8);
+		bd_addr_udn.val[2] = (uint8_t)((udn & 0x00FF0000) >> 16);
+		bd_addr_udn.val[3] = (uint8_t)device_id;
+		bd_addr_udn.val[4] = (uint8_t)(company_id & 0x000000FF);
+		bd_addr_udn.val[5] = (uint8_t)((company_id & 0x0000FF00) >> 8);
+		bd_addr = &bd_addr_udn;
+	} else {
+		bd_addr = NULL;
+	}
+
+	return bd_addr;
+}
+
+static int bt_ipm_set_addr(void)
+{
+	bt_addr_t *uid_addr;
+	struct aci_set_ble_addr *param;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	uid_addr = bt_get_ble_addr();
+	if (!uid_addr) {
+		return -ENOMSG;
+	}
+
+	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
+
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	param->length = 6;
+	param->value[0] = uid_addr->val[0];
+	param->value[1] = uid_addr->val[1];
+	param->value[2] = uid_addr->val[2];
+	param->value[3] = uid_addr->val[3];
+	param->value[4] = uid_addr->val[4];
+	param->value[5] = uid_addr->val[5];
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, &rsp);
+	if (err) {
+		return err;
+	}
+	net_buf_unref(rsp);
+	return 0;
+}
+
 static int bt_ipm_ble_init(void)
 {
 	struct aci_set_tx_power *param;
@@ -370,7 +449,10 @@ static int bt_ipm_ble_init(void)
 	}
 	/* TDB: Something to do on reset complete? */
 	net_buf_unref(rsp);
-
+	err = bt_ipm_set_addr();
+	if (err) {
+		BT_ERR("Can't set BLE UID addr");
+	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
 	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
 	if (!buf) {

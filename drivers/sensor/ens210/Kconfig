@@ -1,10 +1,7 @@
-# Kconfig - ENS210 Digital Temperature and Humidity sensor configuration options
+# ENS210 Digital Temperature and Humidity sensor configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ENS210
 	bool "ENS210 Digital Temperature and Humidity sensor"

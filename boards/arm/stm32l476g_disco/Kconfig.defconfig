@@ -1,9 +1,7 @@
-# Kconfig - STM32L476G DISCOVERY board configuration
-#
+# STM32L476G DISCOVERY board configuration
+
 # Copyright (c) 2017 Arthur Sfez
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32L476G_DISCO
 

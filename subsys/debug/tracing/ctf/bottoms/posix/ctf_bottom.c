@@ -7,7 +7,7 @@
 #include "ctf_bottom.h"
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 
 ctf_bottom_ctx_t ctf_bottom;

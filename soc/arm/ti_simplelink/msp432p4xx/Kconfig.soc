@@ -1,9 +1,7 @@
-# SPDX-License-Identifier: Apache-2.0
-#
+# Texas Instruments MSP432P401R
+
 # Copyright (c) 2017, Linaro Ltd
-#
-# Kconfig.soc - Texas Instruments MSP432P401R
-#
+# SPDX-License-Identifier: Apache-2.0
 
 choice
 	prompt "TI SimpleLink MCU Selection"

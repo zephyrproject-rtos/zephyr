@@ -78,7 +78,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	unsigned int key = z_arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 	u32_t dt, start_ms = k_uptime_get_32();
 
 	k_sem_give(&cpuhold_sem);
@@ -95,7 +95,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	dt = k_uptime_get_32() - start_ms;
 	zassert_true(dt < 3000,
 		     "1cpu test took too long (%d ms)", dt);
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 void z_test_1cpu_start(void)

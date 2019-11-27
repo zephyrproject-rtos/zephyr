@@ -213,6 +213,12 @@ contiguous block of memory, zero any BSS variables at boot, and define
 a memory partition of appropriate base address and size which contains all
 the tagged data.
 
+.. figure:: auto_mem_domain.png
+   :alt: Automatic Memory Domain build flow
+   :align: center
+
+   Automatic Memory Domain build flow
+
 Automatic memory partitions are only configured as read-write
 regions. They are defined with :c:macro:`K_APPMEM_PARTITION_DEFINE()`.
 Global variables are then routed to this partition using
@@ -284,8 +290,13 @@ top-level ``CMakeLists.txt`` adds the following:
 
     gen_app_partitions.py ... --library libc.a z_libc_partition ..
 
-There is no support for expressing this in the project-level configuration
-or build files; the toplevel ``CMakeLists.txt`` must be edited.
+For pre-compiled libraries there is no support for expressing this in the
+project-level configuration or build files; the toplevel ``CMakeLists.txt`` must
+be edited.
+
+For Zephyr libraries created using ``zephyr_library`` or ``zephyr_library_named``
+the ``zephyr_library_app_memory`` function can be used to specify the memory
+partition where all globals in the library should be placed.
 
 Pre-defined Memory Partitions
 -----------------------------

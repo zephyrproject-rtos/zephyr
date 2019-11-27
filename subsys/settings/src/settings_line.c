@@ -228,6 +228,10 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	off_t off;
 	int rc;
 
+	if (len_req == 0) {
+		return -EINVAL;
+	}
+
 	rem_size = len_req;
 
 	while (rem_size) {
@@ -472,6 +476,10 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	char buf[16];
 	int rc;
 	off_t off = 0;
+
+	if (val_len == 0) {
+		return -EINVAL;
+	}
 
 	for (rem = val_len; rem > 0; rem -= len_read) {
 		len_read = exp_len = MIN(sizeof(buf), rem);

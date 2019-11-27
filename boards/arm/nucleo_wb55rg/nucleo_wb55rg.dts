@@ -103,6 +103,10 @@
 	status = "okay";
 };
 
+&lptim1 {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
@@ -123,19 +127,19 @@
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x5b800>;
+			reg = <0x0000C000 0x5c000>;
 		};
-		slot1_partition: partition@67800 {
+		slot1_partition: partition@68000 {
 			label = "image-1";
-			reg = <0x00067800 0x5b800>;
+			reg = <0x00068000 0x5c000>;
 		};
-		scratch_partition: partition@c3000 {
+		scratch_partition: partition@c4000 {
 			label = "image-scratch";
-			reg = <0x000c3000 0x4000>;
+			reg = <0x000c4000 0x4000>;
 		};
-		storage_partition: partition@c7000 {
+		storage_partition: partition@c8000 {
 			label = "storage";
-			reg = <0x000c7000 0x4000>;
+			reg = <0x000c8000 0x3000>;
 		};
 
 	};

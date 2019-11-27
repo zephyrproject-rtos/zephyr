@@ -1,9 +1,7 @@
-# Kconfig - 96Boards Argonkey Board Configuration
-#
+# 96Boards Argonkey Board Configuration
+
 # Copyright (c) 2018 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_96B_ARGONKEY
 
@@ -68,13 +66,6 @@ config I2S_5
 	default y
 
 endif # I2S
-
-if DMA
-
-config DMA_STM32F4X
-	default y
-
-endif # DMA
 
 if LSM6DSL
 

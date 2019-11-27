@@ -1,7 +1,5 @@
 # Copyright (c) 2018-2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
@@ -54,5 +52,9 @@ config LIS2MDL_THREAD_STACK_SIZE
 config LIS2MDL_MAG_ODR_RUNTIME
 	bool "Set magnetometer sampling frequency (ODR) at runtime (default: 10 Hz)"
 	default y
+
+config LIS2MDL_SPI_FULL_DUPLEX
+	bool "Enable SPI 4wire mode (separated MISO and MOSI lines)"
+	depends on SPI
 
 endif # LIS2MDL

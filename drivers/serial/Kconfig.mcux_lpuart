@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK LPUART
-#
+# MCUXpresso SDK LPUART
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_MCUX_LPUART
 	bool "MCUX LPUART driver"

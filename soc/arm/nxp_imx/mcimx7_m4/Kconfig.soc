@@ -1,9 +1,7 @@
-# Kconfig - iMX7 M4 core series
-#
+# iMX7 M4 core series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "i.MX7 M4 Selection"

@@ -1,9 +1,7 @@
-# Copyright (c) 2019, Texas Instruments Incorporated
-#
-# SPDX-License-Identifier: Apache-2.0
+# TI SimpleLink CC3235SF SoC
 
-# Kconfig.defconfig.cc3235sf - TI SimpleLink CC3235SF SoC
-#
+# Copyright (c) 2019, Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_CC3235SF
 

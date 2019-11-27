@@ -1,10 +1,7 @@
-# Kconfig.loopback - CAN loopback device configuration options
+# CAN loopback device configuration options
 
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_LOOPBACK
 	bool "Loopback CAN driver"

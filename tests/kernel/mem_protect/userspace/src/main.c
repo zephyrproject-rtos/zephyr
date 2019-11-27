@@ -909,7 +909,7 @@ static inline void z_vrfy_stack_info_get(u32_t *start_addr, u32_t *size)
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
-	return z_arch_buffer_validate(addr, size, write);
+	return arch_buffer_validate(addr, size, write);
 }
 
 static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
@@ -971,7 +971,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		*pos = val;
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		/* If we're in user mode, check every byte in the stack buffer
 		 * to ensure that the thread has permissions on it.
 		 */
@@ -999,7 +999,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		       Z_THREAD_STACK_BUFFER(stack_obj));
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
 			      "bad stack size in thread struct");
 	}
@@ -1081,7 +1081,7 @@ void test_bad_syscall(void)
 	expect_fault = true;
 	expected_reason = K_ERR_KERNEL_OOPS;
 
-	z_arch_syscall_invoke0(INT_MAX);
+	arch_syscall_invoke0(INT_MAX);
 
 }
 

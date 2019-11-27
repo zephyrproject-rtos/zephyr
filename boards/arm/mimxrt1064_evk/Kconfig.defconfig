@@ -1,9 +1,7 @@
-# Kconfig - MIMXRT1064-EVK board
-#
+# MIMXRT1064-EVK board
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MIMXRT1064_EVK
 
@@ -68,9 +66,6 @@ config LVGL_VDB_SIZE
 
 config LVGL_DPI
 	default 128
-
-config LVGL_BITS_PER_PIXEL
-	default 0
 
 choice LVGL_COLOR_DEPTH
 	default LVGL_COLOR_DEPTH_16

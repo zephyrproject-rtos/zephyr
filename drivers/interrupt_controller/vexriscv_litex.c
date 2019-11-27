@@ -83,17 +83,17 @@ static void vexriscv_litex_irq_handler(void *device)
 #endif
 }
 
-void z_arch_irq_enable(unsigned int irq)
+void arch_irq_enable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() | (1 << irq));
 }
 
-void z_arch_irq_disable(unsigned int irq)
+void arch_irq_disable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() & ~(1 << irq));
 }
 
-int z_arch_irq_is_enabled(unsigned int irq)
+int arch_irq_is_enabled(unsigned int irq)
 {
 	return vexriscv_litex_irq_getmask() & (1 << irq);
 }

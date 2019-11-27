@@ -12,12 +12,7 @@
  */
 
 #include <kernel.h>
-
-#include <toolchain.h>
-#include <linker/sections.h>
-
 #include <spinlock.h>
-#include <kernel_structs.h>
 #include <sys/math_extras.h>
 #include <sys_clock.h>
 #include <drivers/timer/system_timer.h>
@@ -29,7 +24,9 @@
 #include <kswap.h>
 #include <init.h>
 #include <debug/tracing.h>
+#include <string.h>
 #include <stdbool.h>
+#include <irq_offload.h>
 
 static struct k_spinlock lock;
 
@@ -60,7 +57,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 bool k_is_in_isr(void)
 {
-	return z_arch_is_in_isr();
+	return arch_is_in_isr();
 }
 
 /*
@@ -113,7 +110,7 @@ void z_impl_k_busy_wait(u32_t usec_to_wait)
 		}
 	}
 #else
-	z_arch_busy_wait(usec_to_wait);
+	arch_busy_wait(usec_to_wait);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 }
 
@@ -382,7 +379,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	if (delay == 0) {
 		k_thread_start(thread);
 	} else {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(delay);
+		s32_t ticks = _TICK_ALIGN + k_ms_to_ticks_ceil32(delay);
 
 		z_add_thread_timeout(thread, ticks);
 	}
@@ -406,13 +403,13 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	size_t random_val;
 
 	if (!z_stack_adjust_initialized) {
-		random_val = z_early_boot_rand32_get();
+		z_early_boot_rand_get((u8_t *)&random_val, sizeof(random_val));
 	} else {
-		random_val = sys_rand32_get();
+		sys_rand_get((u8_t *)&random_val, sizeof(random_val));
 	}
 
 	/* Don't need to worry about alignment of the size here,
-	 * z_arch_new_thread() is required to do it.
+	 * arch_new_thread() is required to do it.
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
@@ -431,6 +428,51 @@ static inline size_t adjust_stack_size(size_t stack_size)
 #endif /* CONFIG_STACK_GROWS_UP */
 
 #endif /* CONFIG_STACK_POINTER_RANDOM */
+
+void z_new_thread_init(struct k_thread *thread,
+					    char *pStack, size_t stackSize,
+					    int prio, unsigned int options)
+{
+#if !defined(CONFIG_INIT_STACKS) && !defined(CONFIG_THREAD_STACK_INFO)
+	ARG_UNUSED(pStack);
+	ARG_UNUSED(stackSize);
+#endif
+
+#ifdef CONFIG_INIT_STACKS
+	memset(pStack, 0xaa, stackSize);
+#endif
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((u32_t *)pStack) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
+	/* Initialize various struct k_thread members */
+	z_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
+
+	/* static threads overwrite it afterwards with real value */
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
+
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	thread->custom_data = NULL;
+#endif
+
+#ifdef CONFIG_THREAD_NAME
+	thread->name[0] = '\0';
+#endif
+
+#if defined(CONFIG_USERSPACE)
+	thread->mem_domain_info.mem_domain = NULL;
+#endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+	thread->stack_info.start = (uintptr_t)pStack;
+	thread->stack_info.size = (u32_t)stackSize;
+#endif /* CONFIG_THREAD_STACK_INFO */
+}
 
 /*
  * Note:
@@ -461,12 +503,12 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
-	z_arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in z_arch_new_thread() has
+	/* don't set again if the arch's own code in arch_new_thread() has
 	 * already set the pointer.
 	 */
 	new_thread->userspace_local_data =
@@ -530,7 +572,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!z_arch_is_in_isr(), "Threads may not be created in ISRs");
+	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
 	/* Special case, only for unit tests */
 #if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
@@ -616,7 +658,13 @@ void z_thread_single_suspend(struct k_thread *thread)
 		z_remove_thread_from_ready_q(thread);
 	}
 
+	(void)z_abort_thread_timeout(thread);
+
 	z_mark_thread_as_suspended(thread);
+
+	if (thread == _current) {
+		z_reschedule_unlocked();
+	}
 }
 
 void z_impl_k_thread_suspend(struct k_thread *thread)
@@ -795,7 +843,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
-	z_arch_user_mode_enter(entry, p1, p2, p3);
+	arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */
 	z_thread_entry(entry, p1, p2, p3);
@@ -837,7 +885,7 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 int z_impl_k_float_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	return z_arch_float_disable(thread);
+	return arch_float_disable(thread);
 #else
 	return -ENOSYS;
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
@@ -862,3 +910,14 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 #include <syscalls/k_thread_abort_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_IRQ_OFFLOAD
+static K_SEM_DEFINE(offload_sem, 1, 1);
+
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	k_sem_take(&offload_sem, K_FOREVER);
+	arch_irq_offload(routine, parameter);
+	k_sem_give(&offload_sem);
+}
+#endif

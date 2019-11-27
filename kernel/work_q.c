@@ -108,7 +108,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 
 	/* Add timeout */
 	z_add_timeout(&work->timeout, work_timeout,
-		     _TICK_ALIGN + z_ms_to_ticks(delay));
+		     _TICK_ALIGN + k_ms_to_ticks_ceil32(delay));
 
 done:
 	k_spin_unlock(&lock, key);

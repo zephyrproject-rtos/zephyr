@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KWx MCU series
-#
+# Kinetis KWx MCU series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_KINETIS_KWX
 	bool "Kinetis KWx Series MCU"

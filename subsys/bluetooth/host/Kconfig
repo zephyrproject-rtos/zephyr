@@ -1,11 +1,8 @@
-# Kconfig - Bluetooth LE stack configuration options
+# Bluetooth LE stack configuration options
 
-#
 # Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 comment "Host Stack Configuration"
 
@@ -65,7 +62,8 @@ config BT_DISCARDABLE_BUF_COUNT
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
-	int "HCI Tx thread stack size"
+	int
+	prompt "HCI Tx thread stack size" if BT_HCI_TX_STACK_SIZE_WITH_PROMPT
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
@@ -82,6 +80,9 @@ config BT_HCI_TX_STACK_SIZE
 	  Stack size needed for executing bt_send with specified driver.
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
+
+config BT_HCI_TX_STACK_SIZE_WITH_PROMPT
+	bool "Override HCI Tx thread stack size"
 
 config BT_HCI_ECC_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
@@ -176,6 +177,15 @@ config BT_SETTINGS
 	  instead of each subsystem doing it independently.
 
 if BT_SETTINGS
+config BT_SETTINGS_CCC_LAZY_LOADING
+	bool "Load CCC values from settings when peer connects"
+	default y
+	help
+	  Load Client Configuration Characteristic setting right after a bonded
+	  device connects.
+	  Disabling this option will increase memory usage as CCC values for all
+	  bonded devices will be loaded when calling settings_load.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	help
@@ -300,6 +310,17 @@ config BT_SMP_SC_ONLY
 	  for services that only require Security Mode 1 Level 1 (no security).
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
+
+config BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	bool "Allow unauthenticated pairing for paired device"
+	help
+	  This option allows all unauthenticated pairing attempts made by the
+	  peer where an unauthenticated bond already exists.
+	  This would enable cases where an attacker could copy the peer device
+	  address to connect and start an unauthenticated pairing procedure
+	  to replace the existing bond. When this option is disabled in order
+	  to create a new bond the old bond has to be explicitly deleted with
+	  bt_unpair.
 
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"

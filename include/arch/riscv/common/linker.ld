@@ -11,9 +11,6 @@
  * Generic Linker script for the riscv platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <soc.h>
 
 #include <autoconf.h>
@@ -211,6 +208,8 @@ SECTIONS
      GROUP_END(RAMABLE_REGION)
 
 #include <linker/debug-sections.ld>
+
+    /DISCARD/ : { *(.note.GNU-stack) }
 
     SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{

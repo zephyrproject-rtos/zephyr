@@ -101,7 +101,7 @@ an item will jump to it. Item values can be toggled directly within the dialog.\
 
 
 def _main():
-    menuconfig(standard_kconfig())
+    menuconfig(standard_kconfig(__doc__))
 
 
 # Global variables used below:
@@ -1481,9 +1481,8 @@ def _toggle_showall(_):
 def _do_showall():
     # Updates the UI for the current show-all setting
 
-    # Don't allow turning off show-all if we're in single-menu mode and the
-    # current menu would become empty
-    if _single_menu and not _shown_menu_nodes(_cur_menu):
+    # Don't allow turning off show-all if we'd end up with no visible nodes
+    if _nothing_shown():
         _show_all_var.set(True)
         return
 
@@ -1516,6 +1515,17 @@ def _do_showall():
     _tree.yview(_item_row(stayput) - old_scroll)
 
     _tree.focus_set()
+
+
+def _nothing_shown():
+    # _do_showall() helper. Returns True if no nodes would get
+    # shown with the current show-all setting. Also handles the
+    # (obscure) case when there are no visible nodes in the entire
+    # tree, meaning guiconfig was automatically started in
+    # show-all mode, which mustn't be turned off.
+
+    return not _shown_menu_nodes(
+        _cur_menu if _single_menu else _kconf.top_node)
 
 
 def _toggle_tree_mode(_):

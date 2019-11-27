@@ -1136,6 +1136,9 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 
 segment:
 	seg = l2cap_alloc_seg(buf);
+	if (!seg) {
+		return NULL;
+	}
 
 	if (sdu_hdr_len) {
 		net_buf_add_le16(seg, net_buf_frags_len(buf));
@@ -1177,6 +1180,9 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
+	if (!seg) {
+		return -ENOMEM;
+	}
 
 	/* Channel may have been disconnected while waiting for a buffer */
 	if (!ch->chan.conn) {

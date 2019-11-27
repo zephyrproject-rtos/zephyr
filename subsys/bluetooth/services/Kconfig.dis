@@ -1,9 +1,7 @@
-# Kconfig - GATT Device Information service
-#
+# GATT Device Information service
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BT_GATT_DIS
 	bool "Enable GATT Device Information service"

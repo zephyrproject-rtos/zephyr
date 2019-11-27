@@ -1,10 +1,7 @@
-# Kconfig - debug configuration options
+# Debug configuration options
 
-#
 # Copyright (c) 2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "System Monitoring Options"
 
@@ -54,6 +51,11 @@ config ASAN
 	  only supported by boards based on the posix architecture, and requires a
 	  recent-ish compiler with the ``-fsanitize=address`` command line option,
 	  and the libasan library.
+
+	  Note that at exit leak detection is disabled for 64-bit boards when
+	  GCC is used due to potential risk of a deadlock in libasan.
+	  This behavior can be changes by adding leak_check_at_exit=1 to the
+	  environment variable ASAN_OPTIONS.
 
 config UBSAN
 	bool "Build with undefined behavior sanitizer"

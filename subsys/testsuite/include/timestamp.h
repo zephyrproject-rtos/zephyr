@@ -104,7 +104,7 @@ static inline int high_timer_overflow(void)
 	/* Check if the time elapsed in msec is sufficient to trigger an
 	 *  overflow of the high precision timer
 	 */
-	if (tCheck >= (SYS_CLOCK_HW_CYCLES_TO_NS64(UINT_MAX) /
+	if (tCheck >= (k_cyc_to_ns_floor64(UINT_MAX) /
 				(NSEC_PER_USEC * USEC_PER_MSEC))) {
 		return -1;
 	}

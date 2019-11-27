@@ -8,16 +8,18 @@
  * @file
  * @brief Kernel swapper code for IA-32
  *
- * This module implements the z_arch_swap() routine for the IA-32 architecture.
+ * This module implements the arch_swap() routine for the IA-32 architecture.
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
+#include <kernel.h>
+#include <arch/cpu.h>
+#include <kernel_arch_data.h>
 #include <offsets_short.h>
 
 	/* exports (internal APIs) */
 
-	GTEXT(z_arch_swap)
+	GTEXT(arch_swap)
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
@@ -28,7 +30,7 @@
 	GDATA(_k_neg_eagain)
 
 /*
- * Given that z_arch_swap() is called to effect a cooperative context switch,
+ * Given that arch_swap() is called to effect a cooperative context switch,
  * only the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
@@ -60,7 +62,7 @@
  *
  * C function prototype:
  *
- * unsigned int z_arch_swap (unsigned int eflags);
+ * unsigned int arch_swap (unsigned int eflags);
  */
 
 .macro read_tsc var_name
@@ -72,7 +74,7 @@
 	pop %edx
 	pop %eax
 .endm
-SECTION_FUNC(TEXT, z_arch_swap)
+SECTION_FUNC(TEXT, arch_swap)
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values.
@@ -80,8 +82,8 @@ SECTION_FUNC(TEXT, z_arch_swap)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,z_arch_timing_swap_start
-	mov %edx,z_arch_timing_swap_start+4
+	mov %eax,arch_timing_swap_start
+	mov %edx,arch_timing_swap_start+4
 	pop %edx
 	pop %eax
 #endif
@@ -104,7 +106,7 @@ SECTION_FUNC(TEXT, z_arch_swap)
 	 * Carve space for the return value. Setting it to a default of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
 	 * If another value is ever needed, it can be modified with
-	 * z_arch_thread_return_value_set().
+	 * arch_thread_return_value_set().
 	 */
 
 	pushl   _k_neg_eagain
@@ -329,7 +331,7 @@ CROHandlingDone:
 	movl	_thread_offset_to_esp(%eax), %esp
 
 
-	/* load return value from a possible z_arch_thread_return_value_set() */
+	/* load return value from a possible arch_thread_return_value_set() */
 
 	popl	%eax
 
@@ -343,23 +345,23 @@ CROHandlingDone:
 	/*
 	 * %eax may contain one of these values:
 	 *
-	 * - the return value for z_arch_swap() that was set up by a call to
-	 * z_arch_thread_return_value_set()
+	 * - the return value for arch_swap() that was set up by a call to
+	 * arch_thread_return_value_set()
 	 * - -EINVAL
 	 */
 
-	/* Utilize the 'eflags' parameter to z_arch_swap() */
+	/* Utilize the 'eflags' parameter to arch_swap() */
 
 	pushl	4(%esp)
 	popfl
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	cmp $0x1,z_arch_timing_value_swap_end
+	cmp $0x1,arch_timing_value_swap_end
 	jne time_read_not_needed
-	movw $0x2,z_arch_timing_value_swap_end
-	read_tsc z_arch_timing_value_swap_common
-	pushl z_arch_timing_swap_start
-	popl z_arch_timing_value_swap_temp
+	movw $0x2,arch_timing_value_swap_end
+	read_tsc arch_timing_value_swap_common
+	pushl arch_timing_swap_start
+	popl arch_timing_value_swap_temp
 time_read_not_needed:
 #endif
 	ret
@@ -369,7 +371,7 @@ time_read_not_needed:
  *
  * @brief Adjust stack/parameters before invoking thread entry function
  *
- * This function adjusts the initial stack frame created by z_arch_new_thread()
+ * This function adjusts the initial stack frame created by arch_new_thread()
  * such that the GDB stack frame unwinders recognize it as the outermost frame
  * in the thread's stack.
  *
@@ -378,7 +380,7 @@ time_read_not_needed:
  * a main() function, and there does not appear to be a simple way of stopping
  * the unwinding of the stack.
  *
- * Given the initial thread created by z_arch_new_thread(), GDB expects to find
+ * Given the initial thread created by arch_new_thread(), GDB expects to find
  * a return address on the stack immediately above the thread entry routine
  * z_thread_entry, in the location occupied by the initial EFLAGS.  GDB
  * attempts to examine the memory at this return address, which typically

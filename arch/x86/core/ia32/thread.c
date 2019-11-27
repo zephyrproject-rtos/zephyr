@@ -12,12 +12,9 @@
  * processor architecture.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
+#include <kernel.h>
+#include <ksched.h>
 #include <arch/x86/mmustructs.h>
-#include <sys/printk.h>
 
 /* forward declaration */
 
@@ -112,8 +109,8 @@ static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-					 void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
 {
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)_current->stack_obj;
@@ -164,7 +161,7 @@ NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 extern int z_float_disable(struct k_thread *thread);
 
-int z_arch_float_disable(struct k_thread *thread)
+int arch_float_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_LAZY_FP_SHARING)
 	return z_float_disable(thread);
@@ -174,10 +171,10 @@ int z_arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
-void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		       size_t stack_size, k_thread_entry_t entry,
-		       void *parameter1, void *parameter2, void *parameter3,
-		       int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *parameter1, void *parameter2, void *parameter3,
+		     int priority, unsigned int options)
 {
 	char *stack_buf;
 	char *stack_high;

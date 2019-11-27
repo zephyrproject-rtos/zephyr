@@ -1,9 +1,7 @@
-# Kconfig - ST STM32F411CE MCU configuration options
-#
+# ST STM32F411CE MCU configuration options
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F411XE
 

@@ -168,7 +168,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		} else {
 			bt_dev.name[len] = '\0';
 
-			BT_DBG("Name set to %s", bt_dev.name);
+			BT_DBG("Name set to %s", log_strdup(bt_dev.name));
 		}
 		return 0;
 	}

@@ -6,8 +6,8 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#include "test_mpool.h"
 #include <kernel_internal.h>
+#include "test_mpool.h"
 
 /** TESTPOINT: Statically define and initialize a memory pool*/
 K_MEM_POOL_DEFINE(kmpool, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);

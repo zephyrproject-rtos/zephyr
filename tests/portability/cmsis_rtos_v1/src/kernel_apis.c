@@ -45,7 +45,7 @@ void test_kernel_systick(void)
 	k_busy_wait(WAIT_TIME_US);
 	stop_time = osKernelSysTick();
 
-	diff = SYS_CLOCK_HW_CYCLES_TO_NS(stop_time -
+	diff = (u32_t)k_cyc_to_ns_floor64(stop_time -
 					 start_time) / NSEC_PER_USEC;
 
 	/* Check that it's within 1%.  On some Zephyr platforms

@@ -1,10 +1,8 @@
-# Kconfig - STM32 MCU clock control driver config
-#
+# STM32 MCU clock control driver config
+
 # Copyright (c) 2017 Linaro
 # Copyright (c) 2017 RnDity Sp. z o.o.
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_STM32
 

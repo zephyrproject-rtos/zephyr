@@ -1,10 +1,7 @@
-# Kconfig - Clock controller driver configuration options
+# Clock controller driver configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # Clock controller drivers

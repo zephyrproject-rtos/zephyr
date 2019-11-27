@@ -1,8 +1,7 @@
-# Kconfig.nrf5 - nRF5 entropy generator driver configuration
-#
+# nRF5 entropy generator driver configuration
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # Copyright (c) 2017 Exati Tecnologia Ltda.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config ENTROPY_NRF_FORCE_ALT
@@ -72,9 +71,9 @@ config ENTROPY_NRF5_ISR_THRESHOLD
 config ENTROPY_NRF5_PRI
 	int "RNG interrupt priority"
 	range 0 2 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_COMPATIBLE_NRF52X
+	range 0 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
 	default 2 if SOC_SERIES_NRF51X
-	default 5 if SOC_COMPATIBLE_NRF52X
+	default 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
 	help
 	  nRF5X RNG IRQ priority.
 

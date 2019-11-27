@@ -1,10 +1,7 @@
-# Kconfig - EFM32WG series configuration options
+# EFM32WG series configuration options
 
-#
 # Copyright (c) 2017 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFM32WG
 

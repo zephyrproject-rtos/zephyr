@@ -1,7 +1,6 @@
-# Kconfig - Native posix ethernet driver configuration options
+# Native posix ethernet driver configuration options
 
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NATIVE_POSIX

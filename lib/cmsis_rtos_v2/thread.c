@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <kernel.h>
+#include <ksched.h>
 #include <stdio.h>
 #include <string.h>
-#include <kernel_structs.h>
-#include <ksched.h>
 #include <sys/atomic.h>
 #include <debug/stack.h>
 #include "wrapper.h"

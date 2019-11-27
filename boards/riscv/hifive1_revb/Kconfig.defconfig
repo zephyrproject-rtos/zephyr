@@ -1,5 +1,6 @@
 # Copyright (c) 2019 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
+
 if BOARD_HIFIVE1_REVB
 
 config BOARD

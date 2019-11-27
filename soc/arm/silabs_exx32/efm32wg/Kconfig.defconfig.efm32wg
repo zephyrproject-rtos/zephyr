@@ -1,10 +1,7 @@
-# Kconfig - Silicon Labs EFM32WG-STK3800 platform configuration options
+# Silicon Labs EFM32WG-STK3800 platform configuration options
 
-#
 # Copyright (c) 2017 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if GPIO
 

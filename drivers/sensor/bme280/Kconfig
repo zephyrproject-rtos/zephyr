@@ -1,11 +1,9 @@
-# Kconfig.bmp280 - BMP280 temperature and pressure sensor configuration options
+# BMP280 temperature and pressure sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2017 IpTronix S.r.l.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig BME280
 	bool "BME280/BMP280 sensor"
 	depends on I2C || SPI

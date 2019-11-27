@@ -20,7 +20,7 @@ K_APPMEM_PARTITION_DEFINE(bench_ptn);
 struct k_mem_domain bench_domain;
 
 extern char sline[256];
-extern u64_t z_arch_timing_enter_user_mode_end;
+extern u64_t arch_timing_enter_user_mode_end;
 
 u32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
 u32_t user_thread_creation_end_time, user_thread_creation_start_time;
@@ -105,7 +105,7 @@ void drop_to_user_mode(void)
 	k_yield();
 
 	drop_to_user_mode_end_time = (u32_t)
-		SUBTRACT_CLOCK_CYCLES(z_arch_timing_enter_user_mode_end);
+		SUBTRACT_CLOCK_CYCLES(arch_timing_enter_user_mode_end);
 
 	u32_t tmp_start_time =
 		SUBTRACT_CLOCK_CYCLES(drop_to_user_mode_start_time);

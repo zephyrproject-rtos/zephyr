@@ -296,6 +296,11 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 	status_t status;
 	int alloc;
 
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
+
 	while (true) {
 		alloc = mcux_get_tx_alloc(data);
 		if (alloc >= 0) {

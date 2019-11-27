@@ -1,9 +1,8 @@
 # ST Microelectronics LSM6DSO 6-axis IMU sensor driver
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig LSM6DSO
 	bool "LSM6DSO I2C/SPI accelerometer and gyroscope Chip"
 	depends on (I2C && HAS_DTS_I2C) || SPI

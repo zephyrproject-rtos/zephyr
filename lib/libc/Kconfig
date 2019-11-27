@@ -1,10 +1,7 @@
-# Kconfig - C library
+# C library
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "C Library"
 
@@ -39,7 +36,7 @@ config EXTERNAL_LIBC
 	help
 	  Build with external/user provided C library.
 
-endchoice #LIBC_IMPLEMENTATION
+endchoice # LIBC_IMPLEMENTATION
 
 if NEWLIB_LIBC
 
@@ -79,7 +76,7 @@ config NEWLIB_LIBC_FLOAT_SCANF
 	  Build with floating point scanf enabled. This will increase the size of
 	  the image.
 
-endif #NEWLIB_LIBC
+endif # NEWLIB_LIBC
 
 if MINIMAL_LIBC
 
@@ -98,7 +95,7 @@ config MINIMAL_LIBC_LL_PRINTF
 	  Build with long long printf enabled. This will increase the size of
 	  the image.
 
-endif #MINIMAL_LIBC
+endif # MINIMAL_LIBC
 
 config STDOUT_CONSOLE
 	bool "Send stdout to console"

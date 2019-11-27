@@ -1,10 +1,7 @@
-# Kconfig.dw - DesignWare GPIO configuration options
-#
-#
+# DesignWare GPIO configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_DW
 	bool "Designware GPIO"

@@ -711,9 +711,9 @@ static int arc_mpu_init(struct device *arg)
 
 		/* record the static region which can be split */
 		if (mpu_config.mpu_regions[i].attr & REGION_DYNAMIC) {
-			if (dynamic_regions_num >
+			if (dynamic_regions_num >=
 			MPU_DYNAMIC_REGION_AREAS_NUM) {
-				LOG_ERR("no enough dynamic regions %d",
+				LOG_ERR("not enough dynamic regions %d",
 				 dynamic_regions_num);
 				return -EINVAL;
 			}

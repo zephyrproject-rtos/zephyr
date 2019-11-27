@@ -1,10 +1,7 @@
-# Kconfig - ETH_ENC28J60 Ethernet driver configuration options
+# ETH_ENC28J60 Ethernet driver configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"

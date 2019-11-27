@@ -90,6 +90,15 @@
 #include <stm32l4xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_DMA_STM32
+#include <stm32l4xx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_STM32_LPTIM_TIMER
+#include <stm32l4xx_ll_lptim.h>
+#include <stm32l4xx_ll_system.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L4X_SOC_H_ */

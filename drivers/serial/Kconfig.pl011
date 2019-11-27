@@ -1,9 +1,5 @@
-# Kconfig.pl011
-#
 # Copyright (c) 2018 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_PL011
 	bool "ARM PL011 UART Driver"

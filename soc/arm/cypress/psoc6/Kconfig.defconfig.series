@@ -1,10 +1,7 @@
-# Kconfig.defconfig.series - Cypress Semiconductor PSoC6 series configuration
-# options
-#
+# Cypress Semiconductor PSoC6 series configuration options
+
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_PSOC62
 

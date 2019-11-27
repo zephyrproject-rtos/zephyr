@@ -1,9 +1,7 @@
-# Kconfig - EFM32HG MCU line
-#
+# EFM32HG MCU line
+
 # Copyright (c) 2018 Marcio Montenegro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_EFM32HG
 	bool "EFM32HG Series MCU"

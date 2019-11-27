@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK LPSCI
-#
+# MCUXpresso SDK LPSCI
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_MCUX_LPSCI
 	bool "MCUX LPSCI driver"

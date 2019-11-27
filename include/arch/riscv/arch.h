@@ -15,7 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
-#include "exp.h"
+#include <arch/riscv/thread.h>
+#include <arch/riscv/exp.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
@@ -63,21 +64,21 @@ extern "C" {
  */
 extern u32_t __soc_get_irq(void);
 
-void z_arch_irq_enable(unsigned int irq);
-void z_arch_irq_disable(unsigned int irq);
-int z_arch_irq_is_enabled(unsigned int irq);
-void z_arch_irq_priority_set(unsigned int irq, unsigned int prio);
+void arch_irq_enable(unsigned int irq);
+void arch_irq_disable(unsigned int irq);
+int arch_irq_is_enabled(unsigned int irq);
+void arch_irq_priority_set(unsigned int irq, unsigned int prio);
 void z_irq_spurious(void *unused);
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	z_arch_irq_priority_set(irq_p, priority_p); \
+	arch_irq_priority_set(irq_p, priority_p); \
 	irq_p; \
 })
 #else
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	irq_p; \
@@ -88,7 +89,7 @@ void z_irq_spurious(void *unused);
  * use atomic instruction csrrc to lock global irq
  * csrrc: atomic read and clear bits in CSR register
  */
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 	ulong_t mstatus;
@@ -106,7 +107,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
  * use atomic instruction csrrs to unlock global irq
  * csrrs: atomic read and set bits in CSR register
  */
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	ulong_t mstatus;
 
@@ -116,26 +117,26 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 			  : "memory");
 }
 
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	/* FIXME: looking at z_arch_irq_lock, this should be reducable
+	/* FIXME: looking at arch_irq_lock, this should be reducable
 	 * to just testing that key is nonzero (because it should only
 	 * have the single bit set).  But there is a mask applied to
-	 * the argument in z_arch_irq_unlock() that has me worried
+	 * the argument in arch_irq_unlock() that has me worried
 	 * that something elseswhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
 	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
 }
 
-static ALWAYS_INLINE void z_arch_nop(void)
+static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
 extern u32_t z_timer_cycle_get_32(void);
 
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }

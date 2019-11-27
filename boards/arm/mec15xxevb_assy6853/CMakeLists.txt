@@ -45,7 +45,7 @@ if(DEFINED EVERGLADES_SPI_GEN)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${EVERGLADES_SPI_GEN}
     -i ${EVERGLADES_SPI_CFG}
-    -o ${PROJECT_BINARY_DIR}/spi_image.bin
+    -o ${PROJECT_BINARY_DIR}/${SPI_IMAGE_NAME}
   )
 
   unset(EVERGLADES_SPI_GEN)

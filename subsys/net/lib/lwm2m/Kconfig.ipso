@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LWM2M_IPSO_SUPPORT
 	bool "IPSO Alliance Smart Object Support"

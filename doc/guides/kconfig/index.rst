@@ -464,6 +464,25 @@ Here are some things to check:
   they come from.
 
 
+Checking changes with :file:`scripts/kconfig/lint.py`
+*****************************************************
+
+After you make Kconfig changes, you can use the
+:zephyr_file:`scripts/kconfig/lint.py` script to check for some potential
+issues, like unused symbols and symbols that are impossible to enable. Use
+``--help`` to see available options.
+
+Some checks are necessarily a bit heuristic, so a symbol being flagged by a
+check does not necessarily mean there's a problem. If a check returns a false
+positive e.g. due to token pasting in C (``CONFIG_FOO_##index##_BAR``), just
+ignore it.
+
+When investigating an unknown symbol ``FOO_BAR``, it is a good idea to run
+``git grep FOO_BAR`` to look for references. It is also a good idea to search
+for some components of the symbol name with e.g. ``git grep FOO`` and
+``git grep BAR``, as it can help uncover token pasting.
+
+
 Style recommendations and shorthands
 ************************************
 
@@ -631,6 +650,27 @@ For a Kconfig symbol that enables a driver/subsystem FOO, consider having just
 "Foo" as the prompt, instead of "Enable Foo support" or the like. It will
 usually be clear in the context of an option that can be toggled on/off, and
 makes things consistent.
+
+
+Header comments and other nits
+==============================
+
+A few formatting nits, to help keep things consistent:
+
+- Use this format for any header comments at the top of ``Kconfig`` files:
+
+  .. code-block:: none
+
+     # <Overview of symbols defined in the file, preferably in plain English>
+     (Blank line)
+     # Copyright (c) 2019 ...
+     # SPDX-License-Identifier: <License>
+     (Blank line)
+     (Kconfig definitions)
+
+- Format comments as ``# Comment`` rather than ``#Comment``
+
+- Put a blank line before/after each top-level ``if`` and ``endif``
 
 
 Lesser-known/used Kconfig features
@@ -831,6 +871,7 @@ value starting with ``0x``.
   dt_node_reg_size_int(kconf, _, path, index=0, unit=None):
   dt_node_reg_size_hex(kconf, _, path, index=0, unit=None):
   dt_compat_enabled(kconf, _, compat):
+  dt_chosen_enabled(kconf, _, chosen):
   dt_node_has_bool_prop(kconf, _, path, prop):
 
 Example Usage

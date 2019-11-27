@@ -1,7 +1,6 @@
-# Kconfig - MCUXpresso SDK USART
-#
+# MCUXpresso SDK USART
+
 # Copyright 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USART_MCUX_LPC

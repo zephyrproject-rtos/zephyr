@@ -106,8 +106,8 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	pcnt = ((size - unused) * 100U) / size;
 
 	shell_print((const struct shell *)user_data,
-		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)",
-		      (u32_t)thread,
+		"%p %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)",
+		      thread,
 		      tname ? tname : "NA",
 		      size, unused, size - unused, size, pcnt);
 }

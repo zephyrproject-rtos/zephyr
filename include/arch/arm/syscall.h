@@ -36,9 +36,10 @@ extern "C" {
 /* Syscall invocation macros. arm-specific machine constraints used to ensure
  * args land in the proper registers.
  */
-static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id)
+static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5, uintptr_t arg6,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -53,13 +54,15 @@ static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r5), "r" (r6)
-			 : "r8", "ip", "sp", "memory");
+			 : "r8", "memory", "ip");
 
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -73,13 +76,14 @@ static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r6)
-			 : "r8", "memory");
+			 : "r8", "memory", "ip");
 
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -92,13 +96,14 @@ static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r6)
-			 : "r8", "memory");
+			 : "r8", "memory", "ip");
 
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id)
+static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -109,12 +114,13 @@ static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
-			 : "r8", "memory", "r3");
+			 : "r8", "memory", "r3", "ip");
 
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -124,12 +130,13 @@ static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
-			 : "r8", "memory", "r2", "r3");
+			 : "r8", "memory", "r2", "r3", "ip");
 
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
+					     uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r6 __asm__("r6") = call_id;
@@ -138,11 +145,11 @@ static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3", "ip");
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke0(u32_t call_id)
+static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
 	register u32_t ret __asm__("r0");
 	register u32_t r6 __asm__("r6") = call_id;
@@ -151,12 +158,12 @@ static inline u32_t z_arch_syscall_invoke0(u32_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3", "ip");
 
 	return ret;
 }
 
-static inline bool z_arch_is_user_context(void)
+static inline bool arch_is_user_context(void)
 {
 	u32_t value;
 

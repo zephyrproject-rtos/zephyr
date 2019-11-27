@@ -1,9 +1,5 @@
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menuconfig SPI_FLASH_W25QXXDV
 	bool "SPI NOR Flash Winbond W25QXXDV"

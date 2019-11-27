@@ -1,9 +1,7 @@
-# Kconfig - EFR32FG1P (Flex Gecko) MCU line
-#
+# EFR32FG1P (Flex Gecko) MCU line
+
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFR32FG1P
 

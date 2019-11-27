@@ -1,9 +1,7 @@
-# Kconfig.soc - Cypress PSOC6 MCU line
-#
+# Cypress PSOC6 MCU line
+
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Cypress PSoC6 MCU Selection"

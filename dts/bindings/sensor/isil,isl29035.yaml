@@ -1,0 +1,17 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Intersil ISL29035 Light Sensor
+
+description: |
+    Intersil ISL29035 Light Sensor. See datasheet at
+    https://www.renesas.com/us/en/www/doc/datasheet/isl29035.pdf
+
+compatible: "isil,isl29035"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false

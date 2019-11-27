@@ -35,8 +35,10 @@ void sys_trace_thread_create(struct k_thread *thread)
 	ctf_bounded_string_t name = { "Unnamed thread" };
 
 #if defined(CONFIG_THREAD_NAME)
-	if (thread->name != NULL) {
-		strncpy(name.buf, thread->name, sizeof(name.buf));
+	const char *tname = k_thread_name_get(thread);
+
+	if (tname != NULL) {
+		strncpy(name.buf, tname, sizeof(name.buf));
 		/* strncpy may not always null-terminate */
 		name.buf[sizeof(name.buf) - 1] = 0;
 	}
@@ -97,9 +99,10 @@ void sys_trace_thread_name_set(struct k_thread *thread)
 {
 #if defined(CONFIG_THREAD_NAME)
 	ctf_bounded_string_t name = { "Unnamed thread" };
+	const char *tname = k_thread_name_get(thread);
 
-	if (thread->name != NULL) {
-		strncpy(name.buf, thread->name, sizeof(name.buf));
+	if (tname != NULL) {
+		strncpy(name.buf, tname, sizeof(name.buf));
 		/* strncpy may not always null-terminate */
 		name.buf[sizeof(name.buf) - 1] = 0;
 	}

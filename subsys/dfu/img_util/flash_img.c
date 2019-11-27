@@ -133,8 +133,13 @@ static int flash_sync(struct flash_img_context *ctx)
 	}
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	flash_progressive_erase(ctx, ctx->bytes_written +
-				CONFIG_IMG_BLOCK_BUF_SIZE);
+	rc = flash_progressive_erase(ctx, ctx->bytes_written +
+				     CONFIG_IMG_BLOCK_BUF_SIZE);
+	if (rc) {
+		LOG_ERR("flash_progressive_erase error %d offset=0x%08zx", rc,
+			ctx->bytes_written);
+		return rc;
+	}
 #endif
 
 	rc = flash_area_write(ctx->flash_area, ctx->bytes_written, ctx->buf,
@@ -199,8 +204,11 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 	}
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
 	/* erase the image trailer area if it was not erased */
-	flash_progressive_erase(ctx,
+	rc = flash_progressive_erase(ctx,
 				BOOT_TRAILER_IMG_STATUS_OFFS(ctx->flash_area));
+	if (rc) {
+		return rc;
+	}
 #endif
 
 	flash_area_close(ctx->flash_area);

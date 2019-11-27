@@ -1,10 +1,7 @@
-# Kconfig - ADC configuration options
+# ADC configuration options
 
-#
 # Copyright (c) 2017 comsuisse AG
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config ADC_SAM_AFEC
 	bool "SAM ADC Driver"

@@ -1,7 +1,6 @@
-# Kconfig - DFU support configuration options
-#
+# DFU support configuration options
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 #

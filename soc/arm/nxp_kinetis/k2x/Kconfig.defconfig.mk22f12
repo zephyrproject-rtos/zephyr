@@ -1,9 +1,7 @@
-# Kconfig - FSL FRDM K22F platform configuration options
-#
+# FSL FRDM K22F platform configuration options
+
 # Copyright (c) 2018 Prevas A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MK22F51212
 

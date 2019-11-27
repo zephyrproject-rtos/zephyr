@@ -83,9 +83,10 @@ extern "C" {
  *         return void
  *
  */
-typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
-				      u32_t arg4, u32_t arg5, u32_t arg6,
-				      void *ssf);
+typedef uintptr_t (*_k_syscall_handler_t)(uintptr_t arg1, uintptr_t arg2,
+					  uintptr_t arg3, uintptr_t arg4,
+					  uintptr_t arg5, uintptr_t arg6,
+					  void *ssf);
 
 /* True if a syscall function must trap to the kernel, usually a
  * compile-time decision.
@@ -99,7 +100,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 #elif defined(__ZEPHYR_USER__)
 	ret = true;
 #else
-	ret = z_arch_is_user_context();
+	ret = arch_is_user_context();
 #endif
 #endif
 	return ret;
@@ -113,7 +114,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 static inline bool _is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE
-	return z_arch_is_user_context();
+	return arch_is_user_context();
 #else
 	return false;
 #endif

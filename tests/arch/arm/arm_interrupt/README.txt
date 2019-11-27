@@ -37,7 +37,7 @@ Sample Output:
  starting test - test_arm_interrupt
  Available IRQ line: 25
  E: ***** HARD FAULT *****
- E: Z_ARCH_EXCEPT with reason 3
+ E: ARCH_EXCEPT with reason 3
 
  E: r0/a1:  0x00000003  r1/a2:  0x20001240  r2/a3:  0x00000003
  E: r3/a4:  0x20001098 r12/ip:  0x00000000 r14/lr:  0x000012c9
@@ -49,7 +49,7 @@ Sample Output:
  E: Fault during interrupt handling
 
  E: ***** HARD FAULT *****
- E: Z_ARCH_EXCEPT with reason 4
+ E: ARCH_EXCEPT with reason 4
 
  E: r0/a1:  0x00000004  r1/a2:  0x20001240  r2/a3:  0x00000004
  E: r3/a4:  0x20001098 r12/ip:  0x00000000 r14/lr:  0x000012c9

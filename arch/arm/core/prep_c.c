@@ -17,14 +17,10 @@
  */
 
 #include <kernel.h>
-#include <zephyr/types.h>
-#include <toolchain.h>
-#include <linker/linker-defs.h>
 #include <kernel_internal.h>
-#include <arch/cpu.h>
-#if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/cortex_m/cmsis.h>
-#elif defined(CONFIG_ARMV7_R)
+#include <linker/linker-defs.h>
+
+#if defined(CONFIG_ARMV7_R)
 #include <cortex_r/stack.h>
 #endif
 

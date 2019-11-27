@@ -1,10 +1,7 @@
-# Kconfig.ipv4 - IPv4 Options
+# IPv4 Options
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_IPV4
 	bool "IPv4"

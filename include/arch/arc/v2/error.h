@@ -25,7 +25,7 @@ extern "C" {
 /*
  * use trap_s to raise a SW exception
  */
-#define Z_ARCH_EXCEPT(reason_p)	do { \
+#define ARCH_EXCEPT(reason_p)	do { \
 		__asm__ volatile ( \
 		"mov r0, %[reason]\n\t" \
 		"trap_s %[id]\n\t" \

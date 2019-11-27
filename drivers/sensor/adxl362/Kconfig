@@ -1,10 +1,8 @@
-# Kconfig.adxl362 - ADXL362 Three-Axis Digital Accelerometers
+# ADXL362 Three-Axis Digital Accelerometers
 
-#
 # Copyright (c) 2017 IpTronix S.r.l.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig ADXL362
 	bool "ADXL362 sensor"
 	depends on SPI

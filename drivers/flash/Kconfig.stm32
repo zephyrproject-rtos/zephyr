@@ -1,10 +1,8 @@
-# Kconfig - ST Microelectronics STM32 MCUs Flash driver config
-#
+# ST Microelectronics STM32 MCUs Flash driver config
+
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # Copyright (c) 2017 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_STM32
 

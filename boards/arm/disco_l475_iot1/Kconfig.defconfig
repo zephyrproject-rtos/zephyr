@@ -1,14 +1,21 @@
-# Kconfig - Discovery IoT L475 board configuration
-#
+# Discovery IoT L475 board configuration
+
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_DISCO_L475_IOT1
 
 config BOARD
 	default "disco_l475_iot1"
+
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+
+endchoice
+
+endif #STM32_LPTIM_TIMER
 
 if UART_CONSOLE
 
@@ -65,19 +72,6 @@ choice HTS221_TRIGGER_MODE
 	default HTS221_TRIGGER_NONE
 endchoice
 
-
-if VL53L0X
-
-config VL53L0X_XSHUT_CONTROL_ENABLE
-	default y
-
-config VL53L0X_XSHUT_GPIO_DEV_NAME
-	default "GPIOC"
-
-config VL53L0X_XSHUT_GPIO_PIN_NUM
-	default 6
-
-endif # VL53L0X
 
 if LSM6DSL
 

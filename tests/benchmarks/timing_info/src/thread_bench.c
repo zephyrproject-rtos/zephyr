@@ -19,9 +19,9 @@ char sline[256];
 /* FILE *output_file = stdout; */
 
 /* location of the time stamps*/
-extern u32_t z_arch_timing_value_swap_end;
-extern u64_t z_arch_timing_value_swap_temp;
-extern u64_t z_arch_timing_value_swap_common;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_temp;
+extern u64_t arch_timing_value_swap_common;
 
 volatile u64_t thread_abort_end_time;
 volatile u64_t thread_abort_start_time;
@@ -48,7 +48,7 @@ K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 struct k_thread my_thread;
 struct k_thread my_thread_0;
 
-u32_t z_arch_timing_value_swap_end_test = 1U;
+u32_t arch_timing_value_swap_end_test = 1U;
 u64_t dummy_time;
 u64_t start_time;
 u64_t test_end_time;
@@ -68,9 +68,9 @@ u32_t benchmarking_overhead_swap(void)
 		"rdtsc\n\t"
 		"mov %eax,start_time\n\t"
 		"mov %edx,start_time+4\n\t"
-		"cmp $0x1,z_arch_timing_value_swap_end_test\n\t"
+		"cmp $0x1,arch_timing_value_swap_end_test\n\t"
 		"jne time_read_not_needed_test\n\t"
-		"movw $0x2,z_arch_timing_value_swap_end\n\t"
+		"movw $0x2,arch_timing_value_swap_end\n\t"
 		"pushl %eax\n\t"
 		"pushl %edx\n\t"
 		"rdtsc\n\t"
@@ -99,7 +99,7 @@ void test_thread_entry(void *p, void *p1, void *p2)
 
 void thread_swap_test(void *p1, void *p2, void *p3)
 {
-	z_arch_timing_value_swap_end = 1U;
+	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
 	thread_abort_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(_current);
@@ -142,20 +142,20 @@ void system_thread_bench(void)
 			-1 /*priority*/, 0, K_NO_WAIT);
 
 	k_sleep(K_MSEC(1));
-	thread_abort_end_time = (z_arch_timing_value_swap_common);
-	z_arch_timing_swap_end = z_arch_timing_value_swap_common;
+	thread_abort_end_time = (arch_timing_value_swap_common);
+	arch_timing_swap_end = arch_timing_value_swap_common;
 #if defined(CONFIG_X86)
-	z_arch_timing_swap_start = z_arch_timing_value_swap_temp;
+	arch_timing_swap_start = arch_timing_value_swap_temp;
 	/* In the rest of ARCHes read_timer_start_of_swap() has already
 	 * registered the time-stamp of the start of context-switch in
-	 * z_arch_timing_swap_start.
+	 * arch_timing_swap_start.
 	 */
 #endif
-	u32_t total_swap_cycles = z_arch_timing_swap_end - z_arch_timing_swap_start;
+	u32_t total_swap_cycles = arch_timing_swap_end - arch_timing_swap_start;
 
 	/* Interrupt latency*/
-	u64_t local_end_intr_time = z_arch_timing_irq_end;
-	u64_t local_start_intr_time = z_arch_timing_irq_start;
+	u64_t local_end_intr_time = arch_timing_irq_end;
+	u64_t local_start_intr_time = arch_timing_irq_start;
 
 	/*******************************************************************/
 	/* thread create*/
@@ -224,8 +224,10 @@ void system_thread_bench(void)
 		(u32_t) (CYCLES_TO_NS(intr_latency_cycles)));
 
 	/*tick overhead*/
-	u32_t tick_overhead_cycles =  SUBTRACT_CLOCK_CYCLES(z_arch_timing_tick_end) -
-				SUBTRACT_CLOCK_CYCLES(z_arch_timing_tick_start);
+	u32_t tick_overhead_cycles =
+		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_end) -
+		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_start);
+
 	PRINT_STATS("Tick overhead",
 		(u32_t)(tick_overhead_cycles),
 		(u32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
