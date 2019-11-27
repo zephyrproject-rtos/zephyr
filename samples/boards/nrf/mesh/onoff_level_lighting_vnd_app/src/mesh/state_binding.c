@@ -72,11 +72,6 @@ u16_t constrain_lightness(u16_t light)
 	return light;
 }
 
-static void constrain_target_lightness(void)
-{
-	ctl->light->target = constrain_lightness(ctl->light->target);
-}
-
 static void constrain_target_lightness2(void)
 {
 	/* This is as per Mesh Model Specification 3.3.2.2.3 */
@@ -90,6 +85,17 @@ static void constrain_target_lightness2(void)
 	} else if (ctl->light->target > ctl->light->range_max) {
 		ctl->light->target = ctl->light->range_max;
 	}
+}
+
+u16_t constrain_temperature(u16_t temp)
+{
+	if (temp < ctl->temp->range_min) {
+		temp = ctl->temp->range_min;
+	} else if (temp > ctl->temp->range_max) {
+		temp = ctl->temp->range_max;
+	}
+
+	return temp;
 }
 
 static s16_t light_ctl_temp_to_level(u16_t temp)
@@ -143,7 +149,7 @@ void set_target(u8_t type, void *dptr)
 	break;
 	case LEVEL_LIGHT:
 		ctl->light->target = *((s16_t *) dptr) - INT16_MIN;
-		constrain_target_lightness();
+		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case DELTA_LEVEL_LIGHT:
 		ctl->light->target =  *((s16_t *) dptr) - INT16_MIN;
@@ -151,20 +157,22 @@ void set_target(u8_t type, void *dptr)
 		break;
 	case ACTUAL:
 		ctl->light->target = *((u16_t *) dptr);
+		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case LINEAR:
 		ctl->light->target = linear_to_actual(*((u16_t *) dptr));
-		constrain_target_lightness();
+		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case CTL_LIGHT:
 		ctl->light->target = *((u16_t *) dptr);
-		constrain_target_lightness();
+		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case LEVEL_TEMP:
 		ctl->temp->target = level_to_light_ctl_temp(*((s16_t *) dptr));
 		break;
 	case CTL_TEMP:
 		ctl->temp->target = *((u16_t *) dptr);
+		ctl->temp->target = constrain_temperature(ctl->temp->target);
 		break;
 	case CTL_DELTA_UV:
 		ctl->duv->target = *((s16_t *) dptr);

@@ -25,6 +25,7 @@ enum state_binding {
 };
 
 u16_t constrain_lightness(u16_t light);
+u16_t constrain_temperature(u16_t temp);
 u16_t level_to_light_ctl_temp(s16_t level);
 
 void set_target(u8_t type, void *dptr);

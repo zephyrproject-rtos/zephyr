@@ -62,6 +62,9 @@ static void light_default_status_init(void)
 	ctl->light->def = constrain_lightness(ctl->light->def);
 	ctl->light->target = constrain_lightness(ctl->light->target);
 
+	ctl->temp->def = constrain_temperature(ctl->temp->def);
+	ctl->temp->target = constrain_temperature(ctl->temp->target);
+
 	ctl->temp->current = ctl->temp->def;
 	ctl->duv->current = ctl->duv->def;
 
