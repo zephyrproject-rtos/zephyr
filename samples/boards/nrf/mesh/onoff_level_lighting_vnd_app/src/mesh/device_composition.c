@@ -833,15 +833,16 @@ static void gen_def_trans_time_publish(struct bt_mesh_model *model)
 	}
 }
 
-static bool gen_def_trans_time_setunack(struct bt_mesh_model *model,
-					struct bt_mesh_msg_ctx *ctx,
-					struct net_buf_simple *buf)
+static void gen_def_trans_time_set_unack(struct bt_mesh_model *model,
+					 struct bt_mesh_msg_ctx *ctx,
+					 struct net_buf_simple *buf)
 {
 	u8_t tt;
+
 	tt = net_buf_simple_pull_u8(buf);
 
 	if ((tt & 0x3F) == 0x3F) {
-		return false;
+		return;
 	}
 
 	if (ctl->tt != tt) {
@@ -851,27 +852,31 @@ static bool gen_def_trans_time_setunack(struct bt_mesh_model *model,
 		gen_def_trans_time_publish(model);
 		save_on_flash(GEN_DEF_TRANS_TIME_STATE);
 	}
-
-	return true;
-}
-
-static void gen_def_trans_time_set_unack(struct bt_mesh_model *model,
-					 struct bt_mesh_msg_ctx *ctx,
-					 struct net_buf_simple *buf)
-{
-	gen_def_trans_time_setunack(model, ctx, buf);
 }
 
 static void gen_def_trans_time_set(struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
-	if (gen_def_trans_time_setunack(model, ctx, buf) == true) {
+	u8_t tt;
+
+	tt = net_buf_simple_pull_u8(buf);
+
+	if ((tt & 0x3F) == 0x3F) {
+		return;
+	}
+
+	if (ctl->tt != tt) {
+		ctl->tt = tt;
+		default_tt = tt;
+
+		gen_def_trans_time_get(model, ctx, buf);
+		gen_def_trans_time_publish(model);
+		save_on_flash(GEN_DEF_TRANS_TIME_STATE);
+	} else {
 		gen_def_trans_time_get(model, ctx, buf);
 	}
 }
-
-
 
 /* Generic Default Transition Time Client message handlers */
 static void gen_def_trans_time_status(struct bt_mesh_model *model,
@@ -926,15 +931,16 @@ static void gen_onpowerup_publish(struct bt_mesh_model *model)
 	}
 }
 
-static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
-				   struct bt_mesh_msg_ctx *ctx,
-				   struct net_buf_simple *buf)
+static void gen_onpowerup_set_unack(struct bt_mesh_model *model,
+				    struct bt_mesh_msg_ctx *ctx,
+				    struct net_buf_simple *buf)
 {
 	u8_t onpowerup;
+
 	onpowerup = net_buf_simple_pull_u8(buf);
 
 	if (onpowerup > STATE_RESTORE) {
-		return false;
+		return;
 	}
 
 	if (ctl->onpowerup != onpowerup) {
@@ -943,22 +949,27 @@ static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
 		gen_onpowerup_publish(model);
 		save_on_flash(GEN_ONPOWERUP_STATE);
 	}
-
-	return true;
-}
-
-static void gen_onpowerup_set_unack(struct bt_mesh_model *model,
-				    struct bt_mesh_msg_ctx *ctx,
-				    struct net_buf_simple *buf)
-{
-	gen_onpowerup_setunack(model, ctx, buf);
 }
 
 static void gen_onpowerup_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	if (gen_onpowerup_setunack(model, ctx, buf) == true) {
+	u8_t onpowerup;
+
+	onpowerup = net_buf_simple_pull_u8(buf);
+
+	if (onpowerup > STATE_RESTORE) {
+		return;
+	}
+
+	if (ctl->onpowerup != onpowerup) {
+		ctl->onpowerup = onpowerup;
+
+		gen_onpowerup_get(model, ctx, buf);
+		gen_onpowerup_publish(model);
+		save_on_flash(GEN_ONPOWERUP_STATE);
+	} else {
 		gen_onpowerup_get(model, ctx, buf);
 	}
 }
@@ -1483,8 +1494,20 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	light_lightness_default_set_unack(model, ctx, buf);
-	light_lightness_default_get(model, ctx, buf);
+	u16_t lightness;
+
+	lightness = net_buf_simple_pull_le16(buf);
+	lightness = constrain_lightness(lightness);
+
+	if (ctl->light->def != lightness) {
+		ctl->light->def = lightness;
+
+		light_lightness_default_get(model, ctx, buf);
+		light_lightness_default_publish(model);
+		save_on_flash(DEF_STATES);
+	} else {
+		light_lightness_default_get(model, ctx, buf);
+	}
 }
 
 static void light_lightness_range_publish(struct bt_mesh_model *model)
@@ -1507,9 +1530,9 @@ static void light_lightness_range_publish(struct bt_mesh_model *model)
 	}
 }
 
-static bool light_lightness_range_setunack(struct bt_mesh_model *model,
-					   struct bt_mesh_msg_ctx *ctx,
-					   struct net_buf_simple *buf)
+static void light_lightness_range_set_unack(struct bt_mesh_model *model,
+					    struct bt_mesh_msg_ctx *ctx,
+					    struct net_buf_simple *buf)
 {
 	u16_t min, max;
 
@@ -1517,43 +1540,60 @@ static bool light_lightness_range_setunack(struct bt_mesh_model *model,
 	max = net_buf_simple_pull_le16(buf);
 
 	if (min == 0U || max == 0U) {
-		return false;
-	} else {
-		if (min <= max) {
-			ctl->light->status_code = RANGE_SUCCESSFULLY_UPDATED;
-
-			if (ctl->light->range_min != min ||
-			    ctl->light->range_max != max) {
-
-				ctl->light->range_min = min;
-				ctl->light->range_max = max;
-
-				light_lightness_range_publish(model);
-				save_on_flash(LIGHTNESS_RANGE);
-			}
-		} else {
-			/* The provided value for Range Max cannot be set */
-			ctl->light->status_code = CANNOT_SET_RANGE_MAX;
-			return false;
-		}
+		return;
 	}
 
-	return true;
-}
+	if (min <= max) {
+		ctl->light->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
-static void light_lightness_range_set_unack(struct bt_mesh_model *model,
-					    struct bt_mesh_msg_ctx *ctx,
-					    struct net_buf_simple *buf)
-{
-	light_lightness_range_setunack(model, ctx, buf);
+		if (ctl->light->range_min != min ||
+		    ctl->light->range_max != max) {
+
+			ctl->light->range_min = min;
+			ctl->light->range_max = max;
+
+			light_lightness_range_publish(model);
+			save_on_flash(LIGHTNESS_RANGE);
+		}
+	} else {
+		/* The provided value for Range Max cannot be set */
+		ctl->light->status_code = CANNOT_SET_RANGE_MAX;
+		return;
+	}
 }
 
 static void light_lightness_range_set(struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	if (light_lightness_range_setunack(model, ctx, buf) == true) {
-		light_lightness_range_get(model, ctx, buf);
+	u16_t min, max;
+
+	min = net_buf_simple_pull_le16(buf);
+	max = net_buf_simple_pull_le16(buf);
+
+	if (min == 0U || max == 0U) {
+		return;
+	}
+
+	if (min <= max) {
+		ctl->light->status_code = RANGE_SUCCESSFULLY_UPDATED;
+
+		if (ctl->light->range_min != min ||
+		    ctl->light->range_max != max) {
+
+			ctl->light->range_min = min;
+			ctl->light->range_max = max;
+
+			light_lightness_range_get(model, ctx, buf);
+			light_lightness_range_publish(model);
+			save_on_flash(LIGHTNESS_RANGE);
+		} else {
+			light_lightness_range_get(model, ctx, buf);
+		}
+	} else {
+		/* The provided value for Range Max cannot be set */
+		ctl->light->status_code = CANNOT_SET_RANGE_MAX;
+		return;
 	}
 }
 
@@ -1884,9 +1924,9 @@ static void light_ctl_default_publish(struct bt_mesh_model *model)
 	}
 }
 
-static bool light_ctl_default_setunack(struct bt_mesh_model *model,
-				       struct bt_mesh_msg_ctx *ctx,
-				       struct net_buf_simple *buf)
+static void light_ctl_default_set_unack(struct bt_mesh_model *model,
+					struct bt_mesh_msg_ctx *ctx,
+					struct net_buf_simple *buf)
 {
 	u16_t lightness, temp;
 	s16_t delta_uv;
@@ -1896,7 +1936,7 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
 
 	if (temp < TEMP_MIN || temp > TEMP_MAX) {
-		return false;
+		return;
 	}
 
 	lightness = constrain_lightness(lightness);
@@ -1911,22 +1951,36 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		light_ctl_default_publish(model);
 		save_on_flash(DEF_STATES);
 	}
-
-	return true;
-}
-
-static void light_ctl_default_set_unack(struct bt_mesh_model *model,
-					struct bt_mesh_msg_ctx *ctx,
-					struct net_buf_simple *buf)
-{
-	light_ctl_default_setunack(model, ctx, buf);
 }
 
 static void light_ctl_default_set(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	if (light_ctl_default_setunack(model, ctx, buf) == true) {
+	u16_t lightness, temp;
+	s16_t delta_uv;
+
+	lightness = net_buf_simple_pull_le16(buf);
+	temp = net_buf_simple_pull_le16(buf);
+	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
+
+	if (temp < TEMP_MIN || temp > TEMP_MAX) {
+		return;
+	}
+
+	lightness = constrain_lightness(lightness);
+	temp = constrain_temperature(temp);
+
+	if (ctl->light->def != lightness || ctl->temp->def != temp ||
+	    ctl->duv->def != delta_uv) {
+		ctl->light->def = lightness;
+		ctl->temp->def = temp;
+		ctl->duv->def = delta_uv;
+
+		light_ctl_default_get(model, ctx, buf);
+		light_ctl_default_publish(model);
+		save_on_flash(DEF_STATES);
+	} else {
 		light_ctl_default_get(model, ctx, buf);
 	}
 }
@@ -1951,9 +2005,9 @@ static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
 	}
 }
 
-static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
-					  struct bt_mesh_msg_ctx *ctx,
-					  struct net_buf_simple *buf)
+static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
+					   struct bt_mesh_msg_ctx *ctx,
+					   struct net_buf_simple *buf)
 {
 	u16_t min, max;
 
@@ -1963,7 +2017,7 @@ static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
 	if (min < TEMP_MIN || min > TEMP_MAX ||
 	    max < TEMP_MIN || max > TEMP_MAX) {
-		return false;
+		return;
 	}
 
 	if (min <= max) {
@@ -1981,25 +2035,44 @@ static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
 	} else {
 		/* The provided value for Range Max cannot be set */
 		ctl->temp->status_code = CANNOT_SET_RANGE_MAX;
-		return false;
+		return;
 	}
-
-	return true;
-}
-
-static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
-					   struct bt_mesh_msg_ctx *ctx,
-					   struct net_buf_simple *buf)
-{
-	light_ctl_temp_range_setunack(model, ctx, buf);
 }
 
 static void light_ctl_temp_range_set(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	if (light_ctl_temp_range_setunack(model, ctx, buf) == true) {
-		light_ctl_temp_range_get(model, ctx, buf);
+	u16_t min, max;
+
+	min = net_buf_simple_pull_le16(buf);
+	max = net_buf_simple_pull_le16(buf);
+
+	/* This is as per 6.1.3.1 in Mesh Model Specification */
+	if (min < TEMP_MIN || min > TEMP_MAX ||
+	    max < TEMP_MIN || max > TEMP_MAX) {
+		return;
+	}
+
+	if (min <= max) {
+		ctl->temp->status_code = RANGE_SUCCESSFULLY_UPDATED;
+
+		if (ctl->temp->range_min != min ||
+		    ctl->temp->range_max != max) {
+
+			ctl->temp->range_min = min;
+			ctl->temp->range_max = max;
+
+			light_ctl_temp_range_get(model, ctx, buf);
+			light_ctl_temp_range_publish(model);
+			save_on_flash(TEMPERATURE_RANGE);
+		} else {
+			light_ctl_temp_range_get(model, ctx, buf);
+		}
+	} else {
+		/* The provided value for Range Max cannot be set */
+		ctl->temp->status_code = CANNOT_SET_RANGE_MAX;
+		return;
 	}
 }
 
