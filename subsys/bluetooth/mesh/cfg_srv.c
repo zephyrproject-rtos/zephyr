@@ -1138,7 +1138,7 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 	if (update) {
 		update->ref++;
 		va_store(update);
-		return 0;
+		return STATUS_SUCCESS;
 	}
 
 	if (!free_slot) {
@@ -1170,6 +1170,7 @@ static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 		}
 
 		va_store(update);
+		return STATUS_SUCCESS;
 	}
 
 	if (addr) {
