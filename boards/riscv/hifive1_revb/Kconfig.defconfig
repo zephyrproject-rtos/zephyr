@@ -15,6 +15,9 @@ config FLASH_BASE_ADDRESS
 config FLASH_LOAD_OFFSET
 	default 0x0
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
+
 if PWM
 config PWM_SIFIVE
 	default y
