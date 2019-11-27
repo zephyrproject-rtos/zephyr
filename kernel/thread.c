@@ -55,6 +55,24 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 #endif
 }
 
+void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
+{
+#if defined(CONFIG_THREAD_MONITOR)
+	struct k_thread *thread;
+	k_spinlock_key_t key;
+
+	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
+
+	key = k_spin_lock(&lock);
+	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+		k_spin_unlock(&lock, key);
+		user_cb(thread, user_data);
+		key = k_spin_lock(&lock);
+	}
+	k_spin_unlock(&lock, key);
+#endif
+}
+
 bool k_is_in_isr(void)
 {
 	return arch_is_in_isr();

@@ -644,14 +644,44 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @param user_data Pointer to user data.
  *
  * @note CONFIG_THREAD_MONITOR must be set for this function
- * to be effective. Also this API uses irq_lock to protect the
- * _kernel.threads list which means creation of new threads and
- * terminations of existing threads are blocked until this
- * API returns.
+ * to be effective.
+ * @note This API uses @ref k_spin_lock to protect the _kernel.threads
+ * list which means creation of new threads and terminations of existing
+ * threads are blocked until this API returns.
  *
  * @return N/A
  */
 extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
+
+/**
+ * @brief Iterate over all the threads in the system without locking.
+ *
+ * This routine works exactly the same like @ref k_thread_foreach
+ * but unlocks interrupts when user_cb is executed.
+ *
+ * @param user_cb Pointer to the user callback function.
+ * @param user_data Pointer to user data.
+ *
+ * @note CONFIG_THREAD_MONITOR must be set for this function
+ * to be effective.
+ * @note This API uses @ref k_spin_lock only when accessing the _kernel.threads
+ * queue elements. It unlocks it during user callback function processing.
+ * If a new task is created when this @c foreach function is in progress,
+ * the added new task would not be included in the enumeration.
+ * If a task is aborted during this enumeration, there would be a race here
+ * and there is a possibility that this aborted task would be included in the
+ * enumeration.
+ * @note If the task is aborted and the memory occupied by its @c k_thread
+ * structure is reused when this @c k_thread_foreach_unlocked is in progress
+ * it might even lead to the system behave unstable.
+ * This function may never return, as it would follow some @c next task
+ * pointers treating given pointer as a pointer to the k_thread structure
+ * while it is something different right now.
+ * Do not reuse the memory that was occupied by k_thread structure of aborted
+ * task if it was aborted after this function was called in any context.
+ */
+extern void k_thread_foreach_unlocked(
+	k_thread_user_cb_t user_cb, void *user_data);
 
 /** @} */
 
