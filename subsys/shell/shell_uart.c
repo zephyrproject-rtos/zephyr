@@ -274,6 +274,10 @@ static int enable_shell_uart(struct device *arg)
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
 
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
 	shell_init(&shell_uart, dev, true, log_backend, level);
 
 	return 0;
