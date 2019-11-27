@@ -10,5 +10,6 @@
 
 void update_led_gpio(void);
 void update_light_state(void);
+void update_vnd_led_gpio(void);
 
 #endif

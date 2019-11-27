@@ -7,13 +7,12 @@
 
 #include <drivers/gpio.h>
 
-#include "app_gpio.h"
-#include "storage.h"
-
 #include "ble_mesh.h"
+#include "common.h"
 #include "device_composition.h"
 #include "state_binding.h"
 #include "transition.h"
+#include "storage.h"
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_ENABLED,
@@ -1012,13 +1011,7 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 
 	printk("Vendor model message = %04x\n", state->current);
 
-	if (state->current == STATE_ON) {
-		/* LED2 On */
-		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 0);
-	} else {
-		/* LED2 Off */
-		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
-	}
+	update_vnd_led_gpio();
 }
 
 static void vnd_set(struct bt_mesh_model *model,

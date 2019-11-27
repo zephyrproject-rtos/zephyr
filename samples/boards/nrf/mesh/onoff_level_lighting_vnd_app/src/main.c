@@ -93,6 +93,17 @@ static void light_default_status_init(void)
 	ctl->duv->target = ctl->duv->current;
 }
 
+void update_vnd_led_gpio(void)
+{
+	if (vnd_user_data.current == STATE_ON) {
+		/* LED2 On */
+		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 0);
+	} else {
+		/* LED2 Off */
+		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
+	}
+}
+
 void update_led_gpio(void)
 {
 	u8_t power, color;
