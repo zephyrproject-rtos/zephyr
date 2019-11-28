@@ -24,8 +24,14 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
-		pwm_led0: pwm_led_0 {
-			pwms = <&pwm0 13>;
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 11>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 12>;
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 41>;
 		};
 	};
 
@@ -70,7 +76,12 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
-		pwm-led0 = &pwm_led0;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
 	};
 };
@@ -135,7 +146,12 @@ arduino_i2c: &i2c0 {
 &pwm0 {
 	status = "okay";
 	ch0-pin = <13>;
-	ch0-inverted;
+	ch1-pin = <11>;
+	ch1-inverted;
+	ch2-pin = <12>;
+	ch2-inverted;
+	ch3-pin = <41>;
+	ch3-inverted;
 };
 
 arduino_spi: &spi3 {

@@ -24,6 +24,30 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		back_led: led_3 {
+			gpios = <&gpio0 13 0>;
+			label = "User D13 green";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		back_pwm_led: pwm_led_3 {
+			pwms = <&pwm0 13>;
+		};
+	};
+
+	aliases {
+		led3 = &back_led;
+		pwm-led3 = &back_pwm_led;
+	};
+};
+
+&pwm0 {
+	ch0-inverted;
 };
 
 &spi1 {
