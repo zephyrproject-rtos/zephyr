@@ -863,7 +863,7 @@ function(zephyr_check_compiler_flag_hardcoded lang option check exists)
   endif()
 endfunction(zephyr_check_compiler_flag_hardcoded)
 
-# zephyr_linker_sources(<location> <files>)
+# zephyr_linker_sources(<location> [SORT_KEY <sort_key>] <files>)
 #
 # <files> is one or more .ld formatted files whose contents will be
 #    copied/included verbatim into the given <location> in the global linker.ld.
@@ -878,6 +878,9 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
 #    SECTIONS     Near the end of the file. Don't use this when linking into
 #                 RAMABLE_REGION, use RAM_SECTIONS instead.
+# <sort_key> is an optional key to sort by inside of each location. The key must
+#    be alphanumeric, and the keys are sorted alphabetically. If no key is
+#    given, the key 'default' is used. Keys are case-sensitive.
 #
 # Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
 #
@@ -945,7 +948,13 @@ function(zephyr_linker_sources location)
     message(fatal_error "Must choose valid location for linker snippet.")
   endif()
 
-  foreach(file IN ITEMS ${ARGN})
+  cmake_parse_arguments(L "" "SORT_KEY" "" ${ARGN})
+  set(SORT_KEY default)
+  if(DEFINED L_SORT_KEY)
+    set(SORT_KEY ${L_SORT_KEY})
+  endif()
+
+  foreach(file IN ITEMS ${L_UNPARSED_ARGUMENTS})
     # Resolve path.
     if(IS_ABSOLUTE ${file})
       set(path ${file})
@@ -957,11 +966,18 @@ function(zephyr_linker_sources location)
       message(FATAL_ERROR "zephyr_linker_sources() was called on a directory")
     endif()
 
-    # Append the file contents to the relevant destination file.
-    file(READ ${path} snippet)
-    file(RELATIVE_PATH relpath ${ZEPHYR_BASE} ${path})
-    file(APPEND ${snippet_path}
-             "\n/* From \${ZEPHYR_BASE}/${relpath}: */\n" "${snippet}\n")
+    # Find the relative path to the linker file from the include folder.
+    file(RELATIVE_PATH relpath ${ZEPHYR_BASE}/include ${path})
+
+    # Create strings to be written into the file
+    set (include_str "/* Sort key: \"${SORT_KEY}\" */#include \"${relpath}\"")
+
+    # Add new line to existing lines, sort them, and write them back.
+    file(STRINGS ${snippet_path} lines) # Get current lines (without newlines).
+    list(APPEND lines ${include_str})
+    list(SORT lines)
+    string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
+    file(WRITE ${snippet_path} ${lines} "\n")
   endforeach()
 endfunction(zephyr_linker_sources)
 
