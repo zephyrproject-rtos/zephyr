@@ -219,62 +219,36 @@ static const char *tcp_th(struct net_pkt *pkt)
 {
 #define BUF_SIZE 80
 	static char buf[BUF_SIZE];
-	size_t buf_size = BUF_SIZE;
-	char *s = buf;
-	struct net_ipv4_hdr *ip = ip_get(pkt);
+	int len = 0;
 	struct tcphdr *th = th_get(pkt);
-	u8_t fl = th->th_flags;
-	ssize_t data_len = ntohs(ip->len) - sizeof(*ip) - th->th_off * 4;
 
-	*s = '\0';
+	buf[0] = '\0';
 
 	if (th->th_off < 5) {
-		s += snprintk(s, buf_size, "Bogus th_off: %hu",
-				(u16_t)th->th_off);
-		buf_size -= s - buf;
+		len += snprintk(buf + len, BUF_SIZE - len,
+				"bogus th_off: %hu", (u16_t)th->th_off);
 		goto end;
 	}
 
-	if (fl) {
-		if (fl & SYN) {
-			s += snprintk(s, buf_size, "SYN=%u,", th_seq(th));
-			buf_size -= s - buf;
-		}
-		if (fl & FIN) {
-			s += snprintk(s, buf_size, "FIN=%u,", th_seq(th));
-			buf_size -= s - buf;
-		}
-		if (fl & ACK) {
-			s += snprintk(s, buf_size, "ACK=%u,", th_ack(th));
-			buf_size -= s - buf;
-		}
-		if (fl & PSH) {
-			s += snprintk(s, buf_size, "PSH,");
-			buf_size -= s - buf;
-		}
-		if (fl & RST) {
-			s += snprintk(s, buf_size, "RST,");
-			buf_size -= s - buf;
-		}
-		if (fl & URG) {
-			s += snprintk(s, buf_size, "URG,");
-			buf_size -= s - buf;
-		}
-		s[strlen(s) - 1] = '\0';
-		s--;
+	len += snprintk(buf + len, BUF_SIZE - len,
+			"%s Seq=%u", tcp_flags(th->th_flags), th_seq(th));
+
+	if (th->th_flags & ACK) {
+		len += snprintk(buf + len, BUF_SIZE - len,
+				" Ack=%u", th_ack(th));
 	}
 
-	if (data_len) {
-		s += snprintk(s, buf_size, ", len=%ld", (long int)data_len);
-		buf_size -= s - buf;
-	}
+	{
+		struct net_ipv4_hdr *ip = ip_get(pkt);
+		ssize_t data_len = ntohs(ip->len) -
+					(sizeof(*ip) + th->th_off * 4);
 
-	if (((bool)(PSH & fl)) != (data_len > 0)) {
-		NET_WARN("Invalid TCP packet: %s, data_len=%zd", buf, data_len);
+		len += snprintk(buf + len, BUF_SIZE - len,
+				" Len=%ld", (long int)data_len);
 	}
 end:
-	return buf;
 #undef BUF_SIZE
+	return buf;
 }
 
 static void tcp_send(struct net_pkt *pkt)
