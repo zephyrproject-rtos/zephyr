@@ -153,6 +153,10 @@ SECTIONS
 
 	. = CONFIG_TEXT_SECTION_OFFSET;
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
 #if defined(CONFIG_SW_VECTOR_RELAY)
 	KEEP(*(.vector_relay_table))
 	KEEP(*(".vector_relay_table.*"))

@@ -86,6 +86,12 @@ SECTIONS
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	. = CONFIG_TEXT_SECTION_OFFSET;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
+
 	*(.text_start)
 	*(".text_start.*")
 	*(.text)

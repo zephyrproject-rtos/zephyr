@@ -88,6 +88,12 @@ SECTIONS
 		KEEP(*(".openocd_debug.*"))
 
 		_image_text_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
+
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)

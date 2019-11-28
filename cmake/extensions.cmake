@@ -873,15 +873,17 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    NOINIT       Inside the noinit output section.
 #    RWDATA       Inside the data output section.
 #    RODATA       Inside the rodata output section.
+#    TEXT_START   At the beginning of the text section, i.e. the beginning of
+#                 the image.
 #    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
 #    SECTIONS     Near the end of the file. Don't use this when linking into
 #                 RAMABLE_REGION, use RAM_SECTIONS instead.
 #
 # Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
 #
-# When placing into NOINIT, RWDATA, or RODATA, the contents of the files will be
-# placed inside an output section, so assume the section definition is already
-# present, e.g.:
+# When placing into NOINIT, RWDATA, RODATA, or TEXT_START the contents of the files
+# will be placed inside an output section, so assume the section definition is
+# already present, e.g.:
 #    _mysection_start = .;
 #    KEEP(*(.mysection));
 #    _mysection_end = .;
@@ -909,6 +911,7 @@ function(zephyr_linker_sources location)
   set(snippet_base      "${__build_dir}/include/generated")
   set(sections_path     "${snippet_base}/snippets-sections.ld")
   set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
+  set(text_start_path   "${snippet_base}/snippets-text-start.ld")
   set(noinit_path       "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
   set(rodata_path       "${snippet_base}/snippets-rodata.ld")
@@ -918,6 +921,7 @@ function(zephyr_linker_sources location)
   if (NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
     file(WRITE ${ram_sections_path} "")
+    file(WRITE ${text_start_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
     file(WRITE ${rodata_path} "")
@@ -929,6 +933,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "RAM_SECTIONS")
     set(snippet_path "${ram_sections_path}")
+  elseif("${location}" STREQUAL "TEXT_START")
+    set(snippet_path "${text_start_path}")
   elseif("${location}" STREQUAL "NOINIT")
     set(snippet_path "${noinit_path}")
   elseif("${location}" STREQUAL "RWDATA")
