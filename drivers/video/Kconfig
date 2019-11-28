@@ -37,4 +37,6 @@ source "drivers/video/Kconfig.sw_generator"
 
 source "drivers/video/Kconfig.mt9m114"
 
+source "drivers/video/Kconfig.rk043fn02h"
+
 endif # VIDEO

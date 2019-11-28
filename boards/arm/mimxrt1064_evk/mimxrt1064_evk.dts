@@ -86,6 +86,7 @@
 
 	panel {
 		compatible = "rocktech,rk043fn02h-ct";
+		label = "rk043fn02h-ct";
 		port {
 			lcd_panel_in: endpoint {
 				remote-endpoint = <&lcd_panel_out>;

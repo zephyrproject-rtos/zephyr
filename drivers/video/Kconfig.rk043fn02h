@@ -1,0 +1,9 @@
+# RK043FN02H
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_RK043FN02H
+	bool "RK043FN02H 4.3 inch TFT 480*272 panel"
+	help
+	  Enable driver for RK043FN02H 4.3 inch RGB565 TFT 480*272 panel.
