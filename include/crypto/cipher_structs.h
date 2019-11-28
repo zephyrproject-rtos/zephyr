@@ -172,6 +172,9 @@ struct cipher_ctx {
 /* Whether the hardware/driver supports autononce feature */
 #define CAP_AUTONONCE			BIT(7)
 
+/* Don't prefix IV to cipher blocks */
+#define CAP_NO_IV_PREFIX		BIT(8)
+
 /* More flags to be added as necessary */
 
 
