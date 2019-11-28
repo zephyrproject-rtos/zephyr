@@ -1676,6 +1676,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	BT_DBG("chan %p len %u", chan, buf->len);
 
 	chan->ops->recv(chan, buf);
+	net_buf_unref(buf);
 }
 
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
@@ -1709,7 +1710,6 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	l2cap_chan_recv(chan, buf);
-	net_buf_unref(buf);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn,
