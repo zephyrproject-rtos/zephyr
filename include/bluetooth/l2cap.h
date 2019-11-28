@@ -100,6 +100,21 @@ struct bt_l2cap_chan {
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 };
 
+
+struct bt_idempotent_mutex {
+	struct k_mutex mut;
+	u8_t locked;
+};
+
+struct bt_sem {
+	u32_t count;
+	u32_t capacity;
+	struct k_mutex count_guard;
+	struct bt_idempotent_mutex block_take;
+	struct bt_idempotent_mutex block_give;
+};
+
+
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
 	/** Endpoint CID */
@@ -111,7 +126,7 @@ struct bt_l2cap_le_endpoint {
 	/** Endpoint initial credits */
 	u16_t				init_credits;
 	/** Endpoint credits */
-	struct k_sem			credits;
+	struct bt_sem			credits;
 };
 
 /** @brief LE L2CAP Channel structure. */

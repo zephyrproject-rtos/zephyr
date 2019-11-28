@@ -63,6 +63,134 @@
 
 static sys_slist_t servers;
 
+
+
+void bt_sem_init(struct bt_sem *sem, u32_t initial_count, u32_t limit)
+{
+	/* Init */
+	sem->count = initial_count;
+	sem->capacity = limit;
+	k_mutex_init(&(sem->count_guard));
+	k_mutex_init(&(sem->block_take.mut));  sem->block_take.locked = 0;
+	k_mutex_init(&(sem->block_give.mut));  sem->block_give.locked = 0;
+}
+
+u32_t bt_sem_count_get(struct bt_sem *sem)
+{
+	return sem->count;
+}
+
+#if 1 /* Simple vs complex */
+
+/****
+ ****	Simple: Enough for what we need now
+ ****/
+
+int bt_sem_take(struct bt_sem *sem, s32_t timeout)
+{
+	const int want = 1;
+	int ret = 0;
+
+	if (k_mutex_lock(&(sem->count_guard), timeout)) {                     /* shared-counter: lock   : We're about to access it */
+		return -EAGAIN;
+	}
+
+	if (sem->count < want) {                                              /* shared-counter: use    : Read */
+		/* Not enough available to take atomically */
+		ret = -EBUSY;
+	} else {
+		/* We can take all that we want in constant time */
+		sem->count -= want;                                           /* shared-counter: use    : Read modify write */
+	}
+
+	k_mutex_unlock(&(sem->count_guard));                                  /* shared-counter: unlock : No further use */
+
+	return ret;
+}
+
+void bt_sem_give(struct bt_sem *sem, const int have)
+{
+	int ret = 0;
+	k_mutex_lock(&(sem->count_guard), K_NO_WAIT);                         /* shared-counter: lock   : We're about to access it */
+
+	/* Replicate saturation semantics of k_sem_give */
+	sem->count = MIN(sem->count + have, sem->capacity);
+
+	k_mutex_unlock(&(sem->count_guard));                                  /* shared-counter: unlock : No further use */
+}
+
+#else /* Simple vs complex */
+
+/****
+ ****	Complex: Capacitated multi-commodity semaphore
+ ****/
+
+int bt_sem_take(struct bt_sem *sem, s32_t timeout, const int want)
+{
+	k_mutex_lock(&(sem->count_guard), K_FOREVER);                         /* shared-counter: lock   : We're about to access it */
+
+	while (1)
+	{
+		if (sem->count < want) {                                      /* shared-counter: use    : Read */
+			/* Not enough available to take atomically, so we must wait */
+			k_mutex_unlock(&(sem->count_guard));                  /* shared-counter: unlock : No further use */
+
+			if (k_mutex_lock(&(sem->block_take.mut), timeout)) { /* We cannot progress, let's block */
+				/* error, not locked */
+				return -1;
+			}
+			sem->block_take.locked = 1;
+
+			/* Unblocked, let's try again */
+			k_mutex_lock(&(sem->count_guard), K_FOREVER);         /* shared-counter: lock   : We're about to access it */
+		} else {
+			/* We can take all that we want in constant time */
+			sem->count -= want;                                   /* shared-counter: use    : Read modify write */
+
+			if (sem->block_give.locked) {
+				/* Avoid double unlocking (which is undefined behavior) */
+				sem->block_give.locked = 0;
+				k_mutex_unlock(&(sem->block_give.mut));       /* Now that we've taken some, give() might progress */
+			}
+			k_mutex_unlock(&(sem->count_guard));                  /* shared-counter: unlock : No further use */
+			break;                                                /* Done, we took what we wanted */
+		}
+	}
+
+	return 0;
+}
+
+void bt_sem_give(struct bt_sem *sem, const int have)
+{
+	k_mutex_lock(&(sem->count_guard), K_FOREVER);                         /* shared-counter: lock   : We're about to access it */
+
+	while (1)
+	{
+		if (sem->count + have <= sem->capacity) {
+			/* There is room for adding 'have' */
+			sem->count += have;                                   /* shared-counter: use    : Read modify write */
+
+			if (sem->block_take.locked) {
+				/* Avoid double unlocking (which is undefined behavior) */
+				sem->block_take.locked = 0;
+				k_mutex_unlock(&(sem->block_take.mut));       /* Now that we've given something, take() might progress */
+			}
+			k_mutex_unlock(&(sem->count_guard));                  /* shared-counter: unlock : No further use */
+			break;                                                /* Done, we gave what we wanted */
+		} else {
+			/* No room, so we must wait for room */
+			k_mutex_unlock(&(sem->count_guard));                  /* shared-counter: unlock : No further use */
+			k_mutex_lock(&(sem->block_give.mut), K_FOREVER);      /* We cannot progress, let's block */
+			sem->block_give.locked = 1;
+
+			/* Unblocked, let's try again */
+			k_mutex_lock(&(sem->count_guard), K_FOREVER);         /* shared-counter: lock   : We're about to access it */
+		}
+	}
+}
+
+#endif /* Simple vs complex */
+
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -699,7 +827,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	 * be used.
 	 */
 	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
-	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
+	bt_sem_init(&chan->rx.credits, 0, UINT_MAX);
 
 	if (BT_DBG_ENABLED &&
 	    chan->rx.init_credits * chan->rx.mps < chan->rx.mtu + 2) {
@@ -712,7 +840,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	BT_DBG("chan %p", chan);
 
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
-	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
+	bt_sem_init(&chan->tx.credits, 0, UINT_MAX);
 	k_fifo_init(&chan->tx_queue);
 }
 
@@ -721,9 +849,7 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 {
 	BT_DBG("chan %p credits %u", chan, credits);
 
-	while (credits--) {
-		k_sem_give(&chan->tx.credits);
-	}
+	bt_sem_give(&chan->tx.credits, credits);
 
 	if (atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
 	    chan->chan.ops->status) {
@@ -736,9 +862,7 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 {
 	BT_DBG("chan %p credits %u", chan, credits);
 
-	while (credits--) {
-		k_sem_give(&chan->rx.credits);
-	}
+	bt_sem_give(&chan->rx.credits, credits);
 }
 
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
@@ -1176,7 +1300,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	int len;
 
 	/* Wait for credits */
-	if (k_sem_take(&ch->tx.credits, K_NO_WAIT)) {
+	if (bt_sem_take(&ch->tx.credits, K_NO_WAIT/*, 1*/)) {
 		BT_DBG("No credits to transmit packet");
 		return -EAGAIN;
 	}
@@ -1193,7 +1317,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       seg->len, k_sem_count_get(&ch->tx.credits));
+		   seg->len, bt_sem_count_get(&ch->tx.credits));
 
 	len = seg->len - sdu_hdr_len;
 
@@ -1210,7 +1334,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	/* Check if there is no credits left clear output status and notify its
 	 * change.
 	 */
-	if (!k_sem_count_get(&ch->tx.credits)) {
+	if (!bt_sem_count_get(&ch->tx.credits)) {
 		atomic_clear_bit(ch->chan.status, BT_L2CAP_STATUS_OUT);
 		if (ch->chan.ops->status) {
 			ch->chan.ops->status(&ch->chan, ch->chan.status);
@@ -1340,7 +1464,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
-	if (k_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
+	if (bt_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
 		BT_ERR("Credits overflow");
 		bt_l2cap_chan_disconnect(chan);
 		return;
@@ -1349,7 +1473,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 	l2cap_chan_tx_give_credits(ch, credits);
 
 	BT_DBG("chan %p total credits %u", ch,
-	       k_sem_count_get(&ch->tx.credits));
+		   bt_sem_count_get(&ch->tx.credits));
 
 	l2cap_chan_le_send_resume(ch);
 }
@@ -1466,7 +1590,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	BT_DBG("chan %p credits %u", chan, k_sem_count_get(&chan->rx.credits));
+	BT_DBG("chan %p credits %u", chan, bt_sem_count_get(&chan->rx.credits));
 }
 
 static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
@@ -1477,7 +1601,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 	/* Restore enough credits to complete the sdu */
 	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
 		   (chan->rx.mps - 1)) / chan->rx.mps;
-	credits -= k_sem_count_get(&chan->rx.credits);
+	credits -= bt_sem_count_get(&chan->rx.credits);
 	if (credits <= 0) {
 		return;
 	}
@@ -1588,8 +1712,8 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		 * should only happen if the remote cannot fully utilize the
 		 * MPS for some reason.
 		 */
-		if (!k_sem_count_get(&chan->rx.credits) &&
-		    seg == chan->rx.init_credits) {
+		if (!bt_sem_count_get(&chan->rx.credits) &&
+			seg == chan->rx.init_credits) {
 			l2cap_chan_update_credits(chan, buf);
 		}
 		return;
@@ -1608,7 +1732,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	u16_t sdu_len;
 	int err;
 
-	if (k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
+	if (bt_sem_take(&chan->rx.credits, K_NO_WAIT/*, 1*/)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
