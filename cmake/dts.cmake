@@ -195,6 +195,7 @@ if(SUPPORTS_DTS)
 
   set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
   --dts ${BOARD}.dts.pre.tmp
+  --dtc-flags '${EXTRA_DTC_FLAGS}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --conf-out ${DEVICETREE_CONF}
   --header-out ${DEVICETREE_UNFIXED_H}
