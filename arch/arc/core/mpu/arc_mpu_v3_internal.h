@@ -28,6 +28,23 @@
 #define CALC_REGION_END_ADDR(start, size) \
 	(start + size - (1 << ARC_FEATURE_MPU_ALIGNMENT_BITS))
 
+/* ARC MPU version 3 does not support mpu region overlap in hardware
+ * so if we want to allocate MPU region dynamically, e.g. thread stack,
+ * memory domain from a background region, a dynamic region splitting
+ * approach is designed. pls see comments in
+ *          _dynamic_region_allocate_and_init
+ * But this approach has an impact on performance of thread switch.
+ * As a trade off, we can use the default mpu region as the background region
+ * to avoid the dynamic region splitting. This will give more privilege to
+ * codes in kernel mode which can access the memory region not covered by
+ * explicit mpu entry. Considering  memory protection is mainly used to
+ * isolate malicious codes in user mode, it makes sense to get better
+ * thread switch performance through default mpu region.
+ * CONFIG_MPU_GAP_FILLING is used to turn this on/off.
+ *
+ */
+#if defined(CONFIG_MPU_GAP_FILLING)
+
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_MPU_STACK_GUARD)
 /* 1 for stack guard , 1 for user thread, 1 for split */
 #define MPU_REGION_NUM_FOR_THREAD 3
@@ -37,6 +54,8 @@
 #else
 #define MPU_REGION_NUM_FOR_THREAD 0
 #endif
+
+#define MPU_DYNAMIC_REGION_AREAS_NUM 2
 
 /**
  * @brief internal structure holding information of
@@ -49,9 +68,6 @@ struct dynamic_region_info {
 	u32_t attr;
 };
 
-#define MPU_DYNAMIC_REGION_AREAS_NUM 2
-
-static u8_t static_regions_num;
 static u8_t dynamic_regions_num;
 static u8_t dynamic_region_index;
 
@@ -61,6 +77,9 @@ static u8_t dynamic_region_index;
  * regions may be configured.
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
+#endif /* CONFIG_MPU_GAP_FILLING */
+
+static u8_t static_regions_num;
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 /* \todo through secure service to access mpu */
@@ -237,20 +256,6 @@ static inline bool _is_user_accessible_region(u32_t r_index, int write)
 #endif /* CONFIG_ARC_NORMAL_FIRMWARE */
 
 /**
- * This internal function allocates a dynamic MPU region and returns
- * the index or error
- */
-static inline int _dynamic_region_allocate_index(void)
-{
-	if (dynamic_region_index >= get_num_regions()) {
-		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
-		return -EINVAL;
-	}
-
-	return dynamic_region_index++;
-}
-
-/**
  * This internal function checks the area given by (start, size)
  * and returns the index if the area match one MPU entry
  */
@@ -263,6 +268,21 @@ static inline int _get_region_index(u32_t start, u32_t size)
 	}
 
 	return -EINVAL;
+}
+
+#if defined(CONFIG_MPU_GAP_FILLING)
+/**
+ * This internal function allocates a dynamic MPU region and returns
+ * the index or error
+ */
+static inline int _dynamic_region_allocate_index(void)
+{
+	if (dynamic_region_index >= get_num_regions()) {
+		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
+		return -EINVAL;
+	}
+
+	return dynamic_region_index++;
 }
 
 /* @brief allocate and init a dynamic MPU region
@@ -409,6 +429,69 @@ static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
 
 	return _dynamic_region_allocate_and_init(base, size, region_attr);
 }
+#else
+/**
+ * This internal function is utilized by the MPU driver to parse the intent
+ * type (i.e. THREAD_STACK_REGION) and return the correct region index.
+ */
+static inline int get_region_index_by_type(u32_t type)
+{
+	/*
+	 * The new MPU regions are allocated per type after the statically
+	 * configured regions. The type is one-indexed rather than
+	 * zero-indexed.
+	 *
+	 * For ARC MPU v2, the smaller index has higher priority, so the
+	 * index is allocated in reverse order. Static regions start from
+	 * the biggest index, then thread related regions.
+	 *
+	 */
+	switch (type) {
+	case THREAD_STACK_USER_REGION:
+		return static_regions_num + THREAD_STACK_REGION;
+	case THREAD_STACK_REGION:
+	case THREAD_APP_DATA_REGION:
+	case THREAD_STACK_GUARD_REGION:
+		return static_regions_num + type;
+	case THREAD_DOMAIN_PARTITION_REGION:
+#if defined(CONFIG_MPU_STACK_GUARD)
+		return static_regions_num + type;
+#else
+		/*
+		 * Start domain partition region from stack guard region
+		 * since stack guard is not enabled.
+		 */
+		return static_regions_num + type - 1;
+#endif
+	default:
+		__ASSERT(0, "Unsupported type");
+		return -EINVAL;
+	}
+}
+
+/**
+ * @brief configure the base address and size for an MPU region
+ *
+ * @param   type    MPU region type
+ * @param   base    base address in RAM
+ * @param   size    size of the region
+ */
+static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
+{
+	int region_index =  get_region_index_by_type(type);
+	u32_t region_attr = get_region_attr_by_type(type);
+
+	LOG_DBG("Region info: 0x%x 0x%x", base, size);
+
+	if (region_attr == 0U || region_index < 0) {
+		return -EINVAL;
+	}
+
+	_region_init(region_index, base, size, region_attr);
+
+	return 0;
+}
+#endif
 
 /* ARC Core MPU Driver API Implementation for ARC MPUv3 */
 
@@ -419,9 +502,9 @@ void arc_core_mpu_enable(void)
 {
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 /* the default region:
- * normal:0x000, SID:0x10000, KW:0x100 KR:0x80, KE:0x4 0
+ * secure:0x8000, SID:0x10000, KW:0x100 KR:0x80
  */
-#define MPU_ENABLE_ATTR	0x101c0
+#define MPU_ENABLE_ATTR	0x18180
 #else
 #define MPU_ENABLE_ATTR	0
 #endif
@@ -447,6 +530,7 @@ void arc_core_mpu_disable(void)
  */
 void arc_core_mpu_configure_thread(struct k_thread *thread)
 {
+#if defined(CONFIG_MPU_GAP_FILLING)
 /* the mpu entries of ARC MPUv3 are divided into 2 parts:
  * static entries: global mpu entries, not changed in context switch
  * dynamic entries: MPU entries changed in context switch and
@@ -459,6 +543,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
  * entries
  */
 	_mpu_reset_dynamic_regions();
+#endif
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_USERSPACE)
 	if ((thread->base.user_options & K_USER) != 0U) {
@@ -499,10 +584,6 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 #endif
 
 #if defined(CONFIG_USERSPACE)
-	u32_t num_partitions;
-	struct k_mem_partition *pparts;
-	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
-
 	/* configure stack region of user thread */
 	if (thread->base.user_options & K_USER) {
 		LOG_DBG("configure user thread %p's stack", thread);
@@ -512,6 +593,11 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 			return;
 		}
 	}
+
+#if defined(CONFIG_MPU_GAP_FILLING)
+	u32_t num_partitions;
+	struct k_mem_partition *pparts;
+	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
 
 	/* configure thread's memory domain */
 	if (mem_domain) {
@@ -536,6 +622,9 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 		}
 		pparts++;
 	}
+#else
+	arc_core_mpu_configure_mem_domain(thread);
+#endif
 #endif
 }
 
@@ -581,10 +670,56 @@ int arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
  *
  * @param thread the thread which has memory domain
  */
+#if defined(CONFIG_MPU_GAP_FILLING)
 void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 {
 	arc_core_mpu_configure_thread(thread);
 }
+#else
+void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
+{
+	u32_t region_index;
+	u32_t num_partitions;
+	u32_t num_regions;
+	struct k_mem_partition *pparts;
+	struct k_mem_domain *mem_domain = NULL;
+
+	if (thread) {
+		mem_domain = thread->mem_domain_info.mem_domain;
+	}
+
+	if (mem_domain) {
+		LOG_DBG("configure domain: %p", mem_domain);
+		num_partitions = mem_domain->num_partitions;
+		pparts = mem_domain->partitions;
+	} else {
+		LOG_DBG("disable domain partition regions");
+		num_partitions = 0U;
+		pparts = NULL;
+	}
+
+	num_regions = get_num_regions();
+	region_index = get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+
+	while (num_partitions && region_index < num_regions) {
+		if (pparts->size > 0) {
+			LOG_DBG("set region 0x%x 0x%lx 0x%x",
+				region_index, pparts->start, pparts->size);
+			_region_init(region_index, pparts->start,
+				     pparts->size, pparts->attr);
+			region_index++;
+		}
+		pparts++;
+		num_partitions--;
+	}
+
+	while (region_index < num_regions) {
+		/* clear the left mpu entries */
+		_region_init(region_index, 0, 0, 0);
+		region_index++;
+	}
+}
+#endif
 
 /**
  * @brief remove MPU regions for the memory partitions of the memory domain
@@ -612,8 +747,12 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
 			index = _get_region_index(pparts->start,
 			 pparts->size);
 			if (index > 0) {
+#if defined(CONFIG_MPU_GAP_FILLING)
 				_region_set_attr(index,
-				 REGION_KERNEL_RAM_ATTR);
+				REGION_KERNEL_RAM_ATTR);
+#else
+				_region_init(index, 0, 0, 0);
+#endif
 			}
 		}
 		pparts++;
@@ -638,7 +777,11 @@ void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
 	}
 
 	LOG_DBG("remove region 0x%x", region_index);
+#if defined(CONFIG_MPU_GAP_FILLING)
 	_region_set_attr(region_index, REGION_KERNEL_RAM_ATTR);
+#else
+	_region_init(region_index, 0, 0, 0);
+#endif
 }
 
 /**
@@ -646,8 +789,13 @@ void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
  */
 int arc_core_mpu_get_max_domain_partition_regions(void)
 {
+#if defined(CONFIG_MPU_GAP_FILLING)
 	/* consider the worst case: each partition requires split */
 	return (get_num_regions() - MPU_REGION_NUM_FOR_THREAD) / 2;
+#else
+	return get_num_regions() -
+	       get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION) - 1;
+#endif
 }
 
 /**
@@ -704,11 +852,18 @@ static int arc_mpu_init(struct device *arg)
 		return -EINVAL;
 	}
 
+	static_regions_num = 0;
+
 	/* Disable MPU */
 	arc_core_mpu_disable();
 
 	for (i = 0U; i < mpu_config.num_regions; i++) {
-		_region_init(i,
+		/* skip empty region */
+		if (mpu_config.mpu_regions[i].size == 0) {
+			continue;
+		}
+#if defined(CONFIG_MPU_GAP_FILLING)
+		_region_init(static_regions_num,
 			     mpu_config.mpu_regions[i].base,
 			     mpu_config.mpu_regions[i].size,
 			     mpu_config.mpu_regions[i].attr);
@@ -732,11 +887,22 @@ static int arc_mpu_init(struct device *arg)
 
 			dynamic_regions_num++;
 		}
+		static_regions_num++;
+#else
+		/* dynamic region will be covered by default mpu setting
+		 * no need to configure
+		 */
+		if (!(mpu_config.mpu_regions[i].attr & REGION_DYNAMIC)) {
+			_region_init(static_regions_num,
+			     mpu_config.mpu_regions[i].base,
+			     mpu_config.mpu_regions[i].size,
+			     mpu_config.mpu_regions[i].attr);
+			static_regions_num++;
+		}
+#endif
 	}
 
-	static_regions_num = mpu_config.num_regions;
-
-	for (; i < num_regions; i++) {
+	for (i = static_regions_num; i < num_regions; i++) {
 		_region_init(i, 0, 0, 0);
 	}
 
