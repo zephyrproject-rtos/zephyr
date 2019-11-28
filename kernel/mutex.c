@@ -29,16 +29,15 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <linker/sections.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <sys/dlist.h>
-#include <debug/object_tracing_common.h>
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <debug/object_tracing_common.h>
 #include <tracing/tracing.h>
 #include <sys/check.h>
+#include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
 /* We use a global spinlock here because some of the synchronization

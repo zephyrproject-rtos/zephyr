@@ -15,10 +15,8 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <linker/sections.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <sys/sflist.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
