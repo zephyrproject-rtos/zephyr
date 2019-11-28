@@ -158,11 +158,6 @@ SECTIONS
  */
 #include <snippets-text-start.ld>
 
-	/* Kinetis has to write 16 bytes at 0x400 */
-	SKIP_TO_KINETIS_FLASH_CONFIG
-	KEEP(*(.kinetis_flash_config))
-	KEEP(*(".kinetis_flash_config.*"))
-
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
