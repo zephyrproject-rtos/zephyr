@@ -161,12 +161,6 @@ SECTIONS
  */
 #include <snippets-text-start.ld>
 
-#ifdef CONFIG_KINETIS_FLASH_CONFIG
-	. = CONFIG_KINETIS_FLASH_CONFIG_OFFSET;
-	KEEP(*(.kinetis_flash_config))
-	KEEP(*(".kinetis_flash_config.*"))
-#endif
-
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
