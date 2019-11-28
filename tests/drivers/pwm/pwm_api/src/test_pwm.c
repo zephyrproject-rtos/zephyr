@@ -62,6 +62,8 @@
 
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
+#elif defined CONFIG_PWM_NRFX
+#define DEFAULT_PWM_PORT DT_ALIAS_PWM_0_CH0_PIN
 #else
 #define DEFAULT_PWM_PORT 0
 #endif
