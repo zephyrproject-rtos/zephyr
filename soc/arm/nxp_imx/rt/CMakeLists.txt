@@ -7,3 +7,6 @@
 zephyr_sources(
   soc.c
   )
+
+zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT_BOOT_HEADER
+  TEXT_START SORT_KEY 0 boot_header.ld)
