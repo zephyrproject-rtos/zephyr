@@ -1217,19 +1217,30 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 	bt_l2cap_recv(conn, buf);
 }
 
-static struct bt_conn_tx *conn_tx_alloc(void)
+static struct bt_conn_tx *conn_tx_alloc(struct bt_conn *conn)
 {
+	struct bt_conn_tx *tx;
+
 	/* The TX context always get freed in the system workqueue,
 	 * so if we're in the same workqueue but there are no immediate
-	 * contexts available, there's no chance we'll get one by waiting.
+	 * contexts available, there only chance we have to succeed in
+	 * allocating is by attempting to opportunistically free some up by
+	 * calling tx_notify().
 	 */
 	if (k_current_get() == &k_sys_work_q.thread) {
+		tx = k_fifo_get(&free_tx, K_NO_WAIT);
+		if (tx) {
+			return tx;
+		}
+
+		BT_WARN("Trying to free up TX contexts");
+		tx_notify(conn);
+
 		return k_fifo_get(&free_tx, K_NO_WAIT);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
-		struct bt_conn_tx *tx = k_fifo_get(&free_tx, K_NO_WAIT);
-
+		tx = k_fifo_get(&free_tx, K_NO_WAIT);
 		if (tx) {
 			return tx;
 		}
@@ -1255,7 +1266,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	if (cb) {
-		tx = conn_tx_alloc();
+		tx = conn_tx_alloc(conn);
 		if (!tx) {
 			BT_ERR("Unable to allocate TX context");
 			net_buf_unref(buf);
