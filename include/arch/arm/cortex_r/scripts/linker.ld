@@ -157,30 +157,12 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-text-start.ld>
-#if defined(CONFIG_SW_VECTOR_RELAY)
-	KEEP(*(.vector_relay_table))
-	KEEP(*(".vector_relay_table.*"))
-	KEEP(*(.vector_relay_handler))
-	KEEP(*(".vector_relay_handler.*"))
-#endif
-
-	_vector_start = .;
-	KEEP(*(.exc_vector_table))
-	KEEP(*(".exc_vector_table.*"))
-
-	KEEP(*(IRQ_VECTOR_TABLE))
-
-	KEEP(*(.vectors))
-
-	KEEP(*(.openocd_dbg))
-	KEEP(*(".openocd_dbg.*"))
 
 	/* Kinetis has to write 16 bytes at 0x400 */
 	SKIP_TO_KINETIS_FLASH_CONFIG
 	KEEP(*(.kinetis_flash_config))
 	KEEP(*(".kinetis_flash_config.*"))
 
-	_vector_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
