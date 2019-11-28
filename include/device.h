@@ -107,7 +107,7 @@ extern "C" {
 		.name = drv_name, .init = (init_fn),			  \
 		.config_info = (cfg_info)				  \
 	};								  \
-	static Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
+	Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
@@ -164,7 +164,7 @@ extern "C" {
 		.pm  = &_CONCAT(__pm_, dev_name),                         \
 		.config_info = (cfg_info)				  \
 	};								  \
-	static Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
+	Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
@@ -218,7 +218,7 @@ extern "C" {
  *
  * @param name Device name
  */
-#define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(name) struct device DEVICE_NAME_GET(name)
 
 struct device;
 
