@@ -134,13 +134,6 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-#ifdef CONFIG_CC3220SF_DEBUG
-	/* Add CC3220SF flash header to disable flash verification */
-	. = 0x0;
-	KEEP(*(.dbghdr))
-	KEEP(*(".dbghdr.*"))
-#endif
-
 	. = CONFIG_TEXT_SECTION_OFFSET;
 
 /* Located in generated directory. This file is populated by the
