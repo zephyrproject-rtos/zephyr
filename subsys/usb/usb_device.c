@@ -440,8 +440,8 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	 * Invalid types of descriptors,
 	 * see USB Spec. Revision 2.0, 9.4.3 Get Descriptor
 	 */
-	if ((type == DESC_INTERFACE) || (type == DESC_ENDPOINT) ||
-	    (type > DESC_OTHER_SPEED)) {
+	if ((type == USB_INTERFACE_DESC) || (type == USB_ENDPOINT_DESC) ||
+	    (type > USB_OTHER_SPEED)) {
 		return false;
 	}
 
@@ -464,7 +464,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		/* set data pointer */
 		*data = p;
 		/* get length from structure */
-		if (type == DESC_CONFIGURATION) {
+		if (type == USB_CONFIGURATION_DESC) {
 			/* configuration descriptor is an
 			 * exception, length is at offset
 			 * 2 and 3
@@ -539,7 +539,7 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	/* configure endpoints for this configuration/altsetting */
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_CONFIGURATION:
+		case USB_CONFIGURATION_DESC:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
 			if (cur_config == config_index) {
@@ -548,13 +548,13 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 
 			break;
 
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting =
 			    p[INTF_DESC_bAlternateSetting];
 			break;
 
-		case DESC_ENDPOINT:
+		case USB_ENDPOINT_DESC:
 			if ((cur_config != config_index) ||
 			    (cur_alt_setting != alt_setting)) {
 				break;
@@ -598,7 +598,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
@@ -610,10 +610,9 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 
 			LOG_DBG("iface_num %u alt_set %u", iface, alt_setting);
 			break;
-		case DESC_ENDPOINT:
+		case USB_ENDPOINT_DESC:
 			if ((cur_iface != iface) ||
 			    (cur_alt_setting != alt_setting)) {
-				break;
 			}
 
 			found = set_endpoint((struct usb_ep_descriptor *)p);

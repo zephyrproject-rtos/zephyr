@@ -75,7 +75,7 @@ static void usbip_header_dump(struct usbip_header *hdr)
 void get_interface(u8_t *descriptors)
 {
 	while (descriptors[0]) {
-		if (descriptors[1] == DESC_INTERFACE) {
+		if (descriptors[1] == USB_INTERFACE_DESC) {
 			LOG_DBG("interface found");
 		}
 
@@ -94,7 +94,7 @@ static int send_interfaces(const u8_t *descriptors, int connfd)
 	} __packed iface;
 
 	while (descriptors[0]) {
-		if (descriptors[1] == DESC_INTERFACE) {
+		if (descriptors[1] == USB_INTERFACE_DESC) {
 			struct usb_if_descriptor *desc = (void *)descriptors;
 
 			iface.bInterfaceClass = desc->bInterfaceClass;
