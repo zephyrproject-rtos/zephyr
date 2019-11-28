@@ -160,23 +160,6 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-text-start.ld>
-#if defined(CONFIG_SW_VECTOR_RELAY)
-	KEEP(*(.vector_relay_table))
-	KEEP(*(".vector_relay_table.*"))
-	KEEP(*(.vector_relay_handler))
-	KEEP(*(".vector_relay_handler.*"))
-#endif
-
-	_vector_start = .;
-	KEEP(*(.exc_vector_table))
-	KEEP(*(".exc_vector_table.*"))
-
-	KEEP(*(IRQ_VECTOR_TABLE))
-
-	KEEP(*(.vectors))
-
-	KEEP(*(.openocd_dbg))
-	KEEP(*(".openocd_dbg.*"))
 
 #ifdef CONFIG_KINETIS_FLASH_CONFIG
 	. = CONFIG_KINETIS_FLASH_CONFIG_OFFSET;
@@ -184,7 +167,6 @@ SECTIONS
 	KEEP(*(".kinetis_flash_config.*"))
 #endif
 
-	_vector_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION

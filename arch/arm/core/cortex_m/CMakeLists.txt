@@ -12,6 +12,12 @@ zephyr_library_sources(
   )
 
 zephyr_linker_sources_ifdef(CONFIG_SW_VECTOR_RELAY
+  TEXT_START
+  SORT_KEY 0x0relay_vectors
+  relay_vector_table.ld
+  )
+
+zephyr_linker_sources_ifdef(CONFIG_SW_VECTOR_RELAY
   RAM_SECTIONS
   vt_pointer_section.ld
   )

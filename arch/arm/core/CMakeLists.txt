@@ -33,3 +33,5 @@ add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)
 add_subdirectory_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE cortex_m/tz)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_R cortex_r)
+
+zephyr_linker_sources(TEXT_START SORT_KEY 0x0vectors vector_table.ld)
