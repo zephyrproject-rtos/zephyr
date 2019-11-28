@@ -121,6 +121,19 @@ A board implements an SoC with all its features, together with peripherals
 available on the board that differentiates the board with additional interfaces
 and features not available in the SoC.
 
+A board port on Zephyr typically consists of two parts:
+
+- A hardware description (usually done by device tree), which specifies embedded
+  SoC reference, connectors and any other hardware components such as LEDs,
+  buttons, sensors or communication peripherals (USB, BLE controller, ..).
+
+- A software configuration (done using Kconfig) of features and peripheral
+  drivers. This default board configuration is subordinated to features
+  activation which is application responsibility. Though, it should also enable
+  a minimal set of features common to many applications and to applicable
+  project-provided :ref:`samples-and-demos`.
+
+
 .. _default_board_configuration:
 
 Default board configuration
@@ -137,7 +150,10 @@ overridden.
 
 In order to provide consistency across the various boards and ease the work of
 users providing applications that are not board specific, the following
-guidelines should be followed when porting a board:
+guidelines should be followed when porting a board. Unless explicitly stated,
+peripherals should be disabled by default.
+
+- Configure and enable a working clock configuration, along with a tick source.
 
 - Provide pin and driver configuration that matches the board's valuable
   components such as sensors, buttons or LEDs, and communication interfaces
@@ -149,11 +165,13 @@ guidelines should be followed when porting a board:
 - Configure components that enable the use of these pins, such as
   configuring an SPI instance for Arduino SPI.
 
-- Configure an output for the console.
+- If available, configure and enable a serial output for the console.
 
 - Propose and configure a default network interface.
 
 - Enable all GPIO ports.
+
+- If available, enable pinmux and interrupt controller drivers.
 
 .. _setting_configuration_values:
 
