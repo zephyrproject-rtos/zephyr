@@ -215,14 +215,14 @@ static int vl53l0x_init(struct device *dev)
 
 	if (gpio_pin_configure(gpio,
 			      DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN,
-			      GPIO_DIR_OUT | GPIO_PUD_PULL_UP) < 0) {
+			      GPIO_OUTPUT | GPIO_PULL_UP) < 0) {
 		LOG_ERR("Could not configure GPIO %s %d).",
 			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER,
 			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN);
 		return -EINVAL;
 	}
 
-	gpio_pin_write(gpio, DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN, 1);
+	gpio_pin_set(gpio, DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN, 1);
 	k_sleep(K_MSEC(100));
 #endif
 

@@ -101,7 +101,7 @@
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
 		label = "VL53L0X";
-		xshut-gpios = <&gpioc 6 0>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	};
 };
 
