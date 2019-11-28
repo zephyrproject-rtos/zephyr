@@ -137,12 +137,6 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-#if defined(CONFIG_CC3220SF_DEBUG) || defined(CONFIG_CC3235SF_DEBUG)
-	/* Add CC32xx flash header to disable flash verification */
-	. = 0x0;
-	KEEP(*(.dbghdr))
-	KEEP(*(".dbghdr.*"))
-#endif
 
 	. = CONFIG_TEXT_SECTION_OFFSET;
 
