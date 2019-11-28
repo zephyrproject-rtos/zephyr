@@ -43,6 +43,14 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0_red: pwm_led_0 {
+			pwms = <&pwm0 22>;
+			label = "Red PWM LED";
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -62,6 +70,7 @@
 		led1-green = &led1_green;
 		led2-red   = &led2_red;
 		led3-blue  = &led3_blue;
+		pwm-led0   = &pwm_led0_red;
 	};
 
 };
@@ -117,7 +126,6 @@
 	ch0-pin = <22>;
 	ch0-inverted;
 };
-
 
 &flash0 {
 	/*
