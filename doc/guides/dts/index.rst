@@ -290,6 +290,14 @@ file. It includes the generated :file:`include/devicetree_unfixed.h` and
    Do not include the generated C headers from the build directory directly.
    Include :file:`devicetree.h` instead.
 
+Since some boards may need special instructions for the device tree compiler
+(e.g. warning suppression), create a file named ``pre_dt_board.cmake`` inside
+the board's folder and add the extra flags inside.
+
+.. code-block:: cmake
+
+   list(APPEND EXTRA_DTC_FLAGS "-Wno-simple_bus_reg")
+
 Generated macros
 ================
 
