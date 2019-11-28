@@ -87,6 +87,10 @@ SECTIONS {
 		_image_rom_start = .;
 		_image_text_start = .;
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
 /* when !XIP, .text is in RAM, and vector table must be at its very start */
 
 		KEEP(*(.exc_vector_table))
