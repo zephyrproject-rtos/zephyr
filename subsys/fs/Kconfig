@@ -117,7 +117,7 @@ config NFFS_FILESYSTEM_MAX_AREAS
 
 config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
 	int "Maximum block size"
-	range 16 2048
+	range 16 32768
 	default 2048
 	help
 	  This determines the maximum size of data block written to flash.
