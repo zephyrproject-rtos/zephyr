@@ -188,8 +188,7 @@ extern "C" {
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		attr &= (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW); \
-		switch (attr) { \
+		switch (attr & (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW)) { \
 		case (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW): \
 		case AUX_MPU_ATTR_UW: \
 		case AUX_MPU_ATTR_KW: \
