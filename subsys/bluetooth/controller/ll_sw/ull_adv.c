@@ -14,6 +14,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
 
@@ -41,7 +42,8 @@
 #include "ull_conn_internal.h"
 #include "ull_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull_adv
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_adv
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -443,11 +445,15 @@ u8_t ll_adv_enable(u8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* remember addr to use and also update the addr in
-	 * both adv and scan response PDUs.
-	 */
 	lll = &adv->lll;
+
 	pdu_adv = lll_adv_data_peek(lll);
+	if (pdu_adv->tx_addr) {
+		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	}
+
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	if (0) {
@@ -600,21 +606,27 @@ u8_t ll_adv_enable(u8_t enable)
 		conn_lll->latency_prepare = 0;
 		conn_lll->latency_event = 0;
 		conn_lll->slave.latency_enabled = 0;
-		conn_lll->slave.latency_cancel = 0;
 		conn_lll->slave.window_widening_prepare_us = 0;
 		conn_lll->slave.window_widening_event_us = 0;
 		conn_lll->slave.window_size_prepare_us = 0;
 		/* FIXME: END: Move to ULL? */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+		memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
 
 		conn->common.fex_valid = 0;
+		conn->slave.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
+		conn->llcp_feature.features = LL_FEAT;
+		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
 		conn->llcp_terminate.reason_peer = 0;
 		/* NOTE: use allocated link for generating dedicated
@@ -637,7 +649,7 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
-		conn->llcp_length.pause_tx = 0U;
+		conn->llcp_length.cache.tx_octets = 0U;
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -704,7 +716,7 @@ u8_t ll_adv_enable(u8_t enable)
 		u32_t adv_size		= ll_hdr_size + ADVA_SIZE;
 		const u8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
 		const u8_t rx_to_us	= EVENT_RX_TO_US(phy);
-		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNARROUND(phy);
+		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
 		const u16_t conn_ind_us = ll_hdr_us +
 					  BYTES2US(INITA_SIZE + ADVA_SIZE +
 						   LLDATA_SIZE, phy);
@@ -723,7 +735,7 @@ u8_t ll_adv_enable(u8_t enable)
 		if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
 			adv_size += adv_data_len;
 			slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
-				    EVENT_IFS_MAX_US * (adv_chn_cnt - 1);
+				   rxtx_turn_us * (adv_chn_cnt - 1);
 		} else {
 			if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 				adv_size += TARGETA_SIZE;
@@ -812,7 +824,7 @@ u8_t ll_adv_enable(u8_t enable)
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
-				   adv->evt.ticks_slot,
+				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
@@ -842,7 +854,14 @@ u8_t ll_adv_enable(u8_t enable)
 				   ticks_anchor, 0,
 				   HAL_TICKER_US_TO_TICKS((u64_t)interval *
 							  625),
-				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   TICKER_NULL_REMAINDER,
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	!defined(CONFIG_BT_CTLR_LOW_LAT)
+				   /* Force expiry to ensure timing update */
+				   TICKER_LAZY_MUST_EXPIRE,
+#else
+				   TICKER_NULL_LAZY,
+#endif
 				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
@@ -996,23 +1015,26 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
-	/* Increment prepare reference count */
-	ref = ull_ref_inc(&adv->ull);
-	LL_ASSERT(ref);
-
 	lll = &adv->lll;
 
-	/* Append timing parameters */
-	p.ticks_at_expire = ticks_at_expire;
-	p.remainder = remainder;
-	p.lazy = lazy;
-	p.param = lll;
-	mfy.param = &p;
+	if (IS_ENABLED(CONFIG_BT_TICKER_COMPATIBILITY_MODE) ||
+	    (lazy != TICKER_LAZY_MUST_EXPIRE)) {
+		/* Increment prepare reference count */
+		ref = ull_ref_inc(&adv->ull);
+		LL_ASSERT(ref);
 
-	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-	LL_ASSERT(!ret);
+		/* Append timing parameters */
+		p.ticks_at_expire = ticks_at_expire;
+		p.remainder = remainder;
+		p.lazy = lazy;
+		p.param = lll;
+		mfy.param = &p;
+
+		/* Kick LLL prepare */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
 
 	/* Apply adv random delay */
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1155,8 +1177,17 @@ static void disabled_cb(void *param)
 
 static inline void conn_release(struct ll_adv_set *adv)
 {
-	ll_conn_release(adv->lll.conn->hdr.parent);
+	struct lll_conn *lll = adv->lll.conn;
+	memq_link_t *link;
+
+	LL_ASSERT(!lll->link_tx_free);
+	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+	LL_ASSERT(link);
+	lll->link_tx_free = link;
+
+	ll_conn_release(lll->hdr.parent);
 	adv->lll.conn = NULL;
+
 	ll_rx_release(adv->node_rx_cc_free);
 	adv->node_rx_cc_free = NULL;
 	ll_rx_link_release(adv->link_cc_free);
@@ -1178,6 +1209,22 @@ static inline u8_t disable(u16_t handle)
 
 	mark = ull_disable_mark(adv);
 	LL_ASSERT(mark == adv);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (adv->lll.is_hdcd) {
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_THREAD, TICKER_ID_ADV_STOP,
+				  ull_ticker_status_give, (void *)&ret_cb);
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret) {
+			mark = ull_disable_mark(adv);
+			LL_ASSERT(mark == adv);
+
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+		ret_cb = TICKER_STATUS_BUSY;
+	}
+#endif
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_BASE + handle,

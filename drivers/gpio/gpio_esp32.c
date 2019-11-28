@@ -344,11 +344,11 @@ static struct gpio_esp32_data gpio_data_pins_32_to_39 = {
  * and the device has 40 GPIO pins.
  */
 #if defined(CONFIG_GPIO_ESP32_0)
-GPIO_DEVICE_INIT(CONFIG_GPIO_ESP32_0_NAME, 0_to_31);
+GPIO_DEVICE_INIT(DT_INST_0_ESPRESSIF_ESP32_GPIO_LABEL, 0_to_31);
 #endif
 
 #if defined(CONFIG_GPIO_ESP32_1)
-GPIO_DEVICE_INIT(CONFIG_GPIO_ESP32_1_NAME, 32_to_39);
+GPIO_DEVICE_INIT(DT_INST_1_ESPRESSIF_ESP32_GPIO_LABEL, 32_to_39);
 #endif
 
 static void gpio_esp32_isr(void *param)

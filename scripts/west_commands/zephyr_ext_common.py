@@ -17,7 +17,8 @@ from runners.core import RunnerConfig
 class Forceable(WestCommand):
     '''WestCommand subclass for commands with a --force option.'''
 
-    def add_force_arg(self, parser):
+    @staticmethod
+    def add_force_arg(parser):
         '''Add a -f / --force option to the parser.'''
         parser.add_argument('-f', '--force', action='store_true',
                             help='Ignore any errors and try to proceed')

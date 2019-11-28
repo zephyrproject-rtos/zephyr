@@ -10,16 +10,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NMI_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NMI_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_
 
 #ifndef _ASMLANGUAGE
 #ifdef CONFIG_RUNTIME_NMI
-extern void z_NmiInit(void);
-#define NMI_INIT() z_NmiInit()
+extern void z_arm_nmi_init(void);
+#define NMI_INIT() z_arm_nmi_init()
 #else
 #define NMI_INIT()
 #endif
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NMI_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_ */

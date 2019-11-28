@@ -1,9 +1,7 @@
-# Kconfig - Bluetooth GATT Battery service
-#
+# Bluetooth GATT Battery service
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BT_GATT_BAS
 	bool "Enable GATT Battery service"
@@ -26,4 +24,4 @@ config BT_GATT_BAS_LOG_LEVEL
 	  3 INFO, write LOG_INF in addition to previous levels
 	  4 DEBUG, write LOG_DBG in addition to previous levels
 
-endif #BT_GATT_BAS
+endif # BT_GATT_BAS

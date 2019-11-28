@@ -1,0 +1,11 @@
+identifier: nsim_sem_normal
+name: SEM in normal mode of Nsim simulator
+type: mcu
+arch: arc
+simulation: nsim
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

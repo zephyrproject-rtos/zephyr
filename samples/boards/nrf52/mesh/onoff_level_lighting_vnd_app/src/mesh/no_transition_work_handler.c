@@ -19,7 +19,7 @@ static void unsolicitedly_publish_states_work_handler(struct k_work *work)
 	light_lightness_linear_publish(&root_models[11]);
 	light_ctl_publish(&root_models[14]);
 
-	gen_level_publish(&s0_models[0]);
+	gen_level_publish_temp(&s0_models[0]);
 	light_ctl_temp_publish(&s0_models[2]);
 }
 
@@ -34,15 +34,6 @@ static void unsolicitedly_publish_states_timer_handler(struct k_timer *dummy)
 K_TIMER_DEFINE(unsolicitedly_publish_states_timer,
 	       unsolicitedly_publish_states_timer_handler, NULL);
 
-
-static void save_lightness_temp_last_values_timer_handler(struct k_timer *dummy)
-{
-	save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
-}
-
-K_TIMER_DEFINE(save_lightness_temp_last_values_timer,
-	       save_lightness_temp_last_values_timer_handler, NULL);
-
 static void no_transition_work_handler(struct k_work *work)
 {
 	bool readjust_light_state;
@@ -53,31 +44,33 @@ static void no_transition_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (target_lightness != lightness) {
-		lightness = target_lightness;
-		readjust_lightness();
+	if (ctl->light->target != ctl->light->current) {
+		ctl->light->current = ctl->light->target;
 		readjust_light_state = true;
 	}
 
-	if (target_temperature != temperature) {
-		temperature = target_temperature;
-		readjust_temperature();
+	if (ctl->temp->target != ctl->temp->current) {
+		ctl->temp->current = ctl->temp->target;
 		readjust_light_state = true;
+	}
+
+	if (ctl->duv->target != ctl->duv->current) {
+		ctl->duv->current = ctl->duv->target;
+		readjust_light_state = true;
+	}
+
+	if (ctl->light->current) {
+		ctl->light->last = ctl->light->current;
+		save_on_flash(LIGHTNESS_LAST_STATE);
 	}
 
 	if (readjust_light_state) {
 		update_led_gpio();
 	}
 
-	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
-
-	/* If Lightness & Temperature values remains stable for
-	 * 10 Seconds then & then only get stored on SoC flash.
-	 */
-	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		k_timer_start(&save_lightness_temp_last_values_timer,
-			      K_MSEC(10000), 0);
-	}
+	k_timer_start(&unsolicitedly_publish_states_timer,
+		      K_MSEC(5000),
+		      K_NO_WAIT);
 }
 
 K_WORK_DEFINE(no_transition_work, no_transition_work_handler);

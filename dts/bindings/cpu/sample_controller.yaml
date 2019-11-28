@@ -1,17 +1,11 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Sample Controller CPU
 
-description: >
+description: |
     This binding gives a base representation for Sample Controller CPU.
 
-inherits:
-    !include cpu.yaml
+compatible: "sample_controller"
 
-properties:
-    compatible:
-      constraint: "sample_controller"
+include: cpu.yaml

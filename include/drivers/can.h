@@ -47,6 +47,9 @@ extern "C" {
 /** unexpected error */
 #define CAN_TX_UNKNOWN  (-5)
 
+/** invalid parameter */
+#define CAN_TX_EINVAL   (-22)
+
 /** attach_* failed because there is no unused filter left*/
 #define CAN_NO_FREE_FILTER (-1)
 
@@ -96,6 +99,17 @@ enum can_mode {
 	CAN_LOOPBACK_MODE,
 	/*Combination of loopback and silent*/
 	CAN_SILENT_LOOPBACK_MODE
+};
+
+/**
+ * @brief can_state enum
+ * Defines the possible states of the CAN bus
+ */
+enum can_state {
+	CAN_ERROR_ACTIVE,
+	CAN_ERROR_PASSIVE,
+	CAN_BUS_OFF,
+	CAN_BUS_UNKNOWN
 };
 
 /*
@@ -213,6 +227,16 @@ struct zcan_filter {
 } __packed;
 
 /**
+ * @brief can bus error count structure
+ *
+ * Used to pass the bus error counters to userspace
+ */
+struct can_bus_err_cnt {
+	u8_t tx_err_cnt;
+	u8_t rx_err_cnt;
+};
+
+/**
  * @typedef can_tx_callback_t
  * @brief Define the application callback handler function signature
  *
@@ -231,6 +255,16 @@ typedef void (*can_tx_callback_t)(u32_t error_flags, void *arg);
  */
 typedef void (*can_rx_callback_t)(struct zcan_frame *msg, void *arg);
 
+/**
+ * @typedef can_state_change_isr_t
+ * @brief Defines the state change isr handler function signature
+ *
+ * @param state state of the node
+ * @param err_cnt struct with the error counter values
+ */
+typedef void(*can_state_change_isr_t)(enum can_state state,
+					  struct can_bus_err_cnt err_cnt);
+
 typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
 
@@ -247,6 +281,14 @@ typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
 				const struct zcan_filter *filter);
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
+
+typedef int (*can_recover_t)(struct device *dev, s32_t timeout);
+
+typedef enum can_state (*can_get_state_t)(struct device *dev,
+					  struct can_bus_err_cnt *err_cnt);
+
+typedef void(*can_register_state_change_isr_t)(struct device *dev,
+					       can_state_change_isr_t isr);
 
 #ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
 #define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
@@ -275,6 +317,12 @@ struct can_driver_api {
 	can_send_t send;
 	can_attach_isr_t attach_isr;
 	can_detach_t detach;
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	can_recover_t recover;
+#endif
+	can_get_state_t get_state;
+	can_register_state_change_isr_t register_state_change_isr;
+
 };
 
 /**
@@ -374,7 +422,7 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
  * @param filter       Pointer to a zcan_filter structure defining the id
  *                     filtering.
  *
- * @retval filter id on success.
+ * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
 int can_attach_workq(struct device *dev, struct k_work_q  *work_q,
@@ -398,7 +446,7 @@ int can_attach_workq(struct device *dev, struct k_work_q  *work_q,
  * @param filter Pointer to a zcan_filter structure defining the id
  *               filtering.
  *
- * @retval filter id on success.
+ * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
 __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
@@ -420,7 +468,7 @@ __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
  * @param filter       Pointer to a zcan_filter structure defining the id
  *                     filtering.
  *
- * @retval filter id on success.
+ * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
 static inline int can_attach_isr(struct device *dev,
@@ -478,6 +526,74 @@ static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
 }
 
 /**
+ * @brief Get current state
+ *
+ * Returns the actual state of the CAN controller.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param err_cnt Pointer to the err_cnt destination structure or NULL.
+ *
+ * @retval  state
+ */
+__syscall enum can_state can_get_state(struct device *dev,
+				       struct can_bus_err_cnt *err_cnt);
+
+static inline
+enum can_state z_impl_can_get_state(struct device *dev,
+				    struct can_bus_err_cnt *err_cnt)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->get_state(dev, err_cnt);
+}
+
+/**
+ * @brief Recover from bus-off state
+ *
+ * Recover the CAN controller from bus-off state to error-active state.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param timeout Timeout for waiting for the recovery.
+ *
+ * @retval 0 on success.
+ * @retval CAN_TIMEOUT on timeout.
+ */
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+__syscall int can_recover(struct device *dev, s32_t timeout);
+
+static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->recover(dev, timeout);
+}
+#else
+/* This implementation prevents inking errors for auto recovery */
+static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+{
+	return 0;
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+
+/**
+ * @brief Register an ISR callback for state change interrupt
+ *
+ * Only one callback can be registered per controller.
+ * Calling this function again, overrides the previous call.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param isr Pointer to ISR
+ */
+static inline
+void can_register_state_change_isr(struct device *dev,
+				   can_state_change_isr_t isr)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->register_state_change_isr(dev, isr);
+}
+
+/**
  * @brief Converter that translates between can_frame and zcan_frame structs.
  *
  * @param frame Pointer to can_frame struct.
@@ -503,7 +619,8 @@ static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
 					    struct can_frame *frame)
 {
 	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |
-		zframe->ext_id;
+		(zframe->id_type == CAN_STANDARD_IDENTIFIER ? zframe->std_id :
+				    zframe->ext_id);
 	frame->can_dlc = zframe->dlc;
 	memcpy(frame->data, zframe->data, sizeof(frame->data));
 }

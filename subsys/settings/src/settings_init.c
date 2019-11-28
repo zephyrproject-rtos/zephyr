@@ -133,14 +133,29 @@ int settings_backend_init(void)
 	u16_t cnt = 0;
 	size_t nvs_sector_size, nvs_size = 0;
 	const struct flash_area *fa;
+	struct flash_sector hw_flash_sector;
+	u32_t sector_cnt = 1;
 
 	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
 	if (rc) {
 		return rc;
 	}
 
+	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &sector_cnt,
+				    &hw_flash_sector);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc != 0 && rc != -ENOMEM) {
+		k_panic();
+	}
+
 	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
-			  DT_FLASH_ERASE_BLOCK_SIZE;
+			  hw_flash_sector.fs_size;
+
+	if (nvs_sector_size > UINT16_MAX) {
+		return -EDOM;
+	}
+
 	while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
 		nvs_size += nvs_sector_size;
 		if (nvs_size > fa->fa_size) {

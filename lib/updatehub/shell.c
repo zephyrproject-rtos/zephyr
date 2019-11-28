@@ -8,7 +8,7 @@
 #include <drivers/flash.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
-#include <updatehub.h>
+#include "include/updatehub.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
 

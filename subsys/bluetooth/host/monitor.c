@@ -216,6 +216,7 @@ extern void __stdout_hook_install(int (*fn)(int));
 #define CONFIG_BT_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
 
+#ifndef CONFIG_LOG_MINIMAL
 struct monitor_log_ctx {
 	size_t total_len;
 	char msg[MONITOR_MSG_MAX];
@@ -319,6 +320,7 @@ static const struct log_backend_api monitor_log_api = {
 };
 
 LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
+#endif /* CONFIG_LOG_MINIMAL */
 
 static int bt_monitor_init(struct device *d)
 {

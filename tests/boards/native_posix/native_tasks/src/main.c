@@ -64,6 +64,6 @@ NATIVE_TASK(test_hook7, ON_EXIT, 310);
 
 void main(void)
 {
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	posix_exit(0);
 }

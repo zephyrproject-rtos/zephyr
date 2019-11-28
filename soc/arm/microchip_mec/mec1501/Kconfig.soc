@@ -1,14 +1,11 @@
-# Kconfig - Microchip MEC1501 MCU core series
+# Microchip MEC1501 MCU core series
 
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "MEC1501 Selection"
-depends on SOC_SERIES_MEC1501X
+	prompt "MEC1501 Selection"
+	depends on SOC_SERIES_MEC1501X
 
 config SOC_MEC1501_HSZ
 	bool "MEC1501_HSZ"
@@ -66,3 +63,8 @@ config SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
 
 	  Say n if the crystal is connected single ended to
 	  the XTAL2 pin or a 32KHz square wave is on XTAL2.
+
+config SOC_MEC1501_VTR3_1_8V
+	bool "VTR3 power rail is tied to 1.8V"
+	help
+	  Set this is if VTR3 power sourcejumper in the board is changed.

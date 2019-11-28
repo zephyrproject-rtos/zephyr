@@ -33,7 +33,8 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	u8_t res[16];
 	int err;
 
-	BT_DBG("irk %s, r %s", bt_hex(irk, 16), bt_hex(r, 3));
+	BT_DBG("irk %s", bt_hex(irk, 16));
+	BT_DBG("r %s", bt_hex(r, 3));
 
 	/* r' = padding || r */
 	memcpy(res, r, 3);

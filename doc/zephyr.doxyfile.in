@@ -749,6 +749,7 @@ WARN_LOGFILE           =
 # This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
 # for incremental (and faster) builds to work correctly.
 INPUT                  = custom-doxygen/mainpage.md \
+			 @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
 			 @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
@@ -1978,6 +1979,15 @@ PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "CONFIG_BT_SMP=y" \
                          "CONFIG_USERSPACE=y" \
                          "CONFIG_BT_BREDR=y" \
+                         "CONFIG_FLASH_PAGE_LAYOUT=y" \
+                         "CONFIG_BT_MESH_MODEL_EXTENSIONS=y" \
+                         "CONFIG_SMP=y" \
+                         "CONFIG_FLOAT=y" \
+                         "CONFIG_FP_SHARING=y" \
+                         "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT=y" \
+                         "CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y" \
+                         "CONFIG_USE_SWITCH=y" \
+                         "CONFIG_EXECUTION_BENCHMARKING=y" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
                          "DEVICE_DEFINE()=" \
                          "DEVICE_AND_API_INIT()=" \
@@ -2056,12 +2066,6 @@ EXTERNAL_GROUPS        = YES
 
 EXTERNAL_PAGES         = YES
 
-# The PERL_PATH should be the absolute path and name of the perl script
-# interpreter (i.e. the result of 'which perl').
-# The default file (with absolute path) is: /usr/bin/perl.
-
-PERL_PATH              = /usr/bin/perl
-
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool
 #---------------------------------------------------------------------------
@@ -2074,15 +2078,6 @@ PERL_PATH              = /usr/bin/perl
 # The default value is: YES.
 
 CLASS_DIAGRAMS         = NO
-
-# You can define message sequence charts within doxygen comments using the \msc
-# command. Doxygen will then run the mscgen tool (see:
-# http://www.mcternan.me.uk/mscgen/)) to produce the chart and insert it in the
-# documentation. The MSCGEN_PATH tag allows you to specify the directory where
-# the mscgen tool resides. If left empty the tool is assumed to be found in the
-# default search path.
-
-MSCGEN_PATH            =
 
 # You can include diagrams made with dia in doxygen documentation. Doxygen will
 # then run dia to produce the diagram and insert it in the documentation. The

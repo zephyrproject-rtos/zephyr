@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig HT16K33
 	bool "HT16K33 LED driver"
@@ -56,4 +53,4 @@ config HT16K33_KEYSCAN_POLL_MSEC
 	  Keyscan poll interval in milliseconds. Polling is only used
 	  if no interrupt line is present.
 
-endif #HT16K33_KEYSCAN
+endif # HT16K33_KEYSCAN

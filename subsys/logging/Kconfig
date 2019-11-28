@@ -1,20 +1,30 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LOG
 	bool "Logging"
+	select PRINTK if USERSPACE
 	help
 	  Global switch for the logger, when turned off log calls will not be
 	  compiled in.
 
 if LOG
 
+config LOG_MINIMAL
+	bool "Enable minimal-footprint logging"
+	imply PRINTK
+	help
+	  Enable minimal logging implementation. This has very little footprint
+	  overhead on top of the printk() implementation for standard
+	  logging macros. Hexdump macros are also supported, with a small
+	  amount of code pulled in if used. Build time filtering is supported,
+	  but not runtime filtering. There are no timestamps, prefixes,
+	  colors, or asynchronous logging, and all messages are simply
+	  sent to printk().
+
 config LOG_RUNTIME_FILTERING
 	bool "Enable runtime reconfiguration of the logger"
-	depends on !LOG_FRONTEND
+	depends on !LOG_FRONTEND && !LOG_MINIMAL
 	help
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
@@ -68,6 +78,14 @@ config LOG_MAX_LEVEL
 	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
+config LOG_MIPI_SYST_ENABLE
+	bool "Enable mipi syst format output"
+	select MIPI_SYST_LIB
+	help
+	  Enable mipi syst format output for the logger system.
+
+if !LOG_MINIMAL
+
 menu "Prepend log message with function name"
 	depends on !LOG_FRONTEND
 
@@ -94,7 +112,7 @@ config LOG_PRINTK
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
-	depends on !LOG_IMMEDIATE
+	depends on (!LOG_IMMEDIATE || USERSPACE)
 	default 128
 	help
 	  Array is allocated on the stack.
@@ -110,7 +128,7 @@ config LOG_IMMEDIATE
 	  by another one in the higher priority context.
 
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
-	depends on !NEWLIB_LIBC && !ARCH_POSIX
+	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
 	help
 	  Selecting this option will choose more robust _prf() function from
@@ -130,6 +148,26 @@ config LOG_MODE_NO_OVERFLOW
 	bool "New logs are dropped"
 
 endchoice
+
+config LOG_BLOCK_IN_THREAD
+	bool "On log full block in thread context"
+	help
+	  When enabled logger will block (if in the thread context) when
+	  internal logger buffer is full and new message cannot be allocated.
+
+if LOG_BLOCK_IN_THREAD
+
+config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
+	int "Maximum time (in milliseconds) thread can be blocked"
+	default 1000
+	range -1 10000
+	help
+	  If new buffer for a log message cannot be allocated in that time, log
+	  message is dropped. Forever blocking (-1) is possible however may lead
+	  to the logger deadlock if logging is enabled in threads used for
+	  logging (e.g. logger or shell thread).
+
+endif # LOG_BLOCK_IN_THREAD
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
@@ -164,6 +202,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
+	default 4096 if (X86 && X86_64)
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -240,6 +279,13 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_UART_SYST_ENABLE
+	bool "Enable UART syst backend"
+	depends on LOG_BACKEND_UART
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using UART to output syst format logs.
+
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
@@ -262,6 +308,12 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	  debug probe. Such configuration will persist only until the device
 	  reset. To ensure flawless operation the frequency configured here and
 	  by the SWO viewer program has to match.
+
+config LOG_BACKEND_SWO_SYST_ENABLE
+	bool "Enable SWO syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using SWO to output syst format logs.
 
 endif # LOG_BACKEND_SWO
 
@@ -294,6 +346,12 @@ config LOG_BACKEND_RTT_MODE_BLOCK
 	bool "Block until message is transferred to host."
 	help
 	  Waits until there is enough space in the up-buffer for a message.
+
+config LOG_BACKEND_RTT_SYST_ENABLE
+	bool "Enable RTT syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using RTT to output syst format logs.
 
 endchoice
 
@@ -372,12 +430,6 @@ config LOG_BACKEND_NATIVE_POSIX
 	help
 	  Enable backend in native_posix
 
-config LOG_BACKEND_QEMU_X86_64
-	bool "Enable QEMU x86_64 backend"
-	depends on BOARD_QEMU_X86_64
-	help
-	  Enable backend for qemu_x86_64 board
-
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER
@@ -437,6 +489,12 @@ config LOG_BACKEND_NET_MAX_BUF_SIZE
 	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
 	  should be selected so that typical messages will fit the buffer.
 
+config LOG_BACKEND_NET_SYST_ENABLE
+	bool "Enable networking syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using networking to output syst format logs.
+
 endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_SHOW_COLOR
@@ -455,4 +513,5 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
 
+endif # LOG_MINIMAL
 endif # LOG

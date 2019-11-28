@@ -27,7 +27,7 @@ extern void *_VectorTable;
 #include <kernel_structs.h>
 #include <v2/irq.h>
 
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 #undef _ARC_V2_IRQ_VECT_BASE
 #define _ARC_V2_IRQ_VECT_BASE _ARC_V2_IRQ_VECT_BASE_S
 #endif
@@ -71,8 +71,9 @@ static int arc_v2_irq_unit_init(struct device *unused)
 	 * values in this loop.
 	 */
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
+
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
 			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
@@ -148,7 +149,7 @@ static int arc_v2_irq_unit_resume(struct device *dev)
 	 */
 	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2 |
 				_ARC_V2_IRQ_PRIORITY_SECURE);
@@ -162,7 +163,11 @@ static int arc_v2_irq_unit_resume(struct device *dev)
 				ctx.irq_config[irq - 16] & BIT(0));
 	}
 
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+	/* \todo use sjli instruction to access irq_ctrl */
+#else
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, ctx.irq_ctrl);
+#endif
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
 
 	status32 = z_arc_v2_aux_reg_read(_ARC_V2_STATUS32);

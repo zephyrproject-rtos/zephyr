@@ -1422,7 +1422,7 @@ void bt_sdp_init(void)
 	static struct bt_l2cap_server server = {
 		.psm = SDP_PSM,
 		.accept = bt_sdp_accept,
-		.sec_level = BT_SECURITY_NONE,
+		.sec_level = BT_SECURITY_L0,
 	};
 	int res;
 

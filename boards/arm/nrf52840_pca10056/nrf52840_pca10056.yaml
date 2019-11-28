@@ -8,6 +8,8 @@ toolchain:
   - xtools
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
   - usb_device
   - usb_cdc
   - ble

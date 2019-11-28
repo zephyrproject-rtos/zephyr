@@ -7,11 +7,11 @@
 #ifndef ZEPHYR_LIB_GUI_LVGL_MEM_H_
 #define ZEPHYR_LIB_GUI_LVGL_MEM_H_
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdlib.h>
 
 void *lvgl_malloc(size_t size);
 

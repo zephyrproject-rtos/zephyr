@@ -26,7 +26,7 @@ Building and Running
  sensor, which is present on the disco_l475_iot1 board.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/hts221
+   :zephyr-app: samples/sensor/hts221
    :board: disco_l475_iot1
    :goals: build
    :compact:

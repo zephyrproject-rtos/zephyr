@@ -22,7 +22,7 @@
 
 #define ONE_SECOND		(MSEC_PER_SEC)
 #define ONE_SECOND_ALIGNED	\
-	(u32_t)(__ticks_to_ms(z_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
+	(u32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
@@ -198,7 +198,7 @@ void test_sleep(void)
 					 THREAD_STACK,
 					 (k_thread_entry_t) test_thread,
 					 0, 0, NULL, TEST_THREAD_PRIORITY,
-					 0, 0);
+					 0, K_NO_WAIT);
 
 	TC_PRINT("Test thread started: id = %p\n", test_thread_id);
 
@@ -206,7 +206,7 @@ void test_sleep(void)
 					   helper_thread_stack, THREAD_STACK,
 					   (k_thread_entry_t) helper_thread,
 					   0, 0, NULL, HELPER_THREAD_PRIORITY,
-					   0, 0);
+					   0, K_NO_WAIT);
 
 	TC_PRINT("Helper thread started: id = %p\n", helper_thread_id);
 
@@ -235,11 +235,41 @@ void test_sleep(void)
 
 extern void test_usleep(void);
 
+static void forever_thread_entry(void *p1, void *p2, void *p3)
+{
+	s32_t ret;
+
+	ret = k_sleep(K_FOREVER);
+	zassert_equal(ret, K_FOREVER, "unexpected return value");
+	k_sem_give(&test_thread_sem);
+}
+
+void test_sleep_forever(void)
+{
+	test_objects_init();
+
+	test_thread_id = k_thread_create(&test_thread_data,
+					 test_thread_stack,
+					 THREAD_STACK,
+					 forever_thread_entry,
+					 0, 0, NULL, TEST_THREAD_PRIORITY,
+					 K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* Allow forever thread to run */
+	k_yield();
+
+	k_wakeup(test_thread_id);
+	k_sem_take(&test_thread_sem, K_FOREVER);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
+	k_thread_access_grant(k_current_get(), &test_thread_sem);
+
 	ztest_test_suite(sleep,
-			 ztest_unit_test(test_sleep),
-			 ztest_user_unit_test(test_usleep));
+			 ztest_1cpu_unit_test(test_sleep),
+			 ztest_1cpu_user_unit_test(test_usleep),
+			 ztest_1cpu_unit_test(test_sleep_forever));
 	ztest_run_test_suite(sleep);
 }

@@ -7,10 +7,6 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
 #include "rdc.h"
@@ -19,9 +15,5 @@ extern "C" {
 #include "clock_freq.h"
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */

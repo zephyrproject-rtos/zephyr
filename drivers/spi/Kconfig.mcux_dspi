@@ -1,12 +1,10 @@
-# Kconfig - MCUXpresso SDK SPI
-#
+# MCUXpresso SDK SPI
+
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig SPI_MCUX_DSPI
+config SPI_MCUX_DSPI
 	bool "MCUX SPI driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
 	help

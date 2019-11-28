@@ -1,0 +1,6 @@
+common:
+  depends_on: netif
+tests:
+  net.shell:
+    min_ram: 20
+    tags: net net-shell

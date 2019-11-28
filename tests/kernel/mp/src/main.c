@@ -9,6 +9,12 @@
 #include <ztest.h>
 #include <kernel.h>
 
+#ifdef CONFIG_SMP
+#error Cannot test MP API if SMP is using the CPUs
+#endif
+
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
+
 #define CPU1_STACK_SIZE 1024
 
 K_THREAD_STACK_DEFINE(cpu1_stack, CPU1_STACK_SIZE);
@@ -29,7 +35,8 @@ volatile int cpu_running;
  */
 void cpu1_fn(int key, void *arg)
 {
-	zassert_true(key, "bad irq key");
+	ARG_UNUSED(key);
+
 	zassert_true(arg == &cpu_arg && *(int *)arg == 12345, "wrong arg");
 
 	cpu_running = 1;
@@ -43,13 +50,13 @@ void cpu1_fn(int key, void *arg)
  *
  * @ingroup kernel_mp_tests
  *
- * @see z_arch_start_cpu()
+ * @see arch_start_cpu()
  */
 void test_mp_start(void)
 {
 	cpu_arg = 12345;
 
-	z_arch_start_cpu(1, cpu1_stack, CPU1_STACK_SIZE, cpu1_fn, &cpu_arg);
+	arch_start_cpu(1, cpu1_stack, CPU1_STACK_SIZE, cpu1_fn, &cpu_arg);
 
 	while (!cpu_running) {
 	}

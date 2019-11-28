@@ -1,7 +1,6 @@
-# Kconfig - Particle Boron board configuration
-#
+# Particle Boron board configuration
+
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_PARTICLE_BORON
@@ -26,13 +25,13 @@ endif # I2C
 if SPI
 
 config SPI_2
-       default y
+	default y
 
 endif # SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK
@@ -58,8 +57,12 @@ config UART_1_NRF_UARTE
 config UART_1_NRF_FLOW_CONTROL
 	default y
 
-config MODEM_UBLOX_SARA_R4
+config MODEM_UBLOX_SARA
 	default y
+
+choice MODEM_UBLOX_SARA_VARIANT
+	default MODEM_UBLOX_SARA_R4
+endchoice
 
 config UART_INTERRUPT_DRIVEN
 	default y

@@ -11,11 +11,11 @@
 #define POOL_NUM 2
 #define LOOPS 10
 #define TIMEOUT 200
-#define BLK_SIZE_MIN 8
-#define BLK_SIZE_MAX 32
+#define BLK_SIZE_MIN _MPOOL_MINBLK
+#define BLK_SIZE_MAX (4 * BLK_SIZE_MIN)
 #define BLK_NUM_MIN 8
 #define BLK_NUM_MAX 2
-#define BLK_ALIGN BLK_SIZE_MIN
+#define BLK_ALIGN sizeof(void *)
 
 K_MEM_POOL_DEFINE(mpool1, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 K_MEM_POOL_DEFINE(mpool2, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
@@ -74,7 +74,7 @@ void test_mpool_threadsafe(void)
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 tmpool_api, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(1), 0, 0);
+					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {

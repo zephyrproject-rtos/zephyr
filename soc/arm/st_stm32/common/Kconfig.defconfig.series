@@ -1,20 +1,30 @@
-# Kconfig.defconfig.series - ST Microelectronics STM32 all MCU lines
-#
+# ST Microelectronics STM32 all MCU lines
+
 # Copyright (c) 2017, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Here are set all the Kconfig symbols common to the whole STM32 family
 
 if SOC_FAMILY_STM32
+
+config CORTEX_M_SYSTICK
+	bool
+	default n if STM32_LPTIM_TIMER
+	default y if !STM32_LPTIM_TIMER
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_STM32_CUBE
+	default y
+
+endif # CLOCK_CONTROL
 
 if SERIAL
 
 config UART_STM32
 	default y
 
-endif #SERIAL
+endif # SERIAL
 
 if GPIO
 
@@ -30,19 +40,22 @@ config GPIO_STM32_PORTB
 config GPIO_STM32_PORTC
 	default y
 
-endif #GPIO
+endif # GPIO
 
 if PINMUX
 
 config PINMUX_STM32
 	default y
 
-endif #PINMUX
+endif # PINMUX
 
 if WATCHDOG
 
 config IWDG_STM32
 	default y
+
+config WWDG_STM32
+	default n
 
 endif # WATCHDOG
 
@@ -74,13 +87,6 @@ config USB_DC_STM32
 
 endif # USB
 
-if RTC
-
-config RTC_STM32
-	default y
-
-endif # RTC
-
 if COUNTER
 
 config COUNTER_RTC_STM32
@@ -101,5 +107,12 @@ config ADC_STM32
 	default y
 
 endif # ADC
+
+if DMA
+
+config DMA_STM32
+	default y
+
+endif # DMA
 
 endif # SOC_FAMILY_STM32

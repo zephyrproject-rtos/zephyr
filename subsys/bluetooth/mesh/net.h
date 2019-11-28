@@ -33,6 +33,13 @@ struct bt_mesh_app_key {
 	} keys[2];
 };
 
+struct bt_mesh_node {
+	u16_t addr;
+	u16_t net_idx;
+	u8_t  dev_key[16];
+	u8_t  num_elem;
+};
+
 struct bt_mesh_subnet {
 	u32_t beacon_sent;        /* Timestamp of last sent beacon */
 	u8_t  beacons_last;       /* Number of beacons during last
@@ -107,6 +114,12 @@ struct bt_mesh_friend {
 
 	struct bt_mesh_friend_seg {
 		sys_slist_t queue;
+
+		/* The target number of segments, i.e. not necessarily
+		 * the current number of segments, in the queue. This is
+		 * used for Friend Queue free space calculations.
+		 */
+		u8_t        seg_count;
 	} seg[FRIEND_SEG_RX];
 
 	struct net_buf *last;
@@ -209,6 +222,8 @@ enum {
 	BT_MESH_HB_PUB_PENDING,
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
+	BT_MESH_VA_PENDING,
+	BT_MESH_NODES_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -241,6 +256,10 @@ struct bt_mesh_net {
 
 	u8_t dev_key[16];
 
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	struct bt_mesh_node nodes[CONFIG_BT_MESH_NODE_COUNT];
+#endif
+
 	struct bt_mesh_app_key app_keys[CONFIG_BT_MESH_APP_KEY_COUNT];
 
 	struct bt_mesh_subnet sub[CONFIG_BT_MESH_SUBNET_COUNT];
@@ -268,6 +287,7 @@ struct bt_mesh_net_rx {
 	       net_if:2,       /* Network interface */
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
+	u16_t  msg_cache_idx;  /* Index of entry in message cache */
 };
 
 /* Encoding context for Network/Transport data */
@@ -337,6 +357,8 @@ u32_t bt_mesh_next_seq(void);
 void bt_mesh_net_start(void);
 
 void bt_mesh_net_init(void);
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+			      struct bt_mesh_net_rx *rx);
 
 /* Friendship Credential Management */
 struct friend_cred {
@@ -362,3 +384,19 @@ struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
 				       u16_t lpn_counter, u16_t frnd_counter);
 void friend_cred_clear(struct friend_cred *cred);
 int friend_cred_del(u16_t net_idx, u16_t addr);
+
+static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
+				    void *cb_data)
+{
+	if (!cb) {
+		return;
+	}
+
+	if (cb->start) {
+		cb->start(0, 0, cb_data);
+	}
+
+	if (cb->end) {
+		cb->end(0, cb_data);
+	}
+}

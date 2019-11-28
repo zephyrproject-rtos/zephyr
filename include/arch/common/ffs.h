@@ -8,13 +8,14 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_COMMON_FFS_H_
 #define ZEPHYR_INCLUDE_ARCH_COMMON_FFS_H_
 
+#ifndef _ASMLANGUAGE
+
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef _ASMLANGUAGE
-
-#include <zephyr/types.h>
 /**
  *
  * @brief find most significant bit set in a 32-bit word
@@ -54,12 +55,10 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 	return __builtin_ffs(op);
 }
 
-#endif /* _ASMLANGUAGE */
-
-
 #ifdef __cplusplus
 }
 #endif
 
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_COMMON_FFS_H_ */

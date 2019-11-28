@@ -18,6 +18,7 @@
 
 #include <generated_dts_board.h>
 #include <sw_isr_table.h>
+#include <arch/arc/thread.h>
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
@@ -31,6 +32,9 @@
 #include "v2/sys_io.h"
 #ifdef CONFIG_ARC_CONNECT
 #include <arch/arc/v2/arc_connect.h>
+#endif
+#ifdef CONFIG_ARC_HAS_SECURE
+#include <arch/arc/v2/secureshield/arc_secure.h>
 #endif
 #endif
 
@@ -85,10 +89,10 @@ extern "C" {
 
 
 #if defined(CONFIG_USERSPACE)
-#define Z_ARCH_THREAD_STACK_RESERVED \
+#define ARCH_THREAD_STACK_RESERVED \
 	(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
 #else
-#define Z_ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
+#define ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
 #endif
 
 
@@ -103,8 +107,8 @@ extern "C" {
  * MPU start, size alignment
  */
 #define Z_ARC_THREAD_STACK_ALIGN(size)	Z_ARC_MPUV2_SIZE_ALIGN(size)
-#define Z_ARCH_THREAD_STACK_LEN(size) \
-	(Z_ARC_MPUV2_SIZE_ALIGN(size) + Z_ARCH_THREAD_STACK_RESERVED)
+#define ARCH_THREAD_STACK_LEN(size) \
+	(Z_ARC_MPUV2_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
 /*
  * for stack array, each array member should be aligned both in size
  * and start
@@ -112,7 +116,7 @@ extern "C" {
 #define Z_ARC_THREAD_STACK_ARRAY_LEN(size) \
 		(Z_ARC_MPUV2_SIZE_ALIGN(size) + \
 		MAX(Z_ARC_MPUV2_SIZE_ALIGN(size), \
-		POW2_CEIL(Z_ARCH_THREAD_STACK_RESERVED)))
+		POW2_CEIL(ARCH_THREAD_STACK_RESERVED)))
 #else
 /*
  * MPUv3, no-mpu and no USERSPACE share the same macro definitions.
@@ -126,37 +130,39 @@ extern "C" {
  * aligned
  */
 #define Z_ARC_THREAD_STACK_ALIGN(size)	(STACK_ALIGN)
-#define Z_ARCH_THREAD_STACK_LEN(size) \
-		(STACK_SIZE_ALIGN(size) + Z_ARCH_THREAD_STACK_RESERVED)
+#define ARCH_THREAD_STACK_LEN(size) \
+		(STACK_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
 #define Z_ARC_THREAD_STACK_ARRAY_LEN(size) \
-		Z_ARCH_THREAD_STACK_LEN(size)
+		ARCH_THREAD_STACK_LEN(size)
 
 #endif /* CONFIG_USERSPACE && CONFIG_ARC_MPU_VER == 2 */
 
 
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define ARCH_THREAD_STACK_DEFINE(sym, size) \
 		struct _k_thread_stack_element __noinit \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
-		sym[Z_ARCH_THREAD_STACK_LEN(size)]
+		sym[ARCH_THREAD_STACK_LEN(size)]
 
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 		struct _k_thread_stack_element __noinit \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
 		sym[nmemb][Z_ARC_THREAD_STACK_ARRAY_LEN(size)]
 
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define ARCH_THREAD_STACK_MEMBER(sym, size) \
 		struct _k_thread_stack_element \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
-		sym[Z_ARCH_THREAD_STACK_LEN(size)]
+		sym[ARCH_THREAD_STACK_LEN(size)]
 
-#define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
-		(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)
+#define ARCH_THREAD_STACK_SIZEOF(sym) \
+		(sizeof(sym) - ARCH_THREAD_STACK_RESERVED)
 
-#define Z_ARCH_THREAD_STACK_BUFFER(sym) \
+#define ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym))
 
 #ifdef CONFIG_ARC_MPU
 #ifndef _ASMLANGUAGE
+
+/* Legacy case: retain containing extern "C" with C++ */
 #include <arch/arc/v2/mpu/arc_mpu.h>
 
 #define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_ATTR_N
@@ -221,9 +227,6 @@ extern "C" {
 /* Typedef for the k_mem_partition attribute*/
 typedef u32_t k_mem_partition_attr_t;
 
-/**
- * @brief Explicitly nop operation.
- */
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");

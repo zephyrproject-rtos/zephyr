@@ -1,0 +1,370 @@
+title: Short description of the node
+
+description: |
+    Longer free-form description of the node. Can have multiple
+    lines/paragraphs.
+
+    See https://yaml-multiline.info/ for formatting help.
+
+# Used to map nodes to bindings
+compatible: "manufacturer,device"
+
+# The 'compatible' above would match this node:
+#
+#     device {
+#         compatible = "manufacturer,device";
+#         ...
+#     };
+#
+# Assuming no binding has 'compatible: "manufacturer,device-v2"', it would also
+# match this node:
+#
+#     device {
+#         compatible = "manufacturer,device-v2", "manufacturer,device";
+#         ...
+#     };
+#
+# Strings in 'compatible' properties on nodes are tried from left to right, and
+# the first binding found is used.
+#
+# If more than one binding for a compatible is found, an error is raised.
+
+# Bindings can include other files, which can be used to share common
+# definitions between bindings.
+#
+# Included files are merged into bindings with a simple recursive dictionary
+# merge. It is up to the binding author to make sure that the final merged
+# binding is well-formed, though it is checked by the code as well.
+#
+# It is an error if a key appears with a different value in a binding and in a
+# file it includes, with one exception: A binding can have 'required: true' for
+# some property for which the included file has 'required: false' (see the
+# description of 'properties' below). The 'required: true' from the binding
+# takes precedence, allowing bindings to strengthen requirements from included
+# files.
+#
+# Note that weakening requirements by having 'required: false' where the
+# included file has 'required: true' is an error. This is meant to keep the
+# organization clean.
+#
+# The file base.yaml contains definitions for many common properties. When
+# writing a new binding, it is a good idea to check if base.yaml already
+# defines some of the needed properties, and including it in that case. Note
+# that you can make a property defined in base.yaml obligatory like this
+# (taking 'reg' as an example):
+#
+#     reg:
+#         required: true
+#
+# This relies on the dictionary merge to fill in the other keys for 'reg', like
+# 'type'.
+#
+# When including multiple files, any overlapping 'required' keys on properties
+# in the included files are ORed together. This makes sure that a
+# 'required: true' is always respected.
+include: other.yaml # or [other1.yaml, other2.yaml]
+
+# If the node describes a bus, then the bus type should be given, like below.
+# The name has "child" in it since it describes the bus children of the node
+# appear on.
+child-bus: <string describing bus type, e.g. "i2c">
+
+# If the node appears on a bus, then the bus type should be given, like below.
+#
+# When looking for a binding for a node, the code checks if the binding for the
+# parent node contains 'child-bus: <bus type>'. If it does, then only bindings
+# with a matching 'parent-bus: <bus type>' are considered. This allows the same
+# type of device to have different bindings depending on what bus it appears
+# on.
+parent-bus: <string describing bus type, e.g. "i2c">
+
+# 'properties' describes properties on the node, e.g.
+#
+#   reg = <1 2>;
+#   current-speed = <115200>;
+#   label = "foo";
+#
+# This is used to check that required properties appear, and to
+# control the format of output generated for them. Except for some
+# special-cased properties like 'reg', only properties listed here will
+# generate output.
+#
+# A typical property entry looks like this:
+#
+#   <property name>:
+#     required: <true | false>
+#     type: <string | int | boolean | array | uint8-array | string-array |
+#            phandle | phandles | phandle-array | compound>
+#     description: <description of the property>
+#     enum:
+#       - <item1>
+#       - <item2>
+#       ...
+#       - <itemN>
+#     const: <string | int>
+#     default: <default>
+#
+# These types are available:
+#
+#   - 'type: int' is for properties that are assigned a single 32-bit value,
+#     like
+#
+#         frequency = <100>;
+#
+#   - 'type: array' is for properties that are assigned zero or more 32-bit
+#     values, like
+#
+#         pin-config = <1 2 3>;
+#
+#   - 'type: uint8-array' is for properties that are assigned zero or more
+#     bytes with the [] syntax, like
+#
+#         lookup-table = [89 AB CD EF];
+#
+#     Each byte is given in hex.
+#
+#     This type is called 'bytestring' in the Devicetree specification.
+#
+#   - 'type: string' is for properties that are assigned a single string, like
+#
+#         ident = "foo";
+#
+#   - 'type: string-array' if for properties that are assigned zero or more
+#     strings, like
+#
+#         idents = "foo", "bar", "baz";
+#
+#   - 'type: boolean' is for properties used as flags that don't take a value,
+#     like
+#
+#         hw-flow-control;
+#
+#     The macro generated for the property gets set to 1 if the property exists
+#     on the node, and to 0 otherwise. When combined with 'required: true',
+#     this type just forces the flag to appear on the node. The output will
+#     always be 1 in that case.
+#
+#     Warning: Since a macro is always generated for 'type: boolean'
+#     properties, don't use #ifdef in tests. Do this instead:
+#
+#         #if DT_SOME_BOOLEAN_PROP == 1
+#
+#   - 'type: phandle' is for properties that are assigned a single phandle,
+#     like
+#
+#         foo = <&label>;
+#
+#   - 'type: phandles' is for properties that are assigned zero or more
+#     phandles, like
+#
+#         foo = <&label1 &label2 ...>;
+#
+#   - 'type: phandle-array' is for properties that take a list of phandles and
+#     (possibly) 32-bit numbers, like
+#
+#         pwms = <&ctrl-1 1 2 &ctrl-2 3 4>;
+#
+#     This type requires that the property works in the standard way that
+#     devicetree properties like pwms, clocks, *-gpios, and io-channels work.
+#     Taking 'pwms' as an example, the final -s is stripped from the property
+#     name, and #pwm-cells is looked up in the node for the controller
+#     (&ctrl-1/&ctrl-2) to determine the number of data values after the
+#     phandle. The binding for each controller must also have a *-cells key
+#     (e.g. pwm-cells), giving names to data values. See below for an
+#     explanation of *-cells.
+#
+#     A *-names (e.g. pwm-names) property can appear on the node as well,
+#     giving a name to each entry (the 'pwms' example above has two entries,
+#     <&ctrl-1 1 2> and <&ctrl-2 3 4>).
+#
+#     Because other property names are derived from the name of the property by
+#     removing the final -s, the property name must end in -s. An error is
+#     raised if it doesn't.
+#
+#     *-gpios properties are special-cased so that e.g. foo-gpios resolves to
+#     #gpio-cells rather than #foo-gpio-cells.
+#
+#     All phandle-array properties support mapping through *-map properties,
+#     e.g. gpio-map. See the devicetree spec.
+#
+#   - 'type: compound' is a catch-all for more complex types, e.g.
+#
+#         foo = <&label1>, [01 02];
+#
+# 'type: array' and the other array types also allow splitting the value into
+# several <> blocks, e.g. like this:
+#
+#     foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+#     foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+#     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+#     etc.
+#
+# The optional 'default:' setting gives a value that will be used if the
+# property is missing from the device tree node. If 'default: <default>' is
+# given for a property <prop> and <prop> is missing, then the output will be as
+# if '<prop> = <default>' had appeared (except YAML data types are used for the
+# default value).
+#
+# Note that it only makes sense to combine 'default:' with 'required: false'.
+# Combining it with 'required: true' will raise an error.
+#
+# See below for examples of 'default:'. Putting 'default:' on any property type
+# besides those used in the examples will raise an error.
+properties:
+    # Describes a property like 'current-speed = <115200>;'. We pretend that
+    # it's obligatory for the example node and set 'required: true'.
+    current-speed:
+        type: int
+        required: true
+        description: Initial baud rate for bar-device
+
+    # Describes an optional property like 'keys = "foo", "bar";'
+    keys:
+        type: string-array
+        required: false
+        description: Keys for bar-device
+
+    # Describes an optional property like 'maximum-speed = "full-speed";
+    # the enum specifies known values that the string property may take
+    maximum-speed:
+        type: string
+        required: false
+        description: Configures USB controllers to work up to a specific speed.
+        enum:
+           - "low-speed"
+           - "full-speed"
+           - "high-speed"
+           - "super-speed"
+
+    # Describes a required property '#address-cells = <1>';  the const
+    # specifies that the value for the property is expected to be the value 1
+    "#address-cells":
+        type: int
+        required: true
+        const: 1
+
+    int-with-default:
+        type: int
+        required: false
+        default: 123
+
+    array-with-default:
+        type: array
+        required: false
+        default: [1, 2, 3] # Same as 'array-with-default = <1 2 3>'
+
+    string-with-default:
+        type: string
+        required: false
+        default: "foo"
+
+    string-array-with-default:
+        type: string-array
+        required: false
+        default: ["foo", "bar"] # Same as 'string-array-with-default = "foo", "bar"'
+
+    uint8-array-with-default:
+        type: uint8-array
+        required: false
+        default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
+
+# 'child-binding' can be used when a node has children that all share the same
+# properties. Each child gets the contents of 'child-binding' as its binding
+# (though an explicit 'compatible = ...' on the child node takes precedence, if
+# a binding is found for it).
+#
+# The example below is for a binding for PWM LEDs, where the child nodes are
+# required to have a 'pwms' property. It corresponds to this .dts structure
+# (assuming the binding has 'compatible: "pwm-leds"'):
+#
+# pwmleds {
+#         compatible = "pwm-leds";
+#
+#         red_pwm_led {
+#                 pwms = <&pwm3 4 15625000>;
+#         };
+#         green_pwm_led {
+#                 pwms = <&pwm3 0 15625000>;
+#         };
+#         ...
+# };
+child-binding:
+    title: PWM LED
+    description: LED that uses PWM
+
+    properties:
+        pwms:
+            type: phandle-array
+            required: true
+
+# 'child-binding' also works recursively. For example, the binding below would
+# provide a binding for the 'grandchild' node in this .dts (assuming
+# 'compatible: "foo"'):
+#
+# parent {
+#         compatible = "foo";
+#         child {
+#                 grandchild {
+#                         prop = <123>;
+#                 };
+#         };
+# }
+#
+# WARNING: Due to implementation issues with legacy code, only up to two levels
+# of 'child-binding:' nesting (like below) is supported. This restriction will
+# go away in Zephyr 2.2.
+child-binding:
+    title: ...
+    description: ...
+
+    ...
+
+    child-binding:
+        title: ...
+        description: ...
+
+        properties:
+            prop:
+                type: int
+                required: true
+
+# If the binding describes an interrupt controller, GPIO controller, pinmux
+# device, or any other node referenced by other nodes via 'phandle-array'
+# properties, then *-cells should be given.
+#
+# To understand the purpose of *-cells, assume that some node has
+#
+#     pwms = <&pwm-ctrl 1 2>;
+#
+# , where &pwm-ctrl refers to a node whose binding is this file.
+#
+# The <1 2> part of the property value is called a *specifier* (this
+# terminology is from the devicetree specification), and contains additional
+# data associated with the GPIO. Here, the specifier has two cells, and the
+# node pointed at by &gpio-ctrl is expected to have '#pwm-cells = <2>'.
+#
+# *-cells gives a name to each cell in the specifier. These names are used when
+# generating identifiers.
+#
+# In this example, assume that 1 refers to a pin and that 2 is a flag value.
+# This gives a *-cells assignment like below.
+pwm-cells:
+    - channel # name of first cell
+    - period  # name of second cell
+
+# If the specifier is empty (e.g. '#clock-cells = <0>'), then *-cells can
+# either be omitted (recommended) or set to an empty array. Note that an empty
+# array is specified as e.g. 'clock-cells: []' in YAML.
+
+# As a special case, all *-gpio properties map to the key 'gpio-cells',
+# regardless of prefix
+gpio-cells:
+    - pin
+    - flags
+
+# This older syntax is deprecated and will generate a warning when used. It
+# works as a catch-all, where the name of the referencing 'phandle-array'
+# property doesn't matter.
+"#cells":
+    - pin
+    - flags

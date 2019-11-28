@@ -1,0 +1,8 @@
+sample:
+  name: Video capture
+tests:
+  sample.video.capture:
+    build_only: true
+    tags: video
+    platform_whitelist: mimxrt1064_evk
+    depends_on: video

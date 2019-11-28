@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32F373XC MCU
-#
+# ST Microelectronics STM32F373XC MCU
+
 # Copyright (c) 2016 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F373XC
 
 config SOC
-	string
 	default "stm32f373xc"
 
 config NUM_IRQS
-	int
 	default 82
 
 if GPIO_STM32

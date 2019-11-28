@@ -11,7 +11,7 @@
  *
  * Driver is currently implemented to support following EXTI lines
  * STM32F1/STM32F3: Lines 0 to 15. Lines > 15 not supported
- * STM32F0/STM32L0/STM32L4/STM32G0: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
+ * STM32F0/STM32L0/STM32L4/STM32G0/STM32G4: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
  * STM32F2/STM32F4: Lines 0 to 15, 16, 17 18, 21 and 22. Others not supported
  * STM32F7: Lines 0 to 15, 16, 17 18, 21, 22 and 23. Others not supported
  *
@@ -34,7 +34,8 @@ const IRQn_Type exti_irq_table[] = {
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
@@ -435,7 +436,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
 	IRQ_CONNECT(EXTI0_IRQn,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
 		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),

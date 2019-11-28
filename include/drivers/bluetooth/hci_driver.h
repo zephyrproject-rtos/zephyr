@@ -50,8 +50,10 @@ static inline bool bt_hci_evt_is_prio(u8_t evt)
 	switch (evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
+		/* fallthrough */
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
 #endif
 		return true;
 	default:

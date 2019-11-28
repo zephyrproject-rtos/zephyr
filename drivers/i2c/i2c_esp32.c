@@ -18,6 +18,12 @@
 #include <sys/util.h>
 #include <string.h>
 
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_esp32);
+
+#include "i2c-priv.h"
+
 /* Number of entries in hardware command queue */
 #define I2C_ESP32_NUM_CMDS 16
 /* Number of bytes in hardware FIFO */
@@ -87,6 +93,7 @@ struct i2c_esp32_config {
 	} irq;
 
 	const u32_t default_config;
+	const u32_t bitrate;
 };
 
 static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
@@ -562,7 +569,7 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 	.transfer = i2c_esp32_transfer,
 };
 
-#ifdef CONFIG_I2C_0
+#ifdef DT_INST_0_ESPRESSIF_ESP32_I2C
 DEVICE_DECLARE(i2c_esp32_0);
 
 static void i2c_esp32_connect_irq_0(void)
@@ -581,8 +588,8 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 		.scl_in = I2CEXT0_SCL_IN_IDX,
 	},
 	.pins = {
-		.scl = CONFIG_I2C_ESP32_0_SCL_PIN,
-		.sda = CONFIG_I2C_ESP32_0_SDA_PIN,
+		.scl = DT_INST_0_ESPRESSIF_ESP32_I2C_SCL_PIN,
+		.sda = DT_INST_0_ESPRESSIF_ESP32_I2C_SDA_PIN,
 	},
 	.peripheral = {
 		.clk = DPORT_I2C_EXT0_CLK_EN,
@@ -598,18 +605,19 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 		.source = ETS_I2C_EXT0_INTR_SOURCE,
 		.line = CONFIG_I2C_ESP32_0_IRQ,
 	},
-	.default_config = CONFIG_I2C_0_DEFAULT_CFG,
+	.default_config = I2C_MODE_MASTER, /* FIXME: Zephyr don't support I2C_SLAVE_MODE */
+	.bitrate = DT_INST_0_ESPRESSIF_ESP32_I2C_CLOCK_FREQUENCY,
 };
 
 static struct i2c_esp32_data i2c_esp32_data_0;
 
-DEVICE_AND_API_INIT(i2c_esp32_0, CONFIG_I2C_0_NAME, &i2c_esp32_init,
+DEVICE_AND_API_INIT(i2c_esp32_0, DT_INST_0_ESPRESSIF_ESP32_I2C_LABEL, &i2c_esp32_init,
 		    &i2c_esp32_data_0, &i2c_esp32_config_0,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
-#endif /* CONFIG_I2C_0 */
+#endif /* DT_INST_0_ESPRESSIF_ESP32_I2C */
 
-#ifdef CONFIG_I2C_1
+#ifdef DT_INST_1_ESPRESSIF_ESP32_I2C
 DEVICE_DECLARE(i2c_esp32_1);
 
 static void i2c_esp32_connect_irq_1(void)
@@ -628,8 +636,8 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 		.scl_in = I2CEXT1_SCL_IN_IDX,
 	},
 	.pins = {
-		.scl = CONFIG_I2C_ESP32_1_SCL_PIN,
-		.sda = CONFIG_I2C_ESP32_1_SDA_PIN,
+		.scl = DT_INST_1_ESPRESSIF_ESP32_I2C_SCL_PIN,
+		.sda = DT_INST_1_ESPRESSIF_ESP32_I2C_SDA_PIN,
 	},
 	.peripheral = {
 		.clk = DPORT_I2C_EXT1_CLK_EN,
@@ -645,21 +653,23 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 		.source = ETS_I2C_EXT1_INTR_SOURCE,
 		.line = CONFIG_I2C_ESP32_1_IRQ,
 	},
-	.default_config = CONFIG_I2C_1_DEFAULT_CFG,
+	.default_config = I2C_MODE_MASTER, /* FIXME: Zephyr don't support I2C_SLAVE_MODE */
+	.bitrate = DT_INST_1_ESPRESSIF_ESP32_I2C_CLOCK_FREQUENCY,
 };
 
 static struct i2c_esp32_data i2c_esp32_data_1;
 
-DEVICE_AND_API_INIT(i2c_esp32_1, CONFIG_I2C_1_NAME, &i2c_esp32_init,
+DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_1_ESPRESSIF_ESP32_I2C_LABEL, &i2c_esp32_init,
 		    &i2c_esp32_data_1, &i2c_esp32_config_1,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
-#endif /* CONFIG_I2C_1 */
+#endif /* DT_INST_1_ESPRESSIF_ESP32_I2C */
 
 static int i2c_esp32_init(struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
+	u32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	unsigned int key = irq_lock();
 
 	k_sem_init(&data->fifo_sem, 1, 1);
@@ -676,5 +686,5 @@ static int i2c_esp32_init(struct device *dev)
 	config->connect_irq();
 	irq_unlock(key);
 
-	return i2c_esp32_configure(dev, config->default_config);
+	return i2c_esp32_configure(dev, config->default_config | bitrate_cfg);
 }

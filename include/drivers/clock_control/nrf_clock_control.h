@@ -7,10 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
-#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <device.h>
-#endif
-#include <nrf_clock.h>
+#include <hal/nrf_clock.h>
 
 /* TODO: move all these to clock_control.h ? */
 
@@ -57,8 +55,27 @@
 #define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7
 #endif
 
-#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_USB_NRFX)
 void nrf5_power_usb_power_int_enable(bool enable);
 #endif
+
+/** @brief Force LF clock calibration. */
+void z_nrf_clock_calibration_force_start(void);
+
+/** @brief Return number of calibrations performed.
+ *
+ * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ *
+ * @return Number of calibrations or -1 if feature is disabled.
+ */
+int z_nrf_clock_calibration_count(void);
+
+/** @brief Return number of attempts when calibration was skipped.
+ *
+ * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ *
+ * @return Number of calibrations or -1 if feature is disabled.
+ */
+int z_nrf_clock_calibration_skips_count(void);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_ */

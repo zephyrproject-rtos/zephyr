@@ -13,10 +13,9 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP112);
+LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDRESS		CONFIG_TMP112_I2C_ADDR
+#define TMP112_I2C_ADDRESS		DT_INST_0_TI_TMP112_BASE_ADDRESS
 
 #define TMP112_REG_TEMPERATURE		0x00
 #define TMP112_D0_BIT			BIT(0)
@@ -196,10 +195,10 @@ int tmp112_init(struct device *dev)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(CONFIG_TMP112_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP112_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    CONFIG_TMP112_I2C_MASTER_DEV_NAME);
+			    DT_INST_0_TI_TMP112_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -208,5 +207,5 @@ int tmp112_init(struct device *dev)
 
 static struct tmp112_data tmp112_driver;
 
-DEVICE_AND_API_INIT(tmp112, CONFIG_TMP112_NAME, tmp112_init, &tmp112_driver,
+DEVICE_AND_API_INIT(tmp112, DT_INST_0_TI_TMP112_LABEL, tmp112_init, &tmp112_driver,
 	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);

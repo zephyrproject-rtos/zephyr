@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
 #include <net/gptp.h>
+#include <net/websocket.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
@@ -450,6 +451,9 @@ static inline int services_init(void)
 	}
 
 	dns_init_resolver();
+	websocket_init();
+
+	net_coap_init();
 
 	net_shell_init();
 

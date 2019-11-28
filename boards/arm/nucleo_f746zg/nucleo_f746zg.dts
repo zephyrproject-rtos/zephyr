@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f7/stm32f746Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F746ZG-NUCLEO board";
@@ -51,21 +52,13 @@
 	};
 };
 
-arduino_serial: &usart6 {};
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart6 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart6_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

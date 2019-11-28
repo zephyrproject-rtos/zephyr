@@ -252,7 +252,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 #define TO_ADC12_CLOCK_SRC(val) _DO_CONCAT(kADC12_ClockSourceAlt, val)
 #define TO_ADC12_CLOCK_DIV(val) _DO_CONCAT(kADC12_ClockDivider, val)
 
-#if CONFIG_ADC_0
+#if DT_INST_0_NXP_KINETIS_ADC12
 static void mcux_adc12_config_func_0(struct device *dev);
 
 ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_ADC12_CLK_SOURCE, 0, 3,
@@ -294,9 +294,9 @@ static void mcux_adc12_config_func_0(struct device *dev)
 
 	irq_enable(DT_INST_0_NXP_KINETIS_ADC12_IRQ_0);
 }
-#endif /* CONFIG_ADC_0 */
+#endif /* DT_INST_0_NXP_KINETIS_ADC12 */
 
-#if CONFIG_ADC_1
+#if DT_INST_1_NXP_KINETIS_ADC12
 static void mcux_adc12_config_func_1(struct device *dev);
 
 ASSERT_WITHIN_RANGE(DT_INST_1_NXP_KINETIS_ADC12_CLK_SOURCE, 0, 3,
@@ -338,9 +338,9 @@ static void mcux_adc12_config_func_1(struct device *dev)
 
 	irq_enable(DT_INST_1_NXP_KINETIS_ADC12_IRQ_0);
 }
-#endif /* CONFIG_ADC_1 */
+#endif /* DT_INST_1_NXP_KINETIS_ADC12 */
 
-#if CONFIG_ADC_2
+#if DT_INST_2_NXP_KINETIS_ADC12
 static void mcux_adc12_config_func_2(struct device *dev);
 
 ASSERT_WITHIN_RANGE(DT_INST_2_NXP_KINETIS_ADC12_ADC_CLK_SOURCE, 0, 3,
@@ -381,4 +381,4 @@ static void mcux_adc12_config_func_2(struct device *dev)
 
 	irq_enable(DT_INST_2_NXP_KINETIS_ADC12_ADC_IRQ);
 }
-#endif /* CONFIG_ADC_2 */
+#endif /* DT_INST_2_NXP_KINETIS_ADC12 */

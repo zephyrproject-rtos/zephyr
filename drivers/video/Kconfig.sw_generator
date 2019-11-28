@@ -1,0 +1,9 @@
+# MT9m114
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SW_GENERATOR
+	bool "Video Software Generator"
+	help
+	  Enable video pattern generator (for testing purposes).

@@ -1,0 +1,13 @@
+identifier: stm32f030_demo
+name: STM32F030_DEMO
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 4
+flash: 16
+supported:
+  - uart
+  - gpio

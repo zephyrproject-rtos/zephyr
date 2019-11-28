@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: CYPRESS UART
 
-description: >
+description: |
     This binding gives a base representation of the Cypress UART
 
-inherits:
-    !include uart.yaml
+compatible: "cypress,psoc6-uart"
+
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "cypress,psoc6-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

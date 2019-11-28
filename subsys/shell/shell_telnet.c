@@ -238,6 +238,8 @@ static void telnet_accept(struct net_context *client,
 		goto error;
 	}
 
+	net_context_set_accepting(client, false);
+
 	LOG_DBG("Telnet client connected (family AF_INET%s)",
 		net_context_get_family(client) == AF_INET ? "" : "6");
 
@@ -420,7 +422,7 @@ static int write(const struct shell_transport *transport,
 		 */
 		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
 
-		k_timer_start(&sh_telnet->send_timer, timeout, 0);
+		k_timer_start(&sh_telnet->send_timer, timeout, K_NO_WAIT);
 	}
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,

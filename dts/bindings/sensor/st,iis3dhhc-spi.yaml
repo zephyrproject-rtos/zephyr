@@ -1,0 +1,18 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics MEMS sensors IIS3DHHC SPI
+
+description: |
+    This binding gives a base representation of IIS3DHHC 3-axis accelerometer
+    accessed through SPI bus
+
+compatible: "st,iis3dhhc"
+
+include: spi-device.yaml
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: false
+      description: DRDY pin

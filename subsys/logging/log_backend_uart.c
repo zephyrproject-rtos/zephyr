@@ -31,7 +31,10 @@ LOG_OUTPUT_DEFINE(log_output, char_out, &buf, 1);
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	log_backend_std_put(&log_output, 0, msg);
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_put(&log_output, flag, msg);
 }
 
 static void log_backend_uart_init(void)
@@ -60,7 +63,10 @@ static void sync_string(const struct log_backend *const backend,
 		     struct log_msg_ids src_level, u32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	log_backend_std_sync_string(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_string(&log_output, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
@@ -68,7 +74,10 @@ static void sync_hexdump(const struct log_backend *const backend,
 			 struct log_msg_ids src_level, u32_t timestamp,
 			 const char *metadata, const u8_t *data, u32_t length)
 {
-	log_backend_std_sync_hexdump(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_hexdump(&log_output, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 

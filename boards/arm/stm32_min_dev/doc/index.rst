@@ -10,8 +10,8 @@ The STM32 Minimum Development Board, is a popular and inexpensive
 breadboard-friendly breakout board for the `STM32F103x8`_ CPU. There
 are two variants of the board:
 
-- `Blue Pill Board`_
-- `Black Pill Board`_
+- Blue Pill Board
+- Black Pill Board
 
 Zephyr applications can use the stm32_min_dev_blue or stm32_min_dev_black board
 configuration to use these boards.
@@ -42,6 +42,18 @@ Additional device support is left for the user to implement.
 
 More information on hooking up peripherals and lengthy how to articles can be
 found at `EmbedJournal`_.
+
+The pinout diagram of STM32 Minimum Development Blue Pill board can be seen
+below. The Black Pill's one is similar:
+
+.. figure:: img/stm32_min_dev_pinout_blue.jpg
+     :width: 500px
+     :align: center
+     :height: 350px
+     :alt: Pinout for STM32 Minimum Development Blue Pill Board
+
+     Pinout for STM32 Minimum Development Blue Pill Board
+
 
 STLinkV2 connection:
 ====================
@@ -82,7 +94,6 @@ respectively.
 Supported Features
 ==================
 
-The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
 The stm32_min_dev board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
@@ -108,16 +119,38 @@ The stm32_min_dev board configuration supports the following hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
-I2C
-===
+Connections and IOs
+===================
 
-The STM32 Minimum Development Board board supports two I2C devices. The default
-I2C mapping for Zephyr is:
+Default Zephyr Peripheral Mapping:
+----------------------------------
 
-- I2C1_SCL : PB6
-- I2C1_SDA : PB7
-- I2C2_SCL : PB10
-- I2C2_SDA : PB11
+- UART_1 TX/RX: PA9/PA10
+- UART_2 TX/RX: PA2/PA3
+- UART_3 TX/RX: PB10/PB11
+- I2C_1 SCL/SDA : PB6/PB7
+- I2C_2 SCL/SDA : PB10/PB11
+- PWM_1_CH1: PA8
+- SPI_1 NSS_OE/SCK/MISO/MOSI: PA4/PA5/PA6/PA7
+- SPI_2 NSS_OE/SCK/MISO/MOSI: PB12/PB13/PB14/PB15
+- USB_DC DM/DP: PA11/PA12
+
+System Clock
+------------
+
+The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
+
+Serial Port
+-----------
+
+STM32 Minimum Development Board has 3 U(S)ARTs. The Zephyr console output is
+assigned to UART_1. Default settings are 115200 8N1.
+
+On-Board LEDs
+-------------
+
+The board has one on-board LED that is connected to PB12/PC13 on the black/blue
+variants respectively.
 
 Programming and Debugging
 *************************
@@ -150,9 +183,5 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
-.. _Black Pill Board:
-        https://wiki.stm32duino.com/index.php?title=Black_Pill
-.. _Blue Pill Board:
-        https://wiki.stm32duino.com/index.php?title=Blue_Pill
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/

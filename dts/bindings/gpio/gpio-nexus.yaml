@@ -1,0 +1,22 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for GPIO nexus nodes
+
+properties:
+    gpio-map:
+      type: compound
+      required: true
+
+    gpio-map-mask:
+      type: compound
+      required: false
+
+    gpio-map-pass-thru:
+      type: compound
+      required: false
+
+    "#gpio-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a GPIO specifier

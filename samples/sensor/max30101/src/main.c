@@ -25,6 +25,6 @@ void main(void)
 		/* Print green LED data*/
 		printf("GREEN=%d\n", green.val1);
 
-		k_sleep(20);
+		k_sleep(K_MSEC(20));
 	}
 }

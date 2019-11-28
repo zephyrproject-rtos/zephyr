@@ -324,7 +324,6 @@ static int create_ipv4_answer(struct net_context *ctx,
 }
 #endif /* CONFIG_NET_IPV4 */
 
-#if defined(CONFIG_NET_IPV6)
 static int create_ipv6_answer(struct net_context *ctx,
 			      struct net_pkt *pkt,
 			      union net_ip_header *ip_hdr,
@@ -334,6 +333,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 			      struct sockaddr *dst,
 			      socklen_t *dst_len)
 {
+#if defined(CONFIG_NET_IPV6)
 	const u8_t *addr;
 	int addr_len;
 
@@ -370,9 +370,9 @@ static int create_ipv6_answer(struct net_context *ctx,
 
 	net_context_set_ipv6_hop_limit(ctx, 255);
 
+#endif /* CONFIG_NET_IPV6 */
 	return 0;
 }
-#endif /* CONFIG_NET_IPV6 */
 
 static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 			 union net_ip_header *ip_hdr, struct net_buf *reply,

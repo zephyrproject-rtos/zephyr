@@ -11,8 +11,7 @@
 #include <logging/log.h>
 #include <stdlib.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(FXOS8700);
+LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
 {

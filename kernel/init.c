@@ -66,24 +66,16 @@ LOG_MODULE_REGISTER(os);
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-u64_t __noinit __start_time_stamp; /* timestamp when kernel starts */
-u64_t __noinit __main_time_stamp;  /* timestamp when main task starts */
-u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
+u32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
+u32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
 #endif
 
 /* init/main and idle threads */
+K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DEFINE(z_idle_stack, CONFIG_IDLE_STACK_SIZE);
 
-#define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
-#define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
-
-K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
-K_THREAD_STACK_DEFINE(_idle_stack, IDLE_STACK_SIZE);
-
-static struct k_thread _main_thread_s;
-static struct k_thread _idle_thread_s;
-
-k_tid_t const _main_thread = (k_tid_t)&_main_thread_s;
-k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
+struct k_thread z_main_thread;
+struct k_thread z_idle_thread;
 
 /*
  * storage space for the interrupt stack
@@ -102,21 +94,21 @@ K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  * clean this up in the future.
  */
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
-K_THREAD_STACK_DEFINE(_idle_stack1, IDLE_STACK_SIZE);
+K_THREAD_STACK_DEFINE(_idle_stack1, CONFIG_IDLE_STACK_SIZE);
 static struct k_thread _idle_thread1_s;
 k_tid_t const _idle_thread1 = (k_tid_t)&_idle_thread1_s;
 K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
-K_THREAD_STACK_DEFINE(_idle_stack2, IDLE_STACK_SIZE);
+K_THREAD_STACK_DEFINE(_idle_stack2, CONFIG_IDLE_STACK_SIZE);
 static struct k_thread _idle_thread2_s;
 k_tid_t const _idle_thread2 = (k_tid_t)&_idle_thread2_s;
 K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
-K_THREAD_STACK_DEFINE(_idle_stack3, IDLE_STACK_SIZE);
+K_THREAD_STACK_DEFINE(_idle_stack3, CONFIG_IDLE_STACK_SIZE);
 static struct k_thread _idle_thread3_s;
 k_tid_t const _idle_thread3 = (k_tid_t)&_idle_thread3_s;
 K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
@@ -284,10 +276,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	/* record timestamp for kernel's _main() function */
-	extern u64_t __main_time_stamp;
-
-	__main_time_stamp = (u64_t)k_cycle_get_32();
+	z_timestamp_main = k_cycle_get_32();
 #endif
 
 	extern void main(void);
@@ -295,7 +284,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	main();
 
 	/* Mark nonessenrial since main() has no more work to do */
-	_main_thread->base.user_options &= ~K_ESSENTIAL;
+	z_main_thread.base.user_options &= ~K_ESSENTIAL;
 
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
@@ -314,14 +303,14 @@ void __weak main(void)
 #if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 {
+	z_setup_new_thread(thr, stack,
+			  CONFIG_IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
+	z_mark_thread_as_started(thr);
+
 #ifdef CONFIG_SMP
 	thr->base.is_idle = 1U;
 #endif
-
-	z_setup_new_thread(thr, stack,
-			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
-	z_mark_thread_as_started(thr);
 }
 #endif /* CONFIG_MULTITHREADING */
 
@@ -375,21 +364,21 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 *   contain garbage, which would prevent the cache loading algorithm
 	 *   to work as intended
 	 */
-	_kernel.ready_q.cache = _main_thread;
+	_kernel.ready_q.cache = &z_main_thread;
 #endif
 
-	z_setup_new_thread(_main_thread, _main_stack,
-			  MAIN_STACK_SIZE, bg_thread_main,
-			  NULL, NULL, NULL,
-			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
-	sys_trace_thread_create(_main_thread);
+	z_setup_new_thread(&z_main_thread, z_main_stack,
+			   CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+			   NULL, NULL, NULL,
+			   CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
+	sys_trace_thread_create(&z_main_thread);
 
-	z_mark_thread_as_started(_main_thread);
-	z_ready_thread(_main_thread);
+	z_mark_thread_as_started(&z_main_thread);
+	z_ready_thread(&z_main_thread);
 
-	init_idle_thread(_idle_thread, _idle_stack);
-	_kernel.cpus[0].idle_thread = _idle_thread;
-	sys_trace_thread_create(_idle_thread);
+	init_idle_thread(&z_idle_thread, z_idle_stack);
+	_kernel.cpus[0].idle_thread = &z_idle_thread;
+	sys_trace_thread_create(&z_idle_thread);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
@@ -422,9 +411,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	z_arch_switch_to_main_thread(_main_thread, _main_stack,
-				    K_THREAD_STACK_SIZEOF(_main_stack),
-				    bg_thread_main);
+	arch_switch_to_main_thread(&z_main_thread, z_main_stack,
+				   K_THREAD_STACK_SIZEOF(z_main_stack),
+				   bg_thread_main);
 #else
 	/*
 	 * Context switch to main task (entry function is _main()): the
@@ -437,35 +426,33 @@ static FUNC_NORETURN void switch_to_main_thread(void)
 }
 #endif /* CONFIG_MULTITHREADING */
 
-u32_t z_early_boot_rand32_get(void)
+void z_early_boot_rand_get(u8_t *buf, size_t length)
 {
+	int n = sizeof(u32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	int rc;
-	u32_t retval;
 
 	if (entropy == NULL) {
-		goto sys_rand32_fallback;
+		goto sys_rand_fallback;
 	}
 
 	/* Try to see if driver provides an ISR-specific API */
-	rc = entropy_get_entropy_isr(entropy, (u8_t *)&retval,
-				     sizeof(retval), ENTROPY_BUSYWAIT);
+	rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
 	if (rc == -ENOTSUP) {
 		/* Driver does not provide an ISR-specific API, assume it can
 		 * be called from ISR context
 		 */
-		rc = entropy_get_entropy(entropy, (u8_t *)&retval,
-					 sizeof(retval));
+		rc = entropy_get_entropy(entropy, buf, length);
 	}
 
 	if (rc >= 0) {
-		return retval;
+		return;
 	}
 
 	/* Fall through to fallback */
 
-sys_rand32_fallback:
+sys_rand_fallback:
 #endif
 
 	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
@@ -474,7 +461,25 @@ sys_rand32_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-	return sys_rand32_get();
+
+	while (length > 0) {
+		u32_t rndbits;
+		u8_t *p_rndbits = (u8_t *)&rndbits;
+
+		rndbits = sys_rand32_get();
+
+		if (length < sizeof(u32_t)) {
+			n = length;
+		}
+
+		for (int i = 0; i < n; i++) {
+			*buf = *p_rndbits;
+			buf++;
+			p_rndbits++;
+		}
+
+		length -= n;
+	}
 }
 
 /**
@@ -489,15 +494,17 @@ sys_rand32_fallback:
  */
 FUNC_NORETURN void z_cstart(void)
 {
+#ifdef CONFIG_STACK_CANARIES
+	uintptr_t stack_guard;
+#endif	/* CONFIG_STACK_CANARIES */
+
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
-	if (IS_ENABLED(CONFIG_LOG)) {
-		log_core_init();
-	}
+	LOG_CORE_INIT();
 
 	/* perform any architecture-specific initialization */
-	kernel_arch_init();
+	arch_kernel_init();
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_thread dummy_thread = {
@@ -519,8 +526,10 @@ FUNC_NORETURN void z_cstart(void)
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
-	__stack_chk_guard = z_early_boot_rand32_get();
-#endif
+	z_early_boot_rand_get((u8_t *)&stack_guard, sizeof(stack_guard));
+	__stack_chk_guard = stack_guard;
+	__stack_chk_guard <<= 8;
+#endif	/* CONFIG_STACK_CANARIES */
 
 #ifdef CONFIG_MULTITHREADING
 	prepare_multithreading(&dummy_thread);

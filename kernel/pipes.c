@@ -15,6 +15,7 @@
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <ksched.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
 #include <init.h>
@@ -164,12 +165,13 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
+static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
 
-	return z_impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
+	return z_impl_k_pipe_alloc_init(pipe, size);
 }
+#include <syscalls/k_pipe_alloc_init_mrsh.c>
 #endif
 
 void k_pipe_cleanup(struct k_pipe *pipe)
@@ -710,12 +712,9 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_pipe_get,
-		  pipe, data, bytes_to_read, bytes_read_p, min_xfer_p, timeout)
+int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
+		      size_t *bytes_read, size_t min_xfer, s32_t timeout)
 {
-	size_t *bytes_read = (size_t *)bytes_read_p;
-	size_t min_xfer = (size_t)min_xfer_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
@@ -725,6 +724,7 @@ Z_SYSCALL_HANDLER(k_pipe_get,
 				bytes_to_read, bytes_read, min_xfer,
 				timeout);
 }
+#include <syscalls/k_pipe_get_mrsh.c>
 #endif
 
 int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
@@ -739,12 +739,9 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
-		  min_xfer_p, timeout)
+int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer, s32_t timeout)
 {
-	size_t *bytes_written = (size_t *)bytes_written_p;
-	size_t min_xfer = (size_t)min_xfer_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
@@ -754,6 +751,7 @@ Z_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
 				bytes_to_write, bytes_written, min_xfer,
 				timeout);
 }
+#include <syscalls/k_pipe_put_mrsh.c>
 #endif
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
@@ -770,6 +768,9 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 	async_desc->desc.copy_block = *block;
 	async_desc->desc.sem = sem;
 	async_desc->thread.prio = k_thread_priority_get(_current);
+#ifdef CONFIG_SMP
+	async_desc->thread.is_idle = 0;
+#endif
 
 	(void) z_pipe_put_internal(pipe, async_desc, block->data,
 				    bytes_to_write, &dummy_bytes_written,

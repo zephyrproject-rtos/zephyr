@@ -17,10 +17,23 @@
  * command line arguments is passed to the nrf52_bsim one
  */
 
+#ifndef BOARDS_POSIX_NRF52_BSIM_CMDLINE_H
+#define BOARDS_POSIX_NRF52_BSIM_CMDLINE_H
+
 #include "../native_posix/cmdline_common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline void native_add_command_line_opts(struct args_struct_t *args)
 {
 	void bs_add_extra_dynargs(struct args_struct_t *args);
 	bs_add_extra_dynargs(args);
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* BOARDS_POSIX_NRF52_BSIM_CMDLINE_H */

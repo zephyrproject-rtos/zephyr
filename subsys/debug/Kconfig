@@ -1,35 +1,15 @@
-# Kconfig - debug configuration options
+# Debug configuration options
 
-#
 # Copyright (c) 2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "System Monitoring Options"
 
-config PERFORMANCE_METRICS
-	bool "Enable performance metrics [EXPERIMENTAL]"
-	help
-	  Enable Performance Metrics.
-
 config BOOT_TIME_MEASUREMENT
-	bool "Boot time measurements [EXPERIMENTAL]"
-	depends on PERFORMANCE_METRICS
+	bool "Boot time measurements"
+	depends on ARCH_POSIX || ARM || (X86 && APIC_TIMER && APIC_TIMER_TSC)
 	help
-	  This option enables the recording of timestamps during system start
-	  up. The global variable __start_time_stamp records the time kernel begins
-	  executing, while __main_time_stamp records when main() begins executing,
-	  and __idle_time_stamp records when the CPU becomes idle. All values are
-	  recorded in terms of CPU clock cycles since system reset.
-
-config CPU_CLOCK_FREQ_MHZ
-	int "CPU Clock Frequency in MHz"
-	default 20
-	depends on BOOT_TIME_MEASUREMENT
-	help
-	  This option specifies the CPU Clock Frequency in MHz in order to
-	  convert Intel RDTSC timestamp to microseconds.
+	  This option enables the recording of timestamps during system boot.
 
 config STATS
 	bool "Statistics support"
@@ -62,14 +42,29 @@ config TRACING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
+
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX
 	help
-	  Builds Zephyr with Address Sanitizer enabled.  This is currently
-	  only supported by the native_posix port, and requires a recent-ish
-	  compiler with the ``-fsanitize=address`` command line option, and
-	  the libasan library.
+	  Builds Zephyr with Address Sanitizer enabled. This is currently
+	  only supported by boards based on the posix architecture, and requires a
+	  recent-ish compiler with the ``-fsanitize=address`` command line option,
+	  and the libasan library.
+
+	  Note that at exit leak detection is disabled for 64-bit boards when
+	  GCC is used due to potential risk of a deadlock in libasan.
+	  This behavior can be changes by adding leak_check_at_exit=1 to the
+	  environment variable ASAN_OPTIONS.
+
+config UBSAN
+	bool "Build with undefined behavior sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Undefined Behavior Sanitizer enabled.
+	  This is currently only supported by boards based on the posix
+	  architecture, and requires a recent-ish compiler with the
+	  ``-fsanitize=undefined`` command line option.
 
 config STACK_USAGE
 	bool "Generate stack usage information"
@@ -134,9 +129,12 @@ config ASSERT
 	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
-	  fails, the calling thread is put on an infinite tight loop. Since
-	  enabling this adds a significant footprint, it should only be enabled
-	  in a non-production system.
+	  fails, the policy for what to do is controlled by the implementation
+	  of the assert_post_action() function, which by default will trigger
+	  a fatal error.
+
+	  Disabling this option will cause assertions to compile to nothing,
+	  improving performance and system footprint.
 
 config ASSERT_LEVEL
 	int "__ASSERT() level"
@@ -158,6 +156,13 @@ config FORCE_NO_ASSERT
 	  in circumstances (sanitycheck) where it is enabled via
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
+
+config ASSERT_NO_FILE_INFO
+	bool "Disable file info for asserts"
+	help
+	  This option removes the name and the path of the source file
+	  in which the assertion occurred. Enabling this will save
+	  target code space, and thus may be necessary for tiny targets.
 
 config OBJECT_TRACING
 	bool "Kernel object tracing"

@@ -1,0 +1,40 @@
+# Copyright (c) 2019, Marc Reilly <marc@cpdesign.com.au>
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST7789V 320x240 Display Controller
+
+description: |
+    This is a representation of the ST7789V 320x240 Display Controller
+
+compatible: "sitronix,st7789v"
+
+include: spi-device.yaml
+
+properties:
+    reset-gpios:
+      type: phandle-array
+      required: true
+
+    cmd-data-gpios:
+      type: phandle-array
+      required: true
+
+    height:
+      type: int
+      required: true
+      description: Height in pixels of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixels of the panel driven by the controller
+
+    x-offset:
+      type: int
+      required: false
+      description: The column offset in pixels of the LCD to the controller memory
+
+    y-offset:
+      type: int
+      required: false
+      description: The row offset in pixels of the LCD to the controller memory

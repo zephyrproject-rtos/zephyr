@@ -704,7 +704,7 @@ static k_tid_t start_timeout_v6_thread(s32_t timeout)
 			       (k_thread_entry_t)timeout_thread,
 			       udp_v6_ctx, INT_TO_POINTER(AF_INET6),
 			       INT_TO_POINTER(timeout),
-			       K_PRIO_COOP(7), 0, 0);
+			       K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
 static k_tid_t start_timeout_v4_thread(s32_t timeout)
@@ -713,7 +713,7 @@ static k_tid_t start_timeout_v4_thread(s32_t timeout)
 			       (k_thread_entry_t)timeout_thread,
 			       udp_v4_ctx, INT_TO_POINTER(AF_INET),
 			       INT_TO_POINTER(timeout),
-			       K_PRIO_COOP(7), 0, 0);
+			       K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
 static void net_ctx_recv_v6_timeout(void)

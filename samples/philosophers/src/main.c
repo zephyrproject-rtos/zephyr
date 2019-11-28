@@ -83,7 +83,7 @@
 /* end - control behaviour of the demo */
 /***************************************/
 
-#define STACK_SIZE 768
+#define STACK_SIZE (768 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 #include "phil_obj_abstract.h"
 
@@ -258,6 +258,6 @@ void main(void)
 	/* Wait a few seconds before main() exit, giving the sample the
 	 * opportunity to dump some output before coverage data gets emitted
 	 */
-	k_sleep(5000);
+	k_sleep(K_MSEC(5000));
 #endif
 }

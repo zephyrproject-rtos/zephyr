@@ -9,6 +9,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		watchdog0 = &wdog0;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
@@ -87,30 +91,39 @@
 			compatible = "arm,cmsdk-watchdog";
 			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
+			label = "WATCHDOG";
 		};
 
 		gpio0: gpio@40010000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40010000 0x1000>;
 			interrupts = <6 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@40011000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40011000 0x1000>;
 			interrupts = <7 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@40012000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40012000 0x1000>;
 			interrupts = <42 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@40013000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <43 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

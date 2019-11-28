@@ -499,7 +499,7 @@ static void ipv6_nd_remove_old_stale_nbr(void)
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data = NULL;
 	int nbr_idx = -1;
-	u32_t oldest;
+	u32_t oldest = UINT32_MAX;
 	int i;
 
 	k_sem_take(&nbr_lock, K_FOREVER);
@@ -972,19 +972,10 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 
 static inline u8_t get_llao_len(struct net_if *iface)
 {
-	if (net_if_get_link_addr(iface)->len == 6U) {
-		return 8;
-	} else if (net_if_get_link_addr(iface)->len == 8U) {
-		return 16;
-	} else if (net_if_get_link_addr(iface)->len == 2U) {
-		return 8;
-	}
+	u8_t total_len = net_if_get_link_addr(iface)->len +
+			 sizeof(struct net_icmpv6_nd_opt_hdr);
 
-	/* What else could it be? */
-	NET_ASSERT_INFO(0, "Invalid link address length %d",
-			net_if_get_link_addr(iface)->len);
-
-	return 0;
+	return ROUND_UP(total_len, 8U);
 }
 
 static inline bool set_llao(struct net_pkt *pkt,

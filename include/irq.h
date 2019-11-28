@@ -48,7 +48,7 @@ extern "C" {
  * @return Interrupt vector assigned to this interrupt.
  */
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-	Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
+	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
 /**
  * Configure a dynamic interrupt.
@@ -63,16 +63,13 @@ extern "C" {
  *
  * @return The vector assigned to this interrupt
  */
-extern int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags);
-
 static inline int
 irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		    void (*routine)(void *parameter), void *parameter,
 		    u32_t flags)
 {
-	return z_arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
+	return arch_irq_connect_dynamic(irq, priority, routine, parameter,
+					flags);
 }
 
 /**
@@ -116,7 +113,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @return Interrupt vector assigned to this interrupt.
  */
 #define IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-	Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+	ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
 
 /**
  * @brief Common tasks before executing the body of an ISR
@@ -125,7 +122,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * minimal architecture-specific tasks before the ISR itself can run. It takes
  * no arguments and has no return value.
  */
-#define ISR_DIRECT_HEADER() Z_ARCH_ISR_DIRECT_HEADER()
+#define ISR_DIRECT_HEADER() ARCH_ISR_DIRECT_HEADER()
 
 /**
  * @brief Common tasks before exiting the body of an ISR
@@ -143,7 +140,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @param check_reschedule If nonzero, additionally invoke scheduling logic
  */
 #define ISR_DIRECT_FOOTER(check_reschedule) \
-	Z_ARCH_ISR_DIRECT_FOOTER(check_reschedule)
+	ARCH_ISR_DIRECT_FOOTER(check_reschedule)
 
 /**
  * @brief Perform power management idle exit logic
@@ -153,7 +150,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * exit power management idle state. It takes no parameters and returns no
  * arguments. It may be omitted, but be careful!
  */
-#define ISR_DIRECT_PM() Z_ARCH_ISR_DIRECT_PM()
+#define ISR_DIRECT_PM() ARCH_ISR_DIRECT_PM()
 
 /**
  * @brief Helper macro to declare a direct interrupt service routine.
@@ -183,10 +180,11 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @param name symbol name of the ISR
  */
-#define ISR_DIRECT_DECLARE(name) Z_ARCH_ISR_DIRECT_DECLARE(name)
+#define ISR_DIRECT_DECLARE(name) ARCH_ISR_DIRECT_DECLARE(name)
 
 /**
  * @brief Lock interrupts.
+ * @def irq_lock()
  *
  * This routine disables all interrupts on the CPU. It returns an unsigned
  * integer "lock-out key", which is an architecture-dependent indicator of
@@ -214,17 +212,19 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * The lock-out key should never be used to manually re-enable interrupts
  * or to inspect or manipulate the contents of the CPU's interrupt bits.
  *
- * @return Lock-out key.
+ * @return An architecture-dependent lock-out key representing the
+ *         "interrupt disable state" prior to the call.
  */
 #ifdef CONFIG_SMP
 unsigned int z_smp_global_lock(void);
 #define irq_lock() z_smp_global_lock()
 #else
-#define irq_lock() z_arch_irq_lock()
+#define irq_lock() arch_irq_lock()
 #endif
 
 /**
  * @brief Unlock interrupts.
+ * @def irq_unlock()
  *
  * This routine reverses the effect of a previous call to irq_lock() using
  * the associated lock-out key. The caller must call the routine once for
@@ -241,7 +241,7 @@ unsigned int z_smp_global_lock(void);
 void z_smp_global_unlock(unsigned int key);
 #define irq_unlock(key) z_smp_global_unlock(key)
 #else
-#define irq_unlock(key) z_arch_irq_unlock(key)
+#define irq_unlock(key) arch_irq_unlock(key)
 #endif
 
 /**
@@ -253,7 +253,7 @@ void z_smp_global_unlock(unsigned int key);
  *
  * @return N/A
  */
-#define irq_enable(irq) z_arch_irq_enable(irq)
+#define irq_enable(irq) arch_irq_enable(irq)
 
 /**
  * @brief Disable an IRQ.
@@ -264,7 +264,7 @@ void z_smp_global_unlock(unsigned int key);
  *
  * @return N/A
  */
-#define irq_disable(irq) z_arch_irq_disable(irq)
+#define irq_disable(irq) arch_irq_disable(irq)
 
 /**
  * @brief Get IRQ enable state.
@@ -275,7 +275,7 @@ void z_smp_global_unlock(unsigned int key);
  *
  * @return interrupt enable state, true or false
  */
-#define irq_is_enabled(irq) z_arch_irq_is_enabled(irq)
+#define irq_is_enabled(irq) arch_irq_is_enabled(irq)
 
 /**
  * @}

@@ -9,9 +9,9 @@
 
 #include <init.h>
 #include <sys/util.h>
-
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+#include "bluetooth/addr.h"
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"
@@ -54,7 +54,19 @@ struct aci_set_tx_power {
 	u8_t value[2];
 };
 
+struct aci_set_ble_addr {
+	u8_t config_offset;
+	u8_t length;
+	u8_t value[6];
+} __packed;
+
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
+#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
+
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
+#define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
+
+static bt_addr_t bd_addr_udn;
 
 static void stm32wb_start_ble(void)
 {
@@ -96,6 +108,35 @@ static void syscmd_status_not(SHCI_TL_CmdStatus_t status)
 	BT_DBG("status:%d", status);
 }
 
+/*
+ * https://github.com/zephyrproject-rtos/zephyr/issues/19509
+ * Tested on nucleo_wb55rg (stm32wb55rg) BLE stack (v1.2.0)
+ * Unresolved Resolvable Private Addresses (RPA)
+ * is reported in the peer_rpa field, and not in the peer address,
+ * as it should, when this happens the peer address is set to all FFs
+ * 0A 00 01 08 01 01 FF FF FF FF FF FF 00 00 00 00 00 00 0C AA C5 B3 3D 6B ...
+ * If such message is passed to HCI core than pairing will essentially fail.
+ * Solution: Rewrite the event with the RPA in the PEER address field
+ */
+static void tryfix_event(TL_Evt_t *tev)
+{
+	struct bt_hci_evt_le_meta_event *mev = (void *)&tev->payload;
+
+	if (tev->evtcode != BT_HCI_EVT_LE_META_EVENT ||
+	    mev->subevent != BT_HCI_EVT_LE_ENH_CONN_COMPLETE) {
+		return;
+	}
+
+	struct bt_hci_evt_le_enh_conn_complete *evt =
+			(void *)((u8_t *)mev + (sizeof(*mev)));
+
+	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
+		BT_WARN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
+		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
+		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
+	}
+}
+
 void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 {
 	struct net_buf *buf;
@@ -119,6 +160,7 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 					     K_FOREVER);
 			break;
 		}
+		tryfix_event(&hcievt->evtserial.evt);
 		net_buf_add_mem(buf, &hcievt->evtserial.evt,
 				hcievt->evtserial.evt.plen + 2);
 		break;
@@ -297,6 +339,7 @@ static void start_ble_rf(void)
 		LL_RCC_ReleaseBackupDomainReset();
 	}
 
+#ifdef CONFIG_CLOCK_STM32_LSE
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
@@ -307,13 +350,90 @@ static void start_ble_rf(void)
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
 	/* Switch OFF LSI */
-	LL_RCC_LSI1_Disable();
+	LL_RCC_LSI2_Disable();
+#else
+	LL_RCC_LSI2_Enable();
+	while (!LL_RCC_LSI2_IsReady()) {
+	}
+
+	/* Select wakeup source of BLE RF */
+	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSI);
+	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
+#endif
+
 	/* Set RNG on HSI48 */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 	}
 
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
+}
+
+bt_addr_t *bt_get_ble_addr(void)
+{
+	bt_addr_t *bd_addr;
+	u32_t udn;
+	u32_t company_id;
+	u32_t device_id;
+
+	/* Get the 64 bit Unique Device Number UID */
+	/* The UID is used by firmware to derive   */
+	/* 48-bit Device Address EUI-48 */
+	udn = LL_FLASH_GetUDN();
+
+	if (udn != 0xFFFFFFFF) {
+		/* Get the ST Company ID */
+		company_id = LL_FLASH_GetSTCompanyID();
+		/* Get the STM32 Device ID */
+		device_id = LL_FLASH_GetDeviceID();
+		bd_addr_udn.val[0] = (uint8_t)(udn & 0x000000FF);
+		bd_addr_udn.val[1] = (uint8_t)((udn & 0x0000FF00) >> 8);
+		bd_addr_udn.val[2] = (uint8_t)((udn & 0x00FF0000) >> 16);
+		bd_addr_udn.val[3] = (uint8_t)device_id;
+		bd_addr_udn.val[4] = (uint8_t)(company_id & 0x000000FF);
+		bd_addr_udn.val[5] = (uint8_t)((company_id & 0x0000FF00) >> 8);
+		bd_addr = &bd_addr_udn;
+	} else {
+		bd_addr = NULL;
+	}
+
+	return bd_addr;
+}
+
+static int bt_ipm_set_addr(void)
+{
+	bt_addr_t *uid_addr;
+	struct aci_set_ble_addr *param;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	uid_addr = bt_get_ble_addr();
+	if (!uid_addr) {
+		return -ENOMSG;
+	}
+
+	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
+
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	param->length = 6;
+	param->value[0] = uid_addr->val[0];
+	param->value[1] = uid_addr->val[1];
+	param->value[2] = uid_addr->val[2];
+	param->value[3] = uid_addr->val[3];
+	param->value[4] = uid_addr->val[4];
+	param->value[5] = uid_addr->val[5];
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, &rsp);
+	if (err) {
+		return err;
+	}
+	net_buf_unref(rsp);
+	return 0;
 }
 
 static int bt_ipm_ble_init(void)
@@ -329,7 +449,10 @@ static int bt_ipm_ble_init(void)
 	}
 	/* TDB: Something to do on reset complete? */
 	net_buf_unref(rsp);
-
+	err = bt_ipm_set_addr();
+	if (err) {
+		BT_ERR("Can't set BLE UID addr");
+	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
 	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
 	if (!buf) {

@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <pthread.h>
+#include <sys/util.h>
 
 #define N_THR 3
 #define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -18,11 +19,12 @@ static void *thread_top(void *p1)
 	pthread_t pthread;
 	u32_t policy, ret = 0U;
 	struct sched_param param;
+	int id = POINTER_TO_INT(p1);
 
 	pthread = (pthread_t) pthread_self();
 	pthread_getschedparam(pthread, &policy, &param);
 	printk("Thread %d scheduling policy = %d & priority %d started\n",
-	       (s32_t) p1, policy, param.sched_priority);
+	       id, policy, param.sched_priority);
 
 	ret = pthread_rwlock_tryrdlock(&rwlock);
 	if (ret) {
@@ -31,21 +33,21 @@ static void *thread_top(void *p1)
 			      "Failed to acquire write lock");
 	}
 
-	printk("Thread %d got RD lock\n", (s32_t) p1);
+	printk("Thread %d got RD lock\n", id);
 	usleep(USEC_PER_MSEC);
-	printk("Thread %d releasing RD lock\n", (s32_t) p1);
+	printk("Thread %d releasing RD lock\n", id);
 	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
 
-	printk("Thread %d acquiring WR lock\n", (s32_t) p1);
+	printk("Thread %d acquiring WR lock\n", id);
 	ret = pthread_rwlock_trywrlock(&rwlock);
 	if (ret != 0U) {
 		zassert_false(pthread_rwlock_wrlock(&rwlock),
 			      "Failed to acquire WR lock");
 	}
 
-	printk("Thread %d acquired WR lock\n", (s32_t) p1);
+	printk("Thread %d acquired WR lock\n", id);
 	usleep(USEC_PER_MSEC);
-	printk("Thread %d releasing WR lock\n", (s32_t) p1);
+	printk("Thread %d releasing WR lock\n", id);
 	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
 	pthread_exit(NULL);
 	return NULL;
@@ -91,7 +93,7 @@ void test_posix_rw_lock(void)
 		pthread_attr_setstack(&attr[i], &stack[i][0], STACKSZ);
 
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
-				     (void *)i);
+				     INT_TO_POINTER(i));
 		zassert_false(ret, "Low memory to thread new thread");
 
 	}

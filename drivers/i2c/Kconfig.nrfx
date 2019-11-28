@@ -1,15 +1,12 @@
-# Kconfig - nrfx I2C support
-#
+# nrfx I2C support
+
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2C_NRFX
 	bool "nRF TWI nrfx drivers"
 	default y
 	depends on SOC_FAMILY_NRF
-	select HAS_DTS_I2C
 	help
 	  Enable support for nrfx TWI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -31,14 +28,14 @@ choice I2C_0_NRF_TYPE
 config I2C_0_NRF_TWI
 	bool "nRF TWI 0"
 	depends on HAS_HW_NRF_TWI0
-	select NRFX_TWI
+	select NRFX_TWI0
 	help
 	  Enable nRF TWI Master without EasyDMA on port 0.
 
 config I2C_0_NRF_TWIM
 	bool "nRF TWIM 0"
 	depends on HAS_HW_NRF_TWIM0
-	select NRFX_TWIM
+	select NRFX_TWIM0
 	help
 	  Enable nRF TWI Master with EasyDMA on port 0.
 	  This peripheral accepts transfers from RAM only,
@@ -59,14 +56,14 @@ choice I2C_1_NRF_TYPE
 config I2C_1_NRF_TWI
 	bool "nRF TWI 1"
 	depends on HAS_HW_NRF_TWI1
-	select NRFX_TWI
+	select NRFX_TWI1
 	help
 	  Enable nRF TWI Master without EasyDMA on port 1.
 
 config I2C_1_NRF_TWIM
 	bool "nRF TWIM 1"
 	depends on HAS_HW_NRF_TWIM1
-	select NRFX_TWIM
+	select NRFX_TWIM1
 	help
 	  Enable nRF TWI Master with EasyDMA on port 1.
 	  This peripheral accepts transfers from RAM only,
@@ -87,7 +84,7 @@ choice I2C_2_NRF_TYPE
 config I2C_2_NRF_TWIM
 	bool "nRF TWIM 2"
 	depends on HAS_HW_NRF_TWIM2
-	select NRFX_TWIM
+	select NRFX_TWIM2
 	help
 	  Enable nRF TWI Master with EasyDMA on port 2.
 	  This peripheral accepts transfers from RAM only,
@@ -108,7 +105,7 @@ choice I2C_3_NRF_TYPE
 config I2C_3_NRF_TWIM
 	bool "nRF TWIM 3"
 	depends on HAS_HW_NRF_TWIM3
-	select NRFX_TWIM
+	select NRFX_TWIM3
 	help
 	  Enable nRF TWI Master with EasyDMA on port 3.
 	  This peripheral accepts transfers from RAM only,
@@ -118,4 +115,4 @@ endchoice
 
 endif # I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
-endif #I2C_NRFX
+endif # I2C_NRFX

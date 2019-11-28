@@ -4,14 +4,19 @@
 
 #include <mem.h>
 
-#define DT_FLASH_SIZE		DT_SIZE_K(4096)
 #define DT_SRAM_SIZE		DT_SIZE_K(4096)
+#define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
 
 / {
 	model = "QEMU X86";
 	compatible = "intel,ia32";
+
+	flash0: flash@500000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00500000 DT_FLASH_SIZE>;
+	};
 
 	aliases {
 		uart-0 = &uart0;
@@ -66,6 +71,10 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&hpet {
+	status = "okay";
 };
 
 &flash_sim0 {

@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nRF family SPIM
+
+description: Nordic nRF family SPIM (SPI master with EasyDMA)
+
+compatible: "nordic,nrf-spim"
+
+include: nordic,nrf-spi-common.yaml

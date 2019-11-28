@@ -16,13 +16,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include <device.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Initialize system clock driver

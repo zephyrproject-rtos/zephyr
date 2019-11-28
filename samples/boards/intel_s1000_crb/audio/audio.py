@@ -25,17 +25,14 @@ class Device:
         When the script is run using sudo permission, the
         manufacturer and product strings are printed
         """
-        config_file = os.path.dirname(__file__)
-        if len(config_file) != 0:
-            config_file += '/'
-        config_file += 'config.yml'
+        config_file = os.path.join(os.path.dirname(__file__), 'config.yml')
         with open(config_file, 'r') as ymlfile:
             config = yaml.safe_load(ymlfile)
         self.name = config['general']['name']
         self.usb_vid = config['usb']['vid']
         self.usb_pid = config['usb']['pid']
         self.hid_dev = hid.device()
-        if self.hid_dev == None:
+        if self.hid_dev is None:
             print('Device not found')
         else:
             self.hid_dev.open(self.usb_vid, self.usb_pid)

@@ -1,17 +1,11 @@
-#
 # Copyright (c) 2019, Jan Van Winkel (jan.van_winkel@dxplore.eu)
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Native POSIX UART
 
-description: >
+description: |
     This binding gives a base representation of the Native POSIX UART
 
-inherits:
-    !include uart.yaml
+compatible: "zephyr,native-posix-uart"
 
-properties:
-    compatible:
-      constraint: "zephyr,native-posix-uart"
+include: uart-controller.yaml

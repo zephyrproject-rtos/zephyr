@@ -17,7 +17,10 @@ __ramfunc static void arm_ram_function(void)
 
 void test_arm_ramfunc(void)
 {
-	zassert_true(test_flag == 0, "Test flag not initialized to zero");
+	int init_flag, post_flag;
+
+	init_flag = test_flag;
+	zassert_true(init_flag == 0, "Test flag not initialized to zero");
 
 	/* Verify that the .ramfunc section is not empty, it is located
 	 * inside SRAM, and that arm_ram_function(.) is located inside
@@ -37,7 +40,7 @@ void test_arm_ramfunc(void)
 	 * arm_ram_function(.) is user (read) accessible.
 	 */
 #if defined(CONFIG_USERSPACE)
-	zassert_true(z_arch_buffer_validate((void *)&_ramfunc_ram_start,
+	zassert_true(arch_buffer_validate((void *)&_ramfunc_ram_start,
 			(size_t)&_ramfunc_ram_size, 0) == 0 /* Success */,
 		".ramfunc section not user accessible");
 #endif /* CONFIG_USERSPACE */
@@ -46,7 +49,8 @@ void test_arm_ramfunc(void)
 	arm_ram_function();
 
 	/* Verify that the function is executed successfully. */
-	zassert_true(test_flag = 1,
+	post_flag = test_flag;
+	zassert_true(post_flag == 1,
 		"arm_ram_function() execution failed.");
 }
 /**

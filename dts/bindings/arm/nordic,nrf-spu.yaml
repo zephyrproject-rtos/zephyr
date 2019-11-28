@@ -1,17 +1,15 @@
 title: Nordic SPU (System Protection Unit)
 
-description: >
+description: |
     Binding for the Nordic SPU (System Protection Unit)
 
-inherits:
-    !include base.yaml
+compatible: "nordic,nrf-spu"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-spu"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

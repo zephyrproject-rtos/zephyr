@@ -18,7 +18,12 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
-#include <net/socks.h>
+
+#if defined(CONFIG_SOCKS)
+#include "socks.h"
+#endif
+
+#include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
 
@@ -91,6 +96,16 @@ int zsock_socket_internal(int family, int type, int proto)
 		return -1;
 	}
 
+	if (proto == 0) {
+		if (family == AF_INET || family == AF_INET6) {
+			if (type == SOCK_DGRAM) {
+				proto = IPPROTO_UDP;
+			} else if (type == SOCK_STREAM) {
+				proto = IPPROTO_TCP;
+			}
+		}
+	}
+
 	res = net_context_get(family, type, proto, &ctx);
 	if (res < 0) {
 		z_free_fd(fd);
@@ -100,6 +115,9 @@ int zsock_socket_internal(int family, int type, int proto)
 
 	/* Initialize user_data, all other calls will preserve it */
 	ctx->user_data = NULL;
+
+	/* The socket flags are stored here */
+	ctx->socket_data = NULL;
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
@@ -150,13 +168,14 @@ int z_impl_zsock_socket(int family, int type, int proto)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_socket, family, type, proto)
+static inline int z_vrfy_zsock_socket(int family, int type, int proto)
 {
 	/* implementation call to net_context_get() should do all necessary
 	 * checking
 	 */
 	return z_impl_zsock_socket(family, type, proto);
 }
+#include <syscalls/zsock_socket_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_close_ctx(struct net_context *ctx)
@@ -199,10 +218,11 @@ int z_impl_zsock_close(int sock)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_close, sock)
+static inline int z_vrfy_zsock_close(int sock)
 {
 	return z_impl_zsock_close(sock);
 }
+#include <syscalls/zsock_close_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_zsock_shutdown(int sock, int how)
@@ -220,10 +240,11 @@ int z_impl_zsock_shutdown(int sock, int how)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_shutdown, sock, how)
+static inline int z_vrfy_zsock_shutdown(int sock, int how)
 {
 	return z_impl_zsock_shutdown(sock, how);
 }
+#include <syscalls/zsock_shutdown_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static void zsock_accepted_cb(struct net_context *new_ctx,
@@ -304,7 +325,8 @@ int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_bind, sock, addr, addrlen)
+static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
+				    socklen_t addrlen)
 {
 	struct sockaddr_storage dest_addr_copy;
 
@@ -314,6 +336,7 @@ Z_SYSCALL_HANDLER(zsock_bind, sock, addr, addrlen)
 	return z_impl_zsock_bind(sock, (struct sockaddr *)&dest_addr_copy,
 				addrlen);
 }
+#include <syscalls/zsock_bind_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
@@ -343,7 +366,8 @@ int z_impl_zsock_connect(int sock, const struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_connect, sock, addr, addrlen)
+int z_vrfy_zsock_connect(int sock, const struct sockaddr *addr,
+			socklen_t addrlen)
 {
 	struct sockaddr_storage dest_addr_copy;
 
@@ -353,6 +377,7 @@ Z_SYSCALL_HANDLER(zsock_connect, sock, addr, addrlen)
 	return z_impl_zsock_connect(sock, (struct sockaddr *)&dest_addr_copy,
 				   addrlen);
 }
+#include <syscalls/zsock_connect_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_listen_ctx(struct net_context *ctx, int backlog)
@@ -369,15 +394,19 @@ int z_impl_zsock_listen(int sock, int backlog)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_listen, sock, backlog)
+static inline int z_vrfy_zsock_listen(int sock, int backlog)
 {
 	return z_impl_zsock_listen(sock, backlog);
 }
+#include <syscalls/zsock_listen_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
+	s32_t timeout = K_FOREVER;
+	struct net_context *ctx;
+	struct net_pkt *last_pkt;
 	int fd;
 
 	fd = z_reserve_fd();
@@ -385,7 +414,32 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
-	struct net_context *ctx = k_fifo_get(&parent->accept_q, K_FOREVER);
+	if (sock_is_nonblock(parent)) {
+		timeout = K_NO_WAIT;
+	}
+
+	ctx = k_fifo_get(&parent->accept_q, timeout);
+	if (ctx == NULL) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	/* Check if the connection is already disconnected */
+	last_pkt = k_fifo_peek_tail(&ctx->recv_q);
+	if (last_pkt) {
+		if (net_pkt_eof(last_pkt)) {
+			sock_set_eof(ctx);
+			errno = ECONNABORTED;
+			return -1;
+		}
+	}
+
+	if (net_context_is_closing(ctx)) {
+		errno = ECONNABORTED;
+		return -1;
+	}
+
+	net_context_set_accepting(ctx, false);
 
 #ifdef CONFIG_USERSPACE
 	z_object_recycle(ctx);
@@ -430,7 +484,8 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_accept, sock, addr, addrlen)
+static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
+				      socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
 	int ret;
@@ -454,6 +509,7 @@ Z_SYSCALL_HANDLER(zsock_accept, sock, addr, addrlen)
 
 	return ret;
 }
+#include <syscalls/zsock_accept_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
@@ -501,7 +557,8 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_sendto, sock, buf, len, flags, dest_addr, addrlen)
+ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
+			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	struct sockaddr_storage dest_addr_copy;
 
@@ -516,6 +573,7 @@ Z_SYSCALL_HANDLER(zsock_sendto, sock, buf, len, flags, dest_addr, addrlen)
 			dest_addr ? (struct sockaddr *)&dest_addr_copy : NULL,
 			addrlen);
 }
+#include <syscalls/zsock_sendto_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
@@ -543,12 +601,15 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_sendmsg, sock, msg, flags)
+static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
+					   const struct msghdr *msg,
+					   int flags)
 {
 	/* TODO: Create a copy of msg_buf and copy the data there */
 
 	return z_impl_zsock_sendmsg(sock, (const struct msghdr *)msg, flags);
 }
+#include <syscalls/zsock_sendmsg_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static int sock_get_pkt_src_addr(struct net_pkt *pkt,
@@ -723,6 +784,11 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		return -1;
 	}
 
+	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
+				    net_pkt_priority(pkt),
+				    net_pkt_timestamp(pkt)->nanosecond,
+				    k_cycle_get_32());
+
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
 	} else {
@@ -804,6 +870,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					sock_set_eof(ctx);
 				}
 
+				net_stats_update_tc_rx_time(
+					net_pkt_iface(pkt),
+					net_pkt_priority(pkt),
+					net_pkt_timestamp(pkt)->nanosecond,
+					k_cycle_get_32());
+
 				net_pkt_unref(pkt);
 			}
 		} else {
@@ -824,6 +896,10 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 {
 	enum net_sock_type sock_type = net_context_get_type(ctx);
 
+	if (max_len == 0) {
+		return 0;
+	}
+
 	if (sock_type == SOCK_DGRAM) {
 		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
@@ -842,11 +918,10 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_recvfrom, sock, buf, max_len, flags, src_addr,
-		  addrlen_param)
+ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
+			      struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
-	socklen_t *addrlen_ptr = (socklen_t *)addrlen_param;
 	ssize_t ret;
 
 	if (Z_SYSCALL_MEMORY_WRITE(buf, max_len)) {
@@ -854,24 +929,24 @@ Z_SYSCALL_HANDLER(zsock_recvfrom, sock, buf, max_len, flags, src_addr,
 		return -1;
 	}
 
-	if (addrlen_param) {
-		Z_OOPS(z_user_from_copy(&addrlen_copy,
-					(socklen_t *)addrlen_param,
+	if (addrlen) {
+		Z_OOPS(z_user_from_copy(&addrlen_copy, addrlen,
 					sizeof(socklen_t)));
 	}
 	Z_OOPS(src_addr && Z_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
 
 	ret = z_impl_zsock_recvfrom(sock, (void *)buf, max_len, flags,
 				   (struct sockaddr *)src_addr,
-				   addrlen_param ? &addrlen_copy : NULL);
+				   addrlen ? &addrlen_copy : NULL);
 
-	if (addrlen_param) {
-		Z_OOPS(z_user_to_copy(addrlen_ptr, &addrlen_copy,
+	if (addrlen) {
+		Z_OOPS(z_user_to_copy(addrlen, &addrlen_copy,
 				      sizeof(socklen_t)));
 	}
 
 	return ret;
 }
+#include <syscalls/zsock_recvfrom_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /* As this is limited function, we don't follow POSIX signature, with
@@ -891,10 +966,11 @@ int z_impl_zsock_fcntl(int sock, int cmd, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_fcntl, sock, cmd, flags)
+static inline int z_vrfy_zsock_fcntl(int sock, int cmd, int flags)
 {
 	return z_impl_zsock_fcntl(sock, cmd, flags);
 }
+#include <syscalls/zsock_fcntl_mrsh.c>
 #endif
 
 static int zsock_poll_prepare_ctx(struct net_context *ctx,
@@ -1071,7 +1147,8 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_poll, fds, nfds, timeout)
+static inline int z_vrfy_zsock_poll(struct zsock_pollfd *fds,
+				    int nfds, int timeout)
 {
 	struct zsock_pollfd *fds_copy;
 	size_t fds_size;
@@ -1097,6 +1174,7 @@ Z_SYSCALL_HANDLER(zsock_poll, fds, nfds, timeout)
 
 	return ret;
 }
+#include <syscalls/zsock_poll_mrsh.c>
 #endif
 
 int z_impl_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
@@ -1109,7 +1187,8 @@ int z_impl_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_inet_pton, family, src, dst)
+static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
+					 const char *src, void *dst)
 {
 	int dst_size;
 	char src_copy[NET_IPV6_ADDR_LEN];
@@ -1130,10 +1209,11 @@ Z_SYSCALL_HANDLER(zsock_inet_pton, family, src, dst)
 
 	Z_OOPS(z_user_string_copy(src_copy, (char *)src, sizeof(src_copy)));
 	ret = z_impl_zsock_inet_pton(family, src_copy, dst_copy);
-	Z_OOPS(z_user_to_copy((void *)dst, dst_copy, dst_size));
+	Z_OOPS(z_user_to_copy(dst, dst_copy, dst_size));
 
 	return ret;
 }
+#include <syscalls/zsock_inet_pton_mrsh.c>
 #endif
 
 int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
@@ -1172,7 +1252,8 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_getsockopt, sock, level, optname, optval, optlen)
+int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
+			    void *optval, socklen_t *optlen)
 {
 	socklen_t kernel_optlen = *(socklen_t *)optlen;
 	void *kernel_optval;
@@ -1198,6 +1279,7 @@ Z_SYSCALL_HANDLER(zsock_getsockopt, sock, level, optname, optval, optlen)
 
 	return ret;
 }
+#include <syscalls/zsock_getsockopt_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
@@ -1312,7 +1394,8 @@ int z_impl_zsock_setsockopt(int sock, int level, int optname,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_setsockopt, sock, level, optname, optval, optlen)
+int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
+			    const void *optval, socklen_t optlen)
 {
 	void *kernel_optval;
 	int ret;
@@ -1327,6 +1410,7 @@ Z_SYSCALL_HANDLER(zsock_setsockopt, sock, level, optname, optval, optlen)
 
 	return ret;
 }
+#include <syscalls/zsock_setsockopt_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
@@ -1386,7 +1470,8 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_getsockname, sock, addr, addrlen)
+static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
+					   socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
 	int ret;
@@ -1411,6 +1496,7 @@ Z_SYSCALL_HANDLER(zsock_getsockname, sock, addr, addrlen)
 
 	return ret;
 }
+#include <syscalls/zsock_getsockname_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)

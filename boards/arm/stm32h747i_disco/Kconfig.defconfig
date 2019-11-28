@@ -1,9 +1,7 @@
-# Kconfig - STM32H747I DISCOVERY board configuration
-#
+# STM32H747I DISCOVERY board configuration
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32H747I_DISCO_M7 || BOARD_STM32H747I_DISCO_M4
 
@@ -38,7 +36,7 @@ config CLOCK_STM32_D3PPRE
 	default 2
 
 config STM32H7_DUAL_CORE
-	def_bool y
+	default y
 
 # Dual core boot configuration
 if STM32H7_DUAL_CORE

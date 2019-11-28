@@ -46,15 +46,15 @@ static bool flash_verify(const struct flash_area *fa, off_t offset,
 		size = (len >= sizeof(temp)) ? sizeof(temp) : len;
 		rc = flash_area_read(fa, offset, &temp, size);
 		if (rc) {
-			LOG_ERR("flash_read error %d offset=0x%08x",
-				rc, (u32_t)offset);
+			LOG_ERR("flash_read error %d offset=0x%08lx",
+				rc, (long)offset);
 			break;
 		}
 
 		if (memcmp(data, &temp, size)) {
-			LOG_ERR("offset=0x%08x VERIFY FAIL. "
+			LOG_ERR("offset=0x%08lx VERIFY FAIL. "
 				"expected: 0x%08x, actual: 0x%08x",
-				(u32_t)offset, temp, UNALIGNED_GET(data));
+				(long)offset, temp, UNALIGNED_GET(data));
 			break;
 		}
 		len -= size;
@@ -108,7 +108,8 @@ static int flash_progressive_erase(struct flash_img_context *ctx, off_t off)
 	} else {
 		if (ctx->off_last != sector.fs_off) {
 			ctx->off_last = sector.fs_off;
-			LOG_INF("Erasing sector at offset 0x%x", sector.fs_off);
+			LOG_INF("Erasing sector at offset 0x%08lx",
+				(long)sector.fs_off);
 			rc = flash_area_erase(ctx->flash_area, sector.fs_off,
 					      sector.fs_size);
 			if (rc) {
@@ -132,15 +133,20 @@ static int flash_sync(struct flash_img_context *ctx)
 	}
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	flash_progressive_erase(ctx, ctx->bytes_written +
-				CONFIG_IMG_BLOCK_BUF_SIZE);
+	rc = flash_progressive_erase(ctx, ctx->bytes_written +
+				     CONFIG_IMG_BLOCK_BUF_SIZE);
+	if (rc) {
+		LOG_ERR("flash_progressive_erase error %d offset=0x%08zx", rc,
+			ctx->bytes_written);
+		return rc;
+	}
 #endif
 
 	rc = flash_area_write(ctx->flash_area, ctx->bytes_written, ctx->buf,
 			      CONFIG_IMG_BLOCK_BUF_SIZE);
 	if (rc) {
-		LOG_ERR("flash_write error %d offset=0x%08x", rc,
-			(u32_t)ctx->bytes_written);
+		LOG_ERR("flash_write error %d offset=0x%08zx", rc,
+			ctx->bytes_written);
 		return rc;
 	}
 
@@ -198,8 +204,11 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 	}
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
 	/* erase the image trailer area if it was not erased */
-	flash_progressive_erase(ctx,
+	rc = flash_progressive_erase(ctx,
 				BOOT_TRAILER_IMG_STATUS_OFFS(ctx->flash_area));
+	if (rc) {
+		return rc;
+	}
 #endif
 
 	flash_area_close(ctx->flash_area);

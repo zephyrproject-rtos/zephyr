@@ -1,9 +1,7 @@
-# Kconfig - STM32 Cube LL RTC
-#
+# STM32 Cube LL RTC
+
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig COUNTER_RTC_STM32
 	bool "STM32 Counter RTC driver"
@@ -12,9 +10,9 @@ menuconfig COUNTER_RTC_STM32
 	select USE_STM32_LL_PWR
 	select USE_STM32_LL_RCC
 	select USE_STM32_LL_EXTI
-	select NEWLIB_LIBC
+	select REQUIRES_FULL_LIBC
 	help
-	  Build RTC driver for STM32 SoCs. Tested on STM32 F3, F4, L4, F7 series
+	  Build RTC driver for STM32 SoCs. Tested on STM32 F3, F4, L4, F7, G4 series
 
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"

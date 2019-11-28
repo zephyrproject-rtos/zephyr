@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 0>;			/* D10 */
+
+
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		label = "ILI9340";
+		spi-max-frequency = <15151515>;
+		reg = <0>;
+		cmd-data-gpios = <&arduino_header 15 0>;	/* D9 */
+	};
+};

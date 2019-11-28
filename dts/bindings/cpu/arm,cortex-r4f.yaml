@@ -1,0 +1,11 @@
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+title: ARM Cortex-R4F CPU
+
+description: |
+    This is a representation of ARM Cortex-R4F CPU.
+
+compatible: "arm,cortex-r4f"
+
+include: cpu.yaml

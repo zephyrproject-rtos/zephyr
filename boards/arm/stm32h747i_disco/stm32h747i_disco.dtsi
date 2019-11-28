@@ -54,6 +54,7 @@
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiok 4 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
 		};
 		joy_right: joystick_right {
 			label = "joystick right";

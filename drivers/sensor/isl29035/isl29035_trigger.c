@@ -9,14 +9,12 @@
 #include <drivers/i2c.h>
 #include <sys/util.h>
 #include <kernel.h>
-
+#include <logging/log.h>
 #include "isl29035.h"
 
 extern struct isl29035_driver_data isl29035_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(ISL29035);
+LOG_MODULE_DECLARE(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
 static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {
@@ -69,7 +67,7 @@ static void isl29035_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, CONFIG_ISL29035_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
 
 #if defined(CONFIG_ISL29035_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -94,7 +92,8 @@ static void isl29035_thread_cb(struct device *dev)
 		drv_data->th_handler(dev, &drv_data->th_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio,
+				 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
 }
 
 #ifdef CONFIG_ISL29035_TRIGGER_OWN_THREAD
@@ -129,13 +128,15 @@ int isl29035_trigger_set(struct device *dev,
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 
 	/* disable interrupt callback while changing parameters */
-	gpio_pin_disable_callback(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(drv_data->gpio,
+				  DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
 
 	drv_data->th_handler = handler;
 	drv_data->th_trigger = *trig;
 
 	/* enable interrupt callback */
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio,
+				 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
 
 	return 0;
 }
@@ -154,19 +155,21 @@ int isl29035_init_interrupt(struct device *dev)
 	}
 
 	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_ISL29035_GPIO_DEV_NAME);
+	drv_data->gpio =
+		device_get_binding(DT_INST_0_ISIL_ISL29035_INT_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get GPIO device.");
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio,
+			   DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   isl29035_gpio_callback,
-			   BIT(CONFIG_ISL29035_GPIO_PIN_NUM));
+			   BIT(DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback.");
@@ -180,7 +183,7 @@ int isl29035_init_interrupt(struct device *dev)
 			CONFIG_ISL29035_THREAD_STACK_SIZE,
 			(k_thread_entry_t)isl29035_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = isl29035_work_cb;
 	drv_data->dev = dev;

@@ -21,10 +21,6 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  *
  * Provides abstraction of flash regions for type of use,
@@ -45,6 +41,10 @@ extern "C" {
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SOC_FLASH_0_ID 0	/** device_id for SoC flash memory driver   */
 #define SPI_FLASH_0_ID 1	/** device_id for external SPI flash driver */
@@ -157,7 +157,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  */
 u8_t flash_area_align(const struct flash_area *fa);
 
-/*
+/**
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa_id    Given flash area ID

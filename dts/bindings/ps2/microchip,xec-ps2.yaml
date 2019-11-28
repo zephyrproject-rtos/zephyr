@@ -1,0 +1,19 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip XEC PS/2
+
+description: |
+    This is a representation of the Microchip XEC PS/2 controller
+
+compatible: "microchip,xec-ps2"
+
+include: ps2.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+...

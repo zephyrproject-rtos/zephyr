@@ -1,10 +1,7 @@
-# Kconfig.stm32 - STM32 CAN configuration options
+# STM32 CAN configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_STM32
 	bool "STM32 CAN Driver"

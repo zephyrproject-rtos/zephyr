@@ -22,11 +22,11 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
+#include <arch/arm/thread.h>
 #include <arch/arm/exc.h>
 #include <arch/arm/irq.h>
 #include <arch/arm/error.h>
 #include <arch/arm/misc.h>
-#include <arch/common/sys_io.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/ffs.h>
 #include <arch/arm/nmi.h>
@@ -35,6 +35,10 @@
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/cortex_m/cpu.h>
 #include <arch/arm/cortex_m/memory_map.h>
+#include <arch/common/sys_io.h>
+#elif defined(CONFIG_CPU_CORTEX_R)
+#include <arch/arm/cortex_r/cpu.h>
+#include <arch/arm/cortex_r/sys_io.h>
 #endif
 
 #ifdef __cplusplus
@@ -150,9 +154,10 @@ extern "C" {
  * @brief Define alignment of a stack buffer
  *
  * This is used for two different things:
- * 1) Used in checks for stack size to be a multiple of the stack buffer
+ *
+ * -# Used in checks for stack size to be a multiple of the stack buffer
  *    alignment
- * 2) Used to determine the alignment of a stack buffer
+ * -# Used to determine the alignment of a stack buffer
  *
  */
 #define STACK_ALIGN MAX(Z_THREAD_MIN_STACK_ALIGN, Z_MPU_GUARD_ALIGN)
@@ -185,58 +190,59 @@ extern "C" {
 /* Guard is 'carved-out' of the thread stack region, and the supervisor
  * mode stack is allocated elsewhere by gen_priv_stack.py
  */
-#define Z_ARCH_THREAD_STACK_RESERVED 0
+#define ARCH_THREAD_STACK_RESERVED 0
 #else
-#define Z_ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
+#define ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
 #endif
 
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
 #else
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 #endif
 
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define Z_ARCH_THREAD_STACK_LEN(size) (POW2_CEIL(size))
+#define ARCH_THREAD_STACK_LEN(size) (POW2_CEIL(size))
 #else
-#define Z_ARCH_THREAD_STACK_LEN(size) ((size)+MPU_GUARD_ALIGN_AND_SIZE)
+#define ARCH_THREAD_STACK_LEN(size) ((size)+MPU_GUARD_ALIGN_AND_SIZE)
 #endif
 
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 #else
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(STACK_ALIGN) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 #endif
 
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(POW2_CEIL(size)) \
 		sym[POW2_CEIL(size)]
 #else
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 #endif
 
-#define Z_ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
+#define ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
 
-#define Z_ARCH_THREAD_STACK_BUFFER(sym) \
+#define ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
+/* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>

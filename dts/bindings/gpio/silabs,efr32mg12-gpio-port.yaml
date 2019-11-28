@@ -1,21 +1,22 @@
 title: EFR32MG GPIO
 
-description: >
+description: |
     This is a representation of the EFR32MG GPIO Port nodes
 
-inherits:
-    !include base.yaml
+compatible: "silabs,efr32mg-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "silabs,efr32mg-gpio-port"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

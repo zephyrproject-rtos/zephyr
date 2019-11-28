@@ -45,7 +45,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 #define ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 
-#define BCD(x) ((((x) / 10) << 4) | ((x) / 10))
+#define BCD(x) ((((x) / 10) << 4) | ((x) % 10))
 
 /* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE		18

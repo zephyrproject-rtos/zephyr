@@ -10,9 +10,29 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(lis2dh);
+LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
+
+#define ACCEL_SCALE(sensitivity)			\
+	((SENSOR_G * (sensitivity) >> 14) / 100)
+
+/*
+ * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
+ * multiplied by 100.
+ */
+static const u32_t lis2dh_reg_val_to_scale[] = {
+#if defined(DT_INST_0_ST_LSM303AGR_ACCEL)
+	ACCEL_SCALE(1563),
+	ACCEL_SCALE(3126),
+	ACCEL_SCALE(6252),
+	ACCEL_SCALE(18758),
+#else
+	ACCEL_SCALE(1600),
+	ACCEL_SCALE(3200),
+	ACCEL_SCALE(6400),
+	ACCEL_SCALE(19200),
+#endif
+};
 
 #if defined(DT_ST_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
@@ -46,7 +66,6 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 }
 #endif
 
-#if defined(CONFIG_LIS2DH_TRIGGER) || defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
 int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val)
 {
@@ -64,28 +83,21 @@ int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 	return lis2dh_reg_write_byte(dev, reg_addr,
 				     (old_val & ~mask) | ((val << pos) & mask));
 }
-#endif
 
-static void lis2dh_convert(s16_t raw_val, u16_t scale,
+static void lis2dh_convert(s16_t raw_val, u32_t scale,
 			   struct sensor_value *val)
 {
 	s32_t converted_val;
 
 	/*
 	 * maximum converted value we can get is: max(raw_val) * max(scale)
-	 *	max(raw_val) = +/- 2^15
-	 *	max(scale) = 4785
-	 *	max(converted_val) = 156794880 which is less than 2^31
+	 *	max(raw_val >> 4) = +/- 2^11
+	 *	max(scale) = 114921
+	 *	max(converted_val) = 235358208 which is less than 2^31
 	 */
-	converted_val = raw_val * scale;
+	converted_val = (raw_val >> 4) * scale;
 	val->val1 = converted_val / 1000000;
 	val->val2 = converted_val % 1000000;
-
-	/* normalize val to make sure val->val2 is positive */
-	if (val->val2 < 0) {
-		val->val1 -= 1;
-		val->val2 += 1000000;
-	}
 }
 
 static int lis2dh_channel_get(struct device *dev,
@@ -144,7 +156,7 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	for (i = 0; i < (3 * sizeof(s16_t)); i += sizeof(s16_t)) {
 		s16_t *sample =
-			(s16_t *)&lis2dh->sample.raw[LIS2DH_DATA_OFS + 1 + i];
+			(s16_t *)&lis2dh->sample.raw[1 + i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -219,20 +231,16 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
-static const union {
-	u32_t word_le32;
-	u8_t fs_values[4];
-} lis2dh_acc_range_map = { .fs_values = {2, 4, 8, 16} };
+
+#define LIS2DH_RANGE_IDX_TO_VALUE(idx)		(1 << ((idx) + 1))
+#define LIS2DH_NUM_RANGES			4
 
 static int lis2dh_range_to_reg_val(u16_t range)
 {
 	int i;
-	u32_t range_map;
 
-	range_map = sys_le32_to_cpu(lis2dh_acc_range_map.word_le32);
-
-	for (i = 0; range_map; i++, range_map >>= 1) {
-		if (range == (range_map & 0xff)) {
+	for (i = 0; i < LIS2DH_NUM_RANGES; i++) {
+		if (range == LIS2DH_RANGE_IDX_TO_VALUE(i)) {
 			return i;
 		}
 	}
@@ -250,7 +258,7 @@ static int lis2dh_acc_range_set(struct device *dev, s32_t range)
 		return fs;
 	}
 
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(range);
+	lis2dh->scale = lis2dh_reg_val_to_scale[fs];
 
 	return lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_SHIFT,
@@ -316,11 +324,21 @@ int lis2dh_init(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
-	u8_t raw[LIS2DH_DATA_OFS + 6];
+	u8_t raw[6];
 
 	status = lis2dh_bus_configure(dev);
 	if (status < 0) {
 		return status;
+	}
+
+	if (IS_ENABLED(DT_INST_0_ST_LIS2DH_DISCONNECT_SDO_SA0_PULL_UP)) {
+		status = lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL0,
+						 LIS2DH_SDO_PU_DISC_SHIFT,
+						 LIS2DH_SDO_PU_DISC_MASK, 1);
+		if (status < 0) {
+			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
+			return status;
+		}
 	}
 
 	/* Initialize control register ctrl1 to ctrl 6 to default boot values
@@ -329,7 +347,7 @@ int lis2dh_init(struct device *dev)
 	 * Default values see LIS2DH documentation page 30, chapter 6.
 	 */
 	(void)memset(raw, 0, sizeof(raw));
-	raw[LIS2DH_DATA_OFS] = LIS2DH_ACCEL_EN_BITS;
+	raw[0] = LIS2DH_ACCEL_EN_BITS;
 
 	status = lis2dh_burst_write(dev, LIS2DH_REG_CTRL1, raw,
 				    sizeof(raw));
@@ -339,7 +357,7 @@ int lis2dh_init(struct device *dev)
 	}
 
 	/* set full scale range and store it for later conversion */
-	lis2dh->scale = LIS2DH_ACCEL_SCALE(1 << (LIS2DH_FS_IDX + 1));
+	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_BITS | LIS2DH_HR_BIT);
 	if (status < 0) {

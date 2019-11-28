@@ -1,9 +1,7 @@
-# Kconfig - TWR-KE18F board
-#
+# TWR-KE18F board
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_TWR_KE18F
 
@@ -88,5 +86,15 @@ config ADC_0
 	default y
 
 endif # ADC
+
+if PWM
+
+config PWM_0
+	default y
+
+config PWM_3
+	default y
+
+endif # PWM
 
 endif # BOARD_TWR_KE18F

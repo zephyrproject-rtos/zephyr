@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/types.h>
+#include <errno.h>
 #include <sys/timeutil.h>
 
 /** Convert a civil (proleptic Gregorian) date to days relative to
@@ -39,23 +40,31 @@ static s64_t time_days_from_civil(s64_t y,
 	return era * 146097 + (time_t)doe - 719468;
 }
 
-/** Convert civil time to UNIX time.
- *
- * @param tvp pointer to a civil time structure.  `tm_year`, `tm_mon`,
- * `tm_mday`, `tm_hour`, `tm_min`, and `tm_sec` must be valid.  All
- * other fields are ignored.
- *
- * @return the signed number of seconds between 1970-01-01T00:00:00
- * and the specified time ignoring leap seconds and DST offsets.
- */
-time_t timeutil_timegm(struct tm *tm)
+s64_t timeutil_timegm64(const struct tm *tm)
 {
 	s64_t y = 1900 + (s64_t)tm->tm_year;
 	unsigned int m = tm->tm_mon + 1;
 	unsigned int d = tm->tm_mday - 1;
 	s64_t ndays = time_days_from_civil(y, m, d);
+	s64_t time = tm->tm_sec;
 
-	return (time_t)tm->tm_sec
-	       + 60 * (tm->tm_min + 60 * tm->tm_hour)
-	       + 86400 * ndays;
+	time += 60LL * (tm->tm_min + 60LL * tm->tm_hour);
+	time += 86400LL * ndays;
+
+	return time;
+}
+
+time_t timeutil_timegm(const struct tm *tm)
+{
+	s64_t time = timeutil_timegm64(tm);
+	time_t rv = (time_t)time;
+
+	errno = 0;
+	if ((sizeof(rv) == sizeof(s32_t))
+	    && ((time < (s64_t)INT32_MIN)
+		|| (time > (s64_t)INT32_MAX))) {
+		errno = ERANGE;
+		rv = -1;
+	}
+	return rv;
 }

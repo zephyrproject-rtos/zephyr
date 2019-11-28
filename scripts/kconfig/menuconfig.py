@@ -73,7 +73,7 @@ This is the current list of built-in styles:
     - default       classic Kconfiglib theme with a yellow accent
     - monochrome    colorless theme (uses only bold and standout) attributes,
                     this style is used if the terminal doesn't support colors
-    - aquatic       blue tinted style loosely resembling the lxdialog theme
+    - aquatic       blue-tinted style loosely resembling the lxdialog theme
 
 It is possible to customize the current style by changing colors of UI
 elements on the screen. This is the list of elements that can be stylized:
@@ -174,21 +174,40 @@ Other features
 Limitations
 ===========
 
-Doesn't work out of the box on Windows, but can be made to work with 'pip
-install windows-curses'. See the
-https://github.com/zephyrproject-rtos/windows-curses repository.
+Doesn't work out of the box on Windows, but can be made to work with
 
-'pip install kconfiglib' on Windows automatically installs windows-curses
-to make the menuconfig usable.
+    pip install windows-curses
+
+See the https://github.com/zephyrproject-rtos/windows-curses repository.
 """
 from __future__ import print_function
 
-import curses
+import sys
+
+try:
+    import curses
+except ImportError as e:
+    if sys.platform != "win32":
+        raise
+    sys.exit("""\
+menuconfig failed to import the standard Python 'curses' library. Try
+installing a package like windows-curses
+(https://github.com/zephyrproject-rtos/windows-curses) by running this command
+in cmd.exe:
+
+    pip install windows-curses
+
+Starting with Kconfiglib 13.0.0, windows-curses is no longer automatically
+installed when installing Kconfiglib via pip on Windows (because it breaks
+installation on MSYS2).
+
+Exception:
+{}: {}""".format(type(e).__name__, e))
+
 import errno
 import locale
 import os
 import re
-import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
@@ -628,7 +647,7 @@ def _style_attr(fg_color, bg_color, attribs, color_attribs={}):
 
 
 def _main():
-    menuconfig(standard_kconfig())
+    menuconfig(standard_kconfig(__doc__))
 
 
 def menuconfig(kconf):
@@ -1829,7 +1848,7 @@ def _try_load(filename):
     try:
         _kconf.load_config(filename)
         return True
-    except OSError as e:
+    except EnvironmentError as e:
         _error("Error loading '{}'\n\n{} (errno: {})"
                .format(filename, e.strerror, errno.errorcode[e.errno]))
         return False
@@ -1881,7 +1900,7 @@ def _try_save(save_fn, filename, description):
     try:
         # save_fn() returns a message to print
         return save_fn(filename)
-    except OSError as e:
+    except EnvironmentError as e:
         _error("Error saving {} to '{}'\n\n{} (errno: {})"
                .format(description, e.filename, e.strerror,
                        errno.errorcode[e.errno]))
@@ -2194,9 +2213,7 @@ def _sorted_sc_nodes(cached_nodes=[]):
                          key=lambda choice: choice.name or "")
 
         cached_nodes += sorted(
-            [node
-             for choice in choices
-                 for node in choice.nodes],
+            [node for choice in choices for node in choice.nodes],
             key=lambda node: node.prompt[0] if node.prompt else "")
 
     return cached_nodes
@@ -2639,7 +2656,10 @@ def _defaults_info(sc):
     if not sc.defaults:
         return ""
 
-    s = "Defaults:\n"
+    s = "Default"
+    if len(sc.defaults) > 1:
+        s += "s"
+    s += ":\n"
 
     for val, cond in sc.orig_defaults:
         s += "  - "
@@ -3181,7 +3201,7 @@ def _safe_addstr(win, *args):
         if len(args) == 2:
             attr = args[1]
     else:
-        y, x, s = args[:3]
+        y, x, s = args[:3]  # pylint: disable=unbalanced-tuple-unpacking
         if len(args) == 4:
             attr = args[3]
 

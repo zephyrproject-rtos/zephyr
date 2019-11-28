@@ -1,18 +1,12 @@
-#
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Rocktech LCD Module
 
-description: >
+description: |
     This binding gives a base representation of the Rocktech LCD module with
     LED backlight and capacitive touch panel.
 
-inherits:
-    !include base.yaml
+compatible: "rocktech,rk043fn02h-ct"
 
-properties:
-    compatible:
-      constraint: "rocktech,rk043fn02h-ct"
+include: base.yaml

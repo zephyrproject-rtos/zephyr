@@ -1,0 +1,11 @@
+# Copyright (c) 2019, Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+title: Si7060 Temperature sensor
+
+description: |
+    This is a representation of Si7060 Temperature sensor
+
+compatible: "silabs,si7060"
+
+include: i2c-device.yaml

@@ -599,7 +599,7 @@ static int uart_console_init(struct device *arg)
 	while (1) {
 		u32_t dtr = 0U;
 
-		uart_line_ctrl_get(uart_console_dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(uart_console_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}

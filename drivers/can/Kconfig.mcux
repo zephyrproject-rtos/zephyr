@@ -1,10 +1,7 @@
-# Kconfig.mcux - MCUX CAN configuration options
+# MCUX CAN configuration options
 
-#
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"
@@ -16,6 +13,6 @@ config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
 	depends on CAN_MCUX_FLEXCAN
 	default 5
-	range 1 15 if SOC_SERIES_KINETIS_KE1XF
+	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	help
 	  Defines maximum number of concurrent active RX filters

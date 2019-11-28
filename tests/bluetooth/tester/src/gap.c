@@ -13,6 +13,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/hci.h>
 
 #include <sys/byteorder.h>
 #include <net/buf.h>
@@ -596,7 +597,7 @@ static void pair(const u8_t *data, u16_t len)
 		goto rsp;
 	}
 
-	if (bt_conn_security(conn, BT_SECURITY_MEDIUM)) {
+	if (bt_conn_set_security(conn, BT_SECURITY_L2)) {
 		status = BTP_STATUS_FAILED;
 		bt_conn_unref(conn);
 		goto rsp;

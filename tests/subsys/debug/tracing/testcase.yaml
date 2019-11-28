@@ -1,0 +1,27 @@
+common:
+    tags: tracing debug
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"
+tests:
+  tracing.sysview:
+    platform_whitelist: nrf52840_pca10056
+    extra_configs:
+      - CONFIG_SEGGER_SYSTEMVIEW=y
+      - CONFIG_USE_SEGGER_RTT=y
+  tracing.ctf:
+    platform_whitelist: native_posix
+    extra_configs:
+      - CONFIG_TRACING_CTF=y
+  tracing.cpu_stats:
+    platform_whitelist: nrf52840_pca10056
+    extra_configs:
+      - CONFIG_TRACING_CPU_STATS=y
+  tracing.openocd:
+    extra_configs:
+      - CONFIG_OPENOCD_SUPPORT=y
+    arch_exclude: posix xtensa
+    platform_exclude: qemu_x86_64

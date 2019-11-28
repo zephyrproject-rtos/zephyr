@@ -14,14 +14,13 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <cortex_m/exc.h>
-#include <nrfx.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void z_NmiInit(void);
-#define NMI_INIT() z_NmiInit()
+extern void z_arm_nmi_init(void);
+#define NMI_INIT() z_arm_nmi_init()
 #else
 #define NMI_INIT()
 #endif
@@ -58,7 +57,7 @@ static int nordicsemi_nrf91_init(struct device *arg)
 	return 0;
 }
 
-void z_arch_busy_wait(u32_t time_us)
+void arch_busy_wait(u32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }

@@ -218,7 +218,7 @@ static void send_attention_status(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_STATUS, 1);
 	struct bt_mesh_health_srv *srv = model->user_data;
 	u8_t time;
 
@@ -271,7 +271,7 @@ static void send_health_period_status(struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_STATUS, 1);
 
 	bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_STATUS);
 
@@ -384,12 +384,12 @@ static void attention_off(struct k_work *work)
 	}
 }
 
-int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
+static int health_srv_init(struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_srv *srv = model->user_data;
 
 	if (!srv) {
-		if (!primary) {
+		if (!bt_mesh_model_in_primary(model)) {
 			return 0;
 		}
 
@@ -408,12 +408,16 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
 
 	srv->model = model;
 
-	if (primary) {
+	if (bt_mesh_model_in_primary(model)) {
 		health_srv = srv;
 	}
 
 	return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_health_srv_cb = {
+	.init = health_srv_init,
+};
 
 void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 {

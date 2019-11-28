@@ -56,7 +56,11 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 
 struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
+#if CONFIG_SPI_LOOPBACK_MODE_LOOP
+	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
+#else
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+#endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
@@ -64,7 +68,11 @@ struct spi_config spi_cfg_slow = {
 
 struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
+#if CONFIG_SPI_LOOPBACK_MODE_LOOP
+	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
+#else
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+#endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
@@ -312,6 +320,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
+#if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -392,6 +401,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 
 	return 0;
 }
+#endif
 
 static int spi_resource_lock_test(struct device *lock_dev,
 				  struct spi_config *spi_conf_lock,
@@ -419,8 +429,10 @@ static int spi_resource_lock_test(struct device *lock_dev,
 
 void testing_spi(void)
 {
+#if (CONFIG_SPI_ASYNC)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
+#endif
 	struct device *spi_slow;
 	struct device *spi_fast;
 
@@ -441,25 +453,33 @@ void testing_spi(void)
 
 	spi_fast = spi_slow;
 
+#if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
 					  (k_thread_entry_t)spi_async_call_cb,
 					  &async_evt, &caller, NULL,
-					  K_PRIO_COOP(7), 0, 0);
+					  K_PRIO_COOP(7), 0, K_NO_WAIT);
+#endif
 
 	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
-	    spi_rx_every_4(spi_slow, &spi_cfg_slow) ||
-	    spi_async_call(spi_slow, &spi_cfg_slow)) {
+	    spi_rx_every_4(spi_slow, &spi_cfg_slow)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(spi_slow, &spi_cfg_slow)
+#endif
+	    ) {
 		goto end;
 	}
 
 	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
-	    spi_rx_every_4(spi_fast, &spi_cfg_fast) ||
-	    spi_async_call(spi_fast, &spi_cfg_fast)) {
+	    spi_rx_every_4(spi_fast, &spi_cfg_fast)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(spi_fast, &spi_cfg_fast)
+#endif
+	    ) {
 		goto end;
 	}
 
@@ -470,7 +490,11 @@ void testing_spi(void)
 
 	LOG_INF("All tx/rx passed");
 end:
+#if (CONFIG_SPI_ASYNC)
 	k_thread_abort(async_thread_id);
+#else
+	;
+#endif
 }
 
 /*test case main entry*/

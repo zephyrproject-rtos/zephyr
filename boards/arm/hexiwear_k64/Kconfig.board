@@ -1,9 +1,7 @@
-# Kconfig - Hexiwear K64 board
-#
+# Hexiwear K64 board
+
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_HEXIWEAR_K64
 	bool "NXP Hexiwear K64"

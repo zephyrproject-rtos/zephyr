@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: LiteX SPI
+
+description: |
+    This binding gives a base representation of the LiteX SPI
+
+compatible: "litex,spi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+        required: true

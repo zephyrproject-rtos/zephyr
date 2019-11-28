@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l4r5Xi.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L4R5ZI-NUCLEO board";
@@ -52,33 +53,23 @@
 	};
 };
 
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-arduino_serial: &usart3 {};
-
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -103,6 +94,10 @@ arduino_serial: &usart3 {};
 };
 
 &rtc {
+	status = "okay";
+};
+
+&lptim1 {
 	status = "okay";
 };
 

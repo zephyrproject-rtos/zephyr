@@ -13,28 +13,23 @@ enum state_binding {
 	ONOFF,
 	LEVEL,
 	DELTA_LEVEL,
+	MOVE_LEVEL,
 	ACTUAL,
 	LINEAR,
 	CTL,
-	IGNORE,
 
-	ONOFF_TEMP,
 	LEVEL_TEMP,
+	MOVE_LEVEL_TEMP,
 	CTL_TEMP,
-	IGNORE_TEMP
+
+	CTL_DELTA_UV
 };
 
-extern u16_t lightness, target_lightness;
-extern s16_t temperature, target_temperature;
+u16_t constrain_lightness(u16_t light);
+u16_t level_to_light_ctl_temp(s16_t level);
 
-void readjust_lightness(void);
-void readjust_temperature(void);
-void state_binding(u8_t lightness, u8_t temperature);
-
-void init_lightness_target_values(void);
-void calculate_lightness_target_values(u8_t type);
-
-void init_temp_target_values(void);
-void calculate_temp_target_values(u8_t type);
+void set_target(u8_t type, void *dptr);
+int get_current(u8_t type);
+int get_target(u8_t type);
 
 #endif

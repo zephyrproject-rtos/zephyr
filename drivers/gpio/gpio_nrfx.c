@@ -47,14 +47,15 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(struct device *port)
 static int gpiote_channel_alloc(u32_t abs_pin, nrf_gpiote_polarity_t polarity)
 {
 	for (u8_t channel = 0; channel < GPIOTE_CH_NUM; ++channel) {
-		if (!nrf_gpiote_te_is_enabled(channel)) {
-			nrf_gpiote_events_t evt =
+		if (!nrf_gpiote_te_is_enabled(NRF_GPIOTE, channel)) {
+			nrf_gpiote_event_t evt =
 				offsetof(NRF_GPIOTE_Type, EVENTS_IN[channel]);
 
-			nrf_gpiote_event_configure(channel, abs_pin, polarity);
-			nrf_gpiote_event_clear(evt);
-			nrf_gpiote_event_enable(channel);
-			nrf_gpiote_int_enable(BIT(channel));
+			nrf_gpiote_event_configure(NRF_GPIOTE, channel, abs_pin,
+						   polarity);
+			nrf_gpiote_event_clear(NRF_GPIOTE, evt);
+			nrf_gpiote_event_enable(NRF_GPIOTE, channel);
+			nrf_gpiote_int_enable(NRF_GPIOTE, BIT(channel));
 			return 0;
 		}
 	}
@@ -64,13 +65,14 @@ static int gpiote_channel_alloc(u32_t abs_pin, nrf_gpiote_polarity_t polarity)
 
 static void gpiote_channel_free(u32_t abs_pin)
 {
-	u32_t intenset = nrf_gpiote_int_is_enabled(NRF_GPIOTE_INT_IN_MASK);
+	u32_t intenset = nrf_gpiote_int_enable_check(NRF_GPIOTE,
+						     NRF_GPIOTE_INT_IN_MASK);
 
 	for (size_t i = 0; i < GPIOTE_CH_NUM; i++) {
-		if ((nrf_gpiote_event_pin_get(i) == abs_pin)
+		if ((nrf_gpiote_event_pin_get(NRF_GPIOTE, i) == abs_pin)
 		    && (intenset & BIT(i))) {
-			nrf_gpiote_event_disable(i);
-			nrf_gpiote_int_disable(BIT(i));
+			nrf_gpiote_event_disable(NRF_GPIOTE, i);
+			nrf_gpiote_int_disable(NRF_GPIOTE, BIT(i));
 			return;
 		}
 	}
@@ -400,7 +402,25 @@ static u32_t check_level_trigger_pins(struct device *port)
 
 static inline void fire_callbacks(struct device *port, u32_t pins)
 {
-	gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
+	struct gpio_nrfx_data *data = get_port_data(port);
+	sys_slist_t *list = &data->callbacks;
+	struct gpio_callback *cb, *tmp;
+
+	/* Instead of calling the common gpio_fire_callbacks() function,
+	 * iterate the list of callbacks locally, to be able to perform
+	 * additional masking of the pins and to call handlers only for
+	 * the currently enabled callbacks.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
+		/* Check currently enabled callbacks (data->int_en) in each
+		 * iteration, as some callbacks may get disabled also in any
+		 * of the handlers called here.
+		 */
+		if ((cb->pin_mask & pins) & data->int_en) {
+			__ASSERT(cb->handler, "No callback handler!");
+			cb->handler(port, cb, pins);
+		}
+	}
 }
 
 #ifdef CONFIG_GPIO_NRF_P0
@@ -413,7 +433,8 @@ DEVICE_DECLARE(gpio_nrfx_p1);
 static void gpiote_event_handler(void)
 {
 	u32_t fired_triggers[GPIO_COUNT] = {0};
-	bool port_event = nrf_gpiote_event_is_set(NRF_GPIOTE_EVENTS_PORT);
+	bool port_event = nrf_gpiote_event_check(NRF_GPIOTE,
+						 NRF_GPIOTE_EVENT_PORT);
 
 	if (port_event) {
 #ifdef CONFIG_GPIO_NRF_P0
@@ -428,20 +449,20 @@ static void gpiote_event_handler(void)
 		/* Sense detect was disabled while checking pins so
 		 * DETECT should be deasserted.
 		 */
-		nrf_gpiote_event_clear(NRF_GPIOTE_EVENTS_PORT);
+		nrf_gpiote_event_clear(NRF_GPIOTE, NRF_GPIOTE_EVENT_PORT);
 	}
 
 	/* Handle interrupt from GPIOTE channels. */
 	for (size_t i = 0; i < GPIOTE_CH_NUM; i++) {
-		nrf_gpiote_events_t evt =
+		nrf_gpiote_event_t evt =
 			offsetof(NRF_GPIOTE_Type, EVENTS_IN[i]);
 
-		if (nrf_gpiote_int_is_enabled(BIT(i)) &&
-		    nrf_gpiote_event_is_set(evt)) {
-			u32_t abs_pin = nrf_gpiote_event_pin_get(i);
+		if (nrf_gpiote_int_enable_check(NRF_GPIOTE, BIT(i)) &&
+		    nrf_gpiote_event_check(NRF_GPIOTE, evt)) {
+			u32_t abs_pin = nrf_gpiote_event_pin_get(NRF_GPIOTE, i);
 			/* Divide absolute pin number to port and pin parts. */
 			fired_triggers[abs_pin / 32U] |= BIT(abs_pin % 32);
-			nrf_gpiote_event_clear(evt);
+			nrf_gpiote_event_clear(NRF_GPIOTE, evt);
 		}
 	}
 
@@ -480,7 +501,7 @@ static int gpio_nrfx_init(struct device *port)
 			    gpiote_event_handler, NULL, 0);
 
 		irq_enable(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0);
-		nrf_gpiote_int_enable(NRF_GPIOTE_INT_PORT_MASK);
+		nrf_gpiote_int_enable(NRF_GPIOTE, NRF_GPIOTE_INT_PORT_MASK);
 	}
 
 	return 0;

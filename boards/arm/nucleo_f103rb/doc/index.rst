@@ -162,7 +162,7 @@ You can debug an application in the usual way.  Here is an example for the
 :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic-blinky
+   :zephyr-app: samples/basic/blinky
    :board: nucleo_f103rb
    :maybe-skip-config:
    :goals: debug

@@ -1,4 +1,4 @@
 tests:
-  filesystem.fat:
+  filesystem.fat.dual_drive:
     platform_whitelist: qemu_x86
     tags: filesystem

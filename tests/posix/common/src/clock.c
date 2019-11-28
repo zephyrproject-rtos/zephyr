@@ -112,7 +112,7 @@ void test_posix_realtime(void)
 		 * downward
 		 */
 		zassert_true(error >= 90, "Clock inaccurate %d", error);
-		zassert_true(error < 110, "Clock inaccurate %d", error);
+		zassert_true(error <= 110, "Clock inaccurate %d", error);
 
 		last_delta = delta;
 	}

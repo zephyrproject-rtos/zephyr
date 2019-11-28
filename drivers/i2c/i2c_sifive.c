@@ -332,12 +332,12 @@ static struct i2c_driver_api i2c_sifive_api = {
 
 #define I2C_SIFIVE_INIT(n) \
 	static struct i2c_sifive_cfg i2c_sifive_cfg_##n = { \
-		.base = DT_SIFIVE_I2C0_##n##_BASE_ADDRESS, \
-		.f_sys = DT_SIFIVE_I2C0_##n##_INPUT_FREQUENCY, \
-		.f_bus = DT_SIFIVE_I2C0_##n##_CLOCK_FREQUENCY, \
+		.base = DT_INST_##n##_SIFIVE_I2C0_BASE_ADDRESS, \
+		.f_sys = DT_INST_##n##_SIFIVE_I2C0_INPUT_FREQUENCY, \
+		.f_bus = DT_INST_##n##_SIFIVE_I2C0_CLOCK_FREQUENCY, \
 	}; \
 	DEVICE_AND_API_INIT(i2c_##n, \
-			    DT_SIFIVE_I2C0_##n##_LABEL, \
+			    DT_INST_##n##_SIFIVE_I2C0_LABEL, \
 			    i2c_sifive_init, \
 			    NULL, \
 			    &i2c_sifive_cfg_##n, \
@@ -345,7 +345,6 @@ static struct i2c_driver_api i2c_sifive_api = {
 			    CONFIG_I2C_INIT_PRIORITY, \
 			    &i2c_sifive_api)
 
-#ifdef DT_INST_0_SIFIVE_I2C0_LABEL
+#ifdef DT_INST_0_SIFIVE_I2C0
 I2C_SIFIVE_INIT(0);
 #endif
-

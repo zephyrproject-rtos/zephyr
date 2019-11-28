@@ -26,6 +26,12 @@ static struct k_work_q user_workq;
 static ZTEST_BMEM struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
+static struct k_work_poll triggered_work[NUM_OF_WORK];
+static struct k_poll_event triggered_work_event[NUM_OF_WORK];
+static struct k_poll_signal triggered_work_signal[NUM_OF_WORK];
+static struct k_work_poll triggered_work_sleepy;
+static struct k_poll_event triggered_work_sleepy_event;
+static struct k_poll_signal triggered_work_sleepy_signal;
 static struct k_sem sync_sema;
 static struct k_sem dummy_sema;
 static struct k_thread *main_thread;
@@ -91,7 +97,7 @@ static void twork_resubmit(void *data)
 	/**TESTPOINT: init via k_work_init*/
 	k_delayed_work_init(&new_work, new_work_handler);
 
-	k_delayed_work_submit_to_queue(work_q, &new_work, 0);
+	k_delayed_work_submit_to_queue(work_q, &new_work, K_NO_WAIT);
 
 	/* This is done to test a neagtive case when k_delayed_work_cancel()
 	 * fails in k_delayed_work_submit_to_queue API. Removing work from it
@@ -100,7 +106,7 @@ static void twork_resubmit(void *data)
 	 */
 	k_queue_remove(&(new_work.work_q->queue), &(new_work.work));
 
-	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work, 0),
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work, K_NO_WAIT),
 		      -EINVAL, NULL);
 
 	k_sem_give(&sync_sema);
@@ -135,10 +141,10 @@ static void tdelayed_work_submit(void *data)
 
 		/**TESTPOINT: check remaining timeout after submit */
 		zassert_true(
-		    time_remaining <= __ticks_to_ms(z_ms_to_ticks(TIMEOUT)
+		    time_remaining <= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT)
 						    + _TICK_ALIGN) &&
-		    time_remaining >= __ticks_to_ms(z_ms_to_ticks(TIMEOUT) -
-						    z_ms_to_ticks(15)), NULL);
+		    time_remaining >= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT) -
+						    k_ms_to_ticks_ceil32(15)), NULL);
 		/**TESTPOINT: check pending after delayed work submit*/
 		zassert_true(k_work_pending((struct k_work *)&delayed_work[i])
 			     == 0, NULL);
@@ -202,6 +208,136 @@ static void tdelayed_work_cancel(void *data)
 		zassert_equal(ret, 0, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
+}
+
+static void ttriggered_work_submit(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_poll_signal_init(&triggered_work_signal[i]);
+		k_poll_event_init(&triggered_work_event[i],
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &triggered_work_signal[i]);
+
+		/**TESTPOINT: init via k_work_poll_init*/
+		k_work_poll_init(&triggered_work[i], work_handler);
+		/**TESTPOINT: check pending after triggered work init*/
+		zassert_false(k_work_pending(
+			     (struct k_work *)&triggered_work[i]), NULL);
+		if (work_q) {
+			/**TESTPOINT: triggered work submit to queue*/
+			zassert_true(k_work_poll_submit_to_queue(work_q,
+				    &triggered_work[i],
+				    &triggered_work_event[i], 1,
+				    K_FOREVER) == 0, NULL);
+		} else {
+			/**TESTPOINT: triggered work submit to system queue*/
+			zassert_true(k_work_poll_submit(
+				    &triggered_work[i],
+				    &triggered_work_event[i], 1,
+				    K_FOREVER) == 0, NULL);
+		}
+
+		/**TESTPOINT: check pending after triggered work submit*/
+		zassert_true(k_work_pending(
+			    (struct k_work *)&triggered_work[i]) == 0, NULL);
+	}
+
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		/**TESTPOINT: trigger work execution*/
+		zassert_true(k_poll_signal_raise(&triggered_work_signal[i], 1)
+								   == 0, NULL);
+		/**TESTPOINT: check pending after sending signal */
+		zassert_true(k_work_pending(
+			    (struct k_work *)&triggered_work[i]) != 0, NULL);
+	}
+}
+
+static void ttriggered_work_cancel(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+	int ret;
+
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_poll_signal_init(&triggered_work_signal[i]);
+		k_poll_event_init(&triggered_work_event[i],
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &triggered_work_signal[i]);
+
+		k_work_poll_init(&triggered_work[i], work_handler);
+	}
+
+	k_poll_signal_init(&triggered_work_sleepy_signal);
+	k_poll_event_init(&triggered_work_sleepy_event,
+			  K_POLL_TYPE_SIGNAL,
+			  K_POLL_MODE_NOTIFY_ONLY,
+			  &triggered_work_sleepy_signal);
+
+	k_work_poll_init(&triggered_work_sleepy, work_sleepy);
+
+	if (work_q) {
+		ret = k_work_poll_submit_to_queue(work_q,
+		      &triggered_work_sleepy, &triggered_work_sleepy_event, 1,
+		      K_FOREVER);
+		ret |= k_work_poll_submit_to_queue(work_q,
+		       &triggered_work[0], &triggered_work_event[0], 1,
+		       K_FOREVER);
+		ret |= k_work_poll_submit_to_queue(work_q,
+		       &triggered_work[1], &triggered_work_event[1], 1,
+		       K_FOREVER);
+	} else {
+		ret = k_work_poll_submit(&triggered_work_sleepy,
+				&triggered_work_sleepy_event, 1, K_FOREVER);
+		ret |= k_work_poll_submit(&triggered_work[0],
+				&triggered_work_event[0], 1, K_FOREVER);
+		ret |= k_work_poll_submit(&triggered_work[1],
+				&triggered_work_event[1], 1, K_FOREVER);
+	}
+	/* Check if all submission succeeded */
+	zassert_true(ret == 0, NULL);
+
+	/**TESTPOINT: triggered work cancel when waiting for event*/
+	ret = k_work_poll_cancel(&triggered_work[0]);
+	zassert_true(ret == 0, NULL);
+
+	/**TESTPOINT: check pending after triggerd work cancel*/
+	ret = k_work_pending((struct k_work *)&triggered_work[0]);
+	zassert_true(ret == 0, NULL);
+
+	/* Trigger work #1 */
+	ret = k_poll_signal_raise(&triggered_work_signal[1], 1);
+	zassert_true(ret == 0, NULL);
+
+	/**TESTPOINT: check pending after sending signal */
+	ret = k_work_pending((struct k_work *)&triggered_work[1]);
+	zassert_true(ret != 0, NULL);
+
+	/**TESTPOINT: triggered work cancel when pending for event*/
+	ret = k_work_poll_cancel(&triggered_work[1]);
+	zassert_true(ret == -EINVAL, NULL);
+
+	/* Trigger sleepy work */
+	ret = k_poll_signal_raise(&triggered_work_sleepy_signal, 1);
+	zassert_true(ret == 0, NULL);
+
+	if (!k_is_in_isr()) {
+		/*wait for completed work_sleepy and triggered_work[1]*/
+		k_sleep(2 * TIMEOUT);
+
+		/**TESTPOINT: check pending when work completed*/
+		ret = k_work_pending((struct k_work *)&triggered_work_sleepy);
+		zassert_true(ret == 0, NULL);
+
+		/**TESTPOINT: delayed work cancel when completed*/
+		ret = k_work_poll_cancel(&triggered_work_sleepy);
+		zassert_true(ret == -EINVAL, NULL);
+
+	}
+
+	/*work items not cancelled: triggered_work[1], triggered_work_sleepy*/
 }
 
 /*test cases*/
@@ -510,6 +646,145 @@ void test_delayed_work_cancel_isr(void)
 	}
 }
 
+/**
+ * @brief Test triggered work submission to queue
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_init(), k_work_pending(),
+ * k_work_poll_submit_to_queue(),
+ * k_work_poll_submit()
+ */
+void test_triggered_work_submit_to_queue_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	ttriggered_work_submit(&workq);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work submission to queue in ISR context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_init(), k_work_pending(),
+ * k_work_poll_submit_to_queue(),
+ * k_work_poll_submit()
+ */
+void test_triggered_work_submit_to_queue_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(ttriggered_work_submit, (void *)&workq);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work submission
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_init(), k_work_pending(),
+ * k_work_poll_submit_to_queue(),
+ * k_work_poll_submit()
+ */
+void test_triggered_work_submit_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	ttriggered_work_submit(NULL);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work submission from ISR context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_init(), k_work_pending(),
+ * k_work_poll_submit_to_queue(),
+ * k_work_poll_submit()
+ */
+void test_triggered_work_submit_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(ttriggered_work_submit, NULL);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work cancel from work queue
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_cancel(), k_work_pending()
+ */
+void test_triggered_work_cancel_from_queue_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	ttriggered_work_cancel(&workq);
+	/*wait for work items that could not be cancelled*/
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work cancel from work queue from ISR context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_cancel(), k_work_pending()
+ */
+void test_triggered_work_cancel_from_queue_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(ttriggered_work_cancel, &workq);
+	/*wait for work items that could not be cancelled*/
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work cancel
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_cancel(), k_work_pending()
+ */
+void test_triggered_work_cancel_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	ttriggered_work_cancel(NULL);
+	/*wait for work items that could not be cancelled*/
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test triggered work cancel from ISR context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_cancel(), k_work_pending()
+ */
+void test_triggered_work_cancel_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(ttriggered_work_cancel, NULL);
+	/*wait for work items that could not be cancelled*/
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
 
 void test_main(void)
 {
@@ -528,20 +803,28 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_workq_granted_access),
 			 /* End order-important tests */
 
-			 ztest_unit_test(test_work_submit_to_multipleq),
+			 ztest_1cpu_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
-			 ztest_unit_test(test_work_submit_to_queue_thread),
-			 ztest_unit_test(test_work_submit_to_queue_isr),
-			 ztest_unit_test(test_work_submit_thread),
-			 ztest_unit_test(test_work_submit_isr),
-			 ztest_user_unit_test(test_user_work_submit_to_queue_thread),
-			 ztest_unit_test(test_delayed_work_submit_to_queue_thread),
-			 ztest_unit_test(test_delayed_work_submit_to_queue_isr),
-			 ztest_unit_test(test_delayed_work_submit_thread),
-			 ztest_unit_test(test_delayed_work_submit_isr),
-			 ztest_unit_test(test_delayed_work_cancel_from_queue_thread),
-			 ztest_unit_test(test_delayed_work_cancel_from_queue_isr),
-			 ztest_unit_test(test_delayed_work_cancel_thread),
-			 ztest_unit_test(test_delayed_work_cancel_isr));
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_isr),
+			 ztest_1cpu_unit_test(test_work_submit_thread),
+			 ztest_1cpu_unit_test(test_work_submit_isr),
+			 ztest_1cpu_user_unit_test(test_user_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_isr),
+			 ztest_1cpu_unit_test(test_triggered_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_triggered_work_submit_to_queue_isr),
+			 ztest_1cpu_unit_test(test_triggered_work_submit_thread),
+			 ztest_1cpu_unit_test(test_triggered_work_submit_isr),
+			 ztest_1cpu_unit_test(test_triggered_work_cancel_from_queue_thread),
+			 ztest_1cpu_unit_test(test_triggered_work_cancel_from_queue_isr),
+			 ztest_1cpu_unit_test(test_triggered_work_cancel_thread),
+			 ztest_1cpu_unit_test(test_triggered_work_cancel_isr));
 	ztest_run_test_suite(workqueue_api);
 }

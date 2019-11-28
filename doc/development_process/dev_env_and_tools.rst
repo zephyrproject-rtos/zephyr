@@ -171,7 +171,7 @@ dismissed by the assignee or an owner of the repository. Reviews will be
 dismissed following the criteria below:
 
 - The feedback or concerns were visibly addressed by the author
-- The reviewer did not revisit the pull request after 1 week and multiple pings
+- The reviewer did not revisit the pull request after 2 week and multiple pings
   by the author
 - The review is unrelated to the code change or asking for unjustified
   structural changes such as:
@@ -190,8 +190,10 @@ Closing Stale Issues and Pull Requests
   Use the mailing lists for discussions.
 - In case of both issues and pull-requests the original poster needs to respond
   to questions and provide clarifications regarding the issue or the change.
-  Failing to do so, an issue or a pull request will be closed automatically
-  after 6 months.
+  After one week without a response to a request, a second attempt to elicit
+  a response from the contributor will be made. After one more week without a
+  response the item may be closed (draft and DNM tagged pull requests are
+  excluded).
 
 Continuous Integration
 ***********************

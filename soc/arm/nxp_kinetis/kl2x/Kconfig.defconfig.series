@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KL2x series configuration options
-#
+# Kinetis KL2x series configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_KINETIS_KL2X
 

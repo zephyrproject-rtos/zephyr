@@ -16,22 +16,35 @@
  */
 #define _ISR_OFFSET 0
 
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-/* The customized solution for nRF52X-based platforms
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+/* The customized solution for nRF5X-based platforms
  * requires that the POWER_CLOCK_IRQn line equals 0.
  */
 BUILD_ASSERT_MSG(POWER_CLOCK_IRQn == 0,
 	"POWER_CLOCK_IRQn != 0. Consider rework manual vector table.");
 
-/* The customized solution for nRF52X-based platforms
+/* The customized solution for nRF5X-based platforms
  * requires that the RTC1 IRQ line equals 17.
  */
 BUILD_ASSERT_MSG(RTC1_IRQn == 17,
 	 "RTC1_IRQn != 17. Consider rework manual vector table.");
 
 #undef _ISR_OFFSET
+#if !defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 /* Interrupt line 0 is used by POWER_CLOCK */
 #define _ISR_OFFSET 1
+#else
+/* The customized solution for nRF51-based QEMU Cortex-M0 platform
+ * requires that the TIMER0 IRQ line equals 8.
+ */
+BUILD_ASSERT_MSG(TIMER0_IRQn == 8,
+	 "TIMER0_IRQn != 8. Consider rework manual vector table.");
+/* Interrupt lines 9-11 is the first set of consecutive interrupts implemented
+ * in QEMU Cortex M0.
+ */
+#define _ISR_OFFSET 9
+
+#endif
 
 #elif defined(CONFIG_SOC_SERIES_NRF91X)
 /* The customized solution for nRF91X-based platforms
@@ -69,7 +82,7 @@ void isr0(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[0]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -83,7 +96,7 @@ void isr1(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[1]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -97,7 +110,7 @@ void isr2(void)
 {
 	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[2]);
-	_IntExit();
+	z_arm_int_exit();
 }
 
 /**
@@ -125,7 +138,7 @@ void test_arm_irq_vector_table(void)
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
-		z_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
+		z_arm_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
 
@@ -134,7 +147,8 @@ void test_arm_irq_vector_table(void)
 		      k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
 	for (int ii = 0; ii < 3; ii++) {
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+	defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 		/* the QEMU does not simulate the
 		 * STIR register: this is a workaround
 		 */
@@ -152,34 +166,54 @@ void test_arm_irq_vector_table(void)
 
 typedef void (*vth)(void); /* Vector Table Handler */
 
-#if defined(CONFIG_SOC_SERIES_NRF52X) || defined(CONFIG_SOC_SERIES_NRF91X)
-/* nRF52X- and nRF91X-based platforms employ a Hardware RTC peripheral
+#if defined(CONFIG_SOC_FAMILY_NRF)
+/* nRF5X- and nRF91X-based platforms employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
  * the custom vector table to handle the timer "tick" interrupts.
  *
  * The same applies to the CLOCK Control peripheral, which may trigger
  * IRQs that would need to be serviced.
+ *
+ * Note: qemu_cortex_m0 uses TIMER0 to implement system timer.
  */
 void rtc1_nrf_isr(void);
 void nrf_power_clock_isr(void);
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
+void timer0_nrf_isr(void);
+vth __irq_vector_table _irq_vector_table[] = {
+	nrf_power_clock_isr, 0, 0, 0, 0, 0, 0, 0, timer0_nrf_isr, isr0, isr1, isr2
+};
+#else
+vth __irq_vector_table _irq_vector_table[] = {
 	nrf_power_clock_isr,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
+#endif /* CONFIG_BOARD_QEMU_CORTEX_M0 */
 #elif defined(CONFIG_SOC_SERIES_NRF91X)
-vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
 #endif
+#elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2)
+/* TI CC13x2/CC26x2 based platforms also employ a Hardware RTC peripheral
+ * to implement the Kernel system timer, instead of the ARM Cortex-M
+ * SysTick. Therefore, a pointer to the timer ISR needs to be added in
+ * the custom vector table to handle the timer "tick" interrupts.
+ */
+extern void rtc_isr(void);
+vth __irq_vector_table _irq_vector_table[] = {
+	isr0, isr1, isr2, 0,
+	rtc_isr
+};
 #else
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
+vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
 };
 #endif /* CONFIG_SOC_SERIES_NRF52X || CONFIG_SOC_SERIES_NRF91X */

@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KE1xF MCU line
-#
+# Kinetis KE1xF MCU line
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Kinetis KE1xF MCU Selection"
@@ -82,7 +80,6 @@ config SOC_PART_NUMBER_KINETIS_KE1XF
 
 config WDOG_INIT
 	def_bool y
-	# omit prompt to signify a "hidden" option
 	help
 	  This processor enables the watchdog timer with a short
 	  window for configuration upon reset. Therefore, this
@@ -90,7 +87,7 @@ config WDOG_INIT
 	  handling.
 
 config KINETIS_KE1XF_ENABLE_CODE_CACHE
-        bool "Enable the code cache"
-        default y
+	bool "Enable the code cache"
+	default y
 
 endif # SOC_SERIES_KINETIS_KE1XF

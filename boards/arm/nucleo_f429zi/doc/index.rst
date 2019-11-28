@@ -187,8 +187,8 @@ Flash partitions for MCUBoot bootloader
 
 The on-board STM32F429ZI MCU has 2MBs of internal flash memory. To use `MCUboot`_,
 define a :ref:`Zephyr partition table <flash_partitions>` for the flash memory in
-its device tree file ``nucleo_f429zi.dts``. As a reference, a partition table for
-MCUBoot is already defined in the device tree file, with these settings:
+its devicetree file ``nucleo_f429zi.dts``. As a reference, a partition table for
+MCUBoot is already defined in the devicetree file, with these settings:
 
 - `MCUBoot`_ bootloader partition takes 64K bytes.
 - Zephyr settings partition takes 64K bytes.

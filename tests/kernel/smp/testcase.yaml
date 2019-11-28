@@ -1,3 +1,3 @@
 tests:
-  kernel.multiprocessing:
-    platform_whitelist: esp32 qemu_x86_64
+  kernel.multiprocessing.smp:
+    filter: (CONFIG_MP_NUM_CPUS > 1)

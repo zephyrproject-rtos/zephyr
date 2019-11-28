@@ -1,0 +1,22 @@
+# Copyright (c) 2017 I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for I2C controllers
+
+include: base.yaml
+
+child-bus: i2c
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 0
+    clock-frequency :
+      type: int
+      required: false
+      description: Initial clock frequency in Hz
+    label:
+      required: true

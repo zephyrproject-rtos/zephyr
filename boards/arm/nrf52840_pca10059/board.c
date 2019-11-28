@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <nrf_power.h>
+#include <hal/nrf_power.h>
 
 static int board_nrf52840_pca10059_init(struct device *dev)
 {
@@ -16,7 +16,8 @@ static int board_nrf52840_pca10059_init(struct device *dev)
 	 * default and that is not enough to turn the green and blue LEDs on.
 	 * Increase GPIO voltage to 3.0 volts.
 	 */
-	if ((nrf_power_mainregstatus_get() == NRF_POWER_MAINREGSTATUS_HIGH) &&
+	if ((nrf_power_mainregstatus_get(NRF_POWER) ==
+	     NRF_POWER_MAINREGSTATUS_HIGH) &&
 	    ((NRF_UICR->REGOUT0 & UICR_REGOUT0_VOUT_Msk) ==
 	     (UICR_REGOUT0_VOUT_DEFAULT << UICR_REGOUT0_VOUT_Pos))) {
 

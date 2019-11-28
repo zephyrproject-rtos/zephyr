@@ -14,10 +14,6 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* entering this macro, current is in r2 */
@@ -44,13 +40,20 @@ extern "C" {
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r13, [_ARC_V2_SEC_U_SP]
-	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	st_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	lr r13, [_ARC_V2_SEC_K_SP]
-	st r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+	st_s r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
 #else
 	lr r13, [_ARC_V2_USER_SP]
-	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	st_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	lr r13, [_ARC_V2_KERNEL_SP]
+	st_s r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
+#else
+	lr r13, [_ARC_V2_USER_SP]
+	st_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 #endif
 #endif
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
@@ -61,7 +64,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_FP_SHARING
-	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
+	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 1f
 	lr r13, [_ARC_V2_FPU_STATUS]
@@ -97,7 +100,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_FP_SHARING
-	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
+	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 2f
 
@@ -121,10 +124,17 @@ extern "C" {
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
-	ld r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	ld_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	sr r13, [_ARC_V2_SEC_U_SP]
-	ld r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+	ld_s r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
 	sr r13, [_ARC_V2_SEC_K_SP]
+#else
+	ld_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	sr r13, [_ARC_V2_USER_SP]
+	ld_s r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+	sr r13, [_ARC_V2_KERNEL_SP]
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
 #else
 	ld_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	sr r13, [_ARC_V2_USER_SP]
@@ -248,7 +258,7 @@ extern "C" {
 	 * The pc and status32 values will still be on the stack. We cannot
 	 * pop them yet because the callers of _pop_irq_stack_frame must reload
 	 * status32 differently depending on the execution context they are
-	 * running in (z_arch_switch(), firq or exception).
+	 * running in (arch_switch(), firq or exception).
 	 */
 	add_s sp, sp, ___isf_t_SIZEOF
 
@@ -259,7 +269,7 @@ extern "C" {
  * _kernel.current. r3 is a scratch reg.
  */
 .macro _load_stack_check_regs
-#ifdef CONFIG_ARC_HAS_SECURE
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
 	ld r3, [r2, _thread_offset_to_k_stack_base]
 	sr r3, [_ARC_V2_S_KSTACK_BASE]
 	ld r3, [r2, _thread_offset_to_k_stack_top]
@@ -281,16 +291,59 @@ extern "C" {
 	ld r3, [r2, _thread_offset_to_u_stack_top]
 	sr r3, [_ARC_V2_USTACK_TOP]
 #endif
-#endif /* CONFIG_ARC_HAS_SECURE */
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
 .endm
 
+/* check and increase the interrupt nest counter
+ * after increase, check whether nest counter == 1
+ * the result will be EQ bit of status32
+ */
+.macro _check_and_inc_int_nest_counter reg1 reg2
+#ifdef CONFIG_SMP
+	_get_cpu_id \reg1
+	ld.as \reg1, [@_curr_cpu, \reg1]
+	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	mov \reg1, _kernel
+	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	add \reg2, \reg2, 1
+#ifdef CONFIG_SMP
+	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	cmp \reg2, 1
+.endm
+
+/* decrease interrupt nest counter */
+.macro _dec_int_nest_counter reg1 reg2
+#ifdef CONFIG_SMP
+	_get_cpu_id \reg1
+	ld.as \reg1, [@_curr_cpu, \reg1]
+	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	mov \reg1, _kernel
+	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	sub \reg2, \reg2, 1
+#ifdef CONFIG_SMP
+	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+.endm
 
 /* If multi bits in IRQ_ACT are set, i.e. last bit != fist bit, it's
  * in nest interrupt. The result will be EQ bit of status32
  */
 .macro _check_nest_int_by_irq_act  reg1, reg2
 	lr \reg1, [_ARC_V2_AUX_IRQ_ACT]
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	and \reg1, \reg1, ((1 << ARC_N_IRQ_START_LEVEL) - 1)
+#else
 	and \reg1, \reg1, 0xffff
+#endif
 	ffs \reg2, \reg1
 	fls \reg1, \reg1
 	cmp \reg1, \reg2
@@ -304,17 +357,26 @@ extern "C" {
 .macro _get_curr_cpu_irq_stack irq_sp
 #ifdef CONFIG_SMP
 	_get_cpu_id \irq_sp
-	ld.as \irq_sp, [@_curr_irq_stack, \irq_sp]
+	ld.as \irq_sp, [@_curr_cpu, \irq_sp]
+	ld \irq_sp, [\irq_sp, ___cpu_t_irq_stack_OFFSET]
 #else
 	mov \irq_sp, _kernel
 	ld \irq_sp, [\irq_sp, _kernel_offset_to_irq_stack]
 #endif
 .endm
 
-#endif /* _ASMLANGUAGE */
+/* macro to push aux reg through reg */
+.macro PUSHAX reg aux
+	lr \reg, [\aux]
+	st.a \reg, [sp, -4]
+.endm
 
-#ifdef __cplusplus
-}
-#endif
+/* macro to pop aux reg through reg */
+.macro POPAX reg aux
+	ld.ab \reg, [sp, 4]
+	sr \reg, [\aux]
+.endm
+
+#endif /* _ASMLANGUAGE */
 
 #endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */

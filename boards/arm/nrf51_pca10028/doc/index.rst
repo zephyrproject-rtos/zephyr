@@ -27,10 +27,10 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
      :align: center
      :alt: nRF51 PCA10028 DK
 
-     nRF51 PCA10028 DK (Credit: Nordic Semi)
+     nRF51 PCA10028 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF51 DK website`_. The `Nordic Semiconductor Documentation library`_
+`nRF51 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -75,7 +75,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF51 DK website`_ and `Nordic Semiconductor Documentation library`_
+See `nRF51 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF51 Development Kit board hardware features.
 
 Connections and IOs
@@ -156,5 +156,4 @@ References
 .. target-notes::
 
 .. _nRF51 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF51-DK
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
-
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

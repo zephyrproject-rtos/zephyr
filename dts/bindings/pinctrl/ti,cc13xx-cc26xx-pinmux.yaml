@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: TI SimpleLink CC13xx / CC26xx Pinmux
 
-description: >
+description: |
     This is a representation of the TI SimpleLink CC13xx / CC26xx pinmux node
 
-inherits:
-    !include base.yaml
+compatible: "ti,cc13xx-cc26xx-pinmux"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-pinmux"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

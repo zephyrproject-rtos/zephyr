@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2018 Prevas A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_k2x.dtsi>
+
+/ {
+	model = "NXP Freedom MK22F board";
+	compatible = "nxp,mk22f12", "nxp,k22f", "nxp,k2x";
+
+	aliases {
+		adc-0 = &adc0;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
+		uart-0 = &uart0;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		pinmux-d = &pinmux_d;
+		pinmux-e = &pinmux_e;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		gpio-d = &gpiod;
+		gpio-e = &gpioe;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_3;
+		sw1 = &user_button_2;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioa 1 0>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpioa 2 0>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpiod 5 0>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpioc 1 GPIO_INT_ACTIVE_LOW>;
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpiob 17 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 0 0>,	/* A0 */
+			   <1 0 &gpiob 1 0>,	/* A1 */
+			   <2 0 &gpioc 1 0>,	/* A2 */
+			   <3 0 &gpioc 2 0>,	/* A3 */
+			   <4 0 &gpiob 3 0>,	/* A4 */
+			   <5 0 &gpiob 2 0>,	/* A5 */
+			   <6 0 &gpiod 2 0>,	/* D0 */
+			   <7 0 &gpiod 3 0>,	/* D1 */
+			   <8 0 &gpiob 16 0>,	/* D2 */
+			   <9 0 &gpioa 2 0>,	/* D3 */
+			   <10 0 &gpioa 4 0>,	/* D4 */
+			   <11 0 &gpiob 18 0>,	/* D5 */
+			   <12 0 &gpioc 3 0>,	/* D6 */
+			   <13 0 &gpioc 6 0>,	/* D7 */
+			   <14 0 &gpiob 19 0>,	/* D8 */
+			   <15 0 &gpioa 1 0>,	/* D9 */
+			   <16 0 &gpiod 4 0>,	/* D10 */
+			   <17 0 &gpiod 6 0>,	/* D11 */
+			   <18 0 &gpiod 7 0>,	/* D12 */
+			   <19 0 &gpiod 5 0>,	/* D13 */
+			   <20 0 &gpioe 0 0>,	/* D14 */
+			   <21 0 &gpioe 1 0>;	/* D15 */
+	};
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	fxos8700@1d {
+		compatible = "nxp,fxos8700";
+		reg = <0x1d>;
+		label = "FXOS8700";
+		int1-gpios = <&gpiod 0 0>;
+		int2-gpios = <&gpiod 1 0>;
+	};
+};
+
+arduino_spi: &spi0 {
+	status = "okay";
+};
+
+&pwm3 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&usbd {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00020000>;
+		};
+		slot1_partition: partition@30000 {
+			label = "image-1";
+			reg = <0x00030000 0x00020000>;
+		};
+		scratch_partition: partition@50000 {
+			label = "image-scratch";
+			reg = <0x00050000 0x00010000>;
+		};
+
+		/*
+		 * The flash starting at 0x00060000 and ending at
+		 * 0x0007ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		storage_partition: partition@60000 {
+			label = "storage";
+			reg = <0x00060000 0x00020000>;
+		};
+
+	};
+};

@@ -40,7 +40,8 @@
 #include "ull_conn_internal.h"
 #include "ull_master_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull_master
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_master
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -154,6 +155,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
 	/* FIXME: END: Move to ULL? */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
+#endif /* CONFIG_BT_CTLR_CONN_META */
 
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;
@@ -180,10 +184,14 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
+	conn->master.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
-	conn->llcp_features = LL_FEAT;
+	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
+	conn->llcp_feature.features = LL_FEAT;
+	conn->llcp_version.req = conn->llcp_version.ack = 0;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.reason_peer = 0U;
 	/* NOTE: use allocated link for generating dedicated
@@ -206,7 +214,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn->llcp_length.req = conn->llcp_length.ack = 0U;
-	conn->llcp_length.pause_tx = 0U;
+	conn->llcp_length.cache.tx_octets = 0U;
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -341,7 +349,9 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_enc.req != conn->llcp_enc.ack) {
+	if ((conn->llcp_enc.req != conn->llcp_enc.ack) ||
+	    ((conn->llcp_req != conn->llcp_ack) &&
+	     (conn->llcp_type == LLCP_ENCRYPTION))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -353,7 +363,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
-		if ((conn->lll.enc_rx == 0) && (conn->lll.enc_tx == 0)) {
+		if (!conn->lll.enc_rx && !conn->lll.enc_tx) {
 			struct pdu_data_llctrl_enc_req *enc_req;
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -369,7 +379,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			enc_req->ediv[1] = ediv[1];
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
-		} else if ((conn->lll.enc_rx != 0) && (conn->lll.enc_tx != 0)) {
+		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
 
@@ -408,7 +418,6 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	u32_t conn_offset_us, conn_interval_us;
 	u8_t ticker_id_scan, ticker_id_conn;
 	u32_t ticks_slot_overhead;
-	u32_t mayfly_was_enabled;
 	u32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
@@ -538,12 +547,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= ftr->us_radio_rdy;
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
 	 * being stopped if no tickers active.
 	 */
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	mayfly_was_enabled = mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
-					       TICKER_USER_ID_ULL_LOW);
 	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
 #endif
 
@@ -580,13 +587,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		  (ticker_status == TICKER_STATUS_BUSY));
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	/* enable ticker job, if disabled in this function */
-	if (mayfly_was_enabled) {
-		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW,
-			      1);
-	}
-#else
-	ARG_UNUSED(mayfly_was_enabled);
+	/* enable ticker job, irrespective of disabled in this function so
+	 * first connection event can be scheduled as soon as possible.
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1);
 #endif
 }
 

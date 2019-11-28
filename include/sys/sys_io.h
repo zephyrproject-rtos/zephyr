@@ -9,12 +9,12 @@
 #ifndef ZEPHYR_INCLUDE_SYS_SYS_IO_H_
 #define ZEPHYR_INCLUDE_SYS_SYS_IO_H_
 
+#include <zephyr/types.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/types.h>
-#include <stddef.h>
 
 typedef u32_t io_port_t;
 typedef u32_t mm_reg_t;

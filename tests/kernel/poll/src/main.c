@@ -23,11 +23,11 @@ void test_main(void)
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(poll_api,
-			 ztest_user_unit_test(test_poll_no_wait),
-			 ztest_unit_test(test_poll_wait),
-			 ztest_unit_test(test_poll_cancel_main_low_prio),
-			 ztest_unit_test(test_poll_cancel_main_high_prio),
+			 ztest_1cpu_user_unit_test(test_poll_no_wait),
+			 ztest_1cpu_unit_test(test_poll_wait),
+			 ztest_1cpu_unit_test(test_poll_cancel_main_low_prio),
+			 ztest_1cpu_unit_test(test_poll_cancel_main_high_prio),
 			 ztest_unit_test(test_poll_multi),
-			 ztest_unit_test(test_poll_threadstate));
+			 ztest_1cpu_unit_test(test_poll_threadstate));
 	ztest_run_test_suite(poll_api);
 }

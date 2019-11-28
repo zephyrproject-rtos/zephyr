@@ -12,9 +12,8 @@
 
 #include "adxl362.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(ADXL362);
+LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl362_thread_cb(void *arg)
 {
@@ -160,7 +159,7 @@ int adxl362_init_interrupt(struct device *dev)
 			CONFIG_ADXL362_THREAD_STACK_SIZE,
 			(k_thread_entry_t)adxl362_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl362_work_cb;
 	drv_data->dev = dev;

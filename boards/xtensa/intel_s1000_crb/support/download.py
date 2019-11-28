@@ -36,36 +36,36 @@ def calc_firmware_sha(file):
     Caculate SHA256 hash of the padded contents
     """
     with open(file, 'rb') as firmware:
-       firmware.seek(0, 2)
-       size = firmware.tell()
+        firmware.seek(0, 2)
+        size = firmware.tell()
 
-       # pad firmware to round upto 64 byte boundary
-       padding = (size % 64)
-       if padding != 0:
-           padding = (64 - padding)
-       size += padding
+        # pad firmware to round upto 64 byte boundary
+        padding = (size % 64)
+        if padding != 0:
+            padding = (64 - padding)
+        size += padding
 
-       firmware.seek(0, 0)
-       sha256 = hashlib.sha256()
-       for block in iter(lambda: firmware.read(4096), b""):
-           sha256.update(block)
-       firmware.close()
+        firmware.seek(0, 0)
+        sha256 = hashlib.sha256()
+        for block in iter(lambda: firmware.read(4096), b""):
+            sha256.update(block)
+        firmware.close()
 
-       if padding != 0:
-           sha256.update(b'\0' * padding)
-           print('Firmware (%s): %d bytes, will be padded to %d bytes.'
-                   % (os.path.basename(file), size - padding, size))
-       else:
-           print('Firmware file size: %d bytes.' % size)
-       print('SHA: ' + sha256.hexdigest())
-       return (size, padding, sha256.digest())
+        if padding != 0:
+            sha256.update(b'\0' * padding)
+            print('Firmware (%s): %d bytes, will be padded to %d bytes.'
+                    % (os.path.basename(file), size - padding, size))
+        else:
+            print('Firmware file size: %d bytes.' % size)
+        print('SHA: ' + sha256.hexdigest())
+        return (size, padding, sha256.digest())
 
 def setup_device():
     """
     Configure SPI master device
     Reset target and send initialization commands
     """
-    sue_creek.configure_device(spi_mode = 3, order = 'msb', bits = 8)
+    sue_creek.configure_device(spi_mode=3, order='msb', bits=8)
     sue_creek.reset_device()
 
     command = msg.create_memwrite_cmd((0x71d14, 0, 0x71d24, 0,
@@ -112,7 +112,7 @@ def execute_firmware():
     msg.print_response(response)
 
     command = msg.create_execfw_cmd()
-    response = sue_creek.send_receive(command, wait = False)
+    response = sue_creek.send_receive(command, wait=False)
     msg.print_response(response)
 
 def main():

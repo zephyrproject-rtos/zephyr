@@ -102,8 +102,8 @@ void wakeup_src_thread(int id)
 	for (int i = 0; i < NUM_THREADS; i++) {
 		k_tid_t th = &worker_threads[i];
 
-		zassert_true(th->base.thread_state & _THREAD_PENDING,
-			     "worker thread %d not pending?", i);
+		zassert_equal(strcmp(k_thread_state_str(th), "pending"),
+				0, "worker thread %d not pending?", i);
 	}
 
 	/* Wake the src worker up */
@@ -291,7 +291,7 @@ void worker(void *p1, void *p2, void *p3)
 		if (do_sleep) {
 			u64_t start = k_uptime_get();
 
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 
 			zassert_true(k_uptime_get() - start > 0,
 				     "didn't sleep");
@@ -330,12 +330,12 @@ void test_preempt(void)
 		k_thread_create(&worker_threads[i],
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
-				priority, 0, 0);
+				priority, 0, K_NO_WAIT);
 	}
 
 	k_thread_create(&manager_thread, manager_stack, STACK_SIZE,
 			manager, NULL, NULL, NULL,
-			K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	/* We don't control the priority of this thread so can't make
 	 * it part of the test.  Just get out of the way until the

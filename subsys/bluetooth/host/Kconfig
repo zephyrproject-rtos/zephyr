@@ -1,16 +1,13 @@
-# Kconfig - Bluetooth LE stack configuration options
+# Bluetooth LE stack configuration options
 
-#
 # Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 comment "Host Stack Configuration"
 
 config BT_HCI_HOST
-	# Virtual/hidden option to make the conditions more intuitive
+	# Hidden option to make the conditions more intuitive
 	bool
 	default y
 	depends on !BT_HCI_RAW
@@ -53,7 +50,7 @@ config BT_DISCARDABLE_BUF_COUNT
 	range 1 255
 	default 20 if BT_MESH
 	default 3
-	depends on BT_H4 || BT_CTLR
+	depends on BT_H4 || BT_RPMSG || BT_CTLR
 	help
 	  Number of buffers in a separate buffer pool for events which
 	  the HCI driver considers discardable. Examples of such events
@@ -63,9 +60,10 @@ config BT_DISCARDABLE_BUF_COUNT
 	  block and may even eliminate deadlocks in some cases.
 
 config BT_HCI_TX_STACK_SIZE
-	# NOTE: This value is derived from other symbols and should not be
-	# user-configurable. Do not give it a prompt.
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
 	int
+	prompt "HCI Tx thread stack size" if BT_HCI_TX_STACK_SIZE_WITH_PROMPT
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
@@ -79,7 +77,21 @@ config BT_HCI_TX_STACK_SIZE
 	# the worst-case stack size if an out-of-tree controller is used.
 	default 1024
 	help
-	  Stack size needed for executing bt_send with specified driver
+	  Stack size needed for executing bt_send with specified driver.
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_HCI_TX_STACK_SIZE_WITH_PROMPT
+	bool "Override HCI Tx thread stack size"
+
+config BT_HCI_ECC_STACK_SIZE
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
+	int "HCI ECC thread stack size"
+	default 1100
+	help
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -149,7 +161,7 @@ config BT_HOST_CRYPTO
 
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
-	depends on SETTINGS && PRINTK
+	depends on SETTINGS
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  When selected, the Bluetooth stack will take care of storing
@@ -165,6 +177,15 @@ config BT_SETTINGS
 	  instead of each subsystem doing it independently.
 
 if BT_SETTINGS
+config BT_SETTINGS_CCC_LAZY_LOADING
+	bool "Load CCC values from settings when peer connects"
+	default y
+	help
+	  Load Client Configuration Characteristic setting right after a bonded
+	  device connects.
+	  Disabling this option will increase memory usage as CCC values for all
+	  bonded devices will be loaded when calling settings_load.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	help
@@ -175,7 +196,36 @@ config BT_SETTINGS_CCC_STORE_ON_WRITE
 	  Choosing this option is safer for battery-powered devices or devices
 	  that expect to be reset suddenly. However, it requires additional
 	  workqueue stack space.
+
+config BT_SETTINGS_USE_PRINTK
+	bool "Use snprintk to encode Bluetooth settings key strings"
+	depends on SETTINGS && PRINTK
+	default y
+	help
+	  When selected, Bluetooth settings will use snprintk to encode
+	  key strings.
+	  When not selected, Bluetooth settings will use a faster builtin
+	  function to encode the key string. The drawback is that if
+	  printk is enabled then the program memory footprint will be larger.
 endif # BT_SETTINGS
+
+config BT_WHITELIST
+	bool "Enable whitelist support"
+	help
+	  This option enables the whitelist API. This takes advantage of the
+	  whitelisting feature of a BLE controller.
+	  The whitelist is a global list and the same whitelist is used
+	  by both scanner and advertiser. The whitelist cannot be modified while
+	  it is in use.
+
+	  An Advertiser can whitelist which peers can connect or request scan
+	  response data.
+	  A scanner can whitelist advertiser for which it will generate
+	  advertising reports.
+	  Connections can be established automatically for whitelisted peers.
+
+	  This options deprecates the bt_le_set_auto_conn API in favor of the
+	  bt_conn_create_aute_le API.
 
 if BT_CONN
 
@@ -190,13 +240,13 @@ config BT_ACL_RX_COUNT
 endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers"
-	default BT_CTLR_TX_BUFFERS if BT_CTLR
-	default 7
-	range 1 128
+	int "Maximum number of pending TX buffers with a callback"
+	default BT_L2CAP_TX_BUF_COUNT
+	range BT_L2CAP_TX_BUF_COUNT 255
 	help
-	  Maximum number of pending TX buffers that have not yet
-	  been acknowledged by the controller.
+	  Maximum number of pending TX buffers that have an associated
+	  callback. Normally this can be left to the default value, which
+	  is equal to the number of TX buffers in the stack-internal pool.
 
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
@@ -261,6 +311,17 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	bool "Allow unauthenticated pairing for paired device"
+	help
+	  This option allows all unauthenticated pairing attempts made by the
+	  peer where an unauthenticated bond already exists.
+	  This would enable cases where an attacker could copy the peer device
+	  address to connect and start an unauthenticated pairing procedure
+	  to replace the existing bond. When this option is disabled in order
+	  to create a new bond the old bond has to be explicitly deleted with
+	  bt_unpair.
+
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"
 	help
@@ -287,6 +348,13 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_STORE_DEBUG_KEYS
+	bool "Store Debug Mode bonds"
+	help
+	  This option enables support for storing bonds where either of devices
+	  has the Security Manager in Debug mode. This option should
+	  only be enabled for debugging and should never be used in production.
+
 config BT_SMP_ENFORCE_MITM
 	bool "Enforce MITM protection"
 	default y
@@ -304,6 +372,21 @@ config BT_OOB_DATA_FIXED
 	  value. This option should only be enabled for debugging and should
 	  never be used in production.
 
+config BT_KEYS_OVERWRITE_OLDEST
+	bool "Overwrite oldest keys with new ones if key storage is full"
+	help
+	  With this option enabled, if a pairing attempt occurs and the key storage
+	  is full, then the oldest keys in storage will be removed to free space
+	  for the new pairing keys.
+
+config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
+	bool "Store aging counter every time a successful paring occurs"
+	depends on BT_SETTINGS && BT_KEYS_OVERWRITE_OLDEST
+	help
+	  With this option enabled, aging counter will be stored in settings every
+	  time a successful pairing occurs. This increases flash wear out but offers
+	  a more correct finding of the oldest unused pairing info.
+
 endif # BT_SMP
 
 source "subsys/bluetooth/host/Kconfig.l2cap"
@@ -319,9 +402,20 @@ config BT_MAX_PAIRED
 	  default) number is 1.
 
 config BT_CREATE_CONN_TIMEOUT
-        int "Timeout for pending LE Create Connection command in seconds"
-        default 3
-        range 1 65535
+	int "Timeout for pending LE Create Connection command in seconds"
+	default 3
+	range 1 65535
+
+config BT_CONN_PARAM_UPDATE_TIMEOUT
+	int "Peripheral connection parameter update timeout in milliseconds"
+	default 5000
+	range 1 65535
+
+	help
+	  The value is a timeout used by peripheral device to wait until it
+	  starts the connection parameters update procedure to change default
+	  connection parameters. The default value is set to 5s, to comply
+	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
 
 endif # BT_CONN
 

@@ -18,11 +18,11 @@
  * as a part of ongoing development.
  */
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/types.h>
 
 /** @brief Read battery level value.
  *

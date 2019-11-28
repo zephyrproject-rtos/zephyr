@@ -1,28 +1,26 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Kinetis FTM
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis FTM
 
-inherits:
-    !include pwm.yaml
+compatible: "nxp,kinetis-ftm"
+
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-ftm"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
-"#cells":
+    "#pwm-cells":
+      const: 2
+
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

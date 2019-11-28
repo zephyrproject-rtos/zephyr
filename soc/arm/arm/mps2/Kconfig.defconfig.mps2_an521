@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018-2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MPS2_AN521
 
@@ -10,7 +7,6 @@ config SOC
 	default "mps2_an521"
 
 config NUM_IRQS
-	int
 	default 96
 
 endif

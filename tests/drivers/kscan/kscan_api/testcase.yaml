@@ -1,0 +1,10 @@
+tests:
+  peripheral.kscan:
+    tags: drivers kscan userspace
+    depends_on: kscan
+    platform_exclude: mec15xxevb_assy6853
+  peripheral.kscan.mec15xxevb_assy6853:
+    depends_on: kscan
+    tags: drivers kscan
+    extra_args: CONF_FILE="mec15xxevb_assy6853.conf"
+    platform_whitelist: mec15xxevb_assy6853

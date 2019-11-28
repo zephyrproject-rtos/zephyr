@@ -456,15 +456,16 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 	}
 }
 
-#ifdef CONFIG_ATOMIC_OPERATIONS_C
-#include <syscalls/atomic.h>
-#endif
 /**
  * @}
  */
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef CONFIG_ATOMIC_OPERATIONS_C
+#include <syscalls/atomic.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_ATOMIC_H_ */

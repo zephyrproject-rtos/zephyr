@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   style="background-color: rgb(255, 255, 255);"
+   version="1.1"
+   width="481px"
+   height="171px"
+   viewBox="-0.5 -0.5 481 171"
+   content="&lt;mxfile host=&quot;www.draw.io&quot; modified=&quot;2019-10-03T21:13:02.112Z&quot; agent=&quot;Mozilla/5.0 (X11; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0&quot; etag=&quot;nJzlZGwzNDb1cRSQPZak&quot; version=&quot;12.0.2&quot; type=&quot;google&quot; pages=&quot;1&quot;&gt;&lt;diagram id=&quot;lJw3w9u4R4x5o196SwGf&quot; name=&quot;Page-1&quot;&gt;zVjbcpswEP0aPyZjwPjyWDtu2pl0JjOeaZq+ZBRYgxIhUSEM5OsrmcWAcWy3TUpebPZoJa3O3gQDZxHl15LE4TfhAxvYQz8fOFcD255Ylv41QIGAPS6BQFK/hKwaWNEXQHCIaEp9SFqKSgimaNwGPcE5eKqFESlF1lZbC9beNSYBdICVR1gXvaO+ChG1hsN64AvQIMStpy4ORKRSRiAJiS+yBuQsB85CCqHKpyhfADPcVbyU8z6/MrozTAJX50yIbpzV893F7Ov6VzB0L57Sl+/5Ba6yISzFA1/BhnqgJICxWaTSA7RfFRUpUqTcB7OuNXDmWUgVrGLimdFMR4HGQhUxHMYdQCrIXzXd2hGiAwlEpA0otApOqCgs2mLWcEiFhQ1fOIgRjIFgt3BNk35Apv6AtUmHEfB11KAopApFIDhhyxqd15wNtVTr3AgRI1NPoFSBKUBSJdo8Qk7Vj8bzvVnq0kXpKseVt0KBQmmnMe448ztPv35mG5OPyADUEb3xYU9KYETRTduON3eM3QnneUp1xuvzFYmCqPdItmbtUHbdnkPZOV4AHin3KQ+S3onbKwHTvkvAqMNbh6JESfG86xpWmxLdDWKjF+WB6ZuXayYyLyRSXRLOhdK5IviD5mNOGA24VmSw1meaM/II7FYk1ChoWJZnnceCcgVyudF8JrgH9kTyuLXI1AOfSg2UMzNI1BsF9ajtnFHXOe4B34zfyzfuad8A9z+Z24GWPEaShHqHIvZ04exycuLQFXZ2PcQdbo1/G5RP2pRP9rgsyzlOal4K9teZHV+nLPeddbZu2R367z1V3Q776aR197xvjBzupNrtsmhMMuJ9c6yetpXeoQOPz+zA03/swIcjZbRXgS3r/4bKuJPU18BBEgWmvS+2aUZ8kL13Kmf8wVr89HQ57JsjyzqTpIrMNydp9gFJ2qvxlt03SVXKN1j6CXFYSLMZN3lI4phRb3t7abw+6rdz3/ytKYP+r5LOdI9X5/141WL9hl+WwvozibP8DQ==&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg66"
+   sodipodi:docname="zephyr_dt_build_flow.svg"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14"
+   inkscape:export-filename="/home/mbolivar/zp/zephyr/doc/guides/dts/zephyr_dt_build_flow.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <metadata
+     id="metadata70">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2656"
+     inkscape:window-height="1657"
+     id="namedview68"
+     showgrid="false"
+     inkscape:zoom="1.4636175"
+     inkscape:cx="24.347153"
+     inkscape:cy="72.312542"
+     inkscape:window-x="879"
+     inkscape:window-y="211"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g64" />
+  <defs
+     id="defs2" />
+  <g
+     id="g64">
+    <rect
+       x="0"
+       y="0"
+       width="120"
+       height="30"
+       rx="4.5"
+       ry="4.5"
+       fill="#ffffff"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect4" />
+    <g
+       transform="translate(12.5,8.5)"
+       id="g10">
+      <switch
+         id="switch8">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="95"
+           height="12"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 96px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Devicetree source</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="48"
+           y="12"
+           fill="#000000"
+           text-anchor="middle"
+           font-size="12px"
+           font-family="Helvetica"
+           id="text6">Devicetree source</text>
+      </switch>
+    </g>
+    <path
+       d="M 290 50 L 333.63 50"
+       fill="none"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path12" />
+    <path
+       d="M 338.88 50 L 331.88 53.5 L 333.63 50 L 331.88 46.5 Z"
+       fill="#000000"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path14" />
+    <rect
+       x="170"
+       y="35"
+       width="120"
+       height="30"
+       rx="4.5"
+       ry="4.5"
+       fill="#ffffff"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect16" />
+    <g
+       transform="translate(196.5,43.5)"
+       id="g22">
+      <switch
+         id="switch20">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="67"
+           height="12"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 68px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Build system</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="34"
+           y="12"
+           fill="#000000"
+           text-anchor="middle"
+           font-size="12px"
+           font-family="Helvetica"
+           id="text18">Build system</text>
+      </switch>
+    </g>
+    <path
+       d="M 170 20 L 145 20 L 145 80 L 170 80"
+       fill="none"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       transform="rotate(180,145,50)"
+       pointer-events="none"
+       id="path32" />
+    <path
+       d="M 120 50 L 145 50"
+       fill="none"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       transform="rotate(180,145,50)"
+       pointer-events="none"
+       id="path34" />
+    <path
+       d="M 150 50 L 163.63 50"
+       fill="none"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path36" />
+    <path
+       d="M 168.88 50 L 161.88 53.5 L 163.63 50 L 161.88 46.5 Z"
+       fill="#000000"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path38" />
+    <path
+       d="M 400 65 L 400 88.63"
+       fill="none"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path40" />
+    <path
+       d="M 400 93.88 L 396.5 86.88 L 400 88.63 L 403.5 86.88 Z"
+       fill="#000000"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path42" />
+    <rect
+       x="340"
+       y="35"
+       width="120"
+       height="30"
+       rx="4.5"
+       ry="4.5"
+       fill="#ffffff"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect44" />
+    <g
+       transform="translate(345.5,43.5)"
+       id="g50">
+      <switch
+         id="switch48">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="108"
+           height="12"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 109px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Generated C header</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="54"
+           y="12"
+           fill="#000000"
+           text-anchor="middle"
+           font-size="12px"
+           font-family="Helvetica"
+           id="text46">Generated C header</text>
+      </switch>
+    </g>
+    <rect
+       x="330.03046"
+       y="95"
+       width="129.96954"
+       height="55"
+       rx="8.9354067"
+       ry="8.25"
+       pointer-events="none"
+       id="rect52"
+       style="fill:#ffffff;stroke:#000000;stroke-width:1.04071105" />
+    <rect
+       x="340.01202"
+       y="105"
+       width="129.98798"
+       height="55"
+       rx="8.9366732"
+       ry="8.25"
+       pointer-events="none"
+       id="rect54"
+       style="fill:#ffffff;stroke:#000000;stroke-width:1.04078484" />
+    <rect
+       x="350.11337"
+       y="115"
+       width="129.88664"
+       height="55"
+       rx="8.9297066"
+       ry="8.25"
+       pointer-events="none"
+       id="rect56"
+       style="fill:#ffffff;stroke:#000000;stroke-width:1.04037905" />
+    <g
+       transform="translate(356.03409,113.30113)"
+       id="g62">
+      <switch
+         id="switch60"
+         transform="translate(0.68323861)">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="116"
+           height="41"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 116px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Zephyr and application source code files</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="58"
+           y="27"
+           font-size="12px"
+           id="text58"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000">
+          <tspan
+             sodipodi:role="line"
+             id="tspan72"
+             x="58"
+             y="27">Zephyr and application</tspan>
+          <tspan
+             sodipodi:role="line"
+             id="tspan74"
+             x="58"
+             y="42">source code files</tspan>
+        </text>
+      </switch>
+    </g>
+    <rect
+       style="fill:#ffffff;stroke:#000000"
+       x="0"
+       y="50"
+       width="120"
+       height="30"
+       rx="4.5"
+       ry="4.5"
+       pointer-events="none"
+       id="rect24-9" />
+    <rect
+       style="fill:#ffffff;stroke:#000000"
+       x="6.4573889"
+       y="58.480114"
+       width="120"
+       height="30"
+       rx="4.5"
+       ry="4.5"
+       pointer-events="none"
+       id="rect24-1" />
+    <g
+       id="g101"
+       transform="translate(15.03125,6.8323869)">
+      <rect
+         id="rect24"
+         pointer-events="none"
+         ry="4.5"
+         rx="4.5"
+         height="30"
+         width="120"
+         y="60"
+         x="0"
+         style="fill:#ffffff;stroke:#000000" />
+      <g
+         id="g30"
+         transform="translate(8.5,68.5)">
+        <switch
+           id="switch28">
+          <foreignObject
+             requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+             height="12"
+             width="103"
+             pointer-events="all"
+             style="overflow:visible;">
+            <xhtml:div
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 104px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+              <xhtml:div
+                 style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Devicetree bindings</xhtml:div>
+            </xhtml:div>
+          </foreignObject>
+          <text
+             id="text26"
+             font-size="12px"
+             y="12"
+             x="52"
+             style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000">Devicetree bindings</text>
+        </switch>
+      </g>
+    </g>
+  </g>
+</svg>

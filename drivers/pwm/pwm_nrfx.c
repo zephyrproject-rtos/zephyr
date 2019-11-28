@@ -31,73 +31,56 @@ struct pwm_nrfx_data {
 	u8_t  prescaler;
 };
 
-static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
-				      struct pwm_nrfx_data *data,
-				      u32_t pwm,
-				      u32_t period_cycles)
-{
-	NRF_PWM_Type *pwm_instance = config->pwm.p_registers;
 
-	if (!nrfx_pwm_is_stopped(&config->pwm)) {
-		/* Succeed if requested period matches already used period */
-		if (period_cycles == data->period_cycles) {
+static int pwm_period_check_and_set(const struct pwm_nrfx_config *config,
+				    struct pwm_nrfx_data *data,
+				    u32_t channel,
+				    u32_t period_cycles)
+{
+	u8_t i;
+	u8_t prescaler;
+	u32_t countertop;
+
+	/* If any other channel (other than the one being configured) is set up
+	 * with a non-zero pulse cycle, the period that is currently set cannot
+	 * be changed, as this would influence the output for this channel.
+	 */
+	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; ++i) {
+		if (i != channel) {
+			u16_t channel_pulse_cycle =
+				data->current[i]
+				& PWM_NRFX_CH_PULSE_CYCLES_MASK;
+			if (channel_pulse_cycle > 0) {
+				LOG_ERR("Incompatible period.");
+				return -EINVAL;
+			}
+		}
+	}
+
+	/* Try to find a prescaler that will allow setting the requested period
+	 * after prescaling as the countertop value for the PWM peripheral.
+	 */
+	prescaler = 0;
+	countertop = period_cycles;
+	do {
+		if (countertop <= PWM_COUNTERTOP_COUNTERTOP_Msk) {
+			data->period_cycles = period_cycles;
+			data->prescaler     = prescaler;
+			data->countertop    = (u16_t)countertop;
+
+			nrf_pwm_configure(config->pwm.p_registers,
+					  data->prescaler,
+					  config->initial_config.count_mode,
+					  data->countertop);
 			return 0;
 		}
 
-		/* Fail if requested period != already running period */
-		LOG_ERR("Fail:requested period cycles:%d, != used %d\n",
-			period_cycles, data->period_cycles);
-		return -EINVAL;
-	}
+		countertop >>= 1;
+		++prescaler;
+	} while (prescaler <= PWM_PRESCALER_PRESCALER_Msk);
 
-	/* Check if period_cycles is above COUNTERTOP MAX value, if so, we
-	 * have to see if we can change frequency to something that will fit
-	 */
-	if (period_cycles > PWM_COUNTERTOP_COUNTERTOP_Msk) {
-		/* See if there is a prescaler that will make it work: */
-		bool matching_prescaler_found = false;
-
-		/* Go through all available prescaler values on device (skip 0
-		 * here as it is used in the 'else' block).
-		 * nRF52832 has 0-7 (Div1 - Div128)
-		 */
-		for (u8_t prescaler = 1;
-		     prescaler <= PWM_PRESCALER_PRESCALER_Msk;
-		     prescaler++) {
-			u32_t new_countertop = period_cycles >> prescaler;
-
-			/* If we find value that fits, set it, continue */
-			if (new_countertop <= PWM_COUNTERTOP_COUNTERTOP_Msk) {
-				data->prescaler = prescaler;
-				data->countertop = new_countertop;
-				data->period_cycles = period_cycles;
-				matching_prescaler_found = true;
-				break;
-			}
-		}
-
-		/* Check if able to find matching prescaler and countertop */
-		if (matching_prescaler_found == false) {
-			LOG_ERR("Prescaler for period_cycles %d not found.\n",
-				period_cycles);
-			return -EINVAL;
-		}
-	} else {
-		/* If period_cycles fit the PWM counter without dividing
-		 * the PWM clock, use the zero prescaler.
-		 */
-		data->prescaler = 0U;
-		data->countertop = period_cycles;
-		data->period_cycles = period_cycles;
-	}
-
-	/* Write new PRESCALER and COUNTERTOP to PWM instance */
-	nrf_pwm_configure(pwm_instance,
-			  data->prescaler,
-			  config->initial_config.count_mode,
-			  data->countertop);
-
-	return 0;
+	LOG_ERR("Prescaler for period_cycles %u not found.", period_cycles);
+	return -EINVAL;
 }
 
 static u8_t pwm_channel_map(const uint8_t *output_pins, u32_t pwm)
@@ -116,17 +99,22 @@ static u8_t pwm_channel_map(const uint8_t *output_pins, u32_t pwm)
 	return NRF_PWM_CHANNEL_COUNT;
 }
 
-static bool any_channel_active(const struct pwm_nrfx_data *data)
+static bool pwm_channel_is_active(u8_t channel,
+				  const struct pwm_nrfx_data *data)
 {
-	u8_t channel;
+	u16_t pulse_cycle =
+		data->current[channel] & PWM_NRFX_CH_PULSE_CYCLES_MASK;
 
-	for (channel = 0U; channel < NRF_PWM_CHANNEL_COUNT; channel++) {
-		u16_t channel_pulse_cycle =
-			data->current[channel]
-			& PWM_NRFX_CH_PULSE_CYCLES_MASK;
+	return (pulse_cycle > 0 && pulse_cycle < data->countertop);
+}
 
-		if (channel_pulse_cycle > 0
-		    && channel_pulse_cycle < data->countertop) {
+static bool any_other_channel_is_active(u8_t channel,
+					const struct pwm_nrfx_data *data)
+{
+	u8_t i;
+
+	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; ++i) {
+		if (i != channel && pwm_channel_is_active(i, data)) {
 			return true;
 		}
 	}
@@ -145,7 +133,6 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	const struct pwm_nrfx_config *config = dev->config->config_info;
 	struct pwm_nrfx_data *data = dev->driver_data;
 	u8_t channel;
-	u32_t ret;
 
 	/* Check if PWM pin is one of the predefiend DTS config pins.
 	 * Return its array index (channel number),
@@ -158,32 +145,47 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 		return -EINVAL;
 	}
 
+	/* If this PWM is in center-aligned mode, pulse and period lengths
+	 * are effectively doubled by the up-down count, so halve them here
+	 * to compensate.
+	 */
+	if (config->initial_config.count_mode == NRF_PWM_MODE_UP_AND_DOWN) {
+		period_cycles /= 2;
+		pulse_cycles /= 2;
+	}
+
 	/* Check if period_cycle is either matching currently used, or
 	 * possible to use with our prescaler options.
 	 */
-	ret = pwm_period_check_and_set(config, data, pwm, period_cycles);
-	if (ret) {
-		LOG_ERR("Incompatible period %d", period_cycles);
-		return ret;
+	if (period_cycles != data->period_cycles) {
+		int ret = pwm_period_check_and_set(config, data, channel,
+						   period_cycles);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	/* Check if pulse is bigger than period, fail if so */
-	if (pulse_cycles > period_cycles) {
-		LOG_ERR("Invalid pulse_cycles %d, > period_cycles %d.",
-			pulse_cycles, period_cycles);
-		return -EINVAL;
-	}
+	/* Limit pulse cycles to period cycles (meaning 100% duty), bigger
+	 * values might not fit after prescaling into the 15-bit field that
+	 * is filled below.
+	 */
+	pulse_cycles = MIN(pulse_cycles, period_cycles);
 
 	/* Store new pulse value bit[14:0], and polarity bit[15] for channel. */
 	data->current[channel] = (
 		(data->current[channel] & PWM_NRFX_CH_POLARITY_MASK)
 		| (pulse_cycles >> data->prescaler));
 
-	/* If Channel is off/fully on (duty 0% or 100%), also set GPIO register
-	 * since this will the setting if we in the future disable the
-	 * peripheral when no channels are active.
+	LOG_DBG("pin %u, pulse %u, period %u, prescaler: %u.",
+		pwm, pulse_cycles, period_cycles, data->prescaler);
+
+	/* If this channel turns out to not need to be driven by the PWM
+	 * peripheral (it is off or fully on - duty 0% or 100%), set properly
+	 * the GPIO configuration for its output pin. This will provide
+	 * the correct output state for this channel when the PWM peripheral
+	 * is disabled after all channels appear to be inactive.
 	 */
-	if (pulse_cycles == 0U || pulse_cycles == period_cycles) {
+	if (!pwm_channel_is_active(channel, data)) {
 		/* If pulse 0% and pin not inverted, set LOW.
 		 * If pulse 100% and pin inverted, set LOW.
 		 * If pulse 0% and pin inverted, set HIGH.
@@ -205,23 +207,22 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 		} else {
 			nrf_gpio_pin_set(pwm);
 		}
-	}
 
-	/* Check if all channels are off (duty 0% or 100%) */
-	if (!any_channel_active(data)) {
-		nrfx_pwm_stop(&config->pwm, false);
+		if (!any_other_channel_is_active(channel, data)) {
+			nrfx_pwm_stop(&config->pwm, false);
+		}
 	} else {
-		/* A PWM Channel is active: Start sequence. */
-
 		/* Since we are playing the sequence in a loop, the
 		 * sequence only has to be started when its not already
 		 * playing. The new channel values will be used
 		 * immediately when they are written into the seq array.
 		 */
-		nrfx_pwm_simple_playback(&config->pwm,
-			 &config->seq,
-			 1,
-			 NRFX_PWM_FLAG_LOOP);
+		if (nrfx_pwm_is_stopped(&config->pwm)) {
+			nrfx_pwm_simple_playback(&config->pwm,
+				&config->seq,
+				1,
+				NRFX_PWM_FLAG_LOOP);
+		}
 	}
 
 	return 0;
@@ -250,6 +251,7 @@ static int pwm_nrfx_init(struct device *dev)
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
+					  NULL,
 					  NULL);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->config->name);
@@ -341,14 +343,20 @@ static int pwm_nrfx_pm_control(struct device *dev,
 
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
+#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx)				      \
+	IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_INVERTED)
+
 #define PWM_NRFX_OUTPUT_PIN(dev_idx, ch_idx)				      \
 	(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_PIN |		      \
-	 (DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_INVERTED ?	      \
-	  NRFX_PWM_PIN_INVERTED : 0))
+	 (PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ? NRFX_PWM_PIN_INVERTED : 0))
 
-#define PWM_NRFX_DEFAULT_VALUE(dev_idx, ch_idx)                             \
-	(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_INVERTED ?            \
+#define PWM_NRFX_DEFAULT_VALUE(dev_idx, ch_idx)				      \
+	(PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ?			      \
 	 PWM_NRFX_CH_VALUE_INVERTED : PWM_NRFX_CH_VALUE_NORMAL)
+
+#define PWM_NRFX_COUNT_MODE(dev_idx)                                          \
+	(IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CENTER_ALIGNED) ?	      \
+	 NRF_PWM_MODE_UP_AND_DOWN : NRF_PWM_MODE_UP)
 
 #define PWM_NRFX_DEVICE(idx)						      \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
@@ -357,11 +365,9 @@ static int pwm_nrfx_pm_control(struct device *dev,
 			PWM_NRFX_DEFAULT_VALUE(idx, 1),			      \
 			PWM_NRFX_DEFAULT_VALUE(idx, 2),			      \
 			PWM_NRFX_DEFAULT_VALUE(idx, 3),			      \
-		},							      \
-		.countertop = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE,	      \
-		.prescaler = NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK 	      \
+		}							      \
 	};								      \
-	static const struct pwm_nrfx_config pwm_nrfx_##idx##z_config = {	      \
+	static const struct pwm_nrfx_config pwm_nrfx_##idx##config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \
 			.output_pins = {				      \
@@ -370,9 +376,9 @@ static int pwm_nrfx_pm_control(struct device *dev,
 				PWM_NRFX_OUTPUT_PIN(idx, 2),		      \
 				PWM_NRFX_OUTPUT_PIN(idx, 3),		      \
 			},						      \
-			.base_clock = NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK,     \
-			.count_mode = NRF_PWM_MODE_UP,			      \
-			.top_value = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE,	      \
+			.base_clock = NRF_PWM_CLK_1MHz,			      \
+			.count_mode = PWM_NRFX_COUNT_MODE(idx),		      \
+			.top_value = 1000,				      \
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \
@@ -384,7 +390,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		      DT_NORDIC_NRF_PWM_PWM_##idx##_LABEL,		      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
-		      &pwm_nrfx_##idx##z_config,				      \
+		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
 		      &pwm_nrfx_drv_api_funcs)
 
@@ -392,26 +398,14 @@ static int pwm_nrfx_pm_control(struct device *dev,
 #ifndef DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN
 #define DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH0_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_0_CH0_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN
 #define DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH1_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_0_CH1_INVERTED 0
 #endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN
 #define DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH2_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_0_CH2_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN
 #define DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH3_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_0_CH3_INVERTED 0
 #endif
 PWM_NRFX_DEVICE(0);
 #endif
@@ -420,26 +414,14 @@ PWM_NRFX_DEVICE(0);
 #ifndef DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN
 #define DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH0_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_1_CH0_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN
 #define DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH1_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_1_CH1_INVERTED 0
 #endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN
 #define DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH2_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_1_CH2_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN
 #define DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH3_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_1_CH3_INVERTED 0
 #endif
 PWM_NRFX_DEVICE(1);
 #endif
@@ -448,26 +430,14 @@ PWM_NRFX_DEVICE(1);
 #ifndef DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN
 #define DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH0_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_2_CH0_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN
 #define DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH1_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_2_CH1_INVERTED 0
 #endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN
 #define DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH2_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_2_CH2_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN
 #define DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH3_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_2_CH3_INVERTED 0
 #endif
 PWM_NRFX_DEVICE(2);
 #endif
@@ -476,26 +446,14 @@ PWM_NRFX_DEVICE(2);
 #ifndef DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN
 #define DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH0_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_3_CH0_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN
 #define DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH1_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_3_CH1_INVERTED 0
 #endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN
 #define DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN NRFX_PWM_PIN_NOT_USED
 #endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH2_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_3_CH2_INVERTED 0
-#endif
 #ifndef DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN
 #define DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH3_INVERTED
-#define DT_NORDIC_NRF_PWM_PWM_3_CH3_INVERTED 0
 #endif
 PWM_NRFX_DEVICE(3);
 #endif

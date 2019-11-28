@@ -39,8 +39,12 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
 	clock = rcc_clocks.SYSCLK_Frequency;
 #else
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			(clock_control_subsys_t *) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t *) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
+
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	data->dev_config = config;
@@ -119,7 +123,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
-		while (current->len > 0) {
+		do {
 			u32_t temp_len = current->len;
 			u8_t tmp_msg_flags = current->flags & ~I2C_MSG_RESTART;
 			u8_t tmp_next_msg_flags = next_msg_flags ?
@@ -152,7 +156,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			current->buf += current->len;
 			current->flags = tmp_msg_flags;
 			current->len = temp_len - current->len;
-		}
+		} while (current->len > 0);
 		current++;
 		num_msgs--;
 	}
@@ -297,7 +301,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-DEVICE_AND_API_INIT(i2c_stm32_##name, CONFIG_##name##_NAME,		\
+DEVICE_AND_API_INIT(i2c_stm32_##name, DT_##name##_NAME,			\
 		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
@@ -340,40 +344,5 @@ STM32_I2C_INIT(I2C_4);
 #error "I2C_5 is not available on the platform that you selected"
 #endif /* I2C5_BASE */
 
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_5(struct device *port);
-#endif
-
-static const struct i2c_stm32_config i2c_stm32_cfg_5 = {
-	.i2c = (I2C_TypeDef *)DT_I2C_5_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2C_5_CLOCK_BITS,
-		.bus = DT_I2C_5_CLOCK_BUS,
-	},
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	.irq_config_func = i2c_stm32_irq_config_func_5,
-#endif
-	.bitrate = DT_I2C_5_BITRATE,
-};
-
-static struct i2c_stm32_data i2c_stm32_dev_data_5;
-
-DEVICE_AND_API_INIT(i2c_stm32_5, CONFIG_I2C_5_NAME, &i2c_stm32_init,
-		    &i2c_stm32_dev_data_5, &i2c_stm32_cfg_5,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_5(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2C_5_EVENT_IRQ, DT_I2C_5_EVENT_IRQ_PRI,
-		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_5), 0);
-	irq_enable(DT_I2C_5_EVENT_IRQ);
-
-	IRQ_CONNECT(DT_I2C_5_ERROR_IRQ, DT_I2C_5_ERROR_IRQ_PRI,
-		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_5), 0);
-	irq_enable(DT_I2C_5_ERROR_IRQ);
-}
-#endif
-
+STM32_I2C_INIT(I2C_5);
 #endif /* CONFIG_I2C_5 */

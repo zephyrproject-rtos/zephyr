@@ -139,6 +139,13 @@ commands are documented in the pages for those commands.
      - String, relative path from the :term:`west installation` root directory
        to the manifest repository used by ``west update`` and other commands
        which parse the manifest. Set locally by ``west init``.
+   * - ``update.fetch``
+     - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
+       ``"always"`` (the previous behavior). If set to ``"smart"``, the
+       :ref:`west update <west-multi-repo-cmds>` command will skip fetching
+       from project remotes when those projects' revisions in the manifest file
+       are SHAs or tags which are already available locally. The ``"always"``
+       behavior is to unconditionally fetch from the remote.
    * - ``zephyr.base``
      - String, default value to set for the :envvar:`ZEPHYR_BASE` environment
        variable while the west command is running. By default, this is set to

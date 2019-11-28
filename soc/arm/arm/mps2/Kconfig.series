@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_MPS2
 	bool "ARM MPS2 MCU Series"

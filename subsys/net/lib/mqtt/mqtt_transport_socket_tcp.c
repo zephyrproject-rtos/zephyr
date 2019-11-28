@@ -18,12 +18,6 @@ LOG_MODULE_REGISTER(net_mqtt_sock_tcp, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_os.h"
 
-/**@brief Handles connect request for TCP socket transport.
- *
- * @param[in] client Identifies the client on which the procedure is requested.
- *
- * @retval 0 or an error code indicating reason for failure.
- */
 int mqtt_client_tcp_connect(struct mqtt_client *client)
 {
 	const struct sockaddr *broker = client->broker;
@@ -66,14 +60,6 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 	return 0;
 }
 
-/**@brief Handles write requests on TCP socket transport.
- *
- * @param[in] client Identifies the client on which the procedure is requested.
- * @param[in] data Data to be written on the transport.
- * @param[in] datalen Length of data to be written on the transport.
- *
- * @retval 0 or an error code indicating reason for failure.
- */
 int mqtt_client_tcp_write(struct mqtt_client *client, const u8_t *data,
 			  u32_t datalen)
 {
@@ -93,16 +79,6 @@ int mqtt_client_tcp_write(struct mqtt_client *client, const u8_t *data,
 	return 0;
 }
 
-/**@brief Handles read requests on TCP socket transport.
- *
- * @param[in] client Identifies the client on which the procedure is requested.
- * @param[in] data Pointer where read data is to be fetched.
- * @param[in] buflen Size of memory provided for the operation.
- * @param[in] shall_block Information whether the call should block or not.
- *
- * @retval Number of bytes read or an error code indicating reason for failure.
- *         0 if connection was closed.
- */
 int mqtt_client_tcp_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
 			 bool shall_block)
 {
@@ -121,12 +97,6 @@ int mqtt_client_tcp_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
 	return ret;
 }
 
-/**@brief Handles transport disconnection requests on TCP socket transport.
- *
- * @param[in] client Identifies the client on which the procedure is requested.
- *
- * @retval 0 or an error code indicating reason for failure.
- */
 int mqtt_client_tcp_disconnect(struct mqtt_client *client)
 {
 	int ret;

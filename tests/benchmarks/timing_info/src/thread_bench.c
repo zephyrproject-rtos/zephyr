@@ -19,9 +19,9 @@ char sline[256];
 /* FILE *output_file = stdout; */
 
 /* location of the time stamps*/
-extern u32_t __read_swap_end_time_value;
-extern u64_t __temp_start_swap_time;
-extern u64_t __common_var_swap_end_time;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_temp;
+extern u64_t arch_timing_value_swap_common;
 
 volatile u64_t thread_abort_end_time;
 volatile u64_t thread_abort_start_time;
@@ -48,7 +48,7 @@ K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 struct k_thread my_thread;
 struct k_thread my_thread_0;
 
-u32_t __read_swap_end_time_value_test = 1U;
+u32_t arch_timing_value_swap_end_test = 1U;
 u64_t dummy_time;
 u64_t start_time;
 u64_t test_end_time;
@@ -68,9 +68,9 @@ u32_t benchmarking_overhead_swap(void)
 		"rdtsc\n\t"
 		"mov %eax,start_time\n\t"
 		"mov %edx,start_time+4\n\t"
-		"cmp $0x1,__read_swap_end_time_value_test\n\t"
+		"cmp $0x1,arch_timing_value_swap_end_test\n\t"
 		"jne time_read_not_needed_test\n\t"
-		"movw $0x2,__read_swap_end_time_value\n\t"
+		"movw $0x2,arch_timing_value_swap_end\n\t"
 		"pushl %eax\n\t"
 		"pushl %edx\n\t"
 		"rdtsc\n\t"
@@ -99,7 +99,7 @@ void test_thread_entry(void *p, void *p1, void *p2)
 
 void thread_swap_test(void *p1, void *p2, void *p3)
 {
-	__read_swap_end_time_value = 1U;
+	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
 	thread_abort_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(_current);
@@ -139,23 +139,23 @@ void system_thread_bench(void)
 	k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
 			thread_swap_test,
 			NULL, NULL, NULL,
-			-1 /*priority*/, 0, 0);
+			-1 /*priority*/, 0, K_NO_WAIT);
 
-	k_sleep(1);
-	thread_abort_end_time = (__common_var_swap_end_time);
-	__end_swap_time = __common_var_swap_end_time;
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
-	__start_swap_time = __temp_start_swap_time;
+	k_sleep(K_MSEC(1));
+	thread_abort_end_time = (arch_timing_value_swap_common);
+	arch_timing_swap_end = arch_timing_value_swap_common;
+#if defined(CONFIG_X86)
+	arch_timing_swap_start = arch_timing_value_swap_temp;
 	/* In the rest of ARCHes read_timer_start_of_swap() has already
 	 * registered the time-stamp of the start of context-switch in
-	 * __start_swap_time.
+	 * arch_timing_swap_start.
 	 */
 #endif
-	u32_t total_swap_cycles = __end_swap_time - __start_swap_time;
+	u32_t total_swap_cycles = arch_timing_swap_end - arch_timing_swap_start;
 
 	/* Interrupt latency*/
-	u64_t local_end_intr_time = __end_intr_time;
-	u64_t local_start_intr_time = __start_intr_time;
+	u64_t local_end_intr_time = arch_timing_irq_end;
+	u64_t local_start_intr_time = arch_timing_irq_start;
 
 	/*******************************************************************/
 	/* thread create*/
@@ -166,7 +166,7 @@ void system_thread_bench(void)
 					 STACK_SIZE,
 					 thread_swap_test,
 					 NULL, NULL, NULL,
-					 5 /*priority*/, 0, 10);
+					 5 /*priority*/, 0, K_MSEC(10));
 	TIMING_INFO_PRE_READ();
 	thread_create_end_time = TIMING_INFO_OS_GET_TIME();
 
@@ -183,7 +183,7 @@ void system_thread_bench(void)
 					      STACK_SIZE,
 					      thread_suspend_test,
 					      NULL, NULL, NULL,
-					      -1 /*priority*/, 0, 0);
+					      -1 /*priority*/, 0, K_NO_WAIT);
 
 	TIMING_INFO_PRE_READ();
 	thread_suspend_end_time = TIMING_INFO_OS_GET_TIME();
@@ -224,8 +224,10 @@ void system_thread_bench(void)
 		(u32_t) (CYCLES_TO_NS(intr_latency_cycles)));
 
 	/*tick overhead*/
-	u32_t tick_overhead_cycles =  SUBTRACT_CLOCK_CYCLES(__end_tick_time) -
-				SUBTRACT_CLOCK_CYCLES(__start_tick_time);
+	u32_t tick_overhead_cycles =
+		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_end) -
+		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_start);
+
 	PRINT_STATS("Tick overhead",
 		(u32_t)(tick_overhead_cycles),
 		(u32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
@@ -290,7 +292,7 @@ void heap_malloc_free_bench(void)
 	u32_t sum_malloc = 0U;
 	u32_t sum_free = 0U;
 
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	while (count++ != 100) {
 		TIMING_INFO_PRE_READ();
 		heap_malloc_start_time = TIMING_INFO_OS_GET_TIME();

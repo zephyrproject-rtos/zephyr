@@ -1,10 +1,7 @@
-# Kconfig - Bluetooth Mesh configuration options
+# Bluetooth Mesh configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BT_MESH
 	bool "Bluetooth Mesh support"
@@ -31,6 +28,26 @@ config BT_MESH_PB_ADV
 	help
 	  Enable this option to allow the device to be provisioned over
 	  the advertising bearer.
+
+config BT_MESH_PROVISIONER
+	bool "Provisioner support"
+	select BT_ECC
+	select BT_MESH_PROV
+	default n
+	help
+	  Enable this option to have support for provisioning remote devices.
+
+if BT_MESH_PROVISIONER
+
+config BT_MESH_NODE_COUNT
+	int "Maximum number of saved nodes per network"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many nodes each network can at most
+	  save in the provisioning database.
+
+endif # BT_MESH_PROVISIONER
 
 if BT_CONN
 
@@ -433,6 +450,12 @@ config BT_MESH_SHELL
 	help
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
+
+config BT_MESH_MODEL_EXTENSIONS
+	bool "Support for Model extensions"
+	help
+	  Enable support for the model extension concept, allowing the Access
+	  layer to know about Mesh model relationships.
 
 if BT_SETTINGS
 

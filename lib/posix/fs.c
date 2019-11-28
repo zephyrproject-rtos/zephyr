@@ -102,6 +102,7 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	switch (request) {
 	case ZFD_IOCTL_CLOSE:
 		rc = fs_close(&ptr->file);
+		posix_fs_free_obj(ptr);
 		break;
 
 	case ZFD_IOCTL_LSEEK: {

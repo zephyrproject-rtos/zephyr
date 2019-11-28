@@ -1101,7 +1101,8 @@ static int usdhc_cmd_rsp(struct usdhc_priv *priv)
 						((cmd->response[i - 2U] &
 						0xFF000000U) >> 24U);
 				}
-			} while (i--);
+				i--;
+			} while (i);
 		}
 	}
 	/* check response error flag */

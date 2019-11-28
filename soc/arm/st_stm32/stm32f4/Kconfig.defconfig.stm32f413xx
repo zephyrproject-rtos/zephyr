@@ -1,18 +1,14 @@
-# Kconfig - ST STM32F413XX MCU configuration options
-#
+# ST STM32F413XX MCU configuration options
+
 # Copyright (c) 2017 Florian Vaussard, HEIG-VD
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F413XX
 
 config SOC
-	string
 	default "stm32f413xx"
 
 config NUM_IRQS
-	int
 	default 102
 
 if GPIO_STM32

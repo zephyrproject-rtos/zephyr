@@ -26,9 +26,9 @@
 #include <sys/sflist.h>
 #include <sys/util.h>
 #include <sys/mempool_base.h>
+#include <kernel_structs.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
-#include <kernel_arch_thread.h>
 #include <syscall.h>
 #include <sys/printk.h>
 #include <arch/cpu.h>
@@ -36,5 +36,6 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <fatal.h>
+#include <irq.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

@@ -35,6 +35,8 @@ extern void test_threads_priority_set(void);
 extern void test_delayed_thread_abort(void);
 extern void test_k_thread_foreach(void);
 extern void test_threads_cpu_mask(void);
+extern void test_threads_suspend_timeout(void);
+extern void test_threads_suspend(void);
 
 struct k_thread tdata;
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -64,7 +66,7 @@ void test_systhreads_main(void)
  */
 void test_systhreads_idle(void)
 {
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/** TESTPOINT: check working thread priority should */
 	zassert_true(k_thread_priority_get(k_current_get()) <
 		     K_IDLE_PRIO, NULL);
@@ -78,7 +80,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 	while (1) {
 		k_thread_custom_data_set((void *)data);
 		/* relinguish cpu for a while */
-		k_sleep(50);
+		k_sleep(K_MSEC(50));
 		/** TESTPOINT: custom data comparison */
 		zassert_equal(data, (long)k_thread_custom_data_get(), NULL);
 		data++;
@@ -95,9 +97,9 @@ void test_customdata_get_set_coop(void)
 {
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
-				      K_PRIO_COOP(1), 0, 0);
+				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 	/* cleanup environment */
 	k_thread_abort(tid);
@@ -130,7 +132,7 @@ void test_thread_name_get_set(void)
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
 				      thread_name_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(1), 0, 0);
+				      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 
 	ret = k_thread_name_set(tid, "customdata");
 	zassert_equal(ret, 0, "k_thread_name_set() failed");
@@ -146,7 +148,6 @@ void test_thread_name_get_set(void)
 #ifdef CONFIG_USERSPACE
 static char unreadable_string[64];
 static char not_my_buffer[CONFIG_THREAD_MAX_NAME_LEN];
-ZTEST_BMEM struct k_thread *main_thread_ptr;
 struct k_sem sem;
 #endif /* CONFIG_USERSPACE */
 
@@ -169,7 +170,7 @@ void test_thread_name_user_get_set(void)
 	zassert_equal(ret, -EFAULT, "accepted unreadable string");
 	ret = k_thread_name_set((struct k_thread *)&sem, "some name");
 	zassert_equal(ret, -EINVAL, "accepted non-thread object");
-	ret = k_thread_name_set(main_thread_ptr, "some name");
+	ret = k_thread_name_set(&z_main_thread, "some name");
 	zassert_equal(ret, -EINVAL, "no permission on thread object");
 
 	/* Set and get current thread's name */
@@ -191,7 +192,7 @@ void test_thread_name_user_get_set(void)
 	ret = k_thread_name_copy((struct k_thread *)&sem, thread_name,
 				     sizeof(thread_name));
 	zassert_equal(ret, -EINVAL, "not a thread object");
-	ret = k_thread_name_copy(main_thread_ptr, thread_name,
+	ret = k_thread_name_copy(&z_main_thread, thread_name,
 				     sizeof(thread_name));
 	zassert_equal(ret, 0, "couldn't get main thread name");
 	printk("Main thread name is '%s'\n", thread_name);
@@ -199,7 +200,7 @@ void test_thread_name_user_get_set(void)
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
 				      thread_name_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(1), K_USER, 0);
+				      K_PRIO_PREEMPT(1), K_USER, K_NO_WAIT);
 	ret = k_thread_name_set(tid, "customdata");
 	zassert_equal(ret, 0, "k_thread_name_set() failed");
 	ret = k_thread_name_copy(tid, thread_name, sizeof(thread_name));
@@ -224,9 +225,9 @@ void test_customdata_get_set_preempt(void)
 	/** TESTPOINT: custom data of preempt thread */
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(0), K_USER, 0);
+				      K_PRIO_PREEMPT(0), K_USER, K_NO_WAIT);
 
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 	/* cleanup environment */
 	k_thread_abort(tid);
@@ -270,8 +271,6 @@ void test_user_mode(void)
 }
 #endif
 
-extern const k_tid_t _main_thread;
-
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack);
@@ -281,8 +280,6 @@ void test_main(void)
 #ifdef CONFIG_USERSPACE
 	strncpy(unreadable_string, "unreadable string",
 		sizeof(unreadable_string));
-	/* Copy so user mode can get at it */
-	main_thread_ptr = _main_thread;
 #endif
 
 	ztest_test_suite(threads_lifecycle,
@@ -291,24 +288,26 @@ void test_main(void)
 			 ztest_user_unit_test(test_threads_spawn_delay),
 			 ztest_unit_test(test_threads_spawn_forever),
 			 ztest_unit_test(test_thread_start),
-			 ztest_unit_test(test_threads_suspend_resume_cooperative),
+			 ztest_1cpu_unit_test(test_threads_suspend_resume_cooperative),
 			 ztest_user_unit_test(test_threads_suspend_resume_preemptible),
 			 ztest_unit_test(test_threads_priority_set),
 			 ztest_user_unit_test(test_threads_abort_self),
 			 ztest_user_unit_test(test_threads_abort_others),
-			 ztest_unit_test(test_threads_abort_repeat),
+			 ztest_1cpu_unit_test(test_threads_abort_repeat),
 			 ztest_unit_test(test_abort_handler),
-			 ztest_unit_test(test_delayed_thread_abort),
+			 ztest_1cpu_unit_test(test_delayed_thread_abort),
 			 ztest_unit_test(test_essential_thread_operation),
 			 ztest_unit_test(test_systhreads_main),
 			 ztest_unit_test(test_systhreads_idle),
-			 ztest_unit_test(test_customdata_get_set_coop),
-			 ztest_user_unit_test(test_customdata_get_set_preempt),
-			 ztest_unit_test(test_k_thread_foreach),
+			 ztest_1cpu_unit_test(test_customdata_get_set_coop),
+			 ztest_1cpu_user_unit_test(test_customdata_get_set_preempt),
+			 ztest_1cpu_unit_test(test_k_thread_foreach),
 			 ztest_unit_test(test_thread_name_get_set),
 			 ztest_user_unit_test(test_thread_name_user_get_set),
 			 ztest_unit_test(test_user_mode),
-			 ztest_unit_test(test_threads_cpu_mask)
+			 ztest_1cpu_unit_test(test_threads_cpu_mask),
+			 ztest_unit_test(test_threads_suspend_timeout),
+			 ztest_unit_test(test_threads_suspend)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);

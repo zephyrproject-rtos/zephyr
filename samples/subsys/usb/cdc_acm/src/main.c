@@ -20,7 +20,7 @@
 #include <sys/ring_buffer.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE 1024
 u8_t ring_buffer[RING_BUF_SIZE];
@@ -83,24 +83,27 @@ void main(void)
 
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
 
-	LOG_DBG("Wait for DTR");
+	LOG_INF("Wait for DTR");
 
 	while (true) {
-		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
+		} else {
+			/* Give CPU resources to low priority threads. */
+			k_sleep(K_MSEC(100));
 		}
 	}
 
-	LOG_DBG("DTR set");
+	LOG_INF("DTR set");
 
 	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
 	if (ret) {
 		LOG_WRN("Failed to set DCD, ret code %d", ret);
 	}
 
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
 	if (ret) {
 		LOG_WRN("Failed to set DSR, ret code %d", ret);
 	}
@@ -108,7 +111,7 @@ void main(void)
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(1000000);
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_WRN("Failed to get baudrate, ret code %d", ret);
 	} else {

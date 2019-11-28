@@ -9,10 +9,15 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <kernel_structs.h>
 #include <offsets_short_arch.h>
-
+#include <ksched.h>
 
 #if !defined(__GNUC__)
 #error __FILE__ goes only with Cortex-M GCC
+#endif
+
+#if !defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && \
+	!defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#error "Unsupported architecture"
 #endif
 
 #define PRIORITY 0
@@ -20,7 +25,6 @@
 #define BASEPRI_MODIFIED_2 0x40
 #define SWAP_RETVAL        0x1234
 
-extern int __swap(unsigned int key);
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 
 static struct k_thread alt_thread;
@@ -32,6 +36,7 @@ bool volatile switch_flag;
 struct k_thread *p_ztest_thread;
 
 _callee_saved_t ztest_thread_callee_saved_regs_container;
+int ztest_swap_return_val;
 
 /* Arbitrary values for the callee-saved registers,
  * enforced in the beginning of the test.
@@ -44,6 +49,22 @@ const _callee_saved_t ztest_thread_callee_saved_regs_init = {
 static void load_callee_saved_regs(const _callee_saved_t *regs)
 {
 	/* Load the callee-saved registers with given values */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"mov r1, r7;\n\t"
+		"mov r0, %0;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"mov r8, r4;\n\t"
+		"mov r9, r5;\n\t"
+		"mov r10, r6;\n\t"
+		"mov r11, r7;\n\t"
+		"mov r7, r1;\n\t"
+		:
+		: "r" (regs)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"mov r1, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
@@ -52,6 +73,7 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 		: "r" (regs)
 		: "memory"
 	);
+#endif
 	__DSB();
 }
 
@@ -176,11 +198,14 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 
 static void alt_thread_entry(void)
 {
+	int init_flag, post_flag;
+
 	/* Lock interrupts to make sure we get preempted only when
 	 * it is required by the test */
 	(void)irq_lock();
 
-	zassert_true(switch_flag == false,
+	init_flag = switch_flag;
+	zassert_true(init_flag == false,
 		"Alternative thread: switch flag not false on thread entry\n");
 
 	/* Set switch flag */
@@ -190,13 +215,13 @@ static void alt_thread_entry(void)
 	zassert_true(p_ztest_thread->arch.basepri == 0,
 		"ztest thread basepri not preserved in swap-out\n");
 #else
-	/* Verify that the main test thread has an initial value of zero
-	 * for state variable thread.arch.basepri.
+	/* Verify that the main test thread has the correct value
+	 * for state variable thread.arch.basepri (set before swap).
 	 */
 	zassert_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
 		"ztest thread basepri not preserved in swap-out\n");
 
-	/* Verify original swap return value (set by __swap() */
+	/* Verify original swap return value (set by arch_swap() */
 	zassert_true(p_ztest_thread->arch.swap_return_value == -EAGAIN,
 		"ztest thread swap-return-value not preserved in swap-out\n");
 #endif
@@ -231,7 +256,7 @@ static void alt_thread_entry(void)
 	 * later, that it is populated properly.
 	 */
 	memset(&ztest_thread_fp_callee_saved_regs,
-		0, sizeof(_callee_saved_t));
+		0, sizeof(ztest_thread_fp_callee_saved_regs));
 
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
@@ -256,6 +281,21 @@ static void alt_thread_entry(void)
 	 *
 	 * Note: preserve r7 register (frame pointer).
 	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"mov r1, r7;\n\t"
+		"mov r0, %0;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+		"mov r8, r4;\n\t"
+		"mov r9, r5;\n\t"
+		"mov r10, r6;\n\t"
+		"mov r11, r7;\n\t"
+		"mov r7, r1;\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"mov r0, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
@@ -263,6 +303,7 @@ static void alt_thread_entry(void)
 		: : "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
 
 	/* Manually trigger a context-switch, to swap-out
 	 * the alternative test thread.
@@ -276,12 +317,15 @@ static void alt_thread_entry(void)
 	 * the status of the switch flag; the main test thread will clear
 	 * it when it is swapped-back in.
 	 */
-	zassert_true(switch_flag == false,
+	post_flag = switch_flag;
+	zassert_true(post_flag == false,
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
 void test_arm_thread_swap(void)
 {
+	int test_flag;
+
 	/* Main test thread (ztest)
 	 *
 	 * Simulating initial conditions:
@@ -307,17 +351,26 @@ void test_arm_thread_swap(void)
 	p_ztest_thread = _current;
 
 	/* Confirm initial conditions before starting the test. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag not initialized properly\n");
 	zassert_true(_current->arch.basepri == 0,
 		"Thread BASEPRI flag not clear at thread start\n");
 	/* Verify, also, that the interrupts are unlocked. */
+#if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	zassert_true(__get_BASEPRI() == 0,
-		"initial BASEPRI not in zero\n");
+		"initial BASEPRI not zero\n");
+#else
+	/* For Cortex-M Baseline architecture, we verify that
+	 * the interrupt lock is disabled.
+	 */
+	 zassert_true(__get_PRIMASK() == 0,
+	 "initial PRIMASK not zero\n");
+#endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if defined(CONFIG_USERSPACE)
 	/* The main test thread is set to run in privilege mode */
-	zassert_false((z_arch_is_user_context()),
+	zassert_false((arch_is_user_context()),
 		"Main test thread does not start in privilege mode\n");
 
 	/* Assert that the mode status variable indicates privilege mode */
@@ -358,7 +411,8 @@ void test_arm_thread_swap(void)
 		K_NO_WAIT);
 
 	/* Verify context-switch has not occurred. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag incremented when it should not have\n");
 
 	/* Prepare to force a context switch to the alternative thread,
@@ -375,10 +429,11 @@ void test_arm_thread_swap(void)
 	 * The container will, later, be populated by the swap
 	 * mechanism.
 	 */
-	memcpy(&_current->callee_saved, 0, sizeof(_callee_saved_t));
+	memset(&_current->callee_saved, 0, sizeof(_callee_saved_t));
 
 	/* Verify context-switch has not occurred yet. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag incremented by unexpected context-switch.\n");
 
 	/* Store the callee-saved registers to some global memory
@@ -387,12 +442,29 @@ void test_arm_thread_swap(void)
 	 * are successfully loaded into the thread's callee-saved
 	 * registers' container.
 	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"push {r0, r1, r2, r3};\n\t"
+		"mov r1, %0;\n\t"
+		"stmia r1!, {r4-r7};\n\t"
+		"mov r2, r8;\n\t"
+		"mov r3, r9;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"mov r2, r10;\n\t"
+		"mov r3, r11;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"pop {r0, r1, r2, r3};\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+ #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
 
 	/* Manually trigger a context-switch to swap-out the current thread.
 	 * Request a return to a different interrupt lock state.
@@ -410,17 +482,60 @@ void test_arm_thread_swap(void)
 	 * This will be verified by the alternative test thread.
 	 */
 	register int swap_return_val __asm__("r0") =
-		__swap(BASEPRI_MODIFIED_1);
+		arch_swap(BASEPRI_MODIFIED_1);
 
 #endif /* CONFIG_NO_OPTIMIZATIONS */
 
 	/* Dump callee-saved registers to memory. */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"push {r0, r1, r2, r3};\n\t"
+		"mov r1, %0;\n\t"
+		"stmia r1!, {r4-r7};\n\t"
+		"mov r2, r8;\n\t"
+		"mov r3, r9;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"mov r2, r10;\n\t"
+		"mov r3, r11;\n\t"
+		"stmia r1!, {r2-r3};\n\t"
+		"pop {r0, r1, r2, r3};\n\t"
+		:	: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory"
+	);
+ #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+#endif
+
+#if !defined(CONFIG_NO_OPTIMIZATIONS)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Note: ARMv6-M will always write back the base register,
+	 * so we make sure we preserve the state of the register
+	 * used, as base register in the Store Multiple instruction.
+	 * We also enforce write-back to suppress assembler warning.
+	 */
+	__asm__ volatile (
+		"push {r0, r1, r2, r3, r4, r5, r6, r7};\n\t"
+		"stm %0!, {%1};\n\t"
+		"pop {r0, r1, r2, r3, r4, r5, r6, r7};\n\t"
+		:
+		: "r" (&ztest_swap_return_val), "r" (swap_return_val)
+		: "memory"
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__asm__ volatile (
+		"stm %0, {%1};\n\t"
+		:
+		: "r" (&ztest_swap_return_val), "r" (swap_return_val)
+		: "memory"
+	);
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif
+
 
 	/* After swap-back, verify that the callee-saved registers loaded,
 	 * look exactly as what is located in the respective callee-saved
@@ -431,7 +546,8 @@ void test_arm_thread_swap(void)
 		&_current->callee_saved);
 
 	/* Verify context-switch did occur. */
-	zassert_true(switch_flag == true,
+	test_flag = switch_flag;
+	zassert_true(test_flag == true,
 		"Switch flag not incremented as expected %u\n",
 		switch_flag);
 	/* Clear the switch flag to signal that the main test thread
@@ -446,19 +562,30 @@ void test_arm_thread_swap(void)
 	zassert_true(_current->arch.basepri == 0,
 		"arch.basepri value not in accordance with the update\n");
 
+#if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	/* Verify that the BASEPRI register is updated during the last
 	 * swap-in of the thread.
 	 */
 	zassert_true(__get_BASEPRI() == BASEPRI_MODIFIED_2,
 		"BASEPRI not in accordance with the update: 0x%0x\n",
 		__get_BASEPRI());
+#else
+	/* For Cortex-M Baseline architecture, we verify that
+	 * the interrupt lock is enabled.
+	 */
+	 zassert_true(__get_PRIMASK() != 0,
+	 "PRIMASK not in accordance with the update: 0x%0x\n",
+	 __get_PRIMASK());
+#endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
 	/* The thread is now swapped-back in. */
-	zassert_true(_current->arch.swap_return_value = SWAP_RETVAL,
-		"Swap value not set as expected\n");
-	zassert_true(_current->arch.swap_return_value = swap_return_val,
-			"Swap value not returned as expected\n");
+	zassert_equal(_current->arch.swap_return_value, SWAP_RETVAL,
+		"Swap value not set as expected: 0x%x (0x%x)\n",
+		_current->arch.swap_return_value, SWAP_RETVAL);
+	zassert_equal(_current->arch.swap_return_value, ztest_swap_return_val,
+		"Swap value not returned as expected 0x%x (0x%x)\n",
+		_current->arch.swap_return_value, ztest_swap_return_val);
 #endif
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)

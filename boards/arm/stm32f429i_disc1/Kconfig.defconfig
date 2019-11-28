@@ -1,9 +1,7 @@
-# Kconfig - STM32F4DISCOVERY board configuration
-#
+# STM32F4DISCOVERY board configuration
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F429I_DISC1
 
@@ -23,5 +21,12 @@ config I2C_3
 	default y
 
 endif # I2C
+
+if SPI
+
+config SPI_5
+	default y
+
+endif # SPI
 
 endif # BOARD_STM32F429I_DISC1

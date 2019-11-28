@@ -98,7 +98,7 @@ def generate_header():
 
     zephyr_base = os.environ.get('ZEPHYR_BASE', "")
 
-    clean_cmd = [ ]
+    clean_cmd = []
     for arg in sys.argv:
         if arg.startswith("--bindir"):
             # Drop. Assumes --bindir= was passed with '=' sign.

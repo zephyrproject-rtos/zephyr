@@ -1,15 +1,12 @@
-# Kconfig - LSM6DSL accelerometer and gyroscope sensor configuration
+# LSM6DSL accelerometer and gyroscope sensor configuration
 # options
 
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LSM6DSL
 	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
-	depends on (I2C && HAS_DTS_I2C) || (SPI && HAS_DTS_SPI)
+	depends on (I2C && HAS_DTS_I2C) || SPI
 	help
 	  Enable driver for LSM6DSL accelerometer and gyroscope
 	  sensor.
@@ -65,10 +62,6 @@ config LSM6DSL_SENSORHUB
 
 if LSM6DSL_SENSORHUB
 
-config LSM6DSL_ENABLE_INTERNAL_PULLUP
-	bool "Enabled internals pull-up resistors"
-	default y
-
 choice LSM6DSL_EXTERNAL_SENSOR_0
 	prompt "External sensor 0"
 	help
@@ -82,7 +75,7 @@ config LSM6DSL_EXT0_LPS22HB
 
 endchoice
 
-endif #LSM6DSL_SENSORHUB
+endif # LSM6DSL_SENSORHUB
 
 menu "Attributes"
 

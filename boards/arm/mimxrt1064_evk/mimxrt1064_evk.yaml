@@ -15,10 +15,12 @@ toolchain:
 ram: 32768
 flash: 4096
 supported:
+  - counter
   - display
+  - gpio
   - hwinfo
-  - netif:eth
   - i2c
+  - netif:eth
   - pwm
   - usb_device
-  - counter
+  - video

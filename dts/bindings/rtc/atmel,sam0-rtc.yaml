@@ -1,25 +1,20 @@
-#
 # Copyright (c) 2018 omSquare s.r.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Atmel SAM0 RTC
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM0 RTC
 
-inherits:
-    !include rtc.yaml
+compatible: "atmel,sam0-rtc"
+
+include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-rtc"
-
     reg:
-      category: required
+      required: true
 
     clock-generator:
       type: int
       description: clock generator index
-      category: required
+      required: true

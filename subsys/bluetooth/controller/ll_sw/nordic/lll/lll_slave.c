@@ -27,7 +27,8 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_slave
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_slave
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -131,6 +132,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 					       &lll->data_chan_map[0],
 					       lll->data_chan_count);
 #else /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
+		data_chan_use = 0;
 		LL_ASSERT(0);
 #endif /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
 	} else {

@@ -94,9 +94,8 @@ def create_pof(input_sof, kernel_hex):
         try:
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError as cpe:
-            print(cpe.output.decode("UTF-8"))
-            print("Failed to create POF file")
-            sys.exit(1)
+            sys.exit(cpe.output.decode("utf-8") +
+                     "\nFailed to create POF file")
 
     return output_pof
 
@@ -114,9 +113,8 @@ def flash_kernel(device_id, input_sof, kernel_hex):
         try:
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError as cpe:
-            print(cpe.output.decode("UTF-8"))
-            print("Failed to flash image")
-            sys.exit(1)
+            sys.exit(cpe.output.decode("utf-8") +
+                     "\nFailed to flash image")
     pof_file.close()
 
 def main():

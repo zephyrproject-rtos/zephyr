@@ -697,6 +697,11 @@ struct addrinfo {
 	struct addrinfo *ai_next;
 };
 
+/* Legacy case: retain containing extern "C" with C++
+ *
+ * This header requires aliases defined within this file, and can't
+ * easily be moved to the top.
+ */
 #include <net/socket_offload.h>
 
 static inline int inet_pton(sa_family_t family, const char *src, void *dst)

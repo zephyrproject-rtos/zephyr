@@ -119,7 +119,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 	struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 	if (pending_thread != NULL) {
-		z_set_thread_return_value_with_data(pending_thread, 0, *mem);
+		z_thread_return_value_set_with_data(pending_thread, 0, *mem);
 		z_ready_thread(pending_thread);
 		z_reschedule(&lock, key);
 	} else {

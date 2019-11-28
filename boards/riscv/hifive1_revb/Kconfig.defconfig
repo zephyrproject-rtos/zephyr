@@ -1,5 +1,6 @@
 # Copyright (c) 2019 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
+
 if BOARD_HIFIVE1_REVB
 
 config BOARD
@@ -9,10 +10,13 @@ config HAS_FLASH_LOAD_OFFSET
 	default y
 
 config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS)
+	default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
 
 config FLASH_LOAD_OFFSET
 	default 0x0
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
 
 if PWM
 config PWM_SIFIVE
@@ -28,8 +32,5 @@ if I2C
 config I2C_SIFIVE
 	default y
 endif
-
-config HAS_DTS_I2C
-	default y
 
 endif

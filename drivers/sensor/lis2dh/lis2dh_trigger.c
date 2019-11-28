@@ -6,15 +6,14 @@
 
 #include <sys/util.h>
 #include <kernel.h>
+#include <logging/log.h>
 
 #define START_TRIG_INT1			0
 #define START_TRIG_INT2			1
 #define TRIGGED_INT1			4
 #define TRIGGED_INT2			5
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(lis2dh);
+LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
@@ -356,7 +355,7 @@ int lis2dh_init_interrupt(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
-	u8_t raw[LIS2DH_DATA_OFS + 2];
+	u8_t raw[2];
 
 	/* setup data ready gpio interrupt */
 	lis2dh->gpio_int1 = device_get_binding(DT_LIS2DH_INT1_GPIO_DEV_NAME);
@@ -427,7 +426,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack,
 			CONFIG_LIS2DH_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lis2dh_thread, dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, 0);
+			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;
 	lis2dh->dev = dev;

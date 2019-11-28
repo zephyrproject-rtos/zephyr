@@ -8,7 +8,13 @@
 #ifndef ZEPHYR_INCLUDE_NET_SNTP_H_
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <net/socket.h>
+#else
+#include <posix/sys/socket.h>
+#include <posix/unistd.h>
+#include <posix/poll.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

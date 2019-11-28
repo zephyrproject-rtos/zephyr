@@ -19,8 +19,7 @@
 
 #include "lsm6dso.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM6DSO);
+LOG_MODULE_REGISTER(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
 static const u16_t lsm6dso_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
@@ -297,7 +296,7 @@ static int lsm6dso_attr_set(struct device *dev, enum sensor_channel chan,
 static int lsm6dso_sample_fetch_accel(struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
-	axis3bit16_t buf;
+	union axis3bit16_t buf;
 
 	if (lsm6dso_acceleration_raw_get(data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");
@@ -314,7 +313,7 @@ static int lsm6dso_sample_fetch_accel(struct device *dev)
 static int lsm6dso_sample_fetch_gyro(struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
-	axis3bit16_t buf;
+	union axis3bit16_t buf;
 
 	if (lsm6dso_angular_rate_raw_get(data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");
@@ -332,7 +331,7 @@ static int lsm6dso_sample_fetch_gyro(struct device *dev)
 static int lsm6dso_sample_fetch_temp(struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
-	axis1bit16_t buf;
+	union axis1bit16_t buf;
 
 	if (lsm6dso_temperature_raw_get(data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");

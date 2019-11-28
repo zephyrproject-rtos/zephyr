@@ -12,8 +12,7 @@
 
 #include "bma280.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMA280);
+LOG_MODULE_REGISTER(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

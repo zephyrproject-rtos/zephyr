@@ -1,10 +1,7 @@
-# Kconfig - SX9500 SAR proximity sensor configuration options
+# SX9500 SAR proximity sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SX9500
 	bool "SX9500 I2C SAR Proximity Chip"
@@ -13,23 +10,6 @@ menuconfig SX9500
 	  Enable driver for SX9500 I2C-based SAR proximity sensor.
 
 if SX9500
-
-config SX9500_DEV_NAME
-	string "SX9500 device name"
-	default "SX9500"
-
-config SX9500_I2C_ADDR
-	hex "SX9500 I2C slave address"
-	default 0x2B
-	help
-	  Specify the I2C slave address for the SX9500.
-
-config SX9500_I2C_DEV_NAME
-	string "I2C master where SX9500 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which SX9500 is
-	  connected.
 
 config SX9500_PROX_CHANNEL
 	int "Proximity channel to use"
@@ -59,19 +39,6 @@ endchoice
 
 config SX9500_TRIGGER
 	bool
-
-config SX9500_GPIO_CONTROLLER
-	string "GPIO controller for SX9500 interrupt"
-	depends on SX9500_TRIGGER
-	default "GPIO_0"
-	help
-	  Specify the device name of the GPIO controller the SX9500 interrupt
-	  is connected to.
-
-config SX9500_GPIO_PIN
-	int "GPIO pin for SX9500 interrupt"
-	depends on SX9500_TRIGGER
-	default 3
 
 config SX9500_THREAD_STACK_SIZE
 	int "Sensor delayed work thread stack size"

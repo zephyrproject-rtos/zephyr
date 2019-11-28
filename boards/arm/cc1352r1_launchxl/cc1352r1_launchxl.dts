@@ -53,6 +53,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
 &trng {
 	status = "okay";
 };
@@ -81,4 +85,8 @@
 	miso-pin = <8>;
 	cs-pin = <11>;
 	cs-gpios = <&gpio0 11 0>;
+};
+
+&rtc {
+	status = "okay";
 };

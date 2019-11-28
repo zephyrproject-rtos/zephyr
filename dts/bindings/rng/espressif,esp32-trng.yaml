@@ -1,0 +1,23 @@
+# Copyright (c) 2019, Mohamed ElShahawi <ExtremeGTX@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Espressif ESP32 TRNG (True Random Number Generator)
+
+description: |
+    The TRNG use the noise in the Wi-Fi/BT RF system.
+    When Wi-Fi and BT are disabled, the random number generator will give out
+    pseudo-random numbers.
+
+compatible: "espressif,esp32-trng"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    label:
+      required: true

@@ -1,10 +1,7 @@
-# Kconfig - PWM configuration options
+# PWM configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM
 	bool "PWM (Pulse Width Modulation) Drivers"
@@ -16,6 +13,12 @@ if PWM
 module = PWM
 module-str = pwm
 source "subsys/logging/Kconfig.template.log_config"
+
+config PWM_SHELL
+	bool "Enable PWM shell"
+	depends on SHELL
+	help
+	  Enable the PWM related shell commands.
 
 config PWM_0
 	bool "Enable PWM port 0"
@@ -33,8 +36,6 @@ config PWM_4
 	bool "Enable PWM port 4"
 
 source "drivers/pwm/Kconfig.pca9685"
-
-source "drivers/pwm/Kconfig.qmsi"
 
 source "drivers/pwm/Kconfig.dw"
 
@@ -55,5 +56,7 @@ source "drivers/pwm/Kconfig.esp32"
 source "drivers/pwm/Kconfig.sam"
 
 source "drivers/pwm/Kconfig.mcux"
+
+source "drivers/pwm/Kconfig.xec"
 
 endif # PWM

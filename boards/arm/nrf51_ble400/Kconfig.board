@@ -1,7 +1,6 @@
-# Kconfig - nRF51 BLE400 board configuration
-#
+# nRF51 BLE400 board configuration
+
 # Copyright (c) 2018 Roman Tataurov <diytronic@yandex.ru>
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51_BLE400

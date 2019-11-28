@@ -52,6 +52,10 @@
 #include <stm32h7xx_ll_system.h>
 #endif /* CONFIG_GPIO_STM32 */
 
+#ifdef CONFIG_WWDG_STM32
+#include <stm32h7xx_ll_wwdg.h>
+#endif
+
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32h7xx_ll_usart.h>
 #endif /* CONFIG_SERIAL_HAS_DRIVER */

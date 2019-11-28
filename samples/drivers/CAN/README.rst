@@ -7,10 +7,9 @@ Overview
 ********
 
 This sample demonstrates how to use the Controller Area Network (CAN) API.
-Messages with standard and extended identifiers are sent over the bus, triggered
-by a button event.
-Messages are received using message queues and ISRs.
-Reception is indicated by blink LEDs and output to the console.
+Messages with standard and extended identifiers are sent over the bus.
+Messages are received using message-queues and work-queues.
+Reception is indicated by blinking the LED (if present) and output to the console.
 
 Building and Running
 ********************
@@ -18,26 +17,47 @@ Building and Running
 In loopback mode, the board receives its own messages. This could be used for
 standalone testing.
 
-The sample can be built and executed on boards supporting CAN.
-The output ports and pins of the LEDs can be configured by Kconfig.
+The LED output pin is defined in the board's devicetree.
+
+The sample can be built and executed for boards with a SoC that have an
+integrated CAN controller or for boards with a SoC that has been augmented
+with a stand alone CAN controller.
+
+Integrated CAN controller
+=========================
+
+For the NXP TWR-KE18F board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/CAN
+   :board: twr_ke18f
+   :goals: build flash
+
+Stand alone CAN controller
+==========================
+
+For the nRF52_PCA10040 board combined with the DFRobot CAN bus V2.0 shield that
+provides the MCP2515 CAN controller:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/CAN
+   :board: nrf52_pca10040
+   :shield: dfrobot_can_bus_v2_0
+   :conf: prj.mcp2515.conf
+   :goals: build flash
 
 Sample output
 =============
 
 .. code-block:: console
 
-   Finished init. waiting for Interrupts
-   TX thread is running.
-   filter id: 1
-   Button pressed! Send message 1
-   Button pressed 1 times
-   Button pressed! Send message 0
-   Button pressed 2 times
-   String sent over CAN
-   Button pressed! Send message 1
-   Button pressed 3 times
-   Button pressed! Send message 0
-   Button pressed 4 times
-   String sent over CAN
+   Change LED filter ID: 0
+   Finished init.
+   Counter filter id: 4
+
+   uart:~$ Counter received: 0
+   Counter received: 1
+   Counter received: 2
+   Counter received: 3
 
 .. note:: The values shown above might differ.

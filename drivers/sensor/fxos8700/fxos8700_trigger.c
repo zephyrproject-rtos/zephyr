@@ -6,10 +6,9 @@
  */
 
 #include "fxos8700.h"
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(FXOS8700);
+
+LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
@@ -341,7 +340,7 @@ int fxos8700_trigger_init(struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_FXOS8700_THREAD_STACK_SIZE,
 			fxos8700_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY), 0, 0);
+			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxos8700_work_handler;
 	data->dev = dev;

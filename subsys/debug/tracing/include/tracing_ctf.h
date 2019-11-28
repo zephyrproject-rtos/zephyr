@@ -7,13 +7,13 @@
 #ifndef _TRACE_CTF_H
 #define _TRACE_CTF_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <init.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void sys_trace_thread_switched_out(void);
 void sys_trace_thread_switched_in(void);
@@ -25,6 +25,7 @@ void sys_trace_thread_resume(struct k_thread *thread);
 void sys_trace_thread_ready(struct k_thread *thread);
 void sys_trace_thread_pend(struct k_thread *thread);
 void sys_trace_thread_info(struct k_thread *thread);
+void sys_trace_thread_name_set(struct k_thread *thread);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_isr_exit_to_scheduler(void);

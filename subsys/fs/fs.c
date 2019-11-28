@@ -261,6 +261,9 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 				if (rc < 0) {
 					break;
 				}
+				if (entry->name[0] == 0) {
+					break;
+				}
 				if (entry->type != FS_DIR_ENTRY_DIR) {
 					break;
 				}

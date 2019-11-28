@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM0 MCU family default configuration options
-#
+# Atmel SAM0 MCU family default configuration options
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

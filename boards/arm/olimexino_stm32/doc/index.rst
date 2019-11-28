@@ -28,26 +28,28 @@ Supported Features
 The olimexino_stm32 board configuration supports the following
 hardware features:
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| USB       | on-chip    | USB device           |
-+-----------+------------+----------------------+
-| WATCHDOG  | on-chip    | independent watchdog |
-+-----------+------------+----------------------+
++-----------+------------+-------------------------+
+| Interface | Controller | Driver/Component        |
++===========+============+=========================+
+| NVIC      | on-chip    | nested vectored         |
+|           |            | interrupt controller    |
++-----------+------------+-------------------------+
+| SYSTICK   | on-chip    | system clock            |
++-----------+------------+-------------------------+
+| UART      | on-chip    | serial port             |
++-----------+------------+-------------------------+
+| GPIO      | on-chip    | gpio                    |
++-----------+------------+-------------------------+
+| I2C       | on-chip    | i2c                     |
++-----------+------------+-------------------------+
+| SPI       | on-chip    | spi                     |
++-----------+------------+-------------------------+
+| USB       | on-chip    | USB device              |
++-----------+------------+-------------------------+
+| WATCHDOG  | on-chip    | independent watchdog    |
++-----------+------------+-------------------------+
+| CAN       | on-chip    | Controller Area Network |
++-----------+------------+-------------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -290,6 +292,18 @@ CON4 digital
 |       |              | I2C1_SCL / CANRX        |
 +-------+--------------+-------------------------+
 
+CAN
+
++-------+-------------+
+| PIN # | Signal Name |
++=======+=============+
+| 1     | GND         |
++-------+-------------+
+| 2     | CAN L       |
++-------+-------------+
+| 3     | CAN H       |
++-------+-------------+
+
 System Clock
 ============
 
@@ -333,6 +347,15 @@ through its mini USB connector.
 
 - USB_DM : PA11
 - USB_DP : PA12
+
+CAN
+===
+
+OLIMEXINO-STM32 board has a CAN interface with transceiver on board.
+CAN is accessible through a screw terminal.
+
+- CAN_RX : PB8
+- CAN_TX : PB9
 
 Jumpers
 =======

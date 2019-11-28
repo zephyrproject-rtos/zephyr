@@ -1,22 +1,15 @@
 title: STM32 USART
 
-description: >
+description: |
     This binding gives a base representation of the STM32 USART
 
-inherits:
-    !include uart.yaml
+compatible: "st,stm32-usart"
+
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-usart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
-
-    hw-flow-control:
-      type: boolean
-      category: optional
-      description: Set to enable RTS/CTS flow control at boot time
+      required: true

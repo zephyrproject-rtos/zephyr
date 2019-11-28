@@ -1,9 +1,9 @@
-# Kconfig - Atmel SAM0 SERCOM SPI
-#
+# Atmel SAM0 SERCOM SPI
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig SPI_SAM0
+config SPI_SAM0
 	bool "Atmel SAM0 series SERCOM SPI driver"
 	default y
 	depends on SOC_FAMILY_SAM0

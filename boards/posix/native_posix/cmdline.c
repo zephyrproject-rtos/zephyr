@@ -13,7 +13,7 @@
 #include "timer_model.h"
 #include "cmdline.h"
 #include "toolchain.h"
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 #include "native_tracing.h"
 
 static int s_argc, test_argc;
@@ -54,13 +54,15 @@ void native_add_command_line_opts(struct args_struct_t *args)
 			growby = ARGS_ALLOC_CHUNK_SIZE;
 		}
 
-		args_struct = realloc(args_struct,
+		struct args_struct_t *new_args_struct = realloc(args_struct,
 				      (args_aval + growby)*
 				      sizeof(struct args_struct_t));
 		args_aval += growby;
 		/* LCOV_EXCL_START */
-		if (args_struct == NULL) {
+		if (new_args_struct == NULL) {
 			posix_print_error_and_exit("Could not allocate memory");
+		} else {
+			args_struct = new_args_struct;
 		}
 		/* LCOV_EXCL_STOP */
 	}

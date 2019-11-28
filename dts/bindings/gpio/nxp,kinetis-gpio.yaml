@@ -1,21 +1,22 @@
 title: Kinetis GPIO
 
-description: >
+description: |
     This is a representation of the Kinetis GPIO nodes
 
-inherits:
-    !include base.yaml
+compatible: "nxp,kinetis-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-gpio"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

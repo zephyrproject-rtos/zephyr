@@ -1,0 +1,21 @@
+# Common fields for UART controllers
+
+include: base.yaml
+
+child-bus: uart
+
+properties:
+    clock-frequency:
+      type: int
+      required: false
+      description: Clock frequency information for UART operation
+    current-speed:
+      type: int
+      required: false
+      description: Initial baud rate setting for UART
+    label:
+      required: true
+    hw-flow-control:
+      type: boolean
+      required: false
+      description: Set to enable RTS/CTS flow control at boot time

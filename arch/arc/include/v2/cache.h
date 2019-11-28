@@ -17,11 +17,11 @@
 
 #include <arch/cpu.h>
 
+#ifndef _ASMLANGUAGE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef _ASMLANGUAGE
 
 /* i-cache defines for IC_CTRL register */
 #define IC_CACHE_ENABLE   0x00
@@ -50,10 +50,10 @@ static ALWAYS_INLINE void z_icache_setup(void)
 	}
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_V2_CACHE_H_ */

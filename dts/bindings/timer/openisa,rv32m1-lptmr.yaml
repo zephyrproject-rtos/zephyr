@@ -1,20 +1,18 @@
 title: OpenISA RV32M1 LPTMR
 
-description: >
+description: |
     This binding represents the OpenISA RV32M1 LPTMR peripheral.
 
-inherits:
-    !include base.yaml
+compatible: "openisa,rv32m1-lptmr"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-lptmr"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

@@ -1,31 +1,26 @@
-#
 # Copyright (c) 2018, Aurelien Jarno
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Atmel SAM TRNG (True Random Number Generator)
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM RNG
 
-inherits:
-    !include base.yaml
+compatible: "atmel,sam-trng"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-trng"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

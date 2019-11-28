@@ -132,7 +132,7 @@ in the following table:
 |      |            | attempt to ARM |                          |
 |      |            | mode           |                          |
 +------+------------+----------------+--------------------------+
-|  7   |SecureFault | Unauthorized   | system fatal error       |
+|  7   | SecureFault| Unauthorized   | system fatal error       |
 |      |            | access to      |                          |
 |      |            | secure region  |                          |
 |      |            | from ns space  |                          |
@@ -175,8 +175,7 @@ All GPIO controller pins are exposed via the following sequence of pin numbers:
 
 Mapping from the ARM V2M Musca Board pins to GPIO controllers:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - D0 : P0_0
    - D1 : P0_1
@@ -213,8 +212,7 @@ Mapping from the ARM V2M Musca Board pins to GPIO controllers:
 
 Peripheral Mapping:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - UART_0_RX : D0
    - UART_0_TX : D1

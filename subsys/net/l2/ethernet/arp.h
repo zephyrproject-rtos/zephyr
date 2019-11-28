@@ -7,7 +7,7 @@
 #ifndef __ARP_H
 #define __ARP_H
 
-#if defined(CONFIG_NET_ARP)
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
 
 #include <sys/slist.h>
 #include <net/ethernet.h>
@@ -79,6 +79,7 @@ void net_arp_init(void);
 #define net_arp_prepare(_kt, _u1, _u2) _kt
 #define net_arp_input(...) NET_OK
 #define net_arp_clear_cache(...)
+#define net_arp_foreach(...) 0
 #define net_arp_init(...)
 
 #endif /* CONFIG_NET_ARP */

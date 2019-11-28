@@ -18,6 +18,16 @@
 #include <sys/util.h>
 #include "lsm6dso_reg.h"
 
+union axis3bit16_t {
+	s16_t i16bit[3];
+	u8_t u8bit[6];
+};
+
+union axis1bit16_t {
+	s16_t i16bit;
+	u8_t u8bit[2];
+};
+
 #define LSM6DSO_EN_BIT					0x01
 #define LSM6DSO_DIS_BIT					0x00
 
@@ -146,12 +156,12 @@ struct lsm6dso_data {
 	} hts221;
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
 
-	lsm6dso_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 
 	#ifdef DT_ST_LSM6DSO_BUS_I2C
-	lsm6dso_ctx_t ctx_i2c;
+	stmdev_ctx_t ctx_i2c;
 	#elif DT_ST_LSM6DSO_BUS_SPI
-	lsm6dso_ctx_t ctx_spi;
+	stmdev_ctx_t ctx_spi;
 	#endif
 
 	u16_t accel_freq;

@@ -14,4 +14,13 @@ toolchain:
 ram: 32
 flash: 224
 supported:
+  - adc
+  - counter
+  - espi
   - gpio
+  - i2c
+  - pinmux
+  - pwm
+  - watchdog
+  - ps2
+  - kscan

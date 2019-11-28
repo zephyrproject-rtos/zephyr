@@ -65,7 +65,7 @@ static void init_callback(struct device *dev,
 static void trigger_callback(struct device *dev, int enable_cb)
 {
 	gpio_pin_write(dev, PIN_OUT, 0);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	cb_cnt[0] = 0;
 	cb_cnt[1] = 0;
@@ -74,9 +74,9 @@ static void trigger_callback(struct device *dev, int enable_cb)
 	} else {
 		gpio_pin_disable_callback(dev, PIN_IN);
 	}
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	gpio_pin_write(dev, PIN_OUT, 1);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 }
 
 static int test_callback_add_remove(void)
@@ -129,7 +129,7 @@ static int test_callback_self_remove(void)
 	init_callback(dev, callback_1, callback_remove_self);
 
 	gpio_pin_write(dev, PIN_OUT, 0);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	cb_data[0].aux = INT_MAX;
 	cb_data[1].aux = INT_MAX;

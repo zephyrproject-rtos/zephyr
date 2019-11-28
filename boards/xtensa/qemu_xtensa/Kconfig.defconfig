@@ -1,11 +1,10 @@
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_QEMU_XTENSA
 
 config BUILD_OUTPUT_BIN
-        default n
+	default n
 
 config BOARD
 	default "qemu_xtensa"

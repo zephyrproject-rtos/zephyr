@@ -28,7 +28,7 @@
 #define DEADBEEF_PTR_STR       "0xdeadbeef"
 
 /*
- * A really long string (330 characters + NUL).
+ * A really long string (330 characters + NULL).
  * The underlying sprintf() architecture will truncate it.
  */
 #define REALLY_LONG_STRING		     \

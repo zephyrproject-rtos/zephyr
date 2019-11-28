@@ -97,9 +97,21 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
+	/* We do not support combination of TXTIME and TXTIME_STATS as the
+	 * same variable is shared in net_pkt.h
+	 */
+#if defined(CONFIG_NET_PKT_TXTIME) && defined(CONFIG_NET_PKT_TXTIME_STATS)
+#error \
+"Cannot define both CONFIG_NET_PKT_TXTIME and CONFIG_NET_PKT_TXTIME_STATS"
+#endif
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME) || \
+				defined(CONFIG_NET_PKT_RXTIME_STATS) || \
+				defined(CONFIG_NET_PKT_TXTIME_STATS)
 	union {
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || \
+				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
+				defined(CONFIG_NET_PKT_TXTIME_STATS)
 		/** Timestamp if available. */
 		struct net_ptp_time timestamp;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
@@ -117,8 +129,13 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_TCP)
-	sys_snode_t sent_list;
+#if defined(CONFIG_NET_TCP1) || defined(CONFIG_NET_TCP2)
+	union {
+		sys_snode_t sent_list;
+
+		/** Allow placing the packet into sys_slist_t */
+		sys_snode_t next;
+	};
 #endif
 
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */

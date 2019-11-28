@@ -42,7 +42,7 @@ struct ili9340_data {
 static void ili9340_exit_sleep(struct ili9340_data *data)
 {
 	ili9340_transmit(data, ILI9340_CMD_EXIT_SLEEP, NULL, 0);
-	k_sleep(120);
+	k_sleep(K_MSEC(120));
 }
 
 static int ili9340_init(struct device *dev)
@@ -96,11 +96,11 @@ static int ili9340_init(struct device *dev)
 #ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	LOG_DBG("Resetting display driver");
 	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 0);
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
-	k_sleep(5);
+	k_sleep(K_MSEC(5));
 #endif
 
 	LOG_DBG("Initializing LCD");

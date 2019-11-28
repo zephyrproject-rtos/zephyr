@@ -1,5 +1,12 @@
 tests:
   arch.common.xip:
-    arch_exclude: xtensa
-    platform_exclude: cc3220sf_launchxl minnowboard
+    filter: CONFIG_XIP
+    tags: xip
+
+  # Platforms where XIP is supported but not on by default (rare, typically
+  # emulator targets, to show that XIP is working for a particular arch)
+  arch.common.xip.nondefault:
+    platform_whitelist: qemu_x86 qemu_x86_coverage
+    extra_configs:
+     - CONFIG_XIP=y
     tags: xip

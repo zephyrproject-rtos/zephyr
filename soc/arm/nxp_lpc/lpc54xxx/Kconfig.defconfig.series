@@ -1,9 +1,7 @@
-# Kconfig -  LPC54XXX series configuration options
-#
+# LPC54XXX series configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_LPC54XXX
 
@@ -11,7 +9,6 @@ config SOC_SERIES
 	default "lpc54xxx"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 40
 

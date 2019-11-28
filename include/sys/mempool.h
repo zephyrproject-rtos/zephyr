@@ -47,7 +47,6 @@ struct sys_mem_pool_block {
  * @param section Destination binary section for pool data
  */
 #define SYS_MEM_POOL_DEFINE(name, ignored, minsz, maxsz, nmax, align, section) \
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);			\
 	char __aligned(WB_UP(align)) Z_GENERIC_SECTION(section)		\
 		_mpool_buf_##name[WB_UP(maxsz) * nmax			\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
@@ -62,7 +61,8 @@ struct sys_mem_pool_block {
 			.levels = _mpool_lvls_##name,			\
 			.flags = SYS_MEM_POOL_USER			\
 		}							\
-	}
+	};								\
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK)
 
 /**
  * @brief Initialize a memory pool
@@ -98,5 +98,18 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size);
  * @param ptr Pointer to previously allocated memory
  */
 void sys_mem_pool_free(void *ptr);
+
+/**
+ * @brief Try to perform in-place expansion of memory allocated from a pool
+ *
+ * Return 0 if memory previously allocated by sys_mem_pool_alloc()
+ * can accommodate a new size, otherwise return the size of data that
+ * needs to be copied over to new memory.
+ *
+ * @param ptr Pointer to previously allocated memory
+ * @param new_size New size requested for the memory block
+ * @return A 0 if OK, or size of data to copy elsewhere
+ */
+size_t sys_mem_pool_try_expand_inplace(void *ptr, size_t new_size);
 
 #endif

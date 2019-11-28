@@ -16,8 +16,7 @@
 
 #include "ccs811.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(CCS811);
+LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -38,7 +37,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	if (!(status & CCS811_STATUS_DATA_READY)) {
@@ -166,33 +165,47 @@ int ccs811_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_CCS811_GPIO_WAKEUP) || defined(CONFIG_CCS811_GPIO_RESET)
-	drv_data->gpio = device_get_binding(CONFIG_CCS811_GPIO_DEV_NAME);
-	if (drv_data->gpio == NULL) {
+#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
+	drv_data->gpio_wakeup =
+		device_get_binding(DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER);
+	if (drv_data->gpio_wakeup == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    CONFIG_CCS811_GPIO_DEV_NAME);
+			DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 #endif
 
-#ifdef CONFIG_CCS811_GPIO_RESET
-	gpio_pin_configure(drv_data->gpio, CONFIG_CCS811_GPIO_RESET_PIN_NUM,
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
+	drv_data->gpio_reset =
+		device_get_binding(DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
+	if (drv_data->gpio_reset == NULL) {
+		LOG_ERR("Failed to get pointer to %s device!",
+			DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
+		return -EINVAL;
+	}
+#endif
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
+	gpio_pin_configure(drv_data->gpio_reset,
+			   DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN,
 			   GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_RESET_PIN_NUM, 1);
+	gpio_pin_write(drv_data->gpio_reset,
+		       DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 #endif
 
 	/*
 	 * Wakeup pin should be pulled low before initiating any I2C transfer.
 	 * If it has been tied to GND by default, skip this part.
 	 */
-#ifdef CONFIG_CCS811_GPIO_WAKEUP
-	gpio_pin_configure(drv_data->gpio, CONFIG_CCS811_GPIO_WAKEUP_PIN_NUM,
+#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
+	gpio_pin_configure(drv_data->gpio_wakeup,
+			   DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN,
 			   GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_WAKEUP_PIN_NUM, 0);
+	gpio_pin_write(drv_data->gpio_wakeup,
+		       DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, 0);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 #endif
 
 	/* Switch device to application mode */

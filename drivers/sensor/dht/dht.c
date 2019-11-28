@@ -15,8 +15,7 @@
 
 #include "dht.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(DHT);
+LOG_MODULE_REGISTER(DHT, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * @brief Measure duration of signal send by sensor

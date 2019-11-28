@@ -1,11 +1,8 @@
-# Kconfig - general configuration options
+# General configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Modules"
 
@@ -74,13 +71,13 @@ config LINKER_ORPHAN_SECTION_ERROR
 endchoice
 
 config CODE_DATA_RELOCATION
-       bool "Relocate code/data sections"
-       depends on ARM
-       help
+	bool "Relocate code/data sections"
+	depends on ARM
+	help
 	  When selected this will relocate .text, data and .bss sections from
 	  the specified files and places it in the required memory region. The
 	  files should be specified in the CMakeList.txt file with
-	  a cmake API zephyr_code_relocation().
+	  a cmake API zephyr_code_relocate().
 
 config HAS_FLASH_LOAD_OFFSET
 	bool
@@ -94,9 +91,12 @@ config USE_CODE_PARTITION
 	help
 	  When selected application will be linked into chosen code-partition.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET) if USE_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -109,7 +109,7 @@ config FLASH_LOAD_OFFSET
 
 config FLASH_LOAD_SIZE
 	hex "Kernel load size"
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE) if USE_CODE_PARTITION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -175,12 +175,6 @@ config CUSTOM_SECTIONS_LD
 	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include a customized linker script fragment for inserting additional
 	  arbitrary sections.
-
-config LINK_WHOLE_ARCHIVE
-	bool "Allow linking with --whole-archive"
-	help
-	  This options allows linking external libraries with the
-	  --whole-archive option to keep all symbols.
 
 config KERNEL_ENTRY
 	string "Kernel entry symbol"

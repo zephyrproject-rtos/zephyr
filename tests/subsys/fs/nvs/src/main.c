@@ -503,7 +503,6 @@ void test_nvs_full_sector(void)
 		len = nvs_write(&fs, filling_id, &filling_id,
 				sizeof(filling_id));
 		if (len == -ENOSPC) {
-			filling_id--;
 			break;
 		}
 		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
@@ -557,6 +556,18 @@ void test_delete(void)
 
 		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
 			     len);
+
+		if (filling_id != 0) {
+			continue;
+		}
+
+		/* delete the first entry while it is the most recent one */
+		err = nvs_delete(&fs, filling_id);
+		zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+		len = nvs_read(&fs, filling_id, &data_read, sizeof(data_read));
+		zassert_true(len == -ENOENT,
+			     "nvs_read shouldn't found the entry: %d", len);
 	}
 
 	/* delete existing entry */

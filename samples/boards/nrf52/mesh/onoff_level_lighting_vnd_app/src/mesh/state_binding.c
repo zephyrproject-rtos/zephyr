@@ -10,12 +10,10 @@
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
+#include "storage.h"
 #include "transition.h"
 
 #define MINDIFF 2.25e-308
-
-u16_t lightness, target_lightness;
-s16_t temperature, target_temperature;
 
 static float sqrt(float square)
 {
@@ -63,43 +61,35 @@ static u16_t linear_to_actual(u16_t val)
 	return (u16_t) (UINT16_MAX * sqrt(((float) val / UINT16_MAX)));
 }
 
-static void constrain_lightness(u16_t var)
+u16_t constrain_lightness(u16_t light)
 {
-	if (var > 0 && var < light_lightness_srv_user_data.light_range_min) {
-		var = light_lightness_srv_user_data.light_range_min;
-	} else if (var > light_lightness_srv_user_data.light_range_max) {
-		var = light_lightness_srv_user_data.light_range_max;
+	if (light > 0 && light < ctl->light->range_min) {
+		light = ctl->light->range_min;
+	} else if (light > ctl->light->range_max) {
+		light = ctl->light->range_max;
 	}
 
-	lightness = var;
+	return light;
 }
 
-static void constrain_lightness2(u16_t var)
+static void constrain_target_lightness(void)
+{
+	ctl->light->target = constrain_lightness(ctl->light->target);
+}
+
+static void constrain_target_lightness2(void)
 {
 	/* This is as per Mesh Model Specification 3.3.2.2.3 */
-	if (var > 0 && var < light_lightness_srv_user_data.light_range_min) {
-		if (gen_level_srv_root_user_data.last_delta < 0) {
-			var = 0U;
+	if (ctl->light->target > 0 &&
+	    ctl->light->target < ctl->light->range_min) {
+		if (ctl->light->delta < 0) {
+			ctl->light->target = 0U;
 		} else {
-			var = light_lightness_srv_user_data.light_range_min;
+			ctl->light->target = ctl->light->range_min;
 		}
-	} else if (var > light_lightness_srv_user_data.light_range_max) {
-		var = light_lightness_srv_user_data.light_range_max;
+	} else if (ctl->light->target > ctl->light->range_max) {
+		ctl->light->target = ctl->light->range_max;
 	}
-
-	lightness = var;
-}
-
-static void constrain_target_lightness(u16_t var)
-{
-	if (var > 0 &&
-	    var < light_lightness_srv_user_data.light_range_min) {
-		var = light_lightness_srv_user_data.light_range_min;
-	} else if (var > light_lightness_srv_user_data.light_range_max) {
-		var = light_lightness_srv_user_data.light_range_max;
-	}
-
-	target_lightness = var;
 }
 
 static s16_t light_ctl_temp_to_level(u16_t temp)
@@ -108,229 +98,152 @@ static s16_t light_ctl_temp_to_level(u16_t temp)
 
 	/* Mesh Model Specification 6.1.3.1.1 2nd formula start */
 
-	tmp = (temp - light_ctl_srv_user_data.temp_range_min) * UINT16_MAX;
+	tmp = (temp - ctl->temp->range_min) * UINT16_MAX;
 
-	tmp = tmp / (light_ctl_srv_user_data.temp_range_max -
-		     light_ctl_srv_user_data.temp_range_min);
+	tmp = tmp / (ctl->temp->range_max - ctl->temp->range_min);
 
 	return (s16_t) (tmp + INT16_MIN);
 
 	/* 6.1.3.1.1 2nd formula end */
 }
 
-static u16_t level_to_light_ctl_temp(s16_t level)
+u16_t level_to_light_ctl_temp(s16_t level)
 {
 	u16_t tmp;
 	float diff;
 
 	/* Mesh Model Specification 6.1.3.1.1 1st formula start */
-	diff = (float) (light_ctl_srv_user_data.temp_range_max -
-			light_ctl_srv_user_data.temp_range_min) / UINT16_MAX;
-
+	diff = (float) (ctl->temp->range_max - ctl->temp->range_min) /
+		       UINT16_MAX;
 
 	tmp = (u16_t) ((level - INT16_MIN) * diff);
 
-	return (light_ctl_srv_user_data.temp_range_min + tmp);
+	return (ctl->temp->range_min + tmp);
 
 	/* 6.1.3.1.1 1st formula end */
 }
 
-void readjust_lightness(void)
-{
-	if (lightness != 0U) {
-		light_lightness_srv_user_data.last = lightness;
-	}
-
-	if (lightness) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-	}
-
-	gen_level_srv_root_user_data.level = lightness + INT16_MIN;
-	light_lightness_srv_user_data.actual = lightness;
-	light_lightness_srv_user_data.linear = actual_to_linear(lightness);
-	light_ctl_srv_user_data.lightness = lightness;
-}
-
-void readjust_temperature(void)
-{
-	gen_level_srv_s0_user_data.level = temperature;
-	light_ctl_srv_user_data.temp = level_to_light_ctl_temp(temperature);
-}
-
-void state_binding(u8_t light, u8_t temp)
-{
-	switch (temp) {
-	case ONOFF_TEMP:
-	case CTL_TEMP:
-		temperature =
-			light_ctl_temp_to_level(light_ctl_srv_user_data.temp);
-
-		gen_level_srv_s0_user_data.level = temperature;
-		break;
-	case LEVEL_TEMP:
-		temperature = gen_level_srv_s0_user_data.level;
-		light_ctl_srv_user_data.temp =
-			level_to_light_ctl_temp(temperature);
-		break;
-	default:
-		break;
-	}
-
-	switch (light) {
-	case ONPOWERUP:
-		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
-			lightness = 0U;
-		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			lightness = light_lightness_srv_user_data.last;
-		}
-		break;
-	case ONOFF:
-		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
-			lightness = 0U;
-		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			if (light_lightness_srv_user_data.def == 0U) {
-				lightness = light_lightness_srv_user_data.last;
-			} else {
-				lightness = light_lightness_srv_user_data.def;
-			}
-		}
-		break;
-	case LEVEL:
-		lightness = gen_level_srv_root_user_data.level - INT16_MIN;
-		break;
-	case DELTA_LEVEL:
-		lightness = gen_level_srv_root_user_data.level - INT16_MIN;
-		constrain_lightness2(lightness);
-		goto jump;
-	case ACTUAL:
-		lightness = light_lightness_srv_user_data.actual;
-		break;
-	case LINEAR:
-		lightness =
-			linear_to_actual(light_lightness_srv_user_data.linear);
-		break;
-	case CTL:
-		lightness = light_ctl_srv_user_data.lightness;
-		break;
-	default:
-		break;
-	}
-
-	constrain_lightness(lightness);
-
-jump:
-	readjust_lightness();
-}
-
-void init_lightness_target_values(void)
-{
-	target_lightness = lightness;
-
-	if (target_lightness) {
-		gen_onoff_srv_root_user_data.target_onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.target_onoff = STATE_OFF;
-	}
-
-	gen_level_srv_root_user_data.target_level = target_lightness + INT16_MIN;
-
-	light_lightness_srv_user_data.target_actual = target_lightness;
-
-	light_lightness_srv_user_data.target_linear =
-		actual_to_linear(target_lightness);
-
-	light_ctl_srv_user_data.target_lightness = target_lightness;
-}
-
-void calculate_lightness_target_values(u8_t type)
-{
-	u16_t tmp;
-
-	switch (type) {
-	case ONOFF:
-		if (gen_onoff_srv_root_user_data.target_onoff == 0U) {
-			tmp = 0U;
-		} else {
-			if (light_lightness_srv_user_data.def == 0U) {
-				tmp = light_lightness_srv_user_data.last;
-			} else {
-				tmp = light_lightness_srv_user_data.def;
-			}
-		}
-		break;
-	case LEVEL:
-		tmp = gen_level_srv_root_user_data.target_level - INT16_MIN;
-		break;
-	case ACTUAL:
-		tmp = light_lightness_srv_user_data.target_actual;
-		break;
-	case LINEAR:
-		tmp = linear_to_actual(light_lightness_srv_user_data.target_linear);
-		break;
-	case CTL:
-		tmp = light_ctl_srv_user_data.target_lightness;
-
-		target_temperature = light_ctl_temp_to_level(light_ctl_srv_user_data.target_temp);
-		gen_level_srv_s0_user_data.target_level = target_temperature;
-		break;
-	default:
-		return;
-	}
-
-	constrain_target_lightness(tmp);
-
-	if (target_lightness) {
-		gen_onoff_srv_root_user_data.target_onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.target_onoff = STATE_OFF;
-	}
-
-	gen_level_srv_root_user_data.target_level = target_lightness + INT16_MIN;
-
-	light_lightness_srv_user_data.target_actual = target_lightness;
-
-	light_lightness_srv_user_data.target_linear =
-		actual_to_linear(target_lightness);
-
-	light_ctl_srv_user_data.target_lightness = target_lightness;
-}
-
-void init_temp_target_values(void)
-{
-	target_temperature = temperature;
-	gen_level_srv_s0_user_data.target_level = target_temperature;
-	light_ctl_srv_user_data.target_temp =
-			level_to_light_ctl_temp(target_temperature);
-}
-
-void calculate_temp_target_values(u8_t type)
+void set_target(u8_t type, void *dptr)
 {
 	bool set_light_ctl_delta_uv_target_value;
 
 	set_light_ctl_delta_uv_target_value = true;
 
 	switch (type) {
+	case ONOFF: {
+		u8_t onoff;
+
+		onoff = *((u8_t *) dptr);
+		if (onoff == STATE_OFF) {
+			ctl->light->target = 0U;
+		} else if (onoff == STATE_ON) {
+			if (ctl->light->def == 0U) {
+				ctl->light->target = ctl->light->last;
+			} else {
+				ctl->light->target = ctl->light->def;
+			}
+		}
+	}
+	break;
+	case LEVEL:
+		ctl->light->target = *((s16_t *) dptr) - INT16_MIN;
+		constrain_target_lightness();
+		break;
+	case DELTA_LEVEL:
+		ctl->light->target =  *((s16_t *) dptr) - INT16_MIN;
+		constrain_target_lightness2();
+		break;
+	case ACTUAL:
+		ctl->light->target = *((u16_t *) dptr);
+		break;
+	case LINEAR:
+		ctl->light->target = linear_to_actual(*((u16_t *) dptr));
+		constrain_target_lightness();
+		break;
+	case CTL:
+		set_light_ctl_delta_uv_target_value = false;
+		ctl->light->target = *((u16_t *) dptr);
+		constrain_target_lightness();
+		break;
 	case LEVEL_TEMP:
-		target_temperature = gen_level_srv_s0_user_data.target_level;
-		light_ctl_srv_user_data.target_temp =
-			level_to_light_ctl_temp(target_temperature);
+		ctl->temp->target = level_to_light_ctl_temp(*((s16_t *) dptr));
 		break;
 	case CTL_TEMP:
 		set_light_ctl_delta_uv_target_value = false;
-
-		target_temperature = light_ctl_temp_to_level(light_ctl_srv_user_data.target_temp);
-		gen_level_srv_s0_user_data.target_level = target_temperature;
+		ctl->temp->target = *((u16_t *) dptr);
+		break;
+	case CTL_DELTA_UV:
+		ctl->duv->target = *((s16_t *) dptr);
 		break;
 	default:
 		return;
 	}
 
 	if (set_light_ctl_delta_uv_target_value) {
+		ctl->duv->target = ctl->duv->current;
+	}
 
-		light_ctl_srv_user_data.target_delta_uv =
-			light_ctl_srv_user_data.delta_uv;
+	if (ctl->onpowerup == STATE_RESTORE) {
+		save_on_flash(LIGHTNESS_TEMP_LAST_TARGET_STATE);
 	}
 }
 
+int get_current(u8_t type)
+{
+	switch (type) {
+	case ONOFF:
+		if (ctl->light->current != 0U) {
+			return STATE_ON;
+		} else {
+			if (ctl->light->target) {
+				return STATE_ON;
+			} else {
+				return STATE_OFF;
+			}
+		}
+	case LEVEL:
+		return (s16_t) (ctl->light->current + INT16_MIN);
+	case ACTUAL:
+		return ctl->light->current;
+	case LINEAR:
+		return actual_to_linear(ctl->light->current);
+	case CTL:
+		return ctl->light->current;
+	case LEVEL_TEMP:
+		return light_ctl_temp_to_level(ctl->temp->current);
+	case CTL_TEMP:
+		return ctl->temp->current;
+	case CTL_DELTA_UV:
+		return ctl->duv->current;
+	default:
+		return 0U;
+	}
+}
+
+int get_target(u8_t type)
+{
+	switch (type) {
+	case ONOFF:
+		if (ctl->light->target != 0U) {
+			return STATE_ON;
+		} else {
+			return STATE_OFF;
+		}
+	case LEVEL:
+		return (s16_t) (ctl->light->target + INT16_MIN);
+	case ACTUAL:
+		return ctl->light->target;
+	case LINEAR:
+		return actual_to_linear(ctl->light->target);
+	case CTL:
+		return ctl->light->target;
+	case LEVEL_TEMP:
+		return light_ctl_temp_to_level(ctl->temp->target);
+	case CTL_TEMP:
+		return ctl->temp->target;
+	case CTL_DELTA_UV:
+		return ctl->duv->target;
+	default:
+		return 0U;
+	}
+}

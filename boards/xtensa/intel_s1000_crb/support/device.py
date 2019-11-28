@@ -82,10 +82,10 @@ class Device:
         max_wait = 0.1 	 # 100 ms
         time.sleep(min_wait)
         ready = self.irq_pin.read()
-        if ready == False:
+        if not ready:
             time.sleep(max_wait)
             ready = self.irq_pin.read()
-            if ready == False:
+            if not ready:
                 print('Error: Device not ready', file=sys.stderr)
         return ready
 
@@ -100,14 +100,14 @@ class Device:
         self.reset_pin.write(True)
         self.check_device_ready()
 
-    def send_receive(self, data, wait = True):
+    def send_receive(self, data, wait=True):
         """
         Transmit and receive full duplex data over SPI
         If requested to wait, wait for device to become ready
         before return.
         """
         rx_data = self.spi.transfer(data)
-        if wait == True:
+        if wait:
             self.check_device_ready()
         return rx_data
 

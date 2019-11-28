@@ -12,6 +12,5 @@ supported:
   - nvs
   - pwm
   - can
-  - rtc
   - counter
   - spi

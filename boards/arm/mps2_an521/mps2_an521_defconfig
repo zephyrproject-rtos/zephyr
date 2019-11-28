@@ -29,4 +29,7 @@ CONFIG_UART_CMSDK_APB=y
 # Watchdog
 CONFIG_WATCHDOG=y
 
+# Build a Secure firmware image
+CONFIG_TRUSTED_EXECUTION_SECURE=y
+
 CONFIG_I2C=y

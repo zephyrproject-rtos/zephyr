@@ -98,7 +98,7 @@ elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
 
 def find_obj_file_partitions(filename, partitions):
     with open(filename, 'rb') as f:
-        full_lib = ELFFile( f)
+        full_lib = ELFFile(f)
         if not full_lib:
             sys.exit("Error parsing file: " + filename)
 
@@ -126,7 +126,7 @@ def parse_obj_files(partitions):
     # Iterate over all object files to find partitions
     for dirpath, _, files in os.walk(args.directory):
         for filename in files:
-            if re.match(r".*\.obj$",filename):
+            if re.match(r".*\.obj$", filename):
                 fullname = os.path.join(dirpath, filename)
                 find_obj_file_partitions(fullname, partitions)
 
@@ -191,7 +191,7 @@ def parse_args():
                         help="ELF file")
     parser.add_argument("-o", "--output", required=False,
                         help="Output ld file")
-    parser.add_argument("-v", "--verbose", action="count", default =0,
+    parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Verbose Output")
     parser.add_argument("-l", "--library", nargs=2, action="append", default=[],
                         metavar=("LIBRARY", "PARTITION"),

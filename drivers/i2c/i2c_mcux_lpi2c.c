@@ -228,7 +228,7 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_0 = {
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_0;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_0, CONFIG_I2C_0_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_0, DT_I2C_0_NAME, &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_0, &mcux_lpi2c_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
@@ -256,7 +256,7 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_1 = {
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_1;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_1, CONFIG_I2C_1_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_1, DT_I2C_1_NAME, &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_1, &mcux_lpi2c_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
@@ -284,7 +284,7 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_2 = {
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_2;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_2, CONFIG_I2C_2_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_2, DT_I2C_2_NAME, &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_2, &mcux_lpi2c_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
@@ -312,7 +312,7 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_3 = {
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_3;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_3, CONFIG_I2C_3_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_3, DT_I2C_3_NAME, &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_3, &mcux_lpi2c_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
@@ -340,7 +340,7 @@ static const struct mcux_lpi2c_config mcux_lpi2c_config_4 = {
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_4;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_4, CONFIG_I2C_4_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_4, DT_I2C_4_NAME, &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_4, &mcux_lpi2c_config_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);

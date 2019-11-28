@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: STMicroelectronics MEMS sensors LPS22HH
 
-description: >
+description: |
     This binding gives a base representation of LPS22HH pressure and
     temperature sensor connected to I2C bus
 
-inherits:
-    !include i2c-device.yaml
+compatible: "st,lps22hh"
+
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,lps22hh"
-
     drdy-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
       description: DRDY pin

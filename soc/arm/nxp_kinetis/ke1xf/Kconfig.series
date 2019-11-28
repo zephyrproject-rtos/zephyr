@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KE1xF series MCU
-#
+# Kinetis KE1xF series MCU
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_KINETIS_KE1XF
 	bool "Kinetis KE1xF Series MCU"
@@ -24,5 +22,6 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_ADC12
 	select HAS_MCUX_SCG
 	select HAS_MCUX_WDOG32
+	select HAS_MCUX_FTM
 	help
 	  Enable support for Kinetis KE1xF MCU series

@@ -100,7 +100,7 @@ The STM32MP157A SoC provides the following hardware capabilities:
   - HDMI-CEC interface
   - MDIO Slave interface
   - 3 × SDMMC up to 8-bit (SD / e•MMC™ / SDIO)
-  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capiblity
+  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capability
   - 2 × USB 2.0 high-speed Host+ 1 × USB 2.0 full-speed OTG simultaneously
   - 10/100M or Gigabit Ethernet GMAC (IEEE 1588v2 hardware, MII/RMII/GMII/RGMI)
   - 8- to 14-bit camera interface up to 140 Mbyte/s
@@ -195,7 +195,7 @@ Serial Port
 by default to the RAM console to be dumped by the Linux Remoteproc Framework
 on Cortex®-A7 core. Alternatively, Zephyr console output can be assigned to
 UART7 which is disabled by default. UART console can be enabled through
-board's device tree and 96b_avenger96_defconfig board file (or prj.conf
+board's devicetree and 96b_avenger96_defconfig board file (or prj.conf
 project files), and will disable existing RAM console output. Default UART
 console settings are 115200 8N1.
 
@@ -232,7 +232,7 @@ Debugging
 You can debug an application using OpenOCD and GDB. The Solution proposed below
 is based on the Linux STM32MP1 SDK OpenOCD and is available only for a Linux
 environment. The firmware must first be loaded by the Cortex®-A7. Developer
-then attachs the debugger to the running Zephyr using OpenOCD.
+then attaches the debugger to the running Zephyr using OpenOCD.
 
 Prerequisite
 ------------

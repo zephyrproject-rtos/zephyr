@@ -1,26 +1,21 @@
-#
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Nordic Semiconductor NRF watchdog driver
 
-description: >
+description: |
     This is a representation of the NRF watchdog
 
-inherits:
-    !include base.yaml
+compatible: "nordic,nrf-watchdog"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-watchdog"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

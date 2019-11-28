@@ -7,10 +7,9 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(lsm303dlhc_magn);
+
+LOG_MODULE_REGISTER(lsm303dlhc_magn, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "lsm303dlhc_magn.h"
 

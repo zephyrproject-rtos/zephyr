@@ -25,7 +25,7 @@ static void do_main(struct device *dev)
 		printk("Voltage: %d.%06dV; Current: %d.%06dA\n\n", voltage.val1,
 				voltage.val2, current.val1, current.val2);
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 
 }

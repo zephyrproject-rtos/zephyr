@@ -18,7 +18,7 @@ Flash the binary to a board of choice with a sensor connected.
 For example build for a nucleo_f446re board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/ens210
+   :zephyr-app: samples/sensor/ens210
    :board: nucleo_f446re
    :goals: build flash
    :compact:

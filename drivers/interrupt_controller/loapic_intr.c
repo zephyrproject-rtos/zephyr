@@ -65,33 +65,14 @@ u32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-/*
- * this should not be a function at all, really, it should be
- * hand-coded in include/drivers/sysapic.h. but for now it remains
- * a function, just moved here from drivers/timer/loapic_timer.c
- * where it REALLY didn't belong.
- */
-
-#ifdef CONFIG_X2APIC
-void z_x2apic_eoi(void)
-{
-	x86_write_x2apic(LOAPIC_EOI, 0);
-}
-#endif
-
 /**
+ * @brief Enable and initialize the local APIC.
  *
- * @brief Initialize the Local APIC or xAPIC
- *
- * This routine initializes Local APIC or xAPIC.
- *
- * @return N/A
- *
+ * Called from early assembly layer (e.g., crt0.S).
  */
 
-static int loapic_init(struct device *unused)
+void z_loapic_enable(void)
 {
-	ARG_UNUSED(unused);
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
 
 	/*
@@ -164,7 +145,19 @@ static int loapic_init(struct device *unused)
 
 	/* discard a pending interrupt if any */
 	x86_write_loapic(LOAPIC_EOI, 0);
+}
 
+/**
+ *
+ * @brief Dummy initialization function.
+ *
+ * The local APIC is initialized via z_loapic_enable() long before the
+ * kernel runs through its device initializations, so this is unneeded.
+ */
+
+static int loapic_init(struct device *unused)
+{
+	ARG_UNUSED(unused);
 	return 0;
 }
 

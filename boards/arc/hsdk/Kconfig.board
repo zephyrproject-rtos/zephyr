@@ -1,0 +1,13 @@
+# DesignWare ARC HS Development Kit board configuration
+
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HSDK
+	bool "ARC HS Development Kit"
+	depends on SOC_ARC_HSDK
+	help
+	  The DesignWare ARC HS Development Kit is a ready-to-use platform for
+	  rapid software development on the ARC HS3x family of processors. It
+	  supports single- and multi-core ARC HS34, HS36 and HS38 processors
+	  and offers a wide range of interfaces

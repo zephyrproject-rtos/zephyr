@@ -868,6 +868,21 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   lwm2m_ctx_event_cb_t event_cb);
 
-#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
+/**
+ * @brief Stop the LwM2M RD (De-register) Client
+ *
+ * The RD client sits just above the LwM2M engine and performs the necessary
+ * actions to implement the "Registration interface".
+ * For more information see Section 5.3 "Client Registration Interface" of the
+ * LwM2M Technical Specification.
+ *
+ * @param[in] client_ctx LwM2M context
+ * @param[in] event_cb Client event callback function
+ *
+ * @return 0 for success or negative in case of error.
+ */
+void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
+			  lwm2m_ctx_event_cb_t event_cb);
 
+#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

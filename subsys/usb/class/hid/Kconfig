@@ -1,10 +1,7 @@
-# Kconfig - USB HID configuration options
+# USB HID configuration options
 
-#
 # Copyright (c) 2018 Intel Corp.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config USB_DEVICE_HID
 	bool "USB Human Interface Device support"

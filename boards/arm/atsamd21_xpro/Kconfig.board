@@ -1,5 +1,5 @@
-# Kconfig - SAM D21 Xplained Pro Board configuration
-#
+# SAM D21 Xplained Pro Board configuration
+
 # Copyright (c) 2018 Bryan O'Donoghue
 # SPDX-License-Identifier: Apache-2.0
 

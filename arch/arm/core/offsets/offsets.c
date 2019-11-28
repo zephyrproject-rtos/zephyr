@@ -22,8 +22,9 @@
  * completeness.
  */
 
+#include <kernel.h>
+#include <kernel_arch_data.h>
 #include <gen_offset.h>
-#include <kernel_structs.h>
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
@@ -65,6 +66,10 @@ GEN_OFFSET_SYM(_callee_saved_t, v6);
 GEN_OFFSET_SYM(_callee_saved_t, v7);
 GEN_OFFSET_SYM(_callee_saved_t, v8);
 GEN_OFFSET_SYM(_callee_saved_t, psp);
+#if defined(CONFIG_CPU_CORTEX_R)
+GEN_OFFSET_SYM(_callee_saved_t, spsr);
+GEN_OFFSET_SYM(_callee_saved_t, lr);
+#endif
 
 /* size of the entire preempt registers structure */
 

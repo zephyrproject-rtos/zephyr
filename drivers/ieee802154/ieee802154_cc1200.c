@@ -635,10 +635,10 @@ static int cc1200_tx(struct device *dev,
 	}
 
 	/* Wait for SYNC to be sent */
-	k_sem_take(&cc1200->tx_sync, 100);
+	k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	if (atomic_get(&cc1200->tx_start) == 1) {
 		/* Now wait for the packet to be fully sent */
-		k_sem_take(&cc1200->tx_sync, 100);
+		k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	}
 
 out:
@@ -798,7 +798,7 @@ static int cc1200_init(struct device *dev)
 	k_thread_create(&cc1200->rx_thread, cc1200->rx_stack,
 			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
 			(k_thread_entry_t)cc1200_rx,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	LOG_INF("CC1200 initialized");
 

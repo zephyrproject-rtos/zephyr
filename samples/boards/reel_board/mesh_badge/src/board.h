@@ -9,7 +9,6 @@ enum led_periph_device {
 	DEV_IDX_LED0 = 0,
 	DEV_IDX_LED1,
 	DEV_IDX_LED2,
-	DEV_IDX_LED3,
 };
 
 enum periph_device {

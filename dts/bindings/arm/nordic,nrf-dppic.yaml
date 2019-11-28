@@ -1,21 +1,16 @@
-#
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Nordic DPPIC
 
-description: >
+description: |
     Binding for the Nordic DPPIC
     Distributed Programmable Peripheral Interconnect Controller
 
-inherits:
-    !include base.yaml
+compatible: "nordic,nrf-dppic"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-dppic"
-
     reg:
-      category: required
+      required: true

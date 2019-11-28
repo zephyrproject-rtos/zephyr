@@ -6,54 +6,36 @@
 
 /**
  * @file
- * @brief New thread creation for ARM Cortex-M
+ * @brief New thread creation for ARM Cortex-M and Cortex-R
  *
- * Core thread related primitives for the ARM Cortex-M processor architecture.
+ * Core thread related primitives for the ARM Cortex-M and Cortex-R
+ * processor architecture.
  */
 
 #include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_USERSPACE
 extern u8_t *z_priv_stack_find(void *obj);
 #endif
 
-/**
- *
- * @brief Initialize a new thread from its stack space
- *
- * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by __pendsv(), is put at the other end of
- * the stack, and thus reusable by the stack when not needed anymore.
+/* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
+ * end of the stack, and thus reusable by the stack when not needed anymore.
  *
  * The initial context is an exception stack frame (ESF) since exiting the
  * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
  * an instruction address to jump to must always be set since the CPU always
  * runs in thumb mode, the ESF expects the real address of the instruction,
- * with the lsb *not* set (instructions are always aligned on 16 bit halfwords).
- * Since the compiler automatically sets the lsb of function addresses, we have
- * to unset it manually before storing it in the 'pc' field of the ESF.
- *
- * <options> is currently unused.
- *
- * @param stack      pointer to the aligned stack memory
- * @param stackSize  size of the available stack memory in bytes
- * @param pEntry the entry point
- * @param parameter1 entry point to the first param
- * @param parameter2 entry point to the second param
- * @param parameter3 entry point to the third param
- * @param priority   thread priority
- * @param options    thread options: K_ESSENTIAL, K_FP_REGS
- *
- * @return N/A
+ * with the lsb *not* set (instructions are always aligned on 16 bit
+ * halfwords).  Since the compiler automatically sets the lsb of function
+ * addresses, we have to unset it manually before storing it in the 'pc' field
+ * of the ESF.
  */
-
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stackSize, k_thread_entry_t pEntry,
-		 void *parameter1, void *parameter2, void *parameter3,
-		 int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stackSize, k_thread_entry_t pEntry,
+		     void *parameter1, void *parameter2, void *parameter3,
+		     int priority, unsigned int options)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
@@ -130,7 +112,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_USERSPACE)
 	if ((options & K_USER) != 0) {
-		pInitCtx->basic.pc = (u32_t)z_arch_user_mode_enter;
+		pInitCtx->basic.pc = (u32_t)arch_user_mode_enter;
 	} else {
 		pInitCtx->basic.pc = (u32_t)z_thread_entry;
 	}
@@ -138,8 +120,10 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->basic.pc = (u32_t)z_thread_entry;
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	/* force ARM mode by clearing LSB of address */
 	pInitCtx->basic.pc &= 0xfffffffe;
+#endif
 
 	pInitCtx->basic.a1 = (u32_t)pEntry;
 	pInitCtx->basic.a2 = (u32_t)parameter1;
@@ -149,6 +133,11 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
 	thread->callee_saved.psp = (u32_t)pInitCtx;
+#if defined(CONFIG_CPU_CORTEX_R)
+	pInitCtx->basic.lr = (u32_t)pInitCtx->basic.pc;
+	thread->callee_saved.spsr = A_BIT | T_BIT | MODE_SYS;
+	thread->callee_saved.lr = (u32_t)pInitCtx->basic.pc;
+#endif
 	thread->arch.basepri = 0;
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
@@ -168,8 +157,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_USERSPACE
 
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-	void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
 {
 
 	/* Set up privileged stack before entering user mode */
@@ -339,13 +328,13 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-int z_arch_float_disable(struct k_thread *thread)
+int arch_float_disable(struct k_thread *thread)
 {
 	if (thread != _current) {
 		return -EINVAL;
 	}
 
-	if (z_is_in_isr()) {
+	if (arch_is_in_isr()) {
 		return -EINVAL;
 	}
 
@@ -356,18 +345,110 @@ int z_arch_float_disable(struct k_thread *thread)
 	 * fault to take an outdated thread user_options flag into
 	 * account.
 	 */
-	int key = z_arch_irq_lock();
+	int key = arch_irq_lock();
 
 	thread->base.user_options &= ~K_FP_REGS;
 
 	__set_CONTROL(__get_CONTROL() & (~CONTROL_FPCA_Msk));
 
 	/* No need to add an ISB barrier after setting the CONTROL
-	 * register; z_arch_irq_unlock() already adds one.
+	 * register; arch_irq_unlock() already adds one.
 	 */
 
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 
 	return 0;
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
+void arch_switch_to_main_thread(struct k_thread *main_thread,
+				k_thread_stack_t *main_stack,
+				size_t main_stack_size,
+				k_thread_entry_t _main)
+{
+#if defined(CONFIG_FLOAT)
+	/* Initialize the Floating Point Status and Control Register when in
+	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
+	 * initialized at thread creation for threads that make use of the FP).
+	 */
+	__set_FPSCR(0);
+#if defined(CONFIG_FP_SHARING)
+	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
+	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
+	__ISB();
+#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_FLOAT */
+
+#ifdef CONFIG_ARM_MPU
+	/* Configure static memory map. This will program MPU regions,
+	 * to set up access permissions for fixed memory sections, such
+	 * as Application Memory or No-Cacheable SRAM area.
+	 *
+	 * This function is invoked once, upon system initialization.
+	 */
+	z_arm_configure_static_mpu_regions();
+#endif
+
+	/* get high address of the stack, i.e. its start (stack grows down) */
+	char *start_of_main_stack;
+
+	start_of_main_stack =
+		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
+
+	start_of_main_stack = (char *)STACK_ROUND_DOWN(start_of_main_stack);
+
+	_current = main_thread;
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
+	/* the ready queue cache already contains the main thread */
+
+#ifdef CONFIG_ARM_MPU
+	/*
+	 * If stack protection is enabled, make sure to set it
+	 * before jumping to thread entry function
+	 */
+	z_arm_configure_dynamic_mpu_regions(main_thread);
+#endif
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	/* Set PSPLIM register for built-in stack guarding of main thread. */
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+	__set_PSPLIM((u32_t)main_stack);
+#else
+#error "Built-in PSP limit checks not supported by HW"
+#endif
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
+	/*
+	 * Set PSP to the highest address of the main stack
+	 * before enabling interrupts and jumping to main.
+	 */
+	__asm__ volatile (
+	"mov   r0,  %0\n\t"	/* Store _main in R0 */
+#if defined(CONFIG_CPU_CORTEX_M)
+	"msr   PSP, %1\n\t"	/* __set_PSP(start_of_main_stack) */
+#endif
+
+	"movs r1, #0\n\t"
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
+			|| defined(CONFIG_ARMV7_R)
+	"cpsie i\n\t"		/* __enable_irq() */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
+	"msr   BASEPRI, r1\n\t"	/* __set_BASEPRI(0) */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	"isb\n\t"
+	"movs r2, #0\n\t"
+	"movs r3, #0\n\t"
+	"bl z_thread_entry\n\t"	/* z_thread_entry(_main, 0, 0, 0); */
+	:
+	: "r" (_main), "r" (start_of_main_stack)
+	: "r0" /* not to be overwritten by msr PSP, %1 */
+	);
+
+	CODE_UNREACHABLE;
+}

@@ -10,6 +10,10 @@ config BOARD_NRF52_BSIM
 	select CONSOLE_HAS_DRIVER
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
+	# Indicate that the nRF RNG peripheral is present (actually a model
+	# of it), so that the corresponding driver becomes available (see
+	# dependencies of the ENTROPY_NRF5_RNG option).
+	select HAS_HW_NRF_RNG
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute

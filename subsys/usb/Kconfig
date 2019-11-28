@@ -1,10 +1,7 @@
-# Kconfig - USB device stack configuration options
+# USB device stack configuration options
 
-#
 # Copyright (c) 2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig USB_DEVICE_STACK
 	bool "USB device stack"
@@ -62,7 +59,14 @@ config USB_REQUEST_BUFFER_SIZE
 	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
 	range 8 65536
 	default 256 if USB_DEVICE_NETWORK_RNDIS
-	default 64
+	default 1024 if USB_DEVICE_LOOPBACK
+	default 128
+
+config USB_NUMOF_EP_WRITE_RETRIES
+	int "Number of endpoint write retries"
+	default 3
+	help
+	  Number of endpoint write retries.
 
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"
@@ -71,6 +75,12 @@ config USB_DEVICE_REMOTE_WAKEUP
 	bool "Enable support for remote wakeup"
 	help
 	  This option requires USBD peripheral driver to also support remote wakeup.
+
+config USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
+	bool
+	help
+	  Stack should not handle ZLP for Variable-length Data Stage
+	  because it is taken over by the hardware.
 
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"

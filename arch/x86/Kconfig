@@ -1,10 +1,8 @@
-# Kconfig - x86 general configuration options
+# x86 general configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menu "X86 Architecture Options"
 	depends on X86
 
@@ -19,14 +17,14 @@ config CPU_ATOM
 	bool # hidden
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool # hidden
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
@@ -34,18 +32,37 @@ config CPU_APOLLO_LAKE
 	bool # hidden
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
 #
-# Configuration common to both IA32 and X64 sub-architectures.
+# Configuration common to both IA32 and Intel64 sub-architectures.
 #
 
-config X86_LONGMODE
+config X86_64
 	bool
-	prompt "Run in long (64-bit) mode"
+	prompt "Run in 64-bit mode"
 	default n
+	select 64BIT
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select SCHED_IPI_SUPPORTED
+
+config MAX_IRQ_LINES
+	int "Number of IRQ lines"
+	default 128
+	range 0 224
+	help
+	  This option specifies the number of IRQ lines in the system. It
+	  determines the size of the _irq_to_interrupt_vector_table, which
+	  is used to track the association between vectors and IRQ numbers.
+
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 32
+	range 32 255
+	depends on IRQ_OFFLOAD
 
 config XIP
 	default n
@@ -66,7 +83,21 @@ choice
 		  Reboot via the RST_CNT register, going back to BIOS.
 endchoice
 
-config X86_MULTIBOOT
+config ACPI
+	bool "ACPI (Advanced Configuration and Power Interface) support"
+	default n
+	help
+	  Allow retrieval of platform configuration at runtime.
+
+config X86_MEMMAP_ENTRIES
+	int "Number of memory map entries"
+	range 1 256
+	default 1 if !MULTIBOOT_MEMMAP
+	default 64 if MULTIBOOT_MEMMAP
+	help
+	  Maximum number of memory regions to hold in the memory map.
+
+config MULTIBOOT
 	bool "Generate multiboot header"
 	default y
 	help
@@ -75,9 +106,10 @@ config X86_MULTIBOOT
 	  to leave this option on if you're not sure. It only expands the
 	  text segment by 12-16 bytes and is typically ignored if not needed.
 
-config X86_MULTIBOOT_INFO
+if MULTIBOOT
+
+config MULTIBOOT_INFO
 	bool "Preserve multiboot information structure"
-	depends on X86_MULTIBOOT
 	default n
 	help
 	  Multiboot passes a pointer to an information structure to the
@@ -85,28 +117,43 @@ config X86_MULTIBOOT_INFO
 	  display driver) need to refer to information in this structure,
 	  and so set this option to preserve the data in a permanent location.
 
-if X86_MULTIBOOT
+config MULTIBOOT_MEMMAP
+	bool "Use multiboot memory map if provided"
+	default n
+	select MULTIBOOT_INFO
+	help
+	  Use the multiboot memory map if the loader provides one.
 
-config X86_MULTIBOOT_FRAMEBUF
+config MULTIBOOT_FRAMEBUF
 	bool "Multiboot framebuffer support"
 	default n
 	select DISPLAY
 	select FRAMEBUF_DISPLAY
-	select X86_MULTIBOOT_INFO
+	select MULTIBOOT_INFO
 
-if X86_MULTIBOOT_FRAMEBUF
+if MULTIBOOT_FRAMEBUF
 
-config X86_MULTIBOOT_FRAMEBUF_X
+config MULTIBOOT_FRAMEBUF_X
 	int "Multiboot framebuffer X pixels"
 	default 640
 
-config X86_MULTIBOOT_FRAMEBUF_Y
+config MULTIBOOT_FRAMEBUF_Y
 	int "Multiboot framebuffer Y pixels"
 	default 480
 
-endif # X86_MULTIBOOT_FRAMEBUF
+endif # MULTIBOOT_FRAMEBUF
 
-endif # X86_MULTIBOOT
+endif # MULTIBOOT
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
 
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
@@ -115,11 +162,76 @@ config X86_VERY_EARLY_CONSOLE
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
 	  very minimal serial driver which gets initialized at the very
-	  beginning of z_cstart(), via kernel_arch_init(). This driver enables
+	  beginning of z_cstart(), via arch_kernel_init(). This driver enables
 	  printk to emit messages to the 16550 UART port 0 instance in device
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
 
+config X86_MMU
+	bool "Enable Memory Management Unit"
+	select MEMORY_PROTECTION
+	help
+	  This options enables the memory management unit present in x86
+	  and creates a set of page tables at boot time that is runtime-
+	  mutable.
+
+config X86_MMU_PAGE_POOL_PAGES
+	int "Number of pages to reserve for building page tables"
+	default 16
+	depends on X86_MMU
+	help
+	  Building page tables at boot requires a pool of free memory pages
+	  to construct it. This can't be derived at build time, tune this
+	  to your SoC's specific memory map.
+
+config X86_NO_MELTDOWN
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability,
+	  as described in CVE-2017-5754.
+
+config X86_NO_SPECTRE_V1
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V1, V1.1, and V1.2
+	  CPU vulnerabilities as described in CVE-2017-5753 and CVE-2018-3693.
+
+config X86_NO_SPECTRE_V2
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V2 CPU
+	  vulnerability, as described in CVE-2017-5715.
+
+config X86_NO_SPECTRE_V4
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V4 CPU
+	  vulnerability, as described in CVE-2018-3639.
+
+config X86_NO_LAZY_FP
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate
+	  that a particular SOC is not vulnerable to the Lazy FP CPU
+	  vulnerability, as described in CVE-2018-3665.
+
+config X86_NO_SPECULATIVE_VULNERABILITIES
+	bool
+	select X86_NO_MELTDOWN
+	select X86_NO_SPECTRE_V1
+	select X86_NO_SPECTRE_V2
+	select X86_NO_SPECTRE_V4
+	select X86_NO_LAZY_FP
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC does not perform any kind of speculative execution,
+	  or is a newer chip which is immune to the class of vulnerabilities
+	  which exploit speculative execution side channel attacks.
+
 source "arch/x86/core/Kconfig.ia32"
-source "arch/x86/core/Kconfig.x64"
+source "arch/x86/core/Kconfig.intel64"
 
 endmenu

@@ -1,10 +1,7 @@
-# Kconfig - CoAP implementation for Zephyr
+# CoAP implementation for Zephyr
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config COAP
 	bool "CoAP Support"

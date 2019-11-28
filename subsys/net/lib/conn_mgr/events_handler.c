@@ -124,11 +124,11 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 
 	NET_DBG("Iface index %u", idx);
 
-	switch (NET_MGMT_EVENT(mgmt_event)) {
-	case NET_EVENT_IPV4_ADDR_ADD:
+	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
+	case NET_EVENT_IPV4_CMD_ADDR_ADD:
 		iface_states[idx] |= NET_STATE_IPV4_ADDR_SET;
 		break;
-	case NET_EVENT_IPV4_ADDR_DEL:
+	case NET_EVENT_IPV4_CMD_ADDR_DEL:
 		if (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
 			break;
 		}

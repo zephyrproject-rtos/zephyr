@@ -92,7 +92,7 @@ static void do_test_gen_gz_inc_file(const unsigned char gz_inc_file[],
 	int i;
 
 	for (i = 0; i < sizeof(inc_file); i++) {
-		if (i == 4 || i == 5 || i == 6 || i == 7) {
+		if (4 <= i && i < 8) {
 			/* Modification time field (4 bytes) in
 			 * the gzip header.
 			 */

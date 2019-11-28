@@ -10,7 +10,7 @@
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
-#include <nrf_rtc.h>
+#include <hal/nrf_rtc.h>
 #include <spinlock.h>
 
 #define RTC NRF_RTC1
@@ -19,6 +19,7 @@
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS ((COUNTER_MAX - CYC_PER_TICK) / CYC_PER_TICK)
+#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
 static struct k_spinlock lock;
 
@@ -41,7 +42,7 @@ static u32_t counter(void)
 
 /* Note: this function has public linkage, and MUST have this
  * particular name.  The platform architecture itself doesn't care,
- * but there is a test (tests/kernel/arm_irq_vector_table) that needs
+ * but there is a test (tests/arch/arm_irq_vector_table) that needs
  * to find it to it can set it in a custom vector table.  Should
  * probably better abstract that at some point (e.g. query and reset
  * it by pointer at runtime, maybe?) so we don't have this leaky
@@ -85,7 +86,7 @@ int z_clock_driver_init(struct device *device)
 		return -1;
 	}
 
-	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clock, NULL);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
@@ -119,12 +120,22 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t cyc, dt, t = counter();
-	bool flagged = false;
+	bool zli_fixup = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS);
 
-	/* Round up to next tick boundary */
+	/* Get the cycles from last_count to the tick boundary after
+	 * the requested ticks have passed starting now.
+	 */
 	cyc = ticks * CYC_PER_TICK + 1 + counter_sub(t, last_count);
 	cyc += (CYC_PER_TICK - 1);
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
+
+	/* Due to elapsed time the calculation above might produce a
+	 * duration that laps the counter.  Don't let it.
+	 */
+	if (cyc > MAX_CYCLES) {
+		cyc = MAX_CYCLES;
+	}
+
 	cyc += last_count;
 
 	/* Per NRF docs, the RTC is guaranteed to trigger a compare
@@ -162,7 +173,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 			/* Missed it! */
 			NVIC_SetPendingIRQ(RTC1_IRQn);
 			if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
-				flagged = true;
+				zli_fixup = false;
 			}
 		} else if (dt == 1) {
 			/* Too soon, interrupt won't arrive. */
@@ -173,16 +184,18 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 	/* Failsafe.  ZLIs can preempt us even though interrupts are
-	 * masked, blowing up the sensitive timing above.  If enabled,
-	 * we need a final check (in a loop!  because this too can be
-	 * interrupted) to see that the comparator is still in the
-	 * future.  Don't bother being fancy with cycle counting here,
-	 * just set an interrupt "soon" that we know will get the
-	 * timer back to a known state.  This handles (via some hairy
-	 * modular expressions) the wraparound cases where we are
-	 * preempted for as much as half the counter space.
+	 * masked, blowing up the sensitive timing above.  If the
+	 * feature is enabled and we haven't recorded the presence of
+	 * a pending interrupt then we need a final check (in a loop!
+	 * because this too can be interrupted) to confirm that the
+	 * comparator is still in the future.  Don't bother being
+	 * fancy with cycle counting here, just set an interrupt
+	 * "soon" that we know will get the timer back to a known
+	 * state.  This handles (via some hairy modular expressions)
+	 * the wraparound cases where we are preempted for as much as
+	 * half the counter space.
 	 */
-	if (!flagged && counter_sub(cyc, counter()) <= 0x7fffff) {
+	if (zli_fixup && counter_sub(cyc, counter()) <= 0x7fffff) {
 		while (counter_sub(cyc, counter() + 2) > 0x7fffff) {
 			cyc = counter() + 3;
 			set_comparator(cyc);

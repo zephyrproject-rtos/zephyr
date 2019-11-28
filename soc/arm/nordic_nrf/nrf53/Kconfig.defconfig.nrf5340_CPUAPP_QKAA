@@ -1,0 +1,14 @@
+# Nordic Semiconductor nRF5340 Application MCU
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config SOC
+	default "nRF5340_CPUAPP_QKAA"
+
+config NUM_IRQS
+	default 69
+
+endif # SOC_NRF5340_CPUAPP_QKAA

@@ -100,7 +100,7 @@ void test_queue_supv_to_user(void)
 
 	k_thread_create(&child_thread, child_stack, STACK_SIZE,
 			child_thread_get, q, sem, NULL, K_HIGHEST_THREAD_PRIO,
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
 

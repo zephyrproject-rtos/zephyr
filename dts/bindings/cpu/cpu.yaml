@@ -1,19 +1,12 @@
-#
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: CPU Base Structure
+# Common fields for CPUs
 
-description: >
-    This binding gives the base structures for all CPUs
-
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     clock-frequency:
       type: int
-      category: optional
+      required: false
       description: Clock frequency in Hz

@@ -13,11 +13,8 @@ else()
   set_ifndef(OPENOCD_FLASH "flash write_image erase")
 endif()
 
-# zephyr.elf, or something else?
-set_ifndef(OPENOCD_IMAGE "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}")
-
-set(OPENOCD_CMD_LOAD_DEFAULT "${OPENOCD_FLASH} ${OPENOCD_IMAGE}")
-set(OPENOCD_CMD_VERIFY_DEFAULT "verify_image ${OPENOCD_IMAGE}")
+set(OPENOCD_CMD_LOAD_DEFAULT "${OPENOCD_FLASH}")
+set(OPENOCD_CMD_VERIFY_DEFAULT "verify_image")
 
 board_finalize_runner_args(openocd
   --cmd-load "${OPENOCD_CMD_LOAD_DEFAULT}"

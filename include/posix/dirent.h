@@ -6,15 +6,15 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 #define ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <limits.h>
 #include "posix_types.h"
 
 #ifdef CONFIG_POSIX_FS
 #include <fs/fs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void DIR;
 
@@ -28,10 +28,10 @@ extern DIR *opendir(const char *dirname);
 extern int closedir(DIR *dirp);
 extern struct dirent *readdir(DIR *dirp);
 
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* CONFIG_POSIX_FS */
 
 #endif	/* ZEPHYR_INCLUDE_POSIX_DIRENT_H_ */

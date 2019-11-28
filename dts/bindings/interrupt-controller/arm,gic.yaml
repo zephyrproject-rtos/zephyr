@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Marvell
+# SPDX-License-Identifier: Apache-2.0
+
+title: ARMv7-R Generic Interrupt Controller
+
+description: |
+    This binding describes the ARM Generic Interrupt Controller.
+
+compatible: "arm,gic"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+interrupt-cells:
+  - irq
+  - priority
+  - flags

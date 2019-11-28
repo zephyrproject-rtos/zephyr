@@ -19,7 +19,7 @@ Building
 Native Posix
 ============
 
-Before starting a build, make sure that the i386 pkconfig directory is in your
+Before starting a build, make sure that the i386 pkgconfig directory is in your
 search path and that a 32-bit version of libfuse is installed. For more
 background information on this requirement see :ref:`native_posix`.
 

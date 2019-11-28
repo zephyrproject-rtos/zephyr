@@ -34,6 +34,8 @@ context about the tool.
    :maxdepth: 1
 
    install.rst
+   moving-to-west.rst
+   troubleshooting.rst
    repo-tool.rst
    manifest.rst
    config.rst

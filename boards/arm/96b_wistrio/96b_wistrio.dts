@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include <st/l1/stm32l151Xb.dtsi>
+#include <st/l1/stm32l151Xb-a.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
@@ -37,15 +38,11 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -57,4 +54,12 @@
 		reg = <0x32>;
 		label = "LIS3DH";
 	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
 };

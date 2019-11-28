@@ -1,0 +1,12 @@
+title: Xilinx PS UART
+
+description: |
+    This binding gives a base representation of the Xilinx PS UART
+
+compatible: "xlnx,xuartps"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true

@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2019 Yannis Damigos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "espressif/esp32.dtsi"
+
+/ {
+	model = "ODROID-GO Game Kit";
+	compatible = "hardkernel,odroid-go", "espressif,esp32";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led {
+			gpios = <&gpio0 2 GPIO_INT_ACTIVE_HIGH>;
+			label = "Status Led";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		menu_button: menu_button {
+			label = "Menu";
+			gpios = <&gpio0 13 GPIO_INT_ACTIVE_LOW>;
+		};
+		select_button: select_button {
+			label = "Select";
+			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+		};
+		a_button: a_button {
+			label = "A";
+			gpios = <&gpio1 0 GPIO_INT_ACTIVE_LOW>;
+		};
+		b_button: b_button {
+			label = "B";
+			gpios = <&gpio1 1 GPIO_INT_ACTIVE_LOW>;
+		};
+		start_button: start_button {
+			label = "Start";
+			gpios = <&gpio1 7 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		uart-0 = &uart0;
+		led0 = &blue_led;
+		sw0 = &menu_button;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <40000000>;
+};
+
+&cpu1 {
+	clock-frequency = <40000000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <1>;
+	rx-pin = <3>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <4>;
+	scl-pin = <15>;
+};
+
+&trng0 {
+	status = "okay";
+};

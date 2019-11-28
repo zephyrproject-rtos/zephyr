@@ -52,19 +52,19 @@ struct bt_uuid_128 {
 
 #define BT_UUID_INIT_16(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_16,	\
+	.uuid = { BT_UUID_TYPE_16 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_32(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_32,	\
+	.uuid = { BT_UUID_TYPE_32 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_128(value...)	\
 {					\
-	.uuid.type = BT_UUID_TYPE_128,	\
+	.uuid = { BT_UUID_TYPE_128 },	\
 	.val = { value },		\
 }
 
@@ -78,6 +78,51 @@ struct bt_uuid_128 {
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
+
+
+/**
+ * @brief Encode 128 bit UUID into an array values
+ *
+ * Helper macro to initialize a 128-bit UUID value from the UUID format.
+ * Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID from
+ * the readable form of UUIDs.
+ *
+ * Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *
+ * @code
+ * BT_UUID_DECLARE_128(
+ *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
+ * @endcode
+ *
+ * Just replace the hyphen by the comma and add `0x` prefixes.
+ *
+ * @param w32 First part of the UUID (32 bits)
+ * @param w1  Second part of the UUID (16 bits)
+ * @param w2  Third part of the UUID (16 bits)
+ * @param w3  Fourth part of the UUID (16 bits)
+ * @param w48 Fifth part of the UUID (48 bits)
+ *
+ * @return The comma separated values for UUID 128 initializer that
+ *         may be used directly as an argument for
+ *         @ref BT_UUID_INIT_128 or @ref BT_UUID_DECLARE_128
+ */
+#define BT_UUID_128_ENCODE(w32, w1, w2, w3, w48) \
+	(((w48) >>  0) & 0xFF), \
+	(((w48) >>  8) & 0xFF), \
+	(((w48) >> 16) & 0xFF), \
+	(((w48) >> 24) & 0xFF), \
+	(((w48) >> 32) & 0xFF), \
+	(((w48) >> 40) & 0xFF), \
+	(((w3)  >>  0) & 0xFF), \
+	(((w3)  >>  8) & 0xFF), \
+	(((w2)  >>  0) & 0xFF), \
+	(((w2)  >>  8) & 0xFF), \
+	(((w1)  >>  0) & 0xFF), \
+	(((w1)  >>  8) & 0xFF), \
+	(((w32) >>  0) & 0xFF), \
+	(((w32) >>  8) & 0xFF), \
+	(((w32) >> 16) & 0xFF), \
+	(((w32) >> 24) & 0xFF)
 
 /** @def BT_UUID_GAP
  *  @brief Generic Access
@@ -465,37 +510,19 @@ struct bt_uuid_128 {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
-/** @brief Copy UUID from packet data (LE) to internal bt_uuid.
+/** @brief Create a bt_uuid from a little-endian data buffer.
  *
- *  Copy UUID from packet data in little endian format to internal bt_uuid
- *  format. The data_len parameter is used to determine whether the received
- *  UUID is of 16 or 128 bit format (length 2 or 16). 32 bit format is not
- *  allowed over the air.
+ *  Create a bt_uuid from a little-endian data buffer. The data_len parameter
+ *  is used to determine whether the UUID is in 16, 32 or 128 bit format
+ *  (length 2, 4 or 16). Note: 32 bit format is not allowed over the air.
  *
- *  @param uuid Pointer to where to write the Bluetooth UUID
- *  @param data pointer to location of the UUID in the packet
- *  @param data_len length of the UUID in the packet
- *
- *  @return true if the data was valid and the UUID was successfully created.
- */
-bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
-
-/** @brief Copy UUID from internal variable to internal bt_uuid.
- *
- *  Copy UUID from internal variable pointer to internal bt_uuid format.
- *  The data parameter points to a variable (originally stored in bt_uuid_128,
- *  bt_uuid_32 or bt_uuid_16 format) and therefore take into account of
- *  alignment of the val member.
- *  The data_len parameter is used to determine whether to copy the UUID from
- *  16, 32 or 128 bit format (length 2, 4 or 16).
- *
- *  @param uuid Pointer to where to write the Bluetooth UUID
- *  @param data pointer to location of the UUID variable
- *  @param data_len length of the UUID in the packet
+ *  @param uuid Pointer to the bt_uuid variable
+ *  @param data pointer to UUID stored in little-endian data buffer
+ *  @param data_len length of the UUID in the data buffer
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
-bool bt_uuid_create(struct bt_uuid *uuid, u8_t *data, u8_t data_len);
+bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
 
 #if defined(CONFIG_BT_DEBUG)
 /** @brief Convert Bluetooth UUID to string.

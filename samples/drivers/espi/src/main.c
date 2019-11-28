@@ -10,10 +10,12 @@
 #include <device.h>
 #include <soc.h>
 #include <gpio.h>
-#include <espi.h>
+#include <drivers/espi.h>
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-static struct device *gpio_dev;
+static struct device *gpio_dev0;
+static struct device *gpio_dev1;
+#define PWR_SEQ_TIMEOUT    3000
 #endif
 
 static struct device *espi_dev;
@@ -117,6 +119,37 @@ int espi_init(void)
 	return ret;
 }
 
+static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
+			u32_t exp_level)
+{
+	int ret;
+	u16_t loop_cnt = timeout;
+	u32_t level;
+
+	do {
+		ret = gpio_pin_read(dev, pin, &level);
+		if (ret) {
+			printk("Failed to read %x %d\n", pin, ret);
+			return -EIO;
+		}
+
+		if (exp_level == level) {
+			printk("PIN %x = %x\n", pin, exp_level);
+			break;
+		}
+
+		k_busy_wait(100);
+		loop_cnt--;
+	} while (loop_cnt > 0);
+
+	if (loop_cnt == 0) {
+		printk("PWRT! for %x %x\n", pin, level);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 int wait_for_vwire(struct device *espi_dev, enum espi_vwire_signal signal,
 		   u16_t timeout, u8_t exp_level)
 {
@@ -155,7 +188,7 @@ int espi_handshake(void)
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_WARN,
 			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
 	if (ret) {
-		printk("SUS_WARN Timeout!");
+		printk("SUS_WARN Timeout!\n");
 		return ret;
 	}
 
@@ -163,21 +196,21 @@ int espi_handshake(void)
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S5,
 			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
 	if (ret) {
-		printk("SLP_S5 Timeout!");
+		printk("SLP_S5 Timeout!\n");
 		return ret;
 	}
 
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S4,
 			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
 	if (ret) {
-		printk("SLP_S4 Timeout!");
+		printk("SLP_S4 Timeout!\n");
 		return ret;
 	}
 
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S3,
 			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
 	if (ret) {
-		printk("SLP_S3 Timeout!");
+		printk("SLP_S3 Timeout!\n");
 		return ret;
 	}
 
@@ -189,42 +222,68 @@ void main(void)
 {
 	int ret;
 
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	gpio_dev = device_get_binding(CONFIG_ESPI_GPIO_DEV);
-	if (gpio_dev) {
-		printk("%s FOUND!\n", CONFIG_ESPI_GPIO_DEV);
+	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
+	if (!gpio_dev0) {
+		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV0);
+		return;
 	}
+
+	gpio_dev1 = device_get_binding(CONFIG_ESPI_GPIO_DEV1);
+	if (!gpio_dev1) {
+		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV1);
+		return;
+	}
+
 #endif
 	espi_dev = device_get_binding(CONFIG_ESPI_DEV);
-	if (espi_dev) {
-		printk("%s FOUND!\n", CONFIG_ESPI_DEV);
+	if (!espi_dev) {
+		printk("Fail to find %s!\n", CONFIG_ESPI_DEV);
+		return;
 	}
 
 	printk("Hello eSPI test! %s\n", CONFIG_BOARD);
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = gpio_pin_configure(gpio_dev, CONFIG_ESPI_INIT_PIN, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN, GPIO_DIR_IN);
 	if (ret) {
-		printk("Unable to configure %d ", CONFIG_ESPI_INIT_PIN);
+		printk("Unable to configure PWRGD %d\n", CONFIG_PWRGD_PIN);
+		return;
 	}
 
-	ret = gpio_pin_write(gpio_dev, CONFIG_ESPI_INIT_PIN, 0);
+	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN, GPIO_DIR_OUT);
 	if (ret) {
-		printk("Unable to initialize %d ", CONFIG_ESPI_INIT_PIN);
+		printk("Unable to configure RSMRST %d\n", CONFIG_ESPI_INIT_PIN);
+		return;
+	}
+
+	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
+	if (ret) {
+		printk("Unable to initialize %d\n", CONFIG_ESPI_INIT_PIN);
+		return;
 	}
 #endif
 
 	espi_init();
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	k_sleep(1000);
-	ret = gpio_pin_write(gpio_dev, CONFIG_ESPI_INIT_PIN, 1);
+	ret = wait_for_pin(gpio_dev0, CONFIG_PWRGD_PIN, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
-		printk("Failed to write %x %d", CONFIG_ESPI_INIT_PIN, ret);
+		printk("RSMRST_PWRGD timeout!\n");
+		return;
+	}
+
+	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
+	if (ret) {
+		printk("Failed to write %x %d\n", CONFIG_ESPI_INIT_PIN, ret);
+		return;
 	}
 #endif
 
-	espi_handshake();
+	ret = espi_handshake();
+	if (ret) {
+		printk("Test failed %d\n", ret);
+	}
 }

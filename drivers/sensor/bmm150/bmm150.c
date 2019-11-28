@@ -9,8 +9,7 @@
 #include <logging/log.h>
 #include "bmm150.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMM150);
+LOG_MODULE_REGISTER(BMM150, CONFIG_SENSOR_LOG_LEVEL);
 
 static const struct {
 	int freq;
@@ -599,12 +598,12 @@ static int bmm150_init(struct device *dev)
 }
 
 static const struct bmm150_config bmm150_config = {
-	.i2c_master_dev_name = CONFIG_BMM150_I2C_MASTER_DEV_NAME,
+	.i2c_master_dev_name = DT_INST_0_BOSCH_BMM150_BUS_NAME,
 	.i2c_slave_addr = BMM150_I2C_ADDR,
 };
 
 static struct bmm150_data bmm150_data;
 
-DEVICE_AND_API_INIT(bmm150, CONFIG_BMM150_DEV_NAME, bmm150_init,
+DEVICE_AND_API_INIT(bmm150, DT_INST_0_BOSCH_BMM150_LABEL, bmm150_init,
 			&bmm150_data, &bmm150_config, POST_KERNEL,
 			CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);

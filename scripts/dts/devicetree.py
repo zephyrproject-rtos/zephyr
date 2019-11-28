@@ -131,7 +131,7 @@ def parse_value(value):
         if value[0] == '0':
             return int(value, 8)
         # Match alpha numeric values
-        if re.match("\w", value):
+        if re.match(r"\w", value):
             return value
         return int(value, 10)
 

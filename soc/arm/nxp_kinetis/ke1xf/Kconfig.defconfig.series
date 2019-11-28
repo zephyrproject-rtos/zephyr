@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KE1xF series configuration options
-#
+# Kinetis KE1xF series configuration options
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_KINETIS_KE1XF
 
@@ -11,9 +9,15 @@ config SOC_SERIES
 	default "ke1xf"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 91
+
+if KINETIS_FLASH_CONFIG
+
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x7d
+
+endif # KINETIS_FLASH_CONFIG
 
 if CLOCK_CONTROL
 
@@ -35,19 +39,19 @@ config WDT_MCUX_WDOG32
 
 endif # WATCHDOG
 
-if RTC
-
-config RTC_MCUX
-	default y
-
-endif # RTC
-
 if COUNTER
 
 config COUNTER_MCUX_RTC
 	default y
 
 endif # COUNTER
+
+if PWM
+
+config PWM_MCUX_FTM
+	default y
+
+endif # PWM
 
 if PINMUX
 

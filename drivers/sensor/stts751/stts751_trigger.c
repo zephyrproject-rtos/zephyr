@@ -15,8 +15,7 @@
 
 #include "stts751.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(STTS751);
+LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * stts751_enable_int - enable selected int pin to generate interrupt
@@ -137,7 +136,7 @@ int stts751_init_interrupt(struct device *dev)
 		       CONFIG_STTS751_THREAD_STACK_SIZE,
 		       (k_thread_entry_t)stts751_thread, dev,
 		       0, NULL, K_PRIO_COOP(CONFIG_STTS751_THREAD_PRIORITY),
-		       0, 0);
+		       0, K_NO_WAIT);
 #elif defined(CONFIG_STTS751_TRIGGER_GLOBAL_THREAD)
 	stts751->work.handler = stts751_work_cb;
 	stts751->dev = dev;

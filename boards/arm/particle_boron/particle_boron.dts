@@ -25,6 +25,7 @@
 };
 
 &i2c1 { /* power monitoring */
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <24>;
@@ -48,5 +49,6 @@
 
 		mdm-power-gpios = <&gpio0 16 0>;
 		mdm-reset-gpios = <&gpio0 12 0>;
+		mdm-vint-gpios = <&gpio0 2 0>;
 	};
 };

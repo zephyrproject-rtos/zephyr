@@ -1,7 +1,5 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig COUNTER_SAM0_TC32
 	bool "SAM0 series 32-bit basic timer driver"

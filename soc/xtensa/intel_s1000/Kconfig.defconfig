@@ -1,19 +1,15 @@
-# Kconfig - XTENSA board configuration
-#
+# XTENSA board configuration
+
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_INTEL_S1000
 
 config SOC
-	string
 	default "intel_s1000"
 
 config IRQ_OFFLOAD_INTNUM
 	default 0
-
-config XTENSA_ASM2
-	default y
 
 # S1000 does not have MISC0.
 # Since EXCSAVE2 is unused by Zephyr, use it instead.

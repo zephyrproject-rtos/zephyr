@@ -722,14 +722,14 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
 #endif /* CONFIG_NET_GPTP */
 
-#include <syscalls/ethernet.h>
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+#include <syscalls/ethernet.h>
 
 #endif /* ZEPHYR_INCLUDE_NET_ETHERNET_H_ */

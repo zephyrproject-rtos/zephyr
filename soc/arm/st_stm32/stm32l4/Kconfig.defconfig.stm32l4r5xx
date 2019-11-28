@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32L4R5xx MCU
-#
+# ST Microelectronics STM32L4R5xx MCU
+
 # Copyright (c) 2018 Pushpal Sidhu
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L4R5XX
 
 config SOC
-	string
 	default "stm32l4r5xx"
 
 config NUM_IRQS
-	int
 	default 95
 
 if GPIO_STM32

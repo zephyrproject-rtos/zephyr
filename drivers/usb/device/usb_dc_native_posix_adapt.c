@@ -318,7 +318,7 @@ void usbip_start(void)
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				/* Non-blocking accept */
-				k_sleep(100);
+				k_sleep(K_MSEC(100));
 
 				continue;
 			}
@@ -347,7 +347,7 @@ void usbip_start(void)
 					if (errno == EAGAIN ||
 					    errno == EWOULDBLOCK) {
 						/* Non-blocking accept */
-						k_sleep(100);
+						k_sleep(K_MSEC(100));
 
 						continue;
 					}
@@ -389,7 +389,7 @@ void usbip_start(void)
 			if (read < 0) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					/* Non-blocking accept */
-					k_sleep(100);
+					k_sleep(K_MSEC(100));
 
 					continue;
 				}

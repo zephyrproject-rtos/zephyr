@@ -3,7 +3,8 @@ sample:
 tests:
   sample.driver.gpio:
     tags: drivers
-    filter: DT_GPIO_LEDS_LED0_GPIOS_CONTROLLER and DT_GPIO_KEYS_SW0_GPIOS_CONTROLLER
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-keys", "sw0")
     harness: console
     harness_config:
         type: one_line

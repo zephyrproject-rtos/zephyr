@@ -1,19 +1,16 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: 10Base-T Ethernet Controller with SPI Interface
 
-description: >
+description: |
     This binding gives a base representation of the standalone ENC28J60 chip
-inherits:
-  !include [ethernet.yaml, spi-device.yaml]
+
+compatible: "microchip,enc28j60"
+
+include: [spi-device.yaml, ethernet.yaml]
 
 properties:
-    compatible:
-      constraint: "microchip,enc28j60"
     int-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true

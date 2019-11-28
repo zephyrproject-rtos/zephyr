@@ -1,0 +1,9 @@
+tests:
+  arch.x86.info:
+    arch_whitelist: x86
+    platform_whitelist: up_squared
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+          - "info: complete"

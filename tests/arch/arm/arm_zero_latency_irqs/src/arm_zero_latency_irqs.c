@@ -21,8 +21,11 @@ void test_arm_zero_latency_irqs(void)
 {
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, key;
+	int init_flag, post_flag;
 
-	zassert_false(test_flag, "Test flag not initialized to zero\n");
+	init_flag = test_flag;
+
+	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
@@ -30,9 +33,19 @@ void test_arm_zero_latency_irqs(void)
 			 * Interrupts configured statically with IRQ_CONNECT(.)
 			 * are automatically enabled. NVIC_GetEnableIRQ()
 			 * returning false, here, implies that the IRQ line is
-			 * not enabled, thus, currently not in use by Zephyr.
+			 * either not implemented or it is not enabled, thus,
+			 * currently not in use by Zephyr.
 			 */
-			break;
+
+			/* Set the NVIC line to pending. */
+			NVIC_SetPendingIRQ(i);
+
+			if (NVIC_GetPendingIRQ(i)) {
+				/* If the NVIC line is pending, it is
+				 * guaranteed that it is implemented.
+				 */
+				break;
+			}
 		}
 	}
 
@@ -43,7 +56,7 @@ void test_arm_zero_latency_irqs(void)
 
 	/* Configure the available IRQ line as zero-latency. */
 
-	z_arch_irq_connect_dynamic(i, 0 /* Unused */,
+	arch_irq_connect_dynamic(i, 0 /* Unused */,
 		arm_zero_latency_isr_handler,
 		NULL,
 		IRQ_ZERO_LATENCY);
@@ -65,7 +78,8 @@ void test_arm_zero_latency_irqs(void)
 	__ISB();
 
 	/* Confirm test flag is set by the zero-latency ISR handler. */
-	zassert_true(test_flag == 1, "Test flag not set by ISR\n");
+	post_flag = test_flag;
+	zassert_true(post_flag == 1, "Test flag not set by ISR\n");
 
 	irq_unlock(key);
 }

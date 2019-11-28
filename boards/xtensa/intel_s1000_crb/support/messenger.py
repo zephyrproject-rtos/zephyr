@@ -47,7 +47,8 @@ class Message:
             self.tx_data[index] = 0
         self.tx_index = 0
 
-    def endian_swap(self, dst, dst_offset, src):
+    @staticmethod
+    def endian_swap(dst, dst_offset, src):
         """
         Performs a byte swap of a 32-bit word to change it's endianness
         """
@@ -66,7 +67,7 @@ class Message:
             word = bitstruct.unpack_from('u32', self.tx_data, offset)
             print('Index: %2d Content: 0x%08x' %(index, word[0]))
 
-    def print_response(self, msg, verbose = False):
+    def print_response(self, msg, verbose=False):
         """
         Parses and prints the contents of the response message
         """
@@ -78,7 +79,7 @@ class Message:
             print('RSP <<< NULL.')
         else:
             print('RSP <<< %s.' % self.cmd_rsp[rsp])
-            if verbose == True:
+            if verbose:
                 count = bitstruct.unpack_from('u32', msg, 4 * 8)[0]
                 count &= 0x1ff
                 for index in range(0, 8 + (count * 4), 4):
@@ -128,9 +129,8 @@ class Message:
         bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
                 len(tuple))
         self.tx_index += 4
-        for index in range(len(tuple)):
-            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
-                    tuple[index])
+        for elm in tuple:
+            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8, elm)
             self.tx_index += 4
         return self.tx_data
 
@@ -152,9 +152,8 @@ class Message:
         bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
                 len(tuple))
         self.tx_index += 4
-        for index in range(len(tuple)):
-            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
-                    tuple[index])
+        for elm in tuple:
+            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8, elm)
             self.tx_index += 4
         return self.tx_data
 

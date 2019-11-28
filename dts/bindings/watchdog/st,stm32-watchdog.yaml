@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2019, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: STMicroelectronics STM32 watchdog driver
 
-description: >
+description: |
     This is a representation of the STM32 watchdog
 
-inherits:
-    !include base.yaml
+compatible: "st,stm32-watchdog"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-watchdog"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

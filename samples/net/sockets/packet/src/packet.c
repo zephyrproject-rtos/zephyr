@@ -19,8 +19,6 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 #define RECV_BUFFER_SIZE 1280
 #define RAW_WAIT K_SECONDS(5)
 
-static struct packet_data packet;
-
 static struct k_sem quit_lock;
 
 struct packet_data {
@@ -28,6 +26,8 @@ struct packet_data {
 	char recv_buffer[RECV_BUFFER_SIZE];
 	struct k_delayed_work send;
 };
+
+static struct packet_data packet;
 
 static void process_packet(void);
 static void send_packet(void);

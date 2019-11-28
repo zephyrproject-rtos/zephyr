@@ -1,11 +1,9 @@
-# Kconfig - OpenISA RV32M1 PPC
-#
-# Copyright (c) 2018 Foundries.io
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# OpenISA RV32M1 PPC
 
-menuconfig CLOCK_CONTROL_RV32M1_PCC
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RV32M1_PCC
 	bool "RV32M1 PCC driver"
 	depends on SOC_OPENISA_RV32M1_RISCV32
 	help

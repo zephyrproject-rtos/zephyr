@@ -1,12 +1,9 @@
-#
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Cypress PSoC6 MCU Selection"
-depends on SOC_SERIES_PSOC62
+	prompt "Cypress PSoC6 MCU Selection"
+	depends on SOC_SERIES_PSOC62
 
 config SOC_PSOC6_M0
 	bool "SOC_PSOC6_M0"

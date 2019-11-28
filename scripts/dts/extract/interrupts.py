@@ -28,6 +28,8 @@ class DTInterrupts(DTDirective):
     #                  compatible definition.
     #
     def extract(self, node_path, prop, names, def_label):
+        if prop == "interrupts-extended":
+            return
         vals = reduced[node_path]['props'][prop]
         if not isinstance(vals, list):
             vals = [vals]
@@ -53,7 +55,12 @@ class DTInterrupts(DTDirective):
             l_cell_prefix = ['IRQ']
 
             for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
-                l_cell_name = [cell_yaml['#cells'][i].upper()]
+                if "interrupt-cells" in cell_yaml:
+                    cell_yaml_name = "interrupt-cells"
+                else:
+                    cell_yaml_name = "#cells"
+
+                l_cell_name = [cell_yaml[cell_yaml_name][i].upper()]
                 if l_cell_name == l_cell_prefix:
                     l_cell_name = []
 

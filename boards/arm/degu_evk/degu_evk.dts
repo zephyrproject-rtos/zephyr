@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2019 Atmark Techno, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Degu Evaluation Kit";
+	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
+		     "nordic,nrf52840";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio1 7 GPIO_INT_ACTIVE_LOW>;
+			label = "LED1";
+		};
+		led1: led_1 {
+			gpios = <&gpio1 5 GPIO_INT_ACTIVE_LOW>;
+			label = "LED2";
+		};
+		led2: led_2 {
+			gpios = <&gpio1 3 GPIO_INT_ACTIVE_LOW>;
+			label = "LED3";
+		};
+		led3: led_3 {
+			gpios = <&gpio1 4 GPIO_INT_ACTIVE_LOW>;
+			label = "LED4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 0 GPIO_PUD_PULL_UP>;
+			label = "SW2";
+		};
+		button1: button_1 {
+			gpios = <&gpio1 1 GPIO_PUD_PULL_UP>;
+			label = "SW3";
+		};
+		button2: button_2 {
+			gpios = <&gpio1 14 GPIO_PUD_PULL_UP>;
+			label = "SW4";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&gpiote {
+	status ="okay";
+};
+
+&gpio0 {
+	status ="okay";
+};
+
+&gpio1 {
+	status ="okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <25>;
+	rx-pin = <24>;
+	rts-pin = <23>;
+	cts-pin = <21>;
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <20>;
+	scl-pin = <22>;
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <41>;
+	scl-pin = <11>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x00014000>;
+		};
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x000014000 0x0006e000>;
+		};
+		slot1_partition: partition@82000 {
+			label = "image-1";
+			reg = <0x000082000 0x0006e000>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x0000f0000 0x00008000>;
+		};
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x0000f8000 0x00008000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

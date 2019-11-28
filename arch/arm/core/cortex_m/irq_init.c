@@ -8,17 +8,8 @@
  * @file
  * @brief ARM Cortex-M interrupt initialization
  *
- * The ARM Cortex-M architecture provides its own k_thread_abort() to deal with
- * different CPU modes (handler vs thread) when a thread aborts. When its entry
- * point returns or when it aborts itself, the CPU is in thread mode and must
- * call z_swap() (which triggers a service call), but when in handler mode, the
- * CPU must exit handler mode to cause the context switch, and thus must queue
- * the PendSV exception.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel.h>
 #include <arch/cpu.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
@@ -33,7 +24,7 @@
  * @return N/A
  */
 
-void z_IntLibInit(void)
+void z_arm_int_lib_init(void)
 {
 	int irq = 0;
 

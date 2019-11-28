@@ -1,0 +1,22 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Keyboard Scan Matrix  Base Structure
+
+description: |
+    This binding gives the base structures for all Keyboard Matrix devices
+
+include: base.yaml
+
+child-bus: kscan
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      type: int
+      const: 0
+    label:
+      required: true
+

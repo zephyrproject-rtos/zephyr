@@ -408,6 +408,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		break;
 
 	case PPP_ECHO_REPLY:
+		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
+			net_pkt_remaining_data(req_pkt);
 		break;
 
 	case PPP_PROTOCOL_REJ:
@@ -482,7 +484,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 				goto out_of_mem;
 			}
 		}
-
+	} else if (type == PPP_ECHO_REPLY) {
+		net_pkt_copy(pkt, req_pkt, len);
 	} else if (type == PPP_CONFIGURE_ACK || type == PPP_CONFIGURE_REQ ||
 		   type == PPP_CONFIGURE_REJ || type == PPP_CONFIGURE_NACK) {
 		/* add options */
@@ -1099,7 +1102,10 @@ enum net_verdict ppp_fsm_recv_echo_req(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	return NET_DROP;
+	(void)ppp_send_pkt(fsm, net_pkt_iface(pkt), PPP_ECHO_REPLY,
+		id, pkt, 0);
+
+	return NET_OK;
 }
 
 enum net_verdict ppp_fsm_recv_echo_reply(struct ppp_fsm *fsm,

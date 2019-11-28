@@ -1,16 +1,13 @@
-# Kconfig - ILI9340 display driver configuration options
+# ILI9340 display driver configuration options
 
-#
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ILI9340
 	bool "ILI9340 display driver"
 	depends on SPI
 	help
-	Enable driver for ILI9340 display driver.
+	  Enable driver for ILI9340 display driver.
 
 if ILI9340
 
@@ -18,7 +15,7 @@ choice
 	prompt "LCD"
 	default ILI9340_LCD_ADAFRUIT_1480
 	help
-	Specify the type of LCD connected to the ILI9340 display controller.
+	  Specify the type of LCD connected to the ILI9340 display controller.
 
 config ILI9340_LCD_ADAFRUIT_1480
 	bool "Adafruit 2.2\" TFT 1480"
@@ -31,7 +28,7 @@ endchoice
 choice
 	prompt "Color pixel format"
 	help
-	Specify the color pixel format of the ILI9340 display controller.
+	  Specify the color pixel format of the ILI9340 display controller.
 
 config ILI9340_RGB888
 	bool "RGB888"
@@ -41,4 +38,4 @@ config ILI9340_RGB565
 
 endchoice
 
-endif #ILI9340
+endif # ILI9340

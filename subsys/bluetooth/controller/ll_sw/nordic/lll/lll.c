@@ -11,6 +11,9 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
+#include <soc.h>
+
+#include "hal/swi.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -25,10 +28,16 @@
 #include "lll_vendor.h"
 #include "lll_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
+
+#if defined(CONFIG_BT_CTLR_ZLI)
+#define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
+#else
+#define IRQ_CONNECT_FLAGS 0
+#endif
 
 static struct {
 	struct {
@@ -87,10 +96,15 @@ static void rtc0_nrf5_isr(void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	mayfly_run(TICKER_USER_ID_ULL_LOW);
+#endif
+
 	DEBUG_TICKER_ISR(0);
 }
 
-static void swi4_nrf5_isr(void *arg)
+static void swi_lll_nrf5_isr(void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -99,7 +113,9 @@ static void swi4_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-static void swi5_nrf5_isr(void *arg)
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+static void swi_ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
@@ -107,6 +123,7 @@ static void swi5_nrf5_isr(void *arg)
 
 	DEBUG_TICKER_JOB(0);
 }
+#endif
 
 int lll_init(void)
 {
@@ -128,7 +145,7 @@ int lll_init(void)
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clk_k32, NULL);
 
 	/* Initialize HF CLK */
 	lll.clk_hf =
@@ -142,21 +159,35 @@ int lll_init(void)
 		return err;
 	}
 
+	/* Initialize SW IRQ structure */
+	hal_swi_init();
+
 	/* Connect ISRs */
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-		    swi4_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#else
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO,
-		    swi5_nrf5_isr, NULL, 0);
+#endif
+	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+		    swi_ull_low_nrf5_isr, NULL, 0);
+#endif
 
 	/* Enable IRQs */
-	irq_enable(NRF5_IRQ_RADIO_IRQn);
-	irq_enable(NRF5_IRQ_SWI4_IRQn);
-	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_SWI5_IRQn);
+	irq_enable(RADIO_IRQn);
+	irq_enable(RTC0_IRQn);
+	irq_enable(HAL_SWI_RADIO_IRQ);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_enable(HAL_SWI_JOB_IRQ);
+#endif
 
 	return 0;
 }
@@ -191,26 +222,15 @@ void lll_resume(void *param)
 	struct lll_event *next = param;
 	int ret;
 
-	if (event.curr.abort_cb) {
-		ret = prepare(next->is_abort_cb, next->abort_cb,
-			      next->prepare_cb, next->prio,
-			      &next->prepare_param, next->is_resume);
-		LL_ASSERT(!ret || ret == -EINPROGRESS);
-
-		return;
-	}
-
-	event.curr.is_abort_cb = next->is_abort_cb;
-	event.curr.abort_cb = next->abort_cb;
-	event.curr.param = next->prepare_param.param;
-
-	ret = next->prepare_cb(&next->prepare_param);
-	LL_ASSERT(!ret);
+	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
+		      next->prio, &next->prepare_param, next->is_resume);
+	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
 void lll_disable(void *param)
 {
-	if (!param || param == event.curr.param) {
+	/* LLL disable of current event, done is generated */
+	if (!param || (param == event.curr.param)) {
 		if (event.curr.abort_cb && event.curr.param) {
 			event.curr.abort_cb(NULL, event.curr.param);
 		} else {
@@ -224,7 +244,7 @@ void lll_disable(void *param)
 		next = ull_prepare_dequeue_iter(&idx);
 		while (next) {
 			if (!next->is_aborted &&
-			    param == next->prepare_param.param) {
+			    (!param || (param == next->prepare_param.param))) {
 				next->is_aborted = 1;
 				next->abort_cb(&next->prepare_param,
 					       next->prepare_param.param);
@@ -319,10 +339,14 @@ int lll_clk_on_wait(void)
 	int err;
 
 	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk_hf, (void *)1);
-	if (!err || err == -EINPROGRESS) {
-		DEBUG_RADIO_XTAL(1);
+	err = clock_control_on(lll.clk_hf, NULL);
+
+	while (clock_control_get_status(lll.clk_hf, NULL) !=
+			CLOCK_CONTROL_STATUS_ON) {
+		k_cpu_idle();
 	}
+
+	DEBUG_RADIO_XTAL(1);
 
 	return err;
 }
@@ -423,15 +447,18 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
 		   struct lll_prepare_param *prepare_param, u8_t is_resume)
 {
-	struct lll_event *p;
 	u8_t idx = UINT8_MAX;
+	struct lll_event *p;
+	int ret, err;
 
+	/* Find the ready prepare in the pipeline */
 	p = ull_prepare_dequeue_iter(&idx);
-	while (p && p->is_aborted) {
+	while (p && (p->is_aborted || p->is_resume)) {
 		p = ull_prepare_dequeue_iter(&idx);
 	}
 
-	if (event.curr.abort_cb || p) {
+	/* Current event active or another prepare is ready in the pipeline */
+	if (event.curr.abort_cb || (p && is_resume)) {
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		u32_t preempt_anchor;
 		struct evt_hdr *evt;
@@ -441,7 +468,6 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_event *next;
 		int resume_prio;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
-		int ret;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
 			/* early abort */
@@ -453,11 +479,11 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 					  prepare_cb, prio, is_resume);
 		LL_ASSERT(!ret);
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
 			return -EINPROGRESS;
 		}
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		/* Calc the preempt timeout */
 		evt = HDR_LLL2EVT(prepare_param->param);
 		preempt_anchor = prepare_param->ticks_at_expire;
@@ -520,7 +546,16 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
 
-	return prepare_cb(prepare_param);
+	err = prepare_cb(prepare_param);
+
+	/* Stop running pre-empt timer, if any */
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
+			  TICKER_ID_LLL_PREEMPT, NULL, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_FAILURE) ||
+		  (ret == TICKER_STATUS_BUSY));
+
+	return err;
 }
 
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
@@ -537,7 +572,7 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void ticker_start_op_cb(u32_t status, void *param)
 {
-	/* NOTE: this callback is present only for addition debug messages
+	/* NOTE: this callback is present only for addition of debug messages
 	 * when needed, else can be dispensed with.
 	 */
 	ARG_UNUSED(param);
@@ -571,7 +606,7 @@ static void preempt(void *param)
 		return;
 	}
 
-	while (next && next->is_resume) {
+	while (next && (next->is_aborted || next->is_resume)) {
 		next = ull_prepare_dequeue_iter(&idx);
 	}
 

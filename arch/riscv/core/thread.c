@@ -5,20 +5,17 @@
  */
 
 #include <kernel.h>
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <string.h>
+#include <ksched.h>
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg1,
 			   void *arg2,
 			   void *arg3);
 
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stack_size, k_thread_entry_t thread_func,
-		 void *arg1, void *arg2, void *arg3,
-		 int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t thread_func,
+		     void *arg1, void *arg2, void *arg3,
+		     int priority, unsigned int options)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, thread_func);

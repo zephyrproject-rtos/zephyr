@@ -14,6 +14,7 @@
 
 #include <sys/__assert.h>
 #include <net/net_core.h>
+#include <net/net_event.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,8 +72,6 @@ struct net_if;
 #define NET_MGMT_LAYER_L4		3
 
 /** @endcond */
-
-#include <net/net_event.h>
 
 
 /**

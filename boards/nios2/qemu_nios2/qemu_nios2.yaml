@@ -3,6 +3,8 @@ name: QEMU Emulation for NIOS II
 type: qemu
 simulation: qemu
 arch: nios2
+ram: 128
+flash: 128
 toolchain:
   - zephyr
   - xtools

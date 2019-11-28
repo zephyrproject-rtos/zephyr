@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+title: HPET
+
+description: |
+    This binding represents the High-Precision Event Timer
+
+compatible: "intel,hpet"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

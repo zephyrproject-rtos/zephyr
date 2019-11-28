@@ -39,7 +39,6 @@
 #include <sys/printk.h>
 #include <settings/settings.h>
 #include <sys/byteorder.h>
-#include <nrf.h>
 #include <device.h>
 #include <drivers/gpio.h>
 #include <bluetooth/bluetooth.h>
@@ -446,7 +445,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	}
 
 	if (button_press_cnt == 0U) {
-		k_timer_start(&sw.button_timer, K_SECONDS(1), 0);
+		k_timer_start(&sw.button_timer, K_SECONDS(1), K_NO_WAIT);
 	}
 
 	printk("button_press_cnt 0x%02x\n", button_press_cnt);

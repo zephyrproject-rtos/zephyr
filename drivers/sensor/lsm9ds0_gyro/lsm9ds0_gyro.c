@@ -18,8 +18,7 @@
 
 #include "lsm9ds0_gyro.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM9DS0_GYRO);
+LOG_MODULE_REGISTER(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 					  int x_en, int y_en, int z_en)

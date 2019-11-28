@@ -255,7 +255,7 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 static struct pwm_data pwm_nrf5_sw_0_data;
 
 DEVICE_AND_API_INIT(pwm_nrf5_sw_0,
-		    CONFIG_PWM_NRF5_SW_0_DEV_NAME,
+		    DT_INST_0_NORDIC_NRF_SW_PWM_LABEL,
 		    pwm_nrf5_sw_init,
 		    &pwm_nrf5_sw_0_data,
 		    &pwm_nrf5_sw_0_config,

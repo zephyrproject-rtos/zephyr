@@ -8,6 +8,8 @@ from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
+import sys
+
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
@@ -85,6 +87,11 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                      '--flash_mode', self.flash_mode,
                      '--flash_freq', self.flash_freq,
                      '--flash_size', self.flash_size]
+
+        # Execute Python interpreter if calling a Python script
+        if self.espidf.lower().endswith(".py") and sys.executable:
+            cmd_convert.insert(0, sys.executable)
+            cmd_flash.insert(0, sys.executable)
 
         if self.bootloader_bin:
             cmd_flash.extend(['0x1000', self.bootloader_bin])

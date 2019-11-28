@@ -10,7 +10,7 @@ The EFR32 Flex Gecko Wireless Starter Kit SLWSTK6061A contains a Wireless
 System-On-Chip from the EFR32FG family built on an ARM® Cortex®-M4F processor
 with excellent low power capabilities.
 
-.. figure:: ./efr32_slwstk6061a.png
+.. figure:: ./efr32_slwstk6061a.jpg
    :width: 375px
    :align: center
    :alt: EFR32-SLWSTK6061A

@@ -260,8 +260,8 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 			.csn_pin    = DT_NORDIC_NRF_SPIS_SPI_##idx##_CSN_PIN,  \
 			.mode       = NRF_SPIS_MODE_0,			       \
 			.bit_order  = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.csn_pullup = NRFX_SPIS_DEFAULT_CSN_PULLUP,	       \
-			.miso_drive = NRFX_SPIS_DEFAULT_MISO_DRIVE,	       \
+			.csn_pullup = NRF_GPIO_PIN_NOPULL,		       \
+			.miso_drive = NRF_GPIO_PIN_S0S1,		       \
 			.orc        = CONFIG_SPI_##idx##_NRF_ORC,	       \
 			.def        = DT_NORDIC_NRF_SPIS_SPI_##idx##_DEF_CHAR, \
 		};							       \

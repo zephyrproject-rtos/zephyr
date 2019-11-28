@@ -9,6 +9,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -178,6 +182,7 @@
 			 */
 			gclk = <3>;
 			prescaler = <4>;
+			#io-channel-cells = <1>;
 		};
 	};
 };

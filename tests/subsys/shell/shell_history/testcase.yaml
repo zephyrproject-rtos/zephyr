@@ -1,5 +1,5 @@
 tests:
-  shell:
+  shell.history:
     min_flash: 64
     min_ram: 32
     filter: ( CONFIG_SHELL )

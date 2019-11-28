@@ -1,21 +1,16 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: BMI160 Inertial measurement unit
 
-description: >
+description: |
     This is a representation of the BMI160 Inertial measurement unit
 
-inherits:
-    !include spi-device.yaml
+compatible: "bosch,bmi160"
+
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "bosch,bmi160"
-
     int-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false

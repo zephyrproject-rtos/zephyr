@@ -1,11 +1,9 @@
-# Kconfig - Atmel SAM3X MCU series
-#
+# Atmel SAM3X MCU series
+
 # Copyright (c) 2017 Justin Watson
 # Copyright (c) 2016 Intel Corporation.
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Atmel SAM3X MCU Selection"

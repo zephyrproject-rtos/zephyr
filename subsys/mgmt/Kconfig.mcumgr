@@ -1,7 +1,6 @@
-#
 # Copyright Runtime.io 2018. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
@@ -65,7 +64,7 @@ endif
 menuconfig MCUMGR_CMD_LOG_MGMT
 	bool "Enable mcumgr handlers for log management"
 	help
-	Enables mcumgr handlers for log management
+	  Enables mcumgr handlers for log management
 
 if MCUMGR_CMD_LOG_MGMT
 config LOG_MGMT_CHUNK_SIZE

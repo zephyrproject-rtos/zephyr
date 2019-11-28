@@ -1,9 +1,7 @@
-# Kconfig.defconfig.series - ST Microelectronics STM32H7 MCU line
-#
+# ST Microelectronics STM32H7 MCU line
+
 # Copyright (c) 2019 Linaro  Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32H7 series
 

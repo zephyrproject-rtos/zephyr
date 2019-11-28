@@ -1,25 +1,18 @@
 title: Kinetis UART
 
-description: >
+description: |
     This binding gives a base representation of the Kinetis UART
 
-inherits:
-    !include uart.yaml
+compatible: "nxp,kinetis-uart"
+
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
-
-    hw-flow-control:
-      type: boolean
-      category: optional
-      description: use hw flow control
+      required: true
 
     clocks:
-      category: required
+      required: true

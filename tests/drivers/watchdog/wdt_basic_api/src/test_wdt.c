@@ -62,10 +62,14 @@
 #include <ztest.h>
 #include "test_wdt.h"
 
-#ifdef CONFIG_WDT_0_NAME
-#define WDT_DEV_NAME CONFIG_WDT_0_NAME
+#ifdef DT_ALIAS_WATCHDOG0_LABEL
+#define WDT_DEV_NAME DT_ALIAS_WATCHDOG0_LABEL
+#else
+#ifdef CONFIG_WWDG_STM32
+#define WDT_DEV_NAME DT_WWDT_0_NAME
 #else
 #define WDT_DEV_NAME DT_WDT_0_NAME
+#endif
 #endif
 
 #define WDT_TEST_STATE_IDLE        0
@@ -270,7 +274,7 @@ static int test_wdt_callback_2(void)
 
 	while (1) {
 		wdt_feed(wdt, 0);
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	};
 }
 #endif

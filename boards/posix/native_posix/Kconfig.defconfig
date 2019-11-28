@@ -72,7 +72,7 @@ config NATIVE_POSIX_CONSOLE
 config UART_CONSOLE
 	default y if SERIAL
 
-endif #CONSOLE
+endif # CONSOLE
 
 if DISPLAY
 
@@ -95,11 +95,18 @@ config FLASH_NATIVE_POSIX
 
 endif # FLASH
 
-endif # BOARD_NATIVE_POSIX
-
 if USB
 
 config USB_NATIVE_POSIX
 	default y
 
 endif # USB
+
+if EEPROM
+
+config EEPROM_NATIVE_POSIX
+	default y
+
+endif # EEPROM
+
+endif # BOARD_NATIVE_POSIX

@@ -9,6 +9,7 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "pdu.h"
@@ -79,6 +80,12 @@ u8_t ll_scan_enable(u8_t enable)
 	if (scan) {
 		/* Duplicate filtering is processed in the HCI layer */
 		return 0;
+	}
+
+	if (ll_scan.own_addr_type & 0x1) {
+		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)

@@ -14,12 +14,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "lis2ds12.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LIS2DS12);
+LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
 static void lis2ds12_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
@@ -147,7 +145,7 @@ int lis2ds12_trigger_init(struct device *dev)
 			CONFIG_LIS2DS12_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lis2ds12_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = lis2ds12_work_cb;
 	data->dev = dev;

@@ -1,24 +1,19 @@
-#
 # Copyright (c) 2018, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: STM32 SPI FIFO
 
-description: >
+description: |
     This binding gives a base representation of the STM32 SPI controller with
     embedded Rx and Tx FIFOs
 
-inherits:
-    !include spi.yaml
+compatible: "st,stm32-spi-fifo"
+
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-spi-fifo"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

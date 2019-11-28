@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec1501modular_assy6885
+name: MEC1501 MODULAR ASSY 6885
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 224
+supported:
+  - adc
+  - counter
+  - espi
+  - gpio
+  - i2c
+  - pinmux
+  - pwm
+  - watchdog

@@ -204,8 +204,8 @@ static void test_usb_bos_macros(void)
 	/* usb_bos_fix_total_length(); corrected with register */
 
 	hexdump((void *)hdr, len);
-	hexdump((void *)&webusb_bos_descriptor, len);
-	hexdump((void *)&webusb_bos_descriptor_2, len);
+	hexdump((void *)&webusb_bos_descriptor, sizeof(cap_webusb));
+	hexdump((void *)&webusb_bos_descriptor_2, sizeof(cap_msosv2));
 
 	zassert_true(len ==
 		     sizeof(struct usb_bos_descriptor) +

@@ -15,8 +15,7 @@
 
 #include "lps22hh.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LPS22HH);
+LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * lps22hh_enable_int - enable selected int pin to generate interrupt
@@ -42,7 +41,7 @@ int lps22hh_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lps22hh_data *lps22hh = dev->driver_data;
-	axis1bit32_t raw_press;
+	union axis1bit32_t raw_press;
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
 		lps22hh->handler_drdy = handler;
@@ -145,7 +144,7 @@ int lps22hh_init_interrupt(struct device *dev)
 		       CONFIG_LPS22HH_THREAD_STACK_SIZE,
 		       (k_thread_entry_t)lps22hh_thread, dev,
 		       0, NULL, K_PRIO_COOP(CONFIG_LPS22HH_THREAD_PRIORITY),
-		       0, 0);
+		       0, K_NO_WAIT);
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	lps22hh->work.handler = lps22hh_work_cb;
 	lps22hh->dev = dev;

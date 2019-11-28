@@ -116,6 +116,43 @@ supports the following hardware features:
 |           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
 
+BLE Software Link Layer experimental support
+==================================================
+This is an experimental feature supported on the Zephyr's RI5CY
+configuration, ``rv32m1_vega_ri5cy``. It  uses the Software Link Layer
+framework by Nordic Semi to enable the the on-SoC radio and transceiver for
+implementing a software defined BLE controller. By using both the controller
+and the host stack available in Zephyr, the following BLE samples can be used
+with this board:
+
+- beacon
+- central
+- central_hr
+- eddystone
+- hci_uart
+- ibeacon
+- peripheral_csc (Cycling Speed Cadence)
+- peripheral_dis (Device Information Service)
+- peripheral_esp (Environmental Sensing Service)
+- peripheral_hr (Heart Rate)
+- peripheral_ht (Health Thermometer)
+- scan_adv
+
+.. note::
+
+   BLE Software Link Layer limitations:
+
+   - **no 2 Mbps PHY**
+   - no 512/256 Kbps PHY
+   - **no controller-based cryptographic services (neither RPA nor LL encryption
+     or decryption)**
+   - no mesh support
+   - **no power-save**
+   - no TX power adjustment
+
+   Limitations marked **bold** above are planned to be addressed on this
+   platform.
+
 Connections and IOs
 ===================
 
@@ -276,8 +313,8 @@ Additional Pins
 For an up-to-date description of additional pins (such as buttons,
 LEDs, etc.) supported by Zephyr, see the board DTS files in the Zephyr
 source code, i.e.
-:zephyr_file:`boards/riscv32/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY and
-:zephyr_file:`boards/riscv32/rv32m1_vega/rv32m1_vega_zero_riscy.dts` for
+:zephyr_file:`boards/riscv/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY and
+:zephyr_file:`boards/riscv/rv32m1_vega/rv32m1_vega_zero_riscy.dts` for
 ZERO-RISCY.
 
 See the schematic in the documentation available from the `OpenISA
@@ -457,13 +494,13 @@ first make sure you're booting the right core.
 
 1. In one terminal, use OpenOCD to connect to the board::
 
-     ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
+     ~/rv32m1-openocd -f boards/riscv/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
 
    The output should look like this:
 
    .. code-block:: none
 
-      $ ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
+      $ ~/rv32m1-openocd -f boards/riscv/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
       Open On-Chip Debugger 0.10.0+dev-00431-ge1ec3c7d (2018-10-31-07:29)
       [...]
       Info : Listening on port 3333 for gdb connections

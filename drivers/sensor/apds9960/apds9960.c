@@ -21,8 +21,7 @@
 
 #include "apds9960.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(APDS9960);
+LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
 static void apds9960_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
@@ -447,7 +446,7 @@ static int apds9960_init(struct device *dev)
 	struct apds9960_data *data = dev->driver_data;
 
 	/* Initialize time 5.7ms */
-	k_sleep(6);
+	k_sleep(K_MSEC(6));
 	data->i2c = device_get_binding(config->i2c_name);
 
 	if (data->i2c == NULL) {

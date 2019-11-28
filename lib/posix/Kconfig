@@ -1,10 +1,7 @@
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-config	POSIX_MAX_FDS
+config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"
 	default 16 if POSIX_API
 	default 4
@@ -19,10 +16,9 @@ config POSIX_API
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
 
-if POSIX_API
-
 config PTHREAD_IPC
 	bool "POSIX pthread IPC API"
+	default y if POSIX_API
 	help
 	  This enables a mostly-standards-compliant implementation of
 	  the pthread mutex, condition variable and barrier IPC
@@ -45,6 +41,13 @@ config SEM_VALUE_MAX
 
 endif # PTHREAD_IPC
 
+config POSIX_CLOCK
+	bool "POSIX clock, timer, and sleep APIs"
+	default y if POSIX_API
+	help
+	  This enables POSIX clock\_\*(), timer\_\*(), and \*sleep()
+	  functions.
+
 config MAX_TIMER_COUNT
 	int "Maximum timer count in POSIX application"
 	default 5
@@ -54,24 +57,25 @@ config MAX_TIMER_COUNT
 
 config POSIX_MQUEUE
 	bool "Enable POSIX message queue"
+	default y if POSIX_API
 	help
 	  This enabled POSIX message queue related APIs.
 
 if POSIX_MQUEUE
-config	MSG_COUNT_MAX
+config MSG_COUNT_MAX
 	int "Maximum number of messages in message queue"
 	default 16
 	help
 	  Mention maximum number of messages in message queue in POSIX compliant
 	  application.
 
-config	MSG_SIZE_MAX
+config MSG_SIZE_MAX
 	int "Maximum size of a message"
 	default 16
 	help
 	  Mention maximum size of message in bytes.
 
-config	MQUEUE_NAMELEN_MAX
+config MQUEUE_NAMELEN_MAX
 	int "Maximum size of a name length"
 	default 16
 	range 2 255
@@ -83,11 +87,12 @@ endif
 if FILE_SYSTEM
 config POSIX_FS
 	bool "Enable POSIX file system API support"
+	default y if POSIX_API
 	help
 	  This enables POSIX style file system related APIs.
 
 if POSIX_FS
-config	POSIX_MAX_OPEN_FILES
+config POSIX_MAX_OPEN_FILES
 	int "Maximum number of open file descriptors"
 	default 16
 	help
@@ -96,12 +101,14 @@ config	POSIX_MAX_OPEN_FILES
 endif
 endif # FILE_SYSTEM
 
+if POSIX_API
+
 # The name of this option is mandated by zephyr_interface_library_named
 # cmake directive.
 config APP_LINK_WITH_POSIX_SUBSYS
-        bool "Make POSIX headers available to application"
-        default y
-        help
-          Add POSIX subsystem header files to the 'app' include path.
+	bool "Make POSIX headers available to application"
+	default y
+	help
+	  Add POSIX subsystem header files to the 'app' include path.
 
 endif # POSIX_API

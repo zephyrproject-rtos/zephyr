@@ -1,20 +1,16 @@
-# Kconfig - ST Microelectronics STM32L496xx MCU
-#
+# ST Microelectronics STM32L496xx MCU
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
 # Copyright (c) 2019 Centaur Analytics, Inc
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L496XX
 
 config SOC
-	string
 	default "stm32l496xx"
 
 config NUM_IRQS
-	int
 	default 91
 
 if GPIO_STM32

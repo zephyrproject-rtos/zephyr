@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019, Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: TI SimpleLink CC13xx/CC26xx RTC
+
+description: |
+    This binding gives a base representation of the TI SimpleLink CC13xx/CC26xx RTC
+
+compatible: "ti,cc13xx-cc26xx-rtc"
+
+include: rtc.yaml
+
+properties:
+    reg:
+      required: true

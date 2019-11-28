@@ -28,12 +28,6 @@ extern "C" {
  * @{
  */
 
-#define LOG_LEVEL_NONE 0
-#define LOG_LEVEL_ERR  1
-#define LOG_LEVEL_WRN  2
-#define LOG_LEVEL_INF  3
-#define LOG_LEVEL_DBG  4
-
 /**
  * @brief Writes an ERROR level message to the log.
  *
@@ -247,6 +241,7 @@ extern "C" {
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
+#ifndef CONFIG_LOG_MINIMAL
 /**
  * @brief Writes an formatted string to the log.
  *
@@ -257,10 +252,8 @@ extern "C" {
  *
  * @param fmt Formatted string to output.
  * @param ap  Variable parameters.
- *
- * return Number of bytes written.
  */
-int log_printk(const char *fmt, va_list ap);
+void log_printk(const char *fmt, va_list ap);
 
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
@@ -268,13 +261,29 @@ int log_printk(const char *fmt, va_list ap);
  * Logger allocates a buffer and copies input string returning a pointer to the
  * copy. Logger ensures that buffer is freed when logger message is freed.
  *
+ * Depending on configuration, this function may do nothing and just pass
+ * along the supplied string pointer. Do not rely on this function to always
+ * make a copy!
+ *
  * @param str Transient string.
  *
  * @return Copy of the string or default string if buffer could not be
  *	   allocated. String may be truncated if input string does not fit in
- *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING).
+ *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING). In
+ *	   some configurations, the original string pointer is returned.
  */
 char *log_strdup(const char *str);
+#else
+static inline void log_printk(const char *fmt, va_list ap)
+{
+	vprintk(fmt, ap);
+}
+
+static inline char *log_strdup(const char *str)
+{
+	return (char *)str;
+}
+#endif /* CONFIG_LOG_MINIMAL */
 
 #ifdef __cplusplus
 }

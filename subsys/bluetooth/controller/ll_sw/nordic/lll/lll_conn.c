@@ -28,7 +28,8 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_conn
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_conn
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -305,8 +306,6 @@ lll_conn_isr_rx_exit:
 	}
 
 	if (is_rx_enqueue) {
-		LL_ASSERT(lll->handle != 0xFFFF);
-
 		ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -419,6 +418,18 @@ void lll_conn_isr_tx(void *param)
 
 void lll_conn_isr_abort(void *param)
 {
+	/* Clear radio status and events */
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+
 	isr_cleanup(param);
 }
 
@@ -527,76 +538,14 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		p->len = lll->packet_tx_head_len - lll->packet_tx_head_offset;
 		p->md = 0;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#if defined(CONFIG_BT_CTLR_PHY)
-		switch (lll->phy_tx_time) {
-		default:
-		case BIT(0):
-			/* 1M PHY, 1us = 1 bit, hence divide by 8.
-			 * Deduct 10 bytes for preamble (1), access address (4),
-			 * header (2), and CRC (3).
-			 */
-			max_tx_octets = (lll->max_tx_time >> 3) - 10;
-			break;
-
-		case BIT(1):
-			/* 2M PHY, 1us = 2 bits, hence divide by 4.
-			 * Deduct 11 bytes for preamble (2), access address (4),
-			 * header (2), and CRC (3).
-			 */
-			max_tx_octets = (lll->max_tx_time >> 2) - 11;
-			break;
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		case BIT(2):
-			if (lll->phy_flags & 0x01) {
-				/* S8 Coded PHY, 8us = 1 bit, hence divide by
-				 * 64.
-				 * Subtract time for preamble (80), AA (256),
-				 * CI (16), TERM1 (24), CRC (192) and
-				 * TERM2 (24), total 592 us.
-				 * Subtract 2 bytes for header.
-				 */
-				max_tx_octets = ((lll->max_tx_time - 592) >>
-						 6) - 2;
-			} else {
-				/* S2 Coded PHY, 2us = 1 bit, hence divide by
-				 * 16.
-				 * Subtract time for preamble (80), AA (256),
-				 * CI (16), TERM1 (24), CRC (48) and
-				 * TERM2 (6), total 430 us.
-				 * Subtract 2 bytes for header.
-				 */
-				max_tx_octets = ((lll->max_tx_time - 430) >>
-						 4) - 2;
-			}
-			break;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		}
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-		if (lll->enc_tx) {
-			/* deduct the MIC */
-			max_tx_octets -= 4U;
-		}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
-		if (max_tx_octets > lll->max_tx_octets) {
-			max_tx_octets = lll->max_tx_octets;
-		}
-#else /* !CONFIG_BT_CTLR_PHY */
-		max_tx_octets = lll->max_tx_octets;
-#endif /* !CONFIG_BT_CTLR_PHY */
-#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
-		max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+		max_tx_octets = ull_conn_lll_max_tx_octets_get(lll);
 
 		if (p->len > max_tx_octets) {
 			p->len = max_tx_octets;
 			p->md = 1;
 		}
 
-		if (link->next) {
+		if (link->next != lll->memq_tx.tail) {
 			p->md = 1;
 		}
 	}
@@ -644,10 +593,11 @@ static void isr_done(void *param)
 	e->mic_state = mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	if (trx_cnt) {
 		struct lll_conn *lll = param;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
+		if (lll->role) {
 			u32_t preamble_to_addr_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -669,6 +619,7 @@ static void isr_done(void *param)
 			lll->slave.window_size_event_us = 0;
 		}
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	isr_cleanup(param);
 }
@@ -707,12 +658,14 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		/* Increment serial number */
 		lll->sn++;
 
+#if defined(CONFIG_BT_PERIPHERAL)
 		/* First ack (and redundantly any other ack) enable use of
 		 * slave latency.
 		 */
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && lll->role) {
+		if (lll->role) {
 			lll->slave.latency_enabled = 1;
 		}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 		if (!lll->empty) {
 			struct pdu_data *pdu_data_tx;
@@ -746,7 +699,10 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				memq_dequeue(lll->memq_tx.tail,
 					     &lll->memq_tx.head, NULL);
 
-				link->next = tx->next;
+				/* TX node UPSTREAM, i.e. Tx node ack path */
+				link->next = tx->next; /* Indicates ctrl or data
+							* pool.
+							*/
 				tx->next = link;
 
 				*tx_release = tx;
@@ -840,4 +796,9 @@ static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll)
 	}
 
 	return p;
+}
+
+void lll_conn_flush(struct lll_conn *lll)
+{
+	/* Nothing to be flushed */
 }

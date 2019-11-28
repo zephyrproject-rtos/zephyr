@@ -37,12 +37,6 @@ Build the Zephyr version of the sockets/echo application like this:
    :goals: build
    :compact:
 
-``board_to_use`` defaults to ``qemu_x86``. In this case, you can run the
-application in QEMU using ``make run``. If you used another BOARD, you
-will need to consult its documentation for application deployment
-instructions. You can read about Zephyr support for specific boards in
-the documentation at :ref:`boards`.
-
 After the sample starts, it expects connections at 192.0.2.1, port 8080.
 The easiest way to connect is by opening a following URL in a web
 browser: http://192.0.2.1:8080/ . You should see a page with a sample
@@ -55,7 +49,7 @@ Alternatively, a tool like ``curl`` can be used:
     $ curl http://192.0.2.1:8080/
 
 Finally, you can run an HTTP profiling/load tool like Apache Bench
-(``ab``) against the server:
+(``ab``) against the server::
 
     $ ab -n10 http://192.0.2.1:8080/
 

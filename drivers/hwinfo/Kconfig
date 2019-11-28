@@ -1,10 +1,7 @@
-# Kconfig -HW Info driver configuration options
+# HW Info driver configuration options
 
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig HWINFO
 	bool "Hardware Information driver"
@@ -69,4 +66,10 @@ config HWINFO_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
+config HWINFO_LITEX
+	bool "LiteX device ID"
+	default y
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	help
+	  Enable LiteX hwinfo driver
 endif

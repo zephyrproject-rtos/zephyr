@@ -5,6 +5,7 @@
  */
 
 #include <kernel.h>
+#include <stdlib.h>
 #include "lwm2m_util.h"
 
 #define SHIFT_LEFT(v, o, m) (((v) << (o)) & (m))
@@ -26,11 +27,8 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 		return 0;
 	}
 
-	v = f32->val1;
 	/* sign handled later */
-	if (v < 0) {
-		v = -v;
-	}
+	v = abs(f32->val1);
 
 	/* add whole value to fraction */
 	while (v > 0) {
@@ -44,11 +42,8 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 		e++;
 	}
 
-	v = f32->val2;
 	/* sign handled later */
-	if (v < 0) {
-		v = -v;
-	}
+	v = abs(f32->val2);
 
 	/* add decimal to fraction */
 	i = e;
@@ -76,7 +71,11 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 	memset(b32, 0, len);
 
 	/* sign: bit 31 */
-	b32[0] = f32->val1 < 0 ? 0x80 : 0;
+	if (f32->val1 == 0) {
+		b32[0] = f32->val2 < 0 ? 0x80 : 0;
+	} else {
+		b32[0] = f32->val1 < 0 ? 0x80 : 0;
+	}
 
 	/* exponent: bits 30-23 */
 	b32[0] |= e >> 1;
@@ -108,11 +107,8 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 		return 0;
 	}
 
-	v = f64->val1;
 	/* sign handled later */
-	if (v < 0) {
-		v = -v;
-	}
+	v = abs(f64->val1);
 
 	/* add whole value to fraction */
 	while (v > 0) {
@@ -126,11 +122,8 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 		e++;
 	}
 
-	v = f64->val2;
 	/* sign handled later */
-	if (v < 0) {
-		v = -v;
-	}
+	v = abs(f64->val2);
 
 	/* add decimal to fraction */
 	i = e;
@@ -158,7 +151,11 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 	memset(b64, 0, len);
 
 	/* sign: bit 63 */
-	b64[0] = f64->val1 < 0 ? 0x80 : 0;
+	if (f64->val1 == 0) {
+		b64[0] = f64->val2 < 0 ? 0x80 : 0;
+	} else {
+		b64[0] = f64->val1 < 0 ? 0x80 : 0;
+	}
 
 	/* exponent: bits 62-52 */
 	b64[0] |= (e >> 4);

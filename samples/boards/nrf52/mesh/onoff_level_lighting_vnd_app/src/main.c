@@ -24,105 +24,87 @@ static bool reset;
 
 static void light_default_var_init(void)
 {
-	gen_def_trans_time_srv_user_data.tt = 0x00;
+	ctl->tt = 0x00;
 
-	gen_power_onoff_srv_user_data.onpowerup = STATE_DEFAULT;
+	ctl->onpowerup = STATE_DEFAULT;
 
-	light_lightness_srv_user_data.light_range_min = LIGHTNESS_MIN;
-	light_lightness_srv_user_data.light_range_max = LIGHTNESS_MAX;
-	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
-	light_lightness_srv_user_data.def = LIGHTNESS_MAX;
+	ctl->light->range_min = LIGHTNESS_MIN;
+	ctl->light->range_max = LIGHTNESS_MAX;
+	ctl->light->last = LIGHTNESS_MAX;
+	ctl->light->def = LIGHTNESS_MAX;
 
-	light_ctl_srv_user_data.temp_range_min = TEMP_MIN;
-	light_ctl_srv_user_data.temp_range_max = TEMP_MAX;
-	light_ctl_srv_user_data.lightness_def = LIGHTNESS_MAX;
-	light_ctl_srv_user_data.temp_def = TEMP_MIN;
+	ctl->temp->range_min = TEMP_MIN;
+	ctl->temp->range_max = TEMP_MAX;
+	ctl->temp->def = TEMP_MAX;
 
-	light_ctl_srv_user_data.lightness_temp_last =
-		(u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MIN);
+	ctl->duv->def = DELTA_UV_DEF;
+
+	ctl->light_temp_def = (u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MAX);
+	ctl->light_temp_last_tgt = (u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MAX);
 }
 
+/* This function should only get call after execution of settings_load() */
 static void light_default_status_init(void)
 {
-	u16_t lightness;
+	u16_t light_def;
 
-	lightness = (u16_t) (light_ctl_srv_user_data.lightness_temp_last >> 16);
-
-	if (lightness) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
+	/* Retrieve Range of Lightness */
+	if (ctl->light->range) {
+		ctl->light->range_max = (u16_t) (ctl->light->range >> 16);
+		ctl->light->range_min = (u16_t) ctl->light->range;
 	}
 
-	/* Retrieve Default Lightness & Temperature Values */
-
-	if (light_ctl_srv_user_data.lightness_temp_def) {
-		light_ctl_srv_user_data.lightness_def = (u16_t)
-			(light_ctl_srv_user_data.lightness_temp_def >> 16);
-
-		light_ctl_srv_user_data.temp_def = (u16_t)
-			(light_ctl_srv_user_data.lightness_temp_def);
+	/* Retrieve Range of Temperature */
+	if (ctl->temp->range) {
+		ctl->temp->range_max = (u16_t) (ctl->temp->range >> 16);
+		ctl->temp->range_min = (u16_t) ctl->temp->range;
 	}
 
-	light_lightness_srv_user_data.def =
-		light_ctl_srv_user_data.lightness_def;
+	/* Retrieve Default Lightness Value */
+	light_def = (u16_t) (ctl->light_temp_def >> 16);
+	ctl->light->def = constrain_lightness(light_def);
 
-	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
+	/* Retrieve Default Temperature Value */
+	ctl->temp->def = (u16_t) ctl->light_temp_def;
 
-	/* Retrieve Range of Lightness & Temperature */
+	ctl->temp->current = ctl->temp->def;
+	ctl->duv->current = ctl->duv->def;
 
-	if (light_lightness_srv_user_data.lightness_range) {
-		light_lightness_srv_user_data.light_range_max = (u16_t)
-			(light_lightness_srv_user_data.lightness_range >> 16);
-
-		light_lightness_srv_user_data.light_range_min = (u16_t)
-			(light_lightness_srv_user_data.lightness_range);
-	}
-
-	if (light_ctl_srv_user_data.temperature_range) {
-		light_ctl_srv_user_data.temp_range_max = (u16_t)
-			(light_ctl_srv_user_data.temperature_range >> 16);
-
-		light_ctl_srv_user_data.temp_range_min = (u16_t)
-			(light_ctl_srv_user_data.temperature_range);
-	}
-
-	switch (gen_power_onoff_srv_user_data.onpowerup) {
+	switch (ctl->onpowerup) {
 	case STATE_OFF:
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-		state_binding(ONOFF, ONOFF_TEMP);
+		ctl->light->current = 0U;
 		break;
 	case STATE_DEFAULT:
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-		state_binding(ONOFF, ONOFF_TEMP);
+		if (ctl->light->def == 0U) {
+			ctl->light->current = ctl->light->last;
+		} else {
+			ctl->light->current = ctl->light->def;
+		}
 		break;
 	case STATE_RESTORE:
-		light_lightness_srv_user_data.last = (u16_t)
-			(light_ctl_srv_user_data.lightness_temp_last >> 16);
-
-		light_ctl_srv_user_data.temp =
-			(u16_t) (light_ctl_srv_user_data.lightness_temp_last);
-
-		state_binding(ONPOWERUP, ONOFF_TEMP);
+		ctl->light->current = (u16_t) (ctl->light_temp_last_tgt >> 16);
+		ctl->temp->current = (u16_t) ctl->light_temp_last_tgt;
 		break;
 	}
 
-	default_tt = gen_def_trans_time_srv_user_data.tt;
+	default_tt = ctl->tt;
 
-	init_lightness_target_values();
-	init_temp_target_values();
+	ctl->light->target = ctl->light->current;
+	ctl->temp->target = ctl->temp->current;
+	ctl->duv->target = ctl->duv->current;
 }
 
 void update_led_gpio(void)
 {
 	u8_t power, color;
 
-	power = 100 * ((float) lightness / 65535);
-	color = 100 * ((float) (temperature + 32768) / 65535);
+	power = 100 * ((float) ctl->light->current / 65535);
+	color = 100 * ((float) (ctl->temp->current - ctl->temp->range_min) /
+		       (ctl->temp->range_max - ctl->temp->range_min));
 
 	printk("power-> %d, color-> %d\n", power, color);
 
-	if (lightness) {
+	if (ctl->light->current) {
 		/* LED1 On */
 		gpio_pin_write(led_device[0], DT_ALIAS_LED0_GPIOS_PIN, 0);
 	} else {
@@ -151,7 +133,7 @@ void update_light_state(void)
 {
 	update_led_gpio();
 
-	if (*ptr_counter == 0 || reset == false) {
+	if (ctl->transition->counter == 0 || reset == false) {
 		reset = true;
 		k_work_submit(&no_transition_work);
 	}
@@ -210,12 +192,12 @@ void main(void)
 	update_light_state();
 
 	short_time_multireset_bt_mesh_unprovisioning();
-	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
+	k_timer_start(&reset_counter_timer, K_MSEC(7000), K_NO_WAIT);
 
 #if defined(CONFIG_MCUMGR)
 	/* Initialize the Bluetooth mcumgr transport. */
 	smp_bt_register();
 
-	k_timer_start(&smp_svr_timer, 0, K_MSEC(1000));
+	k_timer_start(&smp_svr_timer, K_NO_WAIT, K_MSEC(1000));
 #endif
 }

@@ -43,7 +43,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	z_thread_single_abort(thread);
 	z_thread_monitor_exit(thread);
 
-	if (thread == _current && !z_is_in_isr()) {
+	if (thread == _current && !arch_is_in_isr()) {
 		z_swap(&lock, key);
 	} else {
 		/* Really, there's no good reason for this to be a
@@ -56,18 +56,5 @@ void z_impl_k_thread_abort(k_tid_t thread)
 		 */
 		z_reschedule(&lock, key);
 	}
-}
-#endif
-
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_abort, thread_p)
-{
-	struct k_thread *thread = (struct k_thread *)thread_p;
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
-				    "aborting essential thread %p", thread));
-
-	z_impl_k_thread_abort((struct k_thread *)thread);
-	return 0;
 }
 #endif

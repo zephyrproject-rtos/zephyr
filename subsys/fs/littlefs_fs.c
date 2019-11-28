@@ -595,6 +595,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	if (block_size == 0) {
 		block_size = get_block_size(fs->area);
 	}
+	if (block_size == 0) {
+		__ASSERT_NO_MSG(block_size != 0);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	s32_t block_cycles = lcp->block_cycles;
 

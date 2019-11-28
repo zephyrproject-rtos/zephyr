@@ -22,7 +22,7 @@ header file. The :file:`board.h` must define the following variables:
 - DT_ALIAS_SW0_GPIOS_PIN
 
 Alternatively, this could also be done by defining 'sw0' alias in the board
-device tree description file.
+devicetree description file.
 
 
 Building and Running

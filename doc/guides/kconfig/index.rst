@@ -14,10 +14,10 @@ behaviors and features that might be cryptic or that are easily overlooked.
 
 .. note::
 
-   The official Kconfig documentation is `kconfig-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-language.txt>`_
-   and `kconfig-macro-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
+   The official Kconfig documentation is `kconfig-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-language.html>`_
+   and `kconfig-macro-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-macro-language.html>`_.
 
 
 What to turn into Kconfig options
@@ -34,7 +34,7 @@ sense for the user to change its value.
 In Zephyr, Kconfig configuration is done after selecting a machine, so in
 general, it does not make sense to put a prompt on a symbol that corresponds to
 a fixed machine-specific setting. Usually, such settings should be handled via
-device tree (``.dts``) files instead.
+devicetree (``.dts``) files instead.
 
 Symbols without prompts can't be configured directly by the user (they derive
 their value from other symbols), so less restrictions apply to them. If some
@@ -464,6 +464,25 @@ Here are some things to check:
   they come from.
 
 
+Checking changes with :file:`scripts/kconfig/lint.py`
+*****************************************************
+
+After you make Kconfig changes, you can use the
+:zephyr_file:`scripts/kconfig/lint.py` script to check for some potential
+issues, like unused symbols and symbols that are impossible to enable. Use
+``--help`` to see available options.
+
+Some checks are necessarily a bit heuristic, so a symbol being flagged by a
+check does not necessarily mean there's a problem. If a check returns a false
+positive e.g. due to token pasting in C (``CONFIG_FOO_##index##_BAR``), just
+ignore it.
+
+When investigating an unknown symbol ``FOO_BAR``, it is a good idea to run
+``git grep FOO_BAR`` to look for references. It is also a good idea to search
+for some components of the symbol name with e.g. ``git grep FOO`` and
+``git grep BAR``, as it can help uncover token pasting.
+
+
 Style recommendations and shorthands
 ************************************
 
@@ -631,6 +650,27 @@ For a Kconfig symbol that enables a driver/subsystem FOO, consider having just
 "Foo" as the prompt, instead of "Enable Foo support" or the like. It will
 usually be clear in the context of an option that can be toggled on/off, and
 makes things consistent.
+
+
+Header comments and other nits
+==============================
+
+A few formatting nits, to help keep things consistent:
+
+- Use this format for any header comments at the top of ``Kconfig`` files:
+
+  .. code-block:: none
+
+     # <Overview of symbols defined in the file, preferably in plain English>
+     (Blank line)
+     # Copyright (c) 2019 ...
+     # SPDX-License-Identifier: <License>
+     (Blank line)
+     (Kconfig definitions)
+
+- Format comments as ``# Comment`` rather than ``#Comment``
+
+- Put a blank line before/after each top-level ``if`` and ``endif``
 
 
 Lesser-known/used Kconfig features
@@ -808,69 +848,66 @@ Kconfig Functions
 *****************
 
 Kconfiglib provides user-defined preprocessor functions that
-we use in Zephyr to expose Device Tree information to Kconfig.
+we use in Zephyr to expose devicetree information to Kconfig.
 For example, we can get the default value for a Kconfig symbol
-from the device tree.
+from the devicetree.
 
-Device Tree Related Functions
-=============================
+Devicetree Related Functions
+============================
+
+See the Python docstrings in ``scripts/kconfig/kconfigfunctions.py`` for more
+details on the functions.  The ``*_int`` version of each function returns the
+value as a decimal integer, while the ``*_hex`` version returns a hexadecimal
+value starting with ``0x``.
 
 .. code-block:: none
 
-  dt_int_val(kconf, _, name, unit):
-       This function looks up 'name' in the DTS generated "conf" style database
-       (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
-       and if it's found it will return the value as an decimal integer.  The
-       function will divide the value based on 'unit':
-           None        No division
-           'k' or 'K'  divide by 1024 (1 << 10)
-           'm' or 'M'  divide by 1,048,576 (1 << 20)
-           'g' or 'G'  divide by 1,073,741,824 (1 << 30)
-
-  dt_hex_val(kconf, _, name, unit):
-       This function looks up 'name' in the DTS generated "conf" style database
-       (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
-       and if it's found it will return the value as an hex integer.  The
-       function will divide the value based on 'unit':
-           None        No division
-           'k' or 'K'  divide by 1024 (1 << 10)
-           'm' or 'M'  divide by 1,048,576 (1 << 20)
-           'g' or 'G'  divide by 1,073,741,824 (1 << 30)
-
-  dt_str_val(kconf, _, name):
-       This function looks up 'name' in the DTS generated "conf" style database
-       (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
-       and if it's found it will return the value as string. if it's not found we
-       return an empty string.
+  dt_chosen_reg_addr_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_addr_hex(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_int(kconf, _, chosen, index=0, unit=None):
+  dt_chosen_reg_size_hex(kconf, _, chosen, index=0, unit=None):
+  dt_node_reg_addr_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_addr_hex(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_int(kconf, _, path, index=0, unit=None):
+  dt_node_reg_size_hex(kconf, _, path, index=0, unit=None):
+  dt_compat_enabled(kconf, _, compat):
+  dt_chosen_enabled(kconf, _, chosen):
+  dt_node_has_bool_prop(kconf, _, path, prop):
 
 Example Usage
-=============
+-------------
 
-The following example shows the usage of the ``dt_int_val`` function:
-
-.. code-block:: none
-
-   boards/arm/mimxrt1020_evk/Kconfig.defconfig
-
-   config FLASH_SIZE
-      default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1,K)
-
-In this example if we examine the generated generated_dts_board.conf file
-as part of the Zephyr build we'd find the following entry:
+The following example shows the usage of the ``dt_node_reg_addr_hex`` function.
+This function will take a path to a devicetree node and register the register
+address of that node:
 
 .. code-block:: none
 
-   DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1=8388608
+   boards/riscv/hifive1_revb/Kconfig.defconfig
 
-The ``dt_int_val`` will search the generated_dts_board.conf that is derived from
-the dts for the board and match the ``DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1`` entry.
-The function than will than scale the value by ``1024``.  This effective causes
+   config FLASH_BASE_ADDRESS
+      default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
+
+In this example if we examine the dts file for the board:
+
+.. code-block:: none
+
+   spi0: spi@10014000 {
+      compatible = "sifive,spi0";
+      reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
+      reg-names = "control", "mem";
+      ...
+   };
+
+The ``dt_node_reg_addr_hex`` will search the dts file for a node at the path
+``/soc/spi@10014000``.  The function than will extract the register address
+at the index 1.  This effective gets the value of ``0x20010000`` and causes
 the above to look like:
 
 .. code-block:: none
 
-   config FLASH_SIZE
-      default 8192
+   config FLASH_BASE_ADDRESS
+      default 0x20010000
 
 
 Other resources

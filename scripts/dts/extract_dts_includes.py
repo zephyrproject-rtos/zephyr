@@ -16,9 +16,16 @@
 
 import os, fnmatch
 import re
-import yaml
 import argparse
 from collections import defaultdict
+
+import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # It's much faster.
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 from devicetree import parse_file
 from extract.globals import *
@@ -65,7 +72,8 @@ def generate_prop_defines(node_path, prop):
     # named 'prop' on the device tree node at 'node_path'
 
     binding = get_binding(node_path)
-    if 'parent' in binding and 'bus' in binding['parent']:
+    if 'parent-bus' in binding or \
+       'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
         parent_path = get_parent_path(node_path)
@@ -78,7 +86,7 @@ def generate_prop_defines(node_path, prop):
 
     if prop == 'reg':
         reg.extract(node_path, names, def_label, 1)
-    elif prop == 'interrupts' or prop == 'interrupts-extended':
+    elif prop in {'interrupts', 'interrupts-extended'}:
         interrupts.extract(node_path, prop, names, def_label)
     elif prop == 'compatible':
         compatible.extract(node_path, prop, def_label)
@@ -122,8 +130,12 @@ def generate_node_defines(node_path):
 
     generate_bus_defines(node_path)
 
+    props = get_binding(node_path).get('properties')
+    if not props:
+        return
+
     # Generate per-property ('foo = <1 2 3>', etc.) #defines
-    for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
+    for yaml_prop, yaml_val in props.items():
         if yaml_prop.startswith("#") or yaml_prop.endswith("-map"):
             continue
 
@@ -150,7 +162,8 @@ def generate_bus_defines(node_path):
     #   bus: ...
 
     binding = get_binding(node_path)
-    if not ('parent' in binding and 'bus' in binding['parent']):
+    if not ('parent-bus' in binding or
+            'parent' in binding and 'bus' in binding['parent']):
         return
 
     parent_path = get_parent_path(node_path)
@@ -158,17 +171,24 @@ def generate_bus_defines(node_path):
     # Check that parent has matching child bus value
     try:
         parent_binding = get_binding(parent_path)
-        parent_bus = parent_binding['child']['bus']
+        if 'child-bus' in parent_binding:
+            parent_bus = parent_binding['child-bus']
+        else:
+            parent_bus = parent_binding['child']['bus']
     except (KeyError, TypeError):
         raise Exception("{0} defines parent {1} as bus master, but {1} is not "
                         "configured as bus master in binding"
                         .format(node_path, parent_path))
 
-    if parent_bus != binding['parent']['bus']:
+    if 'parent-bus' in binding:
+        bus = binding['parent-bus']
+    else:
+        bus = binding['parent']['bus']
+
+    if parent_bus != bus:
         raise Exception("{0} defines parent {1} as {2} bus master, but {1} is "
                         "configured as {3} bus master"
-                        .format(node_path, parent_path,
-                                binding['parent']['bus'], parent_bus))
+                        .format(node_path, parent_path, bus, parent_bus))
 
     # Generate *_BUS_NAME #define
     extract_bus_name(
@@ -205,54 +225,32 @@ def merge_properties(parent, fname, to_dict, from_dict):
         else:
             to_dict[k] = from_dict[k]
 
-            # Warn when overriding a property and changing its value...
-            if (k in to_dict and to_dict[k] != from_dict[k] and
-                # ...unless it's the 'title', 'description', or 'version'
-                # property. These are overridden deliberately.
-                not k in {'title', 'version', 'description'} and
-                # Also allow the category to be changed from 'optional' to
-                # 'required' without a warning
-                not (k == "category" and to_dict[k] == "optional" and
-                     from_dict[k] == "required")):
-
-                print("extract_dts_includes.py: {}('{}') merge of property "
-                      "'{}': '{}' overwrites '{}'"
-                      .format(fname, parent, k, from_dict[k], to_dict[k]))
-
 
 def merge_included_bindings(fname, node):
     # Recursively merges properties from files !include'd from the 'inherits'
     # section of the binding. 'fname' is the path to the top-level binding
     # file, and 'node' the current top-level YAML node being processed.
 
-    check_binding_properties(node)
+    res = node
+
+    if "include" in node:
+        included = node.pop("include")
+        if isinstance(included, str):
+            included = [included]
+
+        for included_fname in included:
+            binding = load_binding_file(included_fname)
+            inherited = merge_included_bindings(fname, binding)
+            merge_properties(None, fname, inherited, res)
+            res = inherited
 
     if 'inherits' in node:
         for inherited in node.pop('inherits'):
             inherited = merge_included_bindings(fname, inherited)
-            merge_properties(None, fname, inherited, node)
-            node = inherited
+            merge_properties(None, fname, inherited, res)
+            res = inherited
 
-    return node
-
-
-def check_binding_properties(node):
-    # Checks that the top-level YAML node 'node' has the expected properties.
-    # Prints warnings and substitutes defaults otherwise.
-
-    if 'title' not in node:
-        print("extract_dts_includes.py: node without 'title' -", node)
-
-    for prop in 'title', 'description':
-        if prop not in node:
-            node[prop] = "<unknown {}>".format(prop)
-            print("extract_dts_includes.py: '{}' property missing "
-                  "in '{}' binding. Using '{}'."
-                  .format(prop, node['title'], node[prop]))
-
-    if 'id' in node:
-        print("extract_dts_includes.py: WARNING: id field set "
-              "in '{}', should be removed.".format(node['title']))
+    return res
 
 
 def define_str(name, value, value_tabs, is_deprecated=False):
@@ -345,37 +343,39 @@ def load_bindings(root, binding_dirs):
     compats = []
 
     # Add '!include foo.yaml' handling
-    yaml.Loader.add_constructor('!include', yaml_include)
+    Loader.add_constructor('!include', yaml_include)
 
-    loaded_yamls = set()
+    # Code below is adapated from edtlib.py
+
+    # Searches for any 'compatible' string mentioned in the devicetree
+    # files, with a regex
+    dt_compats_search = re.compile(
+        "|".join(re.escape(compat) for compat in dts_compats)
+    ).search
 
     for file in binding_files:
-        # Extract compat from 'constraint:' line
-        for line in open(file, 'r', encoding='utf-8'):
-            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-            if match:
-                break
-        else:
-            # No 'constraint:' line found. Move on to next yaml file.
+        with open(file, encoding="utf-8") as f:
+            contents = f.read()
+
+        if not dt_compats_search(contents):
             continue
 
-        compat = match.group(1)
-        if compat not in dts_compats or file in loaded_yamls:
-            # The compat does not appear in the device tree, or the yaml
-            # file has already been loaded
+        binding = yaml.load(contents, Loader=Loader)
+
+        binding_compats = _binding_compats(binding)
+        if not binding_compats:
             continue
-
-        # Found a binding (.yaml file) for a 'compatible' value that
-        # appears in DTS. Load it.
-
-        loaded_yamls.add(file)
-
-        if compat not in compats:
-            compats.append(compat)
 
         with open(file, 'r', encoding='utf-8') as yf:
             binding = merge_included_bindings(file,
-                                              yaml.load(yf, Loader=yaml.Loader))
+                                              yaml.load(yf, Loader=Loader))
+
+        for compat in binding_compats:
+            if compat not in compats:
+                compats.append(compat)
+
+            if 'parent-bus' in binding:
+                bus_to_binding[binding['parent-bus']][compat] = binding
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
@@ -388,6 +388,32 @@ def load_bindings(root, binding_dirs):
     extract.globals.bindings = compat_to_binding
     extract.globals.bus_bindings = bus_to_binding
     extract.globals.binding_compats = compats
+
+
+def _binding_compats(binding):
+    # Adapated from edtlib.py
+
+    def new_style_compats():
+        if binding is None or "compatible" not in binding:
+            return []
+
+        val = binding["compatible"]
+
+        if isinstance(val, str):
+            return [val]
+        return val
+
+    def old_style_compat():
+        try:
+            return binding["properties"]["compatible"]["constraint"]
+        except Exception:
+            return None
+
+    new_compats = new_style_compats()
+    old_compat = old_style_compat()
+    if old_compat:
+        return [old_compat]
+    return new_compats
 
 
 def find_binding_files(binding_dirs):
@@ -437,7 +463,7 @@ def load_binding_file(fname):
                        "!include statement: {}".format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
-        return yaml.load(f, Loader=yaml.Loader)
+        return yaml.load(f, Loader=Loader)
 
 
 def yaml_inc_error(msg):

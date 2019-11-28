@@ -20,7 +20,8 @@ struct settings_nvs_read_fn_arg {
 	u16_t id;
 };
 
-static int settings_nvs_load(struct settings_store *cs, const char *subtree);
+static int settings_nvs_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg);
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 
@@ -32,10 +33,18 @@ static struct settings_store_itf settings_nvs_itf = {
 static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
 {
 	struct settings_nvs_read_fn_arg *rd_fn_arg;
+	ssize_t rc;
 
 	rd_fn_arg = (struct settings_nvs_read_fn_arg *)back_end;
 
-	return nvs_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
+	rc = nvs_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
+	if (rc > (ssize_t)len) {
+		/* nvs_read signals that not all bytes were read
+		 * align read len to what was requested
+		 */
+		rc = len;
+	}
+	return rc;
 }
 
 int settings_nvs_src(struct settings_nvs *cf)
@@ -54,14 +63,14 @@ int settings_nvs_dst(struct settings_nvs *cf)
 	return 0;
 }
 
-static int settings_nvs_load(struct settings_store *cs, const char *subtree)
+static int settings_nvs_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg)
 {
+	int ret = 0;
 	struct settings_nvs *cf = (struct settings_nvs *)cs;
 	struct settings_nvs_read_fn_arg read_fn_arg;
-	struct settings_handler *ch;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	char buf;
-	const char *name_argv;
 	ssize_t rc1, rc2;
 	u16_t name_id = NVS_NAMECNT_ID;
 
@@ -104,22 +113,18 @@ static int settings_nvs_load(struct settings_store *cs, const char *subtree)
 
 		/* Found a name, this might not include a trailing \0 */
 		name[rc1] = '\0';
-
-		if (subtree && !settings_name_steq(name, subtree, NULL)) {
-			continue;
-		}
-
-		ch = settings_parse_and_lookup(name, &name_argv);
-		if (!ch) {
-			continue;
-		}
-
 		read_fn_arg.fs = &cf->cf_nvs;
 		read_fn_arg.id = name_id + NVS_NAME_ID_OFFSET;
-		ch->h_set(name_argv, rc2, settings_nvs_read_fn,
-			  (void *) &read_fn_arg);
+
+		ret = settings_call_set_handler(
+			name, rc2,
+			settings_nvs_read_fn, &read_fn_arg,
+			(void *)arg);
+		if (ret) {
+			break;
+		}
 	}
-	return 0;
+	return ret;
 }
 
 static int settings_nvs_save(struct settings_store *cs, const char *name,
@@ -168,12 +173,25 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 			cf->last_name_id--;
 			rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
 				       &cf->last_name_id, sizeof(u16_t));
+			if (rc < 0) {
+				/* Error: can't to store
+				 * the largest name ID in use.
+				 */
+				return rc;
+			}
 		}
 
 		if (delete) {
 			rc = nvs_delete(&cf->cf_nvs, name_id);
-			rc = nvs_delete(&cf->cf_nvs, name_id +
+
+			if (rc >= 0) {
+				rc = nvs_delete(&cf->cf_nvs, name_id +
 					NVS_NAME_ID_OFFSET);
+			}
+
+			if (rc < 0) {
+				return rc;
+			}
 
 			return 0;
 		}
@@ -183,7 +201,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	}
 
 	if (delete) {
-		return -ENOENT;
+		return 0;
 	}
 
 	/* No free IDs left. */
@@ -198,6 +216,9 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	/* write the name if required */
 	if (write_name) {
 		rc = nvs_write(&cf->cf_nvs, write_name_id, name, strlen(name));
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	/* update the last_name_id and write to flash if required*/

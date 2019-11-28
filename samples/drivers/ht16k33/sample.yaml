@@ -4,4 +4,5 @@ sample:
 tests:
   sample.driver.ht16k33:
     platform_whitelist: nrf52840_pca10056
+    harness: TBD
     tags: LED

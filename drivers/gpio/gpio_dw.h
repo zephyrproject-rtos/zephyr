@@ -11,11 +11,6 @@
 #include <drivers/gpio.h>
 #include "gpio_dw_registers.h"
 
-#ifdef CONFIG_PCI
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
-#endif /* CONFIG_PCI */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,10 +33,6 @@ struct gpio_dw_config {
 
 struct gpio_dw_runtime {
 	u32_t base_addr;
-#ifdef CONFIG_PCI
-	struct pci_dev_info  pci_dev;
-#endif /* CONFIG_PCI */
-
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	struct device *clock;
 #endif

@@ -1,0 +1,8 @@
+sample:
+  description: Sample application for ST7789V display
+  name: st7789v_sample
+tests:
+  sample.display.st7789v:
+    build_only: true
+    platform_whitelist: nrf52_pca10040
+    tags: display

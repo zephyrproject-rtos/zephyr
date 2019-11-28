@@ -9,7 +9,9 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_TIME_H_
 
 #include <stdint.h>
+#include <sys/_types.h>
 #include <bits/restrict.h>
+#include <sys/_timespec.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
  * like mbedTLS and to support time APIs.
@@ -31,10 +33,15 @@ struct tm {
 	int tm_isdst;
 };
 
-typedef int64_t time_t;
-typedef int32_t suseconds_t;
+#if !defined(__time_t_defined)
+#define __time_t_defined
+typedef _TIME_T_ time_t;
+#endif
 
-#include <sys/_timespec.h>
+#if !defined(__suseconds_t_defined)
+#define __suseconds_t_defined
+typedef _SUSECONDS_T_ suseconds_t;
+#endif
 
 /*
  * Conversion between civil time and UNIX time.  The companion

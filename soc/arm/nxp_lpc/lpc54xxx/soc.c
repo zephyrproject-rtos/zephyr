@@ -24,6 +24,7 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <fsl_pint.h>
 
 /**
  *
@@ -33,7 +34,7 @@
  *
  */
 
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 
 #ifdef CONFIG_SOC_LPC54114_M4
@@ -88,7 +89,12 @@ static int nxp_lpc54114_init(struct device *arg)
 	oldLevel = irq_lock();
 
 	/* Initialize FRO/system clock to 48 MHz */
-	clkInit();
+	clock_init();
+
+#ifdef CONFIG_GPIO_MCUX_LPC
+	/* Turn on PINT device*/
+	PINT_Init(PINT);
+#endif
 
 	/*
 	 * install default handler that simply resets the CPU if configured in

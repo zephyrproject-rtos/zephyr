@@ -1,12 +1,9 @@
-# Kconfig - general architecture configuration options
+# General architecture configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2015 Intel Corporation
 # Copyright (c) 2016 Cadence Design Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
@@ -31,11 +28,6 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
-config X86_64
-	bool "x86_64 architecture"
-	select ATOMIC_OPERATIONS_BUILTIN
-	select SCHED_IPI_SUPPORTED
-
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
@@ -48,6 +40,8 @@ config RISCV
 config XTENSA
 	bool "Xtensa architecture"
 	select HAS_DTS
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 
 config ARCH_POSIX
 	bool "POSIX (native) architecture"
@@ -72,15 +66,14 @@ module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
-       bool
-       help
-         This option tells the build system that the target system is
-         big-endian.  Little-endian architecture is the default and
-         should leave this option unselected.  This option is selected
-         by arch/$ARCH/Kconfig, soc/**/Kconfig, or boards/**/Kconfig
-         and the user should generally avoid modifying it.  The option
-         is used to select linker script OUTPUT_FORMAT and command
-         line option for gen_isr_tables.py.
+	bool
+	help
+	  This option tells the build system that the target system is big-endian.
+	  Little-endian architecture is the default and should leave this option
+	  unselected.  This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
+	  and command line option for gen_isr_tables.py.
 
 config 64BIT
 	bool
@@ -91,11 +84,14 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86 || X86_64
+if ARC || ARM || NIOS2 || X86
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
-	default $(dt_int_val,DT_SRAM_SIZE)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  This option specifies the size of the SRAM in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -103,15 +99,18 @@ config SRAM_SIZE
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
-	default $(dt_hex_val,DT_SRAM_BASE_ADDRESS)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  This option specifies the base address of the SRAM on the board.  It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_int_val,DT_FLASH_SIZE) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -119,13 +118,13 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86 || X86_64
+endif # ARM || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -231,14 +230,14 @@ config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
 	depends on USERSPACE
 	help
-	Enabling this option allows for kernel objects to be requested from
-	the calling thread's resource pool, at a slight cost in performance
-	due to the supplemental run-time tables required to validate such
-	objects.
+	  Enabling this option allows for kernel objects to be requested from
+	  the calling thread's resource pool, at a slight cost in performance
+	  due to the supplemental run-time tables required to validate such
+	  objects.
 
-	Objects allocated in this way can be freed with a supervisor-only
-	API call, or when the number of references to that object drops to
-	zero.
+	  Objects allocated in this way can be freed with a supervisor-only
+	  API call, or when the number of references to that object drops to
+	  zero.
 
 if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
@@ -317,9 +316,11 @@ config GEN_IRQ_START_VECTOR
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
+	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
-	  run in interrupt context. Mainly useful for test cases.
+	  run in interrupt context. Only useful for test cases that need
+	  to validate the correctness of kernel objects in IRQ context.
 
 endmenu # Interrupt configuration
 
@@ -344,6 +345,9 @@ config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	bool
 
 config ARCH_HAS_RAMFUNC_SUPPORT
+	bool
+
+config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
 #
@@ -425,13 +429,11 @@ config CPU_HAS_FPU
 
 config CPU_HAS_MPU
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
 config MEMORY_PROTECTION
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when Memory Protection features are supported.
 	  Memory protection support is currently available on ARC, ARM, and x86
@@ -439,17 +441,40 @@ config MEMORY_PROTECTION
 
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires a power of two alignment
 	  and size for MPU regions.
 
 config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires the active (i.e. enabled)
 	  MPU regions to be non-overlapping with each other.
+
+config MPU_GAP_FILLING
+	bool "Force MPU to be filling in background memory regions"
+	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	default y if !USERSPACE
+	help
+	  This Kconfig option instructs the MPU driver to enforce
+	  a full kernel SRAM partitioning, when it programs the
+	  dynamic MPU regions (user thread stack, PRIV stack guard
+	  and application memory domains) during context-switch. We
+	  allow this to be a configurable option, in order to be able
+	  to switch the option off and have an increased number of MPU
+	  regions available for application memory domain programming.
+
+	  Notes:
+	  An increased number of MPU regions should only be required,
+	  when building with USERSPACE support. As a result, when we
+	  build without USERSPACE support, gap filling should always
+	  be required.
+
+	  When the option is switched off, access to memory areas not
+	  covered by explicit MPU regions is restricted to privileged
+	  code on an ARCH-specific basis. Refer to ARCH-specific
+	  documentation for more information on how this option is
+	  used.
 
 menuconfig FLOAT
 	bool "Floating point"

@@ -18,8 +18,7 @@
 
 static u16_t lis2dw12_i2c_slave_addr = DT_INST_0_ST_LIS2DW12_BASE_ADDRESS;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LIS2DW12);
+LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lis2dw12_i2c_read(struct lis2dw12_data *data, u8_t reg_addr,
 				 u8_t *value, u16_t len)
@@ -35,9 +34,9 @@ static int lis2dw12_i2c_write(struct lis2dw12_data *data, u8_t reg_addr,
 			       reg_addr, value, len);
 }
 
-lis2dw12_ctx_t lis2dw12_i2c_ctx = {
-	.read_reg = (lis2dw12_read_ptr) lis2dw12_i2c_read,
-	.write_reg = (lis2dw12_write_ptr) lis2dw12_i2c_write,
+stmdev_ctx_t lis2dw12_i2c_ctx = {
+	.read_reg = (stmdev_read_ptr) lis2dw12_i2c_read,
+	.write_reg = (stmdev_write_ptr) lis2dw12_i2c_write,
 };
 
 int lis2dw12_i2c_init(struct device *dev)

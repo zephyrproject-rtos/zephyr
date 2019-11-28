@@ -1,26 +1,21 @@
-#
 # Copyright (c) 2018, marc-cpdesign
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: NRF5 GPIOTE
 
-description: >
+description: |
     This is a representation of the NRF GPIOTE node
 
-inherits:
-    !include base.yaml
+compatible: "nordic,nrf-gpiote"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-gpiote"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

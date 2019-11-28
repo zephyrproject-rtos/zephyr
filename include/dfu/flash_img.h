@@ -8,11 +8,11 @@
 #ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 #define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
+#include <storage/flash_map.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <storage/flash_map.h>
 
 struct flash_img_context {
 	u8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];

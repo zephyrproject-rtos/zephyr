@@ -11,16 +11,14 @@
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
-
+#include <logging/log.h>
 #include <drivers/gpio.h>
 
 #include "lsm9ds0_gyro.h"
 
 extern struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LSM9DS0_GYRO);
+LOG_MODULE_DECLARE(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
 int lsm9ds0_gyro_trigger_set(struct device *dev,
 			     const struct sensor_trigger *trig,
@@ -104,7 +102,7 @@ int lsm9ds0_gyro_init_interrupt(struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
 			lsm9ds0_gyro_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, 0);
+			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

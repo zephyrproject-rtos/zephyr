@@ -37,6 +37,9 @@
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
+			dmas = <&dma1 4 0 0x400 0x3
+				&dma1 3 0 0x400 0x3>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 			label = "I2S_2";
 		};
@@ -48,6 +51,9 @@
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
+			dmas = <&dma1 5 0 0x400 0x3
+				&dma1 0 0 0x400 0x3>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 			label = "I2S_3";
 		};

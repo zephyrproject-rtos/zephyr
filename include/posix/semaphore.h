@@ -6,12 +6,12 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SEMAPHORE_H_
 #define ZEPHYR_INCLUDE_POSIX_SEMAPHORE_H_
 
+#include <posix/time.h>
+#include "posix_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <posix/time.h>
-#include "posix_types.h"
 
 int sem_destroy(sem_t *semaphore);
 int sem_getvalue(sem_t *restrict semaphore, int *restrict value);

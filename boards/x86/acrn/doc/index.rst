@@ -58,7 +58,6 @@ On the Zephyr Build System
       :zephyr-app: samples/hello_world
       :board: acrn
       :goals: build
-      :tool: all
 
    This will build the application ELF binary in
    ``samples/hello_world/build/zephyr/zephyr.elf``.

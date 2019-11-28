@@ -20,9 +20,18 @@ the following devices:
      :height: 335px
      :alt: ARM V2M MPS2
 
+In addition to enabling actual hardware usage, this board configuration can
+also use QEMU to emulate the AN385 platform running on the MPS2+.
+
 More information about the board can be found at the `V2M MPS2 Website`_.
 
 The Application Note AN385 can be found at `Application Note AN385`_.
+
+.. note::
+   This board configuration makes no claims about its suitability for use
+   with actual MPS2 hardware systems using AN385, or any other hardware
+   system. It has been tested on actual hardware, but its primary purpose is
+   for use with QEMU and unit tests.
 
 Hardware
 ********
@@ -139,8 +148,7 @@ All GPIO controller pins are exposed via the following sequence of pin numbers:
 
 Mapping from the ARM MPS2 Board pins to GPIO controllers:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - D0 : EXT_0
    - D1 : EXT_4
@@ -197,8 +205,7 @@ Mapping from the ARM MPS2 Board pins to GPIO controllers:
 
 Peripheral Mapping:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - UART_3_RX : D0
    - UART_3_TX : D1

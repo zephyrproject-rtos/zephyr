@@ -196,7 +196,7 @@ static void timer_tests(void)
 
 	timer_start_tick = k_uptime_get_32();
 
-	k_timer_start(&timer, NUM_SECONDS(1), 0);
+	k_timer_start(&timer, NUM_SECONDS(1), K_NO_WAIT);
 
 	if (k_timer_status_sync(&timer)) {
 		timer_data = timer.user_data;
@@ -249,10 +249,12 @@ void task_high(void)
 	counter = SEM_TEST_START;
 
 	k_thread_create(&coop_thread[0], coop_stack[0], COOP_STACKSIZE,
-			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
+			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0,
+			K_NO_WAIT);
 
 	k_thread_create(&coop_thread[1], coop_stack[1], COOP_STACKSIZE,
-			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+			K_NO_WAIT);
 
 	counter = FIFO_TEST_START;
 	fifo_tests(THIRD_SECOND, &task_high_state, my_fifo_get, k_sem_take);
@@ -438,7 +440,7 @@ void test_pending(void)
 void test_main(void)
 {
 	ztest_test_suite(pend,
-			ztest_unit_test(test_pending));
+			ztest_1cpu_unit_test(test_pending));
 	ztest_run_test_suite(pend);
 }
 

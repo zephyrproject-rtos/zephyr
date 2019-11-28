@@ -14,7 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 static int stm32h7_m4_wakeup(struct device *arg)
@@ -24,7 +24,7 @@ static int stm32h7_m4_wakeup(struct device *arg)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 
 	if (IS_ENABLED(CONFIG_STM32H7_BOOT_CM4_CM7)) {
-		u32_t timeout;
+		int timeout;
 
 		/*
 		 * When system initialization is finished, Cortex-M7 will

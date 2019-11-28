@@ -40,12 +40,12 @@ void test_main(void)
 			 ztest_user_unit_test(test_queue_alloc_prepend_user),
 			 ztest_user_unit_test(test_queue_alloc_append_user),
 			 ztest_unit_test(test_auto_free),
-			 ztest_unit_test(test_queue_thread2thread),
+			 ztest_1cpu_unit_test(test_queue_thread2thread),
 			 ztest_unit_test(test_queue_thread2isr),
 			 ztest_unit_test(test_queue_isr2thread),
-			 ztest_unit_test(test_queue_get_2threads),
-			 ztest_unit_test(test_queue_get_fail),
-			 ztest_unit_test(test_queue_loop),
+			 ztest_1cpu_unit_test(test_queue_get_2threads),
+			 ztest_1cpu_unit_test(test_queue_get_fail),
+			 ztest_1cpu_unit_test(test_queue_loop),
 			 ztest_unit_test(test_queue_alloc));
 	ztest_run_test_suite(queue_api);
 }

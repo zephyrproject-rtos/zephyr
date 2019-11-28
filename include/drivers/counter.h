@@ -183,7 +183,6 @@ typedef u32_t (*counter_api_get_max_relative_alarm)(struct device *dev);
 typedef u32_t (*counter_api_get_guard_period)(struct device *dev, u32_t flags);
 typedef int (*counter_api_set_guard_period)(struct device *dev, u32_t ticks,
 						u32_t flags);
-typedef void *(*counter_api_get_user_data)(struct device *dev);
 
 struct counter_driver_api {
 	counter_api_start start;
@@ -197,7 +196,6 @@ struct counter_driver_api {
 	counter_api_get_max_relative_alarm get_max_relative_alarm;
 	counter_api_get_guard_period get_guard_period;
 	counter_api_set_guard_period set_guard_period;
-	counter_api_get_user_data get_user_data;
 };
 
 
@@ -569,45 +567,6 @@ static inline u32_t z_impl_counter_get_guard_period(struct device *dev,
 
 /* Deprecated counter callback. */
 typedef void (*counter_callback_t)(struct device *dev, void *user_data);
-
-/**
- * @brief Deprecated function.
- */
-__deprecated static inline int counter_set_alarm(struct device *dev,
-						 counter_callback_t callback,
-						 u32_t count, void *user_data)
-{
-	struct counter_top_cfg cfg = {
-		.ticks = count,
-		.callback = callback,
-		.user_data = user_data,
-		.flags = 0
-	};
-
-	return counter_set_top_value(dev, &cfg);
-}
-
-/**
- * @brief Get user data set for top alarm.
- *
- * @note Function intended to be used only by deprecated RTC driver API to
- * provide backward compatibility.
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @return User data.
- */
-__deprecated static inline void *counter_get_user_data(struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->driver_api;
-
-	if (api->get_user_data) {
-		return api->get_user_data(dev);
-	} else {
-		return NULL;
-	}
-}
 
 #ifdef __cplusplus
 }

@@ -10,12 +10,12 @@
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
-#include <kernel_internal.h>
 #include <sys/errno_private.h>
 #include <sys/libc-hooks.h>
 #include <syscall_handler.h>
 #include <app_memory/app_memdomain.h>
 #include <init.h>
+#include <sys/sem.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -136,11 +136,12 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zephyr_read_stdin, buf, nbytes)
+static inline int z_vrfy_z_zephyr_read_stdin(char *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
+#include <syscalls/z_zephyr_read_stdin_mrsh.c>
 #endif
 
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
@@ -158,11 +159,12 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zephyr_write_stdout, buf, nbytes)
+static inline int z_vrfy_z_zephyr_write_stdout(const void *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
+#include <syscalls/z_zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API
@@ -237,20 +239,30 @@ void _exit(int status)
 	}
 }
 
+static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
+
 void *_sbrk(int count)
 {
+	void *ret, *ptr;
+
+	sys_sem_take(&heap_sem, K_FOREVER);
+
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	void *ptr = heap_base + heap_sz;
+	ptr = heap_base + heap_sz;
 #else
-	void *ptr = ((char *)HEAP_BASE) + heap_sz;
+	ptr = ((char *)HEAP_BASE) + heap_sz;
 #endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
-		return ptr;
+		ret = ptr;
 	} else {
-		return (void *)-1;
+		ret = (void *)-1;
 	}
+
+	sys_sem_give(&heap_sem);
+
+	return ret;
 }
 FUNC_ALIAS(_sbrk, sbrk, void *);
 

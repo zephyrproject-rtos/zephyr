@@ -31,7 +31,7 @@ extern "C" {
 /**
  * @brief Pause watchdog timer when CPU is in sleep state.
  */
-#define WDT_OPT_PAUSE_IN_SLEEP	BIT(0)
+#define WDT_OPT_PAUSE_IN_SLEEP		BIT(0)
 
 /**
  * @brief Pause watchdog timer when CPU is halted by the debugger.

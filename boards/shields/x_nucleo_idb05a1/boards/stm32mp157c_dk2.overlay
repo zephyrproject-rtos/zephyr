@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	spbtle-rf@0 {
+		irq-gpios = <&arduino_header 15 0>;	 /* D9 */
+	};
+};

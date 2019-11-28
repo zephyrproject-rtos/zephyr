@@ -238,6 +238,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 
 
 #define net_route_info(str, route, dst)					\
+	do {								\
 	if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
@@ -247,7 +248,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 			log_strdup(net_sprint_ipv6_addr(dst)),		\
 			log_strdup(net_sprint_ipv6_addr(naddr)),	\
 			route->iface);					\
-	} while (0)
+	} } while (0)
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)

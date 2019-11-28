@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_RV32M1_VEGA
+comment "RV32M1 board Kconfig.defconfig"
 
 config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
@@ -61,11 +62,31 @@ endif # SERIAL
 if I2C
 
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_3
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
+if BT
+
+config BT_CTLR
+	default y
+
+config RV32M1_INTMUX_CHANNEL_2
+	default n
+
+config RV32M1_INTMUX_CHANNEL_3
+	default n
+
+endif # BT
 
 endif # BOARD_RV32M1_VEGA

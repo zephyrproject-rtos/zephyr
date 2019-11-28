@@ -1,10 +1,7 @@
-# Kconfig - USB device configuration options
+# USB device configuration options
 
-#
 # Copyright (c) 2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if USB
 
@@ -36,9 +33,8 @@ config USB_DC_STM32
 	select USE_STM32_LL_USB if !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32F3X && !SOC_SERIES_STM32L0X
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
-	select HAS_DTS_USB
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0 and L4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
 	  processors.
 
 config USB_DC_SAM0
@@ -53,25 +49,24 @@ config USB_DC_SAM
 	bool "SAM series USB HS Device Controller driver"
 	depends on SOC_SERIES_SAME70
 	select USB_DEVICE_DRIVER
-	select HAS_DTS_USB
 	help
 	  SAM family USB HS device controller Driver.
 
-menuconfig USB_NRF52840
-	bool "Nordic Semiconductor nRF52840 USB Device Controller Driver"
+menuconfig USB_NRFX
+	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_USBD
 	select USB_DEVICE_DRIVER
-	select HAS_DTS_USB
 	select NRFX_USBD
+	select USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
 	help
-	  nRF52840 USB Device Controller Driver
+	  nRF USB Device Controller Driver
 
 config USB_NRFX_EVT_QUEUE_SIZE
 	int "USBD event queue size"
 	range 4 64
 	default 32
-	depends on USB_NRF52840
+	depends on USB_NRFX
 	help
 	  Size of the driver's internal event queue.
 	  Required size will depend on number of endpoints (class instances) in use.
@@ -79,7 +74,7 @@ config USB_NRFX_EVT_QUEUE_SIZE
 config USB_NRFX_WORK_QUEUE_STACK_SIZE
 	int "USBD work queue stack size"
 	default 1024
-	depends on USB_NRF52840
+	depends on USB_NRFX
 	help
 	  Size of the stack for the work queue thread that is used in the driver
 	  for handling the events from the USBD ISR, i.e. executing endpoint

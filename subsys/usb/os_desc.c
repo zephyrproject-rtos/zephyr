@@ -18,8 +18,6 @@ static struct usb_os_descriptor *os_desc;
 int usb_handle_os_desc(struct usb_setup_packet *setup,
 		       s32_t *len, u8_t **data)
 {
-	LOG_DBG("wValue 0x%x", setup->wValue);
-
 	if (!os_desc) {
 		return -ENOTSUP;
 	}

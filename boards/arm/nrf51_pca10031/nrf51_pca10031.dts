@@ -39,11 +39,19 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&sw_pwm 21>;
+		};
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0_red;
 		led1 = &led0_green;
 		led2 = &led0_blue;
+		pwm-led0 = &pwm_led0;
 	};
 };
 

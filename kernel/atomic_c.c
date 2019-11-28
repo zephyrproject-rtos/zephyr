@@ -39,13 +39,16 @@ static struct k_spinlock lock;
 #include <syscall_handler.h>
 
 #define ATOMIC_SYSCALL_HANDLER_TARGET(name) \
-	Z_SYSCALL_HANDLER(name, target) { \
+	static inline atomic_val_t z_vrfy_##name(atomic_t *target) \
+	{								\
 		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target); \
 	}
 
 #define ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(name) \
-	Z_SYSCALL_HANDLER(name, target, value) { \
+	static inline atomic_val_t z_vrfy_##name(atomic_t *target, \
+						 atomic_val_t value) \
+	{								\
 		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target, value); \
 	}
@@ -93,12 +96,14 @@ int z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(atomic_cas, target, old_value, new_value)
+int z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
+		      atomic_val_t new_value)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t)));
 
 	return z_impl_atomic_cas((atomic_t *)target, old_value, new_value);
 }
+#include <syscalls/atomic_cas_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -326,3 +331,13 @@ atomic_val_t z_impl_atomic_nand(atomic_t *target, atomic_val_t value)
 }
 
 ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_nand);
+
+#ifdef CONFIG_USERSPACE
+#include <syscalls/atomic_add_mrsh.c>
+#include <syscalls/atomic_sub_mrsh.c>
+#include <syscalls/atomic_set_mrsh.c>
+#include <syscalls/atomic_or_mrsh.c>
+#include <syscalls/atomic_xor_mrsh.c>
+#include <syscalls/atomic_and_mrsh.c>
+#include <syscalls/atomic_nand_mrsh.c>
+#endif

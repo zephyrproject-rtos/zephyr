@@ -62,50 +62,20 @@ struct ssd16xx_data {
 	u8_t scan_mode;
 };
 
-#if defined(DT_INST_0_GD_GDE0213B1)
-static u8_t ssd16xx_lut_initial[] = {
-	0x22, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x11,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E,
-	0x01, 0x00, 0x00, 0x00, 0x00
-};
+static u8_t ssd16xx_lut_initial[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL;
+static u8_t ssd16xx_lut_default[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT;
+#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+static u8_t ssd16xx_softstart[] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART;
+#endif
+static u8_t ssd16xx_gdv[] = DT_INST_0_SOLOMON_SSD16XXFB_GDV;
+static u8_t ssd16xx_sdv[] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
 
-static u8_t ssd16xx_lut_default[] = {
-	0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x0F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00
-};
-#elif defined(DT_INST_0_GD_GDE029A1)
-static u8_t ssd16xx_lut_initial[] = {
-	0x50, 0xAA, 0x55, 0xAA, 0x11, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x1F, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL
+#error "No initial waveform look up table (LUT) selected!"
+#endif
 
-static u8_t ssd16xx_lut_default[] = {
-	0x10, 0x18, 0x18, 0x08, 0x18, 0x18, 0x08, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x13, 0x14, 0x44, 0x12,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-#elif defined(DT_INST_0_HINK_E0154A05)
-static u8_t ssd16xx_lut_initial[] = {
-	0x02, 0x02, 0x01, 0x11, 0x12, 0x12, 0x22, 0x22,
-	0x66, 0x69, 0x69, 0x59, 0x58, 0x99, 0x99, 0x88,
-	0x00, 0x00, 0x00, 0x00, 0xF8, 0xB4, 0x13, 0x51,
-	0x35, 0x51, 0x51, 0x19, 0x01, 0x00
-};
-
-static u8_t ssd16xx_lut_default[] = {
-	0x10, 0x18, 0x18, 0x08, 0x18, 0x18, 0x08, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x13, 0x14, 0x44, 0x12,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-#else
-#error "No waveform look up table (LUT) selected!"
+#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT
+#error "No default waveform look up table (LUT) selected!"
 #endif
 
 static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
@@ -238,13 +208,6 @@ static int ssd16xx_update_display(const struct device *dev)
 	struct ssd16xx_data *driver = dev->driver_data;
 	u8_t tmp;
 	int err;
-
-	tmp = SSD16XX_CTRL1_INITIAL_UPDATE_LH;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL1,
-				&tmp, sizeof(tmp));
-	if (err < 0) {
-		return err;
-	}
 
 	tmp = (SSD16XX_CTRL2_ENABLE_CLK |
 	       SSD16XX_CTRL2_ENABLE_ANALOG |
@@ -417,7 +380,8 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_and_write_buffer(struct device *dev)
+static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
+					  bool update)
 {
 	int err;
 	u8_t clear_page[EPD_PANEL_WIDTH];
@@ -449,8 +413,7 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev)
 
 	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
 
-	tmp = SSD16XX_CMD_WRITE_RAM;
-	sbuf.buf = &tmp;
+	sbuf.buf = &ram_cmd;
 	sbuf.len = 1;
 	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 	if (err < 0) {
@@ -469,7 +432,11 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev)
 		}
 	}
 
-	return ssd16xx_update_display(dev);
+	if (update) {
+		return ssd16xx_update_display(dev);
+	}
+
+	return 0;
 }
 
 static int ssd16xx_controller_init(struct device *dev)
@@ -500,29 +467,22 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_1)
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_1;
-	tmp[1] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_2;
-	tmp[2] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_3;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART, tmp, 3);
+#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART,
+				ssd16xx_softstart, sizeof(ssd16xx_softstart));
 	if (err < 0) {
 		return err;
 	}
 #endif
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_GDV_A;
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_GDV_B)
-	tmp[1] = DT_INST_0_SOLOMON_SSD16XXFB_GDV_B;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, tmp, 2);
-#else
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, tmp, 1);
-#endif
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, ssd16xx_gdv,
+				sizeof(ssd16xx_gdv));
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SDV_CTRL, tmp, 1);
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SDV_CTRL, ssd16xx_sdv,
+				sizeof(ssd16xx_sdv));
 	if (err < 0) {
 		return err;
 	}
@@ -560,7 +520,15 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	err = ssd16xx_clear_and_write_buffer(dev);
+	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	if (err < 0) {
+		return err;
+	}
+
+	ssd16xx_busy_wait(driver);
+
+	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RED_RAM,
+					     false);
 	if (err < 0) {
 		return err;
 	}
@@ -574,7 +542,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	return ssd16xx_clear_and_write_buffer(dev);
+	return ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
 static int ssd16xx_init(struct device *dev)
@@ -612,7 +580,7 @@ static int ssd16xx_init(struct device *dev)
 	gpio_pin_configure(driver->dc, SSD16XX_DC_PIN,
 			   GPIO_DIR_OUT);
 
-	driver->busy = device_get_binding(SSD16XX_DC_CNTRL);
+	driver->busy = device_get_binding(SSD16XX_BUSY_CNTRL);
 	if (driver->busy == NULL) {
 		LOG_ERR("Could not get GPIO port for SSD16XX busy signal");
 		return -EIO;

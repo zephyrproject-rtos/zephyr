@@ -1,14 +1,11 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_ARC_EMSDP
 
 choice
-prompt "ARC EM Software Development Platform Core Selection"
-default SOC_EMSDP_EM11D
+	prompt "ARC EM Software Development Platform Core Selection"
+	default SOC_EMSDP_EM11D
 
 config SOC_EMSDP_EM4
 	bool "Synopsys ARC EM4 of EMSDP"
@@ -46,4 +43,4 @@ config SOC_EMSDP_EM11D
 
 endchoice
 
-endif #SOC_ARC_EMSDP
+endif # SOC_ARC_EMSDP

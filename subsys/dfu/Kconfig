@@ -1,7 +1,6 @@
-# Kconfig - DFU support configuration options
-#
+# DFU support configuration options
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -56,10 +55,10 @@ config 	IMG_ERASE_PROGRESSIVELY
 	depends on MCUBOOT_IMG_MANAGER
 	select FLASH_PAGE_LAYOUT
 	help
-	 If enabled, flash is erased as necessary when receiving new firmware,
-	 instead of erasing the whole image slot at once. This is necessary
-	 on some hardware that has long erase times, to prevent long wait
-	 times at the beginning of the DFU process.
+	  If enabled, flash is erased as necessary when receiving new firmware,
+	  instead of erasing the whole image slot at once. This is necessary
+	  on some hardware that has long erase times, to prevent long wait
+	  times at the beginning of the DFU process.
 
 module = IMG_MANAGER
 module-str = image manager

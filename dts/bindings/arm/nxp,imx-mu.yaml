@@ -1,31 +1,26 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: IMX MESSAGING UNIT
 
-description: >
+description: |
     This binding gives a base representation of the i.MX Messaging Unit
 
-inherits:
-    !include base.yaml
+compatible: "nxp,imx-mu"
+
+include: base.yaml
 
 properties:
-  compatible:
-      constraint: "nxp,imx-mu"
-
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true
 
   rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral

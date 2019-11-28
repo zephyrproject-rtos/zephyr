@@ -94,7 +94,7 @@ static void tqueue_read_write(struct k_queue *pqueue)
 	/**TESTPOINT: thread-isr-thread data passing via queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_entry, pqueue, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	TC_PRINT("main queue append ---> ");
 	tqueue_append(pqueue);

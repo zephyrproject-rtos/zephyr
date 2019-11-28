@@ -1,21 +1,12 @@
-#
+# Copyright (c) 2019 Vestas Wind Systems A/S
 # Copyright (c) 2018, Nordic Semiconductor
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Virtual I2C slave eeprom
+title: Atmel AT24 (and compatible) I2C EEPROM devices
 
-description: >
-    This binding gives a base representation of a generic I2C slave EEPROM
+description: |
+    Any Atmel AT24 compatible I2C EEPROM
 
-inherits:
-    !include i2c-device.yaml
+compatible: "atmel,at24"
 
-properties:
-    compatible:
-      constraint: "atmel,at24"
-    size:
-      type: int
-      category: required
-      description: I2C Slave EEPROM Size in KiB
+include: [eeprom-spi-i2c.yaml, i2c-device.yaml]

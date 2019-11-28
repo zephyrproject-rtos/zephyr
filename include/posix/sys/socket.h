@@ -6,12 +6,12 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 
+#include <sys/types.h>
+#include <net/socket.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <sys/types.h>
-#include <net/socket.h>
 
 static inline int socket(int family, int type, int proto)
 {
@@ -21,6 +21,9 @@ static inline int socket(int family, int type, int proto)
 #define SHUT_RD ZSOCK_SHUT_RD
 #define SHUT_WR ZSOCK_SHUT_WR
 #define SHUT_RDWR ZSOCK_SHUT_RDWR
+
+#define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 
 static inline int shutdown(int sock, int how)
 {

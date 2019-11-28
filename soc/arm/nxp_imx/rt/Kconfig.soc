@@ -1,13 +1,11 @@
-# Kconfig - i.MX RT series
-#
+# i.MX RT series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "i.MX RT Selection"
-depends on SOC_SERIES_IMX_RT
+	prompt "i.MX RT Selection"
+	depends on SOC_SERIES_IMX_RT
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -70,6 +68,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_CSI
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -90,9 +89,11 @@ config SOC_MIMXRT1052
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_CSI
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -113,6 +114,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_CSI
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -133,9 +135,11 @@ config SOC_MIMXRT1062
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_CSI
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -156,9 +160,11 @@ config SOC_MIMXRT1064
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
+	select INIT_ENET_PLL if NET_L2_ETHERNET
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_CSI
 
 endchoice
 
@@ -263,6 +269,13 @@ config INIT_USB1_PLL
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
 
+config INIT_ENET_PLL
+	bool
+	help
+	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
+	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
+	  for MIMXRT1021").
+
 config ARM_DIV
 	int "ARM clock divider"
 	range 0 7
@@ -331,7 +344,7 @@ config CODE_FLEXSPI
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-        select NXP_IMX_RT_BOOT_HEADER
+	select NXP_IMX_RT_BOOT_HEADER
 
 endchoice
 
@@ -345,6 +358,9 @@ config DATA_DTCM
 config DATA_SEMC
 	bool "Link data into external SEMC-controlled memory"
 	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
+
+config DATA_OCRAM
+	bool "Link data into On-Chip RAM memory"
 
 endchoice
 

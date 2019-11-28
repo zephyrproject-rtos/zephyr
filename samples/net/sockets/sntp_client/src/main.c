@@ -9,6 +9,9 @@
 LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
 #include <net/sntp.h>
+#ifdef CONFIG_POSIX_API
+#include <arpa/inet.h>
+#endif
 
 #include "config.h"
 

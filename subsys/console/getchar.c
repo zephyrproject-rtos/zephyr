@@ -8,6 +8,7 @@
 #include <device.h>
 #include <console/console.h>
 #include <console/tty.h>
+#include <uart.h>
 
 static struct tty_serial console_serial;
 
@@ -46,12 +47,29 @@ int console_getchar(void)
 	return c;
 }
 
-void console_init(void)
+int console_init(void)
 {
 	struct device *uart_dev;
+	int ret;
 
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	tty_init(&console_serial, uart_dev);
+	ret = tty_init(&console_serial, uart_dev);
+
+	if (ret) {
+		return ret;
+	}
+
+	/* Checks device driver supports for interrupt driven data transfers. */
+	if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
+		const struct uart_driver_api *api =
+			(const struct uart_driver_api *)uart_dev->driver_api;
+		if (!api->irq_callback_set) {
+			return -ENOTSUP;
+		}
+	}
+
 	tty_set_tx_buf(&console_serial, console_txbuf, sizeof(console_txbuf));
 	tty_set_rx_buf(&console_serial, console_rxbuf, sizeof(console_rxbuf));
+
+	return 0;
 }

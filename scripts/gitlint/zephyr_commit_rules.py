@@ -112,7 +112,7 @@ class MaxLineLengthExceptions(LineRule):
         if line.startswith('Signed-off-by'):
             return
 
-        if len(urls) > 0:
+        if urls:
             return
 
         if len(line) > max_length:

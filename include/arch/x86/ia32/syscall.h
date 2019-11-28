@@ -32,13 +32,12 @@ extern "C" {
 /* Syscall invocation macros. x86-specific machine constraints used to ensure
  * args land in the proper registers, see implementation of
  * z_x86_syscall_entry_stub in userspace.S
- *
- * the entry stub clobbers EDX and ECX on IAMCU systems
  */
 
-static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id)
+static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5, uintptr_t arg6,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
@@ -47,82 +46,70 @@ static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 			 "int $0x80\n\t"
 			 "pop %%ebp\n\t"
 			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
 			   "c" (arg3), "b" (arg4), "D" (arg5),
 			   [arg6] "m" (arg6)
-			 : "memory", "esp");
+			 : "memory");
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
 			   "c" (arg3), "b" (arg4), "D" (arg5)
 			 : "memory");
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3),
 			   "b" (arg4)
 			 : "memory");
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id)
+static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3)
 			 : "memory");
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2)
-#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2)
 			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "ecx"
-#endif
 			 );
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id)
+static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
+					     uintptr_t call_id)
 {
 	u32_t ret;
 
@@ -130,14 +117,11 @@ static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 			 : "=a" (ret)
 			 : "S" (call_id), "a" (arg1)
 			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "edx", "ecx"
-#endif
 			 );
 	return ret;
 }
 
-static inline u32_t z_arch_syscall_invoke0(u32_t call_id)
+static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
 	u32_t ret;
 
@@ -145,14 +129,11 @@ static inline u32_t z_arch_syscall_invoke0(u32_t call_id)
 			 : "=a" (ret)
 			 : "S" (call_id)
 			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "edx", "ecx"
-#endif
 			 );
 	return ret;
 }
 
-static inline bool z_arch_is_user_context(void)
+static inline bool arch_is_user_context(void)
 {
 	int cs;
 

@@ -27,8 +27,9 @@
 	};
 
 	lis2mdl@1e {
-		compatible = "st,lis2mdl-magn";
+		compatible = "st,lis2mdl";
 		reg = <0x1e>;
+		irq-gpios =  <&arduino_header 2 0>; /* A2 */
 		label = "LIS2MDL";
 	};
 
@@ -42,7 +43,7 @@
 	lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
-		irq-gpios =  <&arduino_header 10 0>; /* D4 */
+		irq-gpios =  <&arduino_header 11 0>; /* D5 */
 		label = "LSM6DSO";
 	};
 };

@@ -60,7 +60,7 @@ static int test_gy271(void)
 		return TC_FAIL;
 	}
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	datas[0] = 0x03;
 	if (i2c_write(i2c_dev, datas, 1, 0x1E)) {
@@ -110,7 +110,7 @@ static int test_burst_gy271(void)
 		return TC_FAIL;
 	}
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	(void)memset(datas, 0, sizeof(datas));
 

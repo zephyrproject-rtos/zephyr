@@ -70,17 +70,17 @@ void test_mpool_alloc_wait_prio(void)
 	/*the low-priority thread*/
 	tid[0] = k_thread_create(&tdata[0], tstack[0], STACK_SIZE,
 				 tmpool_alloc_wait_timeout, NULL, NULL, NULL,
-				 K_PRIO_PREEMPT(1), 0, 0);
+				 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	/*the highest-priority thread that has waited the longest*/
 	tid[1] = k_thread_create(&tdata[1], tstack[1], STACK_SIZE,
 				 tmpool_alloc_wait_ok, NULL, NULL, NULL,
-				 K_PRIO_PREEMPT(0), 0, 10);
+				 K_PRIO_PREEMPT(0), 0, K_MSEC(10));
 	/*the highest-priority thread that has waited shorter*/
 	tid[2] = k_thread_create(&tdata[2], tstack[2], STACK_SIZE,
 				 tmpool_alloc_wait_timeout, NULL, NULL, NULL,
-				 K_PRIO_PREEMPT(0), 0, 20);
+				 K_PRIO_PREEMPT(0), 0, K_MSEC(20));
 	/*relinquish CPU for above threads to start */
-	k_sleep(30);
+	k_sleep(K_MSEC(30));
 	/*free one block, expected to unblock thread "tid[1]"*/
 	k_mem_pool_free(&block[0]);
 	/*wait for all threads exit*/

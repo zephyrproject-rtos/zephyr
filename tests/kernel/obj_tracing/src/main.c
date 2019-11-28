@@ -95,7 +95,7 @@ static void object_monitor(void)
 
 	void *obj_list   = NULL;
 
-	k_sem_take(&f3, 0);
+	k_sem_take(&f3, K_NO_WAIT);
 	/* ztest use one semaphore so use one count less than expected to pass
 	 * test
 	 */

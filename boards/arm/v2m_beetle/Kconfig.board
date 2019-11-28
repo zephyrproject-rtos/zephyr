@@ -1,10 +1,7 @@
-# Kconfig - ARM V2M Beetle Board configuration options
+# ARM V2M Beetle Board configuration options
 
-#
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # V2M (V2 = Versatile Express, M = Motherboard)
 config BOARD_V2M_BEETLE

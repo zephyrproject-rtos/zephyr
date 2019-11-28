@@ -13,14 +13,15 @@
 #ifndef ZEPHYR_INCLUDE_NET_CAN_H_
 #define ZEPHYR_INCLUDE_NET_CAN_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <can.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /**
  * @brief IPv6 over CAN library

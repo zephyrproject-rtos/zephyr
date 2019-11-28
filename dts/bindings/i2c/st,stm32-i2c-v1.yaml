@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2017 I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: STM32 I2C V1
 
-description: >
+description: |
     This binding gives a base representation of the STM32 I2C V1 controller
 
-inherits:
-    !include i2c.yaml
+compatible: "st,stm32-i2c-v1"
+
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-i2c-v1"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

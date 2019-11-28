@@ -10,6 +10,17 @@
 #include <stdio.h>
 #include <sys/util.h>
 
+#ifdef CONFIG_LIS2MDL_TRIGGER
+static int lis2mdl_trig_cnt;
+
+static void lis2mdl_trigger_handler(struct device *dev,
+				    struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
+	lis2mdl_trig_cnt++;
+}
+#endif
+
 #ifdef CONFIG_LPS22HH_TRIGGER
 static int lps22hh_trig_cnt;
 
@@ -68,6 +79,29 @@ static void lsm6dso_temp_trig_handler(struct device *dev,
 	lsm6dso_temp_trig_cnt++;
 }
 #endif
+
+static void lis2mdl_config(struct device *lis2mdl)
+{
+	struct sensor_value odr_attr;
+
+	/* set LIS2MDL sampling frequency to 100 Hz */
+	odr_attr.val1 = 100;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(lis2mdl, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for LIS2MDL\n");
+		return;
+	}
+
+#ifdef CONFIG_LIS2MDL_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_MAGN_XYZ;
+	sensor_trigger_set(lis2mdl, &trig, lis2mdl_trigger_handler);
+#endif
+}
 
 static void lps22hh_config(struct device *lps22hh)
 {
@@ -209,13 +243,14 @@ void main(void)
 #ifdef CONFIG_LSM6DSO_ENABLE_TEMP
 	struct sensor_value die_temp;
 #endif
+	struct sensor_value die_temp2;
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
 	struct device *hts221 = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
 	struct device *lps22hh = device_get_binding(DT_INST_0_ST_LPS22HH_LABEL);
 	struct device *stts751 = device_get_binding(DT_INST_0_ST_STTS751_LABEL);
-	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_MAGN_LABEL);
+	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_LABEL);
 	struct device *lis2dw12 = device_get_binding(DT_INST_0_ST_LIS2DW12_LABEL);
 	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
 	int cnt = 1;
@@ -245,6 +280,7 @@ void main(void)
 		return;
 	}
 
+	lis2mdl_config(lis2mdl);
 	lps22hh_config(lps22hh);
 	stts751_config(stts751);
 	lis2dw12_config(lis2dw12);
@@ -268,10 +304,12 @@ void main(void)
 			return;
 		}
 
+#ifndef CONFIG_LIS2MDL_TRIGGER
 		if (sensor_sample_fetch(lis2mdl) < 0) {
 			printf("LIS2MDL Magn Sensor sample update error\n");
 			return;
 		}
+#endif
 
 #ifndef CONFIG_LIS2DW12_TRIGGER
 		if (sensor_sample_fetch(lis2dw12) < 0) {
@@ -294,6 +332,7 @@ void main(void)
 		sensor_channel_get(lps22hh, SENSOR_CHAN_PRESS, &press);
 		sensor_channel_get(stts751, SENSOR_CHAN_AMBIENT_TEMP, &temp3);
 		sensor_channel_get(lis2mdl, SENSOR_CHAN_MAGN_XYZ, magn);
+		sensor_channel_get(lis2mdl, SENSOR_CHAN_DIE_TEMP, &die_temp2);
 		sensor_channel_get(lis2dw12, SENSOR_CHAN_ACCEL_XYZ, accel2);
 		sensor_channel_get(lsm6dso, SENSOR_CHAN_ACCEL_XYZ, accel1);
 		sensor_channel_get(lsm6dso, SENSOR_CHAN_GYRO_XYZ, gyro);
@@ -334,6 +373,9 @@ void main(void)
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 
+		printf("LIS2MDL: Temperature: %.1f C\n",
+		       sensor_value_to_double(&die_temp2));
+
 		printf("LIS2DW12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&accel2[0]),
 			sensor_value_to_double(&accel2[1]),
@@ -353,6 +395,10 @@ void main(void)
 		/* temperature */
 		printf("LSM6DSO: Temperature: %.1f C\n",
 		       sensor_value_to_double(&die_temp));
+#endif
+
+#if defined(CONFIG_LIS2MDL_TRIGGER)
+		printk("%d:: lis2mdl trig %d\n", cnt, lis2mdl_trig_cnt);
 #endif
 
 #if defined(CONFIG_LPS22HH_TRIGGER)
@@ -375,6 +421,6 @@ void main(void)
 #endif
 
 		cnt++;
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

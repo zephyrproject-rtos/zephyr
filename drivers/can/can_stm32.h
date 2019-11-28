@@ -56,8 +56,7 @@ enum can_filter_type {
 };
 
 struct can_stm32_data {
-	struct k_mutex tx_mutex;
-	struct k_mutex set_filter_mutex;
+	struct k_mutex inst_mutex;
 	struct k_sem tx_int_sem;
 	struct can_mailbox mb0;
 	struct can_mailbox mb1;
@@ -65,6 +64,7 @@ struct can_stm32_data {
 	u64_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
+	can_state_change_isr_t state_change_isr;
 };
 
 struct can_stm32_config {

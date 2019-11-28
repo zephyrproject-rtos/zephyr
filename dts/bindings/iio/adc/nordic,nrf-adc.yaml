@@ -1,23 +1,24 @@
-#
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Nordic Semiconductor nRF Family ADC
 
-description: >
+description: |
     This is a representation of the nRF ADC node
 
-inherits:
-    !include adc.yaml
+compatible: "nordic,nrf-adc"
+
+include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-adc"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - input

@@ -1,0 +1,10 @@
+# ST Microelectronics Common Kconfig
+
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CCM := zephyr,ccm
+
+config STM32_CCM
+	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))

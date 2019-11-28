@@ -18,8 +18,7 @@
 
 #include "lps22hh.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LPS22HH);
+LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps22hh_set_odr_raw(struct device *dev, u8_t odr)
 {
@@ -32,8 +31,8 @@ static int lps22hh_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps22hh_data *data = dev->driver_data;
-	axis1bit32_t raw_press;
-	axis1bit16_t raw_temp;
+	union axis1bit32_t raw_press;
+	union axis1bit16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 

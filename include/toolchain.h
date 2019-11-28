@@ -38,7 +38,24 @@
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <toolchain/gcc.h>
 #else
+/* This include line exists for off-tree definitions of compilers,
+ * and therefore this header is not meant to exist in-tree
+ */
 #include <toolchain/other.h>
 #endif
+
+/*
+ * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
+ * as these are often used without checking for definition and doing so can
+ * cause unexpected behaviours.
+ */
+#ifndef _LINKER
+#if !defined(__BYTE_ORDER__) || !defined(__ORDER_BIG_ENDIAN__) || \
+    !defined(__ORDER_LITTLE_ENDIAN__)
+
+#error "__BYTE_ORDER__ is not defined"
+
+#endif
+#endif /* !_LINKER */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_H_ */

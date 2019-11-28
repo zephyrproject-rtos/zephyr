@@ -1,26 +1,21 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: LPC MAILBOX
 
-description: >
+description: |
     This binding gives a base representation of the LPC MAILBOX
 
-inherits:
-    !include base.yaml
+compatible: "nxp,lpc-mailbox"
+
+include: base.yaml
 
 properties:
-  compatible:
-      constraint: "nxp,lpc-mailbox"
-
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true

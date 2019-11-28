@@ -1,0 +1,28 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic PDM
+
+description: |
+    Binding for the Nordic PDM (pulse density modulation interface)
+
+compatible: "nordic,nrf-pdm"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clk-pin:
+      type: int
+      required: true
+      description: CLK pin
+
+    din-pin:
+      type: int
+      required: true
+      description: DIN pin

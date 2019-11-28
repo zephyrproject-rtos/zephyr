@@ -15,14 +15,13 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
-#include <device.h>
 #include <sys/util.h>
 #include <fsl_common.h>
+
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
+
 #endif /* !_ASMLANGUAGE */
 
 #define IOCON_PIO_DIGITAL_EN 0x0100u  /*!<@brief Enables digital function */
@@ -36,9 +35,5 @@ extern "C" {
 #define IOCON_PIO_MODE_PULLDOWN 0x10u /*!<@brief Selects pull-down function */
 #define IOCON_PIO_MODE_PULLUP 0x20u   /*!<@brief Selects pull-up function */
 #define IOCON_PIO_INPFILT_OFF 0x1000u  /*!<@brief Input filter disabled */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */

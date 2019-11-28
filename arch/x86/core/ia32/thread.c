@@ -12,12 +12,9 @@
  * processor architecture.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <ia32/mmustructs.h>
-#include <sys/printk.h>
+#include <kernel.h>
+#include <ksched.h>
+#include <arch/x86/mmustructs.h>
 
 /* forward declaration */
 
@@ -54,9 +51,9 @@ struct _x86_initial_frame {
  * afterwards is legal unless it is known for sure that the relevant
  * mappings are identical wrt supervisor mode until we iret out.
  */
-static inline void page_tables_set(struct x86_mmu_pdpt *pdpt)
+static inline void page_tables_set(struct x86_page_tables *ptables)
 {
-	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (pdpt) : "memory");
+	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (ptables) : "memory");
 }
 
 /* Update the to the incoming thread's page table, and update the location
@@ -67,7 +64,7 @@ static inline void page_tables_set(struct x86_mmu_pdpt *pdpt)
  */
 void z_x86_swap_update_page_tables(struct k_thread *incoming)
 {
-	struct x86_mmu_pdpt *pdpt;
+	struct x86_page_tables *ptables;
 
 	/* If we're a user thread, we want the active page tables to
 	 * be the per-thread instance.
@@ -76,22 +73,22 @@ void z_x86_swap_update_page_tables(struct k_thread *incoming)
 	 * kernel page tables instead.
 	 */
 	if ((incoming->base.user_options & K_USER) != 0) {
-		pdpt = z_x86_pdpt_get(incoming);
+		ptables = z_x86_thread_page_tables_get(incoming);
 
 		/* In case of privilege elevation, use the incoming
 		 * thread's kernel stack. This area starts immediately
 		 * before the PDPT.
 		 */
-		_main_tss.esp0 = (uintptr_t)pdpt;
+		_main_tss.esp0 = (uintptr_t)ptables;
 	} else {
-		pdpt = &z_x86_kernel_pdpt;
+		ptables = &z_x86_kernel_ptables;
 	}
 
 	/* Check first that we actually need to do this, since setting
 	 * CR3 involves an expensive full TLB flush.
 	 */
-	if (pdpt != z_x86_page_tables_get()) {
-		page_tables_set(pdpt);
+	if (ptables != z_x86_page_tables_get()) {
+		page_tables_set(ptables);
 	}
 }
 #endif /* CONFIG_X86_KPTI */
@@ -112,15 +109,15 @@ static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-					 void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
 {
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)_current->stack_obj;
 
 	/* Set up the kernel stack used during privilege elevation */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->privilege_stack,
-			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK,
+	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
+			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, Z_X86_MMU_RW,
 			    true);
 
 	/* Initialize per-thread page tables, since that wasn't done when
@@ -130,7 +127,7 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Apply memory domain configuration, if assigned */
 	if (_current->mem_domain_info.mem_domain != NULL) {
-		z_x86_apply_mem_domain(z_x86_pdpt_get(_current),
+		z_x86_apply_mem_domain(z_x86_thread_page_tables_get(_current),
 				       _current->mem_domain_info.mem_domain);
 	}
 
@@ -164,7 +161,7 @@ NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 extern int z_float_disable(struct k_thread *thread);
 
-int z_arch_float_disable(struct k_thread *thread)
+int arch_float_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_LAZY_FP_SHARING)
 	return z_float_disable(thread);
@@ -174,26 +171,10 @@ int z_arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
-/**
- * @brief Create a new kernel execution thread
- *
- * Initializes the k_thread object and sets up initial stack frame.
- *
- * @param thread pointer to thread struct memory, including any space needed
- *		for extra coprocessor context
- * @param stack the pointer to aligned stack memory
- * @param stack_size the stack size in bytes
- * @param entry thread entry point routine
- * @param parameter1 first param to entry point
- * @param parameter2 second param to entry point
- * @param parameter3 third param to entry point
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
- */
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stack_size, k_thread_entry_t entry,
-		 void *parameter1, void *parameter2, void *parameter3,
-		 int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *parameter1, void *parameter2, void *parameter3,
+		     int priority, unsigned int options)
 {
 	char *stack_buf;
 	char *stack_high;
@@ -212,16 +193,16 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * If we're not starting in user mode, this functions as a guard
 	 * area.
 	 */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->privilege_stack,
+	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
 		MMU_PAGE_SIZE,
 		((options & K_USER) == 0U) ? MMU_ENTRY_READ : MMU_ENTRY_WRITE,
-		MMU_PTE_RW_MASK, true);
+		Z_X86_MMU_RW, true);
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
 	/* Set guard area to read-only to catch stack overflows */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->guard_page,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK,
+	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
+			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
 			    true);
 #endif
 
@@ -263,4 +244,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_LAZY_FP_SHARING)
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_LAZY_FP_SHARING */
+
+	thread->arch.flags = 0;
 }

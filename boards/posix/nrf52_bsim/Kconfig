@@ -2,6 +2,12 @@
 
 if BOARD_NRF52_BSIM
 
+# The following file is normally parsed only for the ARM architecture, which is
+# used by Nordic SoCs, so to make the symbols defined in this file available for
+# the simulated nrf52_bsim board, which uses the POSIX architecture, the file
+# must be read also from here.
+source "soc/arm/nordic_nrf/Kconfig.peripherals"
+
 comment "NRF52_BSIM options"
 
 config PRINTK_HOOK_INIT_PRIORITY

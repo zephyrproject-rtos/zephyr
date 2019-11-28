@@ -84,6 +84,19 @@ arduino_i2c: &i2c1 {};
 
 &i2c1 {
 	status = "okay";
+
+	mt9m114@48 {
+		compatible = "aptina,mt9m114";
+		reg = <0x48>;
+		label = "MT9M114";
+		status = "okay";
+
+		port {
+			mt9m114_ep_out: endpoint {
+				remote-endpoint = <&csi_ep_in>;
+			};
+		};
+	};
 };
 
 &uart1 {
@@ -100,4 +113,15 @@ arduino_i2c: &i2c1 {};
 
 &usbd1 {
 	status = "okay";
+};
+
+&csi {
+	status = "okay";
+	sensor-label = "MT9M114";
+
+	port {
+		csi_ep_in: endpoint {
+			remote-endpoint = <&mt9m114_ep_out>;
+		};
+	};
 };

@@ -22,7 +22,7 @@
 
 struct usart_mcux_lpc_config {
 	USART_Type *base;
-	clock_name_t clock_source;
+	u32_t clock_source;
 	u32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
@@ -246,7 +246,7 @@ static int usart_mcux_lpc_init(struct device *dev)
 	usart_config_t usart_config;
 	u32_t clock_freq;
 
-	clock_freq = CLOCK_GetFreq(config->clock_source);
+	clock_freq = CLOCK_GetFlexCommClkFreq(config->clock_source);
 
 	USART_GetDefaultConfig(&usart_config);
 	usart_config.enableTx = true;
@@ -291,7 +291,7 @@ static void usart_mcux_lpc_config_func_0(struct device *dev);
 
 static const struct usart_mcux_lpc_config usart_mcux_lpc_0_config = {
 	.base = (USART_Type *)DT_USART_MCUX_LPC_0_BASE_ADDRESS,
-	.clock_source = kCLOCK_Flexcomm0,
+	.clock_source = 0,
 	.baud_rate = DT_USART_MCUX_LPC_0_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_mcux_lpc_config_func_0,

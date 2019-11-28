@@ -1,20 +1,15 @@
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: NIOS2 i2c
 
-description: >
+description: |
     This binding gives a base representation of the NIOS2 i2c
 
-inherits:
-    !include i2c.yaml
+compatible: "nios2,i2c"
+
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nios2,i2c"
-
     reg:
-      category: required
+      required: true

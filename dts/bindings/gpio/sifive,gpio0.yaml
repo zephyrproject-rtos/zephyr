@@ -1,30 +1,28 @@
-#
 # Copyright (c) 2018, SiFive Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: SiFive GPIO
 
-description: >
+description: |
     This is a representation of the SiFive GPIO nodes
 
-inherits:
-    !include base.yaml
+compatible: "sifive,gpio0"
+
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "sifive,gpio0"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

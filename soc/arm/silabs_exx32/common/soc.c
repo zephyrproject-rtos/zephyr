@@ -16,7 +16,7 @@
 #include <em_emu.h>
 #include <em_chip.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #include <logging/log.h>
 
@@ -40,7 +40,7 @@ static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 #ifdef CONFIG_CMU_HFCLK_HFXO
 	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_HFXO) {
@@ -70,12 +70,7 @@ static ALWAYS_INLINE void clkInit(void)
 	/* Enable the High Frequency Peripheral Clock */
 	CMU_ClockEnable(cmuClock_HFPER, true);
 
-#ifdef CONFIG_LOG_BACKEND_SWO
-	/* Select HFCLK as the debug trace clock */
-	CMU->DBGCLKSEL = CMU_DBGCLKSEL_DBG_HFCLK;
-#endif
-
-#ifdef CONFIG_GPIO_GECKO
+#if defined(CONFIG_GPIO_GECKO) || defined(CONFIG_LOG_BACKEND_SWO)
 	CMU_ClockEnable(cmuClock_GPIO, true);
 #endif
 }
@@ -98,6 +93,27 @@ static ALWAYS_INLINE void dcdc_init(void)
 #endif
 }
 #endif
+
+#ifdef CONFIG_LOG_BACKEND_SWO
+static void swo_init(void)
+{
+	struct soc_gpio_pin pin_swo = PIN_SWO;
+
+	/* Select HFCLK as the debug trace clock */
+	CMU->DBGCLKSEL = CMU_DBGCLKSEL_DBG_HFCLK;
+
+#if defined(_GPIO_ROUTEPEN_MASK)
+	/* Enable Serial wire output pin */
+	GPIO->ROUTEPEN |= GPIO_ROUTEPEN_SWVPEN;
+	/* Set SWO location */
+	GPIO->ROUTELOC0 =
+		DT_GPIO_GECKO_SWO_LOCATION << _GPIO_ROUTELOC0_SWVLOC_SHIFT;
+#else
+	GPIO->ROUTE = GPIO_ROUTE_SWOPEN | (DT_GPIO_GECKO_SWO_LOCATION << 8);
+#endif
+	soc_gpio_configure(&pin_swo);
+}
+#endif /* CONFIG_LOG_BACKEND_SWO */
 
 /**
  * @brief Perform basic hardware initialization
@@ -124,13 +140,18 @@ static int silabs_exx32_init(struct device *arg)
 #endif
 
 	/* Initialize system clock according to CONFIG_CMU settings */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise
 	 */
 	NMI_INIT();
+
+#ifdef CONFIG_LOG_BACKEND_SWO
+	/* Configure SWO debug output */
+	swo_init();
+#endif
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);

@@ -91,21 +91,19 @@ void z_impl_k_queue_init(struct k_queue *queue)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_init, queue_ptr)
+static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 {
-	struct k_queue *queue = (struct k_queue *)queue_ptr;
-
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE));
 	z_impl_k_queue_init(queue);
-	return 0;
 }
+#include <syscalls/k_queue_init_mrsh.c>
 #endif
 
 #if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
 	z_ready_thread(thread);
-	z_set_thread_return_value_with_data(thread, 0, data);
+	z_thread_return_value_set_with_data(thread, 0, data);
 }
 #endif /* CONFIG_POLL */
 
@@ -135,8 +133,12 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_queue_cancel_wait, K_OBJ_QUEUE,
-			       struct k_queue *);
+static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	z_impl_k_queue_cancel_wait(queue);
+}
+#include <syscalls/k_queue_cancel_wait_mrsh.c>
 #endif
 
 static s32_t queue_insert(struct k_queue *queue, void *prev, void *data,
@@ -203,13 +205,13 @@ s32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
+static inline s32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
+						void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-
-	return z_impl_k_queue_alloc_append((struct k_queue *)queue,
-					  (void *)data);
+	return z_impl_k_queue_alloc_append(queue, data);
 }
+#include <syscalls/k_queue_alloc_append_mrsh.c>
 #endif
 
 s32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
@@ -218,13 +220,13 @@ s32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
+static inline s32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
+						 void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-
-	return z_impl_k_queue_alloc_prepend((struct k_queue *)queue,
-					   (void *)data);
+	return z_impl_k_queue_alloc_prepend(queue, data);
 }
+#include <syscalls/k_queue_alloc_prepend_mrsh.c>
 #endif
 
 void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
@@ -345,16 +347,32 @@ void *z_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
+static inline void *z_vrfy_k_queue_get(struct k_queue *queue, s32_t timeout)
 {
-	s32_t timeout = timeout_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-
-	return (u32_t)z_impl_k_queue_get((struct k_queue *)queue, timeout);
+	return z_impl_k_queue_get(queue, timeout);
 }
+#include <syscalls/k_queue_get_mrsh.c>
 
-Z_SYSCALL_HANDLER1_SIMPLE(k_queue_is_empty, K_OBJ_QUEUE, struct k_queue *);
-Z_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_head, K_OBJ_QUEUE, struct k_queue *);
-Z_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_tail, K_OBJ_QUEUE, struct k_queue *);
+static inline int z_vrfy_k_queue_is_empty(struct k_queue *queue)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	return z_impl_k_queue_is_empty(queue);
+}
+#include <syscalls/k_queue_is_empty_mrsh.c>
+
+static inline void *z_vrfy_k_queue_peek_head(struct k_queue *queue)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	return z_impl_k_queue_peek_head(queue);
+}
+#include <syscalls/k_queue_peek_head_mrsh.c>
+
+static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	return z_impl_k_queue_peek_tail(queue);
+}
+#include <syscalls/k_queue_peek_tail_mrsh.c>
+
 #endif /* CONFIG_USERSPACE */

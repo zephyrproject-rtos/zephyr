@@ -1,9 +1,7 @@
-# Kconfig - OLIMEX-STM32-P405 board configuration
-#
+# OLIMEX-STM32-P405 board configuration
+
 # Copyright (c) 2017, Erwin Rol <erwin@erwinrol.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_OLIMEX_STM32_P405
 
@@ -16,5 +14,12 @@ config UART_2
 	default y
 
 endif # UART_CONSOLE
+
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
 
 endif # BOARD_OLIMEX_STM32_P405

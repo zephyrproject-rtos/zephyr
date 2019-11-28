@@ -16,8 +16,7 @@
 
 #include "lps25hb.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LPS25HB);
+LOG_MODULE_REGISTER(LPS25HB, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
 {

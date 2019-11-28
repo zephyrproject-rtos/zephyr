@@ -20,9 +20,6 @@
 #include <usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
-#ifdef CONFIG_QMSI
-#include "clk.h"
-#endif
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>

@@ -13,7 +13,7 @@ void fcb_test_rotate(void)
 	int rc;
 	int old_id;
 	struct fcb_entry loc;
-	u8_t test_data[128];
+	u8_t test_data[128] = {0};
 	int elem_cnts[2] = {0, 0};
 	int cnts[2];
 	struct append_arg aa_arg = {
@@ -33,7 +33,7 @@ void fcb_test_rotate(void)
 	 */
 	while (1) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
-		if (rc == FCB_ERR_NOSPACE) {
+		if (rc == -ENOSPC) {
 			break;
 		}
 		if (loc.fe_sector == &test_fcb_sector[0]) {

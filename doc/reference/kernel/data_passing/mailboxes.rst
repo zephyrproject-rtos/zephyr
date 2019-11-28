@@ -79,7 +79,7 @@ Thread Compatibility
 ====================
 
 A sending thread can specify the address of the thread to which the message
-is sent, or it send it to any thread by specifying :c:macro:`K_ANY`.
+is sent, or send it to any thread by specifying :c:macro:`K_ANY`.
 Likewise, a receiving thread can specify the address of the thread from which
 it wishes to receive a message, or it can receive a message from any thread
 by specifying :c:macro:`K_ANY`.
@@ -180,7 +180,8 @@ internal mailbox use only.
     The address of the desired sending thread. Set it to :c:macro:`K_ANY`
     to receive a message sent by any thread. Leave this field uninitialized
     when sending a message. The mailbox updates this field
-    with the actual sender's address once the message is received.
+    with the actual sender's address when the message is put into
+    the mailbox.
 
 Sending a Message
 =================
@@ -340,7 +341,7 @@ data while the previously sent block is being processed
 
         while (1) {
             /* allocate a memory block to hold the message data */
-            k_mem_pool_alloc(&mp_pool, &send_msg.tx_block, 4096, K_FOREVER);
+            k_mem_pool_alloc(&my_pool, &send_msg.tx_block, 4096, K_FOREVER);
 
             /* keep overwriting the hardware-generated data in the block    */
             /* until the previous message has been received by the consumer */

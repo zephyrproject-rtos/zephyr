@@ -41,7 +41,8 @@ void test_essential_thread_operation(void)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack,
 				      STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
-				      NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+				      NULL, NULL, K_PRIO_PREEMPT(0), 0,
+				      K_NO_WAIT);
 
 	k_sem_take(&sync_sem, K_FOREVER);
 	k_thread_abort(tid);

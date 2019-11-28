@@ -1,0 +1,11 @@
+sample:
+  name: syst sample
+tests:
+  sample.subsys.logging.syst:
+    platform_whitelist: mps2_an385 sam_e70_xplained
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "

@@ -18,8 +18,7 @@
 
 static u16_t lis2ds12_i2c_slave_addr = DT_INST_0_ST_LIS2DS12_BASE_ADDRESS;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LIS2DS12);
+LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lis2ds12_i2c_read_data(struct lis2ds12_data *data, u8_t reg_addr,
 				 u8_t *value, u8_t len)

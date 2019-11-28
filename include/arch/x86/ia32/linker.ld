@@ -37,9 +37,6 @@
  * order when programming the MMU.
  */
 
-#define _LINKER
-
-#define _ASMLANGUAGE
 #include <linker/linker-defs.h>
 #include <offsets.h>
 #include <sys/util.h>
@@ -121,9 +118,9 @@ SECTIONS
 
 #ifdef CONFIG_X86_MMU
 	. = ALIGN(4);
-	z_x86_mmulist_start = .;
-	KEEP(*(.mmulist))
-	z_x86_mmulist_end = .;
+	_mmu_region_list_start = .;
+	KEEP(*("._mmu_region.static.*"))
+	_mmu_region_list_end = .;
 #endif /* CONFIG_X86_MMU */
 
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
@@ -160,18 +157,11 @@ SECTIONS
 #include <linker/kobject-rom.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
 	MMU_PAGE_ALIGN
 	/* ROM ends here, position counter will now be in RAM areas */
-#ifdef CONFIG_XIP
-	/* For XIP systems, the kernel object tables are kept at the end
-	 * of ROM and are unpredictable in size; the true size of the ROM
-	 * region isn't know when the MMU tables are generated.
-	 * Just set the rom region to extend to the end of flash.
-	 */
-	_image_rom_end = _image_rom_start + KB(DT_ROM_SIZE);
-#else
 	_image_rom_end = .;
-#endif
 	_image_rom_size = _image_rom_end - _image_rom_start;
 	_image_rodata_end = _image_rom_end;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
@@ -357,6 +347,7 @@ SECTIONS
 #include <linker/common-ram.ld>
 
 #include <linker/kobject.ld>
+#include <linker/cplusplus-ram.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;

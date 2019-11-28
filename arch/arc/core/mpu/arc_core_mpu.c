@@ -27,7 +27,7 @@ void configure_mpu_thread(struct k_thread *thread)
 
 #if defined(CONFIG_USERSPACE)
 
-int z_arch_mem_domain_max_partitions_get(void)
+int arch_mem_domain_max_partitions_get(void)
 {
 	return arc_core_mpu_get_max_domain_partition_regions();
 }
@@ -35,8 +35,8 @@ int z_arch_mem_domain_max_partitions_get(void)
 /*
  * Reset MPU region for a single memory partition
  */
-void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t partition_id)
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      u32_t partition_id)
 {
 	if (_current->mem_domain_info.mem_domain != domain) {
 		return;
@@ -50,7 +50,7 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 /*
  * Configure MPU memory domain
  */
-void z_arch_mem_domain_thread_add(struct k_thread *thread)
+void arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	if (_current != thread) {
 		return;
@@ -64,7 +64,7 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread)
 /*
  * Destroy MPU regions for the mem domain
  */
-void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
+void arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	if (_current->mem_domain_info.mem_domain != domain) {
 		return;
@@ -75,25 +75,25 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	arc_core_mpu_enable();
 }
 
-void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				    u32_t partition_id)
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   u32_t partition_id)
 {
 	/* No-op on this architecture */
 }
 
-void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	if (_current != thread) {
 		return;
 	}
 
-	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
+	arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
 /*
  * Validate the given buffer is user accessible or not
  */
-int z_arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return arc_core_mpu_buffer_validate(addr, size, write);
 }

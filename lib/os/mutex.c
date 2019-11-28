@@ -41,15 +41,16 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
 	return k_mutex_lock(kernel_mutex, timeout);
 }
 
-Z_SYSCALL_HANDLER(z_sys_mutex_kernel_lock, mutex, timeout)
+static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
+						 s32_t timeout)
 {
-	if (check_sys_mutex_addr(mutex)) {
+	if (check_sys_mutex_addr((u32_t) mutex)) {
 		return -EACCES;
 	}
 
-	return z_impl_z_sys_mutex_kernel_lock((struct sys_mutex *)mutex,
-					      timeout);
+	return z_impl_z_sys_mutex_kernel_lock(mutex, timeout);
 }
+#include <syscalls/z_sys_mutex_kernel_lock_mrsh.c>
 
 int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
@@ -67,12 +68,12 @@ int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 	return 0;
 }
 
-Z_SYSCALL_HANDLER(z_sys_mutex_kernel_unlock, mutex)
+static inline int z_vrfy_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
-	if (check_sys_mutex_addr(mutex)) {
+	if (check_sys_mutex_addr((u32_t) mutex)) {
 		return -EACCES;
 	}
 
-	return z_impl_z_sys_mutex_kernel_unlock((struct sys_mutex *)mutex);
+	return z_impl_z_sys_mutex_kernel_unlock(mutex);
 }
-
+#include <syscalls/z_sys_mutex_kernel_unlock_mrsh.c>

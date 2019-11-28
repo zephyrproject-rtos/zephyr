@@ -1,0 +1,25 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SPI controllers
+
+include: base.yaml
+
+child-bus: spi
+
+properties:
+    clock-frequency:
+      type: int
+      required: false
+      description: Clock frequency the SPI peripheral is being driven at
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 0
+    label:
+      required: true
+    cs-gpios:
+      type: phandle-array
+      required: false

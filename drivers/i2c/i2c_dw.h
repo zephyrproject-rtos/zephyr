@@ -103,7 +103,7 @@ struct i2c_dw_rom_config {
 };
 
 struct i2c_dw_dev_config {
-	u32_t base_address;
+	struct i2c_dw_registers *regs;
 	struct k_sem		device_sync_sem;
 	u32_t app_config;
 

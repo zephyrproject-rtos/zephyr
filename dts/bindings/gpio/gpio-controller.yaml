@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for GPIO controllers
+
+properties:
+    "gpio-controller":
+      type: boolean
+      required: true
+      description: Convey's this node is a GPIO controller
+    "#gpio-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a GPIO specifier
+    ngpios:
+      type: int
+      required: false
+      description: Number of gpios supported

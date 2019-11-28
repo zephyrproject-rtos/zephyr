@@ -345,7 +345,7 @@ void test_mutex(void)
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), thread_flags, K_NO_WAIT);
-	k_sleep(1);     /* Give thread_12 a chance to block on the mutex */
+	k_sleep(K_MSEC(1));     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
 	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
@@ -418,6 +418,8 @@ K_THREAD_DEFINE(THREAD_11, STACKSIZE, thread_11, NULL, NULL, NULL,
 /*test case main entry*/
 void test_main(void)
 {
+	int rv;
+
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &thread_12_thread_data, &thread_12_stack_area);
@@ -429,7 +431,10 @@ void test_main(void)
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_09);
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_11);
 #endif
-	sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
+	rv = sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
+	if (rv != 0) {
+		TC_ERROR("Failed to take mutex %p\n", &not_my_mutex);
+	}
 
 	/* We deliberately disable userspace, even on platforms that
 	 * support it, so that the alternate implementation of sys_mutex
@@ -439,14 +444,14 @@ void test_main(void)
 	 */
 #ifdef CONFIG_USERSPACE
 	ztest_test_suite(mutex_complex,
-			 ztest_user_unit_test(test_mutex),
+			 ztest_1cpu_user_unit_test(test_mutex),
 			 ztest_user_unit_test(test_user_access),
 			 ztest_unit_test(test_supervisor_access));
 
 	ztest_run_test_suite(mutex_complex);
 #else
 	ztest_test_suite(mutex_complex,
-			 ztest_unit_test(test_mutex),
+			 ztest_1cpu_unit_test(test_mutex),
 			 ztest_unit_test(test_user_access),
 			 ztest_unit_test(test_supervisor_access));
 

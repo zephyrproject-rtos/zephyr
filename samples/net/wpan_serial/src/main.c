@@ -574,7 +574,7 @@ void main(void)
 	LOG_DBG("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -584,7 +584,7 @@ void main(void)
 
 	LOG_DBG("DTR set, continue");
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		printk("Failed to get baudrate, ret code %d\n", ret);
 	} else {

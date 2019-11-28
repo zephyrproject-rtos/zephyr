@@ -23,9 +23,9 @@
 #include "board.h"
 
 enum font_size {
-	FONT_BIG = 0,
+	FONT_SMALL = 0,
 	FONT_MEDIUM = 1,
-	FONT_SMALL = 2,
+	FONT_BIG = 2,
 };
 
 enum screen_ids {
@@ -71,7 +71,6 @@ static struct {
 	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN, },
 	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN, },
 	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED3_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED3_GPIOS_PIN, },
 };
 
 struct k_delayed_work led_timer;

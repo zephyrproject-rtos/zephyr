@@ -14,10 +14,9 @@ try:
     import ply.lex as lex
     import ply.yacc as yacc
 except ImportError:
-    print("PLY library for Python 3 not installed.")
-    print("Please install the ply package using your workstation's")
-    print("package manager or the 'pip' tool.")
-    sys.exit(1)
+    sys.exit("PLY library for Python 3 not installed.\n"
+             "Please install the ply package using your workstation's\n"
+             "package manager or the 'pip' tool.")
 
 reserved = {
     'and' : 'AND',
@@ -101,7 +100,7 @@ precedence = (
     ('left', 'OR'),
     ('left', 'AND'),
     ('right', 'NOT'),
-    ('nonassoc' , 'EQUALS', 'NOTEQUALS', 'GT', 'LT', 'GTEQ', 'LTEQ', 'IN'),
+    ('nonassoc', 'EQUALS', 'NOTEQUALS', 'GT', 'LT', 'GTEQ', 'LTEQ', 'IN'),
 )
 
 def p_expr_or(p):
@@ -134,6 +133,20 @@ def p_expr_eval(p):
 def p_expr_single(p):
     """expr : SYMBOL"""
     p[0] = ("exists", p[1])
+
+def p_func(p):
+    """expr : SYMBOL OPAREN arg_intr CPAREN"""
+    p[0] = [p[1]]
+    p[0].append(p[3])
+
+def p_arg_intr_single(p):
+    """arg_intr : const"""
+    p[0] = [p[1]]
+
+def p_arg_intr_mult(p):
+    """arg_intr : arg_intr COMMA const"""
+    p[0] = copy.copy(p[1])
+    p[0].append(p[3])
 
 def p_list(p):
     """list : OBRACKET list_intr CBRACKET"""
@@ -183,13 +196,13 @@ def ast_sym_int(ast, env):
             return int(v, 10)
     return 0
 
-def ast_expr(ast, env):
+def ast_expr(ast, env, edt):
     if ast[0] == "not":
-        return not ast_expr(ast[1], env)
+        return not ast_expr(ast[1], env, edt)
     elif ast[0] == "or":
-        return ast_expr(ast[1], env) or ast_expr(ast[2], env)
+        return ast_expr(ast[1], env, edt) or ast_expr(ast[2], env, edt)
     elif ast[0] == "and":
-        return ast_expr(ast[1], env) and ast_expr(ast[2], env)
+        return ast_expr(ast[1], env, edt) and ast_expr(ast[2], env, edt)
     elif ast[0] == "==":
         return ast_sym(ast[1], env) == ast[2]
     elif ast[0] == "!=":
@@ -205,13 +218,32 @@ def ast_expr(ast, env):
     elif ast[0] == "in":
         return ast_sym(ast[1], env) in ast[2]
     elif ast[0] == "exists":
-        return True if ast_sym(ast[1], env) else False
+        return bool(ast_sym(ast[1], env))
     elif ast[0] == ":":
-        return True if re.compile(ast[2]).match(ast_sym(ast[1], env)) else False
+        return bool(re.match(ast[2], ast_sym(ast[1], env)))
+    elif ast[0] == "dt_compat_enabled":
+        compat = ast[1][0]
+        for node in edt.nodes:
+            if compat in node.compats and node.enabled:
+                return True
+        return False
+    elif ast[0] == "dt_alias_exists":
+        alias = ast[1][0]
+        for node in edt.nodes:
+            if alias in node.aliases and node.enabled:
+                return True
+        return False
+    elif ast[0] == "dt_compat_enabled_with_alias":
+        compat = ast[1][0]
+        alias = ast[1][1]
+        for node in edt.nodes:
+            if node.enabled and alias in node.aliases and node.matching_compat == compat:
+                return True
+        return False
 
 mutex = threading.Lock()
 
-def parse(expr_text, env):
+def parse(expr_text, env, edt):
     """Given a text representation of an expression in our language,
     use the provided environment to determine whether the expression
     is true or false"""
@@ -223,7 +255,7 @@ def parse(expr_text, env):
     finally:
         mutex.release()
 
-    return ast_expr(ast, env)
+    return ast_expr(ast, env, edt)
 
 # Just some test code
 if __name__ == "__main__":
@@ -245,4 +277,4 @@ if __name__ == "__main__":
         parser = yacc.yacc()
         print(parser.parse(line))
 
-        print(parse(line, local_env))
+        print(parse(line, local_env, None))

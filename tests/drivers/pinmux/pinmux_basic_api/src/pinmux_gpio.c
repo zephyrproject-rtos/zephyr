@@ -112,7 +112,7 @@ static int test_gpio(u32_t pin, u32_t func)
 		return TC_FAIL;
 	}
 
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	if (cb_triggered) {
 		TC_PRINT("GPIO callback is triggered\n");

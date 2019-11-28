@@ -6,10 +6,6 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 #define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "posix_types.h"
 #include "sys/stat.h"
 #ifdef CONFIG_NETWORKING
@@ -19,6 +15,10 @@ extern "C" {
 
 #ifdef CONFIG_POSIX_API
 #include <fs/fs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* File related operations */
 extern int close(int file);

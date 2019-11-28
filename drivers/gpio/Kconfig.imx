@@ -1,9 +1,7 @@
-# Kconfig.imx - IMX GPIO configuration options
-#
+# IMX GPIO configuration options
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_IMX
 	bool "IMX GPIO driver"

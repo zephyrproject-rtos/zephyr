@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+#include "lll_meta.h"
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
 
 #define TICKER_INSTANCE_ID_CTLR 0
 #define TICKER_USER_ID_LLL      MAYFLY_CALL_ID_0
@@ -10,7 +13,8 @@
 #define TICKER_USER_ID_ULL_LOW  MAYFLY_CALL_ID_2
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
-#define EVENT_PIPELINE_MAX            5
+#define EVENT_PIPELINE_MAX 7
+#define EVENT_DONE_MAX 3
 
 #define HDR_ULL(p)     ((void *)((u8_t *)(p) + sizeof(struct evt_hdr)))
 #define HDR_ULL2LLL(p) ((struct lll_hdr *)((u8_t *)(p) + \
@@ -207,9 +211,15 @@ struct node_rx_hdr {
 	};
 
 	enum node_rx_type   type;
+	u8_t                user_meta; /* User metadata */
 	u16_t               handle;
 
-	struct node_rx_ftr  rx_ftr;
+	union {
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+		lll_rx_pdu_meta_t  rx_pdu_meta;
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
+		struct node_rx_ftr rx_ftr;
+	};
 };
 
 struct node_rx_pdu {
@@ -283,6 +293,7 @@ static inline int lll_is_stop(void *lll)
 }
 
 int lll_init(void);
+int lll_reset(void);
 int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		lll_prepare_cb_t prepare_cb, int prio,
 		struct lll_prepare_param *prepare_param);

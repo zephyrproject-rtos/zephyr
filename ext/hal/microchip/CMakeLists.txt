@@ -1,1 +1,0 @@
-add_subdirectory_ifdef(CONFIG_HAS_MEC_HAL mec)

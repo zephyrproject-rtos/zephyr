@@ -11,7 +11,7 @@
 #include <linker/sections.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
@@ -106,7 +106,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	/* Boot ROM did initialize the XTAL, here we only sets external XTAL
 	 * OSC freq
@@ -200,6 +200,11 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
 #endif
 #endif
+#ifdef CONFIG_VIDEO_MCUX_CSI
+	CLOCK_EnableClock(kCLOCK_Csi); /* Disable CSI clock gate */
+	CLOCK_SetDiv(kCLOCK_CsiDiv, 0); /* Set CSI divider to 1 */
+	CLOCK_SetMux(kCLOCK_CsiMux, 0); /* Set CSI source to OSC 24M */
+#endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
@@ -280,7 +285,7 @@ static int imxrt_init(struct device *arg)
 	}
 
 	/* Initialize system clock */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

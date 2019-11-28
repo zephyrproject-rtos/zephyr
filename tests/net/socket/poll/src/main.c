@@ -73,7 +73,8 @@ void test_poll(void)
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ, "");
+	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ * 2, "tstamp %d",
+		     tstamp);
 	zassert_equal(res, 0, "");
 
 

@@ -9,6 +9,8 @@ toolchain:
 ram: 20
 flash: 128
 supported:
+  - arduino_gpio
+  - arduino_spi
   - gpio
   - spi
   - pwm

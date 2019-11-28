@@ -1,14 +1,12 @@
 title: Nordic FICR (Factory Information Configuration Registers)
 
-description: >
+description: |
     Binding for the Nordic FICR (Factory Information Configuration Registers)
 
-inherits:
-    !include base.yaml
+compatible: "nordic,nrf-ficr"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-ficr"
-
     reg:
-      category: required
+      required: true

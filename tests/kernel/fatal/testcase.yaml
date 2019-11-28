@@ -1,6 +1,7 @@
 tests:
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf
+    platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     tags: kernel ignore_faults userspace
   kernel.common.stack_protection_no_userspace:
@@ -10,6 +11,7 @@ tests:
     tags: kernel ignore_faults memory_protection
   kernel.common.stack_protection_arm_fp_sharing:
     extra_args: CONF_FILE=prj_arm_fp_sharing.conf
+    platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION and CONFIG_ARMV7_M_ARMV8_M_FP
     tags: kernel ignore_faults userspace
   kernel.common.stack_protection_armv8m_mpu_stack_guard:

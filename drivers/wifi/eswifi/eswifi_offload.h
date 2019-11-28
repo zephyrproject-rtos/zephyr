@@ -8,7 +8,6 @@
 #define ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_OFFLOAD_H_
 
 #include <net/net_offload.h>
-
 #include "eswifi.h"
 
 #define ESWIFI_OFFLOAD_MAX_SOCKETS 4
@@ -50,6 +49,7 @@ struct eswifi_off_socket {
 	u16_t port;
 	bool is_server;
 	int usage;
+	struct k_fifo fifo;
+	struct net_pkt *prev_pkt_rem;
 };
-
 #endif

@@ -10,5 +10,6 @@ toolchain:
 supported:
   - counter
   - netif:serial-net
+  - gpio
 testing:
   default: true

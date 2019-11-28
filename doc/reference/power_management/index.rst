@@ -205,6 +205,9 @@ transaction that cannot be interrupted. This method can be used in
 implementations where the applications and components using devices are not
 expected to be power aware and do not implement device power management.
 
+.. image:: central_method.svg
+   :align: center
+
 This method can also be used to emulate a hardware feature supported by some
 SOCs which cause automatic entry to deep sleep when all devices are idle.
 Refer to `Busy Status Indication`_ to see how to indicate whether a device is busy

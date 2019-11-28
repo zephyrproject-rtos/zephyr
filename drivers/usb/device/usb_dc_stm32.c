@@ -75,7 +75,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
- * between two kind of USB DC. STM32 F0, F3, and L0 series support USB device
+ * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
  * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
  * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
  *
@@ -404,7 +404,7 @@ int usb_dc_attach(void)
 	 * For STM32F0 series SoCs on QFN28 and TSSOP20 packages enable PIN
 	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
 	 */
-#if defined(DT_USB_ENABLE_PIN_REMAP)
+#if DT_USB_ENABLE_PIN_REMAP == 1
 	if (LL_APB1_GRP2_IsEnabledClock(LL_APB1_GRP2_PERIPH_SYSCFG)) {
 		LL_SYSCFG_EnablePinRemap();
 	} else {
@@ -807,7 +807,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* If no more data in the buffer, start a new read transaction.
 	 * DataOutStageCallback will called on transaction complete.
 	 */
-	if (ep != EP0_OUT && !ep_state->read_count) {
+	if (!ep_state->read_count) {
 		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
 				     EP_MPS);
 	}

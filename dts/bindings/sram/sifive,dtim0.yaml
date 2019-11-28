@@ -1,20 +1,15 @@
-#
 # Copyright (c) 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Data Tightly-Integrated Memory
 
-description: >
+description: |
     This bindings describes the SiFive Data Tightly-Integrated Memory
 
-inherits:
-    !include base.yaml
+compatible: "sifive,dtim0"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,dtim0"
-
     reg:
-      category: required
+      required: true

@@ -11,6 +11,7 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "pdu.h"
@@ -406,18 +407,17 @@ u8_t ll_adv_enable(u8_t enable)
 		return 0;
 	}
 
-	/* TODO: move the addr remembered into controller
-	 * this way when implementing Privacy 1.2, generated
-	 * new resolvable addresses can be used instantly.
-	 */
-
-	/* remember addr to use and also update the addr in
-	 * both adv and scan response PDUs.
-	 */
 	radio_adv_data = radio_adv_data_get();
-	radio_scan_data = radio_scan_data_get();
 	pdu_adv = (struct pdu_adv *)&radio_adv_data->data
 			[radio_adv_data->last][0];
+
+	if (pdu_adv->tx_addr) {
+		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	}
+
+	radio_scan_data = radio_scan_data_get();
 	pdu_scan = (struct pdu_adv *)&radio_scan_data->data
 			[radio_scan_data->last][0];
 

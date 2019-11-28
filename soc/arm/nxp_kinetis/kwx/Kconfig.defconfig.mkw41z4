@@ -1,26 +1,15 @@
-# Kconfig - Kinetis KWx SoC configuration options
-#
+# Kinetis KWx SoC configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW41Z4
 
 config SOC
-	string
 	default "mkw41z4"
 
 config NUM_IRQS
-	int
 	default 32
-
-if RTC
-
-config RTC_MCUX
-	default y
-
-endif # RTC
 
 if ADC
 
@@ -106,5 +95,26 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 	default IEEE802154_KW41Z_DRV_NAME
 
 endif # NETWORKING
+
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+if ENTROPY_GENERATOR
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+#config MBEDTLS
+config TINYCRYPT
+	default y
+endif
+
+#
+# KW41Z TRNG entropy source cannot be used as a Hardware RNG source so
+# use XOROSHIRO for PRNG
+#
+choice RNG_GENERATOR_CHOICE
+	default XOROSHIRO_RANDOM_GENERATOR
+endchoice
 
 endif # SOC_MKW41Z4

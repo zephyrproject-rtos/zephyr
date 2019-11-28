@@ -36,9 +36,9 @@ of 115.2k.  Higher baud rates are enabled by changing the PCP and telling
 Zephyr what the resulting master clock is.
 
 Use devicetree to set the value of the ``PRV_CLOCK_PARAMS`` register in
-the UART block of interest. Typically an overlay ``up_squared.overlay``
-would be present in the application directory, and would look something
-like this:
+the UART block of interest. Typically a devicetree overlay file would be
+present in the application directory (specific to the board, such as
+``up_squared.overlay`` or ``gpmrb.overlay``), with contents like this:
 
    .. code-block:: console
 

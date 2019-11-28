@@ -1,0 +1,11 @@
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+title: 96BOARDS 3.3V LOW SPEED CONNECTOR
+
+description: >
+    This is a representation of GPIO pin nodes exposed on the 96Boards 3.3v low speed header
+
+compatible: "96b-lscon-3v3"
+
+include: [gpio-nexus.yaml, base.yaml]

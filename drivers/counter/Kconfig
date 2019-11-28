@@ -1,10 +1,7 @@
-# Kconfig - counter configuration options
+# Counter configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig COUNTER
 	bool "Counter Drivers"
@@ -18,8 +15,6 @@ module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/counter/Kconfig.gecko"
-
-source "drivers/counter/Kconfig.qmsi"
 
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
@@ -38,5 +33,7 @@ source "drivers/counter/Kconfig.sam0"
 source "drivers/counter/Kconfig.cmos"
 
 source "drivers/counter/Kconfig.mcux_gpt"
+
+source "drivers/counter/Kconfig.xec"
 
 endif # COUNTER

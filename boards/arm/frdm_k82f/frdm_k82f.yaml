@@ -1,0 +1,19 @@
+identifier: frdm_k82f
+name: NXP FRDM-K82F
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 256
+supported:
+  - gpio
+  - hwinfo
+  - i2c
+  - nvs
+  - pwm
+  - spi
+  - usb_device
+  - watchdog

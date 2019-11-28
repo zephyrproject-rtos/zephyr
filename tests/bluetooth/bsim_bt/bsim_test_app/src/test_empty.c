@@ -36,7 +36,7 @@ static void test_empty_thread(void *p1, void *p2, void *p3)
 
 	while (1) {
 		printk("A silly demo thread. Iteration %i\n", i++);
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 }
 

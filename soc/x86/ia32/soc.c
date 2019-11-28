@@ -17,14 +17,15 @@
 #include <drivers/uart.h>
 #include <device.h>
 #include <init.h>
-#include <ia32/mmustructs.h>
+#include <arch/x86/mmustructs.h>
 #include <linker/linker-defs.h>
 
 #ifdef CONFIG_X86_MMU
 MMU_BOOT_REGION(CONFIG_LOAPIC_BASE_ADDRESS, KB(4), MMU_ENTRY_WRITE);
 MMU_BOOT_REGION(DT_IOAPIC_BASE_ADDRESS, MB(1), MMU_ENTRY_WRITE);
+
 #ifdef CONFIG_HPET_TIMER
-MMU_BOOT_REGION(CONFIG_HPET_TIMER_BASE_ADDRESS, KB(4), MMU_ENTRY_WRITE);
+MMU_BOOT_REGION(DT_INST_0_INTEL_HPET_BASE_ADDRESS, KB(4), MMU_ENTRY_WRITE);
 #endif
 
 #ifdef CONFIG_ETH_E1000

@@ -14,10 +14,6 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -25,6 +21,10 @@ extern "C" {
 #else
 
 #include <arch/arm/cortex_m/cmsis.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
@@ -37,7 +37,7 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  *
  * @return N/A
  */
-static ALWAYS_INLINE void z_InterruptStackSetup(void)
+static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
 	u32_t msp = (u32_t)(Z_THREAD_STACK_BUFFER(_interrupt_stack)) +
 			    K_THREAD_STACK_SIZEOF(_interrupt_stack);
@@ -63,10 +63,10 @@ static ALWAYS_INLINE void z_InterruptStackSetup(void)
 #endif /* CONFIG_STACK_ALIGN_DOUBLE_WORD */
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_ */

@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_ARM=y
+CONFIG_SOC_SERIES_STM32G4X=y
+CONFIG_SOC_STM32G431XX=y
+
+# 170MHz system clock only in 'boost power' mode. RM0440, section
+# 5.1.5 states that the R1MODE bit must be cleared before system can
+# be 170MHz. This requires an update to the stm32 clock control
+# driver, so default to 150MHz until then.
+# CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=170000000
+
+# 150MHz system clock in 'normal power' mode
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=150000000
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable pinmux
+CONFIG_PINMUX=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Use PLLCLK for SYSCLK
+CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL=y
+
+# Use HSI (16MHz) to feed into PLL
+CONFIG_CLOCK_STM32_PLL_SRC_HSI=y
+
+CONFIG_CLOCK_STM32_PLL_M_DIVISOR=4
+CONFIG_CLOCK_STM32_PLL_P_DIVISOR=7
+CONFIG_CLOCK_STM32_PLL_Q_DIVISOR=2
+CONFIG_CLOCK_STM32_PLL_R_DIVISOR=2
+
+# Produce 150MHz clock at PLLCLK output
+CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER=75
+
+# Comment out above and uncomment below for 170MHz. Note that you
+# must have configured the mcu for boost power mode.
+# CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER=85
+
+# Produce Max (150MHz or 170MHz) HCLK
+CONFIG_CLOCK_STM32_AHB_PRESCALER=1
+
+# Produce Max (150MHz or 170MHz) APB1 clocks and APB2 clocks
+CONFIG_CLOCK_STM32_APB1_PRESCALER=1
+CONFIG_CLOCK_STM32_APB2_PRESCALER=1
+
+# Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y

@@ -190,6 +190,46 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 	return bestmatch;
 }
 
+int settings_call_set_handler(const char *name,
+			      size_t len,
+			      settings_read_cb read_cb,
+			      void *read_cb_arg,
+			      const struct settings_load_arg *load_arg)
+{
+	int rc;
+	const char *name_key = name;
+
+	if (load_arg && load_arg->subtree &&
+	    !settings_name_steq(name, load_arg->subtree, &name_key)) {
+		return 0;
+	}
+
+	if (load_arg && load_arg->cb) {
+		rc = load_arg->cb(name_key, len, read_cb, read_cb_arg,
+				  load_arg->param);
+	} else {
+		struct settings_handler_static *ch;
+
+		ch = settings_parse_and_lookup(name, &name_key);
+		if (!ch) {
+			return 0;
+		}
+
+		rc = ch->h_set(name_key, len, read_cb, read_cb_arg);
+
+		if (rc != 0) {
+			LOG_ERR("set-value failure. key: %s error(%d)",
+				log_strdup(name), rc);
+			/* Ignoring the error */
+			rc = 0;
+		} else {
+			LOG_DBG("set-value OK. key: %s",
+				log_strdup(name));
+		}
+	}
+	return rc;
+}
+
 int settings_commit(void)
 {
 	return settings_commit_subtree(NULL);

@@ -63,20 +63,36 @@
 			status = "disabled";
 		};
 
-		gpio0: gpio@0 {
-			compatible = "nxp,kinetis-gpio";
+		gpio0:gpio@0 {
+			compatible = "nxp,lpc-gpio";
 			reg = <0x5008c000 0x2488>;
-			interrupts = <2 2>;
+			interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
 
-		gpio1: gpio@1 {
-			compatible = "nxp,kinetis-gpio";
+		gpio1:gpio@1 {
+			compatible = "nxp,lpc-gpio";
 			reg = <0x5008c000 0x2488>;
-			interrupts = <3 2>;
+			interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
 			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2:gpio@2 {
+			compatible = "nxp,lpc-gpio";
+			reg = <0x5008c000 0x2488>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3:gpio@3 {
+			compatible = "nxp,lpc-gpio";
+			reg = <0x5008c000 0x2488>;
+			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};

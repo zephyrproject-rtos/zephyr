@@ -1,7 +1,6 @@
-# Kconfig - Clock controller driver configuration options
-#
+# Clock controller driver configuration options
+
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_NRF_FORCE_ALT
@@ -47,14 +46,57 @@ config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
 
 endchoice
 
-config CLOCK_CONTROL_NRF_K32SRC_BLOCKING
-	bool "Blocking 32KHz crystal oscillator startup"
-	depends on CLOCK_CONTROL_NRF_K32SRC_XTAL
+config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
+	bool
+	depends on !SOC_SERIES_NRF91X
+	default y if CLOCK_CONTROL_NRF_K32SRC_RC
+
+if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
+
+config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
+	int "Calibration opportunity period (in 250ms units)"
+	default 16
+	range 1 127
 	help
-	  Clock control driver will spin wait in CPU sleep until 32KHz
-	  crystal oscillator starts up. If not enabled, RC oscillator will
-	  initially start running and automatically switch to crystal when
-	  ready.
+	  Periodically, calibration action is performed. Action includes
+	  temperature measurement followed by clock calibration. Calibration may
+	  be skipped if temperature change (compared to measurement of previous
+	  calibration) did not exceeded CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF
+	  and number of consecutive skips did not exceeded
+	  CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP.
+
+config CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
+	int "Maximum number of calibration skips"
+	default 1
+	range 0 255
+	help
+	  Calibration is skipped when temperature change since last calibration
+	  was less than configured threshold. If number of consecutive skips
+	  reaches configured value then calibration is performed
+	  unconditionally. Set to 0 to perform calibration periodically
+	  regardless of temperature change.
+
+config CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF
+	int "Temperature change triggering calibration (in 0.25 degree units)"
+	default 2
+	help
+	  Calibration is triggered if the temperature has changed by at least
+	  this amount since the last calibration.
+
+config CLOCK_CONTROL_NRF_CALIBRATION_DEBUG
+	bool "Calibration instrumentation"
+	help
+	  Enables retrieving debug information like number of performed or
+	  skipped calibrations.
+
+config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
+	bool
+	default y if CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP > 0 && \
+		CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF > 0
+	select TEMP_NRF5
+	select SENSOR
+
+endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 choice CLOCK_CONTROL_NRF_ACCURACY
 	prompt "32KHz clock accuracy"

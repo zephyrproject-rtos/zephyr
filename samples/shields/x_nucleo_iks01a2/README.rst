@@ -19,7 +19,7 @@ Requirements
 This sample communicates over I2C with the X-NUCLEO-IKS01A2 shield
 stacked on a board with an Arduino connector. The board's I2C must be
 configured for the I2C Arduino connector (both for pin muxing
-and device tree). See for example the :ref:`nucleo_f401re_board` board
+and devicetree). See for example the :ref:`nucleo_f401re_board` board
 source code:
 
 - :zephyr_file:`boards/arm/nucleo_f401re/nucleo_f401re.dts`

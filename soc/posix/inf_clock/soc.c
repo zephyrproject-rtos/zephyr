@@ -9,15 +9,14 @@
  * clock.
  *
  * Therefore, the code will always run until completion after each interrupt,
- * after which k_cpu_idle() will be called releasing the execution back to the
- * HW models.
+ * after which arch_cpu_idle() will be called releasing the execution back to
+ * the HW models.
  *
  * The HW models raising an interrupt will "awake the cpu" by calling
  * poisix_interrupt_raised() which will transfer control to the irq handler,
- * which will run inside SW/Zephyr contenxt. After which a __swap() to whatever
- * Zephyr thread may follow.
- * Again, once Zephyr is done, control is given back to the HW models.
- *
+ * which will run inside SW/Zephyr contenxt. After which a arch_swap() to
+ * whatever Zephyr thread may follow.  Again, once Zephyr is done, control is
+ * given back to the HW models.
  *
  * The Zephyr OS+APP code and the HW models are gated by a mutex +
  * condition as there is no reason to let the zephyr threads run while the
@@ -28,7 +27,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 #include "posix_soc.h"
 #include "posix_board_if.h"
 #include "posix_core.h"
@@ -125,7 +124,7 @@ void posix_interrupt_raised(void)
 
 
 /**
- * Normally called from k_cpu_idle():
+ * Normally called from arch_cpu_idle():
  *   the idle loop will call this function to set the CPU to "sleep".
  * Others may also call this function with care. The CPU will be set to sleep
  * until some interrupt awakes it.
@@ -143,8 +142,8 @@ void posix_halt_cpu(void)
 	 * => let the "irq handler" check if/what interrupt was raised
 	 * and call the appropriate irq handler.
 	 *
-	 * Note that, the interrupt handling may trigger a __swap() to another
-	 * Zephyr thread. When posix_irq_handler() returns, the Zephyr
+	 * Note that, the interrupt handling may trigger a arch_swap() to
+	 * another Zephyr thread. When posix_irq_handler() returns, the Zephyr
 	 * kernel has swapped back to this thread again
 	 */
 	posix_irq_handler();
@@ -156,7 +155,7 @@ void posix_halt_cpu(void)
 
 
 /**
- * Implementation of k_cpu_atomic_idle() for this SOC
+ * Implementation of arch_cpu_atomic_idle() for this SOC
  */
 void posix_atomic_halt_cpu(unsigned int imask)
 {

@@ -1,21 +1,19 @@
 title: Atmel SAM0 PINMUX
 
-description: >
+description: |
     This binding gives a base representation of the Atmel SAM0 PINMUX
 
-inherits:
-    !include base.yaml
+compatible: "atmel,sam0-pinmux"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-pinmux"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

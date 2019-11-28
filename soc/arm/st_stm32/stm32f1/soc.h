@@ -43,7 +43,7 @@
 #include <stm32f1xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32f1xx_ll_i2c.h>
 #endif
 
@@ -55,12 +55,20 @@
 #include <stm32f1xx_ll_iwdg.h>
 #endif
 
+#ifdef CONFIG_WWDG_STM32
+#include <stm32f1xx_ll_wwdg.h>
+#endif
+
 #ifdef CONFIG_GPIO_STM32
 #include <stm32f1xx_ll_gpio.h>
 #endif
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32f1xx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32f1xx_ll_dma.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

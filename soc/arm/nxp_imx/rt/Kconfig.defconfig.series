@@ -1,9 +1,7 @@
-# Kconfig - i.MX RT series
-#
+# i.MX RT series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_IMX_RT
 
@@ -13,14 +11,19 @@ config SOC_SERIES
 config TEXT_SECTION_OFFSET
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config INIT_ENET_PLL
-
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_CCM
 	default y if HAS_MCUX_CCM
 
 endif # CLOCK_CONTROL
+
+if DISK_ACCESS_SDHC
+
+config DISK_ACCESS_USDHC
+	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+
+endif # DISK_ACCESS_SDHC
 
 if DISPLAY
 
@@ -94,52 +97,62 @@ endif # SPI
 if CODE_ITCM
 
 config FLASH_SIZE
-	default $(dt_int_val,DT_INST_0_NXP_IMX_ITCM_SIZE,K)
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_INST_0_NXP_IMX_ITCM_BASE_ADDRESS)
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0)
 
 endif # CODE_ITCM
 
 if CODE_FLEXSPI
 
 config FLASH_SIZE
-	default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1,K)
+	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A8000_BASE_ADDRESS_1)
+	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
 
 endif # CODE_FLEXSPI
 
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-        default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A4000_SIZE_1,K)
+	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K)
 
 config FLASH_BASE_ADDRESS
-        default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A4000_BASE_ADDRESS_1)
+	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1)
 
 endif # CODE_FLEXSPI2
 
 if DATA_DTCM
 
 config SRAM_SIZE
-	default $(dt_int_val,DT_INST_0_NXP_IMX_DTCM_SIZE,K)
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/dtcm@20000000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_hex_val,DT_INST_0_NXP_IMX_DTCM_BASE_ADDRESS)
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/dtcm@20000000)
 
 endif # DATA_DTCM
 
 if DATA_SEMC
 
 config SRAM_SIZE
-	default $(dt_int_val,DT_MMIO_SRAM_80000000_SIZE,K)
+	default $(dt_node_reg_size_int,/memory@80000000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_hex_val,DT_MMIO_SRAM_80000000_BASE_ADDRESS)
+	default $(dt_node_reg_addr_hex,/memory@80000000)
 
 endif # DATA_SEMC
+
+if DATA_OCRAM
+
+config SRAM_SIZE
+	default $(dt_node_reg_size_int,/memory@20200000,0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/memory@20200000)
+
+endif # DATA_OCRAM
 
 if USB
 
@@ -147,6 +160,13 @@ config USB_DC_NXP_EHCI
 	default y
 
 endif # USB
+
+if VIDEO
+
+config VIDEO_MCUX_CSI
+	default y if HAS_MCUX_CSI
+
+endif
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

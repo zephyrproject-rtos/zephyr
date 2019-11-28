@@ -1,20 +1,18 @@
 title: STM32 CAN
 
-description: >
+description: |
     This binding gives a base representation of the STM32 CAN controller
 
-inherits:
-    !include can.yaml
+compatible: "st,stm32-can"
+
+include: can-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-can"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

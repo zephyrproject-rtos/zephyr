@@ -155,6 +155,8 @@ This distribution also includes a launcher executable, also named ``west``. When
 west is installed, the launcher is placed by :file:`pip3` somewhere in the
 user's ``PATH``. This is the command-line entry point.
 
+.. _west-manifest-rev:
+
 The ``manifest-rev`` branch
 ***************************
 
@@ -223,13 +225,27 @@ important to understand.
      (``-m`` defaults to https://github.com/zephyrproject-rtos/zephyr, and
      the ``-mr`` default is overridden to ``v1.15.0``).
 
-- ``west update [--rebase] [--keep-descendants] [--exclude-west] [PROJECT
-  ...]``: clone and update the specified projects based
+- ``west update [--fetch {always,smart}] [--rebase] [--keep-descendants]
+  [PROJECT ...]``: clone and update the specified projects based
   on the current :term:`west manifest`.
 
-  This command parses the manifest, clones any project repositories that are
-  not already present locally, and checks out the project revisions specified
-  in the manifest file, updating ``manifest-rev`` branches along the way.
+  By default, this command:
+
+  #. Parses the manifest file, :file:`west.yml`
+  #. Clones any project repositories that are not already present locally
+  #. Fetches any project revisions in the manifest file which are not already
+     pulled from the remote
+  #. Sets each project's :ref:`manifest-rev <west-manifest-rev>` branch to the
+     current manifest revision
+  #. Checks out those revisions in local working trees
+
+  To operate on a subset of projects only, specify them using the ``PROJECT``
+  positional arguments, which can be either project names as given in the
+  manifest file, or paths to the local project clones.
+
+  To force this command to fetch from project remotes even if the revisions
+  appear to be available locally, either use ``--fetch always`` or set the
+  ``update.fetch`` :ref:`configuration option <west-config>` to ``"always"``.
 
   For safety, ``west update`` uses ``git checkout --detach`` to check out a
   detached ``HEAD`` at the manifest revision for each updated project, leaving
@@ -244,17 +260,22 @@ Miscellaneous Commands
 ======================
 
 West has a few more commands for managing the multi-repo, which are briefly
-discussed here.
+discussed here. Run ``west <command> -h`` for detailed help.
 
-- ``west list``: Lists project information from the manifest (URL, revision,
-  path, etc.), along with other manifest-related information.
+- ``west list [-f FORMAT] [PROJECT ...]``: Lists project information from the
+  manifest file, such as URL, revision, path, etc. The printed information can
+  be controlled using the ``-f`` option.
 
 - ``west manifest --freeze [-o outfile]``: Save a "frozen" representation of
   the current manifest; all ``revision`` fields are converted to SHAs based on
   the current ``manifest-rev`` branches.
 
+- ``west manifest --validate``: Ensure the current manifest file is
+  well-formed. Print information about what's wrong and fail the process in
+  case of error.
+
 - ``west diff [PROJECT ...]``: Runs a multi-repo ``git diff``
-  for the specified projects (default: all cloned projects).
+  for the specified projects.
 
 - ``west status [PROJECT ...]``: Like ``west diff``, for
   running ``git status``.
@@ -267,6 +288,8 @@ discussed here.
   To run an arbitrary Git command in each project, use something like ``west
   forall -c 'git <command> --options'``. Note that ``west forall`` can be used
   to run any command, though, not just Git commands.
+
+- ``west help <command>``: this is equivalent to ``west <command> -h``.
 
 .. _PyPI:
    https://pypi.org/project/west/

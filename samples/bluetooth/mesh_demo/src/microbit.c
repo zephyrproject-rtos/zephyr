@@ -249,7 +249,7 @@ void board_init(u16_t *addr)
 	struct mb_display *disp = mb_display_get();
 
 	nvm = device_get_binding(DT_FLASH_DEV_NAME);
-	pwm = device_get_binding(CONFIG_PWM_NRF5_SW_0_DEV_NAME);
+	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
 
 	*addr = NRF_UICR->CUSTOMER[0];
 	if (!*addr || *addr == 0xffff) {

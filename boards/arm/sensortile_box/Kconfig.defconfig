@@ -1,0 +1,48 @@
+# SensorTile.box board configuration
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SENSORTILE_BOX
+
+config BOARD
+	default "sensortile_box"
+
+if UART_CONSOLE
+
+config UART_1
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_3
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_3
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+if LIS2MDL
+
+config LIS2MDL_SPI_FULL_DUPLEX
+	default y
+
+endif # LIS2MDL
+
+endif # SPI
+
+endif # BOARD_SENSORTILE_BOX

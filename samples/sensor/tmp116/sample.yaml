@@ -1,0 +1,18 @@
+sample:
+  name: TI TMP116 Sensor Sample
+tests:
+  test_build:
+    harness: sensor
+    platform_whitelist: nucleo_f401re
+    tags: sensors
+    depends_on: i2c
+  sample.sensor.tmp116:
+    harness: console
+    platform_whitelist: nucleo_f401re
+    tags: sensors
+    depends_on: i2c
+    harness_config:
+        type: one_line
+        regex:
+            - "temp is (.*) oC"
+        fixture: fixture_i2c_tmp116

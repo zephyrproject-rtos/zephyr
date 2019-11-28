@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    arcv2_irq_unit.c)
+zephyr_sources_ifdef(CONFIG_GIC                     gic-400.c)
 zephyr_sources_ifdef(CONFIG_IOAPIC                  ioapic_intr.c)
 zephyr_sources_ifdef(CONFIG_LOAPIC                  loapic_intr.c system_apic.c)
 zephyr_sources_ifdef(CONFIG_LOAPIC_SPURIOUS_VECTOR  loapic_spurious.S)

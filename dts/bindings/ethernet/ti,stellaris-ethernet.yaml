@@ -1,20 +1,17 @@
-#
 # Copyright (c) 2018 Zilogic Systems
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: TI Stellaris Ethernet
 
-description: >
+description: |
     This binding gives a base representation of the TI Stellaris Ethernet
 
-inherits:
-  !include ethernet.yaml
+compatible: "ti,stellaris-ethernet"
+
+include: ethernet.yaml
 
 properties:
-    compatible:
-      constraint: "ti,stellaris-ethernet"
     reg:
-      category: required
+      required: true
     interrupts:
-      category: required
+      required: true

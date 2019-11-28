@@ -7,10 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_RISCV_PRIVILEGE_ASM_INLINE_GCC_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_RISCV_PRIVILEGE_ASM_INLINE_GCC_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * The file must not be included directly
  * Include arch/cpu.h instead
@@ -21,11 +17,6 @@ extern "C" {
 
 #include <toolchain.h>
 
-
 #endif /* _ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_RISCV_PRIVILEGE_ASM_INLINE_GCC_H_ */

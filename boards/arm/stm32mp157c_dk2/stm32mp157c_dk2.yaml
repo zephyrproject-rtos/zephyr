@@ -7,6 +7,8 @@ toolchain:
   - gccarmemb
   - xtools
 supported:
+  - arduino_i2c
+  - arduino_gpio
   - gpio
   - shell
   - i2c

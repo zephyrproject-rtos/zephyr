@@ -12,9 +12,8 @@
 
 #include "bmc150_magn.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMC150_MAGN);
+LOG_MODULE_DECLARE(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 
 int bmc150_magn_trigger_set(struct device *dev,
 			    const struct sensor_trigger *trig,
@@ -143,7 +142,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
 			bmc150_magn_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, 0);
+			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

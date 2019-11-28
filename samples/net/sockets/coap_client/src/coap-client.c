@@ -627,14 +627,14 @@ void main(void)
 	}
 
 	/* Close the socket */
-	close(sock);
+	(void)close(sock);
 
 	LOG_DBG("Done");
 
 	return;
 
 quit:
-	close(sock);
+	(void)close(sock);
 
 	LOG_ERR("quit");
 }

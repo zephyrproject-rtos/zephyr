@@ -1,4 +1,5 @@
 tests:
-  arch.interrupt:
+  arch.interrupt.x86:
     arch_whitelist: x86
+    platform_exclude: qemu_x86_64
     tags: ignore_faults interrupt idt

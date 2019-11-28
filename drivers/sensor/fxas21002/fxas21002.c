@@ -9,8 +9,7 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(FXAS21002);
+LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Sample period in microseconds, indexed by output data rate encoding (DR) */
 static const u32_t sample_period[] = {

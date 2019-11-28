@@ -516,14 +516,14 @@ static inline int z_impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
 	return api->trigger(dev, dir, cmd);
 }
 
-#include <syscalls/i2s.h>
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+#include <syscalls/i2s.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2S_H_ */

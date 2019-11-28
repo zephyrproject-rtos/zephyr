@@ -442,7 +442,7 @@ static int ht16k33_init(struct device *dev)
 
 		/* Setup timer for polling key data */
 		k_timer_init(&data->timer, ht16k33_timer_callback, NULL);
-		k_timer_start(&data->timer, 0,
+		k_timer_start(&data->timer, K_NO_WAIT,
 			      CONFIG_HT16K33_KEYSCAN_POLL_MSEC);
 	}
 

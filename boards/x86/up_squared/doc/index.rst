@@ -18,155 +18,19 @@ a powerful and flexible Intel |reg| FPGA Altera MAX 10 onboard.
 
    Up Squared (Credit: https://up-board.org)
 
-This board configuration enables kernel support for the `UP Squared`_ board,
-along with the following devices:
-
-* High Precision Event Timer (HPET)
-
-* Serial Ports in Polling and Interrupt Driven Modes
-
-* GPIO
-
-* I2C
+This board configuration enables kernel support for the `UP Squared`_ board.
 
 .. note::
    This board configuration works on all three variants of `UP Squared`_
    boards containing Intel |reg| Pentium |trade| SoC,
    Intel |reg| Celeron |trade| SoC, or Intel |reg| Atom |trade| SoC.
 
-.. note::
-   This board configuration works only with the default BIOS settings.
-   Enabling/disabling LPSS devices in BIOS (under Advanced -> HAT Configurations)
-   will change the MMIO addresses of these devices, and will prevent
-   the drivers from communicating with these devices. For drivers that support
-   PCI enumeration, :option:`CONFIG_PCI` and :option:`CONFIG_PCI_ENUMERATION`
-   will allow these drivers to probe for the correct MMIO addresses.
-
 Hardware
 ********
 
 General information about the board can be found at the `UP Squared`_ website.
 
-Supported Features
-==================
-
-This board supports the following hardware features:
-
-* HPET
-
-* Advanced Programmed Interrupt Controller (APIC)
-
-* Serial Ports in Polling and Interrupt Driven Modes, High-Speed
-
-* GPIO
-
-* I2C
-
-+-----------+------------+-----------------------+-----------------+
-| Interface | Controller | Driver/Component      | PCI Enumeration |
-+===========+============+=======================+=================+
-| HPET      | on-chip    | system clock          | Not Supported   |
-+-----------+------------+-----------------------+-----------------+
-| APIC      | on-chip    | interrupt controller  | Not Supported   |
-+-----------+------------+-----------------------+-----------------+
-| UART      | on-chip    | serial port-polling;  | Supported       |
-|           |            | serial port-interrupt |                 |
-+-----------+------------+-----------------------+-----------------+
-| GPIO      | on-chip    | GPIO controller       | Not Supported   |
-+-----------+------------+-----------------------+-----------------+
-| I2C       | on-chip    | I2C controller        | Supported       |
-+-----------+------------+-----------------------+-----------------+
-
-The Zephyr kernel currently does not support other hardware features.
-
-Serial Port Support
--------------------
-
-Serial port I/O is supported in both polling and interrupt-driven modes.
-
-Baud rates beyond 115.2Kbps (up to 3.6864Mbps) are supported, with additional
-configuration. The UARTs are fed a master clock which is fed into a PLL which
-in turn outputs the baud master clock. The PLL is controlled by a per-UART
-32-bit register called ``PRV_CLOCK_PARAMS`` (aka the ``PCP``), the format of
-which is:
-
-+--------+---------+--------+--------+
-| [31]   | [30:16] | [15:1] | [0]    |
-+========+=========+========+========+
-| enable | ``m``   | ``n``  | toggle |
-+--------+---------+--------+--------+
-
-The resulting baud master clock frequency is ``(n/m)`` * master.
-
-On the UP^2, the master clock is 100MHz, and the firmware by default sets
-the ``PCP`` to ``0x3d090240``, i.e., ``n = 288``, ``m =  15625``, which
-results in the de-facto standard 1.8432MHz master clock and a max baud rate
-of 115.2k.  Higher baud rates are enabled by changing the PCP and telling
-Zephyr what the resulting master clock is.
-
-Use devicetree to set the value of the ``PRV_CLOCK_PARAMS`` register in
-the UART block of interest. Typically an overlay ``up_squared.overlay``
-would be present in the application directory, and would look something
-like this:
-
-   .. code-block:: console
-
-    / {
-        soc {
-            uart@0 {
-                pcp = <0x3d090900>;
-                clock-frequency = <7372800>;
-                current-speed = <230400>;
-            };
-        };
-    };
-
-The relevant variables are ``pcp`` (the value to use for ``PRV_CLOCK_PARAMS``),
-and ``clock-frequency`` (the resulting baud master clock). The meaning of
-``current-speed`` is unchanged, and as usual indicates the initial baud rate.
-
-Interrupt Controller
---------------------
-
-This board uses the kernel's static Interrupt Descriptor Table (IDT) to program the
-Advanced Programmable Interrupt Controller (APIC) interrupt redirection table.
-
-
-+-----+---------+--------------------------+
-| IRQ | Remarks | Used by Zephyr Kernel    |
-+=====+=========+==========================+
-| 2   | HPET    | timer driver             |
-+-----+---------+--------------------------+
-| 4   | UART_0  | serial port when used in |
-|     |         | interrupt mode           |
-+-----+---------+--------------------------+
-| 5   | UART_1  | serial port when used in |
-|     |         | interrupt mode           |
-+-----+---------+--------------------------+
-| 14  | GPIO    | GPIO APL driver          |
-+-----+---------+--------------------------+
-| 27  | I2C_0   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 28  | I2C_1   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 29  | I2C_2   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 30  | I2C_3   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 31  | I2C_4   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 32  | I2C_5   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 33  | I2C_6   | I2C DW driver            |
-+-----+---------+--------------------------+
-| 34  | I2C_7   | I2C DW driver            |
-+-----+---------+--------------------------+
-
-HPET System Clock Support
--------------------------
-
-The SoC uses HPET timing with legacy-free timer support. The board
-configuration uses HPET as a system clock timer.
+.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.rst
 
 GPIO
 ----
@@ -186,12 +50,6 @@ Connections and IOs
 
 Refer to the `UP Squared`_ website and `UP Squared Pinout`_ website
 for connection diagrams.
-
-Memory Mappings
-===============
-
-This board configuration uses default hardware memory map
-addresses and sizes.
 
 Programming and Debugging
 *************************
@@ -243,7 +101,6 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :tool: all
       :board: up_squared
       :goals: build
 

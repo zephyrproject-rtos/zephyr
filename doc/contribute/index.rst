@@ -297,7 +297,8 @@ uncrustify
 ==========
 
 The `uncrustify tool <https://sourceforge.net/projects/uncrustify>`_ can
-be helpful to quickly reformat your source code to our `Coding Style`_
+be helpful to quickly reformat large amounts of new source code to our
+`Coding Style`_
 standards together with a configuration file we've provided:
 
 .. code-block:: bash
@@ -306,6 +307,10 @@ standards together with a configuration file we've provided:
    uncrustify --replace --no-backup -l C -c $ZEPHYR_BASE/.uncrustify.cfg my_source_file.c
    # On Windows
    uncrustify --replace --no-backup -l C -c %ZEPHYR_BASE%\.uncrustify.cfg my_source_file.c
+
+But note that you should not use uncrustify to reformat existing Zephyr code,
+or to modify files in which you only introduce a small fix. This would create a
+lot of unwelcome extra changed lines.
 
 On Linux systems, you can install uncrustify with
 
@@ -756,3 +761,22 @@ Code component README template
 ==============================
 
 .. literalinclude:: code_component_README
+
+
+Contribution Roles and Responsibilities
+***************************************
+
+The Zephyr project defines a development process workflow using GitHub
+**Issues** to track feature, enhancement, and bug reports together with GitHub
+**Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
+community members work together to review these Issues and PRs, managing
+feature enhancements and quality improvements of Zephyr through its regular
+releases, as outlined in the
+`program management overview <https://wiki.zephyrproject.org/Program-Management>`_.
+
+We can only manage the volume of Issues and PRs, by requiring timely reviews,
+feedback, and responses from the community and contributors, both for initial
+submissions and for followup questions and clarifications.  Read about the
+project's :ref:`development processes and tools <dev-environment-and-tools>`
+and specifics about :ref:`review timelines <review_time>` to learn about the
+project's goals and guidelines for our active developer community.

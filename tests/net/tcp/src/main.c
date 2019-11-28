@@ -345,7 +345,7 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 				      u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET6, IPPROTO_TCP, K_FOREVER);
@@ -353,7 +353,10 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv6_create(pkt, remote_addr, local_addr);
+	if (net_ipv6_create(pkt, remote_addr, local_addr)) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
@@ -374,7 +377,7 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 				      u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET, IPPROTO_TCP, K_FOREVER);
@@ -382,7 +385,10 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv4_create(pkt, remote_addr, local_addr);
+	if (net_ipv4_create(pkt, remote_addr, local_addr)) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
@@ -430,7 +436,7 @@ static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 					   u16_t local_port)
 {
 	struct net_pkt *pkt;
-	struct net_tcp_hdr tcp_hdr;
+	struct net_tcp_hdr tcp_hdr = { 0 };
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hop_by_hop_ext_hdr) +
 					sizeof(data),

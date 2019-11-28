@@ -42,7 +42,7 @@ Building and Running
 
 The below steps describe how to build and run the ``UpdateHub`` sample in
 Zephyr. Where examples are given, it is assumed the sample is being built for
-the Freedom-K64F Development Kit (``BOARD=fdrm_k64f``).
+the Freedom-K64F Development Kit (``BOARD=frdm_k64f``).
 
 Step 1: Build MCUboot
 =====================
@@ -111,11 +111,11 @@ use IPv6 by enabling IPv6 and configuring your IP address.
 Step 4: Build UpdateHub
 =======================
 
-``UpdateHub`` can be built for the fdrm_k64f as follows:
+``UpdateHub`` can be built for the frdm_k64f as follows:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/net/updatehub/
-    :board: fdrm_k64f
+    :board: frdm_k64f
     :conf: "prj.conf overlay-prj.conf"
     :goals: build
 
@@ -149,7 +149,7 @@ Step 6: Flash the first image
 
 Upload the :file:`signed.bin` file from Step 4 to image slot-0 of your
 board.  The location of image slot-0 varies by board, as described in
-:ref:`mcuboot_partitions`.  For the fdrm_k64f, slot-0 is located at address
+:ref:`mcuboot_partitions`.  For the frdm_k64f, slot-0 is located at address
 ``0xc000``.
 
 Using :file:`pyocd` you don't need to specify the slot-0 starting address.

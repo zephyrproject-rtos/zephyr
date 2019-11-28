@@ -61,7 +61,7 @@ const char *testfs_path_init(struct testfs_path *pp,
 		if ((len + 1) >= sizeof(pp->path)) {
 			len = sizeof(pp->path) - 1;
 		}
-		strncpy(pp->path, mp->mnt_point, sizeof(pp->path));
+		strncpy(pp->path, mp->mnt_point, len);
 		pp->eos = pp->path + len;
 	}
 	*pp->eos = '\0';
@@ -384,7 +384,7 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 			       && ((strcmp(stat.name, ".") == 0)
 				   || (strcmp(stat.name, "..") == 0)));
 
-		TC_PRINT("%s %s%s%s %u\n", pp->path,
+		TC_PRINT("%s %s%s%s %zu\n", pp->path,
 			 stat.name,
 			 (stat.type == FS_DIR_ENTRY_FILE) ? "" : "/",
 			 dotdir ? " SYNTHESIZED"

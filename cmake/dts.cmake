@@ -14,9 +14,14 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_UNFIXED_H ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board_unfixed.h)
 set(GENERATED_DTS_BOARD_CONF      ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
+set(DTS_POST_CPP                  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
-set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
+
+if(DEFINED DTS_COMMON_OVERLAYS)
+  # TODO: remove this warning in version 1.16
+  message(FATAL_ERROR "DTS_COMMON_OVERLAYS is no longer supported. Use DTC_OVERLAY_FILE instead.")
+endif()
 
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
 # files may be found. It always includes the application directory,
@@ -28,9 +33,10 @@ list(APPEND
   ${ZEPHYR_BASE}
   )
 
+list(REMOVE_DUPLICATES DTS_ROOT)
+
 set(dts_files
   ${DTS_SOURCE}
-  ${DTS_COMMON_OVERLAYS}
   ${shield_dts_files}
   )
 
@@ -64,12 +70,6 @@ if(SUPPORTS_DTS)
       message(STATUS "Overlaying ${dts_file}")
     endif()
 
-    # Ensure that changes to 'dts_file's cause CMake to be re-run
-    set_property(DIRECTORY APPEND PROPERTY
-      CMAKE_CONFIGURE_DEPENDS
-      ${dts_file}
-      )
-
     math(EXPR i "${i}+1")
   endforeach()
 
@@ -100,6 +100,11 @@ if(SUPPORTS_DTS)
     endif()
   endforeach()
 
+  # Cache the location of the root bindings so they can be used by
+  # scripts which use the build directory.
+  set(CACHED_DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} CACHE INTERNAL
+    "DT bindings root directories")
+
   # TODO: Cut down on CMake configuration time by avoiding
   # regeneration of generated_dts_board_unfixed.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
@@ -108,7 +113,8 @@ if(SUPPORTS_DTS)
 
   # Run the C preprocessor on an empty C source file that has one or
   # more DTS source files -include'd into it to create the
-  # intermediary file *.dts.pre.tmp
+  # intermediary file *.dts.pre.tmp. Also, generate a dependency file
+  # so that changes to DT sources are detected.
   execute_process(
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
@@ -118,14 +124,30 @@ if(SUPPORTS_DTS)
     ${NOSYSDEF_CFLAG}
     -D__DTS__
     -P
-    -E ${ZEPHYR_BASE}/misc/empty_file.c
+    -E   # Stop after preprocessing
+    -MD  # Generate a dependency file as a side-effect
+    -MF ${BOARD}.dts.pre.d
     -o ${BOARD}.dts.pre.tmp
+    ${ZEPHYR_BASE}/misc/empty_file.c
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
+
+  # Parse the generated dependency file to find the DT sources that
+  # were included and then add them to the list of files that trigger
+  # a re-run of CMake.
+  toolchain_parse_make_rule(
+    ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    include_files # Output parameter
+    )
+
+  set_property(DIRECTORY APPEND PROPERTY
+    CMAKE_CONFIGURE_DEPENDS
+    ${include_files}
+    )
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
 
@@ -162,7 +184,7 @@ if(SUPPORTS_DTS)
 
   set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
   --dts ${BOARD}.dts.pre.tmp
-  --bindings-dir ${DTS_ROOT_BINDINGS}
+  --bindings-dirs ${DTS_ROOT_BINDINGS}
   --conf-out ${GENERATED_DTS_BOARD_CONF}
   --header-out ${GENERATED_DTS_BOARD_UNFIXED_H}
   )
@@ -197,8 +219,6 @@ if(SUPPORTS_DTS)
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
-
-  import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")

@@ -20,6 +20,16 @@
 #include <sys/util.h>
 #include "lps22hh_reg.h"
 
+union axis1bit32_t {
+	s32_t i32bit;
+	u8_t u8bit[4];
+};
+
+union axis1bit16_t {
+	s16_t i16bit;
+	u8_t u8bit[2];
+};
+
 struct lps22hh_config {
 	char *master_dev_name;
 	int (*bus_init)(struct device *dev);
@@ -43,12 +53,12 @@ struct lps22hh_data {
 	s32_t sample_press;
 	s16_t sample_temp;
 
-	lps22hh_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 
 #ifdef DT_ST_LPS22HH_BUS_I2C
-	lps22hh_ctx_t ctx_i2c;
+	stmdev_ctx_t ctx_i2c;
 #elif DT_ST_LPS22HH_BUS_SPI
-	lps22hh_ctx_t ctx_spi;
+	stmdev_ctx_t ctx_spi;
 #endif
 
 #ifdef CONFIG_LPS22HH_TRIGGER

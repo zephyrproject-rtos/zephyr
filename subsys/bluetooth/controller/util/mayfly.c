@@ -58,6 +58,10 @@ void mayfly_enable(u8_t caller_id, u8_t callee_id, u8_t enable)
 		    mft[callee_id][caller_id].disable_ack) {
 			mft[callee_id][caller_id].disable_req++;
 
+			/* set mayfly callee pending */
+			mfp[callee_id] = 1U;
+
+			/* pend the callee for execution */
 			mayfly_pend(caller_id, callee_id);
 		}
 	}
@@ -174,7 +178,7 @@ void mayfly_run(u8_t callee_id)
 	if (!mfp[callee_id]) {
 		return;
 	}
-	mfp[callee_id] = 1U;
+	mfp[callee_id] = 0U;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
@@ -235,6 +239,10 @@ void mayfly_run(u8_t callee_id)
 				 * processed.
 				 */
 				if (caller_id || link) {
+					/* set mayfly callee pending */
+					mfp[callee_id] = 1U;
+
+					/* pend the callee for execution */
 					mayfly_pend(callee_id, callee_id);
 
 					return;

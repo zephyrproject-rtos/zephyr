@@ -1,0 +1,24 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for USB controllers
+
+include: base.yaml
+
+properties:
+    maximum-speed:
+      type: string
+      required: false
+      description: Configures USB controllers to work up to a specific
+                   speed. Valid arguments are "super-speed", "high-speed",
+                   "full-speed" and "low-speed". If this is not passed
+                   via DT, USB controllers should use their maximum
+                   hardware capability.
+      enum:
+         - "low-speed"
+         - "full-speed"
+         - "high-speed"
+         - "super-speed"
+
+    label:
+      required: true

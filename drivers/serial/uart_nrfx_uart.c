@@ -251,25 +251,31 @@ static void uart_nrfx_poll_out(struct device *dev,
 /** Console I/O function */
 static int uart_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0U;
-
-	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
-		/* register bitfields maps to the defines in uart.h */
-		error = nrf_uart_errorsrc_get_and_clear(uart0_addr);
-	}
-
-	return error;
+	/* register bitfields maps to the defines in uart.h */
+	return nrf_uart_errorsrc_get_and_clear(uart0_addr);
 }
 
 static int uart_nrfx_configure(struct device *dev,
 			       const struct uart_config *cfg)
 {
-	nrf_uart_parity_t parity;
-	nrf_uart_hwfc_t hwfc;
+	nrf_uart_config_t uart_cfg;
 
+#if defined(UART_CONFIG_STOP_Msk)
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		uart_cfg.stop = NRF_UART_STOP_ONE;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		uart_cfg.stop = NRF_UART_STOP_TWO;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#else
 	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
 		return -ENOTSUP;
 	}
+#endif
 
 	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
 		return -ENOTSUP;
@@ -277,11 +283,11 @@ static int uart_nrfx_configure(struct device *dev,
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		hwfc = NRF_UART_HWFC_DISABLED;
+		uart_cfg.hwfc = NRF_UART_HWFC_DISABLED;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		if (get_dev_config(dev)->rts_cts_pins_set) {
-			hwfc = NRF_UART_HWFC_ENABLED;
+			uart_cfg.hwfc = NRF_UART_HWFC_ENABLED;
 		} else {
 			return -ENOTSUP;
 		}
@@ -290,13 +296,22 @@ static int uart_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(UART_CONFIG_PARITYTYPE_Msk)
+	uart_cfg.paritytype = NRF_UART_PARITYTYPE_EVEN;
+#endif
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		parity = NRF_UART_PARITY_EXCLUDED;
+		uart_cfg.parity = NRF_UART_PARITY_EXCLUDED;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		parity = NRF_UART_PARITY_INCLUDED;
+		uart_cfg.parity = NRF_UART_PARITY_INCLUDED;
 		break;
+#if defined(UART_CONFIG_PARITYTYPE_Msk)
+	case UART_CFG_PARITY_ODD:
+		uart_cfg.parity = NRF_UART_PARITY_INCLUDED;
+		uart_cfg.paritytype = NRF_UART_PARITYTYPE_ODD;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -305,7 +320,7 @@ static int uart_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	nrf_uart_configure(uart0_addr, parity, hwfc);
+	nrf_uart_configure(uart0_addr, &uart_cfg);
 
 	get_dev_data(dev)->uart_config = *cfg;
 
@@ -821,6 +836,10 @@ static void uart_nrfx_irq_callback_set(struct device *dev,
 static void uart_nrfx_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
+	}
 
 	if (irq_callback) {
 		irq_callback(irq_cb_data);

@@ -36,6 +36,8 @@ static inline int check_filter_match(const struct zcan_frame *frame,
 	return ((id & mask) == (frame_id & mask));
 }
 
+
+
 int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 		      s32_t timeout, can_tx_callback_t callback,
 		      void *callback_arg)
@@ -53,6 +55,11 @@ int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 		    , frame->id_type == CAN_STANDARD_IDENTIFIER ?
 		    "standard" : "extended"
 		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
+
+	if (frame->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
 
 	if (!data->loopback) {
 
@@ -149,11 +156,46 @@ int can_loopback_configure(struct device *dev, enum can_mode mode,
 	return 0;
 }
 
+static enum can_state can_loopback_get_state(struct device *dev,
+					     struct can_bus_err_cnt *err_cnt)
+{
+	ARG_UNUSED(dev);
+
+	if (err_cnt) {
+		err_cnt->tx_err_cnt = 0;
+		err_cnt->rx_err_cnt = 0;
+	}
+
+	return CAN_ERROR_ACTIVE;
+}
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+int can_loopback_recover(struct device *dev, s32_t timeout)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timeout);
+
+	return 0;
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+
+static void can_loopback_register_state_change_isr(struct device *dev,
+						   can_state_change_isr_t isr)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(isr);
+}
+
 static const struct can_driver_api can_api_funcs = {
 	.configure = can_loopback_configure,
 	.send = can_loopback_send,
 	.attach_isr = can_loopback_attach_isr,
-	.detach = can_loopback_detach
+	.detach = can_loopback_detach,
+	.get_state = can_loopback_get_state,
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	.recover = can_loopback_recover,
+#endif
+	.register_state_change_isr = can_loopback_register_state_change_isr
 };
 
 

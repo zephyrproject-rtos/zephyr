@@ -11,9 +11,6 @@
  * Generic Linker script for the riscv platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <soc.h>
 
 #include <autoconf.h>
@@ -120,6 +117,8 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
     _image_rom_end = .;
     __data_rom_start = .;
 
@@ -196,6 +195,8 @@ SECTIONS
 
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+#include <linker/cplusplus-ram.ld>
+
      _image_ram_end = .;
      _end = .; /* end of image */
 
@@ -207,6 +208,8 @@ SECTIONS
      GROUP_END(RAMABLE_REGION)
 
 #include <linker/debug-sections.ld>
+
+    /DISCARD/ : { *(.note.GNU-stack) }
 
     SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{

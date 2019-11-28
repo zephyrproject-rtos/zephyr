@@ -140,10 +140,12 @@ static struct usb_dev_priv {
 	struct usb_setup_packet setup;
 	/** Pointer to data buffer */
 	u8_t *data_buf;
-	/** Eemaining bytes in buffer */
+	/** Remaining bytes in buffer */
 	s32_t data_buf_residue;
 	/** Total length of control transfer */
 	s32_t data_buf_len;
+	/** Zero length packet flag of control transfer */
+	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
 	/** USB stack status clalback */
@@ -234,25 +236,35 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  */
 static void usb_data_to_host(u16_t len)
 {
-	u32_t chunk = usb_dev.data_buf_residue;
+	if (usb_dev.zlp_flag == false) {
+		u32_t chunk = usb_dev.data_buf_residue;
 
-	/*Always EP0 for control*/
-	usb_dc_ep_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
-	usb_dev.data_buf += chunk;
-	usb_dev.data_buf_residue -= chunk;
+		/*Always EP0 for control*/
+		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
+			  usb_dev.data_buf_residue, &chunk);
+		usb_dev.data_buf += chunk;
+		usb_dev.data_buf_residue -= chunk;
 
-	/*
-	 * Send ZLP when host asks for a bigger length and the last chunk
-	 * is wMaxPacketSize long, to indicate the last packet.
-	 */
-	if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
-	    && len > chunk) {
-		int ret;
+#ifndef CONFIG_USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
+		/*
+		 * Set ZLP flag when host asks for a bigger length and the
+		 * last chunk is wMaxPacketSize long, to indicate the last
+		 * packet.
+		 */
+		if (!usb_dev.data_buf_residue && len > usb_dev.data_buf_len) {
+			/* Send less data as requested during the Setup stage */
+			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+				/* Transfers a zero-length packet */
+				LOG_DBG("ZLP, requested %u , length %u ",
+					len, usb_dev.data_buf_len);
+				usb_dev.zlp_flag = true;
+			}
+		}
+#endif
 
-		do {
-			ret = usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0,
-					      NULL);
-		} while (ret == -EAGAIN);
+	} else {
+		usb_dev.zlp_flag = false;
+		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
 	}
 }
 
@@ -287,10 +299,20 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		length = sys_le16_to_cpu(setup->wLength);
+		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+			if (REQTYPE_GET_DIR(setup->bmRequestType)
+			    != REQTYPE_DIR_TO_HOST) {
+				LOG_ERR("Request buffer too small");
+				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+				return;
+			}
+		}
 
 		usb_dev.data_buf = usb_dev.req_data;
 		usb_dev.data_buf_residue = length;
 		usb_dev.data_buf_len = length;
+		usb_dev.zlp_flag = false;
 
 		if (length &&
 		    REQTYPE_GET_DIR(setup->bmRequestType)
@@ -351,7 +373,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
 		/* Send more data if available */
-		if (usb_dev.data_buf_residue != 0) {
+		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
 			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
 		}
 	} else {
@@ -1042,15 +1064,19 @@ int usb_disable(void)
 
 int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 {
-	while (true) {
-		int ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+	int tries = CONFIG_USB_NUMOF_EP_WRITE_RETRIES;
+	int ret;
 
-		if (ret != -EAGAIN) {
-			return ret;
+	do {
+		ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+		if (ret == -EAGAIN) {
+			LOG_WRN("Failed to write endpoint buffer 0x%02x", ep);
+			k_yield();
 		}
 
-		k_yield();
-	}
+	} while (ret == -EAGAIN && tries--);
+
+	return ret;
 }
 
 int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
@@ -1400,7 +1426,7 @@ static int class_handler(struct usb_setup_packet *pSetup,
 
 		if ((iface->class_handler) &&
 		    (if_descr->bInterfaceNumber ==
-		     sys_le16_to_cpu(pSetup->wIndex))) {
+		     (sys_le16_to_cpu(pSetup->wIndex) & 0xFF))) {
 			return iface->class_handler(pSetup, len, data);
 		}
 	}

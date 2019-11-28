@@ -1,7 +1,6 @@
-# Kconfig - MCUXpresso SDK USART
-#
+# MCUXpresso SDK USART
+
 # Copyright 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USART_MCUX_LPC
@@ -14,7 +13,7 @@ menuconfig USART_MCUX_LPC
 
 if USART_MCUX_LPC
 
-menuconfig USART_MCUX_LPC_0
+config USART_MCUX_LPC_0
 	bool "USART 0"
 	help
 	  Enable USART 0.

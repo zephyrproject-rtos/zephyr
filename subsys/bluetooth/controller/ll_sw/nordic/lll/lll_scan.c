@@ -8,7 +8,9 @@
 #include <toolchain.h>
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
+#include <soc.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -32,9 +34,9 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_scan
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_scan
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -312,8 +314,14 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
 		 */
-		radio_isr_set(isr_abort, param);
-		radio_disable();
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll_is_stop(param)) {
+			while (!radio_has_disabled()) {
+				cpu_sleep();
+			}
+		} else {
+			radio_isr_set(isr_abort, param);
+			radio_disable();
+		}
 		return;
 	}
 
@@ -557,12 +565,27 @@ static void isr_window(void *param)
 
 static void isr_abort(void *param)
 {
+	/* Clear radio status and events */
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+
 	/* Scanner stop can expire while here in this ISR.
 	 * Deferred attempt to stop can fail as it would have
 	 * expired, hence ignore failure.
 	 */
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
+
+	/* Under race conditions, radio could get started while entering ISR */
+	radio_disable();
 
 	isr_cleanup(param);
 }
@@ -688,7 +711,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		evt = HDR_LLL2EVT(lll);
 		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(evt->ticks_slot) -
 				  502 - EVENT_OVERHEAD_START_US -
-				  (EVENT_JITTER_US << 1))) {
+				  EVENT_TICKER_RES_MARGIN_US)) {
 			return -ETIME;
 		}
 
@@ -787,6 +810,12 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 					 radio_rx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		if (rssi_ready) {
+			lll_conn->rssi_latest =  radio_rssi_get();
+		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* block CPU so that there is no CRC error on pdu tx,
 		 * this is only needed if we want the CPU to sleep.

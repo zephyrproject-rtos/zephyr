@@ -172,7 +172,7 @@ def _build_dir(args, die_if_none=True):
         return args.build_dir
 
     guess = config.get('build', 'guess-dir', fallback='never')
-    guess = True if guess == 'runners' else False
+    guess = guess == 'runners'
     dir = find_build_dir(None, guess)
 
     if dir and is_zephyr_build(dir):
@@ -371,8 +371,8 @@ def _dump_context(command, args, runner_args, cached_runner_var):
             colorize=True)
 
     if cache is None:
-        log.warn('Missing or invalid CMake cache {}; there is no context.',
-                 'Use --build-dir to specify the build directory.')
+        log.wrn('Missing or invalid CMake cache; there is no context.',
+                'Use --build-dir to specify the build directory.')
         return
 
     log.inf('Build directory:', colorize=True)

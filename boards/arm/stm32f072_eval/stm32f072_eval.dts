@@ -78,8 +78,6 @@
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_d>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

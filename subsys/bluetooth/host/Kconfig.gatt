@@ -1,10 +1,7 @@
-# Kconfig - Bluetooth ATT/GATT configuration options
+# Bluetooth ATT/GATT configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "ATT and GATT Options"
 
@@ -37,16 +34,23 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
+config BT_GATT_SERVICE_CHANGED
+	bool "GATT Service Changed support"
+	default y
+	help
+	  This option enables support for the service changed characteristic.
+
 config BT_GATT_DYNAMIC_DB
 	bool "GATT dynamic database support"
 	default n
+	depends on BT_GATT_SERVICE_CHANGED
 	help
 	  This option enables registering/unregistering services at runtime.
 
 config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
-	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_SERVICE_CHANGED
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
@@ -60,13 +64,13 @@ config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	bool "GATT Enforce change-unaware state"
 	depends on BT_GATT_CACHING
 	help
-	 When enable this option blocks notification and indications to client
-	 to conform to the following statement from the Bluetooth 5.1
-	 specification:
-	 '...the server shall not send notifications and indications to such
-	 a client until it becomes change-aware."
-	 In case the service cannot deal with sudden errors (-EAGAIN) then it
-	 shall not use this option.
+	  When enable this option blocks notification and indications to client
+	  to conform to the following statement from the Bluetooth 5.1
+	  specification:
+	  '...the server shall not send notifications and indications to such
+	  a client until it becomes change-aware."
+	  In case the service cannot deal with sudden errors (-EAGAIN) then it
+	  shall not use this option.
 
 config BT_GATT_CLIENT
 	bool "GATT client support"

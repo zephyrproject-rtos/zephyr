@@ -39,7 +39,7 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
             p_path_to_strip = Path(path_to_strip)
             try:
                 processed_path = p_path.relative_to(p_path_to_strip)
-            except ValueError as e:
+            except ValueError:
                 # path is valid, but is not prefixed by path_to_strip
                 processed_path = p_path
         else:
@@ -152,9 +152,8 @@ def get_footprint_from_bin_and_statfile(
 
 def generate_target_memory_section(
         bin_objdump, bin_nm, out, kernel_name, source_dir, features_json):
-    features_path_data = None
     try:
-        features_path_data = json.loads(open(features_json, 'r').read())
+        json.loads(open(features_json, 'r').read())
     except BaseException:
         pass
 
@@ -267,7 +266,7 @@ def generate_target_memory_section(
         out = ""
         sorted_nodes = sorted(symbols_struct.items(),
                               key=operator.itemgetter(0))
-        named_symbol_filter = re.compile('.*\.[a-zA-Z]+/.*')
+        named_symbol_filter = re.compile(r'.*\.[a-zA-Z]+/.*')
         out_symbols_filter = re.compile('^:/')
         for symbpath in sorted_nodes:
             matched = 0
@@ -283,7 +282,7 @@ def generate_target_memory_section(
                 matched = matched + \
                     _does_symbol_matches_feature(
                         symbpath[0], symbpath[1], feature)
-            if matched is 0:
+            if matched == 0:
                 out += "UNCATEGORIZED: %s %d<br/>" % (symbpath[0], symbpath[1])
         return out
 
@@ -329,7 +328,7 @@ def generate_target_memory_section(
     # Keep only final nodes
     tmp2 = {}
     for e in tmp:
-        if len(_childs_for_node(tmp, e)) == 0:
+        if not _childs_for_node(tmp, e):
             tmp2[e] = tmp[e]
 
     # Group nodes too small in an "other" section

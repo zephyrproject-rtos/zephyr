@@ -1,25 +1,20 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: NXP MCR20A 802.15.4 Wireless Transceiver
 
-description: >
+description: |
     This is a representation of the NXP MCR20A wireless transceiver.
 
-inherits:
-    !include spi-device.yaml
+compatible: "nxp,mcr20a"
+
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,mcr20a"
-
     irqb-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
 
     reset-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true

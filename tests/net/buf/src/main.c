@@ -189,7 +189,7 @@ static void net_buf_test_3(void)
 	k_thread_create(&test_3_thread_data, test_3_thread_stack,
 			K_THREAD_STACK_SIZEOF(test_3_thread_stack),
 			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
-			K_PRIO_COOP(7), 0, 0);
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");

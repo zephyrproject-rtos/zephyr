@@ -1,0 +1,119 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC1501MODULAR_ASSY6885
+
+config BOARD
+	default "mec1501modular_assy6885"
+
+if UART_NS16550
+
+config UART_NS16550_PORT_1
+	default y if UART_CONSOLE
+
+endif
+
+if PINMUX_XEC
+
+config PINMUX_XEC_GPIO000_036
+	default y
+
+config PINMUX_XEC_GPIO040_076
+	default y
+
+config PINMUX_XEC_GPIO100_136
+	default y
+
+config PINMUX_XEC_GPIO140_176
+	default y
+
+config PINMUX_XEC_GPIO200_236
+	default y if ADC_XEC
+	default n
+
+config PINMUX_XEC_GPIO240_276
+	default n
+
+endif # PINMUX_XEC
+
+if GPIO_XEC
+
+config GPIO_XEC_GPIO000_036
+	default y
+
+config GPIO_XEC_GPIO040_076
+	default y
+
+config GPIO_XEC_GPIO100_136
+	default y
+
+config GPIO_XEC_GPIO140_176
+	default y
+
+config GPIO_XEC_GPIO200_236
+	default y
+
+config GPIO_XEC_GPIO240_276
+	default y
+
+endif # GPIO_XEC
+
+if I2C_XEC
+
+config I2C_XEC_0
+	default y
+
+config I2C_XEC_1
+	default y
+
+config I2C_XEC_2
+	default n
+
+endif # I2C
+
+if ESPI_XEC
+
+#PS/2 driver is compiled in terms of this flag.
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+endif #ESPI_XEC
+
+if RTOS_TIMER
+
+# XEC RTOS timer HW frequency is fixed at 32768
+# The driver requires tickless mode and ticks per
+# second to be 32768 for accurate operation.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+endif # RTOS_TIMER
+
+if !RTOS_TIMER
+
+# If RTOS timer is not enabled we use ARM Cortex-M
+# SYSTICK. SYSTICK frequency is 48MHz divided by
+# SOC_MEC1501_PROC_CLK_DIV.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # RTOS_TIMER
+
+if PS2
+
+config PS2_XEC_0
+	default y
+
+config PS2_XEC_1
+	default y
+
+endif # PS2
+endif # BOARD_MEC1501MODULAR_ASSY6885

@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
-#include <cmsis_os.h>
+#include <kernel.h>
 #include <ksched.h>
-
-extern const k_tid_t _main_thread;
+#include <cmsis_os.h>
+#include <kernel_internal.h>
 
 /**
  * @brief Get the RTOS kernel system timer counter
@@ -42,5 +41,5 @@ osStatus osKernelStart(void)
  */
 int32_t osKernelRunning(void)
 {
-	return z_has_thread_started(_main_thread);
+	return z_has_thread_started(&z_main_thread);
 }

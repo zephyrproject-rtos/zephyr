@@ -1,0 +1,21 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nRF family TWIS
+
+description: Nordic nRF family TWIS (TWI slave with EasyDMA)
+
+compatible: "nordic,nrf-twis"
+
+include: nordic,nrf-twi-common.yaml
+
+properties:
+    address-0:
+      type: int
+      required: false
+      description: TWI slave address 0
+
+    address-1:
+      type: int
+      required: false
+      description: TWI slave address 1

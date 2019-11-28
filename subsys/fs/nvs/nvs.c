@@ -553,7 +553,8 @@ static int nvs_startup(struct nvs_fs *fs)
 	 * a closed sector, this is where NVS can to write.
 	 */
 	for (i = 0; i < fs->sector_count; i++) {
-		addr = (i << ADDR_SECT_SHIFT) + fs->sector_size - ate_size;
+		addr = (i << ADDR_SECT_SHIFT) +
+		       (u16_t)(fs->sector_size - ate_size);
 		rc = nvs_flash_cmp_const(fs, addr, 0xff,
 					  sizeof(struct nvs_ate));
 		if (rc) {
@@ -671,7 +672,7 @@ end:
 int nvs_clear(struct nvs_fs *fs)
 {
 	int rc;
-	off_t addr;
+	u32_t addr;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -753,6 +754,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	struct nvs_ate wlk_ate;
 	u32_t wlk_addr, rd_addr;
 	u16_t required_space = 0U; /* no space, appropriate for delete ate */
+	bool prev_found = false;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -782,6 +784,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 			return rc;
 		}
 		if ((wlk_ate.id == id) && (!nvs_ate_crc8_check(&wlk_ate))) {
+			prev_found = true;
 			break;
 		}
 		if (wlk_addr == fs->ate_wra) {
@@ -789,7 +792,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 		}
 	}
 
-	if (wlk_addr != fs->ate_wra) {
+	if (prev_found) {
 		/* previous entry found */
 		rd_addr &= ADDR_SECT_MASK;
 		rd_addr += wlk_ate.offset;
@@ -802,7 +805,8 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 				 */
 				return 0;
 			}
-		} else {
+		} else if (len == wlk_ate.len) {
+			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
 			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
 			if (rc <= 0) {

@@ -13,37 +13,7 @@
 #include <init.h>
 #include <fsl_clock.h>
 #include <fsl_cache.h>
-#include <cortex_m/exc.h>
-
-/*
- * KE1xF flash configuration fields
- * These 16 bytes, which must be loaded to address 0x400, include default
- * protection, boot options and security settings.
- * They are loaded at reset to various Flash Memory module (FTFE) registers.
- */
-u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
-	/* Backdoor Comparison Key (unused) */
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	/* Program flash protection */
-	0xFF, 0xFF, 0xFF, 0xFF,
-	/*
-	 * Flash security: Backdoor key disabled, Mass erase enabled,
-	 *                 Factory access enabled, MCU is unsecure
-	 */
-	0xFE,
-	/*
-	 * Flash nonvolatile option: Boot from ROM with BOOTCFG0/NMI
-	 *                           pin low, boot from flash with
-	 *                           BOOTCFG0/NMI pin high, RESET_b
-	 *                           pin dedicated, NMI enabled,
-	 *                           normal boot
-	 */
-	0x7d,
-	/* EEPROM protection */
-	0xFF,
-	/* Data flash protection */
-	0xFF,
-};
+#include <arch/arm/cortex_m/cmsis.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT_MSG(val >= min && val <= max, str)
@@ -193,35 +163,50 @@ static ALWAYS_INLINE void clk_init(void)
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
-#ifdef CONFIG_UART_MCUX_LPUART_0
-	CLOCK_SetIpSrc(kCLOCK_Lpuart0, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_LPUART_UART_0_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
+		       DT_NXP_KINETIS_LPUART_UART_0_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_UART_MCUX_LPUART_1
-	CLOCK_SetIpSrc(kCLOCK_Lpuart1, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_LPUART_UART_1_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpuart1,
+		       DT_NXP_KINETIS_LPUART_UART_1_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_UART_MCUX_LPUART_2
-	CLOCK_SetIpSrc(kCLOCK_Lpuart2, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_LPUART_UART_2_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpuart2,
+		       DT_NXP_KINETIS_LPUART_UART_2_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_I2C_0
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c0, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_IMX_LPI2C_I2C_0_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpi2c0, DT_NXP_IMX_LPI2C_I2C_0_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_I2C_1
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c1, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_IMX_LPI2C_I2C_1_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpi2c1, DT_NXP_IMX_LPI2C_I2C_1_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_SPI_0
-	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_IMX_LPSPI_SPI_0_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpspi0, DT_NXP_IMX_LPSPI_SPI_0_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_SPI_1
-	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_IMX_LPSPI_SPI_1_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Lpspi1, DT_NXP_IMX_LPSPI_SPI_1_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_ADC_0
-	CLOCK_SetIpSrc(kCLOCK_Adc0, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_ADC12_ADC_0_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Adc0, DT_NXP_KINETIS_ADC12_ADC_0_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_ADC_1
-	CLOCK_SetIpSrc(kCLOCK_Adc1, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_ADC12_ADC_1_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Adc1, DT_NXP_KINETIS_ADC12_ADC_1_CLOCK_IP_SOURCE);
 #endif
-#ifdef CONFIG_ADC_2
-	CLOCK_SetIpSrc(kCLOCK_Adc2, kCLOCK_IpSrcFircAsync);
+#ifdef DT_NXP_KINETIS_ADC12_ADC_2_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Adc2, DT_NXP_KINETIS_ADC12_ADC_2_CLOCK_IP_SOURCE);
+#endif
+#ifdef DT_NXP_KINETIS_FTM_FTM_0_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Ftm0, DT_NXP_KINETIS_FTM_FTM_0_CLOCK_IP_SOURCE);
+#endif
+#ifdef DT_NXP_KINETIS_FTM_FTM_1_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Ftm1, DT_NXP_KINETIS_FTM_FTM_1_CLOCK_IP_SOURCE);
+#endif
+#ifdef DT_NXP_KINETIS_FTM_FTM_2_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Ftm2, DT_NXP_KINETIS_FTM_FTM_2_CLOCK_IP_SOURCE);
+#endif
+#ifdef DT_NXP_KINETIS_FTM_FTM_3_CLOCK_IP_SOURCE
+	CLOCK_SetIpSrc(kCLOCK_Ftm3, DT_NXP_KINETIS_FTM_FTM_3_CLOCK_IP_SOURCE);
 #endif
 }
 
@@ -269,7 +254,7 @@ static int ke1xf_init(struct device *arg)
 	return 0;
 }
 
-void _WdogInit(void)
+void z_arm_watchdog_init(void)
 {
 	/*
 	 * NOTE: DO NOT SINGLE STEP THROUGH THIS FUNCTION!!! Watchdog

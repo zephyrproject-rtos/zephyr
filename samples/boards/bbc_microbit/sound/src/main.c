@@ -94,7 +94,7 @@ void main(void)
 			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN));
 	gpio_add_callback(gpio, &button_cb);
 
-	pwm = device_get_binding(CONFIG_PWM_NRF5_SW_0_DEV_NAME);
+	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
 
 	k_work_init(&beep_work, beep);
 	/* Notify with a beep that we've started */

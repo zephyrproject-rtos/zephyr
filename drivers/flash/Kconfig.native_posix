@@ -1,7 +1,6 @@
-# Kconfig - Native POSIX Flash driver
-#
+# Native POSIX Flash driver
+
 # Copyright (c) 2019, Jan Van Winkel (jan.van_winkel@dxplore.eu)
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig FLASH_NATIVE_POSIX

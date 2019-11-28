@@ -36,15 +36,11 @@
 
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &uart7 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart7_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

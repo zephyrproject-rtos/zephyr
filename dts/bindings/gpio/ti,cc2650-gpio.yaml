@@ -1,18 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 GPIO
 
-description: >
+description: |
     This is a representation of the TI CC2650 GPIO node
 
-inherits:
-    !include base.yaml
+compatible: "ti,cc2650-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "ti,cc2650-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

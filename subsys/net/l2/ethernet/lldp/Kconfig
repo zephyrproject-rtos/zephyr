@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_LLDP
 	bool "Enable Link Layer Discovery Protocol (LLDP)"

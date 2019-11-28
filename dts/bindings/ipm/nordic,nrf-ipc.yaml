@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nRF family IPC
+
+description: Nordic nRF family IPC (Interprocessor Communication)
+
+compatible: "nordic,nrf-ipc"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

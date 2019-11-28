@@ -20,7 +20,7 @@ This sample can run on every board with i2c.
 For example build for a nucleo_f446re board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/ams_iAQcore
+   :zephyr-app: samples/sensor/ams_iAQcore
    :board: nucleo_f446re
    :goals: build flash
    :compact:

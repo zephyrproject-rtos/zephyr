@@ -1,10 +1,7 @@
-# Kconfig.net - Configuration options for IPv6 over CAN
+# Configuration options for IPv6 over CAN
 
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_NET
 	bool "Enable 6loCAN network interface [EXPERIMENTAL]"
@@ -34,4 +31,4 @@ config CAN_NET_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-endif #CAN_NET
+endif # CAN_NET

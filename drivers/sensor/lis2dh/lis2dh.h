@@ -36,6 +36,10 @@
 
 #define LIS2DH_AUTOINCREMENT_ADDR	BIT(7)
 
+#define LIS2DH_REG_CTRL0		0x1e
+#define LIS2DH_SDO_PU_DISC_SHIFT	7
+#define LIS2DH_SDO_PU_DISC_MASK		BIT(LIS2DH_SDO_PU_DISC_SHIFT)
+
 #define LIS2DH_REG_CTRL1		0x20
 #define LIS2DH_ACCEL_XYZ_SHIFT		0
 #define LIS2DH_ACCEL_X_EN_BIT		BIT(0)
@@ -113,7 +117,6 @@
 
 #define LIS2DH_FS_SELECT(fs)		((fs) << LIS2DH_FS_SHIFT)
 #define LIS2DH_FS_BITS			(LIS2DH_FS_SELECT(LIS2DH_FS_IDX))
-#define LIS2DH_ACCEL_SCALE(range_g)	((SENSOR_G * 2 * (range_g)) / 65636LL)
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
 	#define LIS2DH_HR_BIT		BIT(3)
 #else
@@ -166,13 +169,7 @@
 #define LIS2DH_REG_INT2_DUR		0x37
 
 /* sample buffer size includes status register */
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-#define LIS2DH_BUF_SZ			8
-#define LIS2DH_DATA_OFS			1
-#else
 #define LIS2DH_BUF_SZ			7
-#define LIS2DH_DATA_OFS			0
-#endif
 
 #if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 /* INT1 and INT2 are configured */
@@ -189,9 +186,6 @@
 union lis2dh_sample {
 	u8_t raw[LIS2DH_BUF_SZ];
 	struct {
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-		u8_t dummy;
-#endif
 		u8_t status;
 		s16_t xyz[3];
 	} __packed;
@@ -206,7 +200,7 @@ struct lis2dh_data {
 #endif
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
-	u16_t scale;
+	u32_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	struct device *gpio_int1;
@@ -277,8 +271,10 @@ static inline int lis2dh_burst_read(struct device *dev, u8_t start_addr,
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(DT_ST_LIS2DH_BUS_I2C)
-	return i2c_burst_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
-			      start_addr | LIS2DH_AUTOINCREMENT_ADDR,
+	u8_t addr = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
+
+	return i2c_write_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
+			      &addr, sizeof(addr),
 			      buf, num_bytes);
 #else
 	return -ENODEV;
@@ -312,6 +308,23 @@ static inline int lis2dh_burst_write(struct device *dev, u8_t start_addr,
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(DT_ST_LIS2DH_BUS_I2C)
+	/* NRF TWIM is default and does not support burst write.  We
+	 * can't detect whether the I2C master uses TWI or TWIM, so
+	 * use a substitute implementation unconditionally on Nordic.
+	 *
+	 * See Zephyr issue #20154.
+	 */
+	if (IS_ENABLED(CONFIG_I2C_NRFX)) {
+		u8_t buffer[8];
+
+		/* Largest num_bytes used is 6 */
+		__ASSERT((1U + num_bytes) <= sizeof(buffer),
+			 "burst buffer too small");
+		buffer[0] = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
+		memmove(buffer + 1, buf, num_bytes);
+		return i2c_write(lis2dh->bus, buffer, 1 + num_bytes,
+				 LIS2DH_BUS_ADDRESS);
+	}
 	return i2c_burst_write(lis2dh->bus, LIS2DH_BUS_ADDRESS,
 			       start_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			       buf, num_bytes);
@@ -339,15 +352,15 @@ static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
 #endif
 }
 
+int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
+			    u8_t pos, u8_t mask, u8_t val);
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 int lis2dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
 int lis2dh_init_interrupt(struct device *dev);
-
-int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
-			    u8_t pos, u8_t mask, u8_t val);
 
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val);

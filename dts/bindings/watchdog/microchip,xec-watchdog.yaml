@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip XEC watchdog timer
+
+description: |
+    This binding gives a base representation of the Microchip XEC watchdog timer
+
+include: base.yaml
+
+compatible: "microchip,xec-watchdog"
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    interrupts:
+      required: true

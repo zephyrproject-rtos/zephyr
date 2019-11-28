@@ -1,0 +1,17 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics MEMS sensors LIS2MDL I2C
+
+description: |
+    This binding gives a base representation of LIS2MDL magnetometer
+    accessed through I2C bus
+
+compatible: "st,lis2mdl"
+
+include: i2c-device.yaml
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: false

@@ -1,0 +1,20 @@
+# Kinetis K2x series configuration options
+
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_KINETIS_K2X
+
+config SOC_SERIES
+	default "k2x"
+
+config NUM_IRQS
+	default 74
+
+source "soc/arm/nxp_kinetis/k2x/Kconfig.defconfig.mk*"
+
+endif # SOC_SERIES_KINETIS_K2X

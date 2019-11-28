@@ -1,5 +1,4 @@
 tests:
   peripheral.mailbox:
     arch_exclude: posix xtensa
-    platform_exclude: qemu_x86_64 # see issue #12478
     tags: drivers ipc

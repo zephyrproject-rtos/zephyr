@@ -1,11 +1,7 @@
-# Kconfig - kernel configuration options
+# Kernel configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menu "General Kernel Options"
 
@@ -100,22 +96,22 @@ config NUM_METAIRQ_PRIORITIES
 	int "Number of very-high priority 'preemptor' threads"
 	default 0
 	help
-	 This defines a set of priorities at the (numerically) lowest
-	 end of the range which have "meta-irq" behavior.  Runnable
-	 threads at these priorities will always be scheduled before
-	 threads at lower priorities, EVEN IF those threads are
-	 otherwise cooperative and/or have taken a scheduler lock.
-	 Making such a thread runnable in any way thus has the effect
-	 of "interrupting" the current task and running the meta-irq
-	 thread synchronously, like an exception or system call.  The
-	 intent is to use these priorities to implement "interrupt
-	 bottom half" or "tasklet" behavior, allowing driver
-	 subsystems to return from interrupt context but be guaranteed
-	 that user code will not be executed (on the current CPU)
-	 until the remaining work is finished.  As this breaks the
-	 "promise" of non-preemptibility granted by the current API
-	 for cooperative threads, this tool probably shouldn't be used
-	 from application code.
+	  This defines a set of priorities at the (numerically) lowest
+	  end of the range which have "meta-irq" behavior.  Runnable
+	  threads at these priorities will always be scheduled before
+	  threads at lower priorities, EVEN IF those threads are
+	  otherwise cooperative and/or have taken a scheduler lock.
+	  Making such a thread runnable in any way thus has the effect
+	  of "interrupting" the current task and running the meta-irq
+	  thread synchronously, like an exception or system call.  The
+	  intent is to use these priorities to implement "interrupt
+	  bottom half" or "tasklet" behavior, allowing driver
+	  subsystems to return from interrupt context but be guaranteed
+	  that user code will not be executed (on the current CPU)
+	  until the remaining work is finished.  As this breaks the
+	  "promise" of non-preemptibility granted by the current API
+	  for cooperative threads, this tool probably shouldn't be used
+	  from application code.
 
 config SCHED_DEADLINE
 	bool "Enable earliest-deadline-first scheduling"
@@ -183,7 +179,7 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
-config  THREAD_CUSTOM_DATA
+config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help
 	  This option allows each thread to store 32 bits of custom data,
@@ -624,6 +620,7 @@ menu "Security Options"
 
 config STACK_CANARIES
 	bool "Compiler stack canaries"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	help
 	  This option enables compiler stack canaries.
 
@@ -695,13 +692,13 @@ config MAX_DOMAIN_PARTITIONS
 menu "SMP Options"
 
 config USE_SWITCH
-	bool "Use new-style _arch_switch instead of __swap"
+	bool "Use new-style _arch_switch instead of arch_swap"
 	depends on USE_SWITCH_SUPPORTED
 	help
 	  The _arch_switch() API is a lower level context switching
-	  primitive than the original __swap mechanism.  It is required
+	  primitive than the original arch_swap mechanism.  It is required
 	  for an SMP-aware scheduler, or if the architecture does not
-	  provide __swap.  In uniprocess situations where the
+	  provide arch_swap.  In uniprocess situations where the
 	  architecture provides both, _arch_switch incurs more somewhat
 	  overhead and may be slower.
 
@@ -722,6 +719,7 @@ config SMP
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
 	default 1
+	range 1 4
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
@@ -730,7 +728,7 @@ config SCHED_IPI_SUPPORTED
 	bool "Architecture supports broadcast interprocessor interrupts"
 	help
 	  True if the architecture supports a call to
-	  z_arch_sched_ipi() to broadcast an interrupt that will call
+	  arch_sched_ipi() to broadcast an interrupt that will call
 	  z_sched_ipi() on other CPUs in the system.  Required for
 	  k_thread_abort() to operate with reasonable latency
 	  (otherwise we might have to wait for the other thread to

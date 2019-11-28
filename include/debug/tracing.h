@@ -19,12 +19,12 @@
 #define SYS_TRACE_ID_SEMA_TAKE               (6u + SYS_TRACE_ID_OFFSET)
 
 #ifdef CONFIG_TRACING
-void z_sys_trace_idle(void);
-void z_sys_trace_isr_enter(void);
-void z_sys_trace_isr_exit(void);
-void z_sys_trace_isr_exit_to_scheduler(void);
-void z_sys_trace_thread_switched_in(void);
-void z_sys_trace_thread_switched_out(void);
+void sys_trace_idle(void);
+void sys_trace_isr_enter(void);
+void sys_trace_isr_exit(void);
+void sys_trace_isr_exit_to_scheduler(void);
+void sys_trace_thread_switched_in(void);
+void sys_trace_thread_switched_out(void);
 #endif
 
 #ifdef CONFIG_SEGGER_SYSTEMVIEW
@@ -38,6 +38,11 @@ void z_sys_trace_thread_switched_out(void);
 
 #else
 
+/**
+ * @brief Tracing APIs
+ * @defgroup tracing_apis Tracing APIs
+ * @{
+ */
 /**
  * @brief Called before a thread has been selected to run
  */
@@ -95,6 +100,12 @@ void z_sys_trace_thread_switched_out(void);
 #define sys_trace_thread_info(thread)
 
 /**
+ * @brief Called when a thread name is set
+ * @param thread Thread structure
+ */
+#define sys_trace_thread_name_set(thread)
+
+/**
  * @brief Called when entering an ISR
  */
 #define sys_trace_isr_enter()
@@ -121,18 +132,14 @@ void z_sys_trace_thread_switched_out(void);
  */
 #define sys_trace_end_call(id)
 
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+#define sys_trace_idle()
 
-#define z_sys_trace_idle()
-
-#define z_sys_trace_isr_enter()
-
-#define z_sys_trace_isr_exit()
-
-#define z_sys_trace_isr_exit_to_scheduler()
-
-#define z_sys_trace_thread_switched_in()
-
-#define z_sys_trace_thread_switched_out()
+/**
+ * @}
+ */
 
 #endif
 #endif

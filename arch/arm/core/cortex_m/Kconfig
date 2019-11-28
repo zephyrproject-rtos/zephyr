@@ -1,10 +1,7 @@
-# Kconfig - ARM Cortex-M platform configuration options
+# ARM Cortex-M platform configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # NOTE: We have the specific core implementations first and outside of the
 # if CPU_CORTEX_M block so that SoCs can select which core they are using
@@ -15,7 +12,6 @@
 config CPU_CORTEX_M0
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0 CPU
@@ -23,7 +19,6 @@ config CPU_CORTEX_M0
 config CPU_CORTEX_M0PLUS
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0+ CPU
@@ -31,7 +26,6 @@ config CPU_CORTEX_M0PLUS
 config CPU_CORTEX_M3
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of a Cortex-M3 CPU
@@ -39,7 +33,6 @@ config CPU_CORTEX_M3
 config CPU_CORTEX_M4
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
@@ -48,7 +41,6 @@ config CPU_CORTEX_M4
 config CPU_CORTEX_M23
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV8_M_BASELINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	help
@@ -57,7 +49,6 @@ config CPU_CORTEX_M23
 config CPU_CORTEX_M33
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV8_M_MAINLINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
@@ -67,7 +58,6 @@ config CPU_CORTEX_M33
 config CPU_CORTEX_M7
 	bool
 	select CPU_CORTEX_M
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
@@ -75,43 +65,13 @@ config CPU_CORTEX_M7
 
 if CPU_CORTEX_M
 
-config ISA_THUMB2
-	bool
-	# Omit prompt to signify "hidden" option
-	help
-	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
-
-	  Thumb-2 technology is the instruction set underlying the ARM Cortex
-	  architecture which provides enhanced levels of performance, energy
-	  efficiency, and code density for a wide range of embedded
-	  applications.
-
-	  Thumb-2 technology builds on the success of Thumb, the innovative
-	  high code density instruction set for ARM microprocessor cores, to
-	  increase the power of the ARM microprocessor core available to
-	  developers of low cost, high performance systems.
-
-	  The technology is backwards compatible with existing ARM and Thumb
-	  solutions, while significantly extending the features available to
-	  the Thumb instructions set. This allows more of the application to
-	  benefit from the best in class code density of Thumb.
-
-	  For performance optimized code Thumb-2 technology uses 31 percent
-	  less memory to reduce system cost, while providing up to 38 percent
-	  higher performance than existing high density code, which can be used
-	  to prolong battery-life or to enrich the product feature set. Thumb-2
-	  technology is featured in the  processor, and in all ARMv7
-	  architecture-based processors.
-
 config CPU_CORTEX_M_HAS_SYSTICK
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the CPU has the BASEPRI register.
@@ -125,7 +85,6 @@ config CPU_CORTEX_M_HAS_BASEPRI
 
 config CPU_CORTEX_M_HAS_VTOR
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on !CPU_CORTEX_M0
 	help
 	  This option signifies the CPU has the VTOR register.
@@ -138,7 +97,6 @@ config CPU_CORTEX_M_HAS_VTOR
 
 config CPU_CORTEX_M_HAS_SPLIM
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
 	help
 	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
@@ -150,12 +108,11 @@ config CPU_CORTEX_M_HAS_SPLIM
 
 	  In an ARMv8-M Mainline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have additional Secure instances.
-  	  In an ARMv8-M Baseline implementation with the Security Extension
+	  In an ARMv8-M Baseline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have only Secure instances.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the CPU may trigger system faults
@@ -164,7 +121,6 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 
 config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
@@ -177,7 +133,6 @@ config CPU_CORTEX_M_HAS_CMSE
 
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
@@ -195,7 +150,6 @@ config ARMV6_M_ARMV8_M_BASELINE
 
 config ARMV8_M_BASELINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ARMV6_M_ARMV8_M_BASELINE
 	select CPU_CORTEX_M_HAS_CMSE
 	help
@@ -207,7 +161,6 @@ config ARMV8_M_BASELINE
 
 config ARMV7_M_ARMV8_M_MAINLINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	select CPU_CORTEX_M_HAS_BASEPRI
@@ -231,7 +184,6 @@ config ARMV7_M_ARMV8_M_MAINLINE
 
 config ARMV8_M_MAINLINE
 	bool
-	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM
 	select CPU_CORTEX_M_HAS_CMSE
@@ -244,7 +196,6 @@ config ARMV8_M_MAINLINE
 
 config ARMV8_M_SE
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM if !ARM_NONSECURE_FIRMWARE
 	help
@@ -254,7 +205,6 @@ config ARMV8_M_SE
 
 config ARMV7_M_ARMV8_M_FP
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
 	help
 	  This option signifies the use of an ARMv7-M processor
@@ -263,64 +213,13 @@ config ARMV7_M_ARMV8_M_FP
 
 config ARMV8_M_DSP
 	bool
-	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation supporting the DSP Extension.
 
-menu "ARM Cortex-M options"
-
-config LDREX_STREX_AVAILABLE
-	bool
-	default y
-
-config DATA_ENDIANNESS_LITTLE
-	bool
-	default y
-	help
-	  This is driven by the processor implementation, since it is fixed in
-	  hardware. The board should set this value to 'n' if the data is
-	  implemented as big endian.
-
-config STACK_ALIGN_DOUBLE_WORD
-	bool "Align stacks on double-words (8 octets)"
-	default y
-	help
-	  This is needed to conform to AAPCS, the procedure call standard for
-	  the ARM. It wastes stack space. The option also enforces alignment
-	  of stack upon exception entry on Cortex-M3 and Cortex-M4 (ARMv7-M).
-	  Note that for ARMv6-M, ARMv8-M, and Cortex-M7 MCUs stack alignment
-	  on exception entry is enabled by default and it is not configurable.
-
-config RUNTIME_NMI
-	bool "Attach an NMI handler at runtime"
-	select REBOOT
-	help
-	  The kernel provides a simple NMI handler that simply hangs in a tight
-	  loop if triggered. This fills the requirement that there must be an
-	  NMI handler installed when the CPU boots. If a custom handler is
-	  needed, enable this option and attach it via _NmiHandlerSet().
-
-config FAULT_DUMP
-	int "Fault dump level"
-	default 2
-	range 0 2
-	help
-	  Different levels for display information when a fault occurs.
-
-	  2: The default. Display specific and verbose information. Consumes
-		the most memory (long strings).
-
-	  1: Display general and short information. Consumes less memory
-		(short strings).
-
-	  0: Off.
-
 config XIP
 	default y
-
-endmenu
 
 menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"
     depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
@@ -355,12 +254,6 @@ config SW_VECTOR_RELAY
 	  vector table relocation mechanisms or for Cortex-M0+
 	  (or an Armv8-M baseline core) with no VTOR and no other hardware
 	  relocation table mechanisms.
-
-config PLATFORM_SPECIFIC_INIT
-	bool "Enable platform (SOC) specific startup hook"
-	help
-	  The platform specific initialization code (z_platform_init) is executed
-	  at the beginning of the startup code (__start).
 
 endmenu
 

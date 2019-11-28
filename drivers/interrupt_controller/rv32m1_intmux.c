@@ -86,6 +86,19 @@ static u32_t rv32m1_intmux_get_state(struct device *dev)
 	return 0;
 }
 
+static int rv32m1_intmux_get_line_state(struct device *dev, unsigned int irq)
+{
+	INTMUX_Type *regs = DEV_REGS(dev);
+	u32_t channel = rv32m1_intmux_channel(irq);
+	u32_t line = rv32m1_intmux_line(irq);
+
+	if ((regs->CHANNEL[channel].CHn_IER_31_0 & BIT(line)) != 0) {
+		return 1;
+	}
+
+	return 0;
+}
+
 /*
  * IRQ handling.
  */
@@ -113,6 +126,7 @@ static const struct irq_next_level_api rv32m1_intmux_apis = {
 	.intr_enable = rv32m1_intmux_irq_enable,
 	.intr_disable = rv32m1_intmux_irq_disable,
 	.intr_get_state = rv32m1_intmux_get_state,
+	.intr_get_line_state = rv32m1_intmux_get_line_state,
 };
 
 static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {

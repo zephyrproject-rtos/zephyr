@@ -1,13 +1,11 @@
 # ST Microelectronics LPS22HH pressure and temperature sensor
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"
-	depends on (I2C && HAS_DTS_I2C) || (SPI && HAS_DTS_SPI)
+	depends on (I2C && HAS_DTS_I2C) || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help

@@ -66,9 +66,7 @@
 #define FRIEND_CRED_COUNT 0
 #endif
 
-#if FRIEND_CRED_COUNT > 0
 static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
-#endif
 
 static u64_t msg_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static u16_t msg_cache_next;
@@ -86,6 +84,13 @@ struct bt_mesh_net bt_mesh = {
 			.net_idx = BT_MESH_KEY_UNUSED,
 		}
 	},
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	.nodes = {
+		[0 ... (CONFIG_BT_MESH_NODE_COUNT - 1)] = {
+			.net_idx = BT_MESH_KEY_UNUSED,
+		}
+	},
+#endif
 };
 
 static u32_t dup_cache[4];
@@ -137,7 +142,8 @@ static bool msg_cache_match(struct bt_mesh_net_rx *rx,
 	}
 
 	/* Add to the cache */
-	msg_cache[msg_cache_next++] = hash;
+	rx->msg_cache_idx = msg_cache_next++;
+	msg_cache[rx->msg_cache_idx] = hash;
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
 
 	return false;
@@ -209,8 +215,6 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 	return 0;
 }
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
 int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16])
 {
 	u16_t lpn_addr, frnd_addr;
@@ -396,13 +400,6 @@ int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
 
 	return -ENOENT;
 }
-#else
-int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
-		    const u8_t **enc, const u8_t **priv)
-{
-	return -ENOENT;
-}
-#endif /* FRIEND || LOW_POWER */
 
 u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 {
@@ -722,6 +719,14 @@ u32_t bt_mesh_next_seq(void)
 		bt_mesh_store_seq();
 	}
 
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) &&
+	    bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
+	    bt_mesh_subnet_get(BT_MESH_KEY_PRIMARY)) {
+		bt_mesh_beacon_ivu_initiator(true);
+		bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
+		bt_mesh_net_sec_update(NULL);
+	}
+
 	return seq;
 }
 
@@ -731,6 +736,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 {
 	const u8_t *enc, *priv;
 	u32_t seq;
+	u16_t dst;
 	int err;
 
 	BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
@@ -757,6 +763,9 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	buf->data[3] = seq >> 8;
 	buf->data[4] = seq;
 
+	/* Get destination, in case it's a proxy client */
+	dst = DST(buf->data);
+
 	err = bt_mesh_net_encrypt(enc, &buf->b, BT_MESH_NET_IVI_TX, false);
 	if (err) {
 		BT_ERR("encrypt failed (err %d)", err);
@@ -769,13 +778,11 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 		return err;
 	}
 
-	bt_mesh_adv_send(buf, cb, cb_data);
-
-	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) &&
-	    bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
-		bt_mesh_beacon_ivu_initiator(true);
-		bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
-		bt_mesh_net_sec_update(NULL);
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    bt_mesh_proxy_relay(&buf->b, dst)) {
+		send_cb_finalize(cb, cb_data);
+	} else {
+		bt_mesh_adv_send(buf, cb, cb_data);
 	}
 
 	return 0;
@@ -887,15 +894,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 			/* Notify completion if this only went
 			 * through the Mesh Proxy.
 			 */
-			if (cb) {
-				if (cb->start) {
-					cb->start(0, 0, cb_data);
-				}
-
-				if (cb->end) {
-					cb->end(0, cb_data);
-				}
-			}
+			send_cb_finalize(cb, cb_data);
 
 			err = 0;
 			goto done;
@@ -941,8 +940,8 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 			    net_auth);
 
 	if (memcmp(auth, net_auth, 8)) {
-		BT_WARN("Authentication Value %s != %s",
-			bt_hex(auth, 8), bt_hex(net_auth, 8));
+		BT_WARN("Authentication Value %s", bt_hex(auth, 8));
+		BT_WARN(" != %s", bt_hex(net_auth, 8));
 		return false;
 	}
 
@@ -1019,8 +1018,6 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 	return bt_mesh_net_decrypt(enc, buf, BT_MESH_NET_IVI_RX(rx), false);
 }
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
 static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 			  size_t data_len, struct bt_mesh_net_rx *rx,
 			  struct net_buf_simple *buf)
@@ -1056,7 +1053,6 @@ static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 
 	return -ENOENT;
 }
-#endif
 
 static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 				 struct bt_mesh_net_rx *rx,
@@ -1073,15 +1069,14 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 			continue;
 		}
 
-#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
-     defined(CONFIG_BT_MESH_FRIEND))
-		if (!friend_decrypt(sub, data, data_len, rx, buf)) {
+		if ((IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
+		     IS_ENABLED(CONFIG_BT_MESH_FRIEND)) &&
+		    !friend_decrypt(sub, data, data_len, rx, buf)) {
 			rx->friend_cred = 1U;
 			rx->ctx.net_idx = sub->net_idx;
 			rx->sub = sub;
 			return true;
 		}
-#endif
 
 		if (NID(data) == sub->keys[0].nid &&
 		    !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
@@ -1230,6 +1225,17 @@ done:
 	net_buf_unref(buf);
 }
 
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+			      struct bt_mesh_net_rx *rx)
+{
+	rx->old_iv = (IVI(buf->data) != (bt_mesh.iv_index & 0x01));
+	rx->ctl = CTL(buf->data);
+	rx->ctx.recv_ttl = TTL(buf->data);
+	rx->seq = SEQ(buf->data);
+	rx->ctx.addr = SRC(buf->data);
+	rx->ctx.recv_dst = DST(buf->data);
+}
+
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
@@ -1321,7 +1327,19 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
 			  bt_mesh_elem_find(rx.ctx.recv_dst));
 
-	bt_mesh_trans_recv(&buf, &rx);
+	/* The transport layer has indicated that it has rejected the message,
+	 * but would like to see it again if it is received in the future.
+	 * This can happen if a message is received when the device is in
+	 * Low Power mode, but the message was not encrypted with the friend
+	 * credentials. Remove it from the message cache so that we accept
+	 * it again in the future.
+	 */
+	if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
+		BT_WARN("Removing rejected message from Network Message Cache");
+		msg_cache[rx.msg_cache_idx] = 0ULL;
+		/* Rewind the next index now that we're not using this entry */
+		msg_cache_next = rx.msg_cache_idx;
+	}
 
 	/* Relay if this was a group/virtual address, or if the destination
 	 * was neither a local element nor an LPN we're Friends for.

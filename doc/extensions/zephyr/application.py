@@ -30,7 +30,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     \:tool:
       which tool to use. Valid options are currently 'cmake', 'west' and 'all'.
-      The default is 'all'.
+      The default is 'west'.
 
     \:app:
       path to the application to build.
@@ -123,7 +123,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         # Parse directive options.  Don't use os.path.sep or os.path.join here!
         # That would break if building the docs on Windows.
-        tool = self.options.get('tool', 'all').lower()
+        tool = self.options.get('tool', 'west').lower()
         app = self.options.get('app', None)
         zephyr_app = self.options.get('zephyr-app', None)
         cd_into = 'cd-into' in self.options
@@ -161,7 +161,6 @@ class ZephyrAppCommandsDirective(Directive):
         in_tree = self.IN_TREE_STR if zephyr_app else None
         # Allow build directories which are nested.
         build_dir = ('build' + '/' + build_dir_append).rstrip('/')
-        num_slashes = build_dir.count('/')
 
         # Create host_os array
         host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS
@@ -207,7 +206,7 @@ class ZephyrAppCommandsDirective(Directive):
             if tool_comment:
                 paragraph = nodes.paragraph()
                 paragraph += nodes.Text(tool_comment.format(
-                                    'CMake and {}'.format( generator)))
+                    'CMake and {}'.format(generator)))
                 content.append(paragraph)
                 content.append(self._lit_block(c))
             else:
@@ -251,31 +250,43 @@ class ZephyrAppCommandsDirective(Directive):
         if cd_into and app:
             content.append('cd {}'.format(app))
 
-        if 'build' in goals:
-            build_args = ' -b {}{}{}{}'.format(board, dst, src, cmake_args)
-            content.append('west build{}'.format(build_args))
+        # We always have to run west build.
+        #
+        # FIXME: doing this unconditionally essentially ignores the
+        # maybe-skip-config option if set.
+        #
+        # This whole script and its users from within the
+        # documentation needs to be overhauled now that we're
+        # defaulting to west.
+        #
+        # For now, this keeps the resulting commands working.
+        content.append('west build -b {}{}{}{}'.
+                       format(board, dst, src, cmake_args))
 
-        goal_args = '{}'.format(dst)
+        # If we're signing, we want to do that next, so that flashing
+        # etc. commands can use the signed file which must be created
+        # in this step.
         if 'sign' in goals:
-            content.append('west sign{}'.format(goal_args))
+            content.append('west sign{}'.format(dst))
 
         for goal in goals:
-            if goal == 'build' or goal == 'sign':
+            if goal in {'build', 'sign'}:
                 continue
             elif goal == 'flash':
-                content.append('west flash{}'.format(goal_args))
+                content.append('west flash{}'.format(dst))
             elif goal == 'debug':
-                content.append('west debug{}'.format(goal_args))
+                content.append('west debug{}'.format(dst))
             elif goal == 'debugserver':
-                content.append('west debugserver{}'.format(goal_args))
+                content.append('west debugserver{}'.format(dst))
             elif goal == 'attach':
-                content.append('west attach{}'.format(goal_args))
+                content.append('west attach{}'.format(dst))
             else:
-                content.append('west build -t {}{}'.format(goal, goal_args))
+                content.append('west build -t {}{}'.format(goal, dst))
 
         return content
 
-    def _mkdir(self, mkdir, build_dir, host_os, skip_config):
+    @staticmethod
+    def _mkdir(mkdir, build_dir, host_os, skip_config):
         content = []
         if skip_config:
             content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
@@ -284,12 +295,12 @@ class ZephyrAppCommandsDirective(Directive):
         if host_os == "unix":
             content.append('{} {} && cd {}'.format(mkdir, build_dir, build_dir))
         elif host_os == "win":
-            build_dir = build_dir.replace('/','\\')
+            build_dir = build_dir.replace('/', '\\')
             content.append('mkdir {} & cd {}'.format(build_dir, build_dir))
         return content
 
-    def _cmake_args(self, **kwargs):
-        generator = kwargs['generator']
+    @staticmethod
+    def _cmake_args(**kwargs):
         board = kwargs['board']
         shield = kwargs['shield']
         conf = kwargs['conf']
@@ -340,11 +351,9 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_cmake(self, **kwargs):
         generator = kwargs['generator']
-        host_os = kwargs['host_os']
         cd_into = kwargs['cd_into']
         app = kwargs['app']
         in_tree = kwargs['in_tree']
-        host_os = kwargs['host_os']
         build_dir = kwargs['build_dir']
         build_args = kwargs['build_args']
         skip_config = kwargs['skip_config']

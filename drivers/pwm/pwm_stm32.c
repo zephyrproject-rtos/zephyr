@@ -16,6 +16,9 @@
 
 #include "pwm_stm32.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pwm_stm32);
+
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct pwm_stm32_config * const)(dev)->config->config_info)
@@ -160,8 +163,11 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	}
 
 	/* Timer clock depends on APB prescaler */
-	clock_control_get_rate(data->clock,
-			(clock_control_subsys_t *)&cfg->pclken, &bus_clk);
+	if (clock_control_get_rate(data->clock,
+			(clock_control_subsys_t *)&cfg->pclken, &bus_clk) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	tim_clk = __get_tim_clk(bus_clk,
 			(clock_control_subsys_t *)&cfg->pclken);

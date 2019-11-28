@@ -1,10 +1,7 @@
-# Kconfig.cc2520 - TI CC2520 configuration options
-#
-#
+# TI CC2520 configuration options
+
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
@@ -21,8 +18,8 @@ config IEEE802154_CC2520_DRV_NAME
 config IEEE802154_CC2520_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	help
-	This option is useful if one needs to manage SPI CS through a GPIO
-	pin to by-pass the SPI controller's CS logic.
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
 
 config IEEE802154_CC2520_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"

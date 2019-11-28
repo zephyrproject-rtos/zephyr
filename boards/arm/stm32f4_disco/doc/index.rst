@@ -114,6 +114,9 @@ For mode details please refer to `STM32F4DISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
+.. rst-class:: rst-columns
+
 - UART_1_TX : PB6
 - UART_1_RX : PB7
 - UART_2_TX : PA2

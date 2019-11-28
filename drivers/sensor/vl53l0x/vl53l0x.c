@@ -21,8 +21,7 @@
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(VL53L0X);
+LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:
@@ -203,28 +202,28 @@ static int vl53l0x_init(struct device *dev)
 
 	LOG_DBG("enter in %s", __func__);
 
-#ifdef CONFIG_VL53L0X_XSHUT_CONTROL_ENABLE
+#ifdef DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER
 	struct device *gpio;
 
 	/* configure and set VL53L0X_XSHUT_Pin */
-	gpio = device_get_binding(CONFIG_VL53L0X_XSHUT_GPIO_DEV_NAME);
+	gpio = device_get_binding(DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER);
 	if (gpio == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-		CONFIG_VL53L0X_XSHUT_GPIO_DEV_NAME);
+		DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
 	if (gpio_pin_configure(gpio,
-			      CONFIG_VL53L0X_XSHUT_GPIO_PIN_NUM,
+			      DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN,
 			      GPIO_DIR_OUT | GPIO_PUD_PULL_UP) < 0) {
 		LOG_ERR("Could not configure GPIO %s %d).",
-			CONFIG_VL53L0X_XSHUT_GPIO_DEV_NAME,
-			CONFIG_VL53L0X_XSHUT_GPIO_PIN_NUM);
+			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER,
+			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN);
 		return -EINVAL;
 	}
 
-	gpio_pin_write(gpio, CONFIG_VL53L0X_XSHUT_GPIO_PIN_NUM, 1);
-	k_sleep(100);
+	gpio_pin_write(gpio, DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN, 1);
+	k_sleep(K_MSEC(100));
 #endif
 
 	drv_data->i2c = device_get_binding(DT_INST_0_ST_VL53L0X_BUS_NAME);

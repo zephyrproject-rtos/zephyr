@@ -178,5 +178,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    self.tool_opt)
 
-            self.logger.info('Flashing Target Device')
+            self.logger.info('Flashing file: {}'.format(self.bin_name))
             self.check_call(cmd)

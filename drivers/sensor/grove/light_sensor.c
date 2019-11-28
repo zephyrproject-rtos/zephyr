@@ -9,10 +9,9 @@
 #include <math.h>
 #include <drivers/sensor.h>
 #include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(grove_light);
+
+LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 
 struct gls_data {
 	struct device *adc;

@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32MP1 MPU series
-#
+# ST Microelectronics STM32MP1 MPU series
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32MP1X
 	bool "STM32MP15 Series MPU"
@@ -11,6 +9,5 @@ config SOC_SERIES_STM32MP1X
 	select SOC_FAMILY_STM32
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
-	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
 	help
-		Enable support for STM32MP1 MPU series
+	  Enable support for STM32MP1 MPU series

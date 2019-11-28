@@ -125,14 +125,13 @@ static void write_control(void)
 
 	expect_fault = false;
 	BARRIER();
-	__asm__ volatile (
-		"mrs %0, CONTROL;\n\t"
-		"bic %0, #1;\n\t"
-		"msr CONTROL, %0;\n\t"
-		"mrs %0, CONTROL;\n\t"
-		: "=r" (msr_value)::
-	);
-	zassert_true((msr_value & 1),
+	msr_value = __get_CONTROL();
+	msr_value &= ~(CONTROL_nPRIV_Msk);
+	__set_CONTROL(msr_value);
+	__DSB();
+	__ISB();
+	msr_value = __get_CONTROL();
+	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
@@ -696,7 +695,7 @@ static void domain_add_thread_drop_to_user(void)
 	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -716,7 +715,7 @@ static void domain_add_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -738,7 +737,7 @@ static void domain_remove_thread_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -761,7 +760,7 @@ static void domain_remove_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -804,7 +803,7 @@ static void domain_add_thread_context_switch(void)
 	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
 
 	spawn_user();
@@ -824,7 +823,7 @@ static void domain_add_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
 
 	spawn_user();
@@ -846,7 +845,7 @@ static void domain_remove_thread_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	spawn_user();
@@ -870,7 +869,7 @@ static void domain_remove_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_ctx_dom, &access_part);
 
 	spawn_user();
@@ -899,25 +898,25 @@ void z_impl_stack_info_get(u32_t *start_addr, u32_t *size)
 	*size = k_current_get()->stack_info.size;
 }
 
-Z_SYSCALL_HANDLER(stack_info_get, start_addr, size)
+static inline void z_vrfy_stack_info_get(u32_t *start_addr, u32_t *size)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(u32_t)));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(u32_t)));
 
 	z_impl_stack_info_get((u32_t *)start_addr, (u32_t *)size);
-
-	return 0;
 }
+#include <syscalls/stack_info_get_mrsh.c>
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
-	return z_arch_buffer_validate(addr, size, write);
+	return arch_buffer_validate(addr, size, write);
 }
 
-Z_SYSCALL_HANDLER(check_perms, addr, size, write)
+static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 {
 	return z_impl_check_perms((void *)addr, size, write);
 }
+#include <syscalls/check_perms_mrsh.c>
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
@@ -972,7 +971,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		*pos = val;
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		/* If we're in user mode, check every byte in the stack buffer
 		 * to ensure that the thread has permissions on it.
 		 */
@@ -1000,7 +999,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		       Z_THREAD_STACK_BUFFER(stack_obj));
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
 			      "bad stack size in thread struct");
 	}
@@ -1082,7 +1081,7 @@ void test_bad_syscall(void)
 	expect_fault = true;
 	expected_reason = K_ERR_KERNEL_OOPS;
 
-	z_arch_syscall_invoke0(INT_MAX);
+	arch_syscall_invoke0(INT_MAX);
 
 }
 
@@ -1117,47 +1116,27 @@ void test_object_recycle(void)
 
 void test_oops_panic(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_PANIC, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_oops(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_OOPS, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_exception(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_CPU_EXCEPTION, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_maxint(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(INT_MAX, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_stackcheck(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_main(void)

@@ -1,13 +1,11 @@
-# Kconfig - Kinetis KWx MCU series
-#
+# Kinetis KWx MCU series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Kinetis KWx MCU Selection"
-depends on SOC_SERIES_KINETIS_KWX
+	prompt "Kinetis KWx MCU Selection"
+	depends on SOC_SERIES_KINETIS_KWX
 
 config SOC_MKW22D5
 	bool "SOC_MKW22D5"
@@ -113,7 +111,6 @@ config KW2XD_FLASH_CLOCK_DIVIDER
 
 config WDOG_INIT
 	def_bool y
-	# omit prompt to signify a "hidden" option
 	help
 	  This processor enables the watchdog timer with a short timeout
 	  upon reset. Therefore, this requires that the watchdog be configured

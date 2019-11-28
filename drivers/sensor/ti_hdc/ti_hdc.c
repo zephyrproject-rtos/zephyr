@@ -15,8 +15,7 @@
 
 #include "ti_hdc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TI_HDC);
+LOG_MODULE_REGISTER(TI_HDC, CONFIG_SENSOR_LOG_LEVEL);
 
 #if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
 static void ti_hdc_gpio_callback(struct device *dev,

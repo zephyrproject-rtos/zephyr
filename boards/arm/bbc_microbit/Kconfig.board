@@ -1,7 +1,6 @@
-# Kconfig - nRF51 BBC_MICROBIT board configuration
-#
+# nRF51 BBC_MICROBIT board configuration
+
 # Copyright (c) 2016 Nordic Semiconductor ASA.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BBC_MICROBIT

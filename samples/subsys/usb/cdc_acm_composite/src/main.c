@@ -20,7 +20,7 @@
 #include <sys/ring_buffer.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(cdc_acm_composite, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE	(64 * 2)
 
@@ -88,12 +88,12 @@ static void uart_line_set(struct device *dev)
 	int ret;
 
 	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DCD, ret code %d", ret);
 	}
 
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DSR, ret code %d", ret);
 	}
@@ -101,7 +101,7 @@ static void uart_line_set(struct device *dev)
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(1000000);
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_DBG("Failed to get baudrate, ret code %d", ret);
 	} else {
@@ -128,27 +128,27 @@ void main(void)
 		return;
 	}
 
-	LOG_DBG("Wait for DTR");
+	LOG_INF("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev0, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev0, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	while (1) {
-		uart_line_ctrl_get(dev1, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev1, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
-	LOG_DBG("DTR set, start test");
+	LOG_INF("DTR set, start test");
 
 	uart_line_set(dev0);
 	uart_line_set(dev1);

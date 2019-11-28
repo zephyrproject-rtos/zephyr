@@ -1,17 +1,15 @@
 title: ARM PL011 UART
 
-description: >
+description: |
     This binding gives a base representation of the ARM PL011 UART
 
-inherits:
-    !include uart.yaml
+compatible: "arm,pl011"
+
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "arm,pl011"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

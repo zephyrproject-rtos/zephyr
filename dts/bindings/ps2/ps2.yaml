@@ -1,0 +1,24 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: PS/2 Base Structure
+
+description: |
+    This binding gives the base structures for all PS/2 devices
+
+include: base.yaml
+
+child-bus: ps2
+
+properties:
+    "#address-cells":
+      type: int
+      required: true
+      description: should be 1.
+    "#size-cells":
+      type: int
+      required: true
+      description: should be 0.
+    label:
+      required: true
+

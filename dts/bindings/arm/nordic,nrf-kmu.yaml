@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic KMU
+
+description: |
+    Binding for the Nordic KMU (Key Management Unit)
+
+compatible: "nordic,nrf-kmu"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

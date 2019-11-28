@@ -15,8 +15,8 @@
 #define IRQ_MASK		DT_INST_0_VEXRISCV_INTC0_IRQ_MASK_BASE_ADDRESS
 #define IRQ_PENDING		DT_INST_0_VEXRISCV_INTC0_IRQ_PENDING_BASE_ADDRESS
 
-#define TIMER0_IRQ		DT_LITEX_TIMER0_E0002800_IRQ_0
-#define UART0_IRQ		DT_LITEX_UART0_E0001800_IRQ_0
+#define TIMER0_IRQ		DT_INST_0_LITEX_TIMER0_IRQ_0
+#define UART0_IRQ		DT_INST_0_LITEX_UART0_IRQ_0
 
 #define ETH0_IRQ		DT_INST_0_LITEX_ETH0_IRQ_0
 
@@ -83,17 +83,17 @@ static void vexriscv_litex_irq_handler(void *device)
 #endif
 }
 
-void z_arch_irq_enable(unsigned int irq)
+void arch_irq_enable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() | (1 << irq));
 }
 
-void z_arch_irq_disable(unsigned int irq)
+void arch_irq_disable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() & ~(1 << irq));
 }
 
-int z_arch_irq_is_enabled(unsigned int irq)
+int arch_irq_is_enabled(unsigned int irq)
 {
 	return vexriscv_litex_irq_getmask() & (1 << irq);
 }

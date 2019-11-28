@@ -18,6 +18,7 @@ void test_fs_open(void);
 void test_fs_write(void);
 void test_fs_read(void);
 void test_fs_close(void);
+void test_fs_fd_leak(void);
 void test_fs_unlink(void);
 void test_fs_mkdir(void);
 void test_fs_readdir(void);

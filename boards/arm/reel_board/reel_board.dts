@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Phytec Messtechnik GmbH
+ * Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
  * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "reel_board.dtsi"
 
 / {
 	model = "reel board";
@@ -23,94 +24,10 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-		yellow_led: led_0 {
-			gpios = <&gpio0 13 0>;
-			label = "User D13";
-		};
-		red_led: led_1 {
-			gpios = <&gpio0 11 0>;
-			label = "User D3 red";
-		};
-		green_led: led_2 {
-			gpios = <&gpio0 12 0>;
-			label = "User D3 green";
-		};
-		blue_led: led_3 {
-			gpios = <&gpio1 9 0>;
-			label = "User D3 blue";
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_button: button_0 {
-			gpios = <&gpio0 7 GPIO_PUD_PULL_UP>;
-			label = "User Button";
-		};
-	};
-
-	aliases {
-		led0 = &yellow_led;
-		led1 = &red_led;
-		led2 = &green_led;
-		led3 = &blue_led;
-		sw0 = &user_button;
-	};
 };
 
-&gpiote {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&uart0 {
-	compatible = "nordic,nrf-uart";
-	current-speed = <115200>;
-	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
-};
-
-&i2c0 {
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <26>;
-	scl-pin = <27>;
-
-	mma8652fc@1d {
-		compatible = "nxp,fxos8700","nxp,mma8652fc";
-		reg = <0x1d>;
-		label = "MMA8652FC";
-		int1-gpios = <&gpio0 24 0>;
-		int2-gpios = <&gpio0 25 0>;
-	};
-
-	ti_hdc@43 {
-		compatible = "ti,hdc","ti,hdc1010";
-		reg = <0x43>;
-		label = "HDC1010";
-		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
-	};
-
-	apds9960@39 {
-		compatible = "avago,apds9960";
-		reg = <0x39>;
-		label = "APDS9960";
-		int-gpios = <&gpio0 23 0>;
-	};
-};
-
-&spi3 {
+&spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;
@@ -118,7 +35,7 @@
 	cs-gpios = <&gpio0 17 0>;
 
 	ssd16xxfb@0 {
-		compatible = "solomon,ssd16xxfb", "gd,gde0213b1";
+		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b1";
 		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
@@ -129,55 +46,21 @@
 		reset-gpios = <&gpio0 15 0>;
 		dc-gpios = <&gpio0 16 0>;
 		busy-gpios = <&gpio0 14 0>;
-		gdv-a = <0x10>;
-		gdv-b = <0x0a>;
-		sdv = <0x19>;
+		gdv = [10 0a];
+		sdv = [19];
 		vcom = <0xa8>;
 		border-waveform = <0x71>;
+		lut-initial = [
+			22 55 AA 55 AA 55 AA 11
+			00 00 00 00 00 00 00 00
+			1E 1E 1E 1E 1E 1E 1E 1E
+			01 00 00 00 00
+		];
+		lut-default = [
+			18 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			0F 01 00 00 00 00 00 00
+			00 00 00 00 00
+		];
 	};
-};
-
-&flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
-		};
-		slot0_partition: partition@c000 {
-			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
-		};
-		slot1_partition: partition@73000 {
-			label = "image-1";
-			reg = <0x00073000 0x000067000>;
-		};
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
-		};
-
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
-
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
-		storage_partition: partition@f8000 {
-			label = "storage";
-			reg = <0x000f8000 0x00008000>;
-		};
-	};
-};
-
-&usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
 };

@@ -67,3 +67,5 @@ Sample Output
         [00:00:03.166,006] <wrn> ext_log_system: warning level log, 2 arguments: 12
         [00:00:03.166,025] <inf> ext_log_system: notice level log, 3 arguments: 105
         [00:00:03.166,044] <inf> ext_log_system: info level log, 4 arguments : 1 24
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

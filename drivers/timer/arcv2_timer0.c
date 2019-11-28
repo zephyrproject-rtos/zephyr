@@ -13,8 +13,24 @@
 /*
  * note: This implementation assumes Timer0 is present. Be sure
  * to build the ARC CPU with Timer0.
+ *
+ * If secureshield is present and secure firmware is configured,
+ * use secure Timer 0
  */
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+
+#undef _ARC_V2_TMR0_COUNT
+#undef _ARC_V2_TMR0_CONTROL
+#undef _ARC_V2_TMR0_LIMIT
+#undef IRQ_TIMER0
+
+#define _ARC_V2_TMR0_COUNT _ARC_V2_S_TMR0_COUNT
+#define _ARC_V2_TMR0_CONTROL _ARC_V2_S_TMR0_CONTROL
+#define _ARC_V2_TMR0_LIMIT _ARC_V2_S_TMR0_LIMIT
+#define IRQ_TIMER0 IRQ_SEC_TIMER0
+
+#endif
 
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */
 #define _ARC_V2_TMR_CTRL_NH 0x2 /* count only while not halted */
@@ -219,7 +235,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * that interrupts are already disabled)
 	 */
 #ifdef CONFIG_SMP
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	/* as 64-bits GFRC is used as wall clock, it's ok to ignore idle
+	 * systick will not be missed.
+	 * However for single core using 32-bits arc timer, idle cannot
+	 * be ignored, as 32-bits timer will overflow in a not-long time.
+	 */
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && ticks == K_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -230,19 +251,19 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	u32_t delay;
 	u32_t key;
 
-	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
+	ticks = MIN(MAX_TICKS, ticks);
 
 	/* Desired delay in the future */
 	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
 
-	key = z_arch_irq_lock();
+	key = arch_irq_lock();
 
 	timer0_limit_register_set(delay - 1);
 	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
 						_ARC_V2_TMR_CTRL_IE);
 
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 #endif
 #else
 	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {

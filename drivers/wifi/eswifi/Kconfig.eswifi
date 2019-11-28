@@ -1,10 +1,7 @@
-# Kconfig - es-WiFi driver options
+# es-WiFi driver options
 
-#
 # Copyright (c) 2018 Linaro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig WIFI_ESWIFI
 	bool "Inventek eS-WiFi support"

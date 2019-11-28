@@ -1,37 +1,30 @@
-#
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Generic fixed rate clock provider
 
-description: >
+description: |
     This is a representation of a generic fixed rate clock provider.
 
-properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      constraint: "fixed-clock"
+compatible: "fixed-clock"
 
+include: clock-controller.yaml
+
+properties:
     label:
       type: string
-      category: optional
+      required: false
       description: Human readable string describing the device (used by Zephyr for API name)
 
     clock-frequency:
       type: int
       description: output clock frequency (Hz)
-      category: required
+      required: true
 
     clocks:
       type: array
-      category: optional
+      required: false
       description: input clock source
 
     "#clock-cells":
-      type: int
-      category: required
-      description: should be 0.
+      const: 0

@@ -45,6 +45,18 @@ struct adc_hdl adc_list[] = {
 		.resolution = 0,
 	},
 #endif
+#ifdef CONFIG_ADC_2
+	{
+		.device_name = DT_ADC_2_NAME,
+		.channel_config = {
+			.gain = ADC_GAIN_1,
+			.reference = ADC_REF_INTERNAL,
+			.acquisition_time = ADC_ACQ_TIME_DEFAULT,
+			.channel_id = 0,
+		},
+		.resolution = 0,
+	},
+#endif
 };
 
 struct args_index {
@@ -449,6 +461,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc,
 #endif
 #ifdef CONFIG_ADC_1
 	SHELL_CMD(ADC_1, &sub_adc_cmds, "ADC_1", NULL),
+#endif
+#ifdef CONFIG_ADC_2
+	SHELL_CMD(ADC_2, &sub_adc_cmds, "ADC_2", NULL),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );

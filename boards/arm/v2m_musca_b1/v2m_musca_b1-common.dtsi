@@ -44,3 +44,16 @@ uart1: uart@106000 {
 	current-speed = <115200>;
 	label = "UART_1";
 };
+
+gpio: gpio@1000000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x1000000 0x1000>;
+	interrupts = <67 3		    /* combined */
+		      51 3 52 3 53 3 54 3   /* PINS 0:3 */
+		      55 3 56 3 57 3 58 3   /* PINS 4:7 */
+		      59 3 60 3 61 3 62 3   /* PINS 8:11 */
+		      63 3 64 3 65 3 66 3>; /* PINS 12:15 */
+	gpio-controller;
+	#gpio-cells = <2>;
+	label = "GPIO_0";
+};

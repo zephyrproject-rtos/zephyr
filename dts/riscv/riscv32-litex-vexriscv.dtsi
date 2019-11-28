@@ -44,6 +44,17 @@
 			label = "uart0";
 			status = "disabled";
 		};
+		spi0: spi@e0002000 {
+			compatible = "litex,spi";
+			interrupt-parent = <&intc0>;
+			interrupts = <5 0>;
+			reg = <0xe0002000 0x34>;
+			reg-names = "control";
+			label = "spi0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 		timer0: serial@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
@@ -61,6 +72,18 @@
 			local-mac-address = [10 e2 d5 00 00 02];
 			reg-names = "buffers", "control";
 			label = "eth0";
+			status = "disabled";
+		};
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			so it requires 8 bytes.
+			In LiteX each 32-bit register holds
+			only a single byte of meaningful data,
+			hence 8 registers. */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			label = "dna0";
 			status = "disabled";
 		};
 	};

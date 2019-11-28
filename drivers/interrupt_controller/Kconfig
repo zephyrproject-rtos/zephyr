@@ -1,10 +1,7 @@
-# Kconfig - interrupt controller configuration options
+# interrupt controller configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Interrupt Controllers"
 
@@ -55,12 +52,6 @@ config IOAPIC
 	  This option signifies that the target has an IO-APIC device. This
 	  capability allows IO-APIC-dependent code to be included.
 
-config IOAPIC_DEBUG
-	bool "IO-APIC Debugging"
-	depends on IOAPIC
-	help
-	  Enable debugging for IO-APIC driver.
-
 config IOAPIC_NUM_RTES
 	int "Number of Redirection Table Entries available"
 	default 24
@@ -82,7 +73,7 @@ config IOAPIC_MASK_RTE
 	  when the OS starts up, or a previous boot stage has done some IOAPIC
 	  configuration that needs to be preserved.
 
-endif #LOAPIC
+endif # LOAPIC
 
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
@@ -100,6 +91,8 @@ config PLIC
 	default y
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	select RISCV_HAS_PLIC
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
 	help
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC;
@@ -146,6 +139,13 @@ config DW_ICTL_INIT_PRIORITY
 	depends on DW_ICTL
 	help
 	  DesignWare Interrupt Controller initialization priority.
+
+config GIC
+	bool "ARM Generic Interrupt Controller (GIC)"
+	depends on CPU_CORTEX_R
+	help
+	  The ARM Generic Interrupt Controller works with Cortex-A and
+	  Cortex-R processors.
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 

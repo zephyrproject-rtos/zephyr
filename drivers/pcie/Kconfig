@@ -1,10 +1,7 @@
-# Kconfig - PCIe/new PCI configuration options
+# PCIe/new PCI configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PCIE
 	bool "Enable new PCI/PCIe support"

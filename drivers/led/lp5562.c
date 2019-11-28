@@ -37,12 +37,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
-#ifdef CONFIG_HAS_DTS_I2C
-#define CONFIG_LP5562_DEV_NAME            DT_INST_0_TI_LP5562_LABEL
-#define CONFIG_LP5562_I2C_ADDRESS         DT_INST_0_TI_LP5562_BASE_ADDRESS
-#define CONFIG_LP5562_I2C_MASTER_DEV_NAME DT_INST_0_TI_LP5562_BUS_NAME
-#endif
-
 #include "led_context.h"
 
 /* Registers */
@@ -313,7 +307,7 @@ static int lp5562_set_led_source(struct device *dev,
 {
 	struct lp5562_data *data = dev->driver_data;
 
-	if (i2c_reg_update_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_update_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_LED_MAP,
 				LP5562_CHANNEL_MASK(channel),
 				source << (channel << 1))) {
@@ -341,7 +335,7 @@ static int lp5562_get_led_source(struct device *dev,
 	struct lp5562_data *data = dev->driver_data;
 	u8_t led_map;
 
-	if (i2c_reg_read_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_read_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 			      LP5562_LED_MAP, &led_map)) {
 		return -EIO;
 	}
@@ -374,7 +368,7 @@ static bool lp5562_is_engine_executing(struct device *dev,
 		return false;
 	}
 
-	if (i2c_reg_read_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_read_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_ENABLE, &enabled)) {
 		LOG_ERR("Failed to read ENABLE register.");
 		return false;
@@ -440,7 +434,7 @@ static int lp5562_set_engine_reg(struct device *dev,
 		return ret;
 	}
 
-	if (i2c_reg_update_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_update_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				   reg,
 				   LP5562_MASK << shift,
 				   val << shift)) {
@@ -489,7 +483,7 @@ static inline int lp5562_set_engine_exec_state(struct device *dev,
 	 * Delay between consecutive I2C writes to
 	 * ENABLE register (00h) need to be longer than 488μs (typ.).
 	 */
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	return ret;
 }
@@ -568,14 +562,14 @@ static int lp5562_program_command(struct device *dev,
 		return ret;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 			       prog_base_addr + (command_index << 1),
 			       command_msb)) {
 		LOG_ERR("Failed to update LED.");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 			       prog_base_addr + (command_index << 1) + 1,
 			       command_lsb)) {
 		LOG_ERR("Failed to update LED.");
@@ -860,7 +854,7 @@ static int lp5562_led_set_brightness(struct device *dev, u32_t led, u8_t value)
 		return ret;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 			       reg, val)) {
 		LOG_ERR("LED write failed");
 		return -EIO;
@@ -905,7 +899,7 @@ static int lp5562_led_init(struct device *dev)
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 
-	data->i2c = device_get_binding(CONFIG_LP5562_I2C_MASTER_DEV_NAME);
+	data->i2c = device_get_binding(DT_INST_0_TI_LP5562_BUS_NAME);
 	if (data->i2c == NULL) {
 		LOG_ERR("Failed to get I2C device");
 		return -EINVAL;
@@ -917,14 +911,14 @@ static int lp5562_led_init(struct device *dev)
 	dev_data->min_brightness = LP5562_MIN_BRIGHTNESS;
 	dev_data->max_brightness = LP5562_MAX_BRIGHTNESS;
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_ENABLE,
 				LP5562_ENABLE_CHIP_EN)) {
 		LOG_ERR("Enabling LP5562 LED chip failed.");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_CONFIG,
 				(LP5562_CONFIG_INTERNAL_CLOCK |
 				 LP5562_CONFIG_PWRSAVE_EN))) {
@@ -932,13 +926,13 @@ static int lp5562_led_init(struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_OP_MODE, 0x00)) {
 		LOG_ERR("Disabling all engines failed.");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, DT_INST_0_TI_LP5562_BASE_ADDRESS,
 				LP5562_LED_MAP, 0x00)) {
 		LOG_ERR("Setting all LEDs to manual control failed.");
 		return -EIO;
@@ -956,7 +950,7 @@ static const struct led_driver_api lp5562_led_api = {
 	.off = lp5562_led_off,
 };
 
-DEVICE_AND_API_INIT(lp5562_led, CONFIG_LP5562_DEV_NAME,
+DEVICE_AND_API_INIT(lp5562_led, DT_INST_0_TI_LP5562_LABEL,
 		&lp5562_led_init, &lp5562_led_data,
 		NULL, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
 		&lp5562_led_api);

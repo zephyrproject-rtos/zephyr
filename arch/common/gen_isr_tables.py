@@ -105,8 +105,8 @@ def read_intlist(intlist_path, syms):
 def parse_args():
     global args
 
-    parser = argparse.ArgumentParser(description = __doc__,
-            formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-e", "--big-endian", action="store_true",
             help="Target encodes data in big-endian format (little endian is "
@@ -164,7 +164,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
 
     for i in range(nv):
         param, func = swt[i]
-        if type(func) is int:
+        if isinstance(func, int):
             func_as_string = "{0:#x}".format(func)
         else:
             func_as_string = func

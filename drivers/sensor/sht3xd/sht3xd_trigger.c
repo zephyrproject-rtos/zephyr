@@ -11,9 +11,8 @@
 
 #include "sht3xd.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(SHT3XD);
+LOG_MODULE_DECLARE(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
 static u16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {
@@ -223,7 +222,7 @@ int sht3xd_init_interrupt(struct device *dev)
 			CONFIG_SHT3XD_THREAD_STACK_SIZE,
 			(k_thread_entry_t)sht3xd_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = sht3xd_work_cb;
 #endif

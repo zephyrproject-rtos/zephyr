@@ -8,6 +8,7 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 #include <fcntl.h>
+#include <sys/util.h>
 #include <mqueue.h>
 #include <pthread.h>
 
@@ -85,11 +86,11 @@ void test_posix_mqueue(void)
 		if (i % 2) {
 			ret = pthread_create(&newthread[i], &attr[i],
 					     sender_thread,
-					     (void *)i);
+					     INT_TO_POINTER(i));
 		} else {
 			ret = pthread_create(&newthread[i], &attr[i],
 					     receiver_thread,
-					     (void *)i);
+					     INT_TO_POINTER(i));
 		}
 
 		zassert_false(ret, "Not enough space to create new thread");

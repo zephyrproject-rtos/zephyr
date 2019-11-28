@@ -30,8 +30,10 @@ If you have :ref:`west <west>` installed, you don't need to worry about how
 this variable is defined unless you are adding a new module. The build system
 knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
 modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
-variable. This can be useful if you want to keep the list of modules found with
-west and also add your own.
+variable or by adding a :makevar:`ZEPHYR_EXTRA_MODULES` line to ``.zephyrrc``
+(See the section on :ref:`env_vars` for more details). This can be
+useful if you want to keep the list of modules found with west and also add
+your own.
 
 See the section about :ref:`west-multi-repo` for more details.
 

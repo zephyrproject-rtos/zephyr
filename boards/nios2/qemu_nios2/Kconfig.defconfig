@@ -3,7 +3,7 @@
 if BOARD_QEMU_NIOS2
 
 config BUILD_OUTPUT_BIN
-        default n
+	default n
 
 config BOARD
 	default "qemu_nios2"

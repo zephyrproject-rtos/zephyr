@@ -18,11 +18,10 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/uart.h>
-#include <linker/sections.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #define PLLFLLSEL_MCGFLLCLK	(0)
 #define PLLFLLSEL_MCGPLLCLK	(1)
@@ -33,37 +32,6 @@
 #define ER32KSEL_LPO1KHZ	(3)
 
 #define TIMESRC_OSCERCLK        (2)
-
-/*
- * K64F Flash configuration fields
- * These 16 bytes, which must be loaded to address 0x400, include default
- * protection and security settings.
- * They are loaded at reset to various Flash Memory module (FTFE) registers.
- *
- * The structure is:
- * -Backdoor Comparison Key for unsecuring the MCU - 8 bytes
- * -Program flash protection bytes, 4 bytes, written to FPROT0-3
- * -Flash security byte, 1 byte, written to FSEC
- * -Flash nonvolatile option byte, 1 byte, written to FOPT
- * -Reserved, 1 byte, (Data flash protection byte for FlexNVM)
- * -Reserved, 1 byte, (EEPROM protection byte for FlexNVM)
- *
- */
-u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
-	/* Backdoor Comparison Key (unused) */
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	/* Program flash protection; 1 bit/region - 0=protected, 1=unprotected
-	 */
-	0xFF, 0xFF, 0xFF, 0xFF,
-	/*
-	 * Flash security: Backdoor key disabled, Mass erase enabled,
-	 *                 Factory access enabled, MCU is unsecure
-	 */
-	0xFE,
-	/* Flash nonvolatile option: NMI enabled, EzPort enabled, Normal boot */
-	0xFF,
-	/* Reserved for FlexNVM feature (unsupported by this MCU) */
-	0xFF, 0xFF};
 
 static const osc_config_t oscConfig = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
@@ -119,7 +87,7 @@ static const sim_clock_config_t simConfig = {
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
@@ -181,7 +149,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 #endif /* !CONFIG_ARM_MPU */
 
 	/* Initialize PLL/system clock to 120 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

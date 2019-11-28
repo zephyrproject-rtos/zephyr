@@ -11,9 +11,8 @@
 
 #include "bmi160.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMI160);
+LOG_MODULE_DECLARE(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
 static void bmi160_handle_anymotion(struct device *dev)
 {
@@ -289,7 +288,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 	k_thread_create(&bmi160_thread, bmi160_thread_stack,
 			CONFIG_BMI160_THREAD_STACK_SIZE,
 			bmi160_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, 0);
+			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	bmi160->work.handler = bmi160_work_handler;
 	bmi160->dev = dev;

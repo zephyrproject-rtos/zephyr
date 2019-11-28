@@ -89,10 +89,20 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define INLINE
 #endif
 
+/** @brief Return larger value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MAX for GCC only, single
+ * evaluation version.
+ */
 #ifndef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+/** @brief Return smaller value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MIN for GCC only, single
+ * evaluation version.
+ */
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -170,6 +180,21 @@ size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen);
  */
 size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 
+/**
+ * @brief      Convert a u8_t into decimal string representation.
+ *
+ * Convert a u8_t value into ASCII decimal string representation.
+ * The string is terminated if there is enough space in buf.
+ *
+ * @param[out] buf     Address of where to store the string representation.
+ * @param[in]  buflen  Size of the storage area for string representation.
+ * @param[in]  value   The value to convert to decimal string
+ *
+ * @return     The length of the converted string (excluding terminator if
+ *             any), or 0 if an error occurred.
+ */
+u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
+
 #endif /* !_ASMLANGUAGE */
 
 /* KB, MB, GB */
@@ -188,6 +213,9 @@ size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 #define BIT(n)  (1UL << (n))
 #endif
 #endif
+
+/** 64-bit unsigned integer with bit position _n set */
+#define BIT64(_n) (1ULL << (_n))
 
 /**
  * @brief Macro sets or clears bit depending on boolean value

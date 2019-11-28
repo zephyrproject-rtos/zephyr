@@ -50,7 +50,7 @@ static void do_main(struct device *dev)
 		printk("temp is %d (%d micro)\n", temp_value.val1,
 		       temp_value.val2);
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }
 

@@ -1,10 +1,8 @@
-# Kconfig - EFM32HG series configuration options
-#
+# EFM32HG series configuration options
+
 # Copyright (c) 2018 Christian Taedcke
 # Copyright (c) 2018 Marcio Montenegro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFM32HG
 
@@ -15,7 +13,6 @@ config SOC_PART_NUMBER
 	default "EFM32HG322F64" if SOC_PART_NUMBER_EFM32HG322F64
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 20
 

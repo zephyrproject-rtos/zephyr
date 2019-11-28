@@ -14,6 +14,10 @@
 #include <soc.h>
 #include <em_gpio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct soc_gpio_pin {
 	GPIO_Port_TypeDef port; /** GPIO port */
 	unsigned int pin;       /** GPIO pin on the port */
@@ -26,5 +30,9 @@ struct soc_gpio_pin {
  * @param[in] pin configuration data
  */
 void soc_gpio_configure(const struct soc_gpio_pin *pin);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SILABS_EXX32_SOC_GPIO_H_ */

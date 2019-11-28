@@ -1,11 +1,9 @@
-# Kconfig.litex - LiteX UART (LiteUART) configuration option
-#
-# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# LiteX UART (LiteUART) configuration option
 
-menuconfig UART_LITEUART
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_LITEUART
 	bool "LiteUART serial driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	# currently not supporting interrupts due to a bug in LiteUART Tx IRQ
@@ -13,10 +11,3 @@ menuconfig UART_LITEUART
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables LiteUART serial driver.
-
-menuconfig UART_LITEUART_PORT_0
-	bool "Enable LiteX Port 0"
-	depends on UART_LITEUART
-	help
-	  This tells the driver to configure the UART port at boot, depending on
-	  the additional configuration options below.

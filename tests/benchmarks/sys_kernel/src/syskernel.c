@@ -149,7 +149,7 @@ void main(void)
 	 */
 	u64_t time_stamp = z_tick_get();
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	u64_t time_stamp_2 = z_tick_get();
 

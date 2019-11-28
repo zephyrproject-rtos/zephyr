@@ -1,13 +1,11 @@
-# Kconfig - Atmel SAM4S Xplained Board configuration
-#
+# Atmel SAM4S Xplained Board configuration
+
 # Copyright (c) 2017 Justin Watson
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_SAM4S_XPLAINED
 
 config BOARD
-	string
 	default "sam4s_xplained"
 
 if I2C

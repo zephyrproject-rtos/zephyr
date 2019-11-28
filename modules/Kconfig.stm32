@@ -1,13 +1,12 @@
-# Kconfig - STM32CUBE HAL config
+# STM32CUBE HAL config
 
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_STM32CUBE
-    bool
-    select HAS_CMSIS
-    depends on SOC_FAMILY_STM32
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_STM32
 
 if HAS_STM32CUBE
 
@@ -380,4 +379,4 @@ config USE_STM32_LL_USB
 config USE_STM32_LL_UTILS
 	bool
 
-endif
+endif # HAS_STM32CUBE

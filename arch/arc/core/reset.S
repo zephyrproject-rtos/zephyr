@@ -17,7 +17,7 @@
 #include <swap_macros.h>
 
 GDATA(_interrupt_stack)
-GDATA(_main_stack)
+GDATA(z_main_stack)
 GDATA(_VectorTable)
 
 /* use one of the available interrupt stacks during init */
@@ -45,34 +45,39 @@ GTEXT(__start)
 
 SECTION_FUNC(TEXT,__reset)
 SECTION_FUNC(TEXT,__start)
-
 	/* lock interrupts: will get unlocked when switch to main task
 	 * also make sure the processor in the correct status
 	 */
-	mov r0, 0
+	mov_s r0, 0
 	kflag r0
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	sflag r0
+#endif
+
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
 	/*
 	 * ARCV2 timer (timer0) is a free run timer, let it start to count
 	 * here.
 	 */
-	mov r0, 0xffffffff
+	mov_s r0, 0xffffffff
 	sr r0, [_ARC_V2_TMR0_LIMIT]
-	mov r0, 0
+	mov_s r0, 0
 	sr r0, [_ARC_V2_TMR0_COUNT]
 #endif
 	/* interrupt related init */
+#ifndef CONFIG_ARC_NORMAL_FIRMWARE
+	/* IRQ_ACT and IRQ_CTRL should be initialized and set in secure mode */
 	sr r0, [_ARC_V2_AUX_IRQ_ACT]
 	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
+#endif
 	sr r0, [_ARC_V2_AUX_IRQ_HINT]
-
-	/* \todo: MPU init, gp for small data? */
 
 	/* set the vector table base early,
 	 * so that exception vectors can be handled.
 	 */
-	mov r0, _VectorTable
-#ifdef CONFIG_ARC_HAS_SECURE
+	mov_s r0, _VectorTable
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
 #else
 	sr r0, [_ARC_V2_IRQ_VECT_BASE]
@@ -90,7 +95,7 @@ SECTION_FUNC(TEXT,__start)
 	kflag r0
 #endif
 
-	mov r1, 1
+	mov_s r1, 1
 
 invalidate_and_disable_icache:
 
@@ -101,9 +106,9 @@ invalidate_and_disable_icache:
 	mov_s r2, 0
 	sr r2, [_ARC_V2_IC_IVIC]
 	/* writing to IC_IVIC needs 3 NOPs */
-	nop
-	nop
-	nop
+	nop_s
+	nop_s
+	nop_s
 	sr r1, [_ARC_V2_IC_CTRL]
 
 invalidate_dcache:
@@ -121,7 +126,7 @@ done_cache_invalidate:
         jl @_sys_resume_from_deep_sleep
 #endif
 
-#ifdef CONFIG_SMP
+#if CONFIG_MP_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
 
@@ -132,13 +137,14 @@ _slave_core_wait:
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _slave_core_wait
 
+	ld sp, [arc_cpu_sp]
 	/* signal master core that slave core runs */
 	st 0, [arc_cpu_wake_flag]
 
-	/* get sp set by master core */
-	_get_curr_cpu_irq_stack sp
-
-	j z_arch_slave_start
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
+	j z_arc_slave_start
 
 _master_core_startup:
 #endif
@@ -149,7 +155,7 @@ _master_core_startup:
 	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
 	 * one of them for the rest of the early boot
 	 */
-	mov sp, _main_stack
+	mov_s sp, z_main_stack
 	add sp, sp, CONFIG_MAIN_STACK_SIZE
 
 	mov_s r0, _interrupt_stack
@@ -159,7 +165,11 @@ _master_core_startup:
 
 #endif /* CONFIG_INIT_STACKS */
 
-	mov sp, INIT_STACK
+	mov_s sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
+
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
 
 	j @_PrepC

@@ -1,23 +1,21 @@
-# Kconfig - configuration for STM32 pinmux
-#
+# Configuration for STM32 pinmux
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config PINMUX_STM32
 	bool "Pinmux driver for STM32 MCUs"
 	depends on SOC_FAMILY_STM32
 	help
-	 Enable pin multiplexer for STM32 MCUs
+	  Enable pin multiplexer for STM32 MCUs
 
 config PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY
 	int "Device initialization priority STM32 pinmux"
 	depends on PINMUX_STM32
 	default 2
 	help
-	 This option controls the priority of pinmux device initialization.
-	 Higher priority ensures that the device is initialized earlier in
-	 the startup cycle. Note that the pinmux device needs to be initialized
-	 after clock control device, but possibly before all other devices.
-	 If unsure, leave at default value 2
+	  This option controls the priority of pinmux device initialization.
+	  Higher priority ensures that the device is initialized earlier in
+	  the startup cycle. Note that the pinmux device needs to be initialized
+	  after clock control device, but possibly before all other devices.
+	  If unsure, leave at default value 2

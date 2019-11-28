@@ -1,9 +1,7 @@
-# Kconfig - OLIMEXINO-STM32 board configuration
-#
+# OLIMEXINO-STM32 board configuration
+
 # Copyright (c) 2016, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_OLIMEXINO_STM32
 
@@ -46,5 +44,12 @@ config PWM_STM32_1
 	default y
 
 endif # PWM
+
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
 
 endif # BOARD_OLIMEXINO_STM32

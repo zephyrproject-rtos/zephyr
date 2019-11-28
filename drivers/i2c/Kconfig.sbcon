@@ -1,11 +1,7 @@
-#
 # Copyright (c) 2016 Linaro Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig I2C_SBCON
+config I2C_SBCON
 	bool "I2C driver for ARM's SBCon two-wire serial bus interface"
 	depends on ARM
 	select I2C_BITBANG
-	select HAS_DTS_I2C

@@ -129,12 +129,16 @@ static int write_port_regs(struct device *dev, u8_t reg,
 		"0x%X", i2c_addr, reg, buf->byte[0], (reg + 1),
 		buf->byte[1]);
 
-	ret = i2c_burst_write(i2c_master, i2c_addr, reg, buf->byte, 2);
+	ret = i2c_reg_write_byte(i2c_master, i2c_addr, reg, buf->byte[0]);
 	if (ret) {
 		LOG_ERR("PCAL9535A[0x%X]: error writing from register 0x%X "
 			"(%d)", i2c_addr, reg, ret);
 	}
-
+	ret = i2c_reg_write_byte(i2c_master, i2c_addr, reg+1, buf->byte[1]);
+	if (ret) {
+		LOG_ERR("PCAL9535A[0x%X]: error writing from register 0x%X "
+				"(%d)", i2c_addr, reg, ret);
+	}
 	return ret;
 }
 

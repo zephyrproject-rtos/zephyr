@@ -46,7 +46,7 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	u8_t shift = 0U;
 
 	/* Convert timeout to seconds. */
-	float m_timeout = (float)timeout / 1000000 * LSI_VALUE;
+	u32_t m_timeout = (u64_t)timeout * LSI_VALUE / 1000000;
 
 	do {
 		divider = 4 << shift;
@@ -151,7 +151,7 @@ static int iwdg_stm32_init(struct device *dev)
 #ifdef CONFIG_IWDG_STM32_START_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_timeout_cfg config = {
-		.window.max = CONFIG_IWDG_STM32_TIMEOUT * USEC_PER_MSEC,
+		.window.max = CONFIG_IWDG_STM32_TIMEOUT / USEC_PER_MSEC,
 	};
 
 	LL_IWDG_Enable(iwdg);

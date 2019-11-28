@@ -1,10 +1,7 @@
-# Kconfig - Private config options for Google Cloud IOT application
+# Private config options for Google Cloud IOT application
 
-#
 # Copyright (c) 2018 Linaro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Google IOT MQTT/TLS sample application"
 

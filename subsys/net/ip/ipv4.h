@@ -31,9 +31,22 @@
  *
  * @return 0 on success, negative errno otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_create(struct net_pkt *pkt,
 		    const struct in_addr *src,
 		    const struct in_addr *dst);
+#else
+static inline int net_ipv4_create(struct net_pkt *pkt,
+				  const struct in_addr *src,
+				  const struct in_addr *dst)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
+
+	return -ENOTSUP;
+}
+#endif
 
 /**
  * @brief Finalize IPv4 packet. It should be called right before
@@ -46,6 +59,17 @@ int net_ipv4_create(struct net_pkt *pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
+#else
+static inline int net_ipv4_finalize(struct net_pkt *pkt,
+				    u8_t next_header_proto)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(next_header_proto);
+
+	return -ENOTSUP;
+}
+#endif
 
 #endif /* __IPV4_H */

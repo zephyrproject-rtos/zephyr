@@ -62,6 +62,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_LLL_VENDOR_NORDIC
     ll_sw/nordic/lll/lll.c
     )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_LLL_VENDOR_OPENISA
+    ll_sw/openisa/lll/lll.c
+    )
   if(CONFIG_BT_BROADCASTER)
     zephyr_library_sources(
       ll_sw/ull_adv.c
@@ -74,6 +78,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
       CONFIG_BT_LLL_VENDOR_NORDIC
       ll_sw/nordic/lll/lll_adv.c
       )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_LLL_VENDOR_OPENISA
+      ll_sw/openisa/lll/lll_adv.c
+      )
   endif()
   if(CONFIG_BT_OBSERVER)
     zephyr_library_sources(
@@ -82,6 +90,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources_ifdef(
       CONFIG_BT_LLL_VENDOR_NORDIC
       ll_sw/nordic/lll/lll_scan.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_LLL_VENDOR_OPENISA
+      ll_sw/openisa/lll/lll_scan.c
       )
   endif()
   if(CONFIG_BT_CONN)
@@ -93,6 +105,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
       ll_sw/nordic/lll/lll_clock.c
       ll_sw/nordic/lll/lll_conn.c
       )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_LLL_VENDOR_OPENISA
+      ll_sw/openisa/lll/lll_clock.c
+      ll_sw/openisa/lll/lll_conn.c
+      )
     if(CONFIG_BT_PERIPHERAL)
       zephyr_library_sources(
         ll_sw/ull_slave.c
@@ -100,6 +117,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
       zephyr_library_sources_ifdef(
         CONFIG_BT_LLL_VENDOR_NORDIC
         ll_sw/nordic/lll/lll_slave.c
+        )
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_LLL_VENDOR_OPENISA
+        ll_sw/openisa/lll/lll_slave.c
         )
     endif()
     if(CONFIG_BT_CENTRAL)
@@ -109,6 +130,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
       zephyr_library_sources_ifdef(
         CONFIG_BT_LLL_VENDOR_NORDIC
         ll_sw/nordic/lll/lll_master.c
+        )
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_LLL_VENDOR_OPENISA
+        ll_sw/openisa/lll/lll_master.c
         )
     endif()
     if(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -136,7 +161,20 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources_ifdef(
       CONFIG_BT_CTLR_PROFILE_ISR
       ll_sw/nordic/lll/lll_prof.c
-      )
+    )
+  endif()
+  if(CONFIG_BT_LLL_VENDOR_OPENISA)
+    zephyr_library_include_directories(
+      ll_sw/openisa/lll
+    )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_DTM
+      ll_sw/openisa/lll/lll_test.c
+    )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_PROFILE_ISR
+      ll_sw/openisa/lll/lll_test.c
+    )
   endif()
 endif()
 
@@ -154,6 +192,15 @@ zephyr_library_sources_ifdef(
   ll_sw/nordic/hal/nrf5/ticker.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  ll_sw/openisa/hal/RV32M1/cntr.c
+  ll_sw/openisa/hal/RV32M1/ecb.c
+  ll_sw/openisa/hal/RV32M1/radio/radio.c
+  ll_sw/openisa/hal/RV32M1/mayfly.c
+  ll_sw/openisa/hal/RV32M1/ticker.c
+  )
+
 zephyr_library_include_directories(
   .
   include
@@ -164,6 +211,13 @@ if(CONFIG_SOC_COMPATIBLE_NRF)
   zephyr_library_include_directories(
     ll_sw/nordic
     hci/nordic
+    )
+endif()
+
+if(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+  zephyr_library_include_directories(
+    ll_sw/openisa
+    hci/openisa
     )
 endif()
 

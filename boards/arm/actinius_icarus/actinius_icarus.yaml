@@ -1,0 +1,14 @@
+identifier: actinius_icarus
+name: Actinius Icarus
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - i2c
+  - pwm
+  - watchdog

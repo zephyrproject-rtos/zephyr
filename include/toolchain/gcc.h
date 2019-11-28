@@ -14,6 +14,40 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+/*
+ * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
+ * detected and defined using arch-specific definitions.
+ */
+
+#ifndef _LINKER
+
+#ifndef __ORDER_BIG_ENDIAN__
+#define __ORDER_BIG_ENDIAN__            (1)
+#endif
+
+#ifndef __ORDER_LITTLE_ENDIAN__
+#define __ORDER_LITTLE_ENDIAN__         (2)
+#endif
+
+#ifndef __BYTE_ORDER__
+#if defined(__BIG_ENDIAN__) || defined(__ARMEB__) || \
+    defined(__THUMBEB__) || defined(__AARCH64EB__) || \
+    defined(__MIPSEB__) || defined(__TC32EB__)
+
+#define __BYTE_ORDER__                  __ORDER_BIG_ENDIAN__
+
+#elif defined(__LITTLE_ENDIAN__) || defined(__ARMEL__) || \
+      defined(__THUMBEL__) || defined(__AARCH64EL__) || \
+      defined(__MIPSEL__) || defined(__TC32EL__)
+
+#define __BYTE_ORDER__                  __ORDER_LITTLE_ENDIAN__
+
+#else
+#error "__BYTE_ORDER__ is not defined and cannot be automatically resolved"
+#endif
+#endif
+
+
 /* C++11 has static_assert built in */
 #ifdef __cplusplus
 #define BUILD_ASSERT(EXPR) static_assert(EXPR, "")
@@ -37,6 +71,8 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #if defined(CONFIG_ARCH_POSIX)
+#include <arch/posix/posix_trace.h>
+
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \
 {\
@@ -139,7 +175,9 @@ do {                                                                    \
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #endif
 #define __used		__attribute__((__used__))
+#ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
+#endif
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)
@@ -175,13 +213,18 @@ do {                                                                    \
 
 /* These macros allow having ARM asm functions callable from thumb */
 
-#if defined(_ASMLANGUAGE) && !defined(_LINKER)
+#if defined(_ASMLANGUAGE)
 
 #ifdef CONFIG_ARM
 
 #if defined(CONFIG_ISA_THUMB2)
 
 #define FUNC_CODE() .thumb;
+#define FUNC_INSTR(a)
+
+#elif defined(CONFIG_ISA_ARM)
+
+#define FUNC_CODE() .code 32
 #define FUNC_INSTR(a)
 
 #else
@@ -197,7 +240,7 @@ do {                                                                    \
 
 #endif /* !CONFIG_ARM */
 
-#endif /* _ASMLANGUAGE && !_LINKER */
+#endif /* _ASMLANGUAGE */
 
 /*
  * These macros are used to declare assembly language symbols that need
@@ -206,7 +249,7 @@ do {                                                                    \
  * correctly.  This is an elfism. Use #if 0 for a.out.
  */
 
-#if defined(_ASMLANGUAGE) && !defined(_LINKER)
+#if defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA)
@@ -299,7 +342,7 @@ do {                                                                    \
 
 #endif /* CONFIG_ARC */
 
-#endif /* _ASMLANGUAGE && !_LINKER */
+#endif /* _ASMLANGUAGE */
 
 #if defined(CONFIG_ARM) && defined(_ASMLANGUAGE)
 #if defined(CONFIG_ISA_THUMB2)
@@ -347,13 +390,6 @@ do {                                                                    \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
-#elif defined(CONFIG_X86_64)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%0"                               \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
 #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
@@ -375,4 +411,33 @@ do {                                                                    \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
 
+/** @brief Return larger value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *	 used:
+ *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
+ *	 - static variable, e.g. array like static u8_t array[Z_MAX(...)];
+ */
+#define Z_MAX(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		_value_a_ > _value_b_ ? _value_a_ : _value_b_; \
+	})
+
+/** @brief Return smaller value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * macro limitations.
+ */
+#define Z_MIN(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
+	})
+
+#endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

@@ -39,10 +39,10 @@ static struct eswifi_dev eswifi0; /* static instance */
 static int eswifi_reset(struct eswifi_dev *eswifi)
 {
 	gpio_pin_write(eswifi->resetn.dev, eswifi->resetn.pin, 0);
-	k_sleep(10);
+	k_sleep(K_MSEC(10));
 	gpio_pin_write(eswifi->resetn.dev, eswifi->resetn.pin, 1);
 	gpio_pin_write(eswifi->wakeup.dev, eswifi->wakeup.pin, 1);
-	k_sleep(500);
+	k_sleep(K_MSEC(500));
 
 	/* fetch the cursor */
 	return eswifi_request(eswifi, NULL, 0, eswifi->buf,
@@ -401,6 +401,10 @@ static void eswifi_iface_init(struct net_if *iface)
 	eswifi_unlock(eswifi);
 
 	eswifi_offload_init(eswifi);
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	eswifi_socket_offload_init(eswifi);
+#endif
+
 }
 
 static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)

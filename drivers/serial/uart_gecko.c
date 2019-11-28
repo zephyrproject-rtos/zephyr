@@ -11,6 +11,13 @@
 #include <em_cmu.h>
 #include <soc.h>
 
+#define USART_PREFIX cmuClock_USART
+#define UART_PREFIX cmuClock_UART
+#define CLOCK_ID_PRFX2(prefix, suffix) prefix##suffix
+#define CLOCK_ID_PRFX(prefix, suffix) CLOCK_ID_PRFX2(prefix, suffix)
+#define CLOCK_USART(id) CLOCK_ID_PRFX(USART_PREFIX, id)
+#define CLOCK_UART(id) CLOCK_ID_PRFX(UART_PREFIX, id)
+
 struct uart_gecko_config {
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
@@ -307,7 +314,7 @@ static void uart_gecko_config_func_0(struct device *dev);
 
 static const struct uart_gecko_config uart_gecko_0_config = {
 	.base = (USART_TypeDef *)DT_INST_0_SILABS_GECKO_UART_BASE_ADDRESS,
-	.clock = cmuClock_UART0,
+	.clock = CLOCK_UART(DT_INST_0_SILABS_GECKO_UART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_0_SILABS_GECKO_UART_CURRENT_SPEED,
 	.pin_rx = PIN_UART0_RXD,
 	.pin_tx = PIN_UART0_TXD,
@@ -362,7 +369,7 @@ static void uart_gecko_config_func_1(struct device *dev);
 
 static const struct uart_gecko_config uart_gecko_1_config = {
 	.base = (USART_TypeDef *)DT_INST_1_SILABS_GECKO_UART_BASE_ADDRESS,
-	.clock = cmuClock_UART1,
+	.clock = CLOCK_UART(DT_INST_1_SILABS_GECKO_UART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_1_SILABS_GECKO_UART_CURRENT_SPEED,
 	.pin_rx = PIN_UART1_RXD,
 	.pin_tx = PIN_UART1_TXD,
@@ -417,7 +424,7 @@ static void usart_gecko_config_func_0(struct device *dev);
 
 static const struct uart_gecko_config usart_gecko_0_config = {
 	.base = (USART_TypeDef *)DT_INST_0_SILABS_GECKO_USART_BASE_ADDRESS,
-	.clock = cmuClock_USART0,
+	.clock = CLOCK_USART(DT_INST_0_SILABS_GECKO_USART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_0_SILABS_GECKO_USART_CURRENT_SPEED,
 	.pin_rx = PIN_USART0_RXD,
 	.pin_tx = PIN_USART0_TXD,
@@ -473,7 +480,7 @@ static void usart_gecko_config_func_1(struct device *dev);
 
 static const struct uart_gecko_config usart_gecko_1_config = {
 	.base = (USART_TypeDef *)DT_INST_1_SILABS_GECKO_USART_BASE_ADDRESS,
-	.clock = cmuClock_USART1,
+	.clock = CLOCK_USART(DT_INST_1_SILABS_GECKO_USART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_1_SILABS_GECKO_USART_CURRENT_SPEED,
 	.pin_rx = PIN_USART1_RXD,
 	.pin_tx = PIN_USART1_TXD,
@@ -529,7 +536,7 @@ static void usart_gecko_config_func_2(struct device *dev);
 
 static const struct uart_gecko_config usart_gecko_2_config = {
 	.base = (USART_TypeDef *)DT_INST_2_SILABS_GECKO_USART_BASE_ADDRESS,
-	.clock = cmuClock_USART2,
+	.clock = CLOCK_USART(DT_INST_2_SILABS_GECKO_USART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_2_SILABS_GECKO_USART_CURRENT_SPEED,
 	.pin_rx = PIN_USART2_RXD,
 	.pin_tx = PIN_USART2_TXD,
@@ -585,7 +592,7 @@ static void usart_gecko_config_func_3(struct device *dev);
 
 static const struct uart_gecko_config usart_gecko_3_config = {
 	.base = (USART_TypeDef *)DT_INST_3_SILABS_GECKO_USART_BASE_ADDRESS,
-	.clock = cmuClock_USART3,
+	.clock = CLOCK_USART(DT_INST_3_SILABS_GECKO_USART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_3_SILABS_GECKO_USART_CURRENT_SPEED,
 	.pin_rx = PIN_USART3_RXD,
 	.pin_tx = PIN_USART3_TXD,

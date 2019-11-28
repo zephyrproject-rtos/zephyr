@@ -1,9 +1,7 @@
 # ST Microelectronics STTS751 temperature sensor
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig STTS751
 	bool "STTS751 temperature sensor"

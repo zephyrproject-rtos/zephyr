@@ -1,23 +1,18 @@
-#
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: NXP LPI2C
 
-description: >
+description: |
     This binding gives a base representation of the NXP i.MX LPI2C controller
 
-inherits:
-    !include i2c.yaml
+compatible: "nxp,imx-lpi2c"
+
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-lpi2c"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

@@ -51,7 +51,7 @@ static inline int wait_for_ack(struct net_if *iface,
 		return 0;
 	}
 
-	if (k_sem_take(&ctx->ack_lock, 10) == 0) {
+	if (k_sem_take(&ctx->ack_lock, K_MSEC(10)) == 0) {
 		/*
 		 * We reinit the semaphore in case handle_ack
 		 * got called multiple times.
