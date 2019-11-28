@@ -240,6 +240,60 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
+static void tx_free(struct bt_conn_tx *tx)
+{
+	tx->cb = NULL;
+	tx->user_data = NULL;
+	tx->pending_no_cb = 0U;
+	k_fifo_put(&free_tx, tx);
+}
+
+static void tx_notify(struct bt_conn *conn)
+{
+	BT_DBG("conn %p", conn);
+
+	while (1) {
+		struct bt_conn_tx *tx;
+		unsigned int key;
+		bt_conn_tx_cb_t cb;
+		void *user_data;
+
+		key = irq_lock();
+		if (sys_slist_is_empty(&conn->tx_complete)) {
+			irq_unlock(key);
+			break;
+		}
+
+		tx = (void *)sys_slist_get_not_empty(&conn->tx_complete);
+		irq_unlock(key);
+
+		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
+
+		/* Copy over the params */
+		cb = tx->cb;
+		user_data = tx->user_data;
+
+		/* Free up TX notify since there may be user waiting */
+		tx_free(tx);
+
+		/* Run the callback, at this point it should be safe to
+		 * allocate new buffers since the TX should have been
+		 * unblocked by tx_free.
+		 */
+		cb(conn, user_data);
+	}
+}
+
+static void tx_complete_work(struct k_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
+					   tx_complete_work);
+
+	BT_DBG("conn %p", conn);
+
+	tx_notify(conn);
+}
+
 static void conn_update_timeout(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, update_work);
@@ -304,45 +358,6 @@ static void conn_update_timeout(struct k_work *work)
 	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
 }
 
-static void tx_free(struct bt_conn_tx *tx)
-{
-	if (tx->conn) {
-		bt_conn_unref(tx->conn);
-		tx->conn = NULL;
-	}
-
-	tx->cb = NULL;
-	tx->user_data = NULL;
-	tx->pending_no_cb = 0U;
-	k_fifo_put(&free_tx, tx);
-}
-
-static void tx_notify_cb(struct k_work *work)
-{
-	struct bt_conn_tx *tx = CONTAINER_OF(work, struct bt_conn_tx, work);
-	struct bt_conn *conn;
-	bt_conn_tx_cb_t cb;
-	void *user_data;
-
-	BT_DBG("tx %p conn %p cb %p user_data %p", tx, tx->conn, tx->cb,
-	       tx->user_data);
-
-	/* Copy over the params */
-	conn = bt_conn_ref(tx->conn);
-	cb = tx->cb;
-	user_data = tx->user_data;
-
-	/* Free up TX notify since there may be user waiting */
-	tx_free(tx);
-
-	/* Run the callback, at this point it should be safe to allocate new
-	 * buffers since the TX should have been unblocked by tx_free.
-	 */
-	cb(conn, user_data);
-
-	bt_conn_unref(conn);
-}
-
 static struct bt_conn *conn_new(void)
 {
 	struct bt_conn *conn = NULL;
@@ -361,6 +376,8 @@ static struct bt_conn *conn_new(void)
 
 	(void)memset(conn, 0, sizeof(*conn));
 	k_delayed_work_init(&conn->update_work, conn_update_timeout);
+
+	k_work_init(&conn->tx_complete_work, tx_complete_work);
 
 	atomic_set(&conn->ref, 1);
 
@@ -1114,6 +1131,11 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 	struct bt_l2cap_hdr *hdr;
 	u16_t len;
 
+	/* Make sure we notify any pending TX callbacks before processing
+	 * new data for this connection.
+	 */
+	tx_notify(conn);
+
 	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	/* Check packet boundary flags */
@@ -1250,9 +1272,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 		tx->cb = cb;
 		tx->user_data = user_data;
-		tx->conn = bt_conn_ref(conn);
 		tx->pending_no_cb = 0U;
-		k_work_init(&tx->work, tx_notify_cb);
 
 		tx_data(buf)->tx = tx;
 	} else {
@@ -1616,6 +1636,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
 			process_unack_tx(conn);
+			tx_notify(conn);
 
 			/* Cancel Connection Update if it is pending */
 			if (conn->type == BT_CONN_TYPE_LE) {

@@ -80,11 +80,8 @@ struct bt_conn_sco {
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
 
 struct bt_conn_tx {
-	union {
-		sys_snode_t node;
-		struct k_work work;
-	};
-	struct bt_conn *conn;
+	sys_snode_t node;
+
 	bt_conn_tx_cb_t cb;
 	void *user_data;
 
@@ -122,6 +119,11 @@ struct bt_conn {
 	 * the next packet (if any) in tx_pending.
 	 */
 	u32_t                   pending_no_cb;
+
+	/* Completed TX for which we need to call the callback */
+	sys_slist_t		tx_complete;
+	struct k_work           tx_complete_work;
+
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;

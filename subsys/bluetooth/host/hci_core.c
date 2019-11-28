@@ -728,9 +728,10 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			key = irq_lock();
 			conn->pending_no_cb = tx->pending_no_cb;
 			tx->pending_no_cb = 0U;
+			sys_slist_append(&conn->tx_complete, &tx->node);
 			irq_unlock(key);
 
-			k_work_submit(&tx->work);
+			k_work_submit(&conn->tx_complete_work);
 			k_sem_give(bt_conn_get_pkts(conn));
 		}
 
