@@ -103,9 +103,6 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	. = CONFIG_TEXT_SECTION_OFFSET;
-	. = ALIGN(4);
-
 	/*
 	 * Respect for CONFIG_TEXT_SECTION_OFFSET is mandatory
 	 * for MCUboot support, so .reset.* and .exception.*
