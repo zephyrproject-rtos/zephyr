@@ -103,38 +103,13 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	/*
-	 * Respect for CONFIG_TEXT_SECTION_OFFSET is mandatory
-	 * for MCUboot support, so .reset.* and .exception.*
-	 * must come after that offset from ROM_BASE.
-	 */
-
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-	/*
-	 * For CONFIG_BOOTLOADER_MCUBOOT, the vector table is located at the
-	 * end of the image header of the MCUboot. After the tagert image is
-	 * boot, the register Machine Trap-Vector Base Address (MTVEC) is
-	 * set with the value of _vector_start in the reset handler.
-	 */
-	_vector_start = .;
-	KEEP(*(.vectors.*))
-	_vector_end = .;
-	. = ALIGN(4);
-#endif
-
-	KEEP(*(.reset.*))
-	KEEP(*(".exception.entry.*")) /* contains __irq_wrapper */
-	*(".exception.other.*")
-
-	KEEP(*(.openocd_debug))
-	KEEP(*(".openocd_debug.*"))
-
-	_image_text_start = .;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-text-start.ld>
+
+	_image_text_start = .;
 
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
