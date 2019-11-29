@@ -184,12 +184,12 @@ static int video_sw_generator_flush(struct device *dev,
 static const struct video_format_cap fmts[] = {
 	{
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width_min = 640,
-		.width_max = 640,
-		.height_min = 480,
-		.height_max = 480,
-		.width_step = 0,
-		.height_step = 0,
+		.width_min = 64,
+		.width_max = 1920,
+		.height_min = 64,
+		.height_max = 1080,
+		.width_step = 1,
+		.height_step = 1,
 	},
 	{ 0 }
 };
@@ -251,8 +251,8 @@ static const struct video_driver_api video_sw_generator_driver_api = {
 
 static struct video_sw_generator_data video_sw_generator_data_0 = {
 	.fmt.width = 320,
-	.fmt.height = 240,
-	.fmt.pitch = 640,
+	.fmt.height = 160,
+	.fmt.pitch = 320*2,
 	.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,
 };
 
