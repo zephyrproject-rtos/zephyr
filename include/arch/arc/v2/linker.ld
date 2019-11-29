@@ -91,11 +91,6 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-text-start.ld>
-/* when !XIP, .text is in RAM, and vector table must be at its very start */
-
-		KEEP(*(.exc_vector_table))
-		KEEP(*(".exc_vector_table.*"))
-		KEEP(*(IRQ_VECTOR_TABLE))
 
 		*(.text)
 		*(".text.*")
