@@ -85,7 +85,6 @@ SECTIONS
 	_image_text_start = PHYS_LOAD_ADDR;
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	. = CONFIG_TEXT_SECTION_OFFSET;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
