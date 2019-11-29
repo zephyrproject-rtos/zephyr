@@ -158,6 +158,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 		struct timeout_order_data *data =
 			k_fifo_get(&timeout_order_fifo, K_FOREVER);
 
+		zassert_not_null(data, NULL);
 		if (data->timeout_order == ii) {
 			TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);
