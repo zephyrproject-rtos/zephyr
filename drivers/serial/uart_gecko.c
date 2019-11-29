@@ -634,3 +634,115 @@ static void usart_gecko_config_func_3(struct device *dev)
 #endif
 
 #endif /* DT_INST_3_SILABS_GECKO_USART */
+
+#ifdef DT_INST_4_SILABS_GECKO_USART
+
+#define PIN_USART4_RXD {DT_INST_4_SILABS_GECKO_USART_LOCATION_RX_1, \
+		DT_INST_4_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
+#define PIN_USART4_TXD {DT_INST_4_SILABS_GECKO_USART_LOCATION_TX_1, \
+		DT_INST_4_SILABS_GECKO_USART_LOCATION_TX_2, gpioModePushPull, 1}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void usart_gecko_config_func_4(struct device *dev);
+#endif
+
+static const struct uart_gecko_config usart_gecko_4_config = {
+	.base = (USART_TypeDef *)DT_INST_4_SILABS_GECKO_USART_BASE_ADDRESS,
+	.clock = CLOCK_USART(DT_INST_4_SILABS_GECKO_USART_PERIPHERAL_ID),
+	.baud_rate = DT_INST_4_SILABS_GECKO_USART_CURRENT_SPEED,
+	.pin_rx = PIN_USART4_RXD,
+	.pin_tx = PIN_USART4_TXD,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_INST_4_SILABS_GECKO_USART_LOCATION_RX_0,
+	.loc_tx = DT_INST_4_SILABS_GECKO_USART_LOCATION_TX_0,
+#else
+#if DT_INST_4_SILABS_GECKO_USART_LOCATION_RX_0 \
+	!= DT_INST_4_SILABS_GECKO_USART_LOCATION_TX_0
+#error USART_4 DTS location-* properties must have identical value
+#endif
+	.loc = DT_INST_4_SILABS_GECKO_USART_LOCATION_RX_0,
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = usart_gecko_config_func_4,
+#endif
+};
+
+static struct uart_gecko_data usart_gecko_4_data;
+
+DEVICE_AND_API_INIT(usart_4, DT_INST_4_SILABS_GECKO_USART_LABEL,
+		    &uart_gecko_init, &usart_gecko_4_data,
+		    &usart_gecko_4_config, PRE_KERNEL_1,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void usart_gecko_config_func_4(struct device *dev)
+{
+	IRQ_CONNECT(DT_INST_4_SILABS_GECKO_USART_IRQ_RX,
+		    DT_INST_4_SILABS_GECKO_USART_IRQ_RX_PRIORITY,
+		    uart_gecko_isr, DEVICE_GET(usart_4), 0);
+	IRQ_CONNECT(DT_INST_4_SILABS_GECKO_USART_IRQ_TX,
+		    DT_INST_4_SILABS_GECKO_USART_IRQ_TX_PRIORITY,
+		    uart_gecko_isr, DEVICE_GET(usart_4), 0);
+
+	irq_enable(DT_INST_4_SILABS_GECKO_USART_IRQ_RX);
+	irq_enable(DT_INST_4_SILABS_GECKO_USART_IRQ_TX);
+}
+#endif
+
+#endif /* DT_INST_4_SILABS_GECKO_USART */
+
+#ifdef DT_INST_5_SILABS_GECKO_USART
+
+#define PIN_USART5_RXD {DT_INST_5_SILABS_GECKO_USART_LOCATION_RX_1, \
+		DT_INST_5_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
+#define PIN_USART5_TXD {DT_INST_5_SILABS_GECKO_USART_LOCATION_TX_1, \
+		DT_INST_5_SILABS_GECKO_USART_LOCATION_TX_2, gpioModePushPull, 1}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void usart_gecko_config_func_5(struct device *dev);
+#endif
+
+static const struct uart_gecko_config usart_gecko_5_config = {
+	.base = (USART_TypeDef *)DT_INST_5_SILABS_GECKO_USART_BASE_ADDRESS,
+	.clock = CLOCK_USART(DT_INST_5_SILABS_GECKO_USART_PERIPHERAL_ID),
+	.baud_rate = DT_INST_5_SILABS_GECKO_USART_CURRENT_SPEED,
+	.pin_rx = PIN_USART5_RXD,
+	.pin_tx = PIN_USART5_TXD,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_INST_5_SILABS_GECKO_USART_LOCATION_RX_0,
+	.loc_tx = DT_INST_5_SILABS_GECKO_USART_LOCATION_TX_0,
+#else
+#if DT_INST_5_SILABS_GECKO_USART_LOCATION_RX_0 \
+	!= DT_INST_5_SILABS_GECKO_USART_LOCATION_TX_0
+#error USART_5 DTS location-* properties must have identical value
+#endif
+	.loc = DT_INST_5_SILABS_GECKO_USART_LOCATION_RX_0,
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = usart_gecko_config_func_5,
+#endif
+};
+
+static struct uart_gecko_data usart_gecko_5_data;
+
+DEVICE_AND_API_INIT(usart_5, DT_INST_5_SILABS_GECKO_USART_LABEL,
+		    &uart_gecko_init, &usart_gecko_5_data,
+		    &usart_gecko_5_config, PRE_KERNEL_1,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void usart_gecko_config_func_5(struct device *dev)
+{
+	IRQ_CONNECT(DT_INST_5_SILABS_GECKO_USART_IRQ_RX,
+		    DT_INST_5_SILABS_GECKO_USART_IRQ_RX_PRIORITY,
+		    uart_gecko_isr, DEVICE_GET(usart_5), 0);
+	IRQ_CONNECT(DT_INST_5_SILABS_GECKO_USART_IRQ_TX,
+		    DT_INST_5_SILABS_GECKO_USART_IRQ_TX_PRIORITY,
+		    uart_gecko_isr, DEVICE_GET(usart_5), 0);
+
+	irq_enable(DT_INST_5_SILABS_GECKO_USART_IRQ_RX);
+	irq_enable(DT_INST_5_SILABS_GECKO_USART_IRQ_TX);
+}
+#endif
+
+#endif /* DT_INST_5_SILABS_GECKO_USART */
