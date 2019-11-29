@@ -25,6 +25,8 @@ if(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
     extra_post_build_byproducts
     ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME}
     )
+
+  zephyr_linker_sources(SECTIONS SORT_KEY z_end secure_entry_functions.ld)
 endif()
 
 # Link the entry veneers library file with the Non-Secure Firmware that needs it.
