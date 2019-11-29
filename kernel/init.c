@@ -370,14 +370,11 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 			   CONFIG_MAIN_STACK_SIZE, bg_thread_main,
 			   NULL, NULL, NULL,
 			   CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
-	sys_trace_thread_create(&z_main_thread);
-
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
 	init_idle_thread(&z_idle_thread, z_idle_stack);
 	_kernel.cpus[0].idle_thread = &z_idle_thread;
-	sys_trace_thread_create(&z_idle_thread);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
