@@ -17,9 +17,9 @@ struct video_sw_generator_data {
 	struct k_fifo fifo_out;
 	struct k_delayed_work buf_work;
 	int pattern;
-	struct k_poll_signal *signal;
 	bool ctrl_hflip;
 	bool ctrl_vflip;
+	struct k_poll_signal *signal;
 };
 
 static int video_sw_generator_set_fmt(struct device *dev,
@@ -115,8 +115,7 @@ static void __buffer_work(struct k_work *work)
 
 	k_fifo_put(&data->fifo_out, vbuf);
 
-	/* Event */
-	if (data->signal) {
+	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 		k_poll_signal_raise(data->signal, VIDEO_BUF_DONE);
 	}
 
@@ -171,7 +170,7 @@ static int video_sw_generator_flush(struct device *dev,
 	} else {
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (data->signal) {
+			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 				k_poll_signal_raise(data->signal,
 						    VIDEO_BUF_ABORTED);
 			}
@@ -204,6 +203,7 @@ static int video_sw_generator_get_caps(struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_POLL
 static int video_sw_generator_set_signal(struct device *dev,
 					 enum video_endpoint_id ep,
 					 struct k_poll_signal *signal)
@@ -218,6 +218,7 @@ static int video_sw_generator_set_signal(struct device *dev,
 
 	return 0;
 }
+#endif
 
 static inline int video_sw_generator_set_ctrl(struct device *dev,
 					      unsigned int cid,
@@ -246,7 +247,9 @@ static const struct video_driver_api video_sw_generator_driver_api = {
 	.dequeue = video_sw_generator_dequeue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_ctrl = video_sw_generator_set_ctrl,
+#ifdef CONFIG_POLL
 	.set_signal = video_sw_generator_set_signal,
+#endif
 };
 
 static struct video_sw_generator_data video_sw_generator_data_0 = {
