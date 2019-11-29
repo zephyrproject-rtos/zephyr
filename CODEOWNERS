@@ -139,6 +139,7 @@
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/counter/                         @nordic-krch
+/drivers/console/semihost_console.c       @luozhongyao
 /drivers/counter/counter_cmos.c           @andrewboie
 /drivers/counter/maxim_ds3231.c           @pabigot
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
