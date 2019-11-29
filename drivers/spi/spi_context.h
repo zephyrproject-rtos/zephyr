@@ -169,10 +169,10 @@ static inline void spi_context_cs_configure(struct spi_context *ctx)
 {
 	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
 		gpio_pin_configure(ctx->config->cs->gpio_dev,
-				   ctx->config->cs->gpio_pin, GPIO_DIR_OUT);
-		gpio_pin_write(ctx->config->cs->gpio_dev,
-			       ctx->config->cs->gpio_pin,
-			       spi_context_cs_inactive_value(ctx));
+				   ctx->config->cs->gpio_pin, GPIO_OUTPUT);
+		gpio_pin_set(ctx->config->cs->gpio_dev,
+			     ctx->config->cs->gpio_pin,
+			     spi_context_cs_inactive_value(ctx));
 	} else {
 		LOG_INF("CS control inhibited (no GPIO device)");
 	}
@@ -183,9 +183,9 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 {
 	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio_dev) {
 		if (on) {
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin,
-				       spi_context_cs_active_value(ctx));
+			gpio_pin_set(ctx->config->cs->gpio_dev,
+				     ctx->config->cs->gpio_pin,
+				     spi_context_cs_active_value(ctx));
 			k_busy_wait(ctx->config->cs->delay);
 		} else {
 			if (!force_off &&
@@ -194,9 +194,9 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 			}
 
 			k_busy_wait(ctx->config->cs->delay);
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin,
-				       spi_context_cs_inactive_value(ctx));
+			gpio_pin_set(ctx->config->cs->gpio_dev,
+				     ctx->config->cs->gpio_pin,
+				     spi_context_cs_inactive_value(ctx));
 		}
 	}
 }
