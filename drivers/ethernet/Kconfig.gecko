@@ -1,0 +1,96 @@
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_GECKO
+	bool "SiLabs Gecko Ethernet driver"
+	help
+	  Enable Ethernet driver for Silicon Labs Gecko chips.
+
+if ETH_GECKO
+
+config ETH_GECKO_NAME
+	string "Device name"
+	default "ETH_0"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config ETH_GECKO_IRQ_PRI
+	int "Interrupt priority"
+	default 0
+	help
+	  IRQ priority of Ethernet device
+
+config ETH_GECKO_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size
+
+config ETH_GECKO_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority
+
+choice ETH_GECKO_MAC_SELECT
+	prompt "MAC address"
+	help
+	  Choose how to configure MAC address.
+
+config ETH_GECKO_RANDOM_MAC
+	bool "Random MAC address"
+	help
+	  Generate a random MAC address dynamically.
+
+config ETH_GECKO_MAC_MANUAL
+	bool "Manual"
+	help
+	  Assign an arbitrary MAC address.
+
+endchoice # ETH_GECKO_MAC_SELECT
+
+if ETH_GECKO_MAC_MANUAL
+
+config ETH_GECKO_MAC0
+	hex "MAC Address Byte 0"
+	default 0
+	range 0 0xff
+
+config ETH_GECKO_MAC1
+	hex "MAC Address Byte 1"
+	default 0
+	range 0 0xff
+
+config ETH_GECKO_MAC2
+	hex "MAC Address Byte 2"
+	default 0
+	range 0 0xff
+
+config ETH_GECKO_MAC3
+	hex "MAC Address Byte 3"
+	default 0
+	range 0 0xff
+
+config ETH_GECKO_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+
+config ETH_GECKO_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+
+endif # ETH_GECKO_MAC_MANUAL
+
+config ETH_GECKO_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+	int "Carrier check timeout period (ms)"
+	default 500
+	range 100 30000
+	help
+	  Set the RX idle timeout period in milliseconds after which the
+	  PHY's carrier status is re-evaluated.
+
+endif # ETH_GECKO

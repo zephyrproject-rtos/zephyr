@@ -7,6 +7,11 @@ zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC
 	phy_sam_gmac.c
 	)
 
+zephyr_sources_ifdef(CONFIG_ETH_GECKO
+	eth_gecko.c
+	phy_gecko.c
+	)
+
 zephyr_sources_ifdef(CONFIG_ETH_STELLARIS	 eth_stellaris.c)
 zephyr_sources_ifdef(CONFIG_ETH_E1000		   eth_e1000.c)
 zephyr_sources_ifdef(CONFIG_ETH_ENC28J60	 eth_enc28j60.c)

@@ -31,5 +31,6 @@ source "drivers/ethernet/Kconfig.smsc911x"
 source "drivers/ethernet/Kconfig.native_posix"
 source "drivers/ethernet/Kconfig.stellaris"
 source "drivers/ethernet/Kconfig.liteeth"
+source "drivers/ethernet/Kconfig.gecko"
 
 endmenu # "Ethernet Drivers"
