@@ -313,7 +313,7 @@ config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 
 config BT_CTLR_SETTINGS
 	bool "Settings System"
-	depends on BT_SETTINGS
+	depends on SETTINGS
 	help
 	  Enable use of settings system in controller.
 
