@@ -1172,7 +1172,7 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 	}
 
 	/* Fallback to using global connection tx pool */
-	return bt_l2cap_create_pdu(NULL, 0);
+	return bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
 }
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
@@ -1255,10 +1255,11 @@ static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
-static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
-			      u16_t sdu_hdr_len)
+static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
+			      struct net_buf *buf, u16_t sdu_hdr_len)
 {
 	struct net_buf *seg;
+	struct net_buf_simple_state state;
 	int len, err;
 
 	/* Wait for credits */
@@ -1267,16 +1268,13 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 		return -EAGAIN;
 	}
 
+	/* Save state so it can be restored if we failed to send */
+	net_buf_simple_save(&buf->b, &state);
+
 	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
 	if (!seg) {
 		k_sem_give(&ch->tx.credits);
 		return -EAGAIN;
-	}
-
-	/* Channel may have been disconnected while waiting for a buffer */
-	if (!ch->chan.conn) {
-		net_buf_unref(seg);
-		return -ECONNRESET;
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
@@ -1300,6 +1298,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 		k_sem_give(&ch->tx.credits);
 
 		if (err == -ENOBUFS) {
+			/* Restore state since segment could not be sent */
+			net_buf_simple_restore(&buf->b, &state);
 			return -EAGAIN;
 		}
 
