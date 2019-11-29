@@ -102,9 +102,11 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 
 done:
 	/* Trigger Event */
-	if (data->signal) {
+	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 		k_poll_signal_raise(data->signal, result);
 	}
+
+	return;
 }
 
 static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
@@ -230,7 +232,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (data->signal) {
+			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 				k_poll_signal_raise(data->signal,
 						    VIDEO_BUF_ABORTED);
 			}
@@ -363,6 +365,7 @@ static int video_mcux_csi_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_POLL
 static int video_mcux_csi_set_signal(struct device *dev,
 				     enum video_endpoint_id ep,
 				     struct k_poll_signal *signal)
@@ -377,6 +380,7 @@ static int video_mcux_csi_set_signal(struct device *dev,
 
 	return 0;
 }
+#endif
 
 static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_format = video_mcux_csi_set_fmt,
@@ -389,7 +393,9 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_ctrl = video_mcux_csi_set_ctrl,
 	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
+#ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,
+#endif
 };
 
 #if 1 /* Unique Instance */
