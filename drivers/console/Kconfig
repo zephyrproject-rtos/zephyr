@@ -291,6 +291,20 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config SEMIHOST_CONSOLE
+	bool "Use semihosting for console"
+	select CONSOLE_HAS_DRIVER
+	depends on CPU_CORTEX_M
+	help
+	  Enable this option to use semihosting for console.
+	  Semihosting is a mechanism that enables code running on an ARM target
+	  to communicate and use the Input/Output facilities on a host computer
+	  that is running a debugger.
+	  Additional information can be found in:
+	  https://developer.arm.com/docs/dui0471/k/what-is-semihosting/what-is-semihosting
+	  This option is compatible with hardware and with QEMU, through the
+	  (automatic) use of the -semihosting-config switch when invoking it.
+
 module = UART_CONSOLE
 module-str = UART console
 source "subsys/logging/Kconfig.template.log_config"
