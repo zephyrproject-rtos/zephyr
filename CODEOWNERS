@@ -105,6 +105,7 @@
 /doc/scripts/                             @carlescufi
 /doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
+/doc/reference/kernel/other/resource_mgmt.rst @pabigot
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*stm32*                        @erwango
