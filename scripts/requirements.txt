@@ -1,5 +1,6 @@
 Pillow
 PyYAML>=5.1
+anytree
 breathe>=4.9.1
 colorama
 docutils>=0.14
@@ -19,6 +20,7 @@ sphinx>=1.7.5
 sphinx_rtd_theme
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
+tabulate
 west>=0.6.2
 wheel>=0.30.0
 # "win32" is used for 64-bit Windows as well
