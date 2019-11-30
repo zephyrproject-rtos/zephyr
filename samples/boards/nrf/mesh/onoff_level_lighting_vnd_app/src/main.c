@@ -93,6 +93,7 @@ static void light_default_status_init(void)
 
 void update_vnd_led_gpio(void)
 {
+#ifndef ONE_LED_ONE_BUTTON_BOARD
 	if (vnd_user_data.current == STATE_ON) {
 		/* LED2 On */
 		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 0);
@@ -100,6 +101,7 @@ void update_vnd_led_gpio(void)
 		/* LED2 Off */
 		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
 	}
+#endif
 }
 
 void update_led_gpio(void)
@@ -120,6 +122,7 @@ void update_led_gpio(void)
 		gpio_pin_write(led_device[0], DT_ALIAS_LED0_GPIOS_PIN, 1);
 	}
 
+#ifndef ONE_LED_ONE_BUTTON_BOARD
 	if (power < 50) {
 		/* LED3 On */
 		gpio_pin_write(led_device[2], DT_ALIAS_LED2_GPIOS_PIN, 0);
@@ -135,6 +138,7 @@ void update_led_gpio(void)
 		/* LED4 Off */
 		gpio_pin_write(led_device[3], DT_ALIAS_LED3_GPIOS_PIN, 1);
 	}
+#endif
 }
 
 void update_light_state(void)

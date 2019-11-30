@@ -29,6 +29,7 @@ void publish(struct k_work *work)
 {
 	int err = 0;
 
+#ifndef ONE_LED_ONE_BUTTON_BOARD
 	if (button_read(button_device[0], DT_ALIAS_SW0_GPIOS_PIN) == 0U) {
 #if defined(ONOFF)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
@@ -213,6 +214,20 @@ void publish(struct k_work *work)
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
 	}
+#else
+	if (button_read(button_device[0], DT_ALIAS_SW0_GPIOS_PIN) == 0U) {
+#if defined(ONOFF)
+		static u8_t state = STATE_ON;
+
+		bt_mesh_model_msg_init(root_models[3].pub->msg,
+				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
+		net_buf_simple_add_u8(root_models[3].pub->msg,
+				      state = state ^ 0x01);
+		net_buf_simple_add_u8(root_models[3].pub->msg, tid++);
+		err = bt_mesh_model_publish(&root_models[3]);
+#endif
+	}
+#endif
 
 	if (err) {
 		printk("bt_mesh_model_publish: err: %d\n", err);

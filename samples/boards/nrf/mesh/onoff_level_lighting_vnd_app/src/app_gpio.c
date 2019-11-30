@@ -7,6 +7,7 @@
 
 #include <drivers/gpio.h>
 
+#include "app_gpio.h"
 #include "publisher.h"
 
 struct device *led_device[4];
@@ -31,6 +32,7 @@ void app_gpio_init(void)
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[0], DT_ALIAS_LED0_GPIOS_PIN, 1);
 
+#ifndef ONE_LED_ONE_BUTTON_BOARD
 	led_device[1] = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
 	gpio_pin_configure(led_device[1], DT_ALIAS_LED1_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
@@ -45,7 +47,7 @@ void app_gpio_init(void)
 	gpio_pin_configure(led_device[3], DT_ALIAS_LED3_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[3], DT_ALIAS_LED3_GPIOS_PIN, 1);
-
+#endif
 	/* Buttons configuration & setting */
 
 	k_work_init(&button_work, publish);
@@ -61,6 +63,7 @@ void app_gpio_init(void)
 	gpio_add_callback(button_device[0], &button_cb[0]);
 	gpio_pin_enable_callback(button_device[0], DT_ALIAS_SW0_GPIOS_PIN);
 
+#ifndef ONE_LED_ONE_BUTTON_BOARD
 	button_device[1] = device_get_binding(DT_ALIAS_SW1_GPIOS_CONTROLLER);
 	gpio_pin_configure(button_device[1], DT_ALIAS_SW1_GPIOS_PIN,
 			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
@@ -93,4 +96,5 @@ void app_gpio_init(void)
 			   BIT(DT_ALIAS_SW3_GPIOS_PIN));
 	gpio_add_callback(button_device[3], &button_cb[3]);
 	gpio_pin_enable_callback(button_device[3], DT_ALIAS_SW3_GPIOS_PIN);
+#endif
 }
