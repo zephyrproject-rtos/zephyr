@@ -1,0 +1,3 @@
+tests:
+  libraries.onoff:
+    tags: onoff timer
