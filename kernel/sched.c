@@ -468,6 +468,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 	z_remove_thread_from_ready_q(thread);
 	z_mark_thread_as_pending(thread);
+	sys_trace_thread_pend(thread);
 
 	if (wait_q != NULL) {
 		thread->base.pended_on = wait_q;
@@ -488,8 +489,6 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 		z_add_thread_timeout(thread, ticks);
 	}
-
-	sys_trace_thread_pend(thread);
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)

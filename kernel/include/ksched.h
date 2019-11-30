@@ -140,11 +140,13 @@ static inline bool z_is_thread_queued(struct k_thread *thread)
 static inline void z_mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_SUSPENDED;
+	sys_trace_thread_suspend(thread);
 }
 
 static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_SUSPENDED;
+	sys_trace_thread_resume(thread);
 }
 
 static inline void z_mark_thread_as_started(struct k_thread *thread)
@@ -248,9 +250,8 @@ static ALWAYS_INLINE void z_ready_thread(struct k_thread *thread)
 {
 	if (z_is_thread_ready(thread)) {
 		z_add_thread_to_ready_q(thread);
+		sys_trace_thread_ready(thread);
 	}
-
-	sys_trace_thread_ready(thread);
 }
 
 static inline void _ready_one_thread(_wait_q_t *wq)
