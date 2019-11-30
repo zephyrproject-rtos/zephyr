@@ -180,12 +180,33 @@ static void onoff_work_handler(struct k_work *work)
 
 static void level_move_lightness_work_handler(void)
 {
-	s16_t level;
+	int light;
 
-	level = (s16_t) get_current(LEVEL_LIGHT) + ctl->light->delta;
+	light = 0;
 
-	ctl->light->current = constrain_lightness((u16_t) (level - INT16_MIN));
+	if (ctl->light->current) {
+		light = ctl->light->current + ctl->light->delta;
+	} else {
+		if (ctl->light->delta < 0) {
+			light = UINT16_MAX + ctl->light->delta;
+		} else if (ctl->light->delta > 0) {
+			light = ctl->light->delta;
+		}
+	}
+
+	if (light > ctl->light->range_max) {
+		light = ctl->light->range_max;
+	} else if (light < ctl->light->range_min) {
+		light = ctl->light->range_min;
+	}
+
+	ctl->light->current = light;
 	update_light_state();
+
+	if (ctl->light->target == light) {
+		ctl->transition->counter = 0;
+		k_timer_stop(&ctl->transition->timer);
+	}
 }
 
 static void level_lightness_work_handler(struct k_work *work)
@@ -221,12 +242,33 @@ static void level_lightness_work_handler(struct k_work *work)
 
 static void level_move_temp_work_handler(void)
 {
-	s16_t level;
+	int temp;
 
-	level = (s16_t) get_current(LEVEL_TEMP) + ctl->temp->delta;
+	temp = 0;
 
-	ctl->temp->current = level_to_light_ctl_temp(level);
+	if (ctl->temp->current) {
+		temp = ctl->temp->current + ctl->temp->delta;
+	} else {
+		if (ctl->temp->delta < 0) {
+			temp = UINT16_MAX + ctl->temp->delta;
+		} else if (ctl->temp->delta > 0) {
+			temp = ctl->temp->delta;
+		}
+	}
+
+	if (temp > ctl->temp->range_max) {
+		temp = ctl->temp->range_max;
+	} else if (temp < ctl->temp->range_min) {
+		temp = ctl->temp->range_min;
+	}
+
+	ctl->temp->current = temp;
 	update_light_state();
+
+	if (ctl->temp->target == temp) {
+		ctl->transition->counter = 0;
+		k_timer_stop(&ctl->transition->timer);
+	}
 }
 
 static void level_temp_work_handler(struct k_work *work)

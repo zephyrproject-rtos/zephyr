@@ -155,6 +155,9 @@ void set_target(u8_t type, void *dptr)
 		ctl->light->target =  *((s16_t *) dptr) - INT16_MIN;
 		constrain_target_lightness2();
 		break;
+	case MOVE_LIGHT:
+		ctl->light->target = *((u16_t *) dptr);
+		break;
 	case ACTUAL:
 		ctl->light->target = *((u16_t *) dptr);
 		ctl->light->target = constrain_lightness(ctl->light->target);
@@ -169,6 +172,9 @@ void set_target(u8_t type, void *dptr)
 		break;
 	case LEVEL_TEMP:
 		ctl->temp->target = level_to_light_ctl_temp(*((s16_t *) dptr));
+		break;
+	case MOVE_TEMP:
+		ctl->temp->target = *((u16_t *) dptr);
 		break;
 	case CTL_TEMP:
 		ctl->temp->target = *((u16_t *) dptr);

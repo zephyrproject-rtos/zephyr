@@ -642,7 +642,8 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 			       struct net_buf_simple *buf)
 {
 	u8_t tid, tt, delay;
-	s16_t delta, target;
+	s16_t delta;
+	u16_t target;
 	s64_t now;
 
 	delta = (s16_t) net_buf_simple_pull_le16(buf);
@@ -686,14 +687,13 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	ctl->light->delta = delta;
 
 	if (delta < 0) {
-		target = INT16_MIN;
-		set_target(LEVEL_LIGHT, &target);
+		target = ctl->light->range_min;
 	} else if (delta > 0) {
-		target = INT16_MAX;
-		set_target(LEVEL_LIGHT, &target);
+		target = ctl->light->range_max;
 	} else if (delta == 0) {
-		ctl->light->target = ctl->light->current;
+		target = ctl->light->current;
 	}
+	set_target(MOVE_LIGHT, &target);
 
 	if (ctl->light->target != ctl->light->current) {
 		set_transition_values(MOVE_LIGHT);
@@ -715,7 +715,8 @@ static void gen_move_set(struct bt_mesh_model *model,
 			 struct net_buf_simple *buf)
 {
 	u8_t tid, tt, delay;
-	s16_t delta, target;
+	s16_t delta;
+	u16_t target;
 	s64_t now;
 
 	delta = (s16_t) net_buf_simple_pull_le16(buf);
@@ -760,14 +761,13 @@ static void gen_move_set(struct bt_mesh_model *model,
 	ctl->light->delta = delta;
 
 	if (delta < 0) {
-		target = INT16_MIN;
-		set_target(LEVEL_LIGHT, &target);
+		target = ctl->light->range_min;
 	} else if (delta > 0) {
-		target = INT16_MAX;
-		set_target(LEVEL_LIGHT, &target);
+		target = ctl->light->range_max;
 	} else if (delta == 0) {
-		ctl->light->target = ctl->light->current;
+		target = ctl->light->current;
 	}
+	set_target(MOVE_LIGHT, &target);
 
 	if (ctl->light->target != ctl->light->current) {
 		set_transition_values(MOVE_LIGHT);
@@ -2685,7 +2685,8 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 				    struct net_buf_simple *buf)
 {
 	u8_t tid, tt, delay;
-	s16_t delta, target;
+	s16_t delta;
+	u16_t target;
 	s64_t now;
 
 	delta = (s16_t) net_buf_simple_pull_le16(buf);
@@ -2729,14 +2730,13 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 	ctl->temp->delta = delta;
 
 	if (delta < 0) {
-		target = INT16_MIN;
-		set_target(LEVEL_TEMP, &target);
+		target = ctl->temp->range_min;
 	} else if (delta > 0) {
-		target = INT16_MAX;
-		set_target(LEVEL_TEMP, &target);
+		target = ctl->temp->range_max;
 	} else if (delta == 0) {
-		ctl->temp->target = ctl->temp->current;
+		target = ctl->temp->current;
 	}
+	set_target(MOVE_TEMP, &target);
 
 	if (ctl->temp->target != ctl->temp->current) {
 		set_transition_values(MOVE_TEMP);
@@ -2758,7 +2758,8 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 			      struct net_buf_simple *buf)
 {
 	u8_t tid, tt, delay;
-	s16_t delta, target;
+	s16_t delta;
+	u16_t target;
 	s64_t now;
 
 	delta = (s16_t) net_buf_simple_pull_le16(buf);
@@ -2803,14 +2804,13 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	ctl->temp->delta = delta;
 
 	if (delta < 0) {
-		target = INT16_MIN;
-		set_target(LEVEL_TEMP, &target);
+		target = ctl->temp->range_min;
 	} else if (delta > 0) {
-		target = INT16_MAX;
-		set_target(LEVEL_TEMP, &target);
+		target = ctl->temp->range_max;
 	} else if (delta == 0) {
-		ctl->temp->target = ctl->temp->current;
+		target = ctl->temp->current;
 	}
+	set_target(MOVE_TEMP, &target);
 
 	if (ctl->temp->target != ctl->temp->current) {
 		set_transition_values(MOVE_TEMP);
