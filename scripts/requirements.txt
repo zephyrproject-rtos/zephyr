@@ -21,5 +21,6 @@ sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 west>=0.6.2
 wheel>=0.30.0
+tabulate
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
