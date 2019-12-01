@@ -3,7 +3,7 @@ sample:
         with Zephyr.
     name: OpenAMP example integration
 tests:
-    sample.subsys.ipc.openamp:
+    sample.ipc.openamp:
         platform_whitelist: lpcxpresso54114_m4
         tags: ipm
         harness: console

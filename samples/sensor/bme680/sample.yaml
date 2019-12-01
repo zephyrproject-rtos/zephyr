@@ -1,7 +1,7 @@
 sample:
   name: BME680 Sensor sample
 tests:
-  sample.bme680:
+  sample.sensor.bme680:
     harness: sensor
     tags: samples sensor
     depends_on: i2c bme680

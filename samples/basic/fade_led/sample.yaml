@@ -1,7 +1,7 @@
 sample:
   name: Fade LED
 tests:
-  sample.fade_led:
+  sample.basic.fade_led:
     tags: drivers pwm
     depends_on: pwm
     harness: led

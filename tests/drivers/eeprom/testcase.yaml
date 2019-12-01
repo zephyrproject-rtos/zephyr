@@ -1,4 +1,4 @@
 tests:
-  peripheral.eeprom:
+  drivers.eeprom:
     platform_whitelist: native_posix native_posix_64
     tags: drivers userspace

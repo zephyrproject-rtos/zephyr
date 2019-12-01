@@ -1,7 +1,7 @@
 sample:
   name: Servo Motor using PWM
 tests:
-  sample.servo_motor:
+  sample.basic.servo_motor:
     tags: drivers pwm
     depends_on: pwm
     harness: motor

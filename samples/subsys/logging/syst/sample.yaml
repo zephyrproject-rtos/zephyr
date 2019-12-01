@@ -1,7 +1,7 @@
 sample:
   name: syst sample
 tests:
-  sample.subsys.logging.syst:
+  sample.logger.syst:
     platform_whitelist: mps2_an385 sam_e70_xplained
     tags: logging
     harness: console

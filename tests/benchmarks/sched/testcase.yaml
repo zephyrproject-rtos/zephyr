@@ -1,5 +1,5 @@
 tests:
-  benchmark.scheduler:
+  benchmark.kernel.scheduler:
     tags: benchmark
     slow: true
     harness: console

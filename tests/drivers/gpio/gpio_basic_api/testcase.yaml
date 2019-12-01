@@ -1,5 +1,5 @@
 tests:
-  peripheral.gpio:
+  drivers.gpio:
     tags: drivers gpio
     depends_on: gpio
     harness: loopback # see documentation
