@@ -3812,7 +3812,7 @@ def main():
                 return
 
         elif options.list_tests:
-            for test in all_tests:
+            for test in sorted(all_tests):
                 cnt = cnt + 1
                 print(" - {}".format(test))
             print("{} total.".format(cnt))
