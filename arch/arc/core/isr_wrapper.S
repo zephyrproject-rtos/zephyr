@@ -246,18 +246,6 @@ rirq_path:
 
 #if defined(CONFIG_TRACING)
 GTEXT(sys_trace_isr_enter)
-
-.macro log_interrupt_k_event
-	clri r0 /* do not interrupt event logger operations */
-	push_s r0
-	push_s blink
-	jl sys_trace_isr_enter
-	pop_s blink
-	pop_s r0
-	seti r0
-.endm
-#else
-	#define log_interrupt_k_event
 #endif
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
@@ -303,7 +291,6 @@ SECTION_FUNC(TEXT, _isr_demux)
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
-	log_interrupt_k_event
 
 	lr r0, [_ARC_V2_ICAUSE]
 	/* handle software triggered interrupt */
