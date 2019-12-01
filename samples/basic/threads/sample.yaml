@@ -3,7 +3,7 @@ sample:
     using K_THREAD_DEFINE
   name: Basic Thread Demo
 tests:
-  sample.threads:
+  sample.basic.threads:
     tags: kernel threads gpio
     filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
             dt_compat_enabled_with_alias("gpio-leds", "led1")

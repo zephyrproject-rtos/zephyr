@@ -1,4 +1,4 @@
 tests:
-  misc.math_extras:
+  utilities.math:
     timeout: 5
     type: unit

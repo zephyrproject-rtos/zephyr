@@ -1,7 +1,7 @@
 sample:
   name: Watchdog Driver Sample
 tests:
-  sample.driver.watchdog:
+  sample.drivers.watchdog:
     tags: drivers
     harness: console
     harness_config:
@@ -14,7 +14,7 @@ tests:
             - "Watchdog sample application"
     depends_on: watchdog
     platform_exclude: nucleo_l496zg nucleo_f401re
-  sample.driver.window_watchdog_nucleo_l496zg:
+  sample.drivers.watchdog.nucleo_l496zg:
     tags: drivers
     harness: console
     harness_config:

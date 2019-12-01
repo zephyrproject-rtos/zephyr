@@ -3,8 +3,8 @@ common:
   type: unit
 
 tests:
-  lib.os.timeutil:
+  utilities.time:
     extra_args: M64_MODE=0
 
-  lib.os.timeutil_64bit:
+  utilities.time.64bit:
     extra_args: M64_MODE=1

@@ -1,5 +1,5 @@
 tests:
-  benchmark.timing.default_kernel:
+  benchmark.kernel.timing.default:
     arch_exclude: posix
     tags: benchmark
     harness: console
@@ -9,7 +9,7 @@ tests:
         regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
-  benchmark.timing.userspace:
+  benchmark.kernel.timing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_userspace.conf
     arch_whitelist: x86 arm arc
