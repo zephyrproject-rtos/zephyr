@@ -3777,6 +3777,7 @@ class HardwareMap:
         from serial.tools import list_ports
 
         serial_devices = list_ports.comports()
+        print("Scanning connected hardware...")
         for d in serial_devices:
             if d.manufacturer in self.manufacturer:
 
@@ -3804,7 +3805,7 @@ class HardwareMap:
                 s_dev['connected'] = True
                 self.detected.append(s_dev)
             else:
-                print("Unsupported device (%s): %s" %(d.manufacturer, d))
+                print("- Unsupported device (%s): %s" %(d.manufacturer, d))
 
     def write_map(self, hwm_file):
         # use existing map
@@ -3819,13 +3820,21 @@ class HardwareMap:
                 for d in self.detected:
                     for h in hwm:
                         if d['id'] == h['id'] and d['product'] == h['product']:
-                            print("Already in map: %s (%s)" %(d['product'], d['id']))
                             h['connected'] = True
                             h['serial'] = d['serial']
                             d['match'] = True
 
                 new = list(filter(lambda n:  not n.get('match', False), self.detected))
                 hwm = hwm + new
+
+                print("\nRegistered devices:")
+                table = []
+                header = ["Platform", "ID", "Serial device"]
+                for p in sorted(hwm, key = lambda i: i['platform']):
+                    platform = p.get('platform')
+                    table.append([platform, p.get('id', None), p.get('serial')])
+                print(tabulate(table, headers=header, tablefmt="github"))
+
 
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(hwm, yaml_file, default_flow_style=False)
