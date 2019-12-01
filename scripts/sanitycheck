@@ -193,6 +193,11 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
+try:
+    from anytree import Node, RenderTree, find
+except ImportError:
+    print("Install the anytree module to use the --test-tree option")
+
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -1572,6 +1577,15 @@ class TestCase(object):
     def scan_path(self, path):
         subcases = []
         for filename in glob.glob(os.path.join(path, "src", "*.c")):
+            try:
+                _subcases, warnings = self.scan_file(filename)
+                if warnings:
+                    error("%s: %s" % (filename, warnings))
+                if _subcases:
+                    subcases += _subcases
+            except ValueError as e:
+                error("%s: can't find: %s" % (filename, e))
+        for filename in glob.glob(os.path.join(path, "*.c")):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
@@ -3157,6 +3171,9 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
+    case_select.add_argument("--test-tree", action="store_true",
+        help="""Output the testsuite in a tree form""")
+
     case_select.add_argument("--list-test-duplicates", action="store_true",
         help="""List tests with duplicate identifiers.
         """)
@@ -3780,7 +3797,7 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    if options.list_tests or options.list_test_duplicates or options.sub_test:
+    if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
         cnt = 0
         all_tests = suite.get_all_tests()
 
@@ -3811,11 +3828,46 @@ def main():
                 info("Tests not found")
                 return
 
-        elif options.list_tests:
+        elif options.list_tests or options.test_tree:
+            if options.test_tree:
+                testsuite = Node("Testsuite")
+                samples = Node("Samples", parent=testsuite)
+                tests = Node("Tests", parent=testsuite)
+
             for test in sorted(all_tests):
                 cnt = cnt + 1
-                print(" - {}".format(test))
-            print("{} total.".format(cnt))
+                if options.list_tests:
+                    print(" - {}".format(test))
+
+                if options.test_tree:
+                    if test.startswith("sample."):
+                        sec = test.split(".")
+                        area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
+                        if not area:
+                            area = Node(sec[1], parent=samples)
+
+                        t = Node(test, parent=area)
+                    else:
+                        sec = test.split(".")
+                        area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
+                        if not area:
+                            area = Node(sec[0], parent=tests)
+
+                        if area and len(sec) > 2:
+                            subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
+                            if not subarea:
+                                subarea = Node(sec[1], parent=area)
+
+                            t = Node(test, parent=subarea)
+
+            if options.list_tests:
+                print("{} total.".format(cnt))
+
+            if options.test_tree:
+                for pre, _, node in RenderTree(testsuite):
+                    print("%s%s" % (pre, node.name))
+
+
             return
 
     discards = []
