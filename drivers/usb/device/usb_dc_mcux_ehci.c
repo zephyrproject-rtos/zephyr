@@ -62,7 +62,8 @@ static const usb_device_controller_interface_struct_t ehci_iface = {
 int usb_dc_reset(void)
 {
 	if (dev_data.controllerHandle != NULL) {
-		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlStop, NULL);
+		dev_data.interface->deviceControl(dev_data.controllerHandle,
+						  kUSB_DeviceControlStop, NULL);
 		dev_data.interface->deviceDeinit(dev_data.controllerHandle);
 		dev_data.controllerHandle = NULL;
 	}
@@ -72,23 +73,34 @@ int usb_dc_reset(void)
 
 int usb_dc_attach(void)
 {
+	usb_status_t status;
+
 	dev_data.eps = &s_ep_ctrl[0];
 	if (dev_data.attached) {
-		LOG_WRN("already attached");
+		LOG_WRN("Already attached");
 		return 0;
 	}
+
 	dev_data.interface = &ehci_iface;
-	if (kStatus_USB_Success != dev_data.interface->deviceInit(CONTROLLER_ID, &dev_data, &dev_data.controllerHandle)) {
-		return -EINVAL;
+	status = dev_data.interface->deviceInit(CONTROLLER_ID, &dev_data,
+						&dev_data.controllerHandle);
+	if (kStatus_USB_Success != status) {
+		return -EIO;
 	}
 
 	/* Connect and enable USB interrupt */
 	IRQ_CONNECT(DT_USBD_MCUX_EHCI_IRQ, DT_USBD_MCUX_EHCI_IRQ_PRI,
 		    usb_isr_handler, 0, 0);
 	irq_enable(DT_USBD_MCUX_EHCI_IRQ);
-	dev_data.attached = 1;
-	LOG_DBG("attached");
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlRun, NULL);
+	dev_data.attached = true;
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+						   kUSB_DeviceControlRun, NULL);
+	if (kStatus_USB_Success != status) {
+		return -EIO;
+	}
+
+	LOG_DBG("Attached");
+
 	return 0;
 }
 
