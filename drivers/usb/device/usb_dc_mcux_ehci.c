@@ -305,26 +305,36 @@ int usb_dc_ep_halt(const u8_t ep)
 int usb_dc_ep_enable(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
 
-	/* endpoint0 OUT is primed by controller driver when configure this
-	 *  endpoint.
+	/*
+	 * endpoint 0 OUT is primed by controller driver when configure this
+	 * endpoint.
 	 */
 	if (!ep_abs_idx) {
 		return 0;
 	}
+
 	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
 		return -EALREADY;
 	}
 
-	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
-		dev_data.interface->deviceRecv(dev_data.controllerHandle,
-					       ep,
-					       (u8_t *)dev_data.eps[ep_abs_idx].block.data,
-					       (uint32_t)dev_data.eps[ep_abs_idx].ep_mps);
+	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) &&
+	    (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
+		status = dev_data.interface->deviceRecv(
+				dev_data.controllerHandle, ep,
+				(u8_t *)dev_data.eps[ep_abs_idx].block.data,
+				(uint32_t)dev_data.eps[ep_abs_idx].ep_mps);
+		if (kStatus_USB_Success != status) {
+			LOG_ERR("Failed to enable reception on 0x%02x", ep);
+			return -EIO;
+		}
+
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	} else {
-		/* control enpoint just be enabled before enumeration,
+		/*
+		 * control enpoint just be enabled before enumeration,
 		 * when running here, setup has been primed.
 		 */
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
@@ -336,9 +346,17 @@ int usb_dc_ep_enable(const u8_t ep)
 int usb_dc_ep_disable(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
 
-	dev_data.interface->deviceCancel(dev_data.controllerHandle, ep);
+	status = dev_data.interface->deviceCancel(dev_data.controllerHandle,
+						  ep);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to disable ep 0x%02x", ep);
+		return -EIO;
+	}
+
 	dev_data.eps[ep_abs_idx].ep_enabled = false;
+
 	return 0;
 }
 
@@ -351,7 +369,7 @@ int usb_dc_ep_flush(const u8_t ep)
 		return -EINVAL;
 	}
 
-	LOG_DBG("ep %x, idx %d", ep_idx, ep);
+	LOG_DBG("Not implemented, ep 0x%02x, idx %u", ep_idx, ep);
 
 	return 0;
 }
