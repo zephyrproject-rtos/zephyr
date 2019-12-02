@@ -157,7 +157,7 @@ static bool check_key_events(void *dev)
 	bool key_pressed = false;
 	u32_t cycles_now  = k_cycle_get_32();
 
-	if (++kbd_data.scan_cycles_idx > SCAN_OCURRENCES)
+	if (++kbd_data.scan_cycles_idx >= SCAN_OCURRENCES)
 		kbd_data.scan_cycles_idx = 0U;
 
 	kbd_data.scan_clk_cycle[kbd_data.scan_cycles_idx] = cycles_now;
