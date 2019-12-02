@@ -228,32 +228,72 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 int usb_dc_ep_set_stall(const u8_t ep)
 {
 	u8_t endpoint = ep;
+	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
 
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointStall, &endpoint);
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlEndpointStall, &endpoint);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to stall endpoint");
+		return -EIO;
+	}
+
 	return 0;
 }
 
 int usb_dc_ep_clear_stall(const u8_t ep)
 {
 	u8_t endpoint = ep;
+	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
 
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointUnstall, &endpoint);
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlEndpointUnstall, &endpoint);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to clear stall");
+		return -EIO;
+	}
+
 	return 0;
 }
 
 int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 {
+	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_device_endpoint_status_struct_t ep_status;
+	usb_status_t status;
+
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (!stalled) {
 		return -EINVAL;
 	}
-	*stalled = 0;
-	/* Get the endpoint status */
-	usb_device_endpoint_status_struct_t endpointStatus;
 
-	endpointStatus.endpointAddress = ep;
-	endpointStatus.endpointStatus = kUSB_DeviceEndpointStateIdle;
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlGetEndpointStatus, &endpointStatus);
-	*stalled = endpointStatus.endpointStatus;
+	*stalled = 0;
+	ep_status.endpointAddress = ep;
+	ep_status.endpointStatus = kUSB_DeviceEndpointStateIdle;
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlGetEndpointStatus, &ep_status);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to get endpoint status");
+		return -EIO;
+	}
+
+	*stalled = (u8_t)ep_status.endpointStatus;
+
 	return 0;
 }
 
