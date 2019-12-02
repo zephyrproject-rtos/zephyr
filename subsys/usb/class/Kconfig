@@ -145,8 +145,7 @@ config USB_DFU_DETACH_TIMEOUT
 	default 1000
 
 config USB_DFU_DEFAULT_POLLTIMEOUT
-	prompt "Default value for bwPollTimeout"
-	int
+	int "Default value for bwPollTimeout"
 	depends on USB_DFU_CLASS
 	default 256
 	range 0 1000

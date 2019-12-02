@@ -42,7 +42,6 @@ config BT_GATT_SERVICE_CHANGED
 
 config BT_GATT_DYNAMIC_DB
 	bool "GATT dynamic database support"
-	default n
 	depends on BT_GATT_SERVICE_CHANGED
 	help
 	  This option enables registering/unregistering services at runtime.

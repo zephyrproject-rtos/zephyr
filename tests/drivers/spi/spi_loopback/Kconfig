@@ -35,4 +35,3 @@ config SPI_LOOPBACK_FAST_FREQ
 
 config SPI_LOOPBACK_MODE_LOOP
 	bool "Configure the SPI in LOOP mode, so that no extra wiring is needed"
-	default n
