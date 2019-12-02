@@ -26,7 +26,6 @@ GTEXT(z_get_next_ready_thread)
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_thread_switched_in)
-GTEXT(sys_trace_isr_enter)
 #endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -228,9 +227,6 @@ on_irq_stack:
 
 call_irq:
 #endif /* CONFIG_IRQ_OFFLOAD */
-#ifdef CONFIG_TRACING
-	call sys_trace_isr_enter
-#endif
 
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause

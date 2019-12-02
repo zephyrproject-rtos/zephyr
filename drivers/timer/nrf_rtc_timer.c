@@ -12,6 +12,7 @@
 #include <sys_clock.h>
 #include <hal/nrf_rtc.h>
 #include <spinlock.h>
+#include <debug/tracing.h>
 
 #define RTC NRF_RTC1
 
@@ -51,6 +52,7 @@ static u32_t counter(void)
 void rtc1_nrf_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+	sys_trace_isr_enter();
 	RTC->EVENTS_COMPARE[0] = 0;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -73,6 +75,7 @@ void rtc1_nrf_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	sys_trace_isr_exit();
 }
 
 int z_clock_driver_init(struct device *device)

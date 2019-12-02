@@ -64,6 +64,7 @@
 #include <power/power.h>
 #include <device.h>
 #include <kernel_structs.h>
+#include <debug/tracing.h>
 
 #include "legacy_api.h"
 
@@ -213,6 +214,8 @@ void timer_int_handler(void *unused /* parameter is not used */
 #endif
 	ARG_UNUSED(unused);
 
+	sys_trace_isr_enter();
+
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (!programmed_full_ticks) {
 		if (_sys_clock_always_on) {
@@ -288,6 +291,9 @@ void timer_int_handler(void *unused /* parameter is not used */
 	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
+
+	sys_trace_isr_exit();
+
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	__asm__ __volatile__ (
 		"pushl %eax\n\t"

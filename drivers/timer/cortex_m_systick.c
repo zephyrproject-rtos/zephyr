@@ -7,6 +7,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <debug/tracing.h>
 
 void z_arm_exc_exit(void);
 
@@ -120,6 +121,8 @@ void z_clock_isr(void *arg)
 	ARG_UNUSED(arg);
 	u32_t dticks;
 
+	sys_trace_isr_enter();
+
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
 	elapsed();
 
@@ -148,6 +151,9 @@ void z_clock_isr(void *arg)
 	} else {
 		z_clock_announce(1);
 	}
+
+	sys_trace_isr_exit();
+
 	z_arm_exc_exit();
 }
 

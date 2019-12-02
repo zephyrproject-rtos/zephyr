@@ -22,6 +22,8 @@
 #include <driverlib/aon_rtc.h>
 #include <driverlib/aon_event.h>
 
+#include <debug/tracing.h>
+
 #define RTC_COUNTS_PER_SEC 0x100000000ULL
 
 /* Number of counts per rtc timer cycle */
@@ -97,6 +99,8 @@ void rtc_isr(void *arg)
 
 	ARG_UNUSED(arg);
 
+	sys_trace_isr_enter();
+
 	AONRTCEventClear(AON_RTC_CH0);
 
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -124,6 +128,8 @@ void rtc_isr(void *arg)
 	z_clock_announce(1);
 
 #endif /* CONFIG_TICKLESS_KERNEL */
+
+	sys_trace_isr_exit();
 }
 
 static void initDevice(void)

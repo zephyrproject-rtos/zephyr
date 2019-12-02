@@ -8,6 +8,7 @@
 #include <sys/util.h>
 #include <drivers/timer/system_timer.h>
 #include <soc.h>
+#include <debug/tracing.h>
 
 /*
  * This is just a getting started point.
@@ -46,9 +47,13 @@ static void lptmr_irq_handler(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+	sys_trace_isr_enter();
+
 	SYSTEM_TIMER_INSTANCE->CSR |= LPTMR_CSR_TCF(1); /* Rearm timer. */
 	cycle_count += CYCLES_PER_TICK;          /* Track cycles. */
 	z_clock_announce(1);                     /* Poke the scheduler. */
+
+	sys_trace_isr_exit();
 }
 
 int z_clock_driver_init(struct device *unused)

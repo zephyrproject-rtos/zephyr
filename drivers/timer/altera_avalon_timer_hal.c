@@ -9,6 +9,7 @@
 #include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <altera_common.h>
+#include <debug/tracing.h>
 
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"
@@ -28,12 +29,16 @@ static void timer_irq_handler(void *unused)
 	read_timer_start_of_tick_handler();
 #endif
 
+	sys_trace_isr_enter();
+
 	accumulated_cycle_count += k_ticks_to_cyc_floor32(1);
 
 	/* Clear the interrupt */
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
+
+	sys_trace_isr_exit();
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	extern void read_timer_end_of_tick_handler(void);

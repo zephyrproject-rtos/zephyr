@@ -12,6 +12,7 @@
 #include <sys_clock.h>
 
 #include <spinlock.h>
+#include <debug/tracing.h>
 
 /*
  * Assumptions and limitations:
@@ -41,6 +42,8 @@ static void lptim_irq_handler(struct device *unused)
 {
 
 	ARG_UNUSED(unused);
+
+	sys_trace_isr_enter();
 
 	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) != 0)
 		&& LL_LPTIM_IsEnabledIT_ARRM(LPTIM1) != 0) {
@@ -79,6 +82,8 @@ static void lptim_irq_handler(struct device *unused)
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : 1);
 	}
+
+	sys_trace_isr_exit();
 }
 
 int z_clock_driver_init(struct device *device)

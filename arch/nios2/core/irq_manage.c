@@ -87,8 +87,6 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
-		sys_trace_isr_enter();
-
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
 
@@ -99,7 +97,6 @@ void _enter_irq(u32_t ipending)
 		read_timer_end_of_isr();
 #endif
 		ite->isr(ite->arg);
-		sys_trace_isr_exit();
 	}
 
 	_kernel.nested--;

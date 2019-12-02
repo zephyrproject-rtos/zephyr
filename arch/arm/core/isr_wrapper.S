@@ -64,10 +64,6 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl read_timer_start_of_isr
 #endif
 
-#ifdef CONFIG_TRACING
-	bl sys_trace_isr_enter
-#endif
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
@@ -150,10 +146,6 @@ _idle_state_cleared:
 	ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
-
-#ifdef CONFIG_TRACING
-	bl sys_trace_isr_exit
-#endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	pop {r0, r3}

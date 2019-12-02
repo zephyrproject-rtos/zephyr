@@ -18,6 +18,7 @@
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
+#include <debug/tracing.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_0_ATMEL_SAM0_RTC_BASE_ADDRESS)
@@ -115,6 +116,8 @@ static void rtc_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	sys_trace_isr_enter();
+
 	/* Read and clear the interrupt flag register. */
 	u16_t status = RTC0->INTFLAG.reg;
 
@@ -146,6 +149,8 @@ static void rtc_isr(void *arg)
 	}
 
 #endif /* CONFIG_TICKLESS_KERNEL */
+
+	sys_trace_isr_exit();
 }
 
 int z_clock_driver_init(struct device *device)

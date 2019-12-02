@@ -7,6 +7,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <drivers/interrupt_controller/loapic.h>
+#include <debug/tracing.h>
 
 BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
@@ -139,6 +140,8 @@ static void isr(void *arg)
 	u32_t cycles;
 	s32_t ticks;
 
+	sys_trace_isr_enter();
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/*
@@ -162,6 +165,8 @@ static void isr(void *arg)
 	last_announcement = total_cycles;
 	k_spin_unlock(&lock, key);
 	z_clock_announce(ticks);
+
+	sys_trace_isr_exit();
 }
 
 #else
@@ -170,12 +175,16 @@ static void isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	sys_trace_isr_enter();
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	total_cycles += CYCLES_PER_TICK;
 	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
 	k_spin_unlock(&lock, key);
 
 	z_clock_announce(1);
+
+	sys_trace_isr_exit();
 }
 
 u32_t z_clock_elapsed(void)

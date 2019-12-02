@@ -7,6 +7,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <irq.h>
+#include <debug/tracing.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
 		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
@@ -37,6 +38,9 @@ static unsigned int last_count;
 static void hpet_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	sys_trace_isr_enter();
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t now = MAIN_COUNTER_REG;
 
@@ -69,6 +73,8 @@ static void hpet_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+
+	sys_trace_isr_exit();
 }
 
 static void set_timer0_irq(unsigned int irq)

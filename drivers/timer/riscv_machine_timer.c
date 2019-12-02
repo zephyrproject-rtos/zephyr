@@ -7,6 +7,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <soc.h>
+#include <debug/tracing.h>
 
 #define CYC_PER_TICK ((u32_t)((u64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -53,6 +54,8 @@ static void timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	sys_trace_isr_enter();
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u64_t now = mtime();
 	u32_t dticks = (u32_t)((now - last_count) / CYC_PER_TICK);
@@ -70,6 +73,8 @@ static void timer_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+
+	sys_trace_isr_exit();
 }
 
 int z_clock_driver_init(struct device *device)

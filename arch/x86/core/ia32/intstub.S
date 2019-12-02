@@ -129,19 +129,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 */
 	pushl	%edi
 
-
-#if defined(CONFIG_TRACING)
-
-	/* Save these as we are using to keep track of isr and isr_param */
-	pushl	%eax
-	pushl	%edx
-
-	call	sys_trace_isr_enter
-
-	popl	%edx
-	popl	%eax
-#endif
-
 	/* load %ecx with &_kernel */
 
 	movl	$_kernel, %ecx
