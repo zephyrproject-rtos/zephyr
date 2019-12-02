@@ -297,14 +297,6 @@ config INIT_STACKS
 	  water mark can be easily determined. This applies to the stack areas
 	  for threads, as well as to the interrupt stack.
 
-config KERNEL_DEBUG
-	bool "Kernel debugging"
-	select INIT_STACKS
-	help
-	  Enable kernel debugging.
-
-	  Note that debugging the kernel internals can be very verbose.
-
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
