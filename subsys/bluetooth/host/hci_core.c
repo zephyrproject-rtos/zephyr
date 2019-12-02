@@ -23,6 +23,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/smp.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
@@ -42,7 +43,7 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "gatt_internal.h"
-#include "smp.h"
+#include "smp_internal.h"
 #include "crypto.h"
 #include "settings.h"
 

@@ -1,5 +1,5 @@
 /**
- * @file smp.h
+ * @file smp_internal.h
  * Security Manager Protocol implementation header
  */
 
@@ -28,43 +28,8 @@ struct bt_smp_hdr {
 #define BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS	0x0d
 #define BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED	0x0e
 
-#define BT_SMP_IO_DISPLAY_ONLY			0x00
-#define BT_SMP_IO_DISPLAY_YESNO			0x01
-#define BT_SMP_IO_KEYBOARD_ONLY			0x02
-#define BT_SMP_IO_NO_INPUT_OUTPUT		0x03
-#define BT_SMP_IO_KEYBOARD_DISPLAY		0x04
-
-#define BT_SMP_OOB_DATA_MASK			0x01
-#define BT_SMP_OOB_NOT_PRESENT			0x00
-#define BT_SMP_OOB_PRESENT			0x01
-
-#define BT_SMP_MIN_ENC_KEY_SIZE			7
-#define BT_SMP_MAX_ENC_KEY_SIZE			16
-
-#define BT_SMP_DIST_ENC_KEY			0x01
-#define BT_SMP_DIST_ID_KEY			0x02
-#define BT_SMP_DIST_SIGN			0x04
-#define BT_SMP_DIST_LINK_KEY			0x08
-
-#define BT_SMP_DIST_MASK			0x0f
-
-#define BT_SMP_AUTH_NONE			0x00
-#define BT_SMP_AUTH_BONDING			0x01
-#define BT_SMP_AUTH_MITM			0x04
-#define BT_SMP_AUTH_SC				0x08
-#define BT_SMP_AUTH_KEYPRESS			0x10
-#define BT_SMP_AUTH_CT2				0x20
-
 #define BT_SMP_CMD_PAIRING_REQ			0x01
 #define BT_SMP_CMD_PAIRING_RSP			0x02
-struct bt_smp_pairing {
-	u8_t  io_capability;
-	u8_t  oob_flag;
-	u8_t  auth_req;
-	u8_t  max_key_size;
-	u8_t  init_key_dist;
-	u8_t  resp_key_dist;
-} __packed;
 
 #define BT_SMP_CMD_PAIRING_CONFIRM		0x03
 struct bt_smp_pairing_confirm {

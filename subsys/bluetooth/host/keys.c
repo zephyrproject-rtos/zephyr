@@ -25,7 +25,7 @@
 #include "common/rpa.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
-#include "smp.h"
+#include "smp_internal.h"
 #include "settings.h"
 #include "keys.h"
 

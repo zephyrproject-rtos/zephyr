@@ -25,7 +25,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "smp.h"
+#include "smp_internal.h"
 
 static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BT_MAX_CONN];
 

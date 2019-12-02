@@ -8,7 +8,7 @@
 #include "net/buf.h"
 #include "mgmt/mgmt.h"
 #include "mgmt/buf.h"
-#include "smp/smp.h"
+#include "smp/smp_internal.h"
 #include "mgmt/smp.h"
 
 static mgmt_alloc_rsp_fn zephyr_smp_alloc_rsp;

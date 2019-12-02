@@ -22,6 +22,7 @@
 #include <net/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/smp.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/buf.h>
 
@@ -39,7 +40,7 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "smp.h"
+#include "smp_internal.h"
 
 #define SMP_TIMEOUT K_SECONDS(30)
 
@@ -263,6 +264,44 @@ static bool oobd_present;
 static bool sc_supported;
 static const u8_t *sc_public_key;
 static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
+
+int bt_smp_get_pairing_peer_info(const struct bt_conn *conn,
+				 struct bt_smp_pairing *info)
+{
+	int i;
+
+	BT_DBG("conn %p handle %u", conn, conn->handle);
+
+	if (conn == NULL) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		struct bt_smp *smp = &bt_smp_pool[i];
+
+		if (smp->chan.chan.conn != conn) {
+			continue;
+		}
+
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+			return -EBUSY;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+			*info = *(struct bt_smp_pairing *)&smp->preq[1];
+		} else if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+			   atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+			*info = *(struct bt_smp_pairing *)&smp->prsp[1];
+		}
+
+		return 0;
+	}
+
+	BT_ERR("No available SMP context for conn %p", conn);
+
+	return -ENOENT;
+}
 
 static u8_t get_io_capa(void)
 {

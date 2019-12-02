@@ -41,7 +41,7 @@
 #include "keys.h"
 #include "l2cap_internal.h"
 #include "att_internal.h"
-#include "smp.h"
+#include "smp_internal.h"
 #include "settings.h"
 #include "gatt_internal.h"
 
