@@ -30,12 +30,6 @@ extern "C" {
  * @}
  */
 
-#ifdef CONFIG_KERNEL_DEBUG
-#define K_DEBUG(fmt, ...) printk("[%s]  " fmt, __func__, ##__VA_ARGS__)
-#else
-#define K_DEBUG(fmt, ...)
-#endif
-
 #if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
 #define _NUM_COOP_PRIO (CONFIG_NUM_COOP_PRIORITIES)
 #define _NUM_PREEMPT_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + 1)

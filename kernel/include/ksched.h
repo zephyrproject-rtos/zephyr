@@ -271,8 +271,6 @@ static inline void z_sched_lock(void)
 
 	compiler_barrier();
 
-	K_DEBUG("scheduler locked (%p:%d)\n",
-		_current, _current->base.sched_locked);
 #endif
 }
 

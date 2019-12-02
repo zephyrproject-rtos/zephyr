@@ -14,6 +14,8 @@
 #include <drivers/timer/system_timer.h>
 #include <stdbool.h>
 #include <kernel_internal.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 /* Maximum time between the time a self-aborting thread flags itself
  * DEAD and the last read or write to its stack memory (i.e. the time
@@ -782,7 +784,7 @@ void k_sched_unlock(void)
 		update_cache(0);
 	}
 
-	K_DEBUG("scheduler unlocked (%p:%d)\n",
+	LOG_DBG("scheduler unlocked (%p:%d)",
 		_current, _current->base.sched_locked);
 
 	z_reschedule_unlocked();
@@ -1149,7 +1151,7 @@ static int32_t z_tick_sleep(int32_t ticks)
 
 	__ASSERT(!arch_is_in_isr(), "");
 
-	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
+	LOG_DBG("thread %p for %d ticks", _current, ticks);
 
 	/* wait of 0 ms is treated as a 'yield' */
 	if (ticks == 0) {
