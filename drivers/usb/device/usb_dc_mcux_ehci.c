@@ -174,6 +174,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	usb_device_endpoint_init_struct_t ep_init;
 	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *eps = &dev_data.eps[ep_abs_idx];
+	usb_status_t status;
 
 	ep_init.zlt = 0U;
 	ep_init.endpointAddress = cfg->ep_addr;
@@ -186,32 +187,41 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		return -EINVAL;
 	}
 
+	if (dev_data.eps[ep_abs_idx].ep_enabled) {
+		LOG_WRN("Endpoint already configured");
+		return 0;
+	}
+
 	block = &(eps->block);
 	if (block->data) {
 		k_mem_pool_free(block);
 		block->data = NULL;
 	}
 
-	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, K_MSEC(10)) == 0) {
-		memset(block->data, 0, cfg->ep_mps);
-	} else {
+	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, K_MSEC(10))) {
 		LOG_ERR("Memory allocation time-out");
 		return -ENOMEM;
 	}
 
+	memset(block->data, 0, cfg->ep_mps);
 	dev_data.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
-	if (dev_data.eps[ep_abs_idx].ep_enabled) {
-		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointDeinit, (void *)(&cfg->ep_addr));
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlEndpointInit, &ep_init);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to initialize endpoint");
+		return -EIO;
 	}
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
 
-	/* if it is controlendpoint, controller will prime setup
+	/*
+	 * If it is control endpoint, controller will prime setup
 	 * here set the occupied flag.
 	 */
-	if ((EP_ADDR2IDX(cfg->ep_addr) == USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT)) {
+	if ((EP_ADDR2IDX(cfg->ep_addr) == USB_CONTROL_ENDPOINT) &&
+	    (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT)) {
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	}
 	dev_data.eps[ep_abs_idx].ep_enabled = true;
+
 	return 0;
 }
 
