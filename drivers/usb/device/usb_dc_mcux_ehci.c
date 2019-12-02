@@ -106,13 +106,29 @@ int usb_dc_attach(void)
 
 int usb_dc_detach(void)
 {
-	LOG_DBG("detached.");
+	usb_status_t status;
+
 	if (dev_data.controllerHandle != NULL) {
-		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlStop, NULL);
-		dev_data.interface->deviceDeinit(dev_data.controllerHandle);
-		dev_data.controllerHandle = NULL;
+		LOG_WRN("Device not attached");
+		return 0;
 	}
-	dev_data.attached = 0;
+
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+						   kUSB_DeviceControlStop,
+						   NULL);
+	if (kStatus_USB_Success != status) {
+		return -EIO;
+	}
+
+	status = dev_data.interface->deviceDeinit(dev_data.controllerHandle);
+	if (kStatus_USB_Success != status) {
+		return -EIO;
+	}
+
+	dev_data.controllerHandle = NULL;
+	dev_data.attached = false;
+	LOG_DBG("Detached");
+
 	return 0;
 }
 
