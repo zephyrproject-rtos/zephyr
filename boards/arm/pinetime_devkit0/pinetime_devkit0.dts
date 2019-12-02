@@ -122,8 +122,11 @@
 		label = "ST7789V";
 		width = <240>;
 		height = <240>;
-		cmd-data-gpios = <&gpio0 9 0>;	/* DET */
+		cmd-data-gpios = <&gpio0 18 0>;	/* DET */
 		reset-gpios = <&gpio0 26 0>;	/* RESX reset */
+		bklight1-gpios = <&gpio0 14 0>;	/* backlight low */
+		bklight2-gpios = <&gpio0 22 0>;	/* backlight mid */
+		bklight3-gpios = <&gpio0 23 0>;	/* backlight high */
 	};
 };
 
