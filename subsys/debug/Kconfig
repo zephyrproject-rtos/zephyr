@@ -3,6 +3,8 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
 menu "System Monitoring Options"
 
 config BOOT_TIME_MEASUREMENT
@@ -42,6 +44,78 @@ config TRACING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
+
+if TRACING
+
+config TRACING_THREAD_STACK_SIZE
+	int "Stack size for tracing thread"
+	default 2048
+	help
+	  Set stack size for tracing thread.
+
+config TRACING_BUFFER_SIZE
+	int "Number of bytes dedicated for tracing packet buffer."
+	default 8192
+	range 128 65536
+	help
+	  Number of bytes dedicated for tracing packet buffer.
+
+config TRACING_PACKET_BUF_SIZE
+	int "Number of bytes dedicated for per packet buffer size"
+	default 32
+	help
+	  Number of bytes dedicated for per packet buffer size.
+
+config TRACING_BLOCK_IN_THREAD_TIMEOUT_MS
+	int "Maximum time (in milliseconds) thread can be blocked"
+	default 50
+	range 1 10000
+	help
+	  Maximum time (in milliseconds) thread can be blocked to wait new
+	  tracing packet to be allocated.
+
+config TRACING_THREAD_TRIGGER_THRESHOLD
+	int "Number of buffered tracing packets which triggers tracing thread."
+	default 10
+	help
+	  When number of buffered tracing packets reaches the threshold,
+	  tracing thread will be woken up.
+
+config TRACING_THREAD_WAIT_THRESHOLD_MS
+	int "Set tracing thread waiting threshold"
+	default 1000
+	help
+	  Tracing thread waiting period given in milliseconds after every first
+	  packet put to tracing packet list.
+
+config TRACING_BACKEND_UART
+	bool "Enable UART backend"
+	depends on UART_CONSOLE
+	default y if !SHELL_BACKEND_SERIAL
+	help
+	  When enabled backend is using UART to output tracing data.
+
+config TRACING_BACKEND_UART_NAME
+	string "Device Name of UART Device for UART backend"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
+	default "UART_0"
+	depends on TRACING_BACKEND_UART
+	help
+	  This option specifies the name of UART device to be used for
+	  tracing backend.
+
+config TRACING_BACKEND_USB
+	bool "Enable USB backend"
+	help
+	  When enabled backend is using USB to output tracing data.
+
+config TRACING_HANDLE_HOST_CMD
+	bool "Enable host cmd handle"
+	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
+	help
+	  When enabled tracing will handle cmd from host.
+
+endif
 
 config ASAN
 	bool "Build with address sanitizer"
@@ -275,7 +349,6 @@ config TRACING_CTF_BOTTOM_POSIX
 	help
 	  Enable POSIX backend for CTF tracing. It will output the CTF stream to a
 	  file using fwrite.
-
 
 source "subsys/debug/Kconfig.segger"
 

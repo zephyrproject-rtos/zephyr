@@ -1,26 +1,41 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SEGGER_SYSTEMVIEW OR CONFIG_TRACING_CPU_STATS)
-  zephyr_library()
 
-  zephyr_library_sources_ifdef(
+  zephyr_sources_ifdef(
     CONFIG_SEGGER_SYSTEMVIEW
     sysview_config.c
     sysview.c
     )
 
-  zephyr_library_sources_ifdef(
+  zephyr_sources_ifdef(
     CONFIG_TRACING_CPU_STATS
     cpu_stats.c
     )
-
-  if(CONFIG_TRACING)
-    zephyr_library_include_directories(
-      ${ZEPHYR_BASE}/kernel/include
-      ${ZEPHYR_BASE}/arch/${ARCH}/include
-      )
-  endif()
 endif()
+
+zephyr_sources_ifdef(
+  CONFIG_TRACING
+  tracing_core.c
+  tracing_format.c
+  tracing_packet.c
+  )
+
+zephyr_sources_ifdef(
+  CONFIG_TRACING_BACKEND_USB
+  tracing_backend_usb.c
+  )
+
+zephyr_sources_ifdef(
+  CONFIG_TRACING_BACKEND_UART
+  tracing_backend_uart.c
+  )
+
+zephyr_include_directories_ifdef(
+  CONFIG_TRACING
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+)
 
 zephyr_include_directories_ifdef(CONFIG_TRACING include)
 
