@@ -274,8 +274,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_timestamp_main = k_cycle_get_32();
 #endif
 
-	extern void main(void);
-
 	main();
 
 	/* Mark nonessenrial since main() has no more work to do */
