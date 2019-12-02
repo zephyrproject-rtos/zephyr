@@ -12,3 +12,4 @@ zephyr_library_include_directories(
 zephyr_include_directories(.)
 
 add_subdirectory_ifdef(CONFIG_TRACING_CTF_BOTTOM_POSIX bottoms/posix)
+add_subdirectory_ifdef(CONFIG_TRACING_CTF_BOTTOM_GENERIC bottoms/generic)

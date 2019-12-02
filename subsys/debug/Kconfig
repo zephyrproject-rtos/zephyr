@@ -350,6 +350,12 @@ config TRACING_CTF_BOTTOM_POSIX
 	  Enable POSIX backend for CTF tracing. It will output the CTF stream to a
 	  file using fwrite.
 
+config TRACING_CTF_BOTTOM_GENERIC
+	bool "CTF backend for generic tracing infrastructure"
+	depends on TRACING_CTF
+	help
+	  Enable generic tracing infrastructure as CTF backend.
+
 source "subsys/debug/Kconfig.segger"
 
 endmenu
