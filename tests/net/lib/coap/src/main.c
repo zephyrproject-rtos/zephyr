@@ -1478,7 +1478,7 @@ static const struct {
 	{ "Test observer client", test_observer_client, },
 };
 
-int main(int argc, char *argv[])
+void main(void)
 {
 	int count, pass, result;
 
@@ -1495,6 +1495,4 @@ int main(int argc, char *argv[])
 	result = pass == count ? TC_PASS : TC_FAIL;
 
 	TC_END_REPORT(result);
-
-	return 0;
 }
