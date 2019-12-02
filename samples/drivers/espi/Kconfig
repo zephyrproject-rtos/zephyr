@@ -19,7 +19,6 @@ config ESPI_VIRTUAL_WIRE_TIMEOUT
 
 config ESPI_GPIO_DEV_NEEDED
 	bool "GPIO required for minimum eSPI handshake"
-	default n
 
 if ESPI_GPIO_DEV_NEEDED
 

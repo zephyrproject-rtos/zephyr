@@ -293,7 +293,6 @@ config NET_TCP_BACKLOG_SIZE
 
 config NET_TCP_AUTO_ACCEPT
 	bool "Auto accept incoming TCP data"
-	default n
 	depends on NET_TCP
 	help
 	  Automatically accept incoming TCP data packet to the valid
@@ -382,7 +381,6 @@ endchoice
 
 config NET_TEST_PROTOCOL
 	bool "Enable JSON based test protocol (UDP)"
-	default n
 	help
 	  Enable JSON based test protocol (UDP).
 

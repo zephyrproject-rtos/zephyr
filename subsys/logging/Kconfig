@@ -266,7 +266,6 @@ config LOG_CMDS
 
 config LOG_FRONTEND
 	bool "Enable frontend"
-	default n
 	select LOG_IMMEDIATE
 	help
 	  When enabled, logs are redirected to a custom frontend instead

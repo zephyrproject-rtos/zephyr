@@ -10,7 +10,9 @@ menuconfig LOAPIC
 	depends on X86
 	help
 	  This option selects local APIC as the interrupt controller.
+
 if LOAPIC
+
 config LOAPIC_BASE_ADDRESS
 	hex "Local APIC Base Address"
 	default 0xFEE00000
@@ -19,7 +21,6 @@ config LOAPIC_BASE_ADDRESS
 
 config X2APIC
 	bool "Access local APIC in x2APIC mode"
-	default n
 	help
 	  If your local APIC supports x2APIC mode, turn this on.
 
