@@ -47,7 +47,7 @@ K_QUEUE_DEFINE(shared_queue_outgoing);
 struct k_thread app_a_thread;
 K_THREAD_STACK_DEFINE(app_a_stack, APP_A_STACKSIZE);
 
-void main(void *p1, void *p2, void *p3)
+void main(void)
 {
 	LOG_INF("APP A partition: %p %zu", (void *)app_a_partition.start,
 		(size_t)app_a_partition.size);
