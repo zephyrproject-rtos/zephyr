@@ -26,16 +26,20 @@ static void usb_isr_handler(void);
 extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 
 /* the setup transfer state */
-#define SETUP_DATA_STAGE_DONE (0)
-#define SETUP_DATA_STAGE_IN (1)
-#define SETUP_DATA_STAGE_OUT (2)
+#define SETUP_DATA_STAGE_DONE	(0)
+#define SETUP_DATA_STAGE_IN	(1)
+#define SETUP_DATA_STAGE_OUT	(2)
+
 /* Then endpoint number/index calculation */
-#define EP_ADDR2IDX(ep)     ((ep) & ~USB_EP_DIR_MASK)
-#define EP_ADDR2DIR(ep)     ((ep) & USB_EP_DIR_MASK)
-#define EP_ABS_IDX(ep)   (((ep) & ~USB_EP_DIR_MASK) * 2 + (((ep) & USB_EP_DIR_MASK) >> 7))
-#define NUM_OF_EP_MAX           DT_USBD_MCUX_EHCI_NUM_BIDIR_EP
+#define EP_ADDR2IDX(ep)		((ep) & ~USB_EP_DIR_MASK)
+#define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
+#define EP_ABS_IDX(ep)		(((ep) & ~USB_EP_DIR_MASK) * 2 + \
+					(((ep) & USB_EP_DIR_MASK) >> 7))
+#define NUM_OF_EP_MAX		DT_USBD_MCUX_EHCI_NUM_BIDIR_EP
+
 /* The minimum value is 1 */
-#define EP_BUF_NUMOF_BLOCKS     ((NUM_OF_EP_MAX + 3) / 4)
+#define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
+
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define EP_BUF_NONCACHED
@@ -45,7 +49,7 @@ K_MEM_POOL_DEFINE(ep_buf_pool, 16, 1024, EP_BUF_NUMOF_BLOCKS, 4);
 #endif
 
 static usb_ep_ctrl_data_t s_ep_ctrl[NUM_OF_EP_MAX];
-static usb_device_struct_t s_Device;
+static usb_device_struct_t dev_data;
 
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /* EHCI device driver interface */
@@ -57,10 +61,10 @@ static const usb_device_controller_interface_struct_t s_UsbDeviceEhciInterface =
 
 int usb_dc_reset(void)
 {
-	if (s_Device.controllerHandle != NULL) {
-		s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlStop, NULL);
-		s_Device.interface->deviceDeinit(s_Device.controllerHandle);
-		s_Device.controllerHandle = NULL;
+	if (dev_data.controllerHandle != NULL) {
+		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlStop, NULL);
+		dev_data.interface->deviceDeinit(dev_data.controllerHandle);
+		dev_data.controllerHandle = NULL;
 	}
 
 	return 0;
@@ -68,13 +72,13 @@ int usb_dc_reset(void)
 
 int usb_dc_attach(void)
 {
-	s_Device.eps = &s_ep_ctrl[0];
-	if (s_Device.attached) {
+	dev_data.eps = &s_ep_ctrl[0];
+	if (dev_data.attached) {
 		LOG_WRN("already attached");
 		return 0;
 	}
-	s_Device.interface = (const usb_device_controller_interface_struct_t *)(&s_UsbDeviceEhciInterface);
-	if (kStatus_USB_Success != s_Device.interface->deviceInit(CONTROLLER_ID, &s_Device, &s_Device.controllerHandle)) {
+	dev_data.interface = (const usb_device_controller_interface_struct_t *)(&s_UsbDeviceEhciInterface);
+	if (kStatus_USB_Success != dev_data.interface->deviceInit(CONTROLLER_ID, &dev_data, &dev_data.controllerHandle)) {
 		return -EINVAL;
 	}
 
@@ -82,28 +86,28 @@ int usb_dc_attach(void)
 	IRQ_CONNECT(DT_USBD_MCUX_EHCI_IRQ, DT_USBD_MCUX_EHCI_IRQ_PRI,
 		    usb_isr_handler, 0, 0);
 	irq_enable(DT_USBD_MCUX_EHCI_IRQ);
-	s_Device.attached = 1;
+	dev_data.attached = 1;
 	LOG_DBG("attached");
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlRun, NULL);
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlRun, NULL);
 	return 0;
 }
 
 int usb_dc_detach(void)
 {
 	LOG_DBG("detached.");
-	if (s_Device.controllerHandle != NULL) {
-		s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlStop, NULL);
-		s_Device.interface->deviceDeinit(s_Device.controllerHandle);
-		s_Device.controllerHandle = NULL;
+	if (dev_data.controllerHandle != NULL) {
+		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlStop, NULL);
+		dev_data.interface->deviceDeinit(dev_data.controllerHandle);
+		dev_data.controllerHandle = NULL;
 	}
-	s_Device.attached = 0;
+	dev_data.attached = 0;
 	return 0;
 }
 
 int usb_dc_set_address(const u8_t addr)
 {
 	LOG_DBG("");
-	s_Device.address = addr;
+	dev_data.address = addr;
 	return 0;
 }
 
@@ -139,15 +143,15 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	u8_t ep_abs_idx =  EP_ABS_IDX(cfg->ep_addr);
-	usb_device_endpoint_init_struct_t epInit;
+	usb_device_endpoint_init_struct_t ep_init;
 	struct k_mem_block *block;
-	struct usb_ep_ctrl_data *eps = &s_Device.eps[ep_abs_idx];
+	struct usb_ep_ctrl_data *eps = &dev_data.eps[ep_abs_idx];
 
-	epInit.zlt = 0U;
-	epInit.endpointAddress = cfg->ep_addr;
-	epInit.maxPacketSize = cfg->ep_mps;
-	epInit.transferType = cfg->ep_type;
-	s_Device.eps[ep_abs_idx].ep_type = cfg->ep_type;
+	ep_init.zlt = 0U;
+	ep_init.endpointAddress = cfg->ep_addr;
+	ep_init.maxPacketSize = cfg->ep_mps;
+	ep_init.transferType = cfg->ep_type;
+	dev_data.eps[ep_abs_idx].ep_type = cfg->ep_type;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -167,19 +171,19 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		return -ENOMEM;
 	}
 
-	s_Device.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
-	if (s_Device.eps[ep_abs_idx].ep_enabled) {
-		s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointDeinit, (void *)(&cfg->ep_addr));
+	dev_data.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
+	if (dev_data.eps[ep_abs_idx].ep_enabled) {
+		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointDeinit, (void *)(&cfg->ep_addr));
 	}
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointInit, &epInit);
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
 
 	/* if it is controlendpoint, controller will prime setup
 	 * here set the occupied flag.
 	 */
 	if ((EP_ADDR2IDX(cfg->ep_addr) == USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT)) {
-		s_Device.eps[ep_abs_idx].ep_occupied = true;
+		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	}
-	s_Device.eps[ep_abs_idx].ep_enabled = true;
+	dev_data.eps[ep_abs_idx].ep_enabled = true;
 	return 0;
 }
 
@@ -187,7 +191,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 {
 	u8_t endpoint = ep;
 
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointStall, &endpoint);
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointStall, &endpoint);
 	return 0;
 }
 
@@ -195,7 +199,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 {
 	u8_t endpoint = ep;
 
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointUnstall, &endpoint);
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointUnstall, &endpoint);
 	return 0;
 }
 
@@ -210,7 +214,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 
 	endpointStatus.endpointAddress = ep;
 	endpointStatus.endpointStatus = kUSB_DeviceEndpointStateIdle;
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlGetEndpointStatus, &endpointStatus);
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlGetEndpointStatus, &endpointStatus);
 	*stalled = endpointStatus.endpointStatus;
 	return 0;
 }
@@ -230,22 +234,22 @@ int usb_dc_ep_enable(const u8_t ep)
 	if (!ep_abs_idx) {
 		return 0;
 	}
-	if (s_Device.eps[ep_abs_idx].ep_occupied) {
+	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
 		return -EALREADY;
 	}
 
 	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
-		s_Device.interface->deviceRecv(s_Device.controllerHandle,
+		dev_data.interface->deviceRecv(dev_data.controllerHandle,
 					       ep,
-					       (u8_t *)s_Device.eps[ep_abs_idx].block.data,
-					       (uint32_t)s_Device.eps[ep_abs_idx].ep_mps);
-		s_Device.eps[ep_abs_idx].ep_occupied = true;
+					       (u8_t *)dev_data.eps[ep_abs_idx].block.data,
+					       (uint32_t)dev_data.eps[ep_abs_idx].ep_mps);
+		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	} else {
 		/* control enpoint just be enabled before enumeration,
 		 * when running here, setup has been primed.
 		 */
-		s_Device.eps[ep_abs_idx].ep_occupied = true;
+		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	}
 
 	return 0;
@@ -255,8 +259,8 @@ int usb_dc_ep_disable(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
-	s_Device.interface->deviceCancel(s_Device.controllerHandle, ep);
-	s_Device.eps[ep_abs_idx].ep_enabled = false;
+	dev_data.interface->deviceCancel(dev_data.controllerHandle, ep);
+	dev_data.eps[ep_abs_idx].ep_enabled = false;
 	return 0;
 }
 
@@ -279,11 +283,11 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t *const ret_bytes)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
-	u8_t *buffer = (u8_t *)s_Device.eps[ep_abs_idx].block.data;
+	u8_t *buffer = (u8_t *)dev_data.eps[ep_abs_idx].block.data;
 	u32_t len_to_send;
 
-	if (data_len > s_Device.eps[ep_abs_idx].ep_mps) {
-		len_to_send = s_Device.eps[ep_abs_idx].ep_mps;
+	if (data_len > dev_data.eps[ep_abs_idx].ep_mps) {
+		len_to_send = dev_data.eps[ep_abs_idx].ep_mps;
 	} else {
 		len_to_send = data_len;
 	}
@@ -294,7 +298,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 #if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
 	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
 #endif
-	s_Device.interface->deviceSend(s_Device.controllerHandle,
+	dev_data.interface->deviceSend(dev_data.controllerHandle,
 				       ep,
 				       buffer,
 				       len_to_send);
@@ -312,7 +316,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	u32_t data_len;
 	u8_t *bufp = NULL;
 
-	while (s_Device.eps[ep_abs_idx].ep_occupied) {
+	while (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_ERR("Endpoint is occupied by the controller");
 		return -EBUSY;
 	}
@@ -328,8 +332,8 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	/* it is control setup, we should use message.buffer,
 	 * this buffer is from internal setup array.
 	 */
-	bufp = s_Device.eps[ep_abs_idx].transfer_message.buffer;
-	data_len = s_Device.eps[ep_abs_idx].transfer_message.length;
+	bufp = dev_data.eps[ep_abs_idx].transfer_message.buffer;
+	data_len = dev_data.eps[ep_abs_idx].transfer_message.length;
 	if (data_len == USB_UNINITIALIZED_VAL_32) {
 		if (read_bytes) {
 			*read_bytes = 0;
@@ -359,21 +363,21 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	}
 
 	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
-		u8_t isSetup = s_Device.eps[0].transfer_message.isSetup;
-		u8_t *buffer = s_Device.eps[0].transfer_message.buffer;
+		u8_t isSetup = dev_data.eps[0].transfer_message.isSetup;
+		u8_t *buffer = dev_data.eps[0].transfer_message.buffer;
 
 		if (isSetup) {
 			if (((usb_setup_struct_t *)buffer)->wLength == 0) {
-				s_Device.setupDataStage = SETUP_DATA_STAGE_DONE;
+				dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
 			} else if (((usb_setup_struct_t *)buffer)->bmRequestType & USB_REQUEST_TYPE_DIR_MASK) {
-				s_Device.setupDataStage = SETUP_DATA_STAGE_IN;
+				dev_data.setupDataStage = SETUP_DATA_STAGE_IN;
 			} else {
-				s_Device.setupDataStage = SETUP_DATA_STAGE_OUT;
+				dev_data.setupDataStage = SETUP_DATA_STAGE_OUT;
 			}
 		} else {
-			if (s_Device.setupDataStage != SETUP_DATA_STAGE_DONE) {
-				if ((data_len >= max_data_len) || (data_len < s_Device.eps[0].ep_mps)) {
-					s_Device.setupDataStage = SETUP_DATA_STAGE_DONE;
+			if (dev_data.setupDataStage != SETUP_DATA_STAGE_DONE) {
+				if ((data_len >= max_data_len) || (data_len < dev_data.eps[0].ep_mps)) {
+					dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
 				}
 			}
 		}
@@ -386,24 +390,24 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* select the index of the next endpoint buffer */
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
-	if (s_Device.eps[ep_abs_idx].ep_occupied) {
+	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already occupied", ep);
 		return -EBUSY;
 	}
 
 	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
-		if (s_Device.setupDataStage == SETUP_DATA_STAGE_DONE) {
+		if (dev_data.setupDataStage == SETUP_DATA_STAGE_DONE) {
 			return 0;
 		}
-		if (s_Device.setupDataStage == SETUP_DATA_STAGE_IN) {
-			s_Device.setupDataStage = SETUP_DATA_STAGE_DONE;
+		if (dev_data.setupDataStage == SETUP_DATA_STAGE_IN) {
+			dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
 		}
 	}
-	s_Device.interface->deviceRecv(s_Device.controllerHandle,
+	dev_data.interface->deviceRecv(dev_data.controllerHandle,
 				       ep,
-				       (u8_t *)s_Device.eps[ep_abs_idx].block.data,
-				       s_Device.eps[ep_abs_idx].ep_mps);
-	s_Device.eps[ep_abs_idx].ep_occupied = true;
+				       (u8_t *)dev_data.eps[ep_abs_idx].block.data,
+				       dev_data.eps[ep_abs_idx].ep_mps);
+	dev_data.eps[ep_abs_idx].ep_occupied = true;
 
 	return 0;
 }
@@ -434,49 +438,49 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
-	if (!s_Device.attached) {
+	if (!dev_data.attached) {
 		return -EINVAL;
 	}
-	s_Device.eps[ep_abs_idx].callback = cb;
+	dev_data.eps[ep_abs_idx].callback = cb;
 
 	return 0;
 }
 
 void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
-	s_Device.status_callback = cb;
+	dev_data.status_callback = cb;
 }
 
 int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
-	return s_Device.eps[ep_abs_idx].ep_mps;
+	return dev_data.eps[ep_abs_idx].ep_mps;
 }
 
 static void control_endpoint_enable(void)
 {
-	usb_device_endpoint_init_struct_t epInit;
+	usb_device_endpoint_init_struct_t ep_init;
 	u8_t ep_abs_idx = 0;
 
-	epInit.zlt = 0U;
-	epInit.transferType = USB_ENDPOINT_CONTROL;
-	epInit.maxPacketSize = EP0_MAX_PACKET_SIZE;
+	ep_init.zlt = 0U;
+	ep_init.transferType = USB_ENDPOINT_CONTROL;
+	ep_init.maxPacketSize = EP0_MAX_PACKET_SIZE;
 
-	epInit.endpointAddress = EP0_OUT;
-	ep_abs_idx =  EP_ABS_IDX(epInit.endpointAddress);
-	s_Device.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
+	ep_init.endpointAddress = EP0_OUT;
+	ep_abs_idx =  EP_ABS_IDX(ep_init.endpointAddress);
+	dev_data.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
 
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointInit, &epInit);
-	s_Device.eps[ep_abs_idx].ep_occupied = false;
-	s_Device.eps[ep_abs_idx].ep_enabled = true;
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
+	dev_data.eps[ep_abs_idx].ep_occupied = false;
+	dev_data.eps[ep_abs_idx].ep_enabled = true;
 
-	epInit.endpointAddress = EP0_IN;
-	ep_abs_idx = EP_ABS_IDX(epInit.endpointAddress);
-	s_Device.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
-	s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlEndpointInit, &epInit);
-	s_Device.eps[ep_abs_idx].ep_occupied = false;
-	s_Device.eps[ep_abs_idx].ep_enabled = true;
+	ep_init.endpointAddress = EP0_IN;
+	ep_abs_idx = EP_ABS_IDX(ep_init.endpointAddress);
+	dev_data.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
+	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
+	dev_data.eps[ep_abs_idx].ep_occupied = false;
+	dev_data.eps[ep_abs_idx].ep_enabled = true;
 }
 
 /* Notify the up layer the KHCI status changed. */
@@ -486,43 +490,43 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 	switch (message->code) {
 	case kUSB_DeviceNotifyBusReset:
-		s_Device.address = 0;
-		s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlSetDefaultStatus, NULL);
+		dev_data.address = 0;
+		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlSetDefaultStatus, NULL);
 		for (int i = 0; i < NUM_OF_EP_MAX; i++) {
-			s_Device.eps[i].ep_occupied = false;
-			s_Device.eps[i].ep_enabled = false;
+			dev_data.eps[i].ep_occupied = false;
+			dev_data.eps[i].ep_enabled = false;
 		}
 		control_endpoint_enable();
-		s_Device.status_callback(USB_DC_RESET, NULL);
+		dev_data.status_callback(USB_DC_RESET, NULL);
 		break;
 	case kUSB_DeviceNotifyError:
-		s_Device.status_callback(USB_DC_ERROR, NULL);
+		dev_data.status_callback(USB_DC_ERROR, NULL);
 		break;
 	case kUSB_DeviceNotifySuspend:
-		s_Device.status_callback(USB_DC_SUSPEND, NULL);
+		dev_data.status_callback(USB_DC_SUSPEND, NULL);
 		break;
 	case kUSB_DeviceNotifyResume:
-		s_Device.status_callback(USB_DC_RESUME, NULL);
+		dev_data.status_callback(USB_DC_RESUME, NULL);
 		break;
 	default:
 	{
 		u8_t ep_packet_type = 0;
 		u8_t ep_abs_idx = EP_ABS_IDX(message->code);
-		s_Device.eps[ep_abs_idx].transfer_message.length = message->length;
-		s_Device.eps[ep_abs_idx].transfer_message.isSetup = message->isSetup;
-		s_Device.eps[ep_abs_idx].transfer_message.code = message->code;
-		s_Device.eps[ep_abs_idx].transfer_message.buffer = message->buffer;
-		s_Device.eps[ep_abs_idx].ep_occupied = false;
+		dev_data.eps[ep_abs_idx].transfer_message.length = message->length;
+		dev_data.eps[ep_abs_idx].transfer_message.isSetup = message->isSetup;
+		dev_data.eps[ep_abs_idx].transfer_message.code = message->code;
+		dev_data.eps[ep_abs_idx].transfer_message.buffer = message->buffer;
+		dev_data.eps[ep_abs_idx].ep_occupied = false;
 		if (message->isSetup) {
 			ep_packet_type = USB_DC_EP_SETUP;
 		} else {
 			/* IN TOKEN */
 			if ((message->code & USB_REQUEST_TYPE_DIR_MASK) == USB_REQUEST_TYPE_DIR_IN) {
 				/* control endpoint 0 and status stage for setAddr transfer */
-				if ((s_Device.address != 0) && (ep_abs_idx == 1)) {
+				if ((dev_data.address != 0) && (ep_abs_idx == 1)) {
 					/* SET ADDRESS in the status stage in the IN transfer*/
-					s_Device.interface->deviceControl(s_Device.controllerHandle, kUSB_DeviceControlSetDeviceAddress, &s_Device.address);
-					s_Device.address = 0;
+					dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlSetDeviceAddress, &dev_data.address);
+					dev_data.address = 0;
 				}
 				ep_packet_type = USB_DC_EP_DATA_IN;
 			}
@@ -531,14 +535,14 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 				ep_packet_type = USB_DC_EP_DATA_OUT;
 			}
 		}
-		if (s_Device.eps[ep_abs_idx].callback) {
+		if (dev_data.eps[ep_abs_idx].callback) {
 #if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
 			if (message->length) {
 				DCACHE_InvalidateByRange((uint32_t)message->buffer,
 							 message->length);
 			}
 #endif
-			s_Device.eps[ep_abs_idx].callback(message->code,
+			dev_data.eps[ep_abs_idx].callback(message->code,
 							  ep_packet_type);
 		}
 	}
@@ -547,5 +551,5 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 static void usb_isr_handler(void)
 {
-	USB_DeviceEhciIsrFunction(&s_Device);
+	USB_DeviceEhciIsrFunction(&dev_data);
 }
