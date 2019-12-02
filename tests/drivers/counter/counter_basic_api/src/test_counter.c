@@ -175,7 +175,13 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	k_busy_wait(5000);
 
 	cnt = counter_read(dev);
-	zassert_true(cnt > 0, "%s: Counter should progress", dev_name);
+	if (counter_is_counting_up(dev)) {
+		err = (cnt > 0) ? 0 : 1;
+	} else {
+		tmp_top_cnt = counter_get_top_value(dev);
+		err = (cnt < tmp_top_cnt) ? 0 : 1;
+	}
+	zassert_true(err == 0, "%s: Counter should progress", dev_name);
 
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
@@ -200,9 +206,15 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 {
 	u32_t now = counter_read(dev);
 
-	zassert_true(now >= counter,
-			"%s: Alarm (%d) too early now:%d.",
+	if (counter_is_counting_up(dev)) {
+		zassert_true(now >= counter,
+			"%s: Alarm (%d) too early now: %d (counting up).",
 			dev->config->name, counter, now);
+	} else {
+		zassert_true(now <= counter,
+			"%s: Alarm (%d) too early now: %d (counting down).",
+			dev->config->name, counter, now);
+	}
 
 	if (user_data) {
 		zassert_true(&alarm_cfg == user_data,
