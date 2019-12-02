@@ -93,6 +93,15 @@ Boards & SoC Support
 Drivers and Sensors
 *******************
 
+* ADC
+
+  * Added support for STM32G4X in STM32 driver
+  * Added Microchip XEC ADC driver
+
+* Bluetooth
+
+  * Added RPMsg transport HCI driver
+
 * CAN
 
   * Added API to read the bus-state and error counters
@@ -100,12 +109,178 @@ Drivers and Sensors
   * Optimizations for the MCP2515 driver
   * Bug fixes
 
+* Clock Control
+
+  * Added support for nRF52833 in nRF driver
+  * Added support for STM32G4X in STM32 driver
+
+* Console
+
+  * Removed deprecated function console_register_line_input
+
+* Counter
+
+  * Added support for STM32L1 and STM32G4X in STM32 driver
+  * Removed QMSI driver
+  * Added Microchip XEC driver
+
+* Display
+
+  * Enhanced SSD1306 driver to support build time selection
+  * Enhanced SSD16XX driver to use bytestring property for LUT and parameters
+
+* DMA
+
+  * Added generic STM32 driver
+  * Removed QMSI driver
+
 * EEPROM
 
   * Added EEPROM device driver API
   * Added Atmel AT24 (and compatible) I2C EEPROM driver
   * Added Atmel AT25 (and compatible) SPI EEPROM driver
   * Added native_posix EEPROM emulation driver
+
+* Entropy
+
+  * Added RV32M1 driver
+  * Added support for STM32G4X in STM32 driver
+
+* Ethernet
+
+  * Added MAC address configuration and carrier state detection to STM32 driver
+  * Added ENC424J600 driver
+  * Removed DesignWare driver
+
+* Flash
+
+  * Added deep-power-down mode support in SPI NOR driver
+  * Fixed STM32 driver for 2MB parts
+  * Added support for STM32G4X in STM32 driver
+  * Removed QMSI driver
+
+* GPIO
+
+  * Added support for STM32G4X in STM32 driver
+  * Removed QMSI, SCH, and SAM3 drivers
+
+* Hardware Info
+
+  * Added LiteX DNA driver
+
+* I2C
+
+  * Converted remaining drivers to device tree
+  * Added support for STM32G4X in STM32 driver
+  * Fixed DesignWare driver for 64-bit
+  * Removed QMSI driver
+  * Added proper error handling in XEC driver
+
+* I2S
+
+  * Refactored STM32 driver
+
+* IEEE 802.15.4
+
+  * Added CC13xx / CC26xx driver
+
+* Interrupt Controller
+
+  * Added support for SAME54 to SAM0 EIC driver
+  * Added support for STM32G4X in STM32 driver
+  * Converted RISC-V plic to use multi-level irq support
+
+* IPM
+
+  * Added nRFx driver
+
+* Keyboard Scan
+
+  * Added Microchip XEC driver
+
+* LED
+
+  * Removed non-DTS support from LP5562, PCA9633, and LP3943 drivers
+
+* Modem
+
+  * Added simple power management to modem receiver
+
+* Pinmux
+
+  * Added support for STM32G4X in STM32 driver
+  * Removed QMSI driver
+
+* PS/2
+
+  * Added Microchip XEC driver
+
+* PWM
+
+  * Added PWM shell
+  * Added Microchip XEC driver
+  * Removed QMSI driver
+
+* Sensor
+
+  * Fixed raw value scaling and SPI burst transfers in LIS2DH driver
+  * Converted various drivers to device tree
+  * Fixed fractional part calculation in ENS210 driver
+  * Added OPT3001 light sensor driver
+  * Added SI7060 temperature sensor driver
+  * Added TMP116 driver
+  * Implemented single shot mode in SHT3XD driver
+  * Added single/double tap trigger support in LIS2DW12 driver
+
+* Serial
+
+  * Added support for SAME54 to SAM0 driver
+  * Added support for STM32G4X in STM32 driver
+  * Added support for 2 stop bits in nRF UARTE and UART drivers
+  * Removed QMSI driver
+  * Added ESP32 driver with FIFO/interrupt support
+
+* SPI
+
+  * Added support for nRF52833 in nRFx driver
+  * Added support for STM32G4X in STM32 driver
+  * Added RV32M1 driver
+  * Added Microchip XEC driver
+  * Added LiteX driver
+  * Removed Intel Quark driver
+
+* Timer
+
+  * Fixed starving clock announcements in SYSTICK and nRF drivers
+  * Fixed clamp tick adjustment in tickless mode in various drivers
+  * Fixed calculation of absolute cycles in SYSTICK driver
+  * Fixed lost ticks from unannounced elapsed in nRF driver
+  * Fixed SMP bug in ARC driver
+  * Added STM32 LPTIM driver
+  * Changed CC13X2/CC26X2 to use RTC instead of SYSTICK for system clock
+
+* USB
+
+  * Added support for nRF52833 in nRFx driver
+  * Added support for STM32G4X in STM32 driver
+  * Enabled ZLP hardware handling for variable-length data storage
+
+* Video
+
+  * Added MCUX CSI and Aptina MT9M114 drivers
+  * Added software video pattern generator driver
+
+* Watchdog
+
+  * Added support for SAME54 to SAM0 driver
+  * Converted drivers to use device tree
+  * Removed QMSI driver
+  * Added STM32 WWDG driver
+  * Added Microchip XEC driver
+
+* WiFi
+
+  * Implemented TCP/UDP socket offload with TLS in Inventek eS-WiFi driver
 
 Networking
 **********
