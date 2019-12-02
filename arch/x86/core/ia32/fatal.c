@@ -13,6 +13,7 @@
 #include <kernel_internal.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <arch/x86/ia32/segmentation.h>
+#include <arch/syscall.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
