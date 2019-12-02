@@ -269,9 +269,16 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 /* Prepare a L2CAP Response PDU to be sent over a connection */
 struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 
-/* Send L2CAP PDU over a connection */
-void bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
-		      bt_conn_tx_cb_t cb, void *user_data);
+/* Send L2CAP PDU over a connection
+ *
+ * Buffer ownership is transferred to stack so either in case of success
+ * or error the buffer will be unref internally.
+ *
+ * Calling this from RX thread is assumed to never fail so the return can be
+ * ignored.
+ */
+int bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
+		     bt_conn_tx_cb_t cb, void *user_data);
 
 static inline void bt_l2cap_send(struct bt_conn *conn, u16_t cid,
 				 struct net_buf *buf)
