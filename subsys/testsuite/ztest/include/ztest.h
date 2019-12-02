@@ -59,16 +59,7 @@ typedef struct esf z_arch_esf_t;
 #include <ztest_assert.h>
 #include <ztest_mock.h>
 #include <ztest_test.h>
+#include <ztest_main_if.h>
 #include <tc_util.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void test_main(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __ZTEST_H__ */

@@ -73,6 +73,7 @@ endif()
 
 target_sources(testbinary PRIVATE
   $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest.c
+  $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_unit_main.c
   $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
   )
 

@@ -25,7 +25,7 @@ ZTEST_DMEM enum {
 	TEST_PHASE_FRAMEWORK
 } phase = TEST_PHASE_FRAMEWORK;
 
-static ZTEST_BMEM int test_status;
+ZTEST_BMEM int test_status;
 
 static int cleanup_test(struct unit_test *test)
 {
@@ -374,16 +374,7 @@ struct k_mem_domain ztest_mem_domain;
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
-#ifndef KERNEL
-int main(void)
-{
-	z_init_mock();
-	test_main();
-	end_report();
-
-	return test_status;
-}
-#else
+#ifdef KERNEL
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
@@ -433,4 +424,6 @@ void main(void)
 		}
 	}
 }
+#else
+ /* To avoid inclusion conflicts the unit tests main is in ztests_unit_main.c */
 #endif
