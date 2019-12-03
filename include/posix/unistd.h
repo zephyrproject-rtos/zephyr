@@ -31,10 +31,6 @@ extern int rename(const char *old, const char *newp);
 extern int unlink(const char *path);
 extern int stat(const char *path, struct stat *buf);
 extern int mkdir(const char *path, mode_t mode);
-#endif
-
-unsigned sleep(unsigned int seconds);
-int usleep(useconds_t useconds);
 
 #ifdef CONFIG_NETWORKING
 static inline int gethostname(char *buf, size_t len)
@@ -42,6 +38,11 @@ static inline int gethostname(char *buf, size_t len)
 	return zsock_gethostname(buf, len);
 }
 #endif
+
+#endif
+
+unsigned sleep(unsigned int seconds);
+int usleep(useconds_t useconds);
 
 #ifdef __cplusplus
 }
