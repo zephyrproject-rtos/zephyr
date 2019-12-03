@@ -18,7 +18,7 @@
 void main(void)
 {
 	struct device *dev;
-	bool led_is_on = false;
+	bool led_is_on = true;
 	int ret;
 
 	dev = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
@@ -26,8 +26,9 @@ void main(void)
 		return;
 	}
 
-	ret = gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_OUTPUT |
-				 DT_ALIAS_LED0_GPIOS_FLAGS);
+	ret = gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN,
+				 GPIO_OUTPUT_ACTIVE
+				 | DT_ALIAS_LED0_GPIOS_FLAGS);
 	if (ret < 0) {
 		return;
 	}
