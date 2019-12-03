@@ -28,12 +28,12 @@ This sample has been tested on the NordicSemiconductor nRF9160 DK (nrf9160_pca10
 Building and Running
 ********************
 
-The code can be found in :zephyr_file:`samples/boards/nrf91/nrfx`.
+The code can be found in :zephyr_file:`samples/boards/nrf/nrfx`.
 
 To build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf91/nrfx
+   :zephyr-app: samples/boards/nrf/nrfx
    :board: nrf9160_pca10090
    :goals: build flash
    :compact:

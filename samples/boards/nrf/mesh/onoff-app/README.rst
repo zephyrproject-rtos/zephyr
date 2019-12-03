@@ -43,13 +43,13 @@ likely also run on the nrf52_pca10040 board.
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/boards/nrf52/mesh/onoff-app` in the
+This sample can be found under :zephyr_file:`samples/boards/nrf/mesh/onoff-app` in the
 Zephyr tree.
 
 The following commands build the application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf52/mesh/onoff-app
+   :zephyr-app: samples/boards/nrf/mesh/onoff-app
    :board: nrf52840_pca10056
    :goals: build flash
    :compact:

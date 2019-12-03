@@ -39,7 +39,7 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf52/power_mgr
+   :zephyr-app: samples/boards/nrf/power_mgr
    :board: nrf52_pca10040
    :goals: build flash
    :compact:
