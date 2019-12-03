@@ -115,6 +115,14 @@ The list of available power states is defined by :code:`enum power_states`. In
 general power states with higher indexes will offer greater power savings and
 have higher wake latencies.
 
+Upon boot all power states are marked as disabled and need to be explicitly
+enabled by calling :c:func:`sys_pm_ctrl_enable_state()` function.
+
+A driver, subsystem or application that needs to prevent the power management
+subsystem from entering a given power state at runtime should call
+:c:func:`sys_pm_ctrl_disable_state()` function. To lift that restriction it
+needs to subsequently call :c:func:`sys_pm_ctrl_enable_state()`.
+
 Sleep State
 -----------
 

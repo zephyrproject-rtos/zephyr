@@ -28,11 +28,6 @@ void main(void)
 	nrf_gpio_cfg_sense_set(DT_GPIO_PIN(DT_NODELABEL(button0), gpios),
 			       NRF_GPIO_PIN_SENSE_LOW);
 
-	/* Prevent deep sleep (system off) from being entered on long
-	 * timeouts due to the default residency policy.
-	 */
-	sys_pm_ctrl_disable_state(SYS_POWER_STATE_DEEP_SLEEP_1);
-
 	printk("Busy-wait %u s\n", BUSY_WAIT_S);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
 
@@ -51,10 +46,7 @@ void main(void)
 
 	printk("Entering system off; press BUTTON1 to restart\n");
 
-	/* Above we disabled entry to deep sleep based on duration of
-	 * controlled delay.  Here we need to override that, then
-	 * force entry to deep sleep on any delay.
-	 */
+	/* Force the system to enter the deep sleep state. */
 	sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 	k_sleep(K_MSEC(1));
 

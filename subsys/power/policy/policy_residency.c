@@ -55,11 +55,9 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 	}
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
-#ifdef CONFIG_SYS_PM_STATE_LOCK
 		if (!sys_pm_ctrl_is_state_enabled((enum power_states)(i))) {
 			continue;
 		}
-#endif
 		if ((ticks == K_TICKS_FOREVER) ||
 		    (ticks >= pm_min_residency[i])) {
 			LOG_DBG("Selected power state %d "

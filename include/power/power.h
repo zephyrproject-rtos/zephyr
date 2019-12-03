@@ -177,27 +177,40 @@ void sys_pm_dump_debug_info(void);
 
 #endif /* CONFIG_SYS_PM_DEBUG */
 
-#ifdef CONFIG_SYS_PM_STATE_LOCK
 /**
- * @brief Disable particular power state
+ * @brief Disable particular power state.
  *
- * @details Disabled state cannot be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref sys_pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
+ * Disabled state cannot be selected by the Zephyr Power Management policy.
+ *
+ * Calling this function increases reference count of 'agents' that require the
+ * given power state to be disabled. The 'agent' is required to call
+ * sys_pm_ctrl_enable_state() function when it does not need anymore to block
+ * the system from entering the give power state. If not, the power state will
+ * be blocked permanently.
+ *
+ * Application defined power management policy can use the
+ * sys_pm_ctrl_is_state_enabled() function to check if given state is enabled.
  *
  * @param [in] state Power state to be disabled.
  */
 void sys_pm_ctrl_disable_state(enum power_states state);
 
 /**
- * @brief Enable particular power state
+ * @brief Enable particular power state.
  *
- * @details Enabled state can be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref sys_pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
- *	    By default all power states are enabled.
+ * Enabled state can be selected by the Zephyr Power Management policy.
+ *
+ * During the boot all power states other than active state are disabled.
+ * Depending on the Power Management model being used it is responsibility of
+ * the Zephyr Power Management subsystem or the application to enable selected
+ * power states when the power management framework is initialized.
+ *
+ * Any power state can be enabled only once. Other than that a driver or an
+ * application can call sys_pm_ctrl_enable_state() only if it previously called
+ * sys_pm_ctrl_disable_state() function.
+ *
+ * Application defined power management policy can use the
+ * sys_pm_ctrl_is_state_enabled() function to check if given state is enabled.
  *
  * @param [in] state Power state to be enabled.
  */
@@ -211,8 +224,6 @@ void sys_pm_ctrl_enable_state(enum power_states state);
  * @param [in] state Power state.
  */
 bool sys_pm_ctrl_is_state_enabled(enum power_states state);
-
-#endif /* CONFIG_SYS_PM_STATE_LOCK */
 
 /**
  * @}

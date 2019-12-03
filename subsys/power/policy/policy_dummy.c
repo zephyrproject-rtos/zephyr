@@ -24,11 +24,10 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 	do {
 		i = (i + 1) % SYS_POWER_STATE_MAX;
 
-#ifdef CONFIG_SYS_PM_STATE_LOCK
 		if (!sys_pm_ctrl_is_state_enabled((enum power_states)(i))) {
 			continue;
 		}
-#endif
+
 		cur_power_state = i;
 
 		LOG_DBG("Selected power state: %u", i);
