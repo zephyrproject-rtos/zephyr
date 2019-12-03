@@ -1187,6 +1187,12 @@ Application Configuration
 Kconfig Configuration
 =====================
 
+Use the ``menuconfig`` and ``guiconfig`` interfaces to test out different
+configurations during development. See :ref:`menuconfig` for more information.
+
+The Initial Kconfig Configuration
+---------------------------------
+
 The initial configuration for an application is produced by merging
 configuration settings from three sources:
 
@@ -1227,8 +1233,8 @@ directory.
 
 As long as :file:`zephyr/.config` exists and is up-to-date (is newer than the
 :makevar:`BOARD` and application configuration files), it will be used in
-preference to producing a new merged configuration. This can be used during
-development, as described below in :ref:`override_kernel_conf`.
+preference to producing a new merged configuration. This can be used to test
+out configurations during development, as described in :ref:`menuconfig`.
 
 For more information on Zephyr's Kconfig configuration scheme, see the
 :ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
@@ -1240,22 +1246,21 @@ inter-dependencies between options, see the :ref:`configuration_options`.
 
 .. note::
 
-    Dependencies between options can also be viewed in the interactive
-    configuration interface, which is described in the
-    :ref:`override_kernel_conf` section. It will have the most up-to-date
-    dependencies, and also shows which dependencies are currently unsatisfied.
+    Dependencies between options can also be viewed in the :ref:`interactive
+    configuration interfaces <menuconfig>`. They will show the most up-to-date
+    dependencies, and also show which dependencies are currently unsatisfied.
 
-    To view the dependencies of an option in the configuration interface, jump
-    to it with :kbd:`/` and press :kbd:`?`. For each unsatisfied dependency,
-    jump to it in turn to check its dependencies.
+    To view the dependencies of an option in e.g. ``menuconfig``, jump to it
+    with :kbd:`/` and press :kbd:`?`. For each unsatisfied dependency, jump to
+    it in turn to check its dependencies.
 
 .. _application_set_conf:
 
-Setting Application Configuration Values
-----------------------------------------
+Making Kconfig Configuration Settings Permanent
+-----------------------------------------------
 
-This section describes how to edit Zephyr configuration
-(:file:`.conf`) files.
+This section describes how to edit Zephyr configuration (:file:`.conf`) files
+to make configuration settings permanent.
 
 - Add each configuration entry on a new line.
 
@@ -1304,184 +1309,6 @@ The example below shows a comment line and an override setting
     # Enable printk for debugging
     CONFIG_PRINTK=y
 
-.. _override_kernel_conf:
-
-Overriding the Default Configuration
-------------------------------------
-
-Making temporary changes to the configuration can be handy during development.
-There are two interactive configuration interfaces available for changing the
-configuration: ``menuconfig``, which runs in the terminal, and ``guiconfig``, a
-graphical configuration interface.
-
-.. note::
-
-   The configuration can also be changed by editing :file:`zephyr/.config` in
-   the application build directory by hand. Using one of the configuration
-   interfaces is usually safer, as they correctly handle dependencies between
-   configuration symbols.
-
-To make a setting permanent, you should set it in a :file:`*.conf` file, as
-described above in :ref:`application_set_conf`.
-
-Follow these steps to run the configuration interfaces.
-
-#. Build your application as usual using either ``west`` or ``cmake``:
-
-   .. zephyr-app-commands::
-      :tool: all
-      :cd-into:
-      :board: <board>
-      :goals: build
-      :compact:
-
-#. Use either of these commands to run the terminal-based ``menuconfig``
-   interface:
-
-   .. code-block:: bash
-
-       west build -t menuconfig
-
-   .. code-block:: bash
-
-       ninja menuconfig
-
-   Use either of these command to run the graphical ``guiconfig`` interface:
-
-   .. code-block:: bash
-
-       west build -t guiconfig
-
-   .. code-block:: bash
-
-       ninja guiconfig
-
-   .. note::
-
-       If you get an import error for ``tkinter`` when trying to run
-       ``guiconfig``, you are missing required packages. See
-       :ref:`installation_linux`. The package is usually called something like
-       ``python3-tk``/``python3-tkinter``.
-
-       ``tkinter`` is not included by default in many Python installations,
-       despite being part of the standard library.
-
-   The two interfaces are shown below:
-
-   .. figure:: figures/menuconfig.png
-        :alt: menuconfig interface
-
-   .. figure:: figures/guiconfig.png
-        :alt: guiconfig interface
-
-   ``guiconfig`` always shows the help text and other information related to
-   the currently selected item in the bottom window pane. In the terminal
-   interface, press :kbd:`?` to view the same information.
-
-   .. note::
-
-      If you prefer to work in the ``guiconfig`` interface, then it's a good
-      idea to check any changes to Kconfig files you make in *single-menu
-      mode*, which is toggled via a checkbox at the top. Unlike full-tree
-      mode, single-menu mode will distinguish between symbols defined with
-      ``config`` and symbols defined with ``menuconfig``, showing you what
-      things would look like in the ``menuconfig`` interface.
-
-#. Change configuration values in the ``menuconfig`` interface as follows:
-
-   * Navigate the menu with the arrow keys.
-
-     .. note::
-
-        Common `Vim <https://www.vim.org>`_ key bindings are supported as well.
-
-   * Press :kbd:`Enter` to enter menus and choices, which appear with ``--->``
-     next to them. Press :kbd:`ESC` to return to the parent menu.
-
-   * Press :kbd:`Space` to change symbol values. Boolean configuration symbols
-     are shown with :guilabel:`[ ]` brackets, while numeric and string-valued
-     configuration symbols are shown with :guilabel:`( )` brackets. Symbol
-     values that can't be changed are indicated with :guilabel:`- -` and
-     :guilabel:`-*-`.
-
-     .. note::
-
-        You can also press :kbd:`Y` or :kbd:`N` to set a boolean configuration
-        symbol to the corresponding value.
-
-   * Press :kbd:`?` to display information about the currently selected symbol.
-     Press :kbd:`ESC` or :kbd:`Q` to return from the information display to the
-     menu.
-
-   In the ``guiconfig`` interface, either click on the image next to the symbol
-   to change its value, or double-click on the row with the symbol.
-   Double-clicking only works for changing the value if the symbol has no
-   children. Double-clicking a symbol with children will show/hide its children
-   instead.
-
-   ``guiconfig`` also supports keyboard controls: :kbd:`Space` toggles values,
-   and :kbd:`Enter` opens/closes menus.
-
-#. Pressing :kbd:`Q` in the ``menuconfig`` interface will bring up the
-   save-and-quit dialog (if there are changes to save):
-
-   .. figure:: figures/menuconfig-quit.png
-      :alt: Save and Quit Dialog
-
-   Press :kbd:`Y` to save the kernel configuration options to the default
-   filename (:file:`zephyr/.config`). You will typically save to the default
-   filename unless you are experimenting with different configurations.
-
-   The ``guiconfig`` interface will also prompt for saving the configuration on
-   exit if it has been modified.
-
-   .. note::
-
-      The configuration file used during the build is always
-      :file:`zephyr/.config`. If you have another saved configuration that you
-      want to build with, copy it to :file:`zephyr/.config`. Make sure to back
-      up your original configuration file.
-
-      Also note that filenames starting with ``.`` are not listed by ``ls`` by
-      default on Linux and macOS. Use the ``-a`` flag to see them.
-
-Finding a symbol in the menu tree and navigating to it can be tedious. To jump
-directly to a symbol, press the :kbd:`/` key (this also works in
-``guiconfig``). This brings up the following dialog, where you can search for
-symbols by name and jump to them. In ``guiconfig``, you can also change symbol
-values directly within the dialog.
-
-.. figure:: figures/menuconfig-jump-to.png
-    :alt: menuconfig jump-to dialog
-
-.. figure:: figures/guiconfig-jump-to.png
-    :alt: guiconfig jump-to dialog
-
-If you jump to a symbol that isn't currently visible (e.g., due to having
-unsatisfied dependencies), then *show-all mode* will be enabled. In show-all
-mode, all symbols are displayed, including currently invisible symbols. To turn
-off show-all mode, press :kbd:`A` in ``menuconfig`` or :kbd:`Ctrl-A` in
-``guiconfig``.
-
-.. note::
-
-    Show-all mode can't be turned off if there are no visible items in the
-    current menu.
-
-To figure out why a symbol you jumped to isn't visible, inspect its
-dependencies, either by pressing :kbd:`?` in ``menuconfig`` or in the
-information pane at the bottom in ``guiconfig``. If you discover that the
-symbol depends on another symbol that isn't enabled, you can jump to that
-symbol in turn to see if it can be enabled.
-
-.. note::
-
-   In ``menuconfig``, you can press :kbd:`Ctrl-F` to view the help of the
-   currently selected item in the jump-to dialog without leaving the dialog.
-
-For more information on ``menuconfig`` and ``guiconfig``, see the Python
-docstrings at the top of ``scripts/kconfig/menuconfig.py`` and
-``scripts/kconfig/guiconfig.py``.
 
 .. _application_dt:
 

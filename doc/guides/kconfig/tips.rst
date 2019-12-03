@@ -430,9 +430,9 @@ Checking changes in ``menuconfig``
 **********************************
 
 When adding new symbols or making other changes to Kconfig files, it is a good
-idea to look up the symbols in the :ref:`menuconfig <override_kernel_conf>`
-interface afterwards. To get to a symbol quickly, use the menuconfig's jump-to
-feature (press :kbd:`/`).
+idea to look up the symbols in the :ref:`menuconfig <menuconfig>` interface
+afterwards. To get to a symbol quickly, use the menuconfig's jump-to feature
+(press :kbd:`/`).
 
 Here are some things to check:
 
