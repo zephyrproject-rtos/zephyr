@@ -31,6 +31,8 @@ struct gpio_nrfx_data {
 };
 
 struct gpio_nrfx_cfg {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	NRF_GPIO_Type *port;
 	u8_t port_num;
 };
@@ -585,6 +587,9 @@ static int gpio_nrfx_init(struct device *port)
 
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
+		.common = {						\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##id##_NORDIC_NRF_GPIO_NGPIOS), \
+		},							\
 		.port = NRF_P##id,					\
 		.port_num = id						\
 	};								\
