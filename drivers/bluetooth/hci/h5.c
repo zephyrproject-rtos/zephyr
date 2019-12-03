@@ -406,14 +406,7 @@ static void h5_process_complete_packet(u8_t *hdr)
 
 static inline struct net_buf *get_evt_buf(u8_t evt)
 {
-	struct net_buf *buf;
-
-	buf = bt_buf_get_evt(evt, false, K_NO_WAIT);
-	if (buf) {
-		net_buf_add_u8(h5.rx_buf, evt);
-	}
-
-	return buf;
+	return bt_buf_get_evt(evt, false, K_NO_WAIT);
 }
 
 static void bt_uart_isr(struct device *unused)
