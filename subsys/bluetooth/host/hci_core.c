@@ -1690,35 +1690,10 @@ static int set_flow_control(void)
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
-static int bt_clear_all_pairings(u8_t id)
-{
-	bt_conn_disconnect_all(id);
-
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		bt_keys_clear_all(id);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BREDR)) {
-		bt_keys_link_key_clear_addr(NULL);
-	}
-
-	return 0;
-}
-
-int bt_unpair(u8_t id, const bt_addr_le_t *addr)
+static void unpair(u8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys = NULL;
-	struct bt_conn *conn;
-
-	if (id >= CONFIG_BT_ID_MAX) {
-		return -EINVAL;
-	}
-
-	if (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
-		return bt_clear_all_pairings(id);
-	}
-
-	conn = bt_conn_lookup_addr_le(id, addr);
+	struct bt_conn *conn = bt_conn_lookup_addr_le(id, addr);
 	if (conn) {
 		/* Clear the conn->le.keys pointer since we'll invalidate it,
 		 * and don't want any subsequent code (like disconnected
@@ -1753,7 +1728,27 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_gatt_clear(id, addr);
 	}
+}
 
+static void unpair_remote(const struct bt_bond_info *info, void *data)
+{
+	u8_t *id = (u8_t *) data;
+
+	unpair(*id, &info->addr);
+}
+
+int bt_unpair(u8_t id, const bt_addr_le_t *addr)
+{
+	if (id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
+	if (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		bt_foreach_bond(id, unpair_remote, &id);
+		return 0;
+	}
+
+	unpair(id, addr);
 	return 0;
 }
 
