@@ -254,8 +254,14 @@ out:
 
 static int port_write(struct device *dev,
 		      gpio_port_pins_t mask,
-		      gpio_port_value_t value)
+		      gpio_port_value_t value,
+		      gpio_port_value_t toggle)
 {
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	const struct sx1509b_config *cfg = dev->config->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	u16_t *outp = &drv_data->pin_state.data;
@@ -263,7 +269,7 @@ static int port_write(struct device *dev,
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	u16_t orig_out = *outp;
-	u16_t out = (orig_out & ~mask) | (u16_t)(value & mask);
+	u16_t out = ((orig_out & ~mask) | (value & mask)) ^ toggle;
 	int rc = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				       SX1509B_REG_DATA, out);
 	if (rc == 0) {
@@ -281,38 +287,25 @@ static int port_set_masked(struct device *dev,
 			   gpio_port_pins_t mask,
 			   gpio_port_value_t value)
 {
-	/* Can't do I2C bus operations from an ISR */
-	if (k_is_in_isr()) {
-		return -EWOULDBLOCK;
-	}
-
-	return port_write(dev, mask, value);
+	return port_write(dev, mask, value, 0);
 }
 
 static int port_set_bits(struct device *dev,
 			 gpio_port_pins_t pins)
 {
-	return port_set_masked(dev, pins, pins);
+	return port_write(dev, pins, pins, 0);
 }
 
 static int port_clear_bits(struct device *dev,
 			   gpio_port_pins_t pins)
 {
-	return port_set_masked(dev, pins, 0);
+	return port_write(dev, pins, 0, 0);
 }
 
 static int port_toggle_bits(struct device *dev,
 			    gpio_port_pins_t pins)
 {
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
-
-	/* Can't do I2C bus operations from an ISR */
-	if (k_is_in_isr()) {
-		return -EWOULDBLOCK;
-	}
-
-	return port_write(dev, pins,
-			  drv_data->pin_state.data ^ pins);
+	return port_write(dev, 0, 0, pins);
 }
 
 static int pin_interrupt_configure(struct device *dev,
