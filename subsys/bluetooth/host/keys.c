@@ -263,24 +263,6 @@ void bt_keys_clear(struct bt_keys *keys)
 	(void)memset(keys, 0, sizeof(*keys));
 }
 
-static void keys_clear_id(struct bt_keys *keys, void *data)
-{
-	u8_t *id = data;
-
-	if (*id == keys->id) {
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_gatt_clear(*id, &keys->addr);
-		}
-
-		bt_keys_clear(keys);
-	}
-}
-
-void bt_keys_clear_all(u8_t id)
-{
-	bt_keys_foreach(BT_KEYS_ALL, keys_clear_id, &id);
-}
-
 #if defined(CONFIG_BT_SETTINGS)
 int bt_keys_store(struct bt_keys *keys)
 {
