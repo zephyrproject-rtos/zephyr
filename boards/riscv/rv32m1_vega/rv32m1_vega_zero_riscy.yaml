@@ -9,3 +9,4 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - i2c
+  - pwm
