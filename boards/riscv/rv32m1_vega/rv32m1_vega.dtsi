@@ -9,6 +9,12 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		led3 = &sts_led;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		sw2 = &user_button_4;
@@ -32,6 +38,22 @@
 		sts_led: led_3 {
 			gpios = <&gpioe 0 0>;
 			label = "User LD4";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&pwm2 2 0 0>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm2 1 0 0>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&pwm2 0 0 0>;
+			label = "User PWM LD3";
 		};
 	};
 
@@ -125,4 +147,8 @@ arduino_spi: &spi0 {
 		size = <33554432>;
 		has-be32k;
 	};
+};
+
+&pwm2 {
+	status = "okay";
 };

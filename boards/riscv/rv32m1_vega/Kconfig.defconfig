@@ -79,6 +79,13 @@ config SPI_1
 
 endif # SPI
 
+if PWM
+
+config PWM_2
+	default y
+
+endif # PWM
+
 if BT
 
 config BT_CTLR
