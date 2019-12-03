@@ -1117,8 +1117,7 @@ Make sure to follow these steps in order.
        "bounce" symbol. If you use such a symbol, it must have the same name as
        the environment variable.
 
-       See the :ref:`kconfig_extensions` section in the
-       :ref:`board_porting_guide` for more information.
+       See :ref:`kconfig_extensions` for more information.
 
    The :file:`Kconfig` file is automatically detected when placed in
    the application directory, but it is also possible for it to be
