@@ -32,6 +32,10 @@ struct gpio_cc13xx_cc26xx_data {
 
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
 
+static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
+	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_TI_CC13XX_CC26XX_GPIO_NGPIOS),
+};
+
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
 	u32_t mask);
 static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
@@ -340,6 +344,7 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 };
 
 DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_GPIO_LABEL,
-		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0, NULL,
+		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0,
+		    &gpio_cc13xx_cc26xx_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_cc13xx_cc26xx_driver_api);
