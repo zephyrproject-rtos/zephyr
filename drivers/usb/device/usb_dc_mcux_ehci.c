@@ -7,6 +7,7 @@
 #include <soc.h>
 #include <string.h>
 #include <drivers/usb/usb_dc.h>
+#include <usb/usb_device.h>
 #include <soc.h>
 #include <device.h>
 #include "usb_dc_mcux.h"
@@ -374,19 +375,20 @@ int usb_dc_ep_flush(const u8_t ep)
 	return 0;
 }
 
-/*  send data to the host */
 int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t *const ret_bytes)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 	u8_t *buffer = (u8_t *)dev_data.eps[ep_abs_idx].block.data;
 	u32_t len_to_send;
+	usb_status_t status;
 
 	if (data_len > dev_data.eps[ep_abs_idx].ep_mps) {
 		len_to_send = dev_data.eps[ep_abs_idx].ep_mps;
 	} else {
 		len_to_send = data_len;
 	}
+
 	for (u32_t n = 0; n < len_to_send; n++) {
 		buffer[n] = data[n];
 	}
@@ -394,14 +396,44 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 #if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
 	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
 #endif
-	dev_data.interface->deviceSend(dev_data.controllerHandle,
-				       ep,
-				       buffer,
-				       len_to_send);
+	status = dev_data.interface->deviceSend(dev_data.controllerHandle,
+						ep, buffer, len_to_send);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to fill ep 0x%02x buffer", ep);
+		return -EIO;
+	}
+
 	if (ret_bytes) {
 		*ret_bytes = len_to_send;
 	}
+
 	return 0;
+}
+
+static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
+				 u32_t data_len, u32_t max_data_len)
+{
+	struct usb_setup_packet *usbd_setup;
+
+	usbd_setup = (struct usb_setup_packet *)cb_msg->buffer;
+
+	if (cb_msg->isSetup) {
+		if (usbd_setup->wLength == 0) {
+			dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
+		} else if (REQTYPE_GET_DIR(usbd_setup->bmRequestType)
+			   == REQTYPE_DIR_TO_HOST) {
+			dev_data.setupDataStage = SETUP_DATA_STAGE_IN;
+		} else {
+			dev_data.setupDataStage = SETUP_DATA_STAGE_OUT;
+		}
+	} else {
+		if (dev_data.setupDataStage != SETUP_DATA_STAGE_DONE) {
+			if ((data_len >= max_data_len) ||
+			    (data_len < dev_data.eps[0].ep_mps)) {
+				dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
+			}
+		}
+	}
 }
 
 int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
@@ -416,16 +448,20 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		LOG_ERR("Endpoint is occupied by the controller");
 		return -EBUSY;
 	}
+
 	if ((ep_idx >= NUM_OF_EP_MAX) || (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT)) {
 		LOG_ERR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
+
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
 		LOG_ERR("Wrong arguments");
 		return -EINVAL;
 	}
-	/* it is control setup, we should use message.buffer,
+
+	/*
+	 * It is control setup, we should use message.buffer,
 	 * this buffer is from internal setup array.
 	 */
 	bufp = dev_data.eps[ep_abs_idx].transfer_message.buffer;
@@ -436,6 +472,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		}
 		return -EINVAL;
 	}
+
 	if (!data && !max_data_len) {
 		/* When both buffer and max data to read are zero return the
 		 * available data in buffer.
@@ -445,46 +482,34 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		}
 		return 0;
 	}
+
 	if (data_len > max_data_len) {
 		LOG_WRN("Not enough room to copy all the data!");
 		data_len = max_data_len;
 	}
+
 	if (data != NULL) {
 		for (u32_t i = 0; i < data_len; i++) {
 			data[i] = bufp[i];
 		}
 	}
+
 	if (read_bytes) {
 		*read_bytes = data_len;
 	}
 
 	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
-		u8_t isSetup = dev_data.eps[0].transfer_message.isSetup;
-		u8_t *buffer = dev_data.eps[0].transfer_message.buffer;
-
-		if (isSetup) {
-			if (((usb_setup_struct_t *)buffer)->wLength == 0) {
-				dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
-			} else if (((usb_setup_struct_t *)buffer)->bmRequestType & USB_REQUEST_TYPE_DIR_MASK) {
-				dev_data.setupDataStage = SETUP_DATA_STAGE_IN;
-			} else {
-				dev_data.setupDataStage = SETUP_DATA_STAGE_OUT;
-			}
-		} else {
-			if (dev_data.setupDataStage != SETUP_DATA_STAGE_DONE) {
-				if ((data_len >= max_data_len) || (data_len < dev_data.eps[0].ep_mps)) {
-					dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
-				}
-			}
-		}
+		update_control_stage(&dev_data.eps[0].transfer_message,
+				     data_len, max_data_len);
 	}
+
 	return 0;
 }
 
 int usb_dc_ep_read_continue(u8_t ep)
 {
-	/* select the index of the next endpoint buffer */
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
 
 	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already occupied", ep);
@@ -495,14 +520,20 @@ int usb_dc_ep_read_continue(u8_t ep)
 		if (dev_data.setupDataStage == SETUP_DATA_STAGE_DONE) {
 			return 0;
 		}
+
 		if (dev_data.setupDataStage == SETUP_DATA_STAGE_IN) {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
 		}
 	}
-	dev_data.interface->deviceRecv(dev_data.controllerHandle,
-				       ep,
-				       (u8_t *)dev_data.eps[ep_abs_idx].block.data,
-				       dev_data.eps[ep_abs_idx].ep_mps);
+
+	status = dev_data.interface->deviceRecv(dev_data.controllerHandle, ep,
+			       (u8_t *)dev_data.eps[ep_abs_idx].block.data,
+			       dev_data.eps[ep_abs_idx].ep_mps);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to enable reception on ep 0x%02x", ep);
+		return -EIO;
+	}
+
 	dev_data.eps[ep_abs_idx].ep_occupied = true;
 
 	return 0;
@@ -516,18 +547,16 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
 	if (retval) {
 		return retval;
 	}
+
 	if (!data && !max_data_len) {
-		/* When both buffer and max data to read are zero the above
+		/*
+		 * When both buffer and max data to read are zero the above
 		 * call would fetch the data len and we simply return.
 		 */
 		return 0;
 	}
 
-	if (usb_dc_ep_read_continue(ep) != 0) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return usb_dc_ep_read_continue(ep);
 }
 
 int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
