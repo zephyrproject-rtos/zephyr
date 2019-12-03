@@ -289,7 +289,6 @@ Networking
   and is turned off by default. Users wanting to experiment with it can set
   :option:`CONFIG_NET_TCP2` Kconfig option.
 * Added support for running MQTT protocol on top of a Websocket connection.
-* Added infrastructure for testing network samples in automatic way.
 * Added support for enabling DNS in LWM2M.
 * Added support for resetting network statistics in net-shell.
 * Added support for getting statistics about the time it took to receive or send
