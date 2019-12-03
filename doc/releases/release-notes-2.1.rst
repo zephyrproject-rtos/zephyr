@@ -374,7 +374,14 @@ HALs
 Documentation
 *************
 
-* TBD
+* A new Getting Started Guide simplifies and streamlines the "out of
+  box" experience for developers, from setting up their development
+  environment through running the blinky sample.
+* Many additions and updates to architecture, build, and process docs including
+  sanity check, board porting, Bluetooth, scheduling, timing,
+  peripherals, configuration, and user mode.
+* Documentation for new boards and samples.
+* Improvements and clarity of API documentation.
 
 Tests and Samples
 *****************
