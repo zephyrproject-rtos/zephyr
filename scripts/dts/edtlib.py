@@ -1604,11 +1604,6 @@ def _check_prop_type_and_default(prop_name, prop_type, required, default,
     if default is None:
         return
 
-    if required:
-        _err("'default:' for '{}' in 'properties:' in {} is meaningless in "
-             "combination with 'required: true'"
-             .format(prop_name, binding_path))
-
     if prop_type in {"boolean", "compound", "phandle", "phandles",
                      "phandle-array"}:
         _err("'default:' can't be combined with 'type: {}' for '{}' in "
