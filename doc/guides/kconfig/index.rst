@@ -6,3 +6,4 @@ Kconfig
 
    tips.rst
    preprocessor-functions.rst
+   extensions.rst
