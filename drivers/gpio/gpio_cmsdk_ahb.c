@@ -23,7 +23,8 @@
 typedef void (*gpio_config_func_t)(struct device *port);
 
 struct gpio_cmsdk_ahb_cfg {
-	struct gpio_driver_data common;
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	volatile struct gpio_cmsdk_ahb *port;
 	gpio_config_func_t gpio_config_func;
 	/* GPIO Clock control in Active State */
@@ -394,6 +395,9 @@ static int gpio_cmsdk_ahb_init(struct device *dev)
 static void gpio_cmsdk_ahb_config_0(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_0_cfg = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_ARM_CMSDK_GPIO_NGPIOS),
+	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0),
 	.gpio_config_func = gpio_cmsdk_ahb_config_0,
 	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
@@ -427,6 +431,9 @@ static void gpio_cmsdk_ahb_config_0(struct device *dev)
 static void gpio_cmsdk_ahb_config_1(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_1_cfg = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_ARM_CMSDK_GPIO_NGPIOS),
+	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1),
 	.gpio_config_func = gpio_cmsdk_ahb_config_1,
 	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
@@ -460,6 +467,9 @@ static void gpio_cmsdk_ahb_config_1(struct device *dev)
 static void gpio_cmsdk_ahb_config_2(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_2_cfg = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_ARM_CMSDK_GPIO_NGPIOS),
+	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO2),
 	.gpio_config_func = gpio_cmsdk_ahb_config_2,
 	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
@@ -493,6 +503,9 @@ static void gpio_cmsdk_ahb_config_2(struct device *dev)
 static void gpio_cmsdk_ahb_config_3(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_3_cfg = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_ARM_CMSDK_GPIO_NGPIOS),
+	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO3),
 	.gpio_config_func = gpio_cmsdk_ahb_config_3,
 	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
