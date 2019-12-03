@@ -8,7 +8,7 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <kernel_arch_data.h>
-#include <xtensa/specreg.h>
+#include <xtensa/config/specreg.h>
 #include <xtensa-asm2-context.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
