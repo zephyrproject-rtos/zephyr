@@ -3117,15 +3117,6 @@ Artificially long but functional example:
         help="""Create a report with a custom name.
         """)
 
-    parser.add_argument("--detailed-report",
-        action="store",
-        metavar="FILENAME",
-        help="""Generate a junit report with detailed testcase results.
-        Unlike the CSV file produced by --testcase-report, this XML
-        report includes only tests which have run and none which were
-        merely built. If an image with multiple tests crashes early then
-        later tests are not accounted for either.""")
-
     parser.add_argument("--report-excluded",
             action="store_true",
             help="""List all tests that are never run based on current scope and
