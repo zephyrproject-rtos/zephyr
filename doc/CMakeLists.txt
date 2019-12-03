@@ -194,7 +194,7 @@ add_custom_target(
   kconfig
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
-  PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}"
+  PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
   srctree=${ZEPHYR_BASE}
   BOARD_DIR=boards/*/*
@@ -207,13 +207,14 @@ add_custom_target(
   KCONFIG_DOC_MODE=1
     ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
       --keep-module-paths
-      --modules Architecture:arch:${ZEPHYR_BASE}/arch
-                Driver:drivers:${ZEPHYR_BASE}/drivers
-                Kernel:kernel:${ZEPHYR_BASE}/kernel
-                Library:lib:${ZEPHYR_BASE}/lib
-                Subsystem:subsys:${ZEPHYR_BASE}/subsys
-                'External Module':modules:${ZEPHYR_BASE}/modules
+      --modules Architecture,arch,${ZEPHYR_BASE}/arch
+                Driver,drivers,${ZEPHYR_BASE}/drivers
+                Kernel,kernel,${ZEPHYR_BASE}/kernel
+                Library,lib,${ZEPHYR_BASE}/lib
+                Subsystem,subsys,${ZEPHYR_BASE}/subsys
+                "External Module,modules,${ZEPHYR_BASE}/modules"
 
+  VERBATIM
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Running genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/"
 )
