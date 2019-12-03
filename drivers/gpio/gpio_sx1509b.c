@@ -19,6 +19,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sx1509b, CONFIG_GPIO_LOG_LEVEL);
 
+#include "gpio_utils.h"
+
 /* Number of pins supported by the device */
 #define NUM_PINS 16
 
@@ -52,6 +54,8 @@ struct sx1509b_drv_data {
 
 /** Configuration data */
 struct sx1509b_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	const char *i2c_master_dev_name;
 	u16_t i2c_slave_addr;
 };
@@ -474,6 +478,9 @@ static const struct gpio_driver_api api_table = {
 };
 
 static const struct sx1509b_config sx1509b_cfg = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SEMTECH_SX1509B_NGPIOS),
+	},
 	.i2c_master_dev_name = DT_INST_0_SEMTECH_SX1509B_BUS_NAME,
 	.i2c_slave_addr = DT_INST_0_SEMTECH_SX1509B_BASE_ADDRESS,
 };
