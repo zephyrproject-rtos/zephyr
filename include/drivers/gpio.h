@@ -55,12 +55,23 @@ extern "C" {
 /* Initializes output to a high state. */
 #define GPIO_OUTPUT_INIT_HIGH   (1U << 11)
 
+/* Initializes output based on logic level */
+#define GPIO_OUTPUT_INIT_LOGICAL (1U << 12)
+
 /** @endcond */
 
 /** Configures GPIO pin as output and initializes it to a low state. */
 #define GPIO_OUTPUT_LOW         (GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW)
 /** Configures GPIO pin as output and initializes it to a high state. */
 #define GPIO_OUTPUT_HIGH        (GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH)
+/** Configures GPIO pin as output and initializes it to a logic 0. */
+#define GPIO_OUTPUT_INACTIVE    (GPIO_OUTPUT |			\
+				 GPIO_OUTPUT_INIT_LOW |		\
+				 GPIO_OUTPUT_INIT_LOGICAL)
+/** Configures GPIO pin as output and initializes it to a logic 1. */
+#define GPIO_OUTPUT_ACTIVE      (GPIO_OUTPUT |			\
+				 GPIO_OUTPUT_INIT_HIGH |	\
+				 GPIO_OUTPUT_INIT_LOGICAL)
 
 /** @} */
 
@@ -76,19 +87,19 @@ extern "C" {
  */
 
 /** Disables GPIO pin interrupt. */
-#define GPIO_INT_DISABLE               (1U << 12)
+#define GPIO_INT_DISABLE               (1U << 13)
 
 /** @cond INTERNAL_HIDDEN */
 
 /* Enables GPIO pin interrupt. */
-#define GPIO_INT_ENABLE                (1U << 13)
+#define GPIO_INT_ENABLE                (1U << 14)
 
 /* GPIO interrupt is sensitive to logical levels.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LEVELS_LOGICAL        (1U << 14)
+#define GPIO_INT_LEVELS_LOGICAL        (1U << 15)
 
 /* GPIO interrupt is edge sensitive.
  *
@@ -97,7 +108,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_EDGE                  (1U << 15)
+#define GPIO_INT_EDGE                  (1U << 16)
 
 /* Trigger detection when input state is (or transitions to) physical low or
  * logical 0 level.
@@ -105,7 +116,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LOW_0                 (1U << 16)
+#define GPIO_INT_LOW_0                 (1U << 17)
 
 /* Trigger detection on input state is (or transitions to) physical high or
  * logical 1 level.
@@ -113,7 +124,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_HIGH_1                (1U << 17)
+#define GPIO_INT_HIGH_1                (1U << 18)
 
 /** @endcond */
 
@@ -187,7 +198,7 @@ extern "C" {
  * @note Drivers that do not support a debounce feature should ignore
  * this flag rather than rejecting the configuration with -ENOTSUP.
  */
-#define GPIO_INT_DEBOUNCE              (1U << 18)
+#define GPIO_INT_DEBOUNCE              (1U << 19)
 
 /**
  * @name GPIO drive strength flags
@@ -212,7 +223,7 @@ extern "C" {
  * @{
  */
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS 19
+#define GPIO_DS_LOW_POS 20
 #define GPIO_DS_LOW_MASK (0x3U << GPIO_DS_LOW_POS)
 /** @endcond */
 
@@ -227,7 +238,7 @@ extern "C" {
 #define GPIO_DS_ALT_LOW (0x1U << GPIO_DS_LOW_POS)
 
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_HIGH_POS 21
+#define GPIO_DS_HIGH_POS 22
 #define GPIO_DS_HIGH_MASK (0x3U << GPIO_DS_HIGH_POS)
 /** @endcond */
 
@@ -683,6 +694,17 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 	__ASSERT((flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH)) == 0
 		 || (flags & GPIO_OUTPUT) != 0,
 		 "Output needs to be enabled to be initialized low or high");
+
+	__ASSERT((flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH))
+		 != (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH),
+		 "Output cannot be initialized low and high");
+
+	if (((flags & GPIO_OUTPUT_INIT_LOGICAL) != 0)
+	    && ((flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH)) != 0)
+	    && ((flags & GPIO_ACTIVE_LOW) != 0)) {
+		flags ^= GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH
+			| GPIO_OUTPUT_INIT_LOGICAL;
+	}
 
 	ret = gpio_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
 	if (ret != 0) {
