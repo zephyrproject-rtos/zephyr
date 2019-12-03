@@ -1998,8 +1998,7 @@ PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "__aligned(x)=" \
                          "__printf_like(x, y)=" \
                          "__attribute__(x)=" \
-                         "__syscall=" \
-                         "__syscall_inline="
+                         "__syscall="
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
