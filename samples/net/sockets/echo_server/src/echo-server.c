@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_echo_server_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 #include <linker/sections.h>
 #include <errno.h>
+#include <shell/shell.h>
 
 #include <net/net_core.h>
 #include <net/tls_credentials.h>
@@ -81,6 +82,24 @@ static void init_app(void)
 
 	init_vlan();
 }
+
+static int cmd_sample_quit(const struct shell *shell,
+			  size_t argc, char *argv[])
+{
+	quit();
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sample_commands,
+	SHELL_CMD(quit, NULL,
+		  "Quit the sample application\n",
+		  cmd_sample_quit),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(sample, &sample_commands,
+		   "Sample application commands", NULL);
 
 void main(void)
 {
