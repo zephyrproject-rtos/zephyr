@@ -1255,6 +1255,16 @@ static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
+/* This returns -EAGAIN whenever a segment cannot be send immediately which can
+ * happen under the following circuntances:
+ *
+ * 1. There are no credits
+ * 2. There are no buffers
+ * 3. There are no TX contexts
+ *
+ * In all cases the original buffer is unaffected so it can be pushed back to
+ * be sent later.
+ */
 static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 			      struct net_buf *buf, u16_t sdu_hdr_len)
 {
