@@ -156,6 +156,12 @@ config SPI_RV32M1_LPSPI
 
 endif # SPI
 
+if PWM
+
+config PWM_RV32M1_TPM
+	default y
+
+endif # PWM
 
 if FLASH
 
