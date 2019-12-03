@@ -165,4 +165,19 @@ config SOC_ATMEL_SAME70_DISABLE_ERASE_PIN
 	  switch the pin to general IO mode giving control of the pin to the GPIO
 	  module.
 
+config SOC_ATMEL_SAME70_DISABLE_WDT
+	bool "Disable watchdog"
+	depends on !WDT_SAM
+	default y
+	help
+	  Watchdog is enabled by default on the SAME70 SoC. When the watchdog
+	  driver is not used, setting this option will disable the watchdog
+	  and prevent unintentional processor reset; otherwise, watchdog state
+	  is governed by the watchdog driver.
+
+	  If the application configures watchdog on its own and does not rely
+	  on the Zephyr-provided watchdog driver, this option must be disabled
+	  to leave watchdog enabled, as SAME70 watchdog cannot be re-enabled
+	  until reset, once disabled.
+
 endif # SOC_SERIES_SAME70

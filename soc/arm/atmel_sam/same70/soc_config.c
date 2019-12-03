@@ -51,6 +51,17 @@ static int atmel_same70_config(struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_SOC_ATMEL_SAME70_DISABLE_WDT
+	/*
+	 * Disable the watchdog to prevent unintentional processor reset when
+	 * the watchdog driver is not enabled and the application does not
+	 * configure the watchdog on its own.
+	 */
+	 Wdt *wdt = (Wdt *)DT_WDT_SAM_BASE_ADDRESS;
+
+	 wdt->WDT_MR |= WDT_MR_WDDIS;
+#endif
+
 	return 0;
 }
 
