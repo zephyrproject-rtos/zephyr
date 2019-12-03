@@ -25,3 +25,11 @@ tests:
       - CONFIG_OPENOCD_SUPPORT=y
     arch_exclude: posix xtensa
     platform_exclude: qemu_x86_64
+  tracing.uart:
+    platform_whitelist: sam_e70_xplained
+    depends_on: usb_device usb_cdc
+    extra_args: CONF_FILE="prj_uart.conf"
+  tracing.usb:
+    platform_whitelist: sam_e70_xplained
+    depends_on: usb_device
+    extra_args: CONF_FILE="prj_usb.conf"
