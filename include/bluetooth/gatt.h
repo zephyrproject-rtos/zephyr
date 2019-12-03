@@ -1256,7 +1256,8 @@ struct bt_gatt_subscribe_params;
 /** @typedef bt_gatt_notify_func_t
  *  @brief Notification callback function
  *
- *  @param conn Connection object.
+ *  @param conn Connection object. May be NULL, indicating that the peer is
+ *              being unpaired
  *  @param params Subscription parameters.
  *  @param data Attribute value data. If NULL then subscription was removed.
  *  @param length Attribute value length.

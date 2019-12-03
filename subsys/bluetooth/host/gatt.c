@@ -4137,6 +4137,23 @@ static int sc_clear_by_addr(u8_t id, const bt_addr_le_t *addr)
 	return 0;
 }
 
+static void bt_gatt_clear_subscriptions(const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BT_GATT_CLIENT)
+	struct bt_gatt_subscribe_params *params, *tmp;
+	sys_snode_t *prev = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
+		if (bt_addr_le_cmp(addr, &params->_peer)) {
+			prev = &params->node;
+			continue;
+		}
+		params->value = 0U;
+		gatt_subscription_remove(NULL, prev, params);
+	}
+#endif /* CONFIG_BT_GATT_CLIENT */
+}
+
 int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 {
 	int err;
@@ -4155,6 +4172,8 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 	if (err < 0) {
 		return err;
 	}
+
+	bt_gatt_clear_subscriptions(addr);
 
 	return 0;
 }
