@@ -216,7 +216,8 @@ static struct xec_params *xec_compare_params(u32_t target_freq,
 				lc_params->off);
 	}
 
-	if (abs(target_freq - freq_h) < abs(target_freq - freq_l)) {
+	if (abs((int)target_freq - (int)freq_h) <
+	    abs((int)target_freq - (int)freq_l)) {
 		params = hc_params;
 	} else {
 		params = lc_params;
