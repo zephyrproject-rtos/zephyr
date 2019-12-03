@@ -124,6 +124,38 @@ static int setup(void)
 	return TC_PASS;
 }
 
+/* Verify pin-number validation on all non-deprecated API that does
+ * this without __ASSERT.
+ */
+static int check_available_pins(void)
+{
+	const struct gpio_driver_config *const cfg =
+		(const struct gpio_driver_config *)dev->config->config_info;
+	u8_t bad_pin = 0;
+	int rc;
+
+	if ((~cfg->available) == 0U) {
+		TC_PRINT("Test device supports all pins\n");
+		return TC_PASS;
+	}
+
+	while ((cfg->available & (gpio_port_pins_t)BIT(bad_pin)) != 0U) {
+		++bad_pin;
+	}
+	TC_PRINT("Test device available pins are %x, testing %u\n",
+		 (unsigned int)cfg->available, bad_pin);
+
+	rc = gpio_pin_configure(dev, bad_pin, GPIO_OUTPUT);
+	zassert_equal(rc, -EINVAL,
+		      "configure bad pin");
+
+	rc = gpio_pin_interrupt_configure(dev, bad_pin, GPIO_INT_DISABLE);
+	zassert_equal(rc, -EINVAL,
+		      "configure interrupt bad pin");
+
+	return TC_PASS;
+}
+
 /* gpio_port_set_bits_raw()
  * gpio_port_clear_bits_raw()
  * gpio_port_set_masked_raw()
@@ -624,6 +656,8 @@ void test_gpio_port(void)
 {
 	zassert_equal(setup(), TC_PASS,
 		      "device setup failed");
+	zassert_equal(check_available_pins(), TC_PASS,
+		      "pin number validation failed");
 	zassert_equal(bits_physical(), TC_PASS,
 		      "bits_physical failed");
 	zassert_equal(pin_physical(), TC_PASS,
