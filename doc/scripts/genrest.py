@@ -106,15 +106,21 @@ def init():
 
     modules = []
     for module_spec in args.modules:
-        if module_spec.count(":") == 2:
-            title, suffix, path_s = module_spec.split(":")
+        # Split on ',', but keep any ',,' as a literal ','. Temporarily
+        # represent a literal comma with null.
+        spec_parts = [part.replace("\0", ",")
+                      for part in module_spec.replace(",,", "\0").split(",")]
+
+        if len(spec_parts) == 3:
+            title, suffix, path_s = spec_parts
             desc_path = None
-        elif module_spec.count(":") == 3:
-            title, suffix, path_s, desc_path = module_spec.split(":")
+        elif len(spec_parts) == 4:
+            title, suffix, path_s, desc_path = spec_parts
         else:
             sys.exit("error: --modules argument '{}' should have the format "
-                     "<title>:<suffix>:<path> or the format "
-                     "<title>:<suffix>:<path>:<index description filename>"
+                     "<title>,<suffix>,<path> or the format "
+                     "<title>,<suffix>,<path>,<index description filename>. "
+                     "A doubled ',,' in any part is treated as a literal comma."
                      .format(module_spec))
 
         abspath = pathlib.Path(path_s).resolve()
@@ -160,9 +166,12 @@ several index pages, based on where symbols are defined.
 
 Each MODULE_SPECIFICATION has the form
 
-    <title>:<suffix>:<path>[:<index description path>]
+    <title>,<suffix>,<path>[,<index description path>]
 
 , where <index description path> is optional.
+
+To insert a literal comma into any of the parts, double it,
+e.g. 'My title,, with a comma'.
 
 A separate index-<suffix>.rst symbol index page is generated
 for each MODULE_SPECIFICATION, with links to all symbols
