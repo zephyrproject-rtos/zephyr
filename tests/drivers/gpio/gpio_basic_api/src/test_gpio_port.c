@@ -36,7 +36,7 @@ static bool logic_in(void)
 	int rc = gpio_port_get(dev, &v);
 
 	zassert_equal(rc, 0,
-		      "raw_in failed");
+		      "logic_in failed");
 	return (v & BIT(PIN_IN)) ? true : false;
 }
 
@@ -49,6 +49,20 @@ static void raw_out(bool set)
 		rc = gpio_port_set_bits_raw(dev, BIT(PIN_OUT));
 	} else {
 		rc = gpio_port_clear_bits_raw(dev, BIT(PIN_OUT));
+	}
+	zassert_equal(rc, 0,
+		      "raw_out failed");
+}
+
+/* Short-hand for a checked write of PIN_OUT logic state */
+static void logic_out(bool set)
+{
+	int rc;
+
+	if (set) {
+		rc = gpio_port_set_bits(dev, BIT(PIN_OUT));
+	} else {
+		rc = gpio_port_clear_bits(dev, BIT(PIN_OUT));
 	}
 	zassert_equal(rc, 0,
 		      "raw_out failed");
@@ -303,6 +317,59 @@ static int check_raw_output_levels(void)
 	raw_out(false);
 	zassert_equal(raw_in(), false,
 		      "set low mismatch");
+
+	return TC_PASS;
+}
+
+/* Verify configure output level is dependent on active level, and
+ * logic output is dependent on active level.
+ */
+static int check_logic_output_levels(void)
+{
+	int rc;
+
+	TC_PRINT("- %s\n", __func__);
+
+	rc = gpio_pin_configure(dev, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_INACTIVE);
+	zassert_equal(rc, 0,
+		      "active true output false failed: %d", rc);
+	zassert_equal(raw_in(), false,
+		      "active true output false logic mismatch");
+	logic_out(true);
+	zassert_equal(raw_in(), true,
+		      "set true mismatch");
+
+	rc = gpio_pin_configure(dev, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_ACTIVE);
+	zassert_equal(rc, 0,
+		      "active true output true failed");
+	zassert_equal(raw_in(), true,
+		      "active true output true logic mismatch");
+	logic_out(false);
+	zassert_equal(raw_in(), false,
+		      "set false mismatch");
+
+	rc = gpio_pin_configure(dev, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE);
+	zassert_equal(rc, 0,
+		      "active low output true failed");
+
+	zassert_equal(raw_in(), false,
+		      "active low output true raw mismatch");
+	logic_out(false);
+	zassert_equal(raw_in(), true,
+		      "set false mismatch");
+
+	rc = gpio_pin_configure(dev, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_INACTIVE);
+	zassert_equal(rc, 0,
+		      "active low output false failed");
+	zassert_equal(raw_in(), true,
+		      "active low output false logic mismatch");
+	logic_out(true);
+	zassert_equal(raw_in(), false,
+		      "set true mismatch");
 
 	return TC_PASS;
 }
@@ -563,6 +630,8 @@ void test_gpio_port(void)
 		      "pin_physical failed");
 	zassert_equal(check_raw_output_levels(), TC_PASS,
 		      "check_raw_output_levels failed");
+	zassert_equal(check_logic_output_levels(), TC_PASS,
+		      "check_logic_output_levels failed");
 	zassert_equal(check_input_levels(), TC_PASS,
 		      "check_input_levels failed");
 	zassert_equal(bits_logical(), TC_PASS,
