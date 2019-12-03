@@ -642,6 +642,9 @@ static int gpio_dw_initialize(struct device *port)
 static void gpio_config_0_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_config_0 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_0_IRQ,
 #endif
@@ -701,6 +704,9 @@ static void gpio_config_0_irq(struct device *port)
 static void gpio_config_1_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_1 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_1_IRQ,
 #endif
@@ -759,6 +765,9 @@ static void gpio_config_1_irq(struct device *port)
 static void gpio_config_2_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_2 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_2_IRQ,
 #endif
@@ -817,6 +826,9 @@ static void gpio_config_2_irq(struct device *port)
 static void gpio_config_3_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_3 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_3_IRQ,
 #endif
