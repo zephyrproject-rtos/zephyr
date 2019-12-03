@@ -501,6 +501,9 @@ static void bt_uart_isr(struct device *unused)
 				h5.rx_state = END;
 				break;
 			}
+			if (!remaining) {
+				h5.rx_state = END;
+			}
 			break;
 		case PAYLOAD:
 			if (h5_unslip_byte(&byte) < 0) {
