@@ -2826,7 +2826,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 	const struct bt_att_find_info_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
 	u16_t handle = 0U;
-	u8_t len;
+	u16_t len;
 	union {
 		const struct bt_att_info_16 *i16;
 		const struct bt_att_info_128 *i128;
@@ -3007,7 +3007,7 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
 		const struct bt_att_data *data = pdu;
 		u16_t handle;
-		u8_t len;
+		u16_t len;
 
 		handle = sys_le16_to_cpu(data->handle);
 
