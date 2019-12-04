@@ -266,6 +266,20 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 		return -EIO;
 	}
 
+	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) &&
+	    (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
+		status = dev_data.interface->deviceRecv(
+				dev_data.controllerHandle, ep,
+				(u8_t *)dev_data.eps[ep_abs_idx].block.data,
+				(uint32_t)dev_data.eps[ep_abs_idx].ep_mps);
+		if (kStatus_USB_Success != status) {
+			LOG_ERR("Failed to enable reception on 0x%02x", ep);
+			return -EIO;
+		}
+
+		dev_data.eps[ep_abs_idx].ep_occupied = true;
+	}
+
 	return 0;
 }
 
