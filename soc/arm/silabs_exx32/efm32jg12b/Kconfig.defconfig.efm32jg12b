@@ -1,0 +1,35 @@
+# Silicon Labs EFM32JG12B configuration options
+
+# Copyright (c) 2019 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if GPIO
+
+config GPIO_GECKO
+	default y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_GECKO
+	default y
+
+config LEUART_GECKO
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_GECKO
+	default y
+
+endif # I2C
+
+if FLASH
+
+config SOC_FLASH_GECKO
+	default y
+
+endif # FLASH
