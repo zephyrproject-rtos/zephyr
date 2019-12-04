@@ -5,7 +5,7 @@ Build Overview
 
 The Zephyr build process can be divided into two main phases: a
 configuration phase (driven by *CMake*) and a build phase (driven by
-*Make* or *Ninja*). We will descibe the build phase using *Make* as
+*Make* or *Ninja*). We will describe the build phase using *Make* as
 example.
 
 
