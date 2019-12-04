@@ -1,3 +1,5 @@
+.. _kconfig:
+
 Kconfig
 #######
 
@@ -5,6 +7,7 @@ Kconfig
    :maxdepth: 1
 
    menuconfig.rst
+   setting.rst
    tips.rst
    preprocessor-functions.rst
    extensions.rst

@@ -589,8 +589,10 @@ with the C Kconfig tools, though an implicit 0 default might be less likely to
 be what was intended compared to other symbol types as well.
 
 
-Common shorthands
-=================
+.. _kconfig_shorthands:
+
+Common Kconfig shorthands
+=========================
 
 Kconfig has two shorthands that deal with prompts and defaults.
 
