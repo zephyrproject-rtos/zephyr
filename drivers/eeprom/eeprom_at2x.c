@@ -215,12 +215,17 @@ static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 	struct eeprom_at2x_data *data = dev->driver_data;
 	s64_t timeout;
 	u8_t addr[2];
+	u16_t bus_addr = config->bus_addr & ~BIT_MASK(3);
 	int err;
 
-	if (config->addr_width == 16) {
+	if (config->addr_width > 11) {
 		sys_put_be16(offset, addr);
 	} else {
 		addr[0] = offset & BIT_MASK(8);
+		if (config->addr_width > 8) {
+			bus_addr |=
+				offset >> 8 & BIT_MASK(config->addr_width - 8);
+		}
 	}
 
 	/*
@@ -229,8 +234,8 @@ static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 	 */
 	timeout = k_uptime_get() + config->timeout;
 	do {
-		err = i2c_write_read(data->bus_dev, config->bus_addr,
-				     addr, config->addr_width / 8,
+		err = i2c_write_read(data->bus_dev, bus_addr,
+				     addr, config->addr_width > 11 ? 2 : 1,
 				     buf, len);
 		if (!err) {
 			break;
@@ -247,8 +252,9 @@ static int eeprom_at24_write(struct device *dev, off_t offset,
 	const struct eeprom_at2x_config *config = dev->config->config_info;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int count = eeprom_at2x_limit_write_count(dev, offset, len);
-	u8_t block[config->addr_width / 8 + count];
+	u8_t block[config->addr_width > 11 ? 2 : 1 + count];
 	s64_t timeout;
+	u16_t bus_addr = config->bus_addr & ~BIT_MASK(3);
 	int i = 0;
 	int err;
 
@@ -257,8 +263,10 @@ static int eeprom_at24_write(struct device *dev, off_t offset,
 	 * address (offset) and data (buf) must be provided in one
 	 * write transaction (block).
 	 */
-	if (config->addr_width == 16) {
+	if (config->addr_width > 11) {
 		block[i++] = offset >> 8;
+	} else if (config->addr_width > 8) {
+		bus_addr |= offset >> 8 & BIT_MASK(config->addr_width - 8);
 	}
 	block[i++] = offset;
 	memcpy(&block[i], buf, count);
@@ -270,8 +278,7 @@ static int eeprom_at24_write(struct device *dev, off_t offset,
 	 */
 	timeout = k_uptime_get() + config->timeout;
 	do {
-		err = i2c_write(data->bus_dev, block, sizeof(block),
-				config->bus_addr);
+		err = i2c_write(data->bus_dev, block, sizeof(block), bus_addr);
 		if (!err) {
 			break;
 		}
@@ -551,7 +558,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 };
 
 #define ASSERT_AT24_ADDR_W_VALID(w) \
-	BUILD_ASSERT_MSG(w == 8U || w == 16U, \
+	BUILD_ASSERT_MSG(w >= 7U || w <= 15U, \
 			 "Unsupported address width")
 
 #define ASSERT_AT25_ADDR_W_VALID(w) \
