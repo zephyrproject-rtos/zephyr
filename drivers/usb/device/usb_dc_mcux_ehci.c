@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2019, NXP
+ * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -583,45 +584,122 @@ int usb_dc_ep_mps(const u8_t ep)
 	return dev_data.eps[ep_abs_idx].ep_mps;
 }
 
-static void control_endpoint_enable(void)
+static void handle_bus_reset(void)
 {
 	usb_device_endpoint_init_struct_t ep_init;
 	u8_t ep_abs_idx = 0;
+	usb_status_t status;
+
+	dev_data.address = 0;
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlSetDefaultStatus, NULL);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to set default status");
+	}
+
+	for (int i = 0; i < NUM_OF_EP_MAX; i++) {
+		dev_data.eps[i].ep_occupied = false;
+		dev_data.eps[i].ep_enabled = false;
+	}
 
 	ep_init.zlt = 0U;
 	ep_init.transferType = USB_ENDPOINT_CONTROL;
 	ep_init.maxPacketSize = EP0_MAX_PACKET_SIZE;
-
 	ep_init.endpointAddress = EP0_OUT;
+
 	ep_abs_idx =  EP_ABS_IDX(ep_init.endpointAddress);
 	dev_data.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
 
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlEndpointInit, &ep_init);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to initialize control OUT endpoint");
+	}
+
 	dev_data.eps[ep_abs_idx].ep_occupied = false;
 	dev_data.eps[ep_abs_idx].ep_enabled = true;
 
 	ep_init.endpointAddress = EP0_IN;
 	ep_abs_idx = EP_ABS_IDX(ep_init.endpointAddress);
 	dev_data.eps[ep_abs_idx].ep_mps = EP0_MAX_PACKET_SIZE;
-	dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlEndpointInit, &ep_init);
+	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
+			kUSB_DeviceControlEndpointInit, &ep_init);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to initialize control IN endpoint");
+	}
+
 	dev_data.eps[ep_abs_idx].ep_occupied = false;
 	dev_data.eps[ep_abs_idx].ep_enabled = true;
+}
+
+static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
+{
+	u8_t ep_status_code = 0;
+	u8_t ep = cb_msg->code;
+	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+	usb_status_t status;
+
+	dev_data.eps[ep_abs_idx].ep_occupied = false;
+
+	if (cb_msg->length == UINT32_MAX) {
+		/*
+		 * Probably called from USB_DeviceEhciCancel()
+		 * LOG_WRN("Drop message for ep 0x%02x", ep);
+		 */
+		return;
+	}
+
+	if (cb_msg->isSetup) {
+		ep_status_code = USB_DC_EP_SETUP;
+	} else {
+		/* IN TOKEN */
+		if ((ep & USB_EP_DIR_MASK) == USB_EP_DIR_IN) {
+			if ((dev_data.address != 0) && (ep_abs_idx == 1)) {
+				/*
+				 * Set Address in the status stage in
+				 * the IN transfer.
+				 */
+				status = dev_data.interface->deviceControl(
+					dev_data.controllerHandle,
+					kUSB_DeviceControlSetDeviceAddress,
+					&dev_data.address);
+				if (kStatus_USB_Success != status) {
+					LOG_ERR("Failed to set device address");
+					return;
+				}
+				dev_data.address = 0;
+			}
+			ep_status_code = USB_DC_EP_DATA_IN;
+		}
+		/* OUT TOKEN */
+		else {
+			ep_status_code = USB_DC_EP_DATA_OUT;
+		}
+	}
+
+	if (dev_data.eps[ep_abs_idx].callback) {
+#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
+		if (cb_msg->length) {
+			DCACHE_InvalidateByRange((uint32_t)cb_msg->buffer,
+						 cb_msg->length);
+		}
+#endif
+		dev_data.eps[ep_abs_idx].callback(ep, ep_status_code);
+	} else {
+		LOG_ERR("No cb pointer for endpoint 0x%02x", ep);
+	}
 }
 
 /* Notify the up layer the KHCI status changed. */
 void USB_DeviceNotificationTrigger(void *handle, void *msg)
 {
-	usb_device_callback_message_struct_t *message = (usb_device_callback_message_struct_t *)msg;
+	u8_t ep_abs_idx;
+	usb_device_callback_message_struct_t *cb_msg =
+		(usb_device_callback_message_struct_t *)msg;
 
-	switch (message->code) {
+	switch (cb_msg->code) {
 	case kUSB_DeviceNotifyBusReset:
-		dev_data.address = 0;
-		dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlSetDefaultStatus, NULL);
-		for (int i = 0; i < NUM_OF_EP_MAX; i++) {
-			dev_data.eps[i].ep_occupied = false;
-			dev_data.eps[i].ep_enabled = false;
-		}
-		control_endpoint_enable();
+		handle_bus_reset();
 		dev_data.status_callback(USB_DC_RESET, NULL);
 		break;
 	case kUSB_DeviceNotifyError:
@@ -634,43 +712,16 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 		dev_data.status_callback(USB_DC_RESUME, NULL);
 		break;
 	default:
-	{
-		u8_t ep_packet_type = 0;
-		u8_t ep_abs_idx = EP_ABS_IDX(message->code);
-		dev_data.eps[ep_abs_idx].transfer_message.length = message->length;
-		dev_data.eps[ep_abs_idx].transfer_message.isSetup = message->isSetup;
-		dev_data.eps[ep_abs_idx].transfer_message.code = message->code;
-		dev_data.eps[ep_abs_idx].transfer_message.buffer = message->buffer;
-		dev_data.eps[ep_abs_idx].ep_occupied = false;
-		if (message->isSetup) {
-			ep_packet_type = USB_DC_EP_SETUP;
-		} else {
-			/* IN TOKEN */
-			if ((message->code & USB_REQUEST_TYPE_DIR_MASK) == USB_REQUEST_TYPE_DIR_IN) {
-				/* control endpoint 0 and status stage for setAddr transfer */
-				if ((dev_data.address != 0) && (ep_abs_idx == 1)) {
-					/* SET ADDRESS in the status stage in the IN transfer*/
-					dev_data.interface->deviceControl(dev_data.controllerHandle, kUSB_DeviceControlSetDeviceAddress, &dev_data.address);
-					dev_data.address = 0;
-				}
-				ep_packet_type = USB_DC_EP_DATA_IN;
-			}
-			/* OUT TOKEN */
-			else {
-				ep_packet_type = USB_DC_EP_DATA_OUT;
-			}
+		ep_abs_idx = EP_ABS_IDX(cb_msg->code);
+
+		if (ep_abs_idx >= NUM_OF_EP_MAX) {
+			LOG_ERR("Wrong endpoint index/address");
+			return;
 		}
-		if (dev_data.eps[ep_abs_idx].callback) {
-#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
-			if (message->length) {
-				DCACHE_InvalidateByRange((uint32_t)message->buffer,
-							 message->length);
-			}
-#endif
-			dev_data.eps[ep_abs_idx].callback(message->code,
-							  ep_packet_type);
-		}
-	}
+
+		memcpy(&dev_data.eps[ep_abs_idx].transfer_message, cb_msg,
+		       sizeof(usb_device_callback_message_struct_t));
+		handle_transfer_msg(&dev_data.eps[ep_abs_idx].transfer_message);
 	}
 }
 
