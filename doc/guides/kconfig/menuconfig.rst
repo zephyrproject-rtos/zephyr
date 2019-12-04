@@ -20,7 +20,7 @@ terminal, while ``guiconfig`` is a graphical configuration interface.
    re-configuring.
 
 To make a setting permanent, you should set it in a :file:`*.conf` file, as
-described in :ref:`application_set_conf`.
+described in :ref:`setting_configuration_values`.
 
 .. tip::
 

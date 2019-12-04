@@ -48,13 +48,12 @@ These contents are:
   debug compiled binaries on real or emulated hardware, and more.
 
 * **Kernel configuration files**: An application typically provides a
-  configuration file (usually called :file:`prj.conf`) that specifies
+  Kconfig configuration file (usually called :file:`prj.conf`) that specifies
   application-specific values for one or more kernel configuration options.
   These application settings are merged with board-specific settings to produce
   a kernel configuration.
 
-  The :ref:`application_kconfig` section below goes over application
-  configuration in detail.
+  See :ref:`application-kconfig` below for more information.
 
 * **Application source code files**: An application typically provides one
   or more application-specific files, written in C or assembly language. These
@@ -86,6 +85,9 @@ At the top of the tree there are several files that are of importance:
 :file:`Kconfig`
     The top-level Kconfig file, which refers to the file :file:`Kconfig.zephyr`
     also found at the top-level directory.
+
+    See :ref:`the Kconfig section of the manual <kconfig>` for detailed Kconfig
+    documentation.
 
 :file:`west.yml`
     The :ref:`west` manifest, listing the external repositories managed by
@@ -221,15 +223,7 @@ Follow these steps to create a new application directory. (Refer to
              :file:`boilerplate.cmake`. The most recent of the two
              versions will be enforced by CMake.
 
-#. Set any Kconfig values needed by your application. Zephyr uses the same
-   Kconfig system as the Linux kernel, but with its own database of
-   configuration options.
-
-   For example, create a file named :file:`prj.conf` in the :file:`app`
-   directory, and enable or disable Kconfig features as needed. You can use
-   existing :ref:`samples-and-demos` to get started with Kconfig variables you
-   are interested in.  See :ref:`application_kconfig` for more details, and
-   :ref:`configuration_options` for a complete list of available options.
+#. Set Kconfig configuration options. See :ref:`application-kconfig`.
 
 #. Optionally, you can also configure any devicetree overlays needed by your
    application. See :ref:`application_dt` below for details.
@@ -271,6 +265,8 @@ should know about.
   fragment files. Multiple filenames can be separated with either spaces or
   semicolons. Each file includes Kconfig configuration values that override
   the default configuration values.
+
+  See :ref:`initial-conf` for more information.
 
 * :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more devicetree
   overlay files. Multiple filenames can be separated with either spaces or
@@ -1087,7 +1083,7 @@ Make sure to follow these steps in order.
      set(CONF_FILE "fragment_file1.conf")
      list(APPEND CONF_FILE "fragment_file2.conf")
 
-   More details are available below in :ref:`application_kconfig`.
+   See :ref:`initial-conf` for more information.
 
 #. If your application uses a devicetree overlay file or files other than
    the usual :file:`<board>.overlay`, add lines setting the
@@ -1098,6 +1094,9 @@ Make sure to follow these steps in order.
 #. If your application has its own kernel configuration options,
    create a :file:`Kconfig` file in the same directory as your
    application's :file:`CMakeLists.txt`.
+
+   See :ref:`the Kconfig section of the manual <kconfig>` for detailed
+   Kconfig documentation.
 
    An (unlikely) advanced use case would be if your application has its own
    unique configuration **options** that are set differently depending on the
@@ -1112,12 +1111,12 @@ Make sure to follow these steps in order.
 
    .. note::
 
-       Environment variables in ``source`` statements are expanded directly,
-       so you do not need to define an ``option env="ZEPHYR_BASE"`` Kconfig
-       "bounce" symbol. If you use such a symbol, it must have the same name as
-       the environment variable.
+      Environment variables in ``source`` statements are expanded directly, so
+      you do not need to define an ``option env="ZEPHYR_BASE"`` Kconfig
+      "bounce" symbol. If you use such a symbol, it must have the same name as
+      the environment variable.
 
-       See :ref:`kconfig_extensions` for more information.
+      See :ref:`kconfig_extensions` for more information.
 
    The :file:`Kconfig` file is automatically detected when placed in
    the application directory, but it is also possible for it to be
@@ -1177,138 +1176,33 @@ documentation `runningcmake`_ .
 
 .. _runningcmake: http://cmake.org/runningcmake/
 
-.. _application_configuration:
-
 Application Configuration
 *************************
 
-.. _application_kconfig:
+.. _application-kconfig:
 
 Kconfig Configuration
 =====================
 
-Use the ``menuconfig`` and ``guiconfig`` interfaces to test out different
-configurations during development. See :ref:`menuconfig` for more information.
+Application configuration options are usually set in :file:`prj.conf` in the
+application directory. For example, C++ support could be enabled with this
+assignment:
 
-The Initial Kconfig Configuration
----------------------------------
+.. code-block:: none
 
-The initial configuration for an application is produced by merging
-configuration settings from three sources:
+   CONFIG_CPLUSPLUS=y
 
-1. A :makevar:`BOARD`-specific configuration file, stored in
-   :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` in the Zephyr base
-   directory.
+Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
+started.
 
-2. Any CMakeCache entries that are prefixed with :makevar:`CONFIG_`.
+See :ref:`setting_configuration_values` for detailed documentation on setting
+Kconfig configuration values. The :ref:`initial-conf` section on the same page
+explains how the initial configuration is derived. See
+:ref:`configuration_options` for a complete list of configuration options.
 
-3. One or more application-specific configuration files.
-
-The application-specific configuration file(s) can be specified in any of the
-following ways. The simplest option is to just have a single :file:`prj.conf`
-file.
-
-1. If :makevar:`CONF_FILE` is set in :file:`CMakeLists.txt` (**before including
-   the boilerplate.cmake file**), or is present in the CMake variable cache,
-   or is specified via the ``-DCONF_FILE=<conf file(s)>`` when invoking CMake
-   (either directly or via ``west``) the configuration files specified in it
-   are merged and used as the application-specific settings.
-
-2. Otherwise (if (1.) does not apply), if a file :file:`prj_BOARD.conf` exists
-   in the application directory, where :makevar:`BOARD` is the BOARD value set
-   earlier, the settings in it are used.
-
-3. Otherwise (if (2.) does not apply), if a file :file:`boards/BOARD.conf` exists
-   in the application directory, where :makevar:`BOARD` is the BOARD value set
-   earlier, the settings in it are merged with :file:`prj.conf` and used.
-
-4. Otherwise, if a file :file:`prj.conf` exists in the application directory,
-   the settings in it are used.
-
-Configuration settings that have not been specified fall back on their
-default value, as given in the :file:`Kconfig` files.
-
-The merged configuration is saved in :file:`zephyr/.config` in the build
-directory.
-
-As long as :file:`zephyr/.config` exists and is up-to-date (is newer than the
-:makevar:`BOARD` and application configuration files), it will be used in
-preference to producing a new merged configuration. This can be used to test
-out configurations during development, as described in :ref:`menuconfig`.
-
-For more information on Zephyr's Kconfig configuration scheme, see the
-:ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
-For some tips and general recommendations when writing Kconfig files, see the
-:ref:`kconfig_tips_and_tricks` page.
-
-For information on available kernel configuration options, including
-inter-dependencies between options, see the :ref:`configuration_options`.
-
-.. note::
-
-    Dependencies between options can also be viewed in the :ref:`interactive
-    configuration interfaces <menuconfig>`. They will show the most up-to-date
-    dependencies, and also show which dependencies are currently unsatisfied.
-
-    To view the dependencies of an option in e.g. ``menuconfig``, jump to it
-    with :kbd:`/` and press :kbd:`?`. For each unsatisfied dependency, jump to
-    it in turn to check its dependencies.
-
-.. _application_set_conf:
-
-Making Kconfig Configuration Settings Permanent
------------------------------------------------
-
-This section describes how to edit Zephyr configuration (:file:`.conf`) files
-to make configuration settings permanent.
-
-- Add each configuration entry on a new line.
-
-- Enable or disable a boolean option by setting its value to ``y`` or ``n``:
-
-  .. code-block:: none
-
-     CONFIG_SOME_BOOL=y
-     CONFIG_SOME_OTHER_BOOL=n
-
-  .. note::
-
-     Another way to set a boolean symbol to ``n`` is with a comment with the
-     following format:
-
-     .. code-block:: none
-
-        # CONFIG_SOME_OTHER_BOOL is not set
-
-     This style is accepted for a technical reason: Kconfig configuration files
-     can be parsed as makefiles (though Zephyr doesn't use this). Having
-     ``n``-valued symbols correspond to unset variables simplifies tests in
-     Make.
-
-- You can set integer and string options as well, like this:
-
-  .. code-block:: none
-
-     CONFIG_SOME_INT=42
-     CONFIG_SOME_STRING="the best value ever"
-
-- Ensure that each entry setting an option contains no spaces
-  (including on either side of the = sign).
-
-- Use a # followed by a space to comment a line:
-
-  .. code-block:: none
-
-     # This is a comment.
-
-The example below shows a comment line and an override setting
-:option:`CONFIG_PRINTK` to ``y``:
-
-.. code-block:: c
-
-    # Enable printk for debugging
-    CONFIG_PRINTK=y
-
+The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
+worth going through, especially if you planning to add new configuration
+options.
 
 .. _application_dt:
 
