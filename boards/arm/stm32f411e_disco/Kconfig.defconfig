@@ -13,6 +13,14 @@ if UART_CONSOLE
 config UART_2
 	default y
 
+
+if PWM
+
+config PWM_STM32_4
+	default y
+
+endif # PWM
+
 endif # UART_CONSOLE
 
 endif # BOARD_STM32F411E_DISCO
