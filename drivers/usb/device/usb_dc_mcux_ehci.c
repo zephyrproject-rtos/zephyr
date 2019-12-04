@@ -110,7 +110,7 @@ int usb_dc_detach(void)
 {
 	usb_status_t status;
 
-	if (dev_data.controllerHandle != NULL) {
+	if (dev_data.controllerHandle == NULL) {
 		LOG_WRN("Device not attached");
 		return 0;
 	}
@@ -317,6 +317,11 @@ int usb_dc_ep_enable(const u8_t ep)
 		return 0;
 	}
 
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
 		return -EALREADY;
@@ -349,6 +354,11 @@ int usb_dc_ep_disable(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 	usb_status_t status;
+
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
 
 	status = dev_data.interface->deviceCancel(dev_data.controllerHandle,
 						  ep);
@@ -383,6 +393,11 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	u8_t *buffer = (u8_t *)dev_data.eps[ep_abs_idx].block.data;
 	u32_t len_to_send;
 	usb_status_t status;
+
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
 
 	if (data_len > dev_data.eps[ep_abs_idx].ep_mps) {
 		len_to_send = dev_data.eps[ep_abs_idx].ep_mps;
@@ -512,6 +527,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 	usb_status_t status;
 
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (dev_data.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already occupied", ep);
 		return -EBUSY;
@@ -564,6 +584,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (!dev_data.attached) {
 		return -EINVAL;
 	}
@@ -580,6 +605,11 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
 
 	return dev_data.eps[ep_abs_idx].ep_mps;
 }
