@@ -205,14 +205,6 @@ int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id)
 	return -EAGAIN;
 }
 
-void stm32_dma_enable_fifo(DMA_TypeDef *dma, u32_t id)
-{
-	LL_DMA_EnableFifoMode(dma, table_ll_stream[id]);
-	LL_DMA_EnableIT_FE(dma, table_ll_stream[id]);
-	LL_DMA_SetFIFOThreshold(dma, table_ll_stream[id],
-			LL_DMA_FIFOTHRESHOLD_FULL);
-}
-
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, u32_t id)
 {
 	LL_DMA_DisableIT_FE(dma, table_ll_stream[id]);

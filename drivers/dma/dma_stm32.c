@@ -403,8 +403,10 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
+		LL_DMA_EnableFifoMode(dma, table_ll_stream[id]);
 		LL_DMA_EnableIT_FE(dma, table_ll_stream[id]);
 	} else {
+		LL_DMA_DisableFifoMode(dma, table_ll_stream[id]);
 		LL_DMA_DisableIT_FE(dma, table_ll_stream[id]);
 	}
 #endif

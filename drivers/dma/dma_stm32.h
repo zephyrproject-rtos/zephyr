@@ -22,7 +22,6 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id);
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, u32_t id);
 void stm32_dma_enable_stream(DMA_TypeDef *dma, u32_t id);
 int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id);
-void stm32_dma_enable_fifo(DMA_TypeDef *dma, u32_t id);
 void stm32_dma_config_channel_function(DMA_TypeDef *dma, u32_t id, u32_t slot);
 #ifdef CONFIG_DMA_STM32_V1
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, u32_t id);
