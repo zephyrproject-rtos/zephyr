@@ -2312,6 +2312,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, u8_t err,
 	/* Parse attributes found */
 	for (i = 0U; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
+		struct bt_uuid_16 uuid_svc;
 		struct bt_gatt_attr attr = {};
 		struct bt_gatt_service_val value;
 
@@ -2321,15 +2322,17 @@ static void gatt_find_type_rsp(struct bt_conn *conn, u8_t err,
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x", start_handle,
 		       end_handle);
 
+		uuid_svc.uuid.type = BT_UUID_TYPE_16;
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-			attr.uuid = BT_UUID_GATT_PRIMARY;
+			uuid_svc.val = BT_UUID_16(BT_UUID_GATT_PRIMARY)->val;
 		} else {
-			attr.uuid = BT_UUID_GATT_SECONDARY;
+			uuid_svc.val = BT_UUID_16(BT_UUID_GATT_SECONDARY)->val;
 		}
 
 		value.end_handle = end_handle;
 		value.uuid = params->uuid;
 
+		attr.uuid = &uuid_svc.uuid;
 		attr.handle = start_handle;
 		attr.user_data = &value;
 
@@ -2353,9 +2356,9 @@ done:
 static int gatt_find_type(struct bt_conn *conn,
 			 struct bt_gatt_discover_params *params)
 {
+	u16_t uuid_val;
 	struct net_buf *buf;
 	struct bt_att_find_type_req *req;
-	struct bt_uuid *uuid;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -2367,12 +2370,12 @@ static int gatt_find_type(struct bt_conn *conn,
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-		uuid = BT_UUID_GATT_PRIMARY;
+		uuid_val = BT_UUID_16(BT_UUID_GATT_PRIMARY)->val;
 	} else {
-		uuid = BT_UUID_GATT_SECONDARY;
+		uuid_val = BT_UUID_16(BT_UUID_GATT_SECONDARY)->val;
 	}
 
-	req->type = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
+	req->type = sys_cpu_to_le16(uuid_val);
 
 	BT_DBG("uuid %s start_handle 0x%04x end_handle 0x%04x",
 	       bt_uuid_str(params->uuid), params->start_handle,
@@ -2716,6 +2719,7 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 	/* Parse services found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
+		struct bt_uuid_16 uuid_svc;
 		struct bt_gatt_attr attr = {};
 		struct bt_gatt_service_val value;
 		const struct bt_att_group_data *data = pdu;
@@ -2743,15 +2747,17 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x uuid %s",
 		       start_handle, end_handle, bt_uuid_str(&u.uuid));
 
+		uuid_svc.uuid.type = BT_UUID_TYPE_16;
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-			attr.uuid = BT_UUID_GATT_PRIMARY;
+			uuid_svc.val = BT_UUID_16(BT_UUID_GATT_PRIMARY)->val;
 		} else {
-			attr.uuid = BT_UUID_GATT_SECONDARY;
+			uuid_svc.val = BT_UUID_16(BT_UUID_GATT_SECONDARY)->val;
 		}
 
 		value.end_handle = end_handle;
 		value.uuid = &u.uuid;
 
+		attr.uuid = &uuid_svc.uuid;
 		attr.handle = start_handle;
 		attr.user_data = &value;
 
