@@ -1198,7 +1198,7 @@ struct write_data {
 	struct net_buf *buf;
 	u8_t req;
 	const void *value;
-	u8_t len;
+	u16_t len;
 	u16_t offset;
 	u8_t err;
 };
@@ -1238,7 +1238,7 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 static u8_t att_write_rsp(struct bt_conn *conn, u8_t req, u8_t rsp,
 			  u16_t handle, u16_t offset, const void *value,
-			  u8_t len)
+			  u16_t len)
 {
 	struct write_data data;
 
@@ -1305,7 +1305,7 @@ struct prep_data {
 	struct bt_conn *conn;
 	struct net_buf *buf;
 	const void *value;
-	u8_t len;
+	u16_t len;
 	u16_t offset;
 	u8_t err;
 };
@@ -1358,7 +1358,7 @@ append:
 }
 
 static u8_t att_prep_write_rsp(struct bt_att *att, u16_t handle, u16_t offset,
-			       const void *value, u8_t len)
+			       const void *value, u16_t len)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct prep_data data;
