@@ -385,9 +385,9 @@ static int settings_file_save_priv(struct settings_store *cs, const char *name,
 		rc = fs_seek(&file, 0, FS_SEEK_END);
 		if (rc == 0) {
 			entry_ctx.stor_ctx = &file;
-			rc2 = settings_line_write(name, value, val_len, 0,
+			rc = settings_line_write(name, value, val_len, 0,
 						  (void *)&entry_ctx);
-			if (rc2 == 0) {
+			if (rc == 0) {
 				cf->cf_lines++;
 			}
 		}
