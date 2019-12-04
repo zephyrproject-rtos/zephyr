@@ -497,6 +497,25 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return len;
 }
 
+static size_t put_opaque(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 char *buf, size_t buflen)
+{
+	struct tlv_out_formatter_data *fd;
+	size_t len;
+	struct oma_tlv tlv;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), (u32_t)buflen);
+	len = oma_tlv_put(&tlv, out, (u8_t *)buf, false);
+	return len;
+}
+
 static size_t put_float32fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float32_value_t *value)
@@ -761,6 +780,7 @@ const struct lwm2m_writer oma_tlv_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
+	.put_opaque = put_opaque,
 	.put_float32fix = put_float32fix,
 	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,

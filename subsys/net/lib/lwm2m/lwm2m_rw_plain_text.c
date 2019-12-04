@@ -183,6 +183,17 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return buflen;
 }
 
+static size_t put_opaque(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 char *buf, size_t buflen)
+{
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen) < 0) {
+		return 0;
+	}
+
+	return buflen;
+}
+
 static size_t put_bool(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path,
 		       bool value)
@@ -336,6 +347,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
+	.put_opaque = put_opaque,
 	.put_float32fix = plain_text_put_float32fix,
 	.put_float64fix = plain_text_put_float64fix,
 	.put_bool = put_bool,
