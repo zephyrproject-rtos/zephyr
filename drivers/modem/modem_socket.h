@@ -15,6 +15,9 @@
 
 #include <kernel.h>
 #include <net/net_ip.h>
+#include <net/socket.h>
+
+#include "sockets_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +53,8 @@ struct modem_socket_config {
 	/* beginning socket id (modems can set this to 0 or 1 as needed) */
 	int base_socket_num;
 	struct k_sem sem_poll;
+
+	const struct socket_op_vtable *vtable;
 };
 
 /* return total size of remaining packets */
@@ -65,7 +70,8 @@ struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg);
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd);
 int modem_socket_poll(struct modem_socket_config *cfg,
 		      struct pollfd *fds, int nfds, int msecs);
-int modem_socket_init(struct modem_socket_config *cfg);
+int modem_socket_init(struct modem_socket_config *cfg,
+		      const struct socket_op_vtable *vtable);
 
 #ifdef __cplusplus
 }
