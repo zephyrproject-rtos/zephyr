@@ -209,9 +209,7 @@ if not ZEPHYR_BASE:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
 import edtlib
-
 import logging
-
 
 hw_map_local = threading.Lock()
 report_lock = threading.Lock()
@@ -251,6 +249,7 @@ else:
     COLOR_RED = ""
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
+
 
 class CMakeCacheEntry:
     '''Represents a CMake cache entry.
@@ -407,6 +406,7 @@ class CMakeCache:
     def __iter__(self):
         return iter(self._entries.values())
 
+
 class SanityCheckException(Exception):
     pass
 
@@ -414,9 +414,11 @@ class SanityCheckException(Exception):
 class SanityRuntimeError(SanityCheckException):
     pass
 
+
 class ConfigurationError(SanityCheckException):
     def __init__(self, cfile, message):
         SanityCheckException.__init__(self, cfile + ": " + message)
+
 
 class BuildError(SanityCheckException):
     pass
@@ -427,6 +429,7 @@ class ExecutionError(SanityCheckException):
 
 
 log_file = None
+
 
 # Debug Functions
 def info(what, show_time=True):
@@ -459,6 +462,7 @@ def verbose(what):
     if VERBOSE >= 2:
         info(what)
 
+
 class HarnessImporter:
 
     def __init__(self, name):
@@ -470,6 +474,7 @@ class HarnessImporter:
             my_class = getattr(module, "Test")
 
         self.instance = my_class()
+
 
 class Handler:
     def __init__(self, instance, type_str="build"):
@@ -520,6 +525,7 @@ class Handler:
                 cw.writerow(harness.fieldnames)
                 for instance in harness.recording:
                     cw.writerow(instance)
+
 
 class BinaryHandler(Handler):
     def __init__(self, instance, type_str):
@@ -643,6 +649,7 @@ class BinaryHandler(Handler):
             self.instance.reason = "Handler timeout"
 
         self.record(harness)
+
 
 class DeviceHandler(Handler):
 
@@ -849,6 +856,7 @@ class DeviceHandler(Handler):
 
         self.record(harness)
 
+
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
 
@@ -1016,6 +1024,7 @@ class QEMUHandler(Handler):
 
     def get_fifo(self):
         return self.fifo_fn
+
 
 class SizeCalculator:
 
@@ -1258,6 +1267,7 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "harness_config": {"type": "map", "default": {}}
                        }
 
+
 class SanityConfigParser:
     """Class to read test case files with semantic checking
     """
@@ -1458,14 +1468,13 @@ class Platform:
             if not os.environ.get(env, None):
                 self.env_satisfied = False
 
-
     def __repr__(self):
         return "<%s on %s>" % (self.name, self.arch)
+
 
 class TestCase(object):
     """Class representing a test application
     """
-
 
     def __init__(self):
         """TestCase constructor.
@@ -1528,7 +1537,7 @@ class TestCase(object):
             # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
             relative_tc_root = os.path.relpath(canonical_testcase_root,
-                                         start=canonical_zephyr_base)
+                                               start=canonical_zephyr_base)
         else:
             relative_tc_root = ""
 
@@ -1630,7 +1639,6 @@ class TestCase(object):
 
         if not results:
             self.cases.append(self.id)
-
 
     def __str__(self):
         return self.name
@@ -1853,11 +1861,11 @@ class CMake():
 
     def run_cmake(self, args=[]):
 
-        verbose("Running cmake on %s for %s" %(self.source_dir, self.platform.name))
+        verbose("Running cmake on %s for %s" % (self.source_dir,
+                                                self.platform.name))
+        ldflags = "-Wl,--fatal-warnings"
 
-        ldflags="-Wl,--fatal-warnings"
-
-        #fixme: add additional cflags based on options
+        # fixme: add additional cflags based on options
         cmake_args = [
                 '-B{}'.format(self.build_dir),
                 '-S{}'.format(self.source_dir),
@@ -1901,7 +1909,6 @@ class CMake():
             self.instance.status = "failed"
             self.instance.reason = "Cmake build failure"
             results = {"returncode": p.returncode}
-
 
         if out:
             with open(os.path.join(self.build_dir, self.log), "a") as log:
@@ -2042,7 +2049,6 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
 
-
         elif op == "build":
             verbose("build test: %s" %self.instance.name)
             results = self.build()
@@ -2182,6 +2188,7 @@ class ProjectBuilder(FilterBuilder):
 
 pipeline = queue.LifoQueue()
 
+
 class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
     """BoundedExecutor behaves as a ThreadPoolExecutor which will block on
     calls to submit() once the limit given as "bound" work items are queued for
@@ -2191,14 +2198,14 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
     """
     def __init__(self, bound, max_workers, **kwargs):
         super().__init__(max_workers)
-        #self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        # self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.semaphore = BoundedSemaphore(bound + max_workers)
 
     def submit(self, fn, *args, **kwargs):
         self.semaphore.acquire()
         try:
             future = super().submit(fn, *args, **kwargs)
-        except:
+        except Exception:
             self.semaphore.release()
             raise
         else:
@@ -2218,7 +2225,7 @@ class TestSuite:
 
         self.roots = testcase_roots
         if not isinstance(board_root_list, list):
-            self.board_roots= [board_root_list]
+            self.board_roots = [board_root_list]
         else:
             self.board_roots = board_root_list
 
@@ -2232,9 +2239,9 @@ class TestSuite:
         self.load_errors = 0
         self.instances = dict()
 
-        self.total_tests = 0 # number of test instances
-        self.total_cases = 0 # number of test cases
-        self.total_done = 0 # tests completed
+        self.total_tests = 0  # number of test instances
+        self.total_cases = 0  # number of test cases
+        self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
 
@@ -2261,12 +2268,10 @@ class TestSuite:
         self.total_tests = len(self.instances)
         self.total_cases = len(self.testcases)
 
-
     def compare_metrics(self, filename):
         # name, datatype, lower results better
         interesting_metrics = [("ram_size", int, True),
                                ("rom_size", int, True)]
-
 
         if not os.path.exists(filename):
             info("Cannot compare metrics, %s not found" % filename)
@@ -2397,8 +2402,6 @@ class TestSuite:
         if log_file:
             log_file.close()
 
-
-
     def add_configurations(self):
 
         for board_root in self.board_roots:
@@ -2447,7 +2450,6 @@ class TestSuite:
             sys.exit(2)
 
         return toolchain
-
 
     def add_testcases(self):
         for root in self.roots:
@@ -2523,7 +2525,6 @@ class TestSuite:
 
         return True
 
-
     def get_platform(self, name):
         selected_platform = None
         for platform in self.platforms:
@@ -2580,7 +2581,6 @@ class TestSuite:
                 instance.create_overlay(platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
-
 
     def apply_filters(self):
 
@@ -2829,7 +2829,6 @@ class TestSuite:
                 instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
                 instance.metrics["unrecognized"] = []
 
-
     def discard_report(self, filename):
 
         try:
@@ -2849,7 +2848,6 @@ class TestSuite:
                            "platform": instance.platform.name,
                            "reason": reason}
                 cw.writerow(rowdict)
-
 
     def target_report(self, outdir):
         run = "Sanitycheck"
@@ -2931,7 +2929,6 @@ class TestSuite:
             result = ET.tostring(eleTestsuites)
             with open(os.path.join(outdir, platform + ".xml"), 'wb') as f:
                 f.write(result)
-
 
     def xunit_report(self, filename):
         fails = 0
@@ -3017,7 +3014,6 @@ class TestSuite:
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
-
 
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
@@ -3791,7 +3787,7 @@ class HardwareMap:
                 s_dev['serial'] = d.device
                 s_dev['product'] = d.product
                 s_dev['runner'] = 'unknown'
-                for runner in self.runner_mapping.keys():
+                for runner,_ in self.runner_mapping.items():
                     products = self.runner_mapping.get(runner)
                     if d.product in products:
                         s_dev['runner'] = runner
@@ -3843,9 +3839,6 @@ class HardwareMap:
             # create new file
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(self.detected, yaml_file, default_flow_style=False)
-
-        return
-
 
 
 run_individual_tests = None
