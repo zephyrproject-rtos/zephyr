@@ -2557,7 +2557,7 @@ class TestSuite:
             self.add_instances(instance_list)
 
         tests_to_run = len(self.instances)
-        info("%d tests passed already, retyring %d tests" %(total_tests - tests_to_run, tests_to_run))
+        info("%d tests passed already, retrying %d tests" %(total_tests - tests_to_run, tests_to_run))
 
     def load_from_file(self, file):
         try:
