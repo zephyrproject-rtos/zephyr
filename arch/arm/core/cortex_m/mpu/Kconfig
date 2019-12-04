@@ -27,7 +27,7 @@ config ARM_MPU
 	  memory map when programming dynamic memory regions (e.g. PRIV stack
 	  guard, user thread stack, and application memory domains), if the
 	  system requires PRIV access policy different from the access policy
-	  of the ARMv8-M background memory map. The allication developer may
+	  of the ARMv8-M background memory map. The application developer may
 	  enforce full PRIV (kernel) memory partition by enabling the
 	  CONFIG_MPU_GAP_FILLING option.
 	  By not enforcing full partition, MPU may leave part of kernel
