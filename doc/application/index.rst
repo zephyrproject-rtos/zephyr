@@ -675,7 +675,7 @@ SOC Definitions
 Similar to board support, the structure is similar to how SOCs are maintained in
 the Zephyr tree, for example:
 
-.. code-block:: console
+.. code-block:: none
 
         soc
         └── arm
@@ -693,19 +693,19 @@ In the ``soc`` directory you will need a top-level Kconfig file pointing to the
 custom SOC definitions:
 
 
-.. code-block:: console
+.. code-block:: none
 
-	choice
-		prompt "SoC/CPU/Configuration Selection"
+   choice
+   	prompt "SoC/CPU/Configuration selection"
 
-	source "$(SOC_DIR)/$(ARCH)/\*/Kconfig.soc"
+   source "$(SOC_DIR)/$(ARCH)/*/Kconfig.soc"
 
-	endchoice
+   endchoice
 
-	menu "Hardware Configuration"
-	osource "$(SOC_DIR)/$(ARCH)/\*/Kconfig"
+   menu "Hardware Configuration"
+   osource "$(SOC_DIR)/$(ARCH)/*/Kconfig"
 
-	endmenu
+   endmenu
 
 Once the SOC structure is in place, you can build your application
 targeting this platform by specifying the location of your custom platform
