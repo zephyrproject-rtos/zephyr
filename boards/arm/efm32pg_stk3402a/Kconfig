@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_EFM32PG_STK3402A
+if BOARD_EFM32PG_STK3402A || BOARD_EFM32PG_STK3402A_JG
 
 config BOARD_INIT_PRIORITY
 	int
@@ -13,4 +13,4 @@ config BOARD_INIT_PRIORITY
 	  Board initialization priority. This must be bigger than
 	  GPIO_GECKO_COMMON_INIT_PRIORITY.
 
-endif # BOARD_EFM32PG_STK3402A
+endif # BOARD_EFM32PG_STK3402A || BOARD_EFM32PG_STK3402A_JG
