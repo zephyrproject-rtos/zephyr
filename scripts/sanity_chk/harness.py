@@ -126,7 +126,7 @@ class Test(Harness):
 
     def handle(self, line):
         match = result_re.match(line)
-        if match:
+        if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
             self.tests[name] = match.group(1)
 
