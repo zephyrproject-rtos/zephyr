@@ -11,7 +11,6 @@
  */
 
 #include <kernel.h>
-#include <net/socket_offload.h>
 #include <sys/fdtable.h>
 
 #include "modem_socket.h"
@@ -107,34 +106,6 @@ data_ready:
 }
 
 /*
- * VTable OPS
- */
-
-static ssize_t modem_socket_read_op(void *obj, void *buf, size_t sz)
-{
-	/* TODO: NOT IMPLEMENTED */
-	return -ENOTSUP;
-}
-
-static ssize_t modem_socket_write_op(void *obj, const void *buf, size_t sz)
-{
-	/* TODO: NOT IMPLEMENTED */
-	return -ENOTSUP;
-}
-
-static int modem_socket_ioctl_op(void *obj, unsigned int request, va_list args)
-{
-	/* TODO: NOT IMPLEMENTED */
-	return -ENOTSUP;
-}
-
-static const struct fd_op_vtable modem_sock_fd_vtable = {
-	.read = modem_socket_read_op,
-	.write = modem_socket_write_op,
-	.ioctl = modem_socket_ioctl_op,
-};
-
-/*
  * Socket Support Functions
  */
 
@@ -164,7 +135,8 @@ int modem_socket_get(struct modem_socket_config *cfg,
 	cfg->sockets[i].ip_proto = proto;
 	/* socket # needs assigning */
 	cfg->sockets[i].id = cfg->sockets_len + 1;
-	z_finalize_fd(cfg->sockets[i].sock_fd, cfg, &modem_sock_fd_vtable);
+	z_finalize_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
+		      (const struct fd_op_vtable *)cfg->vtable);
 
 	return cfg->sockets[i].sock_fd;
 }
@@ -290,7 +262,8 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 	return found_count;
 }
 
-int modem_socket_init(struct modem_socket_config *cfg)
+int modem_socket_init(struct modem_socket_config *cfg,
+		      const struct socket_op_vtable *vtable)
 {
 	int i;
 
@@ -299,6 +272,8 @@ int modem_socket_init(struct modem_socket_config *cfg)
 		k_sem_init(&cfg->sockets[i].sem_data_ready, 0, 1);
 		cfg->sockets[i].id = cfg->base_socket_num - 1;
 	}
+
+	cfg->vtable = vtable;
 
 	return 0;
 }
