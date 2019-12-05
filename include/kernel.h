@@ -136,7 +136,10 @@ struct k_mem_domain;
 struct k_mem_partition;
 struct k_futex;
 
-/* This enumeration needs to be kept in sync with the lists of kernel objects
+/**
+ * @brief Kernel Object Types
+ *
+ * This enumeration needs to be kept in sync with the lists of kernel objects
  * and subsystems in scripts/gen_kobject_list.py, as well as the otype_to_str()
  * function in kernel/userspace.c
  */
@@ -197,9 +200,13 @@ struct _k_object_assignment {
 			{ (&_k_thread_obj_ ## name_), \
 			  (_CONCAT(_object_list_, name_)) }
 
+/** Object initialized */
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
+/** Object is Public */
 #define K_OBJ_FLAG_PUBLIC	BIT(1)
+/** Object allocated */
 #define K_OBJ_FLAG_ALLOC	BIT(2)
+/** Driver Object */
 #define K_OBJ_FLAG_DRIVER	BIT(3)
 
 /**
@@ -283,7 +290,15 @@ __syscall void k_object_access_grant(void *object, struct k_thread *thread);
  */
 void k_object_access_revoke(void *object, struct k_thread *thread);
 
-
+/**
+ * @brief Release an object
+ *
+ * Allows user threads to drop their own permission on an object
+ * Their permissions are automatically cleared when a thread terminates.
+ *
+ * @param object The object to be released
+ *
+ */
 __syscall void k_object_release(void *object);
 
 /**
@@ -340,7 +355,11 @@ static inline void *z_impl_k_object_alloc(enum k_objects otype)
 
 	return NULL;
 }
-
+/**
+ * @brief Free an object
+ *
+ * @param obj
+ */
 static inline void k_obj_free(void *obj)
 {
 	ARG_UNUSED(obj);
@@ -505,9 +524,9 @@ typedef struct _thread_stack_info _thread_stack_info_t;
 
 #if defined(CONFIG_USERSPACE)
 struct _mem_domain_info {
-	/* memory domain queue node */
+	/** memory domain queue node */
 	sys_dnode_t mem_domain_q_node;
-	/* memory domain of the thread */
+	/** memory domain of the thread */
 	struct k_mem_domain *mem_domain;
 };
 
@@ -548,7 +567,7 @@ struct k_thread {
 #endif
 
 #if defined(CONFIG_THREAD_NAME)
-	/* Thread name */
+	/** Thread name */
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
 #endif
 
@@ -611,6 +630,7 @@ enum execution_context_types {
  * @addtogroup thread_apis
  * @{
  */
+
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -3222,10 +3242,15 @@ extern int k_work_poll_cancel(struct k_work_poll *work);
  * @ingroup mutex_apis
  */
 struct k_mutex {
+	/** Mutex wait queue */
 	_wait_q_t wait_q;
 	/** Mutex owner */
 	struct k_thread *owner;
+
+	/** Current lock count */
 	u32_t lock_count;
+
+	/** Original thread priority */
 	int owner_orig_prio;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mutex)
@@ -3475,18 +3500,29 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @brief Message Queue Structure
  */
 struct k_msgq {
+	/** Message queue wait queue */
 	_wait_q_t wait_q;
+	/** Lock */
 	struct k_spinlock lock;
+	/** Message size */
 	size_t msg_size;
+	/** Maximal number of messages */
 	u32_t max_msgs;
+	/** Start of message buffer */
 	char *buffer_start;
+	/** End of message buffer */
 	char *buffer_end;
+	/** Read pointer */
 	char *read_ptr;
+	/** Write pointer */
 	char *write_ptr;
+	/** Number of used messages */
 	u32_t used_msgs;
 
 	_OBJECT_TRACING_NEXT_PTR(k_msgq)
 	_OBJECT_TRACING_LINKED_FLAG
+
+	/** Message queue */
 	u8_t flags;
 };
 /**
@@ -3518,8 +3554,11 @@ struct k_msgq {
  * @brief Message Queue Attributes
  */
 struct k_msgq_attrs {
+	/** Message Size */
 	size_t msg_size;
+	/** Maximal number of messages */
 	u32_t max_msgs;
+	/** Used messages */
 	u32_t used_msgs;
 };
 
@@ -3597,7 +3636,12 @@ void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
 __syscall int k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 				u32_t max_msgs);
 
-
+/**
+ * @brief Cleanup message queue
+ *
+ * Releases memory allocated for the ring buffer.
+ * @param q
+ */
 void k_msgq_cleanup(struct k_msgq *q);
 
 /**
@@ -3753,6 +3797,10 @@ struct k_mem_block {
  * @{
  */
 
+/**
+ * @brief Mailbox Message Structure
+ *
+ */
 struct k_mbox_msg {
 	/** internal use only - needed for legacy API support */
 	u32_t _mailbox;
@@ -3777,9 +3825,14 @@ struct k_mbox_msg {
 	struct k_sem *_async_sem;
 #endif
 };
-
+/**
+ * @brief Mailbox Structure
+ *
+ */
 struct k_mbox {
+	/** Transmit messages queue */
 	_wait_q_t tx_msg_queue;
+	/** Receive message queue */
 	_wait_q_t rx_msg_queue;
 	struct k_spinlock lock;
 
@@ -4554,16 +4607,16 @@ enum k_poll_modes {
 
 /* public - poll signal object */
 struct k_poll_signal {
-	/* PRIVATE - DO NOT TOUCH */
+	/** PRIVATE - DO NOT TOUCH */
 	sys_dlist_t poll_events;
 
-	/*
+	/**
 	 * 1 if the event has been signaled, 0 otherwise. Stays set to 1 until
 	 * user resets it to 0.
 	 */
 	unsigned int signaled;
 
-	/* custom result value passed to k_poll_signal_raise() if needed */
+	/** custom result value passed to k_poll_signal_raise() if needed */
 	int result;
 };
 
@@ -4573,30 +4626,33 @@ struct k_poll_signal {
 	.signaled = 0, \
 	.result = 0, \
 	}
-
+/**
+ * @brief Poll Event
+ *
+ */
 struct k_poll_event {
-	/* PRIVATE - DO NOT TOUCH */
+	/** PRIVATE - DO NOT TOUCH */
 	sys_dnode_t _node;
 
-	/* PRIVATE - DO NOT TOUCH */
+	/** PRIVATE - DO NOT TOUCH */
 	struct _poller *poller;
 
-	/* optional user-specified tag, opaque, untouched by the API */
+	/** optional user-specified tag, opaque, untouched by the API */
 	u32_t tag:8;
 
-	/* bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
+	/** bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
 	u32_t type:_POLL_NUM_TYPES;
 
-	/* bitfield of event states (bitwise-ORed K_POLL_STATE_xxx values) */
+	/** bitfield of event states (bitwise-ORed K_POLL_STATE_xxx values) */
 	u32_t state:_POLL_NUM_STATES;
 
-	/* mode of operation, from enum k_poll_modes */
+	/** mode of operation, from enum k_poll_modes */
 	u32_t mode:1;
 
-	/* unused bits in 32-bit word */
+	/** unused bits in 32-bit word */
 	u32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
 
-	/* per-type data */
+	/** per-type data */
 	union {
 		void *obj;
 		struct k_poll_signal *signal;
@@ -5069,26 +5125,28 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 
 /* memory partition */
 struct k_mem_partition {
-	/* start address of memory partition */
+	/** start address of memory partition */
 	uintptr_t start;
-	/* size of memory partition */
+	/** size of memory partition */
 	u32_t size;
 #if defined(CONFIG_MEMORY_PROTECTION)
-	/* attribute of memory partition */
+	/** attribute of memory partition */
 	k_mem_partition_attr_t attr;
 #endif /* CONFIG_MEMORY_PROTECTION */
 };
 
-/* memory domain
+/**
+ * @brief Memory Domain
+ *
  */
 struct k_mem_domain {
 #ifdef CONFIG_USERSPACE
-	/* partitions in the domain */
+	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
 #endif	/* CONFIG_USERSPACE */
-	/* domain q */
+	/** domain q */
 	sys_dlist_t mem_domain_q;
-	/* number of partitions in the domain */
+	/** number of partitions in the domain */
 	u8_t num_partitions;
 };
 
