@@ -960,6 +960,18 @@ Shell:
     labels:
         - "area: Shell"
 
+Shields:
+    status: maintained
+    maintainers:
+        - erwango
+    collaborators:
+        - avisconti
+        - jfischer-phytec-iot
+    files:
+        - boards/shields/
+    labels:
+        - "area: Shields"
+
 STM32:
     status: maintained
     maintainers:
