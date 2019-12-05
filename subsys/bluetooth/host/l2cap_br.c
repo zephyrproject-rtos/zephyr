@@ -1049,7 +1049,7 @@ static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		if (BR_CHAN(chan)->rx.cid == cid) {
+		if (BR_CHAN(chan)->tx.cid == cid) {
 			sys_slist_remove(&conn->channels, prev, &chan->node);
 			return BR_CHAN(chan);
 		}
