@@ -10,10 +10,6 @@ zephyr_library_sources_ifdef(CONFIG_SYS_POWER_MANAGEMENT
   power.c
   )
 
-zephyr_library_sources_ifdef(CONFIG_ARM_MPU
-  mpu_regions.c
-  )
-
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/arm/include
