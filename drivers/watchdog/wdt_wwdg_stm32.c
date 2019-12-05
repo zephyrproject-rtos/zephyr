@@ -151,6 +151,9 @@ static int wwdg_stm32_setup(struct device *dev, u8_t options)
 		return -ENOTSUP;
 	}
 
+	/* Ensure that Early Wakeup Interrupt Flag is cleared */
+	LL_WWDG_ClearFlag_EWKUP(wwdg);
+
 	/* Enable the WWDG */
 	LL_WWDG_Enable(wwdg);
 
