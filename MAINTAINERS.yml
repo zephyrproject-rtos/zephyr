@@ -460,8 +460,8 @@ Documentation:
         - "area: GPIO"
 
 "Drivers: HW Info":
-    status: orphaned
-    collaborators:
+    status: maintained
+    maintainers:
         - alexanderwachter
     files:
         - drivers/hwinfo/
