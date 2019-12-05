@@ -818,16 +818,29 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_TERMINATE:
 		{
 			struct ll_conn *conn;
+			struct lll_conn *lll;
 			memq_link_t *link;
 
+			/* Get the connection context */
 			conn = ll_conn_get(rx_free->handle);
+			lll = &conn->lll;
 
-			LL_ASSERT(!conn->lll.link_tx_free);
-			link = memq_deinit(&conn->lll.memq_tx.head,
-					   &conn->lll.memq_tx.tail);
+			/* Invalidate the connection context */
+			lll->handle = 0xFFFF;
+
+			/* Demux and flush Tx PDUs that remain enqueued in
+			 * thread context
+			 */
+			ull_conn_tx_demux(UINT8_MAX);
+
+			/* De-initialize tx memq and release the used link */
+			LL_ASSERT(!lll->link_tx_free);
+			link = memq_deinit(&lll->memq_tx.head,
+					   &lll->memq_tx.tail);
 			LL_ASSERT(link);
-			conn->lll.link_tx_free = link;
+			lll->link_tx_free = link;
 
+			/* Release the connection context to free pool */
 			ll_conn_release(conn);
 		}
 		break;
