@@ -2230,20 +2230,29 @@ class ProjectBuilder(FilterBuilder):
             args += instance.handler.args
 
         # merge overlay files into one variable
-        overlays = ""
-        idx = 0
-        for arg in args:
-            match = re.search('OVERLAY_CONFIG="(.*)"', arg)
-            if match:
-                overlays += match.group(1)
-                del args[idx]
-                idx += 1
+        def extract_overlays(args):
+            re_overlay = re.compile('OVERLAY_CONFIG=(.*)')
+            other_args = []
+            overlays = []
+            for arg in args:
+                match = re_overlay.search(arg)
+                if match:
+                    overlays.append(match.group(1).strip('\'"'))
+                else:
+                    other_args.append(arg)
+
+            args[:] = other_args
+            return overlays
+
+        overlays = extract_overlays(args)
 
         if (self.testcase.extra_configs or self.coverage or
                 self.asan):
-            args.append("OVERLAY_CONFIG=\"%s %s\"" % (overlays,
-                                                      os.path.join(instance.build_dir,
-                                                                   "sanitycheck", "testcase_extra.conf")))
+            overlays.append(os.path.join(instance.build_dir,
+                                         "sanitycheck", "testcase_extra.conf"))
+
+        if overlays:
+            args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
         results = self.run_cmake(args)
         return results
