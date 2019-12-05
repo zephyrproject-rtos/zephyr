@@ -2265,22 +2265,38 @@ int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 #endif
 
 #if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(bt_addr_le_t *addr)
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addr)
 {
 #if defined(CONFIG_SOC_FAMILY_NRF)
 	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
 	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
 	     (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
-		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->a.val[0]);
-		sys_put_le16(NRF_FICR->DEVICEADDR[1], &addr->a.val[4]);
+		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->bdaddr.val[0]);
+		sys_put_le16(NRF_FICR->DEVICEADDR[1], &addr->bdaddr.val[4]);
 
 		/* The FICR value is a just a random number, with no knowledge
 		 * of the Bluetooth Specification requirements for random
 		 * static addresses.
 		 */
-		BT_ADDR_SET_STATIC(&addr->a);
+		BT_ADDR_SET_STATIC(&addr->bdaddr);
 
-		addr->type = BT_ADDR_LE_RANDOM;
+		/* If no public address is provided and a static address is
+		 * available, then it is recommended to return an identity root
+		 * key (if available) from this command.
+		 */
+		if ((NRF_FICR->IR[0] != UINT32_MAX) &&
+		    (NRF_FICR->IR[1] != UINT32_MAX) &&
+		    (NRF_FICR->IR[2] != UINT32_MAX) &&
+		    (NRF_FICR->IR[3] != UINT32_MAX)) {
+			sys_put_le32(NRF_FICR->IR[0], &addr->ir[0]);
+			sys_put_le32(NRF_FICR->IR[1], &addr->ir[4]);
+			sys_put_le32(NRF_FICR->IR[2], &addr->ir[8]);
+			sys_put_le32(NRF_FICR->IR[3], &addr->ir[12]);
+		} else {
+			/* Mark IR as invalid */
+			(void)memset(addr->ir, 0x00, sizeof(addr->ir));
+		}
+
 		return 1;
 	}
 #endif /* CONFIG_SOC_FAMILY_NRF */

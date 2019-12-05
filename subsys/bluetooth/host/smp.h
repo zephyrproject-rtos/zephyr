@@ -163,3 +163,6 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
  *  @return 0 in success, error code otherwise
  */
 int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
+
+/** Generate IRK from Identity Root (IR) */
+int bt_smp_irk_get(u8_t *ir, u8_t *irk);

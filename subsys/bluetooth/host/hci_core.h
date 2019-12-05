@@ -30,7 +30,6 @@ enum {
 	BT_DEV_ENABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
-	BT_DEV_USER_ID_ADDR,
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
@@ -48,6 +47,7 @@ enum {
 	BT_DEV_RPA_VALID,
 
 	BT_DEV_ID_PENDING,
+	BT_DEV_STORE_ID,
 
 #if defined(CONFIG_BT_BREDR)
 	BT_DEV_ISCAN,
@@ -61,8 +61,7 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID) | \
-				 BIT(BT_DEV_USER_ID_ADDR))
+				 BIT(BT_DEV_PRESET_ID))
 
 struct bt_dev_le {
 	/* LE features */
@@ -199,7 +198,9 @@ struct bt_keys;
 void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
-int bt_setup_id_addr(void);
+int bt_setup_random_id_addr(void);
+void bt_setup_public_id_addr(void);
+
 void bt_finalize_init(void);
 
 int bt_le_adv_start_internal(const struct bt_le_adv_param *param,

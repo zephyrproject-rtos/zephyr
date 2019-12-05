@@ -463,6 +463,25 @@ static int bt_smp_aes_cmac(const u8_t *key, const u8_t *in, size_t len,
 	return 0;
 }
 
+static int smp_d1(const u8_t *key, u16_t d, u16_t r, u8_t res[16])
+{
+	int err;
+
+	BT_DBG("key %s d %u r %u", bt_hex(key, 16), d, r);
+
+	sys_put_le16(d, &res[0]);
+	sys_put_le16(r, &res[2]);
+	memset(&res[4], 0, 16 - 4);
+
+	err = bt_encrypt_le(key, res, res);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", bt_hex(res, 16));
+	return 0;
+}
+
 static int smp_f4(const u8_t *u, const u8_t *v, const u8_t *x,
 		  u8_t z, u8_t res[16])
 {
@@ -4371,6 +4390,17 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_SIGNING */
+
+int bt_smp_irk_get(u8_t *ir, u8_t *irk)
+{
+	u8_t invalid_ir[16] = { 0 };
+
+	if (!memcmp(ir, invalid_ir, 16)) {
+		return -EINVAL;
+	}
+
+	return smp_d1(ir, 1, 0, irk);
+}
 
 #if defined(CONFIG_BT_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493

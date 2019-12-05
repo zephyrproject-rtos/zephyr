@@ -3959,23 +3959,6 @@ static void read_local_ver_complete(struct net_buf *buf)
 	bt_dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
 }
 
-static void read_bdaddr_complete(struct net_buf *buf)
-{
-	struct bt_hci_rp_read_bd_addr *rp = (void *)buf->data;
-
-	BT_DBG("status 0x%02x", rp->status);
-
-	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) ||
-	    !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
-		BT_DBG("Controller has no public address");
-		return;
-	}
-
-	bt_addr_copy(&bt_dev.id_addr[0].a, &rp->bdaddr);
-	bt_dev.id_addr[0].type = BT_ADDR_LE_PUBLIC;
-	bt_dev.id_count = 1U;
-}
-
 static void read_le_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_local_features *rp = (void *)buf->data;
@@ -4119,16 +4102,6 @@ static int common_init(void)
 	}
 	read_local_ver_complete(rsp);
 	net_buf_unref(rsp);
-
-	/* Read Bluetooth Address */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
-		if (err) {
-			return err;
-		}
-		read_bdaddr_complete(rsp);
-		net_buf_unref(rsp);
-	}
 
 	/* Read Local Supported Commands */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SUPPORTED_COMMANDS, NULL,
@@ -4654,6 +4627,35 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	return 0;
 }
 
+static u8_t bt_read_public_addr(bt_addr_le_t *addr)
+{
+	struct bt_hci_rp_read_bd_addr *rp;
+	struct net_buf *rsp;
+	int err;
+
+	/* Read Bluetooth Address */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+	if (err) {
+		BT_WARN("Failed to read public address");
+		return 0U;
+	}
+
+	rp = (void *)rsp->data;
+
+	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) ||
+	    !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
+		BT_DBG("Controller has no public address");
+		net_buf_unref(rsp);
+		return 0U;
+	}
+
+	bt_addr_copy(&addr->a, &rp->bdaddr);
+	addr->type = BT_ADDR_LE_PUBLIC;
+
+	net_buf_unref(rsp);
+	return 1U;
+}
+
 #if defined(CONFIG_BT_DEBUG)
 static const char *ver_str(u8_t ver)
 {
@@ -4754,16 +4756,18 @@ static void hci_vs_init(void)
 	int err;
 
 	/* If heuristics is enabled, try to guess HCI VS support by looking
-	 * at the HCI version and identity address. We haven't tried to set
-	 * a static random address yet at this point, so the identity will
-	 * either be zeroes or a valid public address.
+	 * at the HCI version and identity address. We haven't set any addresses
+	 * at this point. So we need to read the public address.
 	 */
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
-	    (bt_dev.hci_version < BT_HCI_VERSION_5_0 ||
-	     (!atomic_test_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR) &&
-	      bt_addr_le_cmp(&bt_dev.id_addr[0], BT_ADDR_LE_ANY)))) {
-		BT_WARN("Controller doesn't seem to support Zephyr vendor HCI");
-		return;
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT)) {
+		bt_addr_le_t addr;
+
+		if ((bt_dev.hci_version < BT_HCI_VERSION_5_0) ||
+		    bt_read_public_addr(&addr)) {
+			BT_WARN("Controller doesn't seem to support "
+				"Zephyr vendor HCI");
+			return;
+		}
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_VERSION_INFO, NULL, &rsp);
@@ -4845,10 +4849,16 @@ static int hci_init(void)
 #if defined(CONFIG_BT_HCI_VS_EXT)
 	hci_vs_init();
 #endif
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
+		BT_DBG("No user identity. Trying to set public.");
+
+		bt_setup_public_id_addr();
+	}
 
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
 		BT_DBG("No public address. Trying to set static random.");
-		err = bt_setup_id_addr();
+
+		err = bt_setup_random_id_addr();
 		if (err) {
 			BT_ERR("Unable to set identity address");
 			return err;
@@ -4955,26 +4965,6 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 	return 0;
 }
 
-#if defined(CONFIG_BT_PRIVACY)
-static int irk_init(void)
-{
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Expecting settings to handle local IRK");
-	} else {
-		int err;
-
-		err = bt_rand(&bt_dev.irk[0], 16);
-		if (err) {
-			return err;
-		}
-
-		BT_WARN("Using temporary IRK");
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_PRIVACY */
-
 void bt_finalize_init(void)
 {
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
@@ -5003,11 +4993,6 @@ static int bt_init(void)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	err = irk_init();
-	if (err) {
-		return err;
-	}
-
 	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
@@ -5339,11 +5324,6 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 	}
 
 	new_id = bt_dev.id_count++;
-	if (new_id == BT_ID_DEFAULT &&
-	    !atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
-	}
-
 	id_create(new_id, addr, irk);
 
 	return new_id;
@@ -5432,13 +5412,71 @@ int bt_id_delete(u8_t id)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PRIVACY)
+static void bt_read_identity_root(u8_t *ir)
+{
+	/* Invalid IR */
+	memset(ir, 0, 16);
+
 #if defined(CONFIG_BT_HCI_VS_EXT)
-static uint8_t bt_read_static_addr(bt_addr_le_t *addr)
+	struct bt_hci_rp_vs_read_key_hierarchy_roots *rp;
+	struct net_buf *rsp;
+	int err;
+
+	if (!(bt_dev.vs_commands[1] & BIT(1))) {
+		return;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_KEY_HIERARCHY_ROOTS, NULL,
+				   &rsp);
+	if (err) {
+		BT_WARN("Failed to read identity root");
+		return;
+	}
+
+	rp = (void *)rsp->data;
+	memcpy(ir, rp->ir, 16);
+
+	net_buf_unref(rsp);
+#endif /* defined(CONFIG_BT_HCI_VS_EXT) */
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
+void bt_setup_public_id_addr(void)
+{
+	bt_addr_le_t addr;
+	u8_t *irk = NULL;
+
+	bt_dev.id_count = bt_read_public_addr(&addr);
+
+	if (!bt_dev.id_count) {
+		return;
+	}
+
+#if defined(CONFIG_BT_PRIVACY)
+	u8_t ir_irk[16];
+	u8_t ir[16];
+
+	bt_read_identity_root(ir);
+
+	if (!bt_smp_irk_get(ir, ir_irk)) {
+		irk = ir_irk;
+	} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_STORE_ID);
+	}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
+	id_create(BT_ID_DEFAULT, &addr, irk);
+}
+
+#if defined(CONFIG_BT_HCI_VS_EXT)
+static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
 {
 	struct bt_hci_rp_vs_read_static_addrs *rp;
 	struct net_buf *rsp;
 	int err, i;
 	u8_t cnt;
+
 	if (!(bt_dev.vs_commands[1] & BIT(0))) {
 		BT_WARN("Read Static Addresses command not available");
 		return 0;
@@ -5449,44 +5487,66 @@ static uint8_t bt_read_static_addr(bt_addr_le_t *addr)
 		BT_WARN("Failed to read static addresses");
 		return 0;
 	}
+
 	rp = (void *)rsp->data;
 	cnt = MIN(rp->num_addrs, CONFIG_BT_ID_MAX);
 
 	for (i = 0; i < cnt; i++) {
-		addr[i].type = BT_ADDR_LE_RANDOM;
-		bt_addr_copy(&addr[i].a, &rp->a[i].bdaddr);
+		memcpy(&addrs[i], rp->a, sizeof(struct bt_hci_vs_static_addr));
 	}
+
 	net_buf_unref(rsp);
 	if (!cnt) {
 		BT_WARN("No static addresses stored in controller");
 	}
+
 	return cnt;
 }
 #elif defined(CONFIG_BT_CTLR)
-uint8_t bt_read_static_addr(bt_addr_le_t *addr);
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs);
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
-int bt_setup_id_addr(void)
+int bt_setup_random_id_addr(void)
 {
 #if defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR)
 	/* Only read the addresses if the user has not already configured one or
 	 * more identities (!bt_dev.id_count).
 	 */
 	if (!bt_dev.id_count) {
-		bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+		struct bt_hci_vs_static_addr addrs[CONFIG_BT_ID_MAX];
 
 		bt_dev.id_count = bt_read_static_addr(addrs);
-		if (bt_dev.id_count) {
-			int i;
 
-			for (i = 0; i < bt_dev.id_count; i++) {
-				id_create(i, &addrs[i], NULL);
+		if (bt_dev.id_count) {
+			for (u8_t i = 0; i < bt_dev.id_count; i++) {
+				bt_addr_le_t addr;
+				u8_t *irk = NULL;
+#if defined(CONFIG_BT_PRIVACY)
+				u8_t ir_irk[16];
+
+				if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
+					irk = ir_irk;
+				} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+					atomic_set_bit(bt_dev.flags,
+						       BT_DEV_STORE_ID);
+				}
+#endif /* CONFIG_BT_PRIVACY */
+
+				bt_addr_copy(&addr.a, &addrs[i].bdaddr);
+				addr.type = BT_ADDR_LE_RANDOM;
+
+				id_create(i, &addr, irk);
 			}
 
 			return set_random_address(&bt_dev.id_addr[0].a);
 		}
 	}
-#endif
+#endif /* defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR) */
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_STORE_ID);
+	}
+
 	return bt_id_create(NULL, NULL);
 }
 
