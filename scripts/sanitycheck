@@ -517,9 +517,7 @@ class Handler:
 
     def record(self, harness):
         if harness.recording:
-            filename = os.path.join(options.outdir,
-                    self.instance.platform.name,
-                    self.instance.testcase.name, "recording.csv")
+            filename = os.path.join(self.build_dir, "recording.csv")
             with open(filename, "at") as csvfile:
                 cw = csv.writer(csvfile, harness.fieldnames, lineterminator=os.linesep)
                 cw.writerow(harness.fieldnames)
@@ -1653,7 +1651,7 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, testcase, platform, base_outdir):
+    def __init__(self, testcase, platform, outdir):
 
         self.testcase = testcase
         self.platform = platform
@@ -1662,10 +1660,10 @@ class TestInstance:
         self.reason = "N/A"
         self.metrics = dict()
         self.handler = None
-
+        self.outdir = outdir
 
         self.name = os.path.join(platform.name, testcase.name)
-        self.build_dir = os.path.join(base_outdir, platform.name, testcase.name)
+        self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
         self.build_only = self.check_build_or_run()
         self.run = not self.build_only
@@ -2376,8 +2374,8 @@ class TestSuite:
             filename = os.path.join(options.report_dir, report_name)
             outdir = options.report_dir
         else:
-            filename = os.path.join(options.outdir, report_name)
-            outdir = options.outdir
+            filename = os.path.join(self.outdir, report_name)
+            outdir = self.outdir
 
         if not options.no_update:
             self.xunit_report(filename + ".xml")
@@ -2524,7 +2522,7 @@ class TestSuite:
         return selected_platform
 
     def get_last_failed(self):
-        last_run = os.path.join(options.outdir, "sanitycheck.csv")
+        last_run = os.path.join(self.outdir, "sanitycheck.csv")
         try:
             if not os.path.exists(last_run):
                 raise SanityRuntimeError("Couldn't find last sanitycheck run.: %s" %last_run)
@@ -2899,7 +2897,7 @@ class TestSuite:
                                 'error',
                                 type="failure",
                                 message="failed")
-                        p = os.path.join(options.outdir, instance.platform.name, instance.testcase.name)
+                        p = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
                         log_file = os.path.join(p, "handler.log")
 
                         if os.path.exists(log_file):
@@ -2982,7 +2980,7 @@ class TestSuite:
                     'failure',
                     type="failure",
                     message=instance.reason)
-                p = ("%s/%s/%s" % (options.outdir, instance.platform.name, instance.testcase.name))
+                p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
                 bl = os.path.join(p, "build.log")
                 hl = os.path.join(p, "handler.log")
                 log_file = bl
@@ -3905,7 +3903,6 @@ def main():
                 info("Renaming output directory to {}".format(new_out))
                 shutil.move(options.outdir, new_out)
                 break
-                #shutil.rmtree("%s.old" %options.outdir)
 
     if not options.testcase_root:
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
@@ -3914,7 +3911,9 @@ def main():
     if options.show_footprint or options.compare_report or options.release:
         options.enable_size_report = True
 
-    suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+    suite = TestSuite(options.board_root,
+                      options.testcase_root,
+                      options.outdir)
 
     # Set number of jobs
     if options.jobs:
