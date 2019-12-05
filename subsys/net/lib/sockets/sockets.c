@@ -164,7 +164,12 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		return sock_family->handler(family, type, proto);
 	}
 
-	return zsock_socket_internal(family, type, proto);
+	if (IS_ENABLED(CONFIG_NET_NATIVE)) {
+		return zsock_socket_internal(family, type, proto);
+	}
+
+	errno = EAFNOSUPPORT;
+	return -1;
 }
 
 #ifdef CONFIG_USERSPACE
