@@ -23,7 +23,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
 #endif
 
-#ifdef CONFIG_USART_MCUX_LPC_0
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_0
 	/* USART0 RX,  TX */
 	const u32_t port0_pin29_config = (
 			IOCON_PIO_FUNC1 |
