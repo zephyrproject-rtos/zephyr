@@ -264,7 +264,7 @@ void z_reset_time_slice(void)
 	 * FUTURE z_time_slice() call.
 	 */
 	if (slice_time != 0) {
-		_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
+		_current_cpu->slice_expires = z_tick_get() + slice_time;
 		z_set_timeout_expiry(slice_time, false);
 	}
 }
@@ -272,7 +272,7 @@ void z_reset_time_slice(void)
 void k_sched_time_slice_set(s32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
-		_current_cpu->slice_ticks = 0;
+		_current_cpu->slice_expires = 0;
 		slice_time = k_ms_to_ticks_ceil32(slice);
 		slice_max_prio = prio;
 		z_reset_time_slice();
@@ -287,8 +287,8 @@ static inline int sliceable(struct k_thread *t)
 		&& !z_is_thread_timeout_active(t);
 }
 
-/* Called out of each timer interrupt */
-void z_time_slice(int ticks)
+/* Called out of each sched IPI and timer interrupt */
+void z_time_slice(void)
 {
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == _current) {
@@ -299,14 +299,13 @@ void z_time_slice(int ticks)
 #endif
 
 	if (slice_time && sliceable(_current)) {
-		if (ticks >= _current_cpu->slice_ticks) {
+		if ((_current_cpu->slice_expires != 0) &&
+		    (_current_cpu->slice_expires <= z_tick_get())) {
 			z_move_thread_to_end_of_prio_q(_current);
 			z_reset_time_slice();
-		} else {
-			_current_cpu->slice_ticks -= ticks;
 		}
 	} else {
-		_current_cpu->slice_ticks = 0;
+		_current_cpu->slice_expires = 0;
 	}
 }
 #endif
@@ -1083,13 +1082,17 @@ void z_impl_k_wakeup(k_tid_t thread)
 
 #ifdef CONFIG_SMP
 /* Called out of the scheduler interprocessor interrupt.  All it does
- * is flag the current thread as dead if it needs to abort, so the ISR
- * return into something else and the other thread which called
- * k_thread_abort() can finish its work knowing the thing won't be
- * rescheduled.
+ * is check the time slice, and flag the current thread as dead if it
+ * needs to abort, so the ISR return into something else and the other
+ * thread which called k_thread_abort() can finish its work knowing
+ * the thing won't be rescheduled.
  */
 void z_sched_ipi(void)
 {
+#ifdef CONFIG_TIMESLICING
+	z_time_slice();
+#endif
+
 	LOCKED(&sched_spinlock) {
 		if (_current->base.thread_state & _THREAD_ABORTING) {
 			_current->base.thread_state |= _THREAD_DEAD;

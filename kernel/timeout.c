@@ -76,8 +76,10 @@ static s32_t next_timeout(void)
 	s32_t ret = to == NULL ? MAX_WAIT : MAX(0, to->dticks - ticks_elapsed);
 
 #ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
-		ret = _current_cpu->slice_ticks;
+	s64_t slice = _current_cpu->slice_expires - (curr_tick + ticks_elapsed);
+
+	if (slice >= 0 && slice < ret) {
+		ret = (s32_t) slice;
 	}
 #endif
 	return ret;
@@ -183,10 +185,6 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 
 void z_clock_announce(s32_t ticks)
 {
-#ifdef CONFIG_TIMESLICING
-	z_time_slice(ticks);
-#endif
-
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
 	announce_remaining = ticks;
@@ -215,6 +213,13 @@ void z_clock_announce(s32_t ticks)
 	z_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
+
+#ifdef CONFIG_TIMESLICING
+	z_time_slice();
+# if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
+	arch_sched_ipi();
+# endif
+#endif
 }
 
 s64_t z_tick_get(void)

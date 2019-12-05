@@ -118,8 +118,8 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_TIMESLICING
-	/* number of ticks remaining in current time slice */
-	int slice_ticks;
+	/* tick count where current time slice expires */
+	s64_t slice_expires;
 #endif
 
 	u8_t id;
