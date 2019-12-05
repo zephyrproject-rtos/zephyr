@@ -310,10 +310,14 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 		}
 	}
 
-	/* Send slave address */
-	MCHP_I2C_SMB_DATA(ba) = (addr | BIT(0));
+	/* MCHP I2C spec recommends that for repeated start to write to control
+	 * register before writing to data register
+	 */
 	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO |
 		MCHP_I2C_SMB_CTRL_STA | MCHP_I2C_SMB_CTRL_ACK;
+
+	/* Send slave address */
+	MCHP_I2C_SMB_DATA(ba) = (addr | BIT(0));
 
 	ret = wait_completion(ba);
 	if (ret) {
@@ -322,7 +326,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 
 	if (msg.len == 1) {
 		/* Send NACK for last transaction */
-		MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_STA;
+		MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO;
 	}
 
 	/* Read dummy byte */
@@ -351,7 +355,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 			}
 		} else if (i == (msg.len - 2)) {
 			/* Send NACK for last transaction */
-			MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_STA;
+			MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO;
 		}
 		msg.buf[i] = MCHP_I2C_SMB_DATA(ba);
 	}
