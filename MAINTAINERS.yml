@@ -960,6 +960,25 @@ Shell:
     labels:
         - "area: Shell"
 
+STM32:
+    status: maintained
+    maintainers:
+        - erwango
+    files:
+        - boards/arm/nucleo_*/
+        - boards/arm/stm32*_disco/
+        - boards/arm/stm32*_eval/
+        - drivers/*/*stm32*/
+        - drivers/*/*/*stm32*
+        - dts/arm/st/
+        - dts/bindings/*/*stm32*
+        - soc/arm/st_stm32/
+    labels:
+        - "platform: STM32"
+    description: >-
+        STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
+        boards.
+
 "ZTest and unit test infrastructure":
     # TODO @nashif is this what line 59 of the spreadsheet refers to?
     # Provisional entry, to be corrected
