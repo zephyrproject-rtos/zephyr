@@ -535,6 +535,13 @@ class BinaryHandler(Handler):
 
         self.terminated = False
 
+        # Tool options
+        self.valgrind = False
+        self.lsan = False
+        self.asan = False
+        self.coverage = False
+
+
     def try_kill_process_by_pid(self):
         if self.pid_fn:
             pid = int(open(self.pid_fn).read())
@@ -586,7 +593,7 @@ class BinaryHandler(Handler):
             command = [self.binary]
 
         run_valgrind = False
-        if options.enable_valgrind and shutil.which("valgrind"):
+        if self.valgrind and shutil.which("valgrind"):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
@@ -601,10 +608,10 @@ class BinaryHandler(Handler):
         start_time = time.time()
 
         env = os.environ.copy()
-        if options.enable_asan:
+        if self.asan:
             env["ASAN_OPTIONS"] = "log_path=stdout:" + \
                     env.get("ASAN_OPTIONS", "")
-            if not options.enable_lsan:
+            if not self.lsan:
                 env["ASAN_OPTIONS"] += "detect_leaks=0"
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
@@ -620,7 +627,7 @@ class BinaryHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if options.enable_coverage:
+        if self.coverage:
             subprocess.call(["GCOV_PREFIX=" + self.build_dir,
                 "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
 
@@ -2008,8 +2015,15 @@ class ProjectBuilder(FilterBuilder):
             instance.handler = BinaryHandler(instance, "unit")
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
         elif instance.platform.type == "native":
-            instance.handler = BinaryHandler(instance, "native")
-            instance.handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            handler = BinaryHandler(instance, "native")
+
+            handler.asan = options.enable_lsan
+            handler.valgrind = options.enable_valgrind
+            handler.lsan = options.enable_lsan
+            handler.coverage = options.enable_coverage
+
+            handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            instance.handler = handler
         elif instance.platform.simulation == "nsim":
             if find_executable("nsimdrv"):
                 instance.handler = BinaryHandler(instance, "nsim")
