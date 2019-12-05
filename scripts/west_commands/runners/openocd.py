@@ -30,9 +30,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 config = default
         self.openocd_config = config
 
-        search_args = []
+        if path.exists(self.openocd_config):
+            search_args = ['-s', path.dirname(self.openocd_config)]
+        else:
+            search_args = []
+
         if cfg.openocd_search is not None:
-            search_args = ['-s', cfg.openocd_search]
+            search_args.extend(['-s', cfg.openocd_search])
         self.openocd_cmd = [cfg.openocd] + search_args
         self.hex_name = cfg.hex_file
         self.elf_name = cfg.elf_file
