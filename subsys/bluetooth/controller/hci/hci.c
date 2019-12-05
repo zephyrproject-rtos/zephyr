@@ -1946,8 +1946,22 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 		 */
 		BT_ADDR_SET_STATIC(&addr->bdaddr);
 
-		/* Mark IR as invalid */
-		(void)memset(addr->ir, 0x00, sizeof(addr->ir));
+		/* If no public address is provided and a static address is
+		 * available, then it is recommended to return an identity root
+		 * key (if available) from this command.
+		 */
+		if ((NRF_FICR->IR[0] != UINT32_MAX) &&
+		    (NRF_FICR->IR[1] != UINT32_MAX) &&
+		    (NRF_FICR->IR[2] != UINT32_MAX) &&
+		    (NRF_FICR->IR[3] != UINT32_MAX)) {
+			sys_put_le32(NRF_FICR->IR[0], &addr->ir[0]);
+			sys_put_le32(NRF_FICR->IR[1], &addr->ir[4]);
+			sys_put_le32(NRF_FICR->IR[2], &addr->ir[8]);
+			sys_put_le32(NRF_FICR->IR[3], &addr->ir[12]);
+		} else {
+			/* Mark IR as invalid */
+			(void)memset(addr->ir, 0x00, sizeof(addr->ir));
+		}
 
 		return;
 	}
@@ -1967,19 +1981,11 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	rp->status = 0x00;
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF)
-	/* Fill in IR if present */
-	if ((NRF_FICR->IR[0] != UINT32_MAX) &&
-	    (NRF_FICR->IR[1] != UINT32_MAX) &&
-	    (NRF_FICR->IR[2] != UINT32_MAX) &&
-	    (NRF_FICR->IR[3] != UINT32_MAX)) {
-		sys_put_le32(NRF_FICR->IR[0], &rp->ir[0]);
-		sys_put_le32(NRF_FICR->IR[1], &rp->ir[4]);
-		sys_put_le32(NRF_FICR->IR[2], &rp->ir[8]);
-		sys_put_le32(NRF_FICR->IR[3], &rp->ir[12]);
-	} else {
-		/* Mark IR as invalid */
-		(void)memset(rp->ir, 0x00, sizeof(rp->ir));
-	}
+	/* Mark IR as invalid.
+	 * No public address is available, and static address IR should be read
+	 * using Read Static Addresses command.
+	 */
+	(void)memset(rp->ir, 0x00, sizeof(rp->ir));
 
 	/* Fill in ER if present */
 	if ((NRF_FICR->ER[0] != UINT32_MAX) &&
