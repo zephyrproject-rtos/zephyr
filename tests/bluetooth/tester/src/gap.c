@@ -794,7 +794,7 @@ static void tester_init_gap_cb(int err)
 
 u8_t tester_init_gap(void)
 {
-	if (bt_enable(tester_init_gap_cb) < 0) {
+	if (bt_enable(tester_init_gap_cb, NULL, NULL) < 0) {
 		return BTP_STATUS_FAILED;
 	}
 

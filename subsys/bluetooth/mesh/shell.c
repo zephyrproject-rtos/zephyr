@@ -514,7 +514,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 	if (err && err != -EALREADY) {
 		shell_error(shell, "Bluetooth init failed (err %d)", err);
 		return 0;

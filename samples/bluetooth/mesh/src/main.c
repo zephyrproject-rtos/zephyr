@@ -204,7 +204,7 @@ void main(void)
 	printk("Initializing...\n");
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}

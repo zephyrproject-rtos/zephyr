@@ -120,7 +120,7 @@ void main(void)
 
 	handsfree_enable();
 
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}

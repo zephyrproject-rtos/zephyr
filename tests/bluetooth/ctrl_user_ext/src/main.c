@@ -15,7 +15,7 @@
 
 void test_ctrl_user_ext(void)
 {
-	zassert_false(bt_enable(NULL), "Bluetooth ctrl_user_ext failed");
+	zassert_false(bt_enable(NULL, NULL, NULL), "Bluetooth ctrl_user_ext failed");
 }
 
 /*test case main entry*/

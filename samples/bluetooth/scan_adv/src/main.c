@@ -39,7 +39,7 @@ void main(void)
 	printk("Starting Scanner/Advertiser Demo\n");
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;

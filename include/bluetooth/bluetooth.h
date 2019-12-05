@@ -53,6 +53,15 @@ extern "C" {
  */
 typedef void (*bt_ready_cb_t)(int err);
 
+/**
+ * @typedef bt_preinit_cb_t
+ * @brief Pre-initialization callback before enabling Bluetooth
+ *
+ * @param user context
+ * @return Zero on success or (negative) error code otherwise.
+ */
+typedef int (*bt_preinit_cb_t)(void *data);
+
 /** @brief Enable Bluetooth
  *
  *  Enable Bluetooth. Must be the called before any calls that
@@ -60,10 +69,14 @@ typedef void (*bt_ready_cb_t)(int err);
  *
  *  @param cb Callback to notify completion or NULL to perform the
  *  enabling synchronously.
+ *  @param preinit Before officially enabling Bluetooth, call this
+ *  callback to initialize a specific device. If it is NULL,
+ *  no pre-initialization is required.
+ *  @param data Callback context data
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_enable(bt_ready_cb_t cb);
+int bt_enable(bt_ready_cb_t cb, bt_preinit_cb_t preinit, void *data);
 
 /** @brief Set Bluetooth Device Name
  *

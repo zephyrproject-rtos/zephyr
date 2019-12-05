@@ -640,7 +640,7 @@ void main(void)
 	init_led(3, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN);
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}

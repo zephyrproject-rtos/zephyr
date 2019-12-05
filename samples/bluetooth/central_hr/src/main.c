@@ -224,7 +224,7 @@ static struct bt_conn_cb conn_callbacks = {
 void main(void)
 {
 	int err;
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);

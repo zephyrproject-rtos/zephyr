@@ -1,7 +1,5 @@
-/* bluetooth.c - Bluetooth smoke test */
-
 /*
- * Copyright (c) 2015-2016 Intel Corporation.
+ * Copyright (c) 2019 ZhongYao Luo
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +20,7 @@ static int driver_open(void)
 	TC_PRINT("driver: %s\n", __func__);
 
 	/* Indicate that there is no real Bluetooth device */
-	return EXPECTED_ERROR;
+	return 0;
 }
 
 static int driver_send(struct net_buf *buf)
@@ -42,18 +40,24 @@ static void driver_init(void)
 	bt_hci_driver_register(&drv);
 }
 
-void test_bluetooth_entry(void)
+static int bluetooth_preinit(void *data)
+{
+	TC_PRINT("preinit: %s\n", __func__);
+	return EXPECTED_ERROR;
+}
+
+void test_bluetooth_preinit_entry(void)
 {
 	driver_init();
 
-	zassert_true((bt_enable(NULL, NULL, NULL) == EXPECTED_ERROR),
+	zassert_true((bt_enable(NULL, bluetooth_preinit, NULL) == EXPECTED_ERROR),
 			"bt_enable failed");
 }
 
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_bluetooth,
-			ztest_unit_test(test_bluetooth_entry));
-	ztest_run_test_suite(test_bluetooth);
+	ztest_test_suite(test_bluetooth_preinit,
+			ztest_unit_test(test_bluetooth_preinit_entry));
+	ztest_run_test_suite(test_bluetooth_preinit);
 }

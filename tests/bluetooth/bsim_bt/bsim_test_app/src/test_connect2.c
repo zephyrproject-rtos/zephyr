@@ -148,7 +148,7 @@ static void test_con2_main(void)
 	static int notify_count;
 	int err;
 
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;

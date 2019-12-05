@@ -363,7 +363,7 @@ static void test_con1_main(void)
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);

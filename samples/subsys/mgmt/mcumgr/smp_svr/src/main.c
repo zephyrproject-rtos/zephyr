@@ -152,7 +152,7 @@ void main(void)
 
 #ifdef CONFIG_MCUMGR_SMP_BT
 	/* Enable Bluetooth. */
-	rc = bt_enable(bt_ready);
+	rc = bt_enable(bt_ready, NULL, NULL);
 	if (rc != 0) {
 		printk("Bluetooth init failed (err %d)\n", rc);
 		return;

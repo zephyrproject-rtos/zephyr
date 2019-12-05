@@ -521,7 +521,7 @@ void ble_init(void)
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 	if (err) {
 		printk("Enabling Bluetooth failed (err %d)\n", err);
 		return;

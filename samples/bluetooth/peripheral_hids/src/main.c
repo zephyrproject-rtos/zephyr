@@ -131,7 +131,7 @@ void main(void)
 {
 	int err;
 
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;

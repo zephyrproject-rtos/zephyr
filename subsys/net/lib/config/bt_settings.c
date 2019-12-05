@@ -36,7 +36,7 @@ int z_net_config_bt_setup(void)
 	struct device *dev;
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 	if (err < 0 && err != -EALREADY) {
 		return err;
 	}

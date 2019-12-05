@@ -347,7 +347,7 @@ static void test_hci_prop_evt_entry(void)
 	bt_hci_driver_register(&drv);
 
 	/* Go! Wait until Bluetooth initialization is done  */
-	zassert_true((bt_enable(NULL) == 0),
+	zassert_true((bt_enable(NULL, NULL, NULL) == 0),
 		     "bt_enable failed");
 
 	/* Register the prop callback */

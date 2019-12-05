@@ -287,7 +287,7 @@ void main(void)
 	printk("Unicast address: 0x%04x\n", addr);
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}

@@ -179,7 +179,7 @@ void main(void)
 	ps_settings_init();
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(NULL);
+	err = bt_enable(NULL, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;

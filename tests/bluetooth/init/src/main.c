@@ -15,7 +15,7 @@
 
 void test_init(void)
 {
-	zassert_false(bt_enable(NULL), "Bluetooth init failed");
+	zassert_false(bt_enable(NULL, NULL, NULL), "Bluetooth init failed");
 }
 
 /*test case main entry*/

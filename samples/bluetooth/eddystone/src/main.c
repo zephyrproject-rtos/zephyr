@@ -680,7 +680,7 @@ void main(void)
 	k_delayed_work_init(&idle_work, idle_timeout);
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(bt_ready, NULL, NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
