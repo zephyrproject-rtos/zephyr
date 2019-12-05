@@ -51,12 +51,12 @@ void signal_sampling_started(void)
 	static struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 1);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
 
 	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, 0);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
+			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
 }
 
 void signal_sampling_stopped(void)
@@ -64,12 +64,12 @@ void signal_sampling_stopped(void)
 	static struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 1);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
 
 	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
 }
 
 void signal_print_stopped(void)
@@ -77,12 +77,12 @@ void signal_print_stopped(void)
 	static struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 0);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
+			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
 
 	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
 }
 
 void *rx_block[NUM_MS];
