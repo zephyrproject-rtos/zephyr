@@ -2254,16 +2254,6 @@ class TestSuite:
         # hardcoded for now
         self.connected_hardware = []
 
-
-        if options.jobs:
-            self.jobs = options.jobs
-        elif options.build_only:
-            self.jobs = multiprocessing.cpu_count() * 2
-        else:
-            self.jobs = multiprocessing.cpu_count()
-
-        info("JOBS: %d" % self.jobs)
-
     def update(self):
         self.total_tests = len(self.instances)
         self.total_cases = len(self.testcases)
@@ -3925,6 +3915,16 @@ def main():
         options.enable_size_report = True
 
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+
+    # Set number of jobs
+    if options.jobs:
+        suite.jobs = options.jobs
+    elif options.build_only:
+        suite.jobs = multiprocessing.cpu_count() * 2
+    else:
+        suite.jobs = multiprocessing.cpu_count()
+    info("JOBS: %d" % suite.jobs)
+
     suite.add_testcases()
     suite.add_configurations()
 
