@@ -20,7 +20,7 @@
 #include <soc.h>
 #include <fsl_device_registers.h>
 
-struct usart_mcux_lpc_config {
+struct mcux_flexcomm_config {
 	USART_Type *base;
 	u32_t clock_source;
 	u32_t baud_rate;
@@ -29,16 +29,16 @@ struct usart_mcux_lpc_config {
 #endif
 };
 
-struct usart_mcux_lpc_data {
+struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
 };
 
-static int usart_mcux_lpc_poll_in(struct device *dev, unsigned char *c)
+static int mcux_flexcomm_poll_in(struct device *dev, unsigned char *c)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t flags = USART_GetStatusFlags(config->base);
 	int ret = -1;
 
@@ -50,10 +50,10 @@ static int usart_mcux_lpc_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void usart_mcux_lpc_poll_out(struct device *dev,
+static void mcux_flexcomm_poll_out(struct device *dev,
 					     unsigned char c)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 
 	/* Wait until space is available in TX FIFO */
 	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
@@ -62,9 +62,9 @@ static void usart_mcux_lpc_poll_out(struct device *dev,
 	USART_WriteByte(config->base, c);
 }
 
-static int usart_mcux_lpc_err_check(struct device *dev)
+static int mcux_flexcomm_err_check(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t flags = USART_GetStatusFlags(config->base);
 	int err = 0;
 
@@ -89,10 +89,10 @@ static int usart_mcux_lpc_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int usart_mcux_lpc_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int mcux_flexcomm_fifo_fill(struct device *dev, const u8_t *tx_data,
 			       int len)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
@@ -105,10 +105,10 @@ static int usart_mcux_lpc_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return num_tx;
 }
 
-static int usart_mcux_lpc_fifo_read(struct device *dev, u8_t *rx_data,
+static int mcux_flexcomm_fifo_read(struct device *dev, u8_t *rx_data,
 			       const int len)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
@@ -121,75 +121,75 @@ static int usart_mcux_lpc_fifo_read(struct device *dev, u8_t *rx_data,
 	return num_rx;
 }
 
-static void usart_mcux_lpc_irq_tx_enable(struct device *dev)
+static void mcux_flexcomm_irq_tx_enable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_TxLevelInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
 
-static void usart_mcux_lpc_irq_tx_disable(struct device *dev)
+static void mcux_flexcomm_irq_tx_disable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_TxLevelInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
 
-static int usart_mcux_lpc_irq_tx_complete(struct device *dev)
+static int mcux_flexcomm_irq_tx_complete(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t flags = USART_GetStatusFlags(config->base);
 
 	return (flags & kUSART_TxFifoEmptyFlag) != 0U;
 }
 
-static int usart_mcux_lpc_irq_tx_ready(struct device *dev)
+static int mcux_flexcomm_irq_tx_ready(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_TxLevelInterruptEnable;
 
 	return (USART_GetEnabledInterrupts(config->base) & mask)
-		&& usart_mcux_lpc_irq_tx_complete(dev);
+		&& mcux_flexcomm_irq_tx_complete(dev);
 }
 
-static void usart_mcux_lpc_irq_rx_enable(struct device *dev)
+static void mcux_flexcomm_irq_rx_enable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_RxLevelInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
 
-static void usart_mcux_lpc_irq_rx_disable(struct device *dev)
+static void mcux_flexcomm_irq_rx_disable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_RxLevelInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
 
-static int usart_mcux_lpc_irq_rx_full(struct device *dev)
+static int mcux_flexcomm_irq_rx_full(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t flags = USART_GetStatusFlags(config->base);
 
 	return (flags & kUSART_RxFifoNotEmptyFlag) != 0U;
 }
 
-static int usart_mcux_lpc_irq_rx_ready(struct device *dev)
+static int mcux_flexcomm_irq_rx_ready(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kUSART_RxLevelInterruptEnable;
 
 	return (USART_GetEnabledInterrupts(config->base) & mask)
-		&& usart_mcux_lpc_irq_rx_full(dev);
+		&& mcux_flexcomm_irq_rx_full(dev);
 }
 
-static void usart_mcux_lpc_irq_err_enable(struct device *dev)
+static void mcux_flexcomm_irq_err_enable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kStatus_USART_NoiseError |
 			kStatus_USART_FramingError |
 			kStatus_USART_ParityError;
@@ -197,9 +197,9 @@ static void usart_mcux_lpc_irq_err_enable(struct device *dev)
 	USART_EnableInterrupts(config->base, mask);
 }
 
-static void usart_mcux_lpc_irq_err_disable(struct device *dev)
+static void mcux_flexcomm_irq_err_disable(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	u32_t mask = kStatus_USART_NoiseError |
 			kStatus_USART_FramingError |
 			kStatus_USART_ParityError;
@@ -207,31 +207,31 @@ static void usart_mcux_lpc_irq_err_disable(struct device *dev)
 	USART_DisableInterrupts(config->base, mask);
 }
 
-static int usart_mcux_lpc_irq_is_pending(struct device *dev)
+static int mcux_flexcomm_irq_is_pending(struct device *dev)
 {
-	return (usart_mcux_lpc_irq_tx_ready(dev)
-		|| usart_mcux_lpc_irq_rx_ready(dev));
+	return (mcux_flexcomm_irq_tx_ready(dev)
+		|| mcux_flexcomm_irq_rx_ready(dev));
 }
 
-static int usart_mcux_lpc_irq_update(struct device *dev)
+static int mcux_flexcomm_irq_update(struct device *dev)
 {
 	return 1;
 }
 
-static void usart_mcux_lpc_irq_callback_set(struct device *dev,
+static void mcux_flexcomm_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct usart_mcux_lpc_data *data = dev->driver_data;
+	struct mcux_flexcomm_data *data = dev->driver_data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
 
-static void usart_mcux_lpc_isr(void *arg)
+static void mcux_flexcomm_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct usart_mcux_lpc_data *data = dev->driver_data;
+	struct mcux_flexcomm_data *data = dev->driver_data;
 
 	if (data->callback) {
 		data->callback(data->cb_data);
@@ -240,9 +240,9 @@ static void usart_mcux_lpc_isr(void *arg)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static int usart_mcux_lpc_init(struct device *dev)
+static int mcux_flexcomm_init(struct device *dev)
 {
-	const struct usart_mcux_lpc_config *config = dev->config->config_info;
+	const struct mcux_flexcomm_config *config = dev->config->config_info;
 	usart_config_t usart_config;
 	u32_t clock_freq;
 
@@ -262,59 +262,59 @@ static int usart_mcux_lpc_init(struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api usart_mcux_lpc_driver_api = {
-	.poll_in = usart_mcux_lpc_poll_in,
-	.poll_out = usart_mcux_lpc_poll_out,
-	.err_check = usart_mcux_lpc_err_check,
+static const struct uart_driver_api mcux_flexcomm_driver_api = {
+	.poll_in = mcux_flexcomm_poll_in,
+	.poll_out = mcux_flexcomm_poll_out,
+	.err_check = mcux_flexcomm_err_check,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill = usart_mcux_lpc_fifo_fill,
-	.fifo_read = usart_mcux_lpc_fifo_read,
-	.irq_tx_enable = usart_mcux_lpc_irq_tx_enable,
-	.irq_tx_disable = usart_mcux_lpc_irq_tx_disable,
-	.irq_tx_complete = usart_mcux_lpc_irq_tx_complete,
-	.irq_tx_ready = usart_mcux_lpc_irq_tx_ready,
-	.irq_rx_enable = usart_mcux_lpc_irq_rx_enable,
-	.irq_rx_disable = usart_mcux_lpc_irq_rx_disable,
-	.irq_rx_ready = usart_mcux_lpc_irq_rx_ready,
-	.irq_err_enable = usart_mcux_lpc_irq_err_enable,
-	.irq_err_disable = usart_mcux_lpc_irq_err_disable,
-	.irq_is_pending = usart_mcux_lpc_irq_is_pending,
-	.irq_update = usart_mcux_lpc_irq_update,
-	.irq_callback_set = usart_mcux_lpc_irq_callback_set,
+	.fifo_fill = mcux_flexcomm_fifo_fill,
+	.fifo_read = mcux_flexcomm_fifo_read,
+	.irq_tx_enable = mcux_flexcomm_irq_tx_enable,
+	.irq_tx_disable = mcux_flexcomm_irq_tx_disable,
+	.irq_tx_complete = mcux_flexcomm_irq_tx_complete,
+	.irq_tx_ready = mcux_flexcomm_irq_tx_ready,
+	.irq_rx_enable = mcux_flexcomm_irq_rx_enable,
+	.irq_rx_disable = mcux_flexcomm_irq_rx_disable,
+	.irq_rx_ready = mcux_flexcomm_irq_rx_ready,
+	.irq_err_enable = mcux_flexcomm_irq_err_enable,
+	.irq_err_disable = mcux_flexcomm_irq_err_disable,
+	.irq_is_pending = mcux_flexcomm_irq_is_pending,
+	.irq_update = mcux_flexcomm_irq_update,
+	.irq_callback_set = mcux_flexcomm_irq_callback_set,
 #endif
 };
 
-#ifdef CONFIG_USART_MCUX_LPC_0
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_0
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void usart_mcux_lpc_config_func_0(struct device *dev);
+static void mcux_flexcomm_config_func_0(struct device *dev);
 #endif
 
-static const struct usart_mcux_lpc_config usart_mcux_lpc_0_config = {
+static const struct mcux_flexcomm_config mcux_flexcomm_0_config = {
 	.base = (USART_Type *)DT_USART_MCUX_LPC_0_BASE_ADDRESS,
 	.clock_source = 0,
 	.baud_rate = DT_USART_MCUX_LPC_0_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = usart_mcux_lpc_config_func_0,
+	.irq_config_func = mcux_flexcomm_config_func_0,
 #endif
 };
 
-static struct usart_mcux_lpc_data usart_mcux_lpc_0_data;
+static struct mcux_flexcomm_data mcux_flexcomm_0_data;
 
 DEVICE_AND_API_INIT(usart_0, DT_USART_MCUX_LPC_0_NAME,
-		    &usart_mcux_lpc_init,
-		    &usart_mcux_lpc_0_data, &usart_mcux_lpc_0_config,
+		    &mcux_flexcomm_init,
+		    &mcux_flexcomm_0_data, &mcux_flexcomm_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &usart_mcux_lpc_driver_api);
+		    &mcux_flexcomm_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void usart_mcux_lpc_config_func_0(struct device *dev)
+static void mcux_flexcomm_config_func_0(struct device *dev)
 {
 	IRQ_CONNECT(DT_USART_MCUX_LPC_0_IRQ,
 		    DT_USART_MCUX_LPC_0_IRQ_PRI,
-		    usart_mcux_lpc_isr, DEVICE_GET(usart_0), 0);
+		    mcux_flexcomm_isr, DEVICE_GET(usart_0), 0);
 
 	irq_enable(DT_USART_MCUX_LPC_0_IRQ);
 }
 #endif
 
-#endif /* CONFIG_USART_MCUX_LPC_0 */
+#endif /* CONFIG_UART_MCUX_FLEXCOMM_0 */
