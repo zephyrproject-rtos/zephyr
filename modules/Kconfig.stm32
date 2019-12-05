@@ -34,10 +34,10 @@ config USE_STM32_HAL_CRC
 config USE_STM32_HAL_CRC_EX
 	bool
 
-config USE_STM32_HAL_CRYPT
+config USE_STM32_HAL_CRYP
 	bool
 
-config USE_STM32_HAL_CRYPT_EX
+config USE_STM32_HAL_CRYP_EX
 	bool
 
 config USE_STM32_HAL_DAC
