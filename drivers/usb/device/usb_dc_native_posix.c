@@ -524,6 +524,10 @@ int handle_usb_control(struct usbip_header *hdr)
 	if (ep_cb) {
 		LOG_DBG("Call ep_cb");
 		ep_cb(ntohl(hdr->common.ep), USB_DC_EP_SETUP);
+		if (ntohl(hdr->common.command) == USBIP_CMD_SUBMIT &&
+		    hdr->u.submit.transfer_buffer_length != 0) {
+			ep_cb(ntohl(hdr->common.ep), USB_DC_EP_DATA_OUT);
+		}
 	}
 
 	return 0;
