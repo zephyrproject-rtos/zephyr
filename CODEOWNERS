@@ -30,7 +30,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
-/soc/arm/st_stm32/stm32mp1/               @arnop2
+/soc/arm/st_stm32/stm32mp1/               @arnopo
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
@@ -143,7 +143,7 @@
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
-/drivers/ipm/ipm_stm32_ipcc.c             @arnop2
+/drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
