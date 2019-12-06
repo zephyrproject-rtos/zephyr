@@ -506,11 +506,7 @@ Documentation:
         Inter-processor mailboxes
 
 "Drivers: I2C":
-    # Provisional entry, to be corrected
-    # TODO: spreadsheet not matching CODEOWNERS
-    status: maintained
-    maintainers:
-        - mbolivar
+    status: orphaned
     files:
         - drivers/i2c/
         - dts/bindings/i2c/
