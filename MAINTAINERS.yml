@@ -707,7 +707,7 @@ Documentation:
     description: >-
         Inventek es-WiFi
 
-"File Systems":
+Filesystems:
     # Provisional entry, to be corrected
     status: orphaned
     collaborators:
@@ -991,19 +991,6 @@ STM32:
         STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
         boards.
 
-"ZTest and unit test infrastructure":
-    # TODO @nashif is this what line 59 of the spreadsheet refers to?
-    # Provisional entry, to be corrected
-    status: maintained
-    maintainers:
-        - nashif
-    files:
-        - subsys/testsuite/
-        - tests/ztest/
-        - tests/unit/util/
-    labels:
-        - "area: Debugging"
-
 USB:
     # Provisional entry, to be corrected
     status: maintained
@@ -1074,3 +1061,16 @@ West:
         - tests/arch/x86/
     labels:
         - "area: X86"
+
+"ZTest and unit test infrastructure":
+    # TODO @nashif is this what line 59 of the spreadsheet refers to?
+    # Provisional entry, to be corrected
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - subsys/testsuite/
+        - tests/ztest/
+        - tests/unit/util/
+    labels:
+        - "area: Debugging"
