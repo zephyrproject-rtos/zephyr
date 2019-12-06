@@ -457,6 +457,7 @@ add_subdirectory(drivers)
 if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 	file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
 		ENCODING UTF-8)
+  set(module_names)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
     # Match "<name>":"<path>" for each line of file, each corresponding to
@@ -464,13 +465,22 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # lazy regexes (it supports greedy only).
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+
+    list(APPEND module_names ${module_name})
+
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+  endforeach()
+
+  foreach(module_name ${module_names})
     # Note the second, binary_dir parameter requires the added
     # subdirectory to have its own, local cmake target(s). If not then
     # this binary_dir is created but stays empty. Object files land in
     # the main binary dir instead.
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
-    set(ZEPHYR_CURRENT_MODULE_DIR ${module_path})
-    add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
+    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/${module_name})
   endforeach()
   # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
   set(ZEPHYR_CURRENT_MODULE_DIR)
