@@ -15,6 +15,7 @@ toolchain:
 ram: 32768
 flash: 65536
 supported:
+  - arduino_gpio
   - counter
   - display
   - gpio
