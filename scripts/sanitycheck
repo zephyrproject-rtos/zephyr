@@ -189,6 +189,7 @@ import glob
 import serial
 import concurrent
 import xml.etree.ElementTree as ET
+import logging
 from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
@@ -209,14 +210,11 @@ if not ZEPHYR_BASE:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
 import edtlib
-import logging
 
 hw_map_local = threading.Lock()
 report_lock = threading.Lock()
 
 
-log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
-logging.basicConfig(format=log_format, level=30)
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
@@ -250,6 +248,14 @@ else:
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
 
+
+logger = logging.getLogger('sanitycheck')
+#coloredlogs.install(level='INFO', logger=logger, fmt="%(levelname)s %(message)s")
+logger.setLevel(logging.DEBUG)
+
+
+#log_format = "%(levelname)s %(message)s"
+#logging.basicConfig(format=log_format, level=logging.INFO)
 
 class CMakeCacheEntry:
     '''Represents a CMake cache entry.
@@ -427,40 +433,10 @@ class BuildError(SanityCheckException):
 class ExecutionError(SanityCheckException):
     pass
 
-
-log_file = None
-
-
 # Debug Functions
-def info(what, show_time=True):
-    if options.timestamps and show_time:
-        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        what = "{}: {}".format(date, what)
+def info(what):
     sys.stdout.write(what + "\n")
     sys.stdout.flush()
-    if log_file:
-        log_file.write(what + "\n")
-        log_file.flush()
-
-
-def error(what):
-    if options.timestamps:
-        date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        what = "{}: {}".format(date, what)
-    sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
-    if log_file:
-        log_file(what + "\n")
-        log_file.flush()
-
-
-def debug(what):
-    if VERBOSE >= 1:
-        info(what)
-
-
-def verbose(what):
-    if VERBOSE >= 2:
-        info(what)
 
 
 class HarnessImporter:
@@ -565,7 +541,7 @@ class BinaryHandler(Handler):
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
         for line in iter(proc.stdout.readline, b''):
-            verbose("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
+            logger.debug("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
             log_out_fp.write(line.decode('utf-8'))
             log_out_fp.flush()
             harness.handle(line.decode('utf-8').rstrip())
@@ -601,9 +577,9 @@ class BinaryHandler(Handler):
                        ] + command
             run_valgrind = True
 
-        verbose("Spawning process: " +
+        logger.debug("Spawning process: " +
                 " ".join(shlex.quote(word) for word in command) + os.linesep +
-                "Spawning process in directory: " + self.build_dir)
+                "in directory: " + self.build_dir)
 
         start_time = time.time()
 
@@ -615,7 +591,7 @@ class BinaryHandler(Handler):
                 env["ASAN_OPTIONS"] += "detect_leaks=0"
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
-            verbose("Spawning BinaryHandler Thread for %s" % self.name)
+            logger.debug("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ), daemon=True)
             t.start()
             t.join(self.timeout)
@@ -677,7 +653,7 @@ class DeviceHandler(Handler):
             readable, _, _ = select.select(readlist, [], [], self.timeout)
 
             if halt_fileno in readable:
-                verbose('halted')
+                logger.debug('halted')
                 ser.close()
                 break
             if ser_fileno not in readable:
@@ -696,7 +672,7 @@ class DeviceHandler(Handler):
             # is available yet.
             if serial_line:
                 sl = serial_line.decode('utf-8', 'ignore')
-                verbose("DEVICE: {0}".format(sl.rstrip()))
+                logger.debug("DEVICE: {0}".format(sl.rstrip()))
 
                 log_out_fp.write(sl)
                 log_out_fp.flush()
@@ -795,7 +771,7 @@ class DeviceHandler(Handler):
                     )
         except serial.SerialException as e:
             self.set_state("failed", 0)
-            error("Serial device err: %s" %(str(e)))
+            logger.error("Serial device err: %s" %(str(e)))
             self.make_device_available(serial_device)
             return
 
@@ -812,9 +788,8 @@ class DeviceHandler(Handler):
                             args=(ser, read_pipe, harness))
         t.start()
 
-        logging.debug('Flash command: %s', command)
-
         d_log = "{}/device.log".format(self.instance.build_dir)
+        logger.debug('Flash command: %s', command)
         try:
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
@@ -939,7 +914,7 @@ class QEMUHandler(Handler):
             log_out_fp.write(line)
             log_out_fp.flush()
             line = line.strip()
-            verbose("QEMU: %s" % line)
+            logger.debug("QEMU: %s" % line)
 
             harness.handle(line)
             if harness.state:
@@ -965,7 +940,7 @@ class QEMUHandler(Handler):
         handler.record(harness)
 
         handler_time = time.time() - start_time
-        verbose("QEMU complete (%s) after %f seconds" %
+        logger.debug("QEMU complete (%s) after %f seconds" %
                 (out_state, handler_time))
         handler.set_state(out_state, handler_time)
 
@@ -1010,16 +985,16 @@ class QEMUHandler(Handler):
 
         self.instance.results = harness.tests
         self.thread.daemon = True
-        verbose("Spawning QEMUHandler Thread for %s" % self.name)
+        logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
         subprocess.call(["stty", "sane"])
 
-        verbose("Running %s (%s)" %(self.name, self.type_str))
+        logger.debug("Running %s (%s)" %(self.name, self.type_str))
         command = [get_generator()[0]]
         command += ["-C", self.build_dir, "run"]
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
-            verbose("Spawning QEMUHandler Thread for %s" % self.name)
+            logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
             proc.wait()
             self.returncode = proc.returncode
 
@@ -1620,20 +1595,20 @@ class TestCase(object):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
-                    error("%s: %s" % (filename, warnings))
+                    logger.error("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
-                error("%s: can't find: %s" % (filename, e))
+                logger.error("%s: can't find: %s" % (filename, e))
         for filename in glob.glob(os.path.join(path, "*.c")):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
-                    error("%s: %s" % (filename, warnings))
+                    logger.error("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
-                error("%s: can't find: %s" % (filename, e))
+                logger.error("%s: can't find: %s" % (filename, e))
         return subcases
 
     def parse_subcases(self, test_path):
@@ -1805,7 +1780,7 @@ class CMake():
 
     def run_build(self, args=[]):
 
-        verbose("Building %s for %s" % (self.source_dir, self.platform.name))
+        logger.debug("Building %s for %s" % (self.source_dir, self.platform.name))
 
         cmake_args = []
         cmake_args.extend(args)
@@ -1850,7 +1825,7 @@ class CMake():
 
             if log_msg:
                 if log_msg.find(overflow_flash) > 0 or log_msg.find(overflow_ram) > 0:
-                    verbose("RAM/ROM Overflow")
+                    logger.debug("RAM/ROM Overflow")
                     self.instance.status = "skipped"
                     self.instance.reason = "overflow"
                 else:
@@ -1866,9 +1841,8 @@ class CMake():
 
     def run_cmake(self, args=[]):
 
-        verbose("Running cmake on %s for %s" % (self.source_dir,
-                                                self.platform.name))
         ldflags = "-Wl,--fatal-warnings"
+        logger.debug("Running cmake on %s for %s" %(self.source_dir, self.platform.name))
 
         # fixme: add additional cflags based on options
         cmake_args = [
@@ -2054,7 +2028,7 @@ class ProjectBuilder(FilterBuilder):
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 if self.instance.name in results['filter'] and results['filter'][self.instance.name]:
-                    verbose("filtering %s" % self.instance.name)
+                    logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
                     pipeline.put({"op": "report", "test": self.instance})
@@ -2062,7 +2036,7 @@ class ProjectBuilder(FilterBuilder):
                     pipeline.put({"op": "build", "test": self.instance})
 
         elif op == "build":
-            verbose("build test: %s" %self.instance.name)
+            logger.debug("build test: %s" %self.instance.name)
             results = self.build()
 
             if results.get('returncode', 1) > 0:
@@ -2074,7 +2048,7 @@ class ProjectBuilder(FilterBuilder):
                     pipeline.put({"op": "report", "test": self.instance})
         # Run the generated binary using one of the supported handlers
         elif op == "run":
-            verbose("run test: %s" %self.instance.name)
+            logger.debug("run test: %s" %self.instance.name)
             self.run()
             self.instance.status, _ = self.instance.handler.get_state()
             pipeline.put({
@@ -2106,7 +2080,7 @@ class ProjectBuilder(FilterBuilder):
                         instance.testcase.name,
                         COLOR_RED,
                         COLOR_NORMAL,
-                        instance.reason), False)
+                        instance.reason))
             if not VERBOSE:
                 log_info_file(instance)
         elif instance.status == "skipped":
@@ -2129,7 +2103,7 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
-            info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
+            logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
                 instance.testcase.name, status, more_info))
 
@@ -2276,7 +2250,7 @@ class TestSuite:
                                ("rom_size", int, True)]
 
         if not os.path.exists(filename):
-            info("Cannot compare metrics, %s not found" % filename)
+            logger.info("Cannot compare metrics, %s not found" % filename)
             return []
 
         results = []
@@ -2332,7 +2306,7 @@ class TestSuite:
                 warnings += 1
 
         if warnings:
-            info("Deltas based on metrics from last %s" %
+            logger.warning("Deltas based on metrics from last %s" %
                  ("release" if not last_metrics else "run"))
 
     def summary(self, unrecognized_sections):
@@ -2341,7 +2315,7 @@ class TestSuite:
             if instance.status == "failed":
                 failed += 1
             elif instance.metrics.get("unrecognized") and not unrecognized_sections:
-                info("%sFAILED%s: %s has unrecognized binary sections: %s" %
+                logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
                      (COLOR_RED, COLOR_NORMAL, instance.name,
                       str(instance.metrics.get("unrecognized", []))))
                 failed += 1
@@ -2351,7 +2325,7 @@ class TestSuite:
         else:
             pass_rate = 0
 
-        info("{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
+        logger.info("{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
             COLOR_RED if failed else COLOR_GREEN,
             self.total_tests - self.total_failed - self.total_skipped,
             self.total_tests,
@@ -2368,7 +2342,7 @@ class TestSuite:
 
         self.total_platforms = len(self.platforms)
         if self.platforms:
-            info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
+            logger.info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
                 self.total_cases,
                 len(self.selected_platforms),
                 self.total_platforms,
@@ -2401,19 +2375,16 @@ class TestSuite:
         if options.release:
             self.csv_report(RELEASE_DATA)
 
-        if log_file:
-            log_file.close()
-
     def add_configurations(self):
 
         for board_root in self.board_roots:
             board_root = os.path.abspath(board_root)
 
-            debug("Reading platform configuration files under %s..." %
+            logger.debug("Reading platform configuration files under %s..." %
                 board_root)
 
             for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
-                verbose("Found platform configuration " + file)
+                logger.debug("Found plaform configuration " + file)
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -2423,7 +2394,7 @@ class TestSuite:
                             self.default_platforms.append(platform.name)
 
                 except RuntimeError as e:
-                    error("E: %s: can't load: %s" % (file, e))
+                    logger.error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
 
 
@@ -2457,10 +2428,10 @@ class TestSuite:
         for root in self.roots:
             root = os.path.abspath(root)
 
-            debug("Reading test case configuration files under %s..." %root)
+            logger.debug("Reading test case configuration files under %s..." %root)
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
-                verbose("scanning %s" % dirpath)
+                logger.debug("scanning %s" % dirpath)
                 if 'sample.yaml' in filenames:
                     filename = 'sample.yaml'
                 elif 'testcase.yaml' in filenames:
@@ -2468,7 +2439,7 @@ class TestSuite:
                 else:
                     continue
 
-                verbose("Found possible test case in " + dirpath)
+                logger.debug("Found possible test case in " + dirpath)
 
                 dirnames[:] = []
                 tc_path = os.path.join(dirpath, filename)
@@ -2521,7 +2492,7 @@ class TestSuite:
                     self.testcases[tc.name] = tc
 
         except Exception as e:
-            error("E: %s: can't load (skipping): %s" % (tc_data_file, e))
+            logger.error("%s: can't load (skipping): %s" % (tc_data_file, e))
             self.load_errors += 1
             return False
 
@@ -2560,7 +2531,7 @@ class TestSuite:
             self.add_instances(instance_list)
 
         tests_to_run = len(self.instances)
-        info("%d tests passed already, retrying %d tests" %(total_tests - tests_to_run, tests_to_run))
+        logger.info("%d tests passed already, retrying %d tests" %(total_tests - tests_to_run, tests_to_run))
 
     def load_from_file(self, file):
         try:
@@ -2595,10 +2566,10 @@ class TestSuite:
         tag_filter = options.tag
         exclude_tag = options.exclude_tag
 
-        verbose("platform filter: " + str(platform_filter))
-        verbose("    arch_filter: " + str(arch_filter))
-        verbose("     tag_filter: " + str(tag_filter))
-        verbose("    exclude_tag: " + str(exclude_tag))
+        logger.debug("platform filter: " + str(platform_filter))
+        logger.debug("    arch_filter: " + str(arch_filter))
+        logger.debug("     tag_filter: " + str(tag_filter))
+        logger.debug("    exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
 
@@ -2608,14 +2579,14 @@ class TestSuite:
             platforms = self.platforms
 
         if options.all:
-            info("Selecting all possible platforms per test case")
+            logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
         elif not platform_filter:
-            info("Selecting default platforms per test case")
+            logger.info("Selecting default platforms per test case")
             default_platforms = True
 
-        info("Building initial testcase list...")
+        logger.info("Building initial testcase list...")
 
         for tc_name, tc in self.testcases.items():
             # list of instances per testcase, aka configurations.
@@ -2779,7 +2750,7 @@ class TestSuite:
 
                 instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
 
-        info("Adding tasks to the queue...")
+        logger.info("Adding tasks to the queue...")
         # We can use a with statement to ensure threads are cleaned up promptly
         with BoundedExecutor(bound=self.jobs, max_workers=self.jobs) as executor:
 
@@ -2813,7 +2784,7 @@ class TestSuite:
 
                     else:
                         if data:
-                            verbose(data)
+                            logger.debug(data)
 
                     # remove the now completed future
                     del future_to_test[future]
@@ -2837,7 +2808,7 @@ class TestSuite:
             if self.discards is None:
                 raise SanityRuntimeError("apply_filters() hasn't been run!")
         except Exception as e:
-            error(str(e))
+            logger.error(str(e))
             sys.exit(2)
 
         with open(filename, "wt") as csvfile:
@@ -3196,7 +3167,7 @@ Artificially long but functional example:
 
     parser.add_argument("--timestamps",
             action="store_true",
-            help="Print all messages with time stamps")
+            help="Print all messages with time stamps (Option is deprecated)")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
@@ -3440,7 +3411,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 def log_info(filename):
     filename = os.path.relpath(os.path.realpath(filename))
     if options.inline_logs:
-        info("{:-^100}".format(filename))
+        logger.info("{:-^100}".format(filename))
 
         try:
             with open(filename) as fp:
@@ -3448,12 +3419,11 @@ def log_info(filename):
         except Exception as e:
             data = "Unable to read log data (%s)\n" % (str(e))
 
-        sys.stdout.write(data)
-        if log_file:
-            log_file.write(data)
-        info("{:-^100}".format(filename))
+        logger.error(data)
+
+        logger.info("{:-^100}".format(filename))
     else:
-        info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+        logger.info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
 
 def log_info_file(instance):
@@ -3474,18 +3444,18 @@ def log_info_file(instance):
 
 
 def size_report(sc):
-    info(sc.filename)
-    info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
+    logger.info(sc.filename)
+    logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
     for i in range(len(sc.sections)):
         v = sc.sections[i]
 
-        info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
+        logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
              (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
               v["type"]))
 
-    info("Totals: %d bytes (ROM), %d bytes (RAM)" %
+    logger.info("Totals: %d bytes (ROM), %d bytes (RAM)" %
          (sc.rom_size, sc.ram_size))
-    info("")
+    logger.info("")
 
 class CoverageTool:
     """ Base class for every supported coverage tool
@@ -3500,7 +3470,7 @@ class CoverageTool:
             return Lcov()
         if tool == 'gcovr':
             return Gcovr()
-        error("Unsupported coverage tool specified: {}".format(tool))
+        logger.error("Unsupported coverage tool specified: {}".format(tool))
 
     @staticmethod
     def retrieve_gcov_data(intput_file):
@@ -3562,14 +3532,14 @@ class CoverageTool:
             extracted_coverage_info = gcov_data['data']
             if capture_complete:
                 self.__class__.create_gcda_files(extracted_coverage_info)
-                verbose("Gcov data captured: {}".format(filename))
+                logger.debug("Gcov data captured: {}".format(filename))
             else:
-                error("Gcov data capture incomplete: {}".format(filename))
+                logger.error("Gcov data capture incomplete: {}".format(filename))
 
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
             ret = self._generate(outdir, coveragelog)
             if ret == 0:
-                info("HTML report generated: {}".format(
+                logger.info("HTML report generated: {}".format(
                     os.path.join(outdir, "coverage", "index.html")))
 
 
@@ -3702,7 +3672,7 @@ def export_tests(filename, tests):
                         }
                 cw.writerow(rowdict)
             else:
-                info("{} can't be exported".format(test))
+                logger.info("{} can't be exported".format(test))
 
 
 def native_and_unit_first(a, b):
@@ -3843,16 +3813,56 @@ class HardwareMap:
                 yaml.dump(self.detected, yaml_file, default_flow_style=False)
 
 
-run_individual_tests = None
-options = None
-
 def main():
     start_time = time.time()
-    global VERBOSE, log_file
+    global VERBOSE
     global options
     global run_individual_tests
 
-    options = parse_arguments()
+    options = options = parse_arguments()
+
+    # Cleanup
+    if options.no_clean or options.only_failed or options.test_only:
+        if os.path.exists(options.outdir):
+            logger.info("Keeping artifacts untouched")
+    elif os.path.exists(options.outdir):
+        for i in range(1,100):
+            new_out = options.outdir + ".{}".format(i)
+            if not os.path.exists(new_out):
+                logger.info("Renaming output directory to {}".format(new_out))
+                shutil.move(options.outdir, new_out)
+                break
+
+    os.makedirs(options.outdir, exist_ok=True)
+
+    # create file handler which logs even debug messages
+    if options.log_file:
+        fh = logging.FileHandler(options.log_file)
+    else:
+        fh = logging.FileHandler(os.path.join(options.outdir, "sanitycheck.log"))
+
+    fh.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+
+
+    VERBOSE += options.verbose
+    if VERBOSE > 1:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter_file)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
 
     hwm = HardwareMap()
     if options.generate_hardware_map:
@@ -3874,11 +3884,11 @@ def main():
         return
 
     if options.west_runner and not options.west_flash:
-        error("west-runner requires west-flash to be enabled")
+        logger.error("west-runner requires west-flash to be enabled")
         sys.exit(1)
 
     if options.west_flash and not options.device_testing:
-        error("west-flash requires device-testing to be enabled")
+        logger.error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
     if options.coverage:
@@ -3892,31 +3902,15 @@ def main():
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-    VERBOSE += options.verbose
-
-    if options.log_file:
-        log_file = open(options.log_file, "w")
 
     if options.subset:
         subset, sets = options.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
-            info("Running only a subset: %s/%s" % (subset, sets))
+            logger.info("Running only a subset: %s/%s" % (subset, sets))
         else:
-            error("You have provided a wrong subset value: %s." % options.subset)
+            logger.error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    # Cleanup
-
-    if options.no_clean or options.only_failed or options.test_only:
-        if os.path.exists(options.outdir):
-            info("Keeping artifacts untouched")
-    elif os.path.exists(options.outdir):
-        for i in range(1,100):
-            new_out = options.outdir + ".{}".format(i)
-            if not os.path.exists(new_out):
-                info("Renaming output directory to {}".format(new_out))
-                shutil.move(options.outdir, new_out)
-                break
 
     if not options.testcase_root:
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
@@ -3936,7 +3930,7 @@ def main():
         suite.jobs = multiprocessing.cpu_count() * 2
     else:
         suite.jobs = multiprocessing.cpu_count()
-    info("JOBS: %d" % suite.jobs)
+    logger.info("JOBS: %d" % suite.jobs)
 
     suite.add_testcases()
     suite.add_configurations()
@@ -3955,7 +3949,7 @@ def main():
             if options.platform and len(options.platform) == 1:
                 hwm.load_device_from_cmdline(options.device_serial, options.platform[0])
             else:
-                error("""When --device-testing is used with --device-serial, only one
+                logger.error("""When --device-testing is used with --device-serial, only one
                       platform is allowed""")
 
 
@@ -4007,11 +4001,11 @@ def main():
                     run_individual_tests.append(sti.name)
 
             if run_individual_tests:
-                info("Running the following tests:")
+                logger.info("Running the following tests:")
                 for test in run_individual_tests:
                     print(" - {}".format(test))
             else:
-                info("Tests not found")
+                logger.info("Tests not found")
                 return
 
         elif options.list_tests or options.test_tree:
@@ -4078,7 +4072,7 @@ def main():
         for i, reason in discards.items():
             if options.platform and i.platform.name not in options.platform:
                 continue
-            debug(
+            logger.debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
                     i.testcase.name,
@@ -4119,7 +4113,7 @@ def main():
         suite.csv_report(options.save_tests)
         return
 
-    info("%d test configurations selected, %d configurations discarded due to filters." %
+    logger.info("%d test configurations selected, %d configurations discarded due to filters." %
         (len(suite.instances), len(discards)))
 
     if options.device_testing:
@@ -4135,7 +4129,7 @@ def main():
 
     if options.dry_run:
         duration = time.time() - start_time
-        info("Completed in %d seconds" % (duration))
+        logger.info("Completed in %d seconds" % (duration))
         return
 
     retries = options.retry_failed + 1
@@ -4148,13 +4142,13 @@ def main():
         completed += 1
 
         if completed > 1:
-            info("%d Iteration:" %(completed ))
+            logger.info("%d Iteration:" %(completed ))
             time.sleep(60) # waiting for the system to settle down
             suite.total_done = suite.total_tests - suite.total_failed
             suite.total_failed = 0
 
         suite.execute()
-        info("", False)
+        print("")
 
         retries = retries - 1
         if retries == 0 or suite.total_failed == 0:
@@ -4181,7 +4175,7 @@ def main():
                 options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
                     "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
 
-        info("Generating coverage files...")
+        logger.info("Generating coverage files...")
         coverage_tool = CoverageTool.factory(options.coverage_tool)
         coverage_tool.add_ignore_file('generated')
         coverage_tool.add_ignore_directory('tests')
