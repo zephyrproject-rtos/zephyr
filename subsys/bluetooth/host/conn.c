@@ -214,6 +214,11 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	       conn->le.features[0], param->interval_min,
 	       param->interval_max, param->latency, param->timeout);
 
+	/* Proceed only if connection parameters contains valid values*/
+	if (!bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
 	/* Use LE connection parameter request if both local and remote support
 	 * it; or if local role is master then use LE connection update.
 	 */
