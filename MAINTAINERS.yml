@@ -561,10 +561,9 @@ Documentation:
         - "area: LED"
 
 "Drivers: LED Strip":
-    # Provisional entry, to be corrected
-    status: orphaned
-    collaborators:
-        - mbolivar
+    status: maintained
+    maintainers:
+        - mbolivar-nordic
     files:
         - drivers/led_strip/
         - dts/bindings/led_strip/
