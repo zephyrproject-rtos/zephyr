@@ -73,28 +73,12 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
-{
-	u16_t tx_frame = SPI_STM32_TX_NOP;
-
-	if (spi_context_tx_buf_on(&data->ctx)) {
-		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
-		} else {
-			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
-		}
-	}
-
-	return tx_frame;
-}
-
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u16_t tx_frame;
+	u16_t tx_frame = SPI_STM32_TX_NOP;
 	u16_t rx_frame;
 
-	tx_frame = spi_stm32_next_tx(data);
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
@@ -112,10 +96,16 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #endif
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+		if (spi_context_tx_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
+		}
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
+		if (spi_context_tx_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+		}
 		LL_SPI_TransmitData16(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 2, 1);
@@ -144,12 +134,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
-		u16_t tx_frame = spi_stm32_next_tx(data);
+		u16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData8(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData16(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
