@@ -247,9 +247,11 @@ Devicetree:
         - "area: Device Tree"
 
 "Display drivers":
-    status: orphaned
-    collaborators:
+    status: maintained
+    maintainers:
         - vanwinkeljan
+    collaborators:
+        - jfischer-phytec-iot
     files:
         - drivers/display/
         - dts/bindings/display/
