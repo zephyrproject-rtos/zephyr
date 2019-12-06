@@ -191,9 +191,8 @@ class Maintainers:
         "HEAD~..", to inspect the tip commit
         """
         res = set()
-        # Final '--' is to disallow a path for 'commits', so that
-        # './get_maintainers.py some/file' errors out instead of doing nothing.
-        # That makes forgetting -f easier to notice.
+        # Final '--' is to make sure 'commits' is interpreted as a commit range
+        # rather than a path. That might give better error messages.
         for path in _git("diff", "--name-only", commits, "--").splitlines():
             res.update(self.path2areas(path))
         return res
