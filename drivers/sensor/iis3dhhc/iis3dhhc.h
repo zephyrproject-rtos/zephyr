@@ -30,6 +30,7 @@ struct iis3dhhc_config {
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	const char *int_port;
 	u8_t int_pin;
+	u8_t int_flags;
 #endif
 #ifdef DT_ST_IIS3DHHC_BUS_SPI
 	struct spi_config spi_conf;
