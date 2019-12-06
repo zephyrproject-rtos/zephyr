@@ -258,6 +258,8 @@ Devicetree:
         - include/display.h
         - include/display/
         - include/drivers/display.h
+        - lib/gui/
+        - subsys/fb/
     labels:
         - "area: Display"
 
