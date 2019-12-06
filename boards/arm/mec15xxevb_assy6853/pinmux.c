@@ -11,33 +11,127 @@
 
 #include "soc.h"
 
+struct pinmux_ports_t {
+#ifdef CONFIG_PINMUX_XEC_GPIO000_036
+	struct device *porta;
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO040_076
+	struct device *portb;
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO100_136
+	struct device *portc;
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	struct device *portd;
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO200_236
+	struct device *porte;
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO240_276
+	struct device *portf;
+#endif
+};
+
+static void i2c_pinmux(struct pinmux_ports_t *p, uint8_t port_sel)
+{
+	switch (port_sel) {
+#ifdef CONFIG_PINMUX_XEC_GPIO000_036
+	case 0:
+		pinmux_pin_set(p->porta, MCHP_GPIO_003, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->porta, MCHP_GPIO_004, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO100_136
+	case 1:
+		pinmux_pin_set(p->portc, MCHP_GPIO_130, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->portc, MCHP_GPIO_131, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	case 2:
+		pinmux_pin_set(p->portd, MCHP_GPIO_154, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->portd, MCHP_GPIO_155, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO000_036
+	case 3:
+		pinmux_pin_set(p->porta, MCHP_GPIO_007, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->porta, MCHP_GPIO_010, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	case 4:
+		pinmux_pin_set(p->portd, MCHP_GPIO_143, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->portd, MCHP_GPIO_144, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	case 5:
+		pinmux_pin_set(p->portd, MCHP_GPIO_141, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->portd, MCHP_GPIO_142, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO100_136
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	case 6:
+		pinmux_pin_set(p->portc, MCHP_GPIO_132, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->portd, MCHP_GPIO_140, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+#endif
+
+#ifdef CONFIG_PINMUX_XEC_GPIO000_036
+	case 7:
+		pinmux_pin_set(p->porta, MCHP_GPIO_012, MCHP_GPIO_CTRL_MUX_F1);
+		pinmux_pin_set(p->porta, MCHP_GPIO_013, MCHP_GPIO_CTRL_MUX_F1);
+		break;
+#endif
+
+	default:
+		break;
+	}
+}
+
 static int board_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
+	struct pinmux_ports_t pinmux_ports;
 
 #ifdef CONFIG_PINMUX_XEC_GPIO000_036
 	struct device *porta =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO000_036_NAME);
+	pinmux_ports.porta = porta;
 #endif
 #ifdef CONFIG_PINMUX_XEC_GPIO040_076
 	struct device *portb =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO040_076_NAME);
+	pinmux_ports.portb = portb;
 #endif
 #ifdef CONFIG_PINMUX_XEC_GPIO100_136
 	struct device *portc =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO100_136_NAME);
+	pinmux_ports.portc = portc;
 #endif
 #ifdef CONFIG_PINMUX_XEC_GPIO140_176
 	struct device *portd =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO140_176_NAME);
+	pinmux_ports.portd = portd;
 #endif
 #ifdef CONFIG_PINMUX_XEC_GPIO200_236
 	struct device *porte =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO200_236_NAME);
+	pinmux_ports.porte = porte;
 #endif
 #ifdef CONFIG_PINMUX_XEC_GPIO240_276
 	struct device *portf =
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO240_276_NAME);
+	pinmux_ports.portf = portf;
 #endif
 
 	/* Configure GPIO bank before usage
@@ -95,23 +189,29 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, MCHP_GPIO_067, MCHP_GPIO_CTRL_MUX_F1);
 #endif /* CONFIG_ADC_XEC */
 
-#ifdef CONFIG_I2C_XEC_0
-	/* Set muxing for I2C1 - SMB01 */
-	pinmux_pin_set(portc, MCHP_GPIO_130, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portc, MCHP_GPIO_131, MCHP_GPIO_CTRL_MUX_F1);
+#ifdef CONFIG_I2C_XEC
+
+#ifdef DT_INST_0_MICROCHIP_XEC_I2C
+	i2c_pinmux(&pinmux_ports, DT_INST_0_MICROCHIP_XEC_I2C_PORT_SEL);
 #endif
 
-#ifdef CONFIG_I2C_XEC_1
-	/* Set muxing, for I2C0 - SMB00 */
-	pinmux_pin_set(porta, MCHP_GPIO_003, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porta, MCHP_GPIO_004, MCHP_GPIO_CTRL_MUX_F1);
+#ifdef DT_INST_1_MICROCHIP_XEC_I2C
+	i2c_pinmux(&pinmux_ports, DT_INST_1_MICROCHIP_XEC_I2C_PORT_SEL);
 #endif
 
-#ifdef CONFIG_I2C_XEC_2
-	/* Set muxing, for I2C2 - SMB04 */
-	pinmux_pin_set(portd, MCHP_GPIO_143, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portd, MCHP_GPIO_144, MCHP_GPIO_CTRL_MUX_F1);
+#ifdef DT_INST_2_MICROCHIP_XEC_I2C
+	i2c_pinmux(&pinmux_ports, DT_INST_2_MICROCHIP_XEC_I2C_PORT_SEL);
 #endif
+
+#ifdef DT_INST_3_MICROCHIP_XEC_I2C
+	i2c_pinmux(&pinmux_ports, DT_INST_3_MICROCHIP_XEC_I2C_PORT_SEL);
+#endif
+
+#ifdef DT_INST_4_MICROCHIP_XEC_I2C
+	i2c_pinmux(&pinmux_ports, DT_INST_4_MICROCHIP_XEC_I2C_PORT_SEL);
+#endif
+
+#endif /* CONFIG_I2C_XEC */
 
 #ifdef CONFIG_ESPI_XEC
 	mchp_pcr_periph_slp_ctrl(PCR_ESPI, MCHP_PCR_SLEEP_DIS);
