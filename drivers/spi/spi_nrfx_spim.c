@@ -362,7 +362,8 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	COND_CODE_1(IS_ENABLED(NRFX_SPIM_EXTENDED_ENABLED),		\
-		(COND_CODE_1(SPIM##idx##_FEATURE_RXDELAY_PRESENT,	\
+		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
+		 COND_CODE_1(SPIM##idx##_FEATURE_RXDELAY_PRESENT,	\
 			(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,),	\
 			())),						\
 		())
