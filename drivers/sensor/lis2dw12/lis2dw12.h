@@ -92,6 +92,7 @@ struct lis2dw12_device_config {
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const char *int_gpio_port;
 	u8_t int_gpio_pin;
+	u8_t int_gpio_flags;
 	u8_t int_pin;
 #ifdef CONFIG_LIS2DW12_PULSE
 	u8_t pulse_trigger;
