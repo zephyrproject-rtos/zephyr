@@ -14,6 +14,6 @@
 	sck-pin = <47>;
 	mosi-pin = <45>;
 	miso-pin = <46>;
-	cs-gpios = <&gpio0 31 0>;
+	cs-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 };
 
