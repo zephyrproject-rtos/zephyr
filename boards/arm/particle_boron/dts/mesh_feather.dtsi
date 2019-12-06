@@ -32,19 +32,19 @@
 	leds {
 		compatible = "gpio-leds";
 		user_led: led_0 {
-			gpios = <&gpio1 12 0>;
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
 		status_red: led_1 {
-			gpios = <&gpio0 13 0>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 		status_green: led_2 {
-			gpios = <&gpio0 14 0>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		status_blue: led_3 {
-			gpios = <&gpio0 15 0>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
 	};
@@ -52,12 +52,12 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		mode_button: button_0 {
-			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Mode Button";
 		};
 
 		reset_button: button_1 {
-			gpios = <&gpio0 18 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Reset Button";
 		};
 	};
@@ -140,8 +140,8 @@
 		label = "MX25L3233F";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		wp-gpios = <&gpio0 22 0>;
-		hold-gpios = <&gpio0 23 0>;
+		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;
 		has-be32k;
 		has-dpd;
