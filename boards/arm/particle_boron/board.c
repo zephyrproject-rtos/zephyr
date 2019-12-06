@@ -11,26 +11,23 @@
 
 static inline void external_antenna(bool on)
 {
-	struct device *ant_ufl_gpio_dev;
+	struct device *gpio_dev;
 
 	/*
 	 * On power-up the SKY13351 is left uncontrolled, so neither
 	 * PCB nor external antenna is selected.  Select the PCB
 	 * antenna.
 	 */
-	ant_ufl_gpio_dev = device_get_binding(ANT_UFL_GPIO_NAME);
-	if (!ant_ufl_gpio_dev) {
+	gpio_dev = device_get_binding(ANT_UFLn_GPIO_NAME);
+	if (!gpio_dev) {
 		return;
 	}
 
-	gpio_pin_configure(ant_ufl_gpio_dev, ANT_UFL_GPIO_PIN,
-			   GPIO_DIR_OUT | ANT_UFL_GPIO_FLAGS);
-
-	if (on) {
-		gpio_pin_write(ant_ufl_gpio_dev, ANT_UFL_GPIO_PIN, 0);
-	} else {
-		gpio_pin_write(ant_ufl_gpio_dev, ANT_UFL_GPIO_PIN, 1);
-	}
+	gpio_pin_configure(gpio_dev, ANT_UFLn_GPIO_PIN,
+			   ANT_UFLn_GPIO_FLAGS
+			   | (on
+			      ? GPIO_OUTPUT_ACTIVE
+			      : GPIO_OUTPUT_INACTIVE));
 }
 
 static int board_particle_boron_init(struct device *dev)
