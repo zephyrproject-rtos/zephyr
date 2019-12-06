@@ -156,10 +156,10 @@ class Maintainers:
             area.inform = area_dict.get("inform", [])
             area.labels = area_dict.get("labels", [])
             area.description = area_dict.get("description")
-            area._files = area_dict.get("files")
-            area._files_exclude = area_dict.get("files-exclude")
-            area._files_regex = area_dict.get("files-regex")
-            area._files_regex_exclude = area_dict.get("files-regex-exclude")
+            area._files = area_dict.get("files", [])
+            area._files_exclude = area_dict.get("files-exclude", [])
+            area._files_regex = area_dict.get("files-regex", [])
+            area._files_regex_exclude = area_dict.get("files-regex-exclude", [])
             self.areas[area_name] = area
 
     def path2areas(self, path):
@@ -301,25 +301,21 @@ class Area:
 
         # Test exclusions first
 
-        if self._files_exclude is not None:
-            for glob in self._files_exclude:
-                if _glob_match(glob, path):
-                    return False
+        for glob in self._files_exclude:
+            if _glob_match(glob, path):
+                return False
 
-        if self._files_regex_exclude is not None:
-            for regex in self._files_regex_exclude:
-                if re.search(regex, path):
-                    return False
+        for regex in self._files_regex_exclude:
+            if re.search(regex, path):
+                return False
 
-        if self._files is not None:
-            for glob in self._files:
-                if _glob_match(glob, path):
-                    return True
+        for glob in self._files:
+            if _glob_match(glob, path):
+                return True
 
-        if self._files_regex is not None:
-            for regex in self._files_regex:
-                if re.search(regex, path):
-                    return True
+        for regex in self._files_regex:
+            if re.search(regex, path):
+                return True
 
         return False
 
