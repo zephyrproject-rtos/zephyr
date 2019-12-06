@@ -36,6 +36,7 @@ struct lps22hh_config {
 #ifdef CONFIG_LPS22HH_TRIGGER
 	const char *drdy_port;
 	u8_t drdy_pin;
+	u8_t drdy_flags;
 #endif
 #ifdef DT_ST_LPS22HH_BUS_I2C
 	u16_t i2c_slv_addr;
