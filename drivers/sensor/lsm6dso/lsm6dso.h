@@ -97,6 +97,7 @@ struct lsm6dso_config {
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	const char *int_gpio_port;
 	u8_t int_gpio_pin;
+	u8_t int_gpio_flags;
 	u8_t int_pin;
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 #ifdef DT_ST_LSM6DSO_BUS_I2C
