@@ -178,6 +178,30 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+
+			gpioi: gpio@4000a180 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x4000a180 0x30>;
+				label = "GPIO_I";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioj: gpio@4000a1c0 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x4000a1c0 0x30>;
+				label = "GPIO_J";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiok: gpio@4000a1f0 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x4000a1f0 0x30>;
+				label = "GPIO_K";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 		};
 	};
 };
