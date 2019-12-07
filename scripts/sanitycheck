@@ -2555,16 +2555,19 @@ class TestSuite:
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
-    def apply_filters(self):
+    def apply_filters(self, **kwargs):
 
         toolchain = self.get_toolchain()
 
         discards = {}
-        platform_filter = options.platform
-        testcase_filter = run_individual_tests
-        arch_filter = options.arch
-        tag_filter = options.tag
-        exclude_tag = options.exclude_tag
+        platform_filter = kwargs.get('platform')
+        testcase_filter = kwargs.get('run_individual_tests')
+        arch_filter = kwargs.get('arch')
+        tag_filter = kwargs.get('tag')
+        exclude_tag = kwargs.get('exclude_tag')
+        all_filter = kwargs.get('all')
+        device_testing_filter = kwargs.get('device_testing')
+        force_toolchain = kwargs.get('force_toolchain')
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -2578,7 +2581,7 @@ class TestSuite:
         else:
             platforms = self.platforms
 
-        if options.all:
+        if all_filter:
             logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
@@ -2598,7 +2601,7 @@ class TestSuite:
                     # Discard silently
                     continue
 
-                if options.device_testing and instance.build_only:
+                if device_testing_filter and instance.build_only:
                     discards[instance] = "Not runnable on device"
                     continue
 
@@ -2657,7 +2660,7 @@ class TestSuite:
                     discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
                     continue
 
-                if not options.force_toolchain \
+                if not force_toolchain \
                     and toolchain and (toolchain not in plat.supported_toolchains) \
                     and tc.type != 'unit':
                     discards[instance] = "Not supported by the toolchain"
@@ -3812,6 +3815,8 @@ class HardwareMap:
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(self.detected, yaml_file, default_flow_style=False)
 
+run_individual_tests = None
+options = None
 
 def main():
     start_time = time.time()
@@ -3819,7 +3824,7 @@ def main():
     global options
     global run_individual_tests
 
-    options = options = parse_arguments()
+    options = parse_arguments()
 
     # Cleanup
     if options.no_clean or options.only_failed or options.test_only:
@@ -4061,7 +4066,19 @@ def main():
         last_run = os.path.join(options.outdir, "sanitycheck.csv")
         suite.load_from_file(last_run)
     else:
-        discards = suite.apply_filters()
+        discards = suite.apply_filters(
+            build_only=options.build_only,
+            enable_slow=options.enable_slow,
+            platform=options.platform,
+            arch=options.arch,
+            tag=options.tag,
+            exclude_tag=options.exclude_tag,
+            force_toolchain=options.force_toolchain,
+            all=options.all,
+            run_individual_tests=run_individual_tests,
+            device_testing=options.device_testing
+
+        )
 
     if VERBOSE > 1 and discards:
         # if we are using command line platform filter, no need to list every
