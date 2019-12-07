@@ -156,10 +156,19 @@ class Maintainers:
             area.inform = area_dict.get("inform", [])
             area.labels = area_dict.get("labels", [])
             area.description = area_dict.get("description")
-            area._files = area_dict.get("files", [])
-            area._files_exclude = area_dict.get("files-exclude", [])
-            area._files_regex = area_dict.get("files-regex", [])
-            area._files_regex_exclude = area_dict.get("files-regex-exclude", [])
+
+            # area._match_fn(path) tests if the path matches files and/or
+            # files-regex
+            area._match_fn = \
+                _get_match_fn(area_dict.get("files"),
+                              area_dict.get("files-regex"))
+
+            # Like area._match_fn(path), but for files-exclude and
+            # files-regex-exclude
+            area._exclude_match_fn = \
+                _get_match_fn(area_dict.get("files-exclude"),
+                              area_dict.get("files-regex-exclude"))
+
             self.areas[area_name] = area
 
     def path2areas(self, path):
@@ -298,25 +307,8 @@ class Area:
     def _contains(self, path):
         # Returns True if the area contains 'path', and False otherwise
 
-        # Test exclusions first
-
-        for glob in self._files_exclude:
-            if _glob_match(glob, path):
-                return False
-
-        for regex in self._files_regex_exclude:
-            if re.search(regex, path):
-                return False
-
-        for glob in self._files:
-            if _glob_match(glob, path):
-                return True
-
-        for regex in self._files_regex:
-            if re.search(regex, path):
-                return True
-
-        return False
+        return self._match_fn and self._match_fn(path) and not \
+            (self._exclude_match_fn and self._exclude_match_fn(path))
 
     def __repr__(self):
         return "<Area {}>".format(self.name)
@@ -345,13 +337,42 @@ def _print_areas(areas):
                             area.description or ""))
 
 
-def _glob_match(glob, path):
-    # Returns True if 'path' matches the pattern 'glob' from a
-    # 'files(-exclude)' entry in MAINTAINERS.yml
+def _get_match_fn(globs, regexes):
+    # Constructs a single regex that tests for matches against the globs in
+    # 'globs' and the regexes in 'regexes'. Parts are joined with '|' (OR).
+    # Returns the search() method of the compiled regex.
+    #
+    # Returns None if there are neither globs nor regexes, which should be
+    # interpreted as no match.
 
-    match_fn = re.match if glob.endswith("/") else re.fullmatch
-    regex = glob.replace(".", "\\.").replace("*", "[^/]*").replace("?", "[^/]")
-    return match_fn(regex, path)
+    if not (globs or regexes):
+        return None
+
+    regex = ""
+
+    if globs:
+        glob_regexes = []
+        for glob in globs:
+            # Construct a regex equivalent to the glob
+            glob_regex = glob.replace(".", "\\.").replace("*", "[^/]*") \
+                             .replace("?", "[^/]")
+
+            if not glob.endswith("/"):
+                # Require a full match for globs that don't end in /
+                glob_regex += "$"
+
+            glob_regexes.append(glob_regex)
+
+        # The glob regexes must anchor to the beginning of the path, since we
+        # return search(). (?:) is a non-capturing group.
+        regex += "^(?:{})".format("|".join(glob_regexes))
+
+    if regexes:
+        if regex:
+            regex += "|"
+        regex += "|".join(regexes)
+
+    return re.compile(regex).search
 
 
 def _load_maintainers(path):
@@ -440,8 +461,6 @@ def _check_maintainers(maints_path, yaml):
             if files_regex_key in area_dict:
                 for regex in area_dict[files_regex_key]:
                     try:
-                        # This also caches the regex in the 're' module, so we
-                        # don't need to worry
                         re.compile(regex)
                     except re.error as e:
                         ferr("bad regular expression '{}' in '{}' in "
