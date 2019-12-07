@@ -484,5 +484,5 @@
 *.rst                                     @nashif
 *posix*.rst                               @aescolar @daor-oti
 # Temporary until we switch over
-MAINTAINERS.yml                           @nashif
-get_maintainer.py                         @nashif
+MAINTAINERS.yml                           @aescolar @ulfalizer
+get_maintainer.py                         @ulfalizer
