@@ -409,12 +409,6 @@ static int sx1509b_init(struct device *dev)
 		goto out;
 	}
 
-	/* Reset state */
-	drv_data->pin_state = (struct sx1509b_pin_state) {
-		.dir = ALL_PINS,
-		.data = ALL_PINS,
-	};
-
 	rc = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				SX1509B_REG_RESET, SX1509B_REG_RESET_MAGIC0);
 	if (rc != 0) {
@@ -429,9 +423,30 @@ static int sx1509b_init(struct device *dev)
 
 	k_sleep(K_MSEC(RESET_DELAY_MS));
 
+	/* Reset state mediated by initial configuration */
+	drv_data->pin_state = (struct sx1509b_pin_state) {
+		.dir = (ALL_PINS
+			& ~(DT_INST_0_SEMTECH_SX1509B_INIT_OUT_LOW
+			    | DT_INST_0_SEMTECH_SX1509B_INIT_OUT_HIGH)),
+		.data = (ALL_PINS
+			 & ~DT_INST_0_SEMTECH_SX1509B_INIT_OUT_LOW),
+	};
+
 	rc = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				SX1509B_REG_CLOCK,
 				SX1509B_REG_CLOCK_FOSC_INT_2MHZ);
+	if (rc == 0) {
+		rc = i2c_reg_write_word_be(drv_data->i2c_master,
+					   cfg->i2c_slave_addr,
+					   SX1509B_REG_DATA,
+					   drv_data->pin_state.data);
+	}
+	if (rc == 0) {
+		rc = i2c_reg_write_word_be(drv_data->i2c_master,
+					   cfg->i2c_slave_addr,
+					   SX1509B_REG_DIR,
+					   drv_data->pin_state.dir);
+	}
 	if (rc != 0) {
 		goto out;
 	}
