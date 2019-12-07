@@ -99,6 +99,9 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;
+		/* Active-low LEDs init high, all else init low */
+		init-out-high = <0xe0e0>;
+		init-out-low = <0x1f1f>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {
