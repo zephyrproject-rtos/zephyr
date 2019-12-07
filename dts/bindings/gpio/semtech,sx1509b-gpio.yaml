@@ -18,6 +18,22 @@ properties:
       required: true
       const: 16
 
+    init-out-low:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Bit mask identifying pins that should be initialized as outputs
+        driven low.
+
+    init-out-high:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Bit mask identifying pins that should be initialized as outputs
+        driven high.
+
 gpio-cells:
   - pin
   - flags
