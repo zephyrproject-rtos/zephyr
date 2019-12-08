@@ -107,6 +107,26 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, 10, port1_pin10_config);
 #endif
 
+#ifdef CONFIG_I2C_4
+	/* PORT0 PIN25 is configured as FC4_RTS_SCL_SSEL1 */
+	pinmux_pin_set(port0, 25, IOCON_PIO_FUNC1 |
+				  IOCON_PIO_I2CSLEW_I2C |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_INPFILT_OFF |
+				  IOCON_PIO_I2CDRIVE_LOW |
+				  IOCON_PIO_I2CFILTER_EN);
+
+	/* PORT0 PIN26 is configured as FC4_CTS_SDA_SSEL0 */
+	pinmux_pin_set(port0, 26, IOCON_PIO_FUNC1 |
+				  IOCON_PIO_I2CSLEW_I2C |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_INPFILT_OFF |
+				  IOCON_PIO_I2CDRIVE_LOW |
+				  IOCON_PIO_I2CFILTER_EN);
+#endif /* CONFIG_I2C_4 */
+
 #ifdef CONFIG_SPI_5
 	/* PORT0 PIN18 is configured as FC5_TXD_SCL_MISO */
 	pinmux_pin_set(port0, 18, IOCON_PIO_FUNC1 |
