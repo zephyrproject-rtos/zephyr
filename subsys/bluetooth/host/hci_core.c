@@ -4776,6 +4776,13 @@ static void hci_vs_init(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len != sizeof(struct bt_hci_rp_vs_read_version_info)) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
+		return;
+	}
+
 #if defined(CONFIG_BT_DEBUG)
 	rp.info = (void *)rsp->data;
 	BT_INFO("HW Platform: %s (0x%04x)",
@@ -4800,6 +4807,13 @@ static void hci_vs_init(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len != sizeof(struct bt_hci_rp_vs_read_supported_commands)) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
+		return;
+	}
+
 	rp.cmds = (void *)rsp->data;
 	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
@@ -4808,6 +4822,13 @@ static void hci_vs_init(void)
 				   NULL, &rsp);
 	if (err) {
 		BT_WARN("Failed to read supported vendor commands");
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len != sizeof(struct bt_hci_rp_vs_read_supported_features)) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
 		return;
 	}
 
@@ -5434,6 +5455,13 @@ static void bt_read_identity_root(u8_t *ir)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len != sizeof(struct bt_hci_rp_vs_read_key_hierarchy_roots)) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
+		return;
+	}
+
 	rp = (void *)rsp->data;
 	memcpy(ir, rp->ir, 16);
 
@@ -5488,8 +5516,24 @@ static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len < sizeof(struct bt_hci_rp_vs_read_static_addrs)) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
+		return 0;
+	}
+
 	rp = (void *)rsp->data;
 	cnt = MIN(rp->num_addrs, CONFIG_BT_ID_MAX);
+
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    rsp->len != (sizeof(struct bt_hci_rp_vs_read_static_addrs) +
+			 rp->num_addrs *
+			 sizeof(struct bt_hci_vs_static_addr))) {
+		BT_WARN("Invalid Vendor HCI extensions");
+		net_buf_unref(rsp);
+		return 0;
+	}
 
 	for (i = 0; i < cnt; i++) {
 		memcpy(&addrs[i], rp->a, sizeof(struct bt_hci_vs_static_addr));
