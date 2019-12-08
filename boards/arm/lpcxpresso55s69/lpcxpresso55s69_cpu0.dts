@@ -69,6 +69,10 @@
 	status = "okay";
 };
 
+&i2c4 {
+	status = "okay";
+};
+
 &spi8 {
 	status = "okay";
 };

@@ -87,6 +87,34 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_ALIAS_SW2_GPIOS_PIN, sw2_config);
 #endif
 
+#ifdef CONFIG_I2C_4
+	/* PORT1 PIN20 is configured as FC4_TXD_SCL_MISO_WS */
+	pinmux_pin_set(port1, 20, IOCON_PIO_FUNC5  |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* PORT1 PIN21 is configured as FC4_RXD_SDA_MOSI_DATA */
+	pinmux_pin_set(port1, 21, IOCON_PIO_FUNC5  |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif /* CONFIG_I2C_4 */
+
+#ifdef CONFIG_FXOS8700_TRIGGER
+	pinmux_pin_set(port1, 19, IOCON_PIO_FUNC0 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_INPFILT_OFF |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif
+
 #ifdef CONFIG_SPI_8
 	/* PORT0 PIN26 is configured as HS_SPI_MOSI */
 	pinmux_pin_set(port0, 26, IOCON_PIO_FUNC9 |

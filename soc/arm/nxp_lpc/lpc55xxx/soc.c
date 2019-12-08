@@ -61,6 +61,14 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Enables the clock for the I/O controller.: Enable Clock. */
     CLOCK_EnableClock(kCLOCK_Iocon);
 
+#ifdef CONFIG_I2C_4
+	/* attach 12 MHz clock to FLEXCOMM4 */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
+
+	/* reset FLEXCOMM for I2C */
+	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
+#endif /* CONFIG_I2C_4 */
+
 #ifdef CONFIG_SPI_8
 	/* Attach 12 MHz clock to FLEXCOMM8 */
 	CLOCK_AttachClk(kFRO12M_to_HSLSPI);

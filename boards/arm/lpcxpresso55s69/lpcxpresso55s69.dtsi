@@ -31,4 +31,13 @@
 	};
 };
 
+arduino_i2c: &i2c4 {
+	mma8652fc@1d {
+		compatible = "nxp,fxos8700","nxp,mma8652fc";
+		reg = <0x1d>;
+		label = "MMA8652FC";
+		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+	};
+};
+
 arduino_spi: &spi8 {};

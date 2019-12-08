@@ -33,8 +33,16 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
+config I2C_4
+	default y
+	depends on I2C
+
 config SPI_8
 	default y
 	depends on SPI
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
 
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
