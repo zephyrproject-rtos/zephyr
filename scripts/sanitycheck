@@ -2110,7 +2110,7 @@ class ProjectBuilder(FilterBuilder):
             if instance.status in ["failed", "timeout"]:
                 log_info_file(instance)
         else:
-            sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+            sys.stdout.write("\rINFO - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
                         self.suite.total_done,
                         self.suite.total_tests,
@@ -3170,7 +3170,7 @@ Artificially long but functional example:
 
     parser.add_argument("--timestamps",
             action="store_true",
-            help="Print all messages with time stamps (Option is deprecated)")
+            help="Print all messages with time stamps")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
@@ -3851,7 +3851,6 @@ def main():
     # create console handler with a higher log level
     ch = logging.StreamHandler()
 
-
     VERBOSE += options.verbose
     if VERBOSE > 1:
         ch.setLevel(logging.DEBUG)
@@ -3860,7 +3859,11 @@ def main():
 
 
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    if options.timestamps:
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    else:
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+
     formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     fh.setFormatter(formatter_file)
