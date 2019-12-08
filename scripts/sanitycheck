@@ -3478,7 +3478,7 @@ class CoverageTool:
     @staticmethod
     def retrieve_gcov_data(intput_file):
         if VERBOSE:
-            print("Working on %s" %intput_file)
+            logger.debug("Working on %s" %intput_file)
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
@@ -3512,7 +3512,7 @@ class CoverageTool:
     @staticmethod
     def create_gcda_files(extracted_coverage_info):
         if VERBOSE:
-            print("Generating gcda files")
+            logger.debug("Generating gcda files")
         for filename, hexdump_val in extracted_coverage_info.items():
             # if kobject_hash is given for coverage gcovr fails
             # hence skipping it problem only in gcovr v4.1
@@ -3748,7 +3748,7 @@ class HardwareMap:
         from serial.tools import list_ports
 
         serial_devices = list_ports.comports()
-        print("Scanning connected hardware...")
+        logger.info("Scanning connected hardware...")
         for d in serial_devices:
             if d.manufacturer in self.manufacturer:
 
@@ -3776,7 +3776,7 @@ class HardwareMap:
                 s_dev['connected'] = True
                 self.detected.append(s_dev)
             else:
-                print("- Unsupported device (%s): %s" %(d.manufacturer, d))
+                logger.warning("Unsupported device (%s): %s" %(d.manufacturer, d))
 
     def write_map(self, hwm_file):
         # use existing map
@@ -3798,7 +3798,8 @@ class HardwareMap:
                 new = list(filter(lambda n:  not n.get('match', False), self.detected))
                 hwm = hwm + new
 
-                print("\nRegistered devices:")
+                logger.info("Registered devices:")
+                print("")
                 table = []
                 header = ["Platform", "ID", "Serial device"]
                 for p in sorted(hwm, key = lambda i: i['platform']):
@@ -3862,7 +3863,7 @@ def main():
     if options.timestamps:
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     else:
-        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(levelname)-7s - %(message)s')
 
     formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
@@ -3881,7 +3882,8 @@ def main():
     if not options.device_testing and options.hardware_map:
         hwm.load_hardware_map(options.hardware_map)
 
-        print("\nAvailable devices:")
+        logger.info("Available devices:")
+        print("")
         table = []
         header = ["Platform", "ID", "Serial device"]
         for p in hwm.connected_hardware:
