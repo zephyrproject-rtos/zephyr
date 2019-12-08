@@ -15,3 +15,14 @@ config HAS_CMSIS_CORE_R
 	bool
 
 endif
+
+menuconfig HAS_CMSIS_DSP
+	bool "Enable CMSIS-DSP"
+	depends on CPU_CORTEX
+	depends on NEWLIB_LIBC
+
+if HAS_CMSIS_DSP
+
+source "ext/hal/cmsis/DSP/Kconfig"
+
+endif

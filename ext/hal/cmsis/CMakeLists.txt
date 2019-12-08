@@ -2,3 +2,4 @@
 
 add_subdirectory_ifdef(CONFIG_HAS_CMSIS_CORE_M Core)
 add_subdirectory_ifdef(CONFIG_HAS_CMSIS_CORE_R Core_R)
+add_subdirectory_ifdef(CONFIG_HAS_CMSIS_DSP    DSP)
