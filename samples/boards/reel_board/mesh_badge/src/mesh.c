@@ -223,16 +223,19 @@ static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 
 static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
 {
-	struct sensor_hdr_a hdr;
+	struct sensor_hdr_b hdr;
 
 	/*
 	 * When the message is a response to a Sensor Get message that
 	 * identifies a sensor property that does not exist on the element, the
 	 * Length field shall represent the value of zero and the Raw Value for
-	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14)
+	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14).
+	 *
+	 * The length zero is represented using the format B and the special
+	 * value 0x7F.
 	 */
-	hdr.format = SENSOR_HDR_A;
-	hdr.length = 0U;
+	hdr.format = SENSOR_HDR_B;
+	hdr.length = 0x7FU;
 	hdr.prop_id = id;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
