@@ -213,7 +213,7 @@ static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 	hdr.prop_id = SENS_PROP_ID_PRESENT_DEVICE_TEMP;
 
 	get_hdc1010_val(val);
-	temp_degrees = sensor_value_to_double(&val[0]);
+	temp_degrees = sensor_value_to_double(&val[0]) * 100;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
 	net_buf_simple_add_le16(msg, temp_degrees);
