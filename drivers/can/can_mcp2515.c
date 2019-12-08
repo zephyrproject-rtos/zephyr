@@ -239,7 +239,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const u8_t *source,
 			source[MCP2515_FRAME_OFFSET_EID0];
 	} else {
 		target->id_type = CAN_STANDARD_IDENTIFIER;
-		target->std_id = (source[MCP2515_FRAME_OFFSET_SIDH] << 3) |
+		target->ext_id = (source[MCP2515_FRAME_OFFSET_SIDH] << 3) |
 				 (source[MCP2515_FRAME_OFFSET_SIDL] >> 5);
 	}
 

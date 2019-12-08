@@ -163,7 +163,7 @@ static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
 {
 	if (src->format == kFLEXCAN_FrameFormatStandard) {
 		dest->id_type = CAN_STANDARD_IDENTIFIER;
-		dest->std_id = FLEXCAN_ID_TO_ZCAN_ID_STD(src->id);
+		dest->ext_id = FLEXCAN_ID_TO_ZCAN_ID_STD(src->id);
 	} else {
 		dest->id_type = CAN_EXTENDED_IDENTIFIER;
 		dest->ext_id = FLEXCAN_ID_TO_ZCAN_ID_EXT(src->id);

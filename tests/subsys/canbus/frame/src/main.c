@@ -77,38 +77,6 @@ static void test_zcan_frame_to_can_frame(void)
 		      "CAN msg length not same");
 }
 
-static void test_invalid_zcan_frame_to_can_frame(void)
-{
-	struct can_frame frame = { 0 };
-	struct can_frame expected = { 0 };
-	struct zcan_frame msg = { 0 };
-	const u8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
-					  0x05, 0x06, 0x07, 0x08 };
-
-	expected.can_id = 0x678;
-	expected.can_dlc = sizeof(data);
-	memcpy(expected.data, data, sizeof(expected.data));
-
-	msg.id_type = CAN_STANDARD_IDENTIFIER;
-	msg.ext_id = 0x12345678U;
-	msg.dlc = sizeof(data);
-	memcpy(msg.data, data, sizeof(data));
-
-	can_copy_zframe_to_frame(&msg, &frame);
-
-	LOG_HEXDUMP_DBG((const u8_t *)&frame, sizeof(frame), "frame");
-	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
-	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
-
-	zassert_mem_equal(&frame.can_id, &expected.can_id, sizeof(frame.can_id),
-			  "CAN ID not same");
-	zassert_mem_equal(&frame.data, &expected.data, sizeof(frame.data),
-			  "CAN data not same");
-	zassert_equal(frame.can_dlc, expected.can_dlc,
-		      "CAN msg length not same");
-}
-
-
 static void test_can_filter_to_zcan_filter(void)
 {
 	struct can_filter filter = { 0 };
@@ -149,7 +117,7 @@ static void test_zcan_filter_to_can_filter(void)
 	struct zcan_filter msg_filter = { 0 };
 
 	expected.can_id = BIT(31) | BIT(30) | 1234;
-	expected.can_mask = BIT(31) | BIT(30) | 1234;
+	expected.can_mask = BIT(31) | 1234;
 
 	msg_filter.rtr = 1U;
 	msg_filter.id_type = 1U;
@@ -175,7 +143,6 @@ void test_main(void)
 	ztest_test_suite(test_can_frame,
 			 ztest_unit_test(test_can_frame_to_zcan_frame),
 			 ztest_unit_test(test_zcan_frame_to_can_frame),
-			 ztest_unit_test(test_invalid_zcan_frame_to_can_frame),
 			 ztest_unit_test(test_can_filter_to_zcan_filter),
 			 ztest_unit_test(test_zcan_filter_to_can_filter));
 

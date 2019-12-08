@@ -49,7 +49,7 @@ static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 		msg->ext_id = mbox->RIR >> CAN_RI0R_EXID_Pos;
 		msg->id_type = CAN_EXTENDED_IDENTIFIER;
 	} else {
-		msg->std_id =  mbox->RIR >> CAN_RI0R_STID_Pos;
+		msg->ext_id =  mbox->RIR >> CAN_RI0R_STID_Pos;
 		msg->id_type = CAN_STANDARD_IDENTIFIER;
 	}
 

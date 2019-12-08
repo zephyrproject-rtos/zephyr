@@ -23,6 +23,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <string.h>
+#include <misc/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,34 +168,51 @@ struct can_filter {
  *
  */
 struct zcan_frame {
-	/** Indicates the identifier type (standard or extended)
-	 * use can_ide enum for assignment
-	 */
-	u32_t id_type : 1;
-	/** Set the message to a transmission request instead of data frame
-	 * use can_rtr enum for assignment
-	 */
-	u32_t rtr     : 1;
-	/** Message identifier*/
 	union {
-		u32_t std_id  : 11;
-		u32_t ext_id  : 29;
+		struct {
+			/** 29-bit Frame identifier.*/
+			u32_t ext_id  : 29;
+			/** Frame is in the CAN-FD frame format */
+			u32_t fd      : 1;
+			/** Set the message to a transmission request instead of
+			 * data frame. Use can_rtr enum for assignment.
+			 */
+			u32_t rtr     : 1;
+			/** Indicates the identifier type (standard or extended).
+			 * Use can_ide enum for assignment.
+			 */
+			u32_t id_type : 1;
+		};
+		struct {
+			/** 11-bit Frame identifier.*/
+			u32_t std_id  : 11;
+		};
 	};
-	/** The length of the message (max. 8) in byte */
+
+	/** The length of the message (max. 8) in bytes.*/
 	u8_t dlc;
-	/** The message data*/
-	union {
-		u8_t data[8];
-		u32_t data_32[2];
-	};
+	/** @cond INTERNAL_HIDDEN */
+	u8_t pad;   /* padding for alignment.*/
+	/** @endcond */
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	/** Timer value of the CAN free running timer.
 	 * The timer is incremented every bit time and captured at the start
 	 * of frame bit (SOF).
 	 */
 	u16_t timestamp;
+#else
+	/** @cond INTERNAL_HIDDEN */
+	u8_t res0;  /* reserved / padding */
+	u8_t res1;  /* reserved / padding */
+	/** @endcond */
 #endif
-} __packed;
+	/** The frame payload data.*/
+	union {
+		u8_t data[CAN_MAX_DLEN];
+		u32_t data_32[ROUND_UP(CAN_MAX_DLEN / sizeof(u32_t),
+				       sizeof(u32_t))];
+	};
+};
 
 /**
  * @brief CAN filter structure
@@ -206,25 +224,43 @@ struct zcan_frame {
  *
  */
 struct zcan_filter {
-	/** Indicates the identifier type (standard or extended)
-	 * use can_ide enum for assignment
-	 */
-	u32_t id_type      : 1;
-	/** target state of the rtr bit */
-	u32_t rtr          : 1;
-	/** target state of the identifier */
 	union {
-		u32_t std_id   : 11;
-		u32_t ext_id   : 29;
+		struct {
+			/** target state of the 29-bit identifier */
+			u32_t ext_id   : 29;
+			/** @cond INTERNAL_HIDDEN */
+			/*Currently unused bit */
+			u32_t res_id   : 1;
+			/** @endcond */
+			/** Indicates the identifier type (standard or extended)
+			 *  use can_ide enum for assignment
+			 */
+			u32_t id_type      : 1;
+			/** target state of the rtr bit */
+			u32_t rtr          : 1;
+		};
+		struct {
+			/** target state of the 11-bit identifier */
+			u32_t std_id   : 11;
+		};
 	};
-	/** rtr bit mask */
-	u32_t rtr_mask     : 1;
-	/** identifier mask*/
 	union {
-		u32_t std_id_mask  : 11;
-		u32_t ext_id_mask  : 29;
+		struct {
+			/** 29-bit identifier mask*/
+			u32_t ext_id_mask  : 29;
+			/** @cond INTERNAL_HIDDEN */
+			/* Currently unused bits */
+			u32_t res_mask     : 2;
+			/** @endcond */
+			/** rtr bit mask */
+			u32_t rtr_mask     : 1;
+		};
+		struct {
+			/** 11-bit identifier mask*/
+			u32_t std_id_mask  : 11;
+		};
 	};
-} __packed;
+};
 
 /**
  * @brief can bus error count structure
@@ -606,11 +642,7 @@ void can_register_state_change_isr(struct device *dev,
 static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
 					    struct zcan_frame *zframe)
 {
-	zframe->id_type = (frame->can_id & BIT(31)) >> 31;
-	zframe->rtr = (frame->can_id & BIT(30)) >> 30;
-	zframe->ext_id = frame->can_id & BIT_MASK(29);
-	zframe->dlc = frame->can_dlc;
-	memcpy(zframe->data, frame->data, sizeof(zframe->data));
+	memcpy(zframe, frame, sizeof(struct can_frame));
 }
 
 /**
@@ -622,11 +654,7 @@ static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
 static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
 					    struct can_frame *frame)
 {
-	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |
-		(zframe->id_type == CAN_STANDARD_IDENTIFIER ? zframe->std_id :
-				    zframe->ext_id);
-	frame->can_dlc = zframe->dlc;
-	memcpy(frame->data, zframe->data, sizeof(frame->data));
+	memcpy(frame, zframe, sizeof(struct zcan_frame));
 }
 
 /**
@@ -640,11 +668,7 @@ static inline
 void can_copy_filter_to_zfilter(const struct can_filter *filter,
 				struct zcan_filter *zfilter)
 {
-	zfilter->id_type = (filter->can_id & BIT(31)) >> 31;
-	zfilter->rtr = (filter->can_id & BIT(30)) >> 30;
-	zfilter->ext_id = filter->can_id & BIT_MASK(29);
-	zfilter->rtr_mask = (filter->can_mask & BIT(30)) >> 30;
-	zfilter->ext_id_mask = filter->can_mask & BIT_MASK(29);
+	memcpy(zfilter, filter, sizeof(struct zcan_filter));
 }
 
 /**
@@ -658,10 +682,7 @@ static inline
 void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 				struct can_filter *filter)
 {
-	filter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->ext_id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->ext_id_mask;
+	memcpy(filter, zfilter, sizeof(struct can_filter));
 }
 
 #ifdef __cplusplus
