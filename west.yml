@@ -92,7 +92,7 @@ manifest:
       revision: 1080094bc246357c6c35e80e8b2d5d0ce7e0d963
       path: tools/net-tools
     - name: hal_nxp
-      revision: 2f896f74a5fc7220546cc23b50351506cd72ea96
+      revision: 87850e41cd48e4472adbae03c9623ea349255d48
       path: modules/hal/nxp
     - name: open-amp
       revision: 5720c73ef3bd885824b2d2184f606443e03f73c4

@@ -98,6 +98,12 @@ config I2C_MCUX
 	help
 	  Enable the mcux I2C driver.
 
+config I2C_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM I2C driver"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Enable the mcux flexcomm i2c driver.
+
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
 	depends on HAS_MCUX_LPI2C && CLOCK_CONTROL
