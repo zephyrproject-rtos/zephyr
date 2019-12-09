@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
