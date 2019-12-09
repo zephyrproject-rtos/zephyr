@@ -433,7 +433,7 @@ static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
 
 #endif /* CONFIG_UART_CONSOLE_MCUMGR */
 
-void uart_console_isr(struct device *unused)
+static void uart_console_isr(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -579,7 +579,7 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
  * @return N/A
  */
 
-void uart_console_hook_install(void)
+static void uart_console_hook_install(void)
 {
 	__stdout_hook_install(console_out);
 	__printk_hook_install(console_out);
