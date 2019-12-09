@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <posix/pthread.h>
-#include <json.h>
+#include <data/json.h>
 
 #include "civetweb.h"
 
