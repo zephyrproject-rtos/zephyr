@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <net/websocket.h>
 
 #include <sys/byteorder.h>
-#include <base64.h>
+#include <sys/base64.h>
 #include <mbedtls/sha1.h>
 
 #include "net_private.h"
