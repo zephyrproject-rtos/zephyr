@@ -11,7 +11,7 @@
 
 #include <errno.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
 

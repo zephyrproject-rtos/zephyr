@@ -8,7 +8,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(tuning);
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <string.h>
 #include <zephyr.h>

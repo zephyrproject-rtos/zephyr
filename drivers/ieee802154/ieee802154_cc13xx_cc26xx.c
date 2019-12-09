@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 
 #include <device.h>
 #include <errno.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <net/ieee802154_radio.h>
 #include <net/ieee802154.h>
 #include <net/net_pkt.h>
