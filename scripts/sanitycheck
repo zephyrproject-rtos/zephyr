@@ -771,7 +771,7 @@ class DeviceHandler(Handler):
                     )
         except serial.SerialException as e:
             self.set_state("failed", 0)
-            logger.error("Serial device err: %s" %(str(e)))
+            logger.error("Serial device error: %s" %(str(e)))
             self.make_device_available(serial_device)
             return
 
@@ -2074,8 +2074,9 @@ class ProjectBuilder(FilterBuilder):
             if VERBOSE or not TERMINAL:
                 status = COLOR_RED + "FAILED " + COLOR_NORMAL + instance.reason
             else:
-                info(
-                    "\n{:<25} {:<50} {}FAILED{}: {}".format(
+                print("")
+                logger.error(
+                    "{:<25} {:<50} {}FAILED{}: {}".format(
                         instance.platform.name,
                         instance.testcase.name,
                         COLOR_RED,
@@ -2110,7 +2111,7 @@ class ProjectBuilder(FilterBuilder):
             if instance.status in ["failed", "timeout"]:
                 log_info_file(instance)
         else:
-            sys.stdout.write("\rINFO - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
                         self.suite.total_done,
                         self.suite.total_tests,
@@ -3426,7 +3427,7 @@ def log_info(filename):
 
         logger.info("{:-^100}".format(filename))
     else:
-        logger.info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+        logger.error("see: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
 
 def log_info_file(instance):
