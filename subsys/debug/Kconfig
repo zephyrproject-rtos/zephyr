@@ -188,6 +188,15 @@ config ASSERT_NO_FILE_INFO
 	  in which the assertion occurred. Enabling this will save
 	  target code space, and thus may be necessary for tiny targets.
 
+config ASSERT_NO_COND_INFO
+	bool "Disable condition info for asserts"
+	help
+	  This option removes the assert condition from the printed assert
+	  message. Enabling this will save target code space, and thus may be
+	  necessary for tiny targets. It is recommended to disable condition
+	  info before disabling file info since the condition can be found in
+	  the source using file info.
+
 config OBJECT_TRACING
 	bool "Kernel object tracing"
 	help
