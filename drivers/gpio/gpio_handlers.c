@@ -8,7 +8,7 @@
 #include <syscall_handler.h>
 
 static inline int z_vrfy_gpio_config(struct device *port, int access_op,
-				    u32_t pin, int flags)
+				    u32_t pin, gpio_flags_t flags)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, config));
 	return z_impl_gpio_config((struct device *)port, access_op, pin, flags);
