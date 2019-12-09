@@ -61,8 +61,7 @@ config BT_ASSERT
 	default y
 	help
 	  Use a custom Bluetooth assert implementation instead of the
-	  kernel-wide __ASSERT(), which is enabled by CONFIG_ASSERT and is
-	  disabled by default.
+	  kernel-wide __ASSERT() when CONFIG_ASSERT is disabled.
 
 if BT_ASSERT
 
