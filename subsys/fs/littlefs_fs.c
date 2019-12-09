@@ -18,7 +18,7 @@
 #include <lfs.h>
 #include <fs/littlefs.h>
 #include <flash.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 
 #include "fs_impl.h"
 

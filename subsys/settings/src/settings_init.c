@@ -122,7 +122,7 @@ int settings_backend_init(void)
 
 #elif defined(CONFIG_SETTINGS_NVS)
 #include <device.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 #include "settings/settings_nvs.h"
 
 static struct settings_nvs default_settings_nvs;
