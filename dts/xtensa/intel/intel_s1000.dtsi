@@ -147,5 +147,15 @@
 			label = "SPI_0";
 		};
 
+		dma0: dma@7c000 {
+			compatible = "snps,designware-dma";
+			#dma-cells = <8>;
+			reg = <0x0007C000 0x1000>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&cavs3>;
+			label = "DMA_0";
+
+			status = "okay";
+		};
 	};
 };
