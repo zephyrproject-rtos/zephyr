@@ -13,11 +13,11 @@
 #include <init.h>
 #include <drivers/dma.h>
 #include <soc.h>
-#include "dma_cavs.h"
+#include "dma_dw.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs);
+LOG_MODULE_REGISTER(dma_dw);
 
 #define BYTE				(1)
 #define WORD				(2)

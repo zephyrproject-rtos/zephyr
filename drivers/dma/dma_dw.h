@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_DMA_DMA_CAVS_H_
-#define ZEPHYR_DRIVERS_DMA_DMA_CAVS_H_
+#ifndef ZEPHYR_DRIVERS_DMA_DMA_DW_H_
+#define ZEPHYR_DRIVERS_DMA_DMA_DW_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,4 +118,4 @@ struct dw_dma_dev_cfg {
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_DMA_DMA_CAVS_H_ */
+#endif /* ZEPHYR_DRIVERS_DMA_DMA_DW_H_ */
