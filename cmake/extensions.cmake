@@ -746,6 +746,14 @@ endfunction()
 # caching comes in addition to the caching that CMake does in the
 # build folder's CMakeCache.txt)
 function(zephyr_check_compiler_flag lang option check)
+  # Check if the option is covered by any hardcoded check before doing
+  # an automated test.
+  zephyr_check_compiler_flag_hardcoded(${lang} "${option}" check exists)
+  if(exists)
+    set(check ${check} PARENT_SCOPE)
+    return()
+  endif()
+
   # Locate the cache directory
   set_ifndef(
     ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_DIR
@@ -841,6 +849,19 @@ function(zephyr_check_compiler_flag lang option check)
       )
   endif()
 endfunction()
+
+function(zephyr_check_compiler_flag_hardcoded lang option check exists)
+  # -Werror=implicit-int is not supported for CXX and we are not able
+  # to automatically test for it because it produces a warning
+  # instead of an error during the test.
+  if((${lang} STREQUAL CXX) AND ("${option}" STREQUAL -Werror=implicit-int))
+    set(check 0 PARENT_SCOPE)
+    set(exists 1 PARENT_SCOPE)
+  else()
+    # There does not exist a hardcoded check for this option.
+    set(exists 0 PARENT_SCOPE)
+  endif()
+endfunction(zephyr_check_compiler_flag_hardcoded)
 
 # zephyr_linker_sources(<location> <files>)
 #
