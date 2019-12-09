@@ -1246,6 +1246,7 @@ static void usbd_work_handler(struct k_work *item)
 	while ((ev = usbd_evt_get()) != NULL) {
 		if (!dev_ready() && ev->evt_type != USBD_EVT_POWER) {
 			/* Drop non-power events when cable is detached. */
+			usbd_evt_free(ev);
 			continue;
 		}
 
