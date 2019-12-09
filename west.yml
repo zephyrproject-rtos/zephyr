@@ -38,7 +38,7 @@ manifest:
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
       path: modules/hal/esp-idf
     - name: fatfs
-      revision: df96914dd989907f3a5de4cb95b116c2f305820d
+      revision: 0c1288bb817c1976388e0f55e8483f671ae437ab
       path: modules/fs/fatfs
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
@@ -74,13 +74,13 @@ manifest:
       revision: 4f1e8f5a78dc08aa42a47cc1ad059cce558c26c3
       path: modules/crypto/mbedtls
     - name: mcumgr
-      revision: 84934959d2d1722a23b7e7e200191ae4a6f96168
+      revision: b18b3d16441f40cf983aa034258e8f7c97bfe9bf
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
       path: tools/net-tools
     - name: nffs
-      revision: bc62a2fa9d98ddb5d633c932ea199bc68e10f194
+      revision: 00dd4fab1a00f2f6e995ef3f2e7c3814689f8885
       path: modules/fs/nffs
     - name: hal_nxp
       revision: c6ce9b7e8ddb501ca6d54e927e1602cb5f7a7183
