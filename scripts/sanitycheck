@@ -433,11 +433,6 @@ class BuildError(SanityCheckException):
 class ExecutionError(SanityCheckException):
     pass
 
-# Debug Functions
-def info(what):
-    sys.stdout.write(what + "\n")
-    sys.stdout.flush()
-
 
 class HarnessImporter:
 
@@ -2240,6 +2235,12 @@ class TestSuite:
 
         # hardcoded for now
         self.connected_hardware = []
+
+    # Debug Functions
+    @staticmethod
+    def info(what):
+        sys.stdout.write(what + "\n")
+        sys.stdout.flush()
 
     def update(self):
         self.total_tests = len(self.instances)
