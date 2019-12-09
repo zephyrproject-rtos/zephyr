@@ -1,0 +1,7 @@
+tests:
+  benchmark.cmsis_dsp.basicmath:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: benchmark cmsis_dsp
+    min_flash: 128
+    min_ram: 64
