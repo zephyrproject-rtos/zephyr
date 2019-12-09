@@ -790,8 +790,8 @@ class DeviceHandler(Handler):
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
                     (stdout, stderr) = proc.communicate(timeout=30)
-                    if VERBOSE:
-                        print(stdout.decode())
+                    logger.debug(stdout.decode())
+
                     if proc.returncode != 0:
                         self.instance.reason = "Device issue (Flash?)"
                         with open(d_log, "w") as dlog_fp:
