@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config DMA_CAVS
-	bool "Enable CAVS DMA driver"
+config DMA_DW
+	bool "Enable DesignWare DMA driver"
 	help
-	  CAVS DMA driver.
+	  DesignWare DMA driver.

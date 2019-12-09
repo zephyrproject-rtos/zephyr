@@ -45,12 +45,12 @@ config CAVS_ISR_TBL_OFFSET
 config DW_ISR_TBL_OFFSET
 	default 3RD_LVL_ISR_TBL_OFFSET
 
-if DMA_CAVS
+if DMA_DW
 
 config HEAP_MEM_POOL_SIZE
 	default 1024
 
-endif # DMA_CAVS
+endif # DMA_DW
 
 if BOOTLOADER_MCUBOOT
 config TEXT_SECTION_OFFSET
@@ -121,7 +121,7 @@ endif
 
 if DMA
 
-config DMA_CAVS
+config DMA_DW
 	default y
 
 endif
