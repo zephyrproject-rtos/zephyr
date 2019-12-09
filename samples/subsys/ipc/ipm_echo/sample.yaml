@@ -1,0 +1,8 @@
+sample:
+    description: the sample echoes data over IPM
+    name: echo IPM sample
+tests:
+    sample.subsys.ipc.ipm_echo:
+        build_only: true
+        platform_whitelist: up_squared_adsp
+        tags: samples ipm
