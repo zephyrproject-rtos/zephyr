@@ -3838,6 +3838,9 @@ def main():
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
+    if options.show_footprint or options.compare_report or options.release:
+        options.enable_size_report = True
+
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
     suite.add_testcases()
     suite.add_configurations()
