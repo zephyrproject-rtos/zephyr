@@ -76,8 +76,8 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 void net_buf_reset(struct net_buf *buf)
 {
-	NET_BUF_ASSERT(buf->flags == 0U);
-	NET_BUF_ASSERT(buf->frags == NULL);
+	__ASSERT_NO_MSG(buf->flags == 0U);
+	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	net_buf_simple_reset(&buf->b);
 }
@@ -236,7 +236,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 	struct net_buf *buf;
 	unsigned int key;
 
-	NET_BUF_ASSERT(pool);
+	__ASSERT_NO_MSG(pool);
 
 	NET_BUF_DBG("%s():%d: pool %p size %zu timeout %d", func, line, pool,
 		    size, timeout);
@@ -341,7 +341,7 @@ success:
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	pool->avail_count--;
-	NET_BUF_ASSERT(pool->avail_count >= 0);
+	__ASSERT_NO_MSG(pool->avail_count >= 0);
 #endif
 	return buf;
 }
@@ -414,7 +414,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout)
 	/* Get any fragments belonging to this buffer */
 	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
 		frag->frags = k_fifo_get(fifo, K_NO_WAIT);
-		NET_BUF_ASSERT(frag->frags);
+		__ASSERT_NO_MSG(frag->frags);
 
 		/* The fragments flag is only for FIFO-internal usage */
 		frag->flags &= ~NET_BUF_FRAGS;
@@ -437,8 +437,8 @@ void net_buf_simple_init_with_data(struct net_buf_simple *buf,
 
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
-	NET_BUF_ASSERT(buf);
-	NET_BUF_ASSERT(buf->len == 0U);
+	__ASSERT_NO_MSG(buf);
+	__ASSERT_NO_MSG(buf->len == 0U);
 	NET_BUF_DBG("buf %p reserve %zu", buf, reserve);
 
 	buf->data = buf->__buf + reserve;
@@ -449,8 +449,8 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 	struct net_buf *tail;
 	unsigned int key;
 
-	NET_BUF_ASSERT(list);
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(list);
+	__ASSERT_NO_MSG(buf);
 
 	for (tail = buf; tail->frags; tail = tail->frags) {
 		tail->flags |= NET_BUF_FRAGS;
@@ -466,7 +466,7 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 	struct net_buf *buf, *frag;
 	unsigned int key;
 
-	NET_BUF_ASSERT(list);
+	__ASSERT_NO_MSG(list);
 
 	key = irq_lock();
 	buf = (void *)sys_slist_get(list);
@@ -482,7 +482,7 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 		frag->frags = (void *)sys_slist_get(list);
 		irq_unlock(key);
 
-		NET_BUF_ASSERT(frag->frags);
+		__ASSERT_NO_MSG(frag->frags);
 
 		/* The fragments flag is only for list-internal usage */
 		frag->flags &= ~NET_BUF_FRAGS;
@@ -498,8 +498,8 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 {
 	struct net_buf *tail;
 
-	NET_BUF_ASSERT(fifo);
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(fifo);
+	__ASSERT_NO_MSG(buf);
 
 	for (tail = buf; tail->frags; tail = tail->frags) {
 		tail->flags |= NET_BUF_FRAGS;
@@ -514,7 +514,7 @@ void net_buf_unref_debug(struct net_buf *buf, const char *func, int line)
 void net_buf_unref(struct net_buf *buf)
 #endif
 {
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(buf);
 
 	while (buf) {
 		struct net_buf *frags = buf->frags;
@@ -546,7 +546,7 @@ void net_buf_unref(struct net_buf *buf)
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		pool->avail_count++;
-		NET_BUF_ASSERT(pool->avail_count <= pool->buf_count);
+		__ASSERT_NO_MSG(pool->avail_count <= pool->buf_count);
 #endif
 
 		if (pool->destroy) {
@@ -561,7 +561,7 @@ void net_buf_unref(struct net_buf *buf)
 
 struct net_buf *net_buf_ref(struct net_buf *buf)
 {
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(buf);
 
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
 		    buf, buf->ref, buf->pool_id);
@@ -575,7 +575,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 	struct net_buf_pool *pool;
 	struct net_buf *clone;
 
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(buf);
 
 	pool = net_buf_pool_get(buf->pool_id);
 
@@ -617,7 +617,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 
 struct net_buf *net_buf_frag_last(struct net_buf *buf)
 {
-	NET_BUF_ASSERT(buf);
+	__ASSERT_NO_MSG(buf);
 
 	while (buf->frags) {
 		buf = buf->frags;
@@ -628,8 +628,8 @@ struct net_buf *net_buf_frag_last(struct net_buf *buf)
 
 void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 {
-	NET_BUF_ASSERT(parent);
-	NET_BUF_ASSERT(frag);
+	__ASSERT_NO_MSG(parent);
+	__ASSERT_NO_MSG(frag);
 
 	if (parent->frags) {
 		net_buf_frag_last(frag)->frags = parent->frags;
@@ -640,7 +640,7 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 
 struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
 {
-	NET_BUF_ASSERT(frag);
+	__ASSERT_NO_MSG(frag);
 
 	if (!head) {
 		return net_buf_ref(frag);
@@ -661,11 +661,11 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 {
 	struct net_buf *next_frag;
 
-	NET_BUF_ASSERT(frag);
+	__ASSERT_NO_MSG(frag);
 
 	if (parent) {
-		NET_BUF_ASSERT(parent->frags);
-		NET_BUF_ASSERT(parent->frags == frag);
+		__ASSERT_NO_MSG(parent->frags);
+		__ASSERT_NO_MSG(parent->frags == frag);
 		parent->frags = frag->frags;
 	}
 
@@ -759,13 +759,11 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 #define NET_BUF_SIMPLE_ERR(fmt, ...) NET_BUF_ERR(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_WARN(fmt, ...) NET_BUF_WARN(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_INFO(fmt, ...) NET_BUF_INFO(fmt, ##__VA_ARGS__)
-#define NET_BUF_SIMPLE_ASSERT(cond) NET_BUF_ASSERT(cond)
 #else
 #define NET_BUF_SIMPLE_DBG(fmt, ...)
 #define NET_BUF_SIMPLE_ERR(fmt, ...)
 #define NET_BUF_SIMPLE_WARN(fmt, ...)
 #define NET_BUF_SIMPLE_INFO(fmt, ...)
-#define NET_BUF_SIMPLE_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_SIMPLE_LOG */
 
 void net_buf_simple_clone(const struct net_buf_simple *original,
@@ -780,7 +778,7 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	NET_BUF_SIMPLE_ASSERT(net_buf_simple_tailroom(buf) >= len);
+	__ASSERT_NO_MSG(net_buf_simple_tailroom(buf) >= len);
 
 	buf->len += len;
 	return tail;
@@ -880,7 +878,7 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	NET_BUF_SIMPLE_ASSERT(net_buf_simple_headroom(buf) >= len);
+	__ASSERT_NO_MSG(net_buf_simple_headroom(buf) >= len);
 
 	buf->data -= len;
 	buf->len += len;
@@ -968,7 +966,7 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	NET_BUF_SIMPLE_ASSERT(buf->len >= len);
+	__ASSERT_NO_MSG(buf->len >= len);
 
 	buf->len -= len;
 	return buf->data += len;
@@ -980,7 +978,7 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
 
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	NET_BUF_SIMPLE_ASSERT(buf->len >= len);
+	__ASSERT_NO_MSG(buf->len >= len);
 
 	buf->len -= len;
 	buf->data += len;
