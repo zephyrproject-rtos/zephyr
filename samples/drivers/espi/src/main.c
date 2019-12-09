@@ -9,7 +9,7 @@
 #include <sys/printk.h>
 #include <device.h>
 #include <soc.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <drivers/espi.h>
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
