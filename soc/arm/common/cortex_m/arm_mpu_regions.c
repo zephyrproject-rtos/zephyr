@@ -5,7 +5,6 @@
  */
 
 #include <sys/slist.h>
-#include <misc/slist.h>
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 #include "arm_mpu_mem_cfg.h"

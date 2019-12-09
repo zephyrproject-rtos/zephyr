@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
 #define ZEPHYR_INCLUDE_ESPI_H_
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <zephyr/types.h>
 #include <device.h>
 

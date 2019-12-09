@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <app_memory/app_memdomain.h>
 #include <sys/libc-hooks.h>
 #include <sys/mempool.h>

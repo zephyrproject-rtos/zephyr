@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/can.h>
 #include <drivers/gpio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
