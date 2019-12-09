@@ -30,7 +30,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <uart.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #define XUARTPS_CR_OFFSET	0x0000U  /**< Control Register [8:0] */
 #define XUARTPS_MR_OFFSET	0x0004U  /**< Mode Register [9:0] */
