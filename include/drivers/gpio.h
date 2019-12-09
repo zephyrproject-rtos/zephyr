@@ -407,6 +407,31 @@ typedef u32_t gpio_port_pins_t;
 typedef u32_t gpio_port_value_t;
 
 /**
+ * @brief Provides a type to hold a GPIO pin index.
+ *
+ * This can be used to record the pin number from a devicetree GPIOS
+ * property.
+ */
+typedef u8_t gpio_pin_t;
+
+/**
+ * @brief Provides a type to hold GPIO devicetree flags.
+ *
+ * All GPIO flags that can be expressed in devicetree fit in the low 8
+ * bits of the full flags field, so use a reduced-size type to record
+ * that part of a GPIOS property.
+ */
+typedef u8_t gpio_devicetree_flags_t;
+
+/**
+ * @brief Provides a type to hold GPIO configuration flags.
+ *
+ * This type is sufficient to hold all flags used to control GPIO
+ * configuration, whether pin or interrupt.
+ */
+typedef u32_t gpio_flags_t;
+
+/**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
@@ -473,7 +498,7 @@ struct gpio_callback {
  */
 
 /* Used by driver api function pin_interrupt_configure, these are defined
- * in terms of the public int flags so we can just mask and pass them
+ * in terms of the public flags so we can just mask and pass them
  * through to the driver api
  */
 enum gpio_int_mode {
@@ -515,15 +540,15 @@ struct gpio_driver_api {
 };
 
 __syscall int gpio_config(struct device *port, int access_op, u32_t pin,
-			  int flags);
+			  gpio_flags_t flags);
 
 static inline int z_impl_gpio_config(struct device *port, int access_op,
-				    u32_t pin, int flags)
+				    u32_t pin, gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	return api->config(port, access_op, pin, flags);
+	return api->config(port, access_op, pin, (int)flags);
 }
 
 __syscall int gpio_write(struct device *port, int access_op, u32_t pin,
@@ -606,10 +631,10 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
  * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_pin_interrupt_configure(struct device *port,
-		unsigned int pin, unsigned int flags);
+		unsigned int pin, gpio_flags_t flags);
 
 static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
-		unsigned int pin, unsigned int flags)
+		unsigned int pin, gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -670,7 +695,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
  * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_configure(struct device *port, u32_t pin,
-				     unsigned int flags)
+				     gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
