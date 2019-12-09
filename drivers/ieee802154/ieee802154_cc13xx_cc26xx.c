@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <net/net_pkt.h>
 #include <random/rand32.h>
 #include <string.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include <driverlib/aon_rtc.h>
 #include <driverlib/osc.h>
