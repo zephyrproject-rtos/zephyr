@@ -48,7 +48,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 
 #endif
 
-#ifdef DT_GPIO_KEYS_SW0_GPIO_CONTROLLER
+#ifdef DT_GPIO_KEYS_SW0_GPIOS_CONTROLLER
 	const u32_t sw0_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -61,7 +61,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 	pinmux_pin_set(port0, DT_ALIAS_SW0_GPIOS_PIN, sw0_config);
 #endif
 
-#ifdef DT_GPIO_KEYS_SW1_GPIO_CONTROLLER
+#ifdef DT_GPIO_KEYS_SW1_GPIOS_CONTROLLER
 	const u32_t sw1_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -74,7 +74,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_ALIAS_SW0_GPIOS_PIN, sw1_config);
 #endif
 
-#ifdef DT_GPIO_KEYS_SW2_GPIO_CONTROLLER
+#ifdef DT_GPIO_KEYS_SW2_GPIOS_CONTROLLER
 	const u32_t sw2_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
