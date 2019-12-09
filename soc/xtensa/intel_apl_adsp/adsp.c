@@ -78,6 +78,14 @@ static void prepare_host_windows(void)
 	SOC_DCACHE_FLUSH((void *)(HP_SRAM_WIN0_BASE + SRAM_REG_FW_END),
 			 HP_SRAM_WIN0_SIZE - SRAM_REG_FW_END);
 
+	if (IS_ENABLED(CONFIG_IPM_INTEL_ADSP)) {
+		/* window1, for inbox/downlink mbox */
+		sys_write32((HP_SRAM_WIN1_SIZE | 0x7), DMWLO(1));
+		sys_write32((HP_SRAM_WIN1_BASE | DMWBA_ENABLE), DMWBA(1));
+		memset((void *)HP_SRAM_WIN1_BASE, 0, HP_SRAM_WIN1_SIZE);
+		SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN1_BASE, HP_SRAM_WIN1_SIZE);
+	}
+
 	/* window3, for trace
 	 * zeroed by trace initialization
 	 */
