@@ -20,6 +20,11 @@ properties:
     "#gpio-cells":
       const: 2
 
+    girq:
+      type: int
+      description: soc group irq index for interrupt
+      required: false
+
 gpio-cells:
   - pin
   - flags

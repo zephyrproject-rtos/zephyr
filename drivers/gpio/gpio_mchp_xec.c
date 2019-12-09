@@ -11,21 +11,6 @@
 
 #include "gpio_utils.h"
 
-#define GPIO_IN_BASE(config) \
-	((__IO u32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
-
-#define GPIO_OUT_BASE(config) \
-	((__IO u32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
-
-static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
-	(MCHP_GPIO_PORT_A_BITMAP),
-	(MCHP_GPIO_PORT_B_BITMAP),
-	(MCHP_GPIO_PORT_C_BITMAP),
-	(MCHP_GPIO_PORT_D_BITMAP),
-	(MCHP_GPIO_PORT_E_BITMAP),
-	(MCHP_GPIO_PORT_F_BITMAP)
-};
-
 struct gpio_xec_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
@@ -39,8 +24,9 @@ struct gpio_xec_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	__IO u32_t *pcr1_base;
+	__IO u32_t *input_base;
+	__IO u32_t *output_base;
 	u8_t girq_id;
-	u32_t port_num;
 	u32_t flags;
 };
 
@@ -51,12 +37,7 @@ static int gpio_xec_configure(struct device *dev,
 	__IO u32_t *current_pcr1;
 	u32_t pcr1 = 0U;
 	u32_t mask = 0U;
-	__IO u32_t *gpio_out_reg = GPIO_OUT_BASE(config);
-
-	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
-		return -EINVAL;
-	}
+	__IO u32_t *gpio_out_reg = config->output_base;
 
 	/* Don't support "open source" mode */
 	if (((flags & GPIO_SINGLE_ENDED) != 0U) &&
@@ -134,11 +115,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 	u32_t mask = 0U;
 	u32_t gpio_interrupt = 0U;
 
-	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
-		return -EINVAL;
-	}
-
 	/* Check if GPIO port supports interrupts */
 	if ((mode != GPIO_INT_MODE_DISABLED) &&
 	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
@@ -155,7 +131,9 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		pcr1 |= MCHP_GPIO_CTRL_IDET_DISABLE;
 
 		/* Disable interrupt in the EC aggregator */
-		MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
+		if (config->girq_id) {
+			MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
+		}
 	} else {
 		if (mode == GPIO_INT_MODE_LEVEL) {
 			/* Enable level interrupts */
@@ -186,8 +164,10 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		/* We enable the interrupts in the EC aggregator so that the
 		 * result can be forwarded to the ARM NVIC
 		 */
-		MCHP_GIRQ_SRC_CLR(config->girq_id, pin);
-		MCHP_GIRQ_ENSET(config->girq_id) = BIT(pin);
+		if (config->girq_id) {
+			MCHP_GIRQ_SRC_CLR(config->girq_id, pin);
+			MCHP_GIRQ_ENSET(config->girq_id) = BIT(pin);
+		}
 	}
 
 	/* Now write contents of pcr1 variable to the PCR1 register that
@@ -211,7 +191,7 @@ static int gpio_xec_port_set_masked_raw(struct device *dev, u32_t mask,
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO u32_t *gpio_base = config->output_base;
 
 	*gpio_base = (*gpio_base & ~mask) | (mask & value);
 
@@ -223,7 +203,7 @@ static int gpio_xec_port_set_bits_raw(struct device *dev, u32_t mask)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO u32_t *gpio_base = config->output_base;
 
 	*gpio_base |= mask;
 
@@ -235,7 +215,7 @@ static int gpio_xec_port_clear_bits_raw(struct device *dev, u32_t mask)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO u32_t *gpio_base = config->output_base;
 
 	*gpio_base &= ~mask;
 
@@ -247,7 +227,7 @@ static int gpio_xec_port_toggle_bits(struct device *dev, u32_t mask)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO u32_t *gpio_base = config->output_base;
 
 	*gpio_base ^= mask;
 
@@ -259,7 +239,7 @@ static int gpio_xec_port_get_raw(struct device *dev, u32_t *value)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* GPIO input registers are used for reading */
-	__IO u32_t *gpio_base = GPIO_IN_BASE(config);
+	__IO u32_t *gpio_base = config->input_base;
 
 	*value = *gpio_base;
 
@@ -329,260 +309,278 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 	.disable_callback = gpio_xec_disable_callback,
 };
 
-#ifdef CONFIG_GPIO_XEC_GPIO000_036
-static int gpio_xec_port000_036_init(struct device *dev);
+#ifdef DT_INST_0_MICROCHIP_XEC_GPIO
 
-static const struct gpio_xec_config gpio_xec_port000_036_config = {
+DEVICE_DECLARE(gpio_xec_port0);
+
+static struct gpio_xec_data gpio_xec_port0_data;
+
+static const struct gpio_xec_config gpio_xec_port0_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_MICROCHIP_XEC_GPIO_NGPIOS),
+		.port_pin_mask = DT_INST_0_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO000_036_BASE_ADDR,
-	.port_num = MCHP_GPIO_000_036,
-#ifdef DT_GPIO_XEC_GPIO000_036_IRQ
-	.girq_id = MCHP_GIRQ11_ID,
+	.pcr1_base = (u32_t *) DT_INST_0_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_0_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_0_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_0_MICROCHIP_XEC_GPIO_IRQ_0
 	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
+#endif
+#ifdef DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ,
 #endif
 };
 
-static struct gpio_xec_data gpio_xec_port000_036_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port000_036, DT_GPIO_XEC_GPIO000_036_LABEL,
-		gpio_xec_port000_036_init,
-		&gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&gpio_xec_driver_api);
-
-static int gpio_xec_port000_036_init(struct device *dev)
+static int gpio_xec_port0_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO000_036_IRQ
+#ifdef DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO000_036_IRQ,
-		DT_GPIO_XEC_GPIO000_036_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port000_036), 0U);
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_0_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port0), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO000_036_IRQ);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO000_036 */
 
-#ifdef CONFIG_GPIO_XEC_GPIO040_076
-static int gpio_xec_port040_076_init(struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port040_076_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_MICROCHIP_XEC_GPIO_NGPIOS),
-	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO040_076_BASE_ADDR,
-	.port_num = MCHP_GPIO_040_076,
-#ifdef DT_GPIO_XEC_GPIO040_076_IRQ
-	.girq_id = MCHP_GIRQ10_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port040_076_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port040_076, DT_GPIO_XEC_GPIO040_076_LABEL,
-		gpio_xec_port040_076_init,
-		&gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
+DEVICE_AND_API_INIT(gpio_xec_port0, DT_INST_0_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port0_init,
+		&gpio_xec_port0_data, &gpio_xec_port0_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port040_076_init(struct device *dev)
+#endif /* DT_INST_0_MICROCHIP_XEC_GPIO */
+
+#ifdef DT_INST_1_MICROCHIP_XEC_GPIO
+
+DEVICE_DECLARE(gpio_xec_port1);
+
+static struct gpio_xec_data gpio_xec_port1_data;
+
+static const struct gpio_xec_config gpio_xec_port1_config = {
+	.common = {
+		.port_pin_mask = DT_INST_1_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
+	},
+	.pcr1_base = (u32_t *) DT_INST_1_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_1_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_1_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_1_MICROCHIP_XEC_GPIO_IRQ_0
+	.flags = GPIO_INT_ENABLE,
+#endif
+#ifdef DT_INST_1_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_1_MICROCHIP_XEC_GPIO_GIRQ,
+#endif
+};
+
+static int gpio_xec_port1_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO040_076_IRQ
+#ifdef DT_INST_1_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO040_076_IRQ,
-		DT_GPIO_XEC_GPIO040_076_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port040_076), 0U);
+	IRQ_CONNECT(DT_INST_1_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_1_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port1), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO040_076_IRQ);
+	irq_enable(DT_INST_1_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO040_076 */
 
-#ifdef CONFIG_GPIO_XEC_GPIO100_136
-static int gpio_xec_port100_136_init(struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port100_136_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_MICROCHIP_XEC_GPIO_NGPIOS),
-	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO100_136_BASE_ADDR,
-	.port_num = MCHP_GPIO_100_136,
-#ifdef DT_GPIO_XEC_GPIO100_136_IRQ
-	.girq_id = MCHP_GIRQ09_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port100_136_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port100_136, DT_GPIO_XEC_GPIO100_136_LABEL,
-		gpio_xec_port100_136_init,
-		&gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
+DEVICE_AND_API_INIT(gpio_xec_port1, DT_INST_1_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port1_init,
+		&gpio_xec_port1_data, &gpio_xec_port1_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port100_136_init(struct device *dev)
+#endif /* DT_INST_1_MICROCHIP_XEC_GPIO */
+
+#ifdef DT_INST_2_MICROCHIP_XEC_GPIO
+
+DEVICE_DECLARE(gpio_xec_port2);
+
+static struct gpio_xec_data gpio_xec_port2_data;
+
+static const struct gpio_xec_config gpio_xec_port2_config = {
+	.common = {
+		.port_pin_mask = DT_INST_2_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
+	},
+	.pcr1_base = (u32_t *) DT_INST_2_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_2_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_2_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_2_MICROCHIP_XEC_GPIO_IRQ_0
+	.flags = GPIO_INT_ENABLE,
+#endif
+#ifdef DT_INST_2_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ,
+#endif
+};
+
+static int gpio_xec_port2_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO100_136_IRQ
+#ifdef DT_INST_2_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO100_136_IRQ,
-		DT_GPIO_XEC_GPIO100_136_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port100_136), 0U);
+	IRQ_CONNECT(DT_INST_2_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_2_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port2), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO100_136_IRQ);
+	irq_enable(DT_INST_2_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO100_136 */
 
-#ifdef CONFIG_GPIO_XEC_GPIO140_176
-static int gpio_xec_port140_176_init(struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port140_176_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_MICROCHIP_XEC_GPIO_NGPIOS),
-	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO140_176_BASE_ADDR,
-	.port_num = MCHP_GPIO_140_176,
-#ifdef DT_GPIO_XEC_GPIO140_176_IRQ
-	.girq_id = MCHP_GIRQ08_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port140_176_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port140_176, DT_GPIO_XEC_GPIO140_176_LABEL,
-		gpio_xec_port140_176_init,
-		&gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
+DEVICE_AND_API_INIT(gpio_xec_port2, DT_INST_2_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port2_init,
+		&gpio_xec_port2_data, &gpio_xec_port2_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port140_176_init(struct device *dev)
+#endif /* DT_INST_2_MICROCHIP_XEC_GPIO */
+
+#ifdef DT_INST_3_MICROCHIP_XEC_GPIO
+
+DEVICE_DECLARE(gpio_xec_port3);
+
+static struct gpio_xec_data gpio_xec_port3_data;
+
+static const struct gpio_xec_config gpio_xec_port3_config = {
+	.common = {
+		.port_pin_mask = DT_INST_3_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
+	},
+	.pcr1_base = (u32_t *) DT_INST_3_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_3_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_3_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_3_MICROCHIP_XEC_GPIO_IRQ_0
+	.flags = GPIO_INT_ENABLE,
+#endif
+#ifdef DT_INST_3_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ,
+#endif
+};
+
+static int gpio_xec_port3_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO140_176_IRQ
+#ifdef DT_INST_3_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO140_176_IRQ,
-		DT_GPIO_XEC_GPIO140_176_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port140_176), 0U);
+	IRQ_CONNECT(DT_INST_3_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_3_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port3), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO140_176_IRQ);
+	irq_enable(DT_INST_3_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO140_176 */
 
-#ifdef CONFIG_GPIO_XEC_GPIO200_236
-static int gpio_xec_port200_236_init(struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port200_236_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_MICROCHIP_XEC_GPIO_NGPIOS),
-	},
-	.pcr1_base = (u32_t *) DT_GPIO_XEC_GPIO200_236_BASE_ADDR,
-	.port_num = MCHP_GPIO_200_236,
-#ifdef DT_GPIO_XEC_GPIO200_236_IRQ
-	.girq_id = MCHP_GIRQ12_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port200_236_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port200_236, DT_GPIO_XEC_GPIO200_236_LABEL,
-		gpio_xec_port200_236_init,
-		&gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
+DEVICE_AND_API_INIT(gpio_xec_port3, DT_INST_3_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port3_init,
+		&gpio_xec_port3_data, &gpio_xec_port3_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port200_236_init(struct device *dev)
+#endif /* DT_INST_3_MICROCHIP_XEC_GPIO */
+
+#ifdef DT_INST_4_MICROCHIP_XEC_GPIO
+
+DEVICE_DECLARE(gpio_xec_port4);
+
+static struct gpio_xec_data gpio_xec_port4_data;
+
+static const struct gpio_xec_config gpio_xec_port4_config = {
+	.common = {
+		.port_pin_mask = DT_INST_4_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
+	},
+	.pcr1_base = (u32_t *) DT_INST_4_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_4_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_4_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_4_MICROCHIP_XEC_GPIO_IRQ_0
+	.flags = GPIO_INT_ENABLE,
+#endif
+#ifdef DT_INST_4_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ,
+#endif
+};
+
+static int gpio_xec_port4_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO200_236_IRQ
+#ifdef DT_INST_4_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO200_236_IRQ,
-		DT_GPIO_XEC_GPIO200_236_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port200_236), 0U);
+	IRQ_CONNECT(DT_INST_4_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_4_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port4), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO200_236_IRQ);
+	irq_enable(DT_INST_4_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO200_236 */
 
-#ifdef CONFIG_GPIO_XEC_GPIO240_276
-static int gpio_xec_port240_276_init(struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port240_276_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_5_MICROCHIP_XEC_GPIO_NGPIOS),
-	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO240_276_BASE_ADDR,
-	.port_num = MCHP_GPIO_240_276,
-#ifdef DT_GPIO_XEC_GPIO240_276_IRQ
-	.girq_id = MCHP_GIRQ26_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port240_276_data;
-
-DEVICE_AND_API_INIT(gpio_xec_port240_276, DT_GPIO_XEC_GPIO240_276_LABEL,
-		gpio_xec_port240_276_init,
-		&gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
+DEVICE_AND_API_INIT(gpio_xec_port4, DT_INST_4_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port4_init,
+		&gpio_xec_port4_data, &gpio_xec_port4_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port240_276_init(struct device *dev)
+#endif /* DT_INST_4_MICROCHIP_XEC_GPIO */
+
+#ifdef DT_INST_5_MICROCHIP_XEC_GPIO
+
+DEVICE_DECLARE(gpio_xec_port5);
+
+static struct gpio_xec_data gpio_xec_port5_data;
+
+static const struct gpio_xec_config gpio_xec_port5_config = {
+	.common = {
+		.port_pin_mask = DT_INST_5_MICROCHIP_XEC_GPIO_GPIO_PIN_MASK,
+	},
+	.pcr1_base = (u32_t *) DT_INST_5_MICROCHIP_XEC_GPIO_BASE_ADDRESS_0,
+	.input_base = (u32_t *) DT_INST_5_MICROCHIP_XEC_GPIO_BASE_ADDRESS_1,
+	.output_base = (u32_t *) DT_INST_5_MICROCHIP_XEC_GPIO_BASE_ADDRESS_2,
+#ifdef DT_INST_5_MICROCHIP_XEC_GPIO_IRQ_0
+	.flags = GPIO_INT_ENABLE,
+#endif
+#ifdef DT_INST_5_MICROCHIP_XEC_GPIO_GIRQ
+	.girq_id = DT_INST_0_MICROCHIP_XEC_GPIO_GIRQ,
+#endif
+};
+
+static int gpio_xec_port5_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO240_276_IRQ
+#ifdef DT_INST_5_MICROCHIP_XEC_GPIO_GIRQ
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO240_276_IRQ,
-		DT_GPIO_XEC_GPIO240_276_IRQ_PRIORITY,
-		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port240_276), 0U);
+	IRQ_CONNECT(DT_INST_5_MICROCHIP_XEC_GPIO_IRQ_0,
+		DT_INST_5_MICROCHIP_XEC_GPIO_IRQ_0_PRIORITY,
+		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port5), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO240_276_IRQ);
+	irq_enable(DT_INST_5_MICROCHIP_XEC_GPIO_IRQ_0);
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO240_276 */
+
+DEVICE_AND_API_INIT(gpio_xec_port5, DT_INST_5_MICROCHIP_XEC_GPIO_LABEL,
+		gpio_xec_port5_init,
+		&gpio_xec_port5_data, &gpio_xec_port5_config,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		&gpio_xec_driver_api);
+
+#endif /* DT_INST_5_MICROCHIP_XEC_GPIO */
