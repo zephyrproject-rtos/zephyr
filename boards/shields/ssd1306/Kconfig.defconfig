@@ -1,0 +1,45 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SSD1306_128X64 || SHIELD_SSD1306_128X32
+
+if DISPLAY
+
+config I2C
+	default y
+
+config SSD1306
+	default y
+
+if LVGL
+
+config LVGL_DISPLAY_DEV_NAME
+	default "SSD1306"
+
+config LVGL_HOR_RES
+	default 128
+
+config LVGL_VER_RES
+	default 64 if SHIELD_SSD1306_128X64
+	default 32 if SHIELD_SSD1306_128X32
+
+config LVGL_VDB_SIZE
+	default 64
+
+config LVGL_DPI
+	default 148
+
+config LVGL_BITS_PER_PIXEL
+	default 1
+
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+rsource "boards/*.defconfig"
+
+endif # DISPLAY
+
+endif # SHIELD_SSD1306_128X64 || SHIELD_SSD1306_128X32
