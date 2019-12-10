@@ -1642,40 +1642,42 @@ class TestInstance:
         self.name = os.path.join(platform.name, testcase.name)
         self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
-        self.build_only = self.check_build_or_run()
-        self.run = not self.build_only
+        self.build_only = True
+        self.run = False
 
         self.results = {}
 
     def __lt__(self, other):
         return self.name < other.name
 
-    def check_build_or_run(self):
+    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixture=[]):
+
         # right now we only support building on windows. running is still work
         # in progress.
-
         if os.name == 'nt':
-            return True
+            self.build_only = True
+            self.run = False
+            return
 
-        build_only = True
+        _build_only = True
 
         # we asked for build-only on the command line
-        if options.build_only:
-            return True
-
-        # The testcase is designed to be build only.
-        if self.testcase.build_only:
-            return True
+        if build_only or self.testcase.build_only:
+            self.build_only = True
+            self.run = False
+            return
 
         # Do not run slow tests:
-        skip_slow = self.testcase.slow and not options.enable_slow
+        skip_slow = self.testcase.slow and not enable_slow
         if skip_slow:
-            return True
+            self.build_only = True
+            self.run = False
+            return
 
         runnable =bool(self.testcase.type == "unit" or \
             self.platform.type == "native" or \
             self.platform.simulation in ["nsim", "renode", "qemu"] or \
-            options.device_testing)
+            device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
@@ -1692,20 +1694,22 @@ class TestInstance:
             # command-line, then we need to run the test, not just build it.
             if "fixture" in self.testcase.harness_config:
                 fixture = self.testcase.harness_config['fixture']
-                if fixture in options.fixture:
-                    build_only = False
+                if fixture in fixture:
+                    _build_only = False
                 else:
-                    build_only = True
+                    _build_only = True
             else:
-                build_only = False
+                _build_only = False
         elif self.testcase.harness:
-            build_only = True
+            _build_only = True
         else:
-            build_only = False
+            _build_only = False
 
-        return not (not build_only and runnable)
+        self.build_only = not (not _build_only and runnable)
+        self.run = not self.build_only
+        return
 
-    def create_overlay(self, platform):
+    def create_overlay(self, platform, enable_asan=False, enable_coverage=False, coverage_platform=[]):
         # Create this in a "sanitycheck/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
@@ -1713,17 +1717,18 @@ class TestInstance:
         subdir = os.path.join(self.build_dir, "sanitycheck")
         os.makedirs(subdir, exist_ok=True)
         file = os.path.join(subdir, "testcase_extra.conf")
+
         with open(file, "w") as f:
             content = ""
 
             if self.testcase.extra_configs:
                 content = "\n".join(self.testcase.extra_configs)
 
-            if options.enable_coverage:
-                if platform.name in options.coverage_platform:
+            if enable_coverage:
+                if platform.name in coverage_platform:
                     content = content + "\nCONFIG_COVERAGE=y"
 
-            if options.enable_asan:
+            if enable_asan:
                 if platform.type == "native":
                     content = content + "\nCONFIG_ASAN=y"
 
@@ -1963,12 +1968,20 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, suite, instance):
+    def __init__(self, suite, instance, **kwargs):
         super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
         self.suite = suite
+
+        self.lsan = kwargs.get('lsan', False)
+        self.asan = kwargs.get('asan', False)
+        self.valgrind = kwargs.get('valgrind', False)
+        self.extra_args = kwargs.get('extra_args', [])
+        self.device_testing = kwargs.get('device_testing', False)
+        self.cmake_only = kwargs.get('cmake_only', False)
+        self.coverage = kwargs.get('coverage', False)
 
     def setup_handler(self):
 
@@ -1986,10 +1999,10 @@ class ProjectBuilder(FilterBuilder):
         elif instance.platform.type == "native":
             handler = BinaryHandler(instance, "native")
 
-            handler.asan = options.enable_lsan
-            handler.valgrind = options.enable_valgrind
-            handler.lsan = options.enable_lsan
-            handler.coverage = options.enable_coverage
+            handler.asan = self.asan
+            handler.valgrind = self.valgrind
+            handler.lsan = self.lsan
+            handler.coverage = self.coverage
 
             handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
             instance.handler = handler
@@ -2002,7 +2015,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler = BinaryHandler(instance, "renode")
                 instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
                 instance.handler.call_make_run = True
-        elif options.device_testing:
+        elif self.device_testing:
             instance.handler = DeviceHandler(instance, "device")
 
         if instance.handler:
@@ -2019,7 +2032,7 @@ class ProjectBuilder(FilterBuilder):
             results = self.cmake()
             if self.instance.status == "failed":
                 pipeline.put({"op": "report", "test": self.instance})
-            elif options.cmake_only:
+            elif self.cmake_only:
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 if self.instance.name in results['filter'] and results['filter'][self.instance.name]:
@@ -2086,7 +2099,7 @@ class ProjectBuilder(FilterBuilder):
             status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
 
         if VERBOSE or not TERMINAL:
-            if options.cmake_only:
+            if self.cmake_only:
                 more_info = "cmake"
             elif instance.status == "skipped":
                 more_info = instance.reason
@@ -2126,9 +2139,7 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
         args = self.testcase.extra_args[:]
-
-        if options.extra_args:
-            args += options.extra_args
+        args += self.extra_args
 
         if instance.handler:
             args += instance.handler.args
@@ -2143,8 +2154,8 @@ class ProjectBuilder(FilterBuilder):
                 del args[idx]
                 idx += 1
 
-        if (self.testcase.extra_configs or options.coverage or
-                options.enable_asan):
+        if (self.testcase.extra_configs or self.coverage or
+                self.asan):
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
                         os.path.join(instance.build_dir,
                                      "sanitycheck", "testcase_extra.conf")))
@@ -2211,6 +2222,19 @@ class TestSuite:
         else:
             self.board_roots = board_root_list
 
+        # Testsuite Options
+        self.coverage_platform = []
+        self.build_only = False
+        self.cmake_only = False
+        self.enable_slow = False
+        self.device_testing = False
+        self.fixture = []
+        self.enable_coverage = False
+        self.enable_lsan = False
+        self.enable_asan = False
+        self.enable_valgrind = False
+        self.extra_args = []
+
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
         self.platforms = []
@@ -2235,6 +2259,9 @@ class TestSuite:
 
         # hardcoded for now
         self.connected_hardware = []
+
+    def config(self):
+        logger.info("coverage platform: {}".format(self.coverage_platform))
 
     # Debug Functions
     @staticmethod
@@ -2351,30 +2378,31 @@ class TestSuite:
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
 
-    def save_reports(self):
+    def save_reports(self, name, report_dir, no_update, release, only_failed):
         if not self.instances:
             return
 
-        report_name = "sanitycheck"
-        if options.report_name:
-            report_name = options.report_name
+        if name:
+            report_name = name
+        else:
+            report_name = "sanitycheck"
 
-        if options.report_dir:
-            os.makedirs(options.report_dir, exist_ok=True)
-            filename = os.path.join(options.report_dir, report_name)
-            outdir = options.report_dir
+        if report_dir:
+            os.makedirs(report_dir, exist_ok=True)
+            filename = os.path.join(report_dir, report_name)
+            outdir = report_dir
         else:
             filename = os.path.join(self.outdir, report_name)
             outdir = self.outdir
 
-        if not options.no_update:
-            self.xunit_report(filename + ".xml")
+        if not no_update:
+            self.xunit_report(filename + ".xml", only_failed)
             self.csv_report(filename + ".csv")
             self.target_report(outdir)
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
-        if options.release:
+        if release:
             self.csv_report(RELEASE_DATA)
 
     def add_configurations(self):
@@ -2528,7 +2556,13 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                    )
+                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2553,7 +2587,13 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                    )
+                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2598,6 +2638,12 @@ class TestSuite:
             instance_list = []
             for plat in platforms:
                 instance = TestInstance(tc, plat, self.outdir)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                    )
 
                 if (plat.arch == "unit") != (tc.type == "unit"):
                     # Discard silently
@@ -2717,7 +2763,7 @@ class TestSuite:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform)
+            case.create_overlay(case.platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
 
         self.discards = discards
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
@@ -2728,9 +2774,9 @@ class TestSuite:
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self):
+    def add_tasks_to_queue(self, test_only=False):
         for instance in self.instances.values():
-            if options.test_only:
+            if test_only:
                 if instance.run:
                     pipeline.put({"op": "run", "test": instance, "status": "built"})
             else:
@@ -2740,7 +2786,7 @@ class TestSuite:
 
         return "DONE FEEDING"
 
-    def execute(self):
+    def execute(self, test_only, cmake_only, enable_size_report):
         def calc_one_elf_size(instance):
             if instance.status not in ["failed", "skipped"]:
                 if instance.platform.type != "native":
@@ -2761,7 +2807,7 @@ class TestSuite:
 
             # start a future for a thread which sends work in through the queue
             future_to_test = {
-                    executor.submit(self.add_tasks_to_queue): 'FEEDER DONE'}
+                    executor.submit(self.add_tasks_to_queue, test_only): 'FEEDER DONE'}
 
             while future_to_test:
                 # check for status of the futures which are currently working
@@ -2776,7 +2822,16 @@ class TestSuite:
                     test = message['test']
 
                     # Start the load operation and mark the future with its URL
-                    pb = ProjectBuilder(self, test)
+                    pb = ProjectBuilder(self,
+                        test,
+                        lsan = self.enable_lsan,
+                        asan = self.enable_asan,
+                        coverage = self.enable_coverage,
+                        extra_args = self.extra_args,
+                        device_testing = self.device_testing,
+                        cmake_only = self.cmake_only,
+                        valgrind = self.enable_valgrind
+                        )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
                 # process any completed futures
@@ -2794,7 +2849,7 @@ class TestSuite:
                     # remove the now completed future
                     del future_to_test[future]
 
-        if options.enable_size_report and not options.cmake_only:
+        if enable_size_report and not cmake_only:
             # Parallelize size calculation
             executor = concurrent.futures.ThreadPoolExecutor(self.jobs)
             futures = [executor.submit(calc_one_elf_size, instance)
@@ -2908,7 +2963,7 @@ class TestSuite:
             with open(os.path.join(outdir, platform + ".xml"), 'wb') as f:
                 f.write(result)
 
-    def xunit_report(self, filename):
+    def xunit_report(self, filename, append=False):
         fails = 0
         passes = 0
         errors = 0
@@ -2930,7 +2985,6 @@ class TestSuite:
 
         run = "Sanitycheck"
         eleTestsuite = None
-        append = options.only_failed
 
         # When we re-run the tests, we re-use the results and update only with
         # the newly run tests.
@@ -3931,9 +3985,21 @@ def main():
     if options.show_footprint or options.compare_report or options.release:
         options.enable_size_report = True
 
-    suite = TestSuite(options.board_root,
-                      options.testcase_root,
-                      options.outdir)
+    suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+
+    # Set testsuite options from command line.
+    suite.build_only = options.build_only
+    suite.enable_slow = options.enable_slow
+    suite.device_testing = options.device_testing
+    suite.fixture = options.fixture
+    suite.enable_asan = options.enable_asan
+    suite.enable_lsan = options.enable_lsan
+    suite.enable_coverage = options.enable_coverage
+    suite.coverage_platorm = ['me']
+    suite.cmake_only = options.cmake_only
+    suite.enable_valgrind = options.enable_valgrind
+    suite.coverage_platform = options.coverage_platform
+
 
     # Set number of jobs
     if options.jobs:
@@ -4171,7 +4237,7 @@ def main():
             suite.total_done = suite.total_tests - suite.total_failed
             suite.total_failed = 0
 
-        suite.execute()
+        suite.execute(options.test_only, options.cmake_only, options.enable_size_report)
         print("")
 
         retries = retries - 1
@@ -4217,7 +4283,12 @@ def main():
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    suite.save_reports()
+    suite.save_reports(options.report_name,
+                       options.report_dir,
+                       options.no_update,
+                       options.release,
+                       options.only_failed)
+
     if suite.total_failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
 
