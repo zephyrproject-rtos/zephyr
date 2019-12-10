@@ -18,6 +18,18 @@ Security Vulnerability Related
 
 No security vulnerabilities received.
 
+API Changes
+***********
+
+Deprecated in this release
+==========================
+
+Stable API changes in this release
+==================================
+
+Removed APIs in this release
+============================
+
 Kernel
 ******
 
