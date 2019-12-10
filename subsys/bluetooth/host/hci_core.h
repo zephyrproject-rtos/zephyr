@@ -84,13 +84,6 @@ struct bt_dev_le {
 	 */
 	u8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
-
-#if defined(CONFIG_BT_WHITELIST)
-	/* Size of the controller whitelist. */
-	u8_t			wl_size;
-	/* Number of entries in the resolving list. */
-	u8_t			wl_entries;
-#endif /* CONFIG_BT_WHITELIST */
 };
 
 #if defined(CONFIG_BT_BREDR)
