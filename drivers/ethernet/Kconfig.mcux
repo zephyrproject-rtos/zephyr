@@ -77,6 +77,13 @@ config ETH_MCUX_0_MANUAL_MAC
 
 endchoice
 
+config ETH_MCUX_HW_ACCELERATION
+	bool "Enable hardware acceleration"
+	default y
+	help
+	  Enable hardware acceleration for the following:
+	  - IPv4, UDP and TCP checksum (both Rx and Tx)
+
 config PTP_CLOCK_MCUX
 	bool "MCUX PTP clock driver support"
 	default y
