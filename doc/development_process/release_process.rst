@@ -247,7 +247,7 @@ following steps need to be followed:
     generates 'lightweight' tags regardless of release or pre-release).
 
 #. Update the :zephyr_file:`VERSION` file in the root of the Git repository. If it's a
-release candidate, use ``EXTRAVERSION`` variable::
+   release candidate, use ``EXTRAVERSION`` variable::
 
     EXTRAVERSION = rc1
 
@@ -262,7 +262,7 @@ release candidate, use ``EXTRAVERSION`` variable::
       <Use "Zephyr 1.11.0-rc1" as the tag annotation>
       $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
-  * If it's a release::
+   * If it's a release::
 
       $ git tag -a v1.11.0
       <Use "Zephyr 1.11.0" as the tag annotation>
@@ -280,19 +280,19 @@ release candidate, use ``EXTRAVERSION`` variable::
 #. Find the new tag at the top of the releases page, edit the release with the
    ``Edit`` button and then do the following:
 
-  * If it's a release candidate:
+   * If it's a release candidate:
 
-    * Name it ``Zephyr 1.11.0-rc1``
-    * Copy the shortlog into the release notes textbox (don't forget to quote it
-      properly so it shows as unformatted text in Markdown)
-    * Check the "This is a pre-release" checkbox
-  * If it's a release:
+     * Name it ``Zephyr 1.11.0-rc1``
+     * Copy the shortlog into the release notes textbox (don't forget to quote it
+       properly so it shows as unformatted text in Markdown)
+     * Check the "This is a pre-release" checkbox
+   * If it's a release:
 
-    * Name it ``Zephyr 1.11.0``
-    * Copy the full content of ``docs/release-notes-1.11.rst`` into the the
-      release notes textbox
-    * Copy the full list of GitHub issues closed with this release into the
-      release notes textbox (see below on how to generate this list)
+     * Name it ``Zephyr 1.11.0``
+     * Copy the full content of ``docs/release-notes-1.11.rst`` into the the
+       release notes textbox
+     * Copy the full list of GitHub issues closed with this release into the
+       release notes textbox (see below on how to generate this list)
 
 #. Send an email to the mailing lists (``announce`` and ``devel``) with a link
    to the release
