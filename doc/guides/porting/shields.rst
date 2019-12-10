@@ -18,8 +18,8 @@ under :zephyr_file:`/boards/shields`:
 
    boards/shields/<shield>
    ├── <shield>.overlay
-   ├── <shield>.conf
-   └── dts_fixup.h
+   ├── Kconfig.shield
+   └── Kconfig.defconfig
 
 These files provides shield configuration as follows:
 
@@ -27,13 +27,15 @@ These files provides shield configuration as follows:
   format that is merged with the board's devicetree information before
   compilation.
 
-* **<shield>.conf**: This file defines values for Kconfig symbols that are
-  required for default shield configuration. To ease use with applications,
+* **Kconfig.shield**: This file defines shield Kconfig symbols that will be
+  used for default shield configuration. To ease use with applications,
   the default shield configuration here should be consistent with those in
   the :ref:`default_board_configuration`.
 
-* **dts_fixup.h**: This is a fixup file to bind board components definitions with
-  application in a generic fashion to enable shield compatibility across boards
+* **Kconfig.defconfig**: This file defines the default shield configuration. It
+  is made to be consistent with the :ref:`default_board_configuration`. Hence,
+  shield configuration should be done by keeping in mind that features
+  activation is application responsibility.
 
 Board compatibility
 *******************
@@ -77,7 +79,7 @@ files to a shield, as follows:
    boards/shields/<shield>
    └── <boards>
        ├── board.overlay
-       └── board.conf
+       └── board.defconfig
 
 
 Shield activation
@@ -108,9 +110,9 @@ possible to provide multiple version of the shields description:
 
    boards/shields/<shield>
    ├── <shield_v1>.overlay
-   ├── <shield_v1>.conf
+   ├── <shield_v1>.defconfig
    ├── <shield_v2>.overlay
-   └── <shield_v2>.conf
+   └── <shield_v2>.defconfig
 
 In this case, a shield-particular revision name can be used:
 
@@ -126,10 +128,10 @@ revision:
 
    boards/shields/<shield>
    ├── <shield_v1>.overlay
-   ├── <shield_v1>.conf
+   ├── <shield_v1>.defconfig
    ├── <shield_v2>.overlay
-   ├── <shield_v2>.conf
+   ├── <shield_v2>.defconfig
    └── <boards>
        └── <shield_v2>
            ├── board.overlay
-           └── board.conf
+           └── board.defconfig
