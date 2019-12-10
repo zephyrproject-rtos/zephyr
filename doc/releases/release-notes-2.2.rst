@@ -271,6 +271,10 @@ Build and Infrastructure
 
 * The minimum Python version supported by Zephyr's build system and tools is
   now 3.6.
+* Renamed :file:`generated_dts_board.h` and :file:`generated_dts_board.conf` to
+  :file:`devicetree.h` and :file:`devicetree.conf`, along with various related
+  identifiers. Including :file:`generated_dts_board.h` now generates a warning
+  saying to include :file:`devicetree.h` instead.
 * <Other items TBD>
 
 Libraries / Subsystems
