@@ -25,9 +25,9 @@ When deciding whether something belongs in Kconfig, it helps to distinguish
 between symbols that have prompts and symbols that don't.
 
 If a symbol has a prompt (e.g. ``bool "Enable foo"``), then the user can change
-the symbol's value in the ``menuconfig`` interface (or by manually editing
-configuration files). Therefore, only put a prompt on a symbol if it makes
-sense for the user to change its value.
+the symbol's value in the ``menuconfig`` or ``guiconfig`` interface (or by
+manually editing configuration files). Therefore, only put a prompt on a symbol
+if it makes sense for the user to change its value.
 
 In Zephyr, Kconfig configuration is done after selecting a machine, so in
 general, it does not make sense to put a prompt on a symbol that corresponds to
@@ -324,8 +324,8 @@ error-prone, since it can be hard to spot that the same dependency is added
 twice.
 
 
-"Stuck" symbols in menuconfig
-*****************************
+"Stuck" symbols in menuconfig and guiconfig
+*******************************************
 
 There is a common subtle gotcha related to interdependent configuration symbols
 with prompts. Consider these symbols:
@@ -344,10 +344,11 @@ Assume that the intention here is to use a larger stack whenever ``FOO`` is
 enabled, and that the configuration initially has ``FOO`` disabled. Also,
 remember that Zephyr creates an initial configuration in :file:`zephyr/.config`
 in the build directory by merging configuration files (including e.g.
-:file:`prj.conf`). This configuration file exists before ``menuconfig`` is run.
+:file:`prj.conf`). This configuration file exists before
+``menuconfig`` or ``guiconfig`` is run.
 
-When first entering the ``menuconfig`` interface, the value of ``STACK_SIZE``
-is 0x100, as expected. After enabling ``FOO``, you might reasonably expect the
+When first entering the configuration interface, the value of ``STACK_SIZE`` is
+0x100, as expected. After enabling ``FOO``, you might reasonably expect the
 value of ``STACK_SIZE`` to change to 0x200, but it stays as 0x100.
 
 To understand what's going on, remember that ``STACK_SIZE`` has a prompt,
@@ -410,9 +411,9 @@ with suggestions:
   As long as ``CUSTOM_STACK_SIZE`` is disabled, ``STACK_SIZE`` will ignore the
   value from the saved configuration.
 
-It is a good idea to try out changes in the ``menuconfig`` interface, to make
-sure that things behave the way you expect. This is especially true when making
-moderately complex changes like these.
+It is a good idea to try out changes in the ``menuconfig`` or ``guiconfig``
+interface, to make sure that things behave the way you expect. This is
+especially true when making moderately complex changes like these.
 
 
 ``depends on`` and ``string``/``int``/``hex`` symbols
@@ -434,10 +435,10 @@ disable any configuration output for it when ``FOO_DEVICE`` is disabled.
    	depends on FOO_DEVICE
 
 In general, it's a good idea to check that only relevant symbols are ever shown
-in the ``menuconfig`` interface. Having ``FOO_DEVICE_FREQUENCY`` show up when
-``FOO_DEVICE`` is disabled (and possibly hidden) makes the relationship between
-the symbols harder to understand, even if code never looks at
-``FOO_DEVICE_FREQUENCY`` when ``FOO_DEVICE`` is disabled.
+in the ``menuconfig``/``guiconfig`` interface. Having ``FOO_DEVICE_FREQUENCY``
+show up when ``FOO_DEVICE`` is disabled (and possibly hidden) makes the
+relationship between the symbols harder to understand, even if code never looks
+at ``FOO_DEVICE_FREQUENCY`` when ``FOO_DEVICE`` is disabled.
 
 
 ``menuconfig`` symbols
@@ -517,13 +518,13 @@ invisible:
    [*] All my children are invisible  ----
 
 
-Checking changes in ``menuconfig``
-**********************************
+Checking changes in menuconfig/guiconfig
+****************************************
 
 When adding new symbols or making other changes to Kconfig files, it is a good
-idea to look up the symbols in the :ref:`menuconfig <menuconfig>` interface
-afterwards. To get to a symbol quickly, use the menuconfig's jump-to feature
-(press :kbd:`/`).
+idea to look up the symbols in :ref:`menuconfig or guiconfig <menuconfig>`
+afterwards. To get to a symbol quickly, use the jump-to feature (press
+:kbd:`/`).
 
 Here are some things to check:
 
@@ -532,8 +533,9 @@ Here are some things to check:
 
   If one symbol depends on another, then it's often a good idea to place it
   right after the symbol it depends on. It will then be shown indented relative
-  to the symbol it depends on in the ``menuconfig`` interface. This also works
-  if several symbols are placed after the symbol they depend on.
+  to the symbol it depends on in the ``menuconfig`` interface, and in a
+  separate menu rooted at the symbol in ``guiconfig``. This also works if
+  several symbols are placed after the symbol they depend on.
 
 * Is it easy to guess what the symbols do from their prompts?
 
@@ -842,9 +844,9 @@ toggled off to select none of the symbols:
 
    endchoice
 
-In the menuconfig interface, this will be displayed e.g. as ``[*] Use legacy
-protocol (Legacy protocol 1) --->``, where the choice can be toggled off to
-enable neither of the symbols.
+In the ``menuconfig`` interface, this will be displayed e.g. as
+``[*] Use legacy protocol (Legacy protocol 1) --->``, where the choice can be
+toggled off to enable neither of the symbols.
 
 
 ``visible if`` conditions
