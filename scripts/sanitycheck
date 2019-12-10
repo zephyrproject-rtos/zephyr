@@ -1982,6 +1982,40 @@ class ProjectBuilder(FilterBuilder):
         self.device_testing = kwargs.get('device_testing', False)
         self.cmake_only = kwargs.get('cmake_only', False)
         self.coverage = kwargs.get('coverage', False)
+        self.inline_logs = kwargs.get('inline_logs', False)
+
+    def log_info(self, filename, inline_logs):
+        filename = os.path.relpath(os.path.realpath(filename))
+        if inline_logs:
+            logger.info("{:-^100}".format(filename))
+
+            try:
+                with open(filename) as fp:
+                    data = fp.read()
+            except Exception as e:
+                data = "Unable to read log data (%s)\n" % (str(e))
+
+            logger.error(data)
+
+            logger.info("{:-^100}".format(filename))
+        else:
+            logger.error("see: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+
+    def log_info_file(self, inline_logs):
+        build_dir = self.instance.build_dir
+        h_log = "{}/handler.log".format(build_dir)
+        b_log = "{}/build.log".format(build_dir)
+        v_log = "{}/valgrind.log".format(build_dir)
+        d_log = "{}/device.log".format(build_dir)
+
+        if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
+            self.log_info("{}".format(v_log), inline_logs)
+        elif os.path.exists(d_log):
+            self.log_info("{}".format(d_log), inline_logs)
+        elif os.path.exists(h_log):
+            self.log_info("{}".format(h_log), inline_logs)
+        else:
+            self.log_info("{}".format(b_log), inline_logs)
 
     def setup_handler(self):
 
@@ -2091,7 +2125,7 @@ class ProjectBuilder(FilterBuilder):
                         COLOR_NORMAL,
                         instance.reason))
             if not VERBOSE:
-                log_info_file(instance)
+                self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
             status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
@@ -2117,7 +2151,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["failed", "timeout"]:
-                log_info_file(instance)
+                self.log_info_file(inline_logs)
         else:
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
@@ -2234,6 +2268,7 @@ class TestSuite:
         self.enable_asan = False
         self.enable_valgrind = False
         self.extra_args = []
+        self.inline_logs = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2830,7 +2865,8 @@ class TestSuite:
                         extra_args = self.extra_args,
                         device_testing = self.device_testing,
                         cmake_only = self.cmake_only,
-                        valgrind = self.enable_valgrind
+                        valgrind = self.enable_valgrind,
+                        inline_logs = self.inline_logs
                         )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
@@ -3466,42 +3502,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     return parser.parse_args()
 
-
-def log_info(filename):
-    filename = os.path.relpath(os.path.realpath(filename))
-    if options.inline_logs:
-        logger.info("{:-^100}".format(filename))
-
-        try:
-            with open(filename) as fp:
-                data = fp.read()
-        except Exception as e:
-            data = "Unable to read log data (%s)\n" % (str(e))
-
-        logger.error(data)
-
-        logger.info("{:-^100}".format(filename))
-    else:
-        logger.error("see: " + COLOR_YELLOW + filename + COLOR_NORMAL)
-
-
-def log_info_file(instance):
-    build_dir = instance.build_dir
-    h_log = "{}/handler.log".format(build_dir)
-    b_log = "{}/build.log".format(build_dir)
-    v_log = "{}/valgrind.log".format(build_dir)
-    d_log = "{}/device.log".format(build_dir)
-
-    if os.path.exists(v_log) and "Valgrind" in instance.reason:
-        log_info("{}".format(v_log))
-    elif os.path.exists(d_log):
-        log_info("{}".format(d_log))
-    elif os.path.exists(h_log):
-        log_info("{}".format(h_log))
-    else:
-        log_info("{}".format(b_log))
-
-
 def size_report(sc):
     logger.info(sc.filename)
     logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
@@ -3999,6 +3999,7 @@ def main():
     suite.cmake_only = options.cmake_only
     suite.enable_valgrind = options.enable_valgrind
     suite.coverage_platform = options.coverage_platform
+    suite.inline_logs = options.inline_logs
 
 
     # Set number of jobs
