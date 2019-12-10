@@ -121,7 +121,7 @@ static u32_t wl_add(bt_addr_le_t *id_addr)
 
 	/* Duplicate  check */
 	if (i < ARRAY_SIZE(wl)) {
-		return BT_HCI_ERR_INVALID_PARAM;
+		return 0;
 	} else if (j >= ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
