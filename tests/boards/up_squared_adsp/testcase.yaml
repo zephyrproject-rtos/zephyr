@@ -1,0 +1,4 @@
+tests:
+  boards.up_squared_adsp:
+    platform_whitelist: up_squared_adsp
+    tags: boards
