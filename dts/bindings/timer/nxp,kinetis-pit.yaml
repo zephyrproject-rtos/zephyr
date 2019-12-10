@@ -1,10 +1,7 @@
 # Copyright (c) 2019 NXP Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP MCUX Periodic Interrupt Timer
-
-description: |
-    This is a representation of the NXP MCUX Periodic Interrupt Timer (PIT)
+description: NXP MCUX Periodic Interrupt Timer (PIT)
 
 compatible: "nxp,kinetis-pit"
 
