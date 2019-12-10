@@ -2269,6 +2269,7 @@ class TestSuite:
         self.enable_valgrind = False
         self.extra_args = []
         self.inline_logs = False
+        self.enable_sizes_report = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2821,7 +2822,7 @@ class TestSuite:
 
         return "DONE FEEDING"
 
-    def execute(self, test_only, cmake_only, enable_size_report):
+    def execute(self):
         def calc_one_elf_size(instance):
             if instance.status not in ["failed", "skipped"]:
                 if instance.platform.type != "native":
@@ -2842,7 +2843,7 @@ class TestSuite:
 
             # start a future for a thread which sends work in through the queue
             future_to_test = {
-                    executor.submit(self.add_tasks_to_queue, test_only): 'FEEDER DONE'}
+                    executor.submit(self.add_tasks_to_queue, self.test_only): 'FEEDER DONE'}
 
             while future_to_test:
                 # check for status of the futures which are currently working
@@ -2885,7 +2886,7 @@ class TestSuite:
                     # remove the now completed future
                     del future_to_test[future]
 
-        if enable_size_report and not cmake_only:
+        if self.enable_size_report and not self.cmake_only:
             # Parallelize size calculation
             executor = concurrent.futures.ThreadPoolExecutor(self.jobs)
             futures = [executor.submit(calc_one_elf_size, instance)
@@ -3989,18 +3990,18 @@ def main():
 
     # Set testsuite options from command line.
     suite.build_only = options.build_only
+    suite.cmake_only = options.cmake_only
+    suite.test_only = options.test_only
     suite.enable_slow = options.enable_slow
     suite.device_testing = options.device_testing
     suite.fixture = options.fixture
     suite.enable_asan = options.enable_asan
     suite.enable_lsan = options.enable_lsan
     suite.enable_coverage = options.enable_coverage
-    suite.coverage_platorm = ['me']
-    suite.cmake_only = options.cmake_only
     suite.enable_valgrind = options.enable_valgrind
     suite.coverage_platform = options.coverage_platform
     suite.inline_logs = options.inline_logs
-
+    suite.enable_size_report = options.enable_size_report
 
     # Set number of jobs
     if options.jobs:
@@ -4238,7 +4239,7 @@ def main():
             suite.total_done = suite.total_tests - suite.total_failed
             suite.total_failed = 0
 
-        suite.execute(options.test_only, options.cmake_only, options.enable_size_report)
+        suite.execute()
         print("")
 
         retries = retries - 1
