@@ -33,6 +33,7 @@
 
 	aliases {
 		led0 = &green_led_0;
+		eeprom-0 = &eeprom;
 	};
 };
 
@@ -61,5 +62,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&eeprom {
 	status = "okay";
 };
