@@ -34,14 +34,17 @@ static void *isr_cb_param;
 
 #define RADIO_AESCCM_HDR_MASK 0xE3 /* AES-CCM: NESN, SN, MD bits masked to 0 */
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
+#define BYTES_TO_USEC(bytes, bits_per_usec)	\
+		((bytes) * 8 >> (__builtin_ffs(bits_per_usec) - 1))
 
 /* us values */
 #define MIN_CMD_TIME 10		/* Minimum interval for a delayed radio cmd */
 #define RX_MARGIN 8
 #define TX_MARGIN 0
 #define RX_WTMRK 5		/* (AA + PDU header) - 1 */
-#define AA_OVHD 27		/* AA playback overhead, depends on PHY type */
-#define Rx_OVHD 32		/* Rx overhead, depends on PHY type */
+#define AA_OVHD_1MBPS 27	/* AA playback overhead for 1 Mbps PHY */
+#define AA_OVHD_2MBPS 10	/* AA playback overhead for 2 Mbps PHY */
+#define RX_OVHD 32		/* Rx overhead */
 
 #define PB_RX 544	/* half of PB (packet buffer) */
 
@@ -66,6 +69,14 @@ static u32_t tmr_tifs;
 
 static u32_t rx_wu;
 static u32_t tx_wu;
+
+static u8_t phy_mode;		/* Current PHY mode (DR_1MBPS or DR_2MBPS) */
+static u8_t bits_per_usec;	/* This saves the # of bits per usec,
+				 * depending on the PHY mode
+				 */
+static u8_t phy_aa_ovhd;	/* This saves the AA overhead, depending on the
+				 * PHY mode
+				 */
 
 static u32_t isr_tmr_aa;
 static u32_t isr_tmr_end;
@@ -151,7 +162,7 @@ static void pkt_rx(void)
 	len += 2;
 
 	/* Add to AA time, PDU + CRC time */
-	isr_tmr_end = isr_tmr_aa + (len + 3) * 8;
+	isr_tmr_end = isr_tmr_aa + BYTES_TO_USEC(len + 3, bits_per_usec);
 
 	/* If not enough time for warmup after we copy the PDU from
 	 * packet buffer, send delayed command now
@@ -237,7 +248,8 @@ void isr_radio(void *arg)
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
 		/* Fix reported AA time */
-		isr_tmr_aa = GENFSK->TIMESTAMP - AA_OVHD;
+		isr_tmr_aa = GENFSK->TIMESTAMP - phy_aa_ovhd;
+
 		if (tmr_aa_save) {
 			tmr_aa = isr_tmr_aa;
 		}
@@ -383,7 +395,9 @@ void radio_setup(void)
 	/* Assign Radio #0 Interrupt to GENERIC_FSK */
 	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_RADIO0_IRQ_SEL(3);
 
-	GENFSK->BITRATE = DR_1MBPS;
+	phy_mode = GENFSK->BITRATE = DR_1MBPS;
+	bits_per_usec = 1;
+	phy_aa_ovhd = AA_OVHD_1MBPS;
 
 	/*
 	 * Split the buffer in equal parts: first half for Tx,
@@ -420,19 +434,50 @@ void radio_reset(void)
 
 void radio_phy_set(u8_t phy, u8_t flags)
 {
-	ARG_UNUSED(phy);
+	int err = 0;
 	ARG_UNUSED(flags);
 
-	/* This function should set one of three modes:
+	/* This function sets one of two modes:
 	 * - BLE 1 Mbps
 	 * - BLE 2 Mbps
-	 * - Coded BLE
-	 * We set this on radio_setup() function. There radio is
-	 * setup for DataRate of 1 Mbps.
-	 * For now this function does nothing. In the future it
-	 * may have to reset the radio
-	 * to the 2 Mbps (the only other mode supported by Vega radio).
+	 * Coded BLE is not supported by VEGA
 	 */
+	switch (phy) {
+	case BIT(0):
+	default:
+		if (phy_mode == DR_1MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_1MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 1 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_1MBPS;
+		bits_per_usec = 1;
+		phy_aa_ovhd = AA_OVHD_1MBPS;
+
+		break;
+
+	case BIT(1):
+		if (phy_mode == DR_2MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_2MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 2 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_2MBPS;
+		bits_per_usec = 2;
+		phy_aa_ovhd = AA_OVHD_2MBPS;
+
+		break;
+	}
 }
 
 void radio_tx_power_set(u32_t power)
@@ -615,9 +660,11 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 {
 	/* RX_WTMRK = AA + PDU header, but AA time is already accounted for */
 	/* PDU header (assume 2 bytes) => 16us, depends on PHY type */
-	/* 2 * Rx_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
+	/* 2 * RX_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
 	/* The rest is Rx margin that for now isn't well defined */
-	return 16 + 2 * Rx_OVHD + RX_MARGIN + isr_latency + Rx_OVHD;
+	return BYTES_TO_USEC(2, bits_per_usec) + 2 * RX_OVHD +
+					RX_MARGIN + isr_latency +
+					RX_OVHD;
 }
 
 void radio_rx_enable(void)
