@@ -2053,10 +2053,6 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EALREADY;
 	}
 
-	if (!bt_dev.le.wl_entries) {
-		return -EINVAL;
-	}
-
 	/* Don't start initiator if we have general discovery procedure. */
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 	if (conn) {
