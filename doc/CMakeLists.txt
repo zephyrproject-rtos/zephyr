@@ -206,6 +206,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
     ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
+      --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
                 Driver,drivers,${ZEPHYR_BASE}/drivers
