@@ -846,6 +846,13 @@ static int eth_0_init(struct device *dev)
 	enet_config.macSpecialConfig |= kENET_ControlVLANTagEnable;
 #endif
 
+#if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
+	enet_config.txAccelerConfig |=
+		kENET_TxAccelIpCheckEnabled | kENET_TxAccelProtoCheckEnabled;
+	enet_config.rxAccelerConfig |=
+		kENET_RxAccelIpCheckEnabled | kENET_RxAccelProtoCheckEnabled;
+#endif
+
 	ENET_Init(ENET,
 		  &context->enet_handle,
 		  &enet_config,
@@ -935,6 +942,11 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		ETHERNET_PTP |
 #endif
+#if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
+		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
+		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
+#endif
+		ETHERNET_AUTO_NEGOTIATION_SET |
 		ETHERNET_LINK_100BASE_T;
 }
 
