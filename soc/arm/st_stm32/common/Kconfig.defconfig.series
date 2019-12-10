@@ -115,4 +115,11 @@ config DMA_STM32
 
 endif # DMA
 
+if EEPROM
+
+config EEPROM_STM32
+	default y
+
+endif # EEPROM
+
 endif # SOC_FAMILY_STM32
