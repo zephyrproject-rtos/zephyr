@@ -193,6 +193,8 @@
  * @brief configuration of GPIO device
  */
 struct gpio_stm32_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	/* port base address */
 	u32_t *base;
 	/* IO port */
