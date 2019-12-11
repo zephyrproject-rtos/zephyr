@@ -14,6 +14,8 @@
 #include "gpio_utils.h"
 
 struct mcux_igpio_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_Type *base;
 };
 
@@ -256,6 +258,9 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 static int mcux_igpio_1_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_1_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_NXP_IMX_GPIO_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_1_BASE_ADDRESS,
 };
 
@@ -291,6 +296,9 @@ static int mcux_igpio_1_init(struct device *dev)
 static int mcux_igpio_2_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_2_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_NXP_IMX_GPIO_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_2_BASE_ADDRESS,
 };
 
@@ -326,6 +334,9 @@ static int mcux_igpio_2_init(struct device *dev)
 static int mcux_igpio_3_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_3_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_NXP_IMX_GPIO_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_3_BASE_ADDRESS,
 };
 
@@ -361,6 +372,9 @@ static int mcux_igpio_3_init(struct device *dev)
 static int mcux_igpio_4_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_4_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_NXP_IMX_GPIO_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_4_BASE_ADDRESS,
 };
 
@@ -396,6 +410,9 @@ static int mcux_igpio_4_init(struct device *dev)
 static int mcux_igpio_5_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_5_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_NXP_IMX_GPIO_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_5_BASE_ADDRESS,
 };
 
