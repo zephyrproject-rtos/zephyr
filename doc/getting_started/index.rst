@@ -29,10 +29,11 @@ tools. First, make sure your development system OS is updated:
 
    .. group-tab:: Ubuntu
 
-      Use these commands to bring your Linux (Ubuntu) system up to date.
-      If you're using a different Linux distribution, use the appropriate
-      package manager for your OS.  (See :ref:`installation_linux` for
-      more information about other Linux distributions.)
+      This guide covers Ubuntu version 18.04 LTS and later. See
+      :ref:`installation_linux` for information about other Linux
+      distributions and older versions of Ubuntu.
+
+      Use these commands to bring your Ubuntu system up to date:
 
       .. code-block:: bash
 
@@ -94,16 +95,11 @@ We'll also install Zephyr's multi-purpose west tool.
 
                wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
 
-         b) Add the kitware repo corresponding to your Ubuntu LTS release (use
-            ``cat /etc/os-release`` to check):
+         b) Add the kitware repo corresponding to the Ubuntu 18.04 LTS release:
 
-            For Ubuntu Bionic Beaver (18.04) use::
+            .. code-block:: bash
 
-              sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-
-            For Ubuntu Xenial Xerus (16.04) use::
-
-              sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
+               sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 
          c) Then install the updated cmake using the usual apt commands:
 
