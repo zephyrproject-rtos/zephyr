@@ -71,8 +71,8 @@
 		status = "okay";
 		reg = <0x1d>;
 		label = "MMA8653FC";
-		int1-gpios = <&gpio0 28 0>;
-		int2-gpios = <&gpio0 27 0>;
+		int1-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 	};
 
 	/* v1.5 variant 1 LSM303AGR */
