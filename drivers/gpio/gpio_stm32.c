@@ -627,6 +627,9 @@ static int gpio_stm32_init(struct device *device)
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
+		.common = {						       \
+			 .available = GPIO_AVAILABLE_PINS(16U),		       \
+		},							       \
 		.base = (u32_t *)__base_addr,				       \
 		.port = __port,						       \
 		.pclken = { .bus = __bus, .enr = __cenr }		       \
