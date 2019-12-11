@@ -14,6 +14,8 @@
 typedef void (*config_func_t)(struct device *dev);
 
 struct gpio_stellaris_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	u32_t base;
 	u32_t port_map;
 	config_func_t config_func;
@@ -321,6 +323,9 @@ static void port_a_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_a_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_a_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_A_BASE_ADDRESS,
 	.port_map = GPIO_PORT_A_MAP,
 	.config_func = port_a_stellaris_config_func,
@@ -352,6 +357,9 @@ static void port_b_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_b_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_b_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_B_BASE_ADDRESS,
 	.port_map = GPIO_PORT_B_MAP,
 	.config_func = port_b_stellaris_config_func,
@@ -383,6 +391,9 @@ static void port_c_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_c_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_c_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_C_BASE_ADDRESS,
 	.port_map = GPIO_PORT_C_MAP,
 	.config_func = port_c_stellaris_config_func,
@@ -414,6 +425,9 @@ static void port_d_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_d_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_d_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_D_BASE_ADDRESS,
 	.port_map = GPIO_PORT_D_MAP,
 	.config_func = port_d_stellaris_config_func,
@@ -442,6 +456,9 @@ static void port_d_stellaris_config_func(struct device *dev)
 static void port_e_stellaris_config_func(struct device *dev);
 
 static const struct gpio_stellaris_config gpio_stellaris_port_e_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_E_BASE_ADDRESS,
 	.port_map = GPIO_PORT_E_MAP,
 	.config_func = port_e_stellaris_config_func,
@@ -475,6 +492,9 @@ static void port_f_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_f_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_f_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_5_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_F_BASE_ADDRESS,
 	.port_map = GPIO_PORT_F_MAP,
 	.config_func = port_f_stellaris_config_func,
@@ -505,6 +525,9 @@ static void port_g_stellaris_config_func(struct device *dev);
 static struct gpio_stellaris_runtime port_g_stellaris_runtime;
 
 static const struct gpio_stellaris_config gpio_stellaris_port_g_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_6_TI_STELLARIS_GPIO_NGPIOS),
+	},
 	.base = DT_GPIO_G_BASE_ADDRESS,
 	.port_map = GPIO_PORT_G_MAP,
 	.config_func = port_g_stellaris_config_func,
