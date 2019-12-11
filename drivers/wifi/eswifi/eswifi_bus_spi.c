@@ -245,8 +245,9 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 		return -ENODEV;
 	}
 	spi->dr.pin = DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_PIN;
-	gpio_pin_configure(spi->dr.dev, spi->dr.pin, GPIO_DIR_IN);
-
+	gpio_pin_configure(spi->dr.dev, spi->dr.pin,
+			   DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_FLAGS |
+			   GPIO_INPUT);
 
 	/* SPI CONFIG/CS */
 	spi->spi_cfg.frequency = DT_INVENTEK_ESWIFI_ESWIFI0_SPI_MAX_FREQUENCY;
