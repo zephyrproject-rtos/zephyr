@@ -76,7 +76,6 @@ static void z_power_soc_deep_sleep(void)
 
 }
 
-#endif
 
 /*
  * Light Sleep
@@ -97,6 +96,7 @@ static void z_power_soc_sleep(void)
 	__NOP();
 	__NOP();
 }
+#endif
 
 /*
  * Called from _sys_suspend(s32_t ticks) in subsys/power.c
