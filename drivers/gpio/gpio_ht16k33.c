@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(gpio_ht16k33);
 #define HT16K33_KEYSCAN_ROWS 3
 
 struct gpio_ht16k33_cfg {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	char *parent_dev_name;
 	u8_t keyscan_idx;
 };
@@ -222,6 +224,9 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 
 #define GPIO_HT16K33_DEVICE(id)						\
 	static const struct gpio_ht16k33_cfg gpio_ht16k33_##id##_cfg = {\
+		.common = {						\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(13),		\
+		},							\
 		.parent_dev_name =					\
 			DT_INST_##id##_HOLTEK_HT16K33_KEYSCAN_BUS_NAME,	\
 		.keyscan_idx     =					\
