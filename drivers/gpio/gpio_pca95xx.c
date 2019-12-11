@@ -52,6 +52,9 @@ LOG_MODULE_REGISTER(gpio_pca95xx);
 
 /** Configuration data */
 struct gpio_pca95xx_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
+
 	/** The master I2C device's name */
 	const char * const i2c_master_dev_name;
 
@@ -589,6 +592,9 @@ static int gpio_pca95xx_init(struct device *dev)
 
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
 static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
+	.common = {							\
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##inst##_NXP_PCA95XX_NGPIOS), \
+	},								\
 	.i2c_master_dev_name = DT_INST_##inst##_NXP_PCA95XX_BUS_NAME,	\
 	.i2c_slave_addr = DT_INST_##inst##_NXP_PCA95XX_BASE_ADDRESS,	\
 	.capabilities =							\
