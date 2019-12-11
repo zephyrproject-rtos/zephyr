@@ -41,6 +41,8 @@ struct gpio_sifive_t {
 };
 
 struct gpio_sifive_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	uintptr_t            gpio_base_addr;
 	/* multi-level encoded interrupt corresponding to pin 0 */
 	u32_t                gpio_irq_base;
@@ -493,6 +495,9 @@ static int gpio_sifive_init(struct device *dev)
 static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SIFIVE_GPIO0_NGPIOS),
+	},
 	.gpio_base_addr = DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS,
 	.gpio_irq_base  = DT_INST_0_SIFIVE_GPIO0_IRQ_0,
 	.gpio_cfg_func  = gpio_sifive_cfg_0,
