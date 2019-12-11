@@ -404,6 +404,7 @@ static void ipcp_down(struct ppp_fsm *fsm)
 	}
 
 	ctx->is_network_up = false;
+	ctx->is_ipcp_up = false;
 
 	ppp_network_down(ctx, PPP_IP);
 }
