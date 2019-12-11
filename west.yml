@@ -21,8 +21,6 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
-    - name: intel
-      url-base: https://github.com/intel
 
   #
   # Please add items below based on alphabetical order
@@ -105,10 +103,6 @@ manifest:
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       revision: baf51863f19f009b92e762115ba5572a5b996b92
-    - name: wasm-micro-runtime
-      path: modules/lib/wasm-micro-runtime
-      remote: intel
-      revision: 7375acdc6ef5b3892c2a60d2bdd695f7d6327c7c
 
   self:
     path: zephyr
