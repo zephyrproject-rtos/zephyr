@@ -48,6 +48,8 @@ struct gpio_gecko_common_data {
 };
 
 struct gpio_gecko_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_P_TypeDef *gpio_base;
 	GPIO_Port_TypeDef gpio_index;
 };
@@ -410,6 +412,9 @@ static int gpio_gecko_common_init(struct device *dev)
 static int gpio_gecko_port##pl##_init(struct device *dev); \
 \
 static const struct gpio_gecko_config gpio_gecko_port##pl##_config = { \
+	.common = { \
+		.port_pin_mask = (gpio_port_pins_t)(-1), \
+	}, \
 	.gpio_base = &GPIO->P[gpioPort##pu], \
 	.gpio_index = gpioPort##pu, \
 }; \
