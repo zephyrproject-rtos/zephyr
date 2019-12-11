@@ -32,6 +32,8 @@
 #define NO_PINT_INT ((1 << sizeof(pint_pin_int_t)) - 1)
 
 struct gpio_mcux_lpc_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_Type *gpio_base;
 	PINT_Type *pint_base;
 	IOCON_Type *pinmux_base;
@@ -403,6 +405,9 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 static int lpc_gpio_0_init(struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_NXP_LPC_GPIO_NGPIOS),
+	},
 	.gpio_base = GPIO,
 	.pint_base = PINT, /* TODO: SECPINT issue #16330 */
 	.pinmux_base = IOCON,
@@ -470,6 +475,9 @@ static int lpc_gpio_0_init(struct device *dev)
 static int lpc_gpio_1_init(struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_NXP_LPC_GPIO_NGPIOS),
+	},
 	.gpio_base = GPIO,
 	.pint_base = PINT,
 	.pinmux_base = IOCON,
