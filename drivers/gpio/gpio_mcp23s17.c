@@ -134,22 +134,27 @@ static int setup_pin_dir(struct device *dev, u32_t pin, int flags)
 {
 	struct mcp23s17_drv_data *const drv_data =
 	    (struct mcp23s17_drv_data * const)dev->driver_data;
-	union mcp23s17_port_data *port = &drv_data->reg_cache.iodir;
-	u16_t bit_mask;
-	u16_t new_value = 0;
+	union mcp23s17_port_data *dir = &drv_data->reg_cache.iodir;
+	union mcp23s17_port_data *output = &drv_data->reg_cache.gpio;
 	int ret;
 
-	bit_mask = 1 << pin;
-
-	/* Config 0 == output, 1 == input */
-	if ((flags & GPIO_DIR_MASK) == GPIO_INPUT) {
-		new_value = 1 << pin;
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			output->all |= BIT(pin);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			output->all &= ~BIT(pin);
+		}
+		dir->all &= ~BIT(pin);
+	} else {
+		dir->all |= BIT(pin);
 	}
 
-	port->all &= ~bit_mask;
-	port->all |= new_value;
+	ret = write_port_regs(dev, REG_GPIO_PORTA, output);
+	if (ret != 0) {
+		return ret;
+	}
 
-	ret = write_port_regs(dev, REG_IODIR_PORTA, port);
+	ret = write_port_regs(dev, REG_IODIR_PORTA, dir);
 
 	return ret;
 }
