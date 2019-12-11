@@ -14,6 +14,8 @@
 #include "gpio_utils.h"
 
 struct imx_gpio_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_Type *base;
 };
 
@@ -288,6 +290,9 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 static int imx_gpio_1_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_1_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_1_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_1_BASE_ADDRESS,
 };
 
@@ -321,6 +326,9 @@ static int imx_gpio_1_init(struct device *port)
 static int imx_gpio_2_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_2_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_2_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_2_BASE_ADDRESS,
 };
 
@@ -354,6 +362,9 @@ static int imx_gpio_2_init(struct device *port)
 static int imx_gpio_3_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_3_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_3_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_3_BASE_ADDRESS,
 };
 
@@ -387,6 +398,9 @@ static int imx_gpio_3_init(struct device *port)
 static int imx_gpio_4_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_4_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_4_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_4_BASE_ADDRESS,
 };
 
@@ -420,6 +434,9 @@ static int imx_gpio_4_init(struct device *port)
 static int imx_gpio_5_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_5_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_5_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_5_BASE_ADDRESS,
 };
 
@@ -453,6 +470,9 @@ static int imx_gpio_5_init(struct device *port)
 static int imx_gpio_6_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_6_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_6_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_6_BASE_ADDRESS,
 };
 
@@ -486,6 +506,9 @@ static int imx_gpio_6_init(struct device *port)
 static int imx_gpio_7_init(struct device *port);
 
 static const struct imx_gpio_config imx_gpio_7_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_GPIO_IMX_PORT_7_NGPIOS),
+	},
 	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_7_BASE_ADDRESS,
 };
 
