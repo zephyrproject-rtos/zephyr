@@ -125,9 +125,9 @@ arduino_i2c: &i2c0 {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		reset-gpios = <&gpioe 27 0>;
-		int1-gpios = <&gpioe 1 0>;
-		int2-gpios = <&gpioe 22 0>;
+		reset-gpios = <&gpioe 27 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 22 GPIO_ACTIVE_LOW>;
 	};
 };
 
