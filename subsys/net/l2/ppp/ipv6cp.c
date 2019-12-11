@@ -483,6 +483,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	}
 
 	ctx->is_network_up = false;
+	ctx->is_ipv6cp_up = false;
 
 	ppp_network_down(ctx, PPP_IPV6);
 
