@@ -221,6 +221,7 @@ def write_props(node):
             out_dev(node, ident, 1 if prop.val else 0)
         elif prop.type == "string":
             out_dev_s(node, ident, prop.val)
+            out_dev(node, ident + "_UNQUOTED", to_ident(prop.val))
         elif prop.type == "int":
             out_dev(node, ident, prop.val)
         elif prop.type == "array":

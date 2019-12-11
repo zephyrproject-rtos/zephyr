@@ -129,6 +129,12 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #
 #         ident = "foo";
 #
+#     Properties with 'type: string' generate two macros in the generated
+#     header: one with a quoted value, and one with an unquoted value where all
+#     non-alphanumeric characters are replaced with underscores. The identifier
+#     for the unquoted version has an *_UNQUOTED suffix. It can be useful for
+#     token pasting and the like.
+#
 #   - 'type: string-array' if for properties that are assigned zero or more
 #     strings, like
 #
