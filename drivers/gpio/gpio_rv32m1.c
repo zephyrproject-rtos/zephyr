@@ -17,6 +17,8 @@
 #include "gpio_utils.h"
 
 struct gpio_rv32m1_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
 	unsigned int flags;
@@ -396,6 +398,9 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 static int gpio_rv32m1_porta_init(struct device *dev);
 
 static const struct gpio_rv32m1_config gpio_rv32m1_porta_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_OPENISA_RV32M1_GPIO_NGPIOS),
+	},
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_0
@@ -441,6 +446,9 @@ static int gpio_rv32m1_porta_init(struct device *dev)
 static int gpio_rv32m1_portb_init(struct device *dev);
 
 static const struct gpio_rv32m1_config gpio_rv32m1_portb_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_OPENISA_RV32M1_GPIO_NGPIOS),
+	},
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_0
@@ -486,6 +494,9 @@ static int gpio_rv32m1_portb_init(struct device *dev)
 static int gpio_rv32m1_portc_init(struct device *dev);
 
 static const struct gpio_rv32m1_config gpio_rv32m1_portc_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_OPENISA_RV32M1_GPIO_NGPIOS),
+	},
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_0
@@ -532,6 +543,9 @@ static int gpio_rv32m1_portc_init(struct device *dev)
 static int gpio_rv32m1_portd_init(struct device *dev);
 
 static const struct gpio_rv32m1_config gpio_rv32m1_portd_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_OPENISA_RV32M1_GPIO_NGPIOS),
+	},
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_0
@@ -577,6 +591,9 @@ static int gpio_rv32m1_portd_init(struct device *dev)
 static int gpio_rv32m1_porte_init(struct device *dev);
 
 static const struct gpio_rv32m1_config gpio_rv32m1_porte_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_OPENISA_RV32M1_GPIO_NGPIOS),
+	},
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_0
