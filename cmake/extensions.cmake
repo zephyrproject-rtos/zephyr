@@ -1518,10 +1518,12 @@ function(find_appropriate_cache_directory dir)
     if(DEFINED ENV{${env_var}})
       set(env_dir $ENV{${env_var}})
 
-      check_if_directory_is_writeable(${env_dir} ok)
+      set(test_user_dir ${env_dir}/${env_suffix_${env_var}})
+
+      check_if_directory_is_writeable(${test_user_dir} ok)
       if(${ok})
         # The directory is write-able
-        set(user_dir ${env_dir}/${env_suffix_${env_var}})
+        set(user_dir ${test_user_dir})
         break()
       else()
         # The directory was not writeable, keep looking for a suitable
