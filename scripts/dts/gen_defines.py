@@ -21,6 +21,7 @@
 import argparse
 import os
 import pathlib
+import re
 import sys
 
 import edtlib
@@ -65,7 +66,7 @@ def main():
     out_comment("Active compatibles (mentioned in DTS + binding found)")
     for compat in sorted(active_compats):
         #define DT_COMPAT_<COMPAT> 1
-        out("COMPAT_{}".format(str2ident(compat)), 1)
+        out("COMPAT_" + to_upper_ident(compat), 1)
 
     # Derived from /chosen
     write_addr_size(edt, "zephyr,sram", "SRAM")
@@ -170,10 +171,10 @@ def write_regs(node):
     # Writes address/size output for the registers in the node's 'reg' property
 
     def reg_addr_name_alias(reg):
-        return str2ident(reg.name) + "_BASE_ADDRESS" if reg.name else None
+        return to_upper_ident(reg.name) + "_BASE_ADDRESS" if reg.name else None
 
     def reg_size_name_alias(reg):
-        return str2ident(reg.name) + "_SIZE" if reg.name else None
+        return to_upper_ident(reg.name) + "_SIZE" if reg.name else None
 
     for reg in node.regs:
         out_dev(node, reg_addr_ident(reg), hex(reg.addr),
@@ -214,7 +215,7 @@ def write_props(node):
         if prop.description is not None:
             out_comment(prop.description, blank_before=False)
 
-        ident = str2ident(prop.name)
+        ident = to_upper_ident(prop.name)
 
         if prop.type == "boolean":
             out_dev(node, ident, 1 if prop.val else 0)
@@ -251,11 +252,13 @@ def write_bus(node):
         err("missing 'label' property on {!r}".format(node.parent))
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_dev_s(node, "BUS_NAME", str2ident(node.parent.label))
+    out_dev_s(node, "BUS_NAME", to_upper_ident(node.parent.label))
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
-        out("{}_BUS_{}".format(str2ident(compat), str2ident(node.bus)), 1)
+        out("{}_BUS_{}".format(to_upper_ident(compat),
+                               to_upper_ident(node.bus)),
+            1)
 
 
 def write_existence_flags(node):
@@ -267,7 +270,8 @@ def write_existence_flags(node):
 
     for compat in node.compats:
         out("INST_{}_{}".format(node.instance_no[compat],
-                                str2ident(compat)), 1)
+                                to_upper_ident(compat)),
+            1)
 
 
 def reg_addr_ident(reg):
@@ -309,17 +313,18 @@ def dev_ident(node):
 
     if node.bus:
         ident += "{}_{:X}_".format(
-            str2ident(node.parent.matching_compat), node.parent.unit_addr)
+            to_upper_ident(node.parent.matching_compat), node.parent.unit_addr)
 
-    ident += "{}_".format(str2ident(node.matching_compat))
+    ident += to_upper_ident(node.matching_compat) + "_"
 
     if node.unit_addr is not None:
         ident += "{:X}".format(node.unit_addr)
     elif node.parent.unit_addr is not None:
-        ident += "{:X}_{}".format(node.parent.unit_addr, str2ident(node.name))
+        ident += "{:X}_{}".format(node.parent.unit_addr,
+                                  to_upper_ident(node.name))
     else:
         # This is a bit of a hack
-        ident += "{}".format(str2ident(node.name))
+        ident += to_upper_ident(node.name)
 
     return ident
 
@@ -339,13 +344,13 @@ def dev_path_aliases(node):
     if node.matching_compat is None:
         return []
 
-    compat_s = str2ident(node.matching_compat)
+    compat_s = to_upper_ident(node.matching_compat)
 
     aliases = []
     for alias in node.aliases:
-        aliases.append("ALIAS_{}".format(str2ident(alias)))
+        aliases.append("ALIAS_{}".format(to_upper_ident(alias)))
         # TODO: See if we can remove or deprecate this form
-        aliases.append("{}_{}".format(compat_s, str2ident(alias)))
+        aliases.append("{}_{}".format(compat_s, to_upper_ident(alias)))
 
     return aliases
 
@@ -358,7 +363,8 @@ def dev_instance_aliases(node):
     # This is a list since a device can have multiple 'compatible' strings,
     # each with their own instance number.
 
-    return ["INST_{}_{}".format(node.instance_no[compat], str2ident(compat))
+    return ["INST_{}_{}".format(node.instance_no[compat],
+                                to_upper_ident(compat))
             for compat in node.compats]
 
 
@@ -460,7 +466,8 @@ def write_flash_partition(partition_node, index):
 
     # Generate label-based identifiers
     write_flash_partition_prefix(
-        "FLASH_AREA_" + str2ident(partition_node.label), partition_node, index)
+        "FLASH_AREA_" + to_upper_ident(partition_node.label),
+        partition_node, index)
 
     # Generate index-based identifiers
     write_flash_partition_prefix(
@@ -496,9 +503,9 @@ def write_irqs(node):
         if not irq.name:
             return None
 
-        alias = "IRQ_{}".format(str2ident(irq.name))
+        alias = "IRQ_" + to_upper_ident(irq.name)
         if cell_name != "irq":
-            alias += "_" + str2ident(cell_name)
+            alias += "_" + to_upper_ident(cell_name)
         return alias
 
     def map_arm_gic_irq_type(irq, irq_num):
@@ -538,7 +545,7 @@ def write_irqs(node):
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
             else:
-                ident += "_" + str2ident(cell_name)
+                ident += "_" + to_upper_ident(cell_name)
 
             out_dev(node, ident, cell_value,
                     name_alias=irq_name_alias(irq, cell_name))
@@ -580,7 +587,7 @@ def write_phandle_val_list(prop):
 
     # pwms -> PWMS
     # foo-gpios -> FOO_GPIOS
-    ident = str2ident(prop.name)
+    ident = to_upper_ident(prop.name)
 
     initializer_vals = []
     for i, entry in enumerate(prop.val):
@@ -605,7 +612,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
     if entry.controller.label is not None:
         ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
-            name_alias = str2ident(entry.name) + "_" + ctrl_ident
+            name_alias = to_upper_ident(entry.name) + "_" + ctrl_ident
         else:
             name_alias = None
         # Ugly backwards compatibility hack. Only add the index if there's
@@ -616,10 +623,10 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         out_dev_s(node, ctrl_ident, entry.controller.label, name_alias)
 
     for cell, val in entry.data.items():
-        cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
+        cell_ident = ident + "_" + to_upper_ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
-            name_alias = str2ident(entry.name) + "_" + cell_ident
+            name_alias = to_upper_ident(entry.name) + "_" + cell_ident
         else:
             name_alias = None
         # Backwards compatibility (see above)
@@ -631,7 +638,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 
     initializer_ident = ident
     if entry.name:
-        name_alias = initializer_ident + "_" + str2ident(entry.name)
+        name_alias = initializer_ident + "_" + to_upper_ident(entry.name)
     else:
         name_alias = None
     if i is not None:
@@ -661,12 +668,12 @@ def write_clocks(node):
 
         for name, val in clock.data.items():
             if clock_i == 0:
-                clk_name_alias = "CLOCK_" + str2ident(name)
+                clk_name_alias = "CLOCK_" + to_upper_ident(name)
             else:
                 clk_name_alias = None
 
-            out_dev(node, "CLOCK_{}_{}".format(str2ident(name), clock_i), val,
-                    name_alias=clk_name_alias)
+            out_dev(node, "CLOCK_{}_{}".format(to_upper_ident(name), clock_i),
+                    val, name_alias=clk_name_alias)
 
         if "fixed-clock" not in controller.compats:
             continue
@@ -679,16 +686,22 @@ def write_clocks(node):
                 controller.props["clock-frequency"].val)
 
 
-def str2ident(s):
-    # Converts 's' to a form suitable for (part of) an identifier
+def to_ident(s):
+    # Replaces all non-alphanumeric characters in 's' with underscores, to get
+    # a string suitable for (part of) an identifier.
+    #
+    # Replaces '+' with 'plus' instead of '_'. This is so that to_upper_ident()
+    # generates e.g. DT_COMPAT_ARM_CORTEX_M0PLUS instead of
+    # DT_COMPAT_ARM_CORTEX_M0_ for 'compatible = "arm,cortex-m0+"'.
 
-    return s.replace("-", "_") \
-            .replace(",", "_") \
-            .replace("@", "_") \
-            .replace("/", "_") \
-            .replace(".", "_") \
-            .replace("+", "PLUS") \
-            .upper()
+    return re.sub(r"\W", "_", s.replace("+", "plus"), flags=re.ASCII)
+
+
+def to_upper_ident(s):
+    # Like to_ident(), but also uppercases the string. Useful for preprocessor
+    # macro identifiers.
+
+    return to_ident(s).upper()
 
 
 def out_dev(node, ident, val, name_alias=None):
