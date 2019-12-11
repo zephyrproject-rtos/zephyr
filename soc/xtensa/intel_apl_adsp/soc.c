@@ -225,6 +225,11 @@ static inline void soc_set_power_and_clock(void)
 	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
 }
 
+u32_t soc_get_ref_clk_freq(void)
+{
+	return DT_FIXED_CLOCK_SYSTEM_CLOCK_CLOCK_FREQUENCY;
+}
+
 static int soc_init(struct device *dev)
 {
 	soc_set_power_and_clock();
