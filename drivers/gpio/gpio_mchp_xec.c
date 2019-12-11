@@ -36,6 +36,8 @@ struct gpio_xec_data {
 };
 
 struct gpio_xec_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	__IO u32_t *pcr1_base;
 	u8_t girq_id;
 	u32_t port_num;
@@ -386,6 +388,9 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 static int gpio_xec_port000_036_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO000_036_BASE_ADDR,
 	.port_num = MCHP_GPIO_000_036,
 #ifdef DT_GPIO_XEC_GPIO000_036_IRQ
@@ -426,6 +431,9 @@ static int gpio_xec_port000_036_init(struct device *dev)
 static int gpio_xec_port040_076_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO040_076_BASE_ADDR,
 	.port_num = MCHP_GPIO_040_076,
 #ifdef DT_GPIO_XEC_GPIO040_076_IRQ
@@ -466,6 +474,9 @@ static int gpio_xec_port040_076_init(struct device *dev)
 static int gpio_xec_port100_136_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO100_136_BASE_ADDR,
 	.port_num = MCHP_GPIO_100_136,
 #ifdef DT_GPIO_XEC_GPIO100_136_IRQ
@@ -506,6 +517,9 @@ static int gpio_xec_port100_136_init(struct device *dev)
 static int gpio_xec_port140_176_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO140_176_BASE_ADDR,
 	.port_num = MCHP_GPIO_140_176,
 #ifdef DT_GPIO_XEC_GPIO140_176_IRQ
@@ -546,6 +560,9 @@ static int gpio_xec_port140_176_init(struct device *dev)
 static int gpio_xec_port200_236_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *) DT_GPIO_XEC_GPIO200_236_BASE_ADDR,
 	.port_num = MCHP_GPIO_200_236,
 #ifdef DT_GPIO_XEC_GPIO200_236_IRQ
@@ -586,6 +603,9 @@ static int gpio_xec_port200_236_init(struct device *dev)
 static int gpio_xec_port240_276_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_5_MICROCHIP_XEC_GPIO_NGPIOS),
+	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO240_276_BASE_ADDR,
 	.port_num = MCHP_GPIO_240_276,
 #ifdef DT_GPIO_XEC_GPIO240_276_IRQ
