@@ -1656,7 +1656,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_WHITELIST)
 	SHELL_CMD_ARG(wl-add, NULL, HELP_ADDR_LE, cmd_wl_add, 3, 0),
 	SHELL_CMD_ARG(wl-rem, NULL, HELP_ADDR_LE, cmd_wl_rem, 3, 0),
-	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 2, 0),
+	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 1, 0),
 	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>", cmd_wl_connect, 2, 0),
 #endif /* defined(CONFIG_BT_WHITELIST) */
 #if defined(CONFIG_BT_FIXED_PASSKEY)
