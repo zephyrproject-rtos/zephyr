@@ -117,8 +117,8 @@ arduino_serial: &uart3 {};
 		 * Note that if you populate them, they conflict with LCD and
 		 * Ethernet interrupt gpios.
 		 */
-		int1-gpios = <&gpio1 10 0>;
-		int2-gpios = <&gpio1 11 0>;
+		int1-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
