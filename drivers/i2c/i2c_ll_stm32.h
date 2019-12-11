@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
+#define STM32_I2C_TIMEOUT_USEC  1000
+
 typedef void (*irq_config_func_t)(struct device *port);
 
 struct i2c_stm32_config {

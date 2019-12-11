@@ -92,7 +92,9 @@ static void stm32_i2c_enable_transfer_interrupts(struct device *dev)
 static void stm32_i2c_master_mode_end(struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+#if defined(CONFIG_I2C_SLAVE)
 	struct i2c_stm32_data *data = DEV_DATA(dev);
+#endif
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	stm32_i2c_disable_transfer_interrupts(dev);
@@ -105,7 +107,6 @@ static void stm32_i2c_master_mode_end(struct device *dev)
 #else
 	LL_I2C_Disable(i2c);
 #endif
-	k_sem_give(&data->device_sync_sem);
 }
 
 #if defined(CONFIG_I2C_SLAVE)
@@ -316,6 +317,7 @@ static void stm32_i2c_event(struct device *dev)
 	return;
 end:
 	stm32_i2c_master_mode_end(dev);
+	k_sem_give(&data->device_sync_sem);
 }
 
 static int stm32_i2c_error(struct device *dev)
@@ -346,6 +348,7 @@ static int stm32_i2c_error(struct device *dev)
 	return 0;
 end:
 	stm32_i2c_master_mode_end(dev);
+	k_sem_give(&data->device_sync_sem);
 	return -EIO;
 }
 
@@ -382,6 +385,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
+	int32_t err = 0;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -395,7 +399,15 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	err = k_sem_take(&data->device_sync_sem,
+			 K_MSEC(STM32_I2C_TIMEOUT_USEC / 1000));
+	if (err < 0) {
+		if (LL_I2C_IsEnabledReloadMode(i2c)) {
+			LL_I2C_DisableReloadMode(i2c);
+		}
+		stm32_i2c_master_mode_end(dev);
+		data->current.is_err = err;
+	}
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo) {
@@ -430,6 +442,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
+	int32_t err = 0;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -444,7 +457,15 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	err = k_sem_take(&data->device_sync_sem,
+			 K_MSEC(STM32_I2C_TIMEOUT_USEC / 1000));
+	if (err < 0) {
+		if (LL_I2C_IsEnabledReloadMode(i2c)) {
+			LL_I2C_DisableReloadMode(i2c);
+		}
+		stm32_i2c_master_mode_end(dev);
+		data->current.is_err = err;
+	}
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo) {
