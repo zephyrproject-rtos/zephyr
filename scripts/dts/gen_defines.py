@@ -236,9 +236,21 @@ def write_props(node):
         elif prop.type == "phandle-array":
             write_phandle_val_list(prop)
 
-        # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
+            # Generate
+            #
+            #   #define DT_..._ENUM <index in enum list, starting from 0>
+            #
+            # if the property has an 'enum:' key
             out_dev(node, ident + "_ENUM", prop.enum_index)
+            if prop.type == "string":
+                # For 'type: string' properties with an 'enum:' key, also
+                # generate
+                #
+                #   #define DT_..._ENUM_<str2ident(prop.val)> 1
+                #
+                # This allows the selection to be tested at compile time.
+                out_dev(node, ident + "_ENUM_" + str2ident(prop.val), 1)
 
 
 def write_bus(node):
