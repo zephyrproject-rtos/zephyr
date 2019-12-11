@@ -34,6 +34,12 @@
 		reg = <0xbe800000 DT_SIZE_K(128)>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <400000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		core_intc: core_intc@0 {
 			compatible = "xtensa,core-intc";
