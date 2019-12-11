@@ -381,7 +381,7 @@ static const struct gpio_driver_api gpio_esp32_driver = {
 };
 
 #if defined(CONFIG_GPIO_ESP32_0)
-static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
+static struct gpio_esp32_data gpio_0_data = { /* 0..31 */
 	.port = {
 		.set_reg = (u32_t *)GPIO_OUT_W1TS_REG,
 		.clear_reg = (u32_t *)GPIO_OUT_W1TC_REG,
@@ -395,7 +395,7 @@ static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
 #endif
 
 #if defined(CONFIG_GPIO_ESP32_1)
-static struct gpio_esp32_data gpio_data_pins_32_to_39 = {
+static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 	.port = {
 		.set_reg = (u32_t *)GPIO_OUT1_W1TS_REG,
 		.clear_reg = (u32_t *)GPIO_OUT1_W1TC_REG,
@@ -408,14 +408,16 @@ static struct gpio_esp32_data gpio_data_pins_32_to_39 = {
 };
 #endif
 
-#define GPIO_DEVICE_INIT(__name, __data_struct_name)		    \
-	DEVICE_AND_API_INIT(gpio_esp32_ ## __data_struct_name,	    \
-			    __name,				    \
-			    gpio_esp32_init,			    \
-			    &gpio_data_pins_ ## __data_struct_name, \
-			    NULL,				    \
-			    POST_KERNEL,			    \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	    \
+#define GPIO_DEVICE_INIT(_id) \
+	static struct gpio_driver_config gpio_##_id##_cfg = { \
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##_id##_ESPRESSIF_ESP32_GPIO_NGPIOS),\
+	}; \
+	DEVICE_AND_API_INIT(gpio_esp32_##_id,				\
+			    DT_INST_##_id##_ESPRESSIF_ESP32_GPIO_LABEL,	\
+			    gpio_esp32_init,				\
+			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &gpio_esp32_driver)
 
 /* GPIOs are divided in two groups for ESP32 because the callback
@@ -423,21 +425,21 @@ static struct gpio_esp32_data gpio_data_pins_32_to_39 = {
  * and the device has 40 GPIO pins.
  */
 #if defined(CONFIG_GPIO_ESP32_0)
-GPIO_DEVICE_INIT(DT_INST_0_ESPRESSIF_ESP32_GPIO_LABEL, 0_to_31);
+GPIO_DEVICE_INIT(0);
 #endif
 
 #if defined(CONFIG_GPIO_ESP32_1)
-GPIO_DEVICE_INIT(DT_INST_1_ESPRESSIF_ESP32_GPIO_LABEL, 32_to_39);
+GPIO_DEVICE_INIT(1);
 #endif
 
 static void gpio_esp32_isr(void *param)
 {
 
 #if defined(CONFIG_GPIO_ESP32_0)
-	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_0_to_31));
+	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_0));
 #endif
 #if defined(CONFIG_GPIO_ESP32_1)
-	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_32_to_39));
+	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_1));
 #endif
 
 	ARG_UNUSED(param);
