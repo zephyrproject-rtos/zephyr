@@ -4935,7 +4935,7 @@ static inline void isr_radio_state_close(void)
 
 	event_inactive(0, 0, 0, NULL);
 
-	err = clock_control_off(_radio.hf_clock, NULL);
+	err = clock_control_off(_radio.hf_clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err) {
 		DEBUG_RADIO_XTAL(0);
 	}
@@ -5216,7 +5216,7 @@ static void mayfly_xtal_start(void *params)
 	ARG_UNUSED(params);
 
 	/* turn on 16MHz clock, non-blocking mode. */
-	err = clock_control_on(_radio.hf_clock, NULL);
+	err = clock_control_on(_radio.hf_clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	LL_ASSERT(!err || (err == -EINPROGRESS));
 
 	DEBUG_RADIO_XTAL(1);
@@ -5247,7 +5247,7 @@ static void mayfly_xtal_stop(void *params)
 
 	ARG_UNUSED(params);
 
-	err = clock_control_off(_radio.hf_clock, NULL);
+	err = clock_control_off(_radio.hf_clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err) {
 		DEBUG_RADIO_XTAL(0);
 	}
@@ -5264,12 +5264,12 @@ static void k32src_wait(void)
 	}
 	done = true;
 
-	struct device *lf_clock = device_get_binding(
-		DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
+	struct device *clock = device_get_binding(
+		DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 
-	LL_ASSERT(lf_clock);
+	LL_ASSERT(clock);
 
-	while (clock_control_on(lf_clock, (void *)CLOCK_CONTROL_NRF_K32SRC)) {
+	while (clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF)) {
 		DEBUG_CPU_SLEEP(1);
 		cpu_sleep();
 		DEBUG_CPU_SLEEP(0);

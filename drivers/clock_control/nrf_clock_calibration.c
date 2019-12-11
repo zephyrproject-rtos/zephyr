@@ -6,6 +6,7 @@
 #include <sensor.h>
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_clock.h>
 #include <logging/log.h>
 #include <stdlib.h>
@@ -49,8 +50,8 @@ static struct clock_control_async_data cal_hf_on_data = {
 	.cb = cal_hf_on_callback
 };
 
-static struct device *hfclk_dev; /* Handler to hfclk device. */
-static struct device *temp_sensor; /* Handler to temperature sensor device. */
+static struct device *clk_dev;
+static struct device *temp_sensor;
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
@@ -91,7 +92,8 @@ void z_nrf_clock_calibration_lfclk_started(struct device *dev)
 {
 	/* Trigger unconditional calibration when lfclk is started. */
 	cal_state = CAL_HFCLK_REQ;
-	clock_control_async_on(hfclk_dev, 0, &cal_hf_on_data);
+	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
+				&cal_hf_on_data);
 }
 
 bool z_nrf_clock_calibration_stop(struct device *dev)
@@ -140,7 +142,7 @@ void z_nrf_clock_calibration_init(struct device *dev)
 		temp_sensor = device_get_binding(TEMP_SENSOR_NAME);
 	}
 
-	hfclk_dev = dev;
+	clk_dev = dev;
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }
@@ -163,7 +165,7 @@ static void start_calibration(void)
 static void to_idle(void)
 {
 	cal_state = CAL_IDLE;
-	clock_control_off(hfclk_dev, 0);
+	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CTSTART);
 }
 
@@ -180,7 +182,8 @@ static int get_temperature(s16_t *tvp)
 	int rc = sensor_sample_fetch(temp_sensor);
 
 	if (rc == 0) {
-		rc = sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP, &sensor_val);
+		rc = sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP,
+					&sensor_val);
 	}
 	if (rc == 0) {
 		*tvp = sensor_value_to_temp_unit(&sensor_val);
@@ -248,7 +251,7 @@ static void cal_hf_on_callback(struct device *dev, void *user_data)
 			k_work_submit(&temp_measure_work);
 		}
 	} else {
-		clock_control_off(hfclk_dev, 0);
+		clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	}
 
 	irq_unlock(key);
@@ -267,7 +270,7 @@ static void on_cal_done(void)
 	int key = irq_lock();
 
 	if (cal_state == CAL_ACTIVE_OFF) {
-		clock_control_off(hfclk_dev, 0);
+		clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 		nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTOP);
 		cal_state = CAL_OFF;
 	} else {
@@ -285,7 +288,8 @@ void z_nrf_clock_calibration_force_start(void)
 
 	if (cal_state == CAL_IDLE) {
 		cal_state = CAL_HFCLK_REQ;
-		clock_control_async_on(hfclk_dev, 0, &cal_hf_on_data);
+		clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
+				&cal_hf_on_data);
 	}
 
 	irq_unlock(key);
@@ -302,7 +306,9 @@ void z_nrf_clock_calibration_isr(void)
 		 */
 		if (cal_state == CAL_IDLE) {
 			cal_state = CAL_HFCLK_REQ;
-			clock_control_async_on(hfclk_dev, 0, &cal_hf_on_data);
+			clock_control_async_on(clk_dev,
+					       CLOCK_CONTROL_NRF_SUBSYS_HF,
+					       &cal_hf_on_data);
 		}
 	}
 

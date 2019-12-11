@@ -11,6 +11,7 @@
 #include <zephyr/types.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
@@ -310,7 +311,7 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 
 u32_t ll_test_end(u16_t *num_rx)
 {
-	struct device *hf_clock;
+	struct device *clock;
 	u8_t ack;
 
 	if (!started) {
@@ -337,8 +338,8 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	hf_clock = radio_hf_clock_get();
-	clock_control_off(hf_clock, NULL);
+	clock = radio_hf_clock_get();
+	clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	/* Stop coarse timer */
 	cntr_stop();

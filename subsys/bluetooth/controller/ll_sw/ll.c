@@ -118,19 +118,18 @@ static void swi5_nrf5_isr(void *arg)
 
 int ll_init(struct k_sem *sem_rx)
 {
-	struct device *clk_k32;
-	struct device *clk_m16;
+	struct device *clk;
 	struct device *entropy;
 	u32_t err;
 
 	sem_recv = sem_rx;
 
-	clk_k32 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
-	if (!clk_k32) {
+	clk = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	if (!clk) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, NULL);
+	clock_control_on(clk, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!entropy) {
@@ -156,12 +155,7 @@ int ll_init(struct k_sem *sem_rx)
 			  hal_ticker_instance0_trigger_set);
 	LL_ASSERT(!err);
 
-	clk_m16 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	if (!clk_m16) {
-		return -ENODEV;
-	}
-
-	err = radio_init(clk_m16, CLOCK_CONTROL_NRF_K32SRC_ACCURACY, entropy,
+	err = radio_init(clk, CLOCK_CONTROL_NRF_K32SRC_ACCURACY, entropy,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,

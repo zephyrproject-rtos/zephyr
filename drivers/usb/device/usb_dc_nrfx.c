@@ -536,7 +536,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;
@@ -547,9 +547,10 @@ static int hf_clock_enable(bool on, bool blocking)
 			/* Do not request HFCLK multiple times. */
 			return 0;
 		}
-		ret = clock_control_on(clock, NULL);
+		ret = clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 		while (blocking &&
-			clock_control_get_status(clock, NULL) !=
+			clock_control_get_status(clock,
+						 CLOCK_CONTROL_NRF_SUBSYS_HF) !=
 					CLOCK_CONTROL_STATUS_ON) {
 		}
 	} else {
@@ -559,7 +560,7 @@ static int hf_clock_enable(bool on, bool blocking)
 			 */
 			return 0;
 		}
-		ret = clock_control_off(clock, NULL);
+		ret = clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
