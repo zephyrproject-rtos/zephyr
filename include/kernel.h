@@ -516,7 +516,7 @@ struct _thread_stack_info {
 	 * the size of the actual area, starting from the start member,
 	 * that should be writable by the thread
 	 */
-	u32_t size;
+	size_t size;
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
