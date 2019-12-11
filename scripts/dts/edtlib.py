@@ -495,6 +495,7 @@ class EDT:
             # run them separately
             node._init_props()
             node._init_interrupts()
+            node._init_gpioctrl()
             node._init_pinctrls()
 
     def _init_compat2enabled(self):
@@ -1255,6 +1256,31 @@ class Node:
             self.regs.append(reg)
 
         _add_names(node, "reg", self.regs)
+
+    def _init_gpioctrl(self):
+        # Initializes gpio-pin-mask property for gpio-controller nodes
+
+        node = self._node
+        if "gpio-controller" not in node.props:
+            return
+
+        valid_mask = 0xffffffff
+        if "ngpios" in node.props:
+            valid_mask = (1 << node.props["ngpios"].to_num()) - 1
+
+        if "gpio-reserved-ranges" in node.props:
+            nums = node.props["gpio-reserved-ranges"].to_nums()
+            for a in range(0, len(nums), 2):
+                valid_mask &= ~((1 << nums[a] + nums[a + 1]) - 1 ^ (1 << nums[a]) - 1)
+
+        prop = Property()
+        prop.node = self
+        prop.name = "gpio-pin-mask"
+        prop.description = None
+        prop.val = valid_mask
+        prop.type = "int"
+        prop.enum_index = None
+        self.props[prop.name] = prop
 
     def _init_pinctrls(self):
         # Initializes self.pinctrls from any pinctrl-<index> properties
