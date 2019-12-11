@@ -16,6 +16,8 @@
 typedef void (*config_func_t)(struct device *dev);
 
 struct gpio_sam_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	Pio *regs;
 	config_func_t config_func;
 	u32_t periph_id;
@@ -401,6 +403,9 @@ int gpio_sam_init(struct device *dev)
 static void port_a_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_a_sam_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_ATMEL_SAM_GPIO_NGPIOS),
+	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTA_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTA_PERIPHERAL_ID,
 	.config_func = port_a_sam_config_func,
@@ -426,6 +431,9 @@ static void port_a_sam_config_func(struct device *dev)
 static void port_b_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_b_sam_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_ATMEL_SAM_GPIO_NGPIOS),
+	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTB_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTB_PERIPHERAL_ID,
 	.config_func = port_b_sam_config_func,
@@ -451,6 +459,9 @@ static void port_b_sam_config_func(struct device *dev)
 static void port_c_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_c_sam_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_ATMEL_SAM_GPIO_NGPIOS),
+	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTC_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTC_PERIPHERAL_ID,
 	.config_func = port_c_sam_config_func,
@@ -476,6 +487,9 @@ static void port_c_sam_config_func(struct device *dev)
 static void port_d_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_d_sam_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_ATMEL_SAM_GPIO_NGPIOS),
+	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTD_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTD_PERIPHERAL_ID,
 	.config_func = port_d_sam_config_func,
@@ -501,6 +515,9 @@ static void port_d_sam_config_func(struct device *dev)
 static void port_e_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_e_sam_config = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_ATMEL_SAM_GPIO_NGPIOS),
+	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTE_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTE_PERIPHERAL_ID,
 	.config_func = port_e_sam_config_func,
