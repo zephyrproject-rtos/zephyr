@@ -92,8 +92,8 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 1 0>;
-		int2-gpios = <&gpiod 13 0>;
+		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 	};
 
 	fxas21002@20 {
