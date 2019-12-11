@@ -96,6 +96,8 @@ BUILD_ASSERT(DT_APL_GPIO_IRQ == 14);
 #define PAD_CFG1_IOSSTATE_IGNORE	(0x0F << PAD_CFG1_IOSSTATE_POS)
 
 struct gpio_intel_apl_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	u32_t	reg_base;
 
 	u8_t	pin_offset;
@@ -487,6 +489,9 @@ int gpio_intel_apl_init(struct device *dev)
 #define GPIO_INTEL_APL_DEV_CFG_DATA(dir_l, dir_u, pos, offset, pins)	\
 static const struct gpio_intel_apl_config				\
 	gpio_intel_apl_cfg_##dir_l##_##pos = {				\
+	.common = {							\
+		.available = GPIO_AVAILABLE_PINS(pins),			\
+	},								\
 	.reg_base = DT_APL_GPIO_BASE_ADDRESS_##dir_u,			\
 	.pin_offset = offset,						\
 	.num_pins = pins,						\
