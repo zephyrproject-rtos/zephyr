@@ -249,15 +249,15 @@ if [ -n "$main_ci" ]; then
 	fi
 	$short_git_log
 
-	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
-		echo "Build BT simulator tests"
-		# Build BT Simulator
-		build_btsim
+	if [ "$matrix" = "1" ]; then
+		if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
+			echo "Build BT simulator tests"
+			# Build BT Simulator
+			build_btsim
+		fi
 
 		# Run BLE tests in simulator on the 1st CI instance:
-		if [ "$matrix" = "1" ]; then
-			run_bsim_bt_tests
-		fi
+		run_bsim_bt_tests
 	else
 		echo "Skipping BT simulator tests"
 	fi
