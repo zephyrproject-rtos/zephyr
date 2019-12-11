@@ -5,7 +5,6 @@
  */
 
 #include <drivers/led_strip.h>
-
 #include <string.h>
 
 #define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
@@ -17,8 +16,7 @@ LOG_MODULE_REGISTER(ws2812b_sw);
 #include <drivers/gpio.h>
 #include <device.h>
 #include <drivers/clock_control.h>
-
-#define BLOCKING ((void *)1)
+#include <drivers/clock_control/nrf_clock_control.h>
 
 static int send_buf(u8_t *buf, size_t len)
 {
@@ -32,7 +30,7 @@ static int send_buf(u8_t *buf, size_t len)
 	 */
 	u32_t i = 0U;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		LOG_ERR("Unable to get HF clock");
 		return -EIO;
@@ -41,7 +39,7 @@ static int send_buf(u8_t *buf, size_t len)
 	/* The inline assembly further below is designed to work only with
 	 * the 16 MHz clock enabled.
 	 */
-	clock_control_on(clock, BLOCKING);
+	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	key = irq_lock();
 
 	while (len--) {
@@ -92,7 +90,7 @@ static int send_buf(u8_t *buf, size_t len)
 	}
 
 	irq_unlock(key);
-	clock_control_off(clock, NULL);
+	clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	return 0;
 }

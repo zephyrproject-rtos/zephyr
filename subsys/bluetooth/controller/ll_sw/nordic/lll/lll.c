@@ -48,7 +48,7 @@ static struct {
 } event;
 
 static struct {
-	struct device *clk_hf;
+	struct device *clk;
 } lll;
 
 /* Entropy device */
@@ -127,7 +127,7 @@ static void swi_ull_low_nrf5_isr(void *arg)
 
 int lll_init(void)
 {
-	struct device *clk_k32;
+	struct device *clk;
 	int err;
 
 	/* Get reference to entropy device */
@@ -140,19 +140,15 @@ int lll_init(void)
 	event.curr.abort_cb = NULL;
 
 	/* Initialize LF CLK */
-	clk_k32 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
-	if (!clk_k32) {
+	clk = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	if (!clk) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, NULL);
+	clock_control_on(clk, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	/* Initialize HF CLK */
-	lll.clk_hf =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	if (!lll.clk_hf) {
-		return -ENODEV;
-	}
+	lll.clk = clk;
 
 	err = init_reset();
 	if (err) {
@@ -321,7 +317,7 @@ int lll_clk_on(void)
 	int err;
 
 	/* turn on radio clock in non-blocking mode. */
-	err = clock_control_on(lll.clk_hf, NULL);
+	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err || err == -EINPROGRESS) {
 		DEBUG_RADIO_XTAL(1);
 	}
@@ -334,9 +330,9 @@ int lll_clk_on_wait(void)
 	int err;
 
 	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk_hf, NULL);
+	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
-	while (clock_control_get_status(lll.clk_hf, NULL) !=
+	while (clock_control_get_status(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF) !=
 			CLOCK_CONTROL_STATUS_ON) {
 		k_cpu_idle();
 	}
@@ -351,7 +347,7 @@ int lll_clk_off(void)
 	int err;
 
 	/* turn off radio clock in non-blocking mode. */
-	err = clock_control_off(lll.clk_hf, NULL);
+	err = clock_control_off(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err) {
 		DEBUG_RADIO_XTAL(0);
 	} else if (err == -EBUSY) {
