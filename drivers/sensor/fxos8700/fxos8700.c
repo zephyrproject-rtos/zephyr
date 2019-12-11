@@ -390,14 +390,16 @@ static int fxos8700_init(struct device *dev)
 			return -EINVAL;
 		}
 
-		gpio_pin_configure(rst, config->reset_pin, GPIO_DIR_OUT);
-		gpio_pin_write(rst, config->reset_pin, 1);
+		gpio_pin_configure(rst, config->reset_pin,
+				   GPIO_OUTPUT_INACTIVE | config->reset_flags);
+
+		gpio_pin_set(rst, config->reset_pin, 1);
 		/* The datasheet does not mention how long to pulse
 		 * the RST pin high in order to reset. Stay on the
 		 * safe side and pulse for 1 millisecond.
 		 */
 		k_busy_wait(USEC_PER_MSEC);
-		gpio_pin_write(rst, config->reset_pin, 0);
+		gpio_pin_set(rst, config->reset_pin, 0);
 	} else {
 		/* Software reset the sensor. Upon issuing a software
 		 * reset command over the I2C interface, the sensor
@@ -524,9 +526,11 @@ static const struct fxos8700_config fxos8700_config = {
 #ifdef DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER
 	.reset_name = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER,
 	.reset_pin = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_PIN,
+	.reset_flags = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_FLAGS,
 #else
 	.reset_name = NULL,
 	.reset_pin = 0,
+	.reset_flags = 0,
 #endif
 #ifdef CONFIG_FXOS8700_MODE_ACCEL
 	.mode = FXOS8700_MODE_ACCEL,
@@ -564,9 +568,11 @@ static const struct fxos8700_config fxos8700_config = {
 #ifdef CONFIG_FXOS8700_DRDY_INT1
 	.gpio_name = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_FLAGS,
 #else
 	.gpio_name = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_FLAGS,
 #endif
 #endif
 #ifdef CONFIG_FXOS8700_PULSE
