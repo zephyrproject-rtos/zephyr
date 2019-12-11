@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F0 MCU series
-#
+# ST Microelectronics STM32F0 MCU series
+
 # Copyright (c) 2017 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32F0X
 	bool "STM32F0x Series MCU"
@@ -13,4 +11,4 @@ config SOC_SERIES_STM32F0X
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_STM32CUBE
 	help
-	 Enable support for STM32F0 MCU series
+	  Enable support for STM32F0 MCU series

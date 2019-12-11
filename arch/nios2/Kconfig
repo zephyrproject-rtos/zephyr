@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Nios II Options"
 	depends on NIOS2
@@ -65,8 +62,8 @@ config EXTRA_EXCEPTION_INFO
 	  describing what that cause code means.
 
 choice
-prompt "Global Pointer options"
-default GP_GLOBAL
+	prompt "Global Pointer options"
+	default GP_GLOBAL
 
 config GP_NONE
 	bool "No global pointer"

@@ -51,22 +51,16 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &uart4 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart4_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -108,6 +102,7 @@
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
 		label = "VL53L0X";
+		xshut-gpios = <&gpioc 6 0>;
 	};
 };
 
@@ -195,6 +190,10 @@
 	pwm {
 		status = "okay";
 	};
+};
+
+&lptim1 {
+	status = "okay";
 };
 
 &rtc {

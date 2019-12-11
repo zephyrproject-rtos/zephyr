@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 Radio"

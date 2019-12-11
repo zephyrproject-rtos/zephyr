@@ -90,6 +90,7 @@
 		label = "GPIO_P0";
 		gpio-controller;
 		#gpio-cells = <2>;
+		ngpios = <16>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {
@@ -109,6 +110,9 @@
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
+		irq-gpios = <&gpio0 22 0>;
+		reset-gpios = <&sx1509b 11 0>;
+		wake-gpios = <&sx1509b 12 0>;
 	};
 };
 

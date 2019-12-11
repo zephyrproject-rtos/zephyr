@@ -1,11 +1,10 @@
+# Texas Instruments CC2650
+
 # SPDX-License-Identifier: Apache-2.0
-#
-# Kconfig.soc - Texas Instruments CC2650
-#
 
 choice
-prompt "TI SimpleLink MCU Selection"
-depends on SOC_SERIES_CC2650
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_CC2650
 
 config SOC_CC2650
 	bool "CC2650"

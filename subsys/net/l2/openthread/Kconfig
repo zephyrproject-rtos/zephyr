@@ -1,10 +1,7 @@
-# Kconfig - OpenThread driver configuration options
-#
-#
+# OpenThread driver configuration options
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # OpenThread options
@@ -148,6 +145,15 @@ config OPENTHREAD_MTD
 	bool "MTD - Minimal Thread Device"
 endchoice
 
+config OPENTHREAD_MTD_SED
+	bool "SED - Sleepy End Device"
+	depends on OPENTHREAD_MTD
+
+config OPENTHREAD_POLL_PERIOD
+	int "Poll period for sleepy end devices [ms]"
+	default 236000
+	depends on OPENTHREAD_MTD_SED
+
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
 	select SHELL
@@ -190,14 +196,14 @@ config OPENTHREAD_JOINER_PSKD
 	  Pre Shared Key for the Device to start joiner
 
 config OPENTHREAD_DHCP6_CLIENT
-       bool "DHCPv6 client support"
-       help
-         Enable DHCPv6 client capability in OpenThread stack
+	bool "DHCPv6 client support"
+	help
+	  Enable DHCPv6 client capability in OpenThread stack
 
 config OPENTHREAD_DHCP6_SERVER
-       bool "DHCPv6 server support"
-       help
-         Enable DHCPv6 server capability in OpenThread stack
+	bool "DHCPv6 server support"
+	help
+	  Enable DHCPv6 server capability in OpenThread stack
 
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"

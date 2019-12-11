@@ -15,7 +15,7 @@
 #include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_llsw_ll
+#define LOG_MODULE_NAME bt_ctlr_ll
 #include "common/log.h"
 
 #include "hal/cpu.h"
@@ -39,12 +39,6 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_filter.h"
-
-#if defined(CONFIG_BT_CTLR_ZLI)
-#define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
-#else
-#define IRQ_CONNECT_FLAGS 0
-#endif
 
 /* Global singletons */
 
@@ -185,16 +179,11 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+			   radio_nrf5_isr, 0);
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
-	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
-		    swi5_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#else
+		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
 		    swi5_nrf5_isr, NULL, 0);
-#endif
 
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);

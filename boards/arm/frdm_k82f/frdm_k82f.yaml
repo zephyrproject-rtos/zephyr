@@ -9,6 +9,7 @@ toolchain:
 ram: 192
 flash: 256
 supported:
+  - arduino_gpio
   - gpio
   - hwinfo
   - i2c

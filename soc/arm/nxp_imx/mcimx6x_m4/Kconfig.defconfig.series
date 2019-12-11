@@ -1,9 +1,7 @@
-# Kconfig - i.MX 6SoloX M4 core series
-#
+# i.MX 6SoloX M4 core series
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_IMX_6X_M4
 

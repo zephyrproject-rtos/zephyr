@@ -39,15 +39,11 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -121,7 +117,6 @@
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
-		irq-gpios = <&gpiod 12 0>;
 		label = "LIS2MDL";
 	};
 };

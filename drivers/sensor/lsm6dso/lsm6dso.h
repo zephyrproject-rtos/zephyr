@@ -13,7 +13,7 @@
 
 #include <sensor.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
 #include "lsm6dso_reg.h"

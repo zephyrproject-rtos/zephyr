@@ -122,11 +122,11 @@ struct ipm_driver_api {
  * @param data Pointer to the data sent in the message.
  * @param size Size of the data.
  *
- * @retval EBUSY    If the remote hasn't yet read the last data sent.
- * @retval EMSGSIZE If the supplied data size is unsupported by the driver.
- * @retval EINVAL   If there was a bad parameter, such as: too-large id value.
- *                  or the device isn't an outbound IPM channel.
- * @retval 0        On success.
+ * @retval -EBUSY    If the remote hasn't yet read the last data sent.
+ * @retval -EMSGSIZE If the supplied data size is unsupported by the driver.
+ * @retval -EINVAL   If there was a bad parameter, such as: too-large id value.
+ *                   or the device isn't an outbound IPM channel.
+ * @retval 0         On success.
  */
 __syscall int ipm_send(struct device *ipmdev, int wait, u32_t id,
 		       const void *data, int size);
@@ -200,8 +200,8 @@ static inline u32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
  * @param ipmdev Driver instance pointer.
  * @param enable Set to 0 to disable and to nonzero to enable.
  *
- * @retval 0      On success.
- * @retval EINVAL If it isn't an inbound channel.
+ * @retval 0       On success.
+ * @retval -EINVAL If it isn't an inbound channel.
  */
 __syscall int ipm_set_enabled(struct device *ipmdev, int enable);
 

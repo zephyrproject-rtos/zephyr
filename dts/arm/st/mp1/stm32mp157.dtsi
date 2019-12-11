@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/mp1/stm32mp1-pinctrl.dtsi>
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>

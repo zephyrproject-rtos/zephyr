@@ -33,14 +33,19 @@ void main(void)
 	 */
 	k_sleep(K_MSEC(1));
 
-	int freq = sys_clock_hw_cycles_per_sec() / 1000000;
-
-	main_us = z_timestamp_main / freq;
-	task_us = task_time_stamp / freq;
-	idle_us = z_timestamp_idle / freq;
+	main_us = (u32_t)ceiling_fraction(USEC_PER_SEC *
+					  (u64_t)z_timestamp_main,
+					  sys_clock_hw_cycles_per_sec());
+	task_us = (u32_t)ceiling_fraction(USEC_PER_SEC *
+					  (u64_t)task_time_stamp,
+					  sys_clock_hw_cycles_per_sec());
+	idle_us = (u32_t)ceiling_fraction(USEC_PER_SEC *
+					  (u64_t)z_timestamp_idle,
+					  sys_clock_hw_cycles_per_sec());
 
 	TC_START("Boot Time Measurement");
-	TC_PRINT("Boot Result: Clock Frequency: %d MHz\n", freq);
+	TC_PRINT("Boot Result: Clock Frequency: %d Hz\n",
+					  sys_clock_hw_cycles_per_sec());
 	TC_PRINT("_start->main(): %u cycles, %u us\n", z_timestamp_main,
 						       main_us);
 	TC_PRINT("_start->task  : %u cycles, %u us\n", task_time_stamp,

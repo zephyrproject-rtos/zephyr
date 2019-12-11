@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_NSIM
 
@@ -17,4 +14,4 @@ source "soc/arc/snps_nsim/Kconfig.defconfig.sem"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs_smp"
 
-endif #SOC_NSIM
+endif # SOC_NSIM

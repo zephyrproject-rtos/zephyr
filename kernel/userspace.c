@@ -20,6 +20,7 @@
 #include <app_memory/app_memdomain.h>
 #include <sys/libc-hooks.h>
 #include <sys/mutex.h>
+#include <inttypes.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -753,19 +754,22 @@ void z_app_shmem_bss_zero(void)
  * Default handlers if otherwise unimplemented
  */
 
-static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
-				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
+				     uintptr_t arg3, uintptr_t arg4,
+				     uintptr_t arg5, uintptr_t arg6,
+				     void *ssf)
 {
-	LOG_ERR("Bad system call id %u invoked", bad_id);
-	z_arch_syscall_oops(_current_cpu->syscall_frame);
+	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
+	arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
-				 u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
+				    uintptr_t arg3, uintptr_t arg4,
+				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
 	LOG_ERR("Unimplemented system call");
-	z_arch_syscall_oops(_current_cpu->syscall_frame);
+	arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 

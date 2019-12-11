@@ -52,7 +52,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	int ret;
 	s64_t end = 0;
 
-	__ASSERT(!(z_arch_is_in_isr() && timeout != K_NO_WAIT), "");
+	__ASSERT(!(arch_is_in_isr() && timeout != K_NO_WAIT), "");
 
 	if (timeout > 0) {
 		end = k_uptime_get() + timeout;

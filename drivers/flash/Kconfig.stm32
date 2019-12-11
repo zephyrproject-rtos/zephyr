@@ -1,10 +1,8 @@
-# Kconfig - ST Microelectronics STM32 MCUs Flash driver config
-#
+# ST Microelectronics STM32 MCUs Flash driver config
+
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # Copyright (c) 2017 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_STM32
 
@@ -30,6 +28,7 @@ config SOC_FLASH_STM32
 	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32WBX
 	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32G4X
 	help
-	 Enable STM32F0x, STM32F3x, STM32F4x, STM32F7x, STM32L4x, STM32WBx, STM32G0x or STM32G4x series flash driver.
+	  Enable STM32F0x, STM32F3x, STM32F4x, STM32F7x, STM32L4x, STM32WBx,
+	  STM32G0x or STM32G4x series flash driver.
 
 endif

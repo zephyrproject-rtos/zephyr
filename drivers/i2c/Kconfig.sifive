@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 SiFive Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config I2C_SIFIVE
 	bool "Sifive I2C driver"

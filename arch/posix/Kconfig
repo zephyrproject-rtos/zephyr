@@ -1,10 +1,7 @@
-# Kconfig - General configuration options
+# General configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "POSIX (native) Options"
 	depends on ARCH_POSIX

@@ -18,7 +18,9 @@
 #ifndef _ASMLANGUAGE
 
 #include <em_common.h>
-#include <device.h>
+
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
 
 #include "soc_pinmap.h"
 #include "../common/soc_gpio.h"

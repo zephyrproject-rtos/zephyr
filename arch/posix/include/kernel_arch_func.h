@@ -10,9 +10,7 @@
 #ifndef ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#include "kernel.h"
-#include <toolchain/common.h>
-#include "posix_core.h"
+#include <kernel_arch_data.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -21,18 +19,18 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN)
-void z_arch_switch_to_main_thread(struct k_thread *main_thread,
-		k_thread_stack_t *main_stack,
-		size_t main_stack_size, k_thread_entry_t _main);
+void arch_switch_to_main_thread(struct k_thread *main_thread,
+				k_thread_stack_t *main_stack,
+				size_t main_stack_size, k_thread_entry_t _main);
 #endif
 
-static inline void z_arch_kernel_init(void)
+static inline void arch_kernel_init(void)
 {
 	/* Nothing to be done */
 }
 
 static ALWAYS_INLINE void
-z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->callee_saved.retval = value;
 }
@@ -41,7 +39,7 @@ z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 }
 #endif
 
-static inline bool z_arch_is_in_isr(void)
+static inline bool arch_is_in_isr(void)
 {
 	return _kernel.nested != 0U;
 }

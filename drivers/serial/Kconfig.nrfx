@@ -1,9 +1,7 @@
-# Kconfig.nrfx - nrfx UART configuration
-#
+# nrfx UART configuration
+
 # Copyright (c) 2016 - 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_NRFX
 	bool "nRF UART nrfx drivers"
@@ -96,7 +94,7 @@ config UART_0_NRF_HW_ASYNC_TIMER
 
 config UART_0_GPIO_MANAGEMENT
 	bool "Enable GPIO management on port 0"
-	depends on UART_0_NRF_UARTE && DEVICE_POWER_MANAGEMENT
+	depends on DEVICE_POWER_MANAGEMENT
 	default y
 	help
 	  If enabled, the driver will configure the GPIOs used by the uart to

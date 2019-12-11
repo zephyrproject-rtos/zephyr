@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <drivers/i2c.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <sensor.h>
 #include <zephyr/types.h>
 #include <sys/util.h>

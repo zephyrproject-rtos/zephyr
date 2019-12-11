@@ -1,5 +1,5 @@
-# Kconfig.ia32 - IA32-specific X86 subarchitecture options
-#
+# IA32-specific X86 subarchitecture options
+
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,16 +10,6 @@ config NESTED_INTERRUPTS
 	default y
 	help
 	  This option enables support for nested interrupts.
-
-config EXCEPTION_DEBUG
-	bool "Unhandled exception debugging"
-	default y
-	depends on LOG
-	help
-	  Install handlers for various CPU exception/trap vectors to
-	  make debugging them easier, at a small expense in code size.
-	  This prints out the specific exception vector and any associated
-	  error codes.
 
 menu "Memory Layout Options"
 

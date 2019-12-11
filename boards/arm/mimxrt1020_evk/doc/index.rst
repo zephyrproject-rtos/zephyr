@@ -82,6 +82,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1020_evk/mimxrt1020_evk_defconfig``

@@ -1,10 +1,7 @@
-# Kconfig - BMA280 Three Axis Accelerometer configuration options
+# BMA280 Three Axis Accelerometer configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMA280
 	bool "BMA280 Three Axis Accelerometer Family"

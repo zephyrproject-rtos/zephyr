@@ -7,8 +7,8 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <kernel_structs.h>
 #include <offsets_short.h>
+#include <arch/cpu.h>
 
 /* imports */
 GDATA(_sw_isr_table)

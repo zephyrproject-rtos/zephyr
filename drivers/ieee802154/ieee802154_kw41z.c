@@ -155,6 +155,8 @@ struct kw41z_context {
 
 	u32_t rx_warmup_time;
 	u32_t tx_warmup_time;
+
+	bool frame_pending; /* FP bit state from the most recent ACK frame. */
 };
 
 static struct kw41z_context kw41z_context_data;
@@ -569,6 +571,47 @@ out:
 	}
 }
 
+#define ACK_FRAME_LEN 3
+#define ACK_FRAME_TYPE (2 << 0)
+#define ACK_FRAME_PENDING_BIT (1 << 4)
+
+static void handle_ack(struct kw41z_context *kw41z, u8_t seq_number)
+{
+	struct net_pkt *ack_pkt;
+	u8_t ack_psdu[ACK_FRAME_LEN];
+
+	ack_pkt = net_pkt_alloc_with_buffer(kw41z->iface, ACK_FRAME_LEN,
+					    AF_UNSPEC, 0, K_NO_WAIT);
+	if (!ack_pkt) {
+		LOG_ERR("No free packet available.");
+		return;
+	}
+
+	/* Re-create ACK frame. */
+	ack_psdu[0] = kw41z_context_data.frame_pending ?
+		      ACK_FRAME_TYPE | ACK_FRAME_PENDING_BIT : ACK_FRAME_TYPE;
+	ack_psdu[1] = 0;
+	ack_psdu[2] = seq_number;
+
+	if (net_pkt_write(ack_pkt, ack_psdu, sizeof(ack_psdu)) < 0) {
+		LOG_ERR("Failed to write to a packet.");
+		goto out;
+	}
+
+	/* Use some fake values for LQI and RSSI. */
+	(void)net_pkt_set_ieee802154_lqi(ack_pkt, 80);
+	(void)net_pkt_set_ieee802154_rssi(ack_pkt, -40);
+
+	net_pkt_cursor_init(ack_pkt);
+
+	if (ieee802154_radio_handle_ack(kw41z->iface, ack_pkt) != NET_OK) {
+		LOG_INF("ACK packet not handled - releasing.");
+	}
+
+out:
+	net_pkt_unref(ack_pkt);
+}
+
 static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
@@ -652,6 +695,10 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 	ZLL->PHY_CTRL = (ZLL->PHY_CTRL & ~ZLL_PHY_CTRL_TRCV_MSK_MASK) | xcvseq;
 	irq_unlock(key);
 	k_sem_take(&kw41z->seq_sync, K_FOREVER);
+
+	if ((kw41z->seq_retval == 0) && ieee802154_is_ar_flag_set(frag)) {
+		handle_ack(kw41z, frag->data[2]);
+	}
 
 	LOG_DBG("seq_retval: %d", kw41z->seq_retval);
 	return kw41z->seq_retval;
@@ -795,6 +842,9 @@ static void kw41z_isr(int unused)
 			case KW41Z_STATE_TXRX:
 				LOG_DBG("TXRX seq done");
 				kw41z_tmr3_disable();
+				/* Store the frame pending bit status. */
+				kw41z_context_data.frame_pending =
+					irqsts & ZLL_IRQSTS_RX_FRM_PEND_MASK;
 			case KW41Z_STATE_TX:
 				LOG_DBG("TX seq done");
 				KW_DBG_TRACE(KW41_DBG_TRACE_TX, irqsts,

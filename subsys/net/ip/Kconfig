@@ -1,10 +1,7 @@
-# Kconfig - IP stack config
+# IP stack config
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "IP stack"
 
@@ -238,14 +235,14 @@ config NET_ROUTING
 	  would need to populate the routing table. RPL used to do that
 	  earlier but currently there is no RPL support in Zephyr.
 
-config	NET_MAX_ROUTES
+config NET_MAX_ROUTES
 	int "Max number of routing entries stored."
 	default NET_IPV6_MAX_NEIGHBORS
 	depends on NET_ROUTE
 	help
 	  This determines how many entries can be stored in routing table.
 
-config	NET_MAX_NEXTHOPS
+config NET_MAX_NEXTHOPS
 	int "Max number of next hop entries stored."
 	default NET_MAX_ROUTES
 	depends on NET_ROUTE
@@ -256,7 +253,7 @@ config NET_ROUTE_MCAST
 	bool
 	depends on NET_ROUTE
 
-config	NET_MAX_MCAST_ROUTES
+config NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
 	default 1
 	depends on NET_ROUTE_MCAST
@@ -296,7 +293,6 @@ config NET_TCP_BACKLOG_SIZE
 
 config NET_TCP_AUTO_ACCEPT
 	bool "Auto accept incoming TCP data"
-	default n
 	depends on NET_TCP
 	help
 	  Automatically accept incoming TCP data packet to the valid
@@ -385,7 +381,6 @@ endchoice
 
 config NET_TEST_PROTOCOL
 	bool "Enable JSON based test protocol (UDP)"
-	default n
 	help
 	  Enable JSON based test protocol (UDP).
 
@@ -586,8 +581,8 @@ config NET_BUF_DATA_POOL_SIZE
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
-	 This value tell what is the size of the memory pool where each
-	 network buffer is allocated from.
+	  This value tell what is the size of the memory pool where each
+	  network buffer is allocated from.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool

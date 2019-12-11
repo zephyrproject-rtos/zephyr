@@ -1,8 +1,7 @@
-# Kconfig - Particle Xenon board configuration
-#
+# Particle Xenon board configuration
+
 # Copyright (c) 2018 Endre Karlson
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_PARTICLE_XENON
@@ -27,13 +26,13 @@ endif # I2C
 if SPI
 
 config SPI_2
-       default y
+	default y
 
 endif # SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK

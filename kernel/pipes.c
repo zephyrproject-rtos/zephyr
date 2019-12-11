@@ -15,6 +15,7 @@
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <ksched.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
 #include <init.h>

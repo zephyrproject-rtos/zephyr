@@ -16,7 +16,7 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_userspace_enter)
 GTEXT(z_arm_do_syscall)
-GTEXT(z_arch_user_string_nlen)
+GTEXT(arch_user_string_nlen)
 GTEXT(z_arm_user_string_nlen_fault_start)
 GTEXT(z_arm_user_string_nlen_fault_end)
 GTEXT(z_arm_user_string_nlen_fixup)
@@ -497,9 +497,9 @@ dispatch_syscall:
 
 
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
     push {r0, r1, r2, r4, r5, lr}
 
     /* sp+4 is error value, init to -1 */

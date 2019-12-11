@@ -1,10 +1,7 @@
-# Kconfig - BMM150 Geomagnetic sensor configuration options
+# BMM150 Geomagnetic sensor configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMM150
 	bool "BMM150 I2C Geomagnetic Chip"
@@ -12,24 +9,6 @@ menuconfig BMM150
 	help
 	  Enable driver for BMM150 I2C-based Geomagnetic sensor.
 if BMM150
-
-config BMM150_DEV_NAME
-	string "BMM150 device name"
-	default "bmm150"
-
-config BMM150_I2C_ADDR
-	hex "BMM150 I2C slave address"
-	default 0x10
-	help
-	  Specify the I2C slave address for the BMM150.
-	  Possible addresses are 0x10,0x11,0x12,0x13.
-
-config BMM150_I2C_MASTER_DEV_NAME
-	string "I2C master where BMM150 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which BMM150
-	  is connected.
 
 choice
 	prompt "Default preset"

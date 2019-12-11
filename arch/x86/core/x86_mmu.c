@@ -746,7 +746,7 @@ static void add_mmu_region(struct x86_page_tables *ptables,
 	}
 }
 
-/* Called from x86's z_arch_kernel_init() */
+/* Called from x86's arch_kernel_init() */
 void z_x86_paging_init(void)
 {
 	size_t pages_free;
@@ -777,7 +777,7 @@ void z_x86_paging_init(void)
 }
 
 #ifdef CONFIG_X86_USERSPACE
-int z_arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return z_x86_mmu_validate(z_x86_thread_page_tables_get(_current), addr,
 				  size, write != 0);
@@ -1003,8 +1003,8 @@ void z_x86_thread_pt_init(struct k_thread *thread)
  * mode the per-thread page tables will be generated and the memory domain
  * configuration applied.
  */
-void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					u32_t partition_id)
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      u32_t partition_id)
 {
 	sys_dnode_t *node, *next_node;
 
@@ -1024,7 +1024,7 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	}
 }
 
-void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
+void arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	for (int i = 0, pcount = 0; pcount < domain->num_partitions; i++) {
 		struct k_mem_partition *partition;
@@ -1035,11 +1035,11 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 		}
 		pcount++;
 
-		z_arch_mem_domain_partition_remove(domain, i);
+		arch_mem_domain_partition_remove(domain, i);
 	}
 }
 
-void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
@@ -1062,8 +1062,8 @@ void z_arch_mem_domain_thread_remove(struct k_thread *thread)
 	}
 }
 
-void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				     u32_t partition_id)
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   u32_t partition_id)
 {
 	sys_dnode_t *node, *next_node;
 
@@ -1080,7 +1080,7 @@ void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	}
 }
 
-void z_arch_mem_domain_thread_add(struct k_thread *thread)
+void arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	if ((thread->base.user_options & K_USER) == 0) {
 		return;
@@ -1090,7 +1090,7 @@ void z_arch_mem_domain_thread_add(struct k_thread *thread)
 			       thread->mem_domain_info.mem_domain);
 }
 
-int z_arch_mem_domain_max_partitions_get(void)
+int arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }

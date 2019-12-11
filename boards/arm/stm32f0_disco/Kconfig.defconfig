@@ -1,9 +1,7 @@
-# Kconfig - STM32F0 development board with STM32F051R8T6 MCU
-#
+# STM32F0 development board with STM32F051R8T6 MCU
+
 # Copyright (c) 2018 Nathan Tsoi <nathan@vertile.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F0_DISCO
 

@@ -749,7 +749,7 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
 		.send_ttl = BT_MESH_TTL_MAX,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub  = &bt_mesh.sub[0],
+		.sub  = bt_mesh_subnet_get(frnd->net_idx),
 		.ctx  = &ctx,
 		.src  = bt_mesh_primary_addr(),
 		.xmit = bt_mesh_net_transmit_get(),

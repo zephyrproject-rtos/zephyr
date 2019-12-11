@@ -1,11 +1,9 @@
-# Kconfig.series - Nordic Semiconductor nRF52 MCU line
-#
-# Copyright (c) 2016-2018 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Nordic Semiconductor nRF52 MCU line
 
-config  SOC_SERIES_NRF52X
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF52X
 	bool "Nordic Semiconductor nRF52 series MCU"
 	select SOC_COMPATIBLE_NRF52X
 	select CPU_CORTEX_M4
@@ -16,4 +14,4 @@ config  SOC_SERIES_NRF52X
 	select HAS_NRFX
 	select HAS_SEGGER_RTT
 	help
-	 Enable support for NRF52 MCU series
+	  Enable support for NRF52 MCU series

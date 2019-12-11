@@ -36,6 +36,10 @@
 
 #define LIS2DH_AUTOINCREMENT_ADDR	BIT(7)
 
+#define LIS2DH_REG_CTRL0		0x1e
+#define LIS2DH_SDO_PU_DISC_SHIFT	7
+#define LIS2DH_SDO_PU_DISC_MASK		BIT(LIS2DH_SDO_PU_DISC_SHIFT)
+
 #define LIS2DH_REG_CTRL1		0x20
 #define LIS2DH_ACCEL_XYZ_SHIFT		0
 #define LIS2DH_ACCEL_X_EN_BIT		BIT(0)
@@ -113,7 +117,6 @@
 
 #define LIS2DH_FS_SELECT(fs)		((fs) << LIS2DH_FS_SHIFT)
 #define LIS2DH_FS_BITS			(LIS2DH_FS_SELECT(LIS2DH_FS_IDX))
-#define LIS2DH_ACCEL_SCALE(range_g)	((SENSOR_G * 2 * (range_g)) / 65636LL)
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
 	#define LIS2DH_HR_BIT		BIT(3)
 #else
@@ -197,7 +200,7 @@ struct lis2dh_data {
 #endif
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
-	u16_t scale;
+	u32_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	struct device *gpio_int1;
@@ -349,15 +352,15 @@ static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
 #endif
 }
 
+int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
+			    u8_t pos, u8_t mask, u8_t val);
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 int lis2dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
 int lis2dh_init_interrupt(struct device *dev);
-
-int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
-			    u8_t pos, u8_t mask, u8_t val);
 
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val);

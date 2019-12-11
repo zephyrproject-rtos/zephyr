@@ -3,10 +3,6 @@
 Install Windows Host Dependencies
 #################################
 
-.. important::
-
-   Go back to the main :ref:`getting_started` when you're done here.
-
 This guide was tested on Windows versions 7, 8.1, and 10.
 
 Update Your Operating System

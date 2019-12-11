@@ -84,18 +84,6 @@ struct usb_desc_header {
 	u8_t bDescriptorType;       /**< descriptor type */
 };
 
-#define DESC_DEVICE                 1
-#define DESC_CONFIGURATION          2
-#define DESC_STRING                 3
-#define DESC_INTERFACE              4
-#define DESC_ENDPOINT               5
-#define DESC_DEVICE_QUALIFIER       6
-#define DESC_OTHER_SPEED            7
-#define DESC_INTERFACE_POWER        8
-
-#define CS_INTERFACE                0x24
-#define CS_ENDPOINT                 0x25
-
 #define GET_DESC_TYPE(x)            (((x)>>8)&0xFF)
 #define GET_DESC_INDEX(x)           ((x)&0xFF)
 

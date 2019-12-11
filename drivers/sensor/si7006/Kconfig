@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Electronut Labs
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SI7006
 	bool "Si7006 Temperature and Humidity Sensor"

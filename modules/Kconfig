@@ -1,6 +1,4 @@
-
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 comment "Optional modules. Make sure they're installed, via the project manifest."

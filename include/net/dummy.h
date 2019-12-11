@@ -33,6 +33,11 @@ struct dummy_api {
 	int (*send)(struct device *dev, struct net_pkt *pkt);
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * dummy API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct dummy_api, iface_api) == 0);
+
 #ifdef __cplusplus
 }
 #endif

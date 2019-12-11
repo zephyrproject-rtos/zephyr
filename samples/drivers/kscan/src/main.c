@@ -5,8 +5,8 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
-#include <gpio.h>
+#include <sys/printk.h>
+#include <drivers/gpio.h>
 #include <soc.h>
 #include <kscan.h>
 

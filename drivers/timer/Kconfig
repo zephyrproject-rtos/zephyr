@@ -1,13 +1,9 @@
-# Kconfig - timer driver configuration options
+# Timer driver configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menu "Timer Drivers"
 
@@ -37,7 +33,6 @@ config APIC_TIMER_IRQ_PRIORITY
 
 config APIC_TIMER_TSC
 	bool "Use invariant TSC for z_timer_cycle_get_32()"
-	default n
 	help
 	  If your CPU supports invariant TSC, and you know the ratio of the
 	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
@@ -97,7 +92,7 @@ config TSC_CYCLES_PER_SEC
 	  value of CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC will be used instead;
 	  many MCUs these values are the same.
 
-endif #LOAPIC_TIMER
+endif # LOAPIC_TIMER
 
 menuconfig ARCV2_TIMER
 	bool "ARC Timer"
@@ -143,6 +138,8 @@ config NRF_RTC_TIMER
 	  This module implements a kernel device driver for the nRF Real Time
 	  Counter NRF_RTC1 and provides the standard "system clock driver"
 	  interfaces.
+
+source "drivers/timer/Kconfig.stm32_lptim"
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"

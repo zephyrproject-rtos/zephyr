@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 #include <cmsis_os.h>
+#include <string.h>
 
 K_MEM_SLAB_DEFINE(cmsis_semaphore_slab, sizeof(struct k_sem),
 		CONFIG_CMSIS_SEMAPHORE_MAX_COUNT, 4);

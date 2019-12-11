@@ -77,6 +77,11 @@ struct canbus_api {
 			  const void *optval, socklen_t *optlen);
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * CANBUS API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct canbus_api, iface_api) == 0);
+
 /**
  * @}
  */

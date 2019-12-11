@@ -38,8 +38,8 @@
 #define L2CAP_POLICY_WHITELIST		0x01
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
-NET_BUF_POOL_DEFINE(data_tx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
-NET_BUF_POOL_DEFINE(data_rx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, NULL);
 
 static u8_t l2cap_policy;
 static struct bt_conn *l2cap_whitelist[CONFIG_BT_MAX_CONN];
@@ -62,7 +62,7 @@ static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	u32_t delta;
 
 	delta = k_cycle_get_32() - cycle_stamp;
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);
+	delta = (u32_t)k_cyc_to_ns_floor64(delta);
 
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.

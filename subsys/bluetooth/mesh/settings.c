@@ -1502,7 +1502,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	char path[20];
 	int i, count, err;
 
-	for (i = 0, count = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (i = 0, count = 0; i < CONFIG_BT_MESH_MODEL_GROUP_COUNT; i++) {
 		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
 			groups[count++] = mod->groups[i];
 		}
@@ -1904,6 +1904,7 @@ void bt_mesh_clear_node(struct bt_mesh_node *node)
 		return;
 	}
 
+	free_slot->clear = true;
 	free_slot->addr = node->addr;
 
 	schedule_store(BT_MESH_NODES_PENDING);

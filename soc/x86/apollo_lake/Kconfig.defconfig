@@ -1,11 +1,8 @@
-#
-# Kconfig - Apollo Lake SoC configuration options
-#
+# Apollo Lake SoC configuration options
+
 # Copyright (c) 2018-2019 Intel Corporation
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_APOLLO_LAKE
 

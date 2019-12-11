@@ -11,8 +11,8 @@
  * ARM-specific kernel interrupt handling interface. Included by arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
 
 #include <irq.h>
 #include <sw_isr_table.h>
@@ -24,13 +24,13 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_int_exit);
-GTEXT(z_arch_irq_enable)
-GTEXT(z_arch_irq_disable)
-GTEXT(z_arch_irq_is_enabled)
+GTEXT(arch_irq_enable)
+GTEXT(arch_irq_disable)
+GTEXT(arch_irq_is_enabled)
 #else
-extern void z_arch_irq_enable(unsigned int irq);
-extern void z_arch_irq_disable(unsigned int irq);
-extern int z_arch_irq_is_enabled(unsigned int irq);
+extern void arch_irq_enable(unsigned int irq);
+extern void arch_irq_disable(unsigned int irq);
+extern int arch_irq_is_enabled(unsigned int irq);
 
 extern void z_arm_int_exit(void);
 
@@ -76,43 +76,47 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
  * We additionally set the priority in the interrupt controller at
  * runtime.
  */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
-#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
-/* FIXME prefer these inline, but see GH-3056 */
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void _arch_isr_direct_pm(void);
-#define Z_ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
+#define ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else
-#define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
+#define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
-#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
-extern void z_arch_isr_direct_header(void);
-
-#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
+#define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
+#define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
 /* arch/arm/core/exc_exit.S */
 extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING
+extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
-static inline void z_arch_isr_direct_footer(int maybe_swap)
+static inline void arch_isr_direct_header(void)
 {
+#ifdef CONFIG_TRACING
+	sys_trace_isr_enter();
+#endif
+}
 
+static inline void arch_isr_direct_footer(int maybe_swap)
+{
 #ifdef CONFIG_TRACING
 	sys_trace_isr_exit();
 #endif
@@ -121,7 +125,7 @@ static inline void z_arch_isr_direct_footer(int maybe_swap)
 	}
 }
 
-#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt ("IRQ"))) void name(void) \
 	{ \
@@ -149,4 +153,4 @@ extern void _isr_wrapper(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_ */

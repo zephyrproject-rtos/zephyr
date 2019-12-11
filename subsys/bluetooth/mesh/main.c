@@ -167,7 +167,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
 		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-		struct bt_uuid_128 uuid = { .uuid.type = BT_UUID_TYPE_128 };
+		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
 
 		memcpy(uuid.val, prov->uuid, 16);
 		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));

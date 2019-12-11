@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <toolchain.h>
+#include <linker/sections.h>
 #include <offsets_short.h>
 
 /* exports */
@@ -12,7 +13,7 @@ GTEXT(_exception)
 
 /* import */
 GTEXT(_Fault)
-GTEXT(z_arch_swap)
+GTEXT(arch_swap)
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(z_irq_do_offload)
 GTEXT(_offload_routine)
@@ -126,7 +127,7 @@ on_irq_stack:
 	/*
 	 * A context reschedule is required: keep the volatile registers of
 	 * the interrupted thread on the context's stack.  Utilize
-	 * the existing z_arch_swap() primitive to save the remaining
+	 * the existing arch_swap() primitive to save the remaining
 	 * thread's registers (including floating point) and perform
 	 * a switch to the new thread.
 	 */
@@ -143,7 +144,7 @@ on_irq_stack:
 	 */
 	mov r4, et
 
-	call z_arch_swap
+	call arch_swap
 	jmpi _exception_exit
 #else
 	jmpi no_reschedule

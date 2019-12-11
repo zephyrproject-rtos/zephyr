@@ -1,10 +1,7 @@
-# Kconfig - sensor configuration options
+# Sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SENSOR
 	bool "Sensor Drivers"
@@ -114,6 +111,8 @@ source "drivers/sensor/mcp9808/Kconfig"
 source "drivers/sensor/mpu6050/Kconfig"
 
 source "drivers/sensor/ms5837/Kconfig"
+
+source "drivers/sensor/ms5607/Kconfig"
 
 source "drivers/sensor/nrf5/Kconfig"
 

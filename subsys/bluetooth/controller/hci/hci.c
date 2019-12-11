@@ -2336,11 +2336,24 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 
 	pdu_data = (void *)node_tx->pdu;
 
-	if (flags == BT_ACL_START_NO_FLUSH || flags == BT_ACL_START) {
-		pdu_data->ll_id = PDU_DATA_LLID_DATA_START;
-	} else {
-		pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
+	if (bt_acl_flags_bc(flags) != BT_ACL_POINT_TO_POINT) {
+		return -EINVAL;
 	}
+
+	switch (bt_acl_flags_pb(flags)) {
+	case BT_ACL_START_NO_FLUSH:
+		pdu_data->ll_id = PDU_DATA_LLID_DATA_START;
+		break;
+	case BT_ACL_CONT:
+		pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
+		break;
+	default:
+		/* BT_ACL_START and BT_ACL_COMPLETE not allowed on LE-U
+		 * from Host to Controller
+		 */
+		return -EINVAL;
+	}
+
 	pdu_data->len = len;
 	memcpy(&pdu_data->lldata[0], buf->data, len);
 

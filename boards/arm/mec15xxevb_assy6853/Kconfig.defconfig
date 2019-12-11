@@ -1,8 +1,6 @@
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 if BOARD_MEC15XXEVB_ASSY6853
 
 config BOARD
@@ -112,12 +110,12 @@ endif # RTOS_TIMER
 if PS2
 
 config PS2_XEC_0
-        default y
+	default y
 
 config PS2_XEC_1
-        default y
+	default y
 
-endif #PS2
+endif # PS2
 
 if SPI
 
@@ -135,5 +133,16 @@ config SPI_0_OP_MODES
 endif # SPI_XEC_QMSPI
 
 endif # SPI
+
+# power management stuff
+if SYS_POWER_MANAGEMENT
+
+config SYS_PM_MIN_RESIDENCY_SLEEP_1
+	default 1000
+
+config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1
+	default 2000
+
+endif # SYS_POWER_MANAGEMENT
 
 endif # BOARD_MEC15XXEVB_ASSY6853

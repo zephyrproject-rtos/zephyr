@@ -553,7 +553,8 @@ static int nvs_startup(struct nvs_fs *fs)
 	 * a closed sector, this is where NVS can to write.
 	 */
 	for (i = 0; i < fs->sector_count; i++) {
-		addr = (i << ADDR_SECT_SHIFT) + fs->sector_size - ate_size;
+		addr = (i << ADDR_SECT_SHIFT) +
+		       (u16_t)(fs->sector_size - ate_size);
 		rc = nvs_flash_cmp_const(fs, addr, 0xff,
 					  sizeof(struct nvs_ate));
 		if (rc) {
@@ -671,7 +672,7 @@ end:
 int nvs_clear(struct nvs_fs *fs)
 {
 	int rc;
-	off_t addr;
+	u32_t addr;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");

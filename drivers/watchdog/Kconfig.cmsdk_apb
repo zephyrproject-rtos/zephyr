@@ -1,10 +1,7 @@
-# Kconfig.cmsdk_ahb - ARM CMSDK (Cortex-M System Design Kit) AHB WDOG cfg
-#
-#
+# ARM CMSDK (Cortex-M System Design Kit) AHB WDOG cfg
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_ARM
 

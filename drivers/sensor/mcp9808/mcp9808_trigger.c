@@ -18,22 +18,13 @@ LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 static int mcp9808_reg_write(struct mcp9808_data *data, u8_t reg, u16_t val)
 {
-	u16_t be_val = sys_cpu_to_be16(val);
-
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = (u8_t *) &be_val,
-			.len = 2,
-			.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
-		},
+	u8_t buf[3] = {
+		reg,
+		val >> 8,	/* big-endian register storage */
+		val & 0xFF,
 	};
 
-	return i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr);
+	return i2c_write(data->i2c_master, buf, sizeof(buf), data->i2c_slave_addr);
 }
 
 static int mcp9808_reg_update(struct mcp9808_data *data, u8_t reg,
@@ -179,15 +170,15 @@ void mcp9808_setup_interrupt(struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio = device_get_binding(CONFIG_MCP9808_GPIO_CONTROLLER);
-	gpio_pin_configure(gpio, CONFIG_MCP9808_GPIO_PIN,
+	gpio = device_get_binding(DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_CONTROLLER);
+	gpio_pin_configure(gpio, DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&data->gpio_cb,
 			   mcp9808_gpio_cb,
-			   BIT(CONFIG_MCP9808_GPIO_PIN));
+			   BIT(DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN));
 
 	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_enable_callback(gpio, CONFIG_MCP9808_GPIO_PIN);
+	gpio_pin_enable_callback(gpio, DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN);
 }

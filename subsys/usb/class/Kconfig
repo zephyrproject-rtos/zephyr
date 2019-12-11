@@ -1,10 +1,7 @@
-# Kconfig - USB class drivers configuration options
+# USB class drivers configuration options
 
-#
 # Copyright (c) 2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config USB_CDC_ACM
 	bool "USB CDC ACM Device Class Driver"
@@ -95,7 +92,7 @@ config USB_DEVICE_BLUETOOTH
 	  USB Bluetooth device class driver
 
 config BLUETOOTH_INT_EP_MPS
-	int
+	int "Bluetooth device class interrupt endpoint size"
 	depends on USB_DEVICE_BLUETOOTH
 	default 16
 	range 8 64
@@ -131,6 +128,7 @@ config USB_DFU_CLASS
 	select MPU_ALLOW_FLASH_WRITE
 	select POLL
 	depends on IMG_MANAGER
+	select IMG_ERASE_PROGRESSIVELY if SOC_FLASH_NRF
 	help
 	  USB DFU class driver
 
@@ -147,8 +145,7 @@ config USB_DFU_DETACH_TIMEOUT
 	default 1000
 
 config USB_DFU_DEFAULT_POLLTIMEOUT
-	prompt "Default value for bwPollTimeout"
-	int
+	int "Default value for bwPollTimeout"
 	depends on USB_DFU_CLASS
 	default 256
 	range 0 1000

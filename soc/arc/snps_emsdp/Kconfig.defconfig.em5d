@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_EMSDP_EM5D
 
@@ -43,4 +40,4 @@ config ZTEST_STACKSIZE
 
 endif # ZTEST
 
-endif #SOC_EMSDP_EM5D
+endif # SOC_EMSDP_EM5D

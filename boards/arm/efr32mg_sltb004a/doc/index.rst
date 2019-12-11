@@ -59,6 +59,8 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| MPU       | on-chip    | memory protection unit              |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |

@@ -31,7 +31,7 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
  *
  * @return N/A
  */
-void z_arch_cpu_idle(void)
+void arch_cpu_idle(void)
 {
 	riscv_idle(SOC_MSTATUS_IEN);
 }
@@ -41,7 +41,7 @@ void z_arch_cpu_idle(void)
  * @brief Atomically re-enable interrupts and enter low power mode
  *
  * INTERNAL
- * The requirements for z_arch_cpu_atomic_idle() are as follows:
+ * The requirements for arch_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -53,7 +53,7 @@ void z_arch_cpu_idle(void)
  *
  * @return N/A
  */
-void z_arch_cpu_atomic_idle(unsigned int key)
+void arch_cpu_atomic_idle(unsigned int key)
 {
 	riscv_idle(key);
 }

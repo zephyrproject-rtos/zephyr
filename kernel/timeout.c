@@ -3,12 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <timeout_q.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+
+#include <kernel.h>
 #include <spinlock.h>
 #include <ksched.h>
+#include <timeout_q.h>
 #include <syscall_handler.h>
+#include <drivers/timer/system_timer.h>
+#include <sys_clock.h>
 
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
@@ -236,7 +238,7 @@ u32_t z_tick_get_32(void)
 
 s64_t z_impl_k_uptime_get(void)
 {
-	return __ticks_to_ms(z_tick_get());
+	return k_ticks_to_ms_floor64(z_tick_get());
 }
 
 #ifdef CONFIG_USERSPACE

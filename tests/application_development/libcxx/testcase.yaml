@@ -1,16 +1,10 @@
 tests:
-  misc.app_dev.libcxx:
+  application_development.cpp.libcxx:
     arch_exclude: posix
     platform_exclude: qemu_x86_coverage
     min_flash: 54
     tags: cpp
-  misc.app_dev.libcxx.zephyr_cpp:
-    arch_exclude: posix
-    platform_exclude: qemu_x86_coverage
-    tags: cpp
-    extra_configs:
-        - CONFIG_ZEPHYR_CPLUSPLUS=y
-  misc.app_dev.libcxx.exceptions:
+  application_development.cpp.libcxx.exceptions:
     arch_exclude: posix
     platform_exclude: qemu_x86_coverage
     min_flash: 54

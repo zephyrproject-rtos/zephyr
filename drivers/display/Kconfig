@@ -1,10 +1,7 @@
-# Kconfig - Display drivers
+# Display drivers
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DISPLAY
 	bool "Display Drivers"
@@ -30,7 +27,6 @@ source "drivers/display/Kconfig.dummy"
 config FRAMEBUF_DISPLAY
 	# Hidden, selected by client drivers.
 	bool
-	default n
 	help
 	  Enable framebuffer-based display 'helper' driver.
 

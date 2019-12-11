@@ -3,7 +3,7 @@ sample:
         the lpcxpresso54114 using a mailbox.
     name: IPM MCUX Mailbox Sample
 tests:
-    sample.subsys.ipc.ipm_mcux:
+    sample.ipc.ipm.ipm_mcux:
         platform_whitelist: lpcxpresso54114_m4
         tags: ipm
         harness: console

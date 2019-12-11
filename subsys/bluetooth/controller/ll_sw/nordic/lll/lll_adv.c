@@ -36,7 +36,8 @@
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_adv
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -479,7 +480,8 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	if (!lll->chan_map_curr && lll->is_hdcd) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll->is_hdcd &&
+	    !lll->chan_map_curr) {
 		lll->chan_map_curr = lll->chan_map;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */

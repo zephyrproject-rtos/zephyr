@@ -133,7 +133,7 @@ static inline void benchmark_timer_init(void)  {       }
 static inline void benchmark_timer_stop(void)  {       }
 static inline void benchmark_timer_start(void) {       }
 
-#define CYCLES_TO_NS(x) SYS_CLOCK_HW_CYCLES_TO_NS(x)
+#define CYCLES_TO_NS(x) (u32_t)k_cyc_to_ns_floor64(x)
 
 /* Get Core Frequency in MHz */
 static inline u32_t get_core_freq_MHz(void)

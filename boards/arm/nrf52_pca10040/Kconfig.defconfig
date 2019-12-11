@@ -1,7 +1,6 @@
-# Kconfig - nRF52 PCA10040 board configuration
-#
+# nRF52 PCA10040 board configuration
+
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF52_PCA10040

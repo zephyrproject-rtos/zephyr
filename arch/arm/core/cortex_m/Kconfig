@@ -1,10 +1,7 @@
-# Kconfig - ARM Cortex-M platform configuration options
+# ARM Cortex-M platform configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # NOTE: We have the specific core implementations first and outside of the
 # if CPU_CORTEX_M block so that SoCs can select which core they are using
@@ -111,7 +108,7 @@ config CPU_CORTEX_M_HAS_SPLIM
 
 	  In an ARMv8-M Mainline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have additional Secure instances.
-  	  In an ARMv8-M Baseline implementation with the Security Extension
+	  In an ARMv8-M Baseline implementation with the Security Extension
 	  the MSPLIM, PSPLIM registers have only Secure instances.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
@@ -257,12 +254,6 @@ config SW_VECTOR_RELAY
 	  vector table relocation mechanisms or for Cortex-M0+
 	  (or an Armv8-M baseline core) with no VTOR and no other hardware
 	  relocation table mechanisms.
-
-config PLATFORM_SPECIFIC_INIT
-	bool "Enable platform (SOC) specific startup hook"
-	help
-	  The platform specific initialization code (z_platform_init) is executed
-	  at the beginning of the startup code (__start).
 
 endmenu
 

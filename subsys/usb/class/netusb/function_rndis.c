@@ -89,14 +89,14 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 	/* Header Functional Descriptor */
 	.if0_header = {
 		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = HEADER_FUNC_DESC,
 		.bcdCDC = sys_cpu_to_le16(USB_1_1),
 	},
 	/* Call Management Functional Descriptor */
 	.if0_cm = {
 		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
 		.bmCapabilities = 0x00,
 		.bDataInterface = 1,
@@ -104,7 +104,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 	/* ACM Functional Descriptor */
 	.if0_acm = {
 		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = ACM_FUNC_DESC,
 		/* Device supports the request combination of:
 		 *	Set_Line_Coding,
@@ -117,7 +117,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 	/* Union Functional Descriptor */
 	.if0_union = {
 		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = UNION_FUNC_DESC,
 		.bControlInterface = 0,
 		.bSubordinateInterface0 = 1,

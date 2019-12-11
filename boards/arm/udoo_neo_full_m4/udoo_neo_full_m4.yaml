@@ -15,6 +15,6 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - uart
-  - gpio
   - counter
+  - gpio
+  - uart

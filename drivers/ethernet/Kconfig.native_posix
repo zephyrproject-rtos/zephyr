@@ -1,7 +1,6 @@
-# Kconfig - Native posix ethernet driver configuration options
+# Native posix ethernet driver configuration options
 
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NATIVE_POSIX
@@ -104,7 +103,7 @@ config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
 
 if ! ETH_NATIVE_POSIX_RANDOM_MAC
 
-config	ETH_NATIVE_POSIX_MAC_ADDR
+config ETH_NATIVE_POSIX_MAC_ADDR
 	string "MAC address for the interface"
 	default ""
 	help

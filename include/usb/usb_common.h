@@ -45,7 +45,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 #define ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 
-#define BCD(x) ((((x) / 10) << 4) | ((x) / 10))
+#define BCD(x) ((((x) / 10) << 4) | ((x) % 10))
 
 /* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE		18
@@ -65,10 +65,14 @@
 #define USB_INTERFACE_DESC		0x04
 #define USB_ENDPOINT_DESC		0x05
 #define USB_DEVICE_QUAL_DESC		0x06
+#define USB_OTHER_SPEED			0x07
+#define USB_INTERFACE_POWER		0x08
 #define USB_INTERFACE_ASSOC_DESC	0x0B
 #define USB_DEVICE_CAPABILITY_DESC	0x10
 #define USB_HID_DESC			0x21
 #define USB_HID_REPORT_DESC		0x22
+#define USB_CS_INTERFACE_DESC		0x24
+#define USB_CS_ENDPOINT_DESC		0x25
 #define USB_DFU_FUNCTIONAL_DESC		0x21
 #define USB_ASSOCIATION_DESC		0x0B
 #define USB_BINARY_OBJECT_STORE_DESC	0x0F

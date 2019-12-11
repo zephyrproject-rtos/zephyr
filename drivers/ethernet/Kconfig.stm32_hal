@@ -1,17 +1,14 @@
-# Kconfig - STM32 HAL Ethernet driver configuration options
+# STM32 HAL Ethernet driver configuration options
 
-#
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_STM32_HAL
 	bool "STM32 HAL Ethernet driver"
 	select USE_STM32_HAL_ETH
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
-          all Ethernet enabled variants of the F2, F4 and F7 series.
+	  all Ethernet enabled variants of the F2, F4 and F7 series.
 
 if ETH_STM32_HAL
 
@@ -90,10 +87,10 @@ config ETH_STM32_HAL_MII
 
 config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
 	int "Carrier check timeout period (ms)"
- 	default 500
- 	range 100 30000
- 	help
- 	  Set the RX idle timeout period in milliseconds after which the
+	default 500
+	range 100 30000
+	help
+	  Set the RX idle timeout period in milliseconds after which the
 	  PHY's carrier status is re-evaluated.
 
 endif # ETH_STM32_HAL

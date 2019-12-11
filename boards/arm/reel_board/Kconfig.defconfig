@@ -1,7 +1,6 @@
-# Kconfig - reel board configuration
-#
+# reel board configuration
+
 # Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
@@ -63,7 +62,7 @@ endif # SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK

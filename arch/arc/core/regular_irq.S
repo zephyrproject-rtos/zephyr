@@ -17,6 +17,7 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
@@ -63,7 +64,7 @@ PRE-CONTEXT-SWITCH STACK
 
          --------------------------------------
   SP ->  | Return address; PC (Program Counter), in fact value taken from
-         | BLINK register in z_arch_switch()
+         | BLINK register in arch_switch()
          --------------------------------------
          | STATUS32 value, we explicitly save it here for later usage, read-on
          --------------------------------------
@@ -268,7 +269,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 #ifdef CONFIG_PREEMPT_ENABLED
 
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
 	cmp_s r0, 0
 	beq _rirq_no_reschedule

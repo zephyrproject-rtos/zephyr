@@ -56,6 +56,11 @@ int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 		    "standard" : "extended"
 		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
 
+	if (frame->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
+
 	if (!data->loopback) {
 
 		return 0;

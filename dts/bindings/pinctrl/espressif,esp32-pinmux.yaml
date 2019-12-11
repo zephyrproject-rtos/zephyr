@@ -1,0 +1,14 @@
+# Copyright (c) 2019 Mohamed ElShahawi
+# SPDX-License-Identifier: Apache-2.0
+title: ESP32 PINMUX
+
+description: >
+    This binding gives a base representation of the ESP32 PINMUX
+
+compatible: "espressif,esp32-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true

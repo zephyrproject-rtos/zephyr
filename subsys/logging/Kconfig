@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LOG
 	bool "Logging"
@@ -131,7 +128,7 @@ config LOG_IMMEDIATE
 	  by another one in the higher priority context.
 
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
-	depends on !NEWLIB_LIBC && !ARCH_POSIX
+	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
 	help
 	  Selecting this option will choose more robust _prf() function from
@@ -269,7 +266,6 @@ config LOG_CMDS
 
 config LOG_FRONTEND
 	bool "Enable frontend"
-	default n
 	select LOG_IMMEDIATE
 	help
 	  When enabled, logs are redirected to a custom frontend instead

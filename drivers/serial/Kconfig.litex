@@ -1,9 +1,7 @@
-# Kconfig.litex - LiteX UART (LiteUART) configuration option
-#
+# LiteX UART (LiteUART) configuration option
+
 # Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config UART_LITEUART
 	bool "LiteUART serial driver"

@@ -43,8 +43,8 @@
  * to enable FP register sharing on its behalf.
  */
 
-#include <kernel_structs.h>
-#include <toolchain.h>
+#include <kernel.h>
+#include <kernel_internal.h>
 
 /* SSE control/status register default value (used by assembler code) */
 extern u32_t _sse_mxcsr_default_value;

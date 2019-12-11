@@ -1,7 +1,6 @@
-# Kconfig - ETH_MCUX Ethernet driver configuration options
+# ETH_MCUX Ethernet driver configuration options
 
 # Copyright (c) 2016-2017 ARM Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_MCUX
@@ -52,7 +51,7 @@ config ETH_MCUX_TX_BUFFERS
 config ETH_MCUX_0
 	bool "MCUX Ethernet port 0"
 	help
-	 Include port 0 driver
+	  Include port 0 driver
 
 choice ETH_MCUX_0_MAC_SELECT
 	prompt "MAC address"

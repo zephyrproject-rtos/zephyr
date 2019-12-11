@@ -82,17 +82,6 @@ endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-if(WEST)
-  # Verify that the west version found can be used for flashing, e.g. is not the bootstrapper.
-  execute_process(COMMAND ${WEST} flash -h
-                  RESULT_VARIABLE return_code
-                  OUTPUT_QUIET
-                  ERROR_QUIET)
-  if(NOT ${return_code})
-    set(WEST_FLASH True)
-  endif(NOT ${return_code})
-endif(WEST)
-
 foreach(target flash debug debugserver attach)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
@@ -113,7 +102,7 @@ foreach(target flash debug debugserver attach)
 
   # We pass --skip-rebuild here because the DEPENDS value ensures the
   # build is already up to date before west is run.
-  if(WEST_FLASH)
+  if(WEST)
     set(cmd
       ${CMAKE_COMMAND} -E env
       ${WEST}
@@ -131,13 +120,6 @@ foreach(target flash debug debugserver attach)
       ${comment}
       USES_TERMINAL
       )
-  elseif(WEST)
-    add_custom_target(${target}
-      COMMAND ${CMAKE_COMMAND} -E echo \"West version found in path does not support
-          '${CMAKE_MAKE_PROGRAM} ${target}', ensure west is installed and not only
-          the bootstrapper. run 'west init' to fetch west.\"
-      USES_TERMINAL
-      )
   else()
     add_custom_target(${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
@@ -145,5 +127,5 @@ foreach(target flash debug debugserver attach)
           'pip install west --user', and thereafter 'west init'.\"
       USES_TERMINAL
       )
-  endif(WEST_FLASH)
+  endif(WEST)
 endforeach()

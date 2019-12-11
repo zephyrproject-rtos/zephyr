@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <stdbool.h>
 #include <errno.h>
 #include <random/rand32.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>

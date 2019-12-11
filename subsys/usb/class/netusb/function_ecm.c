@@ -78,14 +78,14 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Header Functional Descriptor */
 	.if0_header = {
 		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = HEADER_FUNC_DESC,
 		.bcdCDC = sys_cpu_to_le16(USB_1_1),
 	},
 	/* Union Functional Descriptor */
 	.if0_union = {
 		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = UNION_FUNC_DESC,
 		.bControlInterface = 0,
 		.bSubordinateInterface0 = 1,
@@ -93,7 +93,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Ethernet Networking Functional descriptor */
 	.if0_netfun_ecm = {
 		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorType = USB_CS_INTERFACE_DESC,
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,
 		.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */

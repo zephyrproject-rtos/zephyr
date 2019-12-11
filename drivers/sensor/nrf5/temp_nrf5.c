@@ -39,6 +39,10 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	int r;
 
+	/* Error if before sensor initialized */
+	if (data->hfclk_dev == NULL) {
+		return -EAGAIN;
+	}
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -102,6 +106,7 @@ static int temp_nrf5_init(struct device *dev)
 
 	LOG_DBG("");
 
+	/* A null hfclk_dev indicates sensor has not been initialized */
 	data->hfclk_dev =
 		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
 	__ASSERT_NO_MSG(data->hfclk_dev);
@@ -123,7 +128,7 @@ static int temp_nrf5_init(struct device *dev)
 static struct temp_nrf5_data temp_nrf5_driver;
 
 DEVICE_AND_API_INIT(temp_nrf5,
-		    CONFIG_TEMP_NRF5_NAME,
+		    DT_INST_0_NORDIC_NRF_TEMP_LABEL,
 		    temp_nrf5_init,
 		    &temp_nrf5_driver,
 		    NULL,

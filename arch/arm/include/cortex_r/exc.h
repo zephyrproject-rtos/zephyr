@@ -33,7 +33,7 @@ extern volatile irq_offload_routine_t offload_routine;
 #endif
 
 /* Check the CPSR mode bits to see if we are in IRQ or FIQ mode */
-static ALWAYS_INLINE bool z_arch_is_in_isr(void)
+static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
 	unsigned int status;
 

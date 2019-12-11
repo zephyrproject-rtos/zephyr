@@ -38,7 +38,7 @@ static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
 	rd_fn_arg = (struct settings_nvs_read_fn_arg *)back_end;
 
 	rc = nvs_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
-	if (rc > len) {
+	if (rc > (ssize_t)len) {
 		/* nvs_read signals that not all bytes were read
 		 * align read len to what was requested
 		 */
@@ -173,12 +173,25 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 			cf->last_name_id--;
 			rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
 				       &cf->last_name_id, sizeof(u16_t));
+			if (rc < 0) {
+				/* Error: can't to store
+				 * the largest name ID in use.
+				 */
+				return rc;
+			}
 		}
 
 		if (delete) {
 			rc = nvs_delete(&cf->cf_nvs, name_id);
-			rc = nvs_delete(&cf->cf_nvs, name_id +
+
+			if (rc >= 0) {
+				rc = nvs_delete(&cf->cf_nvs, name_id +
 					NVS_NAME_ID_OFFSET);
+			}
+
+			if (rc < 0) {
+				return rc;
+			}
 
 			return 0;
 		}
@@ -203,6 +216,9 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	/* write the name if required */
 	if (write_name) {
 		rc = nvs_write(&cf->cf_nvs, write_name_id, name, strlen(name));
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	/* update the last_name_id and write to flash if required*/

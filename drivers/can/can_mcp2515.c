@@ -216,7 +216,7 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 
 	target[MCP2515_FRAME_OFFSET_DLC] = rtr | dlc;
 
-	for (; data_idx < 8; data_idx++) {
+	for (; data_idx < CAN_MAX_DLC; data_idx++) {
 		target[MCP2515_FRAME_OFFSET_D0 + data_idx] =
 			source->data[data_idx];
 	}
@@ -245,7 +245,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const u8_t *source,
 	target->rtr = source[MCP2515_FRAME_OFFSET_DLC] & BIT(6) ?
 		      CAN_REMOTEREQUEST : CAN_DATAFRAME;
 
-	for (; data_idx < 8; data_idx++) {
+	for (; data_idx < CAN_MAX_DLC; data_idx++) {
 		target->data[data_idx] = source[MCP2515_FRAME_OFFSET_D0 +
 						data_idx];
 	}
@@ -386,7 +386,13 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	u8_t tx_idx = 0U;
 	u8_t abc;
 	u8_t nnn;
+	u8_t len;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
+
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
 
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
 		return CAN_TIMEOUT;
@@ -417,7 +423,10 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	/* Address Pointer selection */
 	abc = 2 * tx_idx;
 
-	mcp2515_cmd_load_tx_buffer(dev, abc, tx_frame, sizeof(tx_frame));
+	/* Calculate minimum length to transfer */
+	len = sizeof(tx_frame) - CAN_MAX_DLC + msg->dlc;
+
+	mcp2515_cmd_load_tx_buffer(dev, abc, tx_frame, len);
 
 	/* request tx slot transmission */
 	nnn = BIT(tx_idx);

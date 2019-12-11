@@ -1,11 +1,8 @@
-# Kconfig - console driver configuration options
+# Console driver configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Setting shared by different subsystems
 
@@ -179,7 +176,7 @@ config IPM_CONSOLE_STACK_SIZE
 	  thread to print out incoming messages from the remote CPU. Specify the
 	  stack size for these threads here.
 
-config	UART_PIPE
+config UART_PIPE
 	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help

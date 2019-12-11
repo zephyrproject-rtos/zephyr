@@ -1,9 +1,7 @@
-# Kconfig - ARM LTD SoC configuration options
-#
+# ARM LTD SoC configuration options
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_FAMILY_ARM
 	bool

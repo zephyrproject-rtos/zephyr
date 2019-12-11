@@ -69,11 +69,13 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		 * also expecting task switch below the switching tolerance.
 		 */
 		expected_slice_min =
-			(z_ms_to_ticks(SLICE_SIZE) - TASK_SWITCH_TOLERANCE) *
-			sys_clock_hw_cycles_per_tick();
+			(k_ms_to_ticks_ceil32(SLICE_SIZE)
+			 - TASK_SWITCH_TOLERANCE)
+			* k_ticks_to_cyc_floor32(1);
 		expected_slice_max =
-			(z_ms_to_ticks(SLICE_SIZE) + TASK_SWITCH_TOLERANCE) *
-			sys_clock_hw_cycles_per_tick();
+			(k_ms_to_ticks_ceil32(SLICE_SIZE)
+			 + TASK_SWITCH_TOLERANCE)
+			* k_ticks_to_cyc_floor32(1);
 	}
 
 #ifdef CONFIG_DEBUG

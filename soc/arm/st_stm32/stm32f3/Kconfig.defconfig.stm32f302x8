@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F302X8 MCU
-#
+# ST Microelectronics STM32F302X8 MCU
+
 # Copyright (c) 2018 Seitz & Associates
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F302X8
 

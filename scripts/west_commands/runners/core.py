@@ -121,8 +121,7 @@ class BuildConfiguration:
     Configuration options can be read as if the object were a dict,
     either object['CONFIG_FOO'] or object.get('CONFIG_FOO').
 
-    Configuration values in .config and generated_dts_board.conf are
-    available.'''
+    Kconfig configuration values are available (parsed from .config).'''
 
     def __init__(self, build_dir):
         self.build_dir = build_dir
@@ -139,12 +138,7 @@ class BuildConfiguration:
         return self.options.get(option, *args)
 
     def _init(self):
-        build_z = os.path.join(self.build_dir, 'zephyr')
-        generated = os.path.join(build_z, 'include', 'generated')
-        files = [os.path.join(build_z, '.config'),
-                 os.path.join(generated, 'generated_dts_board.conf')]
-        for f in files:
-            self._parse(f)
+        self._parse(os.path.join(self.build_dir, 'zephyr', '.config'))
 
     def _parse(self, filename):
         with open(filename, 'r') as f:

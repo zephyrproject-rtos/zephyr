@@ -1,13 +1,11 @@
-# Kconfig - Kinetis K6X MCU line
-#
+# Kinetis K6X MCU line
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Kinetis K6x MCU Selection"
-depends on SOC_SERIES_KINETIS_K6X
+	prompt "Kinetis K6x MCU Selection"
+	depends on SOC_SERIES_KINETIS_K6X
 
 config SOC_MK64F12
 	bool "SOC_MK64F12"

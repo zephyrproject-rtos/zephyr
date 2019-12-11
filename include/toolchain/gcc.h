@@ -71,7 +71,7 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #if defined(CONFIG_ARCH_POSIX)
-#include <posix_trace.h>
+#include <arch/posix/posix_trace.h>
 
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \

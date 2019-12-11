@@ -2887,9 +2887,9 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
 #ifdef CONFIG_FLOAT
-		 (SYS_CLOCK_HW_CYCLES_TO_NS(cycles) / 1000000.f));
+		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
-		 (SYS_CLOCK_HW_CYCLES_TO_NS(cycles) / 1000000));
+		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
 #endif
 	k_sem_give(&ping_timeout);
 
@@ -3011,9 +3011,9 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
 #ifdef CONFIG_FLOAT
-		 (SYS_CLOCK_HW_CYCLES_TO_NS(cycles) / 1000000.f));
+		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
-		 (SYS_CLOCK_HW_CYCLES_TO_NS(cycles) / 1000000));
+		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
 #endif
 	k_sem_give(&ping_timeout);
 

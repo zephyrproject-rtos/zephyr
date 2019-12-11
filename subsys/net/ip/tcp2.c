@@ -381,7 +381,7 @@ static void tcp_send_process(struct k_timer *timer)
 	}
 
 	if (conn && conn->in_retransmission) {
-		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), 0);
+		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), K_NO_WAIT);
 	}
 }
 
@@ -403,7 +403,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		conn->in_retransmission = false;
 	} else {
 		conn->send_retries = tcp_retries;
-		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), 0);
+		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), K_NO_WAIT);
 	}
 }
 

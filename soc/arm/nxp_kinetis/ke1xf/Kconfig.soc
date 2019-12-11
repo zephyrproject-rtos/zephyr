@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KE1xF MCU line
-#
+# Kinetis KE1xF MCU line
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Kinetis KE1xF MCU Selection"
@@ -89,7 +87,7 @@ config WDOG_INIT
 	  handling.
 
 config KINETIS_KE1XF_ENABLE_CODE_CACHE
-        bool "Enable the code cache"
-        default y
+	bool "Enable the code cache"
+	default y
 
 endif # SOC_SERIES_KINETIS_KE1XF

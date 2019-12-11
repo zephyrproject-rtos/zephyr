@@ -149,7 +149,7 @@ Inside this header is the body of :c:func:`k_sem_init()`::
     {
     #ifdef CONFIG_USERSPACE
             if (z_syscall_trap()) {
-                    z_arch_syscall_invoke3(*(u32_t *)&sem, *(u32_t *)&initial_count, *(u32_t *)&limit, K_SYSCALL_K_SEM_INIT);
+                    arch_syscall_invoke3(*(uintptr_t *)&sem, *(uintptr_t *)&initial_count, *(uintptr_t *)&limit, K_SYSCALL_K_SEM_INIT);
                     return;
             }
             compiler_barrier();
@@ -169,6 +169,13 @@ functions marshal arguments into designated CPU registers and perform the
 necessary privilege elevation. In this layer, all arguments are treated as an
 unsigned 32-bit type. There is always a 32-bit unsigned return value, which
 may or may not be used.
+
+.. figure:: syscall_flow.png
+   :alt: System Call execution flow
+   :width: 80%
+   :align: center
+
+   System Call execution flow
 
 Some system calls may have more than six arguments. The number of
 arguments passed via registers is limited to six for all

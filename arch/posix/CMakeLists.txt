@@ -3,10 +3,10 @@
 if (CONFIG_64BIT)
 	# some gcc versions fail to build without -fPIC
 	zephyr_compile_options(-m64 -fPIC)
-	zephyr_ld_options(-m64)
+	zephyr_link_libraries(-m64)
 else ()
 	zephyr_compile_options(-m32)
-	zephyr_ld_options(-m32)
+	zephyr_link_libraries(-m32)
 endif ()
 
 zephyr_compile_options(

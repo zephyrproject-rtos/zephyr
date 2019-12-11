@@ -1,5 +1,5 @@
-# Kconfig - x86 general configuration options
-#
+# x86 general configuration options
+
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,14 +16,14 @@ config ARCH
 config CPU_ATOM
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool # hidden
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
@@ -31,7 +31,7 @@ config CPU_MINUTEIA
 config CPU_APOLLO_LAKE
 	bool # hidden
 	select CPU_HAS_FPU
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU && !X86_64
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
@@ -41,9 +41,7 @@ config CPU_APOLLO_LAKE
 #
 
 config X86_64
-	bool
-	prompt "Run in 64-bit mode"
-	default n
+	bool "Run in 64-bit mode"
 	select 64BIT
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -85,7 +83,6 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
-	default n
 	help
 	  Allow retrieval of platform configuration at runtime.
 
@@ -110,7 +107,6 @@ if MULTIBOOT
 
 config MULTIBOOT_INFO
 	bool "Preserve multiboot information structure"
-	default n
 	help
 	  Multiboot passes a pointer to an information structure to the
 	  kernel entry point. Some drivers (e.g., the multiboot framebuffer
@@ -119,14 +115,12 @@ config MULTIBOOT_INFO
 
 config MULTIBOOT_MEMMAP
 	bool "Use multiboot memory map if provided"
-	default n
 	select MULTIBOOT_INFO
 	help
 	  Use the multiboot memory map if the loader provides one.
 
 config MULTIBOOT_FRAMEBUF
 	bool "Multiboot framebuffer support"
-	default n
 	select DISPLAY
 	select FRAMEBUF_DISPLAY
 	select MULTIBOOT_INFO
@@ -145,6 +139,16 @@ endif # MULTIBOOT_FRAMEBUF
 
 endif # MULTIBOOT
 
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
+
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
@@ -152,14 +156,13 @@ config X86_VERY_EARLY_CONSOLE
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
 	  very minimal serial driver which gets initialized at the very
-	  beginning of z_cstart(), via z_arch_kernel_init(). This driver enables
+	  beginning of z_cstart(), via arch_kernel_init(). This driver enables
 	  printk to emit messages to the 16550 UART port 0 instance in device
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
 
 config X86_MMU
 	bool "Enable Memory Management Unit"
 	select MEMORY_PROTECTION
-	depends on MP_NUM_CPUS = 1 # FIXME: Working through SMP issues
 	help
 	  This options enables the memory management unit present in x86
 	  and creates a set of page tables at boot time that is runtime-

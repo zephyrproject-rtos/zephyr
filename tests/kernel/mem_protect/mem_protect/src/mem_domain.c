@@ -356,7 +356,7 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 	/* Subtract one since the domain is initialized with one partition
 	 * already present.
 	 */
-	u8_t max_partitions = (u8_t)z_arch_mem_domain_max_partitions_get() - 1;
+	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get() - 1;
 	u8_t index;
 
 	k_mem_domain_remove_thread(k_current_get());
@@ -420,7 +420,7 @@ void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 {
 
-	u8_t max_partitions = (u8_t)z_arch_mem_domain_max_partitions_get();
+	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get();
 	u8_t index;
 
 	k_mem_domain_init(&mem_domain_tc3_mem_domain,

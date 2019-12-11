@@ -1,0 +1,17 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip MCP9808 Digital Temperature Sensor
+
+description: |
+    Microchip MCP9808 Digital Temperature Sensor
+    http://ww1.microchip.com/downloads/en/DeviceDoc/25095A.pdf
+
+compatible: "microchip,mcp9808"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false

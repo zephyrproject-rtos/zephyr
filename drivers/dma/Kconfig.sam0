@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAM DMAC configuration options
-#
+# Atmel SAM DMAC configuration options
+
 # Copyright (c) 2018 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,4 +8,4 @@ config DMA_SAM0
 	default y
 	depends on SOC_FAMILY_SAM0
 	help
-	DMA driver for Atmel SAM0 series MCUs.
+	  DMA driver for Atmel SAM0 series MCUs.

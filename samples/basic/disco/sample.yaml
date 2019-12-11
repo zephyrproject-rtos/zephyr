@@ -1,8 +1,0 @@
-sample:
-  name: Disco Lights
-tests:
-  sample.disco:
-    filter: DT_GPIO_LEDS_LED0_GPIOS_CONTROLLER and DT_GPIO_LEDS_LED1_GPIOS_CONTROLLER
-    tags: LED gpio
-    depends_on: gpio
-    harness: led

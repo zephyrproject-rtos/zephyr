@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/can.h>
 #include <drivers/gpio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
@@ -150,7 +150,7 @@ void state_change_work_handler(struct k_work *work)
 		state_to_str(current_state),
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
 
-#ifndef CONFIG_CAN_AUTO_BOFF_RECOVERY
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	if (current_state == CAN_BUS_OFF) {
 		printk("Recover from bus-off\n");
 
@@ -158,7 +158,7 @@ void state_change_work_handler(struct k_work *work)
 			printk("Recovery timed out\n");
 		}
 	}
-#endif /* CONFIG_CAN_AUTO_BOFF_RECOVERY */
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
 void state_change_isr(enum can_state state, struct can_bus_err_cnt err_cnt)

@@ -1,0 +1,83 @@
+# Kinetis KV5x series configuration options
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_KV5X
+
+config SOC_SERIES
+	default "kv5x"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 121
+
+if ADC
+
+config ADC_MCUX_ADC16
+	default y
+
+endif # ADC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+endif # CLOCK_CONTROL
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_MCUX
+	default y
+
+endif # GPIO
+
+if I2C
+
+config I2C_MCUX
+	default y
+
+endif # I2C
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+if PWM
+
+config PWM_MCUX_FTM
+	default y
+
+endif # PWM
+
+if SERIAL
+
+config UART_MCUX
+	default y
+
+endif # SERIAL
+
+if SPI
+
+config SPI_MCUX_DSPI
+	default y
+
+endif # SPI
+
+source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
+
+endif # SOC_SERIES_KINETIS_KV5X

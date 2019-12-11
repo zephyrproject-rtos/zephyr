@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_EMSDP_EM7D_ESP
 
@@ -30,4 +27,4 @@ config CACHE_FLUSHING
 config FP_FPU_DA
 	default y
 
-endif #SOC_EMSDP_EM7D_ESP
+endif # SOC_EMSDP_EM7D_ESP

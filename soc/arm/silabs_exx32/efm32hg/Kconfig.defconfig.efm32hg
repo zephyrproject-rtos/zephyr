@@ -1,10 +1,7 @@
-# Kconfig - Silicon Labs EFM32HG-SLSTK3400A platform configuration options
+# Silicon Labs EFM32HG-SLSTK3400A platform configuration options
 
-#
 # Copyright (c) 2018 Marcio Montenegro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if GPIO
 

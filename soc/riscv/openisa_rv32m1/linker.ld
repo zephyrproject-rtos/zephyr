@@ -12,9 +12,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <generated_dts_board.h>
 #include <autoconf.h>
 
@@ -31,7 +28,7 @@
 
 #define VECTOR_SIZE CONFIG_RISCV_RV32M1_VECTOR_SIZE
 
-#ifdef CONFIG_USE_CODE_PARTITION
+#ifdef CONFIG_USE_DT_CODE_PARTITION
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 

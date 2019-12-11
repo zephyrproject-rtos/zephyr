@@ -56,7 +56,7 @@ void test_arm_zero_latency_irqs(void)
 
 	/* Configure the available IRQ line as zero-latency. */
 
-	z_arch_irq_connect_dynamic(i, 0 /* Unused */,
+	arch_irq_connect_dynamic(i, 0 /* Unused */,
 		arm_zero_latency_isr_handler,
 		NULL,
 		IRQ_ZERO_LATENCY);

@@ -24,7 +24,6 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include <kernel_arch_thread.h>
 
 /* stacks */
 
@@ -36,7 +35,6 @@
 #ifndef _ASMLANGUAGE
 
 #include <kernel.h>
-#include <kernel_internal.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include <sys/dlist.h>

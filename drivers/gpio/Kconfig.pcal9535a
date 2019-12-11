@@ -1,10 +1,7 @@
-# Kconfig.pcal9535a - PCAL9535A GPIO configuration options
-#
-#
+# PCAL9535A GPIO configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_PCAL9535A
 	bool "PCAL9535A I2C-based GPIO chip"

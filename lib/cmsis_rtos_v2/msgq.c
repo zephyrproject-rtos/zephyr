@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <string.h>
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_msgq_slab, sizeof(struct cv2_msgq),
@@ -103,7 +104,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_FOREVER);
 	} else {
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr,
-				    __ticks_to_ms(timeout));
+				    k_ticks_to_ms_floor64(timeout));
 	}
 
 	if (retval == 0) {
@@ -141,7 +142,7 @@ osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_FOREVER);
 	} else {
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr,
-				    __ticks_to_ms(timeout));
+				    k_ticks_to_ms_floor64(timeout));
 	}
 
 	if (retval == 0) {

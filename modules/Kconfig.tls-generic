@@ -1,8 +1,10 @@
-# Kconfig.tls - TLS/DTLS related options
+# TLS/DTLS related options
 
 # Copyright (c) 2018 Intel Corporation
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+
+if MBEDTLS
 
 menu "TLS configuration"
 
@@ -323,3 +325,5 @@ config MBEDTLS_USER_CONFIG_FILE
 	  covered by the generic config file.
 
 endmenu
+
+endif # MBEDTLS

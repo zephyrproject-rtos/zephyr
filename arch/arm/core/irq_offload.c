@@ -20,7 +20,7 @@ void z_irq_do_offload(void)
 	offload_routine(offload_param);
 }
 
-void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && defined(CONFIG_ASSERT)
 	/* ARMv6-M/ARMv8-M Baseline HardFault if you make a SVC call with

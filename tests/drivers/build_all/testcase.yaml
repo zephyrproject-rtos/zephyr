@@ -1,68 +1,73 @@
 common:
   depends_on: gpio spi i2c
 tests:
-  test_build_drivers:
+  drivers.build.build:
     build_only: true
     min_ram: 16
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc i2c
-  test_build_ethernet:
+  net.ethernet.build:
     build_only: true
     extra_args: CONF_FILE=ethernet.conf
     min_flash: 42
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: spi netif
-  test_build_sensors_trigger_a_h:
+  sensors.build.trigger_a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_a_h.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_build_sensors_trigger_i_z:
+  sensors.build.trigger_i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_i_z.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_build_sensors_a_h:
+  sensors.build.a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_a_h.conf
     min_flash: 44
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_build_sensors_i_z:
+  sensors.build.i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_i_z.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_build_sensors_stmemsc:
+  sensors.build.stmemsc:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_build_sensors_stmemsc_trigger:
+  sensors.build.stmemsc_trigger:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc_trigger.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
-    tags: drivers footprint
+    tags: drivers
     depends_on: adc spi
-  test_clock:
+  drivers.clock.build:
     build_only: true
     extra_configs:
       - CONFIG_CLOCK_CONTROL=y
-  test_build_gpio:
+  drivers.gpio.build:
     build_only: true
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
     depends_on: gpio
+  drivers.eeprom.build:
+    build_only: true
+    extra_args: CONF_FILE=eeprom.conf
+    min_ram: 32
+    depends_on: gpio i2c spi

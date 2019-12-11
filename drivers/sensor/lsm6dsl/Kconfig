@@ -1,11 +1,8 @@
-# Kconfig - LSM6DSL accelerometer and gyroscope sensor configuration
+# LSM6DSL accelerometer and gyroscope sensor configuration
 # options
 
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LSM6DSL
 	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
@@ -78,7 +75,7 @@ config LSM6DSL_EXT0_LPS22HB
 
 endchoice
 
-endif #LSM6DSL_SENSORHUB
+endif # LSM6DSL_SENSORHUB
 
 menu "Attributes"
 

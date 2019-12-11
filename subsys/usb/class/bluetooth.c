@@ -151,7 +151,7 @@ static void hci_rx_thread(void)
 			usb_transfer_sync(
 				bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr,
 				buf->data, buf->len,
-				USB_TRANS_WRITE);
+				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);
 			break;
 		case BT_BUF_ACL_IN:
 			usb_transfer_sync(
@@ -200,7 +200,7 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 	buf = net_buf_alloc(&acl_tx_pool, K_FOREVER);
 	__ASSERT_NO_MSG(buf);
 
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+	net_buf_reserve(buf, BT_BUF_RESERVE);
 
 	/* Start a new read transfer */
 	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, buf->data,
@@ -269,7 +269,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+	net_buf_reserve(buf, BT_BUF_RESERVE);
 	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	net_buf_add_mem(buf, *data, *len);

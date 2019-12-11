@@ -1,9 +1,7 @@
-# Kconfig - LPCXpresso54114 board
-#
+# LPCXpresso54114 board
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0
 
@@ -37,5 +35,12 @@ config GPIO_MCUX_LPC_PORT1
 	default y
 
 endif # GPIO_MCUX_LPC
+
+if SPI
+
+config SPI_5
+	default y
+
+endif # SPI
 
 endif # BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0

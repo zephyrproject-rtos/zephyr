@@ -80,7 +80,7 @@ static int stop(struct device *dev)
 
 static u32_t get_top_value(struct device *dev)
 {
-	return nrf_timer_cc_read(get_nrfx_config(dev)->timer, TOP_CH);
+	return nrf_timer_cc_get(get_nrfx_config(dev)->timer, TOP_CH);
 }
 
 static u32_t get_max_relative_alarm(struct device *dev)
@@ -95,7 +95,7 @@ static u32_t read(struct device *dev)
 	nrf_timer_task_trigger(timer,
 			       nrf_timer_capture_task_get(COUNTER_READ_CC));
 
-	return nrf_timer_cc_read(timer, COUNTER_READ_CC);
+	return nrf_timer_cc_get(timer, COUNTER_READ_CC);
 }
 
 /* Return true if value equals 2^n - 1 */
@@ -157,8 +157,8 @@ static int set_cc(struct device *dev, u8_t id, u32_t val, u32_t flags)
 	 * future).
 	 */
 	now = read(dev);
-	prev_val = nrf_timer_cc_read(reg, chan);
-	nrf_timer_cc_write(reg, chan, now);
+	prev_val = nrf_timer_cc_get(reg, chan);
+	nrf_timer_cc_set(reg, chan, now);
 	nrf_timer_event_clear(reg, evt);
 
 	if (absolute) {
@@ -180,7 +180,7 @@ static int set_cc(struct device *dev, u8_t id, u32_t val, u32_t flags)
 		val = ticks_add(now, val, top);
 	}
 
-	nrf_timer_cc_write(reg, chan, val);
+	nrf_timer_cc_set(reg, chan, val);
 
 	/* decrement value to detect also case when val == read(dev). Otherwise,
 	 * condition would need to include comparing diff against 0.
@@ -254,7 +254,7 @@ static int set_top_value(struct device *dev, const struct counter_top_cfg *cfg)
 	}
 
 	nrf_timer_int_disable(timer, COUNTER_TOP_INT_MASK);
-	nrf_timer_cc_write(timer, TOP_CH, cfg->ticks);
+	nrf_timer_cc_set(timer, TOP_CH, cfg->ticks);
 	nrf_timer_shorts_enable(timer, COUNTER_OVERFLOW_SHORT);
 
 	data->top_cb = cfg->callback;
@@ -290,7 +290,7 @@ static int init_timer(struct device *dev,
 	nrf_timer_mode_set(reg, config->mode);
 	nrf_timer_frequency_set(reg, config->freq);
 
-	nrf_timer_cc_write(reg, TOP_CH, counter_get_max_top_value(dev));
+	nrf_timer_cc_set(reg, TOP_CH, counter_get_max_top_value(dev));
 
 	NRFX_IRQ_ENABLE(NRFX_IRQ_NUMBER_GET(reg));
 
@@ -346,7 +346,7 @@ static void alarm_irq_handle(struct device *dev, u32_t id)
 		chdata->callback = NULL;
 
 		if (cb) {
-			u32_t cc_val = nrf_timer_cc_read(reg, cc);
+			u32_t cc_val = nrf_timer_cc_get(reg, cc);
 
 			cb(dev, id, cc_val, chdata->user_data);
 		}

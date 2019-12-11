@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_NSIM_EM
 
@@ -56,4 +53,4 @@ endif # ZTEST
 
 endif # ARC_MPU_VER
 
-endif #SOC_NSIM_EM
+endif # SOC_NSIM_EM

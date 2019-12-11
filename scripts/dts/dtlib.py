@@ -1183,9 +1183,9 @@ class Node:
       integer.
 
     props:
-      A dictionary that maps the properties defined on the node to their
-      values. 'props' is indexed by property name (a string), and values are
-      represented as 'bytes' arrays.
+      A collections.OrderedDict that maps the properties defined on the node to
+      their values. 'props' is indexed by property name (a string), and values
+      are represented as 'bytes' arrays.
 
       To convert property values to Python numbers or strings, use
       dtlib.to_num(), dtlib.to_nums(), or dtlib.to_string().
@@ -1199,7 +1199,8 @@ class Node:
       stored in big-endian format.
 
     nodes:
-      A dictionary containing the subnodes of the node, indexed by name.
+      A collections.OrderedDict containing the subnodes of the node, indexed by
+      name.
 
     labels:
       A list with all labels pointing to the node, in the same order as the
@@ -1230,8 +1231,8 @@ class Node:
         self.parent = parent
         self.dt = dt
 
-        self.props = {}
-        self.nodes = {}
+        self.props = collections.OrderedDict()
+        self.nodes = collections.OrderedDict()
         self.labels = []
         self._omit_if_no_ref = False
         self._is_referenced = False

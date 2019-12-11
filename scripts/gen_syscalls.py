@@ -64,7 +64,7 @@ list_template = """
 
 #ifndef _ASMLANGUAGE
 
-#include <zephyr/types.h>
+#include <stdint.h>
 
 #endif /* _ASMLANGUAGE */
 
@@ -78,7 +78,7 @@ syscall_template = """
 #ifndef _ASMLANGUAGE
 
 #include <syscall_list.h>
-#include <syscall_macros.h>
+#include <syscall.h>
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
@@ -107,14 +107,14 @@ extern "C" {
 """
 
 handler_template = """
-extern u32_t z_hdlr_%s(u32_t arg1, u32_t arg2, u32_t arg3,
-                u32_t arg4, u32_t arg5, u32_t arg6, void *ssf);
+extern uintptr_t z_hdlr_%s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
+                uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
 """
 
 weak_template = """
 __weak ALIAS_OF(handler_no_syscall)
-u32_t %s(u32_t arg1, u32_t arg2, u32_t arg3,
-         u32_t arg4, u32_t arg5, u32_t arg6, void *ssf);
+uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
+         uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
 """
 
 
@@ -143,16 +143,16 @@ def typename_split(item):
     return (m[0].strip(), m[1])
 
 def need_split(argtype):
-    return argtype in types64
+    return (not args.long_registers) and (argtype in types64)
 
 # Note: "lo" and "hi" are named in little endian conventions,
 # but it doesn't matter as long as they are consistently
 # generated.
 def union_decl(type):
-    return "union { struct { u32_t lo, hi; } split; %s val; }" % type
+    return "union { struct { uintptr_t lo, hi; } split; %s val; }" % type
 
 def wrapper_defs(func_name, func_type, args):
-    ret64 = func_type in types64
+    ret64 = need_split(func_type)
     mrsh_args = [] # List of rvalue expressions for the marshalled invocation
     split_args = []
     nsplit = 0
@@ -163,10 +163,10 @@ def wrapper_defs(func_name, func_type, args):
             mrsh_args.append("parm%d.split.hi" % nsplit)
             nsplit += 1
         else:
-            mrsh_args.append("*(u32_t *)&" + argname)
+            mrsh_args.append("*(uintptr_t *)&" + argname)
 
     if ret64:
-        mrsh_args.append("(u32_t)&ret64")
+        mrsh_args.append("(uintptr_t)&ret64")
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
 
@@ -183,13 +183,13 @@ def wrapper_defs(func_name, func_type, args):
         wrap += "\t\t" + "parm%d.val = %s;\n" % (parmnum, argname)
 
     if len(mrsh_args) > 6:
-        wrap += "\t\t" + "u32_t more[] = {\n"
+        wrap += "\t\t" + "uintptr_t more[] = {\n"
         wrap += "\t\t\t" + (",\n\t\t\t".join(mrsh_args[5:])) + "\n"
         wrap += "\t\t" + "};\n"
-        mrsh_args[5:] = ["(u32_t) &more"]
+        mrsh_args[5:] = ["(uintptr_t) &more"]
 
     syscall_id = "K_SYSCALL_" + func_name.upper()
-    invoke = ("z_arch_syscall_invoke%d(%s)"
+    invoke = ("arch_syscall_invoke%d(%s)"
               % (len(mrsh_args),
                  ", ".join(mrsh_args + [syscall_id])))
 
@@ -225,12 +225,12 @@ def mrsh_rval(mrsh_num, total):
     if mrsh_num < 5 or total <= 6:
         return "arg%d" % mrsh_num
     else:
-        return "(((u32_t *)more)[%d])" % (mrsh_num - 5)
+        return "(((uintptr_t *)more)[%d])" % (mrsh_num - 5)
 
 def marshall_defs(func_name, func_type, args):
     mrsh_name = "z_mrsh_" + func_name
 
-    nmrsh = 0        # number of marshalled u32_t parameter
+    nmrsh = 0        # number of marshalled uintptr_t parameter
     vrfy_parms = []  # list of (arg_num, mrsh_or_parm_num, bool_is_split)
     split_parms = [] # list of a (arg_num, mrsh_num) for each split
     for i, (argtype, _) in enumerate(args):
@@ -243,17 +243,17 @@ def marshall_defs(func_name, func_type, args):
             nmrsh += 1
 
     # Final argument for a 64 bit return value?
-    if func_type in types64:
+    if need_split(func_type):
         nmrsh += 1
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
     mrsh = "extern %s z_vrfy_%s(%s);\n" % (func_type, func_name, decl_arglist)
 
-    mrsh += "u32_t %s(u32_t arg0, u32_t arg1, u32_t arg2,\n" % mrsh_name
+    mrsh += "uintptr_t %s(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n" % mrsh_name
     if nmrsh <= 6:
-        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, u32_t arg5, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
     else:
-        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, void *more, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
     mrsh += "{\n"
     mrsh += "\t" + "_current_cpu->syscall_frame = ssf;\n"
 
@@ -262,7 +262,7 @@ def marshall_defs(func_name, func_type, args):
 
     if nmrsh > 6:
         mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ(more, "
-                 + str(nmrsh - 6) + " * sizeof(u32_t)));\n")
+                 + str(nmrsh - 6) + " * sizeof(uintptr_t)));\n")
 
     for i, split_rec in enumerate(split_parms):
         arg_num, mrsh_num = split_rec
@@ -287,13 +287,13 @@ def marshall_defs(func_name, func_type, args):
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
-        if func_type in types64:
+        if need_split(func_type):
             ptr = "((u64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
             mrsh += "\t" + "return 0;\n"
         else:
-            mrsh += "\t" + "return (u32_t) ret;\n"
+            mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"
 
@@ -339,7 +339,9 @@ def parse_args():
     parser.add_argument("-o", "--base-output", required=True,
                         help="Base output directory for syscall macro headers")
     parser.add_argument("-s", "--split-type", action="append",
-                        help="A long type that must be split/marshalled")
+                        help="A long type that must be split/marshalled on 32-bit systems")
+    parser.add_argument("-x", "--long-registers", action="store_true",
+                        help="Indicates we are on system with 64-bit registers")
     args = parser.parse_args()
 
 
@@ -384,7 +386,7 @@ def main():
                                 if not name in noweak])
 
         # The "noweak" ones just get a regular declaration
-        weak_defines += "\n".join(["extern u32_t %s(u32_t arg1, u32_t arg2, u32_t arg3, u32_t arg4, u32_t arg5, u32_t arg6, void *ssf);"
+        weak_defines += "\n".join(["extern uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);"
                                    % s for s in noweak])
 
         fp.write(table_template % (weak_defines,

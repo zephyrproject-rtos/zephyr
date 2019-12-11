@@ -9,6 +9,7 @@ Peripherals
    adc.rst
    counter.rst
    dma.rst
+   eeprom.rst
    entropy.rst
    flash.rst
    gpio.rst

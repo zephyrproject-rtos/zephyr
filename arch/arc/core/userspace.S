@@ -48,10 +48,10 @@
 GTEXT(z_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
 GTEXT(z_user_thread_entry_wrapper)
-GTEXT(z_arch_user_string_nlen)
-GTEXT(z_arch_user_string_nlen_fault_start)
-GTEXT(z_arch_user_string_nlen_fault_end)
-GTEXT(z_arch_user_string_nlen_fixup)
+GTEXT(arch_user_string_nlen)
+GTEXT(z_arc_user_string_nlen_fault_start)
+GTEXT(z_arc_user_string_nlen_fault_end)
+GTEXT(z_arc_user_string_nlen_fixup)
 /*
  * @brief Wrapper for z_thread_entry in the case of user thread
  * The init parameters are in privileged stack
@@ -248,9 +248,9 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	rtie
 
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
 	/* int err; */
 	sub_s sp,sp,0x4
 
@@ -269,11 +269,11 @@ SECTION_FUNC(TEXT, z_arch_user_string_nlen)
 	mov lp_count, r1
 
 strlen_loop:
-z_arch_user_string_nlen_fault_start:
+z_arc_user_string_nlen_fault_start:
 	/* is the byte at ++r12 a NULL? if so, we're done. Might fault! */
 	ldb.aw r1, [r12, 1]
 
-z_arch_user_string_nlen_fault_end:
+z_arc_user_string_nlen_fault_end:
 	brne_s r1, 0, not_null
 
 strlen_done:
@@ -281,7 +281,7 @@ strlen_done:
 	mov_s r1, 0
 	st_s r1, [sp, 0]
 
-z_arch_user_string_nlen_fixup:
+z_arc_user_string_nlen_fixup:
 	/* *err_arg = err; Pop stack and return */
 	ld_s r1, [sp, 0]
 	add_s sp, sp, 4

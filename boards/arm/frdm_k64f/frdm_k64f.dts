@@ -109,7 +109,10 @@
 	};
 };
 
-arduino_serial: &uart3 {};
+arduino_serial: &uart3 {
+	status = "okay";
+	current-speed = <115200>;
+};
 
 &cpu0 {
 	clock-frequency = <120000000>;

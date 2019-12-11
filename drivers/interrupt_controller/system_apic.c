@@ -72,7 +72,7 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
  *
  * @return N/A
  */
-void z_arch_irq_enable(unsigned int irq)
+void arch_irq_enable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_enable(irq);
@@ -92,7 +92,7 @@ void z_arch_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-void z_arch_irq_disable(unsigned int irq)
+void arch_irq_disable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_disable(irq);

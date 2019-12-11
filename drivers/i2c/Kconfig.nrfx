@@ -1,9 +1,7 @@
-# Kconfig - nrfx I2C support
-#
+# nrfx I2C support
+
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2C_NRFX
 	bool "nRF TWI nrfx drivers"
@@ -117,4 +115,4 @@ endchoice
 
 endif # I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
-endif #I2C_NRFX
+endif # I2C_NRFX

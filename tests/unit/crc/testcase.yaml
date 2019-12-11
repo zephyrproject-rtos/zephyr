@@ -1,4 +1,4 @@
 tests:
-  misc.crc:
+  utilities.crc:
     tags: net crc
     type: unit

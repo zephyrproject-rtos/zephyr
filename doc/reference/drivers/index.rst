@@ -38,13 +38,17 @@ are listed below.
 * **Serial communication**: This device driver is used by the kernel's
   system console subsystem.
 
-* **Random number generator**: This device driver provides a source of random
-  numbers.
+* **Entropy**: This device driver provides a source of entropy numbers
+  for the random number generator subsystem.
 
   .. important::
 
-    Certain implementations of the random number generator device driver
-    do not generate sequences of values that are truly random.
+    Use the :ref:`random API functions <random_api>` for random
+    values. :ref:`Entropy functions <entropy_interface>` should not be
+    directly used as a random number generator source as some hardware
+    implementations are designed to be an entropy seed source for random
+    number generators and will not provide cryptographically secure
+    random number streams.
 
 Synchronous Calls
 *****************

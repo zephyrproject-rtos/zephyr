@@ -1,10 +1,7 @@
 # ARC options
 
-#
 # Copyright (c) 2014, 2019 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "ARC Options"
 	depends on ARC
@@ -16,14 +13,14 @@ choice
 	prompt "ARC core family"
 	default CPU_ARCEM
 
-config	CPU_ARCEM
+config CPU_ARCEM
 	bool "ARC EM cores"
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
-config	CPU_ARCHS
+config CPU_ARCHS
 	bool "ARC HS cores"
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_BUILTIN
@@ -64,7 +61,7 @@ config FP_FPU_DA
 
 menu "ARCv2 Family Options"
 
-config	CPU_ARCV2
+config CPU_ARCV2
 	bool
 	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
 	select ARCH_HAS_USERSPACE if ARC_MPU
@@ -74,7 +71,7 @@ config	CPU_ARCV2
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
-config	NUM_IRQ_PRIO_LEVELS
+config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
 	range 1 16
 	help
@@ -83,7 +80,7 @@ config	NUM_IRQ_PRIO_LEVELS
 
 	  The BSP must provide a valid default for proper operation.
 
-config	NUM_IRQS
+config NUM_IRQS
 	int "Upper limit of interrupt numbers/IDs used"
 	range 17 256
 	help
@@ -94,7 +91,7 @@ config	NUM_IRQS
 	  The BSP must provide a valid default. This drives the size of the
 	  vector table.
 
-config	RGF_NUM_BANKS
+config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
 	depends on CPU_ARCV2
 	range 1 2
@@ -120,7 +117,6 @@ config ARC_FIRQ
 config ARC_FIRQ_STACK
 	bool "Enable separate firq stack"
 	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
-	default n
 	help
 	  Use separate stack for FIRQ handing. When the fast irq is also a direct
 	  irq, this will get the minimal interrupt latency.
@@ -140,19 +136,19 @@ config 	ARC_HAS_STACK_CHECKING
 	  checking stack accesses and raising an exception when a stack
 	  overflow or underflow is detected.
 
-config	ARC_CONNECT
+config ARC_CONNECT
 	bool "ARC has ARC connect"
 	select SCHED_IPI_SUPPORTED
 	help
 	  ARC is configured with ARC CONNECT which is a hardware for connecting
 	  multi cores.
 
-config  ARC_STACK_CHECKING
+config ARC_STACK_CHECKING
 	bool
 	help
 	  Use ARC STACK_CHECKING to do stack protection
 
-config	ARC_STACK_PROTECTION
+config ARC_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
@@ -168,9 +164,8 @@ config	ARC_STACK_PROTECTION
 	  selection of the ARC stack checking is
 	  prioritized over the MPU-based stack guard.
 
-config	ARC_USE_UNALIGNED_MEM_ACCESS
+config ARC_USE_UNALIGNED_MEM_ACCESS
 	bool "Enable unaligned access in HW"
-	default n if CPU_ARCEM
 	default y if CPU_ARCHS
 	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
 	help
@@ -178,7 +173,7 @@ config	ARC_USE_UNALIGNED_MEM_ACCESS
 	  to support unaligned memory access which is then disabled by default.
 	  Enable unaligned access in hardware and make software to use it.
 
-config	FAULT_DUMP
+config FAULT_DUMP
 	int "Fault dump level"
 	default 2
 	range 0 2
@@ -193,7 +188,7 @@ config	FAULT_DUMP
 
 	  0: Off.
 
-config	XIP
+config XIP
 	default y if !UART_NSIM
 
 config GEN_ISR_TABLES
@@ -238,8 +233,7 @@ config SJLI_TABLE_SIZE
 	  sjli instruction.
 
 config ARC_SECURE_FIRMWARE
-	prompt "Generate Secure Firmware"
-	bool
+	bool "Generate Secure Firmware"
 	depends on ARC_HAS_SECURE
 	default y if TRUSTED_EXECUTION_SECURE
 	help
@@ -255,8 +249,7 @@ config ARC_SECURE_FIRMWARE
 	  and normal resources of the ARC processors.
 
 config ARC_NORMAL_FIRMWARE
-	prompt "Generate Normal Firmware"
-	bool
+	bool "Generate Normal Firmware"
 	depends on !ARC_SECURE_FIRMWARE
 	depends on ARC_HAS_SECURE
 	default y if TRUSTED_EXECUTION_NONSECURE

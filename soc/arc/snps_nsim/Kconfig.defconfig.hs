@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_NSIM_HS
 
@@ -30,4 +27,4 @@ config ARC_FIRQ
 config CACHE_FLUSHING
 	default y
 
-endif #SOC_NSIM_HS
+endif # SOC_NSIM_HS

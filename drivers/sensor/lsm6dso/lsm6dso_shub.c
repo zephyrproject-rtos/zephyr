@@ -426,9 +426,9 @@ static inline void lsm6dso_shub_wait_completed(struct lsm6dso_data *data)
 static inline void lsm6dso_shub_embedded_en(struct lsm6dso_data *data, bool on)
 {
 	if (on) {
-		lsm6dso_mem_bank_set(data->ctx, LSM6DSO_SENSOR_HUB_BANK);
+		(void) lsm6dso_mem_bank_set(data->ctx, LSM6DSO_SENSOR_HUB_BANK);
 	} else {
-		lsm6dso_mem_bank_set(data->ctx, LSM6DSO_USER_BANK);
+		(void) lsm6dso_mem_bank_set(data->ctx, LSM6DSO_USER_BANK);
 	}
 
 	k_busy_wait(150);

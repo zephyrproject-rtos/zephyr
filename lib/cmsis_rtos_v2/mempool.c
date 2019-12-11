@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <string.h>
 #include "wrapper.h"
 
 #define TIME_OUT_TICKS  10
@@ -108,7 +109,7 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 	} else {
 		retval = k_mem_slab_alloc(
 			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, __ticks_to_ms(timeout));
+			(void **)&ptr, k_ticks_to_ms_floor64(timeout));
 	}
 
 	if (retval == 0) {

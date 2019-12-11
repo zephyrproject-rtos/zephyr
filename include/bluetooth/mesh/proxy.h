@@ -21,14 +21,13 @@
 extern "C" {
 #endif
 
-/**
- * @brief Enable advertising with Node Identity.
+/** @brief Enable advertising with Node Identity.
  *
- * This API requires that GATT Proxy support has been enabled. Once called
- * each subnet will start advertising using Node Identity for the next
- * 60 seconds.
+ *  This API requires that GATT Proxy support has been enabled. Once called
+ *  each subnet will start advertising using Node Identity for the next
+ *  60 seconds.
  *
- * @return 0 on success, or (negative) error code on failure.
+ *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_proxy_identity_enable(void);
 

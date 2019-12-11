@@ -548,7 +548,11 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 		    , msg->rtr == CAN_DATAFRAME ? "no" : "yes");
 
 	__ASSERT(msg->dlc == 0U || msg->data != NULL, "Dataptr is null");
-	__ASSERT(msg->dlc <= CAN_MAX_DLC, "DLC > 8");
+
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
 
 	if (can->ESR & CAN_ESR_BOFF) {
 		return CAN_TX_BUS_OFF;

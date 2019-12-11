@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32L151X8-A MCU
-#
+# ST Microelectronics STM32L151X8-A MCU
+
 # Copyright (c) 2019 eTactica ehf
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L151X8A
 

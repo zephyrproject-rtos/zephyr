@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAMD21 MCU series
-#
+# Atmel SAMD21 MCU series
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

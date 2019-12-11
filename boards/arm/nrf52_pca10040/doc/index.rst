@@ -30,10 +30,10 @@ the following devices:
      :align: center
      :alt: nRF52 PCA10040 DK
 
-     nRF52 PCA10040 DK (Credit: Nordic Semi)
+     nRF52 PCA10040 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF52 DK website`_. The `Nordic Semiconductor Documentation library`_
+`nRF52 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -82,7 +82,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52 DK website`_ and `Nordic Semiconductor Documentation library`_
+See `nRF52 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52 Development Kit board hardware features.
 
 Connections and IOs
@@ -403,5 +403,4 @@ References
 .. target-notes::
 
 .. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52-DK
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
-
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

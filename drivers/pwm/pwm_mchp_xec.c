@@ -59,7 +59,9 @@ struct xec_params {
 	u8_t div;
 };
 
-u32_t max_freq_high_on_div[16] = {
+#define NUM_DIV_ELEMS		16
+
+u32_t max_freq_high_on_div[NUM_DIV_ELEMS] = {
 	48000000,
 	24000000,
 	16000000,
@@ -78,7 +80,7 @@ u32_t max_freq_high_on_div[16] = {
 	3000000
 };
 
-u32_t max_freq_low_on_div[16] = {
+u32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
 	100000,
 	50000,
 	33333,
@@ -200,21 +202,22 @@ static struct xec_params *xec_compare_params(u32_t target_freq,
 	u32_t freq_h = 0;
 	u32_t freq_l = 0;
 
-	if (hc_params->div < UINT8_MAX) {
+	if (hc_params->div < NUM_DIV_ELEMS) {
 		freq_h = xec_compute_frequency(
 				max_freq_high_on_div[hc_params->div],
 				hc_params->on,
 				hc_params->off);
 	}
 
-	if (lc_params->div < UINT8_MAX) {
+	if (lc_params->div < NUM_DIV_ELEMS) {
 		freq_l = xec_compute_frequency(
 				max_freq_low_on_div[lc_params->div],
 				lc_params->on,
 				lc_params->off);
 	}
 
-	if (abs(target_freq - freq_h) < abs(target_freq - freq_l)) {
+	if (abs((int)target_freq - (int)freq_h) <
+	    abs((int)target_freq - (int)freq_l)) {
 		params = hc_params;
 	} else {
 		params = lc_params;

@@ -1,5 +1,4 @@
 # Copyright (c) 2018 Foundries.io Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_OPENISA_RV32M1_RISCV32
@@ -10,6 +9,7 @@ config SOC_OPENISA_RV32M1_RISCV32
 	select XIP
 	select HAS_RV32M1_LPUART
 	select HAS_RV32M1_LPI2C
+	select HAS_RV32M1_LPSPI
 	select ATOMIC_OPERATIONS_C
 	select VEGA_SDK_HAL
 	select RISCV_SOC_INTERRUPT_INIT

@@ -1,10 +1,7 @@
-# Kconfig - STM32 SPI driver configuration options
+# STM32 SPI driver configuration options
 
-#
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SPI_STM32
 	bool "STM32 MCU SPI controller driver"

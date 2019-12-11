@@ -71,3 +71,78 @@ void test_threads_suspend_resume_preemptible(void)
 {
 	threads_suspend_resume(1);
 }
+
+static bool after_suspend;
+
+void suspend_myself(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg0);
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	k_thread_suspend(k_current_get());
+	after_suspend = true;
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ *
+ * @brief Check that k_thread_suspend() is a schedule point when
+ * called on the current thread.
+ */
+void test_threads_suspend(void)
+{
+	after_suspend = false;
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      suspend_myself, NULL, NULL, NULL,
+				      0, K_USER, K_NO_WAIT);
+
+	/* Give the thread a chance to start and verify that it
+	 * stopped executing after suspending itself.
+	 */
+	k_sleep(K_MSEC(100));
+	zassert_false(after_suspend, "thread woke up unexpectedly");
+
+	k_thread_abort(tid);
+}
+
+void sleep_suspended(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg0);
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	/* Sleep a half second, then set the flag after we wake up.
+	 * If we are suspended, the wakeup should not occur
+	 */
+	k_sleep(K_MSEC(100));
+	after_suspend = true;
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Check that k_thread_suspend() cancels a preexisting thread timeout
+ *
+ * @details Suspended threads should not wake up unexpectedly if they
+ * happened to have been sleeping when suspended.
+ */
+void test_threads_suspend_timeout(void)
+{
+	after_suspend = false;
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      sleep_suspended, NULL, NULL, NULL,
+				      0, K_USER, K_NO_WAIT);
+
+	k_sleep(K_MSEC(50));
+	k_thread_suspend(tid);
+
+	/* Give the timer long enough to expire, and verify that it
+	 * has not (i.e. that the thread didn't wake up, because it
+	 * has been suspended)
+	 */
+	k_sleep(K_MSEC(200));
+	zassert_false(after_suspend, "thread woke up unexpectedly");
+
+	k_thread_abort(tid);
+}

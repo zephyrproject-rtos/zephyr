@@ -7,10 +7,11 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - ieee802154
   - adc
+  - arduino_gpio
   - counter
+  - gpio
   - hwinfo
   - i2c
+  - ieee802154
   - spi
-  - gpio

@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
-#include <json.h>
+#include <data/json.h>
 #include <net/net_pkt.h>
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)

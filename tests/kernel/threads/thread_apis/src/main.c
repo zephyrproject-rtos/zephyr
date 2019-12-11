@@ -35,6 +35,8 @@ extern void test_threads_priority_set(void);
 extern void test_delayed_thread_abort(void);
 extern void test_k_thread_foreach(void);
 extern void test_threads_cpu_mask(void);
+extern void test_threads_suspend_timeout(void);
+extern void test_threads_suspend(void);
 
 struct k_thread tdata;
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -303,7 +305,9 @@ void test_main(void)
 			 ztest_unit_test(test_thread_name_get_set),
 			 ztest_user_unit_test(test_thread_name_user_get_set),
 			 ztest_unit_test(test_user_mode),
-			 ztest_1cpu_unit_test(test_threads_cpu_mask)
+			 ztest_1cpu_unit_test(test_threads_cpu_mask),
+			 ztest_unit_test(test_threads_suspend_timeout),
+			 ztest_unit_test(test_threads_suspend)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);

@@ -1,15 +1,13 @@
-# Kconfig.bme680 - BME680 temperature, pressure, humidity and gas sensor configuration options
+# BME680 temperature, pressure, humidity and gas sensor configuration options
 
-#
 # Copyright (c) 2018 Bosch Sensortec GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig BME680
 	bool "BME680 sensor"
 	depends on I2C
 	help
-	 Enable driver for BME680 I2C-based based temperature, pressure, humidity and gas sensor.
+	  Enable driver for BME680 I2C-based based temperature, pressure, humidity and gas sensor.
 
 if BME680
 

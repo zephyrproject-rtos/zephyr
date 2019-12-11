@@ -1138,7 +1138,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	BT_DBG("");
 
 	if (conn_count == CONFIG_BT_MAX_CONN) {
-		BT_WARN("Connectable advertising deferred (max connections)");
+		BT_DBG("Connectable advertising deferred (max connections)");
 		return remaining;
 	}
 

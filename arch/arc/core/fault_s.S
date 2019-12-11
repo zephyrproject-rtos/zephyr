@@ -116,7 +116,7 @@ _exc_return:
 
 #ifdef CONFIG_PREEMPT_ENABLED
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	breq r0, 0, _exc_return_from_exc
 	mov_s r2, r0
 #else
@@ -284,7 +284,7 @@ exc_nest_handle:
 
 #ifdef CONFIG_PREEMPT_ENABLED
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	breq r0, 0, _exc_return_from_irqoffload_trap
 	mov_s r2, r1
 

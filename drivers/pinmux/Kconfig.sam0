@@ -1,5 +1,5 @@
-# Kconfig.sam0 - Atmel SAM0 pinmux configuration options
-#
+# Atmel SAM0 pinmux configuration options
+
 # Copyright (c) 2018 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 

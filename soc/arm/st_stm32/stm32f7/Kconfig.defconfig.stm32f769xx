@@ -1,9 +1,7 @@
-# Kconfig - ST STM32F769XI MCU configuration options
-#
+# ST STM32F769XI MCU configuration options
+
 # Copyright (c) 2018  Yong Jin
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F769XX
 

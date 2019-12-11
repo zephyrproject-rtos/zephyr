@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32F1 MCU series
-#
+# ST Microelectronics STM32F1 MCU series
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32F1X
 	bool "STM32F1x Series MCU"
@@ -12,4 +10,4 @@ config SOC_SERIES_STM32F1X
 	select HAS_STM32CUBE
 	select HAS_SWO
 	help
-	 Enable support for STM32F1 MCU series
+	  Enable support for STM32F1 MCU series

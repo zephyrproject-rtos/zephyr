@@ -1,10 +1,7 @@
-# Kconfig - AK8975 magnetometer configuration options
+# AK8975 magnetometer configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig AK8975
 	bool "AK8975 Magnetometer"

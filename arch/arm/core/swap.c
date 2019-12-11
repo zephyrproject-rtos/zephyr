@@ -5,8 +5,7 @@
  */
 
 #include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <kernel_internal.h>
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 extern void read_timer_start_of_swap(void);
@@ -16,7 +15,7 @@ extern const int _k_neg_eagain;
 /* The 'key' actually represents the BASEPRI register
  * prior to disabling interrupts via the BASEPRI mechanism.
  *
- * z_arch_swap() itself does not do much.
+ * arch_swap() itself does not do much.
  *
  * It simply stores the intlock key (the BASEPRI value) parameter into
  * current->basepri, and then triggers a PendSV exception, which does
@@ -26,7 +25,7 @@ extern const int _k_neg_eagain;
  * z_arm_pendsv all come from handling an interrupt, which means we know the
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
- * Given that z_arch_swap() is called to effect a cooperative context switch,
+ * Given that arch_swap() is called to effect a cooperative context switch,
  * only the caller-saved integer registers need to be saved in the thread of the
  * outgoing thread. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the z_arm_pendsv exception.
@@ -34,7 +33,7 @@ extern const int _k_neg_eagain;
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
  */
-int z_arch_swap(unsigned int key)
+int arch_swap(unsigned int key)
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	read_timer_start_of_swap();

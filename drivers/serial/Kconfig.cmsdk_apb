@@ -1,10 +1,7 @@
-# Kconfig.beetle - ARM CMSDK APB SoC UART configuration options
-#
-#
+# ARM CMSDK APB SoC UART configuration options
+
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config UART_CMSDK_APB
 	bool "ARM CMSDK APB UART driver"

@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32L1 MCU line
-#
+# ST Microelectronics STM32L1 MCU line
+
 # Copyright (c) 2019 Linaro Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_STM32L1X
 
@@ -14,7 +12,7 @@ config SOC_SERIES
 
 if I2C_STM32
 
-config  I2C_STM32_V1
+config I2C_STM32_V1
 	default y
 
 endif # I2C_STM32

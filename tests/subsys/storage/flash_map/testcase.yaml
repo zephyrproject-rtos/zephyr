@@ -2,7 +2,7 @@ tests:
   storage.flash_map:
     platform_whitelist: nrf51_pca10028 qemu_x86 native_posix native_posix_64
     tags: flash_map
-  storage.flash_map_mpu:
+  storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040 frdm_k64f hexiwear_k64
                         twr_ke18f

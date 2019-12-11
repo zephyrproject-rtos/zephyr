@@ -9,3 +9,8 @@ description: |
 compatible: "st,vl53l0x"
 
 include: i2c-device.yaml
+
+properties:
+    xshut-gpios:
+      type: phandle-array
+      required: false

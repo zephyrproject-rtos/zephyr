@@ -42,7 +42,7 @@ static void do_isr_dynamic(void)
 		     "could not find slot for dynamic isr");
 
 	argval = &i;
-	z_arch_irq_connect_dynamic(i + CONFIG_GEN_IRQ_START_VECTOR, 0, dyn_isr,
+	arch_irq_connect_dynamic(i + CONFIG_GEN_IRQ_START_VECTOR, 0, dyn_isr,
 				   argval, 0);
 
 	zassert_true(_sw_isr_table[i].isr == dyn_isr &&

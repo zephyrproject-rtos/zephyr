@@ -281,8 +281,11 @@ static int spi_stm32_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			       (clock_control_subsys_t) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
 		u32_t clk = clock >> br;

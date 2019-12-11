@@ -9,6 +9,7 @@
 #include <logging/log_msg.h>
 #include <stdarg.h>
 #include <sys/__assert.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK SPI
-#
+# MCUXpresso SDK SPI
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SPI_MCUX_LPSPI
 	bool "MCUX SPI driver"

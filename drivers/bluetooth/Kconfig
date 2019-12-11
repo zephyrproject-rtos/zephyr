@@ -1,10 +1,7 @@
-# Kconfig - Bluetooth LE driver configuration options
+# Bluetooth LE driver configuration options
 
-#
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # Bluetooth options

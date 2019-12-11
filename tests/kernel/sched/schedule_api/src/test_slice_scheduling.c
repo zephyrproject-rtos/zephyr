@@ -41,8 +41,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	int thread_parameter = (idx == (NUM_THREAD - 1)) ? '\n' :
 			       (idx + 'A');
 
-	s64_t expected_slice_min = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE));
-	s64_t expected_slice_max = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE) + 1);
+	s64_t expected_slice_min = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(SLICE_SIZE));
+	s64_t expected_slice_max = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(SLICE_SIZE) + 1);
 
 	/* Clumsy, but need to handle the precision loss with
 	 * submillisecond ticks.  It's always possible to alias and

@@ -49,20 +49,6 @@ LOG_MODULE_REGISTER(os);
 #define BOOT_DELAY_BANNER ""
 #endif
 
-#ifdef BUILD_VERSION
-#define BOOT_BANNER "Booting Zephyr OS build "		\
-	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
-#else
-#define BOOT_BANNER "Booting Zephyr OS version "	\
-	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
-#endif
-
-#if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (false)
-#else
-#define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
-#endif
-
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
@@ -256,7 +242,16 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 		       "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
-	PRINT_BOOT_BANNER();
+
+#if defined(CONFIG_BOOT_BANNER)
+#ifdef BUILD_VERSION
+	printk("*** Booting Zephyr OS build %s %s ***\n",
+			STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
+#else
+	printk("*** Booting Zephyr OS version %s %s ***\n",
+			KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);
+#endif
+#endif
 
 	/* Final init level before app starts */
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
@@ -295,7 +290,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
-	z_arch_nop();
+	arch_nop();
 }
 
 /* LCOV_EXCL_STOP */
@@ -411,9 +406,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	z_arch_switch_to_main_thread(&z_main_thread, z_main_stack,
-				     K_THREAD_STACK_SIZEOF(z_main_stack),
-				     bg_thread_main);
+	arch_switch_to_main_thread(&z_main_thread, z_main_stack,
+				   K_THREAD_STACK_SIZEOF(z_main_stack),
+				   bg_thread_main);
 #else
 	/*
 	 * Context switch to main task (entry function is _main()): the
@@ -426,35 +421,33 @@ static FUNC_NORETURN void switch_to_main_thread(void)
 }
 #endif /* CONFIG_MULTITHREADING */
 
-u32_t z_early_boot_rand32_get(void)
+void z_early_boot_rand_get(u8_t *buf, size_t length)
 {
+	int n = sizeof(u32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	int rc;
-	u32_t retval;
 
 	if (entropy == NULL) {
-		goto sys_rand32_fallback;
+		goto sys_rand_fallback;
 	}
 
 	/* Try to see if driver provides an ISR-specific API */
-	rc = entropy_get_entropy_isr(entropy, (u8_t *)&retval,
-				     sizeof(retval), ENTROPY_BUSYWAIT);
+	rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
 	if (rc == -ENOTSUP) {
 		/* Driver does not provide an ISR-specific API, assume it can
 		 * be called from ISR context
 		 */
-		rc = entropy_get_entropy(entropy, (u8_t *)&retval,
-					 sizeof(retval));
+		rc = entropy_get_entropy(entropy, buf, length);
 	}
 
 	if (rc >= 0) {
-		return retval;
+		return;
 	}
 
 	/* Fall through to fallback */
 
-sys_rand32_fallback:
+sys_rand_fallback:
 #endif
 
 	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
@@ -463,7 +456,25 @@ sys_rand32_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-	return sys_rand32_get();
+
+	while (length > 0) {
+		u32_t rndbits;
+		u8_t *p_rndbits = (u8_t *)&rndbits;
+
+		rndbits = sys_rand32_get();
+
+		if (length < sizeof(u32_t)) {
+			n = length;
+		}
+
+		for (int i = 0; i < n; i++) {
+			*buf = *p_rndbits;
+			buf++;
+			p_rndbits++;
+		}
+
+		length -= n;
+	}
 }
 
 /**
@@ -478,13 +489,17 @@ sys_rand32_fallback:
  */
 FUNC_NORETURN void z_cstart(void)
 {
+#ifdef CONFIG_STACK_CANARIES
+	uintptr_t stack_guard;
+#endif	/* CONFIG_STACK_CANARIES */
+
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
 	LOG_CORE_INIT();
 
 	/* perform any architecture-specific initialization */
-	z_arch_kernel_init();
+	arch_kernel_init();
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_thread dummy_thread = {
@@ -506,8 +521,10 @@ FUNC_NORETURN void z_cstart(void)
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
-	__stack_chk_guard = z_early_boot_rand32_get();
-#endif
+	z_early_boot_rand_get((u8_t *)&stack_guard, sizeof(stack_guard));
+	__stack_chk_guard = stack_guard;
+	__stack_chk_guard <<= 8;
+#endif	/* CONFIG_STACK_CANARIES */
 
 #ifdef CONFIG_MULTITHREADING
 	prepare_multithreading(&dummy_thread);

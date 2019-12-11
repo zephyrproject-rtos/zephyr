@@ -1,12 +1,9 @@
-# Kconfig - general architecture configuration options
+# General architecture configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2015 Intel Corporation
 # Copyright (c) 2016 Cadence Design Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
@@ -69,15 +66,14 @@ module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
-       bool
-       help
-         This option tells the build system that the target system is
-         big-endian.  Little-endian architecture is the default and
-         should leave this option unselected.  This option is selected
-         by arch/$ARCH/Kconfig, soc/**/Kconfig, or boards/**/Kconfig
-         and the user should generally avoid modifying it.  The option
-         is used to select linker script OUTPUT_FORMAT and command
-         line option for gen_isr_tables.py.
+	bool
+	help
+	  This option tells the build system that the target system is big-endian.
+	  Little-endian architecture is the default and should leave this option
+	  unselected.  This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
+	  and command line option for gen_isr_tables.py.
 
 config 64BIT
 	bool
@@ -234,14 +230,14 @@ config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
 	depends on USERSPACE
 	help
-	Enabling this option allows for kernel objects to be requested from
-	the calling thread's resource pool, at a slight cost in performance
-	due to the supplemental run-time tables required to validate such
-	objects.
+	  Enabling this option allows for kernel objects to be requested from
+	  the calling thread's resource pool, at a slight cost in performance
+	  due to the supplemental run-time tables required to validate such
+	  objects.
 
-	Objects allocated in this way can be freed with a supervisor-only
-	API call, or when the number of references to that object drops to
-	zero.
+	  Objects allocated in this way can be freed with a supervisor-only
+	  API call, or when the number of references to that object drops to
+	  zero.
 
 if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
@@ -320,9 +316,11 @@ config GEN_IRQ_START_VECTOR
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
+	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
-	  run in interrupt context. Mainly useful for test cases.
+	  run in interrupt context. Only useful for test cases that need
+	  to validate the correctness of kernel objects in IRQ context.
 
 endmenu # Interrupt configuration
 
@@ -452,6 +450,31 @@ config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 	help
 	  This option is enabled when the MPU requires the active (i.e. enabled)
 	  MPU regions to be non-overlapping with each other.
+
+config MPU_GAP_FILLING
+	bool "Force MPU to be filling in background memory regions"
+	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	default y if !USERSPACE
+	help
+	  This Kconfig option instructs the MPU driver to enforce
+	  a full kernel SRAM partitioning, when it programs the
+	  dynamic MPU regions (user thread stack, PRIV stack guard
+	  and application memory domains) during context-switch. We
+	  allow this to be a configurable option, in order to be able
+	  to switch the option off and have an increased number of MPU
+	  regions available for application memory domain programming.
+
+	  Notes:
+	  An increased number of MPU regions should only be required,
+	  when building with USERSPACE support. As a result, when we
+	  build without USERSPACE support, gap filling should always
+	  be required.
+
+	  When the option is switched off, access to memory areas not
+	  covered by explicit MPU regions is restricted to privileged
+	  code on an ARCH-specific basis. Refer to ARCH-specific
+	  documentation for more information on how this option is
+	  used.
 
 menuconfig FLOAT
 	bool "Floating point"

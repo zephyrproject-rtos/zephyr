@@ -1,10 +1,7 @@
-# Kconfig - iAQ-core Digital VOC sensor configuration options
+# iAQ-core Digital VOC sensor configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig AMS_IAQ_CORE
 	bool "iAQ-core Digital VOC sensor"
@@ -18,6 +15,6 @@ config IAQ_CORE_MAX_READ_RETRIES
 	int "Number of read retries"
 	default 4
 	help
-	 Number of retries when reading failed or device not ready.
+	  Number of retries when reading failed or device not ready.
 
 endif # AMS_IAQ_CORE

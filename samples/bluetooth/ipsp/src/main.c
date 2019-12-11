@@ -165,7 +165,7 @@ static int build_reply(const char *name,
 	int reply_len = net_pkt_remaining_data(pkt);
 	int ret;
 
-	LOG_DBG("%s received %d bytes", name, reply_len);
+	LOG_DBG("%s received %d bytes", log_strdup(name), reply_len);
 
 	ret = net_pkt_read(pkt, buf, reply_len);
 	if (ret < 0) {
@@ -173,9 +173,9 @@ static int build_reply(const char *name,
 		return ret;
 	}
 
-	LOG_DBG("sending %d bytes", ret);
+	LOG_DBG("sending %d bytes", reply_len);
 
-	return ret;
+	return reply_len;
 }
 
 static inline void pkt_sent(struct net_context *context,

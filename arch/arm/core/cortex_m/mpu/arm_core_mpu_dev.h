@@ -28,7 +28,8 @@ struct k_thread;
  *
  * @param mpu_regions_num the number of available HW MPU regions.
  */
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+	defined(CONFIG_MPU_GAP_FILLING)
 /*
  * For ARM MPU architectures, where the domain partitions cannot be defined
  * on top of the statically configured memory regions, the maximum number of
@@ -53,7 +54,8 @@ struct k_thread;
  * @brief Maximum number of MPU regions required to configure a
  *        memory region for (user) Thread Stack.
  */
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+	defined(CONFIG_MPU_GAP_FILLING)
 /* When dynamic regions may not be defined on top of statically
  * allocated memory regions, defining a region for a thread stack
  * requires two additional MPU regions to be configured; one for
@@ -73,7 +75,8 @@ struct k_thread;
  * @brief Maximum number of MPU regions required to configure a
  *        memory region for a (supervisor) Thread Stack Guard.
  */
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) \
+#if (defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+		defined(CONFIG_MPU_GAP_FILLING)) \
 	|| defined(CONFIG_CPU_HAS_NXP_MPU)
 /*
  * When dynamic regions may not be defined on top of statically

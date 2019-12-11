@@ -1,9 +1,9 @@
 sample:
   name: SPI Flash Sample
 tests:
-  sample.driver.spi_flash:
+  sample.drivers.spi.flash:
     tags: spi flash
-    filter: DT_INST_0_JEDEC_SPI_NOR_LABEL
+    filter: dt_compat_enabled("jedec,spi-nor")
     harness: console
     harness_config:
         type: multi_line
@@ -15,4 +15,11 @@ tests:
             - "Attempted to write 55 aa"
             - "Data read 55 aa"
             - "Data read matches with data written. Good!!"
+    depends_on: spi
+  sample.drivers.spi.flash_dpd:
+    tags: spi flash
+    filter: dt_compat_enabled("jedec,spi-nor")
+    build_only: true
+    extra_configs:
+      - CONFIG_SPI_NOR_IDLE_IN_DPD=y
     depends_on: spi

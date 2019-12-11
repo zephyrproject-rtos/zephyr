@@ -299,6 +299,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openisa	open-isa.org
 openrisc	OpenRISC.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.

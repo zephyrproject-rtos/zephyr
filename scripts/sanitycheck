@@ -149,8 +149,8 @@ pairs:
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report (sanitycheck_discard.csv)
+can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
@@ -165,11 +165,6 @@ Most everyday users will run with no arguments.
 """
 
 import os
-if os.name == 'nt':
-    print("Running sanitycheck on Windows is not supported yet.")
-    print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
-    exit(1)
-
 import contextlib
 import string
 import mmap
@@ -198,6 +193,18 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
+try:
+    from anytree import Node, RenderTree, find
+except ImportError:
+    print("Install the anytree module to use the --test-tree option")
+
+
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
+    sys.exit("$ZEPHYR_BASE environment variable undefined")
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
+import edtlib
 
 import logging
 
@@ -208,11 +215,6 @@ report_lock = threading.Lock()
 
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 logging.basicConfig(format=log_format, level=30)
-
-ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
-    exit(1)
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
@@ -581,7 +583,14 @@ class BinaryHandler(Handler):
 
         start_time = time.time()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+        env = os.environ.copy()
+        if options.enable_asan:
+            env["ASAN_OPTIONS"] = "log_path=stdout:" + \
+                    env.get("ASAN_OPTIONS", "")
+            if not options.enable_lsan:
+                env["ASAN_OPTIONS"] += "detect_leaks=0"
+        with subprocess.Popen(command, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ), daemon=True)
             t.start()
@@ -621,7 +630,6 @@ class BinaryHandler(Handler):
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Handler timeout"
-
 
         self.record(harness)
 
@@ -728,7 +736,7 @@ class DeviceHandler(Handler):
 
         runner = hardware.get('runner', None)
         if runner:
-            board_id = hardware.get("id", None)
+            board_id = hardware.get("probe_id", hardware.get("id", None))
             product = hardware.get("product", None)
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command.append("--runner")
@@ -812,6 +820,8 @@ class DeviceHandler(Handler):
             self.set_state(out_state, handler_time)
 
         self.make_device_available(serial_device)
+
+        self.record(harness)
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
@@ -964,6 +974,19 @@ class QEMUHandler(Handler):
         verbose("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
         subprocess.call(["stty", "sane"])
+
+        verbose("Running %s (%s)" %(self.name, self.type_str))
+        command = [get_generator()[0]]
+        command += ["-C", self.build_dir, "run"]
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+            verbose("Spawning QEMUHandler Thread for %s" % self.name)
+            proc.wait()
+            self.returncode = proc.returncode
+
+        if self.returncode != 0:
+            self.set_state("failed", 0)
+            self.instance.reason = "Exited with {}".format(self.returncode)
 
     def get_fifo(self):
         return self.fifo_fn
@@ -1502,7 +1525,7 @@ class TestCase(object):
             # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
             br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
             # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            br"ztest_(?:user_)?unit_test(?:_setup_teardown)?"
+            br"ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?"
             # Consume the argument that becomes the extra testcse
             br"\(\s*"
             br"(?P<stc_name>[a-zA-Z0-9_]+)"
@@ -1520,8 +1543,15 @@ class TestCase(object):
         warnings = None
 
         with open(inf_name) as inf:
-            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
-                                              mmap.PROT_READ, 0)) as main_c:
+            if os.name == 'nt':
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'access':mmap.ACCESS_READ}
+            else:
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'flags':mmap.MAP_PRIVATE, 'prot':mmap.PROT_READ, 'offset':0}
+
+            with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
+                # contextlib makes pylint think main_c isn't subscriptable
+                # pylint: disable=unsubscriptable-object
+
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
@@ -1555,10 +1585,19 @@ class TestCase(object):
                     subcases += _subcases
             except ValueError as e:
                 error("%s: can't find: %s" % (filename, e))
+        for filename in glob.glob(os.path.join(path, "*.c")):
+            try:
+                _subcases, warnings = self.scan_file(filename)
+                if warnings:
+                    error("%s: %s" % (filename, warnings))
+                if _subcases:
+                    subcases += _subcases
+            except ValueError as e:
+                error("%s: can't find: %s" % (filename, e))
         return subcases
 
     def parse_subcases(self, test_path):
-        results = self.scan_path(os.path.dirname(test_path))
+        results = self.scan_path(test_path)
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
@@ -1603,6 +1642,11 @@ class TestInstance:
         return self.name < other.name
 
     def check_build_or_run(self):
+        # right now we only support building on windows. running is still work
+        # in progress.
+
+        if os.name == 'nt':
+            return True
 
         build_only = True
 
@@ -1667,8 +1711,12 @@ class TestInstance:
                 content = "\n".join(self.testcase.extra_configs)
 
             if options.enable_coverage:
-                if platform in options.coverage_platform:
+                if platform.name in options.coverage_platform:
                     content = content + "\nCONFIG_COVERAGE=y"
+
+            if options.enable_asan:
+                if platform.type == "native":
+                    content = content + "\nCONFIG_ASAN=y"
 
             f.write(content)
 
@@ -1704,7 +1752,6 @@ class CMake():
 
         self.defconfig = {}
         self.cmake_cache = {}
-        self.devicetree = {}
 
         self.instance = None
         self.testcase = testcase
@@ -1847,10 +1894,7 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        _generated_dt_confg = "include/generated/generated_dts_board.conf"
-
         cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-        dt_config_path = os.path.join(self.build_dir, "zephyr", _generated_dt_confg)
         defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
 
         with open(defconfig_path, "r") as fp:
@@ -1876,18 +1920,6 @@ class FilterBuilder(CMake):
 
         self.cmake_cache = cmake_conf
 
-        dt_conf = {}
-        if os.path.exists(dt_config_path):
-            with open(dt_config_path, "r") as fp:
-                for line in fp.readlines():
-                    m = self.dt_re.match(line)
-                    if not m:
-                        if line.strip() and not line.startswith("#"):
-                            sys.stderr.write("Unrecognized line %s\n" % line)
-                        continue
-                    dt_conf[m.group(1)] = m.group(2).strip()
-        self.devicetree = dt_conf
-
         filter_data = {
             "ARCH": self.platform.arch,
             "PLATFORM": self.platform.name
@@ -1895,11 +1927,16 @@ class FilterBuilder(CMake):
         filter_data.update(os.environ)
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
-        filter_data.update(self.devicetree)
 
+        dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
         if self.testcase and self.testcase.tc_filter:
             try:
-                res = expr_parser.parse(self.testcase.tc_filter, filter_data)
+                if os.path.exists(dts_path):
+                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
+                else:
+                    edt = None
+                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
+
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
                     "Failed processing %s\n" % self.testcase.yamlfile)
@@ -1998,27 +2035,13 @@ class ProjectBuilder(FilterBuilder):
                 "test": self.instance,
                 "state": "executed",
                 "status": self.instance.status,
-                "reason": self.instance.status}
+                "reason": self.instance.reason}
                 )
 
         # Report results and output progress to screen
         elif op == "report":
             with report_lock:
                 self.report_out()
-
-    def log_info_file(self, instance):
-
-        build_dir = instance.build_dir
-        h_log = "{}/handler.log".format(build_dir)
-        b_log = "{}/build.log".format(build_dir)
-        v_log = "{}/valgrind.log".format(build_dir)
-
-        if os.path.exists(v_log) and "Valgrind" in instance.reason:
-            log_info("{}".format(v_log))
-        elif os.path.exists(h_log):
-            log_info("{}".format(h_log))
-        else:
-            log_info("{}".format(b_log))
 
     def report_out(self):
         total_tests_width = len(str(self.suite.total_tests))
@@ -2038,7 +2061,7 @@ class ProjectBuilder(FilterBuilder):
                         COLOR_NORMAL,
                         instance.reason), False)
             if not VERBOSE:
-                self.log_info_file(instance)
+                log_info_file(instance)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
             status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
@@ -2064,7 +2087,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["failed", "timeout"]:
-                self.log_info_file(instance)
+                log_info_file(instance)
         else:
             sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                         COLOR_GREEN,
@@ -2103,7 +2126,8 @@ class ProjectBuilder(FilterBuilder):
                 del args[idx]
                 idx += 1
 
-        if self.testcase.extra_configs or options.coverage:
+        if (self.testcase.extra_configs or options.coverage or
+                options.enable_asan):
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
                         os.path.join(instance.build_dir,
                                      "sanitycheck", "testcase_extra.conf")))
@@ -2123,16 +2147,6 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.suite = self.suite
 
         instance.handler.handle()
-
-        if instance.handler.type_str == "qemu":
-            verbose("Running %s (%s)" %(instance.name, instance.handler.type_str))
-            command = [get_generator()[0]]
-            command += ["-C", self.build_dir, "run"]
-
-            with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
-                verbose("Spawning QEMUHandler Thread for %s" % instance.name)
-                proc.wait()
-                self.returncode = proc.returncode
 
         sys.stdout.flush()
 
@@ -2161,9 +2175,6 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
         else:
             future.add_done_callback(lambda x: self.semaphore.release())
             return future
-
-    def shutdown(self, wait=True):
-        super().shutdown(wait)
 
 
 class TestSuite:
@@ -2398,6 +2409,15 @@ class TestSuite:
                     error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
 
+
+    def get_all_tests(self):
+        tests = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                tests.append(case)
+
+        return tests
+
     @staticmethod
     def get_toolchain():
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
@@ -2520,7 +2540,7 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.create_overlay(platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2545,7 +2565,7 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.create_overlay(platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2707,7 +2727,7 @@ class TestSuite:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform.name)
+            case.create_overlay(case.platform)
 
         self.discards = discards
 
@@ -2774,7 +2794,8 @@ class TestSuite:
                     try:
                         data = future.result()
                     except Exception as exc:
-                        print('%r generated an exception: %s' % (test, exc))
+                        sys.exit('%r generated an exception: %s' % (test, exc))
+
                     else:
                         if data:
                             verbose(data)
@@ -3013,6 +3034,15 @@ class TestSuite:
                 cw.writerow(rowdict)
 
 
+    def get_testcase(self, identifier):
+        results = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                if case == identifier:
+                    results.append(tc)
+        return results
+
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(
@@ -3101,15 +3131,6 @@ Artificially long but functional example:
         help="""Create a report with a custom name.
         """)
 
-    parser.add_argument("--detailed-report",
-        action="store",
-        metavar="FILENAME",
-        help="""Generate a junit report with detailed testcase results.
-        Unlike the CSV file produced by --testcase-report, this XML
-        report includes only tests which have run and none which were
-        merely built. If an image with multiple tests crashes early then
-        later tests are not accounted for either.""")
-
     parser.add_argument("--report-excluded",
             action="store_true",
             help="""List all tests that are never run based on current scope and
@@ -3132,9 +3153,11 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
-        help="Create the filtered list of test cases, but don't actually "
-        "run them. Useful if you're just interested in "
-        "--discard-report")
+        help="""Create the filtered list of test cases, but don't actually
+        run them. Useful if you're just interested in the discard report
+        generated for every run and saved in the specified output
+        directory (sanitycheck_discard.csv).
+        """)
 
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
@@ -3146,6 +3169,13 @@ Artificially long but functional example:
         The output is flattened and reports --sub-test names only,
         not their directories. For instance net.socket.getaddrinfo_ok
         and net.socket.fd_set belong to different directories.
+        """)
+
+    case_select.add_argument("--test-tree", action="store_true",
+        help="""Output the testsuite in a tree form""")
+
+    case_select.add_argument("--list-test-duplicates", action="store_true",
+        help="""List tests with duplicate identifiers.
         """)
 
     parser.add_argument("--export-tests", action="store",
@@ -3347,12 +3377,31 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         NOTE: west-flash must be enabled to use this option.
         """
     )
-    parser.add_argument(
+
+    valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    valgrind_asan_group.add_argument(
         "--enable-valgrind", action="store_true",
         help="""Run binary through valgrind and check for several memory access
-        errors." Valgrind needs to be installed on the host. This option only
+        errors. Valgrind needs to be installed on the host. This option only
         works with host binaries such as those generated for the native_posix
-        configuration.
+        configuration and is mutual exclusive with --enable-asan.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-asan", action="store_true",
+        help="""Enable address sanitizer to check for several memory access
+        errors. Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-valgrind.
+        """)
+
+    parser.add_argument(
+        "--enable-lsan", action="store_true",
+        help="""Enable leak sanitizer to check for heap memory leaks.
+        Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and when --enable-asan is given.
         """)
 
     parser.add_argument("--enable-coverage", action="store_true",
@@ -3360,7 +3409,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
-                        "--enable_coverage and --enable-slow")
+                        "--enable_coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
@@ -3370,6 +3419,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--gcov-tool", default=None,
                         help="Path to the gcov tool to use for code coverage "
                         "reports")
+
+    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
+                        help="Tool to use to generate coverage report.")
 
     return parser.parse_args()
 
@@ -3392,6 +3444,21 @@ def log_info(filename):
     else:
         info("\n\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
+
+def log_info_file(instance):
+    build_dir = instance.build_dir
+    h_log = "{}/handler.log".format(build_dir)
+    b_log = "{}/build.log".format(build_dir)
+    v_log = "{}/valgrind.log".format(build_dir)
+
+    if os.path.exists(v_log) and "Valgrind" in instance.reason:
+        log_info("{}".format(v_log))
+    elif os.path.exists(h_log):
+        log_info("{}".format(h_log))
+    else:
+        log_info("{}".format(b_log))
+
+
 def size_report(sc):
     info(sc.filename)
     info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
@@ -3406,110 +3473,194 @@ def size_report(sc):
          (sc.rom_size, sc.ram_size))
     info("")
 
-def retrieve_gcov_data(intput_file):
-    if VERBOSE:
-        print("Working on %s" %intput_file)
-    extracted_coverage_info = {}
-    capture_data = False
-    capture_complete = False
-    with open(intput_file, 'r') as fp:
-        for line in fp.readlines():
-            if re.search("GCOV_COVERAGE_DUMP_START", line):
-                capture_data = True
-                continue
-            if re.search("GCOV_COVERAGE_DUMP_END", line):
-                capture_complete = True
-                break
-            # Loop until the coverage data is found.
-            if not capture_data:
-                continue
-            if line.startswith("*"):
-                sp = line.split("<")
-                if len(sp) > 1:
-                    # Remove the leading delimiter "*"
-                    file_name = sp[0][1:]
-                    # Remove the trailing new line char
-                    hex_dump = sp[1][:-1]
+class CoverageTool:
+    """ Base class for every supported coverage tool
+    """
+
+    def __init__(self):
+        self.gcov_tool = options.gcov_tool
+
+    @staticmethod
+    def factory(tool):
+        if tool == 'lcov':
+            return Lcov()
+        if tool == 'gcovr':
+            return Gcovr()
+        error("Unsupported coverage tool specified: {}".format(tool))
+
+    @staticmethod
+    def retrieve_gcov_data(intput_file):
+        if VERBOSE:
+            print("Working on %s" %intput_file)
+        extracted_coverage_info = {}
+        capture_data = False
+        capture_complete = False
+        with open(intput_file, 'r') as fp:
+            for line in fp.readlines():
+                if re.search("GCOV_COVERAGE_DUMP_START", line):
+                    capture_data = True
+                    continue
+                if re.search("GCOV_COVERAGE_DUMP_END", line):
+                    capture_complete = True
+                    break
+                # Loop until the coverage data is found.
+                if not capture_data:
+                    continue
+                if line.startswith("*"):
+                    sp = line.split("<")
+                    if len(sp) > 1:
+                        # Remove the leading delimiter "*"
+                        file_name = sp[0][1:]
+                        # Remove the trailing new line char
+                        hex_dump = sp[1][:-1]
+                    else:
+                        continue
                 else:
                     continue
-            else:
+                extracted_coverage_info.update({file_name:hex_dump})
+        if not capture_data:
+            capture_complete = True
+        return {'complete': capture_complete, 'data': extracted_coverage_info}
+
+    @staticmethod
+    def create_gcda_files(extracted_coverage_info):
+        if VERBOSE:
+            print("Generating gcda files")
+        for filename, hexdump_val in extracted_coverage_info.items():
+            # if kobject_hash is given for coverage gcovr fails
+            # hence skipping it problem only in gcovr v4.1
+            if "kobject_hash" in filename:
+                filename = (filename[:-4]) +"gcno"
+                try:
+                    os.remove(filename)
+                except Exception:
+                    pass
                 continue
-            extracted_coverage_info.update({file_name:hex_dump})
-    if not capture_data:
-        capture_complete = True
-    return {'complete': capture_complete, 'data': extracted_coverage_info}
 
-def create_gcda_files(extracted_coverage_info):
-    if VERBOSE:
-        print("Generating gcda files")
-    for filename, hexdump_val in extracted_coverage_info.items():
-        # if kobject_hash is given for coverage gcovr fails
-        # hence skipping it problem only in gcovr v4.1
-        if "kobject_hash" in filename:
-            filename = (filename[:-4]) +"gcno"
-            try:
-                os.remove(filename)
-            except Exception:
-                pass
-            continue
+            with open(filename, 'wb') as fp:
+                fp.write(bytes.fromhex(hexdump_val))
 
-        with open(filename, 'wb') as fp:
-            fp.write(bytes.fromhex(hexdump_val))
 
-def generate_coverage(outdir, ignores):
+    def generate(self, outdir):
+        for filename in glob.glob("%s/**/handler.log" % outdir, recursive=True):
+            gcov_data = self.__class__.retrieve_gcov_data(filename)
+            capture_complete = gcov_data['complete']
+            extracted_coverage_info = gcov_data['data']
+            if capture_complete:
+                self.__class__.create_gcda_files(extracted_coverage_info)
+                verbose("Gcov data captured: {}".format(filename))
+            else:
+                error("Gcov data capture incomplete: {}".format(filename))
 
-    for filename in glob.glob("%s/**/handler.log" %outdir, recursive=True):
-        gcov_data = retrieve_gcov_data(filename)
-        capture_complete = gcov_data['complete']
-        extracted_coverage_info = gcov_data['data']
-        if capture_complete:
-            create_gcda_files(extracted_coverage_info)
-            verbose("Gcov data captured: {}".format(filename))
-        else:
-            error("Gcov data capture incomplete: {}".format(filename))
+        with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+            ret = self._generate(outdir, coveragelog)
+            if ret == 0:
+                info("HTML report generated: {}".format(
+                    os.path.join(outdir, "coverage", "index.html")))
 
-    gcov_tool = options.gcov_tool
 
-    with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+class Lcov(CoverageTool):
+
+    def __init__(self):
+        super().__init__()
+        self.ignores = []
+
+    def add_ignore_file(self, pattern):
+        self.ignores.append('*' + pattern + '*')
+
+    def add_ignore_directory(self, pattern):
+        self.ignores.append(pattern + '/*')
+
+    def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
-        subprocess.call(["lcov", "--gcov-tool", gcov_tool,
-                            "--capture", "--directory", outdir,
-                            "--rc", "lcov_branch_coverage=1",
-                            "--output-file", coveragefile], stdout=coveragelog)
+        subprocess.call(["lcov", "--gcov-tool", self.gcov_tool,
+                         "--capture", "--directory", outdir,
+                         "--rc", "lcov_branch_coverage=1",
+                         "--output-file", coveragefile], stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--extract", coveragefile,
+        subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--extract",
+                         coveragefile,
                          os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
                          "--output-file", ztestfile,
                          "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
-            subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--remove", ztestfile,
+            subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--remove",
+                             ztestfile,
                              os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
                              "--output-file", ztestfile,
                              "--rc", "lcov_branch_coverage=1"],
-                             stdout=coveragelog)
+                            stdout=coveragelog)
             files = [coveragefile, ztestfile]
         else:
             files = [coveragefile]
 
-        for i in ignores:
+        for i in self.ignores:
             subprocess.call(
-                ["lcov", "--gcov-tool", gcov_tool, "--remove",
-                    coveragefile, i, "--output-file",
-                    coveragefile, "--rc", "lcov_branch_coverage=1"],
+                ["lcov", "--gcov-tool", self.gcov_tool, "--remove",
+                 coveragefile, i, "--output-file",
+                 coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
 
-        #The --ignore-errors source option is added to avoid it exiting due to
-        #samples/application_development/external_lib/
-        ret = subprocess.call(["genhtml", "--legend", "--branch-coverage",
-                               "--ignore-errors", "source",
-                               "-output-directory",
-                               os.path.join(outdir, "coverage")] + files,
+        # The --ignore-errors source option is added to avoid it exiting due to
+        # samples/application_development/external_lib/
+        return subprocess.call(["genhtml", "--legend", "--branch-coverage",
+                                "--ignore-errors", "source",
+                                "-output-directory",
+                                os.path.join(outdir, "coverage")] + files,
                                stdout=coveragelog)
-        if ret==0:
-            info("HTML report generated: %s"%
-                 os.path.join(outdir, "coverage","index.html"))
+
+
+class Gcovr(CoverageTool):
+
+    def __init__(self):
+        super().__init__()
+        self.ignores = []
+
+    def add_ignore_file(self, pattern):
+        self.ignores.append('.*' + pattern + '.*')
+
+    def add_ignore_directory(self, pattern):
+        self.ignores.append(pattern + '/.*')
+
+    @staticmethod
+    def _interleave_list(prefix, list):
+        tuple_list = [(prefix, item) for item in list]
+        return [item for sublist in tuple_list for item in sublist]
+
+    def _generate(self, outdir, coveragelog):
+        coveragefile = os.path.join(outdir, "coverage.json")
+        ztestfile = os.path.join(outdir, "ztest.json")
+
+        excludes = Gcovr._interleave_list("-e", self.ignores)
+
+        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
+        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+                         self.gcov_tool, "-e", "tests/*"] + excludes +
+                        ["--json", "-o", coveragefile, outdir],
+                        stdout=coveragelog)
+
+        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+                         self.gcov_tool, "-f", "tests/ztest", "-e",
+                         "tests/ztest/test/*", "--json", "-o", ztestfile,
+                         outdir], stdout=coveragelog)
+
+        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
+            files = [coveragefile, ztestfile]
+        else:
+            files = [coveragefile]
+
+        subdir = os.path.join(outdir, "coverage")
+        os.makedirs(subdir, exist_ok=True)
+
+        tracefiles = self._interleave_list("--add-tracefile", files)
+
+        return subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--html",
+                                "--html-details"] + tracefiles +
+                               ["-o", os.path.join(subdir, "index.html")],
+                               stdout=coveragelog)
+
 
 def get_generator():
     if options.ninja:
@@ -3527,27 +3678,17 @@ def export_tests(filename, tests):
         cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
         for test in tests:
             data = test.split(".")
-            subsec = " ".join(data[1].split("_")).title()
-            rowdict = {
-                    "section": data[0].capitalize(),
-                    "subsection": subsec,
-                    "title": test,
-                    "reference": test
-                    }
-            cw.writerow(rowdict)
-
-def get_unique_tests(suite):
-    unq = []
-    run_individual_tests = []
-    for _, tc in suite.testcases.items():
-        for c in tc.cases:
-            if options.sub_test and c in options.sub_test:
-                if tc.name not in run_individual_tests:
-                    run_individual_tests.append(tc.name)
-            unq.append(c)
-
-    return unq
-
+            if len(data) > 1:
+                subsec = " ".join(data[1].split("_")).title()
+                rowdict = {
+                        "section": data[0].capitalize(),
+                        "subsection": subsec,
+                        "title": test,
+                        "reference": test
+                        }
+                cw.writerow(rowdict)
+            else:
+                info("{} can't be exported".format(test))
 
 
 def native_and_unit_first(a, b):
@@ -3584,7 +3725,13 @@ def main():
         serial_devices = list_ports.comports()
         filtered = []
         for d in serial_devices:
-            if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics', 'Atmel Corp.']:
+            if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics',
+                                  'Atmel Corp.', 'Texas Instruments',
+                                  'Silicon Labs', 'NXP Semiconductors']:
+                # TI XDS110 can have multiple serial devices for a single board
+                # assume endpoint 0 is the serial, skip all others
+                if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
+                    continue
                 s_dev = {}
                 s_dev['platform'] = "unknown"
                 s_dev['id'] = d.serial_number
@@ -3592,6 +3739,12 @@ def main():
                 s_dev['product'] = d.product
                 if s_dev['product'] in ['DAPLink CMSIS-DAP', 'MBED CMSIS-DAP']:
                     s_dev['runner'] = "pyocd"
+                elif s_dev['product'] in ['J-Link', 'J-Link OB']:
+                    s_dev['runner'] = "jlink"
+                elif s_dev['product'] in ['STM32 STLink']:
+                    s_dev['runner'] = "openocd"
+                elif s_dev['product'].startswith('XDS110'):
+                    s_dev['runner'] = "openocd"
                 else:
                     s_dev['runner'] = "unknown"
                 s_dev['available'] = True
@@ -3608,6 +3761,7 @@ def main():
                 # disconnect everything
                 for h in hwm:
                     h['connected'] = False
+                    h['serial'] = None
 
                 for d in filtered:
                     for h in hwm:
@@ -3644,9 +3798,9 @@ def main():
 
     if options.coverage:
         options.enable_coverage = True
-        options.enable_slow = True
-        if not options.coverage_platform:
-            options.coverage_platform = options.platform
+
+    if not options.coverage_platform:
+        options.coverage_platform = options.platform
 
     if options.size:
         for fn in options.size:
@@ -3684,6 +3838,9 @@ def main():
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
+    if options.show_footprint or options.compare_report or options.release:
+        options.enable_size_report = True
+
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
     suite.add_testcases()
     suite.add_configurations()
@@ -3706,7 +3863,6 @@ def main():
                       platform is allowed""")
 
 
-
     if suite.load_errors:
         sys.exit(1)
 
@@ -3722,12 +3878,7 @@ def main():
 
     if options.export_tests:
         cnt = 0
-        unq = []
-        for _, tc in suite.testcases.items():
-            for c in tc.cases:
-                unq.append(c)
-
-        tests = sorted(set(unq))
+        tests = suite.get_all_tests()
         export_tests(options.export_tests, tests)
         return
 
@@ -3736,24 +3887,77 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    if options.list_tests or options.sub_test:
+    if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
         cnt = 0
-        unq = get_unique_tests(suite)
+        all_tests = suite.get_all_tests()
+
+        if options.list_test_duplicates:
+            import collections
+            dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+            if dupes:
+                print("Tests with duplicate identifiers:")
+                for dupe in dupes:
+                    print("- {}".format(dupe))
+                    for dc in suite.get_testcase(dupe):
+                        print("  - {}".format(dc))
+            else:
+                print("No duplicates found.")
+            return
 
         if options.sub_test:
+            for st in options.sub_test:
+                subtests = suite.get_testcase(st)
+                for sti in subtests:
+                    run_individual_tests.append(sti.name)
+
             if run_individual_tests:
                 info("Running the following tests:")
-                for t in run_individual_tests:
-                    print(" - {}".format(t))
+                for test in run_individual_tests:
+                    print(" - {}".format(test))
             else:
                 info("Tests not found")
                 return
 
-        elif options.list_tests:
-            for u in sorted(set(unq)):
+        elif options.list_tests or options.test_tree:
+            if options.test_tree:
+                testsuite = Node("Testsuite")
+                samples = Node("Samples", parent=testsuite)
+                tests = Node("Tests", parent=testsuite)
+
+            for test in sorted(all_tests):
                 cnt = cnt + 1
-                print(" - {}".format(u))
-            print("{} total.".format(cnt))
+                if options.list_tests:
+                    print(" - {}".format(test))
+
+                if options.test_tree:
+                    if test.startswith("sample."):
+                        sec = test.split(".")
+                        area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
+                        if not area:
+                            area = Node(sec[1], parent=samples)
+
+                        t = Node(test, parent=area)
+                    else:
+                        sec = test.split(".")
+                        area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
+                        if not area:
+                            area = Node(sec[0], parent=tests)
+
+                        if area and len(sec) > 2:
+                            subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
+                            if not subarea:
+                                subarea = Node(sec[1], parent=area)
+
+                            t = Node(test, parent=subarea)
+
+            if options.list_tests:
+                print("{} total.".format(cnt))
+
+            if options.test_tree:
+                for pre, _, node in RenderTree(testsuite):
+                    print("%s%s" % (pre, node.name))
+
+
             return
 
     discards = []
@@ -3786,7 +3990,7 @@ def main():
                     reason))
 
     if options.report_excluded:
-        all_tests = set(get_unique_tests(suite))
+        all_tests = suite.get_all_tests()
         to_be_run = set()
         for i,p in suite.instances.items():
             to_be_run.update(p.testcase.cases)
@@ -3821,6 +4025,12 @@ def main():
     info("%d test configurations selected, %d configurations discarded due to filters." %
         (len(suite.instances), len(discards)))
 
+    if options.device_testing:
+        print("\nDevice testing on:")
+        for p in suite.connected_hardware:
+            if p['connected']:
+                print("%s (%s) on %s" %(p['platform'], p.get('id', None), p['serial']))
+
     if options.dry_run:
         duration = time.time() - start_time
         info("Completed in %d seconds" % (duration))
@@ -3851,6 +4061,9 @@ def main():
     suite.misc_reports(options.compare_report, options.show_footprint,
                 options.all_deltas, options.footprint_threshold, options.last_metrics)
 
+    suite.duration = time.time() - start_time
+    suite.summary(options.disable_unrecognized_section_test)
+
     if options.coverage:
         if options.gcov_tool is None:
             use_system_gcov = False
@@ -3867,10 +4080,11 @@ def main():
                     "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
 
         info("Generating coverage files...")
-        generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
-
-    suite.duration = time.time() - start_time
-    suite.summary(options.disable_unrecognized_section_test)
+        coverage_tool = CoverageTool.factory(options.coverage_tool)
+        coverage_tool.add_ignore_file('generated')
+        coverage_tool.add_ignore_directory('tests')
+        coverage_tool.add_ignore_directory('samples')
+        coverage_tool.generate(options.outdir)
 
     if options.device_testing:
         print("\nHardware distribution summary:\n")

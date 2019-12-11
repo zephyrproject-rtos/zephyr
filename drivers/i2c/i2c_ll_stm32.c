@@ -39,8 +39,12 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
 	clock = rcc_clocks.SYSCLK_Frequency;
 #else
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			(clock_control_subsys_t *) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t *) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
+
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	data->dev_config = config;
@@ -119,7 +123,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
-		while (current->len > 0) {
+		do {
 			u32_t temp_len = current->len;
 			u8_t tmp_msg_flags = current->flags & ~I2C_MSG_RESTART;
 			u8_t tmp_next_msg_flags = next_msg_flags ?
@@ -152,7 +156,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			current->buf += current->len;
 			current->flags = tmp_msg_flags;
 			current->len = temp_len - current->len;
-		}
+		} while (current->len > 0);
 		current++;
 		num_msgs--;
 	}

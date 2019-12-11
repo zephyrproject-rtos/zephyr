@@ -11,9 +11,6 @@
  * Linker script for the Nios II platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <autoconf.h>
 #include <linker/sections.h>
 

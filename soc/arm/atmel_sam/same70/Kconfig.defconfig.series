@@ -1,8 +1,7 @@
-# Kconfig - Atmel SAM E70 MCU series configuration options
-#
+# Atmel SAM E70 MCU series configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_SAME70
 

@@ -1,5 +1,5 @@
-# Kconfig - Atmel SAMR21 MCU series configuration options
-#
+# Atmel SAMR21 MCU series configuration options
+
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
 

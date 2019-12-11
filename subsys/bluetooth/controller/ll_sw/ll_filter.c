@@ -24,7 +24,7 @@
 #define ADDR_TYPE_ANON 0xFF
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_llsw_llfilter
+#define LOG_MODULE_NAME bt_ctlr_ll_filter
 #include "common/log.h"
 
 #include "hal/debug.h"
@@ -121,7 +121,7 @@ static u32_t wl_add(bt_addr_le_t *id_addr)
 
 	/* Duplicate  check */
 	if (i < ARRAY_SIZE(wl)) {
-		return BT_HCI_ERR_INVALID_PARAM;
+		return 0;
 	} else if (j >= ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}

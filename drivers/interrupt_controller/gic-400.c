@@ -133,7 +133,6 @@ static void gic_irq_enable(struct device *dev, unsigned int irq)
 {
 	int int_grp, int_off;
 
-	irq += GIC_SPI_INT_BASE;
 	int_grp = irq / 32;
 	int_off = irq % 32;
 
@@ -144,7 +143,6 @@ static void gic_irq_disable(struct device *dev, unsigned int irq)
 {
 	int int_grp, int_off;
 
-	irq += GIC_SPI_INT_BASE;
 	int_grp = irq / 32;
 	int_off = irq % 32;
 
@@ -162,14 +160,12 @@ static void gic_irq_set_priority(struct device *dev,
 	int int_grp, int_off;
 	u8_t val;
 
-	irq += GIC_SPI_INT_BASE;
-
 	/* Set priority */
 	sys_write8(prio & 0xff, GICD_IPRIORITYRn + irq);
 
 	/* Set interrupt type */
 	int_grp = irq / 4;
-	int_off = (irq % 4) * 2;
+	int_off = (irq % 16) * 2;
 
 	val = sys_read8(GICD_ICFGRn + int_grp);
 	val &= ~(GIC_INT_TYPE_MASK << int_off);
@@ -193,7 +189,7 @@ static void gic_isr(void *arg)
 		return;
 	}
 
-	isr_offset = cfg->isr_table_offset + irq - GIC_SPI_INT_BASE;
+	isr_offset = cfg->isr_table_offset + irq;
 
 	gic_isr_handle = _sw_isr_table[isr_offset].isr;
 	if (gic_isr_handle)

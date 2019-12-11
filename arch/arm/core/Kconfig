@@ -1,10 +1,7 @@
-# Kconfig - ARM core configuration options
+# ARM core configuration options
 
-#
 # Copyright (c) 2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CPU_CORTEX
 	bool
@@ -97,6 +94,12 @@ config RUNTIME_NMI
 	  loop if triggered. This fills the requirement that there must be an
 	  NMI handler installed when the CPU boots. If a custom handler is
 	  needed, enable this option and attach it via _NmiHandlerSet().
+
+config PLATFORM_SPECIFIC_INIT
+	bool "Enable platform (SOC) specific startup hook"
+	help
+	  The platform specific initialization code (z_platform_init) is executed
+	  at the beginning of the startup code (__start).
 
 config FAULT_DUMP
 	int "Fault dump level"

@@ -68,7 +68,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in z_arch_switch().
+the parameter in r0 in arch_switch().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -168,7 +168,7 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from z_arch_switch() is loaded
+    The address of the returning instruction from arch_switch() is loaded
     in ilink and the saved status32 in status32_p0.
 
   o to any irq
