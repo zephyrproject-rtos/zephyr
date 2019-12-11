@@ -175,7 +175,7 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";
-		reset-gpios = <&gpioc 15 0>;
+		reset-gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>;
 	};
 };
 
