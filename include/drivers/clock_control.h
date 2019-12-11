@@ -14,6 +14,7 @@
 #include <device.h>
 #include <sys/__assert.h>
 #include <sys/slist.h>
+#include <sys/onoff.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,10 +94,18 @@ typedef enum clock_control_status (*clock_control_get_status_fn)(
 						struct device *dev,
 						clock_control_subsys_t sys);
 
+typedef int (*clock_control_onoff_fn)(struct device *dev,
+				   clock_control_subsys_t sys,
+				   struct onoff_client *client);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
 	clock_control_async_on_fn	async_on;
+	clock_control_onoff_fn		request;
+	clock_control_onoff_fn		release;
+	clock_control_onoff_fn		cancel;
+	clock_control_onoff_fn		reset;
 	clock_control_get		get_rate;
 	clock_control_get_status_fn	get_status;
 };
@@ -107,6 +116,9 @@ struct clock_control_driver_api {
  * On success, the clock is enabled and ready when this function
  * returns. This function may sleep, and thus can only be called from
  * thread context.
+ *
+ * @note It is not recommended to mix on/off API with request/release API.
+ *	 Particularly, that driver may implement just one approach.
  *
  * Use @ref clock_control_async_on() for non-blocking operation.
  *
@@ -120,8 +132,13 @@ static inline int clock_control_on(struct device *dev,
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->driver_api;
 
+	if (api->on == NULL) {
+		return -ENOTSUP;
+	}
+
 	return api->on(dev, sys);
 }
+
 
 /**
  * @brief Disable a clock controlled by the device
@@ -139,16 +156,24 @@ static inline int clock_control_off(struct device *dev,
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->driver_api;
 
+	if (api->off == NULL) {
+		return -ENOTSUP;
+	}
+
 	return api->off(dev, sys);
 }
 
 /**
- * @brief Request clock to start with notification when clock has been started.
+ * @brief Asynchronously start clock resource with notification when clock has
+ *	  been started.
  *
  * Function is non-blocking and can be called from any context.
  * When clock is already running user callback will be called from the context
  * of the function call else it is called from other context (e.g. clock
  * interrupt).
+ *
+ * @note It is not recommended to mix on/off API with request/release API.
+ *	 Particularly, that driver may implement just one approach.
  *
  * @param dev 	   Device.
  * @param sys	   A pointer to an opaque data representing the sub-system.
@@ -156,8 +181,8 @@ static inline int clock_control_off(struct device *dev,
  *		   action is performed. Structure content must be valid until
  *		   clock is started and user callback is called. Can be NULL.
  *
- * @retval 0 if clock is started or already running.
- * @retval -EBUSY if same request already scheduled and not yet completed.
+ * @retval 0 if clock was started successfully.
+ * @retval -EBUSY if clock was already started.
  * @retval -ENOTSUP if not supported.
  */
 static inline int clock_control_async_on(struct device *dev,
@@ -172,6 +197,119 @@ static inline int clock_control_async_on(struct device *dev,
 	}
 
 	return api->async_on(dev, sys, data);
+}
+
+/**
+ * @brief Request clock resource.
+ *
+ * Each request increases internal reference counter to track number of active
+ * requestors. Use @ref clock_control_release to indicate that clock resource is
+ * no longer needed.
+ *
+ * @note It is not recommended to mix request/release API with on/off API.
+ *	 Particularly, that driver may implement just one approach.
+ *
+ * @param dev 	   Device.
+ * @param sys	   A pointer to an opaque data representing the sub-system.
+ * @param client   Initialized client. See onoff library for more details.
+ *
+ * @retval non-negative on successful clock requesting.
+ * @retval -ENOTSUP if not supported.
+ * @retval negative errno on failure.
+ */
+static inline int clock_control_request(struct device *dev,
+					 clock_control_subsys_t sys,
+					 struct onoff_client *client)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->driver_api;
+
+	if (!api->request) {
+		return -ENOTSUP;
+	}
+
+	return api->request(dev, sys, client);
+}
+
+/**
+ * @brief Release clock resource by a client.
+ *
+ * Each release decreases internal reference counter. As long as reference
+ * counter is positive clock is kept active.
+ *
+ * @param dev 	   Device.
+ * @param sys	   A pointer to an opaque data representing the sub-system.
+ * @param client   Initialized client. See onoff library for more details.
+ *
+ * @retval 0 if clock is started or already running.
+ * @retval -ENOTSUP if not supported.
+ * @retval negative errno on failure.
+ */
+static inline int clock_control_release(struct device *dev,
+					 clock_control_subsys_t sys,
+					 struct onoff_client *client)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->driver_api;
+
+	if (!api->release) {
+		return -ENOTSUP;
+	}
+
+	return api->release(dev, sys, client);
+}
+
+/**
+ * @brief Cancel requesting of clock resource by a client.
+ *
+ * Cancel shall be called if client wants to release the clock resource before
+ * getting started confirmation.
+ *
+ * @param dev 	   Device.
+ * @param sys	   A pointer to an opaque data representing the sub-system.
+ * @param client   Initialized client. See onoff library for more details.
+ *
+ * @retval 0 if clock is started or already running.
+ * @retval -ENOTSUP if not supported.
+ * @retval negative errno on failure.
+ */
+static inline int clock_control_cancel(struct device *dev,
+					 clock_control_subsys_t sys,
+					 struct onoff_client *client)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->driver_api;
+
+	if (!api->cancel) {
+		return -ENOTSUP;
+	}
+
+	return api->cancel(dev, sys, client);
+}
+
+/**
+ * @brief Reset clock resource from error state to off state.
+ *
+ * @param dev 	   Device.
+ * @param sys	   A pointer to an opaque data representing the sub-system.
+ * @param client   Initialized client. See onoff library for more details.
+ *
+ * @retval 0 if clock is started or already running.
+ * @retval -ENOTSUP if not supported.
+ * @retval negative errno on failure.
+ */
+static inline int clock_control_reset(struct device *dev,
+					 clock_control_subsys_t sys,
+					 struct onoff_client *client)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->driver_api;
+
+	if (!api->reset) {
+		return -ENOTSUP;
+	}
+
+	return api->reset(dev, sys, client);
 }
 
 /**
