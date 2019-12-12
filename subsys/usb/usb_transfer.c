@@ -80,12 +80,14 @@ static void usb_transfer_work(struct k_work *item)
 
 	if (trans->status != -EBUSY) {
 		/* transfer cancelled or already completed */
+		LOG_WRN("Transfer cancelled or completed, ep 0x%02x", ep);
 		goto done;
 	}
 
 	if (trans->flags & USB_TRANS_WRITE) {
 		if (!trans->bsize) {
 			if (!(trans->flags & USB_TRANS_NO_ZLP)) {
+				LOG_DBG("Transfer ZLP");
 				usb_write(ep, NULL, 0, NULL);
 			}
 			trans->status = 0;
@@ -94,7 +96,7 @@ static void usb_transfer_work(struct k_work *item)
 
 		ret = usb_write(ep, trans->buffer, trans->bsize, &bytes);
 		if (ret) {
-			LOG_ERR("Transfer error %d", ret);
+			LOG_ERR("Transfer error %d, ep 0x%02x", ret, ep);
 			/* transfer error */
 			trans->status = -EINVAL;
 			goto done;
@@ -107,6 +109,7 @@ static void usb_transfer_work(struct k_work *item)
 		ret = usb_dc_ep_read_wait(ep, trans->buffer, trans->bsize,
 					  &bytes);
 		if (ret) {
+			LOG_ERR("Transfer error %d, ep 0x%02x", ret, ep);
 			/* transfer error */
 			trans->status = -EINVAL;
 			goto done;
@@ -139,7 +142,7 @@ done:
 			return;
 		}
 
-		LOG_DBG("transfer done, ep=%02x, status=%d, size=%zu",
+		LOG_DBG("Transfer done, ep 0x%02x, status %d, size %zu",
 			trans->ep, trans->status, trans->tsize);
 
 		trans->cb = NULL;
@@ -195,7 +198,7 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 	struct usb_transfer_data *trans = NULL;
 	int i, key, ret = 0;
 
-	LOG_DBG("transfer start, ep=%02x, data=%p, dlen=%zd",
+	LOG_DBG("Transfer start, ep 0x%02x, data %p, dlen %zd",
 		ep, data, dlen);
 
 	key = irq_lock();
@@ -208,13 +211,14 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 	}
 
 	if (!trans) {
-		LOG_ERR("no transfer slot available");
+		LOG_ERR("No transfer slot available");
 		ret = -ENOMEM;
 		goto done;
 	}
 
 	if (trans->status == -EBUSY) {
 		/* A transfer is already ongoing and not completed */
+		LOG_ERR("A transfer is already ongoing, ep 0x%02x", ep);
 		k_sem_give(&trans->sem);
 		ret = -EBUSY;
 		goto done;
