@@ -1078,12 +1078,53 @@ static struct bt_conn *find_pending_connect(bt_addr_le_t *peer_addr)
 	return bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
 }
 
+static void conn_auto_initiate(struct bt_conn *conn)
+{
+	int err;
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		/* It is possible that connection was disconnected directly from
+		 * connected callback so we must check state before doing
+		 * connection parameters update.
+		 */
+		return;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) &&
+	    ((conn->role == BT_HCI_ROLE_MASTER) ||
+	     BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features))) {
+		err = hci_le_read_remote_features(conn);
+		if (!err) {
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE) &&
+	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
+		err = hci_le_set_phy(conn);
+		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
+		hci_le_set_data_len(conn);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
+}
+
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
-	int err;
 
 	BT_DBG("status 0x%02x handle %u role %u %s", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
@@ -1256,41 +1297,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
-	/*
-	 * it is possible that connection was disconnected directly from
-	 * connected callback so we must check state before doing connection
-	 * parameters update
-	 */
-	if (conn->state != BT_CONN_CONNECTED) {
-		goto done;
-	}
-
-	if ((evt->role == BT_HCI_ROLE_MASTER) ||
-	    BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features)) {
-		err = hci_le_read_remote_features(conn);
-		if (!err) {
-			goto done;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
-		err = hci_le_set_phy(conn);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
-			goto done;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		hci_le_set_data_len(conn);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_CONN_ROLE_SLAVE) {
-		slave_update_conn_param(conn);
-	}
+	/* Start auto-initiated procedures */
+	conn_auto_initiate(conn);
 
 done:
 	bt_conn_unref(conn);
@@ -1363,30 +1371,10 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    BT_FEAT_LE_PHY_2M(conn->le.features)) {
-		int err;
+	atomic_set_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH);
+	/* Continue with auto-initiated procedures */
+	conn_auto_initiate(conn);
 
-		err = hci_le_set_phy(conn);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
-			goto done;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
-	    BT_FEAT_LE_DLE(conn->le.features)) {
-		hci_le_set_data_len(conn);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_CONN_ROLE_SLAVE) {
-		slave_update_conn_param(conn);
-	}
-
-done:
 	bt_conn_unref(conn);
 }
 
@@ -1437,16 +1425,9 @@ static void le_phy_update_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
-	    BT_FEAT_LE_DLE(conn->le.features)) {
-		hci_le_set_data_len(conn);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_CONN_ROLE_SLAVE) {
-		slave_update_conn_param(conn);
-	}
+	atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE);
+	/* Continue with auto-initiated procedures */
+	conn_auto_initiate(conn);
 
 done:
 	bt_conn_unref(conn);
