@@ -4095,6 +4095,9 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		/* Mark for buffer for release */
 		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 	} else if (!conn->llcp_version.rx) {
+		/* procedure request acked */
+		conn->llcp_version.ack = conn->llcp_version.req;
+
 		/* Procedure complete */
 		conn->procedure_expire = 0U;
 	} else {
