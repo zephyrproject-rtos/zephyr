@@ -1141,18 +1141,6 @@ next_state:
 			   tcp_state_to_str(conn->state, true));
 	}
 
-	if (fl) {
-		th = NULL;
-		NET_WARN("Unconsumed flags: %s (%s) %s",
-			 log_strdup(tcp_flags(fl)),
-			 log_strdup(tcp_th(pkt)),
-			 log_strdup(tcp_conn_state(conn, NULL)));
-		tcp_out(conn, RST);
-		conn_state(conn, TCP_CLOSED);
-		next = 0;
-		goto next_state;
-	}
-
 	if (next) {
 		pkt = NULL;
 		th = NULL;
