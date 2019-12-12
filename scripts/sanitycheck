@@ -3873,14 +3873,12 @@ class HardwareMap:
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(self.detected, yaml_file, default_flow_style=False)
 
-run_individual_tests = None
 options = None
 
 def main():
     start_time = time.time()
     global VERBOSE
     global options
-    global run_individual_tests
 
     options = parse_arguments()
 
