@@ -31,6 +31,9 @@ enum {
 	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
 
+	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
+	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
