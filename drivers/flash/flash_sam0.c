@@ -112,6 +112,20 @@ static int flash_sam0_check_status(off_t offset)
 	return 0;
 }
 
+static inline uint32_t flash_sam0_read_unaligned_uint32(const void *data)
+{
+    union {
+        uint32_t u32;
+        uint8_t u8[4];
+    } res;
+    const uint8_t *d = (const uint8_t *)data;
+    res.u8[0] = d[0];
+    res.u8[1] = d[1];
+    res.u8[2] = d[2];
+    res.u8[3] = d[3];
+    return res.u32;
+}
+
 static int flash_sam0_write_page(struct device *dev, off_t offset,
 				 const void *data)
 {
@@ -125,7 +139,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
-		*dst = *src;
+		*dst = flash_sam0_read_unaligned_uint32(src);
 	}
 
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
