@@ -62,7 +62,7 @@
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
 		label = "FXAS21002";
-		int1-gpios = <&gpio7 0 0>;
+		int1-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
 
 };
