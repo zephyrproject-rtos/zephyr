@@ -144,7 +144,13 @@ int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 
 /** @brief Set the target node's Health fast period divisor.
  *
- *  @copydetails bt_mesh_health_period_get
+ *  The health period divisor is used to increase the publish rate when a fault
+ *  is registered. Normally, the Health server will publish with the period in
+ *  the configured publish parameters. When a fault is registered, the publish
+ *  period is divided by (1 << divisor). For example, if the target node's
+ *  Health server is configured to publish with a period of 16 seconds, and the
+ *  Health fast period divisor is 5, the Health server will publish with an
+ *  interval of 500 ms when a fault is registered.
  *
  *  @param net_idx         Network index to encrypt with.
  *  @param addr            Target node element address.
