@@ -499,6 +499,9 @@ struct mqtt_client {
 	/** MQTT protocol version. */
 	u8_t protocol_version;
 
+	/** Unanswered PINGREQ count on this connection. */
+	s8_t unacked_ping;
+
 	/** Will retain flag, 1 if will message shall be retained persistently.
 	 */
 	u8_t will_retain : 1;
