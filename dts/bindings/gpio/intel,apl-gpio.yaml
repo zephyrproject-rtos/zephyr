@@ -17,6 +17,14 @@ properties:
     interrupts:
       required: true
 
+    ngpios:
+      required: true
+
+    pin-offset:
+      type: int
+      required: true
+      description: Pin offset of this GPIO entry
+
     "#gpio-cells":
       const: 2
 
