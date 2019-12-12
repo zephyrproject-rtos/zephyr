@@ -630,6 +630,18 @@ void log_dropped(void);
 void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
 				       const char *fmt, ...);
 
+/**
+ * @brief Create mask with occurences of a string format specifiers (%s).
+ *
+ * Result is stored as the mask (argument n is n'th bit). Bit is set if string
+ * format specifier was found.
+ *
+ * @param str String.
+ * @param nargs Number of arguments in the string.
+ *
+ * @return Mask with %s format specifiers found.
+ */
+u32_t z_log_get_s_mask(const char *str, u32_t nargs);
 
 /* Internal function used by log_from_user(). */
 __syscall void z_log_string_from_user(u32_t src_level_val, const char *str);

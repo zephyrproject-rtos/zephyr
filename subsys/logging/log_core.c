@@ -81,23 +81,7 @@ static u32_t dummy_timestamp(void)
 	return 0;
 }
 
-/**
- * @brief Count number of string format specifiers (%s).
- *
- * Result is stored as the mask (argument n is n'th bit). Bit is set if %s was
- * found.
- *
- * @note Algorithm does not take into account complex format specifiers as they
- *	 hardly used in log messages and including them would significantly
- *	 extended this function which is called on every log message is feature
- *	 is enabled.
- *
- * @param str String.
- * @param nargs Number of arguments in the string.
- *
- * @return Mask with %s format specifiers found.
- */
-static u32_t count_s(const char *str, u32_t nargs)
+u32_t z_log_get_s_mask(const char *str, u32_t nargs)
 {
 	char curr;
 	bool arm = false;
@@ -173,7 +157,7 @@ static void detect_missed_strdup(struct log_msg *msg)
 	}
 
 	msg_str = log_msg_str_get(msg);
-	mask = count_s(msg_str, log_msg_nargs_get(msg));
+	mask = z_log_get_s_mask(msg_str, log_msg_nargs_get(msg));
 
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);

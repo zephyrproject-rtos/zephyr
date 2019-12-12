@@ -103,17 +103,38 @@ static void cont_free(struct log_msg_cont *cont)
 
 static void msg_free(struct log_msg *msg)
 {
-	u32_t nargs = msg->hdr.params.std.nargs;
+	u32_t nargs = log_msg_nargs_get(msg);
 
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
 		int i;
+		u32_t smask = 0;
 
 		for (i = 0; i < nargs; i++) {
 			void *buf = (void *)log_msg_arg_get(msg, i);
 
 			if (log_is_strdup(buf)) {
-				log_free(buf);
+				if (smask == 0) {
+					/* Do string arguments scan only when
+					 * string duplication candidate detected
+					 * since it is time consuming and free
+					 * can be called from any context when
+					 * log message is being dropped.
+					 */
+					smask = z_log_get_s_mask(
+							log_msg_str_get(msg),
+							nargs);
+					if (smask == 0) {
+						/* if no string argument is
+						 * detected then stop searching
+						 * for candidates.
+						 */
+						break;
+					}
+				}
+				if (smask & BIT(i)) {
+					log_free(buf);
+				}
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_USERSPACE) &&

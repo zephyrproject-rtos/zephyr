@@ -477,6 +477,22 @@ static void test_log_msg_dropped_notification(void)
 	k_sched_unlock();
 }
 
+static void test_single_z_log_get_s_mask(const char *str, u32_t nargs,
+					 u32_t exp_mask)
+{
+	u32_t mask = z_log_get_s_mask(str, nargs);
+
+	zassert_equal(mask, exp_mask, "Unexpected mask %x (expected %x)",
+								mask, exp_mask);
+}
+
+static void test_z_log_get_s_mask(void)
+{
+	test_single_z_log_get_s_mask("%d%%%-10s%p%x", 4, 0x2);
+	test_single_z_log_get_s_mask("%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d"
+				     "%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%s",
+				     32, 0x80000000);
+}
 /*
  * Test checks if panic is correctly executed. On panic logger should flush all
  * messages and process logs in place (not in deferred way).
@@ -522,6 +538,7 @@ void test_main(void)
 			 ztest_unit_test(test_log_strdup_detect_miss),
 			 ztest_unit_test(test_strdup_trimming),
 			 ztest_unit_test(test_log_msg_dropped_notification),
+			 ztest_unit_test(test_z_log_get_s_mask),
 			 ztest_unit_test(test_log_panic));
 	ztest_run_test_suite(test_log_list);
 }
