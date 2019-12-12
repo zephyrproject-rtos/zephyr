@@ -466,6 +466,11 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
 
+    if(NOT module_name)
+      # When the module_name is missing create it from the module_path
+      string(REGEX REPLACE "/" "__" module_name ${module_path})
+    endif()
+
     list(APPEND module_names ${module_name})
 
     string(TOUPPER ${module_name} MODULE_NAME_UPPER)
