@@ -252,6 +252,3 @@ void test_k_float_disable_irq(void)
 	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
-/**
- * @}
- */

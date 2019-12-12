@@ -130,10 +130,6 @@ static inline unsigned int irq_line_is_enabled_next_level(struct device *dev,
 	return api->intr_get_line_state(dev, irq);
 }
 
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif
