@@ -1154,6 +1154,7 @@ next_state:
 	}
 
 	if (next) {
+		pkt = NULL;
 		th = NULL;
 		conn_state(conn, next);
 		next = 0;
