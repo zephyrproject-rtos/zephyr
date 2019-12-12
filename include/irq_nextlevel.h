@@ -84,10 +84,6 @@ static inline unsigned int irq_is_enabled_next_level(struct device *dev)
 	return api->intr_get_state(dev);
 }
 
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif
