@@ -3352,6 +3352,29 @@ static void le_data_len_change(struct pdu_data *pdu_data, u16_t handle,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_REMOTE_VERSION)
+void hci_remote_version_info_encode(struct pdu_data *pdu_data, u16_t handle,
+				    struct net_buf *buf)
+{
+	struct pdu_data_llctrl_version_ind *ver_ind;
+	struct bt_hci_evt_remote_version_info *ep;
+
+	if (!(event_mask & BT_EVT_MASK_REMOTE_VERSION_INFO)) {
+		return;
+	}
+
+	hci_evt_create(buf, BT_HCI_EVT_REMOTE_VERSION_INFO, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
+
+	ver_ind = &pdu_data->llctrl.version_ind;
+	ep->status = 0x00;
+	ep->handle = sys_cpu_to_le16(handle);
+	ep->version = ver_ind->version_number;
+	ep->manufacturer = ver_ind->company_id;
+	ep->subversion = ver_ind->sub_version_number;
+}
+#endif /* CONFIG_BT_REMOTE_VERSION */
+
 static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 			     struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -3368,6 +3391,12 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		encrypt_change(0x00, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
+		hci_remote_version_info_encode(pdu_data, handle, buf);
+		break;
+#endif /* defined(CONFIG_BT_REMOTE_VERSION) */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		le_remote_feat_complete(0x00, pdu_data, handle, buf);
@@ -3478,29 +3507,6 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
 }
-
-#if defined(CONFIG_BT_REMOTE_VERSION)
-void hci_remote_version_info_encode(struct net_buf *buf,
-				    struct pdu_data *pdu_data, u16_t handle)
-{
-	struct pdu_data_llctrl_version_ind *ver_ind;
-	struct bt_hci_evt_remote_version_info *ep;
-
-	if (!(event_mask & BT_EVT_MASK_REMOTE_VERSION_INFO)) {
-		return;
-	}
-
-	hci_evt_create(buf, BT_HCI_EVT_REMOTE_VERSION_INFO, sizeof(*ep));
-	ep = net_buf_add(buf, sizeof(*ep));
-
-	ver_ind = &pdu_data->llctrl.version_ind;
-	ep->status = 0x00;
-	ep->handle = sys_cpu_to_le16(handle);
-	ep->version = ver_ind->version_number;
-	ep->manufacturer = ver_ind->company_id;
-	ep->subversion = ver_ind->sub_version_number;
-}
-#endif /* CONFIG_BT_REMOTE_VERSION */
 #endif /* CONFIG_BT_CONN */
 
 u8_t hci_get_class(struct node_rx_pdu *node_rx)
