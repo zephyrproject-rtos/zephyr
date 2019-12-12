@@ -193,26 +193,7 @@ def write_props(node):
     # for the node
 
     for prop in node.props.values():
-        # Skip #size-cell and other property starting with #. Also skip mapping
-        # properties like 'gpio-map'.
-        if prop.name[0] == "#" or prop.name.endswith("-map"):
-            continue
-
-        # See write_clocks()
-        if prop.name == "clocks":
-            continue
-
-        # edtlib provides these as well (Property.val becomes an edtlib.Node
-        # and a list of edtlib.Nodes, respectively). Nothing is generated for
-        # them currently though.
-        if prop.type in {"phandle", "phandles"}:
-            continue
-
-        # Skip properties that we handle elsewhere
-        if prop.name in {
-            "reg", "compatible", "status", "interrupts",
-            "interrupt-controller", "gpio-controller"
-        }:
+        if not should_write(prop):
             continue
 
         if prop.description is not None:
@@ -235,12 +216,40 @@ def write_props(node):
                 out_dev_s(node, "{}_{}".format(ident, i), val)
         elif prop.type == "uint8-array":
             out_dev_init(node, ident, ["0x{:02x}".format(b) for b in prop.val])
-        elif prop.type == "phandle-array":
+        else:  # prop.type == "phandle-array"
             write_phandle_val_list(prop)
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
             out_dev(node, ident + "_ENUM", prop.enum_index)
+
+
+def should_write(prop):
+    # write_props() helper. Returns True if output should be generated for
+    # 'prop'.
+
+    # Skip #size-cell and other property starting with #. Also skip mapping
+    # properties like 'gpio-map'.
+    if prop.name[0] == "#" or prop.name.endswith("-map"):
+        return False
+
+    # See write_clocks()
+    if prop.name == "clocks":
+        return False
+
+    # For these, Property.val becomes an edtlib.Node, a list of edtlib.Nodes,
+    # and None, respectively. Nothing is generated for them though.
+    if prop.type in {"phandle", "phandles", "compound"}:
+        return False
+
+    # Skip properties that we handle elsewhere
+    if prop.name in {
+        "reg", "compatible", "status", "interrupts",
+        "interrupt-controller", "gpio-controller"
+    }:
+        return False
+
+    return True
 
 
 def write_bus(node):
