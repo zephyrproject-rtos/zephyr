@@ -45,6 +45,9 @@ struct usb_transfer_data {
 
 static struct usb_transfer_data ut_data[MAX_NUM_TRANSFERS];
 
+/** Last control transfer endpoint status code */
+static enum usb_dc_ep_cb_status_code control_ep_status;
+
 /* Transfer management */
 static struct usb_transfer_data *usb_ep_get_transfer(u8_t ep)
 {
@@ -159,12 +162,8 @@ void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
 {
 	struct usb_transfer_data *trans = usb_ep_get_transfer(ep);
 
-	if (status != USB_DC_EP_DATA_IN && status != USB_DC_EP_DATA_OUT) {
-		return;
-	}
-
 	if (!trans) {
-		if (status == USB_DC_EP_DATA_OUT) {
+		if (status == USB_DC_EP_DATA_OUT || status == USB_DC_EP_SETUP) {
 			u32_t bytes;
 			/* In the unlikely case we receive data while no
 			 * transfer is ongoing, we have to consume the data
@@ -181,6 +180,10 @@ void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
 			LOG_ERR("RX data lost, no transfer");
 		}
 		return;
+	} else {
+		if ((ep == USB_CONTROL_OUT_EP0 || ep == USB_CONTROL_IN_EP0)) {
+			control_ep_status = status;
+		}
 	}
 
 	if (!k_is_in_isr() || (status == USB_DC_EP_DATA_OUT)) {
@@ -231,7 +234,17 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 	trans->tsize = 0;
 	trans->cb = cb;
 	trans->flags = flags;
-	trans->priv = cb_data;
+	if (cb_data) {
+		trans->priv = cb_data;
+	} else {
+		/*
+		 * Hack, store pointer to the endpoint callback status
+		 * to be able to access it later.
+		 */
+		if ((ep == USB_CONTROL_OUT_EP0 || ep == USB_CONTROL_IN_EP0)) {
+			trans->priv = &control_ep_status;
+		}
+	}
 	trans->status = -EBUSY;
 
 	if (usb_dc_ep_mps(ep) && (dlen % usb_dc_ep_mps(ep))) {
