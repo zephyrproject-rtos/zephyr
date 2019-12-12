@@ -5921,6 +5921,10 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr)
 	struct net_buf *buf;
 	int err;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_WL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -5945,6 +5949,10 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr)
 	struct net_buf *buf;
 	int err;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_WL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -5964,8 +5972,13 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr)
 
 int bt_le_whitelist_clear(void)
 {
-	int err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_WL, NULL, NULL);
+	int err;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_WL, NULL, NULL);
 	if (err) {
 		BT_ERR("Failed to clear whitelist");
 		return err;
