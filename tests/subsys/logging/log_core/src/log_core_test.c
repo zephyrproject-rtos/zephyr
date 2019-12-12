@@ -329,16 +329,21 @@ static void test_log_from_declared_module(void)
 static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
+	char *dstr;
 
 	log_setup(false);
 
 	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
 			"Test assumes certain configuration");
-
+	backend1_cb.check_strdup = true;
 	backend1_cb.exp_strdup[0] = true;
 	backend1_cb.exp_strdup[1] = false;
 
-	LOG_INF("%s", log_strdup(test_str));
+	dstr = log_strdup(test_str);
+	/* test if message freeing is not fooled by using value within strdup
+	 * buffer pool but with different format specifier.
+	 */
+	LOG_INF("%s %p", dstr, dstr + 1);
 	LOG_INF("%s", log_strdup(test_str));
 
 	while (log_process(false)) {
@@ -442,7 +447,8 @@ static void log_n_messages(u32_t n_msg, u32_t exp_dropped)
 	}
 
 	zassert_equal(backend1_cb.total_drops, exp_dropped,
-			"Unexpected log msg dropped");
+			"Unexpected log msg dropped %d (expected %d)",
+			backend1_cb.total_drops, exp_dropped);
 
 }
 
