@@ -197,6 +197,7 @@ static inline bool arch_is_in_isr(void);
 /**
  * @defgroup arch-benchmarking Architecture-specific benchmarking globals
  * @ingroup arch-interface
+ * @{
  */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -218,6 +219,7 @@ extern u64_t arch_timing_value_swap_temp;
 /**
  * @defgroup arch-misc Miscellaneous architecture APIs
  * @ingroup arch-interface
+ * @{
  */
 
 /**
