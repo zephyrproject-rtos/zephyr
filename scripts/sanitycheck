@@ -537,6 +537,16 @@ class BinaryHandler(Handler):
             except ProcessLookupError:
                 pass
 
+    def terminate(self, proc):
+        # encapsulate terminate functionality so we do it consistently where ever
+        # we might want to terminate the proc.  We need try_kill_process_by_pid
+        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
+        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
+        # so we need to use try_kill_process_by_pid.
+        self.try_kill_process_by_pid()
+        proc.terminate()
+        self.terminated = True
+
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
         for line in iter(proc.stdout.readline, b''):
@@ -550,8 +560,7 @@ class BinaryHandler(Handler):
                     #so let's give it up to 100ms to do so
                     proc.wait(0.1)
                 except subprocess.TimeoutExpired:
-                    proc.terminate()
-                    self.terminated = True
+                    self.terminate(proc)
                 break
 
         log_out_fp.close()
@@ -596,9 +605,7 @@ class BinaryHandler(Handler):
             t.start()
             t.join(self.timeout)
             if t.is_alive():
-                self.try_kill_process_by_pid()
-                proc.terminate()
-                self.terminated = True
+                self.terminate(proc)
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
