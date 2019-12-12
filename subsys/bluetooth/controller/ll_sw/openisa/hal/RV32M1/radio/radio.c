@@ -83,7 +83,8 @@ static struct {
 	u64_t nonce[2];
 	struct pdu_data *rx_pkt_ccm_output;
 	struct pdu_data *rx_pkt_ccm_input;
-	int auth_mic_valid;
+	u8_t auth_mic_valid;
+	u8_t empty_pdu_rxed;
 } cauv3_ctx_ccm;
 
 static void tmp_cb(void *param)
@@ -157,8 +158,14 @@ static void pkt_rx(void)
 	while (*sts & GENFSK_XCVR_STS_RX_IN_PROGRESS_MASK) {
 	}
 
-	if (cauv3_ctx_ccm.rx_pkt_ccm_output)
+	if (cauv3_ctx_ccm.rx_pkt_ccm_output) {
 		*(u16_t *)cauv3_ctx_ccm.rx_pkt_ccm_output = pb[0];
+		if (len < 4) {
+			cauv3_ctx_ccm.rx_pkt_ccm_output = 0;
+			cauv3_ctx_ccm.rx_pkt_ccm_input = 0;
+			cauv3_ctx_ccm.empty_pdu_rxed = 1;
+		}
+	}
 
 	/* Copy the PDU */
 	for (idx = 0; idx < len / 2; idx++) {
@@ -1023,6 +1030,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 	/* ccm.key[16] is stored in MSO to LSO format, as retrieved from e function */
 	memcpy((u8_t *)key_local, ccm->key, sizeof(key_local));
 	cauv3_ctx_ccm.auth_mic_valid = 0;
+	cauv3_ctx_ccm.empty_pdu_rxed = 0;
 	cauv3_ctx_ccm.rx_pkt_ccm_input = (struct pdu_data *)_pkt_scratch;
 	cauv3_ctx_ccm.rx_pkt_ccm_output = (struct pdu_data *)pkt;
 	cauv3_ctx_ccm.nonce[0] = ccm->counter;	/* LSO to MSO, counter is LE */
@@ -1171,6 +1179,7 @@ u32_t radio_ccm_is_done(void)
 		/* Just copy input into output */
 		*cauv3_ctx_ccm.rx_pkt_ccm_output = *cauv3_ctx_ccm.rx_pkt_ccm_input;
 		cauv3_ctx_ccm.auth_mic_valid = 1;
+		cauv3_ctx_ccm.empty_pdu_rxed = 1;
 	} else {
 		while(1); // only 0, not 1,2,3,4
 	}
@@ -1181,6 +1190,11 @@ u32_t radio_ccm_is_done(void)
 u32_t radio_ccm_mic_is_valid(void)
 {
 	return cauv3_ctx_ccm.auth_mic_valid;
+}
+
+u32_t radio_ccm_mic_is_available(void)
+{
+	return cauv3_ctx_ccm.empty_pdu_rxed;
 }
 
 void radio_ar_configure(u32_t nirk, void *irk)

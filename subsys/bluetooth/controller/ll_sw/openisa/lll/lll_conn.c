@@ -512,7 +512,11 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 	struct pdu_data *p;
 	memq_link_t *link;
 
-	if (lll->empty) {
+	if (lll->empty
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+			|| (lll->enc_tx && !radio_ccm_mic_is_available())
+#endif
+			) {
 		*pdu_data_tx = empty_tx_enqueue(lll);
 		return;
 	}
