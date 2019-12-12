@@ -16,7 +16,7 @@ def read_bytes(buffer):
 class Loglist:
     """Loglist class"""
 
-    def __init__(self, argument):
+    def __init__(self, argument, debug=False):
         """Constructor for the loglist takes argument filename or buffer"""
 
         if isinstance(argument, str):
@@ -29,13 +29,14 @@ class Loglist:
 
         self.loglist = []
         self.parse()
+        self.debug = debug
 
     def parse_slot(self, slot):
         magic = read_bytes(slot[0:2])
 
         if magic == MAGIC:
             id_num = read_bytes(slot[2:4])
-            logstr = slot[4:].decode(errors='replace').split('\r', 1)[0]
+            logstr = slot[4:].decode(errors='replace')
             self.loglist.append((id_num, logstr))
 
     def parse(self):
@@ -45,4 +46,8 @@ class Loglist:
 
     def print(self):
         for pair in sorted(self.loglist):
-            print('{} : {}'.format(*pair))
+            if self.debug:
+                # Add slot number when debug is enabled
+                print('[{}] : {}'.format(*pair), end='')
+            else:
+                print('{}'.format(pair[1]), end='')
