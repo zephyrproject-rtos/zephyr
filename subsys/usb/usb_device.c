@@ -198,74 +198,26 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 }
 
 /*
- * @brief send next chunk of data (possibly 0 bytes) to host
- *
- * @return N/A
- */
-static void usb_data_to_host(u16_t len)
-{
-	if (usb_dev.zlp_flag == false) {
-		u32_t chunk = usb_dev.data_buf_residue;
-
-		/*Always EP0 for control*/
-		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
-			  usb_dev.data_buf_residue, &chunk);
-		usb_dev.data_buf += chunk;
-		usb_dev.data_buf_residue -= chunk;
-
-#ifndef CONFIG_USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
-		/*
-		 * Set ZLP flag when host asks for a bigger length and the
-		 * last chunk is wMaxPacketSize long, to indicate the last
-		 * packet.
-		 */
-		if (!usb_dev.data_buf_residue && len > usb_dev.data_buf_len) {
-			/* Send less data as requested during the Setup stage */
-			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
-				/* Transfers a zero-length packet */
-				LOG_DBG("ZLP, requested %u , length %u ",
-					len, usb_dev.data_buf_len);
-				usb_dev.zlp_flag = true;
-			}
-		}
-#endif
-
-	} else {
-		usb_dev.zlp_flag = false;
-		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
-	}
-}
-
-/*
  * @brief handle IN/OUT transfers on EP0
- *
- * @param [in] ep        Endpoint address
- * @param [in] ep_status Endpoint status
- *
- * @return N/A
  */
-static void usb_handle_control_transfer(u8_t ep,
-					enum usb_dc_ep_cb_status_code ep_status)
+static void usb_handle_control_transfer(u8_t ep, int size, void *priv)
 {
-	u32_t chunk = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
+	u16_t length;
+	enum usb_dc_ep_cb_status_code ep_status;
+	unsigned int flags = 0;
 
-	LOG_DBG("ep %x, status %x", ep, ep_status);
-
+	__ASSERT_NO_MSG(priv != NULL);
+	ep_status = *(enum usb_dc_ep_cb_status_code *)priv;
+	/*
+	 * OUT transfer, Setup packet,
+	 * reset request message state machine
+	 */
 	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
-		u16_t length;
-
 		/*
 		 * OUT transfer, Setup packet,
 		 * reset request message state machine
 		 */
-		if (usb_dc_ep_read(ep,
-				   (u8_t *)setup, sizeof(*setup), NULL) < 0) {
-			LOG_DBG("Read Setup Packet failed");
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			return;
-		}
-
 		length = sys_le16_to_cpu(setup->wLength);
 		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 			if (REQTYPE_GET_DIR(setup->bmRequestType)
@@ -273,7 +225,7 @@ static void usb_handle_control_transfer(u8_t ep,
 				LOG_ERR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
-				return;
+				goto setup_stage_restart;
 			}
 		}
 
@@ -285,6 +237,16 @@ static void usb_handle_control_transfer(u8_t ep,
 		if (length &&
 		    REQTYPE_GET_DIR(setup->bmRequestType)
 		    == REQTYPE_DIR_TO_DEVICE) {
+			LOG_INF("Request to device, data OUT stage");
+			if (usb_transfer(USB_CONTROL_OUT_EP0,
+					 usb_dev.req_data,
+					 usb_dev.data_buf_residue,
+					 USB_TRANS_READ,
+					 usb_handle_control_transfer, NULL)) {
+				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+				LOG_ERR("Failed to start transfer");
+				goto setup_stage_restart;
+			}
 			return;
 		}
 
@@ -292,61 +254,102 @@ static void usb_handle_control_transfer(u8_t ep,
 		if (!usb_handle_request(setup,
 					&usb_dev.data_buf_len,
 					&usb_dev.data_buf)) {
-			LOG_DBG("usb_handle_request failed");
+			LOG_INF("usb_handle_request failed");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			return;
+			goto setup_stage_restart;
 		}
 
 		/* Send smallest of requested and offered length */
 		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len, length);
+		/*
+		 * Set ZLP flag when host asks for a bigger length and the
+		 * last chunk is wMaxPacketSize long, to indicate the last
+		 * packet.
+		 */
+		if (length > usb_dev.data_buf_len) {
+			/* Send less data as requested during the Setup stage */
+			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+				/* Transfers a zero-length packet */
+				LOG_WRN("ZLP, requested %u , length %u ",
+					length, usb_dev.data_buf_len);
+			}
+		} else if (length && length == usb_dev.data_buf_len) {
+			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+				LOG_WRN("no ZLP, requested %u , length %u ",
+					length, usb_dev.data_buf_len);
+				flags = USB_TRANS_NO_ZLP;
+			}
+		}
+
 		/* Send first part (possibly a zero-length status message) */
-		usb_data_to_host(length);
+		if (usb_transfer(USB_CONTROL_IN_EP0,
+				 usb_dev.data_buf,
+				 usb_dev.data_buf_residue,
+				 USB_TRANS_WRITE | flags,
+				 usb_handle_control_transfer, NULL)) {
+			LOG_ERR("Failed to start transfer");
+			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+			goto setup_stage_restart;
+		}
+		LOG_INF("Prepared to transmit %u bytes",
+			usb_dev.data_buf_residue);
+		usb_dev.data_buf_residue = 0;
+
+		return;
+
 	} else if (ep == USB_CONTROL_OUT_EP0) {
 		/* OUT transfer, data or status packets */
 		if (usb_dev.data_buf_residue <= 0) {
 			/* absorb zero-length status message */
-			if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
-					   usb_dev.data_buf, 0, &chunk) < 0) {
-				LOG_DBG("Read DATA Packet failed");
-				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			}
-			return;
+			LOG_INF("ACK stage, absorb ZLP");
+			goto setup_stage_restart;
 		}
 
-		if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
-				   usb_dev.data_buf,
-				   usb_dev.data_buf_residue, &chunk) < 0) {
-			LOG_DBG("Read DATA Packet failed");
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
-			return;
-		}
-
-		usb_dev.data_buf += chunk;
-		usb_dev.data_buf_residue -= chunk;
-		if (usb_dev.data_buf_residue == 0) {
+		if (usb_dev.data_buf_residue) {
+			LOG_INF("data OUT stage done");
 			/* Received all, send data to handler */
+			length = sys_le16_to_cpu(setup->wLength);
 			usb_dev.data_buf = usb_dev.req_data;
 			if (!usb_handle_request(setup,
 						&usb_dev.data_buf_len,
 						&usb_dev.data_buf)) {
 				LOG_DBG("usb_handle_request1 failed");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-				return;
+				goto setup_stage_restart;
 			}
 
-			/*Send status to host*/
-			LOG_DBG(">> usb_data_to_host(2)");
-			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
+			/* Send status to host */
+			LOG_INF("Status after data OUT");
+			if (usb_transfer(USB_CONTROL_IN_EP0, NULL,
+					 0,
+					 USB_TRANS_WRITE | flags,
+					 usb_handle_control_transfer, NULL)) {
+				LOG_ERR("Failed to start transfer");
+				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+				goto setup_stage_restart;
+			}
+			usb_dev.data_buf_residue = 0;
 		}
+
 	} else if (ep == USB_CONTROL_IN_EP0) {
-		/* Send more data if available */
-		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
-			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
+		LOG_INF("Finished DATA or ACK IN stage");
+		if (usb_dev.data_buf_residue != 0) {
+			LOG_ERR("Residue should not be %u",
+				usb_dev.data_buf_residue);
 		}
+
+		goto setup_stage_restart;
 	} else {
 		__ASSERT_NO_MSG(false);
 	}
+
+	return;
+
+setup_stage_restart:
+	usb_transfer(USB_CONTROL_OUT_EP0,
+		     (u8_t *)&usb_dev.setup, sizeof(usb_dev.setup),
+		     USB_TRANS_READ,
+		     usb_handle_control_transfer, NULL);
 }
 
 /*
@@ -1270,13 +1273,17 @@ int usb_enable(void)
 
 	/* Register endpoint 0 handlers*/
 	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
-				     usb_handle_control_transfer);
+				     usb_transfer_ep_callback);
+	usb_transfer(USB_CONTROL_OUT_EP0,
+		     (u8_t *)&usb_dev.setup, sizeof(usb_dev.setup),
+		     USB_TRANS_READ,
+		     usb_handle_control_transfer, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
-				     usb_handle_control_transfer);
+				     usb_transfer_ep_callback);
 	if (ret < 0) {
 		return ret;
 	}
