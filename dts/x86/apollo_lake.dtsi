@@ -35,6 +35,19 @@
 		#interrupt-cells = <3>;
 	};
 
+	aliases {
+		gpio-n-000 = &gpio_n_000_031;
+		gpio-n-032 = &gpio_n_032_063;
+		gpio-n-064 = &gpio_n_064_077;
+		gpio-nw-000 = &gpio_nw_000_031;
+		gpio-nw-032 = &gpio_nw_032_063;
+		gpio-nw-064 = &gpio_nw_064_076;
+		gpio-w-000 = &gpio_w_000_031;
+		gpio-w-032 = &gpio_w_032_046;
+		gpio-sw-000 = &gpio_sw_000_031;
+		gpio-sw-032 = &gpio_sw_032_042;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -212,18 +225,163 @@
 			status = "okay";
 		};
 
-		gpio: gpio@d0c50000 {
+		gpio_n_000_031: gpio@d0c50000 {
 			compatible = "intel,apl-gpio";
-			reg = <0xd0c50000 0x1000>,
-			      <0xd0c40000 0x1000>,
-			      <0xd0c70000 0x1000>,
-			      <0xd0c00000 0x1000>;
+			reg = <0xd0c50000 0x1000>;
 			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			label = "APL_GPIO";
-			gpio-controller ;
+			label = "GPIO_N_000";
+			gpio-controller;
 			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_n_032_063: gpio@d0c50001 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c50001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_N_032";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_n_064_077: gpio@d0c50002 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c50002 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_N_064";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <14>;
+			pin-offset = <64>;
+
+			status = "okay";
+		};
+
+		gpio_nw_000_031: gpio@d0c40000 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c40000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_NW_000";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_nw_032_063: gpio@d0c40001 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c40001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_NW_032";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_nw_064_076: gpio@d0c40002 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c40002 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_NW_064";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <64>;
+			pin-offset = <13>;
+
+			status = "okay";
+		};
+
+		gpio_w_000_031: gpio@d0c70000 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c70000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_W_000";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_w_032_046: gpio@d0c70001 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c70001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_W_032";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <15>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_sw_000_031: gpio@d0c00000 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c00000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_SW_000";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+
+		gpio_sw_032_042: gpio@d0c00001 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c00001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			label = "GPIO_SW_032";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <11>;
+			pin-offset = <32>;
 
 			status = "okay";
 		};

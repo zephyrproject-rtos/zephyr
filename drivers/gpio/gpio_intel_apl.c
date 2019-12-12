@@ -36,7 +36,7 @@
  * as well, but my (admitted cursory) testing disagrees.
  */
 
-BUILD_ASSERT(DT_APL_GPIO_IRQ == 14);
+BUILD_ASSERT(DT_INST_0_INTEL_APL_GPIO_IRQ_0 == 14);
 
 #define REG_PAD_BASE_ADDR		0x000C
 
@@ -627,12 +627,15 @@ int gpio_intel_apl_init(struct device *dev)
 	__ASSERT(nr_isr_devs < GPIO_INTEL_APL_NR_SUBDEVS, "too many subdevs");
 
 	if (nr_isr_devs == 0) {
-		IRQ_CONNECT(DT_APL_GPIO_IRQ,
-			    DT_APL_GPIO_IRQ_PRIORITY,
+		/* Note that all controllers are using the same IRQ line.
+		 * So we can just use the values from the first instance.
+		 */
+		IRQ_CONNECT(DT_INST_0_INTEL_APL_GPIO_IRQ_0,
+			    DT_INST_0_INTEL_APL_GPIO_IRQ_0_PRIORITY,
 			    gpio_intel_apl_isr, NULL,
-			    DT_APL_GPIO_IRQ_SENSE);
+			    DT_INST_0_INTEL_APL_GPIO_IRQ_0_SENSE);
 
-		irq_enable(DT_APL_GPIO_IRQ);
+		irq_enable(DT_INST_0_INTEL_APL_GPIO_IRQ_0);
 	}
 
 	isr_devs[nr_isr_devs++] = dev;
@@ -647,18 +650,19 @@ int gpio_intel_apl_init(struct device *dev)
 	return 0;
 }
 
-#define GPIO_INTEL_APL_DEV_CFG_DATA(dir_l, dir_u, pos, offset, pins)	\
+#define GPIO_INTEL_APL_DEV_CFG_DATA(dir_l, dir_u, pos)			\
 static const struct gpio_intel_apl_config				\
 	gpio_intel_apl_cfg_##dir_l##_##pos = {				\
-	.reg_base = DT_APL_GPIO_BASE_ADDRESS_##dir_u,			\
-	.pin_offset = offset,						\
-	.num_pins = pins,						\
+	.reg_base = (DT_ALIAS_GPIO_##dir_u##_##pos##_BASE_ADDRESS	\
+			& 0xFFFFFF00),					\
+	.pin_offset = DT_ALIAS_GPIO_##dir_u##_##pos##_PIN_OFFSET,	\
+	.num_pins = DT_ALIAS_GPIO_##dir_u##_##pos##_NGPIOS,		\
 };									\
 									\
 static struct gpio_intel_apl_data gpio_intel_apl_data_##dir_l##_##pos;	\
 									\
 DEVICE_AND_API_INIT(gpio_intel_apl_##dir_l##_##pos,			\
-		    DT_APL_GPIO_LABEL_##dir_u##_##pos,			\
+		    DT_ALIAS_GPIO_##dir_u##_##pos##_LABEL,		\
 		    gpio_intel_apl_init,				\
 		    &gpio_intel_apl_data_##dir_l##_##pos,		\
 		    &gpio_intel_apl_cfg_##dir_l##_##pos,		\
@@ -667,16 +671,16 @@ DEVICE_AND_API_INIT(gpio_intel_apl_##dir_l##_##pos,			\
 
 /* "sub" devices.  no more than GPIO_INTEL_APL_NR_SUBDEVS of these! */
 
-GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 0, 0, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 1, 32, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 2, 32, 14);
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 000);
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 032);
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 064);
 
-GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 0, 0, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 1, 32, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 2, 32, 13);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 000);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 032);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 064);
 
-GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 0, 0, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 1, 32, 15);
+GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 000);
+GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 032);
 
-GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 0, 0, 32);
-GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 1, 32, 11);
+GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 000);
+GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 032);
