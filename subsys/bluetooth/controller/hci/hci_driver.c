@@ -76,27 +76,7 @@ static s32_t hbuf_count;
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
 {
-/* Currently the only event processed */
-#if defined(CONFIG_BT_REMOTE_VERSION)
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
-	struct net_buf *buf;
-	u16_t handle;
-
-	/* Avoid using hci_get_class() to speed things up */
-	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_LLCP) {
-
-		handle = node_rx->hdr.handle;
-		if (pdu_data->llctrl.opcode ==
-		    PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
-
-			buf = bt_buf_get_evt(BT_HCI_EVT_REMOTE_VERSION_INFO,
-					     false, K_FOREVER);
-			hci_remote_version_info_encode(buf, pdu_data, handle);
-			return buf;
-		}
-	}
-
-#endif /* CONFIG_BT_CONN */
+	/* Currently there are no events processed */
 	return NULL;
 }
 

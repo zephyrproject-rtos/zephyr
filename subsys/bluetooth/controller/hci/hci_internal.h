@@ -46,8 +46,6 @@ u8_t hci_get_class(struct node_rx_pdu *node_rx);
 int hci_acl_handle(struct net_buf *acl, struct net_buf **evt);
 void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf);
 void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num);
-void hci_remote_version_info_encode(struct net_buf *buf,
-				    struct pdu_data *pdu_data, u16_t handle);
 #endif
 int hci_vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 			  struct net_buf **evt);
