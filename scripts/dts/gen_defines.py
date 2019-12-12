@@ -122,15 +122,25 @@ Nodes in dependency order (ordinal and path):
 def write_node_comment(node):
     # Writes a comment describing 'node' to the header and configuration file
 
+    if node in written_nodes:
+        # The node is a child of a 'generate-child-initializer: true' node, and
+        # had its output generated together with the parent node
+        return
+
     s = """\
 Devicetree node:
-  {}
+  {}""".format(node.path)
+
+    if node.generate_child_initializer:
+        s += " (and children)"
+
+    s += """
 
 Binding (compatible = {}):
   {}
 
 Dependency Ordinal: {}
-""".format(node.path, node.matching_compat, relativize(node.binding_path),
+""".format(node.matching_compat, relativize(node.binding_path),
            node.dep_ordinal)
 
     if node.depends_on:
@@ -185,8 +195,18 @@ def write_regs(node):
 
 
 def write_props(node):
-    # Writes any properties defined in the "properties" section of the binding
-    # for the node
+    # Writes any properties defined in the 'properties' section of the binding
+    # for the node. Returns a list with the identifiers generated for the
+    # properties, to implement 'generate-child-initializer'.
+
+    if node in written_nodes:
+        # Return None. The return value shouldn't matter here, and it might
+        # help uncover errors.
+        return
+
+    # List of identifiers generated for the properties. For array types, only
+    # the identifier for the { ... } initializer is included.
+    ids = []
 
     for prop in node.props.values():
         if not should_write(prop):
@@ -198,28 +218,59 @@ def write_props(node):
         ident = str2ident(prop.name)
 
         if prop.type == "boolean":
-            out_dev(node, ident, 1 if prop.val else 0)
+            ids.append(out_dev(node, ident, 1 if prop.val else 0))
         elif prop.type == "string":
-            out_dev_s(node, ident, prop.val)
+            ids.append(out_dev_s(node, ident, prop.val))
         elif prop.type == "int":
-            out_dev(node, ident, prop.val)
+            ids.append(out_dev(node, ident, prop.val))
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
                 out_dev(node, "{}_{}".format(ident, i), val)
-            out_dev(node, ident,
-                    "{" + ", ".join(map(str, prop.val)) + "}")
+            ids.append(out_dev(node, ident,
+                       "{" + ", ".join(map(str, prop.val)) + "}"))
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
                 out_dev_s(node, "{}_{}".format(ident, i), val)
+            ids.append(out_dev(node, ident,
+                               "{" + ", ".join(prop.val) + "}"))
         elif prop.type == "uint8-array":
-            out_dev(node, ident,
-                    "{ " + ", ".join("0x{:02x}".format(b) for b in prop.val) + " }")
+            ids.append(out_dev(node, ident,
+                               "{ " + ", ".join("0x{:02x}".format(b)
+                                                for b in prop.val) + " }"))
         else:  # prop.type == "phandle-array"
-            write_phandle_val_list(prop)
+            phandle_array_ident = write_phandle_val_list(prop)
+            # Empty phandle-arrays don't generate any identifiers
+            if phandle_array_ident:
+                ids.append(phandle_array_ident)
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
             out_dev(node, ident + "_ENUM", prop.enum_index)
+
+    written_nodes.add(node)
+
+    if node.generate_child_initializer:
+        child_inits = []
+
+        for child in node.children.values():
+            child_ids = write_props(child)
+            initializer_id = out_dev(
+                node, str2ident(child.name) + "_INIT",
+                "{" + ", ".join(child_ids) + "}")
+            child_inits.append(initializer_id)
+
+        # Adding this to 'ids' makes it possible to nest
+        # 'generate-child-initializer: true' to generate an initalizer more
+        # than one level deep
+        ids.append(out_dev(node, "INIT", "{" + ", ".join(child_inits) + "}"))
+
+    return ids
+
+
+# Used to keep track of which nodes have already had output generated for their
+# properties. Needed for 'generate-child-initializer: true' nodes, to avoid
+# avoid generating output for the children twice.
+written_nodes = set()
 
 
 def should_write(prop):
@@ -572,7 +623,7 @@ def write_phandle_val_list(prop):
     #
     #   If only one entry appears in 'prop' (the example above has two), the
     #   generated identifier won't get a '_0' suffix, and the '_COUNT' and
-    #   group initializer are skipped too.
+    #   array initializer are skipped too.
     #
     # The base identifier is derived from the property name. For example, 'pwms = ...'
     # generates output like this:
@@ -586,6 +637,9 @@ def write_phandle_val_list(prop):
     #   #define <device prefix>_PWMS_COUNT 2
     #   #define <device prefix>_PWMS {<device prefix>_PWMS_0, <device prefix>_PWMS_1}
     #   ...
+    #
+    # Returns the main '<device prefix>_PWMS' identifier, for use with
+    # 'generate_child_initializer'.
 
     # pwms -> PWMS
     # foo-gpios -> FOO_GPIOS
@@ -596,9 +650,15 @@ def write_phandle_val_list(prop):
         initializer_vals.append(write_phandle_val_list_entry(
             prop.node, entry, i if len(prop.val) > 1 else None, ident))
 
-    if len(prop.val) > 1:
+    if len(initializer_vals) > 1:
         out_dev(prop.node, ident + "_COUNT", len(initializer_vals))
-        out_dev(prop.node, ident, "{" + ", ".join(initializer_vals) + "}")
+        # Return the identifier for the array initializer
+        return out_dev(prop.node, ident, "{" + ", ".join(initializer_vals) + "}")
+
+    # When there's just one entry, return the identifier for its initializer.
+    # No array initializer gets generated in this case. Return None for empty
+    # phandle-arrays.
+    return initializer_vals[0] if initializer_vals else None
 
 
 def write_phandle_val_list_entry(node, entry, i, ident):

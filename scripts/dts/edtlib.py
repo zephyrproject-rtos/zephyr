@@ -486,7 +486,7 @@ class EDT:
 
         ok_top = {"title", "description", "compatible", "properties", "#cells",
                   "bus", "on-bus", "parent-bus", "child-bus", "parent", "child",
-                  "child-binding", "sub-node"}
+                  "child-binding", "sub-node", "generate-child-initializer"}
 
         for prop in binding:
             if prop not in ok_top and not prop.endswith("-cells"):
@@ -563,6 +563,11 @@ class EDT:
                        "'gpio-cells:', etc., instead. The name should match "
                        "the name of the corresponding phandle-array property "
                        "(see binding-template.yaml)".format(binding_path))
+
+        if "generate-child-initializer" in binding and \
+           not isinstance(binding["generate-child-initializer"], bool):
+            _err("malformed 'generate-child-initializer:' field in {} - "
+                 "should be true/false".format(binding_path))
 
         def ok_cells_val(val):
             # Returns True if 'val' is an okay value for '*-cells:' (or the
@@ -749,6 +754,10 @@ class Node:
     flash_controller:
       The flash controller for the node. Only meaningful for nodes representing
       flash partitions.
+
+    generate_child_initalizer:
+      True if the binding for the node has 'generate-child-initializer: true',
+      and False otherwise. See binding-template.yaml.
     """
     @property
     def name(self):
@@ -883,6 +892,12 @@ class Node:
         if controller.matching_compat == "soc-nv-flash":
             return controller.parent
         return controller
+
+    @property
+    def generate_child_initializer(self):
+        "See the class docstring"
+        return self._binding and \
+            bool(self._binding.get("generate-child-initializer"))
 
     def __repr__(self):
         return "<Node {} in '{}', {}>".format(

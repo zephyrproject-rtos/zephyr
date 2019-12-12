@@ -73,6 +73,48 @@ bus: <string describing bus type, e.g. "i2c">
 # device to have different bindings depending on what bus it appears on.
 on-bus: <string describing bus type, e.g. "i2c">
 
+# If 'generate-child-initializer: true' appears in the binding for a node, then
+# static initializers will be generated for the child nodes of the node, along
+# with a static initializer for an array with the child nodes.
+#
+# As an example, take the following devicetree. Assume that the binding for
+# 'foos' contains 'generate-child-initializer: true', and that it gives the
+# foo_0 and foo_1 nodes a binding via 'child-binding:' (see below).
+#
+#     / {
+#             foos@0 {
+#                     compatible = "foos";
+#                     foo_0 {
+#                             int = <0>;
+#                             string = "foo";
+#                     };
+#                     foo_1 {
+#                             int = <1>;
+#                             array = <2 3>;
+#                     };
+#             };
+#     };
+#
+# These additional static initializers will then be generated, along with
+# aliases. The order of the properties in the initializer matches the order in
+# the devicetree.
+#
+#     /* Initializer for foo_0 */
+#     #define DT_FOOS_0_FOO_0_INIT   {DT_FOOS_0_FOO_0_INT, DT_FOOS_0_FOO_0_STRING}
+#     /* Initializer for foo_1 */
+#     #define DT_FOOS_0_FOO_1_INIT   {DT_FOOS_0_FOO_1_INT, DT_FOOS_0_FOO_1_ARRAY}
+#     /* Initializer for the children of foos@0 */
+#     #define DT_FOOS_0_INIT         {DT_FOOS_0_FOO_0_INIT, DT_FOOS_0_FOO_1_INIT}
+#
+# The referenced macros initialize each property (note that these are always
+# generated):
+#
+#     #define DT_FOOS_0_FOO_0_INT    0
+#     #define DT_FOOS_0_FOO_0_STRING "foo"
+#     #define DT_FOOS_0_FOO_1_INT    1
+#     #define DT_FOOS_0_FOO_1_ARRAY  {2, 3}
+generate-child-initializer: true
+
 # 'properties' describes properties on the node, e.g.
 #
 #   reg = <1 2>;
