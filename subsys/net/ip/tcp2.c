@@ -510,10 +510,10 @@ static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
 
 static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 {
-#define BUF_SIZE 64
+#define BUF_SIZE 80
 	static char buf[BUF_SIZE];
 
-	snprintk(buf, BUF_SIZE, "%s %s %u/%u", pkt ? tcp_th(pkt) : "",
+	snprintk(buf, BUF_SIZE, "%s [%s Seq=%u Ack=%u]", pkt ? tcp_th(pkt) : "",
 			tcp_state_to_str(conn->state, false),
 			conn->seq, conn->ack);
 #undef BUF_SIZE
