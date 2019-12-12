@@ -49,6 +49,7 @@
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
+#define L2CAP_RTX_TIMEOUT	K_SECONDS(2)
 
 /* Dedicated pool for disconnect buffers so they are guaranteed to be send
  * even in case of data congestion due to flooding.
@@ -391,7 +392,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 	}
 
 	/* Don't wait more than the minimum RTX timeout of 2 seconds */
-	buf = bt_l2cap_create_pdu_timeout(pool, 0, K_SECONDS(2));
+	buf = bt_l2cap_create_pdu_timeout(pool, 0, L2CAP_RTX_TIMEOUT);
 	if (!buf) {
 		/* If it was not possible to allocate a buffer within the
 		 * timeout return NULL.
