@@ -226,17 +226,15 @@ def write_props(node):
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
                 out_dev(node, "{}_{}".format(ident, i), val)
-            ids.append(out_dev(node, ident,
-                       "{" + ", ".join(map(str, prop.val)) + "}"))
+            ids.append(out_dev_init(node, ident, map(str, prop.val)))
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
                 out_dev_s(node, "{}_{}".format(ident, i), val)
-            ids.append(out_dev(node, ident,
-                               "{" + ", ".join(prop.val) + "}"))
+            ids.append(out_dev_init(node, ident,
+                                    ['"' + val + '"' for val in prop.val]))
         elif prop.type == "uint8-array":
-            ids.append(out_dev(node, ident,
-                               "{ " + ", ".join("0x{:02x}".format(b)
-                                                for b in prop.val) + " }"))
+            ids.append(out_dev_init(node, ident,
+                                    ["0x{:02x}".format(b) for b in prop.val]))
         else:  # prop.type == "phandle-array"
             phandle_array_ident = write_phandle_val_list(prop)
             # Empty phandle-arrays don't generate any identifiers
@@ -254,15 +252,13 @@ def write_props(node):
 
         for child in node.children.values():
             child_ids = write_props(child)
-            initializer_id = out_dev(
-                node, str2ident(child.name) + "_INIT",
-                "{" + ", ".join(child_ids) + "}")
-            child_inits.append(initializer_id)
+            child_inits.append(out_dev_init(
+                node, str2ident(child.name) + "_INIT", child_ids))
 
         # Adding this to 'ids' makes it possible to nest
         # 'generate-child-initializer: true' to generate an initalizer more
         # than one level deep
-        ids.append(out_dev(node, "INIT", "{" + ", ".join(child_inits) + "}"))
+        ids.append(out_dev_init(node, "INIT", child_inits))
 
     return ids
 
@@ -653,7 +649,7 @@ def write_phandle_val_list(prop):
     if len(initializer_vals) > 1:
         out_dev(prop.node, ident + "_COUNT", len(initializer_vals))
         # Return the identifier for the array initializer
-        return out_dev(prop.node, ident, "{" + ", ".join(initializer_vals) + "}")
+        return out_dev_init(prop.node, ident, initializer_vals)
 
     # When there's just one entry, return the identifier for its initializer.
     # No array initializer gets generated in this case. Return None for empty
@@ -705,9 +701,9 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         name_alias = None
     if i is not None:
         initializer_ident += "_{}".format(i)
-    return out_dev(node, initializer_ident,
-                   "{" + ", ".join(map(str, initializer_vals)) + "}",
-                   name_alias)
+
+    return out_dev_init(node, initializer_ident, map(str, initializer_vals),
+                        name_alias)
 
 
 def write_clocks(node):
@@ -796,6 +792,15 @@ def out_dev_s(node, ident, s, name_alias=None):
     # Returns the generated macro name for 'ident'.
 
     return out_dev(node, ident, quote_str(s), name_alias)
+
+
+def out_dev_init(node, ident, elms, name_alias=None):
+    # Like out_dev(), but emits a {s_1, s_2, ...} initializer with the strings
+    # in the iterable 'elms'.
+    #
+    # Returns the generated macro name for 'ident'.
+
+    return out_dev(node, ident, "{" + ", ".join(elms) + "}", name_alias)
 
 
 def out_s(ident, val):
