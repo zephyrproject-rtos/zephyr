@@ -550,6 +550,7 @@ class BinaryHandler(Handler):
                     #so let's give it up to 100ms to do so
                     proc.wait(0.1)
                 except subprocess.TimeoutExpired:
+                    self.try_kill_process_by_pid()
                     proc.terminate()
                     self.terminated = True
                 break
