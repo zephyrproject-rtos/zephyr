@@ -369,17 +369,12 @@ static int read_data(struct eth_context *ctx, int fd)
 
 static void eth_rx(struct eth_context *ctx)
 {
-	int ret;
-
 	LOG_DBG("Starting ZETH RX thread");
 
 	while (1) {
 		if (net_if_is_up(ctx->iface)) {
-			ret = eth_wait_data(ctx->dev_fd);
-			if (!ret) {
+			while (!eth_wait_data(ctx->dev_fd)) {
 				read_data(ctx, ctx->dev_fd);
-			} else {
-				eth_stats_update_errors_rx(ctx->iface);
 			}
 		}
 
