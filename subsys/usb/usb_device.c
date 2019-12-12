@@ -101,10 +101,6 @@ LOG_MODULE_REGISTER(usb_device);
 #define MAX_NUM_REQ_HANDLERS        4
 #define MAX_STD_REQ_MSG_SIZE        8
 
-/* Default USB control EP, always 0 and 0x80 */
-#define USB_CONTROL_OUT_EP0         0
-#define USB_CONTROL_IN_EP0          0x80
-
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_cfg_data __usb_data_start[];
 extern struct usb_cfg_data __usb_data_end[];

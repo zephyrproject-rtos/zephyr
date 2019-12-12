@@ -77,6 +77,10 @@ extern "C" {
 #define USB_MAX_FS_INT_MPS	64   /**< full speed MPS for interrupt EP */
 #define USB_MAX_FS_ISO_MPS	1023 /**< full speed MPS for isochronous EP */
 
+/** Default USB control endpoint addresses, always 0x00 and 0x80 */
+#define USB_CONTROL_OUT_EP0	0x00
+#define USB_CONTROL_IN_EP0	0x80
+
 /*************************************************************************
  *  USB application interface
  **************************************************************************/
