@@ -1020,6 +1020,8 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
+	__ASSERT(!arch_is_in_isr(), "");
+
 	if (ms == K_FOREVER) {
 		k_thread_suspend(_current);
 		return K_FOREVER;
