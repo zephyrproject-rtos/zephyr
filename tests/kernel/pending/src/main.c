@@ -296,7 +296,7 @@ void test_pending_fifo(void)
 	 */
 	k_thread_priority_set(k_current_get(), 9);
 
-	struct offload_work offload1 = {0};
+	struct offload_work offload1 = { Z_WORK_INITIALIZER(NULL), 0};
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &start_test_sem;
@@ -363,8 +363,8 @@ void test_pending_lifo(void)
 	 */
 	k_thread_priority_set(k_current_get(), 9);
 
-	struct offload_work offload1 = {0};
-	struct offload_work offload2 = {0};
+	struct offload_work offload1 = { Z_WORK_INITIALIZER(NULL), 0 };
+	struct offload_work offload2 = { Z_WORK_INITIALIZER(NULL), 0 };
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &end_test_sem;
@@ -430,7 +430,7 @@ void test_pending_timer(void)
 	 */
 	k_thread_priority_set(k_current_get(), 9);
 
-	struct offload_work offload2 = {0};
+	struct offload_work offload2 = { Z_WORK_INITIALIZER(NULL), 0 };
 
 	k_work_init(&offload2.work_item, sync_threads);
 	offload2.sem = &end_test_sem;
