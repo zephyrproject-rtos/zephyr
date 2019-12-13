@@ -853,7 +853,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 /* These spinlock assertion predicates are defined here because having
  * them in spinlock.h is a giant header ordering headache.
  */
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 bool z_spin_lock_valid(struct k_spinlock *l)
 {
 	uintptr_t thread_cpu = l->thread_cpu;
@@ -879,8 +879,7 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 {
 	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
 }
-
-#endif
+#endif /* CONFIG_SPIN_VALIDATE */
 
 int z_impl_k_float_disable(struct k_thread *thread)
 {

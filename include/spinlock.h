@@ -10,23 +10,17 @@
 
 /* There's a spinlock validation framework available when asserts are
  * enabled.  It adds a relatively hefty overhead (about 3k or so) to
- * kernel code size, don't use on platforms known to be small. (Note
- * we're using the kconfig value here.  This isn't defined for every
- * board, but the default of zero works well as an "infinity"
- * fallback.  There is a DT_FLASH_SIZE parameter too, but that seems
- * even more poorly supported.
+ * kernel code size, don't use on platforms known to be small.
  */
-#if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
-#if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
+#ifdef CONFIG_SPIN_VALIDATE
 #include <sys/__assert.h>
 #include <stdbool.h>
 struct k_spinlock;
 bool z_spin_lock_valid(struct k_spinlock *l);
 bool z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
-#define SPIN_VALIDATE
-#endif
-#endif
+BUILD_ASSERT_MSG(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
+#endif /* CONFIG_SPIN_VALIDATE */
 
 struct k_spinlock_key {
 	int key;
@@ -39,15 +33,16 @@ struct k_spinlock {
 	atomic_t locked;
 #endif
 
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 	/* Stores the thread that holds the lock with the locking CPU
 	 * ID in the bottom two bits.
 	 */
 	uintptr_t thread_cpu;
 #endif
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && !defined(SPIN_VALIDATE)
-	/* If CONFIG_SMP and SPIN_VALIDATE are both not defined
+#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
+	!defined(CONFIG_SPIN_VALIDATE)
+	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
 	 * the k_spinlock struct will have no members. The result
 	 * is that in C sizeof(k_spinlock) is 0 and in C++ it is 1.
 	 *
@@ -75,7 +70,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 */
 	k.key = arch_irq_lock();
 
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock");
 #endif
 
@@ -84,7 +79,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	}
 #endif
 
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 	z_spin_lock_set_owner(l);
 #endif
 	return k;
@@ -94,7 +89,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 					k_spinlock_key_t key)
 {
 	ARG_UNUSED(l);
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
 #endif
 
@@ -117,7 +112,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
-#ifdef SPIN_VALIDATE
+#ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
 #endif
 #ifdef CONFIG_SMP
