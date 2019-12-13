@@ -376,10 +376,6 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 #endif
 	}
 
-	setup_ipv4(iface);
-	setup_dhcpv4(iface);
-	setup_ipv6(iface, flags);
-
 	if (flags & NET_CONFIG_NEED_IPV6) {
 		need++;
 	}
@@ -389,6 +385,10 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	}
 
 	k_sem_init(&counter, need, UINT_MAX);
+
+	setup_ipv4(iface);
+	setup_dhcpv4(iface);
+	setup_ipv6(iface, flags);
 
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
