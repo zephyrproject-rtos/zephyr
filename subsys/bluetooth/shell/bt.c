@@ -1137,10 +1137,29 @@ static int cmd_bonds(const struct shell *shell, size_t argc, char *argv[])
 	int bond_count = 0;
 
 	shell_print(shell, "Bonded devices:");
-
 	bt_foreach_bond(selected_id, bond_info, &bond_count);
-
 	shell_print(shell, "Total %d", bond_count);
+
+	return 0;
+}
+
+static void connection_info(struct bt_conn *conn, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int *conn_count = user_data;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	(*conn_count)++;
+}
+
+static int cmd_connections(const struct shell *shell, size_t argc, char *argv[])
+{
+	int conn_count = 0;
+
+	shell_print(shell, "Connected devices:");
+	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
+	shell_print(shell, "Total %d", conn_count);
 
 	return 0;
 }
@@ -1663,6 +1682,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
+	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
 	SHELL_CMD_ARG(auth, NULL,
 		      "<method: all, input, display, yesno, confirm, "
 		      "oob, none>",
