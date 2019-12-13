@@ -10926,7 +10926,7 @@ static u8_t ping_resp_send(struct connection *conn)
 			   sizeof(struct pdu_data_llctrl_ping_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 
-	ctrl_tx_enqueue(conn, node_tx);
+	ctrl_tx_sec_enqueue(conn, node_tx);
 
 	return 0;
 }
@@ -10991,7 +10991,7 @@ static void length_resp_send(struct connection *conn,
 	pdu_ctrl_tx->llctrl.length_rsp.max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	ctrl_tx_enqueue(conn, node_tx);
+	ctrl_tx_sec_enqueue(conn, node_tx);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
