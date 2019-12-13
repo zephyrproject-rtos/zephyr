@@ -295,8 +295,11 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		if (context->enabled) {
 			eth_mcux_phy_enter_reset(context);
 		} else {
-			/* @todo, actually power down the PHY ? */
 			context->phy_state = eth_mcux_phy_state_initial;
+			net_eth_carrier_off(context->iface);
+			ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
+						kENET_MiiWriteValidFrame,
+						PHY_BCTL_POWER_DOWN_MASK);
 		}
 		break;
 	case eth_mcux_phy_state_reset:
