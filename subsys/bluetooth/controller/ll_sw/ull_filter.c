@@ -45,6 +45,8 @@
 static struct lll_filter wl_filter;
 u8_t wl_anon;
 
+#define IRK_SIZE 16
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
 
@@ -69,7 +71,7 @@ static struct rl_dev {
 	u8_t      id_addr_type:1;
 	bt_addr_t id_addr;
 
-	u8_t      local_irk[16];
+	u8_t      local_irk[IRK_SIZE];
 	u8_t      pirk_idx;
 	bt_addr_t curr_rpa;
 	bt_addr_t peer_rpa;
@@ -101,7 +103,7 @@ struct target_resolve_work {
 };
 #endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
 
-static u8_t peer_irks[CONFIG_BT_CTLR_RL_SIZE][16];
+static u8_t peer_irks[CONFIG_BT_CTLR_RL_SIZE][IRK_SIZE];
 static u8_t peer_irk_rl_ids[CONFIG_BT_CTLR_RL_SIZE];
 static u8_t peer_irk_count;
 
@@ -273,7 +275,8 @@ u8_t ll_rl_clear(void)
 	return 0;
 }
 
-u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16], const u8_t lirk[16])
+u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[IRK_SIZE],
+	       const u8_t lirk[IRK_SIZE])
 {
 	u8_t i, j;
 
@@ -295,21 +298,21 @@ u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16], const u8_t lirk[16])
 
 	bt_addr_copy(&rl[i].id_addr, &id_addr->a);
 	rl[i].id_addr_type = id_addr->type & 0x1;
-	rl[i].pirk = mem_nz((u8_t *)pirk, 16);
-	rl[i].lirk = mem_nz((u8_t *)lirk, 16);
+	rl[i].pirk = mem_nz((u8_t *)pirk, IRK_SIZE);
+	rl[i].lirk = mem_nz((u8_t *)lirk, IRK_SIZE);
 	if (rl[i].pirk) {
 		/* cross-reference */
 		rl[i].pirk_idx = peer_irk_count;
 		peer_irk_rl_ids[peer_irk_count] = i;
 		/* AAR requires big-endian IRKs */
-		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, 16);
+		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, IRK_SIZE);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 		/* a new key was added, invalidate the known/unknown list */
 		prpa_cache_clear();
 #endif
 	}
 	if (rl[i].lirk) {
-		memcpy(rl[i].local_irk, lirk, 16);
+		memcpy(rl[i].local_irk, lirk, IRK_SIZE);
 		rl[i].local_rpa = NULL;
 	}
 	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
@@ -350,7 +353,7 @@ u8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			u8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
 			if (pj && pi != pj) {
-				memcpy(peer_irks[pi], peer_irks[pj], 16);
+				memcpy(peer_irks[pi], peer_irks[pj], IRK_SIZE);
 				for (k = 0U;
 				     k < CONFIG_BT_CTLR_RL_SIZE;
 				     k++) {
@@ -542,11 +545,11 @@ void ull_filter_rpa_update(bool timeout)
 		if ((rl[i].taken) && (all || !rl[i].rpas_ready)) {
 
 			if (rl[i].pirk) {
-				u8_t irk[16];
+				u8_t irk[IRK_SIZE];
 
 				/* TODO: move this swap to the driver level */
 				sys_memcpy_swap(irk, peer_irks[rl[i].pirk_idx],
-						16);
+						IRK_SIZE);
 				err = bt_rpa_create(irk, &rl[i].peer_rpa);
 				LL_ASSERT(!err);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
@@ -1138,12 +1141,12 @@ static void target_resolve(struct k_work *work)
 static u8_t prpa_cache_try_resolve(bt_addr_t *rpa)
 {
 	u8_t pi;
-	u8_t lpirk[16];
+	u8_t lpirk[IRK_SIZE];
 
 	for (u8_t i = 0U; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if (rl[i].taken && rl[i].pirk) {
 			pi = rl[i].pirk_idx;
-			sys_memcpy_swap(lpirk, peer_irks[pi], 16);
+			sys_memcpy_swap(lpirk, peer_irks[pi], IRK_SIZE);
 			if (bt_rpa_irk_matches(lpirk, rpa)) {
 				return i;
 			}
