@@ -73,8 +73,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/arm/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig`
-Kconfig file.
+:zephyr_file:`boards/arm/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig\` Kconfig file.
 
 Connections and IOs
 ===================
@@ -186,6 +185,14 @@ PVT SPI, SHD SPI and LED0-2 respectively.
 
 .. note:: An additional setting for UART2 is to make sure JP39 does not have any jumper.
 
+To receive UART2 serial output, please refer to the picture below
+to make sure that JP9 configured for UART2 output.
+
+.. image:: ./mec15xxevb_assy6853_jp9_1.png
+     :width: 300px
+     :align: center
+     :alt: JP9 header Assy6853
+
 Jumper settings for MEC1501 144WFBGA Socket DC Assy 6883 Rev B1p0
 =================================================================
 
@@ -259,38 +266,96 @@ Building
    can find the image generation tool. This binary image can be used
    to flash the SPI chip.
 
+Wiring
+========
+#. Connect the SPI Dongle ASSY 6791 to ``J44`` in the EVB.
+
+   .. image:: ./spidongle_assy6791_view1.png
+        :width: 400px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
+
+#. Connect programmer to the header J6 on the Assy6791 board, it will flash the SPI NOR chip ``U3``
+   Make sure that your programmer's offset is 0x0.
+   For programming you can use Dediprog SF100 or a similar tool for flashing SPI chips.
+
+   .. list-table:: Microchip board wiring
+      :align: center
+
+      * - .. image:: spidongle_assy6791.png
+             :width: 300px
+             :align: center
+             :alt: SPI DONGLE ASSY 6791
+
+        - .. image:: spidongle_assy6791_view2.png
+             :width: 300px
+             :align: center
+             :alt: SPI DONGLE ASSY 6791 view 2
+
+          |
+
+          .. image:: dediprog_connector_2.png
+             :width: 300px
+             :align: center
+             :alt: SPI DONGLE ASSY 6791 Connected
+
+
+   .. note:: Remember that SPI MISO/MOSI are swapped on Dediprog headers!
+    Use separate wires to connect Dediprog pins with pins on the Assy6791 SPI board.
+    Wiring connection is described in the table below.
+
+    +------------+---------------+
+    |  Dediprog  |  Assy6791     |
+    |  Connector |  J6 Connector |
+    +============+===============+
+    |    VCC     |       1       |
+    +------------+---------------+
+    |    GND     |       2       |
+    +------------+---------------+
+    |    CS      |       3       |
+    +------------+---------------+
+    |    CLK     |       4       |
+    +------------+---------------+
+    |    MISO    |       6       |
+    +------------+---------------+
+    |    MOSI    |       5       |
+    +------------+---------------+
+
+
 Flashing
 ========
-
-.. image:: ./spidongle_assy6791.png
-     :width: 300px
-     :align: center
-     :alt: SPI DONGLE ASSY 6791
-
-#. Connect the SPI Dongle ASSY 6791 to ``J44`` in the EVB. See the image above.
-
-#. Then proceed to flash the SPI NOR ``U3`` at offset 0x0 using Dediprog SF100
-   or a similar tool for flashing SPI chips.
-
-   .. note:: Remember that SPI MISO/MOSI are swapped on dediprog headers!
-
-   - Flash your board using west:
-
-     .. code-block:: console
-
-        $ west flash
-
-     Make sure that the program ``dpcmd`` (on Linux) or
-     ``dpcmd.exe`` (on Windows) can be found in your ``PATH``.
-     The Windows version is installed with your DediProg software.
-     The source code of the Linux version can be found at `SF100 Linux GitHub`_.
-
-#. Run your favorite terminal program to listen for output. Under Linux the
-   terminal should be :code:`/dev/ttyACM0`. For example:
+#. Flash your board using west.
 
    .. code-block:: console
 
-      $ minicom -D /dev/ttyACM0 -o
+      $ west flash
+
+   .. note:: When west process started press Reset button and do not release it
+    till the whole west process will not be finished successfully.
+
+    .. image:: ./reset_button_1.png
+         :width: 400px
+         :align: center
+         :alt: SPI DONGLE ASSY 6791 Connected
+
+#. If you use Dediprog SF100 do an additional setup. Please make sure that the program ``dpcmd`` (on Linux)
+   or ``dpcmd.exe`` (on Windows) can be found in your ``PATH``.
+   The Windows version is installed with your DediProg software.
+   The source code of the Linux version can be found at `SF100 Linux GitHub`_.
+   For Linux please make sure that you copied ``60-dediprog.rules`` from the SF100Linux
+   folder to the :code:`/etc/udev/rules.s` then restart service using:
+
+   .. code-block:: console
+
+      $ udevadm control --reload:
+
+
+#. Run your favorite terminal program to listen for output. Under Linux the
+   terminal should be :code:`/dev/ttyUSB0`. For example:
+
+   .. code-block:: console
+
+      $ minicom -D /dev/ttyUSB0 -o
 
    The -o option tells minicom not to send the modem initialization
    string. Connection should be configured as follows:
@@ -301,9 +366,27 @@ Flashing
    - Stop bits: 1
 
 #. Connect the MEC15xxEVB_ASSY_6853 board to your host computer using the
-   UART2 port and apply power.
+   UART2 port.
+
+#. An easy option to apply power to the board is via a micro-USB cable.
+   Configure this option by using a jumper between ``JP88 7-8``.
+
+   .. image:: ./jp88_power_options.png
+        :width: 400px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
 
    You should see ``"Hello World! mec15xxevb_assy6853"`` in your terminal.
+   If you don't see this message on the serial terminal, press the Reset button
+   and the message should appear.
+
+#. Final wiring for the board should look like this:
+
+   .. image:: ./mec_board_setup.png
+        :width: 600px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
+
 
 Debugging
 =========
@@ -311,11 +394,15 @@ This board comes with a Cortex ETM port which facilitates tracing and debugging
 using a single physical connection.  In addition, it comes with sockets for
 JTAG only sessions.
 
-HW Issues
-=========
-In case you don't see your application running, please make sure ``LED7``,
-``LED8``, and ``LED1`` are lit. If one of these is off, then check the power-
-related jumpers again.
+Troubleshooting
+===============
+#. In case you don't see your application running, please make sure ``LED7``, ``LED8``, and ``LED1``
+   are lit. If one of these is off, then check the power-related jumpers again.
+
+#. If you can't program the board using Dediprog, disconnect the Assy6791
+   from the main board Assy6853 and try again.
+
+#. If Dediprog can't detect the onboard flash, press the board's Reset button and try again.
 
 References
 **********
