@@ -374,7 +374,7 @@ for the secure veneers.
 
 .. code-block:: bash
 
-   cp -r install/ $ZEPHYR_PROJECT/src/ext
+   cp -r install $ZEPHYR_PROJECT/src/ext
    cp $ZEPHYR_PROJECT/src/ext/install/export/tfm/veneers/s_veneers.o $ZEPHYR_PROJECT/src/ext
 
 
