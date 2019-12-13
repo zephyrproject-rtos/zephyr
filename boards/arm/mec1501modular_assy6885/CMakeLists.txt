@@ -8,9 +8,7 @@ zephyr_library()
 zephyr_library_sources(pinmux.c)
 
 if(DEFINED ENV{EVERGLADES_SPI_GEN})
-  # Check if location for MCHP tool is defined.
-  # This tool generates a binary image to flash the SPI chip.
-  # See board documentation for further details on this.
+  # Grab it from environment variable if defined
   set(EVERGLADES_SPI_GEN $ENV{EVERGLADES_SPI_GEN})
 else()
   # Else find the tool in PATH
@@ -47,7 +45,7 @@ if(DEFINED EVERGLADES_SPI_GEN)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${EVERGLADES_SPI_GEN}
     -i ${EVERGLADES_SPI_CFG}
-    -o ${PROJECT_BINARY_DIR}/spi_image.bin
+    -o ${PROJECT_BINARY_DIR}/${SPI_IMAGE_NAME}
   )
 
   unset(EVERGLADES_SPI_GEN)

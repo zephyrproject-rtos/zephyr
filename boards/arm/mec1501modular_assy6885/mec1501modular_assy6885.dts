@@ -66,3 +66,7 @@
 &pwm0 {
 	status = "okay";
 };
+
+&kscan0 {
+	status = "okay";
+};
