@@ -356,7 +356,9 @@ static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static void enc_req_reused_send(struct connection *conn,
 				struct radio_pdu_node_tx *node_tx);
+#if defined(CONFIG_BT_PERIPHERAL)
 static u8_t enc_rsp_send(struct connection *conn);
+#endif /* CONFIG_BT_PERIPHERAL */
 static u8_t start_enc_rsp_send(struct connection *conn,
 			       struct pdu_data *pdu_ctrl_tx);
 static u8_t pause_enc_rsp_send(struct connection *conn, u8_t req);
@@ -10599,6 +10601,7 @@ static void enc_req_reused_send(struct connection *conn,
 				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm), 0);
 }
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static u8_t enc_rsp_send(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -10641,6 +10644,7 @@ static u8_t enc_rsp_send(struct connection *conn)
 
 	return 0;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static u8_t start_enc_rsp_send(struct connection *conn,
 			       struct pdu_data *pdu_ctrl_tx)
