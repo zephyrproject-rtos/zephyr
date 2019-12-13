@@ -1297,6 +1297,8 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		}
 	}
 
+	net_context_set_accepting(child, false);
+
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
 
