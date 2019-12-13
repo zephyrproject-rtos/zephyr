@@ -32,7 +32,7 @@ config PINMUX_XEC_GPIO200_236
 	default n
 
 config PINMUX_XEC_GPIO240_276
-	default n
+	default y
 
 endif # PINMUX_XEC
 
@@ -116,4 +116,16 @@ config PS2_XEC_1
 	default y
 
 endif # PS2
+
+
+# power management stuff
+if SYS_POWER_MANAGEMENT
+
+config SYS_PM_MIN_RESIDENCY_SLEEP_1
+	default 1000
+
+config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1
+	default 2000
+
+endif # SYS_POWER_MANAGEMENT
 endif # BOARD_MEC1501MODULAR_ASSY6885
