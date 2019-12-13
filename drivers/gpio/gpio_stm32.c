@@ -299,10 +299,6 @@ static int gpio_stm32_enable_int(int port, int pin)
 	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 #endif
 
-	if (pin > 15) {
-		return -EINVAL;
-	}
-
 	gpio_stm32_set_exti_source(port, pin);
 
 	return 0;
@@ -390,10 +386,6 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
-	}
-
-	if (pin > 15) {
-		return -EINVAL;
 	}
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
