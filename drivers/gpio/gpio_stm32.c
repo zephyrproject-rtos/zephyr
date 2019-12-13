@@ -314,8 +314,9 @@ static int gpio_stm32_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int gpio_stm32_port_set_masked_raw(struct device *dev, u32_t mask,
-					 u32_t value)
+static int gpio_stm32_port_set_masked_raw(struct device *dev,
+					  gpio_port_pins_t mask,
+					  gpio_port_value_t value)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -327,7 +328,8 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int gpio_stm32_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_stm32_port_set_bits_raw(struct device *dev,
+					gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -336,12 +338,13 @@ static int gpio_stm32_port_set_bits_raw(struct device *dev, u32_t mask)
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
-	WRITE_REG(gpio->BSRR, mask);
+	WRITE_REG(gpio->BSRR, pins);
 
 	return 0;
 }
 
-static int gpio_stm32_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_stm32_port_clear_bits_raw(struct device *dev,
+					  gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -351,16 +354,17 @@ static int gpio_stm32_port_clear_bits_raw(struct device *dev, u32_t mask)
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly.
 	 */
-	WRITE_REG(gpio->BRR, mask);
+	WRITE_REG(gpio->BRR, pins);
 #else
 	/* On other series, LL abstraction is needed  */
-	LL_GPIO_ResetOutputPin(gpio, mask);
+	LL_GPIO_ResetOutputPin(gpio, pins);
 #endif
 
 	return 0;
 }
 
-static int gpio_stm32_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_stm32_port_toggle_bits(struct device *dev,
+				       gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -369,7 +373,7 @@ static int gpio_stm32_port_toggle_bits(struct device *dev, u32_t mask)
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
-	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ mask);
+	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ pins);
 
 	return 0;
 }
