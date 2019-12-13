@@ -50,7 +50,10 @@
 
 #if defined(__cplusplus)
 template < class T, size_t N >
-constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
+#if __cplusplus >= 201103L
+constexpr
+#endif /* >= C++11 */
+size_t ARRAY_SIZE(T(&)[N]) { return N; }
 
 #else
 /* Evaluates to number of elements in an array; compile error if not
