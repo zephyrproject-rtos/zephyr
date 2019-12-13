@@ -98,8 +98,7 @@ static void send_fw_ready(void)
 	       &fw_ready_apl, sizeof(fw_ready_apl));
 
 	memcpy((void *)(MAILBOX_DSPBOX_BASE + sizeof(fw_ready_apl)),
-	       &sram_window,
-	       (sizeof(sram_window) + sram_window.ext_hdr.hdr.size));
+	       &sram_window, sizeof(sram_window));
 
 	SOC_DCACHE_FLUSH((void *)MAILBOX_DSPBOX_BASE, MAILBOX_DSPBOX_SIZE);
 
