@@ -44,6 +44,20 @@
 #define main(...) zephyr_app_main(__VA_ARGS__)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* To be able to define main() in C++ code we need to have its prototype
+ * defined somewhere visibly. Otherwise name mangling will prevent the linker
+ * from finding it. Zephyr assumes a void main(void) prototype and therefore
+ * this will be the prototype after renaming:
+ */
+void zephyr_app_main(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #ifdef CONFIG_POSIX_API
 
 /*
