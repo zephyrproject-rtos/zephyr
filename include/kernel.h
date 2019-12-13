@@ -731,6 +731,8 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * stack overflows this region and stack protection features may not detect this
  * situation.
  *
+ * @allowed_from Threads
+ *
  * @param new_thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack space.
  * @param stack_size Stack size in bytes.
@@ -756,6 +758,8 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 /**
  * @brief Drop a thread's privileges permanently to user mode
  *
+ * @allowed_from Supervisor Mode
+ *
  * @param entry Function to start executing from
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
@@ -775,6 +779,8 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * The thread object must be initialized (i.e. running). The objects don't
  * need to be.
  * Note that NULL shouldn't be passed as an argument.
+ *
+ * @allowed_from Supervisor Mode
  *
  * @param thread Thread to grant access to objects
  * @param ... list of kernel object pointers
@@ -826,6 +832,7 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  *
  * This routine puts the current thread to sleep for @a duration milliseconds.
  *
+ * @allowed_from Threads
  * @param ms Number of milliseconds to sleep.
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
@@ -841,6 +848,8 @@ __syscall s32_t k_sleep(s32_t ms);
  * the duration of a tick, CONFIG_SYS_CLOCK_TICKS_PER_SEC must be adjusted
  * to achieve the resolution desired. The implications of doing this must
  * be understood before attempting to use k_usleep(). Use with caution.
+ *
+ * @allowed_from Threads
  *
  * @param us Number of microseconds to sleep.
  *
@@ -865,6 +874,8 @@ __syscall void k_busy_wait(u32_t usec_to_wait);
  * This routine causes the current thread to yield execution to another
  * thread of the same or higher priority. If there are no other ready threads
  * of the same or higher priority, the routine returns immediately.
+ *
+ * @allowed_from Threads
  *
  * @return N/A
  * @req K-THREAD-015
@@ -1040,6 +1051,8 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * Priority can be assigned in the range of -CONFIG_NUM_COOP_PRIORITIES to
  * CONFIG_NUM_PREEMPT_PRIORITIES-1, where -CONFIG_NUM_COOP_PRIORITIES is the
  * highest priority.
+ *
+ * @allowed_from Threads
  *
  * @param thread ID of thread whose priority is to be set.
  * @param prio New priority.
@@ -1240,7 +1253,7 @@ extern void k_sched_time_slice_set(s32_t slice, int prio);
  * This routine allows the caller to customize its actions, depending on
  * whether it is a thread or an ISR.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @return false if invoked by a thread.
  * @return true if invoked by an ISR.
@@ -1258,7 +1271,7 @@ extern bool k_is_in_isr(void);
  * - The thread's priority is in the preemptible range.
  * - The thread has not locked the scheduler.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @return 0 if invoked by an ISR or by a cooperative thread.
  * @return Non-zero if invoked by a preemptible thread.
@@ -1300,6 +1313,8 @@ extern void k_sched_lock(void);
  * This routine reverses the effect of a previous call to k_sched_lock().
  * A thread must call the routine once for each time it called k_sched_lock()
  * before the thread becomes preemptible.
+ *
+ * @allowed_from Threads
  *
  * @return N/A
  */
@@ -1611,7 +1626,9 @@ __syscall void k_timer_start(struct k_timer *timer,
  * Attempting to stop a timer that is not running is permitted, but has no
  * effect on the timer.
  *
- * @note Can be called by ISRs.  The stop handler has to be callable from ISRs
+ * @allowed_from Threads, ISRs
+ *
+ * @note The stop handler has to be callable from ISRs
  * if @a k_timer_stop is to be called from ISRs.
  *
  * @param timer     Address of timer.
@@ -1646,6 +1663,8 @@ __syscall u32_t k_timer_status_get(struct k_timer *timer);
  *
  * This routine must not be used by interrupt handlers, since they are not
  * allowed to block.
+ *
+ * @allowed_from Threads
  *
  * @param timer     Address of timer.
  *
@@ -1918,7 +1937,7 @@ __syscall void k_queue_init(struct k_queue *queue);
  * -EINTR and K_POLL_STATE_CANCELLED state (and per above, subsequent
  * k_queue_get() will return NULL).
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  *
@@ -1933,7 +1952,7 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  * aligned on a word boundary, and the first word of the item is reserved
  * for the kernel's use.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -1950,7 +1969,7 @@ extern void k_queue_append(struct k_queue *queue, void *data);
  * the calling thread's resource pool, which is automatically freed when the
  * item is removed. The data itself is not copied.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -1967,7 +1986,7 @@ __syscall s32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  * aligned on a word boundary, and the first word of the item is reserved
  * for the kernel's use.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -1984,7 +2003,7 @@ extern void k_queue_prepend(struct k_queue *queue, void *data);
  * the calling thread's resource pool, which is automatically freed when the
  * item is removed. The data itself is not copied.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -2001,7 +2020,7 @@ __syscall s32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * data item must be aligned on a word boundary, and the first word of
  * the item is reserved for the kernel's use.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param prev Address of the previous data item.
@@ -2019,7 +2038,7 @@ extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param head Pointer to first node in singly-linked list.
@@ -2036,7 +2055,7 @@ extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * The data items must be in a singly-linked list implemented using a
  * sys_slist_t object. Upon completion, the original list is empty.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param list Pointer to sys_slist_t object.
@@ -2051,7 +2070,9 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * This routine removes first data item from @a queue. The first word of the
  * data item is reserved for the kernel's use.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param queue Address of the queue.
  * @param timeout Non-negative waiting period to obtain a data item (in
@@ -2070,7 +2091,7 @@ __syscall void *k_queue_get(struct k_queue *queue, s32_t timeout);
  * data item is reserved for the kernel's use. Removing elements from k_queue
  * rely on sys_slist_find_and_remove which is not a constant time operation.
  *
- * @note Can be called by ISRs
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -2089,7 +2110,7 @@ static inline bool k_queue_remove(struct k_queue *queue, void *data)
  * item is reserved for the kernel's use. Appending elements to k_queue
  * relies on sys_slist_is_node_in_list which is not a constant time operation.
  *
- * @note Can be called by ISRs
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
@@ -2116,7 +2137,7 @@ static inline bool k_queue_unique_append(struct k_queue *queue, void *data)
  * Note that the data might be already gone by the time this function returns
  * if other threads are also trying to read from the queue.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param queue Address of the queue.
  *
@@ -2298,7 +2319,7 @@ struct k_fifo {
  * return from k_fifo_get() call with NULL value (as if timeout
  * expired).
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO queue.
  *
@@ -2315,7 +2336,7 @@ struct k_fifo {
  * aligned on a word boundary, and the first word of the item is reserved
  * for the kernel's use.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO.
  * @param data Address of the data item.
@@ -2334,7 +2355,7 @@ struct k_fifo {
  * the calling thread's resource pool, which is automatically freed when the
  * item is removed. The data itself is not copied.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO.
  * @param data Address of the data item.
@@ -2354,7 +2375,7 @@ struct k_fifo {
  * each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO queue.
  * @param head Pointer to first node in singly-linked list.
@@ -2374,7 +2395,7 @@ struct k_fifo {
  * sys_slist_t object. Upon completion, the sys_slist_t object is invalid
  * and must be re-initialized via sys_slist_init().
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO queue.
  * @param list Pointer to sys_slist_t object.
@@ -2391,7 +2412,9 @@ struct k_fifo {
  * This routine removes a data item from @a fifo in a "first in, first out"
  * manner. The first word of the data item is reserved for the kernel's use.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param fifo Address of the FIFO queue.
  * @param timeout Waiting period to obtain a data item (in milliseconds),
@@ -2410,7 +2433,7 @@ struct k_fifo {
  * Note that the data might be already gone by the time this function returns
  * if other threads is also trying to read from the FIFO.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param fifo Address of the FIFO queue.
  *
@@ -2514,7 +2537,7 @@ struct k_lifo {
  * aligned on a word boundary, and the first word of the item is
  * reserved for the kernel's use.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param lifo Address of the LIFO queue.
  * @param data Address of the data item.
@@ -2533,7 +2556,7 @@ struct k_lifo {
  * the calling thread's resource pool, which is automatically freed when the
  * item is removed. The data itself is not copied.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param lifo Address of the LIFO.
  * @param data Address of the data item.
@@ -2551,7 +2574,9 @@ struct k_lifo {
  * This routine removes a data item from @a lifo in a "last in, first out"
  * manner. The first word of the data item is reserved for the kernel's use.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param lifo Address of the LIFO queue.
  * @param timeout Waiting period to obtain a data item (in milliseconds),
@@ -2669,7 +2694,7 @@ void k_stack_cleanup(struct k_stack *stack);
  *
  * This routine adds a stack_data_t value @a data to @a stack.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param stack Address of the stack.
  * @param data Value to push onto the stack.
@@ -2685,7 +2710,9 @@ __syscall void k_stack_push(struct k_stack *stack, stack_data_t data);
  * This routine removes a stack_data_t value from @a stack in a "last in,
  * first out" manner and stores the value in @a data.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param stack Address of the stack.
  * @param data Address of area to hold the value popped from the stack.
@@ -2846,7 +2873,7 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
  * A submitted work item must not be modified until it has been processed
  * by the workqueue.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work_q Address of workqueue.
  * @param work Address of work item.
@@ -2873,7 +2900,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
  *
  * Otherwise this works the same as k_work_submit_to_queue().
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work_q Address of workqueue.
  * @param work Address of work item.
@@ -2908,7 +2935,7 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
  * This routine indicates if work item @a work is pending in a workqueue's
  * queue.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work Address of work item.
  *
@@ -2950,6 +2977,7 @@ extern void k_work_q_start(struct k_work_q *work_q,
  * thread and queue objects, and the same restrictions on priority apply as
  * k_thread_create().
  *
+ * @allowed_from User mode
  * @param work_q Address of workqueue.
  * @param stack Pointer to work queue thread's stack space, as defined by
  *		K_THREAD_STACK_DEFINE()
@@ -3000,7 +3028,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * A delayed work item must not be modified until it has been processed
  * by the workqueue.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work_q Address of workqueue.
  * @param work Address of delayed work item.
@@ -3023,7 +3051,7 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * A delayed work item can only be canceled while its countdown is still
  * underway.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @note The result of calling this on a k_delayed_work item that has
  * not been submitted (i.e. before the return of the
@@ -3052,7 +3080,7 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
  * that block or yield since this may prevent the system workqueue from
  * processing other work items in a timely manner.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work Address of work item.
  *
@@ -3086,7 +3114,7 @@ static inline void k_work_submit(struct k_work *work)
  * that block or yield since this may prevent the system workqueue from
  * processing other work items in a timely manner.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work Address of delayed work item.
  * @param delay Non-negative delay before submitting the work item (in
@@ -3149,7 +3177,7 @@ extern void k_work_poll_init(struct k_work_poll *work,
  * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @warning
  * Provided array of events as well as a triggered work item must be placed
@@ -3189,7 +3217,7 @@ extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @warning
  * Provided array of events as well as a triggered work item must not be
@@ -3221,7 +3249,7 @@ static inline int k_work_poll_submit(struct k_work_poll *work,
  * A triggered work item can only be canceled if no event triggered work
  * submission.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param work Address of delayed work item.
  *
@@ -3401,7 +3429,9 @@ __syscall void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  *
  * This routine takes @a sem.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param sem Address of the semaphore.
  * @param timeout Non-negative waiting period to take the semaphore (in
@@ -3421,7 +3451,7 @@ __syscall int k_sem_take(struct k_sem *sem, s32_t timeout);
  * This routine gives @a sem, unless the semaphore is already at its maximum
  * permitted count.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param sem Address of the semaphore.
  *
@@ -3649,7 +3679,8 @@ void k_msgq_cleanup(struct k_msgq *q);
  *
  * This routine sends a message to message queue @a q.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param q Address of the message queue.
  * @param data Pointer to the message.
@@ -3670,7 +3701,9 @@ __syscall int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
  * This routine receives a message from message queue @a q in a "first in,
  * first out" manner.
  *
- * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ * @allowed_from Threads, ISRs
+ *
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
  *
  * @param q Address of the message queue.
  * @param data Address of area to hold the received message.
@@ -3691,7 +3724,7 @@ __syscall int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
  * This routine reads a message from message queue @a q in a "first in,
  * first out" manner and leaves the message in the queue.
  *
- * @note Can be called by ISRs.
+ * @allowed_from Threads, ISRs
  *
  * @param q Address of the message queue.
  * @param data Address of area to hold the message read from the queue.
@@ -4405,6 +4438,9 @@ struct k_mem_pool {
  *
  * This routine allocates a memory block from a memory pool.
  *
+ * @allowed_from Threads, ISRs
+ * @note When called from an ISR @a timeout must be set to K_NO_WAIT.
+ *
  * @param pool Address of the memory pool.
  * @param block Pointer to block descriptor for the allocated memory.
  * @param size Amount of memory to allocate (in bytes).
@@ -4731,6 +4767,8 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  * When called from user mode, a temporary memory allocation is required from
  * the caller's resource pool.
  *
+ * @allowed_from Threads
+ *
  * @param events An array of pointers to events to be polled for.
  * @param num_events The number of events in the array.
  * @param timeout Non-negative waiting period for an event to be ready (in
@@ -4903,6 +4941,8 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  *
  * If this is called from ISR context, the default system fatal error handler
  * will treat it as an unrecoverable system error, just like k_panic().
+ *
+ * @allowed_from Threads, ISRs
  * @req K-MISC-003
  */
 #define k_oops()	z_except_reason(K_ERR_KERNEL_OOPS)
@@ -5159,6 +5199,8 @@ struct k_mem_domain {
  * See documentation for k_mem_domain_add_partition() for details about
  * partition constraints.
  *
+ * @allowed_from Supervisor Mode
+ *
  * @param domain The memory domain to be initialized.
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
@@ -5197,6 +5239,8 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
  * Violating these constraints may lead to CPU exceptions or undefined
  * behavior.
  *
+ * @allowed_from Supervisor Mode
+ *
  * @param domain The memory domain to be added a memory partition.
  * @param part The memory partition to be added
  * @req K-MD-001
@@ -5208,6 +5252,8 @@ extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
  * @brief Remove a memory partition from a memory domain.
  *
  * Remove a memory partition from a memory domain.
+ *
+ * @allowed_from Supervisor Mode
  *
  * @param domain The memory domain to be removed a memory partition.
  * @param part The memory partition to be removed
@@ -5221,6 +5267,8 @@ extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
  *
  * Add a thread into a memory domain.
  *
+ * @allowed_from Supervisor Mode
+ *
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
  *
@@ -5233,6 +5281,8 @@ extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
  * @brief Remove a thread from its memory domain.
  *
  * Remove a thread from its memory domain.
+ *
+ * @allowed_from Supervisor Mode
  *
  * @param thread ID of thread going to be removed from its memory domain.
  * @req K-MD-001
