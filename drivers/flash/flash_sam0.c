@@ -112,18 +112,21 @@ static int flash_sam0_check_status(off_t offset)
 	return 0;
 }
 
-static inline uint32_t flash_sam0_read_unaligned_uint32(const void *data)
+static inline u32_t flash_sam0_read_unaligned_u32(const void *data)
 {
-    union {
-        uint32_t u32;
-        uint8_t u8[4];
-    } res;
-    const uint8_t *d = (const uint8_t *)data;
-    res.u8[0] = d[0];
-    res.u8[1] = d[1];
-    res.u8[2] = d[2];
-    res.u8[3] = d[3];
-    return res.u32;
+	union 
+	{
+		u32_t u32;
+		u8_t u8[4];
+	} res;
+	const u8_t *d = (const u8_t *)data;
+
+	res.u8[0] = d[0];
+	res.u8[1] = d[1];
+	res.u8[2] = d[2];
+	res.u8[3] = d[3];
+
+	return res.u32;
 }
 
 static int flash_sam0_write_page(struct device *dev, off_t offset,
@@ -139,7 +142,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
-		*dst = flash_sam0_read_unaligned_uint32(src);
+		*dst = flash_sam0_read_unaligned_u32(src);
 	}
 
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
@@ -198,7 +201,7 @@ static int flash_sam0_commit(struct device *dev)
 }
 
 static int flash_sam0_write(struct device *dev, off_t offset,
-			    const void *data, size_t len)
+				const void *data, size_t len)
 {
 	struct flash_sam0_data *ctx = dev->driver_data;
 	const u8_t *pdata = data;
@@ -236,7 +239,7 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 #else /* CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES */
 
 static int flash_sam0_write(struct device *dev, off_t offset,
-			    const void *data, size_t len)
+				const void *data, size_t len)
 {
 	const u8_t *pdata = data;
 	int err;
@@ -331,15 +334,15 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 	flash_sam0_sem_take(dev);
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
-	     offset += LOCK_REGION_SIZE) {
+		 offset += LOCK_REGION_SIZE) {
 		*FLASH_MEM(offset) = 0U;
 
 		if (enable) {
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_LR |
-					     NVMCTRL_CTRLA_CMDEX_KEY;
+						 NVMCTRL_CTRLA_CMDEX_KEY;
 		} else {
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_UR |
-					     NVMCTRL_CTRLA_CMDEX_KEY;
+						 NVMCTRL_CTRLA_CMDEX_KEY;
 		}
 		err = flash_sam0_check_status(offset);
 		if (err != 0) {
@@ -355,8 +358,8 @@ done:
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 void flash_sam0_page_layout(struct device *dev,
-			    const struct flash_pages_layout **layout,
-			    size_t *layout_size)
+				const struct flash_pages_layout **layout,
+				size_t *layout_size)
 {
 	*layout = &flash_sam0_pages_layout;
 	*layout_size = 1;
@@ -391,5 +394,5 @@ static const struct flash_driver_api flash_sam0_api = {
 static struct flash_sam0_data flash_sam0_data_0;
 
 DEVICE_AND_API_INIT(flash_sam0, DT_INST_0_ATMEL_SAM0_NVMCTRL_LABEL,
-		    flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);
+			flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
+			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);
