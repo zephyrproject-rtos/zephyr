@@ -79,6 +79,7 @@ struct ccs811_data {
 #endif
 	struct ccs811_result_type result;
 	u8_t mode;
+	u8_t app_fw_ver;
 };
 
 #ifdef CONFIG_CCS811_TRIGGER
