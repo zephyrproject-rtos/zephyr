@@ -4409,7 +4409,7 @@ static void length_resp_send(struct ll_conn *conn, struct node_tx *tx,
 	pdu_tx->llctrl.length_rsp.max_tx_time = sys_cpu_to_le16(eff_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	ctrl_tx_enqueue(conn, tx);
+	ctrl_tx_sec_enqueue(conn, tx);
 }
 
 static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
@@ -4669,7 +4669,7 @@ static int ping_resp_send(struct ll_conn *conn, struct node_rx_pdu *rx)
 		      sizeof(struct pdu_data_llctrl_ping_rsp);
 	pdu_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 
-	ctrl_tx_enqueue(conn, tx);
+	ctrl_tx_sec_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
 	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
