@@ -10243,6 +10243,9 @@ static void ctrl_tx_enqueue(struct connection *conn,
 static void ctrl_tx_sec_enqueue(struct connection *conn,
 				  struct radio_pdu_node_tx *node_tx)
 {
+	bool pause = false;
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->pause_tx) {
 		if (!conn->pkt_tx_ctrl) {
 			/* As data PDU tx is paused and no control PDU in queue,
@@ -10268,8 +10271,6 @@ static void ctrl_tx_sec_enqueue(struct connection *conn,
 			conn->pkt_tx_last = node_tx;
 		}
 	} else {
-		bool pause = false;
-
 		/* check if Encryption Request is at head, it may have been
 		 * transmitted and not ack-ed. Hence, enqueue this control PDU
 		 * after control last marker and before data marker.
@@ -10279,12 +10280,20 @@ static void ctrl_tx_sec_enqueue(struct connection *conn,
 			struct pdu_data *pdu_data_tx;
 
 			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
-			if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
-			    (pdu_data_tx->llctrl.opcode ==
-			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+			if ((conn->llcp_req != conn->llcp_ack) &&
+			    (conn->llcp_type == LLCP_ENCRYPTION) &&
+			    (pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+			    ((pdu_data_tx->llctrl.opcode ==
+			      PDU_DATA_LLCTRL_TYPE_ENC_REQ) ||
+			     (pdu_data_tx->llctrl.opcode ==
+			      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 				pause = true;
 			}
 		}
+
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+	{
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
 
 		ctrl_tx_pause_enqueue(conn, node_tx, pause);
 	}
