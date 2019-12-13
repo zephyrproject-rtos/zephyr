@@ -3321,6 +3321,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_PHY)
 static u16_t calc_eff_time(u8_t max_octets, u8_t phy, u16_t default_time)
 {
 	u16_t time = PKT_US(max_octets, phy);
@@ -3337,6 +3338,7 @@ static u16_t calc_eff_time(u8_t max_octets, u8_t phy, u16_t default_time)
 
 	return eff_time;
 }
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -4466,8 +4468,6 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		struct pdu_data_llctrl_length_req *lr;
 		u16_t max_rx_octets;
 		u16_t max_tx_octets;
-		u16_t max_rx_time;
-		u16_t max_tx_time;
 
 		lr = &pdu_rx->llctrl.length_req;
 
@@ -4490,6 +4490,9 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		}
 
 #if defined(CONFIG_BT_CTLR_PHY)
+		u16_t max_rx_time;
+		u16_t max_tx_time;
+
 		/* use the minimal of our default_tx_time and
 		 * peer max_rx_time
 		 */
