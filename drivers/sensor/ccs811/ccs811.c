@@ -231,7 +231,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct ccs811_result_type *rp = &drv_data->result;
 	const u8_t cmd = CCS811_REG_ALG_RESULT_DATA;
 	int rc;
-	u16_t buf[4];
+	u16_t buf[4] = { 0 };
 	unsigned int status;
 
 	set_wake(drv_data, true);
@@ -250,8 +250,16 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	rp->error = error_from_status(status);
 	rp->raw = sys_be16_to_cpu(buf[3]);
 
-	/* @todo APP FW 1.1 may not set DATA_READY. */
-	return (rp->status & CCS811_STATUS_DATA_READY) ? 0 : -EAGAIN;
+	/* APP FW 1.1 does not set DATA_READY, but it does set CO2 to
+	 * zero while it's starting up.  Assume a non-zero CO2 with
+	 * old firmware is valid for the purposes of claiming the
+	 * fetch was fresh.
+	 */
+	if ((drv_data->app_fw_ver <= 0x11)
+	    && (rp->co2 != 0)) {
+		status |= CCS811_STATUS_DATA_READY;
+	}
+	return (status & CCS811_STATUS_DATA_READY) ? 0 : -EAGAIN;
 }
 
 static int ccs811_channel_get(struct device *dev,
@@ -421,8 +429,10 @@ static int ccs811_init(struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	int ret = 0;
-	u8_t hw_id;
 	int status;
+	u16_t fw_ver;
+	u8_t cmd;
+	u8_t hw_id;
 
 	*drv_data = (struct ccs811_data){ 0 };
 	drv_data->i2c = device_get_binding(DT_INST_0_AMS_CCS811_BUS_NAME);
@@ -517,6 +527,19 @@ static int ccs811_init(struct device *dev)
 		ret = -EINVAL;
 		goto out;
 	}
+
+	/* Check application firmware version (first byte) */
+	cmd = CCS811_REG_FW_APP_VERSION;
+	if (i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			   &cmd, sizeof(cmd),
+			   &fw_ver, sizeof(fw_ver)) < 0) {
+		LOG_ERR("Failed to read App Firmware Version register");
+		ret = -EIO;
+		goto out;
+	}
+	fw_ver = sys_be16_to_cpu(fw_ver);
+	LOG_INF("App FW %04x", fw_ver);
+	drv_data->app_fw_ver = fw_ver >> 8U;
 
 	/* Configure measurement mode */
 	u8_t meas_mode = CCS811_MODE_IDLE;
