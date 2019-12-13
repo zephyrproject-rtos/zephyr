@@ -224,6 +224,7 @@ ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "endrst=\endverbatim"
 
 ALIASES 	       += "req=\xrefitem req \"Requirement\" \"Requirements\" "
+ALIASES            += "allowed_from=\xrefitem context \"Allowed from\" \"Allowed from\" "
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
