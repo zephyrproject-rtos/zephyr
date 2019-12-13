@@ -4,6 +4,7 @@
 config EEPROM_STM32
 	bool "STM32 EEPROM driver"
 	depends on SOC_SERIES_STM32L1X
+	default y
 	select USE_STM32_HAL_FLASH
 	select USE_STM32_HAL_FLASH_EX
 	help
