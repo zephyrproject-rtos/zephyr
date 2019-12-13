@@ -309,15 +309,15 @@ void log_n(const char *str,
 	}
 }
 
-void log_hexdump(const char *str,
-		 const u8_t *data,
-		 u32_t length,
+void log_hexdump(const char *str, const void *data, u32_t length,
 		 struct log_msg_ids src_level)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_hexdump(str, data, length, src_level);
+		log_frontend_hexdump(str, (const u8_t *)data, length,
+				     src_level);
 	} else {
-		struct log_msg *msg = log_msg_hexdump_create(str, data, length);
+		struct log_msg *msg =
+			log_msg_hexdump_create(str, (const u8_t *)data, length);
 
 		if (msg == NULL) {
 			return;
@@ -429,10 +429,11 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...)
 }
 
 void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
-		      const u8_t *data, u32_t len)
+		      const void *data, u32_t len)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_hexdump(metadata, data, len, src_level);
+		log_frontend_hexdump(metadata, (const u8_t *)data, len,
+				     src_level);
 	} else {
 		struct log_backend const *backend;
 		u32_t timestamp = timestamp_func();
@@ -441,9 +442,9 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 			backend = log_backend_get(i);
 
 			if (log_backend_is_active(backend)) {
-				log_backend_put_sync_hexdump(backend, src_level,
-							timestamp, metadata,
-							data, len);
+				log_backend_put_sync_hexdump(
+					backend, src_level, timestamp, metadata,
+					(const u8_t *)data, len);
 			}
 		}
 	}
@@ -1089,7 +1090,7 @@ void z_vrfy_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
 #include <syscalls/z_log_hexdump_from_user_mrsh.c>
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len)
+			   const void *data, u32_t len)
 {
 	union {
 		struct log_msg_ids structure;
@@ -1098,7 +1099,8 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 
 	__ASSERT_NO_MSG(sizeof(src_level) <= sizeof(u32_t));
 	src_level_union.structure = src_level;
-	z_log_hexdump_from_user(src_level_union.value, metadata, data, len);
+	z_log_hexdump_from_user(src_level_union.value, metadata,
+				(const u8_t *)data, len);
 }
 #else
 void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
@@ -1139,7 +1141,7 @@ void log_generic_from_user(struct log_msg_ids src_level,
 }
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len)
+			   const void *data, u32_t len)
 {
 	ARG_UNUSED(src_level);
 	ARG_UNUSED(metadata);
