@@ -188,4 +188,18 @@
 		iterator < _CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
 
+/*
+ * Both constexpr and noexcept are introduced in C++11.
+ * So need a workaround for C++98.
+ */
+#if defined(__cplusplus)
+  #ifdef CONFIG_STD_CPP98
+    #define CONSTEXPR
+    #define NOEXCEPT
+  #else
+    #define CONSTEXPR constexpr
+    #define NOEXCEPT noexcept
+  #endif
+#endif /* __cplusplus */
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

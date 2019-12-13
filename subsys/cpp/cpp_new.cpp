@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <toolchain.h>
 
 void* operator new(size_t size)
 {
@@ -16,23 +17,23 @@ void* operator new[](size_t size)
 	return malloc(size);
 }
 
-void operator delete(void* ptr) noexcept
+void operator delete(void* ptr) NOEXCEPT
 {
 	free(ptr);
 }
 
-void operator delete[](void* ptr) noexcept
+void operator delete[](void* ptr) NOEXCEPT
 {
 	free(ptr);
 }
 
 #if (__cplusplus > 201103L)
-void operator delete(void* ptr, size_t) noexcept
+void operator delete(void* ptr, size_t) NOEXCEPT
 {
 	free(ptr);
 }
 
-void operator delete[](void* ptr, size_t) noexcept
+void operator delete[](void* ptr, size_t) NOEXCEPT
 {
 	free(ptr);
 }
