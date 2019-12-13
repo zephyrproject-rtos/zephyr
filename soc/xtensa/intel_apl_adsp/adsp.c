@@ -10,6 +10,7 @@
 #include <platform/ipc.h>
 #include <platform/mailbox.h>
 #include <platform/shim.h>
+#include <drivers/ipm.h>
 
 #include "soc.h"
 
@@ -102,16 +103,17 @@ static void prepare_host_windows(void)
  */
 static void send_fw_ready(void)
 {
-	memcpy((void *)MAILBOX_DSPBOX_BASE,
-	       &fw_ready_apl, sizeof(fw_ready_apl));
+	uint8_t buf[sizeof(fw_ready_apl) + sizeof(sram_window)];
+	struct device *dev;
 
-	memcpy((void *)(MAILBOX_DSPBOX_BASE + sizeof(fw_ready_apl)),
-	       &sram_window, sizeof(sram_window));
+	dev = device_get_binding("IPM_0");
+	__ASSERT_NO_MSG(dev);
 
-	SOC_DCACHE_FLUSH((void *)MAILBOX_DSPBOX_BASE, MAILBOX_DSPBOX_SIZE);
+	memcpy(buf, &fw_ready_apl, sizeof(fw_ready_apl));
+	memcpy(buf + sizeof(fw_ready_apl), &sram_window, sizeof(sram_window));
 
-	ipc_write(IPC_DIPCIE, 0);
-	ipc_write(IPC_DIPCI, (0x80000000 | ADSP_IPC_FW_READY));
+	/* Note: Blocks here */
+	ipm_send(dev, 1, ADSP_IPC_FW_READY, buf, sizeof(buf));
 }
 
 static int adsp_init(struct device *dev)
@@ -123,4 +125,5 @@ static int adsp_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(adsp_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Init after IPM initialization and before logging (uses memory windows) */
+SYS_INIT(adsp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
