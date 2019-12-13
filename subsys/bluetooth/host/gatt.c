@@ -3425,7 +3425,7 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, u8_t err,
 
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
 			if (node == &params->node) {
-				gatt_subscription_remove(conn, tmp, params);
+				gatt_subscription_remove(conn, prev, params);
 				break;
 			}
 
