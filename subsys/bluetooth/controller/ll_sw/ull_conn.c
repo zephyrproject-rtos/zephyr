@@ -1923,7 +1923,6 @@ static void ctrl_tx_sec_enqueue(struct ll_conn *conn, struct node_tx *tx)
 			conn->tx_data_last = tx;
 		}
 	} else {
-
 		/* check if Encryption Request is at head, enqueue this control
 		 * PDU after control last marker and before data marker.
 		 * This way it is paused until Encryption Setup completes.
@@ -1932,9 +1931,13 @@ static void ctrl_tx_sec_enqueue(struct ll_conn *conn, struct node_tx *tx)
 			struct pdu_data *pdu_data_tx;
 
 			pdu_data_tx = (void *)conn->tx_head->pdu;
-			if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
-			    (pdu_data_tx->llctrl.opcode ==
-			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+			if ((conn->llcp_req != conn->llcp_ack) &&
+			    (conn->llcp_type == LLCP_ENCRYPTION) &&
+			    (pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+			    ((pdu_data_tx->llctrl.opcode ==
+			      PDU_DATA_LLCTRL_TYPE_ENC_REQ) ||
+			     (pdu_data_tx->llctrl.opcode ==
+			      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 				pause = true;
 			}
 		}
