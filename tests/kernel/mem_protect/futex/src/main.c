@@ -148,11 +148,18 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 
 	atomic_sub(&(multiple_futex[idx].val), 1);
 }
+/*
+ * @defgroup kernel_futex_tests Futex
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 
 /**
- * @ingroup futex_tests
+ * @ingroup kernel_futex_tests
  * @{
  */
+
 
 /**
  * @brief Test k_futex_wait() forever
@@ -441,6 +448,10 @@ void test_user_futex_bad(void)
 	ret = k_futex_wait(&simple_futex, 100, K_NO_WAIT);
 	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
 }
+
+/**
+ * @}
+ */
 
 /* ztest main entry*/
 void test_main(void)
