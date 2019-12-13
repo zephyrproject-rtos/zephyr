@@ -3110,6 +3110,18 @@ extern struct k_work_q k_sys_work_q;
  * INTERNAL_HIDDEN @endcond
  */
 
+#ifdef CONFIG_MAIN_THREAD_WORK_QUEUE
+/**
+ * @brief The main thread work queue.
+ *
+ * This work queue, if enabled by CONFIG_MAIN_THREAD_WORK_QUEUE, is executed on
+ * the main thread after the application's main function returns. Work items can
+ * be submitted to this queue at initialization levels greater than or equal to
+ * _SYS_INIT_LEVEL_POST_KERNEL.
+ */
+extern struct k_work_q k_main_work_q;
+#endif
+
 #define Z_WORK_INITIALIZER(work_handler) \
 	{ \
 	._reserved = NULL, \

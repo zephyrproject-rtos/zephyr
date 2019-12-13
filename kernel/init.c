@@ -58,6 +58,12 @@ uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
 
 /* init/main and idle threads */
 K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+
+#ifdef CONFIG_MAIN_THREAD_WORK_QUEUE
+struct k_work_q k_main_work_q;
+extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
+#endif
+
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
@@ -214,7 +220,12 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	z_sys_post_kernel = true;
 
+#ifdef CONFIG_MAIN_THREAD_WORK_QUEUE
+	k_queue_init(&k_main_work_q.queue);
+#endif
+
 	z_sys_init_run_level(_SYS_INIT_LEVEL_POST_KERNEL);
+
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
 #endif
@@ -260,16 +271,23 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
-	/* Mark nonessenrial since main() has no more work to do */
+	/* Mark nonessential since main has no more initialization to do. */
 	z_main_thread.base.user_options &= ~K_ESSENTIAL;
 
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
 #endif
-} /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
-/* LCOV_EXCL_START */
+/* LCOV_EXCL_START
+ * Either the main thread work queue is disabled, and we're done, or it's
+ * enabled, and we should never return from it.
+ */
+#ifdef CONFIG_MAIN_THREAD_WORK_QUEUE
+	/* Run the main work queue if requested. */
+	z_work_q_main(&k_main_work_q.queue, NULL, NULL);
+#endif
+}
 
 void __weak main(void)
 {

@@ -82,6 +82,15 @@ config MAIN_THREAD_PRIORITY
 	  Priority at which the initialization thread runs, including the start
 	  of the main() function. main() can then change its priority if desired.
 
+config MAIN_THREAD_WORK_QUEUE
+	bool "Start a work queue on the main thread"
+	default n
+	help
+	  If enabled, a work queue ('k_main_work_q') is started on the main
+	  thread after the application's main function returns. Work items can
+	  be submitted to this work queue at initialization levels
+	  _SYS_INIT_LEVEL_POST_KERNEL and beyond.
+
 config COOP_ENABLED
 	def_bool (NUM_COOP_PRIORITIES != 0)
 
