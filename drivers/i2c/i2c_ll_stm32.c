@@ -289,27 +289,28 @@ static void i2c_stm32_irq_config_func_##name(struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#define STM32_I2C_INIT(name)						\
-STM32_I2C_IRQ_HANDLER_DECL(name);					\
-									\
-static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
-	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
-	.pclken = {							\
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(name), bits),	\
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(name), bus),		\
-	},								\
-	STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
-	.bitrate = DT_PROP(DT_NODELABEL(name), clock_frequency),	\
-};									\
-									\
-static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
-									\
-DEVICE_AND_API_INIT(i2c_stm32_##name, DT_LABEL(DT_NODELABEL(name)),	\
-		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	\
-		    &i2c_stm32_cfg_##name,				\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &api_funcs);					\
-									\
+#define STM32_I2C_INIT(name)						  \
+STM32_I2C_IRQ_HANDLER_DECL(name);					  \
+									  \
+static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		  \
+	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		  \
+	.pclken = {							  \
+		.enr = DT_CLOCKS_CELL(DT_NODELABEL(name), bits),	  \
+		.bus = DT_CLOCKS_CELL(DT_NODELABEL(name), bus),		  \
+	},								  \
+	STM32_I2C_IRQ_HANDLER_FUNCTION(name)				  \
+	.bitrate = DT_PROP(DT_NODELABEL(name), clock_frequency),	  \
+	.timeout = DT_PROP_OR(DT_NODELABEL(name), timeout_ms, UINT32_MAX) \
+	};								  \
+									  \
+static struct i2c_stm32_data i2c_stm32_dev_data_##name;			  \
+									  \
+DEVICE_AND_API_INIT(i2c_stm32_##name, DT_LABEL(DT_NODELABEL(name)),	  \
+		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	  \
+		    &i2c_stm32_cfg_##name,				  \
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	  \
+		    &api_funcs);					  \
+									  \
 STM32_I2C_IRQ_HANDLER(name)
 
 /* I2C instances declaration */

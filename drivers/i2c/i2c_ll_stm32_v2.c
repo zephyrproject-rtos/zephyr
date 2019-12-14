@@ -399,8 +399,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
-	err = k_sem_take(&data->device_sync_sem,
-			 K_MSEC(STM32_I2C_TIMEOUT_USEC / 1000));
+	err = k_sem_take(&data->device_sync_sem, K_USEC(cfg->timeout));
 	if (err < 0) {
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {
 			LL_I2C_DisableReloadMode(i2c);
@@ -457,8 +456,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	err = k_sem_take(&data->device_sync_sem,
-			 K_MSEC(STM32_I2C_TIMEOUT_USEC / 1000));
+	err = k_sem_take(&data->device_sync_sem, K_USEC(cfg->timeout));
 	if (err < 0) {
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {
 			LL_I2C_DisableReloadMode(i2c);
