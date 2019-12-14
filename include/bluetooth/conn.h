@@ -46,12 +46,12 @@ struct bt_le_conn_param {
   * @param to       Supervision Timeout (N * 10 ms)
   */
 #define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
-	(&(struct bt_le_conn_param) { \
+	((struct bt_le_conn_param[]) { { \
 		.interval_min = (int_min), \
 		.interval_max = (int_max), \
 		.latency = (lat), \
 		.timeout = (to), \
-	 })
+	 } })
 
 /** Default LE connection parameters:
   *   Connection Interval: 30-50 ms
@@ -859,9 +859,9 @@ struct bt_br_conn_param {
   * @param role_switch True if role switch is allowed
   */
 #define BT_BR_CONN_PARAM(role_switch) \
-	(&(struct bt_br_conn_param) { \
+	((struct bt_br_conn_param[]) { { \
 		.allow_role_switch = (role_switch), \
-	 })
+	 } })
 
 /** Default BR/EDR connection parameters:
   *   Role switch allowed

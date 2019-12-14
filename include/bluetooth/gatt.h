@@ -546,9 +546,9 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _value) \
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
-			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						    .value_handle = 0U, \
-						    .properties = _props, })), \
+			  ((struct bt_gatt_chrc[]) { { .uuid = _uuid,	\
+						       .value_handle = 0U, \
+						       .properties = _props, } })), \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
 #if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
@@ -660,8 +660,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _perm CCC access permissions.
  */
 #define BT_GATT_CCC(_changed, _perm)				\
-	BT_GATT_CCC_MANAGED((&(struct _bt_gatt_ccc)			\
-		BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)), _perm)
+	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
+		{BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)}), _perm)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
