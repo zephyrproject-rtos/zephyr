@@ -924,36 +924,37 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 				 union net_proto_header *proto,
 				 void *user_data)
 {
-	struct tcp *conn = ((struct net_context *)user_data)->tcp;
-	u8_t vhl = ip->ipv4->vhl;
+	struct tcp *conn;
+	struct tcphdr *th;
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
 
-	if (vhl != 0x45) {
-		NET_ERR("conn: %p, Unsupported IP version: 0x%hx", conn,
-			(u16_t)vhl);
+	if (ip->ipv4->vhl != 0x45) {
+		NET_ERR("Unsupported IP version: 0x%hx", (u16_t)ip->ipv4->vhl);
 		goto out;
 	}
 
-	NET_DBG("conn: %p, %s", conn, tcp_th(pkt));
+	conn = tcp_conn_search(pkt);
+	if (conn) {
+		goto in;
+	}
 
-	if (conn && TCP_LISTEN == conn->state) {
-		struct tcp *conn_old = conn;
+	th = th_get(pkt);
+
+	if (th->th_flags & SYN) {
+		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
 		conn = tcp_conn_new(pkt);
-
-		conn->context->iface = conn_old->context->iface;
-		conn->context->user_data = conn_old->context->user_data;
 
 		conn_old->context->remote = conn->dst->sa;
 
 		conn_old->accept_cb(conn->context,
-					&conn_old->context->remote,
-					sizeof(struct sockaddr), 0,
-					conn_old->context);
+				    &conn_old->context->remote,
+				    sizeof(struct sockaddr), 0,
+				    conn_old->context);
 	}
-
+ in:
 	if (conn) {
 		tcp_in(conn, pkt);
 	}
