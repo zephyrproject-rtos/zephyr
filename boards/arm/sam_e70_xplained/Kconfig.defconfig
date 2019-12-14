@@ -71,6 +71,7 @@ if SPI
 if SPI_SAM_PORT_0
 
 config SPI_SAME70_PORT_0_PIN_CS3
+	bool
 	default y
 
 endif # SPI_SAM_PORT_0
