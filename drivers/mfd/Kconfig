@@ -1,0 +1,16 @@
+# MFD configuration options
+
+# Copyright (c) 2019 Max van Kessel
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Multifunction Device Drivers"
+
+config MFD_TIMER_STM32
+	bool "STM32 MCU timer driver"
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable This option enables the base timer driver for STM32 family of
+	  processors. Say y if you wish to use timer interface on STM32
+	  MCU.
+
+endmenu

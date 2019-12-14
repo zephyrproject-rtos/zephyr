@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for stm32-timers devices
+
+include: base.yaml
+
+parent-bus: stm32-timers
+
+properties:
+    reg:
+      required: false
+
+    label:
+      required: true

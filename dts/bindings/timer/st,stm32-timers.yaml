@@ -4,15 +4,64 @@ compatible: "st,stm32-timers"
 
 include: base.yaml
 
-properties:
-    label:
-      required: true
+child-bus: stm32-timers
 
-    reg:
+properties:
+    "#address-cells":
+      required: false
+      const: 1
+    "#size-cells":
+      required: false
+      const: 0
+
+    label:
       required: true
 
     clocks:
       required: true
 
-    interrupts:
-      required: false
+    st,align-mode:
+      type: string
+      default: "edge"
+      description: Edge align or center align(1, 2, etc)
+      enum:
+      - "edge"
+      - "center1"
+      - "center2"
+      - "center3"
+
+    st,counter-dir:
+      type: string
+      default: "up"
+      description: Counter direction.
+      enum:
+      - "up"
+      - "down"
+
+    st,master-slave-mode:
+      type: boolean
+      description: The effect of an event on the trigger input (TRGI) is
+                    delayed to allow a perfect synchronization between
+                    the current timer and its slaves (through TRGO). (MSM)
+
+    st,slave-mode:
+      type: int
+      default: 0
+      description: When external signals are selected the active edge of
+                    the trigger signal (TRGI) is linked to the polarity
+                    selected on the external input. (SMS)
+
+    st,slave-trigger-in:
+      type: int
+      default: 0
+      description: Trigger input to be used to sync the counter (TS)
+
+    st,master-trigger-out:
+      type: int
+      default: 0
+      description: Information to be sent in master mode to slave timers for sync (MMS)
+
+    st,prescaler:
+      type: int
+      default: 0
+      description: Clock prescaler at the input of the timer
