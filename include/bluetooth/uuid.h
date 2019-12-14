@@ -69,11 +69,11 @@ struct bt_uuid_128 {
 }
 
 #define BT_UUID_DECLARE_16(value) \
-	((struct bt_uuid *) (&(struct bt_uuid_16) BT_UUID_INIT_16(value)))
+	((struct bt_uuid *) ((struct bt_uuid_16[]) {BT_UUID_INIT_16(value)}))
 #define BT_UUID_DECLARE_32(value) \
-	((struct bt_uuid *) (&(struct bt_uuid_32) BT_UUID_INIT_32(value)))
+	((struct bt_uuid *) ((struct bt_uuid_32[]) {BT_UUID_INIT_32(value)}))
 #define BT_UUID_DECLARE_128(value...) \
-	((struct bt_uuid *) (&(struct bt_uuid_128) BT_UUID_INIT_128(value)))
+	((struct bt_uuid *) ((struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
 
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
