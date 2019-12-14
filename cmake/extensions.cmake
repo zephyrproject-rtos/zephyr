@@ -851,10 +851,10 @@ function(zephyr_check_compiler_flag lang option check)
 endfunction()
 
 function(zephyr_check_compiler_flag_hardcoded lang option check exists)
-  # -Werror=implicit-int is not supported for CXX and we are not able
-  # to automatically test for it because it produces a warning
-  # instead of an error during the test.
-  if((${lang} STREQUAL CXX) AND ("${option}" STREQUAL -Werror=implicit-int))
+  # Various flags that are not supported for CXX may not be testable
+  # because they would produce a warning instead of an error during
+  # the test.  Exclude them by toolchain-specific blacklist.
+  if((${lang} STREQUAL CXX) AND ("${option}" IN_LIST CXX_EXCLUDED_OPTIONS))
     set(check 0 PARENT_SCOPE)
     set(exists 1 PARENT_SCOPE)
   else()
