@@ -169,19 +169,22 @@ def relativize(path):
 def write_regs(node):
     # Writes address/size output for the registers in the node's 'reg' property
 
-    def reg_addr_name_alias(reg):
-        return str2ident(reg.name) + "_BASE_ADDRESS" if reg.name else None
+    def write_reg(reg, base_ident, val):
+        # Drop '_0' from the identifier if there's a single register, for
+        # backwards compatibility
+        if len(reg.node.regs) > 1:
+            ident = "{}_{}".format(base_ident, reg.node.regs.index(reg))
+        else:
+            ident = base_ident
 
-    def reg_size_name_alias(reg):
-        return str2ident(reg.name) + "_SIZE" if reg.name else None
+        out_dev(node, ident, val,
+                # Name alias from 'reg-names = ...'
+                str2ident(reg.name) + "_" + base_ident if reg.name else None)
 
     for reg in node.regs:
-        out_dev(node, reg_addr_ident(reg), hex(reg.addr),
-                name_alias=reg_addr_name_alias(reg))
-
+        write_reg(reg, "BASE_ADDRESS", hex(reg.addr))
         if reg.size:
-            out_dev(node, reg_size_ident(reg), reg.size,
-                    name_alias=reg_size_name_alias(reg))
+            write_reg(reg, "SIZE", reg.size)
 
 
 def write_props(node):
@@ -268,34 +271,6 @@ def write_existence_flags(node):
     for compat in node.compats:
         out("INST_{}_{}".format(node.instance_no[compat],
                                 str2ident(compat)), 1)
-
-
-def reg_addr_ident(reg):
-    # Returns the identifier (e.g., macro name) to be used for the address of
-    # 'reg' in the output
-
-    node = reg.node
-
-    # NOTE: to maintain compat wit the old script we special case if there's
-    # only a single register (we drop the '_0').
-    if len(node.regs) > 1:
-        return "BASE_ADDRESS_{}".format(node.regs.index(reg))
-    else:
-        return "BASE_ADDRESS"
-
-
-def reg_size_ident(reg):
-    # Returns the identifier (e.g., macro name) to be used for the size of
-    # 'reg' in the output
-
-    node = reg.node
-
-    # NOTE: to maintain compat wit the old script we special case if there's
-    # only a single register (we drop the '_0').
-    if len(node.regs) > 1:
-        return "SIZE_{}".format(node.regs.index(reg))
-    else:
-        return "SIZE"
 
 
 def dev_ident(node):
