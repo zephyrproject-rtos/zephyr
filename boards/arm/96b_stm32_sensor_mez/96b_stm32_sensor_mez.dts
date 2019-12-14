@@ -100,6 +100,10 @@
 	status = "okay";
 };
 
+&spi4 {
+	status = "okay";
+};
+
 &timers3 {
 	status = "okay";
 
