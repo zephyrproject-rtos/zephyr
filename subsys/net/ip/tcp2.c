@@ -529,16 +529,17 @@ static bool tcp_options_check(void *buf, ssize_t len)
 
 	for ( ; len >= 2; options += opt_len, len -= opt_len) {
 		opt = options[0];
-		opt_len = options[1];
+		opt_len = (opt == TCPOPT_PAD || opt == TCPOPT_NOP) ?
+			1 : options[1];
 
 		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
-		if (opt == TCPOPT_PAD) {
-			break;
+		if (opt == TCPOPT_PAD || opt == TCPOPT_NOP) {
+			continue;
 		}
-		if (opt == TCPOPT_NOP) {
-			opt_len = 1;
-		} else if (opt_len < 2 || opt_len > len) {
+
+		if (opt_len < 2 || opt_len > len) {
+			result = false;
 			break;
 		}
 
