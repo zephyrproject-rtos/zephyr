@@ -59,6 +59,9 @@ config SPI_1
 config SPI_2
 	default y
 
+config SPI_4
+	default y
+
 config SPI_STM32_INTERRUPT
 	default y
 

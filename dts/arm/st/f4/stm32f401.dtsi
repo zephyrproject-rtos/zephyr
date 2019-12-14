@@ -30,6 +30,17 @@
 			label = "SPI_3";
 		};
 
+		spi4: spi@40013400 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <84 5>;
+			status = "disabled";
+			label = "SPI_4";
+		};
+
 		i2s2: i2s@40003800 {
 			compatible = "st,stm32-i2s";
 			#address-cells = <1>;
