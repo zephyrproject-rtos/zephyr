@@ -2,16 +2,26 @@ description: STM32 PWM
 
 compatible: "st,stm32-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, stm32-timer-device.yaml]
 
 properties:
     label:
       required: true
 
-    st,prescaler:
+    st,compare-mode:
       type: int
-      required: true
-      description: Clock prescaler at the input of the timer
+      default: 6
+
+    st,preload-enable:
+      type: boolean
+
+    st,polarity:
+      type: string
+      default: "high"
+      description: active state of pin
+      enum:
+      - "high"
+      - "low"
 
     "#pwm-cells":
       const: 2

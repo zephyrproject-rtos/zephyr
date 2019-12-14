@@ -1,62 +1,59 @@
 /*
  * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2019 Max van Kessel.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <errno.h>
-
 #include <soc.h>
-#include <drivers/pwm.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
-
-#include <drivers/clock_control/stm32_clock_control.h>
-
-#include "pwm_stm32.h"
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_stm32);
+#include <drivers/pwm.h>
+#include <mfd/mfd_timer_stm32.h>
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct pwm_stm32_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev)							\
 	((struct pwm_stm32_data * const)(dev)->driver_data)
-#define PWM_STRUCT(dev)					\
-	((TIM_TypeDef *)(DEV_CFG(dev))->pwm_base)
+#define DEV_BASE(data)							\
+	((struct mfd_timer_stm32_data * const)(data)->tim->driver_data)
 
-#define CHANNEL_LENGTH 4
+/** Configuration data */
+struct pwm_stm32_config {
+	char * parent;
+	u8_t mode;
+	bool preload;
+	u8_t polarity;
+};
 
-static u32_t __get_tim_clk(u32_t bus_clk,
-			      clock_control_subsys_t *sub_system)
+/** Runtime driver data */
+struct pwm_stm32_data {
+	struct device *tim;		/**< Parent timer device */
+};
+
+#define CHAN(n)	LL_TIM_CHANNEL_CH##n
+static const u32_t timer_channels[] = {
+	CHAN(1),
+	CHAN(2),
+	CHAN(3),
+	CHAN(4),
+};
+
+static int init(struct device *dev)
 {
-	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	u32_t tim_clk, apb_psc;
+	int err = -EIO;
+	const struct pwm_stm32_config 	*cfg = DEV_CFG(dev);
+	struct pwm_stm32_data 		*data = DEV_DATA(dev);
 
-	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
-	}
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_STM32G0X)
-	else {
-		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
-	}
-#endif
-
-	/*
-	 * If the APB prescaler equals 1, the timer clock frequencies
-	 * are set to the same frequency as that of the APB domain.
-	 * Otherwise, they are set to twice (×2) the frequency of the
-	 * APB domain.
-	 */
-	if (apb_psc == 1U) {
-		tim_clk = bus_clk;
-	} else	{
-		tim_clk = bus_clk * 2U;
+	data->tim = device_get_binding(cfg->parent);
+	if (data->tim != NULL) {
+		err = 0;
 	}
 
-	return tim_clk;
+	return err;
 }
 
 /*
@@ -74,11 +71,12 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 			     u32_t period_cycles, u32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
-	struct pwm_stm32_data *data = DEV_DATA(dev);
-	TIM_HandleTypeDef *TimerHandle = &data->hpwm;
-	TIM_OC_InitTypeDef sConfig;
-	u32_t channel;
-	bool counter_32b;
+	const struct pwm_stm32_config 	*cfg = DEV_CFG(dev);
+	struct pwm_stm32_data 		*data = DEV_DATA(dev);
+	const struct mfd_timer_stm32_data *parent = DEV_BASE(data);
+
+	TIM_TypeDef *tim = (TIM_TypeDef *)parent->tim;
+	bool counter_32b = false;
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {
 		return -EINVAL;
@@ -89,28 +87,20 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	/* configure channel */
-	channel = (pwm - 1)*CHANNEL_LENGTH;
-
-	if (!IS_TIM_INSTANCE(PWM_STRUCT(dev)) ||
-		!IS_TIM_CHANNELS(channel)) {
-		return -ENOTSUP;
-	}
-
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	/* FIXME: IS_TIM_32B_COUNTER_INSTANCE not available on
 	 * SMT32F1 Cube HAL since all timer counters are 16 bits
 	 */
 	counter_32b = 0;
 #else
-	counter_32b = IS_TIM_32B_COUNTER_INSTANCE(PWM_STRUCT(dev));
+	counter_32b = IS_TIM_32B_COUNTER_INSTANCE(tim);
 #endif
 
 	/*
 	 * The timer counts from 0 up to the value in the ARR register (16-bit).
 	 * Thus period_cycles cannot be greater than UINT16_MAX + 1.
 	 */
-	if (!counter_32b && (period_cycles > 0x10000)) {
+	if (!counter_32b && (period_cycles > 0x10000U)) {
 		/* 16 bits counter does not support requested period
 		 * You might want to adapt PWM output clock to adjust
 		 * cycle durations to fit requested period into 16 bits
@@ -119,219 +109,149 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	/* Configure Timer IP */
-	TimerHandle->Instance = PWM_STRUCT(dev);
-	TimerHandle->Init.Prescaler = data->pwm_prescaler;
-	TimerHandle->Init.ClockDivision = 0;
-	TimerHandle->Init.CounterMode = TIM_COUNTERMODE_UP;
-	TimerHandle->Init.RepetitionCounter = 0;
+	LL_TIM_SetAutoReload(tim, period_cycles - 1);
 
-	/* Set period value */
-	TimerHandle->Init.Period = period_cycles - 1;
+	u32_t config = cfg->polarity << TIM_CCER_CC1P_Pos;
 
-	HAL_TIM_PWM_Init(TimerHandle);
+	LL_TIM_OC_ConfigOutput(tim, timer_channels[pwm - 1], config);
 
-	/* Configure PWM channel */
-	sConfig.OCMode       = TIM_OCMODE_PWM1;
-	sConfig.OCPolarity   = TIM_OCPOLARITY_HIGH;
-	sConfig.OCFastMode   = TIM_OCFAST_DISABLE;
-	sConfig.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
-	sConfig.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	sConfig.OCIdleState  = TIM_OCIDLESTATE_RESET;
+	config = cfg->mode << TIM_CCMR1_OC1M_Pos;
 
-	/* Set the pulse value */
-	sConfig.Pulse = pulse_cycles;
+	LL_TIM_OC_SetMode(tim, timer_channels[pwm - 1], config);
 
-	HAL_TIM_PWM_ConfigChannel(TimerHandle, &sConfig, channel);
-
-	return HAL_TIM_PWM_Start(TimerHandle, channel);
-}
-
-/*
- * Get the clock rate (cycles per second) for a PWM pin.
- *
- * Parameters
- * dev: Pointer to PWM device structure
- * pwm: PWM port number
- * cycles: Pointer to the memory to store clock rate (cycles per second)
- *
- * return 0, or negative errno code
- */
-static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					u64_t *cycles)
-{
-	const struct pwm_stm32_config *cfg = DEV_CFG(dev);
-	struct pwm_stm32_data *data = DEV_DATA(dev);
-	u32_t bus_clk, tim_clk;
-
-	if (cycles == NULL) {
-		return -EINVAL;
+	if (pwm == 1U) {
+		LL_TIM_OC_SetCompareCH1(tim, pulse_cycles);
+	} else if (pwm == 2U) {
+		LL_TIM_OC_SetCompareCH2(tim, pulse_cycles);
+	} else if (pwm == 3U) {
+		LL_TIM_OC_SetCompareCH3(tim, pulse_cycles);
+	} else {
+		LL_TIM_OC_SetCompareCH4(tim, pulse_cycles);
 	}
 
-	/* Timer clock depends on APB prescaler */
-	if (clock_control_get_rate(data->clock,
-			(clock_control_subsys_t *)&cfg->pclken, &bus_clk) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate");
-		return -EIO;
+	LL_TIM_CC_EnableChannel(tim, timer_channels[pwm - 1]);
+
+	if (IS_TIM_BREAK_INSTANCE(tim)) {
+		LL_TIM_EnableAllOutputs(tim);
 	}
 
-	tim_clk = __get_tim_clk(bus_clk,
-			(clock_control_subsys_t *)&cfg->pclken);
-
-	*cycles = (u64_t)(tim_clk / (data->pwm_prescaler + 1));
+	mfd_timer_stm32_enable(data->tim);
 
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_stm32_drv_api_funcs = {
-	.pin_set = pwm_stm32_pin_set,
-	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
+static int get_cycles_per_sec(struct device *dev, u32_t pwm, u64_t *cycles)
+{
+	ARG_UNUSED(pwm);
+	struct pwm_stm32_data *data = DEV_DATA(dev);
+
+	return mfd_timer_stm32_get_cycles_per_sec(data->tim, cycles);
+}
+
+static const struct pwm_driver_api api = {
+	.pin_set = pin_set,
+	.get_cycles_per_sec = get_cycles_per_sec,
 };
 
+#define PWM_DEVICE_INIT_STM32(n)			  		\
+static struct pwm_stm32_data pwm_stm32_dev_data_ ## n; 	  	  	\
+static const struct pwm_stm32_config pwm_stm32_dev_cfg_ ## n = { 	\
+	.parent = DT_INST_## n ##_ST_STM32_PWM_BUS_NAME,		\
+	.mode = DT_INST_## n ##_ST_STM32_PWM_ST_COMPARE_MODE,		\
+	.preload = DT_INST_## n ##_ST_STM32_PWM_ST_PRELOAD_ENABLE,	\
+	.polarity = DT_INST_## n ##_ST_STM32_PWM_ST_POLARITY_ENUM,	\
+};								  	\
+								  	\
+DEVICE_AND_API_INIT(pwm_stm32_ ## n,					\
+		    DT_INST_## n ##_ST_STM32_PWM_LABEL,	 		\
+		    &init,				  		\
+		    &pwm_stm32_dev_data_ ## n,			  	\
+		    &pwm_stm32_dev_cfg_ ## n,			  	\
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    &api)
 
-static inline void __pwm_stm32_get_clock(struct device *dev)
-{
-	struct pwm_stm32_data *data = DEV_DATA(dev);
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+#if DT_INST_0_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(0);
+#endif
 
-	__ASSERT_NO_MSG(clk);
+#if DT_INST_1_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(1);
+#endif
 
-	data->clock = clk;
-}
+#if DT_INST_2_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(2);
+#endif
+
+#if DT_INST_3_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(3);
+#endif
+
+#if DT_INST_4_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(4);
+#endif
+
+#if DT_INST_5_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(5);
+#endif
+
+#if DT_INST_6_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(6);
+#endif
+
+#if DT_INST_7_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(7);
+#endif
+
+#if DT_INST_8_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(8);
+#endif
+
+#if DT_INST_9_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(9);
+#endif
+
+#if DT_INST_10_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(10);
+#endif
+
+#if DT_INST_11_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(11);
+#endif
+
+#if DT_INST_12_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(12);
+#endif
+
+#if DT_INST_13_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(13);
+#endif
+
+#if DT_INST_14_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(14);
+#endif
+
+#if DT_INST_15_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(15);
+#endif
+
+#if DT_INST_16_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(16);
+#endif
+
+#if DT_INST_17_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(17);
+#endif
+
+#if DT_INST_18_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(18);
+#endif
+
+#if DT_INST_19_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(19);
+#endif
+
+#if DT_INST_20_ST_STM32_PWM
+PWM_DEVICE_INIT_STM32(20);
+#endif
 
 
-static int pwm_stm32_init(struct device *dev)
-{
-	const struct pwm_stm32_config *config = DEV_CFG(dev);
-	struct pwm_stm32_data *data = DEV_DATA(dev);
-
-	__pwm_stm32_get_clock(dev);
-
-	/* enable clock */
-	if (clock_control_on(data->clock,
-			(clock_control_subsys_t *)&config->pclken) != 0) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-#define PWM_DEVICE_INIT_STM32(n)			  \
-	static struct pwm_stm32_data pwm_stm32_dev_data_ ## n = {	  \
-		/* Default case */					  \
-		.pwm_prescaler = DT_PWM_STM32_## n ##_PRESCALER,	  \
-	};								  \
-									  \
-	static const struct pwm_stm32_config pwm_stm32_dev_cfg_ ## n = {  \
-		.pwm_base = DT_TIM_STM32_## n ##_BASE_ADDRESS,		  \
-		.pclken = { .bus = DT_TIM_STM32_## n ##_CLOCK_BUS,	  \
-			    .enr = DT_TIM_STM32_## n ##_CLOCK_BITS },	  \
-	};								  \
-									  \
-	DEVICE_AND_API_INIT(pwm_stm32_ ## n,				  \
-			    DT_PWM_STM32_ ## n ## _DEV_NAME,	  \
-			    pwm_stm32_init,				  \
-			    &pwm_stm32_dev_data_ ## n,			  \
-			    &pwm_stm32_dev_cfg_ ## n,			  \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
-			    &pwm_stm32_drv_api_funcs);
-
-#ifdef CONFIG_PWM_STM32_1
-/* 16-bit advanced-control timer */
-PWM_DEVICE_INIT_STM32(1)
-#endif /* CONFIG_PWM_STM32_1 */
-
-#ifdef CONFIG_PWM_STM32_2
-/* 32-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(2)
-#endif /* CONFIG_PWM_STM32_2 */
-
-#ifdef CONFIG_PWM_STM32_3
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(3)
-#endif /* CONFIG_PWM_STM32_3 */
-
-#ifdef CONFIG_PWM_STM32_4
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(4)
-#endif /* CONFIG_PWM_STM32_4 */
-
-#ifdef CONFIG_PWM_STM32_5
-/* 32-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(5)
-#endif /* CONFIG_PWM_STM32_5 */
-
-#ifdef CONFIG_PWM_STM32_6
-/* 16-bit basic timer */
-PWM_DEVICE_INIT_STM32(6)
-#endif /* CONFIG_PWM_STM32_6 */
-
-#ifdef CONFIG_PWM_STM32_7
-/* 16-bit basic timer */
-PWM_DEVICE_INIT_STM32(7)
-#endif /* CONFIG_PWM_STM32_7 */
-
-#ifdef CONFIG_PWM_STM32_8
-/* 16-bit advanced-control timer */
-PWM_DEVICE_INIT_STM32(8)
-#endif /* CONFIG_PWM_STM32_8 */
-
-#ifdef CONFIG_PWM_STM32_9
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(9)
-#endif /* CONFIG_PWM_STM32_9 */
-
-#ifdef CONFIG_PWM_STM32_10
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(10)
-#endif /* CONFIG_PWM_STM32_10 */
-
-#ifdef CONFIG_PWM_STM32_11
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(11)
-#endif /* CONFIG_PWM_STM32_11 */
-
-#ifdef CONFIG_PWM_STM32_12
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(12)
-#endif /* CONFIG_PWM_STM32_12 */
-
-#ifdef CONFIG_PWM_STM32_13
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(13)
-#endif /* CONFIG_PWM_STM32_13 */
-
-#ifdef CONFIG_PWM_STM32_14
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(14)
-#endif /* CONFIG_PWM_STM32_14 */
-
-#ifdef CONFIG_PWM_STM32_15
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(15)
-#endif /* CONFIG_PWM_STM32_15 */
-
-#ifdef CONFIG_PWM_STM32_16
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(16)
-#endif /* CONFIG_PWM_STM32_16 */
-
-#ifdef CONFIG_PWM_STM32_17
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(17)
-#endif /* CONFIG_PWM_STM32_17 */
-
-#ifdef CONFIG_PWM_STM32_18
-/* 16-bit advanced timer */
-PWM_DEVICE_INIT_STM32(18)
-#endif /* CONFIG_PWM_STM32_18 */
-
-#ifdef CONFIG_PWM_STM32_19
-/* 16-bit general-purpose timer */
-PWM_DEVICE_INIT_STM32(19)
-#endif /* CONFIG_PWM_STM32_19 */
-
-#ifdef CONFIG_PWM_STM32_20
-/* 16-bit advanced timer */
-PWM_DEVICE_INIT_STM32(20)
-#endif /* CONFIG_PWM_STM32_20 */
