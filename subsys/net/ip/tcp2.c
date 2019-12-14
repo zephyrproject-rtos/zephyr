@@ -572,13 +572,13 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
 	u8_t off = th->th_off;
-	ssize_t data_len = ntohs(ip->len) - sizeof(*ip) - off * 4;
+	ssize_t len = ntohs(ip->len) - sizeof(*ip) - off * 4;
 
 	if (off > 5 && false == tcp_options_check((th + 1), (off - 5) * 4)) {
-		data_len = 0;
+		len = 0;
 	}
 
-	return data_len > 0 ? data_len : 0;
+	return len > 0 ? len : 0;
 }
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
