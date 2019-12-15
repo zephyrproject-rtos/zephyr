@@ -493,10 +493,28 @@ error:
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
-static inline int check_errors(struct device *dev, const char *funcname)
+static int stm32_i2c_wait_timeout(uint32_t *timeout)
+{
+	if (*timeout == 0) {
+		return 1;
+	} else {
+		k_busy_wait(1);
+		(*timeout)--;
+		return 0;
+	}
+}
+
+static inline int check_errors(struct device *dev, uint32_t *timeout,
+			       const char *funcname)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (stm32_i2c_wait_timeout(timeout)) {
+		LL_I2C_GenerateStopCondition(i2c);
+		LOG_DBG("%s: Timeout", funcname);
+		goto error;
+	}
 
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
@@ -530,14 +548,15 @@ error:
 	return -EIO;
 }
 
-static inline int msg_done(struct device *dev, unsigned int current_msg_flags)
+static inline int msg_done(struct device *dev, uint32_t *timeout,
+			   unsigned int current_msg_flags)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	/* Wait for transfer to complete */
 	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
-		if (check_errors(dev, __func__)) {
+		if (check_errors(dev, timeout, __func__)) {
 			return -EIO;
 		}
 	}
@@ -561,6 +580,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	uint32_t timeout = cfg->timeout;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -571,7 +591,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 				break;
 			}
 
-			if (check_errors(dev, __func__)) {
+			if (check_errors(dev, &timeout, __func__)) {
 				return -EIO;
 			}
 		}
@@ -581,7 +601,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 		len--;
 	}
 
-	return msg_done(dev, msg->flags);
+	return msg_done(dev, &timeout, msg->flags);
 }
 
 int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
@@ -591,13 +611,14 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	uint32_t timeout = cfg->timeout;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
 	len = msg->len;
 	while (len) {
 		while (!LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			if (check_errors(dev, __func__)) {
+			if (check_errors(dev, &timeout, __func__)) {
 				return -EIO;
 			}
 		}
@@ -607,7 +628,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		len--;
 	}
 
-	return msg_done(dev, msg->flags);
+	return msg_done(dev, &timeout, msg->flags);
 }
 #endif
 
