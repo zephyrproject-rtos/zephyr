@@ -11,6 +11,7 @@
 #include <sys/mempool_base.h>
 #include <toolchain.h>
 #include <irq.h>
+#include <errno.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -54,8 +55,20 @@ static void *isr_cb_param;
 				 * buffer
 				 */
 
+
 #define RADIO_ACTIVE_MASK 0x1fff
 #define RADIO_DISABLE_TMR 4		/* us */
+
+/* Delay needed in order to exit and enter Manual DSM.
+ * Should happen after radio_tmr_start() */
+#define DSM_ENTER_DELAY_TICKS 8
+
+/* Mask to determine the state of DSM machine */
+#define MAN_DSM_ON (RSIM_DSM_CONTROL_MAN_DEEP_SLEEP_STATUS_MASK \
+		| RSIM_DSM_CONTROL_DSM_MAN_READY_MASK \
+		| RSIM_DSM_CONTROL_MAN_SLEEP_REQUEST_MASK) \
+
+static u32_t dsm_ref; /* DSM reference counter */
 
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
@@ -389,7 +402,10 @@ void radio_setup(void)
 	hpmcal_disable();
 #endif
 
-	/* enable the CRC as it is disabled by default after reset */
+	/* Enable Deep Sleep Mode for GENFSK */
+	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_MAN_DSM_SEL(2);
+
+	/* Enable the CRC as it is disabled by default after reset */
 	XCVR_MISC->CRCW_CFG |= XCVR_CTRL_CRCW_CFG_CRCW_EN(1);
 
 	/* Assign Radio #0 Interrupt to GENERIC_FSK */
@@ -424,6 +440,14 @@ void radio_setup(void)
 	GENFSK->WHITEN_SZ_THR |= GENFSK_WHITEN_SZ_THR_REC_BAD_PKT(1);
 
 	get_isr_latency();
+
+	/* Turn radio off */
+	if (is_radio_off()) {
+		dsm_ref = 0;
+	} else {
+		dsm_ref = 1;
+		radio_sleep();
+	}
 }
 
 void radio_reset(void)
@@ -1339,4 +1363,83 @@ u32_t radio_ar_has_match(void)
 {
 	/* printk("%s\n", __func__); */
 	return 0;
+}
+
+u32_t radio_sleep(void)
+{
+
+	if (dsm_ref == 0) {
+		return -EALREADY;
+	}
+
+	u32_t localref = --dsm_ref;
+	/* These opertions (decrement, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other. */
+	if (localref == 0) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (status) {
+			/* Allready in sleep mode */
+			return 0;
+		}
+
+		/* Disable timer */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Sleep time after DSM_ENTER_DELAY */
+		RSIM->MAN_SLEEP = RSIM_MAN_SLEEP_MAN_SLEEP_TIME(dsm_timer +
+				DSM_ENTER_DELAY_TICKS);
+
+		/* Set Wake time to max, we use DSM early exit */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer - 1);
+
+		/* MAN wakeup request enable */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_MAN_WAKEUP_REQUEST_EN(1);
+
+		/* Enable DSM, sending a sleep request */
+		GENFSK->DSM_CTRL |= GENFSK_DSM_CTRL_GEN_SLEEP_REQUEST(1);
+
+		/* Enable timer */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+	}
+	return 0;
+}
+
+u32_t radio_wake(void)
+{
+	u32_t localref = ++dsm_ref;
+	/* These opertions (increment, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other. */
+	if (localref == 1) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (!status) {
+			/* Not in sleep mode */
+			return 0;
+		}
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Wake time after DSM_ENTER_DELAY */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer +
+				DSM_ENTER_DELAY_TICKS);
+	}
+	return 0;
+}
+
+u32_t is_radio_off(void)
+{
+	u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+	return status;
 }
