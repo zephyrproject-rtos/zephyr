@@ -91,7 +91,7 @@ static inline void set_valid_fault_value(int test_case_number)
 /* Userspace function */
 void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 {
-	set_valid_fault_value((int)tc_number);
+	set_valid_fault_value((int)(uintptr_t)tc_number);
 
 	mem_domain_buf[0] = 10U;
 	if (valid_fault == false) {
