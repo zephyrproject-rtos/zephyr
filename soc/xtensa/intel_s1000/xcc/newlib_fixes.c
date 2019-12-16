@@ -102,3 +102,12 @@ void *_sbrk_r(struct _reent *r, int count)
 
 	return _sbrk(count);
 }
+
+int _gettimeofday_r(struct _reent *r, struct timeval *__tp, void *__tzp)
+{
+	ARG_UNUSED(r);
+	ARG_UNUSED(__tp);
+	ARG_UNUSED(__tzp);
+
+	return -1;
+}
