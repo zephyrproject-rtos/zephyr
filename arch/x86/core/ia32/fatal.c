@@ -22,20 +22,6 @@ LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
-
-#ifdef CONFIG_BOARD_QEMU_X86
-FUNC_NORETURN void arch_system_halt(unsigned int reason)
-{
-	ARG_UNUSED(reason);
-
-	/* Causes QEMU to exit. We passed the following on the command line:
-	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
-	 */
-	sys_out32(0, 0xf4);
-	CODE_UNREACHABLE;
-}
-#endif
-
 void z_x86_spurious_irq(const z_arch_esf_t *esf)
 {
 	int vector = z_irq_controller_isr_vector_get();

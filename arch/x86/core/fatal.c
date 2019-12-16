@@ -11,6 +11,19 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+#if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
+{
+	ARG_UNUSED(reason);
+
+	/* Causes QEMU to exit. We passed the following on the command line:
+	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
+	 */
+	sys_out32(0, 0xf4);
+	CODE_UNREACHABLE;
+}
+#endif
+
 static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
 {
 #ifdef CONFIG_X86_64
