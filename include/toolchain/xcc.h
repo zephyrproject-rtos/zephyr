@@ -18,6 +18,10 @@
 
 #include <stdbool.h>
 
+#ifndef UINT32_C
+#define UINT32_C(x)	x ## U
+#endif
+
 /* XCC doesn't support __COUNTER__ but this should be good enough */
 #define __COUNTER__ __LINE__
 
