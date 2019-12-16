@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <init.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
+#include <version.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
@@ -58,6 +59,9 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #else
 #define OT_POLL_PERIOD 0
 #endif
+
+#define PACKAGE_NAME "Zephyr"
+#define PACKAGE_VERSION KERNEL_VERSION_STRING
 
 extern void platformShellInit(otInstance *aInstance);
 

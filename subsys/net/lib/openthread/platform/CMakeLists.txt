@@ -13,7 +13,3 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
-
-# The source files here use header files from the OpenThread project
-# target_link_libraries(app ot_lib) # Better?
-add_dependencies(openthread_platform ot)
