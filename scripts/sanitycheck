@@ -189,6 +189,7 @@ import serial
 import concurrent
 import xml.etree.ElementTree as ET
 import logging
+from colorama import Fore
 from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
@@ -232,18 +233,6 @@ VERBOSE = 0
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 
-if os.isatty(sys.stdout.fileno()):
-    TERMINAL = True
-    COLOR_NORMAL = '\033[0m'
-    COLOR_RED = '\033[91m'
-    COLOR_GREEN = '\033[92m'
-    COLOR_YELLOW = '\033[93m'
-else:
-    TERMINAL = False
-    COLOR_NORMAL = ""
-    COLOR_RED = ""
-    COLOR_GREEN = ""
-    COLOR_YELLOW = ""
 
 logger = logging.getLogger('sanitycheck')
 # coloredlogs.install(level='INFO', logger=logger, fmt="%(levelname)s %(message)s")
@@ -1990,7 +1979,7 @@ class ProjectBuilder(FilterBuilder):
 
             logger.info("{:-^100}".format(filename))
         else:
-            logger.error("see: " + COLOR_YELLOW + filename + COLOR_NORMAL)
+            logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
 
     def log_info_file(self, inline_logs):
         build_dir = self.instance.build_dir
@@ -2104,26 +2093,26 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.status in ["failed", "timeout"]:
             self.suite.total_failed += 1
-            if VERBOSE or not TERMINAL:
-                status = COLOR_RED + "FAILED " + COLOR_NORMAL + instance.reason
+            if VERBOSE:
+                status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
             else:
                 print("")
                 logger.error(
                     "{:<25} {:<50} {}FAILED{}: {}".format(
                         instance.platform.name,
                         instance.testcase.name,
-                        COLOR_RED,
-                        COLOR_NORMAL,
+                        Fore.RED,
+                        Fore.RESET,
                         instance.reason))
             if not VERBOSE:
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
-            status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
+            status = Fore.YELLOW + "SKIPPED" + Fore.RESET
         else:
-            status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
+            status = Fore.GREEN + "PASSED" + Fore.RESET
 
-        if VERBOSE or not TERMINAL:
+        if VERBOSE:
             if self.cmake_only:
                 more_info = "cmake"
             elif instance.status == "skipped":
@@ -2145,17 +2134,17 @@ class ProjectBuilder(FilterBuilder):
                 self.log_info_file(self.inline_logs)
         else:
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
-                COLOR_GREEN,
+                Fore.GREEN,
                 self.suite.total_done,
                 self.suite.total_tests,
-                COLOR_NORMAL,
+                Fore.RESET,
                 int((float(self.suite.total_done) / self.suite.total_tests) * 100),
-                COLOR_YELLOW if self.suite.total_skipped > 0 else COLOR_NORMAL,
+                Fore.YELLOW if self.suite.total_skipped > 0 else Fore.RESET,
                 self.suite.total_skipped,
-                COLOR_NORMAL,
-                COLOR_RED if self.suite.total_failed > 0 else COLOR_NORMAL,
+                Fore.RESET,
+                Fore.RED if self.suite.total_failed > 0 else Fore.RESET,
                 self.suite.total_failed,
-                COLOR_NORMAL
+                Fore.RESET
             )
                              )
         sys.stdout.flush()
@@ -2357,8 +2346,8 @@ class TestSuite:
                     continue
 
                 logger.info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
-                    i.platform.name, i.testcase.name, COLOR_YELLOW,
-                    "INFO" if all_deltas else "WARNING", COLOR_NORMAL,
+                    i.platform.name, i.testcase.name, Fore.YELLOW,
+                    "INFO" if all_deltas else "WARNING", Fore.RESET,
                     metric, delta, value, percentage))
                 warnings += 1
 
@@ -2373,7 +2362,7 @@ class TestSuite:
                 failed += 1
             elif instance.metrics.get("unrecognized") and not unrecognized_sections:
                 logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
-                             (COLOR_RED, COLOR_NORMAL, instance.name,
+                             (Fore.RED, Fore.RESET, instance.name,
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
 
@@ -2385,18 +2374,18 @@ class TestSuite:
 
         logger.info(
             "{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
-                COLOR_RED if failed else COLOR_GREEN,
+                Fore.RED if failed else Fore.GREEN,
                 self.total_tests - self.total_failed - self.total_skipped,
                 self.total_tests,
-                COLOR_NORMAL,
+                Fore.RESET,
                 pass_rate,
-                COLOR_RED if self.total_failed else COLOR_NORMAL,
+                Fore.RED if self.total_failed else Fore.RESET,
                 self.total_failed,
-                COLOR_NORMAL,
+                Fore.RESET,
                 self.total_skipped,
-                COLOR_YELLOW if self.warnings else COLOR_NORMAL,
+                Fore.YELLOW if self.warnings else Fore.RESET,
                 self.warnings,
-                COLOR_NORMAL,
+                Fore.RESET,
                 self.duration))
 
         self.total_platforms = len(self.platforms)
@@ -4157,8 +4146,8 @@ def main():
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
                     i.testcase.name,
-                    COLOR_YELLOW,
-                    COLOR_NORMAL,
+                    Fore.YELLOW,
+                    Fore.RESET,
                     reason))
 
     if options.report_excluded:
