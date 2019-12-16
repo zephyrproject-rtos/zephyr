@@ -616,6 +616,32 @@ u32_t log_get_strdup_pool_utilization(void);
  */
 u32_t log_get_strdup_longest_string(void);
 
+/* Internal function. See log_handle_string. */
+bool z_log_handle_string(printk_out_func_t out, void *ctx, char *str);
+
+/**
+ * @brief Process duplicated string cadidate.
+ *
+ * Function is called by the string formatter when string format specifier is
+ * detected. Based on the address, logger determines if it is a duplicate
+ * and process it only in that case.
+ *
+ * @param out	Output function.
+ * @param ctx	Context passed to the output function.
+ * @param s	String.
+ *
+ * @return True if string was processed by the logger, false otherwise.
+ */
+static inline bool log_handle_string(printk_out_func_t out, void *ctx, char *s)
+{
+	if (!IS_ENABLED(CONFIG_LOG) || IS_ENABLED(CONFIG_LOG_IMMEDIATE) ||
+		IS_ENABLED(CONFIG_LOG_MINIMAL)) {
+		return false;
+	}
+
+	return z_log_handle_string(out, ctx, s);
+}
+
 /** @brief Indicate to the log core that one log message has been dropped.
  */
 void log_dropped(void);

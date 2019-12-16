@@ -87,6 +87,8 @@ static inline __printf_like(3, 0) int vsnprintk(char *str, size_t size,
 }
 #endif
 
+typedef int (*printk_out_func_t)(int c, void *ctx);
+
 #ifdef __cplusplus
 }
 #endif

@@ -21,8 +21,6 @@
 #include <logging/log.h>
 #include <sys/types.h>
 
-typedef int (*out_func_t)(int c, void *ctx);
-
 enum pad_type {
 	PAD_NONE,
 	PAD_ZERO_BEFORE,
@@ -30,10 +28,10 @@ enum pad_type {
 	PAD_SPACE_AFTER,
 };
 
-static void _printk_dec_ulong(out_func_t out, void *ctx,
+static void _printk_dec_ulong(printk_out_func_t out, void *ctx,
 			      const unsigned long num, enum pad_type padding,
 			      int min_width);
-static void _printk_hex_ulong(out_func_t out, void *ctx,
+static void _printk_hex_ulong(printk_out_func_t out, void *ctx,
 			      const unsigned long long num, enum pad_type padding,
 			      int min_width);
 
@@ -85,7 +83,7 @@ void *__printk_get_hook(void)
 	return _char_out;
 }
 
-static void print_err(out_func_t out, void *ctx)
+static void print_err(printk_out_func_t out, void *ctx)
 {
 	out('E', ctx);
 	out('R', ctx);
@@ -101,7 +99,7 @@ static void print_err(out_func_t out, void *ctx)
  *
  * @return N/A
  */
-void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
+void z_vprintk(printk_out_func_t out, void *ctx, const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
@@ -251,8 +249,13 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				char *s = va_arg(ap, char *);
 				char *start = s;
 
-				while (*s) {
-					out((int)(*s++), ctx);
+				/* Certain strings are handled by the logger and
+				 * skipped here.
+				 */
+				if (!log_handle_string(out, ctx, s)) {
+					while (*s) {
+						out((int)(*s++), ctx);
+					}
 				}
 
 				if (padding == PAD_SPACE_AFTER) {
@@ -413,7 +416,7 @@ void printk(const char *fmt, ...)
  *
  * @return N/A
  */
-static void _printk_hex_ulong(out_func_t out, void *ctx,
+static void _printk_hex_ulong(printk_out_func_t out, void *ctx,
 			      const unsigned long long num,
 			      enum pad_type padding,
 			      int min_width)
@@ -462,7 +465,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  *
  * @return N/A
  */
-static void _printk_dec_ulong(out_func_t out, void *ctx,
+static void _printk_dec_ulong(printk_out_func_t out, void *ctx,
 			      const unsigned long num, enum pad_type padding,
 			      int min_width)
 {
@@ -543,7 +546,7 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 {
 	struct str_context ctx = { str, size, 0 };
 
-	z_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+	z_vprintk((printk_out_func_t)str_out, &ctx, fmt, ap);
 
 	if (ctx.count < ctx.max) {
 		str[ctx.count] = '\0';

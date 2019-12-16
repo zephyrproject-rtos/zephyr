@@ -931,6 +931,19 @@ void log_free(void *str)
 	}
 }
 
+bool z_log_handle_string(printk_out_func_t out, void *ctx, char *str)
+{
+	if (!log_is_strdup(str)) {
+		return false;
+	}
+
+	while (*str) {
+		out((int)(*str++), ctx);
+	}
+
+	return true;
+}
+
 #if defined(CONFIG_USERSPACE)
 void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
 {
