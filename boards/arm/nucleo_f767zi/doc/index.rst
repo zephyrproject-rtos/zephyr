@@ -1,6 +1,6 @@
-.. _nucleo_f746zg_board:
+.. _nucleo_f767zi_board:
 
-ST Nucleo F746ZG
+ST Nucleo F767ZI
 ################
 
 Overview
@@ -44,7 +44,7 @@ Key Features
   STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
-.. image:: img/nucleo_f746zg.jpg
+.. image:: img/nucleo_f767zi.jpg
    :width: 720px
    :align: center
    :height: 720px
@@ -63,8 +63,8 @@ Nucleo F767ZI provides the following hardware components:
 - ART Accelerator
 - 216 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
-- 1 MB Flash
-- 320 KB SRAM
+- 2 MB Flash
+- 512 KB SRAM
 - 16-bit timers(10)
 - 32-bit timers(2)
 - SPI(6)
@@ -131,7 +131,7 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-The Nucleo F746ZG board features a ST Zio connector (extended Arduino Uno V3)
+The Nucleo F767ZI board features a ST Zio connector (extended Arduino Uno V3)
 and a ST morpho connector. Board is configured as follows:
 
 - UART_2 TX/RX/RTS/CTS : PD5/PD6/PD4/PD3
@@ -154,14 +154,14 @@ device on pin PA7.
 System Clock
 ------------
 
-Nucleo F746ZG System Clock could be driven by an internal or external
+Nucleo F767ZI System Clock could be driven by an internal or external
 oscillator, as well as the main PLL clock. By default, the System clock is
 driven by the PLL clock at 72MHz, driven by an 8MHz high-speed external clock.
 
 Serial Port
 -----------
 
-Nucleo F746ZG board has 4 UARTs and 4 USARTs. The Zephyr console output is
+Nucleo F767ZI board has 4 UARTs and 4 USARTs. The Zephyr console output is
 assigned to UART3. Default settings are 115200 8N1.
 
 
@@ -175,9 +175,9 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo F746ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
+Nucleo F767ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 
-Flashing an application to Nucleo F746ZG
+Flashing an application to Nucleo F767ZI
 ----------------------------------------
 
 Here is an example for the :ref:`hello_world` application.
@@ -220,7 +220,7 @@ You can debug an application in the usual way.  Here is an example for the
    http://www.st.com/resource/en/user_manual/dm00105823.pdf
 
 .. _STM32f767zi on www.st.com:
-   https://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-high-performance-mcus/stm32f7-series/stm32f7x6/stm32f746zg.html
+   https://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-high-performance-mcus/stm32f7-series/stm32f7x&/stm32f767zi.html
 
-.. _STM32F746 reference manual:
-   https://www.st.com/resource/en/reference_manual/dm00124865.pdf
+.. _STM32F767 reference manual:
+   https://www.st.com/resource/en/reference_manual/DM00224583.pdf
