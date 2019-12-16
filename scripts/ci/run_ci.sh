@@ -97,6 +97,12 @@ function on_complete() {
 		cp ./sanity-out/sanitycheck.xml shippable/testresults/
 	fi
 
+	if [ -e ./module_tests/sanitycheck.xml ]; then
+		echo "Copy ./module_tests/sanitycheck.xml"
+		cp ./module_tests/sanitycheck.xml \
+			shippable/testresults/module_tests.xml
+	fi
+
 	if [ -e ${bsim_bt_test_results_file} ]; then
 		echo "Copy ${bsim_bt_test_results_file}"
 		cp ${bsim_bt_test_results_file} shippable/testresults/
@@ -123,6 +129,7 @@ function run_bsim_bt_tests() {
 }
 
 function get_tests_to_run() {
+	./scripts/zephyr_module.py --sanitycheck-out module_tests.args
 	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
 	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
 
@@ -266,6 +273,14 @@ if [ -n "$main_ci" ]; then
 	# Run a subset of tests based on matrix size
 	${sanitycheck} ${sanitycheck_options} --load-tests test_file.txt \
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
+
+	# Run module tests on matrix #1
+	if [ "$matrix" = "1" ]; then
+		if [ -s module_tests.args ]; then
+			${sanitycheck} ${sanitycheck_options} \
+				+module_tests.args --outdir module_tests
+		fi
+	fi
 
 	# cleanup
 	rm -f test_file*
