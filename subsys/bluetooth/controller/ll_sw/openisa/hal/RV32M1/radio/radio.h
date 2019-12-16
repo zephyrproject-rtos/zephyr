@@ -102,3 +102,7 @@ void radio_ar_configure(u32_t nirk, void *irk);
 u32_t radio_ar_match_get(void);
 void radio_ar_status_reset(void);
 u32_t radio_ar_has_match(void);
+
+u32_t radio_sleep(void);
+u32_t radio_wake(void);
+u32_t is_radio_off(void);
