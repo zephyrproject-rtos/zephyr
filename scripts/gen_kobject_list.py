@@ -108,6 +108,7 @@ subsystems = [
     "spi_driver_api",
     "uart_driver_api",
     "can_driver_api",
+    "wdt_driver_api",
 ]
 
 
