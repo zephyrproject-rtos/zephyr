@@ -187,7 +187,8 @@
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
 /drivers/i2c/i2c_dw*                      @dcpleung
-/drivers/*/*xec*                     @franciscomunoz @albertofloyd @scottwcpg
+/drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
+/drivers/watchdog/wdt_handlers.c          @andrewboie
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arc/                                 @vonhust @ruuddw @iriszzw

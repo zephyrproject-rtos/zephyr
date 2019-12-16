@@ -113,6 +113,7 @@ subsystems = [
     "can_driver_api",
     "ptp_clock_driver_api",
     "eeprom_driver_api",
+    "wdt_driver_api",
 
     # Fake 'sample driver' subsystem, used by tests/samples
     "sample_driver_api"
