@@ -81,7 +81,8 @@ config NRFX_LPCOMP
 config NRFX_NFCT
 	bool "Enable NFCT driver"
 	depends on HAS_HW_NRF_NFCT
-	select NRFX_TIMER4
+	select NRFX_TIMER4 if SOC_SERIES_NRF52X
+	select NRFX_TIMER2 if SOC_SERIES_NRF53X
 
 config NRFX_NVMC
 	bool "Enable NVMC driver"
