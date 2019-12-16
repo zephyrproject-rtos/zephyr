@@ -42,7 +42,7 @@ void test_main(void)
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(queue_api,
-			 ztest_unit_test(test_queue_supv_to_user),
+			 ztest_1cpu_unit_test(test_queue_supv_to_user),
 			 ztest_user_unit_test(test_queue_alloc_prepend_user),
 			 ztest_user_unit_test(test_queue_alloc_append_user),
 			 ztest_unit_test(test_auto_free),
