@@ -27,6 +27,15 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+* USB
+
+  * The usb_enable() function, which was previously invoked automatically
+    by the USB stack, now needs to be explicitly called by the application
+    in order to enable the USB subsystem.
+  * The usb_enable() function now takes a parameter, usb_dc_status_callback
+    which can be set by the application to a callback to receive status events
+    from the USB stack. The parameter can also be set to NULL if no callback is required.
+
 Removed APIs in this release
 ============================
 
