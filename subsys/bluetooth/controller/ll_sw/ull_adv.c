@@ -435,6 +435,7 @@ u8_t ll_adv_enable(u8_t enable)
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
 	u32_t ret;
+	u8_t rnd_type;
 
 	if (!enable) {
 		return disable(handle);
@@ -448,7 +449,14 @@ u8_t ll_adv_enable(u8_t enable)
 	lll = &adv->lll;
 
 	pdu_adv = lll_adv_data_peek(lll);
-	if (pdu_adv->tx_addr) {
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rnd_type = (adv->own_addr_type & 0x1);
+#else
+	rnd_type = (pdu_adv->tx_addr);
+#endif
+
+	if (rnd_type) {
 		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
