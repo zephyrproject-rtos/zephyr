@@ -31,7 +31,7 @@ Building and Running
 
 This application has been built and tested on the NXP FRDMK64F.
 Certs are required to authenticate to the Azure Cloud IoT hub.
-Current certs in :zephyr_file:`samples/net/mqtt_azure/src/digicert.cer` are
+Current certs in :zephyr_file:`samples/net/cloud/mqtt_azure/src/digicert.cer` are
 copied from `<https://github.com/Azure/azure-iot-sdk-c/blob/master/certs/certs.c>`_
 
 Configure the following Kconfig options based on your Azure Cloud IoT Hub
@@ -56,10 +56,10 @@ the sample behind a proxy:
 - SAMPLE_SOCKS_PORT - Port number of SOCKS5 Proxy server
 
 On your Linux host computer, open a terminal window, locate the source code
-of this sample application (i.e., :zephyr_file:`samples/net/mqtt_azure`) and type:
+of this sample application (i.e., :zephyr_file:`samples/net/cloud/mqtt_azure`) and type:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/mqtt_azure
+   :zephyr-app: samples/net/cloud/mqtt_azure
    :board: frdm_k64f
    :conf: "prj.conf <overlay.conf>"
    :goals: build flash

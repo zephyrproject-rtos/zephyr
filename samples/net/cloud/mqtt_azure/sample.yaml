@@ -2,7 +2,7 @@ sample:
   description: MQTT sample app to Azure cloud
   name: mqtt-azure
 tests:
-  sample.net.mqtt_azure:
+  sample.net.cloud.mqtt_azure:
     harness: net
     platform_whitelist: sam_e70_xplained frdm_k64f qemu_x86
     tags: net mqtt cloud

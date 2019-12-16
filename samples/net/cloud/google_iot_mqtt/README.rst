@@ -16,7 +16,7 @@ currently is able to
 - Send/Receive keep alive / pings from cloud server
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/google_iot_mqtt`.
+:zephyr_file:`samples/net/cloud/google_iot_mqtt`.
 
 Requirements
 ************
@@ -32,7 +32,7 @@ ECDSA certs/keys are required to authenticate to the Google IOT Cloud.
 The application includes a key creation script.
 
 Run the ``create_keys.py`` script in the
-``samples/net/google_iot_mqtt/src/private_info/`` directory.
+``samples/net/cloud/google_iot_mqtt/src/private_info/`` directory.
 
 Users will also be required to configure the following Kconfig options
 based on their Google Cloud IOT project:
