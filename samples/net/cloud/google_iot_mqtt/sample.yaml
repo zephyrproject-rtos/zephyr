@@ -1,8 +1,6 @@
 sample:
   description: MQTT sample app to Google IoT cloud
   name: google_iot_mqtt
-tests:
-  sample.net.cloud.google_iot_mqtt:
-    harness: net
-    platform_whitelist: frdm_k64f
-    tags: net mqtt cloud
+common:
+  tags: net mqtt cloud
+  harness: net
