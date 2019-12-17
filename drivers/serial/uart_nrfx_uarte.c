@@ -1256,6 +1256,7 @@ static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
 		uarte_nrfx_pins_enable(dev, true);
@@ -1270,6 +1271,13 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
 		       new_state == DEVICE_PM_SUSPEND_STATE ||
 		       new_state == DEVICE_PM_OFF_STATE);
+
+		/* if pm is already not active, driver will stay indefinitely
+		 * in while loop waiting for event NRF_UARTE_EVENT_RXTO
+		 */
+		if (data->pm_state != DEVICE_PM_ACTIVE_STATE) {
+			return;
+		}
 
 		/* Disabling UART requires stopping RX, but stop RX event is
 		 * only sent after each RX if async UART API is used.
