@@ -92,7 +92,7 @@ manifest:
       revision: 9b591b289e1f37339bd038b5a1f0e6c8ad39c63a
       path: modules/lib/open-amp
     - name: openthread
-      revision: 5496d9df4866e7761f3d06e5ea284d4acdeb4544
+      revision: 05aaccc6e0db0fe17ac4beed2a2aacc9a9af167c
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
