@@ -544,8 +544,8 @@ struct spi_dw_data spi_dw_data_port_0 = {
 };
 
 const struct spi_dw_config spi_dw_config_0 = {
-	.regs = DT_SPI_0_BASE_ADDRESS,
-	.clock_frequency = DT_SPI_0_CLOCK_FREQUENCY,
+	.regs = DT_SPI_DW_0_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_DW_0_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_0_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_0_CLOCK_GATE_SUBSYS),
@@ -554,7 +554,7 @@ const struct spi_dw_config spi_dw_config_0 = {
 	.op_modes = CONFIG_SPI_0_OP_MODES
 };
 
-DEVICE_AND_API_INIT(spi_dw_port_0, DT_SPI_0_NAME, spi_dw_init,
+DEVICE_AND_API_INIT(spi_dw_port_0, DT_SPI_DW_0_NAME, spi_dw_init,
 		    &spi_dw_data_port_0, &spi_dw_config_0,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -562,20 +562,24 @@ DEVICE_AND_API_INIT(spi_dw_port_0, DT_SPI_0_NAME, spi_dw_init,
 void spi_config_0_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), DT_SPI_DW_IRQ_FLAGS);
-	irq_enable(DT_SPI_0_IRQ);
+	IRQ_CONNECT(DT_SPI_DW_0_IRQ, DT_SPI_DW_0_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
+		    DT_SPI_DW_0_IRQ_FLAGS);
+	irq_enable(DT_SPI_DW_0_IRQ);
 #else
-	IRQ_CONNECT(DT_SPI_0_IRQ_RX_AVAIL, DT_SPI_0_IRQ_RX_AVAIL_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_0_IRQ_TX_REQ, DT_SPI_0_IRQ_TX_REQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_0_IRQ_ERR_INT, DT_SPI_0_IRQ_ERR_INT_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), DT_SPI_DW_IRQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_0_IRQ_RX_AVAIL, DT_SPI_DW_0_IRQ_RX_AVAIL_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
+		    DT_SPI_DW_0_IRQ_RX_AVAIL_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_0_IRQ_TX_REQ, DT_SPI_DW_0_IRQ_TX_REQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
+		    DT_SPI_DW_0_IRQ_TX_REQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_0_IRQ_ERR_INT, DT_SPI_DW_0_IRQ_ERR_INT_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
+		    DT_SPI_DW_0_IRQ_ERR_INT_FLAGS);
 
-	irq_enable(DT_SPI_0_IRQ_RX_AVAIL);
-	irq_enable(DT_SPI_0_IRQ_TX_REQ);
-	irq_enable(DT_SPI_0_IRQ_ERR_INT);
+	irq_enable(DT_SPI_DW_0_IRQ_RX_AVAIL);
+	irq_enable(DT_SPI_DW_0_IRQ_TX_REQ);
+	irq_enable(DT_SPI_DW_0_IRQ_ERR_INT);
 
 #endif
 }
@@ -589,8 +593,8 @@ struct spi_dw_data spi_dw_data_port_1 = {
 };
 
 static const struct spi_dw_config spi_dw_config_1 = {
-	.regs = DT_SPI_1_BASE_ADDRESS,
-	.clock_frequency = DT_SPI_1_CLOCK_FREQUENCY,
+	.regs = DT_SPI_DW_1_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_DW_1_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_1_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_1_CLOCK_GATE_SUBSYS),
@@ -599,7 +603,7 @@ static const struct spi_dw_config spi_dw_config_1 = {
 	.op_modes = CONFIG_SPI_1_OP_MODES
 };
 
-DEVICE_AND_API_INIT(spi_dw_port_1, DT_SPI_1_NAME, spi_dw_init,
+DEVICE_AND_API_INIT(spi_dw_port_1, DT_SPI_DW_1_NAME, spi_dw_init,
 		    &spi_dw_data_port_1, &spi_dw_config_1,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -607,20 +611,24 @@ DEVICE_AND_API_INIT(spi_dw_port_1, DT_SPI_1_NAME, spi_dw_init,
 void spi_config_1_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), DT_SPI_DW_IRQ_FLAGS);
-	irq_enable(DT_SPI_1_IRQ);
+	IRQ_CONNECT(DT_SPI_DW_1_IRQ, DT_SPI_DW_1_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
+		    DT_SPI_DW_1_IRQ_FLAGS);
+	irq_enable(DT_SPI_DW_1_IRQ);
 #else
-	IRQ_CONNECT(DT_SPI_1_IRQ_RX_AVAIL, DT_SPI_1_IRQ_RX_AVAIL_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_1_IRQ_TX_REQ, DT_SPI_1_IRQ_TX_REQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_1_IRQ_ERR_INT, DT_SPI_1_IRQ_ERR_INT_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), DT_SPI_DW_IRQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_1_IRQ_RX_AVAIL, DT_SPI_DW_1_IRQ_RX_AVAIL_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
+		    DT_SPI_DW_1_IRQ_RX_AVAIL_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_1_IRQ_TX_REQ, DT_SPI_DW_1_IRQ_TX_REQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
+		    DT_SPI_DW_IRQ_TX_REQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_1_IRQ_ERR_INT, DT_SPI_DW_1_IRQ_ERR_INT_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
+		    DT_SPI_DW_IRQ_ERR_INT_FLAGS);
 
-	irq_enable(DT_SPI_1_IRQ_RX_AVAIL);
-	irq_enable(DT_SPI_1_IRQ_TX_REQ);
-	irq_enable(DT_SPI_1_IRQ_ERR_INT);
+	irq_enable(DT_SPI_DW_1_IRQ_RX_AVAIL);
+	irq_enable(DT_SPI_DW_1_IRQ_TX_REQ);
+	irq_enable(DT_SPI_DW_1_IRQ_ERR_INT);
 
 #endif
 }
@@ -634,8 +642,8 @@ struct spi_dw_data spi_dw_data_port_2 = {
 };
 
 static const struct spi_dw_config spi_dw_config_2 = {
-	.regs = DT_SPI_2_BASE_ADDRESS,
-	.clock_frequency = DT_SPI_2_CLOCK_FREQUENCY,
+	.regs = DT_SPI_DW_2_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_DW_2_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_2_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_2_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_2_CLOCK_GATE_SUBSYS),
@@ -644,7 +652,7 @@ static const struct spi_dw_config spi_dw_config_2 = {
 	.op_modes = CONFIG_SPI_2_OP_MODES
 };
 
-DEVICE_AND_API_INIT(spi_dw_port_2, DT_SPI_2_NAME, spi_dw_init,
+DEVICE_AND_API_INIT(spi_dw_port_2, DT_SPI_DW_2_NAME, spi_dw_init,
 		    &spi_dw_data_port_2, &spi_dw_config_2,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -652,20 +660,24 @@ DEVICE_AND_API_INIT(spi_dw_port_2, DT_SPI_2_NAME, spi_dw_init,
 void spi_config_2_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), DT_SPI_DW_IRQ_FLAGS);
-	irq_enable(DT_SPI_2_IRQ);
+	IRQ_CONNECT(DT_SPI_DW_2_IRQ, DT_SPI_DW_2_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_2),
+		    DT_SPI_DW_2_IRQ_FLAGS);
+	irq_enable(DT_SPI_DW_2_IRQ);
 #else
-	IRQ_CONNECT(DT_SPI_2_IRQ_RX_AVAIL, DT_SPI_2_IRQ_RX_AVAIL_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_2_IRQ_TX_REQ, DT_SPI_2_IRQ_TX_REQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_2_IRQ_ERR_INT, DT_SPI_2_IRQ_ERR_INT_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), DT_SPI_DW_IRQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_2_IRQ_RX_AVAIL, DT_SPI_DW_2_IRQ_RX_AVAIL_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_2),
+		    DT_SPI_DW_2_IRQ_RX_AVAIL_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_2_IRQ_TX_REQ, DT_SPI_DW_2_IRQ_TX_REQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_2),
+		    DT_SPI_DW_2_IRQ_TX_REQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_2_IRQ_ERR_INT, DT_SPI_DW_2_IRQ_ERR_INT_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_2),
+		    DT_SPI_DW_2_IRQ_ERR_INT_FLAGS);
 
-	irq_enable(DT_SPI_2_IRQ_RX_AVAIL);
-	irq_enable(DT_SPI_2_IRQ_TX_REQ);
-	irq_enable(DT_SPI_2_IRQ_ERR_INT);
+	irq_enable(DT_SPI_DW_2_IRQ_RX_AVAIL);
+	irq_enable(DT_SPI_DW_2_IRQ_TX_REQ);
+	irq_enable(DT_SPI_DW_2_IRQ_ERR_INT);
 
 #endif
 }
@@ -679,8 +691,8 @@ struct spi_dw_data spi_dw_data_port_3 = {
 };
 
 static const struct spi_dw_config spi_dw_config_3 = {
-	.regs = DT_SPI_3_BASE_ADDRESS,
-	.clock_frequency = DT_SPI_3_CLOCK_FREQUENCY,
+	.regs = DT_SPI_DW_3_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_DW_3_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_3_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_3_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_3_CLOCK_GATE_SUBSYS),
@@ -689,7 +701,7 @@ static const struct spi_dw_config spi_dw_config_3 = {
 	.op_modes = CONFIG_SPI_3_OP_MODES
 };
 
-DEVICE_AND_API_INIT(spi_dw_port_3, DT_SPI_3_NAME, spi_dw_init,
+DEVICE_AND_API_INIT(spi_dw_port_3, DT_SPI_DW_3_NAME, spi_dw_init,
 		    &spi_dw_data_port_3, &spi_dw_config_3,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -697,20 +709,24 @@ DEVICE_AND_API_INIT(spi_dw_port_3, DT_SPI_3_NAME, spi_dw_init,
 void spi_config_3_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_3_IRQ, DT_SPI_3_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), DT_SPI_DW_IRQ_FLAGS);
-	irq_enable(DT_SPI_3_IRQ);
+	IRQ_CONNECT(DT_SPI_DW_3_IRQ, DT_SPI_DW_3_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_3),
+		    DT_SPI_DW_3_IRQ_FLAGS);
+	irq_enable(DT_SPI_DW_3_IRQ);
 #else
-	IRQ_CONNECT(DT_SPI_3_IRQ_RX_AVAIL, DT_SPI_3_IRQ_RX_AVAIL_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_3_IRQ_TX_REQ, DT_SPI_3_IRQ_TX_REQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), DT_SPI_DW_IRQ_FLAGS);
-	IRQ_CONNECT(DT_SPI_3_IRQ_ERR_INT, DT_SPI_3_IRQ_ERR_INT_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), DT_SPI_DW_IRQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_3_IRQ_RX_AVAIL, DT_SPI_DW_3_IRQ_RX_AVAIL_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_3),
+		    DT_SPI_DW_3_IRQ_RX_AVAIL_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_3_IRQ_TX_REQ, DT_SPI_DW_3_IRQ_TX_REQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_3),
+		    DT_SPI_DW_3_IRQ_TX_REQ_FLAGS);
+	IRQ_CONNECT(DT_SPI_DW_3_IRQ_ERR_INT, DT_SPI_DW_3_IRQ_ERR_INT_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_3),
+		    DT_SPI_DW_3_IRQ_ERR_INT_FLAGS);
 
-	irq_enable(DT_SPI_3_IRQ_RX_AVAIL);
-	irq_enable(DT_SPI_3_IRQ_TX_REQ);
-	irq_enable(DT_SPI_3_IRQ_ERR_INT);
+	irq_enable(DT_SPI_DW_3_IRQ_RX_AVAIL);
+	irq_enable(DT_SPI_DW_3_IRQ_TX_REQ);
+	irq_enable(DT_SPI_DW_3_IRQ_ERR_INT);
 
 #endif
 }
