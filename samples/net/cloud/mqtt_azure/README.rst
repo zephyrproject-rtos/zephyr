@@ -16,7 +16,7 @@ can publish messages to an Azure Cloud IoT hub based on MQTT protocol.
 - DNS supported
 
 The source code of this sample application can be found at:
-:zephyr_file:`samples/net/mqtt_azure`.
+:zephyr_file:`samples/net/cloud/mqtt_azure`.
 
 Requirements
 ************
