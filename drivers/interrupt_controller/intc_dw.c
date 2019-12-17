@@ -56,11 +56,11 @@ static void dw_ictl_isr(void *arg)
 			(struct dw_ictl_registers *)dw->base_addr;
 
 	dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_l,
-					config->isr_table_offset);
+				    config->isr_table_offset);
 
 	if (config->numirqs > 32) {
 		dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_h,
-						config->isr_table_offset + 32);
+					    config->isr_table_offset + 32);
 	}
 }
 
@@ -138,14 +138,14 @@ static int dw_ictl_intr_get_line_state(struct device *dev, unsigned int irq)
 static void dw_ictl_config_irq(struct device *port);
 
 static const struct dw_ictl_config dw_config = {
-	.irq_num = DT_DW_ICTL_IRQ,
+	.irq_num = DT_INTC_DW_0_BASE_ADDR,
 	.numirqs = DW_ICTL_NUM_IRQS,
 	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
 	.config_func = dw_ictl_config_irq,
 };
 
 static struct dw_ictl_runtime dw_runtime = {
-	.base_addr = DT_DW_ICTL_BASE_ADDR,
+	.base_addr = DT_ICTL_DW_0_BASE_ADDR,
 };
 
 static const struct irq_next_level_api dw_ictl_apis = {
@@ -155,12 +155,12 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
-DEVICE_AND_API_INIT(dw_ictl, CONFIG_DW_ICTL_NAME, dw_ictl_initialize,
+DEVICE_AND_API_INIT(dw_ictl, DT_INTC_DW_0_NAME, dw_ictl_initialize,
 		    &dw_runtime, &dw_config,
 		    POST_KERNEL, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 
 static void dw_ictl_config_irq(struct device *port)
 {
-	IRQ_CONNECT(DT_DW_ICTL_IRQ, DT_DW_ICTL_IRQ_PRI, dw_ictl_isr,
-		    DEVICE_GET(dw_ictl), DT_DW_ICTL_IRQ_FLAGS);
+	IRQ_CONNECT(DT_INTC_DW_0_IRQ, DT_INTC_DW_0_IRQ_PRI, dw_ictl_isr,
+		    DEVICE_GET(dw_ictl), DT_INTC_DW_0_IRQ_FLAGS);
 }
