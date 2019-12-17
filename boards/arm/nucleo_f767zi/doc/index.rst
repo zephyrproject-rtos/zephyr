@@ -50,7 +50,7 @@ Key Features
    :height: 720px
    :alt: Nucleo F767ZI
 
-More information about the board can be found at the `Nucleo F746ZG website`_.
+More information about the board can be found at the `Nucleo F767ZI website`_.
 
 Hardware
 ********
