@@ -594,7 +594,7 @@ class BinaryHandler(Handler):
             # When a process is killed, the default handler returns 128 + SIGTERM
             # so in that case the return code itself is not meaningful
             self.set_state("failed", handler_time)
-            self.instance.reason = "Handler Error"
+            self.instance.reason = "Failed"
         elif run_valgrind and self.returncode == 2:
             self.set_state("failed", handler_time)
             self.instance.reason = "Valgrind error"
@@ -602,7 +602,7 @@ class BinaryHandler(Handler):
             self.set_state(harness.state, handler_time)
         else:
             self.set_state("timeout", handler_time)
-            self.instance.reason = "Handler timeout"
+            self.instance.reason = "Timeout"
 
         self.record(harness)
 
@@ -745,6 +745,7 @@ class DeviceHandler(Handler):
             )
         except serial.SerialException as e:
             self.set_state("failed", 0)
+            self.instance.reason = "Failed"
             logger.error("Serial device error: %s" % (str(e)))
             self.make_device_available(serial_device)
             return
@@ -793,16 +794,21 @@ class DeviceHandler(Handler):
         if ser.isOpen():
             ser.close()
 
+        handler_time = time.time() - start_time
+
         if out_state == "timeout":
             for c in self.instance.testcase.cases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
 
-        handler_time = time.time() - start_time
+            self.instance.reason = "Timeout"
 
         self.instance.results = harness.tests
+
         if harness.state:
             self.set_state(harness.state, handler_time)
+            if  harness.state == "failed":
+                self.instance.reason = "Failed"
         else:
             self.set_state(out_state, handler_time)
 
@@ -915,6 +921,10 @@ class QEMUHandler(Handler):
         logger.debug("QEMU complete (%s) after %f seconds" %
                      (out_state, handler_time))
         handler.set_state(out_state, handler_time)
+        if out_state == "timeout":
+            handler.instance.reason = "Timeout"
+        elif out_state == "failed":
+            handler.instance.reason = "Failed"
 
         log_out_fp.close()
         out_fp.close()
@@ -1985,9 +1995,9 @@ class ProjectBuilder(FilterBuilder):
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info("{}".format(v_log), inline_logs)
-        elif os.path.exists(d_log):
+        elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
             self.log_info("{}".format(d_log), inline_logs)
-        elif os.path.exists(h_log):
+        elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
         else:
             self.log_info("{}".format(b_log), inline_logs)
