@@ -111,7 +111,6 @@ struct dw_dma_dev_data {
 struct dw_dma_dev_cfg {
 	u32_t base;
 	void (*irq_config)(void);
-	u32_t irq_id;
 };
 
 #ifdef __cplusplus

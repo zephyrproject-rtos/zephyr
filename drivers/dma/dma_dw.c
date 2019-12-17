@@ -345,9 +345,6 @@ static int dw_dma0_initialize(struct device *dev)
 	/* Configure interrupts */
 	dev_cfg->irq_config();
 
-	/* Enable module's IRQ */
-	irq_enable(dev_cfg->irq_id);
-
 	LOG_INF("Device %s initialized", DEV_NAME(dev));
 
 	return 0;
@@ -368,6 +365,7 @@ static void dw_dma0_irq_config(void)
 {
 	IRQ_CONNECT(DW_DMA0_IRQ, CONFIG_DMA_0_IRQ_PRI, dw_dma_isr,
 		    DEVICE_GET(dw_dma0), 0);
+	irq_enable(DW_DMA0_IRQ);
 }
 
 static struct dw_drv_plat_data dmac0 = {
@@ -407,8 +405,7 @@ static struct dw_drv_plat_data dmac0 = {
 
 static const struct dw_dma_dev_cfg dw_dma0_config = {
 	.base = DW_DMA0_BASE_ADDR,
-	.irq_config = dw_dma0_irq_config,
-	.irq_id = DW_DMA0_IRQ,
+	.irq_config = dw_dma0_irq_config
 };
 
 static struct dw_dma_dev_data dw_dma0_data = {
