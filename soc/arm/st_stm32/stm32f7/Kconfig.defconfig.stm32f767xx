@@ -24,4 +24,3 @@ config NUM_IRQS
 	default 110
 
 endif # SOC_STM32F767XX
-
