@@ -6,7 +6,7 @@ ST Nucleo F767ZI
 Overview
 ********
 
-The STM32 Nucleo-144 boards offer combinations of performance and power that
+The STM32 Nucleo-144 F767ZI boards offer combinations of performance and power that
 provide an affordable and flexible way for users to build prototypes and try
 out new concepts. For compatible boards, the SMPS significantly reduces power
 consumption in Run mode.
