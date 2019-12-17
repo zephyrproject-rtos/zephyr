@@ -357,7 +357,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 	.stop = dw_dma_transfer_stop,
 };
 
-/* DMA0 */
+#if defined(DT_INST_0_SNPS_DESIGNWARE_DMA)
 
 static struct device DEVICE_NAME_GET(dw_dma0);
 
@@ -415,3 +415,125 @@ static struct dw_dma_dev_data dw_dma0_data = {
 DEVICE_AND_API_INIT(dw_dma0, DT_DMA_DW_0_NAME, &dw_dma_init,
 		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
+#endif /* DT_INST_0_SNPS_DESIGNWARE_DMA */
+
+
+#if defined(DT_INST_1_SNPS_DESIGNWARE_DMA)
+
+static struct device DEVICE_NAME_GET(dw_dma2);
+
+static void dw_dma1_irq_config(void)
+{
+	IRQ_CONNECT(DT_DMA_DW_1_IRQ, DT_DMA_DW_1_IRQ_PRI, dw_dma_isr,
+		    DEVICE_GET(dw_dma0), DT_DMA_DW_1_IRQ_FLAGS);
+	irq_enable(DT_DMA_DW_1_IRQ);
+}
+
+static struct dw_drv_plat_data dmac1 = {
+	.chan[0] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[1] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[2] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[3] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[4] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[5] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[6] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[7] = {
+		.class  = 6,
+		.weight = 0,
+	},
+};
+
+static const struct dw_dma_dev_cfg dw_dma1_config = {
+	.base = DT_DMA_DW_1_BASE_ADDR,
+	.irq_config = dw_dma1_irq_config
+};
+
+static struct dw_dma_dev_data dw_dma1_data = {
+	.channel_data = &dmac1,
+};
+
+DEVICE_AND_API_INIT(dw_dma1, DT_DMA_DW_1_NAME, &dw_dma_init,
+		    &dw_dma1_data, &dw_dma1_config, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
+#endif /* DT_INST_1_SNPS_DESIGNWARE_DMA */
+
+#if defined(DT_INST_2_SNPS_DESIGNWARE_DMA)
+
+static struct device DEVICE_NAME_GET(dw_dma2);
+
+static void dw_dma2_irq_config(void)
+{
+	IRQ_CONNECT(DT_DMA_DW_2_IRQ, DT_DMA_DW_2_IRQ_PRI, dw_dma_isr,
+		    DEVICE_GET(dw_dma0), DT_DMA_DW_2_IRQ_FLAGS);
+	irq_enable(DT_DMA_DW_2_IRQ);
+}
+
+static struct dw_drv_plat_data dmac2 = {
+	.chan[0] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[1] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[2] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[3] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[4] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[5] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[6] = {
+		.class  = 6,
+		.weight = 0,
+	},
+	.chan[7] = {
+		.class  = 6,
+		.weight = 0,
+	},
+};
+
+static const struct dw_dma_dev_cfg dw_dma2_config = {
+	.base = DT_DMA_DW_2_BASE_ADDR,
+	.irq_config = dw_dma2_irq_config
+};
+
+static struct dw_dma_dev_data dw_dma2_data = {
+	.channel_data = &dmac2,
+};
+
+DEVICE_AND_API_INIT(dw_dma2, DT_DMA_DW_2_NAME, &dw_dma_init,
+		    &dw_dma2_data, &dw_dma2_config, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
+#endif /* DT_INST_2_SNPS_DESIGNWARE_DMA */
