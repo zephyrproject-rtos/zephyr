@@ -21,6 +21,6 @@ config GPIO_STM32_PORTK
 endif # GPIO_STM32
 
 config NUM_IRQS
-	default 98
+	default 110
 
 endif # SOC_STM32F767XX
