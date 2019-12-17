@@ -413,3 +413,14 @@ config MISRA_SANE
 	  arrays are not permitted (and gcc will enforce this).
 
 endmenu
+
+menu "Compatibility"
+
+config COMPAT_INCLUDES
+	bool "Suppress warnings when using header shims"
+	default y
+	help
+	  Suppress any warnings from the pre-processor when including
+	  deprecated header files.
+
+endmenu
