@@ -227,8 +227,7 @@ DEVICE_AND_API_INIT(vipm_nrf_##_idx, "IPM_"#_idx,			\
 		    &vipm_nrf_##_idx##_driver_api)
 
 #define VIPM_DEVICE(_idx, _)						\
-	COND_CODE_1(IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE),	\
-		    (VIPM_DEVICE_1(_idx);), ())
+	IF_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE, (VIPM_DEVICE_1(_idx);))
 
 UTIL_LISTIFY(NRFX_IPC_ID_MAX_VALUE, VIPM_DEVICE, _);
 

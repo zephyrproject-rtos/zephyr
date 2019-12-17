@@ -351,21 +351,20 @@ static const struct nrf_clock_control_config config = {
 			.start_tsk = NRF_CLOCK_TASK_HFCLKSTART,
 			.started_evt = NRF_CLOCK_EVENT_HFCLKSTARTED,
 			.stop_tsk = NRF_CLOCK_TASK_HFCLKSTOP,
-			COND_CODE_1(CONFIG_LOG, (.name = "hfclk",), ())
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclk",))
 		},
 		[CLOCK_CONTROL_NRF_TYPE_LFCLK] = {
 			.start_tsk = NRF_CLOCK_TASK_LFCLKSTART,
 			.started_evt = NRF_CLOCK_EVENT_LFCLKSTARTED,
 			.stop_tsk = NRF_CLOCK_TASK_LFCLKSTOP,
-			COND_CODE_1(CONFIG_LOG, (.name = "lfclk",), ())
-			.start_handler =
-			IS_ENABLED(
-			    CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) ?
-					z_nrf_clock_calibration_start : NULL,
-			.stop_handler =
-			IS_ENABLED(
-			    CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) ?
-					z_nrf_clock_calibration_stop : NULL
+			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
+			IF_ENABLED(
+				CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION,
+				(
+				.start_handler = z_nrf_clock_calibration_start,
+				.stop_handler = z_nrf_clock_calibration_stop,
+				)
+			)
 		}
 	}
 };
