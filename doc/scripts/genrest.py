@@ -105,7 +105,7 @@ def init():
 
     args = parse_args()
 
-    kconf = kconfiglib.Kconfig(args.kconfig)
+    kconf = kconfiglib.Kconfig(args.kconfig, suppress_traceback=True)
     out_dir = args.out_dir
     index_desc = args.index_desc
     separate_all_index = args.separate_all_index

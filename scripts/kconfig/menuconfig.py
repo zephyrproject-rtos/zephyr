@@ -137,12 +137,15 @@ If there's an error in the style definition or if a missing style is assigned
 to, the assignment will be ignored, along with a warning being printed on
 stderr.
 
-The 'default' theme is always implicitly parsed first (or the 'monochrome'
-theme if the terminal lacks colors), so the following two settings have the
-same effect:
+The 'default' theme is always implicitly parsed first, so the following two
+settings have the same effect:
 
     MENUCONFIG_STYLE="selection=fg:white,bg:red"
     MENUCONFIG_STYLE="default selection=fg:white,bg:red"
+
+If the terminal doesn't support colors, the 'monochrome' theme is used, and
+MENUCONFIG_STYLE is ignored. The assumption is that the environment is broken
+somehow, and that the important thing is to get something usable.
 
 
 Other features
@@ -182,12 +185,15 @@ See the https://github.com/zephyrproject-rtos/windows-curses repository.
 """
 from __future__ import print_function
 
+import os
 import sys
+
+_IS_WINDOWS = os.name == "nt"  # Are we running on Windows?
 
 try:
     import curses
 except ImportError as e:
-    if sys.platform != "win32":
+    if not _IS_WINDOWS:
         raise
     sys.exit("""\
 menuconfig failed to import the standard Python 'curses' library. Try
@@ -206,7 +212,6 @@ Exception:
 
 import errno
 import locale
-import os
 import re
 import textwrap
 
@@ -312,19 +317,18 @@ _STYLES = {
     text=
     """,
 
-    # Blue tinted style loosely resembling lxdialog
+    # Blue-tinted style loosely resembling lxdialog
     "aquatic": """
     path=fg:cyan,bg:blue,bold
     separator=fg:white,bg:cyan,bold
     help=path
     frame=fg:white,bg:cyan,bold
-    body=fg:brightwhite,bg:blue
+    body=fg:white,bg:blue
     edit=fg:black,bg:white
     """
 }
 
-# Standard colors definition
-_STYLE_STD_COLORS = {
+_NAMED_COLORS = {
     # Basic colors
     "black":         curses.COLOR_BLACK,
     "red":           curses.COLOR_RED,
@@ -550,9 +554,6 @@ def _style_to_curses(style_def):
     def parse_color(color_def):
         color_def = color_def.split(":", 1)[1]
 
-        if color_def in _STYLE_STD_COLORS:
-            return _color_from_num(_STYLE_STD_COLORS[color_def])
-
         # HTML format, #RRGGBB
         if re.match("#[A-Fa-f0-9]{6}", color_def):
             return _color_from_rgb((
@@ -560,19 +561,20 @@ def _style_to_curses(style_def):
                 int(color_def[3:5], 16),
                 int(color_def[5:7], 16)))
 
-        try:
-            color_num = _color_from_num(int(color_def, 0))
-        except ValueError:
-            _warn("Ignoring color ", color_def, "that's neither predefined "
-                  "nor a number")
-
-            return -1
+        if color_def in _NAMED_COLORS:
+            color_num = _color_from_num(_NAMED_COLORS[color_def])
+        else:
+            try:
+                color_num = _color_from_num(int(color_def, 0))
+            except ValueError:
+                _warn("Ignoring color", color_def, "that's neither "
+                      "predefined nor a number")
+                return -1
 
         if not -1 <= color_num < curses.COLORS:
             _warn("Ignoring color {}, which is outside the range "
                   "-1..curses.COLORS-1 (-1..{})"
                   .format(color_def, curses.COLORS - 1))
-
             return -1
 
         return color_num
@@ -605,15 +607,26 @@ def _style_to_curses(style_def):
 
 def _init_styles():
     if curses.has_colors():
-        curses.use_default_colors()
+        try:
+            curses.use_default_colors()
+        except curses.error:
+            # Ignore errors on funky terminals that support colors but not
+            # using default colors. Worst it can do is break transparency and
+            # the like. Ran across this with the MSYS2/winpty setup in
+            # https://github.com/msys2/MINGW-packages/issues/5823, though there
+            # seems to be a lot of general brokenness there.
+            pass
 
-    # Use the 'monochrome' style template as the base on terminals without
-    # color
-    _parse_style("default" if curses.has_colors() else "monochrome", True)
-
-    # Add any user-defined style from the environment
-    if "MENUCONFIG_STYLE" in os.environ:
-        _parse_style(os.environ["MENUCONFIG_STYLE"], False)
+        # Use the 'default' theme as the base, and add any user-defined style
+        # settings from the environment
+        _parse_style("default", True)
+        if "MENUCONFIG_STYLE" in os.environ:
+            _parse_style(os.environ["MENUCONFIG_STYLE"], False)
+    else:
+        # Force the 'monochrome' theme if the terminal doesn't support colors.
+        # MENUCONFIG_STYLE is likely to mess things up here (though any colors
+        # would be ignored), so ignore it.
+        _parse_style("monochrome", True)
 
 
 # color_attribs holds the color pairs we've already created, indexed by a
@@ -3273,9 +3286,6 @@ def _change_c_lc_ctype_to_utf8():
                 # LC_CTYPE successfully changed
                 return
 
-
-# Are we running on Windows?
-_IS_WINDOWS = os.name == "nt"
 
 if __name__ == "__main__":
     _main()
