@@ -676,10 +676,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
 		.rtc = NRF_RTC##idx,					       \
-		COND_CODE_1(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
-			    (.use_ppi = true,), ())			       \
-		COND_CODE_1(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,), ()) \
+		IF_ENABLED(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
+			    (.use_ppi = true,))				       \
+		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
+		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,))     \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(rtc_##idx,					       \
