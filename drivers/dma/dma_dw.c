@@ -335,7 +335,7 @@ found:
 	}
 }
 
-static int dw_dma0_initialize(struct device *dev)
+static int dw_dma_init(struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
@@ -412,6 +412,6 @@ static struct dw_dma_dev_data dw_dma0_data = {
 	.channel_data = &dmac0,
 };
 
-DEVICE_AND_API_INIT(dw_dma0, DT_DMA_DW_0_NAME, &dw_dma0_initialize,
+DEVICE_AND_API_INIT(dw_dma0, DT_DMA_DW_0_NAME, &dw_dma_init,
 		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
