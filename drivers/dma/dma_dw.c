@@ -363,9 +363,9 @@ static struct device DEVICE_NAME_GET(dw_dma0);
 
 static void dw_dma0_irq_config(void)
 {
-	IRQ_CONNECT(DW_DMA0_IRQ, CONFIG_DMA_0_IRQ_PRI, dw_dma_isr,
-		    DEVICE_GET(dw_dma0), 0);
-	irq_enable(DW_DMA0_IRQ);
+	IRQ_CONNECT(DT_DMA_DW_0_IRQ, DT_DMA_DW_0_IRQ_PRI, dw_dma_isr,
+		    DEVICE_GET(dw_dma0), DT_DMA_DW_0_IRQ_FLAGS);
+	irq_enable(DT_DMA_DW_0_IRQ);
 }
 
 static struct dw_drv_plat_data dmac0 = {
@@ -404,7 +404,7 @@ static struct dw_drv_plat_data dmac0 = {
 };
 
 static const struct dw_dma_dev_cfg dw_dma0_config = {
-	.base = DW_DMA0_BASE_ADDR,
+	.base = DT_DMA_DW_0_BASE_ADDR,
 	.irq_config = dw_dma0_irq_config
 };
 
@@ -412,6 +412,6 @@ static struct dw_dma_dev_data dw_dma0_data = {
 	.channel_data = &dmac0,
 };
 
-DEVICE_AND_API_INIT(dw_dma0, CONFIG_DMA_0_NAME, &dw_dma0_initialize,
+DEVICE_AND_API_INIT(dw_dma0, DT_DMA_DW_0_NAME, &dw_dma0_initialize,
 		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
