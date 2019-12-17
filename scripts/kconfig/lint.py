@@ -151,7 +151,7 @@ def init_kconfig():
         BOARD_DIR="boards/*/*",
         ARCH="*")
 
-    kconf = kconfiglib.Kconfig()
+    kconf = kconfiglib.Kconfig(suppress_traceback=True)
 
 
 def modules_file_dir():

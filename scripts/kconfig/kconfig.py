@@ -29,7 +29,8 @@ def main():
     args = parse_args()
 
     print("Parsing Kconfig tree in " + args.kconfig_root)
-    kconf = Kconfig(args.kconfig_root, warn_to_stderr=False)
+    kconf = Kconfig(args.kconfig_root, warn_to_stderr=False,
+                    suppress_traceback=True)
 
     # Warn for assignments to undefined symbols
     kconf.warn_assign_undef = True
