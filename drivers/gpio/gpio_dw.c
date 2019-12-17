@@ -452,9 +452,9 @@ static struct gpio_dw_runtime gpio_0_runtime = {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
 DEVICE_DEFINE(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_0_runtime, &gpio_config_0,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_0_runtime, &gpio_config_0,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 		    &gpio_0_runtime, &gpio_config_0,
@@ -511,9 +511,9 @@ static struct gpio_dw_runtime gpio_1_runtime = {
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_1_runtime, &gpio_dw_config_1,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_1_runtime, &gpio_dw_config_1,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 		    &gpio_1_runtime, &gpio_dw_config_1,
@@ -569,9 +569,9 @@ static struct gpio_dw_runtime gpio_2_runtime = {
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_2_runtime, &gpio_dw_config_2,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_2_runtime, &gpio_dw_config_2,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
 		    &gpio_2_runtime, &gpio_dw_config_2,
@@ -627,9 +627,9 @@ static struct gpio_dw_runtime gpio_3_runtime = {
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_3_runtime, &gpio_dw_config_3,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_3_runtime, &gpio_dw_config_3,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
 		    &gpio_3_runtime, &gpio_dw_config_3,
