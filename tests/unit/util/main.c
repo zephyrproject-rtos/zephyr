@@ -110,6 +110,25 @@ void test_COND_CODE_0(void)
 	zassert_true((y3 == 1), NULL);
 }
 
+void test_IF_ENABLED(void)
+{
+	#define test_IF_ENABLED_FLAG_A 1
+	#define test_IF_ENABLED_FLAG_B 0
+
+	IF_ENABLED(test_IF_ENABLED_FLAG_A, (goto skipped;))
+	/* location should be skipped if IF_ENABLED macro is correct. */
+	zassert_false(true, "location should be skipped");
+skipped:
+	IF_ENABLED(test_IF_ENABLED_FLAG_B, (zassert_false(true, "");))
+
+	IF_ENABLED(test_IF_ENABLED_FLAG_C, (zassert_false(true, "");))
+
+	zassert_true(true, "");
+
+	#undef test_IF_ENABLED_FLAG_A
+	#undef test_IF_ENABLED_FLAG_B
+}
+
 void test_UTIL_LISTIFY(void)
 {
 	int i = 0;
@@ -157,6 +176,7 @@ void test_main(void)
 			 ztest_unit_test(test_u8_to_dec),
 			 ztest_unit_test(test_COND_CODE_1),
 			 ztest_unit_test(test_COND_CODE_0),
+			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_z_max_z_min)
 	);
