@@ -156,7 +156,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
 		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
+		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 	.sec_dfu_cfg = {
 		/* Interface descriptor */

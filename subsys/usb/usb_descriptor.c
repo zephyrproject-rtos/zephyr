@@ -88,7 +88,7 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
 		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
+		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 };
 
