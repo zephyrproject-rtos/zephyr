@@ -324,6 +324,25 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 	__COND_CODE(_XXXX##_flag, _if_1_code, _else_code)
 
 /**
+ * @brief Insert code if flag is defined and equals 1.
+ *
+ * Usage example:
+ *
+ * IF_ENABLED(CONFIG_FLAG, (u32_t foo;))
+ *
+ * It can be considered as more compact alternative to:
+ *
+ * \#if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
+ *	u32_t foo;
+ * \#endif
+ *
+ * @param _flag		Evaluated flag
+ * @param _code		Code used if flag exists and equal 1. Argument must be
+ *			in brackets.
+ */
+#define IF_ENABLED(_flag, _code) \
+	COND_CODE_1(_flag, _code, ())
+/**
  * @brief Insert code depending on result of flag evaluation.
  *
  * See @ref COND_CODE_1 for details.
