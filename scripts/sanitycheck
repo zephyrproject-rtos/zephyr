@@ -235,12 +235,8 @@ RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
 
 
 logger = logging.getLogger('sanitycheck')
-# coloredlogs.install(level='INFO', logger=logger, fmt="%(levelname)s %(message)s")
 logger.setLevel(logging.DEBUG)
 
-
-# log_format = "%(levelname)s %(message)s"
-# logging.basicConfig(format=log_format, level=logging.INFO)
 
 class CMakeCacheEntry:
     '''Represents a CMake cache entry.
@@ -707,7 +703,6 @@ class DeviceHandler(Handler):
             command = [get_generator()[0], "-C", self.build_dir, "flash"]
 
         while not self.device_is_available(self.instance.platform.name):
-            #logger.debug("Waiting for device to become available...")
             time.sleep(1)
 
         hardware = self.get_available_device(self.instance.platform.name)
