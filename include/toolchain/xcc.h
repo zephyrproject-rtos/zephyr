@@ -11,10 +11,18 @@
  * there. However, __BYTE_ORDER__ is actually being defined later in
  * this file. So define __BYTE_ORDER__ to skip the check in gcc.h
  * and undefine after including gcc.h.
+ *
+ * Clang has it defined so there is no need to work around.
  */
+#ifndef __clang__
 #define __BYTE_ORDER__
+#endif
+
 #include <toolchain/gcc.h>
+
+#ifndef __clang__
 #undef __BYTE_ORDER__
+#endif
 
 #include <stdbool.h>
 
@@ -22,8 +30,12 @@
 #define UINT32_C(x)	x ## U
 #endif
 
-/* XCC doesn't support __COUNTER__ but this should be good enough */
+#ifndef __COUNTER__
+/* XCC (GCC-based compiler) doesn't support __COUNTER__
+ * but this should be good enough
+ */
 #define __COUNTER__ __LINE__
+#endif
 
 #undef __in_section_unique
 #define __in_section_unique(seg) \
