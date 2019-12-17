@@ -31,6 +31,18 @@ static int name_(struct modem_cmd_handler_data *data, u16_t len, \
 	.func = func_cb_, \
 	.arg_count = acount_, \
 	.delim = adelim_, \
+	.direct = false, \
+}
+
+#define MODEM_CMD_DIRECT_DEFINE(name_) MODEM_CMD_DEFINE(name_)
+
+#define MODEM_CMD_DIRECT(cmd_, func_cb_) { \
+	.cmd = cmd_, \
+	.cmd_len = (u16_t)sizeof(cmd_)-1, \
+	.func = func_cb_, \
+	.arg_count = 0, \
+	.delim = "", \
+	.direct = true, \
 }
 
 #define CMD_RESP	0
@@ -47,6 +59,7 @@ struct modem_cmd {
 	const char *delim;
 	u16_t cmd_len;
 	u16_t arg_count;
+	bool direct;
 };
 
 #define SETUP_CMD(cmd_send_, match_cmd_, func_cb_, num_param_, delim_) { \
