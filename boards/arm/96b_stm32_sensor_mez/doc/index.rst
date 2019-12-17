@@ -110,6 +110,20 @@ Serial Port
 On 96Boards STM32 Sensor Mezzanine, Zephyr console output is assigned to UART4
 exposed via on-board Micro USB connector. Default settings are 115200 8N1.
 
+The default USART mappings for the remaining ones are:
+
+- USART1: Connected to AP via UART0 on the 96Boards Low-Speed Header.
+        - TX: PA9
+        - RX: PA10
+
+- USART2: Connected to D0(RX) and D1(TX) on the Arduino Header.
+        - TX: PD5
+        - RX: PD6
+
+- USART3: Broken out to Grove connector J10.
+        - TX: PD8
+        - RX: PD9
+
 I2C
 ---
 
