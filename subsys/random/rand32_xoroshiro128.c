@@ -107,7 +107,7 @@ void sys_rand_get(void *dst, size_t outlen)
 		ret = xoroshiro128_next();
 		if ((outlen-len) < sizeof(ret)) {
 			blocksize = len;
-			(void *)memcpy(udst, &ret, blocksize);
+			(void)memcpy(udst, &ret, blocksize);
 		} else {
 			(*udst++) = ret;
 		}

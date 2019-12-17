@@ -80,7 +80,7 @@ static void rand_get(u8_t *dst, size_t outlen)
 			random_num = k_cycle_get_32();
 			if ((outlen-len) < sizeof(random_num)) {
 				blocksize = len;
-				(void *)memcpy(&(dst[random_num]),
+				(void)memcpy(&(dst[random_num]),
 						&random_num, blocksize);
 			} else {
 				*((u32_t *)&dst[len]) = random_num;
