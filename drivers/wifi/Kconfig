@@ -32,5 +32,6 @@ config WIFI_OFFLOAD
 source "drivers/wifi/winc1500/Kconfig.winc1500"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"
+source "drivers/wifi/esp/Kconfig.esp"
 
 endif # WIFI
