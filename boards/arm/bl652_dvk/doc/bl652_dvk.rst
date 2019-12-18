@@ -270,4 +270,3 @@ References
 .. target-notes::
 
 .. _BL652 Module Website: https://connectivity.lairdtech.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl652-series-bluetooth-v5-nfc
-

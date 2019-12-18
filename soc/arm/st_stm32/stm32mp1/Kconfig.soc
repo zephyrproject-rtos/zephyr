@@ -18,4 +18,3 @@ config RPROC_RSC_TABLE
 	help
 	  add the resource table in the generated binary. This table is
 	  compatible with linux remote proc framework and OpenAMP library.
-

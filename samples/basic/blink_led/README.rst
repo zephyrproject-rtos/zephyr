@@ -60,4 +60,3 @@ for the nrf52840_pca10056 board:
 
 After flashing the image to the board, the user LED on the board should start to
 blinking as discussed in overview
-

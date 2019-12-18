@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+/** Available Provisioning output authentication actions. */
 typedef enum {
 	BT_MESH_NO_OUTPUT       = 0,
 	BT_MESH_BLINK           = BIT(0),
@@ -30,6 +31,7 @@ typedef enum {
 	BT_MESH_DISPLAY_STRING  = BIT(4),
 } bt_mesh_output_action_t;
 
+/** Available Provisioning input authentication actions. */
 typedef enum {
 	BT_MESH_NO_INPUT      = 0,
 	BT_MESH_PUSH          = BIT(0),
@@ -38,11 +40,13 @@ typedef enum {
 	BT_MESH_ENTER_STRING  = BIT(3),
 } bt_mesh_input_action_t;
 
+/** Available Provisioning bearers. */
 typedef enum {
 	BT_MESH_PROV_ADV   = BIT(0),
 	BT_MESH_PROV_GATT  = BIT(1),
 } bt_mesh_prov_bearer_t;
 
+/** Out of Band information location. */
 typedef enum {
 	BT_MESH_PROV_OOB_OTHER     = BIT(0),
 	BT_MESH_PROV_OOB_URI       = BIT(1),
@@ -84,7 +88,7 @@ struct bt_mesh_prov {
 	/** Supported Output OOB Actions */
 	u16_t       output_actions;
 
-	/* Maximum size of Input OOB supported */
+	/** Maximum size of Input OOB supported */
 	u8_t        input_size;
 	/** Supported Input OOB Actions */
 	u16_t       input_actions;
@@ -130,21 +134,21 @@ struct bt_mesh_prov {
 
 	/** @brief The other device finished their OOB input.
 	 *
-	 * This callback notifies the application that it should stop
-	 * displaying its output OOB value, as the other party finished their
-	 * OOB input.
+	 *  This callback notifies the application that it should stop
+	 *  displaying its output OOB value, as the other party finished their
+	 *  OOB input.
 	 */
 	void 	    (*input_complete)(void);
 
 	/** @brief Unprovisioned beacon has been received.
 	 *
-	 * This callback notifies the application that an unprovisioned
-	 * beacon has been received.
+	 *  This callback notifies the application that an unprovisioned
+	 *  beacon has been received.
 	 *
-	 * @param uuid UUID
-	 * @param oob_info OOB Information
-	 * @param uri_hash Pointer to URI Hash value. NULL if no hash was
-	 *                 present in the beacon.
+	 *  @param uuid     UUID
+	 *  @param oob_info OOB Information
+	 *  @param uri_hash Pointer to URI Hash value. NULL if no hash was
+	 *                  present in the beacon.
 	 */
 	void        (*unprovisioned_beacon)(u8_t uuid[16],
 					    bt_mesh_prov_oob_info_t oob_info,
@@ -175,7 +179,7 @@ struct bt_mesh_prov {
 	 *  assigned the specified NetKeyIndex and primary element address.
 	 *
 	 *  @param net_idx NetKeyIndex given during provisioning.
-	 *  @param addr Primary element address.
+	 *  @param addr    Primary element address.
 	 */
 	void        (*complete)(u16_t net_idx, u16_t addr);
 
@@ -185,8 +189,8 @@ struct bt_mesh_prov {
 	 *  been successfully completed, and that a node has been assigned
 	 *  the specified NetKeyIndex and primary element address.
 	 *
-	 *  @param net_idx NetKeyIndex given during provisioning.
-	 *  @param addr Primary element address.
+	 *  @param net_idx  NetKeyIndex given during provisioning.
+	 *  @param addr     Primary element address.
 	 *  @param num_elem Number of elements that this node has.
 	 */
 	void        (*node_added)(u16_t net_idx, u16_t addr, u8_t num_elem);
@@ -265,13 +269,13 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 /** @brief Provision a Mesh Node using PB-ADV
  *
- * @param uuid    UUID
- * @param net_idx Network Key Index
- * @param addr    Address to assign to remote device. If addr is 0, the lowest
- *                available address will be chosen.
- * @param attention_duration The attention duration to be send to remote device
+ *  @param uuid               UUID
+ *  @param net_idx            Network Key Index
+ *  @param addr               Address to assign to remote device. If addr is 0,
+ *                            the lowest available address will be chosen.
+ *  @param attention_duration The attention duration to be send to remote device
  *
- * @return Zero on success or (negative) error code otherwise.
+ *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
 			  u8_t attention_duration);

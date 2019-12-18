@@ -33,7 +33,6 @@ config APIC_TIMER_IRQ_PRIORITY
 
 config APIC_TIMER_TSC
 	bool "Use invariant TSC for z_timer_cycle_get_32()"
-	default n
 	help
 	  If your CPU supports invariant TSC, and you know the ratio of the
 	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC

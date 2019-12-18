@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <init.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
+#include <version.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
@@ -52,6 +53,15 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #else
 #define OT_PLATFORM_INFO ""
 #endif
+
+#if defined(CONFIG_OPENTHREAD_POLL_PERIOD)
+#define OT_POLL_PERIOD CONFIG_OPENTHREAD_POLL_PERIOD
+#else
+#define OT_POLL_PERIOD 0
+#endif
+
+#define PACKAGE_NAME "Zephyr"
+#define PACKAGE_VERSION KERNEL_VERSION_STRING
 
 extern void platformShellInit(otInstance *aInstance);
 
@@ -313,20 +323,23 @@ exit:
 	return len;
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-					     struct net_buf *buf)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(buf);
-	NET_DBG("");
-
-	return NET_CONTINUE;
-}
-
 static void openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
+
+	/* Sleepy End Device specific configuration. */
+	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+		otLinkModeConfig ot_mode = otThreadGetLinkMode(ot_instance);
+
+		/* A SED should always attach the network as a SED to indicate
+		 * increased buffer requirement to a parent.
+		 */
+		ot_mode.mRxOnWhenIdle = false;
+
+		otThreadSetLinkMode(ot_context->instance, ot_mode);
+		otLinkSetPollPeriod(ot_context->instance, OT_POLL_PERIOD);
+	}
 
 	if (otDatasetIsCommissioned(ot_instance)) {
 		/* OpenThread already has dataset stored - skip the

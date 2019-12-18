@@ -13,6 +13,7 @@
 #include <kernel_internal.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <arch/x86/ia32/segmentation.h>
+#include <arch/syscall.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
@@ -20,20 +21,6 @@
 LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
-
-
-#ifdef CONFIG_BOARD_QEMU_X86
-FUNC_NORETURN void arch_system_halt(unsigned int reason)
-{
-	ARG_UNUSED(reason);
-
-	/* Causes QEMU to exit. We passed the following on the command line:
-	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
-	 */
-	sys_out32(0, 0xf4);
-	CODE_UNREACHABLE;
-}
-#endif
 
 void z_x86_spurious_irq(const z_arch_esf_t *esf)
 {
@@ -92,21 +79,7 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const z_arch_esf_t *pEsf)
 {
-	switch (vector) {
-	case IV_GENERAL_PROTECTION:
-		LOG_ERR("General Protection Fault");
-		break;
-	case IV_DEVICE_NOT_AVAILABLE:
-		LOG_ERR("Floating point unit not enabled");
-		break;
-	default:
-		LOG_ERR("CPU exception %d", vector);
-		break;
-	}
-	if ((BIT(vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
-		LOG_ERR("Exception code: 0x%x", pEsf->errorCode);
-	}
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, pEsf);
+	z_x86_unhandled_cpu_exception(vector, pEsf);
 }
 
 #define _EXC_FUNC(vector) \

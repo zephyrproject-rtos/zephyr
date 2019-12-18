@@ -14,6 +14,7 @@
 
 #include "hal/ticker.h"
 #include "hal/ccm.h"
+#include "hal/radio.h"
 
 #include "ticker/ticker.h"
 
@@ -166,6 +167,10 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	/* Use Channel Selection Algorithm #2 if peer too supports it */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {

@@ -140,15 +140,30 @@ void radio_phy_set(u8_t phy, u8_t flags)
 #endif /* CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 }
 
-void radio_tx_power_set(u32_t power)
+void radio_tx_power_set(s8_t power)
 {
 	/* NOTE: valid value range is passed by Kconfig define. */
-	NRF_RADIO->TXPOWER = power;
+	NRF_RADIO->TXPOWER = (u32_t)power;
 }
 
 void radio_tx_power_max_set(void)
 {
 	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+}
+
+s8_t radio_tx_power_min_get(void)
+{
+	return (s8_t)hal_radio_tx_power_min_get();
+}
+
+s8_t radio_tx_power_max_get(void)
+{
+	return (s8_t)hal_radio_tx_power_max_get();
+}
+
+s8_t radio_tx_power_floor(s8_t power)
+{
+	return (s8_t)hal_radio_tx_power_floor(power);
 }
 
 void radio_freq_chan_set(u32_t chan)

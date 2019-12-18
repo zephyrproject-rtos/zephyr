@@ -12,4 +12,3 @@ void main(void)
 {
 	LOG_INF("entered main.");
 }
-

@@ -316,8 +316,8 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
 	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
-			     "Memory region %p (size %u) %s access denied", \
-			     (void *)(ptr), (u32_t)(size), \
+			     "Memory region %p (size %zu) %s access denied", \
+			     (void *)(ptr), (size_t)(size), \
 			     write ? "write" : "read")
 
 /**
@@ -354,12 +354,12 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
-		u32_t product; \
-		Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow((u32_t)(nmemb), \
-						       (u32_t)(size), \
-						       &product), \
-				     "%ux%u array is too large", \
-				     (u32_t)(nmemb), (u32_t)(size)) ||  \
+		size_t product; \
+		Z_SYSCALL_VERIFY_MSG(!size_mul_overflow((size_t)(nmemb), \
+							(size_t)(size), \
+							&product), \
+				     "%zux%zu array is too large", \
+				     (size_t)(nmemb), (size_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \
 	})
 

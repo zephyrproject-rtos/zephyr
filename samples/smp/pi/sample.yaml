@@ -13,6 +13,6 @@ common:
         - "Pi value calculated by thread #[0-9]+: [0-9]+(.*)"
         - "All [0-9]+ threads executed by [0-9]+ cores in [0-9]+ msec(.*)"
 tests:
-  sample.smp_pi:
+  sample.smp.pi:
     tags: introduction
     platform_whitelist: nsim_hs_smp qemu_x86_64

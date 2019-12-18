@@ -45,4 +45,3 @@ void sys_arch_reboot(int type)
 			:::);
 	}
 }
-

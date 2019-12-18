@@ -1,7 +1,7 @@
 sample:
   name: TI HDC Humidity/Temperature Sensor
 tests:
-  test_build:
+  sample.sensor.ti_hdc:
     harness: sensor
     platform_whitelist: reel_board nucleo_l496zg
     tags: sensors

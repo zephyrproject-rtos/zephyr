@@ -83,7 +83,7 @@ void pollfds_del(int fd)
 	FD_CLR(fd, &readfds);
 }
 
-int main(void)
+void main(void)
 {
 	int res;
 	static int counter;

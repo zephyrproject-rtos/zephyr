@@ -20,4 +20,3 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 	posix_print_error_and_exit("Exiting due to fatal error\n");
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
-

@@ -121,4 +121,3 @@ static ALT_INLINE void ALT_ALWAYS_INLINE alt_report_stack_overflow (void)
 #endif /* __cplusplus */
 
 #endif /* __ALT_STACK_H__ */
-

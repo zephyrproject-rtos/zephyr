@@ -63,4 +63,3 @@ Sample Output
     <repeats endlessly every 2 seconds>
 
 .. note:: The magn row is displayed only when running sample onto 96b_argonkey board, where a magnetometer is connected to LSM6DSL.
-

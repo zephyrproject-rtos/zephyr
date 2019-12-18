@@ -7,7 +7,7 @@ zephyr_sources_ifdef(
 
 zephyr_sources_ifdef(
   CONFIG_ASAN
-  asan.c
+  asan_hacks.c
   )
 
 add_subdirectory(tracing)

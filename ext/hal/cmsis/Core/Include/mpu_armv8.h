@@ -343,4 +343,3 @@ __STATIC_INLINE void ARM_MPU_Load_NS(uint32_t rnr, ARM_MPU_Region_t const* table
 #endif
 
 #endif
-

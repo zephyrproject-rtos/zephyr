@@ -209,5 +209,3 @@ void hwm_cleanup(void)
 	hwtimer_cleanup();
 	hw_irq_ctrl_cleanup();
 }
-
-

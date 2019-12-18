@@ -22,16 +22,30 @@
 		};
 	};
 
-	flash0: flash@8000000 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_STM32";
-	};
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 	};
 
 	soc {
+
+		flash-controller@40022000 {
+			compatible = "st,stm32f1-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <3 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <2>;
+			};
+		};
+
 		rcc: rcc@40021000 {
 			compatible = "st,stm32-rcc";
 			#clock-cells = <2>;

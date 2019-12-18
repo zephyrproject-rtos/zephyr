@@ -20,7 +20,6 @@ config ETH_LITEETH_0_IRQ_PRI
 config ETH_LITEETH_0_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ENTROPY_GENERATOR
-	default n
 	help
 	  Generate a random MAC address dynamically.
 

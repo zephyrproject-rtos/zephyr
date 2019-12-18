@@ -1042,4 +1042,3 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 		}
 	}
 }
-

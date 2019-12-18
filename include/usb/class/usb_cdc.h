@@ -40,13 +40,6 @@
 #define DATA_INTERFACE_CLASS		0x0A
 
 /**
- * @brief Values for the bDescriptorType Field
- * @note CDC120-20101103-track.pdf, 5.2.3, Table 12
- */
-#define CS_INTERFACE			0x24
-#define CS_ENDPOINT			0x25
-
-/**
  * @brief bDescriptor SubType for Communications
  * Class Functional Descriptors
  * @note CDC120-20101103-track.pdf, 5.2.3, Table 13

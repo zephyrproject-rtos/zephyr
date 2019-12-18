@@ -202,7 +202,7 @@ static const u8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      s32_t *len, u8_t **data)
 {
-	if (GET_DESC_TYPE(pSetup->wValue) == DESC_STRING &&
+	if (GET_DESC_TYPE(pSetup->wValue) == USB_STRING_DESC &&
 	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (u8_t *)(&msos1_string_descriptor);
 		*len = sizeof(msos1_string_descriptor);

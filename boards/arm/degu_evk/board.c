@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 static int board_degu_evk_init(struct device *dev)
 {

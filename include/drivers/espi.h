@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019 Intel Corporation.
  *
@@ -13,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
 #define ZEPHYR_INCLUDE_ESPI_H_
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <zephyr/types.h>
 #include <device.h>
 
@@ -555,7 +554,7 @@ static inline int z_impl_espi_read_lpc_request(struct device *dev,
  * @brief Writes data to a LPC peripheral which generates an eSPI transaction.
  *
  * This routine provides a generic interface to write data to a block which
- * triggers an eSPI transacion. The eSPI packet is assembled by the HW
+ * triggers an eSPI transaction. The eSPI packet is assembled by the HW
  * block.
  *
  * @param dev Pointer to the device structure for the driver instance.

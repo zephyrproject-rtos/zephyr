@@ -332,6 +332,10 @@ struct connection {
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 #define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 

@@ -6,7 +6,6 @@
 menuconfig BT_GATT_BAS
 	bool "Enable GATT Battery service"
 	select SENSOR
-	default n
 
 if BT_GATT_BAS
 

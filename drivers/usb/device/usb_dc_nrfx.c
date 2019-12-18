@@ -452,7 +452,7 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 	if (ret < 0) {
 		LOG_ERR("USBD event allocation failed!");
 
-		/* This should NOT happen in a properly designed system.
+		/*
 		 * Allocation may fail if workqueue thread is starved or event
 		 * queue size is too small (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
 		 * Wipe all events, free the space and schedule
@@ -464,9 +464,6 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 					       sizeof(struct usbd_event),
 					       K_NO_WAIT);
 		if (ret < 0) {
-			/* This should never fail in a properly
-			 * operating system.
-			 */
 			LOG_ERR("USBD event memory corrupted");
 			__ASSERT_NO_MSG(0);
 			return NULL;
@@ -539,7 +536,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;
@@ -550,9 +547,10 @@ static int hf_clock_enable(bool on, bool blocking)
 			/* Do not request HFCLK multiple times. */
 			return 0;
 		}
-		ret = clock_control_on(clock, NULL);
+		ret = clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 		while (blocking &&
-			clock_control_get_status(clock, NULL) !=
+			clock_control_get_status(clock,
+						 CLOCK_CONTROL_NRF_SUBSYS_HF) !=
 					CLOCK_CONTROL_STATUS_ON) {
 		}
 	} else {
@@ -562,7 +560,7 @@ static int hf_clock_enable(bool on, bool blocking)
 			 */
 			return 0;
 		}
-		ret = clock_control_off(clock, NULL);
+		ret = clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
@@ -1246,6 +1244,7 @@ static void usbd_work_handler(struct k_work *item)
 	while ((ev = usbd_evt_get()) != NULL) {
 		if (!dev_ready() && ev->evt_type != USBD_EVT_POWER) {
 			/* Drop non-power events when cable is detached. */
+			usbd_evt_free(ev);
 			continue;
 		}
 

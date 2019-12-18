@@ -8,7 +8,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_oc_simple);
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <spi.h>
 
 #include "spi_context.h"

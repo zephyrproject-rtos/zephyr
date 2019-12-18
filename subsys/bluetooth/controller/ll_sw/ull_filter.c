@@ -15,6 +15,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -44,6 +45,8 @@
 static struct lll_filter wl_filter;
 u8_t wl_anon;
 
+#define IRK_SIZE 16
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
 
@@ -68,20 +71,50 @@ static struct rl_dev {
 	u8_t      id_addr_type:1;
 	bt_addr_t id_addr;
 
-	u8_t      local_irk[16];
+	u8_t      local_irk[IRK_SIZE];
 	u8_t      pirk_idx;
 	bt_addr_t curr_rpa;
 	bt_addr_t peer_rpa;
 	bt_addr_t *local_rpa;
-
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+	bt_addr_t target_rpa;
+#endif
 } rl[CONFIG_BT_CTLR_RL_SIZE];
 
-static u8_t peer_irks[CONFIG_BT_CTLR_RL_SIZE][16];
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+/* Cache of known unknown peer RPAs */
+static u8_t newest_prpa;
+static struct prpa_cache_dev {
+	u8_t      taken:1;
+	bt_addr_t rpa;
+} prpa_cache[CONFIG_BT_CTLR_RPA_CACHE_SIZE];
+
+struct prpa_resolve_work {
+	struct k_work prpa_work;
+	bt_addr_t     rpa;
+	resolve_callback_t cb;
+};
+
+struct target_resolve_work {
+	struct k_work target_work;
+	bt_addr_t rpa;
+	u8_t      idx;
+	resolve_callback_t cb;
+};
+#endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
+
+static u8_t peer_irks[CONFIG_BT_CTLR_RL_SIZE][IRK_SIZE];
 static u8_t peer_irk_rl_ids[CONFIG_BT_CTLR_RL_SIZE];
 static u8_t peer_irk_count;
 
 static bt_addr_t local_rpas[CONFIG_BT_CTLR_RL_SIZE];
 
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+static struct prpa_resolve_work resolve_work;
+static struct target_resolve_work t_work;
+
+BUILD_ASSERT(ARRAY_SIZE(prpa_cache) < FILTER_IDX_NONE);
+#endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
 BUILD_ASSERT(ARRAY_SIZE(wl) < FILTER_IDX_NONE);
 BUILD_ASSERT(ARRAY_SIZE(rl) < FILTER_IDX_NONE);
 
@@ -124,6 +157,15 @@ static u32_t filter_remove(struct lll_filter *filter, u8_t addr_type,
 static void filter_insert(struct lll_filter *filter, int index, u8_t addr_type,
 			   u8_t *bdaddr);
 static void filter_clear(struct lll_filter *filter);
+
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+static void prpa_cache_clear(void);
+static u8_t prpa_cache_find(bt_addr_t *prpa_cache_addr);
+static void prpa_cache_add(bt_addr_t *prpa_cache_addr);
+static u8_t prpa_cache_try_resolve(bt_addr_t *rpa);
+static void prpa_cache_resolve(struct k_work *work);
+static void target_resolve(struct k_work *work);
+#endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
 
 u8_t ll_wl_size_get(void)
 {
@@ -233,7 +275,8 @@ u8_t ll_rl_clear(void)
 	return 0;
 }
 
-u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16], const u8_t lirk[16])
+u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[IRK_SIZE],
+	       const u8_t lirk[IRK_SIZE])
 {
 	u8_t i, j;
 
@@ -255,21 +298,28 @@ u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16], const u8_t lirk[16])
 
 	bt_addr_copy(&rl[i].id_addr, &id_addr->a);
 	rl[i].id_addr_type = id_addr->type & 0x1;
-	rl[i].pirk = mem_nz((u8_t *)pirk, 16);
-	rl[i].lirk = mem_nz((u8_t *)lirk, 16);
+	rl[i].pirk = mem_nz((u8_t *)pirk, IRK_SIZE);
+	rl[i].lirk = mem_nz((u8_t *)lirk, IRK_SIZE);
 	if (rl[i].pirk) {
 		/* cross-reference */
 		rl[i].pirk_idx = peer_irk_count;
 		peer_irk_rl_ids[peer_irk_count] = i;
 		/* AAR requires big-endian IRKs */
-		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, 16);
+		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, IRK_SIZE);
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+		/* a new key was added, invalidate the known/unknown list */
+		prpa_cache_clear();
+#endif
 	}
 	if (rl[i].lirk) {
-		memcpy(rl[i].local_irk, lirk, 16);
+		memcpy(rl[i].local_irk, lirk, IRK_SIZE);
 		rl[i].local_rpa = NULL;
 	}
 	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
 	rl[i].rpas_ready = 0U;
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+	memset(rl[i].target_rpa.val, 0x00, sizeof(rl[i].target_rpa));
+#endif
 	/* Default to Network Privacy */
 	rl[i].dev = 0U;
 	/* Add reference to  a whitelist entry */
@@ -303,7 +353,7 @@ u8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			u8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
 			if (pj && pi != pj) {
-				memcpy(peer_irks[pi], peer_irks[pj], 16);
+				memcpy(peer_irks[pi], peer_irks[pj], IRK_SIZE);
 				for (k = 0U;
 				     k < CONFIG_BT_CTLR_RL_SIZE;
 				     k++) {
@@ -495,13 +545,19 @@ void ull_filter_rpa_update(bool timeout)
 		if ((rl[i].taken) && (all || !rl[i].rpas_ready)) {
 
 			if (rl[i].pirk) {
-				u8_t irk[16];
+				u8_t irk[IRK_SIZE];
 
 				/* TODO: move this swap to the driver level */
 				sys_memcpy_swap(irk, peer_irks[rl[i].pirk_idx],
-						16);
+						IRK_SIZE);
 				err = bt_rpa_create(irk, &rl[i].peer_rpa);
 				LL_ASSERT(!err);
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+				/* a new key was added,
+				 * invalidate the known/unknown peer RPA cache
+				 */
+				prpa_cache_clear();
+#endif
 			}
 
 			if (rl[i].lirk) {
@@ -603,8 +659,15 @@ void ull_filter_reset(bool init)
 	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
 	rpa_last_ms = -1;
 	rl_clear();
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+	prpa_cache_clear();
+#endif
 	if (init) {
 		k_delayed_work_init(&rpa_work, rpa_timeout);
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+		k_work_init(&(resolve_work.prpa_work), prpa_cache_resolve);
+		k_work_init(&(t_work.target_work), target_resolve);
+#endif
 	} else {
 		k_delayed_work_cancel(&rpa_work);
 	}
@@ -751,6 +814,44 @@ bool ull_filter_lll_rl_enabled(void)
 	return rl_enable;
 }
 
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+u8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
+{
+	LL_ASSERT(rl_enable);
+
+	if (!k_work_pending(&(resolve_work.prpa_work))) {
+		/* copy input param to work variable */
+		memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+		resolve_work.cb = cb;
+
+		k_work_submit(&(resolve_work.prpa_work));
+
+		return 1;
+	}
+
+	return 0;
+}
+
+u8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, u8_t rl_idx,
+					 resolve_callback_t cb)
+{
+	LL_ASSERT(rl_enable);
+
+	if (!k_work_pending(&(t_work.target_work))) {
+		/* copy input param to work variable */
+		memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+		t_work.cb = cb;
+		t_work.idx = rl_idx;
+
+		k_work_submit(&(t_work.target_work));
+
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
+
 static void wl_clear(void)
 {
 	for (int i = 0; i < WL_SIZE; i++) {
@@ -785,7 +886,7 @@ static u32_t wl_add(bt_addr_le_t *id_addr)
 
 	/* Duplicate  check */
 	if (i < ARRAY_SIZE(wl)) {
-		return BT_HCI_ERR_INVALID_PARAM;
+		return 0;
 	} else if (j >= ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
@@ -996,3 +1097,146 @@ static void filter_clear(struct lll_filter *filter)
 	filter->enable_bitmask = 0;
 	filter->addr_type_bitmask = 0;
 }
+
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+static void target_resolve(struct k_work *work)
+{
+	u8_t j, idx;
+	bt_addr_t *search_rpa;
+	struct target_resolve_work *twork;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, 0, NULL};
+
+	twork = CONTAINER_OF(work, struct target_resolve_work, target_work);
+	idx = twork->idx;
+	search_rpa = &(twork->rpa);
+
+	if (rl[idx].taken && !bt_addr_cmp(&(rl[idx].target_rpa), search_rpa)) {
+		j = idx;
+	} else {
+		/* No match - so not in list Need to see if we can resolve */
+		if (bt_rpa_irk_matches(rl[idx].local_irk, search_rpa)) {
+			/* Could resolve, store RPA */
+			memcpy(rl[idx].target_rpa.val, search_rpa->val,
+			       sizeof(bt_addr_t));
+			j = idx;
+		} else {
+			/* Could not resolve, and not in table */
+			j = FILTER_IDX_NONE;
+		}
+	}
+
+	/* Kick the callback in LLL (using the mayfly, tailchain it)
+	 * Pass param FILTER_IDX_NONE if RPA can not be resolved,
+	 * or index in cache if it can be resolved
+	 */
+	if (twork->cb) {
+		mfy.fp = twork->cb;
+		mfy.param = (void *) ((unsigned int) j);
+		mayfly_enqueue(TICKER_USER_ID_THREAD,
+			       TICKER_USER_ID_LLL, 1, &mfy);
+	}
+}
+
+static u8_t prpa_cache_try_resolve(bt_addr_t *rpa)
+{
+	u8_t pi;
+	u8_t lpirk[IRK_SIZE];
+
+	for (u8_t i = 0U; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
+		if (rl[i].taken && rl[i].pirk) {
+			pi = rl[i].pirk_idx;
+			sys_memcpy_swap(lpirk, peer_irks[pi], IRK_SIZE);
+			if (bt_rpa_irk_matches(lpirk, rpa)) {
+				return i;
+			}
+		}
+	}
+
+	return FILTER_IDX_NONE;
+}
+
+static void prpa_cache_resolve(struct k_work *work)
+{
+	u8_t i, j;
+	bt_addr_t *search_rpa;
+	struct prpa_resolve_work *rwork;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, 0, NULL};
+
+	rwork = CONTAINER_OF(work, struct prpa_resolve_work, prpa_work);
+	search_rpa = &(rwork->rpa);
+
+	i = prpa_cache_find(search_rpa);
+
+	if (i == FILTER_IDX_NONE) {
+		/* No match - so not in known unknown list
+		 * Need to see if we can resolve
+		 */
+		j = prpa_cache_try_resolve(search_rpa);
+
+		if (j == FILTER_IDX_NONE) {
+			/* No match - thus cannot resolve, we have an unknown
+			 * so insert in known unkonown list
+			 */
+			prpa_cache_add(search_rpa);
+		} else {
+			/* Address could be resolved, so update current RPA
+			 * in list
+			 */
+			memcpy(rl[j].curr_rpa.val, search_rpa->val,
+			       sizeof(bt_addr_t));
+		}
+
+	} else {
+		/* Found a known unknown - do nothing */
+		j = FILTER_IDX_NONE;
+	}
+
+	/* Kick the callback in LLL (using the mayfly, tailchain it)
+	 * Pass param FILTER_IDX_NONE if RPA can not be resolved,
+	 * or index in cache if it can be resolved
+	 */
+	if (rwork->cb) {
+		mfy.fp = rwork->cb;
+		mfy.param = (void *) ((unsigned int) j);
+		mayfly_enqueue(TICKER_USER_ID_THREAD,
+			       TICKER_USER_ID_LLL, 1, &mfy);
+	}
+}
+
+static void prpa_cache_clear(void)
+{
+	/* Note the first element will not be in use before wrap around
+	 * is reached.
+	 * The first element in actual use will be at index 1.
+	 * There is no element waisted with this implementation, as
+	 * element 0 will eventually be allocated.
+	 */
+	newest_prpa = 0U;
+
+	for (u8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
+		prpa_cache[i].taken = 0U;
+	}
+}
+
+static void prpa_cache_add(bt_addr_t *rpa)
+{
+	newest_prpa = (newest_prpa + 1) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
+
+	memcpy(prpa_cache[newest_prpa].rpa.val, rpa->val, sizeof(bt_addr_t));
+	prpa_cache[newest_prpa].taken = 1U;
+}
+
+static u8_t prpa_cache_find(bt_addr_t *rpa)
+{
+	for (u8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
+		if (prpa_cache[i].taken &&
+		    !bt_addr_cmp(&(prpa_cache[i].rpa), rpa)) {
+			return i;
+		}
+	}
+	return FILTER_IDX_NONE;
+}
+#endif /* !CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
+

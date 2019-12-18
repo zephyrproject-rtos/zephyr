@@ -32,7 +32,12 @@ K_SEM_DEFINE(end_sema, 0, 1);
  * to allocate the pipe object, one for its buffer. Both should be auto-
  * released when the thread exits
  */
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 4, 4);
+#ifdef CONFIG_64BIT
+#define SZ	256
+#else
+#define SZ	128
+#endif
+K_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
 
 static void tpipe_put(struct k_pipe *ppipe, int timeout)
 {
@@ -337,9 +342,9 @@ void test_pipe_alloc(void)
 	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
 	k_pipe_cleanup(&pipe_test_alloc);
 
-	ret = k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN * 8);
+	ret = k_pipe_alloc_init(&pipe_test_alloc, 1024);
 	zassert_true(ret == -ENOMEM,
-		"resource pool is smaller then requested buffer");
+		"resource pool max block size is not smaller then requested buffer");
 }
 
 /**

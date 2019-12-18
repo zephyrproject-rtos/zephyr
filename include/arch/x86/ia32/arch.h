@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <kernel_structs.h>
 #include <arch/common/ffs.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <arch/x86/ia32/thread.h>
 #include <arch/x86/ia32/syscall.h>
 

@@ -153,4 +153,3 @@ extern void z_xt_tick_divisor_init(void);
 #endif // Internal/External timer
 
 #endif  /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_TIMER_H_ */
-

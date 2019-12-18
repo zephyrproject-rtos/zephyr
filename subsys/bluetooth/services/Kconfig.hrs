@@ -5,7 +5,6 @@
 
 menuconfig BT_GATT_HRS
 	bool "Enable GATT Heart Rate service"
-	default n
 
 if BT_GATT_HRS
 

@@ -44,7 +44,7 @@ div.rst-other-versions dl {
 }
 
 /* tweak spacing after a toctree, fixing issue from sphinx-tabs */
-.toctree-wrapper ul, .section ul {
+.toctree-wrapper ul, ul.simple ol.simple {
    margin-bottom: 24px !important;
 }
 

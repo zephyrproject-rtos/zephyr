@@ -21,4 +21,3 @@ References
 .. target-notes::
 
 .. _nRF52810 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52810
-

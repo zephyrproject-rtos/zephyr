@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Real Time Counter
-
-description: |
-    This is a representation of the Nordic nRF RTC node
+description: Nordic nRF RTC (Real-Time Counter)
 
 compatible: "nordic,nrf-rtc"
 
@@ -30,4 +27,3 @@ properties:
       type: boolean
       description: Enable fixed top value
       required: false
-

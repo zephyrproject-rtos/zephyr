@@ -1,4 +1,3 @@
-
 .. raw:: html
 
    <a href="https://www.zephyrproject.org">

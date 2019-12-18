@@ -4,7 +4,3 @@ zephyr_sources(
   soc.c
   wdog.S
   )
-zephyr_sources_ifdef(
-  CONFIG_ARM_MPU
-  arm_mpu_regions.c
-  )

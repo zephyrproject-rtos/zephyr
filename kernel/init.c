@@ -49,20 +49,6 @@ LOG_MODULE_REGISTER(os);
 #define BOOT_DELAY_BANNER ""
 #endif
 
-#ifdef BUILD_VERSION
-#define BOOT_BANNER "Booting Zephyr OS build "		\
-	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
-#else
-#define BOOT_BANNER "Booting Zephyr OS version "	\
-	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
-#endif
-
-#if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (false)
-#else
-#define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
-#endif
-
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
@@ -256,7 +242,16 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 		       "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
-	PRINT_BOOT_BANNER();
+
+#if defined(CONFIG_BOOT_BANNER)
+#ifdef BUILD_VERSION
+	printk("*** Booting Zephyr OS build %s %s ***\n",
+			STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
+#else
+	printk("*** Booting Zephyr OS version %s %s ***\n",
+			KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);
+#endif
+#endif
 
 	/* Final init level before app starts */
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);

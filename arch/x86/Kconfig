@@ -41,9 +41,7 @@ config CPU_APOLLO_LAKE
 #
 
 config X86_64
-	bool
-	prompt "Run in 64-bit mode"
-	default n
+	bool "Run in 64-bit mode"
 	select 64BIT
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -85,7 +83,6 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
-	default n
 	help
 	  Allow retrieval of platform configuration at runtime.
 
@@ -110,7 +107,6 @@ if MULTIBOOT
 
 config MULTIBOOT_INFO
 	bool "Preserve multiboot information structure"
-	default n
 	help
 	  Multiboot passes a pointer to an information structure to the
 	  kernel entry point. Some drivers (e.g., the multiboot framebuffer
@@ -119,14 +115,12 @@ config MULTIBOOT_INFO
 
 config MULTIBOOT_MEMMAP
 	bool "Use multiboot memory map if provided"
-	default n
 	select MULTIBOOT_INFO
 	help
 	  Use the multiboot memory map if the loader provides one.
 
 config MULTIBOOT_FRAMEBUF
 	bool "Multiboot framebuffer support"
-	default n
 	select DISPLAY
 	select FRAMEBUF_DISPLAY
 	select MULTIBOOT_INFO

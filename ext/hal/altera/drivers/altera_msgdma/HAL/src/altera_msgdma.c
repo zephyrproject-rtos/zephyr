@@ -1724,8 +1724,3 @@ int alt_msgdma_extended_descriptor_sync_transfer(
 {
     return alt_msgdma_descriptor_sync_transfer(dev, NULL, desc);
 }
-
-
-
-
-

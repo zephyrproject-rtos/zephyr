@@ -1256,7 +1256,8 @@ struct bt_gatt_subscribe_params;
 /** @typedef bt_gatt_notify_func_t
  *  @brief Notification callback function
  *
- *  @param conn Connection object.
+ *  @param conn Connection object. May be NULL, indicating that the peer is
+ *              being unpaired
  *  @param params Subscription parameters.
  *  @param data Attribute value data. If NULL then subscription was removed.
  *  @param length Attribute value length.
@@ -1277,6 +1278,20 @@ enum {
 	 * issue a new subscription.
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_VOLATILE,
+
+	/** No resubscribe flag
+	 *
+	 * By default when BT_GATT_SUBSCRIBE_FLAG_VOLATILE is unset, the
+	 * subscription will be automatically renewed when the client
+	 * reconnects, as a workaround for GATT servers that do not persist
+	 * subscriptions.
+	 *
+	 * This flag will disable the automatic resubscription. It is useful
+	 * if the application layer knows that the GATT server remembers
+	 * subscriptions from previous connections and wants to avoid renewing
+	 * the subscriptions.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_NO_RESUB,
 
 	/** Write pending flag
 	 *

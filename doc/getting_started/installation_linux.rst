@@ -192,6 +192,19 @@ more recent one by building from source, or use the one that is bundled in
 the :ref:`Zephyr SDK <zephyr_sdk>` by installing it and setting the
 :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable.
 
+Python
+======
+
+Python 3.6 or later is required. Check what version you have by using ``python3
+--version``.
+
+If you have an older version, you will need to install a more recent Python 3.
+You can build from source, or use a backport from your distribution's package
+manager channels if one is available. Isolating this Python in a virtual
+environment is recommended to avoid interfering with your system Python.
+
+.. _pyenv: https://github.com/pyenv/pyenv
+
 .. _zephyr_sdk:
 
 Install the Zephyr Software Development Kit (SDK)

@@ -79,6 +79,14 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 		return -ENOBUFS;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
+		if (net_pkt_ipv4_opts_len(pkt)) {
+			ipv4_hdr->vhl = 0x40 | (0x0F &
+					((net_pkt_ip_hdr_len(pkt) +
+					  net_pkt_ipv4_opts_len(pkt)) / 4U));
+		}
+	}
+
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
@@ -101,6 +109,93 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV4_HDR_OPTIONS)
+int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
+			       net_ipv4_parse_hdr_options_cb_t cb,
+			       void *user_data)
+{
+	struct net_pkt_cursor cur;
+	u8_t opt_data[NET_IPV4_HDR_OPTNS_MAX_LEN];
+	u8_t opts_len;
+
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, sizeof(struct net_ipv4_hdr))) {
+		return -EINVAL;
+	}
+
+	opts_len = net_pkt_ipv4_opts_len(pkt);
+
+	while (opts_len) {
+		u8_t opt_len = 0U;
+		u8_t opt_type;
+
+		if (net_pkt_read_u8(pkt, &opt_type)) {
+			return -EINVAL;
+		}
+
+		opts_len--;
+
+		if (!(opt_type == NET_IPV4_OPTS_EO ||
+		      opt_type == NET_IPV4_OPTS_NOP)) {
+			if (net_pkt_read_u8(pkt, &opt_len)) {
+				return -EINVAL;
+			}
+
+			opt_len -= 2U;
+			opts_len--;
+		}
+
+		if (opt_len > opts_len) {
+			return -EINVAL;
+		}
+
+		switch (opt_type) {
+		case NET_IPV4_OPTS_NOP:
+			break;
+
+		case NET_IPV4_OPTS_EO:
+			/* Options length should be zero, when cursor reachs to
+			 * End of options.
+			 */
+			if (opts_len) {
+				return -EINVAL;
+			}
+
+			break;
+		case NET_IPV4_OPTS_RR:
+		case NET_IPV4_OPTS_TS:
+			if (net_pkt_read(pkt, opt_data, opt_len)) {
+				return -EINVAL;
+			}
+
+			if (cb(opt_type, opt_data, opt_len, user_data)) {
+				return -EINVAL;
+			}
+
+			break;
+		default:
+			if (net_pkt_skip(pkt, opt_len)) {
+				return -EINVAL;
+			}
+
+			break;
+		}
+
+		opts_len -= opt_len;
+	}
+
+	net_pkt_cursor_restore(pkt, &cur);
+
+	return 0;
+}
+#endif
+
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -112,6 +207,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	struct net_ipv4_hdr *hdr;
 	union net_ip_header ip;
 	u8_t hdr_len;
+	u8_t opts_len;
 	int pkt_len;
 
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
@@ -140,7 +236,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	net_pkt_set_ip_hdr_len(pkt, hdr_len);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+
+	opts_len = hdr_len - sizeof(struct net_ipv4_hdr);
+	net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
 	pkt_len = ntohs(hdr->len);
 	if (real_len < pkt_len) {
@@ -188,9 +287,9 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	net_pkt_acknowledge_data(pkt, &ipv4_access);
 
-	if (hdr_len > sizeof(struct net_ipv4_hdr)) {
-		/* There are probably options, let's skip them */
-		if (net_pkt_skip(pkt, hdr_len - sizeof(struct net_ipv4_hdr))) {
+	if (opts_len) {
+		/* Only few options are handled in EchoRequest, rest skipped */
+		if (net_pkt_skip(pkt, opts_len)) {
 			NET_DBG("Header too big? %u", hdr_len);
 			goto drop;
 		}

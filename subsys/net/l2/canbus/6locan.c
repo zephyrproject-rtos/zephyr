@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 #include <6lo.h>
 #include <timeout_q.h>
 #include <string.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <net/ethernet.h>
 #include <net/net_ip.h>
 #include <string.h>

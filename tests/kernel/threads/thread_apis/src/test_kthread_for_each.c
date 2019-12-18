@@ -77,4 +77,3 @@ void test_k_thread_foreach(void)
 					"thread_callback() not getting called");
 	k_thread_abort(tid);
 }
-

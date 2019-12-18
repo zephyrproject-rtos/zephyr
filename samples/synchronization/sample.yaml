@@ -3,7 +3,7 @@ sample:
     basic sanity of the kernel.
   name: Synchronization Sample
 tests:
-  sample.synchronization:
+  sample.kernel.synchronization:
     build_on_all: true
     tags: kernel synchronization
     harness: console

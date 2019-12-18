@@ -23,6 +23,8 @@ extern u32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
 #endif
 
+s8_t z_sys_device_level;
+
 /**
  * @brief Execute all the device initialization functions at a given level
  *
@@ -46,6 +48,7 @@ void z_sys_device_do_config_level(s32_t level)
 		__device_init_end,
 	};
 
+	z_sys_device_level = level;
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {
 		int retval;

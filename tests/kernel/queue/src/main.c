@@ -28,7 +28,13 @@ static void test_queue_alloc_append_user(void)
 	ztest_test_skip();
 }
 #endif
-K_MEM_POOL_DEFINE(test_pool, 16, 96, 4, 4);
+
+#ifdef CONFIG_64BIT
+#define MAX_SZ	128
+#else
+#define MAX_SZ	96
+#endif
+K_MEM_POOL_DEFINE(test_pool, 16, MAX_SZ, 4, 4);
 
 /*test case main entry*/
 void test_main(void)

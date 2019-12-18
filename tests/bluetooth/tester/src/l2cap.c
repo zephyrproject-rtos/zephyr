@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CHANNELS 2
 #define SERVERS 1
 
-NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_MTU, NULL);
 
 static struct channel {
 	u8_t chan_id; /* Internal number that identifies L2CAP channel. */

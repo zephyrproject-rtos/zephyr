@@ -112,10 +112,15 @@ struct lll_conn {
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	struct lll_conn_meta conn_meta;
 #endif /* CONFIG_BT_CTLR_CONN_META */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif
 };
 
 int lll_conn_init(void);
 int lll_conn_reset(void);
+
 u8_t lll_conn_sca_local_get(void);
 u32_t lll_conn_ppm_local_get(void);
 u32_t lll_conn_ppm_get(u8_t sca);

@@ -265,4 +265,3 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _ST STM32F405RG Datasheet:
    http://www.st.com/resource/en/reference_manual/dm00031020.pdf
-

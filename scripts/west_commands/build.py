@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import shlex
 
 from west import log
 from west.configuration import config
@@ -384,6 +385,10 @@ class Build(Forceable):
             cmake_opts = []
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
+
+        user_args = config_get('cmake-args', None)
+        if user_args:
+            cmake_opts.extend(shlex.split(user_args))
 
         # Invoke CMake from the current working directory using the
         # -S and -B options (officially introduced in CMake 3.13.0).

@@ -109,7 +109,7 @@ static u32_t count_s(const char *str, u32_t nargs)
 	while ((curr = *str++) && arg < nargs) {
 		if (curr == '%') {
 			arm = !arm;
-		} else if (arm && isalpha(curr)) {
+		} else if (arm && isalpha((int)curr)) {
 			if (curr == 's') {
 				mask |= BIT(arg);
 			}

@@ -11,6 +11,9 @@ config ESPI_XEC
 
 if ESPI_XEC
 
+config ESPI_OOB_CHANNEL
+	default y
+
 config ESPI_PERIPHERAL_HOST_IO
 	default  y
 

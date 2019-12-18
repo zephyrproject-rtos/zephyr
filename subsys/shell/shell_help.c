@@ -208,4 +208,3 @@ void shell_help_cmd_print(const struct shell *shell)
 	formatted_text_print(shell, shell->ctx->active_cmd.help,
 			     field_width, false);
 }
-

@@ -102,8 +102,3 @@ void test_pipe_user_get_fail(void)
 	get_fail(p);
 }
 #endif
-
-
-/**
- * @}
- */

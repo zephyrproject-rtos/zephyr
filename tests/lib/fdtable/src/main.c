@@ -13,7 +13,7 @@ void test_z_reserve_fd(void)
 {
 	int fd = z_reserve_fd(); /* function being tested */
 
-	zassert_equal(fd >= 0, true, "fd < 0");
+	zassert_true(fd >= 0, "fd < 0");
 
 	z_free_fd(fd);
 }
@@ -23,6 +23,7 @@ void test_z_get_fd_obj_and_vtable(void)
 	const struct fd_op_vtable *vtable;
 
 	int fd = z_reserve_fd();
+	zassert_true(fd >= 0, "fd < 0");
 
 	int *obj;
 	obj = z_get_fd_obj_and_vtable(fd, &vtable); /* function being tested */
@@ -35,6 +36,8 @@ void test_z_get_fd_obj_and_vtable(void)
 void test_z_get_fd_obj(void)
 {
 	int fd = z_reserve_fd();
+	zassert_true(fd >= 0, "fd < 0");
+
 	int err = -1;
 	const struct fd_op_vtable *vtable = 0;
 	const struct fd_op_vtable *vtable2 = vtable+1;
@@ -64,6 +67,8 @@ void test_z_finalize_fd(void)
 	const struct fd_op_vtable *vtable;
 
 	int fd = z_reserve_fd();
+	zassert_true(fd >= 0, NULL);
+
 	int *obj = z_get_fd_obj_and_vtable(fd, &vtable);
 
 	const struct fd_op_vtable *original_vtable = vtable;
@@ -85,6 +90,7 @@ void test_z_alloc_fd(void)
 	int *obj = NULL;
 
 	int fd = z_alloc_fd(obj, vtable); /* function being tested */
+	zassert_true(fd >= 0, NULL);
 
 	obj = z_get_fd_obj_and_vtable(fd, &vtable);
 
@@ -99,6 +105,7 @@ void test_z_free_fd(void)
 	const struct fd_op_vtable *vtable = NULL;
 
 	int fd = z_reserve_fd();
+	zassert_true(fd >= 0, NULL);
 
 	z_free_fd(fd); /* function being tested */
 

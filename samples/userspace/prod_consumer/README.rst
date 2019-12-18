@@ -101,4 +101,3 @@ Sample Output
     I:processing payload #10 complete
     I:writing processed data blob back to the sample device
     I:SUCCESS
-

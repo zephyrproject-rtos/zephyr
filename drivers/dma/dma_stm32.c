@@ -381,7 +381,8 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	}
 	DMA_InitStruct.Channel = table_ll_channel[config->dma_slot];
 
-	stm32_dma_get_fifo_threshold(config->head_block->fifo_mode_control);
+	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
+					config->head_block->fifo_mode_control);
 
 	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
@@ -403,8 +404,10 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
+		LL_DMA_EnableFifoMode(dma, table_ll_stream[id]);
 		LL_DMA_EnableIT_FE(dma, table_ll_stream[id]);
 	} else {
+		LL_DMA_DisableFifoMode(dma, table_ll_stream[id]);
 		LL_DMA_DisableIT_FE(dma, table_ll_stream[id]);
 	}
 #endif

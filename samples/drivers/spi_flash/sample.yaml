@@ -1,7 +1,7 @@
 sample:
   name: SPI Flash Sample
 tests:
-  sample.driver.spi_flash:
+  sample.drivers.spi.flash:
     tags: spi flash
     filter: dt_compat_enabled("jedec,spi-nor")
     harness: console
@@ -16,7 +16,7 @@ tests:
             - "Data read 55 aa"
             - "Data read matches with data written. Good!!"
     depends_on: spi
-  sample.driver.spi_flash_dpd:
+  sample.drivers.spi.flash_dpd:
     tags: spi flash
     filter: dt_compat_enabled("jedec,spi-nor")
     build_only: true

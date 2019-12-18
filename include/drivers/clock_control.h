@@ -102,10 +102,17 @@ struct clock_control_driver_api {
 };
 
 /**
- * @brief Enable the clock of a sub-system controlled by the device
- * @param dev Pointer to the device structure for the clock controller driver
- * 	instance
- * @param sys A pointer to an opaque data representing the sub-system
+ * @brief Enable a clock controlled by the device
+ *
+ * On success, the clock is enabled and ready when this function
+ * returns. This function may sleep, and thus can only be called from
+ * thread context.
+ *
+ * Use @ref clock_control_async_on() for non-blocking operation.
+ *
+ * @param dev Device structure whose driver controls the clock.
+ * @param sys Opaque data representing the clock.
+ * @return 0 on success, negative errno on failure.
  */
 static inline int clock_control_on(struct device *dev,
 				   clock_control_subsys_t sys)
@@ -117,13 +124,14 @@ static inline int clock_control_on(struct device *dev,
 }
 
 /**
- * @brief Disable the clock of a sub-system controlled by the device.
+ * @brief Disable a clock controlled by the device
  *
- * Function is non-blocking and can be called from any context.
+ * This function is non-blocking and can be called from any context.
+ * On success, the clock is disabled when this function returns.
  *
- * @param dev Pointer to the device structure for the clock controller driver
- * 	instance
- * @param sys A pointer to an opaque data representing the sub-system
+ * @param dev Device structure whose driver controls the clock
+ * @param sys Opaque data representing the clock
+ * @return 0 on success, negative errno on failure.
  */
 static inline int clock_control_off(struct device *dev,
 				    clock_control_subsys_t sys)

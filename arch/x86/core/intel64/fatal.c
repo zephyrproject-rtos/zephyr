@@ -17,9 +17,7 @@ void z_x86_exception(z_arch_esf_t *esf)
 		z_x86_page_fault_handler(esf);
 		break;
 	default:
-		LOG_ERR("** CPU Exception %ld (code %ld/0x%lx) **",
-			esf->vector, esf->code, esf->code);
-		z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+		z_x86_unhandled_cpu_exception(esf->vector, esf);
 		CODE_UNREACHABLE;
 	}
 }

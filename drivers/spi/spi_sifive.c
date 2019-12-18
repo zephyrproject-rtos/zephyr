@@ -272,4 +272,3 @@ SPI_INIT(1);
 SPI_INIT(2);
 
 #endif /* DT_INST_2_SIFIVE_SPI0_LABEL */
-

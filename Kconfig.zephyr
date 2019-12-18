@@ -85,20 +85,24 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
-config USE_CODE_PARTITION
-	bool "link into code-partition"
-	depends on HAS_FLASH_LOAD_OFFSET
+if HAS_FLASH_LOAD_OFFSET
+
+config USE_DT_CODE_PARTITION
+	bool "Link application into /chosen/zephyr,code-partition from devicetree"
 	help
-	  When selected application will be linked into chosen code-partition.
+	  When enabled, the application will be linked into the flash partition
+	  selected by the zephyr,code-partition property in /chosen in devicetree.
+	  When this is disabled, the flash load offset and size can be set manually
+	  below.
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_OFFSET
-	hex "Kernel load offset"
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  This option specifies the byte offset from the beginning of flash that
 	  the kernel should be loaded into. Changing this value from zero will
@@ -108,10 +112,10 @@ config FLASH_LOAD_OFFSET
 	  If unsure, leave at the default value 0.
 
 config FLASH_LOAD_SIZE
-	hex "Kernel load size"
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load size" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  If non-zero, this option specifies the size, in bytes, of the flash
 	  area that the Zephyr image will be allowed to occupy.  If zero, the
@@ -119,6 +123,8 @@ config FLASH_LOAD_SIZE
 	  the device.
 
 	  If unsure, leave at the default value 0.
+
+endif # HAS_FLASH_LOAD_OFFSET
 
 config TEXT_SECTION_OFFSET
 	hex
@@ -351,7 +357,7 @@ config BOOTLOADER_SRAM_SIZE
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_CODE_PARTITION
+	select USE_DT_CODE_PARTITION
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -405,17 +411,5 @@ config MISRA_SANE
 	  disallows some otherwise-permitted features of the C
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
-
-endmenu
-
-
-menu "Compatibility"
-
-config COMPAT_INCLUDES
-	bool "Suppress warnings when using header shims"
-	default y
-	help
-	  Suppress any warnings from the pre-processor when including
-	  deprecated header files.
 
 endmenu

@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Marc Reilly <marc@cpdesign.com.au>
 # SPDX-License-Identifier: Apache-2.0
 
-title: ST7789V 320x240 Display Controller
-
-description: |
-    This is a representation of the ST7789V 320x240 Display Controller
+description: ST7789V 320x240 display controller
 
 compatible: "sitronix,st7789v"
 

@@ -1122,6 +1122,48 @@ static int cmd_bondable(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static void bond_info(const struct bt_bond_info *info, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int *bond_count = user_data;
+
+	bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
+	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	(*bond_count)++;
+}
+
+static int cmd_bonds(const struct shell *shell, size_t argc, char *argv[])
+{
+	int bond_count = 0;
+
+	shell_print(shell, "Bonded devices:");
+	bt_foreach_bond(selected_id, bond_info, &bond_count);
+	shell_print(shell, "Total %d", bond_count);
+
+	return 0;
+}
+
+static void connection_info(struct bt_conn *conn, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int *conn_count = user_data;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	(*conn_count)++;
+}
+
+static int cmd_connections(const struct shell *shell, size_t argc, char *argv[])
+{
+	int conn_count = 0;
+
+	shell_print(shell, "Connected devices:");
+	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
+	shell_print(shell, "Total %d", conn_count);
+
+	return 0;
+}
+
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1639,6 +1681,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_security, 2, 1),
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
+	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
+	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
 	SHELL_CMD_ARG(auth, NULL,
 		      "<method: all, input, display, yesno, confirm, "
 		      "oob, none>",
@@ -1656,7 +1700,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_WHITELIST)
 	SHELL_CMD_ARG(wl-add, NULL, HELP_ADDR_LE, cmd_wl_add, 3, 0),
 	SHELL_CMD_ARG(wl-rem, NULL, HELP_ADDR_LE, cmd_wl_rem, 3, 0),
-	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 2, 0),
+	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 1, 0),
 	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>", cmd_wl_connect, 2, 0),
 #endif /* defined(CONFIG_BT_WHITELIST) */
 #if defined(CONFIG_BT_FIXED_PASSKEY)

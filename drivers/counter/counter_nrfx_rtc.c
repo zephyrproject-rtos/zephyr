@@ -526,12 +526,12 @@ static int init_rtc(struct device *dev, u8_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clock, NULL);
+	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 

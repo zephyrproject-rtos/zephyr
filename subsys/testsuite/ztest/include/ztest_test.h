@@ -130,8 +130,8 @@ static inline void unit_test_noop(void)
 #define ztest_user_unit_test(fn) \
 	ztest_user_unit_test_setup_teardown(fn, unit_test_noop, unit_test_noop)
 
-extern void z_test_1cpu_start(void);
-extern void z_test_1cpu_stop(void);
+__syscall void z_test_1cpu_start(void);
+__syscall void z_test_1cpu_stop(void);
 
 /**
  * @brief Define a SMP-unsafe test function
@@ -206,6 +206,9 @@ extern struct k_mem_domain ztest_mem_domain;
 /**
  * @}
  */
+#ifndef ZTEST_UNITTEST
+#include <syscalls/ztest_test.h>
+#endif
 
 #ifdef __cplusplus
 }

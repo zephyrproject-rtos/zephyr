@@ -937,11 +937,11 @@ static void apply_mem_partition(struct x86_page_tables *ptables,
 	}
 
 	__ASSERT(partition->start >= DT_PHYS_RAM_ADDR,
-		 "region at %08lx[%u] extends below system ram start 0x%08x",
+		 "region at %08lx[%zu] extends below system ram start 0x%08x",
 		 partition->start, partition->size, DT_PHYS_RAM_ADDR);
 	__ASSERT(((partition->start + partition->size) <=
 		  (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U))),
-		 "region at %08lx[%u] end at %08lx extends beyond system ram end 0x%08x",
+		 "region at %08lx[%zu] end at %08lx extends beyond system ram end 0x%08x",
 		 partition->start, partition->size,
 		 partition->start + partition->size,
 		 (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));

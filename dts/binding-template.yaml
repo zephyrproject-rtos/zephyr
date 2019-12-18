@@ -1,7 +1,5 @@
-title: Short description of the node
-
 description: |
-    Longer free-form description of the node. Can have multiple
+    Free-form description of the device/node. Can have multiple
     lines/paragraphs.
 
     See https://yaml-multiline.info/ for formatting help.

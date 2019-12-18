@@ -2900,4 +2900,3 @@ DEVICE_AND_API_INIT(usdhc_dev2,
 #error No USDHC2 slot on board.
 #endif
 #endif
-

@@ -42,7 +42,7 @@ static struct {
 } event;
 
 static struct {
-	struct device *clk_hf;
+	struct device *clk;
 } lll;
 
 /* Entropy device */
@@ -125,7 +125,7 @@ int lll_init(void)
 	event.curr.abort_cb = NULL;
 
 	/* Initialize HF CLK */
-	lll.clk_hf = NULL;
+	lll.clk = NULL;
 
 	err = init_reset();
 	if (err) {

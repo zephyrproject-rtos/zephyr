@@ -201,4 +201,3 @@ int timer_delete(timer_t timerid)
 
 	return 0;
 }
-

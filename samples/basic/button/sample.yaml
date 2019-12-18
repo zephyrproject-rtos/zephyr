@@ -1,7 +1,7 @@
 sample:
   name: Button Sample
 tests:
-  sample.button:
+  sample.basic.button:
     tags: button gpio
     filter: dt_compat_enabled_with_alias("gpio-keys", "sw0")
     depends_on: gpio

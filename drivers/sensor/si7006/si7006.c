@@ -12,7 +12,7 @@
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -205,4 +205,3 @@ API Reference
 
 .. doxygengroup:: mem_pool_apis
    :project: Zephyr
-

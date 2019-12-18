@@ -170,4 +170,3 @@ historical interest only.
 
 .. _west v0.5.x documentation:
    https://docs.zephyrproject.org/1.14.0/guides/west/index.html
-

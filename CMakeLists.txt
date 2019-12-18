@@ -50,7 +50,6 @@ set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
-set(SYSCALL_MACROS_H_TARGET    syscall_macros_h_target)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
@@ -458,6 +457,7 @@ add_subdirectory(drivers)
 if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 	file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
 		ENCODING UTF-8)
+  set(module_names)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
     # Match "<name>":"<path>" for each line of file, each corresponding to
@@ -465,29 +465,26 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # lazy regexes (it supports greedy only).
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+
+    list(APPEND module_names ${module_name})
+
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+  endforeach()
+
+  foreach(module_name ${module_names})
     # Note the second, binary_dir parameter requires the added
     # subdirectory to have its own, local cmake target(s). If not then
     # this binary_dir is created but stays empty. Object files land in
     # the main binary dir instead.
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
-    set(ZEPHYR_CURRENT_MODULE_DIR ${module_path})
-    add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
+    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/${module_name})
   endforeach()
   # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
   set(ZEPHYR_CURRENT_MODULE_DIR)
 endif()
-
-set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
-
-add_custom_target(${SYSCALL_MACROS_H_TARGET} DEPENDS ${syscall_macros_h})
-add_custom_command(                          OUTPUT  ${syscall_macros_h}
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
-  > ${syscall_macros_h}
-  DEPENDS ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
-  )
-
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -570,6 +567,10 @@ if(CONFIG_APPLICATION_DEFINED_SYSCALL)
   set(SYSCALL_INCLUDE_DIRECTORY --include ${APPLICATION_SOURCE_DIR})
 endif()
 
+if(CONFIG_ZTEST)
+  set(SYSCALL_ZTEST_DIRECTORY --include ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+endif()
+
 add_custom_command(
   OUTPUT
   ${syscalls_json}
@@ -578,6 +579,7 @@ add_custom_command(
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
   ${SYSCALL_INCLUDE_DIRECTORY}
+  ${SYSCALL_ZTEST_DIRECTORY}
   --json-file        ${syscalls_json}              # Write this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
@@ -637,7 +639,6 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(     ${OFFSETS_LIB}
   ${SYSCALL_LIST_H_TARGET}
-  ${SYSCALL_MACROS_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
   )
@@ -1060,9 +1061,6 @@ if(CONFIG_USERSPACE)
   if(CONFIG_NEWLIB_LIBC_NANO)
     set(NEWLIB_PART -l libc_nano.a z_libc_partition)
   endif()
-  if(CONFIG_MBEDTLS)
-    set(MBEDTLS_PART -l lib..__modules__crypto__mbedtls.a k_mbedtls_partition)
-  endif()
 
   add_custom_command(
     OUTPUT ${APP_SMEM_UNALIGNED_LD}
@@ -1070,7 +1068,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_UNALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
@@ -1121,7 +1119,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
     -o ${APP_SMEM_ALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS

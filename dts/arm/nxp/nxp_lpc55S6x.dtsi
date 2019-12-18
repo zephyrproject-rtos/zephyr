@@ -96,6 +96,16 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		spi8: spi@5009f000 {
+			compatible = "nxp,lpc-spi";
+			reg = <0x5009f000 0x1000>;
+			interrupts = <59 0>;
+			label = "SPI_8";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 

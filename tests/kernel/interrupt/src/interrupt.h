@@ -76,4 +76,3 @@ static void trigger_irq(int irq)
 /* for not supported architecture */
 #define NO_TRIGGER_FROM_SW
 #endif
-

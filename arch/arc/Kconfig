@@ -117,7 +117,6 @@ config ARC_FIRQ
 config ARC_FIRQ_STACK
 	bool "Enable separate firq stack"
 	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
-	default n
 	help
 	  Use separate stack for FIRQ handing. When the fast irq is also a direct
 	  irq, this will get the minimal interrupt latency.
@@ -167,7 +166,6 @@ config ARC_STACK_PROTECTION
 
 config ARC_USE_UNALIGNED_MEM_ACCESS
 	bool "Enable unaligned access in HW"
-	default n if CPU_ARCEM
 	default y if CPU_ARCHS
 	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
 	help
@@ -235,8 +233,7 @@ config SJLI_TABLE_SIZE
 	  sjli instruction.
 
 config ARC_SECURE_FIRMWARE
-	prompt "Generate Secure Firmware"
-	bool
+	bool "Generate Secure Firmware"
 	depends on ARC_HAS_SECURE
 	default y if TRUSTED_EXECUTION_SECURE
 	help
@@ -252,8 +249,7 @@ config ARC_SECURE_FIRMWARE
 	  and normal resources of the ARC processors.
 
 config ARC_NORMAL_FIRMWARE
-	prompt "Generate Normal Firmware"
-	bool
+	bool "Generate Normal Firmware"
 	depends on !ARC_SECURE_FIRMWARE
 	depends on ARC_HAS_SECURE
 	default y if TRUSTED_EXECUTION_NONSECURE

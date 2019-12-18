@@ -80,11 +80,8 @@ struct bt_conn_sco {
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
 
 struct bt_conn_tx {
-	union {
-		sys_snode_t node;
-		struct k_work work;
-	};
-	struct bt_conn *conn;
+	sys_snode_t node;
+
 	bt_conn_tx_cb_t cb;
 	void *user_data;
 
@@ -122,6 +119,11 @@ struct bt_conn {
 	 * the next packet (if any) in tx_pending.
 	 */
 	u32_t                   pending_no_cb;
+
+	/* Completed TX for which we need to call the callback */
+	sys_slist_t		tx_complete;
+	struct k_work           tx_complete_work;
+
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
@@ -226,11 +228,43 @@ void bt_conn_security_changed(struct bt_conn *conn, enum bt_security_err err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
+						 size_t reserve, s32_t timeout,
+						 const char *func, int line);
+#define bt_conn_create_pdu_timeout(_pool, _reserve, _timeout) \
+	bt_conn_create_pdu_timeout_debug(_pool, _reserve, _timeout, \
+					 __func__, __LINE__)
+
+#define bt_conn_create_pdu(_pool, _reserve) \
+	bt_conn_create_pdu_timeout_debug(_pool, _reserve, K_FOREVER, \
+					 __func__, __line__)
+#else
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 					   size_t reserve, s32_t timeout);
 
 #define bt_conn_create_pdu(_pool, _reserve) \
 	bt_conn_create_pdu_timeout(_pool, _reserve, K_FOREVER)
+#endif
+
+/* Prepare a PDU to be sent over a connection */
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
+						  const char *func, int line);
+
+#define bt_conn_create_frag_timeout(_reserve, _timeout) \
+	bt_conn_create_frag_timeout_debug(_reserve, _timeout, \
+					  __func__, __LINE__)
+
+#define bt_conn_create_frag(_reserve) \
+	bt_conn_create_frag_timeout_debug(_reserve, K_FOREVER, \
+					  __func__, __LINE__)
+#else
+struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout);
+
+#define bt_conn_create_frag(_reserve) \
+	bt_conn_create_frag_timeout(_reserve, K_FOREVER)
+#endif
 
 /* Initialize connection management */
 int bt_conn_init(void);

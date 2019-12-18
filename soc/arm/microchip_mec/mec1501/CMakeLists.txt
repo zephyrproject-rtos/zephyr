@@ -7,3 +7,8 @@
 zephyr_sources(
   soc.c
   )
+
+zephyr_sources_ifdef(CONFIG_SYS_POWER_MANAGEMENT
+  device_power.c
+  power.c
+  )

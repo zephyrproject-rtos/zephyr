@@ -289,6 +289,14 @@ config BT_CTLR_TX_PWR_MINUS_40
 
 endchoice
 
+config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
+	bool "Tx Power Dynamic Control"
+	depends on BT_HCI_VS_EXT
+	help
+	  Enable dynamic control of Tx power per role/connection.
+	  Provides HCI VS commands to set and get the current Tx
+	  power on an individual role/connection basis.
+
 config BT_CTLR_SETTINGS
 	bool "Settings System"
 	depends on BT_SETTINGS
@@ -393,6 +401,21 @@ config BT_CTLR_RL_SIZE
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
+
+config BT_CTLR_SW_DEFERRED_PRIVACY
+	bool "LE Controller-based Software Privacy"
+	depends on BT_CTLR_PRIVACY
+	help
+	  Enable support for software based deferred privacy calculations.
+
+config BT_CTLR_RPA_CACHE_SIZE
+	int "LE Controller-based Software Privacy Resolving List size"
+	depends on BT_CTLR_SW_DEFERRED_PRIVACY
+	default 8
+	range 1 64
+	help
+	  Set the size of the Known Unknown Resolving List for LE
+	  Controller-based Software deferred Privacy.
 
 config BT_CTLR_EXT_SCAN_FP
 	bool "LE Extended Scanner Filter Policies"
@@ -516,7 +539,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
-	depends on ZERO_LATENCY_IRQS
+	depends on ZERO_LATENCY_IRQS && BT_LL_SW_SPLIT
 	help
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <adc.h>
 #include <ctype.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>

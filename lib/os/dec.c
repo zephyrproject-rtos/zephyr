@@ -31,4 +31,3 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value)
 
 	return num_digits;
 }
-

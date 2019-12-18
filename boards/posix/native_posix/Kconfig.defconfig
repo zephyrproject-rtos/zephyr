@@ -90,7 +90,7 @@ endif # TRACING_CTF
 
 if FLASH
 
-config FLASH_NATIVE_POSIX
+config FLASH_SIMULATOR
 	default y
 
 endif # FLASH

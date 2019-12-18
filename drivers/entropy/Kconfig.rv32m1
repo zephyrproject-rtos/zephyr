@@ -3,7 +3,7 @@
 # Copyright 2019 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ENTROPY_RV32M1_TRNG
+config ENTROPY_RV32M1_TRNG
 	bool "RV32M1 TRNG driver"
 	depends on ENTROPY_GENERATOR && SOC_OPENISA_RV32M1_RISCV32
 	select ENTROPY_HAS_DRIVER

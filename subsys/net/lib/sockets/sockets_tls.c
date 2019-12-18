@@ -842,6 +842,13 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		return -ENOMEM;
 	}
 
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+	mbedtls_ssl_conf_legacy_renegotiation(&context->tls->config,
+					   MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE);
+	mbedtls_ssl_conf_renegotiation(&context->tls->config,
+				       MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+#endif
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 		/* DTLS requires timer callbacks to operate */
@@ -1289,6 +1296,8 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			goto error;
 		}
 	}
+
+	net_context_set_accepting(child, false);
 
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);

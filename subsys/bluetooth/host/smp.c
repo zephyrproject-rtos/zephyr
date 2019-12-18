@@ -2774,6 +2774,9 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
+	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
+		/* Reject pairing req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
@@ -2955,6 +2958,9 @@ static u8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
+	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
+		/* Reject pairing req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
@@ -3684,6 +3690,12 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK_SC;
 	} else {
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&
+	    !(bondable && (auth & BT_SMP_AUTH_BONDING))) {
+		/* Reject security req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	if (conn->le.keys) {

@@ -33,7 +33,7 @@
 
 #define DATA_MTU 48
 
-NET_BUF_POOL_DEFINE(pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, NULL);
 
 static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -256,4 +256,3 @@ static int cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(rfcomm, &rfcomm_cmds, "Bluetooth RFCOMM shell commands",
 		       cmd_rfcomm, 1, 1);
-

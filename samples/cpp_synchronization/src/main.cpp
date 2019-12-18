@@ -133,7 +133,7 @@ void coop_thread_entry(void)
 	}
 }
 
-int main(void)
+void main(void)
 {
 	struct k_timer timer;
 
@@ -154,6 +154,4 @@ int main(void)
 		/* Wait for coop thread to let us have a turn */
 		sem_main.wait();
 	}
-
-	return 0;
 }

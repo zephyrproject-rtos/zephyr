@@ -35,9 +35,15 @@
 #include "att_internal.h"
 #include "gatt_internal.h"
 
+struct tx_meta {
+	struct bt_conn_tx *tx;
+};
+
+#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
+
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
+		    sizeof(struct tx_meta), NULL);
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 
@@ -67,12 +73,6 @@ const struct bt_conn_auth_cb *bt_auth;
 
 static struct bt_conn conns[CONFIG_BT_MAX_CONN];
 static struct bt_conn_cb *callback_list;
-
-struct tx_meta {
-	struct bt_conn_tx *tx;
-};
-
-#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_tx);
@@ -214,6 +214,11 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	       conn->le.features[0], param->interval_min,
 	       param->interval_max, param->latency, param->timeout);
 
+	/* Proceed only if connection parameters contains valid values*/
+	if (!bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
 	/* Use LE connection parameter request if both local and remote support
 	 * it; or if local role is master then use LE connection update.
 	 */
@@ -238,6 +243,60 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	 * Procedure
 	 */
 	return bt_l2cap_update_conn_param(conn, param);
+}
+
+static void tx_free(struct bt_conn_tx *tx)
+{
+	tx->cb = NULL;
+	tx->user_data = NULL;
+	tx->pending_no_cb = 0U;
+	k_fifo_put(&free_tx, tx);
+}
+
+static void tx_notify(struct bt_conn *conn)
+{
+	BT_DBG("conn %p", conn);
+
+	while (1) {
+		struct bt_conn_tx *tx;
+		unsigned int key;
+		bt_conn_tx_cb_t cb;
+		void *user_data;
+
+		key = irq_lock();
+		if (sys_slist_is_empty(&conn->tx_complete)) {
+			irq_unlock(key);
+			break;
+		}
+
+		tx = (void *)sys_slist_get_not_empty(&conn->tx_complete);
+		irq_unlock(key);
+
+		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
+
+		/* Copy over the params */
+		cb = tx->cb;
+		user_data = tx->user_data;
+
+		/* Free up TX notify since there may be user waiting */
+		tx_free(tx);
+
+		/* Run the callback, at this point it should be safe to
+		 * allocate new buffers since the TX should have been
+		 * unblocked by tx_free.
+		 */
+		cb(conn, user_data);
+	}
+}
+
+static void tx_complete_work(struct k_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
+					   tx_complete_work);
+
+	BT_DBG("conn %p", conn);
+
+	tx_notify(conn);
 }
 
 static void conn_update_timeout(struct k_work *work)
@@ -272,75 +331,40 @@ static void conn_update_timeout(struct k_work *work)
 		return;
 	}
 
-#if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
-	/* if application set own params use those, otherwise use defaults */
-	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
-		param = BT_LE_CONN_PARAM(conn->le.interval_min,
-					 conn->le.interval_max,
-					 conn->le.pending_latency,
-					 conn->le.pending_timeout);
-
-		send_conn_le_param_update(conn, param);
-	} else {
-		param = BT_LE_CONN_PARAM(CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
-					 CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
-					 CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
-					 CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
-
-		send_conn_le_param_update(conn, param);
-	}
+	if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
+#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+		/* if application set own params use those, otherwise
+		 * use defaults
+		 */
+		if (atomic_test_and_clear_bit(conn->flags,
+					      BT_CONN_SLAVE_PARAM_SET)) {
+			param = BT_LE_CONN_PARAM(conn->le.interval_min,
+						conn->le.interval_max,
+						conn->le.pending_latency,
+						conn->le.pending_timeout);
+			send_conn_le_param_update(conn, param);
+		} else {
+			param = BT_LE_CONN_PARAM(
+					CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+					CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
+					CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
+					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
+			send_conn_le_param_update(conn, param);
+		}
 #else
-	/* update only if application set own params */
-	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
-		param = BT_LE_CONN_PARAM(conn->le.interval_min,
-					 conn->le.interval_max,
-					 conn->le.latency,
-					 conn->le.timeout);
-
-		send_conn_le_param_update(conn, param);
-	}
+		/* update only if application set own params */
+		if (atomic_test_and_clear_bit(conn->flags,
+					      BT_CONN_SLAVE_PARAM_SET)) {
+			param = BT_LE_CONN_PARAM(conn->le.interval_min,
+						conn->le.interval_max,
+						conn->le.latency,
+						conn->le.timeout);
+			send_conn_le_param_update(conn, param);
+		}
 #endif
+	}
 
 	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
-}
-
-static void tx_free(struct bt_conn_tx *tx)
-{
-	if (tx->conn) {
-		bt_conn_unref(tx->conn);
-		tx->conn = NULL;
-	}
-
-	tx->cb = NULL;
-	tx->user_data = NULL;
-	tx->pending_no_cb = 0U;
-	k_fifo_put(&free_tx, tx);
-}
-
-static void tx_notify_cb(struct k_work *work)
-{
-	struct bt_conn_tx *tx = CONTAINER_OF(work, struct bt_conn_tx, work);
-	struct bt_conn *conn;
-	bt_conn_tx_cb_t cb;
-	void *user_data;
-
-	BT_DBG("tx %p conn %p cb %p user_data %p", tx, tx->conn, tx->cb,
-	       tx->user_data);
-
-	/* Copy over the params */
-	conn = bt_conn_ref(tx->conn);
-	cb = tx->cb;
-	user_data = tx->user_data;
-
-	/* Free up TX notify since there may be user waiting */
-	tx_free(tx);
-
-	/* Run the callback, at this point it should be safe to allocate new
-	 * buffers since the TX should have been unblocked by tx_free.
-	 */
-	cb(conn, user_data);
-
-	bt_conn_unref(conn);
 }
 
 static struct bt_conn *conn_new(void)
@@ -361,6 +385,8 @@ static struct bt_conn *conn_new(void)
 
 	(void)memset(conn, 0, sizeof(*conn));
 	k_delayed_work_init(&conn->update_work, conn_update_timeout);
+
+	k_work_init(&conn->tx_complete_work, tx_complete_work);
 
 	atomic_set(&conn->ref, 1);
 
@@ -1114,6 +1140,11 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 	struct bt_l2cap_hdr *hdr;
 	u16_t len;
 
+	/* Make sure we notify any pending TX callbacks before processing
+	 * new data for this connection.
+	 */
+	tx_notify(conn);
+
 	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	/* Check packet boundary flags */
@@ -1175,6 +1206,10 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 
 		break;
 	default:
+		/* BT_ACL_START_NO_FLUSH and BT_ACL_COMPLETE are not allowed on
+		 * LE-U from Controller to Host.
+		 * Only BT_ACL_POINT_TO_POINT is supported.
+		 */
 		BT_ERR("Unexpected ACL flags (0x%02x)", flags);
 		bt_conn_reset_rx_state(conn);
 		net_buf_unref(buf);
@@ -1250,9 +1285,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 		tx->cb = cb;
 		tx->user_data = user_data;
-		tx->conn = bt_conn_ref(conn);
 		tx->pending_no_cb = 0U;
-		k_work_init(&tx->work, tx_notify_cb);
 
 		tx_data(buf)->tx = tx;
 	} else {
@@ -1352,11 +1385,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	u16_t frag_len;
 
-#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
-	frag = bt_conn_create_pdu(&frag_pool, 0);
-#else
-	frag = bt_conn_create_pdu(NULL, 0);
-#endif
+	frag = bt_conn_create_frag(0);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
@@ -1616,6 +1645,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
 			process_unack_tx(conn);
+			tx_notify(conn);
 
 			/* Cancel Connection Update if it is pending */
 			if (conn->type == BT_CONN_TYPE_LE) {
@@ -2023,10 +2053,6 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EALREADY;
 	}
 
-	if (!bt_dev.le.wl_entries) {
-		return -EINVAL;
-	}
-
 	/* Don't start initiator if we have general discovery procedure. */
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 	if (conn) {
@@ -2142,6 +2168,10 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param)
 {
 	struct bt_conn *conn;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
 
 	if (param && !bt_le_conn_params_valid(param)) {
 		return -EINVAL;
@@ -2271,8 +2301,35 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
+						  const char *func, int line)
+#else
+struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout)
+#endif
+{
+	struct net_buf_pool *pool = NULL;
+
+#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
+	pool = &frag_pool;
+#endif
+
+#if defined(CONFIG_NET_BUF_LOG)
+	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout,
+						func, line);
+#else
+	return bt_conn_create_pdu_timeout(pool, reserve, timeout);
+#endif /* CONFIG_NET_BUF_LOG */
+}
+
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
+						 size_t reserve, s32_t timeout,
+						 const char *func, int line)
+#else
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 					   size_t reserve, s32_t timeout)
+#endif
 {
 	struct net_buf *buf;
 
@@ -2287,13 +2344,27 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, K_NO_WAIT, func, line);
+#else
 		buf = net_buf_alloc(pool, K_NO_WAIT);
+#endif
 		if (!buf) {
 			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
+#if defined(CONFIG_NET_BUF_LOG)
+			buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
 			buf = net_buf_alloc(pool, timeout);
+#endif
 		}
 	} else {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
 		buf = net_buf_alloc(pool, timeout);
+#endif
 	}
 
 	if (!buf) {

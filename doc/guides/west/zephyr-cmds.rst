@@ -36,4 +36,3 @@ flag::
 Additional help about the formatting options can be found by running::
 
   west boards -h
-

@@ -52,4 +52,3 @@ Sample Output
    temperature 24.953125 C
 
 <repeats endlessly>
-

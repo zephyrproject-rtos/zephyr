@@ -214,4 +214,3 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 
 	return 0;
 }
-

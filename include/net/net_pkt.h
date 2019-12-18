@@ -188,6 +188,15 @@ struct net_pkt {
 		u8_t ipv4_ttl;
 	};
 
+	union {
+#if defined(CONFIG_NET_IPV4)
+		u8_t ipv4_opts_len; /* Length if IPv4 Header Options */
+#endif
+#if defined(CONFIG_NET_IPV6)
+		u16_t ipv6_ext_len; /* length of extension headers */
+#endif
+	};
+
 #if NET_TC_COUNT > 1
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -205,8 +214,6 @@ struct net_pkt {
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_NET_IPV6)
-	u16_t ipv6_ext_len;	/* length of extension headers */
-
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
 	 * packet. Note that this value should be updated by who ever
@@ -387,6 +394,17 @@ static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
 {
 	pkt->ipv4_ttl = ttl;
 }
+
+static inline u8_t net_pkt_ipv4_opts_len(struct net_pkt *pkt)
+{
+	return pkt->ipv4_opts_len;
+}
+
+static inline void net_pkt_set_ipv4_opts_len(struct net_pkt *pkt,
+					     u8_t opts_len)
+{
+	pkt->ipv4_opts_len = opts_len;
+}
 #else
 static inline u8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
 {
@@ -400,6 +418,19 @@ static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(ttl);
+}
+
+static inline u8_t net_pkt_ipv4_opts_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_opts_len(struct net_pkt *pkt,
+					     u8_t opts_len)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(opts_len);
 }
 #endif
 
@@ -525,6 +556,19 @@ static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
 	ARG_UNUSED(hop_limit);
 }
 #endif /* CONFIG_NET_IPV6 */
+
+static inline u16_t net_pkt_ip_opts_len(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IPV6)
+	return pkt->ipv6_ext_len;
+#elif defined(CONFIG_NET_IPV4)
+	return pkt->ipv4_opts_len;
+#else
+	ARG_UNUSED(pkt);
+
+	return 0;
+#endif
+}
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static inline u16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)

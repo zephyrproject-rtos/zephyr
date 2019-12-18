@@ -135,4 +135,3 @@ const lv_img_dsc_t *get_lvgl_img(void)
 {
 	return &img_dsc;
 }
-

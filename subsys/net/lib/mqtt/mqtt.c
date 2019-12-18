@@ -689,4 +689,3 @@ int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
 
 	return 0;
 }
-

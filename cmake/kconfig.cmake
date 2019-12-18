@@ -65,9 +65,14 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_guiconfig
   ${ZEPHYR_BASE}/scripts/kconfig/guiconfig.py
   )
 
+set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_hardenconfig
+  ${ZEPHYR_BASE}/scripts/kconfig/hardenconfig.py
+  )
+
 foreach(kconfig_target
     menuconfig
     guiconfig
+    hardenconfig
     ${EXTRA_KCONFIG_TARGETS}
     )
   add_custom_target(

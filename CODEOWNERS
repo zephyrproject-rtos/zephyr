@@ -30,7 +30,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
-/soc/arm/st_stm32/stm32mp1/               @arnop2
+/soc/arm/st_stm32/stm32mp1/               @arnopo
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
@@ -121,13 +121,13 @@
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale
 /drivers/eeprom/                          @henrikbrixandersen
+/drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*rv32m1*                 @MaureenHelm
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif @nvlsianpu
-/drivers/flash/*native_posix*             @vanwinkeljan @aescolar
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
 /drivers/flash/*stm32*                    @superna9999
@@ -143,7 +143,7 @@
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
-/drivers/ipm/ipm_stm32_ipcc.c             @arnop2
+/drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
@@ -272,7 +272,6 @@
 /include/linker/app_smem*.ld              @andrewboie
 /include/linker/                          @andrewboie @andyross
 /include/logging/                         @nordic-krch
-/include/misc/                            @andrewboie @andyross
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/posix/                           @pfalcon
@@ -331,7 +330,6 @@
 /arch/x86/gen_idt.py                      @andrewboie
 /scripts/gen_kobject_list.py              @andrewboie
 /scripts/gen_priv_stacks.py               @andrewboie @agross-oss @ioannisg
-/scripts/gen_syscall_header.py            @andrewboie
 /scripts/gen_syscalls.py                  @andrewboie
 /scripts/process_gperf.py                 @andrewboie
 /scripts/gen_relocate_app.py              @wentongwu
@@ -347,7 +345,7 @@
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
-/subsys/debug/asan.c                      @vanwinkeljan @aescolar
+/subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
@@ -365,7 +363,7 @@
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/lwm2m/                    @mike-scott
-/subsys/net/lib/config/                   @jukkar @tbursztyka
+/subsys/net/lib/config/                   @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/mqtt/                     @jukkar @tbursztyka @rlubos
 /subsys/net/lib/openthread/               @rlubos
 /subsys/net/lib/coap/                     @rveerama1

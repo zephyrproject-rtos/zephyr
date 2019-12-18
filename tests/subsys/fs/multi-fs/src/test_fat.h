@@ -27,4 +27,3 @@ void test_fat_unlink(void);
 void test_fat_mkdir(void);
 void test_fat_readdir(void);
 void test_fat_rmdir(void);
-

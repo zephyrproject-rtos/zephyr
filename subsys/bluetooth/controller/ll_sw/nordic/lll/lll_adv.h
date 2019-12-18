@@ -40,6 +40,10 @@ struct lll_adv {
 
 	struct lll_adv_pdu adv_data;
 	struct lll_adv_pdu scan_rsp;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 int lll_adv_init(void);

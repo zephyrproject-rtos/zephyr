@@ -334,8 +334,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					  kENET_MiiReadValidFrame);
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
-			net_eth_carrier_on(context->iface);
-			k_sleep(USEC_PER_MSEC);
+
+			/* Network interface might be NULL at this point */
+			if (context->iface) {
+				net_eth_carrier_on(context->iface);
+				k_sleep(USEC_PER_MSEC);
+			}
 		} else if (!link_up && context->link_up) {
 			LOG_INF("Link down");
 			context->link_up = link_up;

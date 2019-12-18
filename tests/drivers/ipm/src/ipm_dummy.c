@@ -131,4 +131,3 @@ int ipm_dummy_init(struct device *d)
 
 	return 0;
 }
-
