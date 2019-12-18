@@ -719,7 +719,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	 * be used.
 	 */
 	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
-	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
+	atomic_set(&chan->rx.credits,  0);
 
 	if (BT_DBG_ENABLED &&
 	    chan->rx.init_credits * chan->rx.mps < chan->rx.mtu + 2) {
@@ -772,7 +772,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	BT_DBG("chan %p", chan);
 
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
-	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
+	atomic_set(&chan->tx.credits, 0);
 	k_fifo_init(&chan->tx_queue);
 	k_work_init(&chan->tx_work, l2cap_chan_tx_process);
 }
@@ -782,9 +782,7 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 {
 	BT_DBG("chan %p credits %u", chan, credits);
 
-	while (credits--) {
-		k_sem_give(&chan->tx.credits);
-	}
+	atomic_add(&chan->tx.credits, credits);
 
 	if (!atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
 	    chan->chan.ops->status) {
@@ -797,9 +795,7 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 {
 	BT_DBG("chan %p credits %u", chan, credits);
 
-	while (credits--) {
-		k_sem_give(&chan->rx.credits);
-	}
+	atomic_add(&chan->rx.credits, credits);
 }
 
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
@@ -1226,7 +1222,7 @@ segment:
 
 static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 {
-	if (!k_sem_count_get(&ch->tx.credits) ||
+	if (!atomic_get(&ch->tx.credits) ||
 	    (k_fifo_is_empty(&ch->tx_queue) && !ch->tx_buf)) {
 		return;
 	}
@@ -1256,6 +1252,22 @@ static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
+static bool test_and_dec(atomic_t *target)
+{
+	atomic_t old_value, new_value;
+
+	do {
+		old_value = atomic_get(target);
+		if (!old_value) {
+			return false;
+		}
+
+		new_value = old_value - 1;
+	} while (atomic_cas(target, old_value, new_value) == 0);
+
+	return true;
+}
+
 /* This returns -EAGAIN whenever a segment cannot be send immediately which can
  * happen under the following circuntances:
  *
@@ -1273,8 +1285,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	struct net_buf_simple_state state;
 	int len, err;
 
-	/* Wait for credits */
-	if (k_sem_take(&ch->tx.credits, K_NO_WAIT)) {
+	if (!test_and_dec(&ch->tx.credits)) {
 		BT_WARN("No credits to transmit packet");
 		return -EAGAIN;
 	}
@@ -1284,12 +1295,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
 	if (!seg) {
-		k_sem_give(&ch->tx.credits);
+		atomic_inc(&ch->tx.credits);
 		return -EAGAIN;
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       seg->len, k_sem_count_get(&ch->tx.credits));
+	       seg->len, atomic_get(&ch->tx.credits));
 
 	len = seg->len - sdu_hdr_len;
 
@@ -1306,7 +1317,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	if (err) {
 		BT_WARN("Unable to send seg %d", err);
-		k_sem_give(&ch->tx.credits);
+		atomic_inc(&ch->tx.credits);
 
 		if (err == -ENOBUFS) {
 			/* Restore state since segment could not be sent */
@@ -1320,7 +1331,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	/* Check if there is no credits left clear output status and notify its
 	 * change.
 	 */
-	if (!k_sem_count_get(&ch->tx.credits)) {
+	if (!atomic_get(&ch->tx.credits)) {
 		atomic_clear_bit(ch->chan.status, BT_L2CAP_STATUS_OUT);
 		if (ch->chan.ops->status) {
 			ch->chan.ops->status(&ch->chan, ch->chan.status);
@@ -1414,7 +1425,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
-	if (k_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
+	if (atomic_get(&ch->tx.credits) + credits > UINT16_MAX) {
 		BT_ERR("Credits overflow");
 		bt_l2cap_chan_disconnect(chan);
 		return;
@@ -1422,8 +1433,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 
 	l2cap_chan_tx_give_credits(ch, credits);
 
-	BT_DBG("chan %p total credits %u", ch,
-	       k_sem_count_get(&ch->tx.credits));
+	BT_DBG("chan %p total credits %u", ch, atomic_get(&ch->tx.credits));
 
 	l2cap_chan_tx_resume(ch);
 }
@@ -1583,7 +1593,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	BT_DBG("chan %p credits %u", chan, k_sem_count_get(&chan->rx.credits));
+	BT_DBG("chan %p credits %u", chan, atomic_get(&chan->rx.credits));
 }
 
 static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
@@ -1594,7 +1604,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 	/* Restore enough credits to complete the sdu */
 	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
 		   (chan->rx.mps - 1)) / chan->rx.mps;
-	credits -= k_sem_count_get(&chan->rx.credits);
+	credits -= atomic_get(&chan->rx.credits);
 	if (credits <= 0) {
 		return;
 	}
@@ -1705,7 +1715,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		 * should only happen if the remote cannot fully utilize the
 		 * MPS for some reason.
 		 */
-		if (!k_sem_count_get(&chan->rx.credits) &&
+		if (!atomic_get(&chan->rx.credits) &&
 		    seg == chan->rx.init_credits) {
 			l2cap_chan_update_credits(chan, buf);
 		}
@@ -1725,7 +1735,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	u16_t sdu_len;
 	int err;
 
-	if (k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
+	if (!test_and_dec(&chan->rx.credits)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
