@@ -342,3 +342,28 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
+
+void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
+{
+	uintptr_t reason;
+
+#ifdef CONFIG_X86_64
+	reason = esf->rax;
+#else
+	uintptr_t *stack_ptr = (uintptr_t *)esf->esp;
+
+	reason = *stack_ptr;
+#endif
+
+#ifdef CONFIG_USERSPACE
+	/* User mode is only allowed to induce oopses and stack check
+	 * failures via this software interrupt
+	 */
+	if ((esf->cs & 0x3) != 0 && !(reason == K_ERR_KERNEL_OOPS ||
+				      reason == K_ERR_STACK_CHK_FAIL)) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+#endif
+
+	z_x86_fatal_error(reason, esf);
+}

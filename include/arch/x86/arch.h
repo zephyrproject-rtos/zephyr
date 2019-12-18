@@ -8,6 +8,11 @@
 
 #include <generated_dts_board.h>
 
+/* Changing this value will require manual changes to exception and IDT setup
+ * in locore.S for intel64
+ */
+#define Z_X86_OOPS_VECTOR	32
+
 #if !defined(_ASMLANGUAGE)
 
 #include <sys/sys_io.h>

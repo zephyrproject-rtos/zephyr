@@ -410,17 +410,15 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 extern struct task_state_segment _main_tss;
 #endif
 
-#if CONFIG_X86_KERNEL_OOPS
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \
 		: \
-		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
+		: [vector] "i" (Z_X86_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
 } while (false)
-#endif
 
 #ifdef __cplusplus
 }
