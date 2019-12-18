@@ -49,25 +49,6 @@
 /* GPIO */
 #define GPIO_DW_PORT_0_INT_MASK			0
 
-/* low power DMACs */
-#define LP_GP_DMA_SIZE				0x00001000
-#define DW_DMA0_BASE_ADDR			0x0007C000
-#define DW_DMA1_BASE_ADDR			(0x0007C000 +\
-						1 * LP_GP_DMA_SIZE)
-#define DW_DMA2_BASE_ADDR			(0x0007C000 +\
-						2 * LP_GP_DMA_SIZE)
-
-#define DW_DMA0_IRQ				0x00001110
-#define DW_DMA1_IRQ				0x0000010A
-#define DW_DMA2_IRQ				0x0000010D
-
-/* address of DMA ownership register. We need to properly configure
- * this register in order to access the DMA registers.
- */
-#define CAVS_DMA0_OWNERSHIP_REG			(0x00071A60)
-#define CAVS_DMA1_OWNERSHIP_REG			(0x00071A62)
-#define CAVS_DMA2_OWNERSHIP_REG			(0x00071A64)
-
 #define DMA_HANDSHAKE_DMIC_RXA			0
 #define DMA_HANDSHAKE_DMIC_RXB			1
 #define DMA_HANDSHAKE_SSP0_TX			2
