@@ -3850,13 +3850,7 @@ class HardwareMap:
                 hwm = hwm + new
 
                 logger.info("Registered devices:")
-                print("")
-                table = []
-                header = ["Platform", "ID", "Serial device"]
-                for p in sorted(hwm, key=lambda i: i['platform']):
-                    platform = p.get('platform')
-                    table.append([platform, p.get('id', None), p.get('serial')])
-                print(tabulate(table, headers=header, tablefmt="github"))
+                self.dump(hwm)
 
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(hwm, yaml_file, default_flow_style=False)
@@ -3865,7 +3859,25 @@ class HardwareMap:
             # create new file
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(self.detected, yaml_file, default_flow_style=False)
+            logger.info("Detected devices:")
+            self.dump(self.detected)
 
+    @staticmethod
+    def dump(hwmap=[], filtered=[], header=[], connected_only=False):
+        print("")
+        table = []
+        if not header:
+            header = ["Platform", "ID", "Serial device"]
+        for p in sorted(hwmap, key=lambda i: i['platform']):
+            platform = p.get('platform')
+            connected = p.get('connected', False)
+            if filtered and platform not in filtered:
+                continue
+
+            if not connected_only or connected:
+                table.append([platform, p.get('id', None), p.get('serial')])
+
+        print(tabulate(table, headers=header, tablefmt="github"))
 
 options = None
 
@@ -3932,14 +3944,8 @@ def main():
         hwm.load_hardware_map(options.hardware_map)
 
         logger.info("Available devices:")
-        print("")
         table = []
-        header = ["Platform", "ID", "Serial device"]
-        for p in hwm.connected_hardware:
-            platform = p.get('platform')
-            if p['connected']:
-                table.append([platform, p.get('id', None), p['serial']])
-        print(tabulate(table, headers=header, tablefmt="github"))
+        hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
         return
 
     if options.west_runner and not options.west_flash:
@@ -4198,13 +4204,7 @@ def main():
 
     if options.device_testing:
         print("\nDevice testing on:")
-        table = []
-        header = ["Platform", "ID", "Serial device"]
-        for p in suite.connected_hardware:
-            platform = p.get('platform')
-            if p['connected'] and platform in suite.selected_platforms:
-                table.append([platform, p.get('id', None), p['serial']])
-        print(tabulate(table, headers=header, tablefmt="github"))
+        hwm.dump(suite.connected_hardware, suite.selected_platforms)
         print("")
 
     if options.dry_run:
