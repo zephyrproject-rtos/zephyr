@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <soc.h>
-#include "intc_sam0_eic.h"
+#include <drivers/interrupt_controller/sam0_eic.h>
 #include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {
