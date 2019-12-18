@@ -657,7 +657,7 @@ def write_clocks(node):
         controller = clock.controller
 
         if controller.label is not None:
-            out_dev_s(node, "CLOCK_CONTROLLER", controller.label)
+            out_dev_s(node, "CLOCKS_CONTROLLER", controller.label)
 
         for name, val in clock.data.items():
             if clock_i == 0:
