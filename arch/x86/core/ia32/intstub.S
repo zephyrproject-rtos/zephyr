@@ -196,7 +196,7 @@ alreadyOnIntStack:
 	sti			/* re-enable interrupts */
 #endif
 	/* Now call the interrupt handler */
-	INDIRECT_CALL(%edx)
+	call	*%edx
 	/* Discard ISR argument */
 	addl	$0x4, %esp
 #ifdef CONFIG_NESTED_INTERRUPTS

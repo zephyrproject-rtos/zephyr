@@ -43,16 +43,6 @@ endmenu
 
 menu "Processor Capabilities"
 
-config X86_RETPOLINE
-	bool "Build with retpolines enabled in x86 assembly code"
-	depends on USERSPACE
-	help
-	  This is recommended on platforms with speculative executions, to
-	  protect against branch target injection (AKA Spectre-V2).  Full
-	  description of how retpolines work can be found here[1].
-
-	  [1] https://support.google.com/faqs/answer/7625886
-
 config X86_ENABLE_TSS
 	bool
 	help
