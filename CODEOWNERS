@@ -385,7 +385,6 @@
 /tests/application_development/libcxx/    @pabigot
 /tests/arch/arm/                          @ioannisg
 /tests/boards/native_posix/               @aescolar
-/tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
