@@ -231,12 +231,15 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		  const struct display_buffer_descriptor *desc,
 		  const void *buf)
 {
+	size_t buf_len;
+
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller then width");
 		return -1;
 	}
 
-	if (buf == NULL || desc->buf_size == 0U) {
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	if (buf == NULL || buf_len == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -1;
 	}
@@ -282,7 +285,7 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 	return i2c_burst_write(driver->i2c,
 			       DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       (u8_t *)buf, desc->buf_size);
+			       (u8_t *)buf, buf_len);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
 	if (x != 0U && y != 0U) {
