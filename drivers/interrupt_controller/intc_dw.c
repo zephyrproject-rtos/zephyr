@@ -127,7 +127,7 @@ static void dw_ictl_config_irq(struct device *dev);
 
 static const struct dw_ictl_config dw_config = {
 	.irq_num = DT_INTC_DW_0_BASE_ADDR,
-	.numirqs = DW_ICTL_NUM_IRQS,
+	.numirqs = DT_INTC_DW_0_NUM_IRQS,
 	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
 	.config_func = dw_ictl_config_irq,
 };
