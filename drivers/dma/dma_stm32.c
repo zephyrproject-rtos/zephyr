@@ -554,7 +554,7 @@ static const struct dma_driver_api dma_funcs = {
 static void dma_stm32_config_irq_##index(struct device *dev);		\
 									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_##index##_ST_STM32_DMA_CLOCK_BUS,	\
+	.pclken = { .bus = DT_INST_##index##_ST_STM32_DMA_CLOCKS_BUS,	\
 		    .enr = DT_INST_##index##_ST_STM32_DMA_CLOCKS_BITS },\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_##index##_ST_STM32_DMA_BASE_ADDRESS,		\
