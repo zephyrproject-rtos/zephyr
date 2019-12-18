@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-  #error test can only run on Cortex-M3/M4/M7/M33 MCUs
-#endif
-
 #include <ztest.h>
 
 extern void test_arm_zero_latency_irqs(void);
