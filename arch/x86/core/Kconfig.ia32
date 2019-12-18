@@ -197,22 +197,6 @@ config CACHE_FLUSHING
 	  cache must be selected as well. By default, that mechanism is discovered at
 	  runtime.
 
-config X86_KERNEL_OOPS
-	bool "Enable handling of kernel oops as an exception"
-	default y
-	help
-	  Enable handling of k_oops() API as a CPU exception, which will provide
-	  extra debugging information such as program counter and register
-	  values when the oops is triggered. Requires an entry in the IDT.
-
-config X86_KERNEL_OOPS_VECTOR
-	int "IDT vector to use for kernel oops"
-	default 33
-	range 32 255
-	depends on X86_KERNEL_OOPS
-	help
-	  Specify the IDT vector to use for the kernel oops exception handler.
-
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"
 	depends on DYNAMIC_INTERRUPTS

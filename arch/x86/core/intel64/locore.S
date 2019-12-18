@@ -334,6 +334,11 @@ EXCEPT      (20); EXCEPT      (21); EXCEPT      (22); EXCEPT      (23)
 EXCEPT      (24); EXCEPT      (25); EXCEPT      (26); EXCEPT      (27)
 EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 
+/* Vector reserved for handling a kernel oops; treat as an exception
+ * and not an interrupt
+ */
+EXCEPT(Z_X86_OOPS_VECTOR);
+
 /*
  * When we arrive at 'irq' from one of the IRQ(X) stubs,
  * we're on the "freshest" IRQ stack and it contains:
@@ -467,7 +472,7 @@ irq_exit_nested:
 
 #define IRQ(nr) vector_ ## nr: pushq $(nr - IV_IRQS); jmp irq
 
-IRQ( 32); IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
+IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
 IRQ( 40); IRQ( 41); IRQ( 42); IRQ( 43); IRQ( 44); IRQ( 45); IRQ( 46); IRQ( 47)
 IRQ( 48); IRQ( 49); IRQ( 50); IRQ( 51); IRQ( 52); IRQ( 53); IRQ( 54); IRQ( 55)
 IRQ( 56); IRQ( 57); IRQ( 58); IRQ( 59); IRQ( 60); IRQ( 61); IRQ( 62); IRQ( 63)
@@ -504,6 +509,7 @@ IRQ(248); IRQ(249); IRQ(250); IRQ(251); IRQ(252); IRQ(253); IRQ(254); IRQ(255)
 
 #define TRAP 0x8f
 #define INTR 0x8e
+#define USER_INTR 0xee
 
 #define IDT(nr, type, ist) \
 	.word vector_ ## nr, X86_KERNEL_CS; \
@@ -521,7 +527,9 @@ idt:
     IDT( 24, TRAP, 7); IDT( 25, TRAP, 7); IDT( 26, TRAP, 7); IDT( 27, TRAP, 7)
     IDT( 28, TRAP, 7); IDT( 29, TRAP, 7); IDT( 30, TRAP, 7); IDT( 31, TRAP, 7)
 
-    IDT( 32, INTR, 1); IDT( 33, INTR, 1); IDT( 34, INTR, 1); IDT( 35, INTR, 1)
+    /* Oops vector can be invoked from Ring 3 and runs on exception stack */
+    IDT(Z_X86_OOPS_VECTOR, USER_INTR, 7);
+    IDT( 33, INTR, 1); IDT( 34, INTR, 1); IDT( 35, INTR, 1)
     IDT( 36, INTR, 1); IDT( 37, INTR, 1); IDT( 38, INTR, 1); IDT( 39, INTR, 1)
     IDT( 40, INTR, 1); IDT( 41, INTR, 1); IDT( 42, INTR, 1); IDT( 43, INTR, 1)
     IDT( 44, INTR, 1); IDT( 45, INTR, 1); IDT( 46, INTR, 1); IDT( 47, INTR, 1)

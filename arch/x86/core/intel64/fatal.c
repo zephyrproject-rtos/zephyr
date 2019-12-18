@@ -13,6 +13,9 @@ LOG_MODULE_DECLARE(os);
 void z_x86_exception(z_arch_esf_t *esf)
 {
 	switch (esf->vector) {
+	case Z_X86_OOPS_VECTOR:
+		z_x86_do_kernel_oops(esf);
+		break;
 	case IV_PAGE_FAULT:
 		z_x86_page_fault_handler(esf);
 		break;

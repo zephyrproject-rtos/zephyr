@@ -58,7 +58,7 @@ config MAX_IRQ_LINES
 
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
-	default 32
+	default 33
 	range 32 255
 	depends on IRQ_OFFLOAD
 

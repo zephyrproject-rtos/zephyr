@@ -59,6 +59,15 @@ struct x86_esf {
 
 typedef struct x86_esf z_arch_esf_t;
 
+#define ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile( \
+		"movq %[reason], %%rax\n\t" \
+		"int $32\n\t" \
+		: \
+		: [reason] "i" (reason_p)); \
+	CODE_UNREACHABLE; \
+} while (false)
+
 #endif /* _ASMLANGUAGE */
 
 /*

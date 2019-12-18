@@ -42,7 +42,7 @@ config X86_EXCEPTION_STACK_TRACE
 
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
-	default 33
+	default 34
 	range 33 255
 	depends on SMP
 

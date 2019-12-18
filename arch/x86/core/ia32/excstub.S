@@ -25,7 +25,7 @@
 	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
-	GTEXT(z_do_kernel_oops)
+	GTEXT(z_x86_do_kernel_oops)
 
 /**
  *
@@ -219,9 +219,7 @@ nestedException:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	KPTI_IRET
 
-#if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)
 	push $0 /* dummy error code */
-	push $z_do_kernel_oops
+	push $z_x86_do_kernel_oops
 	jmp _exception_enter
-#endif
