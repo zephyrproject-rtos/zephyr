@@ -3749,7 +3749,9 @@ class HardwareMap:
         'Atmel Corp.',
         'Texas Instruments',
         'Silicon Labs',
-        'NXP Semiconductors'
+        'NXP Semiconductors',
+        'Microchip Technology Inc.',
+        'FTDI'
     ]
 
     runner_mapping = {
@@ -3763,6 +3765,10 @@ class HardwareMap:
         ],
         'openocd': [
             'STM32 STLink', '^XDS110.*'
+        ],
+        'dediprog': [
+            'TTL232R-3V3',
+            'MCP2200 USB Serial Port Emulator'
         ]
     }
 
