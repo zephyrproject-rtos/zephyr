@@ -79,14 +79,8 @@ static volatile u32_t counter;
 
 K_SEM_DEFINE(counter_sem, 0, 1);
 
-#define INTR_PIN_FLAGS	\
-	(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH | \
-	 GPIO_INT_DEBOUNCE | GPIO_PUD_PULL_DOWN)
-
 #define NUM_PINS	ARRAY_SIZE(counter_pins)
 #define MASK		(BIT(NUM_PINS) - 1)
-
-#define GPIO_DEV	DT_APL_GPIO_LABEL
 
 void button_cb(struct device *gpiodev, struct gpio_callback *cb, u32_t pin)
 {
@@ -125,7 +119,7 @@ void main(void)
 	for (i = 0; i < NUM_PINS; i++) {
 		ret = gpio_pin_configure(counter_pins[i].gpio_dev,
 					 counter_pins[i].pin,
-					 GPIO_DIR_OUT);
+					 GPIO_OUTPUT_LOW);
 		if (ret) {
 			printk("ERROR: cannot set HAT pin %d to OUT (%d)\n",
 			       counter_pins[i].hat_num, ret);
@@ -135,17 +129,26 @@ void main(void)
 
 	/* Setup input pin */
 	ret = gpio_pin_configure(intr_pin.gpio_dev, intr_pin.pin,
-				 INTR_PIN_FLAGS);
+				 GPIO_INPUT);
 	if (ret) {
-		printk("ERROR: cannot set HAT pin %d to OUT (%d)\n",
+		printk("ERROR: cannot set HAT pin %d to IN (%d)\n",
 			       intr_pin.hat_num, ret);
 			return;
 	}
 
+
 	/* Callback uses pin_mask, so need bit shifting */
 	gpio_init_callback(&gpio_cb, button_cb, (1 << intr_pin.pin));
 	gpio_add_callback(intr_pin.gpio_dev, &gpio_cb);
-	gpio_pin_enable_callback(intr_pin.gpio_dev, intr_pin.pin);
+
+	/* Setup input pin for interrupt */
+	ret = gpio_pin_interrupt_configure(intr_pin.gpio_dev, intr_pin.pin,
+					   GPIO_INT_EDGE_RISING);
+	if (ret) {
+		printk("ERROR: cannot config interrupt on HAT pin %d (%d)\n",
+			       intr_pin.hat_num, ret);
+			return;
+	}
 
 	/* main loop */
 	val = 0U;
@@ -153,9 +156,9 @@ void main(void)
 		printk("counter: 0x%x\n", val);
 
 		for (i = 0; i < NUM_PINS; i++) {
-			ret = gpio_pin_write(counter_pins[i].gpio_dev,
-					     counter_pins[i].pin,
-					     (val & BIT(i)));
+			ret = gpio_pin_set(counter_pins[i].gpio_dev,
+					   counter_pins[i].pin,
+					   (val & BIT(i)));
 			if (ret) {
 				printk("ERROR: cannot set HAT pin %d value (%d)\n",
 				       counter_pins[i].hat_num, ret);
