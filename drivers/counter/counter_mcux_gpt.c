@@ -208,6 +208,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 			.max_top_value = UINT32_MAX,				\
 			.freq = 25000000,					\
 			.channels = 1,						\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 		},								\
 	};									\
 										\
