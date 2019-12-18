@@ -243,6 +243,17 @@ config ZERO_LATENCY_IRQS
 	  higher priority than the rest of the kernel they cannot use any
 	  kernel functionality.
 
+config DYNAMIC_DIRECT_INTERRUPTS
+	bool "Enable support for dynamic direct interrupts"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Direct interrupts are designed for performance-critical interrupt
+	  handling and do not go through all of the common interrupt handling
+	  code. This option enables the installation of interrupt service
+	  routines for direct interrupts at runtime.
+	  Note: this requires enabling support for dynamic interrupts in the
+	  kernel.
+
 config SW_VECTOR_RELAY
 	bool "Enable Software Vector Relay"
 	default y if BOOTLOADER_MCUBOOT
