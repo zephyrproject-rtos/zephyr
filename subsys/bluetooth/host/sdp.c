@@ -1388,7 +1388,7 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
  */
 static int bt_sdp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_sdp_connected,
 		.disconnected = bt_sdp_disconnected,
 		.recv = bt_sdp_recv,
@@ -1888,7 +1888,7 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 		     sizeof(*session) - sizeof(session->chan));
 }
 
-static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
+static const struct bt_l2cap_chan_ops sdp_client_chan_ops = {
 		.connected = sdp_client_connected,
 		.disconnected = sdp_client_disconnected,
 		.recv = sdp_client_receive,

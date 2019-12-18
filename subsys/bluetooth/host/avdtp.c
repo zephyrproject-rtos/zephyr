@@ -191,7 +191,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 /*A2DP Layer interface */
 int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 {
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_avdtp_l2cap_connected,
 		.disconnected = bt_avdtp_l2cap_disconnected,
 		.encrypt_change = bt_avdtp_l2cap_encrypt_changed,
@@ -224,7 +224,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	struct bt_avdtp *session = NULL;
 	int result;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_avdtp_l2cap_connected,
 		.disconnected = bt_avdtp_l2cap_disconnected,
 		.recv = bt_avdtp_l2cap_recv,

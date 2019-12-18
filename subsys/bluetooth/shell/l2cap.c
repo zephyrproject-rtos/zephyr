@@ -55,6 +55,8 @@ struct l2ch {
 #define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
 #define L2CAP_CHAN(_chan) _chan->ch.chan
 
+static bool metrics;
+
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	static u32_t len;
@@ -93,6 +95,10 @@ static void l2cap_recv_cb(struct k_work *work)
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct l2ch *l2ch = L2CH_CHAN(chan);
+
+	if (metrics) {
+		return l2cap_recv_metrics(chan, buf);
+	}
 
 	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
 		    buf->len);
@@ -143,14 +149,14 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	/* print if metrics is disabled */
-	if (chan->ops->recv != l2cap_recv_metrics) {
+	if (!metrics) {
 		shell_print(ctx_shell, "Channel %p requires buffer", chan);
 	}
 
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.sent		= l2cap_sent,
@@ -362,9 +368,9 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		l2cap_ops.recv = l2cap_recv_metrics;
+		metrics = true;
 	} else if (!strcmp(action, "off")) {
-		l2cap_ops.recv = l2cap_recv;
+		metrics = false;
 	} else {
 		shell_help(shell);
 		return 0;
