@@ -117,13 +117,14 @@
 &spi3 {
 	status = "okay";
 
-	cs-gpios = <&gpiod 13 0>, <&gpioe 0 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+		   <&gpioe 0 GPIO_ACTIVE_HIGH>;
 
 	spbtle-rf@0 {
 		compatible = "zephyr,bt-hci-spi";
 		reg = <0>;
-		reset-gpios = <&gpioa 8 0>;
-		irq-gpios = <&gpioe 6 0>;
+		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <2000000>;
 		label = "SPBTLE-RF";
 	};
