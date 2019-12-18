@@ -23,9 +23,17 @@ GEN_OFFSET_SYM(_thread_arch_t, r9);
 GEN_OFFSET_SYM(_thread_arch_t, r10);
 GEN_OFFSET_SYM(_thread_arch_t, r11);
 GEN_OFFSET_SYM(_thread_arch_t, sse);
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(_thread_arch_t, ss);
+GEN_OFFSET_SYM(_thread_arch_t, cs);
+#endif
 
 GEN_OFFSET_SYM(x86_tss64_t, ist1);
 GEN_OFFSET_SYM(x86_tss64_t, cpu);
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(x86_tss64_t, psp);
+GEN_OFFSET_SYM(x86_tss64_t, usp);
+#endif
 GEN_ABSOLUTE_SYM(__X86_TSS64_SIZEOF, sizeof(x86_tss64_t));
 
 GEN_OFFSET_SYM(x86_cpuboot_t, ready);

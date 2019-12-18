@@ -59,6 +59,19 @@ struct x86_esf {
 
 typedef struct x86_esf z_arch_esf_t;
 
+struct x86_ssf {
+	unsigned long rip;
+	unsigned long rflags;
+	unsigned long r10;
+	unsigned long r9;
+	unsigned long r8;
+	unsigned long rdx;
+	unsigned long rsi;
+	char fxsave[X86_FXSAVE_SIZE];
+	unsigned long rdi;
+	unsigned long rsp;
+};
+
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"movq %[reason], %%rax\n\t" \
