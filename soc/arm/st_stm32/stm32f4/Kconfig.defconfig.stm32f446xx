@@ -14,10 +14,10 @@ config NUM_IRQS
 if GPIO_STM32
 
 config GPIO_STM32_PORTE
-	default n
+	default y
 
 config GPIO_STM32_PORTH
-	default n
+	default y
 
 endif # GPIO_STM32
 
