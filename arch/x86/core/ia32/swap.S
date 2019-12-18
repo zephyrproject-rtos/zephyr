@@ -417,5 +417,5 @@ time_read_not_needed:
 
 SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
 	movl	$0, (%esp)
-	INDIRECT_JMP(%edi)
+	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */

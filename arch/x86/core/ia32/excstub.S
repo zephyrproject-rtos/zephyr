@@ -161,7 +161,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 allDone:
 	pushl	%esp			/* push z_arch_esf_t * parameter */
-	INDIRECT_CALL(%ecx)		/* call exception handler */
+	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
 #if defined(CONFIG_LAZY_FP_SHARING)
