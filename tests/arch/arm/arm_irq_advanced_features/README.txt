@@ -1,8 +1,15 @@
-Title: Test to verify the behavior of CONFIG_ZERO_LATENCY_IRQS at runtime (ARM Only)
+Title: Test to verify advanced features of ARM Cortex-M interrupt handling.
 
 Description:
+This test suite verifies the behavior of CONFIG_ZERO_LATENCY_IRQS and
+CONFIG_DYNAMIC_DIRECT_INTERRUPTS at runtime (ARM Only)
 
-This test verifies the behavior of CONFIG_ZERO_LATENCY_IRQS at runtime.
+The first test verifies the behavior of CONFIG_DYNAMIC_DIRECT_INTERRUPTS
+at runtime. In particular, it tests that dynamic direct IRQs may be
+installed at run-time in the software interrupt table.
+Only for ARMv7-M and ARMv8-M Mainline targets.
+
+The second test verifies the behavior of CONFIG_ZERO_LATENCY_IRQS at runtime.
 In particular, it tests that IRQs configured with the IRQ_ZERO_LATENCY
 flag are assigned the highest priority in the system (and, therefore,
 cannot be masked-out by irq_lock()).
@@ -34,12 +41,16 @@ or
 
 Sample Output:
 
-Running test suite zero_latency_irqs
+*** Booting Zephyr OS build zephyr-v2.1.0-358-g9ac0a8c10a2e  ***
+Running test suite arm_irq_advanced_features
+===================================================================
+starting test - test_arm_dynamic_direct_interrupts
+PASS - test_arm_dynamic_direct_interrupts
 ===================================================================
 starting test - test_arm_zero_latency_irqs
-Available IRQ line: 70
+Available IRQ line: 57
 PASS - test_arm_zero_latency_irqs
 ===================================================================
-Test suite zero_latency_irqs succeeded
+Test suite arm_irq_advanced_features succeeded
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
