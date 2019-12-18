@@ -2712,7 +2712,7 @@ static int usdhc_access_init(const struct device *dev)
 			(USDHC_Type *)DT_INST_0_NXP_IMX_USDHC_BASE_ADDRESS;
 		priv->nusdhc = 0;
 		priv->clock_dev = device_get_binding(
-			DT_INST_0_NXP_IMX_USDHC_CLOCK_CONTROLLER);
+			DT_INST_0_NXP_IMX_USDHC_CLOCKS_CONTROLLER);
 		if (priv->clock_dev == NULL) {
 			return -EINVAL;
 		}
@@ -2728,7 +2728,7 @@ static int usdhc_access_init(const struct device *dev)
 			(USDHC_Type *)DT_INST_1_NXP_IMX_USDHC_BASE_ADDRESS;
 		priv->nusdhc = 1;
 		priv->clock_dev = device_get_binding(
-			DT_INST_1_NXP_IMX_USDHC_CLOCK_CONTROLLER);
+			DT_INST_1_NXP_IMX_USDHC_CLOCKS_CONTROLLER);
 		if (priv->clock_dev == NULL) {
 			return -EINVAL;
 		}

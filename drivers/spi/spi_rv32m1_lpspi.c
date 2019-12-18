@@ -281,7 +281,7 @@ static void spi_mcux_config_func_0(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_0 = {
 	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_0_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_0_CLOCK_CONTROLLER,
+	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_0_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
 		DT_OPENISA_RV32M1_LPSPI_SPI_0_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_0,
@@ -314,7 +314,7 @@ static void spi_mcux_config_func_1(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_1 = {
 	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_1_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_1_CLOCK_CONTROLLER,
+	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_1_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
 		DT_OPENISA_RV32M1_LPSPI_SPI_1_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_1,
@@ -347,7 +347,7 @@ static void spi_mcux_config_func_2(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_2 = {
 	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_2_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_2_CLOCK_CONTROLLER,
+	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_2_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
 		DT_OPENISA_RV32M1_LPSPI_SPI_2_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_2,
@@ -380,7 +380,7 @@ static void spi_mcux_config_func_3(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_3 = {
 	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_3_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_3_CLOCK_CONTROLLER,
+	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_3_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
 		DT_OPENISA_RV32M1_LPSPI_SPI_3_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_3,
