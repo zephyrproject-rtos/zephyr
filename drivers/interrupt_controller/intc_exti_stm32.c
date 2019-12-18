@@ -19,7 +19,7 @@
 #include <device.h>
 #include <soc.h>
 #include <sys/__assert.h>
-#include "intc_exti_stm32.h"
+#include <drivers/interrupt_controller/exti_stm32.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
     defined(CONFIG_SOC_SERIES_STM32L0X) || \

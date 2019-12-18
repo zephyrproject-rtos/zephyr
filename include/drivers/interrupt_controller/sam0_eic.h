@@ -40,6 +40,7 @@ enum sam0_eic_trigger {
  * @param port port index (A=0, etc)
  * @param pin pin in the port
  * @param trigger trigger condition
+ * @param filter enable filter
  * @param cb interrupt callback
  * @param data parameter to the interrupt callback
  */
@@ -79,6 +80,6 @@ int sam0_eic_disable_interrupt(int port, int pin);
  *
  * @param port port index (A=0, etc)
  */
-u32_t sam0_eic_interrupt_pending(int por);
+u32_t sam0_eic_interrupt_pending(int port);
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_H_ */
