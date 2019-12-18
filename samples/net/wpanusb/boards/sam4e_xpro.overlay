@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2019 Gerson Fernando Budke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+       status = "okay";
+       label = "SPI_RF2XX";
+       cs-gpios = <&portb 14>;
+
+       rf2xx@0 {
+               compatible = "atmel,rf2xx";
+               reg = <0x0>;
+               label = "my_dev_name";
+               spi-max-frequency = <7800000>;
+               reset-gpios = <&porta 3 0>;
+               irq-gpios = <&porta 21 0>;
+               slptr-gpios = <&porta 22 0>;
+               status = "okay";
+       };
+};
