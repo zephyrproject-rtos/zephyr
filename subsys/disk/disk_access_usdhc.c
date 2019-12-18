@@ -2718,7 +2718,7 @@ static int usdhc_access_init(const struct device *dev)
 		}
 		priv->clock_sys =
 			(clock_control_subsys_t)
-			DT_INST_0_NXP_IMX_USDHC_CLOCK_NAME;
+			DT_INST_0_NXP_IMX_USDHC_CLOCKS_NAME;
 	}
 #endif
 
@@ -2734,7 +2734,7 @@ static int usdhc_access_init(const struct device *dev)
 		}
 		priv->clock_sys =
 			(clock_control_subsys_t)
-			DT_INST_1_NXP_IMX_USDHC_CLOCK_NAME;
+			DT_INST_1_NXP_IMX_USDHC_CLOCKS_NAME;
 	}
 #endif
 

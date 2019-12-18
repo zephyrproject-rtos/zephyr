@@ -278,7 +278,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porta_config = {
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCKS_CONTROLLER
 	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-			DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCK_NAME,
+			DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCKS_NAME,
 #else
 	.clock_controller = NULL,
 #endif
@@ -323,7 +323,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portb_config = {
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCKS_CONTROLLER
 	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-			DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCK_NAME,
+			DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCKS_NAME,
 #else
 	.clock_controller = NULL,
 #endif
@@ -368,7 +368,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portc_config = {
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCKS_CONTROLLER
 	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-			DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCK_NAME,
+			DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCKS_NAME,
 #else
 	.clock_controller = NULL,
 #endif
@@ -414,7 +414,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portd_config = {
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCKS_CONTROLLER
 	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-			DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCK_NAME,
+			DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCKS_NAME,
 #else
 	.clock_controller = NULL,
 #endif
@@ -459,7 +459,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porte_config = {
 #ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCKS_CONTROLLER
 	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-			DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCK_NAME,
+			DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCKS_NAME,
 #else
 	.clock_controller = NULL,
 #endif
