@@ -110,12 +110,12 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 	 * No action needed if there's already a CID allocated, e.g. in
 	 * the case of a fixed channel.
 	 */
-	if (ch && ch->rx.cid > 0) {
+	if (ch->rx.cid > 0) {
 		return ch;
 	}
 
 	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
-		if (ch && !bt_l2cap_le_lookup_rx_cid(conn, cid)) {
+		if (!bt_l2cap_le_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
 		}
