@@ -163,9 +163,6 @@ struct soc_dsp_shim_regs {
 	u32_t	reserved3[22];
 };
 
-#define USB_DW_BASE				0x000A0000
-#define USB_DW_IRQ				0x00000806
-
 /* Global Control registers */
 #define SOC_S1000_GLB_CTRL_BASE			(0x00081C00)
 
