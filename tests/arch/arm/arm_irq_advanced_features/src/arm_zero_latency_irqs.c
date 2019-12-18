@@ -8,6 +8,8 @@
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
+#if defined(CONFIG_ZERO_LATENCY_IRQS)
+
 static volatile int test_flag;
 
 void arm_zero_latency_isr_handler(void *args)
@@ -83,6 +85,12 @@ void test_arm_zero_latency_irqs(void)
 
 	irq_unlock(key);
 }
+#else
+void test_arm_zero_latency_irqs(void)
+{
+	TC_PRINT("Skipped (Cortex-M Mainline only)\n");
+}
+#endif /* CONFIG_ZERO_LATENCY_IRQS */
 /**
  * @}
  */
