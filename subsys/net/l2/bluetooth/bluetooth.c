@@ -255,7 +255,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
 }
 
-static struct bt_l2cap_chan_ops ipsp_ops = {
+static const struct bt_l2cap_chan_ops ipsp_ops = {
 	.alloc_buf	= ipsp_alloc_buf,
 	.recv		= ipsp_recv,
 	.connected	= ipsp_connected,

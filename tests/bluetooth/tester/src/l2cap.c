@@ -110,7 +110,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= alloc_buf_cb,
 	.recv		= recv_cb,
 	.connected	= connected_cb,

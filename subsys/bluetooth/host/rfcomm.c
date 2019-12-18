@@ -1567,7 +1567,7 @@ static void rfcomm_session_rtx_timeout(struct k_work *work)
 static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 {
 	int i;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = rfcomm_connected,
 		.disconnected = rfcomm_disconnected,
 		.recv = rfcomm_recv,
