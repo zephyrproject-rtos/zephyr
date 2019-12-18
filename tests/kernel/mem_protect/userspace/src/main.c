@@ -654,8 +654,7 @@ static void access_other_memdomain(void)
 			(k_thread_entry_t)shared_mem_thread, NULL,
 			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_abort(k_current_get());
-
+	k_yield(); /* Let other thread run */
 }
 
 
@@ -1190,14 +1189,14 @@ void test_main(void)
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),
-			 ztest_user_unit_test(read_other_stack),
-			 ztest_user_unit_test(write_other_stack),
+			 ztest_1cpu_user_unit_test(read_other_stack),
+			 ztest_1cpu_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe),
-			 ztest_unit_test(access_other_memdomain),
+			 ztest_1cpu_unit_test(access_other_memdomain),
 			 ztest_unit_test(domain_add_thread_drop_to_user),
 			 ztest_unit_test(domain_add_part_drop_to_user),
 			 ztest_unit_test(domain_remove_part_drop_to_user),
@@ -1206,7 +1205,7 @@ void test_main(void)
 			 ztest_unit_test(domain_add_part_context_switch),
 			 ztest_unit_test(domain_remove_part_context_switch),
 			 ztest_unit_test(domain_remove_thread_context_switch),
-			 ztest_unit_test(test_stack_buffer),
+			 ztest_1cpu_unit_test(test_stack_buffer),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
 			 ztest_user_unit_test(test_oops_panic),
