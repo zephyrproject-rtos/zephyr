@@ -661,11 +661,11 @@ def write_clocks(node):
 
         for name, val in clock.data.items():
             if clock_i == 0:
-                clk_name_alias = "CLOCK_" + str2ident(name)
+                clk_name_alias = "CLOCKS_" + str2ident(name)
             else:
                 clk_name_alias = None
 
-            out_dev(node, "CLOCK_{}_{}".format(str2ident(name), clock_i), val,
+            out_dev(node, "CLOCKS_{}_{}".format(str2ident(name), clock_i), val,
                     name_alias=clk_name_alias)
 
         if "fixed-clock" not in controller.compats:
