@@ -231,6 +231,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 {
 	struct ssd16xx_data *driver = dev->driver_data;
 	int err;
+	size_t buf_len;
 	u16_t x_start;
 	u16_t x_end;
 	u16_t y_start;
@@ -241,7 +242,8 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		return -EINVAL;
 	}
 
-	if (buf == NULL || desc->buf_size == 0U) {
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	if (buf == NULL || buf_len == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
@@ -311,7 +313,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 	}
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_WRITE_RAM, (u8_t *)buf,
-				desc->buf_size);
+				buf_len);
 	if (err < 0) {
 		return err;
 	}
