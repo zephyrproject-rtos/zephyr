@@ -786,7 +786,7 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 		k_sem_give(&chan->tx.credits);
 	}
 
-	if (atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
+	if (!atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
 	    chan->chan.ops->status) {
 		chan->chan.ops->status(&chan->chan, chan->chan.status);
 	}
