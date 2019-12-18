@@ -181,9 +181,9 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 		.base =	(TPM_Type *) \
 			DT_INST_##n##_OPENISA_RV32M1_TPM_BASE_ADDRESS, \
 		.clock_name = \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCK_CONTROLLER, \
+			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCKS_CONTROLLER, \
 		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCK_NAME, \
+			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCKS_NAME, \
 		.tpm_clock_source = kTPM_SystemClock, \
 		.prescale = kTPM_Prescale_Divide_16, \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \

@@ -290,9 +290,9 @@ static void mcux_lpsci_config_func_0(struct device *dev);
 
 static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 	.base = UART0,
-	.clock_name = DT_NXP_KINETIS_LPSCI_UART_0_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPSCI_UART_0_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPSCI_UART_0_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPSCI_UART_0_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPSCI_UART_0_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpsci_config_func_0,

@@ -166,9 +166,9 @@ static void mcux_wdog_config_func_0(struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
 	.base = (WDOG_Type *) DT_NXP_KINETIS_WDOG_WATCHDOG0_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCK_NAME,
+		DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCKS_NAME,
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 

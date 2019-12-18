@@ -265,10 +265,10 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.base =                                                        \
 		(LPI2C_Type *)DT_OPENISA_RV32M1_LPI2C_I2C_##id##_BASE_ADDRESS, \
 		.clock_controller =                                            \
-			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_CONTROLLER,   \
+			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCKS_CONTROLLER,  \
 		.clock_subsys =                                                \
 			(clock_control_subsys_t)                               \
-			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_NAME,         \
+			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCKS_NAME,        \
 		.clock_ip_name = kCLOCK_Lpi2c##id,                             \
 		.clock_ip_src  = kCLOCK_IpSrcFircAsync,                        \
 		.bitrate = DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_FREQUENCY, \

@@ -659,9 +659,9 @@ static void mcux_flexcan_config_func_0(struct device *dev);
 
 static const struct mcux_flexcan_config mcux_flexcan_config_0 = {
 	.base = (CAN_Type *) DT_INST_0_NXP_KINETIS_FLEXCAN_BASE_ADDRESS,
-	.clock_name = DT_INST_0_NXP_KINETIS_FLEXCAN_CLOCK_CONTROLLER,
+	.clock_name = DT_INST_0_NXP_KINETIS_FLEXCAN_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_0_NXP_KINETIS_FLEXCAN_CLOCK_NAME,
+		DT_INST_0_NXP_KINETIS_FLEXCAN_CLOCKS_NAME,
 	.clk_source = DT_INST_0_NXP_KINETIS_FLEXCAN_CLK_SOURCE,
 	.bitrate = DT_INST_0_NXP_KINETIS_FLEXCAN_BUS_SPEED,
 	.sjw = DT_INST_0_NXP_KINETIS_FLEXCAN_SJW,
@@ -761,9 +761,9 @@ static void mcux_flexcan_config_func_1(struct device *dev);
 
 static const struct mcux_flexcan_config mcux_flexcan_config_1 = {
 	.base = (CAN_Type *) DT_INST_1_NXP_KINETIS_FLEXCAN_BASE_ADDRESS,
-	.clock_name = DT_INST_1_NXP_KINETIS_FLEXCAN_CLOCK_CONTROLLER,
+	.clock_name = DT_INST_1_NXP_KINETIS_FLEXCAN_CLOCKS_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_1_NXP_KINETIS_FLEXCAN_CLOCK_NAME,
+		DT_INST_1_NXP_KINETIS_FLEXCAN_CLOCKS_NAME,
 	.clk_source = DT_INST_1_NXP_KINETIS_FLEXCAN_CLK_SOURCE,
 	.bitrate = DT_INST_1_NXP_KINETIS_FLEXCAN_BUS_SPEED,
 	.sjw = DT_INST_1_NXP_KINETIS_FLEXCAN_SJW,

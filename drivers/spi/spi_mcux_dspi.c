@@ -278,9 +278,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_NXP_KINETIS_DSPI_SPI_##id##_BASE_ADDRESS,\
-		.clock_name = DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_CONTROLLER,\
+		.clock_name = DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCKS_CONTROLLER,\
 		.clock_subsys = 					\
-		(clock_control_subsys_t)DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_NAME,\
+		(clock_control_subsys_t)DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCKS_NAME,\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\

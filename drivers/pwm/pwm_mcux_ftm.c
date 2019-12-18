@@ -174,9 +174,9 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 #define FTM_DEVICE(n) \
 	static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 		.base = (FTM_Type *)DT_INST_##n##_NXP_KINETIS_FTM_BASE_ADDRESS,\
-		.clock_name = DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_CONTROLLER, \
+		.clock_name = DT_INST_##n##_NXP_KINETIS_FTM_CLOCKS_CONTROLLER, \
 		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_NAME, \
+			DT_INST_##n##_NXP_KINETIS_FTM_CLOCKS_NAME, \
 		.ftm_clock_source = kFTM_FixedClock, \
 		.prescale = kFTM_Prescale_Divide_16, \
 		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \

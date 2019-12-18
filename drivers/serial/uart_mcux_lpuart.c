@@ -290,9 +290,9 @@ static void mcux_lpuart_config_func_0(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_0_config = {
 	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_0_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_0_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPUART_UART_0_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_0_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_0_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPUART_UART_0_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_0,
@@ -336,9 +336,9 @@ static void mcux_lpuart_config_func_1(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_1_config = {
 	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_1_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_1_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPUART_UART_1_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_1_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_1_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPUART_UART_1_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_1,
@@ -382,9 +382,9 @@ static void mcux_lpuart_config_func_2(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_2_config = {
 	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_2_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_2_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPUART_UART_2_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_2_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_2_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPUART_UART_2_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_2,
@@ -428,9 +428,9 @@ static void mcux_lpuart_config_func_3(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_3_config = {
 	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_3_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_3_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPUART_UART_3_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_3_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_3_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPUART_UART_3_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_3,
@@ -474,9 +474,9 @@ static void mcux_lpuart_config_func_4(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_4_config = {
 	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_4_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_4_CLOCK_CONTROLLER,
+	.clock_name = DT_NXP_KINETIS_LPUART_UART_4_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_4_CLOCK_NAME,
+		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_4_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_LPUART_UART_4_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_4,

@@ -144,9 +144,9 @@ static const struct irq_next_level_api rv32m1_intmux_apis = {
 
 static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 	.regs = (INTMUX_Type *)DT_OPENISA_RV32M1_INTMUX_INTMUX_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_CONTROLLER,
+	.clock_name = DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCKS_CONTROLLER,
 	.clock_subsys =
-		UINT_TO_POINTER(DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_NAME),
+		UINT_TO_POINTER(DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCKS_NAME),
 	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
 };
 

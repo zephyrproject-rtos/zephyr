@@ -291,8 +291,8 @@ static void uart_mcux_config_func_0(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_0_config = {
 	.base = UART0,
-	.clock_name = DT_NXP_KINETIS_UART_UART_0_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_0_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_0_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_0_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_0_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_0_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -335,8 +335,8 @@ static void uart_mcux_config_func_1(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_1_config = {
 	.base = UART1,
-	.clock_name = DT_NXP_KINETIS_UART_UART_1_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_1_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_1_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_1_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_1_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_1_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -379,8 +379,8 @@ static void uart_mcux_config_func_2(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_2_config = {
 	.base = UART2,
-	.clock_name = DT_NXP_KINETIS_UART_UART_2_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_2_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_2_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_2_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_2_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_2_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -423,8 +423,8 @@ static void uart_mcux_config_func_3(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_3_config = {
 	.base = UART3,
-	.clock_name = DT_NXP_KINETIS_UART_UART_3_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_3_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_3_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_3_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_3_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_3_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -467,8 +467,8 @@ static void uart_mcux_config_func_4(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_4_config = {
 	.base = UART4,
-	.clock_name = DT_NXP_KINETIS_UART_UART_4_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_4_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_4_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_4_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_4_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_4_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -511,8 +511,8 @@ static void uart_mcux_config_func_5(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_5_config = {
 	.base = UART5,
-	.clock_name = DT_NXP_KINETIS_UART_UART_5_CLOCK_CONTROLLER,
-	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_5_CLOCK_NAME,
+	.clock_name = DT_NXP_KINETIS_UART_UART_5_CLOCKS_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)DT_NXP_KINETIS_UART_UART_5_CLOCKS_NAME,
 	.baud_rate = DT_NXP_KINETIS_UART_UART_5_CURRENT_SPEED,
 	.hw_flow_control = DT_NXP_KINETIS_UART_UART_5_HW_FLOW_CONTROL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
