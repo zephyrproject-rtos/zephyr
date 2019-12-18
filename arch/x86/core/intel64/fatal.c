@@ -24,3 +24,14 @@ void z_x86_exception(z_arch_esf_t *esf)
 		CODE_UNREACHABLE;
 	}
 }
+
+#ifdef CONFIG_USERSPACE
+void arch_syscall_oops(void *ssf_ptr)
+{
+	struct x86_ssf *ssf = ssf_ptr;
+
+	LOG_ERR("Bad system call from RIP 0x%lx", ssf->rip);
+
+	z_x86_fatal_error(K_ERR_KERNEL_OOPS, NULL);
+}
+#endif /* CONFIG_USERSPACE */

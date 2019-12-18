@@ -115,9 +115,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 #endif
 	movl %eax, %cr3
 
-	movl $X86_EFER_MSR, %ecx	/* enable long mode and no-execute */
+	movl $X86_EFER_MSR, %ecx  /* enable long mode, no-execute, syscall */
 	rdmsr
-	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE), %eax
+	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %eax
 	wrmsr
 
 	movl %cr0, %eax			/* enable paging */
@@ -168,6 +168,30 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 #ifdef CONFIG_LOAPIC
 	call z_loapic_enable
 #endif
+
+#ifdef CONFIG_USERSPACE
+	/* Set landing site for system calls made with 'syscall' instruction */
+	movq $z_x86_syscall_entry_stub, %rax
+	movq %rax, %rdx
+	shrq $32, %rdx
+	movl $X86_LSTAR_MSR, %ecx
+	/* LSTAR set to 64-bit address denoted by EDX:EAX */
+	wrmsr
+
+	/* Set segment descriptors in STAR */
+	xorl %eax, %eax			/* Zero low bits, reserved */
+	movl $X86_STAR_UPPER, %edx
+	movl $X86_STAR_MSR, %ecx
+	wrmsr
+
+	/* Set EFLAGS mask applied when making system calls. Currently we
+	 * mask interrupts and clear direction flag.
+	 */
+	movl $0x600, %eax
+	xorl %edx, %edx
+	movl $X86_FMASK_MSR, %ecx
+	wrmsr
+#endif /* CONFIG_USERSPACE */
 
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
@@ -222,7 +246,13 @@ z_x86_switch:
 	movq %r13, _thread_offset_to_r13(%rsi)
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
-
+#ifdef CONFIG_USERSPACE
+	/* We're always in supervisor mode if we get here, the other case
+	 * is when __resume is invoked from irq_dispatch
+	 */
+	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
+	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
+#endif
 	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
 	/* fall through to __resume */
@@ -234,10 +264,23 @@ z_x86_switch:
  */
 
 __resume:
+#ifdef CONFIG_USERSPACE
+	pushq %rdi	/* Caller-saved, stash it */
+	call z_x86_swap_update_page_tables
+	popq %rdi
+
+	/* Set up exception return stack frame */
+	pushq _thread_offset_to_ss(%rdi)	/* SS */
+#else
 	pushq $X86_KERNEL_DS			/* SS */
+#endif
 	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
 	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
+#ifdef CONFIG_USERSPACE
+	pushq _thread_offset_to_cs(%rdi)	/* CS */
+#else
 	pushq $X86_KERNEL_CS			/* CS */
+#endif
 	pushq _thread_offset_to_rip(%rdi)	/* RIP */
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
@@ -261,6 +304,13 @@ __resume:
 	movq _thread_offset_to_r11(%rdi), %r11
 	movq _thread_offset_to_rdi(%rdi), %rdi  /* do last :-) */
 
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we are returning to user mode */
+	testb $0x3, 8(%rsp)
+	jz 1f
+	swapgs
+#endif /* CONFIG_USERSPACE */
+
 1:	iretq
 
 
@@ -273,7 +323,13 @@ except: /*
 	 * finish struct NANO_ESF on stack. 'vector' .. 'ss' are
 	 * already there from hardware trap and EXCEPT_*() stub.
 	 */
-
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we came in from user mode */
+	testb $0x3, 24(%rsp)
+	jz 1f
+	swapgs
+1:
+#endif /* CONFIG_USERSPACE */
 	pushq %r15
 	subq $X86_FXSAVE_SIZE, %rsp
 	fxsave (%rsp)
@@ -323,6 +379,15 @@ except: /*
 	/* Drop the vector/err code pushed by the HW or EXCEPT_*() stub */
 	add $16, %rsp
 
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we are returning to user mode */
+	testb $0x3, 8(%rsp)
+	jz 1f
+	cli
+	swapgs
+1:
+#endif /* CONFIG_USERSPACE */
+
 	iretq
 
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
@@ -356,6 +421,13 @@ EXCEPT(Z_X86_OOPS_VECTOR);
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we came in from user mode */
+	testb $0x3, 16(%rsp)
+	jz 1f
+	swapgs
+1:
+#endif /* CONFIG_USERSPACE */
 	pushq %rsi
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
 
@@ -422,12 +494,18 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	popq %rcx /* vector number */
 	popq %rax /* RIP */
 	movq %rax, _thread_offset_to_rip(%rsi)
-	popq %rax /* CS: discard */
+	popq %rax /* CS */
+#ifdef CONFIG_USERSPACE
+	movq %rax, _thread_offset_to_cs(%rsi)
+#endif
 	popq %rax /* RFLAGS */
 	movq %rax, _thread_offset_to_rflags(%rsi)
 	popq %rax /* RSP */
 	movq %rax, _thread_offset_to_rsp(%rsi)
-	popq %rax /* SS: discard */
+	popq %rax /* SS */
+#ifdef CONFIG_USERSPACE
+	movq %rax, _thread_offset_to_ss(%rsi)
+#endif
 
 irq_dispatch:
 	movq x86_irq_funcs(,%rcx,8), %rbx
