@@ -237,7 +237,9 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* <TBD>
+* The minimum Python version supported by Zephyr's build system and tools is
+  now 3.6.
+* <Other items TBD>
 
 Libraries / Subsystems
 ***********************
