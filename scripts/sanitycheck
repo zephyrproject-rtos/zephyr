@@ -3802,7 +3802,7 @@ class HardwareMap:
                 if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
                     continue
                 s_dev = {}
-                s_dev['platform'] = "unknown"
+                s_dev['platform'] = d.manufacturer
                 s_dev['id'] = d.serial_number
                 s_dev['serial'] = d.device
                 s_dev['product'] = d.product
