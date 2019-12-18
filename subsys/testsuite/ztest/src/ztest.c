@@ -146,9 +146,6 @@ static void run_test_functions(struct unit_test *test)
 	test->setup();
 	phase = TEST_PHASE_TEST;
 	test->test();
-	phase = TEST_PHASE_TEARDOWN;
-	test->teardown();
-	phase = TEST_PHASE_FRAMEWORK;
 }
 
 #ifndef KERNEL
@@ -312,6 +309,11 @@ static int run_test(struct unit_test *test)
 	 * phase": this will corrupt the kernel ready queue.
 	 */
 	k_sem_take(&test_end_signal, K_FOREVER);
+
+	phase = TEST_PHASE_TEARDOWN;
+	test->teardown();
+	phase = TEST_PHASE_FRAMEWORK;
+
 	if (test_result == -1) {
 		ret = TC_FAIL;
 	}
