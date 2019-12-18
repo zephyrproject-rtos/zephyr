@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <irq_nextlevel.h>
-#include "cavs_ictl.h"
+#include "intc_cavs.h"
 
 static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(u32_t intr_status,
 						       u32_t isr_base_offset)

@@ -60,7 +60,7 @@
 
 #include <drivers/interrupt_controller/ioapic.h> /* public API declarations */
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
-#include "ioapic_priv.h"
+#include "intc_ioapic_priv.h"
 
 #define BITS_PER_IRQ  3
 #define IOAPIC_BITFIELD_HI_LO	0

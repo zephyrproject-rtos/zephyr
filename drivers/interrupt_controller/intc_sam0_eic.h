@@ -5,8 +5,8 @@
  */
 
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_H_
 
 #include <zephyr/types.h>
 
@@ -81,4 +81,4 @@ int sam0_eic_disable_interrupt(int port, int pin);
  */
 u32_t sam0_eic_interrupt_pending(int por);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_H_ */
+#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_H_ */
