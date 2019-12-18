@@ -14,7 +14,7 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/pinmux.h>
 #include <sys/util.h>
-#include <interrupt_controller/exti_stm32.h>
+#include <interrupt_controller/intc_exti_stm32.h>
 
 #include "gpio_stm32.h"
 #include "gpio_utils.h"

@@ -6,8 +6,8 @@
 
 #include <device.h>
 #include <soc.h>
-#include "sam0_eic.h"
-#include "sam0_eic_priv.h"
+#include "intc_sam0_eic.h"
+#include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {
 	u8_t pin : 5;

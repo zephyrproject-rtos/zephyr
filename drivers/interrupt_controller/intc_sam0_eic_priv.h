@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_PRIV_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_PRIV_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_
 
 #include <zephyr/types.h>
 #include <soc.h>
@@ -697,4 +697,4 @@ static inline int sam0_eic_map_to_line(int port, int pin)
 	return ch;
 }
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_SAM0_EIC_PRIV_H_ */
+#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_ */

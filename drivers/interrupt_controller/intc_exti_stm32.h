@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_
 
 #include <zephyr/types.h>
 
@@ -78,4 +78,4 @@ int stm32_exti_set_callback(int line, int port, stm32_exti_callback_t cb,
  */
 void stm32_exti_unset_callback(int line);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_ */
+#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_ */

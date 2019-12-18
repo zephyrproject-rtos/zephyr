@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <soc.h>
-#include <interrupt_controller/sam0_eic.h>
+#include <interrupt_controller/intc_sam0_eic.h>
 
 #include "gpio_utils.h"
 
