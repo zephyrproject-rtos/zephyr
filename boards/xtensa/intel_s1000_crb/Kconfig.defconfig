@@ -61,9 +61,6 @@ if USB
 config USB_DW
 	default y
 
-config USB_DW_IRQ_PRI
-	default 3
-
 config USB_DW_USB_2_0
 	default y
 

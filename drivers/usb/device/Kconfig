@@ -14,12 +14,6 @@ config USB_DW
 	help
 	  Designware USB Device Controller Driver.
 
-config USB_DW_IRQ_PRI
-	int "DesignWare USB Driver Interrupt priority"
-	depends on USB_DW
-	help
-	  USB interrupt priority.
-
 config USB_DW_USB_2_0
 	bool "DesignWare Controller and PHY support for USB specification 2.0"
 	depends on USB_DW
