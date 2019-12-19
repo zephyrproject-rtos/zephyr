@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2019 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,6 +136,80 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
 	static inline int name##_body(void)
+
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+
+extern void z_arm_irq_direct_dynamic_dispatch_reschedule(void);
+
+/**
+ * @brief Macro to register an ISR Dispatcher (with re-scheduling request)
+ * for dynamic direct interrupts.
+ *
+ * This macro registers the ISR dispatcher function for dynamic direct
+ * interrupts, allowing the use of dynamic direct ISRs in the kernel.
+ * The dispatcher function is invoked when the direct
+ * interrupt occurs and then triggers the (soft) Interrupt Service Routine
+ * (ISR) that is registered dynamically (i.e. at run-time) into the IRQ table
+ * stored in SRAM. The ISR must be connected with irq_connect_dynamic() and
+ * enabled via irq_enable() before the dynamic direct interrupt can be
+ * serviced. This ISR dispatcher triggers thread re-secheduling upon return.
+ *
+ * Direct dynamic ISRs are designed for performance-critical interrupt handling
+ * and do not go through common interrupt handling code. They must be
+ * implemented in a way that it is safe to put them directly in the software
+ * vector table.
+ *
+ * @warning
+ * Although this routine is invoked at run-time, all of its arguments must be
+ * computable by the compiler at build time.
+ *
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param flags_p Architecture-specific IRQ configuration flags.
+ *
+ * Note: the function is an ARM Cortex-M only API.
+ */
+#define ARM_IRQ_DIRECT_DYNAMIC_CONNECT_RESCHEDULE(irq_p, priority_p, flags_p) \
+	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
+		z_arm_irq_direct_dynamic_dispatch_reschedule, flags_p)
+
+extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
+
+/**
+ * @brief Macro to register an ISR Dispatcher (with NO re-scheduling request)
+ * for dynamic direct interrupts.
+ *
+ * This macro registers the ISR dispatcher function for dynamic direct
+ * interrupts, allowing the use of dynamic direct ISRs in the kernel.
+ * The dispatcher function is invoked when the direct
+ * interrupt occurs and then triggers the (soft) Interrupt Service Routine
+ * (ISR) that is registered dynamically (i.e. at run-time) into the IRQ table
+ * stored in SRAM. The ISR must be connected with irq_connect_dynamic() and
+ * enabled via irq_enable() before the dynamic direct interrupt can be
+ * serviced. This ISR dispatcher does NOT trigger thread re-secheduling upon
+ * return.
+ *
+ * Direct dynamic ISRs are designed for performance-critical interrupt handling
+ * and do not go through common interrupt handling code. They must be
+ * implemented in a way that it is safe to put them directly in the software
+ * vector table.
+ *
+ * @warning
+ * Although this routine is invoked at run-time, all of its arguments must be
+ * computable by the compiler at build time.
+ *
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param flags_p Architecture-specific IRQ configuration flags.
+ *
+ * Note: the function is an ARM Cortex-M only API.
+ */
+#define ARM_IRQ_DIRECT_DYNAMIC_CONNECT_NO_RESCHEDULE(irq_p, priority_p, \
+	flags_p) \
+	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
+		z_arm_irq_direct_dynamic_dispatch_no_reschedule, flags_p)
+
+#endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
