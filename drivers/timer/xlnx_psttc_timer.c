@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <kernel.h>
 #include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include "irq.h"
-#include "legacy_api.h"
+
+#ifdef CONFIG_TICKLESS_KERNEL
+#warning "Tickless mode is not supported"
+#endif
 
 #define TIMER_FREQ          CONFIG_SYS_CLOCK_TICKS_PER_SEC
 
@@ -115,14 +117,6 @@ void _timer_int_handler(void *unused)
 	z_clock_announce(_sys_idle_elapsed_ticks);
 }
 
-/**
- * @brief Initialize and enable the system clock
- *
- * This routine is used to program the systick to deliver interrupts at the
- * rate specified via the 'sys_clock_us_per_tick' global variable.
- *
- * @return 0
- */
 int z_clock_driver_init(struct device *device)
 {
 	int ret;
@@ -151,6 +145,7 @@ int z_clock_driver_init(struct device *device)
 	sys_write32(0, TIMER_BASEADDR + XTTCPS_MATCH_2_OFFSET);
 	sys_write32(0, TIMER_BASEADDR + XTTCPS_IER_OFFSET);
 	sys_write32(XTTCPS_IXR_ALL_MASK, TIMER_BASEADDR + XTTCPS_ISR_OFFSET);
+
 	/* Reset counter value */
 	regval = sys_read32(TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
 	regval |= XTTCPS_CNT_CNTRL_RST_MASK;
@@ -181,15 +176,11 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
+u32_t z_clock_elapsed(void)
+{
+	return 0;
+}
 
-/**
- * @brief Read the platform's timer hardware
- *
- * This routine returns the current time in terms of timer hardware clock
- * cycles.
- *
- * @return up counter of elapsed clock cycles
- */
 u32_t z_timer_cycle_get_32(void)
 {
 	return accumulated_cycles;
