@@ -296,15 +296,15 @@ void __weak main(void)
 /* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
-static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
+static void init_idle_thread(struct k_thread *thread, k_thread_stack_t *stack)
 {
-	z_setup_new_thread(thr, stack,
+	z_setup_new_thread(thread, stack,
 			  CONFIG_IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
-	z_mark_thread_as_started(thr);
+	z_mark_thread_as_started(thread);
 
 #ifdef CONFIG_SMP
-	thr->base.is_idle = 1U;
+	thread->base.is_idle = 1U;
 #endif
 }
 #endif /* CONFIG_MULTITHREADING */

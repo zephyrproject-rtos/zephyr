@@ -340,11 +340,11 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static int thread_index_get(struct k_thread *t)
+static int thread_index_get(struct k_thread *thread)
 {
 	struct _k_object *ko;
 
-	ko = z_object_find(t);
+	ko = z_object_find(thread);
 
 	if (ko == NULL) {
 		return -1;
