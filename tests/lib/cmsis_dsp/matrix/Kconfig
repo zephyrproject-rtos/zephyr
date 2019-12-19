@@ -1,0 +1,25 @@
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config CMSIS_DSP_TEST_MATRIX_UNARY_Q15
+	bool "Test: Matrix Unary Q15"
+
+config CMSIS_DSP_TEST_MATRIX_UNARY_Q31
+	bool "Test: Matrix Unary Q31"
+
+config CMSIS_DSP_TEST_MATRIX_UNARY_F32
+	bool "Test: Matrix Unary F32"
+
+config CMSIS_DSP_TEST_MATRIX_UNARY_F64
+	bool "Test: Matrix Unary F64"
+
+config CMSIS_DSP_TEST_MATRIX_BINARY_Q15
+	bool "Test: Matrix Binary Q15"
+
+config CMSIS_DSP_TEST_MATRIX_BINARY_Q31
+	bool "Test: Matrix Binary Q31"
+
+config CMSIS_DSP_TEST_MATRIX_BINARY_F32
+	bool "Test: Matrix Binary F32"
+
+source "Kconfig"
