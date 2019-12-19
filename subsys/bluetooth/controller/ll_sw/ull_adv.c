@@ -452,12 +452,6 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	pdu_adv = lll_adv_data_peek(lll);
-	if (pdu_adv->tx_addr) {
-		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-	}
-
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	if (0) {
@@ -474,8 +468,14 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			memcpy(ptr, ll_addr_get(pdu_adv->tx_addr, NULL),
-			       BDADDR_SIZE);
+			/* TODO: Privacy */
+			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+
+			if (!mem_nz(tx_addr, BDADDR_SIZE)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			memcpy(ptr, tx_addr, BDADDR_SIZE);
 		}
 
 		/* TODO: TargetA, fill here at enable */
@@ -500,17 +500,26 @@ u8_t ll_adv_enable(u8_t enable)
 
 			ull_filter_adv_pdu_update(adv, rl_idx, pdu_adv);
 			ull_filter_adv_pdu_update(adv, rl_idx, pdu_scan);
+
 			priv = true;
 		}
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			memcpy(&pdu_adv->adv_ind.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+
+			memcpy(&pdu_adv->adv_ind.addr[0], tx_addr,
 			       BDADDR_SIZE);
-			memcpy(&pdu_scan->scan_rsp.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			memcpy(&pdu_scan->scan_rsp.addr[0], tx_addr,
 			       BDADDR_SIZE);
+		}
+
+		/* In case the local IRK was not set or no match was
+		 * found the fallback address was used instead, check
+		 * that a valid address has been set.
+		 */
+		if (!mem_nz(&pdu_adv->adv_ind.addr[0], BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
 
