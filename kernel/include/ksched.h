@@ -255,10 +255,10 @@ static ALWAYS_INLINE void z_ready_thread(struct k_thread *thread)
 
 static inline void _ready_one_thread(_wait_q_t *wq)
 {
-	struct k_thread *th = z_unpend_first_thread(wq);
+	struct k_thread *thread = z_unpend_first_thread(wq);
 
-	if (th != NULL) {
-		z_ready_thread(th);
+	if (thread != NULL) {
+		z_ready_thread(thread);
 	}
 }
 

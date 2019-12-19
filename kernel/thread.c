@@ -299,30 +299,31 @@ const char *k_thread_state_str(k_tid_t thread_id)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_name_copy(k_tid_t t, char *buf, size_t size)
+static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
+					    char *buf, size_t size)
 {
 #ifdef CONFIG_THREAD_NAME
 	size_t len;
-	struct _k_object *ko = z_object_find(t);
+	struct _k_object *ko = z_object_find(thread);
 
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if (t == NULL || ko->type != K_OBJ_THREAD ||
+	if (thread == NULL || ko->type != K_OBJ_THREAD ||
 	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
 		return -EINVAL;
 	}
 	if (Z_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
 		return -EFAULT;
 	}
-	len = strlen(t->name);
+	len = strlen(thread->name);
 	if (len + 1 > size) {
 		return -ENOSPC;
 	}
 
-	return z_user_to_copy((void *)buf, t->name, len + 1);
+	return z_user_to_copy((void *)buf, thread->name, len + 1);
 #else
-	ARG_UNUSED(t);
+	ARG_UNUSED(thread);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(size);
 	return -ENOSYS;
