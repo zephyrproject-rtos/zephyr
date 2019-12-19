@@ -13,5 +13,3 @@ properties:
 
     label:
       required: true
-
-...
