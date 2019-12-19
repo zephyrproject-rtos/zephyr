@@ -759,6 +759,21 @@ class DeviceHandler(Handler):
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
 
+
+        pre_script = hardware.get('pre_script')
+        post_script = hardware.get('post_script')
+
+        if pre_script:
+            with subprocess.Popen(pre_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    logger.error("{} timed out".format(post_script))
+
         t = threading.Thread(target=self.monitor_serial, daemon=True,
                              args=(ser, read_pipe, harness))
         t.start()
@@ -811,6 +826,17 @@ class DeviceHandler(Handler):
                 self.instance.reason = "Failed"
         else:
             self.set_state(out_state, handler_time)
+
+        if post_script:
+            with subprocess.Popen(post_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    logger.error("{} timed out".format(post_script))
 
         self.make_device_available(serial_device)
 
