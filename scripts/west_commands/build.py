@@ -94,7 +94,8 @@ class Build(Forceable):
                             " Otherwise the default build directory is " +
                             "created and used.")
         parser.add_argument('-t', '--target',
-                            help='''Build system target to run''')
+                            help='''Build system target ("usage"
+                            for more info; and "help" for a list)''')
         parser.add_argument('-p', '--pristine', choices=['auto', 'always',
                             'never'], action=AlwaysIfMissing, nargs='?',
                             help='''Control whether the build folder is made
