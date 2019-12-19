@@ -3767,6 +3767,9 @@ def native_and_unit_first(a, b):
 
 
 class HardwareMap:
+
+    schema_path = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk", "hwmap-schema.yaml")
+
     manufacturer = [
         'ARM',
         'SEGGER',
@@ -3813,11 +3816,8 @@ class HardwareMap:
         self.connected_hardware.append(device)
 
     def load_hardware_map(self, map_file):
-        with open(map_file, 'r') as stream:
-            try:
-                self.connected_hardware = yaml.safe_load(stream)
-            except yaml.YAMLError as exc:
-                print(exc)
+        hwm_schema = scl.yaml_load(self.schema_path)
+        self.connected_hardware = scl.yaml_load_verify(map_file, hwm_schema)
         for i in self.connected_hardware:
             i['counter'] = 0
 
