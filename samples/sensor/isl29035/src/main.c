@@ -15,14 +15,14 @@
 static volatile bool alerted;
 struct k_sem sem;
 
-#ifdef CONFIG_ISL29035_TRIGGER
 static void trigger_handler(struct device *dev,
 			    struct sensor_trigger *trig)
 {
+#ifdef CONFIG_ISL29035_TRIGGER
 	alerted = !alerted;
 	k_sem_give(&sem);
-}
 #endif /* CONFIG_ISL29035_TRIGGER */
+}
 
 static const char *now_str(void)
 {
