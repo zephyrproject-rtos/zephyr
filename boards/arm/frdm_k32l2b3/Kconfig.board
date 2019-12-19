@@ -1,0 +1,9 @@
+# FRDM-K32L2B3 board
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_K32L2B3
+	bool "NXP FRDM-K32L2B3"
+	depends on SOC_SERIES_KINETIS_K32L2B
+	select SOC_PART_NUMBER_K32L2B31VLH0A
