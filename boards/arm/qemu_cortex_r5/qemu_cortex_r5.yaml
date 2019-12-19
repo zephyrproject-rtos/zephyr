@@ -14,14 +14,7 @@ testing:
   ignore_tags:
     - benchmark
     - cmsis_rtos
-    - cpp
     - interrupt
-    - introduction
-    - logging
     - kernel
     - memory_protection
-    - posix
-    - sleep
-    - timer
     - userspace
-    - tracing
