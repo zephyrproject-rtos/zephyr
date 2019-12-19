@@ -36,8 +36,35 @@ SECTIONS
 	*(.lorodata)
 	MMU_PAGE_ALIGN
 	_lodata_start = .;
-	*(.tss)
+
 	*(.lodata)
+
+#ifdef CONFIG_X86_KPTI
+	/* Special page containing supervisor data that is still mapped in
+	 * user mode page tables. GDT, TSSes, trampoline stack, and
+	 * any LDT must go here as they always must live in a page that is
+	 * marked 'present'. Still not directly user accessible, but
+	 * no sensitive data should be here as Meltdown exploits may read it.
+	 *
+	 * On x86-64 the IDT is in rodata and doesn't need to be in the
+	 * trampoline page.
+	 */
+	MMU_PAGE_ALIGN
+	z_shared_kernel_page_start = .;
+#endif /* CONFIG_X86_KPTI */
+
+	*(.tss)
+	*(.gdt)
+
+#ifdef CONFIG_X86_KPTI
+	*(.trampolines)
+	MMU_PAGE_ALIGN
+	z_shared_kernel_page_end = .;
+
+	ASSERT(z_shared_kernel_page_end - z_shared_kernel_page_start == 4096,
+	       "shared kernel area is not one memory page");
+#endif /* CONFIG_X86_KPTI */
+
 	MMU_PAGE_ALIGN
 	_lodata_end = .;
 	}
