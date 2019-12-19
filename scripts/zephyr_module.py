@@ -79,6 +79,9 @@ def process_module(module):
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
 
+    # The input is a module if zephyr/module.yml is a valid yaml file
+    # or if both zephyr/CMakeLists.txt and zephyr/Kconfig are present.
+
     if Path(module_yml).is_file():
         with Path(module_yml).open('r') as f:
             meta = yaml.safe_load(f.read())
@@ -91,6 +94,10 @@ def process_module(module):
                      .format(module_yml.as_posix(), e))
 
         return meta
+
+    if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
+       Path(module_path.joinpath('zephyr/Kconfig')).is_file():
+        return {'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
 
     return None
 
