@@ -16,6 +16,29 @@ extern struct isl29035_driver_data isl29035_data;
 
 LOG_MODULE_DECLARE(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline void setup_int(struct isl29035_driver_data *drv_data,
+			     bool enable)
+{
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
+				     flags);
+}
+
+static inline void handle_int(struct isl29035_driver_data *drv_data)
+{
+	setup_int(drv_data, false);
+
+#if defined(CONFIG_ISL29035_TRIGGER_OWN_THREAD)
+	k_sem_give(&drv_data->gpio_sem);
+#elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&drv_data->work);
+#endif
+}
+
 static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {
 	u64_t raw_val;
@@ -65,15 +88,9 @@ static void isl29035_gpio_callback(struct device *dev,
 	struct isl29035_driver_data *drv_data =
 		CONTAINER_OF(cb, struct isl29035_driver_data, gpio_cb);
 
+
 	ARG_UNUSED(pins);
-
-	gpio_pin_disable_callback(dev, DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
-
-#if defined(CONFIG_ISL29035_TRIGGER_OWN_THREAD)
-	k_sem_give(&drv_data->gpio_sem);
-#elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&drv_data->work);
-#endif
+	handle_int(drv_data);
 }
 
 static void isl29035_thread_cb(struct device *dev)
@@ -92,8 +109,7 @@ static void isl29035_thread_cb(struct device *dev)
 		drv_data->th_handler(dev, &drv_data->th_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
+	setup_int(drv_data, true);
 }
 
 #ifdef CONFIG_ISL29035_TRIGGER_OWN_THREAD
@@ -128,15 +144,17 @@ int isl29035_trigger_set(struct device *dev,
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 
 	/* disable interrupt callback while changing parameters */
-	gpio_pin_disable_callback(drv_data->gpio,
-				  DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
+	setup_int(drv_data, false);
 
 	drv_data->th_handler = handler;
 	drv_data->th_trigger = *trig;
 
 	/* enable interrupt callback */
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN);
+	setup_int(drv_data, true);
+	if (gpio_pin_get(drv_data->gpio,
+			 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN) > 0) {
+		handle_int(drv_data);
+	}
 
 	return 0;
 }
@@ -162,10 +180,8 @@ int isl29035_init_interrupt(struct device *dev)
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio,
-			   DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+	gpio_pin_configure(drv_data->gpio, DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
+			   GPIO_INPUT | DT_INST_0_ISIL_ISL29035_INT_GPIOS_FLAGS);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   isl29035_gpio_callback,
@@ -188,6 +204,8 @@ int isl29035_init_interrupt(struct device *dev)
 	drv_data->work.handler = isl29035_work_cb;
 	drv_data->dev = dev;
 #endif
+
+	setup_int(drv_data, true);
 
 	return 0;
 }
