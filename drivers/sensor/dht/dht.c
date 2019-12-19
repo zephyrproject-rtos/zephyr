@@ -21,17 +21,16 @@ LOG_MODULE_REGISTER(DHT, CONFIG_SENSOR_LOG_LEVEL);
  * @brief Measure duration of signal send by sensor
  *
  * @param drv_data Pointer to the driver data structure
- * @param signal_val Value of signal being measured
+ * @param active Whether current signal is active
  *
  * @return duration in usec of signal being measured,
  *         -1 if duration exceeds DHT_SIGNAL_MAX_WAIT_DURATION
  */
 static s8_t dht_measure_signal_duration(struct device *dev,
-					u32_t signal_val)
+					bool active)
 {
 	struct dht_data *drv_data = dev->driver_data;
 	const struct dht_config *cfg = dev->config->config_info;
-	u32_t val;
 	u32_t elapsed_cycles;
 	u32_t max_wait_cycles = (u32_t)(
 		(u64_t)DHT_SIGNAL_MAX_WAIT_DURATION *
@@ -39,15 +38,17 @@ static s8_t dht_measure_signal_duration(struct device *dev,
 		(u64_t)USEC_PER_SEC
 	);
 	u32_t start_cycles = k_cycle_get_32();
+	int rc;
 
 	do {
-		gpio_pin_read(drv_data->gpio, cfg->pin, &val);
+		rc = gpio_pin_get(drv_data->gpio, cfg->pin);
 		elapsed_cycles = k_cycle_get_32() - start_cycles;
 
-		if (elapsed_cycles > max_wait_cycles) {
+		if ((rc < 0)
+		    || (elapsed_cycles > max_wait_cycles)) {
 			return -1;
 		}
-	} while (val == signal_val);
+	} while ((bool)rc == active);
 
 	return (u64_t)elapsed_cycles *
 	       (u64_t)USEC_PER_SEC /
@@ -66,45 +67,45 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	/* send start signal */
-	gpio_pin_write(drv_data->gpio, cfg->pin, 0);
+	/* assert to send start signal */
+	gpio_pin_set(drv_data->gpio, cfg->pin, true);
 
 	k_busy_wait(DHT_START_SIGNAL_DURATION);
 
-	gpio_pin_write(drv_data->gpio, cfg->pin, 1);
+	gpio_pin_set(drv_data->gpio, cfg->pin, false);
 
 	/* switch to DIR_IN to read sensor signals */
 	gpio_pin_configure(drv_data->gpio, cfg->pin,
-			   GPIO_DIR_IN);
+			   GPIO_INPUT | cfg->flags);
 
-	/* wait for sensor response */
-	if (dht_measure_signal_duration(dev, 1) == -1) {
+	/* wait for sensor active response */
+	if (dht_measure_signal_duration(dev, false) == -1) {
 		ret = -EIO;
 		goto cleanup;
 	}
 
 	/* read sensor response */
-	if (dht_measure_signal_duration(dev, 0) == -1) {
+	if (dht_measure_signal_duration(dev, true) == -1) {
 		ret = -EIO;
 		goto cleanup;
 	}
 
-	/* wait for sensor data */
-	if (dht_measure_signal_duration(dev, 1) == -1) {
+	/* wait for sensor data start */
+	if (dht_measure_signal_duration(dev, false) == -1) {
 		ret = -EIO;
 		goto cleanup;
 	}
 
 	/* read sensor data */
 	for (i = 0U; i < DHT_DATA_BITS_NUM; i++) {
-		/* LOW signal to indicate a new bit */
-		if (dht_measure_signal_duration(dev, 0) == -1) {
+		/* Active signal to indicate a new bit */
+		if (dht_measure_signal_duration(dev, true) == -1) {
 			ret = -EIO;
 			goto cleanup;
 		}
 
-		/* HIGH signal duration indicates bit value */
-		signal_duration[i] = dht_measure_signal_duration(dev, 1);
+		/* Inactive signal duration indicates bit value */
+		signal_duration[i] = dht_measure_signal_duration(dev, false);
 		if (signal_duration[i] == -1) {
 			ret = -EIO;
 			goto cleanup;
@@ -154,9 +155,9 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 cleanup:
-	/* switch to DIR_OUT and leave pin to HIGH until next fetch */
-	gpio_pin_configure(drv_data->gpio, cfg->pin, GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->gpio, cfg->pin, 1);
+	/* Switch to output inactive until next fetch. */
+	gpio_pin_configure(drv_data->gpio, cfg->pin,
+			   GPIO_OUTPUT_INACTIVE | cfg->flags);
 
 	return ret;
 }
@@ -230,10 +231,8 @@ static int dht_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	rc = gpio_pin_configure(drv_data->gpio, cfg->pin, GPIO_DIR_OUT);
-	if (rc == 0) {
-		rc = gpio_pin_write(drv_data->gpio, cfg->pin, 1);
-	}
+	rc = gpio_pin_configure(drv_data->gpio, cfg->pin,
+				GPIO_OUTPUT_INACTIVE | cfg->flags);
 
 	return rc;
 }
@@ -241,6 +240,7 @@ static int dht_init(struct device *dev)
 static struct dht_data dht_data;
 static const struct dht_config dht_config = {
 	.ctrl = DT_INST_0_AOSONG_DHT_DIO_GPIOS_CONTROLLER,
+	.flags = DT_INST_0_AOSONG_DHT_DIO_GPIOS_FLAGS,
 	.pin = DT_INST_0_AOSONG_DHT_DIO_GPIOS_PIN,
 };
 
