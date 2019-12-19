@@ -1,0 +1,70 @@
+tests:
+  libraries.cmsis_dsp.matrix:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    skip: true
+  libraries.cmsis_dsp.matrix.unary_q15:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q15=y
+  libraries.cmsis_dsp.matrix.unary_q31:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q31=y
+  libraries.cmsis_dsp.matrix.unary_f32:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32=y
+  libraries.cmsis_dsp.matrix.unary_f64:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
+  libraries.cmsis_dsp.matrix.binary_q15:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    platform_exclude: mps2_an521
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15=y
+  libraries.cmsis_dsp.matrix.binary_q31:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q31=y
+  libraries.cmsis_dsp.matrix.binary_f32:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F32=y
