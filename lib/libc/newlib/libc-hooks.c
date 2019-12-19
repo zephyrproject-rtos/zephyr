@@ -16,6 +16,9 @@
 #include <app_memory/app_memdomain.h>
 #include <init.h>
 #include <sys/sem.h>
+#include <sys/mutex.h>
+#include <stdlib.h>
+#include <sys/lock.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -239,13 +242,10 @@ __weak void _exit(int status)
 	}
 }
 
-static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
 
 void *_sbrk(int count)
 {
 	void *ret, *ptr;
-
-	sys_sem_take(&heap_sem, K_FOREVER);
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	ptr = heap_base + heap_sz;
@@ -260,8 +260,6 @@ void *_sbrk(int count)
 		ret = (void *)-1;
 	}
 
-	sys_sem_give(&heap_sem);
-
 	return ret;
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
@@ -270,3 +268,162 @@ __weak int *__errno(void)
 {
 	return z_errno();
 }
+
+
+#if !defined(_RETARGETABLE_LOCKING) || \
+	CONFIG_NEWLIB_LIBC_DYNAMIC_LOCK_MEM_SIZE == 0
+
+static LIBC_DATA SYS_MUTEX_DEFINE(heap_mtx);
+
+void __malloc_lock(struct _reent *reent)
+{
+	sys_mutex_lock(&heap_mtx, K_FOREVER);
+}
+
+void __malloc_unlock(struct _reent *reent)
+{
+	sys_mutex_unlock(&heap_mtx);
+}
+
+#else
+#include <sys/mempool.h>
+
+#define NEWLIB_LOCK_POOL_SIZE WB_UP(CONFIG_NEWLIB_LIBC_DYNAMIC_LOCK_MEM_SIZE)
+
+#define NEWLIB_LOCK_FRAG_SIZE WB_UP(sizeof(void *) + sizeof(struct k_mutex))
+
+K_APPMEM_PARTITION_DEFINE(z_malloc_lock_partition);
+#define NEWLIB_LOCK_SECTION K_APP_DMEM_SECTION(z_malloc_lock_partition)
+
+
+SYS_MEM_POOL_DEFINE(z_nl_lock_pool, NULL,
+		NEWLIB_LOCK_FRAG_SIZE, NEWLIB_LOCK_POOL_SIZE,
+		1, sizeof(void *), NEWLIB_LOCK_SECTION);
+
+struct sys_mutex __lock___sinit_recursive_mutex;
+struct sys_mutex __lock___sfp_recursive_mutex;
+struct sys_mutex __lock___atexit_recursive_mutex;
+struct sys_mutex __lock___malloc_recursive_mutex;
+struct sys_mutex __lock___env_recursive_mutex;
+struct sys_sem __lock___at_quick_exit_mutex;
+struct sys_sem __lock___tz_mutex;
+struct sys_sem __lock___dd_hash_mutex;
+struct sys_sem __lock___arc4random_mutex;
+
+static int nl_prepare_hooks(struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	sys_mem_pool_init(&z_nl_lock_pool);
+
+	sys_mutex_init(&__lock___sinit_recursive_mutex);
+	sys_mutex_init(&__lock___sfp_recursive_mutex);
+	sys_mutex_init(&__lock___atexit_recursive_mutex);
+	sys_mutex_init(&__lock___malloc_recursive_mutex);
+	sys_mutex_init(&__lock___env_recursive_mutex);
+
+	sys_sem_init(&__lock___at_quick_exit_mutex, 1, 1);
+	sys_sem_init(&__lock___tz_mutex, 1, 1);
+	sys_sem_init(&__lock___dd_hash_mutex, 1, 1);
+	sys_sem_init(&__lock___arc4random_mutex, 1, 1);
+
+	return 0;
+}
+
+SYS_INIT(nl_prepare_hooks, PRE_KERNEL_1,
+	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+
+
+
+void __retarget_lock_init(_LOCK_T *lock)
+{
+	*lock = sys_mem_pool_alloc(&z_nl_lock_pool, NEWLIB_LOCK_FRAG_SIZE);
+
+	__ASSERT(*lock, "failed to allocate memory for newlib lock");
+
+	if (*lock != NULL) {
+		sys_sem_init((struct sys_sem *) (*lock), 1, 1);
+	}
+}
+
+void __retarget_lock_close(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_mem_pool_free(lock);
+	}
+}
+
+void __retarget_lock_acquire(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_sem_take((struct sys_sem *) lock , K_FOREVER);
+	}
+}
+
+int __retarget_lock_try_acquire(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		if (sys_sem_take((struct sys_sem *) lock,
+			K_NO_WAIT) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void __retarget_lock_release(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_sem_give((struct sys_sem *) lock );
+	}
+}
+
+
+void __retarget_lock_init_recursive(_LOCK_T *lock)
+{
+	*lock = sys_mem_pool_alloc(&z_nl_lock_pool, NEWLIB_LOCK_FRAG_SIZE);
+
+	__ASSERT(*lock, "failed to allocate memory for newlib lock");
+
+	if (*lock != NULL) {
+		sys_mutex_init((struct sys_mutex *) *lock);
+	}
+}
+
+void __retarget_lock_close_recursive(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_mem_pool_free(lock);
+	}
+}
+
+
+void __retarget_lock_acquire_recursive(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_mutex_lock((struct sys_mutex*) lock, K_FOREVER);
+	}
+}
+
+int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		if (sys_mutex_lock((struct sys_mutex *) lock,
+			K_NO_WAIT) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+void __retarget_lock_release_recursive(_LOCK_T lock)
+{
+	if (lock != NULL) {
+		sys_mutex_unlock((struct sys_mutex *) lock);
+	}
+}
+
+#endif
+

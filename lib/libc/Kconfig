@@ -64,6 +64,17 @@ config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	  If this is left at 0, then remaining system RAM will be used for this
 	  area and it may not be possible to program it as an MPU region.
 
+config NEWLIB_LIBC_DYNAMIC_LOCK_MEM_SIZE
+	int "Newlib size of the memory reserved for dynamic locks"
+	default 0
+	help
+	  Size of the memory which is reserved for newlib to create synchronization
+	  locks to maintain thread-safe operation. The number of locks required
+	  depends on the number of concurrent calls to functions provided by
+	  newlib. The size of one lock is 32 Byte.
+
+	  If this is left at 0, only malloc will be thread-safe
+
 config NEWLIB_LIBC_FLOAT_PRINTF
 	bool "Build with newlib float printf"
 	help
