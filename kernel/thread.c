@@ -503,6 +503,10 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
+#ifdef CONFIG_NEWLIB_LIBC
+	_REENT_INIT_PTR(&new_thread->base.k_reent);
+#endif
+
 	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
 

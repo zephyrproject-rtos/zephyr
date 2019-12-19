@@ -54,6 +54,9 @@ int arch_swap(unsigned int key)
 	irq_unlock(key);
 #endif
 
+#ifdef CONFIG_NEWLIB_LIBC
+	_impure_ptr = &_current->base.k_reent;
+#endif
 	/* Context switch is performed here. Returning implies the
 	 * thread has been context-switched-in again.
 	 */

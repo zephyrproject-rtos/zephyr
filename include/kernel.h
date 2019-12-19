@@ -493,6 +493,10 @@ struct _thread_base {
 	u8_t cpu_mask;
 #endif
 
+#ifdef CONFIG_NEWLIB_LIBC
+	struct _reent k_reent;
+#endif
+
 	/* data returned by APIs */
 	void *swap_data;
 
