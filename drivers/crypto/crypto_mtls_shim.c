@@ -23,7 +23,8 @@
 #include <mbedtls/ccm.h>
 #include <mbedtls/aes.h>
 
-#define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
+		      CAP_NO_IV_PREFIX)
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>
@@ -103,36 +104,58 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 
 int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 {
-	int ret;
+	int ret, iv_bytes;
+	u8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
-	/* Prefix IV to ciphertext */
-	memcpy(pkt->out_buf, iv, 16);
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		/* Prefix IV to ciphertext, which is default behavior of Zephyr
+		 * crypto API, unless CAP_NO_IV_PREFIX is requested.
+		 */
+		iv_bytes = 16;
+		memcpy(pkt->out_buf, iv, 16);
+		p_iv = iv;
+	} else {
+		iv_bytes = 0;
+		memcpy(iv_loc, iv, 16);
+		p_iv = iv_loc;
+	}
+
 	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_ENCRYPT, pkt->in_len,
-				    iv, pkt->in_buf, pkt->out_buf + 16);
+				    p_iv, pkt->in_buf, pkt->out_buf + iv_bytes);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
 	}
 
-	pkt->out_len = pkt->in_len + 16;
+	pkt->out_len = pkt->in_len + iv_bytes;
 
 	return 0;
 }
 
 int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 {
-	int ret;
+	int ret, iv_bytes;
+	u8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		iv_bytes = 16;
+		p_iv = iv;
+	} else {
+		iv_bytes = 0;
+		memcpy(iv_loc, iv, 16);
+		p_iv = iv_loc;
+	}
+
 	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len,
-				    iv, pkt->in_buf + 16, pkt->out_buf);
+				    p_iv, pkt->in_buf + iv_bytes, pkt->out_buf);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
 	}
 
-	pkt->out_len = pkt->in_len - 16;
+	pkt->out_len = pkt->in_len - iv_bytes;
 
 	return 0;
 }
