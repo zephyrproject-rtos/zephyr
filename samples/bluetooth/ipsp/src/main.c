@@ -291,6 +291,8 @@ static void tcp_accepted(struct net_context *context,
 
 	NET_DBG("Accept called, context %p error %d", context, error);
 
+	net_context_set_accepting(context, false);
+
 	ret = net_context_recv(context, tcp_received, 0, NULL);
 	if (ret < 0) {
 		LOG_ERR("Cannot receive TCP packet (family %d)",
