@@ -282,7 +282,10 @@ The following code demonstrates a direct ISR:
        ...
     }
 
-Installation of dynamic direct interrupts is currently unsupported.
+Installation of dynamic direct interrupts is supported on an
+architecture-specific basis. (The feature is currently implemented in
+ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
+exposed to the user via an ARM-only API.)
 
 Implementation Details
 ======================
