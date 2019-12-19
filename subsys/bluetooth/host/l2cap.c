@@ -1599,15 +1599,18 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 				      struct net_buf *buf)
 {
-	s16_t credits;
+	u16_t credits;
+	atomic_val_t old_credits = atomic_get(&chan->rx.credits);
 
 	/* Restore enough credits to complete the sdu */
 	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
 		   (chan->rx.mps - 1)) / chan->rx.mps;
-	credits -= atomic_get(&chan->rx.credits);
-	if (credits <= 0) {
+
+	if (credits < old_credits) {
 		return;
 	}
+
+	credits -= old_credits;
 
 	l2cap_chan_send_credits(chan, buf, credits);
 }
