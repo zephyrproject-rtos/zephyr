@@ -1,0 +1,39 @@
+# ARM Generic Interrupt Controller (GIC) configuration
+
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_CORTEX
+
+config GIC
+	bool
+
+config GIC_V1
+	bool
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v1 (e.g. PL390) works with the
+	  ARM Cortex-family processors.
+
+config GIC_V2
+	bool
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v2 (e.g. GIC-400) works with the
+	  ARM Cortex-family processors.
+
+config GIC_V3
+	bool
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v3 (e.g. GIC-500 and GIC-600)
+	  works with the ARM Cortex-family processors.
+
+config GIC_VER
+	int
+	depends on GIC
+	default 1 if GIC_V1
+	default 2 if GIC_V2
+	default 3 if GIC_V3
+
+endif # CPU_CORTEX

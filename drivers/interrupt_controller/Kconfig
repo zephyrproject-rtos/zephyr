@@ -39,13 +39,6 @@ config VEXRISCV_LITEX_IRQ
 	help
 	  IRQ implementation for LiteX VexRiscv
 
-config GIC
-	bool "ARM Generic Interrupt Controller (GIC)"
-	depends on CPU_CORTEX_R
-	help
-	  The ARM Generic Interrupt Controller works with Cortex-A and
-	  Cortex-R processors.
-
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
@@ -59,5 +52,7 @@ source "drivers/interrupt_controller/Kconfig.cavs"
 source "drivers/interrupt_controller/Kconfig.rv32m1"
 
 source "drivers/interrupt_controller/Kconfig.sam0"
+
+source "drivers/interrupt_controller/Kconfig.gic"
 
 endmenu
