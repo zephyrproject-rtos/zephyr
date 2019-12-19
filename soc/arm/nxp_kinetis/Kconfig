@@ -22,6 +22,7 @@ config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_KINETIS_KL2X if SOC_SERIES_KINETIS_KL2X
 	default SOC_PART_NUMBER_KINETIS_KE1XF if SOC_SERIES_KINETIS_KE1XF
 	default SOC_PART_NUMBER_KINETIS_KV5X if SOC_SERIES_KINETIS_KV5X
+	default SOC_PART_NUMBER_KINETIS_K32L2B if SOC_SERIES_KINETIS_K32L2B
 
 config HAS_OSC
 	bool
@@ -29,6 +30,11 @@ config HAS_OSC
 	  Set if the oscillator (OSC) module is present in the SoC.
 
 config HAS_MCG
+	bool
+	help
+	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
+
+config HAS_MCGLITE
 	bool
 	help
 	  Set if the multipurpose clock generator (MCG) module is present in the SoC.

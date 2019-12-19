@@ -1,0 +1,13 @@
+# KINETIS K32L2B MCU series
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_K32L2B
+	bool "KINETIS K32L2B Series MCU"
+	select CPU_CORTEX_M0PLUS
+	select SOC_FAMILY_KINETIS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CLOCK_CONTROL
+	help
+	  Enable support for KINETIS K32L2B MCU series

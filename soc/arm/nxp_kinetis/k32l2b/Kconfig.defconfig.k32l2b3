@@ -1,0 +1,70 @@
+# Kinetis K32L2x SoC configuration options
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_K32L2B
+
+config SOC
+	default "k32l2b31a"
+
+config NUM_IRQS
+	default 32
+
+if ADC
+
+config ADC_MCUX_ADC16
+	default y
+
+endif # ADC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_MCUX
+	default y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_MCUX
+	default y
+
+endif # I2C
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
+if USB
+
+config USB_KINETIS
+	default y
+
+endif # USB
+
+endif # SOC_K32L2B
