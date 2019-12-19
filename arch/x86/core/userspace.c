@@ -25,17 +25,6 @@ static inline void page_tables_set(struct x86_page_tables *ptables)
 #endif
 }
 
-/* Set initial stack pointer for privilege mode elevations */
-static inline void set_initial_psp(char *psp)
-{
-#ifdef CONFIG_X86_64
-	__asm__ volatile("movq %0, %%gs:__x86_tss64_t_psp_OFFSET\n\t"
-			 : : "r" (psp));
-#else
-	_main_tss.esp0 = (uintptr_t)psp;
-#endif
-}
-
 /* Update the to the incoming thread's page table, and update the location of
  * the privilege elevation stack.
  *
@@ -49,16 +38,21 @@ static inline void set_initial_psp(char *psp)
  *
  * We don't need to update the privilege mode initial stack pointer either,
  * privilege elevation always lands on the trampoline stack and the irq/sycall
- * code has to manually transition off of it to the thread's kernel stack after
+ * code has to manually transition off of it to the appropriate stack after
  * switching page tables.
  */
 void z_x86_swap_update_page_tables(struct k_thread *incoming)
 {
 	struct x86_page_tables *ptables;
 
+#ifndef CONFIG_X86_64
+	/* 64-bit uses syscall/sysret which switches stacks manually,
+	 * tss64.psp is updated unconditionally in __resume
+	 */
 	if ((incoming->base.user_options & K_USER) != 0) {
-		set_initial_psp(incoming->arch.psp);
+		_main_tss.esp0 = (uintptr_t)incoming->arch.psp;
 	}
+#endif
 
 	/* Check first that we actually need to do this, since setting
 	 * CR3 involves an expensive full TLB flush.
@@ -87,34 +81,6 @@ FUNC_NORETURN static void drop_to_user(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 
-/* Does the following:
- *
- * - Initialize per-thread page tables and update thread->arch.ptables to
- *   point to them.
- * - Set thread->arch.psp to point to the initial stack pointer for user
- *   mode privilege elevation for system calls; supervisor mode threads leave
- *   this uninitailized.
- */
-static void prepare_user_thread(struct k_thread *thread)
-{
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)thread->stack_obj;
-
-	__ASSERT((thread->base.user_options & K_USER) != 0,
-		 "not a user thread");
-
-	/* Create and program into the MMU the per-thread page tables */
-	z_x86_thread_pt_init(thread);
-
-	thread->arch.psp =
-		header->privilege_stack + sizeof(header->privilege_stack);
-}
-
-static void prepare_supervisor_thread(struct k_thread *thread)
-{
-	thread->arch.ptables = &z_x86_kernel_ptables;
-}
-
 /* Preparation steps needed for all threads if user mode is turned on.
  *
  * Returns the initial entry point to swap into.
@@ -122,12 +88,17 @@ static void prepare_supervisor_thread(struct k_thread *thread)
 void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 {
 	void *initial_entry;
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)thread->stack_obj;
+
+	thread->arch.psp =
+		header->privilege_stack + sizeof(header->privilege_stack);
 
 	if ((thread->base.user_options & K_USER) != 0U) {
-		prepare_user_thread(thread);
+		z_x86_thread_pt_init(thread);
 		initial_entry = drop_to_user;
 	} else {
-		prepare_supervisor_thread(thread);
+		thread->arch.ptables = &z_x86_kernel_ptables;
 		initial_entry = z_thread_entry;
 	}
 
@@ -137,7 +108,7 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-	prepare_user_thread(_current);
+	z_x86_thread_pt_init(_current);
 
 	/* Apply memory domain configuration, if assigned. Threads that
 	 * started in user mode already had this done via z_setup_new_thread()

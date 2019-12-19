@@ -84,7 +84,7 @@ struct x86_tss64 {
 
 	/* Storage area for user mode stack pointer when doing a syscall */
 	char *usp;
-#endif
+#endif /* CONFIG_USERSPACE */
 } __packed __aligned(8);
 
 typedef struct x86_tss64 x86_tss64_t;

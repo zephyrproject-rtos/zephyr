@@ -26,8 +26,18 @@ extern u8_t _exception_stack1[];
 extern u8_t _exception_stack2[];
 extern u8_t _exception_stack3[];
 
+#ifdef CONFIG_X86_KPTI
+extern u8_t z_x86_trampoline_stack[];
+extern u8_t z_x86_trampoline_stack1[];
+extern u8_t z_x86_trampoline_stack2[];
+extern u8_t z_x86_trampoline_stack3[];
+#endif /* CONFIG_X86_KPTI */
+
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss0 = {
+#ifdef CONFIG_X86_KPTI
+	.ist2 = (u64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
+#endif
 	.ist7 = (u64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
@@ -36,6 +46,9 @@ struct x86_tss64 tss0 = {
 #if CONFIG_MP_NUM_CPUS > 1
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss1 = {
+#ifdef CONFIG_X86_KPTI
+	.ist2 = (u64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
+#endif
 	.ist7 = (u64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
@@ -45,6 +58,9 @@ struct x86_tss64 tss1 = {
 #if CONFIG_MP_NUM_CPUS > 2
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss2 = {
+#ifdef CONFIG_X86_KPTI
+	.ist2 = (u64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
+#endif
 	.ist7 = (u64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
@@ -54,6 +70,9 @@ struct x86_tss64 tss2 = {
 #if CONFIG_MP_NUM_CPUS > 3
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss3 = {
+#ifdef CONFIG_X86_KPTI
+	.ist2 = (u64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
+#endif
 	.ist7 = (u64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])

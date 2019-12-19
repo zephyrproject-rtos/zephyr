@@ -17,14 +17,14 @@ config CPU_ATOM
 	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && (!X86_64 || (X86_64 && X86_NO_MELTDOWN))
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && (!X86_64 || (X86_64 && X86_NO_MELTDOWN))
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
@@ -32,7 +32,7 @@ config CPU_APOLLO_LAKE
 	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && (!X86_64 || (X86_64 && X86_NO_MELTDOWN))
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -270,7 +270,6 @@ config X86_KPTI
 	default y
 	depends on USERSPACE
 	depends on !X86_NO_MELTDOWN
-	depends on !X86_64
 	help
 	  Implements kernel page table isolation to mitigate Meltdown exploits
 	  to read Kernel RAM. Incurs a significant performance cost for

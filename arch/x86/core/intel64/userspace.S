@@ -8,6 +8,53 @@
 #include <offsets_short.h>
 #include <syscall.h>
 
+#ifdef CONFIG_X86_KPTI
+/* Copy interrupt return stack context to the trampoline stack, switch back
+ * to the user page table, and only then 'iret'. We jump to this instead
+ * of calling 'iret' if KPTI is turned on. This must be invoked with interrupts
+ * locked.
+ *
+ * Stack layout is expected to be what 'iretq' expects, which is as follows:
+ *
+ * 32 SS
+ * 24 RSP
+ * 16 RFLAGS
+ * 8  CS
+ * 0  RIP
+ */
+.global z_x86_trampoline_to_user
+z_x86_trampoline_to_user:
+	/* Stash EDI, need a free register */
+	pushq	%rdi
+
+	/* Store old stack pointer and switch to trampoline stack */
+	movq	%rsp, %rdi
+	movq	%gs:__x86_tss64_t_ist2_OFFSET, %rsp
+
+	/* Copy context */
+	pushq	40(%rdi)	/* SS */
+	pushq	32(%rdi)	/* RSP */
+	pushq	24(%rdi)	/* RFLAGS */
+	pushq	16(%rdi)	/* CS */
+	pushq   8(%rdi)		/* RIP */
+	xchgq	%rdi, (%rdi)	/* Exchange old rdi to restore it and put
+				   trampoline stack address in its old storage
+				   area */
+
+	/* Switch to thread's page table */
+	pushq	%rax
+	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
+	movq	___cpu_t_current_OFFSET(%rax), %rax
+	movq	_thread_offset_to_ptables(%rax), %rax
+	movq	%rax, %cr3
+	popq	%rax
+	movq	$0, -8(%rsp)	/* Delete stashed RAX data */
+
+	/* Trampoline stack should have nothing sensitive in it at this point */
+	swapgs
+	iretq
+#endif /* CONFIG_X86_KPTI */
+
 
 /* Landing site for 'syscall' instruction
  *
@@ -21,17 +68,39 @@
 z_x86_syscall_entry_stub:
 	swapgs
 
-	/* Switch to the privilege mode stack pointer stored in
-	 * x86_tss64.psp and store the user mode stack pointer in
-	 * x86_tss64.usp, immediately pushing it once the stack switch
-	 * is done since this is a per-cpu and not per-thread area.
-	 *
-	 * This dance is necessary as upon entry we have no free registers
-	 * nor a stack we can push to.
+	/* Save original stack pointer from user mode in memory, at the
+	 * moment we have no free registers or stack to save it to. This
+	 * eventually gets put on the stack before we re-enable interrupts
+	 * as this is a per-cpu and not per-thread area.
 	 */
 	movq	%rsp, %gs:__x86_tss64_t_usp_OFFSET
+
+#ifdef CONFIG_X86_KPTI
+	/* We need to switch to the trampoline stack so that we can
+	 * switch to the kernel's page table
+	 */
+	movq	%gs:__x86_tss64_t_ist2_OFFSET, %rsp
+
+	/* Load kernel's page table */
+	pushq	%rax
+	movq	$z_x86_kernel_ptables, %rax
+	movq	%rax, %cr3
+	popq	%rax
+	movq	$0, -8(%rsp)	/* Delete stashed RAX data */
+#endif /* CONFIG_X86_KPTI */
+
+	/* Switch to the privilege mode stack pointer stored in
+	 * x86_tss64.psp
+	 */
 	movq	%gs:__x86_tss64_t_psp_OFFSET, %rsp
+
+	/* We're now on the privilege mode stack; push the old user stack
+	 * pointer onto it
+	 */
 	pushq	%gs:__x86_tss64_t_usp_OFFSET
+#ifdef CONFIG_X86_KPTI
+	movq	$0, %gs:__x86_tss64_t_usp_OFFSET
+#endif
 
 	sti			/* re-enable interrupts */
 
@@ -103,6 +172,29 @@ _id_ok:
 	addq	$X86_FXSAVE_SIZE, %rsp
 	popq	%rdi
 
+#ifdef CONFIG_X86_KPTI
+	/* Lock IRQs as we are using per-cpu memory areas and the
+	 * trampoline stack
+	 */
+	cli
+
+	/* Stash user stack pointer and switch to trampoline stack */
+	popq	%gs:__x86_tss64_t_usp_OFFSET
+	movq	%gs:__x86_tss64_t_ist2_OFFSET, %rsp
+
+	/* Switch to thread's page table */
+	pushq	%rax
+	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
+	movq	___cpu_t_current_OFFSET(%rax), %rax
+	movq	_thread_offset_to_ptables(%rax), %rax
+	movq	%rax, %cr3
+	popq	%rax
+	movq	$0, -8(%rsp)	/* Delete stashed RAX data */
+
+	/* Restore saved user stack pointer */
+	movq	%gs:__x86_tss64_t_usp_OFFSET, %rsp
+	movq	$0, %gs:__x86_tss64_t_usp_OFFSET
+#else
 	/* Restore user stack pointer */
 	popq	%rsp
 
@@ -111,6 +203,8 @@ _id_ok:
 	 * 'swapgs' and 'sysretq'
 	 */
 	cli
+#endif /* CONFIG_X86_KPTI */
+
 	swapgs
 	sysretq
 
@@ -221,7 +315,6 @@ z_x86_userspace_enter:
 	movq	$0, (%rsp)	/* Now a debugger-friendly return address */
 
 	/* cleanse other registers */
-	xorq	%rax, %rax
 	xorq	%rbx, %rbx
 	xorq	%rbp, %rbp
 	xorq	%r12, %r12
@@ -230,5 +323,14 @@ z_x86_userspace_enter:
 	xorq	%r15, %r15
 
 	cli
+#ifdef CONFIG_X86_KPTI
+	/* Switch to thread's page table. We have free registers so no need
+	 * to involve the trampoline stack.
+	 */
+	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rax
+	movq	___cpu_t_current_OFFSET(%rax), %rax
+	movq	_thread_offset_to_ptables(%rax), %rax
+	movq	%rax, %cr3
+#endif
 	swapgs
 	sysretq

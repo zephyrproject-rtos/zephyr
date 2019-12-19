@@ -663,8 +663,13 @@ extern char z_shared_kernel_page_start[];
 
 static inline bool is_within_system_ram(uintptr_t addr)
 {
+#ifdef CONFIG_X86_64
+	/* FIXME: locore not included in CONFIG_SRAM_BASE_ADDRESS */
+	return addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U));
+#else
 	return (addr >= DT_PHYS_RAM_ADDR) &&
 		(addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
+#endif
 }
 
 /* Ignored bit posiition at all levels */
@@ -758,9 +763,17 @@ static void add_mmu_region_page(struct x86_page_tables *ptables,
 
 #ifdef CONFIG_X86_KPTI
 	if (user_table && (flags & Z_X86_MMU_US) == 0 &&
+#ifdef CONFIG_X86_64
+	    addr >= (uintptr_t)&_lodata_start &&
+#endif
 	    addr != (uintptr_t)(&z_shared_kernel_page_start)) {
 		/* All non-user accessible pages except the shared page
 		 * are marked non-present in the page table.
+		 *
+		 * For x86_64 we also make the locore text/rodata areas
+		 * present even though they don't have user mode access,
+		 * they contain necessary tables and program text for
+		 * successfully handling exceptions and interrupts.
 		 */
 		return;
 	}
