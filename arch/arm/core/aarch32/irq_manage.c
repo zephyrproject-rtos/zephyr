@@ -262,4 +262,33 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	z_arm_irq_priority_set(irq, priority, flags);
 	return irq;
 }
+
+#ifdef CONFIG_DYNAMIC_DIRECT_INTERRUPTS
+static inline void z_arm_irq_dynamic_direct_isr_dispatch(void)
+{
+	u32_t irq = __get_IPSR() - 16;
+
+	if (irq < IRQ_TABLE_SIZE) {
+		struct _isr_table_entry *isr_entry = &_sw_isr_table[irq];
+
+		isr_entry->isr(isr_entry->arg);
+	}
+}
+
+ISR_DIRECT_DECLARE(z_arm_irq_direct_dynamic_dispatch_reschedule)
+{
+	z_arm_irq_dynamic_direct_isr_dispatch();
+
+	return 1;
+}
+
+ISR_DIRECT_DECLARE(z_arm_irq_direct_dynamic_dispatch_no_reschedule)
+{
+	z_arm_irq_dynamic_direct_isr_dispatch();
+
+	return 0;
+}
+
+#endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

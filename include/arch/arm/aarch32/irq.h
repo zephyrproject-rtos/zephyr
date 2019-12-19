@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2019 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,6 +136,63 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
 	static inline int name##_body(void)
+
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+
+extern void z_arm_irq_direct_dynamic_dispatch_reschedule(void);
+extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
+
+/**
+ * @brief Macro to register an ISR Dispatcher (with or without re-scheduling
+ * request) for dynamic direct interrupts.
+ *
+ * This macro registers the ISR dispatcher function for dynamic direct
+ * interrupts for a particular IRQ line, allowing the use of dynamic
+ * direct ISRs in the kernel for that interrupt source.
+ * The dispatcher function is invoked when the hardware
+ * interrupt occurs and then triggers the (software) Interrupt Service Routine
+ * (ISR) that is registered dynamically (i.e. at run-time) into the software
+ * ISR table stored in SRAM. The ISR must be connected with
+ * irq_connect_dynamic() and enabled via irq_enable() before the dynamic direct
+ * interrupt can be serviced. This ISR dispatcher must be configured by the
+ * user to trigger thread re-secheduling upon return, using the @param resch
+ * parameter.
+ *
+ * These ISRs are designed for performance-critical interrupt handling and do
+ * not go through all of the common interrupt handling code.
+ *
+ * With respect to their declaration, dynamic 'direct' interrupts are regular
+ * Zephyr interrupts; their signature must match void isr(void* parameter), as,
+ * unlike regular direct interrupts, they are not placed directly into the
+ * ROM hardware vector table but instead they are installed in the software
+ * ISR table.
+ *
+ * The major differences with regular Zephyr interrupts are the following:
+ * - Similar to direct interrupts, the call into the OS to exit power
+ *   management idle state is optional. Normal interrupts always do this
+ *   before the ISR is run, but with dynamic direct ones when and if it runs
+ *   is controlled by the placement of
+ *   a ISR_DIRECT_PM() macro, or omitted entirely.
+ * - Similar to direct interrupts, scheduling decisions are optional. Unlike
+ *   direct interrupts, the decisions must be made at build time.
+ *   They are controlled by @param resch to this macro.
+ *
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param flags_p Architecture-specific IRQ configuration flags.
+ * @param resch Set flag to 'reschedule' to request thread
+ *              re-scheduling upon ISR function. Set flag
+ *              'no_reschedule' to skip thread re-scheduling
+ *
+ * Note: the function is an ARM Cortex-M only API.
+ *
+ * @return Interrupt vector assigned to this interrupt.
+ */
+#define ARM_IRQ_DIRECT_DYNAMIC_CONNECT(irq_p, priority_p, flags_p, resch) \
+	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
+		CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
+
+#endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
