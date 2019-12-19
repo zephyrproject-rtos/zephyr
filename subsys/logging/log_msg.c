@@ -49,8 +49,8 @@ void log_msg_pool_init(void)
 	k_mem_slab_init(&log_msg_pool, log_msg_pool_buf, MSG_SIZE, NUM_OF_MSGS);
 }
 
-/* Return true if interrupts were locked in the context of this call. */
-static bool is_irq_locked(void)
+/* Return true if interrupts were unlocked in the context of this call. */
+static bool is_irq_unlocked(void)
 {
 	unsigned int key = arch_irq_lock();
 	bool ret = arch_irq_unlocked(key);
@@ -68,7 +68,7 @@ static bool block_on_alloc(void)
 		return false;
 	}
 
-	return (!k_is_in_isr() && !is_irq_locked());
+	return (!k_is_in_isr() && is_irq_unlocked());
 }
 
 union log_msg_chunk *log_msg_chunk_alloc(void)
