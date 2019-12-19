@@ -1,48 +1,25 @@
 /*
  * Copyright (c) 2018 Marvell
  * Copyright (c) 2018 Lexmark International, Inc.
+ * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * NOTE: This driver currently implements the GICv1 and GICv2 interfaces. The
+ *       GICv3 interface is not supported.
  */
 
 #include <device.h>
 #include <sw_isr_table.h>
 #include <irq_nextlevel.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <drivers/interrupt_controller/gic.h>
 
-#define DT_GIC_DIST_BASE	DT_INST_0_ARM_GIC_BASE_ADDRESS_0
-#define DT_GIC_CPU_BASE		DT_INST_0_ARM_GIC_BASE_ADDRESS_1
-
-#define	GICD_CTRL				(DT_GIC_DIST_BASE +     0)
-#define	GICD_TYPER				(DT_GIC_DIST_BASE +   0x4)
-#define	GICD_IIDR				(DT_GIC_DIST_BASE +   0x8)
-#define	GICD_IGROUPRn			(DT_GIC_DIST_BASE +  0x80)
-#define	GICD_ISENABLERn			(DT_GIC_DIST_BASE + 0x100)
-#define	GICD_ICENABLERn			(DT_GIC_DIST_BASE + 0x180)
-#define	GICD_ISPENDRn			(DT_GIC_DIST_BASE + 0x200)
-#define	GICD_ICPENDRn			(DT_GIC_DIST_BASE + 0x280)
-#define	GICD_ISACTIVERn			(DT_GIC_DIST_BASE + 0x300)
-#define	GICD_ICACTIVERn			(DT_GIC_DIST_BASE + 0x380)
-#define	GICD_IPRIORITYRn		(DT_GIC_DIST_BASE + 0x400)
-#define	GICD_ITARGETSRn			(DT_GIC_DIST_BASE + 0x800)
-#define	GICD_ICFGRn				(DT_GIC_DIST_BASE + 0xc00)
-#define	GICD_SGIR				(DT_GIC_DIST_BASE + 0xf00)
-
-#define GICC_CTRL				(DT_GIC_CPU_BASE + 0x00)
-#define GICC_PMR				(DT_GIC_CPU_BASE + 0x04)
-#define GICC_BPR				(DT_GIC_CPU_BASE + 0x08)
-#define GICC_IAR				(DT_GIC_CPU_BASE + 0x0c)
-#define GICC_EOIR				(DT_GIC_CPU_BASE + 0x10)
-
-#define GICC_ENABLE	3
-#define GICC_DIS_BYPASS_MASK	0x1e0
-
-#define	NO_GIC_INT_PENDING	1023
-
-#define	GIC_SPI_INT_BASE	32
-
-#define GIC_INT_TYPE_MASK	0x3
-#define GIC_INT_TYPE_EDGE	(1 << 1)
+#if CONFIG_GIC_VER >= 3
+#error "GICv3 and above are not supported"
+#endif
 
 struct gic_ictl_config {
 	u32_t isr_table_offset;
@@ -61,7 +38,7 @@ static void gic_dist_init(void)
 	 * Disable the forwarding of pending interrupts
 	 * from the Distributor to the CPU interfaces
 	 */
-	sys_write32(0, GICD_CTRL);
+	sys_write32(0, GICD_CTLR);
 
 	/*
 	 * Set all global interrupts to this CPU only.
@@ -88,7 +65,9 @@ static void gic_dist_init(void)
 	 * as these enables are banked registers.
 	 */
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 32) {
+#ifndef CONFIG_GIC_V1
 		sys_write32(0xffffffff, GICD_ICACTIVERn + i / 8);
+#endif
 		sys_write32(0xffffffff, GICD_ICENABLERn + i / 8);
 	}
 
@@ -96,7 +75,7 @@ static void gic_dist_init(void)
 	 * Enable the forwarding of pending interrupts
 	 * from the Distributor to the CPU interfaces
 	 */
-	sys_write32(1, GICD_CTRL);
+	sys_write32(1, GICD_CTLR);
 }
 
 static void gic_cpu_init(void)
@@ -108,7 +87,9 @@ static void gic_cpu_init(void)
 	 * Deal with the banked PPI and SGI interrupts - disable all
 	 * PPI interrupts, ensure all SGI interrupts are enabled.
 	 */
+#ifndef CONFIG_GIC_V1
 	sys_write32(0xffffffff, GICD_ICACTIVERn);
+#endif
 	sys_write32(0xffff0000, GICD_ICENABLERn);
 	sys_write32(0x0000ffff, GICD_ISENABLERn);
 
@@ -123,10 +104,12 @@ static void gic_cpu_init(void)
 	/*
 	 * Enable interrupts and signal them using the IRQ signal.
 	 */
-	val = sys_read32(GICC_CTRL);
-	val &= GICC_DIS_BYPASS_MASK;
-	val |= GICC_ENABLE;
-	sys_write32(val, GICC_CTRL);
+	val = sys_read32(GICC_CTLR);
+#ifndef CONFIG_GIC_V1
+	val &= ~GICC_CTLR_BYPASS_MASK;
+#endif
+	val |= GICC_CTLR_ENABLE_MASK;
+	sys_write32(val, GICC_CTLR);
 }
 
 static void gic_irq_enable(struct device *dev, unsigned int irq)
@@ -168,9 +151,9 @@ static void gic_irq_set_priority(struct device *dev,
 	int_off = (irq % 16) * 2;
 
 	val = sys_read8(GICD_ICFGRn + int_grp);
-	val &= ~(GIC_INT_TYPE_MASK << int_off);
+	val &= ~(GICC_ICFGR_MASK << int_off);
 	if (flags & IRQ_TYPE_EDGE)
-		val |= (GIC_INT_TYPE_EDGE << int_off);
+		val |= (GICC_ICFGR_TYPE << int_off);
 	sys_write8(val, GICD_ICFGRn + int_grp);
 }
 
@@ -184,7 +167,7 @@ static void gic_isr(void *arg)
 	irq = sys_read32(GICC_IAR);
 	irq &= 0x3ff;
 
-	if (irq == NO_GIC_INT_PENDING) {
+	if (irq == GICC_IAR_SPURIOUS) {
 		printk("gic: Invalid interrupt\n");
 		return;
 	}
