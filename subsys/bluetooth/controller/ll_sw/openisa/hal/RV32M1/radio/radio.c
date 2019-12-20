@@ -6,9 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <sys/printk.h>
 #include <sys/dlist.h>
 #include <sys/mempool_base.h>
+#include <sys/byteorder.h>
+#include <bluetooth/addr.h>
 #include <toolchain.h>
 #include <irq.h>
 #include <errno.h>
@@ -136,6 +139,13 @@ static struct {
 	u8_t empty_pdu_rxed;
 } ctx_ccm;
 
+#define RPA_NO_IRK_MATCH 0xFF	/* No IRK match in AR table */
+
+static struct {
+	u8_t ar_enable;
+	u32_t irk_idx;
+} radio_ar_ctx = {0U, RPA_NO_IRK_MATCH};
+
 static void tmp_cb(void *param)
 {
 	u32_t tmr = GENFSK->EVENT_TMR & GENFSK_EVENT_TMR_EVENT_TMR_MASK;
@@ -182,6 +192,37 @@ static void radio_config_after_wake(void)
 		radio_tmr_hcto_configure_hlp(delayed_hcto);
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+static void ar_execute(void *pkt)
+{
+	struct pdu_adv *pdu_adv = (struct pdu_adv *)pkt;
+	bt_addr_t *rpa = (bt_addr_t *)&pdu_adv->payload[0];
+
+	/* Perform address resolution when TxAdd=1 and address is resolvable */
+	if (pdu_adv->tx_addr && BT_ADDR_IS_RPA(rpa)) {
+		u32_t *hash, *prand;
+		status_t status;
+
+		/* Use pointers to avoid breaking strict aliasing */
+		hash = (u32_t *)(&rpa->val[0]);
+		prand = (u32_t *)(&rpa->val[3]);
+
+		/* CAUv3 needs hash & prand in le format, right-justified */
+		status = CAU3_RPAtableSearch(CAU3, (*prand & 0xFFFFFF),
+					(*hash & 0xFFFFFF),
+					&radio_ar_ctx.irk_idx,
+					kCAU3_TaskDoneEvent);
+		if (status != kStatus_Success) {
+			radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
+			BT_ERR("CAUv3 RPA table search failed %d", status);
+			return;
+		}
+	}
+
+	radio_ar_ctx.ar_enable = 0U;
+}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static void pkt_rx(void)
 {
@@ -248,6 +289,13 @@ static void pkt_rx(void)
 		tmp = pb[len / 2];
 		rx_pkt_ptr[len - 1] =  ((u8_t *)&tmp)[0];
 	}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Perform address resolution on this Rx */
+	if (radio_ar_ctx.ar_enable) {
+		ar_execute(rxb);
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	force_bad_crc = 0;
 }
@@ -916,7 +964,7 @@ u32_t radio_rssi_is_ready(void)
 void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
 			    u8_t *bdaddr)
 {
-	printk("%s\n", __func__);
+	/* printk("%s\n", __func__); */
 }
 
 void radio_filter_disable(void)
@@ -1419,24 +1467,53 @@ u32_t radio_ccm_is_available(void)
 
 void radio_ar_configure(u32_t nirk, void *irk)
 {
-	printk("%s\n", __func__);
+	status_t status;
+	u8_t pirk[16];
+
+	/* Initialize CAUv3 RPA table */
+	status = CAU3_RPAtableInit(CAU3, kCAU3_TaskDoneEvent);
+	if (kStatus_Success != status) {
+		BT_ERR("CAUv3 RPA table init failed");
+		return;
+	}
+
+	/* CAUv3 RPA table is limited to CONFIG_BT_CTLR_RL_SIZE entries */
+	if (nirk > CONFIG_BT_CTLR_RL_SIZE) {
+		BT_WARN("Max CAUv3 RPA table size is %d",
+			CONFIG_BT_CTLR_RL_SIZE);
+		nirk = CONFIG_BT_CTLR_RL_SIZE;
+	}
+
+	/* Insert RPA keys(IRK) in table */
+	for (int i = 0; i < nirk; i++) {
+		/* CAUv3 needs IRK in le format */
+		sys_memcpy_swap(pirk, (u8_t *)irk + i * 16, 16);
+		status = CAU3_RPAtableInsertKey(CAU3, (uint32_t *)&pirk,
+						kCAU3_TaskDoneEvent);
+		if (kStatus_Success != status) {
+			BT_ERR("CAUv3 RPA table insert failed");
+			return;
+		}
+	}
+
+	/* RPA Table was configured, it can be used for next Rx */
+	radio_ar_ctx.ar_enable = 1U;
 }
 
 u32_t radio_ar_match_get(void)
 {
-	/* printk("%s\n", __func__); */
-	return 0;
+	return radio_ar_ctx.irk_idx;
 }
 
 void radio_ar_status_reset(void)
 {
-	/* printk("%s\n", __func__); */
+	radio_ar_ctx.ar_enable = 0U;
+	radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
 }
 
 u32_t radio_ar_has_match(void)
 {
-	/* printk("%s\n", __func__); */
-	return 0;
+	return (radio_ar_ctx.irk_idx != RPA_NO_IRK_MATCH);
 }
 
 u32_t radio_sleep(void)
