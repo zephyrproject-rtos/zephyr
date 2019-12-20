@@ -176,6 +176,7 @@ Bluetooth Mesh:
         - trond-snekvik
     files:
         - subsys/bluetooth/mesh/
+        - include/bluetooth/mesh/
     labels:
         - "area: Bluetooth Mesh"
 
