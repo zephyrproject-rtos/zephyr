@@ -804,6 +804,7 @@ class DeviceHandler(Handler):
 
         t.join(self.timeout)
         if t.is_alive():
+            logger.debug("Timed out")
             out_state = "timeout"
 
         if ser.isOpen():
@@ -2021,10 +2022,10 @@ class ProjectBuilder(FilterBuilder):
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info("{}".format(v_log), inline_logs)
-        elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
-            self.log_info("{}".format(d_log), inline_logs)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
+        elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
+            self.log_info("{}".format(d_log), inline_logs)
         else:
             self.log_info("{}".format(b_log), inline_logs)
 
