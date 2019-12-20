@@ -132,7 +132,7 @@ arduino_i2c: &i2c0 {
 		compatible = "ti,hdc","ti,hdc1010";
 		reg = <0x43>;
 		label = "HDC1010";
-		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
+		drdy-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
 	apds9960@39 {
