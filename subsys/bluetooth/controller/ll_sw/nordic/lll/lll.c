@@ -159,6 +159,24 @@ int lll_init(void)
 	hal_swi_init();
 
 	/* Connect ISRs */
+#if defined(CONFIG_BT_DISABLE)
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT_RESCHEDULE(RADIO_IRQn,
+						  CONFIG_BT_CTLR_LLL_PRIO,
+						  IRQ_CONNECT_FLAGS);
+
+	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			    (void (*)(void *))radio_nrf5_isr,
+			    NULL, IRQ_CONNECT_FLAGS);
+	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+			    rtc0_nrf5_isr, NULL, 0);
+	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+			    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_connect_dynamic(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+			    swi_ull_low_nrf5_isr, NULL, 0);
+#endif
+#else
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
@@ -170,6 +188,7 @@ int lll_init(void)
 	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
 		    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
+#endif /* defined(CONFIG_BT_DISABLE) */
 
 	/* Enable IRQs */
 	irq_enable(RADIO_IRQn);

@@ -178,4 +178,13 @@ config BT_COMPANY_ID
 
 source "subsys/bluetooth/mesh/Kconfig"
 
+config BT_DISABLE
+	bool "Enable Bluetooth disable functionality"
+	select DYNAMIC_DIRECT_INTERRUPTS if CONFIG_BT_LLL_VENDOR_NORDIC
+	help
+	  Enable the Bluetooth disable API which would stop all Bluetooth
+	  activity and reset the Bluetooth controller. If using the internal
+	  controller the interrupts will be released and the application can
+	  connect them using dynamic interrupts.
+
 endif # BT
