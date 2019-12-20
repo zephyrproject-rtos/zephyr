@@ -32,6 +32,12 @@
 #define __ASSERT_COND_INFO(test) Z_STRINGIFY(test)
 #endif /* CONFIG_ASSERT_NO_COND_INFO */
 
+#define __ASSERT_LOC(test)                               \
+	printk("ASSERTION FAIL [%s] @ %s:%d\n",          \
+	       __ASSERT_COND_INFO(test),                 \
+	       __ASSERT_FILE_INFO,                       \
+	       __LINE__)                                 \
+
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
 #error "Invalid __ASSERT() level: must be between 0 and 2"
@@ -50,12 +56,6 @@ void assert_post_action(const char *file, unsigned int line);
 #ifdef __cplusplus
 }
 #endif
-
-#define __ASSERT_LOC(test)                               \
-	printk("ASSERTION FAIL [%s] @ %s:%d\n",          \
-	       __ASSERT_COND_INFO(test),                 \
-	       __ASSERT_FILE_INFO,                       \
-	       __LINE__)                                 \
 
 #define __ASSERT_NO_MSG(test)                                             \
 	do {                                                              \
