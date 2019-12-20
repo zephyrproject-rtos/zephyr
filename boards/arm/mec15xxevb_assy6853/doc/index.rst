@@ -73,7 +73,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/arm/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig\` Kconfig file.
+:zephyr_file:`boards/arm/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig` Kconfig file.
 
 Connections and IOs
 ===================
@@ -282,12 +282,14 @@ Wiring
    .. list-table:: Microchip board wiring
       :align: center
 
-      * - .. image:: spidongle_assy6791.png
+      * -
+          .. image:: spidongle_assy6791.png
              :width: 300px
              :align: center
              :alt: SPI DONGLE ASSY 6791
 
-        - .. image:: spidongle_assy6791_view2.png
+        -
+          .. image:: spidongle_assy6791_view2.png
              :width: 300px
              :align: center
              :alt: SPI DONGLE ASSY 6791 view 2
