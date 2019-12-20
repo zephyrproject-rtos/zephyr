@@ -4930,6 +4930,12 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
+#if !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __EXCEPT_LOC() __ASSERT_PRINT("@ %s:%d\n", __FILE__, __LINE__)
+#else
+#define __EXCEPT_LOC()
+#endif
+
 /* NOTE: This is the implementation for arches that do not implement
  * ARCH_EXCEPT() to generate a real CPU exception.
  *
@@ -4938,7 +4944,7 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * the fatal error handler.
  */
 #define z_except_reason(reason) do { \
-		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
+		__EXCEPT_LOC();              \
 		z_fatal_error(reason, NULL); \
 	} while (false)
 
