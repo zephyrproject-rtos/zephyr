@@ -4,7 +4,8 @@
 # File format
 # ###########
 #
-# "Area title" (the quotes are needed if the title has more than one word):
+# "Area title" (the quotes are only needed for titles with special characters,
+#  like colons):
 #     status:
 #         One of the following:
 #
@@ -111,7 +112,7 @@
 
 # Areas are sorted by name
 
-"ARC arch":
+ARC arch:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -124,7 +125,7 @@
     labels:
         - "area: ARC"
 
-"ARM arch":
+ARM arch:
     status: maintained
     maintainers:
         - ioannisg
@@ -157,7 +158,7 @@ Bluetooth:
     labels:
         - "area: Bluetooth"
 
-"Bluetooth controller":
+Bluetooth controller:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -168,7 +169,7 @@ Bluetooth:
     files:
         - subsys/bluetooth/controller/
 
-"Bluetooth Mesh":
+Bluetooth Mesh:
     # Provisional entry, to be corrected
     status: maintained
     collaborators:
@@ -178,7 +179,7 @@ Bluetooth:
     labels:
         - "area: Bluetooth Mesh"
 
-"Build system":
+Build system:
     status: maintained
     maintainers:
         - SebastianBoe
@@ -192,7 +193,7 @@ Bluetooth:
     labels:
         - "area: Build System"
 
-"C library":
+C library:
     # Provisional entry, to be corrected
     status: orphaned
     collaborators:
@@ -204,7 +205,7 @@ Bluetooth:
     labels:
          - "area: C Library"
 
-"CMSIS API layer":
+CMSIS API layer:
     # Provisional entry, to be corrected
     status: orphaned
     collaborators:
@@ -247,7 +248,7 @@ Devicetree:
     labels:
         - "area: Device Tree"
 
-"Display drivers":
+Display drivers:
     status: maintained
     maintainers:
         - vanwinkeljan
@@ -767,7 +768,7 @@ Logging:
     labels:
         - "area: Logging"
 
-"Native POSIX and POSIX arch":
+Native POSIX and POSIX arch:
     status: maintained
     maintainers:
         - aescolar
@@ -864,7 +865,7 @@ Networking:
         - tests/net/lib/mqtt_packet/
         - samples/net/mqtt_publisher/
 
-"NIOS-2 arch":
+NIOS-2 arch:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -875,7 +876,7 @@ Networking:
     labels:
         - "area: NIOS2"
 
-"nRF52 BSIM":
+nRF52 BSIM:
     status: maintained
     maintainers:
         - aescolar
@@ -884,7 +885,7 @@ Networking:
     labels:
         - "platform: nrf52_bsim"
 
-"POSIX API layer":
+POSIX API layer:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -896,7 +897,7 @@ Networking:
     labels:
         - "area: POSIX"
 
-"Power management":
+Power management:
     # TSC : Note this entry differs from the spreadsheet:
     # pizi-nordic is not anymore working in Zephyr, therefore he cannot be a
     # maintainer, and the are is orphaned until a new maintainer is appointed
@@ -910,7 +911,7 @@ Networking:
     labels:
         - "area: Power Management"
 
-"RISCV arch":
+RISCV arch:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -1033,7 +1034,7 @@ West:
     labels:
         - "area: West"
 
-"Xtensa arch":
+Xtensa arch:
     status: maintained
     maintainers:
         - dcpleung
@@ -1048,7 +1049,7 @@ West:
     labels:
         - "area: Xtensa"
 
-"x86 arch":
+x86 arch:
     # Provisional entry, to be corrected
     status: maintained
     maintainers:
@@ -1062,7 +1063,7 @@ West:
     labels:
         - "area: X86"
 
-"ZTest and unit test infrastructure":
+ZTest and unit test infrastructure:
     # TODO @nashif is this what line 59 of the spreadsheet refers to?
     # Provisional entry, to be corrected
     status: maintained
