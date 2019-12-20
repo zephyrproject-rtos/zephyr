@@ -15,3 +15,5 @@
 #define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
 
 struct bt_mesh_net;
+
+int bt_mesh_start(void);
