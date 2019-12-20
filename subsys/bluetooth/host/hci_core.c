@@ -83,6 +83,10 @@ static bt_ready_cb_t ready_cb;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+#if defined(CONFIG_BT_OBSERVER)
+static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
+#endif
+
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 static bt_hci_vnd_evt_cb_t *hci_vnd_evt_cb;
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
@@ -3662,6 +3666,9 @@ static void le_adv_report(struct net_buf *buf)
 	BT_DBG("Adv number of reports %u",  num_reports);
 
 	while (num_reports--) {
+		struct bt_le_scan_cb *cb;
+		struct net_buf_simple_state state;
+		struct bt_le_adv_info adv_info;
 		bt_addr_le_t id_addr;
 		s8_t rssi;
 
@@ -3687,14 +3694,25 @@ static void le_adv_report(struct net_buf *buf)
 							  &info->addr));
 		}
 
-		if (scan_dev_found_cb) {
-			struct net_buf_simple_state state;
+		adv_info.addr = &id_addr;
+		adv_info.adv_type = info->evt_type;
+		adv_info.rssi = rssi;
 
+		if (scan_dev_found_cb) {
 			net_buf_simple_save(&buf->b, &state);
 
 			buf->len = info->length;
 			scan_dev_found_cb(&id_addr, rssi, info->evt_type,
 					  &buf->b);
+
+			net_buf_simple_restore(&buf->b, &state);
+		}
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, cb, node) {
+			net_buf_simple_save(&buf->b, &state);
+
+			buf->len = info->length;
+			cb->recv(&adv_info, &buf->b);
 
 			net_buf_simple_restore(&buf->b, &state);
 		}
@@ -6063,6 +6081,11 @@ int bt_le_scan_stop(void)
 	scan_dev_found_cb = NULL;
 
 	return bt_le_scan_update(false);
+}
+
+void bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
+{
+	sys_slist_append(&scan_cbs, &cb->node);
 }
 #endif /* CONFIG_BT_OBSERVER */
 

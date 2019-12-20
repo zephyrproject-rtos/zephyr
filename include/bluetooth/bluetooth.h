@@ -443,6 +443,32 @@ struct bt_le_scan_param {
 	u16_t window;
 };
 
+/** LE advertisement packet information */
+struct bt_le_adv_info {
+	/** Advertiser LE address and type */
+	const bt_addr_le_t *addr;
+
+	/** Strength of advertiser signal */
+	s8_t rssi;
+
+	/** Advertising packet type */
+	u8_t adv_type;
+};
+
+/** Listener context for (LE) scanning. */
+struct bt_le_scan_cb {
+
+	/** @brief Advertisement packet received callback.
+	 *
+	 *  @param info Advertiser packet information.
+	 *  @param buf  Buffer containing advertiser data.
+	 */
+	void (*recv)(const struct bt_le_adv_info *info,
+		     struct net_buf_simple *buf);
+
+	sys_snode_t node;
+};
+
 /** Helper to declare scan parameters inline
   *
   * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
@@ -481,7 +507,8 @@ struct bt_le_scan_param {
  *  the specified callback.
  *
  *  @param param Scan parameters.
- *  @param cb Callback to notify scan results.
+ *  @param cb Callback to notify scan results. May be NULL if callback
+ *            registration through @ref bt_le_scan_cb_register is preferred.
  *
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
@@ -496,6 +523,18 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_le_scan_stop(void);
+
+/** @brief Register scanner packet callbacks.
+ *
+ *  Adds the callback structure to the list of callback structures that monitors
+ *  scanner activity.
+ *
+ *  This callback will be called for all scanner activity, regardless of what
+ *  API was used to start the scanner.
+ *
+ *  @param cb Callback struct. Must point to static memory.
+ */
+void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
 /** @brief Add device (LE) to whitelist.
  *
