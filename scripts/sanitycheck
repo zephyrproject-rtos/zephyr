@@ -1645,7 +1645,7 @@ class TestInstance:
         self.platform = platform
 
         self.status = None
-        self.reason = "N/A"
+        self.reason = "Unknown"
         self.metrics = dict()
         self.handler = None
         self.outdir = outdir
