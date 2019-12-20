@@ -62,12 +62,11 @@ static inline void setup_int(struct device *dev,
 {
 	const struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config->config_info;
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
 
-	if (enable) {
-		gpio_pin_enable_callback(data->alert_gpio, cfg->alert_pin);
-	} else {
-		gpio_pin_disable_callback(data->alert_gpio, cfg->alert_pin);
-	}
+	gpio_pin_interrupt_configure(data->alert_gpio, cfg->alert_pin, flags);
 }
 
 static void handle_int(struct device *dev)
@@ -110,13 +109,12 @@ int mcp9808_trigger_set(struct device *dev,
 	data->trigger_handler = handler;
 
 	if (handler != NULL) {
-		u32_t val;
-
 		setup_int(dev, true);
 
-		rv = gpio_pin_read(data->alert_gpio, cfg->alert_pin, &val);
-		if ((rv == 0) && (val == 0)) {
+		rv = gpio_pin_get(data->alert_gpio, cfg->alert_pin);
+		if (rv > 0) {
 			handle_int(dev);
+			rv = 0;
 		}
 	}
 
@@ -196,9 +194,7 @@ int mcp9808_setup_interrupt(struct device *dev)
 
 	if (rc == 0) {
 		rc = gpio_pin_configure(gpio, cfg->alert_pin,
-					GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-					GPIO_PUD_PULL_UP |
-					GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+					GPIO_INPUT | cfg->alert_flags);
 	}
 
 	if (rc == 0) {
