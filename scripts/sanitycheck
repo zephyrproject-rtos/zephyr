@@ -4117,7 +4117,7 @@ def main():
                             t = Node(test, parent=subarea)
 
             if options.list_tests:
-                print("{} total.".format(cnt))
+                logger.info("{} total.".format(cnt))
 
             if options.test_tree:
                 for pre, _, node in RenderTree(testsuite):
