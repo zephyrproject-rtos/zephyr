@@ -899,10 +899,6 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			k_delayed_work_submit(&mod->pub->timer, ms);
 		}
 	}
-
-	if (mod->cb && mod->cb->settings_commit)  {
-		mod->cb->settings_commit(mod);
-	}
 }
 
 static int mesh_commit(void)
@@ -962,7 +958,7 @@ static int mesh_commit(void)
 
 	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
 
-	bt_mesh_net_start();
+	bt_mesh_start();
 
 	return 0;
 }
