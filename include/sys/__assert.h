@@ -20,6 +20,12 @@
 #define __ASSERT_ON 0
 #endif
 
+#if defined(CONFIG_ASSERT_VERBOSE)
+#define __ASSERT_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else /* CONFIG_ASSERT_VERBOSE */
+#define __ASSERT_PRINT(fmt, ...)
+#endif /* CONFIG_ASSERT_VERBOSE */
+
 #ifdef CONFIG_ASSERT_NO_FILE_INFO
 #define __ASSERT_FILE_INFO ""
 #else  /* CONFIG_ASSERT_NO_FILE_INFO */
@@ -33,7 +39,7 @@
 #endif /* CONFIG_ASSERT_NO_COND_INFO */
 
 #define __ASSERT_LOC(test)                               \
-	printk("ASSERTION FAIL [%s] @ %s:%d\n",          \
+	__ASSERT_PRINT("ASSERTION FAIL [%s] @ %s:%d\n",  \
 	       __ASSERT_COND_INFO(test),                 \
 	       __ASSERT_FILE_INFO,                       \
 	       __LINE__)                                 \

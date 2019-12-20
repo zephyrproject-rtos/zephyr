@@ -181,6 +181,15 @@ config FORCE_NO_ASSERT
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 
+config ASSERT_VERBOSE
+	bool "Enable verbose assertions"
+	default y
+	help
+	  This option enables printing an assert message with information about
+	  the assertion that occurred. This includes printing the location,
+	  the conditional expression and additional message specific to the
+	  assert.
+
 config ASSERT_NO_FILE_INFO
 	bool "Disable file info for asserts"
 	help
