@@ -38,6 +38,12 @@
 #define __ASSERT_COND_INFO(test) Z_STRINGIFY(test)
 #endif /* CONFIG_ASSERT_NO_COND_INFO */
 
+#ifdef CONFIG_ASSERT_NO_MSG_INFO
+#define __ASSERT_MSG_INFO(fmt, ...)
+#else  /* CONFIG_ASSERT_NO_MSG_INFO */
+#define __ASSERT_MSG_INFO(fmt, ...) __ASSERT_PRINT("\t" fmt "\n", ##__VA_ARGS__)
+#endif /* CONFIG_ASSERT_NO_MSG_INFO */
+
 #define __ASSERT_LOC(test)                               \
 	__ASSERT_PRINT("ASSERTION FAIL [%s] @ %s:%d\n",  \
 	       __ASSERT_COND_INFO(test),                 \
@@ -75,7 +81,7 @@ void assert_post_action(const char *file, unsigned int line);
 	do {                                                              \
 		if (!(test)) {                                            \
 			__ASSERT_LOC(test);                               \
-			printk("\t" fmt "\n", ##__VA_ARGS__);             \
+			__ASSERT_MSG_INFO(fmt, ##__VA_ARGS__);            \
 			assert_post_action(__ASSERT_FILE_INFO, __LINE__); \
 		}                                                         \
 	} while (false)
