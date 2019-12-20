@@ -8,3 +8,22 @@ config TEMP_NRF5
 	depends on HAS_HW_NRF_TEMP
 	help
 	  Enable driver for nRF5 temperature sensor.
+
+if TEMP_NRF5
+
+config TEMP_NRF5_SENSOR
+	bool "Enable sensor device"
+	default y
+	help
+	  Sensor device can be disabled to reduce memory footprint.
+
+config TEMP_NRF5_BETTER_ACCURACY
+	bool "Enable improved accuracy"
+	default y
+	help
+	  If enabled, high frequency crystal is used during sampling. It
+	  results in better measurement accuracy at the cost of longer measurement
+	  time (due to potential clock startup time) and increased RAM usage
+	  (data associated with clock control).
+
+endif # TEMP_NRF5
