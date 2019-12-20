@@ -3785,7 +3785,8 @@ class HardwareMap:
         'Silicon Labs',
         'NXP Semiconductors',
         'Microchip Technology Inc.',
-        'FTDI'
+        'FTDI',
+        'Digilent'
     ]
 
     runner_mapping = {
