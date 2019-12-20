@@ -241,6 +241,7 @@
 /dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
+/dts/xtensa/intel/                        @dcpleung
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
