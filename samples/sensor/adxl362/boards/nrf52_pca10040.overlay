@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	status = "okay";
+	sck-pin = <25>;
+	mosi-pin = <23>;
+	miso-pin = <24>;
+	cs-gpios = <&gpio0 22 0>;
+
+	adxl362@0 {
+		compatible = "adi,adxl362";
+		label = "ADXL362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	};
+};
