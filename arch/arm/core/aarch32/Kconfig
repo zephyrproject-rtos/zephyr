@@ -246,9 +246,6 @@ config ARM_ENTRY_VENEERS_LIB_NAME
 
 endmenu
 
-menu "Architecture Floating Point Options"
-depends on CPU_HAS_FPU
-
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
@@ -268,8 +265,6 @@ config FP_SOFTABI
 	  point instructions are generated but soft-float calling conventions.
 
 endchoice
-
-endmenu
 
 source "arch/arm/core/aarch32/cortex_m/Kconfig"
 source "arch/arm/core/aarch32/cortex_r/Kconfig"
