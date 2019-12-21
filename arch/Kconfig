@@ -253,9 +253,7 @@ config NOCACHE_MEMORY
 endif # ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
 menu "Interrupt Configuration"
-#
-# Interrupt related configs
-#
+
 config DYNAMIC_INTERRUPTS
 	bool "Enable installation of IRQs at runtime"
 	help
@@ -314,7 +312,6 @@ config GEN_IRQ_START_VECTOR
 	  This is a hidden option which needs to be set per architecture and
 	  left alone.
 
-
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
 	depends on TEST
@@ -330,6 +327,7 @@ endmenu
 #
 # Architecture Capabilities
 #
+
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
 
@@ -362,57 +360,51 @@ config ARCH_HAS_THREAD_ABORT
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
 #
+
 config HAS_SYS_POWER_STATE_SLEEP_1
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_SLEEP_2
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_SLEEP_3
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
 	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	# Hidden
 	bool
 	help
 	  This option signifies that the target has options of bootloaders
 	  that support context restore upon resume from deep sleep
 
-
-# End hidden CPU family configs
+#
+# Hidden CPU family configs
 #
 
 config CPU_HAS_TEE
@@ -497,10 +489,6 @@ config FP_SHARING
 	  registers.
 
 endif # FLOAT
-
-#
-# End hidden PM feature configs
-#
 
 config ARCH
 	string
