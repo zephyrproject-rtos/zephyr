@@ -90,6 +90,85 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config ARM_MMU
+	bool "ARM MMU Support"
+	default y
+	help
+	  Memory Management Unit support.
+
+if ARM_MMU
+
+config MAX_XLAT_TABLES
+	int "Maximum numbers of translation tables"
+	default 7
+	help
+	  This option specifies the maximum numbers of translation tables
+	  excluding the base translation table. Based on this, translation
+	  tables are allocated at compile time and used at runtime as needed.
+	  If the runtime need exceeds preallocated numbers of translation
+	  tables, it will result in assert. Number of translation tables
+	  required is decided based on how many discrete memory regions
+	  (both normal and device memory) are present on given platform and
+	  how much granularity is required while assigning attributes
+	  to these memory regions.
+
+choice
+	prompt "Virtual address space size"
+	default ARM64_VA_BITS_32
+	help
+	  Allows choosing one of multiple possible virtual address
+	  space sizes. The level of translation table is determined by
+	  a combination of page size and virtual address space size.
+
+config ARM64_VA_BITS_32
+	bool "32-bit"
+
+config ARM64_VA_BITS_36
+	bool "36-bit"
+
+config ARM64_VA_BITS_42
+	bool "42-bit"
+
+config ARM64_VA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_VA_BITS
+	int
+	default 32 if ARM64_VA_BITS_32
+	default 36 if ARM64_VA_BITS_36
+	default 42 if ARM64_VA_BITS_42
+	default 48 if ARM64_VA_BITS_48
+
+choice
+	prompt "Physical address space size"
+	default ARM64_PA_BITS_32
+	help
+	  Choose the maximum physical address range that the kernel will
+	  support.
+
+config ARM64_PA_BITS_32
+	bool "32-bit"
+
+config ARM64_PA_BITS_36
+	bool "36-bit"
+
+config ARM64_PA_BITS_42
+	bool "42-bit"
+
+config ARM64_PA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_PA_BITS
+	int
+	default 32 if ARM64_PA_BITS_32
+	default 36 if ARM64_PA_BITS_36
+	default 42 if ARM64_PA_BITS_42
+	default 48 if ARM64_PA_BITS_48
+
+endif #ARM_MMU
+
 endif # CPU_CORTEX_A
 
 endif # ARM64
