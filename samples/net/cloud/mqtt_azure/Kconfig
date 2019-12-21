@@ -1,10 +1,7 @@
-# Kconfig - Private config options for mqtt-azure sample app
+# Private config options for mqtt-azure sample app
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Networking mqtt-azure sample application"
 

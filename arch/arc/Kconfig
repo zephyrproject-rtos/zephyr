@@ -128,7 +128,7 @@ config ARC_FIRQ_STACK_SIZE
 	help
 	  The size of firq stack.
 
-config 	ARC_HAS_STACK_CHECKING
+config ARC_HAS_STACK_CHECKING
 	bool "ARC has STACK_CHECKING"
 	default y
 	help
