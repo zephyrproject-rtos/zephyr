@@ -5,18 +5,20 @@
 
 menuconfig IEEE802154_RF2XX
 	bool "ATMEL RF2XX Driver support"
-	depends on NETWORKING
+	depends on NETWORKING && HAS_DTS
 	select SPI
 	select GPIO
 	select NET_L2_IEEE802154_SUB_GHZ if NET_L2_IEEE802154
 
 if IEEE802154_RF2XX
 
-config IEEE802154_RF2XX_DRV_NAME
-	string "ATMEL RF2XX Driver's name"
-	default "IEEE802154_rf2xx"
-	help
-	  This option sets the driver name
+# Workaround for not being able to have commas in macro arguments
+DT_IEEE802154_COMPAT_RF2XX := atmel,rf2xx
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	# Fetch 'label' property from instance 0, defaulting to "RF2XX_0"
+	default "$(dt_compat_get_inst_prop,label, \
+	         $(DT_IEEE802154_COMPAT_RF2XX),0,RF2XX_0)"
 
 config IEEE802154_RF2XX_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
