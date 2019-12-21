@@ -347,11 +347,52 @@ def shields_list_contains(kconf, _, shield):
     return "y" if shield in list.split(";") else "n"
 
 
+def dt_compat_get_inst_prop(kconf, _, prop, compat, inst, default=""):
+    """
+    This function takes a 'compat' and an 'inst'ance to search for an EDT node
+    that matchs. If it finds an EDT node, it will look to see if that node has
+    a name property by the name of 'prop'. If the 'prop' exists it will return
+    the string representation of that 'prop' otherwise a default passed value.
+    """
+    prop_s = prop.strip()
+    compat_s = compat.strip()
+    default_s = default.strip()
+
+    if doc_mode or edt is None:
+        return default_s
+
+    try:
+        inst_no = int(inst)
+    except ValueError:
+        _warn(kconf, "malformed instance number")
+
+        return default_s
+
+    if compat_s not in edt.compat2enabled:
+        return default_s
+
+    node_list = edt.compat2enabled[compat_s]
+    if inst_no >= len(node_list):
+        return default_s
+
+    node = node_list[inst_no]
+    if prop_s not in node.props:
+        return default_s
+
+    val = node.props[prop_s].val
+
+    if not isinstance(val, (str, int)):
+        _warn(kconf, ("substituting devicetree property value that's not "
+                        "a string or an int"))
+
+    return str(val)
+
 functions = {
         "dt_int_val": (dt_int_val, 1, 2),
         "dt_hex_val": (dt_hex_val, 1, 2),
         "dt_str_val": (dt_str_val, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_compat_get_inst_prop": (dt_compat_get_inst_prop, 3, 4),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
