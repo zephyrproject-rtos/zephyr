@@ -1,12 +1,9 @@
-# Kconfig.rf2xx - ATMEL AT86RF23x/212x configuration options
-#
-#
-# Copyright (c) 2019 Gerson Fernando Budke
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# ATMEL AT86RF23x/212x configuration options
 
-menuconfig  IEEE802154_RF2XX
+# Copyright (c) 2019 Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_RF2XX
 	bool "ATMEL RF2XX Driver support"
 	depends on NETWORKING
 	select SPI
