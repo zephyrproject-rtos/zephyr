@@ -5,12 +5,12 @@
  */
 
 &spi2 {
-
+	cs-gpios = <&gpio0 22 0>;
 	adxl372@0 {
 		compatible = "adi,adxl372";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		label = "ADXL372";
-		int1-gpios = <&gpio0 6 0>;
+		int1-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 	};
 };

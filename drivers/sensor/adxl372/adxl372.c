@@ -939,6 +939,7 @@ static const struct adxl372_dev_config adxl372_config = {
 #ifdef CONFIG_ADXL372_TRIGGER
 	.gpio_port = DT_INST_0_ADI_ADXL372_INT1_GPIOS_CONTROLLER,
 	.int_gpio = DT_INST_0_ADI_ADXL372_INT1_GPIOS_PIN,
+	.int_flags = DT_INST_0_ADI_ADXL372_INT1_GPIOS_FLAGS,
 #endif
 
 	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),
