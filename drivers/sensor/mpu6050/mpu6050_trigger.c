@@ -25,7 +25,8 @@ int mpu6050_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_disable_callback(drv_data->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -34,7 +35,8 @@ int mpu6050_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
@@ -48,7 +50,8 @@ static void mpu6050_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->int_pin);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_MPU6050_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -68,7 +71,9 @@ static void mpu6050_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
 }
 
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
@@ -112,8 +117,7 @@ int mpu6050_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 
 	gpio_pin_configure(drv_data->gpio, cfg->int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | cfg->int_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   mpu6050_gpio_callback,
@@ -143,7 +147,8 @@ int mpu6050_init_interrupt(struct device *dev)
 	drv_data->work.handler = mpu6050_work_cb;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
