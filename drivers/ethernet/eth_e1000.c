@@ -16,6 +16,20 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
 
+#if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
+#define hexdump(_buf, _len, fmt, args...)				\
+({									\
+	const size_t STR_SIZE = 80;					\
+	char _str[STR_SIZE];						\
+									\
+	snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ## args);	\
+									\
+	LOG_HEXDUMP_DBG(_buf, _len, log_strdup(_str));			\
+})
+#else
+#define hexdump(args...)
+#endif
+
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 {
 #define _(_x)	case _x: return #_x
@@ -53,6 +67,8 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 
 static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
+	hexdump(buf, len, "%zu byte(s)", len);
+
 	dev->tx.addr = POINTER_TO_INT(buf);
 	dev->tx.len = len;
 	dev->tx.cmd = TDESC_EOP | TDESC_RS;
@@ -100,6 +116,8 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx.len);
 		goto out;
 	}
+
+	hexdump(buf, len, "%zd byte(s)", len);
 
 	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
 					   K_NO_WAIT);
