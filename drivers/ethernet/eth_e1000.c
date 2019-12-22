@@ -9,6 +9,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <unistd.h>
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
@@ -82,6 +83,8 @@ static int e1000_send(struct device *device, struct net_pkt *pkt)
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 {
 	struct net_pkt *pkt = NULL;
+	void *buf;
+	ssize_t len;
 
 	LOG_DBG("rx.sta: 0x%02hx", dev->rx.sta);
 
@@ -90,15 +93,17 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, dev->rx.len - 4,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	buf = INT_TO_POINTER((u32_t)dev->rx.addr);
+	len = dev->rx.len - 4;
+
+	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
+					   K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of buffers");
 		goto out;
 	}
 
-	if (net_pkt_write(pkt, INT_TO_POINTER((u32_t) dev->rx.addr),
-			  dev->rx.len - 4)) {
+	if (net_pkt_write(pkt, buf, len)) {
 		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
