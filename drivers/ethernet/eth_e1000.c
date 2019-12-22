@@ -96,6 +96,11 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 	buf = INT_TO_POINTER((u32_t)dev->rx.addr);
 	len = dev->rx.len - 4;
 
+	if (len <= 0) {
+		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx.len);
+		goto out;
+	}
+
 	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (!pkt) {
