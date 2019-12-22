@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2018-2019 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,10 +50,10 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 		ETHERNET_LINK_1000BASE_T;
 }
 
-static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
+static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
-	dev->tx.addr = POINTER_TO_INT(data);
-	dev->tx.len = data_len;
+	dev->tx.addr = POINTER_TO_INT(buf);
+	dev->tx.len = len;
 	dev->tx.cmd = TDESC_EOP | TDESC_RS;
 
 	iow32(dev, TDT, 1);
