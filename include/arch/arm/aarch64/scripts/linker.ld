@@ -39,6 +39,12 @@
   #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
+/*
+ * MMU currently supports 4 kB translation granule size,
+ * so all regions are required to be 4 kB aligned
+ */
+#define PAGE_SIZE	0x1000
+
 #if CONFIG_FLASH_LOAD_SIZE > 0
   #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
@@ -59,24 +65,14 @@
   #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
-/* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
- * to make linker section alignment comply with MPU granularity.
- */
-#if defined(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
-  _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
+#if defined(CONFIG_ARM_MMU)
+  _region_min_align = PAGE_SIZE;
 #else
-  /* If building without MPU support, use default 4-byte alignment. */
+  /* If building without MMU support, use default 4-byte alignment. */
   _region_min_align = 4;
 #endif
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-  #define MPU_ALIGN(region_size) \
-    . = ALIGN(_region_min_align); \
-    . = ALIGN( 1 << LOG2CEIL(region_size))
-#else
-  #define MPU_ALIGN(region_size) \
-    . = ALIGN(_region_min_align)
-#endif
+#define MMU_ALIGN    . = ALIGN(_region_min_align)
 
 MEMORY
 {
@@ -139,9 +135,11 @@ SECTIONS
 #include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
 
+        MMU_ALIGN;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;
+    _image_text_size = _image_text_end - _image_text_start;
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -199,26 +197,14 @@ SECTIONS
 #include <linker/priv_stacks-rom.ld>
 #include <linker/kobject-rom.ld>
 
-        /*
-         * For XIP images, in order to avoid the situation when __data_rom_start
-         * is 32-bit aligned, but the actual data is placed right after rodata
-         * section, which may not end exactly at 32-bit border, pad rodata
-         * section, so __data_rom_start points at data and it is 32-bit aligned.
-         *
-         * On non-XIP images this may enlarge image size up to 3 bytes. This
-         * generally is not an issue, since modern ROM and FLASH memory is
-         * usually 4k aligned.
-         */
-        . = ALIGN(4);
     } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
+    MMU_ALIGN;
 
     _image_rodata_end = .;
-    MPU_ALIGN(_image_rodata_end -_image_rom_start);
+    _image_rodata_size = _image_rodata_end - _image_rodata_start;
     _image_rom_end = .;
-
-    GROUP_END(ROMABLE_REGION)
 
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -232,11 +218,13 @@ SECTIONS
         *(.igot)
     }
 
+    GROUP_END(ROMABLE_REGION)
+
     GROUP_START(RAMABLE_REGION)
 
     . = RAM_ADDR;
     /* Align the start of image SRAM with the
-     * minimum granularity required by MPU.
+     * minimum granularity required by MMU.
      */
     . = ALIGN(_region_min_align);
     _image_ram_start = .;
@@ -248,7 +236,7 @@ SECTIONS
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
-#define SMEM_PARTITION_ALIGN MPU_ALIGN
+#define SMEM_PARTITION_ALIGN MMU_ALIGN
 
 #include <app_smem.ld>
 
