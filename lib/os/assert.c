@@ -22,10 +22,16 @@
  *
  * @return N/A
  */
+#ifdef CONFIG_ASSERT_NO_FILE_INFO
+__weak void assert_post_action(void)
+#else
 __weak void assert_post_action(const char *file, unsigned int line)
+#endif
 {
+#ifndef CONFIG_ASSERT_NO_FILE_INFO
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
+#endif
 
 #ifdef CONFIG_USERSPACE
 	/* User threads aren't allowed to induce kernel panics; generate
