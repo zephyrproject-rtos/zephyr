@@ -1493,7 +1493,7 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
 	return out;
 }
 
-static ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
+static ssize_t tp_tcp_recv(int fd, void *buf, size_t len, int flags)
 {
 	struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
 	ssize_t bytes_received = conn->rcv->len;
@@ -1638,7 +1638,7 @@ bool tp_input(struct net_pkt *pkt)
 		if (is("RECV", tp->op)) {
 #define HEXSTR_SIZE 64
 			char hexstr[HEXSTR_SIZE];
-			ssize_t len = tcp_recv(0, buf, sizeof(buf), 0);
+			ssize_t len = tp_tcp_recv(0, buf, sizeof(buf), 0);
 
 			tp_init(conn, tp);
 			bin2hex(buf, len, hexstr, HEXSTR_SIZE);
