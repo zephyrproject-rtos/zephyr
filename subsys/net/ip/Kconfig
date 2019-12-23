@@ -49,7 +49,6 @@ module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_OFFLOAD
 
-# Hidden option
 config NET_RAW_MODE
 	bool
 	help

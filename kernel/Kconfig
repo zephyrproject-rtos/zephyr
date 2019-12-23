@@ -496,7 +496,6 @@ endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	bool
-	# hidden
 	help
 	  It's possible that an architecture port cannot use _Swap() to swap to
 	  the _main() thread, but instead must do something custom. It must
