@@ -47,11 +47,27 @@ config HTS221_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-config HTS221_ODR
-	string "Output data rate"
-	default "1"
+choice
+	prompt "Output data rate"
+	default HTS221_ODR_1HZ
 	help
 	  Sensor output data rate expressed in samples per second.
-	  Data rates supported by the chip are 1, 7 and 12.5.
+
+config HTS221_ODR_1HZ
+	bool "1 Hz"
+
+config HTS221_ODR_7HZ
+	bool "7 Hz"
+
+config HTS221_ODR_12_5HZ
+	bool "12.5 Hz"
+
+endchoice
+
+config HTS221_ODR
+	int
+	default 1 if HTS221_ODR_1HZ
+	default 2 if HTS221_ODR_7HZ
+	default 3 if HTS221_ODR_12_5HZ
 
 endif # HTS221

@@ -22,6 +22,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <errno.h>
+#include <sys/async_client.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -269,6 +270,9 @@ enum sensor_attribute {
 	SENSOR_ATTR_MAX = INT16_MAX,
 };
 
+typedef void (*sensor_fetched_callback_t)(struct device *dev,
+					  enum sensor_channel chan,
+					  int res, void *user_data);
 /**
  * @typedef sensor_trigger_handler_t
  * @brief Callback API upon firing of a trigger
@@ -306,6 +310,10 @@ typedef int (*sensor_trigger_set_t)(struct device *dev,
  */
 typedef int (*sensor_sample_fetch_t)(struct device *dev,
 				     enum sensor_channel chan);
+
+typedef int (*sensor_sample_fetch_async_t)(struct device *dev,
+					enum sensor_channel chan,
+					struct async_client *cli);
 /**
  * @typedef sensor_channel_get_t
  * @brief Callback API for getting a reading from a sensor
@@ -320,6 +328,7 @@ struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
 	sensor_trigger_set_t trigger_set;
 	sensor_sample_fetch_t sample_fetch;
+	sensor_sample_fetch_async_t sample_fetch_async;
 	sensor_channel_get_t channel_get;
 };
 
@@ -441,6 +450,19 @@ static inline int z_impl_sensor_sample_fetch_chan(struct device *dev,
 		(const struct sensor_driver_api *)dev->driver_api;
 
 	return api->sample_fetch(dev, type);
+}
+
+static inline int sensor_sample_fetch_async_chan(struct device *dev,
+						 enum sensor_channel type,
+						struct async_client *cli)
+{
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->driver_api;
+
+	if (api->sample_fetch_async == NULL) {
+		return -ENOTSUP;
+	}
+	return api->sample_fetch_async(dev, type, cli);
 }
 
 /**

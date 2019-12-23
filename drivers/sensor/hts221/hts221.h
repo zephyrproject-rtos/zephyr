@@ -11,6 +11,7 @@
 #include <sys/util.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
+#include <drivers/i2c.h>
 
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)
 
@@ -41,6 +42,10 @@ struct hts221_data {
 	s16_t h1_t0_out;
 	s16_t t0_out;
 	s16_t t1_out;
+
+	sensor_fetched_callback_t callback;
+	void *user_data;
+	struct i2c_transaction transaction;
 
 #ifdef CONFIG_HTS221_TRIGGER
 	struct device *gpio;
