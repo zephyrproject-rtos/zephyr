@@ -289,7 +289,7 @@ static void mcux_lpuart_config_func_0(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_0_config = {
-	.base = LPUART0,
+	.base = (LPUART_Type *) DT_UART_MCUX_LPUART_0_BASE_ADDRESS,
 	.clock_name = DT_UART_MCUX_LPUART_0_CLOCK_NAME,
 	.clock_subsys =
 		(clock_control_subsys_t)DT_UART_MCUX_LPUART_0_CLOCK_SUBSYS,

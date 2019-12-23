@@ -51,7 +51,8 @@ extensions = [
     'zephyr.application',
     'zephyr.html_redirects',
     'only.eager_only',
-    'zephyr.link-roles'
+    'zephyr.link-roles',
+    'sphinx_tabs.tabs'
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -276,7 +277,7 @@ sourcelink_suffix = '.txt'
 
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
-#html_search_scorer = 'scorer.js'
+html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'zephyrdoc'
@@ -296,7 +297,7 @@ html_redirect_pages = [
         ('boards/boards', 'boards/index'),
         ('samples/samples', 'samples/index'),
         ('releases/release-notes', 'releases/index'),
-        ('getting_started/getting_starting', 'getting_started/index'),
+        ('getting_started/getting_started', 'getting_started/index'),
         ('introduction/introducing_zephyr', 'introduction/index'),
         ('api/index', 'reference/index'),
         ('api/api', 'reference/index'),
@@ -329,7 +330,10 @@ html_redirect_pages = [
 		('boards/arm/hexiwear_kw40z/doc/hexiwear_kw40z', 'boards/arm/hexiwear_kw40z/doc/index'),
 		('boards/arm/lpcxpresso54114_m0/doc/lpcxpresso54114_m0', 'boards/arm/lpcxpresso54114_m0/doc/index'),
 		('boards/arm/lpcxpresso54114_m4/doc/lpcxpresso54114', 'boards/arm/lpcxpresso54114_m4/doc/index'),
+		('boards/arm/mimxrt1020_evk/doc/mimxrt1020_evk', 'boards/arm/mimxrt1020_evk/doc/index'),
 		('boards/arm/mimxrt1050_evk/doc/mimxrt1050_evk', 'boards/arm/mimxrt1050_evk/doc/index'),
+		('boards/arm/mimxrt1060_evk/doc/mimxrt1060_evk', 'boards/arm/mimxrt1060_evk/doc/index'),
+		('boards/arm/mimxrt1064_evk/doc/mimxrt1064_evk', 'boards/arm/mimxrt1064_evk/doc/index'),
 		('boards/arm/mps2_an385/doc/mps2_an385', 'boards/arm/mps2_an385/doc/index'),
 		('boards/arm/msp_exp432p401r_launchxl/doc/msp_exp432p401r_launchxl', 'boards/arm/msp_exp432p401r_launchxl/doc/index'),
 		('boards/arm/nrf51_ble400/doc/nrf51_ble400', 'boards/arm/nrf51_ble400/doc/index'),
@@ -392,16 +396,16 @@ html_redirect_pages = [
 		('boards/nios2/altera_max10/doc/board', 'boards/nios2/altera_max10/doc/index'),
 		('boards/nios2/qemu_nios2/doc/board', 'boards/nios2/qemu_nios2/doc/index'),
 		('boards/posix/native_posix/doc/board', 'boards/posix/native_posix/doc/index'),
-		('boards/riscv32/hifive1/doc/hifive1', 'boards/riscv/hifive1/doc/index'),
-		('boards/riscv32/m2gl025_miv/doc/m2g1025_miv', 'boards/riscv/m2gl025_miv/doc/index'),
-		('boards/riscv32/qemu_riscv32/doc/board', 'boards/riscv/qemu_riscv32/doc/index'),
-		('boards/riscv32/zedboard_pulpino/doc/zedboard_pulpino', 'boards/riscv/zedboard_pulpino/doc/index'),
-                ('boards/riscv32/hifive1/doc/index', 'boards/riscv/hifive1/doc/index'),
-                ('boards/riscv32/hifive1_revb/doc/index', 'boards/riscv/hifive1_revb/doc/index'),
-                ('boards/riscv32/litex_vexriscv/doc/litex_vexriscv', 'boards/riscv/litex_vexriscv/doc/litex_vexriscv'),
-                ('boards/riscv32/m2gl025_miv/doc/index', 'boards/riscv/m2gl025_miv/doc/index'),
-                ('boards/riscv32/qemu_riscv32/doc/index', 'boards/riscv/qemu_riscv32/doc/index'),
-                ('boards/riscv32/rv32m1_vega/doc/index', 'boards/riscv/rv32m1_vega/doc/index'),
+		('boards/riscv/hifive1/doc/hifive1', 'boards/riscv/hifive1/doc/index'),
+		('boards/riscv/m2gl025_miv/doc/m2g1025_miv', 'boards/riscv/m2gl025_miv/doc/index'),
+		('boards/riscv/qemu_riscv32/doc/board', 'boards/riscv/qemu_riscv32/doc/index'),
+		('boards/riscv/zedboard_pulpino/doc/zedboard_pulpino', 'boards/riscv/zedboard_pulpino/doc/index'),
+                ('boards/riscv/hifive1/doc/index', 'boards/riscv/hifive1/doc/index'),
+                ('boards/riscv/hifive1_revb/doc/index', 'boards/riscv/hifive1_revb/doc/index'),
+                ('boards/riscv/litex_vexriscv/doc/litex_vexriscv', 'boards/riscv/litex_vexriscv/doc/litex_vexriscv'),
+                ('boards/riscv/m2gl025_miv/doc/index', 'boards/riscv/m2gl025_miv/doc/index'),
+                ('boards/riscv/qemu_riscv32/doc/index', 'boards/riscv/qemu_riscv32/doc/index'),
+                ('boards/riscv/rv32m1_vega/doc/index', 'boards/riscv/rv32m1_vega/doc/index'),
 		('boards/x86/arduino_101/doc/board', 'boards/x86/arduino_101/doc/index'),
 		('boards/x86/galileo/doc/galileo', 'boards/x86/galileo/doc/index'),
 		('boards/x86/minnowboard/doc/minnowboard', 'boards/x86/minnowboard/doc/index'),
@@ -512,7 +516,7 @@ breathe_default_project = "Zephyr"
 # Error when parsing function declaration and more.  This is a list
 # of strings that the parser additionally should accept as
 # attributes.
-cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated',
+cpp_id_attributes = ['__syscall', '__deprecated',
     '__may_alias', '__used', '__unused', '__weak',
     '__DEPRECATED_MACRO', 'FUNC_NORETURN']
 
@@ -524,8 +528,9 @@ html_context = {
     'theme_logo_only': False,
     'current_version': version,
     'versions': (("latest", "/"),
+                 ("2.1.0", "/2.1.0/"),
                  ("2.0.0", "/2.0.0/"),
-                 ("1.14.0", "/1.14.0/"),
+                 ("1.14.1", "/1.14.1/"),
                  ("1.13.0", "/1.13.0/"),
                  ("1.12.0", "/1.12.0/"),
                  ("1.11.0", "/1.11.0/"),

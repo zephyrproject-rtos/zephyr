@@ -1,7 +1,6 @@
-# Kconfig - Holyiot YJ-16019 board configuration
-#
+# Holyiot YJ-16019 board configuration
+
 # Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HOLYIOT_YJ16019

@@ -1,7 +1,4 @@
-title: Nordic FICR (Factory Information Configuration Registers)
-
-description: >
-    Binding for the Nordic FICR (Factory Information Configuration Registers)
+description: Nordic FICR (Factory Information Configuration Registers)
 
 compatible: "nordic,nrf-ficr"
 

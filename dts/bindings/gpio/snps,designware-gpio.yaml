@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Synopsys Designware GPIO controller
-
-description: >
-    This is a representation of the Synopsys DesignWare gpio node
+description: Synopsys DesignWare GPIO node
 
 compatible: "snps,designware-gpio"
 

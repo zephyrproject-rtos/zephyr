@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-title: Intel S1000 Pinmux
-
-description: >
-    This is a representation of the Intel S1000 SoC's pinmux node
+description: Intel S1000 pinmux
 
 compatible: "intel,s1000-pinmux"
 

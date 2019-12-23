@@ -26,8 +26,6 @@
 
 #include <arch/x86/mmustructs.h>
 
-#include <kernel_offsets.h>
-
 #if defined(CONFIG_LAZY_FP_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 #endif

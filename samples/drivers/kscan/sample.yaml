@@ -1,7 +1,7 @@
 sample:
   name: KSCAN driver sample
 tests:
-  sample.driver.kscan:
+  sample.drivers.kscan:
     tags: drivers
     harness: console
     harness_config:

@@ -48,4 +48,3 @@ void lvgl_set_px_cb_24bit(struct _disp_drv_t *disp_drv,
 	*(buf_xy + 1) = converted_color.ch.green;
 	*(buf_xy + 2) = converted_color.ch.blue;
 }
-

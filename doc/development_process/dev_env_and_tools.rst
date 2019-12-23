@@ -105,14 +105,14 @@ Security
 Changes that appear to have an impact to the overall security of the system need
 to be reviewed by a security expert from the security working group.
 
-TSC
-++++
+TSC and Working Groups
+++++++++++++++++++++++
 
 Changes that introduce new features or functionality or change the way the
 overall system works need to be reviewed by the TSC or the responsible Working
-Group. For example for API changes, the API working group needs to be consulted
-and made aware of such changes.
-
+Group. For example for :ref:`stable API changes <stable_api_changes>`, the
+proposal needs to be presented in the API meeting so that the relevant
+stakeholders are made aware of the change.
 
 A Pull-Request should have an Assignee
 =======================================
@@ -171,7 +171,7 @@ dismissed by the assignee or an owner of the repository. Reviews will be
 dismissed following the criteria below:
 
 - The feedback or concerns were visibly addressed by the author
-- The reviewer did not revisit the pull request after 1 week and multiple pings
+- The reviewer did not revisit the pull request after 2 week and multiple pings
   by the author
 - The review is unrelated to the code change or asking for unjustified
   structural changes such as:
@@ -190,8 +190,10 @@ Closing Stale Issues and Pull Requests
   Use the mailing lists for discussions.
 - In case of both issues and pull-requests the original poster needs to respond
   to questions and provide clarifications regarding the issue or the change.
-  Failing to do so, an issue or a pull request will be closed automatically
-  after 6 months.
+  After one week without a response to a request, a second attempt to elicit
+  a response from the contributor will be made. After one more week without a
+  response the item may be closed (draft and DNM tagged pull requests are
+  excluded).
 
 Continuous Integration
 ***********************
@@ -275,6 +277,16 @@ Description    The issue is to be discussed in the following
 =============  ===============================================================
 
 .. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+
+Stable API changes
+==================
+
+=============  ===============================================================
+Labels         ``Stable API Change``
+Applicable to  PRs  and issues
+Description    The issue or PR describes a change to a stable API. See
+               additional information in :ref:`stable_api_changes`
+=============  ===============================================================
 
 Minimum PR review time
 ======================

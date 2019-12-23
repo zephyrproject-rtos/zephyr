@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic EGU
-
-description: >
-    Binding for the Nordic EGU (Event Generator Unit)
+description: Nordic EGU (Event Generator Unit)
 
 compatible: "nordic,nrf-egu"
 

@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LOG
 	bool "Logging"
@@ -81,6 +78,12 @@ config LOG_MAX_LEVEL
 	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
+config LOG_MIPI_SYST_ENABLE
+	bool "Enable mipi syst format output"
+	select MIPI_SYST_LIB
+	help
+	  Enable mipi syst format output for the logger system.
+
 if !LOG_MINIMAL
 
 menu "Prepend log message with function name"
@@ -124,8 +127,19 @@ config LOG_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
+if LOG_IMMEDIATE
+config LOG_IMMEDIATE_CLEAN_OUTPUT
+	bool "Enable clean log output"
+	help
+	  If enabled, interrupts are locked during whole log message processing.
+	  As a result, processing on one log message cannot be interrupted by
+	  another one and output is clean, not interleaved. However, enabling
+	  this option is causing interrupts locking for significant amount of
+	  time (up to multiple milliseconds).
+endif
+
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
-	depends on !NEWLIB_LIBC && !ARCH_POSIX
+	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
 	help
 	  Selecting this option will choose more robust _prf() function from
@@ -199,7 +213,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
-	default 4096 if (X86 && X86_LONGMODE)
+	default 4096 if (X86 && X86_64)
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -263,7 +277,6 @@ config LOG_CMDS
 
 config LOG_FRONTEND
 	bool "Enable frontend"
-	default n
 	select LOG_IMMEDIATE
 	help
 	  When enabled, logs are redirected to a custom frontend instead
@@ -275,6 +288,13 @@ config LOG_BACKEND_UART
 	default y if !SHELL_BACKEND_SERIAL
 	help
 	  When enabled backend is using UART to output logs.
+
+config LOG_BACKEND_UART_SYST_ENABLE
+	bool "Enable UART syst backend"
+	depends on LOG_BACKEND_UART
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using UART to output syst format logs.
 
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
@@ -298,6 +318,12 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	  debug probe. Such configuration will persist only until the device
 	  reset. To ensure flawless operation the frequency configured here and
 	  by the SWO viewer program has to match.
+
+config LOG_BACKEND_SWO_SYST_ENABLE
+	bool "Enable SWO syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using SWO to output syst format logs.
 
 endif # LOG_BACKEND_SWO
 
@@ -330,6 +356,12 @@ config LOG_BACKEND_RTT_MODE_BLOCK
 	bool "Block until message is transferred to host."
 	help
 	  Waits until there is enough space in the up-buffer for a message.
+
+config LOG_BACKEND_RTT_SYST_ENABLE
+	bool "Enable RTT syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using RTT to output syst format logs.
 
 endchoice
 
@@ -408,12 +440,6 @@ config LOG_BACKEND_NATIVE_POSIX
 	help
 	  Enable backend in native_posix
 
-config LOG_BACKEND_QEMU_X86_64
-	bool "Enable QEMU x86_64 backend"
-	depends on BOARD_QEMU_X86_64
-	help
-	  Enable backend for qemu_x86_64 board
-
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER
@@ -472,6 +498,12 @@ config LOG_BACKEND_NET_MAX_BUF_SIZE
 	  The RFC 5426 recommends that for IPv4 the size is 480 octets and for
 	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
 	  should be selected so that typical messages will fit the buffer.
+
+config LOG_BACKEND_NET_SYST_ENABLE
+	bool "Enable networking syst backend"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is using networking to output syst format logs.
 
 endif # LOG_BACKEND_NET
 

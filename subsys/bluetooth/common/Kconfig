@@ -1,10 +1,8 @@
-# Kconfig - Bluetooth common configuration options
-#
+# Bluetooth common configuration options
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BT_HAS_HCI_VS
 	bool
@@ -134,8 +132,8 @@ config BT_MONITOR_ON_DEV_NAME
 	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
 	default "UART_0"
 	help
-	 This option specifies the name of UART device to be used
-	 for the Bluetooth monitor logging.
+	  This option specifies the name of UART device to be used
+	  for the Bluetooth monitor logging.
 
 config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"

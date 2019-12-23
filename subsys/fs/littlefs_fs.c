@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
@@ -18,7 +18,7 @@
 #include <lfs.h>
 #include <fs/littlefs.h>
 #include <flash.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 
 #include "fs_impl.h"
 

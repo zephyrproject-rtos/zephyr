@@ -1,11 +1,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP SEMC
-
-description: >
-    This binding gives a base representation of the NXP smart external memory
-    controller (SEMC)
+description: NXP Smart External Memory Controller (SEMC)
 
 compatible: "nxp,imx-semc"
 

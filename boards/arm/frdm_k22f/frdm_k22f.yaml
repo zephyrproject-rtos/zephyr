@@ -8,9 +8,10 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - gpio
   - i2c
   - nvs
   - spi
-  - gpio
   - usb_device
   - watchdog

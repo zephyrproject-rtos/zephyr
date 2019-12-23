@@ -21,6 +21,7 @@ extern "C" {
 
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF51X          0x0001
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF52X          0x0002
+#define BT_HCI_VS_HW_VAR_NORDIC_NRF53X          0x0003
 
 #define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0001
 #define BT_HCI_VS_FW_VAR_VS_CTLR                0x0002
@@ -127,6 +128,37 @@ struct bt_hci_rp_vs_read_host_stack_cmds {
 #define BT_HCI_OP_VS_SET_SCAN_REQ_REPORTS       BT_OP(BT_OGF_VS, 0x000d)
 struct bt_hci_cp_vs_set_scan_req_reports {
 	u8_t  enable;
+} __packed;
+
+#define BT_HCI_VS_LL_HANDLE_TYPE_ADV       0x00
+#define BT_HCI_VS_LL_HANDLE_TYPE_SCAN      0x01
+#define BT_HCI_VS_LL_HANDLE_TYPE_CONN      0x02
+#define BT_HCI_VS_LL_TX_POWER_LEVEL_NO_PREF     0x7F
+#define BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0x000e)
+struct bt_hci_cp_vs_write_tx_power_level {
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  tx_power_level;
+} __packed;
+
+struct bt_hci_rp_vs_write_tx_power_level {
+	u8_t  status;
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  selected_tx_power;
+} __packed;
+
+#define BT_HCI_OP_VS_READ_TX_POWER_LEVEL        BT_OP(BT_OGF_VS, 0x000f)
+struct bt_hci_cp_vs_read_tx_power_level {
+	u8_t  handle_type;
+	u16_t handle;
+} __packed;
+
+struct bt_hci_rp_vs_read_tx_power_level {
+	u8_t  status;
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  tx_power_level;
 } __packed;
 
 /* Events */

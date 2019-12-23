@@ -197,7 +197,7 @@ int settings_call_set_handler(const char *name,
 			      const struct settings_load_arg *load_arg)
 {
 	int rc;
-	const char *name_key;
+	const char *name_key = name;
 
 	if (load_arg && load_arg->subtree &&
 	    !settings_name_steq(name, load_arg->subtree, &name_key)) {

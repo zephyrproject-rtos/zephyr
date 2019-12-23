@@ -1,5 +1,5 @@
 tests:
-  peripheral.uart_async_api:
+  drivers.uart.uart_async_api:
     tags: drivers
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
     harness: keyboard

@@ -15,7 +15,7 @@
  *
  * For example, in the case where user mode passes in a C string via
  * system call, the length of that string needs to be measured. A specially
- * written assembly language version of strlen (z_arch_user_string_len)
+ * written assembly language version of strlen (arch_user_string_len)
  * defines start and end symbols where the memory in the string is examined;
  * if this generates a fault, jumping to the fixup symbol within the same
  * function will return an error result to the caller.

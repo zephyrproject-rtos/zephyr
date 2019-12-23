@@ -1,6 +1,6 @@
 tests:
-  benchmark.latency:
+  benchmark.kernel.latency:
     arch_whitelist: x86 arm posix
-    platform_exclude: qemu_x86_long
+    platform_exclude: qemu_x86_64
     filter: CONFIG_PRINTK
     tags: benchmark

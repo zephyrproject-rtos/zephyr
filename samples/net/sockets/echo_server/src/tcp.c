@@ -86,6 +86,9 @@ static int start_tcp_proto(struct data *data,
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	sec_tag_t sec_tag_list[] = {
 		SERVER_CERTIFICATE_TAG,
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+		PSK_TAG,
+#endif
 	};
 
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
@@ -216,8 +219,7 @@ static int process_tcp(struct data *data)
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("Error in accept (%s): %d - stopping server",
-			data->proto, -errno);
+		LOG_ERR("%s accept error (%d)", data->proto, -errno);
 		return -errno;
 	}
 
@@ -284,9 +286,11 @@ static void process_tcp4(void)
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv4);
 		if (ret < 0) {
-			quit();
+			break;
 		}
 	}
+
+	quit();
 }
 
 static void process_tcp6(void)
@@ -308,9 +312,11 @@ static void process_tcp6(void)
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv6);
 		if (ret != 0) {
-			quit();
+			break;
 		}
 	}
+
+	quit();
 }
 
 void start_tcp(void)

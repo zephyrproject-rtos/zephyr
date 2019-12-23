@@ -57,6 +57,24 @@ External Connector
 | 10    | VBUS             | USB VBUS (5V)           |
 +-------+------------------+-------------------------+
 
+Supported Features
+******************
+
+The Zephyr odroid_go board configuration supports the following hardware
+features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| I2C        | on-chip    | i2c                                 |
++------------+------------+-------------------------------------+
+
 Programming
 ***********
 
@@ -146,10 +164,8 @@ your terminal:
 References
 **********
 
+.. target-notes::
+
 .. [1] https://wiki.odroid.com/odroid_go/odroid_go
 .. _`toolchain`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-setup-toolchain
 .. _`SDK`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-esp-idf
-
-
-.. target-notes::
-

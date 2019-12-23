@@ -1,4 +1,3 @@
-
 .. raw:: html
 
    <a href="https://www.zephyrproject.org">
@@ -40,6 +39,8 @@ Community Support
 
 Community support is provided via mailing lists and Slack; see the Resources
 below for details.
+
+.. _project-resources:
 
 Resources
 *********

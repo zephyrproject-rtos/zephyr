@@ -91,7 +91,7 @@ static inline void set_valid_fault_value(int test_case_number)
 /* Userspace function */
 void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 {
-	set_valid_fault_value((u32_t)tc_number);
+	set_valid_fault_value((int)(uintptr_t)tc_number);
 
 	mem_domain_buf[0] = 10U;
 	if (valid_fault == false) {
@@ -104,7 +104,7 @@ void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 
 void mem_domain_test_1(void *tc_number, void *p2, void *p3)
 {
-	if ((u32_t)tc_number == 1U) {
+	if ((uintptr_t)tc_number == 1U) {
 		mem_domain_buf[0] = 10U;
 		k_mem_domain_remove_thread(k_current_get());
 		k_mem_domain_add_thread(&mem_domain_mem_domain,
@@ -125,7 +125,7 @@ void mem_domain_test_1(void *tc_number, void *p2, void *p3)
  */
 void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
 {
-	u32_t tc_number = 1U;
+	uintptr_t tc_number = 1U;
 
 	mem_domain_init();
 
@@ -151,7 +151,7 @@ void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_invalid_access(void *p1, void *p2, void *p3)
 {
-	u32_t tc_number = 2U;
+	uintptr_t tc_number = 2U;
 
 	k_thread_create(&mem_domain_2_tid,
 			mem_domain_2_stack,
@@ -325,16 +325,17 @@ struct k_mem_domain mem_domain_tc3_mem_domain;
 
 void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
 {
-	u32_t index;
+	uintptr_t index;
 
 	valid_fault = true;
 	USERSPACE_BARRIER;
 
 	/* fault should be hit on the first index itself. */
 	for (index = 0U;
-	     (index < (u32_t)max_partitions) && (index < 8);
+	     (index < (uintptr_t)max_partitions) && (index < 8);
 	     index++) {
-		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10U;
+		*(uintptr_t *)mem_domain_tc3_partition_array[index]->start =
+			10U;
 	}
 
 	zassert_unreachable(ERROR_STR);
@@ -356,7 +357,7 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 	/* Subtract one since the domain is initialized with one partition
 	 * already present.
 	 */
-	u8_t max_partitions = (u8_t)z_arch_mem_domain_max_partitions_get() - 1;
+	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get() - 1;
 	u8_t index;
 
 	k_mem_domain_remove_thread(k_current_get());
@@ -387,7 +388,7 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 				k_current_get());
 
 	k_thread_user_mode_enter(mem_domain_for_user_tc3,
-				 (void *)(u32_t)max_partitions,
+				 (void *)(uintptr_t)max_partitions,
 				 NULL,
 				 NULL);
 
@@ -396,13 +397,14 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 /****************************************************************************/
 void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 {
-	u32_t index;
+	uintptr_t index;
 
 	valid_fault = false;
 	USERSPACE_BARRIER;
 
-	for (index = 0U; (index < (u32_t)p2) && (index < 8); index++) {
-		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10U;
+	for (index = 0U; (index < (uintptr_t)p2) && (index < 8); index++) {
+		*(uintptr_t *)mem_domain_tc3_partition_array[index]->start =
+			10U;
 	}
 
 	ztest_test_pass();
@@ -420,7 +422,7 @@ void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 {
 
-	u8_t max_partitions = (u8_t)z_arch_mem_domain_max_partitions_get();
+	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get();
 	u8_t index;
 
 	k_mem_domain_init(&mem_domain_tc3_mem_domain,
@@ -439,7 +441,7 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 				k_current_get());
 
 	k_thread_user_mode_enter(mem_domain_for_user_tc4,
-				 (void *)(u32_t)max_partitions,
+				 (void *)(uintptr_t)max_partitions,
 				 NULL,
 				 NULL);
 
@@ -521,7 +523,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			MEM_DOMAIN_STACK_SIZE,
 			mem_domain_test_6_1,
 			NULL, NULL, NULL,
-			10, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 
 	k_sem_take(&sync_sem, K_MSEC(100));
@@ -534,7 +536,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			MEM_DOMAIN_STACK_SIZE,
 			mem_domain_test_6_2,
 			NULL, NULL, NULL,
-			10, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 

@@ -169,7 +169,7 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 			 DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS);
 }
 
-int ssd1306_resume(const struct device *dev)
+static int ssd1306_resume(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	/* set display on */
@@ -177,7 +177,7 @@ int ssd1306_resume(const struct device *dev)
 				 SSD1306_DISPLAY_ON);
 }
 
-int ssd1306_suspend(const struct device *dev)
+static int ssd1306_suspend(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	/* set display on */
@@ -185,17 +185,12 @@ int ssd1306_suspend(const struct device *dev)
 				 SSD1306_DISPLAY_OFF);
 }
 
-int ssd1306_write_page(const struct device *dev, u8_t page, void const *data,
-		       size_t length)
+#if defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
+static int ssd1306_write_page(const struct device *dev, u8_t page,
+			      void const *data, size_t length)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	u8_t cmd_buf[] = {
-#ifdef OLED_PANEL_CONTROLLER_SSD1306
-		SSD1306_CONTROL_BYTE_CMD,
-		SSD1306_SET_MEM_ADDRESSING_MODE,
-		SSD1306_CONTROL_BYTE_CMD,
-		SSD1306_SET_MEM_ADDRESSING_PAGE,
-#endif
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_LOWER_COL_ADDRESS |
 		(DT_INST_0_SOLOMON_SSD1306FB_SEGMENT_OFFSET &
@@ -226,17 +221,21 @@ int ssd1306_write_page(const struct device *dev, u8_t page, void const *data,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
 			       data, length);
 }
+#endif
 
-int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
-		  const struct display_buffer_descriptor *desc,
-		  const void *buf)
+static int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
+			 const struct display_buffer_descriptor *desc,
+			 const void *buf)
 {
+	size_t buf_len;
+
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller then width");
 		return -1;
 	}
 
-	if (buf == NULL || desc->buf_size == 0U) {
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	if (buf == NULL || buf_len == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -1;
 	}
@@ -282,7 +281,7 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 	return i2c_burst_write(driver->i2c,
 			       DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       (u8_t *)buf, desc->buf_size);
+			       (u8_t *)buf, buf_len);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
 	if (x != 0U && y != 0U) {
@@ -329,7 +328,7 @@ static int ssd1306_set_brightness(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int ssd1306_set_contrast(const struct device *dev, const u8_t contrast)
+static int ssd1306_set_contrast(const struct device *dev, const u8_t contrast)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	u8_t cmd_buf[] = {
@@ -380,7 +379,11 @@ static int ssd1306_init_device(struct device *dev)
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_ENTIRE_DISPLAY_OFF,
 		SSD1306_CONTROL_LAST_BYTE_CMD,
+#ifdef CONFIG_SSD1306_REVERSE_MODE
+		SSD1306_SET_REVERSE_DISPLAY,
+#else
 		SSD1306_SET_NORMAL_DISPLAY,
+#endif
 	};
 
 #ifdef DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER

@@ -1,19 +1,15 @@
-# Kconfig - ST Microelectronics STM32L476RG MCU
-#
+# ST Microelectronics STM32L476RG MCU
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L476XX
 
 config SOC
-	string
 	default "stm32l476xx"
 
 config NUM_IRQS
-	int
 	default 82
 
 if GPIO_STM32

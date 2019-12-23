@@ -1,10 +1,9 @@
-# Kconfig.stm32 - STM32 entropy generator driver configuration
-#
+# STM32 entropy generator driver configuration
+
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
-#
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ENTROPY_STM32_RNG
+config ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
 	depends on SOC_FAMILY_STM32
 	select ENTROPY_HAS_DRIVER

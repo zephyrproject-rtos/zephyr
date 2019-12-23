@@ -1,7 +1,4 @@
-title: Xtensa Core Interrupt Controller
-
-description: >
-    This binding describes Xtensa Core Interrupt controller
+description: Xtensa Core interrupt controller
 
 compatible: "xtensa,core-intc"
 

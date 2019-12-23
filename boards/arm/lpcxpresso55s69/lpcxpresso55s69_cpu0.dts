@@ -67,3 +67,7 @@
 &red_led {
 	status = "okay";
 };
+
+&spi8 {
+	status = "okay";
+};

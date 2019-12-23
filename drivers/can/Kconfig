@@ -1,10 +1,7 @@
-# Kconfig - CAN configuration options
+# CAN configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # CAN options
@@ -49,6 +46,15 @@ config CAN_RX_TIMESTAMP
 	  This option enables a timestamp value of the CAN free running timer.
 	  The value is incremented every bit time and starts when the controller
 	  is initialized.
+
+config CAN_AUTO_BUS_OFF_RECOVERY
+	bool "Enable automatic recovery from bus-off"
+	default y
+	help
+	  This option enables the automatic bus-off recovery according to
+	  ISO 11898-1 (recovery after 128 occurrences of 11 consecutive
+	  recessive bits). When this option is enabled, the recovery API is not
+	  available.
 
 config CAN_0
 	bool "Enable CAN 0"

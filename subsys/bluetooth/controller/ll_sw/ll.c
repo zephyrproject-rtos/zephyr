@@ -11,13 +11,11 @@
 #include <soc.h>
 #include <device.h>
 #include <drivers/clock_control.h>
-#ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <drivers/clock_control/nrf_clock_control.h>
-#endif
 #include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_llsw_ll
+#define LOG_MODULE_NAME bt_ctlr_ll
 #include "common/log.h"
 
 #include "hal/cpu.h"
@@ -41,12 +39,6 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_filter.h"
-
-#if defined(CONFIG_BT_CTLR_ZLI)
-#define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
-#else
-#define IRQ_CONNECT_FLAGS 0
-#endif
 
 /* Global singletons */
 
@@ -126,19 +118,18 @@ static void swi5_nrf5_isr(void *arg)
 
 int ll_init(struct k_sem *sem_rx)
 {
-	struct device *clk_k32;
-	struct device *clk_m16;
+	struct device *clk;
 	struct device *entropy;
 	u32_t err;
 
 	sem_recv = sem_rx;
 
-	clk_k32 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
-	if (!clk_k32) {
+	clk = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	if (!clk) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, NULL);
+	clock_control_on(clk, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!entropy) {
@@ -164,12 +155,7 @@ int ll_init(struct k_sem *sem_rx)
 			  hal_ticker_instance0_trigger_set);
 	LL_ASSERT(!err);
 
-	clk_m16 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	if (!clk_m16) {
-		return -ENODEV;
-	}
-
-	err = radio_init(clk_m16, CLOCK_CONTROL_NRF_K32SRC_ACCURACY, entropy,
+	err = radio_init(clk, CLOCK_CONTROL_NRF_K32SRC_ACCURACY, entropy,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
@@ -187,16 +173,11 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+			   radio_nrf5_isr, 0);
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
-		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
-	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
-		    swi5_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#else
+		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
 		    swi5_nrf5_isr, NULL, 0);
-#endif
 
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);

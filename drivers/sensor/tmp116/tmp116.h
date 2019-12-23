@@ -22,6 +22,7 @@
 #define TMP116_RESOLUTION_DIV		10000000
 
 #define TMP116_DEVICE_ID		0x1116
+#define TMP117_DEVICE_ID		0x0117
 
 struct tmp116_data {
 	struct device *i2c;

@@ -1,10 +1,7 @@
-# Kconfig -  Ethernet drivers configuration options
+# Ethernet drivers configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Ethernet Drivers"
 	depends on NET_L2_ETHERNET

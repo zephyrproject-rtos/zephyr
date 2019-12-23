@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "File Systems"
 
@@ -109,22 +106,22 @@ config FS_NFFS_NUM_CACHE_BLOCKS
 	default 64
 
 config NFFS_FILESYSTEM_MAX_AREAS
-        int "Maximum number of areas"
-        range 2 64
-        default 8
-        help
-          This defines maximum number of areas located on flash. Each area can
-          be erased without affecting other areas thus the size of area can
-          affect performance of GC where single area has to be rewritten.
-          At least one scratch and one non-scratch area is required.
+	int "Maximum number of areas"
+	range 2 64
+	default 8
+	help
+	  This defines maximum number of areas located on flash. Each area can
+	  be erased without affecting other areas thus the size of area can
+	  affect performance of GC where single area has to be rewritten.
+	  At least one scratch and one non-scratch area is required.
 
 config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
-        int "Maximum block size"
-        range 16 2048
-        default 2048
-        help
-          This determines the maximum size of data block written to flash.
-          Writes larger than this size are split into multiple write operations.
+	int "Maximum block size"
+	range 16 2048
+	default 2048
+	help
+	  This determines the maximum size of data block written to flash.
+	  Writes larger than this size are split into multiple write operations.
 
 endmenu
 

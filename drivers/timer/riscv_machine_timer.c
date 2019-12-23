@@ -10,7 +10,8 @@
 
 #define CYC_PER_TICK ((u32_t)((u64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_TICKS ((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
+#define MAX_CYC 0xffffffffu
+#define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
@@ -99,12 +100,15 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u64_t now = mtime();
-	u32_t cyc = ticks * CYC_PER_TICK;
+	u32_t adj, cyc = ticks * CYC_PER_TICK;
 
-	/* Round up to next tick boundary.  Note use of 32 bit math,
-	 * max_ticks is calibrated to permit this.
-	 */
-	cyc += (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	/* Round up to next tick boundary. */
+	adj = (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYC - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYC;
+	}
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 
 	if ((s32_t)(cyc + last_count - now) < MIN_DELAY) {

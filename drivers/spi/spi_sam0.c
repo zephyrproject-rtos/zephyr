@@ -15,12 +15,22 @@ LOG_MODULE_REGISTER(spi_sam0);
 #include <soc.h>
 #include <drivers/dma.h>
 
+#ifndef SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val
+#define SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val (0x3)
+#endif
+
 /* Device constant configuration parameters */
 struct spi_sam0_config {
 	SercomSpi *regs;
 	u32_t pads;
+#ifdef MCLK
+	volatile u32_t *mclk;
+	u32_t mclk_mask;
+	u16_t gclk_core_id;
+#else
 	u32_t pm_apbcmask;
 	u16_t gclk_clkctrl_id;
+#endif
 #ifdef CONFIG_SPI_ASYNC
 	u8_t tx_dma_request;
 	u8_t tx_dma_channel;
@@ -669,12 +679,21 @@ static int spi_sam0_init(struct device *dev)
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 
+#ifdef MCLK
+	/* Enable the GCLK */
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
+					       GCLK_PCHCTRL_CHEN;
+
+	/* Enable the MCLK */
+	*cfg->mclk |= cfg->mclk_mask;
+#else
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#endif
 
 	/* Disable all SPI interrupts */
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
@@ -740,6 +759,12 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 #ifndef DT_ATMEL_SAM0_SPI_SERCOM_5_RXDMA
 #define DT_ATMEL_SAM0_SPI_SERCOM_5_RXDMA 0xFF
 #endif
+#ifndef DT_ATMEL_SAM0_SPI_SERCOM_6_TXDMA
+#define DT_ATMEL_SAM0_SPI_SERCOM_6_TXDMA 0xFF
+#endif
+#ifndef DT_ATMEL_SAM0_SPI_SERCOM_7_RXDMA
+#define DT_ATMEL_SAM0_SPI_SERCOM_7_RXDMA 0xFF
+#endif
 
 #define SPI_SAM0_DMA_CHANNELS(n)                                             \
 	.tx_dma_request = SERCOM##n##_DMAC_ID_TX,                            \
@@ -754,6 +779,16 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 	SERCOM_SPI_CTRLA_DIPO(DT_ATMEL_SAM0_SPI_SERCOM_##n##_DIPO) | \
 	SERCOM_SPI_CTRLA_DOPO(DT_ATMEL_SAM0_SPI_SERCOM_##n##_DOPO)
 
+#ifdef MCLK
+#define SPI_SAM0_DEFINE_CONFIG(n)						\
+	static const struct spi_sam0_config spi_sam0_config_##n = {		\
+		.regs = (SercomSpi *)DT_ATMEL_SAM0_SPI_SERCOM_##n##_BASE_ADDRESS,\
+		.mclk = MCLK_SERCOM##n,						\
+		.mclk_mask = MCLK_SERCOM##n##_MASK,				\
+		.gclk_core_id = SERCOM##n##_GCLK_ID_CORE,			\
+		.pads = SPI_SAM0_SERCOM_PADS(n)					\
+	}
+#else
 #define SPI_SAM0_DEFINE_CONFIG(n)                                            \
 	static const struct spi_sam0_config spi_sam0_config_##n = {          \
 		.regs = (SercomSpi *)DT_ATMEL_SAM0_SPI_SERCOM_##n##_BASE_ADDRESS,\
@@ -762,6 +797,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		.pads = SPI_SAM0_SERCOM_PADS(n),                             \
 		SPI_SAM0_DMA_CHANNELS(n)                                     \
 	}
+#endif /* MCLK */
 
 #define SPI_SAM0_DEVICE_INIT(n)                                              \
 	SPI_SAM0_DEFINE_CONFIG(n);                                           \
@@ -797,4 +833,12 @@ SPI_SAM0_DEVICE_INIT(4);
 
 #if DT_ATMEL_SAM0_SPI_SERCOM_5_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(5);
+#endif
+
+#if DT_ATMEL_SAM0_SPI_SERCOM_6_BASE_ADDRESS
+SPI_SAM0_DEVICE_INIT(6);
+#endif
+
+#if DT_ATMEL_SAM0_SPI_SERCOM_7_BASE_ADDRESS
+SPI_SAM0_DEVICE_INIT(7);
 #endif

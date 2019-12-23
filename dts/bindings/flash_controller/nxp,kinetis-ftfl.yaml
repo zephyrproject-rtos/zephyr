@@ -1,7 +1,4 @@
-title: NXP Kinetis Flash Memory Module (FTFL)
-
-description: >
-    This binding gives for the NXP Kinetis Flash Memory Module L (FTFL)
+description: NXP Kinetis Flash Memory Module L (FTFL)
 
 compatible: "nxp,kinetis-ftfl"
 

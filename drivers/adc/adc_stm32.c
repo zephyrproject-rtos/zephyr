@@ -532,7 +532,7 @@ static int adc_stm32_init(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(),
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			LL_ADC_CLOCK_SYNC_PCLK_DIV4);
 #endif
 

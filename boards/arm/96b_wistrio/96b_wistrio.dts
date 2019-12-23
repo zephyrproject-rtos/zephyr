@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l1/stm32l151Xb-a.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
@@ -32,20 +33,17 @@
 
 	aliases {
 		led0 = &green_led_0;
+		eeprom-0 = &eeprom;
 	};
 };
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -61,8 +59,23 @@
 
 &spi1 {
 	status = "okay";
+	cs-gpios = <&gpiob 0 0>;
+
+	sx1276@0 {
+		compatible = "semtech,sx1276";
+		reg = <0>;
+		label = "sx1276";
+		reset-gpios = <&gpiob 13 0>;
+		dio-gpios = <&gpioa 11 0 &gpiob 1 0 &gpioa 3 0
+			     &gpioh 0 0 &gpioc 13 0>;
+		spi-max-frequency = <1000000>;
+	};
 };
 
 &rtc {
+	status = "okay";
+};
+
+&eeprom {
 	status = "okay";
 };

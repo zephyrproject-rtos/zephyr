@@ -62,4 +62,3 @@ logically OR regions to determine enforcement policy.
 Size and alignment constraints may result in stack allocations being larger
 than the requested size.  Region priority mechanisms may result in
 some added complexity when implementing stack guards.
-

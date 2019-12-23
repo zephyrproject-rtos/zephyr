@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Atmel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM watchdog driver
-
-description: >
-    This is a representation of the SAM0 watchdog
+description: ATMEL SAM0 watchdog
 
 compatible: "atmel,sam-watchdog"
 

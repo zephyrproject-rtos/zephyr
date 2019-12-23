@@ -24,10 +24,12 @@ struct led_device_info {
 };
 
 static struct led_device_info led_dev_info[] = {
-	{ NULL, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN }, /* green back LED */
-	{ NULL, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN }, /* red front LED */
-	{ NULL, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN }, /* green front LED */
-	{ NULL, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN }, /* blue front LED */
+	/* red front LED */
+	{ NULL, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN },
+	/* green front LED */
+	{ NULL, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN },
+	/* blue front LED */
+	{ NULL, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN },
 };
 
 static struct device_info dev_info[] = {
@@ -54,11 +56,6 @@ static void configure_gpios(void)
 			   led_dev_info[DEV_IDX_LED2].pin, GPIO_DIR_OUT);
 	gpio_pin_write(led_dev_info[DEV_IDX_LED2].dev,
 		       led_dev_info[DEV_IDX_LED2].pin, 1);
-
-	gpio_pin_configure(led_dev_info[DEV_IDX_LED3].dev,
-			   led_dev_info[DEV_IDX_LED3].pin, GPIO_DIR_OUT);
-	gpio_pin_write(led_dev_info[DEV_IDX_LED3].dev,
-		       led_dev_info[DEV_IDX_LED3].pin, 1);
 }
 
 int set_led_state(u8_t id, bool state)

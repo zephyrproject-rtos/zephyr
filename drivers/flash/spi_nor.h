@@ -38,7 +38,9 @@ struct spi_nor_config {
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
-#define SPI_NOR_CMD_MCHP_UNLOCK 0x98    /* Microchip: Global unblock */
+#define SPI_NOR_CMD_ULBPR       0x98    /* Global Block Protection Unlock */
+#define SPI_NOR_CMD_DPD         0xB9    /* Deep Power Down */
+#define SPI_NOR_CMD_RDPD        0xAB    /* Release from Deep Power Down */
 
 /* Page, sector, and block size are standard, not configurable. */
 #define SPI_NOR_PAGE_SIZE    0x0100U

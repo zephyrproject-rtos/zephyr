@@ -65,7 +65,7 @@ static inline void print_dash_line(void)
 #define PRINT_TIME_BANNER()						\
 	do {								\
 	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %u nsec",	\
-		     SYS_CLOCK_HW_CYCLES_TO_NS(1));			\
+		     (u32_t)k_cyc_to_ns_floor64(1));			\
 	print_dash_line();						\
 	} while (0)
 
@@ -81,4 +81,3 @@ extern void raiseInt(u8_t id);
 
 /* pointer to the ISR */
 typedef void (*ptestIsr) (void *unused);
-

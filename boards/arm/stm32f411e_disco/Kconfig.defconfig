@@ -1,9 +1,7 @@
-# Kconfig - STM32F411E-DISCO board configuration
-#
+# STM32F411E-DISCO board configuration
+
 # Copyright (c) 2017 Fenix Engineering Solutions
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F411E_DISCO
 
@@ -14,6 +12,14 @@ if UART_CONSOLE
 
 config UART_2
 	default y
+
+
+if PWM
+
+config PWM_STM32_4
+	default y
+
+endif # PWM
 
 endif # UART_CONSOLE
 

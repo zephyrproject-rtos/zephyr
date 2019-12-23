@@ -192,4 +192,3 @@ void main(void)
 
 	signal_print_stopped();
 }
-

@@ -18,12 +18,12 @@ LOG_MODULE_REGISTER(test);
 #error "Expected 250ms calibration period"
 #endif
 
-static void turn_off_clock(struct device *dev)
+static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 {
 	int err;
 
 	do {
-		err = clock_control_off(dev, 0);
+		err = clock_control_off(dev, subsys);
 	} while (err == 0);
 }
 
@@ -38,10 +38,8 @@ static void lfclk_started_cb(struct device *dev, void *user_data)
  */
 static void test_clock_calibration(void)
 {
-	struct device *hfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_16M");
-	struct device *lfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_32K");
+	struct device *clk_dev =
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	volatile bool started = false;
 	struct clock_control_async_data lfclk_data = {
 		.cb = lfclk_started_cb,
@@ -51,13 +49,14 @@ static void test_clock_calibration(void)
 	u32_t cnt = 0;
 	u32_t max_cnt = 1000;
 
-	turn_off_clock(hfclk_dev);
-	turn_off_clock(lfclk_dev);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	/* In case calibration needs to be completed. */
 	k_busy_wait(100000);
 
-	clock_control_async_on(lfclk_dev, NULL, &lfclk_data);
+	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
+				&lfclk_data);
 
 	while (started == false) {
 	}
@@ -65,12 +64,12 @@ static void test_clock_calibration(void)
 	k_busy_wait(35000);
 
 	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
 			irq_unlock(key);
-			clock_control_off(lfclk_dev, NULL);
+			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 			zassert_true(false, "");
 		}
 	}
@@ -79,37 +78,38 @@ static void test_clock_calibration(void)
 
 	irq_unlock(key);
 
-	while (clock_control_get_status(hfclk_dev, NULL)
+	while (clock_control_get_status(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF)
 			!= CLOCK_CONTROL_STATUS_ON) {
 	}
 
 	key = irq_lock();
 	cnt = 0;
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_DONE) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
 			irq_unlock(key);
-			clock_control_off(lfclk_dev, NULL);
+			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 			zassert_true(false, "");
 		}
 	}
 
 	irq_unlock(key);
 
-	zassert_equal(clock_control_get_status(hfclk_dev, NULL),
+	zassert_equal(clock_control_get_status(
+			clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF),
 			CLOCK_CONTROL_STATUS_OFF,
 			"Expected hfclk off after calibration.");
 
 	key = irq_lock();
 	cnt = 0;
 
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
 			irq_unlock(key);
-			clock_control_off(lfclk_dev, NULL);
+			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 			zassert_true(false, "");
 		}
 	}
@@ -118,7 +118,7 @@ static void test_clock_calibration(void)
 
 	irq_unlock(key);
 
-	clock_control_off(lfclk_dev, NULL);
+	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 }
 
 /* Test checks that when calibration is active then LF clock is not stopped.
@@ -127,10 +127,8 @@ static void test_clock_calibration(void)
  */
 static void test_stopping_when_calibration(void)
 {
-	struct device *hfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_16M");
-	struct device *lfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_32K");
+	struct device *clk_dev =
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	volatile bool started = false;
 	struct clock_control_async_data lfclk_data = {
 		.cb = lfclk_started_cb,
@@ -140,13 +138,14 @@ static void test_stopping_when_calibration(void)
 	u32_t cnt = 0;
 	u32_t max_cnt = 1000;
 
-	turn_off_clock(hfclk_dev);
-	turn_off_clock(lfclk_dev);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	/* In case calibration needs to be completed. */
 	k_busy_wait(100000);
 
-	clock_control_async_on(lfclk_dev, NULL, &lfclk_data);
+	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
+				&lfclk_data);
 
 	while (started == false) {
 	}
@@ -157,12 +156,12 @@ static void test_stopping_when_calibration(void)
 	k_busy_wait(35000);
 
 	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_CTTO) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
 			irq_unlock(key);
-			clock_control_off(lfclk_dev, NULL);
+			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 			zassert_true(false, "");
 		}
 	}
@@ -171,22 +170,23 @@ static void test_stopping_when_calibration(void)
 
 	irq_unlock(key);
 
-	while (clock_control_get_status(hfclk_dev, NULL)
+	while (clock_control_get_status(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF)
 			!= CLOCK_CONTROL_STATUS_ON) {
 	}
 
 	/* calibration started */
 	key = irq_lock();
-	clock_control_off(lfclk_dev, NULL);
+	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
-	zassert_true(nrf_clock_lf_is_running(), "Expected LF still on");
+	zassert_true(nrf_clock_lf_is_running(NRF_CLOCK),
+		"Expected LF still on");
 
-	while (nrf_clock_event_check(NRF_CLOCK_EVENT_DONE) == 0) {
+	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
 		k_busy_wait(1000);
 		cnt++;
 		if (cnt == max_cnt) {
 			irq_unlock(key);
-			clock_control_off(lfclk_dev, NULL);
+			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 			zassert_true(false, "");
 		}
 	}
@@ -196,9 +196,9 @@ static void test_stopping_when_calibration(void)
 	/* wait some time after which clock should be off. */
 	k_busy_wait(300);
 
-	zassert_false(nrf_clock_lf_is_running(), "Expected LF off");
+	zassert_false(nrf_clock_lf_is_running(NRF_CLOCK), "Expected LF off");
 
-	clock_control_off(lfclk_dev, NULL);
+	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 }
 
 static u32_t pend_on_next_calibration(void)
@@ -218,10 +218,8 @@ static u32_t pend_on_next_calibration(void)
 
 static void test_clock_calibration_force(void)
 {
-	struct device *hfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_16M");
-	struct device *lfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_32K");
+	struct device *clk_dev =
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	volatile bool started = false;
 	struct clock_control_async_data lfclk_data = {
 		.cb = lfclk_started_cb,
@@ -230,13 +228,14 @@ static void test_clock_calibration_force(void)
 	u32_t cnt = 0;
 	u32_t period;
 
-	turn_off_clock(hfclk_dev);
-	turn_off_clock(lfclk_dev);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	/* In case calibration needs to be completed. */
 	k_busy_wait(100000);
 
-	clock_control_async_on(lfclk_dev, NULL, &lfclk_data);
+	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
+				&lfclk_data);
 
 	while (started == false) {
 	}

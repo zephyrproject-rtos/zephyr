@@ -1,7 +1,4 @@
-title: CC32XX I2C
-
-description: >
-    This binding gives a base representation of the TI CC32XX I2C controller
+description: TI CC32XX I2C controller
 
 compatible: "ti,cc32xx-i2c"
 

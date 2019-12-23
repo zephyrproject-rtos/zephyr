@@ -3,10 +3,6 @@
 Install macOS Host Dependencies
 ###############################
 
-.. important::
-
-   Go back to the main :ref:`getting_started` when you're done here.
-
 This section describes how to set up a Zephyr development environment on macOS.
 
 These instructions have been tested on the following macOS versions:

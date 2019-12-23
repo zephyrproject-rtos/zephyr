@@ -1,0 +1,10 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TMP112 Digital Temperature Sensor.  See more info at
+    https://www.ti.com/product/TMP112
+
+compatible: "ti,tmp112"
+
+include: i2c-device.yaml

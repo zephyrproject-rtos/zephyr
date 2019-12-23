@@ -17,41 +17,42 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <v2/irq.h>
 #include <swap_macros.h>
 
-GTEXT(z_arch_switch)
+GTEXT(arch_switch)
 
 /**
  *
  * @brief Initiate a cooperative context switch
  *
- * The z_arch_switch routine is invoked by various kernel services to effect
- * a cooperative context switch. Prior to invoking z_arch_switch, the caller
+ * The arch_switch routine is invoked by various kernel services to effect
+ * a cooperative context switch. Prior to invoking arch_switch, the caller
  * disables interrupts via irq_lock()
 
- * Given that z_arch_switch() is called to effect a cooperative context switch,
+ * Given that arch_switch() is called to effect a cooperative context switch,
  * the caller-saved integer registers are saved on the stack by the function
- * call preamble to z_arch_switch. This creates a custom stack frame that will
- * be popped when returning from z_arch_switch, but is not suitable for handling
+ * call preamble to arch_switch. This creates a custom stack frame that will
+ * be popped when returning from arch_switch, but is not suitable for handling
  * a return from an exception. Thus, the fact that the thread is pending because
- * of a cooperative call to z_arch_switch() has to be recorded via the
+ * of a cooperative call to arch_switch() has to be recorded via the
  * _CAUSE_COOP code in the relinquish_cause of the thread's k_thread structure.
  * The _rirq_exit()/_firq_exit() code will take care of doing the right thing
  * to restore the thread status.
  *
- * When z_arch_switch() is invoked, we know the decision to perform a context
+ * When arch_switch() is invoked, we know the decision to perform a context
  * switch or not has already been taken and a context switch must happen.
  *
  *
  * C function prototype:
  *
- * void z_arch_switch(void *switch_to, void **switched_from);
+ * void arch_switch(void *switch_to, void **switched_from);
  *
  */
 
-SECTION_FUNC(TEXT, z_arch_switch)
+SECTION_FUNC(TEXT, arch_switch)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	push_s r0

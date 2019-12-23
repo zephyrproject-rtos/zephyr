@@ -1,9 +1,7 @@
-# Kconfig - ADT7420 temperature sensor configuration options
-#
+# ADT7420 temperature sensor configuration options
+
 # Copyright (c) 2018 Analog Devices Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ADT7420
 	bool "ADT7420 Temperature Sensor"
@@ -69,4 +67,4 @@ config ADT7420_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif #ADT7420
+endif # ADT7420

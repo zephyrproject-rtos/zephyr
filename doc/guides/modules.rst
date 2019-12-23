@@ -1,4 +1,3 @@
-
 .. _modules:
 
 Modules (External projects)
@@ -82,6 +81,26 @@ Each project in the ``west list`` output is tested like this:
      build:
        cmake: .
        kconfig: Kconfig
+
+- To execute both tests and samples available in modules, the Zephyr test runner
+  (sanitycheck) should be pointed to the directories containing those samples and
+  tests. This can be done by specifying the path to both samples and tests in the
+  :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
+  boards, the module file can point sanitycheck to the path where those files
+  are maintained in the module. For example:
+
+
+  .. code-block:: yaml
+
+      build:
+        cmake: .
+      samples:
+        - samples
+      tests:
+        - tests
+      boards:
+        - boards
+
 
 - Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and

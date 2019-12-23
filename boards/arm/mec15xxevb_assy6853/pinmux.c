@@ -54,6 +54,15 @@ static int board_pinmux_init(struct device *dev)
 	ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
 				MCHP_ECS_DCTRL_MODE_SWD);
 
+	/* Configure pins that are not GPIOS by default */
+	pinmux_pin_set(porta, MCHP_GPIO_000, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portd, MCHP_GPIO_161, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portd, MCHP_GPIO_162, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portd, MCHP_GPIO_163, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portd, MCHP_GPIO_170, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portd, MCHP_GPIO_172, MCHP_GPIO_CTRL_MUX_F0);
+	pinmux_pin_set(portf, MCHP_GPIO_250, MCHP_GPIO_CTRL_MUX_F0);
+
 	/* See table 2-4 from the data sheet for pin multiplexing*/
 #ifdef CONFIG_UART_NS16550_PORT_2
 	/* Set muxing, for UART 2 TX/RX and power up */
@@ -72,6 +81,7 @@ static int board_pinmux_init(struct device *dev)
 	mchp_pcr_periph_slp_ctrl(PCR_ADC, MCHP_PCR_SLEEP_DIS);
 
 	/* ADC pin muxes, ADC00 - ADC07 */
+	/* Note, by default ETM is enabled ADC00-ADC03 are not available */
 	pinmux_pin_set(porte, MCHP_GPIO_200, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_201, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_202, MCHP_GPIO_CTRL_MUX_F1);
@@ -86,15 +96,15 @@ static int board_pinmux_init(struct device *dev)
 #endif /* CONFIG_ADC_XEC */
 
 #ifdef CONFIG_I2C_XEC_0
-	/* Set muxing, for I2C0 - SMB00 */
-	pinmux_pin_set(porta, MCHP_GPIO_003, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porta, MCHP_GPIO_004, MCHP_GPIO_CTRL_MUX_F1);
-#endif
-
-#ifdef CONFIG_I2C_XEC_1
 	/* Set muxing for I2C1 - SMB01 */
 	pinmux_pin_set(portc, MCHP_GPIO_130, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(portc, MCHP_GPIO_131, MCHP_GPIO_CTRL_MUX_F1);
+#endif
+
+#ifdef CONFIG_I2C_XEC_1
+	/* Set muxing, for I2C0 - SMB00 */
+	pinmux_pin_set(porta, MCHP_GPIO_003, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porta, MCHP_GPIO_004, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
 #ifdef CONFIG_I2C_XEC_2
@@ -260,6 +270,48 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, MCHP_GPIO_032,
 		       MCHP_GPIO_CTRL_MUX_F1 | MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
 #endif /* CONFIG_KSCAN_XEC */
+
+#ifdef CONFIG_SPI_XEC_QMSPI
+#if defined(DT_INST_0_MICROCHIP_XEC_QMSPI)
+	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
+
+#if DT_SPI_XEC_QMSPI_0_PORT_SEL == 0
+	/* Port 0: Shared SPI pins. Shared has two chip selects */
+#if DT_SPI_XEC_QMSPI_0_CHIP_SELECT == 0
+	pinmux_pin_set(portb, MCHP_GPIO_055, MCHP_GPIO_CTRL_MUX_F2);
+#else
+	pinmux_pin_set(porta, MCHP_GPIO_002, MCHP_GPIO_CTRL_MUX_F2);
+#endif
+	pinmux_pin_set(portb, MCHP_GPIO_056, MCHP_GPIO_CTRL_MUX_F2);
+	pinmux_pin_set(porte, MCHP_GPIO_223, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porte, MCHP_GPIO_224, MCHP_GPIO_CTRL_MUX_F2);
+#if DT_SPI_XEC_QMSPI_0_LINES == 4
+	pinmux_pin_set(porte, MCHP_GPIO_227, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porta, MCHP_GPIO_016, MCHP_GPIO_CTRL_MUX_F2);
+#endif
+
+#else
+	/* Port 1: Private SPI pins. Only one chip select */
+	pinmux_pin_set(portc, MCHP_GPIO_124, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_125, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_121, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_122, MCHP_GPIO_CTRL_MUX_F1);
+#if DT_SPI_XEC_QMSPI_0_LINES == 4
+	pinmux_pin_set(portc, MCHP_GPIO_123, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_126, MCHP_GPIO_CTRL_MUX_F1);
+#endif
+#endif /* DT_SPI_XEC_QMSPI_0_PORT_SEL == 0 */
+
+#endif /* DT_INST_0_MICROCHIP_XEC_QMSPI */
+#endif /* CONFIG_SPI_XEC_QMSPI */
+
+#ifdef CONFIG_SYS_PM_DEBUG
+	/*
+	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
+	 * TEST_CLK_OUT is the PLL 48MHz conditioned output.
+	 */
+	pinmux_pin_set(portb, MCHP_GPIO_060, MCHP_GPIO_CTRL_MUX_F2);
+#endif
 
 	return 0;
 }

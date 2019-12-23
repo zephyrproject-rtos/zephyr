@@ -11,9 +11,9 @@ LOG_MODULE_REGISTER(net_socks, CONFIG_SOCKS_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <net/socket.h>
-#include <net/socks.h>
 #include <net/net_pkt.h>
 
+#include "socks.h"
 #include "socks_internal.h"
 
 static void socks5_method_rsp_cb(struct net_context *ctx,

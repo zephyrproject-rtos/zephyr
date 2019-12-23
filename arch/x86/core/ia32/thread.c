@@ -12,12 +12,9 @@
  * processor architecture.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
+#include <kernel.h>
+#include <ksched.h>
 #include <arch/x86/mmustructs.h>
-#include <sys/printk.h>
 
 /* forward declaration */
 
@@ -112,17 +109,9 @@ static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-					 void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
 {
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)_current->stack_obj;
-
-	/* Set up the kernel stack used during privilege elevation */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
-			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, Z_X86_MMU_RW,
-			    true);
-
 	/* Initialize per-thread page tables, since that wasn't done when
 	 * the thread was initialized (K_USER was not set at creation time)
 	 */
@@ -164,7 +153,7 @@ NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 extern int z_float_disable(struct k_thread *thread);
 
-int z_arch_float_disable(struct k_thread *thread)
+int arch_float_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_LAZY_FP_SHARING)
 	return z_float_disable(thread);
@@ -174,35 +163,23 @@ int z_arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
-void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		       size_t stack_size, k_thread_entry_t entry,
-		       void *parameter1, void *parameter2, void *parameter3,
-		       int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *parameter1, void *parameter2, void *parameter3,
+		     int priority, unsigned int options)
 {
 	char *stack_buf;
 	char *stack_high;
 	struct _x86_initial_frame *initial_frame;
-#if defined(CONFIG_X86_USERSPACE) || defined(CONFIG_X86_STACK_PROTECTION)
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)stack;
-#endif
 
 	Z_ASSERT_VALID_PRIO(priority, entry);
 	stack_buf = Z_THREAD_STACK_BUFFER(stack);
 	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
-#ifdef CONFIG_X86_USERSPACE
-	/* Set MMU properties for the privilege mode elevation stack.
-	 * If we're not starting in user mode, this functions as a guard
-	 * area.
-	 */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->privilege_stack,
-		MMU_PAGE_SIZE,
-		((options & K_USER) == 0U) ? MMU_ENTRY_READ : MMU_ENTRY_WRITE,
-		Z_X86_MMU_RW, true);
-#endif /* CONFIG_X86_USERSPACE */
-
 #if CONFIG_X86_STACK_PROTECTION
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)stack;
+
 	/* Set guard area to read-only to catch stack overflows */
 	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
 			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,

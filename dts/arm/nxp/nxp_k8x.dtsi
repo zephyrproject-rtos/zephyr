@@ -41,7 +41,7 @@
 		uart-3 = &lpuart3;
 		uart-4 = &lpuart4;
 		usbd-0 = &usbd;
-		wdt-0 = &wdog;
+		watchdog0 = &wdog;
 	};
 
 	cpus {

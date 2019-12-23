@@ -1,7 +1,4 @@
-title: GECKO UART
-
-description: >
-    This binding gives a base representation of the GECKO UART
+description: Gecko UART
 
 compatible: "silabs,gecko-uart"
 

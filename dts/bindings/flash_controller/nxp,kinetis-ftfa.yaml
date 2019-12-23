@@ -1,7 +1,4 @@
-title: NXP Kinetis Flash Memory Module (FTFA)
-
-description: >
-    This binding gives for the NXP Kinetis Flash Memory Module A (FTFA)
+description: NXP Kinetis Flash Memory Module A (FTFA)
 
 compatible: "nxp,kinetis-ftfa"
 

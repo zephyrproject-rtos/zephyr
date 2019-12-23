@@ -1,15 +1,12 @@
-# Kconfig - nrfx I2C support
-#
+# nrfx I2C support
+
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2C_NRFX
 	bool "nRF TWI nrfx drivers"
 	default y
 	depends on SOC_FAMILY_NRF
-	select HAS_DTS_I2C
 	help
 	  Enable support for nrfx TWI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -118,4 +115,4 @@ endchoice
 
 endif # I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
-endif #I2C_NRFX
+endif # I2C_NRFX

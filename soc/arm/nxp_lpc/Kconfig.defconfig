@@ -1,7 +1,11 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 source "soc/arm/nxp_lpc/*/Kconfig.defconfig.series"
+
+if SPI
+
+config SPI_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+
+endif # SPI

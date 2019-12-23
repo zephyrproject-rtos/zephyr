@@ -1,7 +1,4 @@
-title: STM32 H7 Flash Controller
-
-description: >
-    This binding gives a base representation of the STM32 H7 Flash Controller
+description: STM32 H7 flash controller
 
 compatible: "st,stm32h7-flash-controller"
 

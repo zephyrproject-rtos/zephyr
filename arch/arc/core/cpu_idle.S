@@ -17,8 +17,8 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 
-GTEXT(z_arch_cpu_idle)
-GTEXT(z_arch_cpu_atomic_idle)
+GTEXT(arch_cpu_idle)
+GTEXT(arch_cpu_atomic_idle)
 GDATA(z_arc_cpu_sleep_mode)
 
 SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
@@ -33,7 +33,7 @@ SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
  * void nanCpuIdle(void)
  */
 
-SECTION_FUNC(TEXT, z_arch_cpu_idle)
+SECTION_FUNC(TEXT, arch_cpu_idle)
 
 #ifdef CONFIG_TRACING
 	push_s blink
@@ -43,7 +43,19 @@ SECTION_FUNC(TEXT, z_arch_cpu_idle)
 
 	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
+/*
+ * It's found that (in nsim_hs_smp), when cpu
+ * is sleeping, no response to inter-processor interrupt
+ * although it's pending and interrupts are enabled.
+ * here is a workround
+ */
+#if !defined(CONFIG_SOC_NSIM) && !defined(CONFIG_SMP)
 	sleep r1
+#else
+	seti r1
+_z_arc_idle_loop:
+	b _z_arc_idle_loop
+#endif
 	j_s [blink]
 	nop
 
@@ -52,9 +64,9 @@ SECTION_FUNC(TEXT, z_arch_cpu_idle)
  *
  * This function exits with interrupts restored to <key>.
  *
- * void z_arch_cpu_atomic_idle(unsigned int key)
+ * void arch_cpu_atomic_idle(unsigned int key)
  */
-SECTION_FUNC(TEXT, z_arch_cpu_atomic_idle)
+SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 
 #ifdef CONFIG_TRACING
 	push_s blink

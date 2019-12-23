@@ -230,6 +230,49 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 }
 #endif
 
+#if defined(CONFIG_BT_REMOTE_INFO)
+static const char *ver_str(u8_t ver)
+{
+	const char * const str[] = {
+		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
+		"5.0", "5.1",
+	};
+
+	if (ver < ARRAY_SIZE(str)) {
+		return str[ver];
+	}
+
+	return "unknown";
+}
+
+static void remote_info_available(struct bt_conn *conn,
+				  struct bt_conn_remote_info *remote_info)
+{
+	struct bt_conn_info info;
+
+	bt_conn_get_info(conn, &info);
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
+		shell_print(ctx_shell,
+			    "Remote LMP version %s (0x%02x) subversion 0x%04x "
+			    "manufacturer 0x%04x", ver_str(remote_info->version),
+			    remote_info->version, remote_info->subversion,
+			    remote_info->manufacturer);
+	}
+
+	if (info.type == BT_CONN_TYPE_LE) {
+		u8_t features[8];
+		char features_str[2 * sizeof(features) +  1];
+
+		sys_memcpy_swap(features, remote_info->le.features,
+				sizeof(features));
+		bin2hex(features, sizeof(features),
+			features_str, sizeof(features_str));
+		shell_print(ctx_shell, "LE Features: 0x%s ", features_str);
+	}
+}
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -240,6 +283,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	.security_changed = security_changed,
+#endif
+#if defined(CONFIG_BT_REMOTE_INFO)
+	.remote_info_available = remote_info_available,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -318,6 +364,7 @@ static int cmd_name(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc < 2) {
 		shell_print(shell, "Bluetooth Local Name: %s", bt_get_name());
+		return 0;
 	}
 
 	err = bt_set_name(argv[1]);
@@ -833,8 +880,8 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_conn *conn = NULL;
-	bt_addr_le_t addr;
 	struct bt_conn_info info;
+	bt_addr_le_t addr;
 	int err;
 
 	switch (argc) {
@@ -887,10 +934,10 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		shell_print(ctx_shell, "Interval: 0x%04x (%.2f ms)",
-			    info.le.interval, info.le.interval * 1.25);
-		shell_print(ctx_shell, "Latency: 0x%04x (%.2f ms)",
-			    info.le.latency, info.le.latency * 1.25);
+		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
+			    info.le.interval, info.le.interval * 5 / 4);
+		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
+			    info.le.latency, info.le.latency * 5 / 4);
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 	}
@@ -1117,6 +1164,48 @@ static int cmd_bondable(const struct shell *shell, size_t argc, char *argv[])
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
 	}
+
+	return 0;
+}
+
+static void bond_info(const struct bt_bond_info *info, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int *bond_count = user_data;
+
+	bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
+	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	(*bond_count)++;
+}
+
+static int cmd_bonds(const struct shell *shell, size_t argc, char *argv[])
+{
+	int bond_count = 0;
+
+	shell_print(shell, "Bonded devices:");
+	bt_foreach_bond(selected_id, bond_info, &bond_count);
+	shell_print(shell, "Total %d", bond_count);
+
+	return 0;
+}
+
+static void connection_info(struct bt_conn *conn, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int *conn_count = user_data;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	(*conn_count)++;
+}
+
+static int cmd_connections(const struct shell *shell, size_t argc, char *argv[])
+{
+	int conn_count = 0;
+
+	shell_print(shell, "Connected devices:");
+	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
+	shell_print(shell, "Total %d", conn_count);
 
 	return 0;
 }
@@ -1638,6 +1727,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_security, 2, 1),
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
+	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
+	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
 	SHELL_CMD_ARG(auth, NULL,
 		      "<method: all, input, display, yesno, confirm, "
 		      "oob, none>",
@@ -1655,7 +1746,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_WHITELIST)
 	SHELL_CMD_ARG(wl-add, NULL, HELP_ADDR_LE, cmd_wl_add, 3, 0),
 	SHELL_CMD_ARG(wl-rem, NULL, HELP_ADDR_LE, cmd_wl_rem, 3, 0),
-	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 2, 0),
+	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 1, 0),
 	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>", cmd_wl_connect, 2, 0),
 #endif /* defined(CONFIG_BT_WHITELIST) */
 #if defined(CONFIG_BT_FIXED_PASSKEY)

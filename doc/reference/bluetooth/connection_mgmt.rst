@@ -29,5 +29,3 @@ API Reference
 
 .. doxygengroup:: bt_conn
    :project: Zephyr
-
-

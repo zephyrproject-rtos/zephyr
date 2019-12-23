@@ -34,7 +34,7 @@ a set of environmental sensors, a pushbutton, and two RGB LEDs.
      :align: center
      :alt: nRF52 Thingy:52
 
-     nRF52 Thingy:52 (Credit: Nordic Semi)
+     nRF52 Thingy:52 (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the `nRF52 DK website`_. The
 `Nordic Semiconductor Infocenter`_ contains the processor's information and the
@@ -386,4 +386,3 @@ References
 
 .. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/Nordic-Thingy-52
 .. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
-

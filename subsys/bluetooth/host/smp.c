@@ -463,6 +463,25 @@ static int bt_smp_aes_cmac(const u8_t *key, const u8_t *in, size_t len,
 	return 0;
 }
 
+static int smp_d1(const u8_t *key, u16_t d, u16_t r, u8_t res[16])
+{
+	int err;
+
+	BT_DBG("key %s d %u r %u", bt_hex(key, 16), d, r);
+
+	sys_put_le16(d, &res[0]);
+	sys_put_le16(r, &res[2]);
+	memset(&res[4], 0, 16 - 4);
+
+	err = bt_encrypt_le(key, res, res);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", bt_hex(res, 16));
+	return 0;
+}
+
 static int smp_f4(const u8_t *u, const u8_t *v, const u8_t *x,
 		  u8_t z, u8_t res[16])
 {
@@ -684,6 +703,12 @@ static bool update_keys_check(struct bt_smp *smp)
 		return false;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_SMP_ALLOW_UNAUTH_OVERWRITE) &&
+	    (!(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)
+	     && smp->method == JUST_WORKS)) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -756,14 +781,14 @@ static void smp_check_complete(struct bt_conn *conn, u8_t dist_complete)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-void smp_id_sent(struct bt_conn *conn, void *user_data)
+static void smp_id_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
 }
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-void smp_sign_info_sent(struct bt_conn *conn, void *user_data)
+static void smp_sign_info_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_SIGN);
 }
@@ -1558,7 +1583,7 @@ static bool br_sc_supported(void)
 
 static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_smp_br_connected,
 		.disconnected = bt_smp_br_disconnected,
 		.recv = bt_smp_br_recv,
@@ -1920,7 +1945,7 @@ static u8_t smp_send_pairing_confirm(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-void smp_ident_sent(struct bt_conn *conn, void *user_data)
+static void smp_ident_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
 }
@@ -2768,6 +2793,9 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
+	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
+		/* Reject pairing req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
@@ -2949,6 +2977,9 @@ static u8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
+	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
+		/* Reject pairing req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
@@ -3680,6 +3711,12 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&
+	    !(bondable && (auth & BT_SMP_AUTH_BONDING))) {
+		/* Reject security req if not both intend to bond */
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
 	if (conn->le.keys) {
 		/* Make sure we have an LTK to encrypt with */
 		if (!(conn->le.keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
@@ -4353,6 +4390,17 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_SIGNING */
+
+int bt_smp_irk_get(u8_t *ir, u8_t *irk)
+{
+	u8_t invalid_ir[16] = { 0 };
+
+	if (!memcmp(ir, invalid_ir, 16)) {
+		return -EINVAL;
+	}
+
+	return smp_d1(ir, 1, 0, irk);
+}
 
 #if defined(CONFIG_BT_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
@@ -5224,7 +5272,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_smp_connected,
 		.disconnected = bt_smp_disconnected,
 		.encrypt_change = bt_smp_encrypt_change,

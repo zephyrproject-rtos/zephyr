@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: Synopsys ARC nSIM UART
-
-description: >
-    This binding gives a base representation of the Synopsys ARC nSIM UART
+description: Synopsys ARC nSIM UART
 
 compatible: "snps,nsim-uart"
 

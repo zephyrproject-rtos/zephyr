@@ -1,16 +1,14 @@
-# Kconfig - Atmel SAMD MCU series configuration options
-#
+# Atmel SAMD MCU series configuration options
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_SAMD21
 
 config SOC_SERIES
-	string
 	default "samd21"
 
 config SOC_PART_NUMBER
-	string
 	default "samd21e15a" if SOC_PART_NUMBER_SAMD21E15A
 	default "samd21e16a" if SOC_PART_NUMBER_SAMD21E16A
 	default "samd21e17a" if SOC_PART_NUMBER_SAMD21E17A
@@ -27,11 +25,9 @@ config SOC_PART_NUMBER
 	default "samd21j18a" if SOC_PART_NUMBER_SAMD21J18A
 
 config NUM_IRQS
-	int
 	default 29
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 48000000
 
 endif # SOC_SERIES_SAMD21

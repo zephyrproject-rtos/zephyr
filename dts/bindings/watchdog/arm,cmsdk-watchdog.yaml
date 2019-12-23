@@ -1,7 +1,4 @@
-title: ARM CMSDK WATCHDOG
-
-description: >
-    This binding gives a base representation of the ARM CMSDK WATCHDOG
+description: ARM CMSDK watchdog
 
 compatible: "arm,cmsdk-watchdog"
 

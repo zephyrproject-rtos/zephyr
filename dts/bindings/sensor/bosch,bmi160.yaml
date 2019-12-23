@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: BMI160 Inertial measurement unit
-
-description: >
-    This is a representation of the BMI160 Inertial measurement unit
+description: BMI160 inertial measurement unit
 
 compatible: "bosch,bmi160"
 

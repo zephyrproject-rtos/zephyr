@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CHANNELS 2
 #define SERVERS 1
 
-NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_MTU, NULL);
 
 static struct channel {
 	u8_t chan_id; /* Internal number that identifies L2CAP channel. */
@@ -110,7 +110,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= alloc_buf_cb,
 	.recv		= recv_cb,
 	.connected	= connected_cb,

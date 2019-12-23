@@ -1,10 +1,7 @@
-# Kconfig - TMP007 infrared thermopile sensor configuration options
+# TMP007 infrared thermopile sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig TMP007
 	bool "TMP007 Infrared Thermopile Sensor"
@@ -13,34 +10,6 @@ menuconfig TMP007
 	  Enable driver for TMP007 infrared thermopile sensors.
 
 if TMP007
-
-config TMP007_NAME
-	string "Driver name"
-	default "TMP007"
-	help
-	  Device name with which the TMP007 sensor is identified.
-
-config TMP007_I2C_ADDR
-	hex "I2C address for TMP006 Sensor"
-	default "0x40"
-	help
-	  I2C address of the TMP007 sensor.
-
-	  0x40: A0 connected GND and A1 connected to GND.
-	  0x41: A0 connected VDD and A1 connected to GND.
-	  0x42: A0 connected SDA and A1 connected to GND.
-	  0x43: A0 connected SCL and A1 connected to GND.
-	  0x44: A0 connected GND and A1 connected to VDD.
-	  0x45: A0 connected VDD and A1 connected to VDD.
-	  0x46: A0 connected SDA and A1 connected to VDD.
-	  0x47: A0 connected SCL and A1 connected to VDD.
-
-config TMP007_I2C_MASTER_DEV_NAME
-	string "I2C master where TMP007 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which the
-	  TMP007 chip is connected.
 
 choice
 	prompt "Trigger mode"
@@ -65,22 +34,6 @@ endchoice
 
 config TMP007_TRIGGER
 	bool
-
-config TMP007_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on TMP007_TRIGGER
-	help
-	  The device name of the GPIO device to which the TMP007 interrupt
-	  (alert) pin is connected.
-
-config TMP007_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on TMP007_TRIGGER
-	help
-	  The number of the GPIO pin on which the interrupt signal from the
-	  TMP007 chip will be received.
 
 config TMP007_THREAD_PRIORITY
 	int "Thread priority"

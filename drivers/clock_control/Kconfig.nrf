@@ -1,7 +1,6 @@
-# Kconfig - Clock controller driver configuration options
-#
+# Clock controller driver configuration options
+
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_NRF_FORCE_ALT
@@ -85,7 +84,7 @@ config CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF
 	  this amount since the last calibration.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_DEBUG
-	bool "Calibration intrumentation"
+	bool "Calibration instrumentation"
 	help
 	  Enables retrieving debug information like number of performed or
 	  skipped calibrations.

@@ -1,9 +1,7 @@
-# Kconfig - LPCXpresso55S69 board
-#
+# LPCXpresso55S69 board
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
 
@@ -11,12 +9,12 @@ config BOARD
 	default "lpcxpresso55S69_cpu0" if BOARD_LPCXPRESSO55S69_CPU0
 	default "lpcxpresso55S69_cpu1" if BOARD_LPCXPRESSO55S69_CPU1
 
-if USART_MCUX_LPC
+if UART_MCUX_FLEXCOMM
 
-config USART_MCUX_LPC_0
+config UART_MCUX_FLEXCOMM_0
 	default y if UART_CONSOLE
 
-endif # USART_MCUX_LPC
+endif # UART_MCUX_FLEXCOMM
 
 if PINMUX_MCUX_LPC
 
@@ -37,5 +35,12 @@ config GPIO_MCUX_LPC_PORT1
 	default y
 
 endif # GPIO_MCUX_LPC
+
+if SPI
+
+config SPI_8
+	default y
+
+endif # SPI
 
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1

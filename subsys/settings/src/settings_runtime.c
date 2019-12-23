@@ -5,27 +5,38 @@
 
 #include <errno.h>
 #include <string.h>
+#include <sys/util.h>
 
 #include <settings/settings.h>
 #include "settings_priv.h"
 
+struct read_cb_arg {
+	void *data;
+	size_t len;
+};
+
 static ssize_t settings_runtime_read_cb(void *cb_arg, void *data, size_t len)
 {
-	memcpy(data, cb_arg, len);
-	return len;
+	struct read_cb_arg *arg = (struct read_cb_arg *)cb_arg;
+
+	memcpy(data, arg->data, MIN(arg->len, len));
+	return MIN(arg->len, len);
 }
 
 int settings_runtime_set(const char *name, void *data, size_t len)
 {
 	struct settings_handler_static *ch;
 	const char *name_key;
+	struct read_cb_arg arg;
 
 	ch = settings_parse_and_lookup(name, &name_key);
 	if (!ch) {
 		return -EINVAL;
 	}
 
-	return ch->h_set(name_key, len, settings_runtime_read_cb, data);
+	arg.data = data;
+	arg.len = len;
+	return ch->h_set(name_key, len, settings_runtime_read_cb, (void *)&arg);
 }
 
 int settings_runtime_get(const char *name, void *data, size_t len)

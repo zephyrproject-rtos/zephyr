@@ -89,4 +89,3 @@ int check_code(const int num, const int expected,
 
 
 #endif /* __TEST_ECC_UTILS_H__ */
-

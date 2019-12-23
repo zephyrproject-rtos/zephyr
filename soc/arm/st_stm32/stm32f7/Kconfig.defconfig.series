@@ -1,9 +1,7 @@
-# Kconfig.defconfig.series - ST Microelectronics STM32F7 MCU line
-#
+# ST Microelectronics STM32F7 MCU line
+
 # Copyright (c) 2018 Yurii Hamann
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32F7 series
 
@@ -51,5 +49,12 @@ config ENTROPY_STM32_RNG
 	default y
 
 endif # ENTROPY_GENERATOR
+
+if DMA_STM32
+
+config DMA_STM32_V1
+	default y
+
+endif # DMA
 
 endif # SOC_SERIES_STM32F7X

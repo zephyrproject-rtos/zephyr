@@ -1,9 +1,7 @@
-# Kconfig.mcux - MCUX IGPIO configuration options
-#
+# MCUX IGPIO configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_MCUX_IGPIO
 	bool "MCUX IGPIO driver"

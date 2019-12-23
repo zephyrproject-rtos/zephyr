@@ -1,17 +1,14 @@
-# Kconfig - Atmel SAM E70 MCU series configuration options
-#
+# Atmel SAM E70 MCU series configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_SAME70
 
 config SOC_SERIES
-	string
 	default "same70"
 
 config SOC_PART_NUMBER
-	string
 	default "same70q21" if SOC_PART_NUMBER_SAME70Q21
 	default "same70q20" if SOC_PART_NUMBER_SAME70Q20
 	default "same70q19" if SOC_PART_NUMBER_SAME70Q19
@@ -37,12 +34,10 @@ config SOC_PART_NUMBER
 # are used).
 #
 config NUM_IRQS
-	int
 	default 74 if SOC_ATMEL_SAME70_REVB
 	default 71
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 300000000
 
 # Configure default device drivers. If a feature is supported by more than one

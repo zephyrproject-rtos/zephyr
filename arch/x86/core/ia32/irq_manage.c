@@ -38,63 +38,9 @@ void *__attribute__((section(".spurNoErrIsr")))
 	MK_ISR_NAME(z_SpuriousIntNoErrCodeHandler) =
 		&z_SpuriousIntNoErrCodeHandler;
 
-/* FIXME: IRQ direct inline functions have to be placed here and not in
- * arch/cpu.h as inline functions due to nasty circular dependency between
- * arch/cpu.h and kernel_structs.h; the inline functions typically need to
- * perform operations on _kernel.  For now, leave as regular functions, a
- * future iteration will resolve this.
- *
- * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
- */
-
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-void z_arch_irq_direct_pm(void)
+void arch_isr_direct_footer_swap(unsigned int key)
 {
-	if (_kernel.idle) {
-		s32_t idle_val = _kernel.idle;
-
-		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
-	}
-}
-#endif
-
-void z_arch_isr_direct_header(void)
-{
-	sys_trace_isr_enter();
-
-	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that z_arch_is_in_isr() works
-	 */
-	++_kernel.nested;
-}
-
-void z_arch_isr_direct_footer(int swap)
-{
-	z_irq_controller_eoi();
-	sys_trace_isr_exit();
-	--_kernel.nested;
-
-	/* Call swap if all the following is true:
-	 *
-	 * 1) swap argument was enabled to this function
-	 * 2) We are not in a nested interrupt
-	 * 3) Next thread to run in the ready queue is not this thread
-	 */
-	if (swap != 0 && _kernel.nested == 0 &&
-	    _kernel.ready_q.cache != _current) {
-		unsigned int flags;
-
-		/* Fetch EFLAGS argument to z_swap() */
-		__asm__ volatile (
-			"pushfl\n\t"
-			"popl %0\n\t"
-			: "=g" (flags)
-			:
-			: "memory"
-			);
-		(void)z_swap_irqlock(flags);
-	}
+	(void)z_swap_irqlock(key);
 }
 
 #if CONFIG_X86_DYNAMIC_IRQ_STUBS > 0
@@ -250,7 +196,7 @@ static void idt_vector_install(int vector, void *irq_handler)
 	irq_unlock(key);
 }
 
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		u32_t flags)
 {

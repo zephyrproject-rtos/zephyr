@@ -351,4 +351,3 @@
 #endif /* ALT_LOG_ENABLE */
 
 #endif /* __ALT_LOG_PRINTF_H__ */
-

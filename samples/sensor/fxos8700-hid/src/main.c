@@ -184,6 +184,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *tr)
 
 void main(void)
 {
+	int ret;
 	u8_t report[4] = { 0x00 };
 	u8_t toggle = 0U;
 	struct device *led_dev, *accel_dev, *hid_dev;
@@ -245,6 +246,13 @@ void main(void)
 
 	usb_hid_register_device(hid_dev, hid_report_desc,
 				sizeof(hid_report_desc), NULL);
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	usb_hid_init(hid_dev);
 
 	while (true) {

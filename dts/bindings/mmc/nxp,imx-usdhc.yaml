@@ -1,10 +1,7 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP i.MXRT USDHC module
-
-description: >
-    This binding specifies the NXP i.MXRT USDHC module.
+description: NXP i.MXRT USDHC module
 
 compatible: "nxp,imx-usdhc"
 

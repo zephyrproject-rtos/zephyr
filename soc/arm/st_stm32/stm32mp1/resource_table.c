@@ -32,4 +32,3 @@ void resource_table_init(volatile void **table_ptr, int *length)
 	*table_ptr = &resource_table;
 	*length = sizeof(resource_table);
 }
-

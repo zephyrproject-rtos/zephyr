@@ -102,4 +102,3 @@ int default_CSPRNG(uint8_t *dest, unsigned int size) {
 }
 
 #endif /* platform */
-

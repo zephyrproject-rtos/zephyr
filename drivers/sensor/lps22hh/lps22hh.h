@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <sensor.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
@@ -41,7 +41,7 @@ struct lps22hh_config {
 	u16_t i2c_slv_addr;
 #elif DT_ST_LPS22HH_BUS_SPI
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -79,7 +79,7 @@ struct lps22hh_data {
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

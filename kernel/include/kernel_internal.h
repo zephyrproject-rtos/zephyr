@@ -15,7 +15,8 @@
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
 #include <kernel.h>
-#include <stdbool.h>
+#include <kernel_arch_interface.h>
+#include <string.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -39,48 +40,17 @@ FUNC_NORETURN void z_cstart(void);
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
-/* Implemented by architectures. Only called from z_setup_new_thread. */
-extern void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
-			      size_t stackSize, k_thread_entry_t entry,
-			      void *p1, void *p2, void *p3,
-			      int prio, unsigned int options);
-
 extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_stack_t *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, const char *name);
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-extern int z_arch_float_disable(struct k_thread *thread);
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+extern void z_new_thread_init(struct k_thread *thread,
+					    char *pStack, size_t stackSize,
+					    int prio, unsigned int options);
 
 #ifdef CONFIG_USERSPACE
-extern int z_arch_mem_domain_max_partitions_get(void);
-
-extern void z_arch_mem_domain_thread_add(struct k_thread *thread);
-
-extern void z_arch_mem_domain_thread_remove(struct k_thread *thread);
-
-extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					       u32_t partition_id);
-
-extern void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-					    u32_t partition_id);
-
-extern void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
-
-extern int z_arch_buffer_validate(void *addr, size_t size, int write);
-
-extern FUNC_NORETURN
-void z_arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
-			   void *p3);
-
-
-extern FUNC_NORETURN void z_arch_syscall_oops(void *ssf);
-
-extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
-
 /**
  * @brief Zero out BSS sections for application shared memory
  *
@@ -118,36 +88,35 @@ extern void z_thread_monitor_exit(struct k_thread *thread);
 	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
 
+#ifdef CONFIG_USE_SWITCH
+/* This is a arch function traditionally, but when the switch-based
+ * z_swap() is in use it's a simple inline provided by the kernel.
+ */
+static ALWAYS_INLINE void
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+{
+	thread->swap_retval = value;
+}
+#endif
+
+static ALWAYS_INLINE void
+z_thread_return_value_set_with_data(struct k_thread *thread,
+				   unsigned int value,
+				   void *data)
+{
+	arch_thread_return_value_set(thread, value);
+	thread->base.swap_data = data;
+}
+
 extern void z_smp_init(void);
 
 extern void smp_timer_init(void);
 
-extern u32_t z_early_boot_rand32_get(void);
+extern void z_early_boot_rand_get(u8_t *buf, size_t length);
 
 #if CONFIG_STACK_POINTER_RANDOM
 extern int z_stack_adjust_initialized;
 #endif
-
-#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-extern void z_arch_busy_wait(u32_t usec_to_wait);
-#endif
-
-int z_arch_swap(unsigned int key);
-
-extern FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern u64_t z_arch_timing_swap_start;
-extern u64_t z_arch_timing_swap_end;
-extern u64_t z_arch_timing_irq_start;
-extern u64_t z_arch_timing_irq_end;
-extern u64_t z_arch_timing_tick_start;
-extern u64_t z_arch_timing_tick_end;
-extern u64_t z_arch_timing_user_mode_end;
-extern u32_t z_arch_timing_value_swap_end;
-extern u64_t z_arch_timing_value_swap_common;
-extern u64_t z_arch_timing_value_swap_temp;
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 extern u32_t z_timestamp_main; /* timestamp when main task starts */

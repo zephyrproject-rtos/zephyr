@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32F030X8 MCU
-#
+# ST Microelectronics STM32F030X8 MCU
+
 # Copyright (c) 2017 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F030X8
 
 config SOC
-	string
 	default "stm32f030x8"
 
 config NUM_IRQS
-	int
 	default 29
 
 endif # SOC_STM32F030X8

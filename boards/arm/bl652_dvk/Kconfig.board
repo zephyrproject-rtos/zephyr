@@ -1,9 +1,8 @@
-# Kconfig - BL652 DVK board configuration
-#
+# BL652 DVK board configuration
+
 # Copyright (c) 2019 Laird Connectivity
-#
 # SPDX-License-Identifier: Apache-2.0
 
-config  BOARD_BL652_DVK
+config BOARD_BL652_DVK
 	bool "BL652 DVK"
 	depends on SOC_NRF52832_QFAA

@@ -23,7 +23,7 @@
 
 #define PORT 4242
 
-int main(void)
+void main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;

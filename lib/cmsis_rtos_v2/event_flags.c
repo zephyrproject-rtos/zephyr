@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <string.h>
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_event_flags_slab, sizeof(struct cv2_event_flags),
@@ -108,7 +109,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int retval, key;
 	u32_t sig;
-	u32_t time_delta_ms, timeout_ms = __ticks_to_ms(timeout);
+	u32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
 	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
 	/* Can be called from ISRs only if timeout is set to 0 */
@@ -171,7 +172,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 				(u64_t)k_cycle_get_32() - time_stamp_start;
 
 			time_delta_ns =
-				(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+				(u32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 
 			time_delta_ms = (u32_t)time_delta_ns / NSEC_PER_MSEC;
 

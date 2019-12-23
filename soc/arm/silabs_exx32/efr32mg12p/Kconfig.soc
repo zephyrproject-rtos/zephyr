@@ -1,9 +1,7 @@
-# Kconfig - EFR32MG12P (Mighty Gecko) MCU line
-#
+# EFR32MG12P (Mighty Gecko) MCU line
+
 # Copyright (c) 2018 Diego Sueiro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFR32MG12P
 

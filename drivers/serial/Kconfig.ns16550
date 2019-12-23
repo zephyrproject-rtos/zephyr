@@ -34,7 +34,6 @@ config UART_NS16750
 
 config UART_NS16550_ACCESS_WORD_ONLY
 	bool "NS16550 only allows word access"
-	default n
 	depends on UART_NS16550
 	help
 	  In some case, e.g. ARC HS Development kit, the peripheral space of ns

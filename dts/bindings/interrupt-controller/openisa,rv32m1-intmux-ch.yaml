@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: RV32M1 INTMUX Channel
-
-description: >
-    This binding describes the RV32M1 INTMUX Channel
+description: RV32M1 INTMUX channel
 
 compatible: "openisa,rv32m1-intmux-ch"
 

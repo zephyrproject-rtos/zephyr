@@ -1,10 +1,7 @@
-# Kconfig - ETH_ENC28J60 Ethernet driver configuration options
+# ETH_ENC28J60 Ethernet driver configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
@@ -55,7 +52,7 @@ config ETH_ENC28J60_0_FULL_DUPLEX
 config ETH_ENC28J60_0_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	help
-	This option is useful if one needs to manage SPI CS through a GPIO
-	pin to by-pass the SPI controller's CS logic.
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
 
-endif #ETH_ENC28J60 && ETH_ENC28J60_0
+endif # ETH_ENC28J60 && ETH_ENC28J60_0

@@ -1,9 +1,6 @@
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SYS_POWER_MANAGEMENT
 	bool "System Power management"

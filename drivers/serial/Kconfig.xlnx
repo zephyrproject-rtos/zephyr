@@ -1,11 +1,9 @@
-# Kconfig - Xilinx UART configuration
-#
-# Copyright (c) 2018 Xilinx Inc.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Xilinx UART configuration
 
-menuconfig UART_XLNX_PS
+# Copyright (c) 2018 Xilinx Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_XLNX_PS
 	bool "Xilinx serial driver for MPSoC"
 	depends on SOC_XILINX_ZYNQMP
 	select SERIAL_HAS_DRIVER

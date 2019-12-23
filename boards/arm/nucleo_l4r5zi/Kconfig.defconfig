@@ -1,14 +1,21 @@
-# Kconfig - STM32L4R5ZI Nucleo board configuration
-#
+# STM32L4R5ZI Nucleo board configuration
+
 # Copyright (c) 2018 Pushpal Sidhu
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_L4R5ZI
 
 config BOARD
 	default "nucleo_l4r5zi"
+
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSI
+
+endchoice
+
+endif #STM32_LPTIM_TIMER
 
 if UART_CONSOLE
 

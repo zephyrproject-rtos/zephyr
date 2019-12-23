@@ -19,6 +19,9 @@
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 #define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F3: maximum erase time of 40ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
+/* STM32F3: maximum erase time of 40ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F4: maximum erase time of 4s for a 128K sector */
@@ -226,6 +229,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+	struct stm32f1x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
 	struct stm32f7x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -267,6 +272,10 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 static struct flash_stm32_priv flash_data = {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	.regs = (struct stm32f0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+	.regs = (struct stm32f1x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -316,6 +325,7 @@ static int stm32_flash_init(struct device *dev)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -324,7 +334,9 @@ static int stm32_flash_init(struct device *dev)
 	 * On STM32F0, Flash interface clock source is always HSI,
 	 * so statically enable HSI here.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X)
 	LL_RCC_HSI_Enable();
 
 	while (!LL_RCC_HSI_IsReady()) {

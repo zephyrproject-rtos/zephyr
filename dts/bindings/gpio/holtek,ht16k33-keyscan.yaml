@@ -1,12 +1,10 @@
-title: Holtek HT16K33 LED Driver With Keyscan
-
-description: Holtek HT16K33 Keyscan binding
+description: Holtek HT16K33 LED driver with keyscan
 
 compatible: "holtek,ht16k33-keyscan"
 
 include: base.yaml
 
-parent-bus: ht16k33
+on-bus: ht16k33
 
 properties:
     reg:

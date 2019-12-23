@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <soc.h>
 
 #if defined(CONFIG_SOC_NSIM_SEM)

@@ -225,7 +225,7 @@ static int set_cc(struct device *dev, u8_t chan, u32_t val, u32_t flags)
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	bool irq_on_late;
 
-	__ASSERT(nrf_rtc_int_is_enabled(rtc, int_mask) == 0,
+	__ASSERT(nrf_rtc_int_enable_check(rtc, int_mask) == 0,
 			"Expected that CC interrupt is disabled.");
 
 	evt = RTC_CHANNEL_EVENT_ADDR(chan);
@@ -526,12 +526,12 @@ static int init_rtc(struct device *dev, u8_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clock, NULL);
+	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
@@ -575,7 +575,7 @@ static void top_irq_handle(struct device *dev)
 		  NRF_RTC_EVENT_OVERFLOW :
 		  RTC_CHANNEL_EVENT_ADDR(counter_get_num_of_channels(dev));
 
-	if (nrf_rtc_event_pending(rtc, top_evt)) {
+	if (nrf_rtc_event_check(rtc, top_evt)) {
 		nrf_rtc_event_clear(rtc, top_evt);
 
 		/* Perform manual clear if custom top value is used and PPI
@@ -596,8 +596,8 @@ static void alarm_irq_handle(struct device *dev, u32_t chan)
 	NRF_RTC_Type *rtc = get_nrfx_config(dev)->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
 	u32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
-	bool hw_irq_pending = nrf_rtc_event_pending(rtc, evt) &&
-			      nrf_rtc_int_is_enabled(rtc, int_mask);
+	bool hw_irq_pending = nrf_rtc_event_check(rtc, evt) &&
+			      nrf_rtc_int_enable_check(rtc, int_mask);
 	bool sw_irq_pending = get_dev_data(dev)->ipend_adj & BIT(chan);
 
 	if (hw_irq_pending || sw_irq_pending) {
@@ -676,10 +676,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
 		.rtc = NRF_RTC##idx,					       \
-		COND_CODE_1(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
-			    (.use_ppi = true,), ())			       \
-		COND_CODE_1(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,), ()) \
+		IF_ENABLED(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
+			    (.use_ppi = true,))				       \
+		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
+		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,))     \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(rtc_##idx,					       \

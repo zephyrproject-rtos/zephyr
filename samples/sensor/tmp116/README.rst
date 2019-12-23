@@ -44,7 +44,7 @@ following commands:
 
 Sample Output
 *************
-The output can be seen via a terminal emultator (e.g. minicom). Connect the board with a USB cable
+The output can be seen via a terminal emulator (e.g. minicom). Connect the board with a USB cable
 to the computer and open /dev/ttyACM0 with the below serial settings:
 
 * Baudrate: 115200

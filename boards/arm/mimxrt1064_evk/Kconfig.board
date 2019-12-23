@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_MIMXRT1064_EVK
 	bool "NXP MIMXRT1064-EVK"

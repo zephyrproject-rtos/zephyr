@@ -1,0 +1,21 @@
+# MCUXpresso SDK USART
+
+# Copyright 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM UART driver"
+	depends on HAS_MCUX_FLEXCOMM
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX USART driver.
+
+if UART_MCUX_FLEXCOMM
+
+config UART_MCUX_FLEXCOMM_0
+	bool "USART 0"
+	help
+	  Enable USART 0.
+
+endif # UART_MCUX_FLEXCOMM

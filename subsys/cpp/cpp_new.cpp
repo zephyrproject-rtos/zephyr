@@ -4,115 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_LIB_CPLUSPLUS)
-#include <new>
-#endif // CONFIG_LIB_CPLUSPLUS
-#include <kernel.h>
+#include <stdlib.h>
+
+#if __cplusplus < 201103L
+#define NOEXCEPT
+#else /* >= C++11 */
+#define NOEXCEPT noexcept
+#endif /* __cplusplus */
 
 void* operator new(size_t size)
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	void* ptr = k_malloc(size);
-#if defined(__cpp_exceptions) && defined(CONFIG_LIB_CPLUSPLUS)
-	if (!ptr)
-		throw std::bad_alloc();
-#endif
-	return ptr;
-#else
-	ARG_UNUSED(size);
-	return NULL;
-#endif
+	return malloc(size);
 }
 
 void* operator new[](size_t size)
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	void* ptr = k_malloc(size);
-#if defined(__cpp_exceptions) && defined(CONFIG_LIB_CPLUSPLUS)
-	if (!ptr)
-		throw std::bad_alloc();
-#endif
-	return ptr;
-#else
-	ARG_UNUSED(size);
-	return NULL;
-#endif
+	return malloc(size);
 }
 
-void operator delete(void* ptr) noexcept
+void operator delete(void* ptr) NOEXCEPT
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
+	free(ptr);
 }
 
-void operator delete[](void* ptr) noexcept
+void operator delete[](void* ptr) NOEXCEPT
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
+	free(ptr);
 }
-
-#if defined(CONFIG_LIB_CPLUSPLUS)
-void* operator new(size_t size, const std::nothrow_t&) noexcept
-{
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	return k_malloc(size);
-#else
-	ARG_UNUSED(size);
-	return NULL;
-#endif
-}
-
-void* operator new[](size_t size, const std::nothrow_t&) noexcept
-{
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	return k_malloc(size);
-#else
-	ARG_UNUSED(size);
-	return NULL;
-#endif
-}
-
-void operator delete(void* ptr, const std::nothrow_t&) noexcept
-{
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
-}
-
-void operator delete[](void* ptr, const std::nothrow_t&) noexcept
-{
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
-}
-#endif // CONFIG_LIB_CPLUSPLUS
 
 #if (__cplusplus > 201103L)
-void operator delete(void* ptr, size_t) noexcept
+void operator delete(void* ptr, size_t) NOEXCEPT
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
+	free(ptr);
 }
 
-void operator delete[](void* ptr, size_t) noexcept
+void operator delete[](void* ptr, size_t) NOEXCEPT
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-	k_free(ptr);
-#else
-	ARG_UNUSED(ptr);
-#endif
+	free(ptr);
 }
 #endif // __cplusplus > 201103L

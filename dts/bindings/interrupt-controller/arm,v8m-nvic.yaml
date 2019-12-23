@@ -1,7 +1,4 @@
-title: ARMv8-M NVIC Interrupt Controller
-
-description: >
-    This binding describes the ARMv8-M Nested Vectored Interrupt Controller.
+description: ARMv8-M NVIC (Nested Vectored Interrupt Controller)
 
 compatible: "arm,v8m-nvic"
 

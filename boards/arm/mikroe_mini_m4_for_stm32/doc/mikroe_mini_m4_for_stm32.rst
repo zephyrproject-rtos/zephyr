@@ -148,4 +148,3 @@ You can debug an application in the usual way.  Here is an example for the
         https://www.st.com/resource/en/datasheet/stm32f415rg.pdf
 .. _MINI-M4 for STM32 User Manual:
         https://download.mikroe.com/documents/starter-boards/mini/stm32/f4/mini-m4-stm32-manual-v100.pdf
-

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2019 Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lscon_96b: connector {
+		compatible = "96b-lscon-3v3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <13 0 &gpioc 2 0>,	/* GPIO-A */
+			   <14 0 &gpioc 3 0>,	/* GPIO-B */
+			   <15 0 &gpioc 4 0>,	/* GPIO-C */
+			   <16 0 &gpioc 5 0>,	/* GPIO-D */
+			   <17 0 &gpioc 6 0>,	/* GPIO-E */
+			   <18 0 &gpioc 7 0>,	/* GPIO-F */
+			   <19 0 &gpioc 8 0>,	/* GPIO-G */
+			   <20 0 &gpioc 9 0>;	/* GPIO-H */
+	};
+};
+
+lscon_96b_i2c0: &i2c1 {};
+lscon_96b_spi0: &spi2 {};
+lscon_96b_uart0: &usart2 {};
+lscon_96b_uart1: &usart1 {};

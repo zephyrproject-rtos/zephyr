@@ -29,7 +29,7 @@ void z_irq_do_offload(void)
 	tmp((void *)offload_param);
 }
 
-void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	unsigned int key;
 
@@ -41,4 +41,3 @@ void z_arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 
 	irq_unlock(key);
 }
-

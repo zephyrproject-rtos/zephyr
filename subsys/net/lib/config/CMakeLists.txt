@@ -18,3 +18,5 @@ if(CONFIG_NET_CONFIG_SETTINGS)
     bt_settings.c
   )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT init_clock_sntp.c)

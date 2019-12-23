@@ -1,7 +1,4 @@
-title: STM32 PINMUX
-
-description: >
-    This binding gives a base representation of the STM32 PINMUX
+description: STM32 PINMUX
 
 compatible: "st,stm32-pinmux"
 

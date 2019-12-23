@@ -1,16 +1,13 @@
-# Kconfig - Kinetis KW2xD SoC configuration options
-#
+# Kinetis KW2xD SoC configuration options
+
 # Copyright (c) 2017, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW22D5 || SOC_MKW24D5
 
 if SOC_MKW22D5
 
 config SOC
-	string
 	default "mkw22d5"
 
 endif # SOC_MKW22D5
@@ -18,13 +15,11 @@ endif # SOC_MKW22D5
 if SOC_MKW24D5
 
 config SOC
-	string
 	default "mkw24d5"
 
 endif # SOC_MKW24D5
 
 config NUM_IRQS
-	int
 	default 65
 
 if ADC

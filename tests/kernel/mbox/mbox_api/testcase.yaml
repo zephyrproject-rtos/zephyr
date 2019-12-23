@@ -1,4 +1,4 @@
 tests:
-  kernel.mailbox:
+  kernel.mailbox.api:
     tags: kernel
     min_ram: 20

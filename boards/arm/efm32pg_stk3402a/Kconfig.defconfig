@@ -1,9 +1,7 @@
-# Kconfig - EFM32PG STK3402A board
-#
+# EFM32PG STK3402A board
+
 # Copyright (c) 2018, Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_EFM32PG_STK3402A
 

@@ -39,7 +39,8 @@
 /*
  * Maximum number of ticks.
  */
-#define MAX_TICKS (0x7FFFFFFFFFFFULL / RTC_COUNTS_PER_TICK)
+#define MAX_CYC 0x7FFFFFFFFFFFULL
+#define MAX_TICKS (MAX_CYC / RTC_COUNTS_PER_TICK)
 
 /*
  * Due to the nature of clock synchronization, the comparator cannot be set
@@ -217,7 +218,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	/* Round to the nearest tick boundary. */
 	timeout = (timeout + RTC_COUNTS_PER_TICK - 1) / RTC_COUNTS_PER_TICK
 		  * RTC_COUNTS_PER_TICK;
-
+	timeout = MIN(timeout, MAX_CYC);
 	timeout += rtc_last;
 
 	/* Set the comparator */

@@ -1,7 +1,6 @@
-# Kconfig - Bluetooth configuration options
-#
+# Bluetooth configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT
@@ -48,6 +47,14 @@ config BT_HCI_RAW
 	help
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
+
+config BT_HCI_RAW_RESERVE
+	int "Buffer headroom needed for HCI transport"
+	depends on BT_HCI_RAW
+	default 0
+	help
+	  This option is used by the HCI raw transport implementation to
+	  declare how much headroom it needs for any HCI transport headers.
 
 config BT_PERIPHERAL
 	bool "Peripheral Role support"
@@ -155,6 +162,19 @@ source "subsys/bluetooth/controller/Kconfig"
 source "subsys/bluetooth/shell/Kconfig"
 
 endif # BT_HCI
+
+config BT_COMPANY_ID
+	hex "Company Id"
+	default 0x05F1
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier for this device. The Linux
+	  Foundation's Company Identifier (0x05F1) is the default value for
+	  this option although silicon vendors and hardware manufacturers
+	  can set their own. Note that the controller's Company Identifier is
+	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
 source "subsys/bluetooth/mesh/Kconfig"
 

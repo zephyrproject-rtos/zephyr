@@ -278,6 +278,3 @@ Locking may not be needed if multiple independent channels are available.
         E.g. native_posix or board with multi-channel DMA. Lock-free.
 
         ``emit(a ## b ## c, thread_id);``
-
-
-

@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Mohamed ElShahawi
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 PINMUX
+
+compatible: "espressif,esp32-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true

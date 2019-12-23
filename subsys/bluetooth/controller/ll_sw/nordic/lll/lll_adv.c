@@ -27,6 +27,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_adv.h"
+#include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
 
@@ -35,7 +36,8 @@
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_adv
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -142,8 +144,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	}
 
 	radio_reset();
-	/* TODO: other Tx Power settings */
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	radio_tx_power_set(lll->tx_pwr_lvl);
+#else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
@@ -314,7 +319,6 @@ static void isr_tx(void *param)
 	u32_t hcto;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
 	}
@@ -329,17 +333,19 @@ static void isr_tx(void *param)
 	}
 	/* TODO: MOVE ^^ */
 
-	radio_isr_set(isr_rx, param);
+	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	radio_switch_complete_and_tx(0, 0, 0, 0);
-	radio_pkt_rx_set(radio_pkt_scratch_get());
 
+	radio_pkt_rx_set(radio_pkt_scratch_get());
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
+
+	radio_isr_set(isr_rx, param);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -361,7 +367,8 @@ static void isr_tx(void *param)
 	 */
 	radio_tmr_end_capture();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_CONN_RSSI)) {
 		radio_rssi_measure();
 	}
 
@@ -477,7 +484,8 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	if (!lll->chan_map_curr && lll->is_hdcd) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll->is_hdcd &&
+	    !lll->chan_map_curr) {
 		lll->chan_map_curr = lll->chan_map;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -589,6 +597,7 @@ static void chan_prepare(struct lll_adv *lll)
 
 	pdu = lll_adv_data_latest_get(lll, &upd);
 	scan_pdu = lll_adv_scan_rsp_latest_get(lll, &upd);
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (upd) {
 		/* Copy the address from the adv packet we will send into the
@@ -715,6 +724,12 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
 		}
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		if (rssi_ready) {
+			lll->conn->rssi_latest =  radio_rssi_get();
+		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Stop further LLL radio events */
 		ret = lll_stop(lll);

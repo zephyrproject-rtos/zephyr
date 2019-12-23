@@ -8,21 +8,30 @@
 / {
 	leds {
 		compatible = "gpio-leds";
-		yellow_led: led_0 {
-			gpios = <&gpio0 13 0>;
-			label = "User D13";
-		};
-		red_led: led_1 {
+		red_led: led_0 {
 			gpios = <&gpio0 11 0>;
 			label = "User D3 red";
 		};
-		green_led: led_2 {
+		green_led: led_1 {
 			gpios = <&gpio0 12 0>;
 			label = "User D3 green";
 		};
-		blue_led: led_3 {
+		blue_led: led_2 {
 			gpios = <&gpio1 9 0>;
 			label = "User D3 blue";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 11>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 12>;
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 41>;
 		};
 	};
 
@@ -37,6 +46,8 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
 			   <1 0 &gpio0 4 0>,	/* A1 */
 			   <2 0 &gpio0 28 0>,	/* A2 */
@@ -62,10 +73,15 @@
 	};
 
 	aliases {
-		led0 = &yellow_led;
-		led1 = &red_led;
-		led2 = &green_led;
-		led3 = &blue_led;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
 	};
 };
@@ -127,8 +143,18 @@ arduino_i2c: &i2c0 {
 	};
 };
 
-arduino_spi: &spi1 {
-	compatible = "nordic,nrf-spi";
+&pwm0 {
+	status = "okay";
+	ch0-pin = <13>;
+	ch1-pin = <11>;
+	ch1-inverted;
+	ch2-pin = <12>;
+	ch2-inverted;
+	ch3-pin = <41>;
+	ch3-inverted;
+};
+
+arduino_spi: &spi3 {
 	status = "okay";
 	sck-pin = <47>;
 	miso-pin = <46>;

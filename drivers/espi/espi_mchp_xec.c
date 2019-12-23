@@ -25,6 +25,7 @@
 
 /* OOB Rx length */
 #define ESPI_XEC_OOB_RX_LEN         0x7F00ul
+#define ESPI_XEC_OOB_RX_LEN_MASK    0x7F00ul
 
 /* BARs as defined in LPC spec chapter 11 */
 #define ESPI_XEC_KBC_BAR_ADDRESS    0x00600000
@@ -33,8 +34,7 @@
 #define ESPI_XEC_PORT80_BAR_ADDRESS 0x00800000
 #define ESPI_XEC_PORT81_BAR_ADDRESS 0x00810000
 
-#define LOG_LEVEL CONFIG_ESPI_LOG_LEVEL
-LOG_MODULE_REGISTER(espi);
+LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_isr {
 	u32_t girq_bit;
@@ -258,6 +258,82 @@ static bool espi_xec_channel_ready(struct device *dev, enum espi_channel ch)
 	return sts;
 }
 
+static int espi_xec_read_lpc_request(struct device *dev,
+				     enum lpc_peripheral_opcode op,
+				     u32_t  *data)
+{
+	ARG_UNUSED(dev);
+
+	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
+		/* Make sure kbc 8042 is on */
+		if (!(KBC_REGS->KBC_CTRL & MCHP_KBC_CTRL_OBFEN)) {
+			return -ENOTSUP;
+		}
+
+		switch (op) {
+		case E8042_OBF_HAS_CHAR:
+			/* EC has written data back to host. OBF is
+			 * automatically cleared after host reads
+			 * the data
+			 */
+			*data = KBC_REGS->EC_KBC_STS & (1 << 0U) ? 1 : 0;
+			break;
+		case E8042_IBF_HAS_CHAR:
+			*data = KBC_REGS->EC_KBC_STS & (1 << 1U) ? 1 : 0;
+			break;
+		default:
+			return -EINVAL;
+		}
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int espi_xec_write_lpc_request(struct device *dev,
+				      enum lpc_peripheral_opcode op,
+				      u32_t *data)
+{
+	struct espi_xec_config *config =
+		(struct espi_xec_config *) (dev->config->config_info);
+
+	volatile u32_t __attribute__((unused)) dummy;
+
+	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
+		/* Make sure kbc 8042 is on */
+		if (!(KBC_REGS->KBC_CTRL & MCHP_KBC_CTRL_OBFEN)) {
+			return -ENOTSUP;
+		}
+
+		switch (op) {
+		case E8042_WRITE_KB_CHAR:
+			KBC_REGS->EC_DATA = *data & 0xff;
+			break;
+		case E8042_WRITE_MB_CHAR:
+			KBC_REGS->EC_AUX_DATA = *data & 0xff;
+			break;
+		case E8042_RESUME_IRQ:
+			MCHP_GIRQ_SRC(config->pc_girq_id) = MCHP_KBC_IBF_GIRQ;
+			MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_KBC_IBF_GIRQ;
+			break;
+		case E8042_PAUSE_IRQ:
+			MCHP_GIRQ_ENCLR(config->pc_girq_id) = MCHP_KBC_IBF_GIRQ;
+			break;
+		case E8042_CLEAR_OBF:
+			dummy = KBC_REGS->HOST_AUX_DATA;
+			break;
+		default:
+			return -EINVAL;
+		}
+	} else {
+		return -ENOTSUP;
+
+	}
+
+	return 0;
+}
+
 static int espi_xec_send_vwire(struct device *dev,
 			       enum espi_vwire_signal signal, u8_t level)
 {
@@ -341,15 +417,26 @@ static void send_slave_bootdone(struct device *dev)
 		ESPI_S2M_VW_REGS->SMVW01.SRC = 0x01000001;
 	}
 }
-
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_init_oob(struct device *dev)
 {
 	struct espi_xec_config *config =
 		(struct espi_xec_config *) (dev->config->config_info);
 
-	MCHP_GIRQ_ENSET(config->bus_girq_id) =
-		BIT(MCHP_ESPI_OOB_UP_GIRQ_POS) | BIT(MCHP_ESPI_OOB_DN_GIRQ_POS);
+	/* Enable OOB Tx/Rx interrupts */
+	MCHP_GIRQ_ENSET(config->bus_girq_id) = (MCHP_ESPI_OOB_UP_GIRQ_VAL |
+			MCHP_ESPI_OOB_DN_GIRQ_VAL);
+
+	ESPI_OOB_REGS->TX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
+	ESPI_OOB_REGS->RX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
+	ESPI_OOB_REGS->TX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
+	ESPI_OOB_REGS->RX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
+	ESPI_OOB_REGS->RX_LEN = (ESPI_XEC_OOB_RX_LEN &
+				 ESPI_XEC_OOB_RX_LEN_MASK);
+
+	/* Enable OOB Tx channel enable change status interrupt */
+	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
+	ESPI_CAP_REGS->OOB_RDY = 1;
 }
 #endif
 
@@ -418,8 +505,10 @@ static void config_sub_devices(struct device *dev)
 		break;
 	}
 #endif
-#ifdef CONFIG_ESPI_PERIPHERAL_8042_KEYBOARD
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	KBC_REGS->KBC_CTRL |= MCHP_KBC_CTRL_AUXH;
+	KBC_REGS->KBC_CTRL |= MCHP_KBC_CTRL_OBFEN;
+	/* This is the activate register, but the HAL has a funny name */
 	KBC_REGS->KBC_PORT92_EN = MCHP_KBC_PORT92_EN;
 	ESPI_EIO_BAR_REGS->EC_BAR_KBC = ESPI_XEC_KBC_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
@@ -444,7 +533,7 @@ static void configure_sirq(void)
 #ifdef CONFIG_ESPI_PERIPHERAL_UART
 	ESPI_SIRQ_REGS->UART_1_SIRQ = 0x04;
 #endif
-#ifdef CONFIG_ESPI_PERIPHERAL_8042_KEYBOARD
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	ESPI_SIRQ_REGS->KBC_SIRQ_0 = 0x01;
 	ESPI_SIRQ_REGS->KBC_SIRQ_1 = 0x0C;
 #endif
@@ -475,8 +564,6 @@ static void espi_pc_isr(struct device *dev)
 
 		ESPI_PC_REGS->PC_STATUS = MCHP_ESPI_PC_STS_EN_CHG;
 	}
-
-	GIRQ19_REGS->SRC = MCHP_ESPI_PC_GIRQ_VAL;
 }
 
 static void espi_vwire_chanel_isr(struct device *dev)
@@ -487,7 +574,6 @@ static void espi_vwire_chanel_isr(struct device *dev)
 	u32_t status;
 
 	status = ESPI_IO_VW_REGS->VW_EN_STS;
-	GIRQ19_REGS->SRC = MCHP_ESPI_VW_EN_GIRQ_VAL;
 
 	if (status & MCHP_ESPI_VW_EN_STS_RO) {
 		ESPI_IO_VW_REGS->VW_RDY = 1;
@@ -502,30 +588,45 @@ static void espi_vwire_chanel_isr(struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_oob_down_isr(struct device *dev)
 {
 	u32_t status;
+
+	LOG_DBG("%s\n", __func__);
 
 	status = ESPI_OOB_REGS->RX_STS;
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
 		ESPI_OOB_REGS->RX_IEN = ~MCHP_ESPI_OOB_RX_IEN;
 	}
-
-	GIRQ19_REGS->SRC = MCHP_ESPI_OOB_DN_GIRQ_VAL;
 }
 
 static void espi_oob_up_isr(struct device *dev)
 {
 	u32_t status;
 
+	LOG_DBG("%s\n", __func__);
+
 	status = ESPI_OOB_REGS->TX_STS;
+
 	if (status & MCHP_ESPI_OOB_TX_STS_DONE) {
-		ESPI_OOB_REGS->TX_IEN = ~MCHP_ESPI_OOB_TX_IEN_DONE;
+		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_DONE;
 	}
 
-	GIRQ19_REGS->SRC = MCHP_ESPI_OOB_UP_GIRQ_VAL;
-}
+	if (status & MCHP_ESPI_OOB_TX_STS_CHG_EN) {
+		if (status & MCHP_ESPI_OOB_TX_STS_CHEN) {
+			espi_init_oob(dev);
+			ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
 
+			/* Re-enable interrupts */
+			ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+		}
+		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_CHG_EN;
+	}
+}
+#endif
+
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
 static void espi_flash_isr(struct device *dev)
 {
 	u32_t status;
@@ -535,8 +636,11 @@ static void espi_flash_isr(struct device *dev)
 		ESPI_FC_REGS->IEN = ~BIT(0);
 	}
 
-	GIRQ19_REGS->SRC = MCHP_ESPI_FC_GIRQ_VAL;
+	if (status & MCHP_ESPI_FC_STS_CHAN_EN_CHG) {
+		espi_init_flash(dev);
+	}
 }
+#endif
 
 static void vw_pltrst_isr(struct device *dev)
 {
@@ -620,6 +724,27 @@ static void ibf_isr(struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
+static void ibf_kbc_isr(struct device *dev)
+{
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+
+	/* The high byte contains information from the host,
+	 * and the lower byte speficies if the host sent
+	 * a command or data. 1 = Command.
+	 */
+	u32_t isr_data = ((KBC_REGS->EC_DATA & 0xFF) << E8042_ISR_DATA_POS) |
+				((KBC_REGS->EC_KBC_STS & MCHP_KBC_STS_CD) <<
+				 E8042_ISR_CMD_DATA_POS);
+
+	struct espi_event evt = {
+		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		.evt_details = ESPI_PERIPHERAL_8042_KBC,
+		.evt_data = isr_data
+	};
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
 static void port80_isr(struct device *dev)
 {
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
@@ -646,9 +771,13 @@ static void port81_isr(struct device *dev)
 
 const struct espi_isr espi_bus_isr[] = {
 	{MCHP_ESPI_PC_GIRQ_VAL, espi_pc_isr},
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 	{MCHP_ESPI_OOB_UP_GIRQ_VAL, espi_oob_up_isr},
 	{MCHP_ESPI_OOB_DN_GIRQ_VAL, espi_oob_down_isr},
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
 	{MCHP_ESPI_FC_GIRQ_VAL, espi_flash_isr},
+#endif
 	{MCHP_ESPI_ESPI_RST_GIRQ_VAL, espi_rst_isr},
 	{MCHP_ESPI_VW_EN_GIRQ_VAL, espi_vwire_chanel_isr},
 };
@@ -664,6 +793,7 @@ const struct espi_isr m2s_vwires_isr[] = {
 
 const struct espi_isr peripherals_isr[] = {
 	{MCHP_ACPI_EC_0_IBF_GIRQ, ibf_isr},
+	{MCHP_KBC_IBF_GIRQ, ibf_kbc_isr},
 	{MCHP_PORT80_DEBUG0_GIRQ_VAL, port80_isr},
 	{MCHP_PORT80_DEBUG1_GIRQ_VAL, port81_isr},
 };
@@ -680,7 +810,6 @@ static void espi_xec_bus_isr(void *arg)
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->bus_girq_id);
-	REG32(MCHP_GIRQ_SRC_ADDR(config->bus_girq_id)) = girq_result;
 
 	for (int i = 0; i < bus_isr_cnt; i++) {
 		struct espi_isr entry = espi_bus_isr[i];
@@ -691,6 +820,8 @@ static void espi_xec_bus_isr(void *arg)
 			}
 		}
 	}
+
+	REG32(MCHP_GIRQ_SRC_ADDR(config->bus_girq_id)) = girq_result;
 }
 
 static void espi_xec_vw_isr(void *arg)
@@ -700,7 +831,6 @@ static void espi_xec_vw_isr(void *arg)
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_id);
-	REG32(MCHP_GIRQ_SRC_ADDR(config->vw_girq_id)) = girq_result;
 
 	for (int i = 0; i < m2s_vwires_isr_cnt; i++) {
 		struct espi_isr entry = m2s_vwires_isr[i];
@@ -711,6 +841,8 @@ static void espi_xec_vw_isr(void *arg)
 			}
 		}
 	}
+
+	REG32(MCHP_GIRQ_SRC_ADDR(config->vw_girq_id)) = girq_result;
 }
 
 static void espi_xec_periph_isr(void *arg)
@@ -720,7 +852,6 @@ static void espi_xec_periph_isr(void *arg)
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->pc_girq_id);
-	REG32(MCHP_GIRQ_SRC_ADDR(config->pc_girq_id)) = girq_result;
 
 	for (int i = 0; i < periph_isr_cnt; i++) {
 		struct espi_isr entry = peripherals_isr[i];
@@ -731,6 +862,8 @@ static void espi_xec_periph_isr(void *arg)
 			}
 		}
 	}
+
+	REG32(MCHP_GIRQ_SRC_ADDR(config->pc_girq_id)) = girq_result;
 }
 
 static int espi_xec_init(struct device *dev);
@@ -741,6 +874,8 @@ static const struct espi_driver_api espi_xec_driver_api = {
 	.send_vwire = espi_xec_send_vwire,
 	.receive_vwire = espi_xec_receive_vwire,
 	.manage_callback = espi_xec_manage_callback,
+	.read_lpc_request = espi_xec_read_lpc_request,
+	.write_lpc_request = espi_xec_write_lpc_request,
 };
 
 static struct espi_xec_data espi_xec_data;
@@ -779,12 +914,6 @@ static int espi_xec_init(struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	ESPI_CAP_REGS->GLB_CAP0 |= MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 	ESPI_CAP_REGS->OOB_CAP |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
-	ESPI_OOB_REGS->TX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
-	ESPI_OOB_REGS->RX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
-	ESPI_OOB_REGS->TX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
-	ESPI_OOB_REGS->RX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
-	ESPI_OOB_REGS->RX_LEN = (ESPI_XEC_OOB_RX_LEN &
-				 ESPI_XEC_OOB_RX_LEN_MASK);
 #else
 	ESPI_CAP_REGS->GLB_CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 #endif
@@ -837,7 +966,7 @@ static int espi_xec_init(struct device *dev)
 		MEC_ESPI_MSVW03_SRC0_VAL;
 
 	/* Enable aggregated block interrupts for peripherals supported */
-#ifdef CONFIG_ESPI_PERIPHERAL_8042_KEYBOARD
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_KBC_IBF_GIRQ;
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
@@ -869,5 +998,6 @@ static int espi_xec_init(struct device *dev)
 		    CONFIG_ESPI_INIT_PRIORITY, espi_xec_periph_isr,
 		    DEVICE_GET(espi_xec_0), 0);
 	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2);
+
 	return 0;
 }

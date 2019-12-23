@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Aurelien Jarno
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM PWM
-
-description: >
-    This binding gives a base representation of the Atmel SAM PWM
+description: Atmel SAM PWM
 
 compatible: "atmel,sam-pwm"
 

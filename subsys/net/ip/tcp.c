@@ -241,7 +241,9 @@ static void tcp_retry_expired(struct k_work *work)
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			NET_DBG("retry %u: [%p] pkt %p send failed",
 				tcp->retry_timeout_shift, tcp, pkt);
-			net_pkt_unref(pkt);
+			if (net_pkt_sent(pkt)) {
+				net_pkt_unref(pkt);
+			}
 		} else {
 			NET_DBG("retry %u: [%p] sent pkt %p",
 				tcp->retry_timeout_shift, tcp, pkt);
@@ -871,7 +873,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	net_pkt_set_overwrite(pkt, true);
 
 	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-			 net_pkt_ipv6_ext_len(pkt))) {
+			 net_pkt_ip_opts_len(pkt))) {
 		return -EMSGSIZE;
 	}
 
@@ -906,7 +908,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	if (calc_chksum) {
 		net_pkt_cursor_init(pkt);
 		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt));
+			     net_pkt_ip_opts_len(pkt));
 
 		/* No need to get tcp_hdr again */
 		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
@@ -1074,7 +1076,7 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		net_pkt_set_overwrite(pkt, true);
 
 		if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-			 net_pkt_ipv6_ext_len(pkt))) {
+				 net_pkt_ip_opts_len(pkt))) {
 			sys_slist_remove(list, NULL, head);
 			net_pkt_unref(pkt);
 			continue;
@@ -1159,9 +1161,14 @@ static void validate_state_transition(enum net_tcp_state current,
 {
 	static const u16_t valid_transitions[] = {
 		[NET_TCP_CLOSED] = 1 << NET_TCP_LISTEN |
-			1 << NET_TCP_SYN_SENT,
+			1 << NET_TCP_SYN_SENT |
+			/* Initial transition from closed->established when
+			 * socket is accepted.
+			 */
+			1 << NET_TCP_ESTABLISHED,
 		[NET_TCP_LISTEN] = 1 << NET_TCP_SYN_RCVD |
-			1 << NET_TCP_SYN_SENT,
+			1 << NET_TCP_SYN_SENT |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_SYN_RCVD] = 1 << NET_TCP_FIN_WAIT_1 |
 			1 << NET_TCP_ESTABLISHED |
 			1 << NET_TCP_LISTEN |
@@ -1943,6 +1950,7 @@ NET_CONN_CB(tcp_established)
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp_hdr *tcp_hdr = proto_hdr->tcp;
 	enum net_verdict ret = NET_OK;
+	bool do_not_send_ack = false;
 	u8_t tcp_flags;
 	u16_t data_len;
 
@@ -2051,6 +2059,8 @@ resend_ack:
 			 */
 			k_delayed_work_submit(&context->tcp->ack_timer,
 					      ACK_TIMEOUT);
+
+			net_context_set_closing(context, true);
 		} else if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_2) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
@@ -2062,7 +2072,14 @@ resend_ack:
 		context->tcp->fin_rcvd = 1U;
 	}
 
-	data_len = net_pkt_remaining_data(pkt);
+	if (!IS_ENABLED(CONFIG_NET_TCP_AUTO_ACCEPT) &&
+	    net_context_is_accepting(context)) {
+		data_len = 0;
+		do_not_send_ack = true;
+	} else {
+		data_len = net_pkt_remaining_data(pkt);
+	}
+
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
 		/* In case we have zero window, we should still accept
 		 * Zero Window Probes from peer, which per convention
@@ -2095,13 +2112,15 @@ resend_ack:
 		net_pkt_unref(pkt);
 	}
 
-	/* Increment the ack */
-	context->tcp->send_ack += data_len;
-	if (tcp_flags & NET_TCP_FIN) {
-		context->tcp->send_ack += 1U;
-	}
+	if (do_not_send_ack == false) {
+		/* Increment the ack */
+		context->tcp->send_ack += data_len;
+		if (tcp_flags & NET_TCP_FIN) {
+			context->tcp->send_ack += 1U;
+		}
 
-	send_ack(context, &conn->remote_addr, false);
+		send_ack(context, &conn->remote_addr, false);
+	}
 
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
@@ -2285,11 +2304,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_LISTEN:
-		if (net_context_get_state(context) != NET_CONTEXT_LISTENING) {
-			NET_DBG("Context %p is not listening", context);
-			return NET_DROP;
-		}
-
 		net_context_set_iface(context, net_pkt_iface(pkt));
 		break;
 	case NET_TCP_SYN_RCVD:
@@ -2452,10 +2466,13 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		net_tcp_change_state(tcp, NET_TCP_LISTEN);
 
-		/* We cannot use net_tcp_change_state() here as that will
-		 * check the state transitions. So set the state directly.
+		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
+
+		/* Mark the new context to be still accepting so that we
+		 * can do proper cleanup if connection is closed before
+		 * we have called accept()
 		 */
-		new_context->tcp->state = NET_TCP_ESTABLISHED;
+		net_context_set_accepting(new_context, true);
 
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
 
@@ -2476,14 +2493,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 					0,
 					context->user_data);
 		net_pkt_unref(pkt);
-
-		/* Set the context in CONNECTED state, so that it can not
-		 * accept any new connections. If application is ready to
-		 * accept the connection, zsock_accept_ctx() will set
-		 * the state back to LISTENING.
-		 */
-		net_context_set_state(context, NET_CONTEXT_CONNECTED);
-
 		return NET_OK;
 	}
 

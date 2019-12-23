@@ -170,3 +170,28 @@
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <24>;
 };
+
+&spi0 {
+	interrupt-parent = <&event0>;
+	interrupts = <13>;
+};
+
+&spi1 {
+	interrupt-parent = <&event0>;
+	interrupts = <14>;
+};
+
+&spi2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <12>;
+};
+
+&spi3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <25>;
+};
+
+&generic_fsk {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <29>;
+};

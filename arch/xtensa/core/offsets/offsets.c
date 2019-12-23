@@ -23,12 +23,9 @@
  * completeness.
  */
 
-#include <gen_offset.h> /* located in kernel/arch/common/include */
-
-/* list of headers that define whose structure offsets will be generated */
-
-#include <kernel_structs.h>
-
+#include <kernel.h>
+#include <kernel_arch_data.h>
+#include <gen_offset.h>
 #include <kernel_offsets.h>
 
 /* Xtensa-specific k_thread structure member offsets */

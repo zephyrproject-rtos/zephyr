@@ -17,10 +17,10 @@
  * in the offsets.o module.
  */
 
-/* this file is only meant to be included by kernel_structs.h */
-
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
+
+#include <kernel_arch_data.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +34,7 @@ extern void z_arm_configure_static_mpu_regions(void);
 extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
 #endif /* CONFIG_ARM_MPU */
 
-static ALWAYS_INLINE void z_arch_kernel_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_arm_interrupt_stack_setup();
 	z_arm_exc_setup();
@@ -44,12 +44,10 @@ static ALWAYS_INLINE void z_arch_kernel_init(void)
 }
 
 static ALWAYS_INLINE void
-z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
-
-extern void z_arch_cpu_atomic_idle(unsigned int key);
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
@@ -57,11 +55,6 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       u32_t stack_start);
 
 extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
-
-extern void z_arch_switch_to_main_thread(struct k_thread *main_thread,
-					 k_thread_stack_t *main_stack,
-					 size_t main_stack_size,
-					 k_thread_entry_t _main);
 
 #endif /* _ASMLANGUAGE */
 

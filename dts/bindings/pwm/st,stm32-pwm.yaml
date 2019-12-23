@@ -1,7 +1,4 @@
-title: STM32 PWM
-
-description: >
-    This binding gives a base representation of the STM32 PWM
+description: STM32 PWM
 
 compatible: "st,stm32-pwm"
 

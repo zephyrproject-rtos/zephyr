@@ -76,27 +76,7 @@ static s32_t hbuf_count;
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
 {
-/* Currently the only event processed */
-#if defined(CONFIG_BT_REMOTE_VERSION)
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
-	struct net_buf *buf;
-	u16_t handle;
-
-	/* Avoid using hci_get_class() to speed things up */
-	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_LLCP) {
-
-		handle = node_rx->hdr.handle;
-		if (pdu_data->llctrl.opcode ==
-		    PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
-
-			buf = bt_buf_get_evt(BT_HCI_EVT_REMOTE_VERSION_INFO,
-					     false, K_FOREVER);
-			hci_remote_version_info_encode(buf, pdu_data, handle);
-			return buf;
-		}
-	}
-
-#endif /* CONFIG_BT_CONN */
+	/* Currently there are no events processed */
 	return NULL;
 }
 
@@ -140,6 +120,13 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx);
 			if (buf) {
+#if defined(CONFIG_BT_LL_SW_LEGACY)
+				radio_rx_fc_set(node_rx->hdr.handle, 0);
+#endif /* CONFIG_BT_LL_SW_LEGACY */
+
+				node_rx->hdr.next = NULL;
+				ll_rx_mem_release((void **)&node_rx);
+
 				BT_DBG("Priority event");
 				bt_recv_prio(buf);
 			} else {
@@ -211,11 +198,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	}
 
 #if defined(CONFIG_BT_LL_SW_LEGACY)
-	{
-		extern u8_t radio_rx_fc_set(u16_t handle, u8_t fc);
-
-		radio_rx_fc_set(node_rx->hdr.handle, 0);
-	}
+	radio_rx_fc_set(node_rx->hdr.handle, 0);
 #endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
@@ -427,16 +410,17 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 static int cmd_handle(struct net_buf *buf)
 {
-	void *node_rx = NULL;
+	struct node_rx_pdu *node_rx = NULL;
 	struct net_buf *evt;
 
-	evt = hci_cmd_handle(buf, &node_rx);
+	evt = hci_cmd_handle(buf, (void **) &node_rx);
 	if (evt) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 
 		if (node_rx) {
 			BT_DBG("RX node enqueue");
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
 		}
 	}

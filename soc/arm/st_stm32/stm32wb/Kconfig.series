@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32WB MCU series
-#
+# ST Microelectronics STM32WB MCU series
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32WBX
 	bool "STM32WBx Series MCU"

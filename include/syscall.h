@@ -14,7 +14,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <syscall_macros.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,48 +82,10 @@ extern "C" {
  *         return void
  *
  */
-typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
-				      u32_t arg4, u32_t arg5, u32_t arg6,
-				      void *ssf);
-#ifdef CONFIG_USERSPACE
-
-/*
- * Interfaces for invoking system calls
- */
-
-static inline u32_t z_arch_syscall_invoke0(u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2,
-					  u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5,
-					  u32_t call_id);
-
-static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id);
-
-#endif /* CONFIG_USERSPACE */
-
-/**
- * Indicate whether we are currently running in user mode
- *
- * @return true if the CPU is currently running with user permissions
- */
-#ifdef CONFIG_USERSPACE
-static inline bool z_arch_is_user_context(void);
-#else
-#define z_arch_is_user_context() (true)
-#endif
+typedef uintptr_t (*_k_syscall_handler_t)(uintptr_t arg1, uintptr_t arg2,
+					  uintptr_t arg3, uintptr_t arg4,
+					  uintptr_t arg5, uintptr_t arg6,
+					  void *ssf);
 
 /* True if a syscall function must trap to the kernel, usually a
  * compile-time decision.
@@ -138,7 +99,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 #elif defined(__ZEPHYR_USER__)
 	ret = true;
 #else
-	ret = z_arch_is_user_context();
+	ret = arch_is_user_context();
 #endif
 #endif
 	return ret;
@@ -152,7 +113,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
 static inline bool _is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE
-	return z_arch_is_user_context();
+	return arch_is_user_context();
 #else
 	return false;
 #endif
@@ -165,4 +126,3 @@ static inline bool _is_user_context(void)
 #endif /* _ASMLANGUAGE */
 
 #endif
-

@@ -151,7 +151,7 @@ void test_k_float_disable_syscall(void)
 #if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);
@@ -197,7 +197,7 @@ static void sup_fp_thread_entry(void)
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
-	z_arch_irq_connect_dynamic(i,
+	arch_irq_connect_dynamic(i,
 		0,
 		arm_test_isr_handler,
 		NULL,
@@ -252,6 +252,3 @@ void test_k_float_disable_irq(void)
 	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
-/**
- * @}
- */

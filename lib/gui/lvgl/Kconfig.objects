@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Objects"
 
@@ -314,9 +311,14 @@ config LVGL_OBJ_LIST_FOCUS_TIME
 	int "List focus time"
 	default 100
 	help
-		List focus animation time in milliseconds
+	  List focus animation time in milliseconds
 
 endif
+
+config LVGL_OBJ_COLOR_PICKER
+	bool "Color picker object"
+	help
+	  Enable color picker object support
 
 config LVGL_OBJ_DROP_DOWN_LIST
 	bool "Drop Down List object"

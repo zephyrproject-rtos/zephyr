@@ -23,8 +23,10 @@
 #include <toolchain.h>
 #include <irq.h>
 #include <arch/posix/asm_inline.h>
+#include <arch/posix/thread.h>
 #include <board_irq.h> /* Each board must define this */
 #include <sw_isr_table.h>
+#include <arch/posix/posix_soc_if.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,48 +48,30 @@ typedef struct __esf z_arch_esf_t;
 
 extern u32_t z_timer_cycle_get_32(void);
 
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }
 
-static ALWAYS_INLINE void z_arch_nop(void)
+static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
+{
+	return key == false;
+}
+
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	return posix_irq_lock();
 }
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	posix_irq_unlock(key);
-}
-
-static ALWAYS_INLINE void z_arch_irq_enable(unsigned int irq)
-{
-	posix_irq_enable(irq);
-}
-
-static ALWAYS_INLINE void z_arch_irq_disable(unsigned int irq)
-{
-	posix_irq_disable(irq);
-}
-
-static ALWAYS_INLINE int z_arch_irq_is_enabled(unsigned int irq)
-{
-	return posix_irq_is_enabled(irq);
-}
-
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
-{
-	return key == false;
 }
 
 #ifdef __cplusplus

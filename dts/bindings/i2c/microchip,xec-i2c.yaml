@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: MICROCHIP I2C
-
-description: >
-    This binding gives a base representation for I2C/SMB controller for Microchip
+description: Microchip I2C/SMB controller
 
 compatible: "microchip,xec-i2c"
 

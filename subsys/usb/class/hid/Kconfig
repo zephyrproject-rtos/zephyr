@@ -1,10 +1,7 @@
-# Kconfig - USB HID configuration options
+# USB HID configuration options
 
-#
 # Copyright (c) 2018 Intel Corp.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config USB_DEVICE_HID
 	bool "USB Human Interface Device support"
@@ -24,6 +21,10 @@ config USB_HID_DEVICE_NAME
 module = USB_HID
 default-count = 1
 source "subsys/usb/class/Kconfig.template.composite_device_number"
+
+module = USB_HID
+module-str = usb hid
+source "subsys/logging/Kconfig.template.log_config"
 
 config ENABLE_HID_INT_OUT_EP
 	bool "Enable USB HID Device Interrupt OUT Endpoint"

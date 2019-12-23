@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Generic fixed rate clock provider
-
-description: >
-    This is a representation of a generic fixed rate clock provider.
+description: Generic fixed-rate clock provider
 
 compatible: "fixed-clock"
 

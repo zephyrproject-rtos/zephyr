@@ -142,4 +142,3 @@ void test_main(void)
 	ztest_run_test_suite(lvgl_screen);
 	ztest_run_test_suite(lvgl_fs);
 }
-

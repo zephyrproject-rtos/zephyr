@@ -1,8 +1,6 @@
 common:
   tags: net http http_client websocket_client websocket
   min_ram: 35
-  # Blacklist qemu_x86_64 because of SSE compile error, see #19066 for details
-  platform_exclude: qemu_x86_64
 sample:
   description: Websocket client sample
   name: websocket_client

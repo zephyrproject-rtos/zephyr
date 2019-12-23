@@ -56,6 +56,9 @@ Enable TLS support in the sample by building the project with the
 An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
 running ``west build`` or ``cmake``.
 
+For boards that support TLS offloading (e.g. TI's cc3220sf_launchxl), use
+``overlay-tls-offload.conf`` instead of ``overlay-tls.conf``.
+
 The certificate used by the sample can be found in the sample's ``src``
 directory. The certificate was selected to enable access to the default website
 configured in the sample (https://google.com). To access a different web page

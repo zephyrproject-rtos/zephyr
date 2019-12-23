@@ -72,6 +72,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1015_evk/mimxrt1015_evk_defconfig``
@@ -194,4 +196,3 @@ see the following message in the terminal:
 
 .. _i.MX RT1015 Reference Manual:
    https://www.nxp.com/docs/en/reference-manual/IMXRT1015RM.pdf
-

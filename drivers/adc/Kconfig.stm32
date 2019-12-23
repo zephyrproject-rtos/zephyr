@@ -1,12 +1,9 @@
-# Kconfig - ADC configuration options
+# ADC configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
 # Copyright (c) 2019 Endre Karlson
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ADC_STM32
 	bool "STM32 ADC driver"
@@ -17,7 +14,7 @@ menuconfig ADC_STM32
 if ADC_STM32
 
 config ADC_1
-	bool "ADC1"
+	prompt "ADC1"
 	default y
 	help
 	  Enable ADC1

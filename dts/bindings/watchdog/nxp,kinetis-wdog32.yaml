@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP Kinetis watchdog (WDOG32) driver
-
-description: >
-    This is a representation of the Kinetis watchdog (WDOG32)
+description: Kinetis watchdog (WDOG32)
 
 compatible: "nxp,kinetis-wdog32"
 

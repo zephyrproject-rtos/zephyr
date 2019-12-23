@@ -1,10 +1,7 @@
-# Kconfig - mcumgr configuration options
+# mcumgr configuration options
 
-#
 # Copyright Runtime.io 2018. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Management"
 
@@ -16,6 +13,15 @@ config MCUMGR_SMP_BT
 	select BT_GATT_DYNAMIC_DB
 	help
 	  Enables handling of SMP commands received over Bluetooth.
+
+config MCUMGR_SMP_BT_AUTHEN
+	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
+	depends on MCUMGR_SMP_BT
+	select BT_SMP
+	default y
+	help
+	  Enables encrypted and authenticated connection requirement to
+	  Bluetooth SMP transport.
 
 config MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"

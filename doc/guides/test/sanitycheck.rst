@@ -1,4 +1,3 @@
-
 .. _sanitycheck_script:
 
 Sanity Tests
@@ -162,9 +161,36 @@ Test Cases
 
 Test cases are detected by the presence of a 'testcase.yaml' or a 'sample.yaml'
 files in the application's project directory. This file may contain one or more
-entries in the test section each identifying a test scenario. The name of
-the test case only needs to be unique for the test cases specified in
-that testcase meta-data.
+entries in the test section each identifying a test scenario.
+
+The name of each testcase needs to be unique in the context of the overall
+testsuite and has to follow basic rules:
+
+#. The format of the test identifier shall be a string without any spaces or
+   special characters (allowed characters: alphanumric and [\_=]) consisting of
+   multiple sections delimited with a dot (.).
+
+#. Each test identifier shall start with a section followed by a subsection
+   separated by a dot. For example, a test that covers semaphores in the kernel
+   shall start with ``kernel.sempahore``.
+
+#. All test identifiers within a testcase.yaml file need to be unique. For
+   example a testcase.yaml file covering semaphores in the kernel can have:
+
+   * ``kernel.semaphore``: For general semaphore tests
+   * ``kernel.semaphore.stress``: Stress testng semaphores in the kernel.
+
+#. Depending on the nature of the test, an identifier can consist of at least
+   two sections:
+
+   * Ztest tests: The individual testcases in the ztest testsuite will be
+     concatenated to identifier in the testcase.yaml file generating unique
+     identifiers for every testcase in the suite.
+
+   * Standalone tests and samples: This type of test should at least have 3
+     sections in the test identifier in the testcase.yaml (or sample.yaml) file.
+     The last section of the name shall signify the test itself.
+
 
 Test cases are written using the YAML syntax and share the same structure as
 samples. The following is an example test with a few options that are
@@ -174,11 +200,11 @@ explained in this document.
 ::
 
         tests:
-          test:
+          bluetooth.gatt:
             build_only: true
             platform_whitelist: qemu_cortex_m3 qemu_x86
             tags: bluetooth
-          test_br:
+          bluetooth.gatt.br:
             build_only: true
             extra_args: CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
@@ -196,11 +222,11 @@ related to the sample and what is being demonstrated:
           name: hello world
           description: Hello World sample, the simplest Zephyr application
         tests:
-          test:
+          sample.basic.hello_world:
             build_only: true
             tags: tests
             min_ram: 16
-          singlethread:
+          sample.basic.hello_world.singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
             filter: not CONFIG_BT
@@ -289,8 +315,9 @@ extra_sections: <list of extra binary sections>
     here. They will not be included in the size calculation.
 
 harness: <string>
-    A harness string needed to run the tests successfully. This can be as simple as
-    a loopback wiring or a complete hardware test setup for sensor and IO testing.
+    A harness string needed to run the tests successfully. This can be as
+    simple as a loopback wiring or a complete hardware test setup for
+    sensor and IO testing.
     Usually pertains to external dependency domains but can be anything such as
     console, sensor, net, keyboard, or Bluetooth.
 
@@ -418,8 +445,9 @@ filter: <expression>
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report
+(:file:`sanitycheck_discard.csv`) can help show why particular test cases were
+skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.

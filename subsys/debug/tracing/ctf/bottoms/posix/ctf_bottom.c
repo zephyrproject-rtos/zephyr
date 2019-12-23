@@ -7,7 +7,7 @@
 #include "ctf_bottom.h"
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 
 ctf_bottom_ctx_t ctf_bottom;
@@ -56,4 +56,3 @@ void add_ctf_option(void)
 	native_add_command_line_opts(ctf_options);
 }
 NATIVE_TASK(add_ctf_option, PRE_BOOT_1, 1);
-

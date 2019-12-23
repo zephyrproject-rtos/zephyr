@@ -7,7 +7,7 @@
 
 #include <ztest.h>
 #include <kernel_version.h>
-#include <misc/speculation.h>
+#include <sys/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);

@@ -3,9 +3,8 @@ sample:
     use of logging feature.
   name: logger sample
 tests:
-  samples.logger:
+  sample.logger:
     tags: logging
-    platform_exclude: qemu_x86_64
     harness: console
     harness_config:
       type: one_line
@@ -17,7 +16,7 @@ tests:
         - Logging performance showcase
         - Logs from external logging system showcase
 
-  samples.logger.rtt:
+  sample.logger.rtt:
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
     harness: keyboard
@@ -25,7 +24,7 @@ tests:
       - CONFIG_LOG_BACKEND_RTT=y
       - CONFIG_USE_SEGGER_RTT=y
 
-  samples.logger.usermode:
+  sample.logger.usermode:
     tags: logging usermode
     filter: CONFIG_ARCH_HAS_USERSPACE
     harness: keyboard

@@ -16,7 +16,8 @@
 
 #include "ticker/ticker.h"
 
-#define LOG_MODULE_NAME bt_ctlr_nrf5_ticker
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_hal_ticker
 #include "common/log.h"
 #include "hal/debug.h"
 

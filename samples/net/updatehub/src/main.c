@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-int main(void)
+void main(void)
 {
 	int ret = -1;
 
@@ -29,7 +29,7 @@ int main(void)
 			       server_certificate,
 			       sizeof(server_certificate)) < 0) {
 		LOG_ERR("Failed to register server certificate");
-		return -1;
+		return;
 	}
 
 	if (tls_credential_add(CA_CERTIFICATE_TAG,
@@ -37,7 +37,7 @@ int main(void)
 			       private_key,
 			       sizeof(private_key)) < 0) {
 		LOG_ERR("Failed to register private key");
-		return -1;
+		return;
 	}
 #endif
 
@@ -81,6 +81,4 @@ int main(void)
 		break;
 	}
 #endif
-
-	return ret;
 }

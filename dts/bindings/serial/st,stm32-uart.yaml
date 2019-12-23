@@ -1,7 +1,4 @@
-title: STM32 UART
-
-description: >
-    This binding gives a base representation of the STM32 UART
+description: STM32 UART
 
 compatible: "st,stm32-uart"
 

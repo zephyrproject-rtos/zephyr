@@ -10,7 +10,7 @@
 #include <kernel_arch_data.h>
 
 struct x86_memmap_exclusion x86_memmap_exclusions[] = {
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 	{ "locore", _locore_start, _locore_end },
 #endif
 	{ "rom", _image_rom_start, _image_rom_end },

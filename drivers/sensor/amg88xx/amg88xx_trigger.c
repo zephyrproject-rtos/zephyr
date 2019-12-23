@@ -131,8 +131,11 @@ int amg88xx_trigger_set(struct device *dev,
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config->config_info;
 
-	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			   AMG88XX_INTC, AMG88XX_INTC_DISABLED);
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {
+		return -EIO;
+	}
+
 	gpio_pin_disable_callback(drv_data->gpio, config->gpio_pin);
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
@@ -144,8 +147,12 @@ int amg88xx_trigger_set(struct device *dev,
 	}
 
 	gpio_pin_enable_callback(drv_data->gpio, config->gpio_pin);
-	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			   AMG88XX_INTC, AMG88XX_INTC_ABS_MODE);
+
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       AMG88XX_INTC, AMG88XX_INTC_ABS_MODE)) {
+		return -EIO;
+	}
+
 	return 0;
 }
 

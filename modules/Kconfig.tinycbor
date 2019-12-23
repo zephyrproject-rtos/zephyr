@@ -36,13 +36,13 @@ config CBOR_PARSER_NO_STRICT_CHECKS
 
 config CBOR_FLOATING_POINT
 	bool "Floating point support"
-	select NEWLIB_LIBC
+	select REQUIRES_FULL_LIBC
 	help
 	  This option enables floating point support.
 
 config CBOR_HALF_FLOAT_TYPE
 	bool "Half float type support"
-	select NEWLIB_LIBC
+	select REQUIRES_FULL_LIBC
 	help
 	  This option enables half float type support.
 

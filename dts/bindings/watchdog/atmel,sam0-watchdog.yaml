@@ -1,7 +1,4 @@
-title: Atmel SAM0 watchdog driver
-
-description: >
-    This is a representation of the SAM0 watchdog
+description: Atmel SAM0 watchdog
 
 compatible: "atmel,sam0-watchdog"
 

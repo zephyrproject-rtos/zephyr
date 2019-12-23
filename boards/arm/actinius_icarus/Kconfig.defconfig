@@ -1,7 +1,6 @@
-# Kconfig - Actinius Icarus board configuration
-#
+# Actinius Icarus board configuration
+
 # Copyright (c) 2019 Actinius
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_ACTINIUS_ICARUS || BOARD_ACTINIUS_ICARUS_NS
@@ -53,17 +52,17 @@ DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 if BOARD_ACTINIUS_ICARUS && TRUSTED_EXECUTION_SECURE
 
 config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_ACTINIUS_ICARUS && TRUSTED_EXECUTION_SECURE
 
 if BOARD_ACTINIUS_ICARUS_NS
 
 config FLASH_LOAD_OFFSET
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_ACTINIUS_ICARUS_NS
 

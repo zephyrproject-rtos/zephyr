@@ -1,11 +1,9 @@
-# Kconfig - Atmel XDMAC SAM driver configuration options
-#
-# Copyright (c) 2017 Piotr Mienkowski
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Atmel XDMAC SAM driver configuration options
 
-menuconfig DMA_SAM_XDMAC
+# Copyright (c) 2017 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SAM_XDMAC
 	bool "Atmel SAM DMA (XDMAC) driver"
 	depends on SOC_FAMILY_SAM
 	help

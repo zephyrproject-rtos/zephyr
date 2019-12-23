@@ -86,6 +86,8 @@ struct mcux_flexcan_data {
 	ATOMIC_DEFINE(tx_allocs, MCUX_FLEXCAN_MAX_TX);
 	struct k_sem tx_allocs_sem;
 	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
+	enum can_state state;
+	can_state_change_isr_t state_change_isr;
 };
 
 #if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
@@ -294,6 +296,11 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 	status_t status;
 	int alloc;
 
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
+
 	while (true) {
 		alloc = mcux_get_tx_alloc(data);
 		if (alloc >= 0) {
@@ -384,6 +391,68 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 	return alloc;
 }
 
+static void mcux_flexcan_register_state_change_isr(struct device *dev,
+						   can_state_change_isr_t isr)
+{
+	struct mcux_flexcan_data *data = dev->driver_data;
+
+	data->state_change_isr = isr;
+}
+
+static enum can_state mcux_flexcan_get_state(struct device *dev,
+					     struct can_bus_err_cnt *err_cnt)
+{
+	const struct mcux_flexcan_config *config = dev->config->config_info;
+	u32_t status_flags;
+
+	if (err_cnt) {
+		FLEXCAN_GetBusErrCount(config->base, &err_cnt->tx_err_cnt,
+				       &err_cnt->rx_err_cnt);
+	}
+
+	status_flags = (FLEXCAN_GetStatusFlags(config->base) &
+			CAN_ESR1_FLTCONF_MASK) << CAN_ESR1_FLTCONF_SHIFT;
+
+	if (status_flags & 0x02) {
+		return CAN_BUS_OFF;
+	}
+
+	if (status_flags & 0x01) {
+		return CAN_ERROR_PASSIVE;
+	}
+
+	return CAN_ERROR_ACTIVE;
+}
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+int mcux_flexcan_recover(struct device *dev, s32_t timeout)
+{
+	const struct mcux_flexcan_config *config = dev->config->config_info;
+	int ret = 0;
+	u64_t start_time;
+
+	if (mcux_flexcan_get_state(dev, NULL) != CAN_BUS_OFF) {
+		return 0;
+	}
+
+	start_time = k_uptime_get();
+	config->base->CTRL1 &= ~CAN_CTRL1_BOFFREC_MASK;
+
+	if (timeout != K_NO_WAIT) {
+		while (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
+			if (timeout != K_FOREVER &&
+			    k_uptime_get() - start_time >= timeout) {
+				ret = CAN_TIMEOUT;
+			}
+		}
+	}
+
+	config->base->CTRL1 |= CAN_CTRL1_BOFFREC_MASK;
+
+	return ret;
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+
 static void mcux_flexcan_detach(struct device *dev, int filter_id)
 {
 	const struct mcux_flexcan_config *config = dev->config->config_info;
@@ -421,6 +490,8 @@ static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 	int status = CAN_TX_OK;
 	void *arg;
 	int alloc;
+	enum can_state state;
+	struct can_bus_err_cnt err_cnt;
 
 	if (error & CAN_ESR1_FLTCONF(2)) {
 		LOG_DBG("Tx bus off (error 0x%08x)", error);
@@ -440,6 +511,14 @@ static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 		LOG_DBG("RX CRC error (error 0x%08x)", error);
 	} else {
 		LOG_DBG("Unhandled error (error 0x%08x)", error);
+	}
+
+	state = mcux_flexcan_get_state(dev, &err_cnt);
+	if (data->state != state) {
+		data->state = state;
+		if (data->state_change_isr) {
+			data->state_change_isr(state, err_cnt);
+		}
 	}
 
 	if (status == CAN_TX_OK) {
@@ -598,6 +677,11 @@ static int mcux_flexcan_init(struct device *dev)
 
 	config->irq_config_func(dev);
 
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	config->base->CTRL1 |= CAN_CTRL1_BOFFREC_MASK;
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+	data->state = mcux_flexcan_get_state(dev, NULL);
+
 	return 0;
 }
 
@@ -606,6 +690,11 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	.send = mcux_flexcan_send,
 	.attach_isr = mcux_flexcan_attach_isr,
 	.detach = mcux_flexcan_detach,
+	.get_state = mcux_flexcan_get_state,
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	.recover = mcux_flexcan_recover,
+#endif
+	.register_state_change_isr = mcux_flexcan_register_state_change_isr
 };
 
 #ifdef CONFIG_CAN_0

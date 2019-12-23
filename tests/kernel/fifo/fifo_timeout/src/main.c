@@ -6,7 +6,6 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#include <ksched.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
 
@@ -102,7 +101,7 @@ static bool is_timeout_in_range(u32_t start_time, u32_t timeout)
 	u32_t stop_time, diff;
 
 	stop_time = k_cycle_get_32();
-	diff = SYS_CLOCK_HW_CYCLES_TO_NS(stop_time -
+	diff = (u32_t)k_cyc_to_ns_floor64(stop_time -
 			start_time) / NSEC_PER_USEC;
 	diff = diff / USEC_PER_MSEC;
 	return timeout <= diff;
@@ -159,6 +158,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 		struct timeout_order_data *data =
 			k_fifo_get(&timeout_order_fifo, K_FOREVER);
 
+		zassert_not_null(data, NULL);
 		if (data->timeout_order == ii) {
 			TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);
@@ -178,7 +178,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 				diff_ms = test_data[j].timeout - data->timeout;
 			}
 
-			if (z_ms_to_ticks(diff_ms) == 1) {
+			if (k_ms_to_ticks_ceil32(diff_ms) == 1) {
 				TC_PRINT(
 				" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);

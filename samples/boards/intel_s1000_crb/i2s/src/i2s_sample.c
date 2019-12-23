@@ -292,11 +292,13 @@ static void i2s_stop_audio(void)
 {
 	int ret;
 
-	if (i2s_trigger(spk_i2s_dev, I2S_DIR_TX, I2S_TRIGGER_STOP)) {
+	ret = i2s_trigger(spk_i2s_dev, I2S_DIR_TX, I2S_TRIGGER_STOP);
+	if (ret) {
 		LOG_ERR("spk_i2s_dev stop failed with code %d", ret);
 	}
 
-	if (i2s_trigger(host_i2s_dev, I2S_DIR_RX, I2S_TRIGGER_STOP)) {
+	ret = i2s_trigger(host_i2s_dev, I2S_DIR_RX, I2S_TRIGGER_STOP);
+	if (ret) {
 		LOG_ERR("host_i2s_dev stop failed with code %d", ret);
 	}
 

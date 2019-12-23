@@ -1,10 +1,7 @@
-# Kconfig - BMC150 magnetometer sensor configuration options
+# BMC150 magnetometer sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMC150_MAGN
 	bool "BMC150_MAGN I2C Magnetometer Chip"
@@ -13,26 +10,6 @@ menuconfig BMC150_MAGN
 	  Enable driver for BMC150 I2C-based magnetometer sensor.
 
 if BMC150_MAGN
-
-config BMC150_MAGN_DEV_NAME
-	string "BMC150_MAGN device name"
-	default "bmc150_magn"
-
-config BMC150_MAGN_I2C_ADDR
-	hex "BMC150_MAGN I2C slave address"
-	default 0x12
-	help
-	  Specify the I2C slave address for the BMC150_MAGN.
-
-	  0x12: GND
-	  0x13: VCC
-
-config BMC150_MAGN_I2C_MASTER_DEV_NAME
-	string "I2C master where BMC150_MAGN is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which BMC150_MAGN
-	  is connected.
 
 menu "Attributes"
 
@@ -92,20 +69,5 @@ config BMC150_MAGN_TRIGGER_DRDY
 	depends on BMC150_MAGN_TRIGGER
 	help
 	  Enable data ready interrupt for BMC150 magnetometer
-
-config BMC150_MAGN_GPIO_DRDY_DEV_NAME
-	string "GPIO device where BMC150_MAGN data ready interrupt is connected"
-	depends on BMC150_MAGN_TRIGGER_DRDY
-	default "GPIO_0"
-	help
-	  Specify the device name of the GPIO controller the BMC150_MAGN interrupt
-	  is connected to.
-
-config BMC150_MAGN_GPIO_DRDY_INT_PIN
-	int "GPIO pin number for the data ready interrupt pin"
-	default 3
-	depends on BMC150_MAGN_TRIGGER_DRDY
-	help
-	  GPIO pin number for the data ready interrupt pin.
 
 endif # BMC150_MAGN

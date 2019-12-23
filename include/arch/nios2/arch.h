@@ -15,10 +15,12 @@
 #define ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
 
 #include <system.h>
+
+#include <arch/nios2/thread.h>
 #include <arch/nios2/asm_inline.h>
 #include <arch/common/addr_types.h>
 #include <generated_dts_board.h>
-#include "nios2.h"
+#include <arch/nios2/nios2.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
@@ -36,7 +38,7 @@ extern "C" {
 /* There is no notion of priority with the Nios II internal interrupt
  * controller and no flags are currently supported.
  */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	irq_p; \
@@ -44,7 +46,7 @@ extern "C" {
 
 extern void z_irq_spurious(void *unused);
 
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key, tmp;
 
@@ -59,7 +61,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 	return key;
 }
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	/* If the CPU is built without certain features, then
 	 * the only writable bit in the status register is PIE
@@ -91,13 +93,13 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif
 }
 
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return key & 1;
 }
 
-void z_arch_irq_enable(unsigned int irq);
-void z_arch_irq_disable(unsigned int irq);
+void arch_irq_enable(unsigned int irq);
+void arch_irq_disable(unsigned int irq);
 
 struct __esf {
 	u32_t ra; /* return address r31 */
@@ -171,12 +173,12 @@ enum nios2_exception_cause {
 
 extern u32_t z_timer_cycle_get_32(void);
 
-static inline u32_t z_arch_k_cycle_get_32(void)
+static inline u32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }
 
-static ALWAYS_INLINE void z_arch_nop(void)
+static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

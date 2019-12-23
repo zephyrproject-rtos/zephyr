@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP MCUX General Purpose Timer
-
-description: >
-    This is a representation of the NXP MCUX General Purpose Timer (GPT)
+description: NXP MCUX General-Purpose Timer (GPT)
 
 compatible: "nxp,imx-gpt"
 

@@ -6,7 +6,7 @@
 
 #include <generated_dts_board.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* Super-primitive 8250/16550 serial output-only driver, 115200 8n1 */
 

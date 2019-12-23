@@ -8,6 +8,7 @@
 #include <kernel_arch_func.h>
 #include <kernel_structs.h>
 #include <arch/x86/multiboot.h>
+#include <arch/x86/mmustructs.h>
 #include <drivers/interrupt_controller/loapic.h>
 
 /*
@@ -59,12 +60,17 @@ struct x86_tss64 tss3 = {
 };
 #endif
 
+extern struct x86_page_tables z_x86_flat_ptables;
+
 struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs = X86_KERNEL_CPU0_GS,
 		.sp = (u64_t) _interrupt_stack + CONFIG_ISR_STACK_SIZE,
-		.fn = z_x86_prep_c
+		.fn = z_x86_prep_c,
+#ifdef CONFIG_X86_MMU
+		.ptables = &z_x86_flat_ptables,
+#endif
 	},
 #if CONFIG_MP_NUM_CPUS > 1
 	{
@@ -91,7 +97,7 @@ struct x86_cpuboot x86_cpuboot[] = {
  * will enter the kernel at fn(---, arg), running on the specified stack.
  */
 
-void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 			void (*fn)(int key, void *data), void *arg)
 {
 	u8_t vector = ((unsigned long) x86_ap_start) >> 12;
@@ -100,6 +106,9 @@ void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	x86_cpuboot[cpu_num].sp = (u64_t) Z_THREAD_STACK_BUFFER(stack) + sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;
+#ifdef CONFIG_X86_MMU
+	x86_cpuboot[cpu_num].ptables = &z_x86_kernel_ptables;
+#endif /* CONFIG_X86_MMU */
 
 	z_loapic_ipi(apic_id, LOAPIC_ICR_IPI_INIT, 0);
 	k_busy_wait(10000);

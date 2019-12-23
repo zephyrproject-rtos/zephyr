@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <sensor.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "stts751.h"

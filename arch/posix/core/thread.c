@@ -15,18 +15,19 @@
 
 #include <toolchain.h>
 #include <kernel_structs.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 #include "posix_core.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 
 /* Note that in this arch we cheat quite a bit: we use as stack a normal
  * pthreads stack and therefore we ignore the stack size
  */
-void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		       size_t stack_size, k_thread_entry_t thread_func,
-		       void *arg1, void *arg2, void *arg3,
-		       int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t thread_func,
+		     void *arg1, void *arg2, void *arg3,
+		     int priority, unsigned int options)
 {
 
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);

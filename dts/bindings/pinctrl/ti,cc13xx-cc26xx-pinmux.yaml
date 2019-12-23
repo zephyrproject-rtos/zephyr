@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Brett Witherspoon
 # SPDX-License-Identifier: Apache-2.0
 
-title: TI SimpleLink CC13xx / CC26xx Pinmux
-
-description: >
-    This is a representation of the TI SimpleLink CC13xx / CC26xx pinmux node
+description: TI SimpleLink CC13xx / CC26xx pinmux node
 
 compatible: "ti,cc13xx-cc26xx-pinmux"
 

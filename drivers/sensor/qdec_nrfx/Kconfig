@@ -1,9 +1,7 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig QDEC_NRFX
+config QDEC_NRFX
 	bool "Nordic QDEC nrfx driver"
 	depends on HAS_HW_NRF_QDEC
 	select NRFX_QDEC

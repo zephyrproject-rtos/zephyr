@@ -353,5 +353,3 @@ void main(void)
 		k_sleep(K_MSEC(2000));
 	}
 }
-
-

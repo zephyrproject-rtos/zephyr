@@ -1,8 +1,8 @@
 sample:
   name: Servo Motor using PWM
 tests:
-  sample.servo_motor:
+  sample.basic.servo_motor:
     tags: drivers pwm
     depends_on: pwm
     harness: motor
-    filter: DT_ALIAS_PWM_0_LABEL
+    filter: dt_alias_exists("pwm-0")

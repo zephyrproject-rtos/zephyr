@@ -1,8 +1,7 @@
-# Kconfig - Sparkfun nRF52832 breakout  board configuration
-#
+# Sparkfun nRF52832 breakout  board configuration
+
 # Copyright (c) 2017 Shawn Nock <shawn@monadnock.ca>
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF52_SPARKFUN

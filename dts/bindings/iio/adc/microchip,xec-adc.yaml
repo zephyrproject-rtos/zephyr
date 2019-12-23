@@ -1,13 +1,7 @@
-#
 # Copyright (c) 2019, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Microchip XEC ADC
-
-description: >
-    This binding gives a base representation of the Microchip XEC ADC
+description: Microchip XEC ADC
 
 compatible: "microchip,xec-adc"
 

@@ -1,15 +1,11 @@
-# Kconfig - FSL FRDM K64F platform configuration options
+# FSL FRDM K64F platform configuration options
 
-#
 # Copyright (c) 2014-2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MK64F12
 
 config SOC
-	string
 	default "mk64f12"
 
 if ADC

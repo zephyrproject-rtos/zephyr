@@ -42,7 +42,7 @@ Hardware
 - GPIO with external interrupt capability
 - UART
 - I2C (2)
-- SPI (2)
+- SPI (3)
 - I2S (1)
 
 Supported Features
@@ -125,9 +125,10 @@ I2C2 goes to the Groove connectors and can be used to attach external sensors.
 
 SPI
 ---
-96Boards STM32 Sensor Mezzanine board has 2 SPIs. SPI1 is used in slave mode
+96Boards STM32 Sensor Mezzanine board has 3 SPIs. SPI1 is used in slave mode
 as the communication bus with the AP. SPI2 is used in master mode to control
-the LSM6DS3H sensor. The default SPI mapping is:
+the LSM6DS3H sensor. SPI4 is broken out to Grove Connector J5.
+The default SPI mapping is:
 
 - SPI1_NSS  : PA4
 - SPI1_SCK  : PA5
@@ -137,6 +138,10 @@ the LSM6DS3H sensor. The default SPI mapping is:
 - SPI2_SCK  : PD3
 - SPI2_MISO : PB14
 - SPI2_MOSI : PB15
+- SPI4_NSS  : PE11
+- SPI4_SCK  : PE12
+- SPI4_MISO : PE13
+- SPI4_MOSI : PE14
 
 PWM
 ---

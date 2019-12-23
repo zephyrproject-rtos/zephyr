@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silabs Gecko Real Time Counter
-
-description: >
-    This is a representation of the Silabs Gecko RTCC node
+description: Silabs Gecko RTCC (Real-Time Counter)
 
 compatible: "silabs,gecko-rtcc"
 

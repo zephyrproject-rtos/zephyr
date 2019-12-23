@@ -186,6 +186,26 @@
 	};
 
 	//
+	// 'pinctrl-<index>'
+	//
+
+	pinctrl {
+		dev {
+			pinctrl-0 = <>;
+			pinctrl-1 = <&{/pinctrl/pincontroller/state-1}>;
+			pinctrl-2 = <&{/pinctrl/pincontroller/state-1}
+				     &{/pinctrl/pincontroller/state-2}>;
+			pinctrl-names = "zero", "one", "two";
+		};
+		pincontroller {
+			state-1 {
+			};
+			state-2 {
+			};
+		};
+	};
+
+	//
 	// For testing Node.parent and Node.children
 	//
 
@@ -274,16 +294,19 @@
 	};
 
 	//
-	// For testing 'child-bus:' and 'parent-bus:'
+	// For testing 'bus:' and 'on-bus:'
 	//
 
 	buses {
-		// The nodes below will map to different bindings since they
-		// appear on different buses
+		// The 'node' nodes below will map to different bindings since
+		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
 			node {
 				compatible = "on-bus";
+				nested {
+					compatible = "on-bus";
+				};
 			};
 		};
 		bar-bus {

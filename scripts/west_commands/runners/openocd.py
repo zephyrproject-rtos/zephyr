@@ -16,32 +16,35 @@ DEFAULT_OPENOCD_GDB_PORT = 3333
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
-    def __init__(self, cfg,
-                 pre_init_cmd=None, pre_cmd=None, load_cmd=None, verify_cmd=None,
-                 post_cmd=None,
+    def __init__(self, cfg, pre_init=None, pre_load=None,
+                 load_cmd=None, verify_cmd=None, post_verify=None,
                  tui=None, config=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
         super(OpenOcdBinaryRunner, self).__init__(cfg)
 
-        if config is not None:
-            self.openocd_config = config
-        else:
-            self.openocd_config = path.join(cfg.board_dir, 'support',
-                    'openocd.cfg')
+        if not config:
+            default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
+            if path.exists(default):
+                config = default
+        self.openocd_config = config
 
-        search_args = []
+        if path.exists(self.openocd_config):
+            search_args = ['-s', path.dirname(self.openocd_config)]
+        else:
+            search_args = []
+
         if cfg.openocd_search is not None:
-            search_args = ['-s', cfg.openocd_search]
+            search_args.extend(['-s', cfg.openocd_search])
         self.openocd_cmd = [cfg.openocd] + search_args
         self.hex_name = cfg.hex_file
         self.elf_name = cfg.elf_file
+        self.pre_init = pre_init or []
+        self.pre_load = pre_load or []
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
-        self.pre_init_cmd = pre_init_cmd
-        self.pre_cmd = pre_cmd
-        self.post_cmd = post_cmd
+        self.post_verify = post_verify or []
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
@@ -57,17 +60,20 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--config',
                             help='if given, override default config file')
         # Options for flashing:
-        parser.add_argument('--cmd-pre-init',
-                            help='Command to run before calling init')
-        parser.add_argument('--cmd-pre-load',
-                            help='Command to run before flashing')
+        parser.add_argument('--cmd-pre-init', action='append',
+                            help='''Command to run before calling init;
+                            may be given multiple times''')
+        parser.add_argument('--cmd-pre-load', action='append',
+                            help='''Command to run before flashing;
+                            may be given multiple times''')
         parser.add_argument('--cmd-load',
                             help='''Command to load/flash binary
                             (required when flashing)''')
         parser.add_argument('--cmd-verify',
                             help='''Command to verify flashed binary''')
-        parser.add_argument('--cmd-post-verify',
-                            help='Command to run after verification')
+        parser.add_argument('--cmd-post-verify', action='append',
+                            help='''Command to run after verification;
+                            may be given multiple times''')
 
         # Options for debugging:
         parser.add_argument('--tui', default=False, action='store_true',
@@ -84,15 +90,20 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def create(cls, cfg, args):
         return OpenOcdBinaryRunner(
             cfg,
-            pre_init_cmd=args.cmd_pre_init,
-            pre_cmd=args.cmd_pre_load, load_cmd=args.cmd_load,
-            verify_cmd=args.cmd_verify, post_cmd=args.cmd_post_verify,
+            pre_init=args.cmd_pre_init,
+            pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
+            verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             tui=args.tui, config=args.config,
             tcl_port=args.tcl_port, telnet_port=args.telnet_port,
             gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
+
+        self.cfg_cmd = []
+        if self.openocd_config is not None:
+            self.cfg_cmd = ['-f', self.openocd_config]
+
         if command == 'flash':
             self.do_flash(**kwargs)
         elif command == 'debug':
@@ -110,30 +121,31 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.verify_cmd is None:
             raise ValueError('Cannot flash; verify command is missing')
 
-        pre_cmd = []
-        if self.pre_cmd is not None:
-            pre_cmd = ['-c', self.pre_cmd]
+        self.logger.info('Flashing file: {}'.format(self.hex_name))
 
         pre_init_cmd = []
-        if self.pre_init_cmd is not None:
-            pre_init_cmd = ['-c', self.pre_init_cmd]
+        pre_load_cmd = []
+        post_verify_cmd = []
+        for i in self.pre_init:
+            pre_init_cmd.append("-c")
+            pre_init_cmd.append(i)
 
-        post_cmd = []
-        if self.post_cmd is not None:
-            post_cmd = ['-c', self.post_cmd]
+        for i in self.pre_load:
+            pre_load_cmd.append("-c")
+            pre_load_cmd.append(i)
 
-        self.logger.info('Flashing file: {}'.format(self.hex_name))
-        cmd = (self.openocd_cmd +
-               ['-f', self.openocd_config] +
-               pre_init_cmd +
-               ['-c', 'init',
-                '-c', 'targets'] +
-               pre_cmd +
-               ['-c', 'reset halt',
-                '-c', self.load_cmd + ' ' + self.hex_name,
-                '-c', 'reset halt',
-                '-c', self.verify_cmd + ' ' + self.hex_name] +
-               post_cmd +
+        for i in self.post_verify:
+            post_verify_cmd.append("-c")
+            post_verify_cmd.append(i)
+
+        cmd = (self.openocd_cmd + self.cfg_cmd +
+               pre_init_cmd + ['-c', 'init',
+                                '-c', 'targets'] +
+               pre_load_cmd + ['-c', 'reset halt',
+                                '-c', self.load_cmd + ' ' + self.hex_name,
+                                '-c', 'reset halt'] +
+               ['-c', self.verify_cmd + ' ' + self.hex_name] +
+               post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
         self.check_call(cmd)
@@ -144,14 +156,18 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.elf_name is None:
             raise ValueError('Cannot debug; no .elf specified')
 
-        server_cmd = (self.openocd_cmd +
-                      ['-f', self.openocd_config,
-                       '-c', 'tcl_port {}'.format(self.tcl_port),
+        pre_init_cmd = []
+        for i in self.pre_init:
+            pre_init_cmd.append("-c")
+            pre_init_cmd.append(i)
+
+        server_cmd = (self.openocd_cmd + self.cfg_cmd +
+                      ['-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
-                       '-c', 'gdb_port {}'.format(self.gdb_port),
-                       '-c', 'init',
-                       '-c', 'targets',
-                       '-c', 'halt'])
+                       '-c', 'gdb_port {}'.format(self.gdb_port)] +
+                      pre_init_cmd + ['-c', 'init',
+                                       '-c', 'targets',
+                                       '-c', 'halt'])
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
                     self.elf_name])
@@ -159,9 +175,16 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.run_server_and_client(server_cmd, gdb_cmd)
 
     def do_debugserver(self, **kwargs):
-        cmd = (self.openocd_cmd +
-               ['-f', self.openocd_config,
-                '-c', 'init',
-                '-c', 'targets',
-                '-c', 'reset halt'])
+        pre_init_cmd = []
+        for i in self.pre_init:
+            pre_init_cmd.append("-c")
+            pre_init_cmd.append(i)
+
+        cmd = (self.openocd_cmd + self.cfg_cmd +
+               ['-c', 'tcl_port {}'.format(self.tcl_port),
+                '-c', 'telnet_port {}'.format(self.telnet_port),
+                '-c', 'gdb_port {}'.format(self.gdb_port)] +
+               pre_init_cmd + ['-c', 'init',
+                                '-c', 'targets',
+                                '-c', 'reset halt'])
         self.check_call(cmd)

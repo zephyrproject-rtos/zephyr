@@ -136,10 +136,17 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t now = MAIN_COUNTER_REG, cyc;
+	u32_t now = MAIN_COUNTER_REG, cyc, adj;
+	u32_t max_cyc = max_ticks * cyc_per_tick;
 
-	/* Round up to next tick boundary */
-	cyc = ticks * cyc_per_tick + (now - last_count) + (cyc_per_tick - 1);
+	/* Round up to next tick boundary. */
+	cyc = ticks * cyc_per_tick;
+	adj = (now - last_count) + (cyc_per_tick - 1);
+	if (cyc <= max_cyc - adj) {
+		cyc += adj;
+	} else {
+		cyc = max_cyc;
+	}
 	cyc = (cyc / cyc_per_tick) * cyc_per_tick;
 	cyc += last_count;
 

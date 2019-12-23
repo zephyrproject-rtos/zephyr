@@ -8,3 +8,8 @@ enable_language(C ASM)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources} src/test_stubs.S)
+
+target_include_directories(app PRIVATE
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  )

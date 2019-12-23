@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <posix/pthread.h>
-#include <json.h>
+#include <data/json.h>
 
 #include "civetweb.h"
 
@@ -166,7 +166,7 @@ void *main_pthread(void *arg)
 	return 0;
 }
 
-int main(void)
+void main(void)
 {
 	pthread_attr_t civetweb_attr;
 	pthread_t civetweb_thread;
@@ -177,6 +177,4 @@ int main(void)
 
 	(void)pthread_create(&civetweb_thread, &civetweb_attr,
 			     &main_pthread, 0);
-
-	return 0;
 }

@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: STM32 GPIO
-
-description: >
-    This is a representation of the STM32 GPIO nodes
+description: STM32 GPIO node
 
 compatible: "st,stm32-gpio"
 

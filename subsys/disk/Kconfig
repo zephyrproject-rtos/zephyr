@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DISK_ACCESS
 	bool "Disk Interface"
@@ -128,6 +125,7 @@ endif # DISK_ACCESS_USDHC
 
 config DISK_SDHC_VOLUME_NAME
 	string "SDHC Disk mount point or drive name"
+	default "SD" if FAT_FILESYSTEM_ELM
 	default "SDHC"
 	help
 	  Disk name as per file system naming guidelines.

@@ -67,6 +67,10 @@
 #include <stm32f0xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_DMA_STM32
+#include <stm32f0xx_ll_dma.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F0_SOC_H_ */

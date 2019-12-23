@@ -195,6 +195,9 @@ Low Speed Header
 | 30     | NC          | NC                   |
 +--------+-------------+----------------------+
 
+More detailed information about the connectors can be found in
+`96Boards IE Specification`_.
+
 External Clock Sources
 ----------------------
 
@@ -377,3 +380,6 @@ STM32F401RET using an SWD scan.
 
 .. _STM32F401 reference manual:
    http://www.st.com/resource/en/reference_manual/dm00096844.pdf
+
+.. _96Boards IE Specification:
+    https://linaro.co/ie-specification

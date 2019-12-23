@@ -120,7 +120,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	int parent_cpu_id = POINTER_TO_INT(p1);
 
-	zassert_true(parent_cpu_id != z_arch_curr_cpu()->id,
+	zassert_true(parent_cpu_id != arch_curr_cpu()->id,
 		     "Parent isn't on other core");
 
 	sync_count++;
@@ -140,7 +140,7 @@ void test_cpu_id_threads(void)
 	/* Make sure idle thread runs on each core */
 	k_sleep(K_MSEC(1000));
 
-	int parent_cpu_id = z_arch_curr_cpu()->id;
+	int parent_cpu_id = arch_curr_cpu()->id;
 
 	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, child_fn,
 				      INT_TO_POINTER(parent_cpu_id), NULL,
@@ -161,7 +161,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	int count = 0;
 
 	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = z_arch_curr_cpu()->id;
+	tinfo[thread_num].cpu_id = arch_curr_cpu()->id;
 
 	while (count++ < 5) {
 		k_busy_wait(DELAY_US);

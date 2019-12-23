@@ -251,36 +251,31 @@ static void uart_nrfx_poll_out(struct device *dev,
 /** Console I/O function */
 static int uart_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0U;
-
-	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
-		/* register bitfields maps to the defines in uart.h */
-		error = nrf_uart_errorsrc_get_and_clear(uart0_addr);
-	}
-
-	return error;
+	/* register bitfields maps to the defines in uart.h */
+	return nrf_uart_errorsrc_get_and_clear(uart0_addr);
 }
 
 static int uart_nrfx_configure(struct device *dev,
 			       const struct uart_config *cfg)
 {
-	nrf_uart_parity_t parity;
-	nrf_uart_hwfc_t hwfc;
-#ifdef UART_CONFIG_STOP_Two
-	bool two_stop_bits = false;
-#endif
+	nrf_uart_config_t uart_cfg;
 
+#if defined(UART_CONFIG_STOP_Msk)
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
+		uart_cfg.stop = NRF_UART_STOP_ONE;
 		break;
-#ifdef UART_CONFIG_STOP_Two
 	case UART_CFG_STOP_BITS_2:
-		two_stop_bits = true;
+		uart_cfg.stop = NRF_UART_STOP_TWO;
 		break;
-#endif
 	default:
 		return -ENOTSUP;
 	}
+#else
+	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
+		return -ENOTSUP;
+	}
+#endif
 
 	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
 		return -ENOTSUP;
@@ -288,11 +283,11 @@ static int uart_nrfx_configure(struct device *dev,
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		hwfc = NRF_UART_HWFC_DISABLED;
+		uart_cfg.hwfc = NRF_UART_HWFC_DISABLED;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		if (get_dev_config(dev)->rts_cts_pins_set) {
-			hwfc = NRF_UART_HWFC_ENABLED;
+			uart_cfg.hwfc = NRF_UART_HWFC_ENABLED;
 		} else {
 			return -ENOTSUP;
 		}
@@ -301,13 +296,22 @@ static int uart_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(UART_CONFIG_PARITYTYPE_Msk)
+	uart_cfg.paritytype = NRF_UART_PARITYTYPE_EVEN;
+#endif
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		parity = NRF_UART_PARITY_EXCLUDED;
+		uart_cfg.parity = NRF_UART_PARITY_EXCLUDED;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		parity = NRF_UART_PARITY_INCLUDED;
+		uart_cfg.parity = NRF_UART_PARITY_INCLUDED;
 		break;
+#if defined(UART_CONFIG_PARITYTYPE_Msk)
+	case UART_CFG_PARITY_ODD:
+		uart_cfg.parity = NRF_UART_PARITY_INCLUDED;
+		uart_cfg.paritytype = NRF_UART_PARITYTYPE_ODD;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -316,15 +320,8 @@ static int uart_nrfx_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	nrf_uart_configure(uart0_addr, parity, hwfc);
+	nrf_uart_configure(uart0_addr, &uart_cfg);
 
-#ifdef UART_CONFIG_STOP_Two
-	if (two_stop_bits) {
-		/* TODO Change this to nrfx HAL function when available */
-		uart0_addr->CONFIG |=
-			UART_CONFIG_STOP_Two << UART_CONFIG_STOP_Pos;
-	}
-#endif
 	get_dev_data(dev)->uart_config = *cfg;
 
 	return 0;
@@ -840,6 +837,10 @@ static void uart_nrfx_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
+	}
+
 	if (irq_callback) {
 		irq_callback(irq_cb_data);
 	}
@@ -969,9 +970,43 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void uart_nrfx_set_power_state(u32_t new_state)
+
+static void uart_nrfx_pins_enable(struct device *dev, bool enable)
+{
+	if (!IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
+		return;
+	}
+
+	u32_t tx_pin = nrf_uart_tx_pin_get(uart0_addr);
+	u32_t rx_pin = nrf_uart_rx_pin_get(uart0_addr);
+	u32_t cts_pin = nrf_uart_cts_pin_get(uart0_addr);
+	u32_t rts_pin = nrf_uart_rts_pin_get(uart0_addr);
+
+	if (enable) {
+		nrf_gpio_pin_write(tx_pin, 1);
+		nrf_gpio_cfg_output(tx_pin);
+		nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+
+		if (get_dev_config(dev)->rts_cts_pins_set) {
+			nrf_gpio_pin_write(rts_pin, 1);
+			nrf_gpio_cfg_output(rts_pin);
+			nrf_gpio_cfg_input(cts_pin,
+					   NRF_GPIO_PIN_NOPULL);
+		}
+	} else {
+		nrf_gpio_cfg_default(tx_pin);
+		nrf_gpio_cfg_default(rx_pin);
+		if (get_dev_config(dev)->rts_cts_pins_set) {
+			nrf_gpio_cfg_default(cts_pin);
+			nrf_gpio_cfg_default(rts_pin);
+		}
+	}
+}
+
+static void uart_nrfx_set_power_state(struct device *dev, u32_t new_state)
 {
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
 		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
 	} else {
@@ -979,6 +1014,7 @@ static void uart_nrfx_set_power_state(u32_t new_state)
 		       new_state == DEVICE_PM_SUSPEND_STATE ||
 		       new_state == DEVICE_PM_OFF_STATE);
 		nrf_uart_disable(uart0_addr);
+		uart_nrfx_pins_enable(dev, false);
 	}
 }
 
@@ -991,7 +1027,7 @@ static int uart_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		u32_t new_state = *((const u32_t *)context);
 
 		if (new_state != current_state) {
-			uart_nrfx_set_power_state(new_state);
+			uart_nrfx_set_power_state(dev, new_state);
 			current_state = new_state;
 		}
 	} else {

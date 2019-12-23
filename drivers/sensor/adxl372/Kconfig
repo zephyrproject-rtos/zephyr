@@ -1,9 +1,7 @@
-# Kconfig - Micropower, 3-Axis, +/-200g Digital Accelerometer
-#
+# Micropower, 3-Axis, +/-200g Digital Accelerometer
+
 # Copyright (c) 2018 Analog Devices Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ADXL372
 	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
@@ -220,4 +218,4 @@ config ADXL372_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif #ADXL372
+endif # ADXL372

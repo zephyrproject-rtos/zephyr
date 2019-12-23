@@ -1,7 +1,7 @@
 sample:
   name: I2C scanner
 tests:
-  sample.driver.i2c_scanner:
+  sample.drivers.i2c_scanner:
     platform_whitelist: nrf52840_blip nrf51_ble400
     tags: drivers
     depends_on: i2c

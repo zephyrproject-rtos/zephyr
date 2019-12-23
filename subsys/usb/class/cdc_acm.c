@@ -118,7 +118,7 @@ struct usb_cdc_acm_config {
 #define INITIALIZER_IF_HDR						\
 	{								\
 		.bFunctionLength = sizeof(struct cdc_header_descriptor),\
-		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorType = USB_CS_INTERFACE_DESC,		\
 		.bDescriptorSubtype = HEADER_FUNC_DESC,			\
 		.bcdCDC = sys_cpu_to_le16(USB_1_1),			\
 	}
@@ -126,7 +126,7 @@ struct usb_cdc_acm_config {
 #define INITIALIZER_IF_CM						\
 	{								\
 		.bFunctionLength = sizeof(struct cdc_cm_descriptor),	\
-		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorType = USB_CS_INTERFACE_DESC,		\
 		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,	\
 		.bmCapabilities = 0x02,					\
 		.bDataInterface = 1,					\
@@ -141,7 +141,7 @@ struct usb_cdc_acm_config {
 #define INITIALIZER_IF_ACM						\
 	{								\
 		.bFunctionLength = sizeof(struct cdc_acm_descriptor),	\
-		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorType = USB_CS_INTERFACE_DESC,		\
 		.bDescriptorSubtype = ACM_FUNC_DESC,			\
 		.bmCapabilities = 0x02,					\
 	}
@@ -149,7 +149,7 @@ struct usb_cdc_acm_config {
 #define INITIALIZER_IF_UNION						\
 	{								\
 		.bFunctionLength = sizeof(struct cdc_union_descriptor),	\
-		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorType = USB_CS_INTERFACE_DESC,		\
 		.bDescriptorSubtype = UNION_FUNC_DESC,			\
 		.bControlInterface = 0,					\
 		.bSubordinateInterface0 = 1,				\
@@ -885,14 +885,14 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	switch (ctrl) {
-	case LINE_CTRL_BAUD_RATE:
+	case UART_LINE_CTRL_BAUD_RATE:
 		*val = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
 		return 0;
-	case LINE_CTRL_RTS:
+	case UART_LINE_CTRL_RTS:
 		*val = (dev_data->line_state &
 			SET_CONTROL_LINE_STATE_RTS) ? 1 : 0;
 		return 0;
-	case LINE_CTRL_DTR:
+	case UART_LINE_CTRL_DTR:
 		*val = (dev_data->line_state &
 			SET_CONTROL_LINE_STATE_DTR) ? 1 : 0;
 		return 0;

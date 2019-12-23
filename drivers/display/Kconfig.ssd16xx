@@ -1,12 +1,9 @@
-# Kconfig - SSD16XX display controller configuration options
+# SSD16XX display controller configuration options
 
-#
 # Copyright (c) 2018 Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig SSD16XX
+config SSD16XX
 	bool "SSD16XX compatible display controller driver"
 	depends on SPI
 	help

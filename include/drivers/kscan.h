@@ -9,7 +9,7 @@
  * @brief Public API for Keyboard scan matrix devices.
  * The scope of this API is simply to report which key event was triggered
  * and users can later decode keys using their desired scan code tables in
- * their application. In additon, typematic rate and delay can easily be
+ * their application. In addition, typematic rate and delay can easily be
  * implemented using a timer if desired.
  */
 
@@ -70,7 +70,7 @@ struct kscan_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param callback called when keyboard devices reply to to a keyboard
- * event susch as key pressed/released.
+ * event such as key pressed/released.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.

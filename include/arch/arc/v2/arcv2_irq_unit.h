@@ -87,6 +87,22 @@ void z_arc_v2_irq_unit_int_disable(int irq)
 }
 
 /*
+ * @brief Poll the enable status of interrupt
+ *
+ * Polls the enable status of the specified interrupt
+ *
+ * @return 1 enabled, 0 disabled
+ */
+
+static ALWAYS_INLINE
+bool z_arc_v2_irq_unit_int_enabled(int irq)
+{
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	return z_arc_v2_aux_reg_read(_ARC_V2_IRQ_ENABLE) & 0x1;
+}
+
+
+/*
  * @brief Set interrupt priority
  *
  * Set the priority of the specified interrupt

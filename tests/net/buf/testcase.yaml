@@ -2,4 +2,3 @@ tests:
   net.buf:
     min_ram: 16
     tags: net buf
-    platform_exclude: qemu_x86_64

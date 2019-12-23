@@ -4,12 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Microchip XEC Counter driver
+ *
+ * This is the driver for the 16/32-bit counters on the Microchip SoCs.
+ *
+ * Notes:
+ * - The counters are running in down counting mode.
+ * - Interrupts are triggered (if enabled) when the counter
+ *   reaches zero.
+ * - These are not free running counters where there are separate
+ *   compare values for interrupts. When setting single shot alarms,
+ *   the counter values are changed so that interrupts are triggered
+ *   when the counters reach zero.
+ */
+
 #include <logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
 #include <counter.h>
 #include <soc.h>
 #include <errno.h>
+#include <stdbool.h>
 
 struct counter_xec_config {
 	struct counter_config_info info;
@@ -46,7 +63,7 @@ static int counter_xec_start(struct device *dev)
 		return -EALREADY;
 	}
 
-	counter->CTRL |= MCHP_BTMR_CTRL_ENABLE;
+	counter->CTRL |= (MCHP_BTMR_CTRL_ENABLE | MCHP_BTMR_CTRL_START);
 
 	LOG_DBG("%p Counter started", dev);
 
@@ -72,7 +89,7 @@ static int counter_xec_stop(struct device *dev)
 	counter->CTRL = reg;
 
 	counter->IEN = MCHP_BTMR_INTDIS;
-	counter->CNT = 0;
+	counter->CNT = counter->PRLD;
 
 	LOG_DBG("%p Counter stopped", dev);
 
@@ -90,20 +107,21 @@ static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
-	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
-	u32_t ticks;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
-	if (!(counter->CTRL & MCHP_BTMR_CTRL_ENABLE)) {
-		return -EIO;
+	/* Interrupts are only triggered when the counter reaches 0.
+	 * So only relative alarms are supported.
+	 */
+	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+		return -ENOTSUP;
 	}
 
-	if (counter->CTRL & MCHP_BTMR_CTRL_START) {
+	if (data->alarm_cb != NULL) {
 		return -EBUSY;
 	}
 
@@ -111,28 +129,18 @@ static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
 		return -EINVAL;
 	}
 
-	ticks = alarm_cfg->ticks;
-
-	if (counter_cfg->info.max_top_value == UINT16_MAX) {
-		if (ticks > UINT16_MAX) {
-			return -EINVAL;
-		}
+	if (alarm_cfg->ticks > counter->PRLD) {
+		return -EINVAL;
 	}
 
-	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
-		u64_t abs_cnt = ticks + counter->CNT;
-
-		ticks = (u32_t) abs_cnt % counter_cfg->info.max_top_value;
-	}
-
-	counter->CNT = ticks;
+	counter->CNT = alarm_cfg->ticks;
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
 	counter->IEN = MCHP_BTMR_INTEN;
 
-	LOG_DBG("%p Counter alarm set to %u ticks", dev, ticks);
+	LOG_DBG("%p Counter alarm set to %u ticks", dev, alarm_cfg->ticks);
 
 	counter->CTRL |= MCHP_BTMR_CTRL_START;
 
@@ -192,7 +200,7 @@ static int counter_xec_set_top_value(struct device *dev,
 		return -EINVAL;
 	}
 
-	restart = (counter->CTRL && MCHP_BTMR_CTRL_START);
+	restart = ((counter->CTRL & MCHP_BTMR_CTRL_START) != 0U);
 
 	counter->CTRL &= ~MCHP_BTMR_CTRL_START;
 
@@ -242,6 +250,8 @@ static void counter_xec_isr(struct device *dev)
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
+	counter_alarm_callback_t alarm_cb;
+	void *user_data;
 
 	counter->STS = MCHP_BTMR_STS_ACTIVE;
 	MCHP_GIRQ_SRC(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
@@ -249,7 +259,14 @@ static void counter_xec_isr(struct device *dev)
 	LOG_DBG("%p Counter ISR", dev);
 
 	if (data->alarm_cb) {
-		data->alarm_cb(dev, 0, counter->CNT, data->user_data);
+		/* Alarm is one-shot, so disable interrupt and callback */
+		counter->IEN = MCHP_BTMR_INTDIS;
+
+		alarm_cb = data->alarm_cb;
+		data->alarm_cb = NULL;
+		user_data = data->user_data;
+
+		alarm_cb(dev, 0, counter->CNT, user_data);
 	} else if (data->top_cb) {
 		data->top_cb(dev, data->user_data);
 	}
@@ -277,6 +294,10 @@ static int counter_xec_init(struct device *dev)
 	counter->CTRL &= ~MCHP_BTMR_CTRL_COUNT_UP;
 	counter->CTRL |= (counter_cfg->prescaler << MCHP_BTMR_CTRL_PRESCALE_POS) &
 		MCHP_BTMR_CTRL_PRESCALE_MASK;
+
+	/* Set preload and actually pre-load the counter */
+	counter->PRLD = counter_cfg->info.max_top_value;
+	counter->CNT = counter_cfg->info.max_top_value;
 
 	MCHP_GIRQ_ENSET(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
 

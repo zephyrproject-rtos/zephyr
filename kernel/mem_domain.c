@@ -101,7 +101,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			__ASSERT(parts[i] != NULL, "");
 			__ASSERT((parts[i]->start + parts[i]->size) >
 				 parts[i]->start,
-				 "invalid partition %p size %d",
+				 "invalid partition %p size %zu",
 				 parts[i], parts[i]->size);
 
 #if defined(CONFIG_EXECUTE_XOR_WRITE) || \
@@ -129,7 +129,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 
 	key = k_spin_lock(&lock);
 
-	z_arch_mem_domain_destroy(domain);
+	arch_mem_domain_destroy(domain);
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
 		struct k_thread *thread =
@@ -151,7 +151,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(domain != NULL, "");
 	__ASSERT(part != NULL, "");
 	__ASSERT((part->start + part->size) > part->start,
-		 "invalid partition %p size %d", part, part->size);
+		 "invalid partition %p size %zu", part, part->size);
 
 #if defined(CONFIG_EXECUTE_XOR_WRITE) || \
 	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
@@ -176,7 +176,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	domain->num_partitions++;
 
-	z_arch_mem_domain_partition_add(domain, p_idx);
+	arch_mem_domain_partition_add(domain, p_idx);
 	k_spin_unlock(&lock, key);
 }
 
@@ -202,7 +202,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	/* Assert if not found */
 	__ASSERT(p_idx < max_partitions, "no matching partition found");
 
-	z_arch_mem_domain_partition_remove(domain, p_idx);
+	arch_mem_domain_partition_remove(domain, p_idx);
 
 	/* A zero-sized partition denotes it's a free partition */
 	domain->partitions[p_idx].size = 0U;
@@ -227,7 +227,7 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 			 &thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = domain;
 
-	z_arch_mem_domain_thread_add(thread);
+	arch_mem_domain_thread_add(thread);
 
 	k_spin_unlock(&lock, key);
 }
@@ -240,7 +240,7 @@ void k_mem_domain_remove_thread(k_tid_t thread)
 	__ASSERT(thread->mem_domain_info.mem_domain != NULL, "mem domain set");
 
 	key = k_spin_lock(&lock);
-	z_arch_mem_domain_thread_remove(thread);
+	arch_mem_domain_thread_remove(thread);
 
 	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = NULL;
@@ -251,7 +251,7 @@ static int init_mem_domain_module(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	max_partitions = z_arch_mem_domain_max_partitions_get();
+	max_partitions = arch_mem_domain_max_partitions_get();
 	/*
 	 * max_partitions must be less than or equal to
 	 * CONFIG_MAX_DOMAIN_PARTITIONS, or would encounter array index

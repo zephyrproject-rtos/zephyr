@@ -1,4 +1,4 @@
 tests:
-  peripheral.can:
+  drivers.can.stm32:
     tags: driver can
     depends_on: can

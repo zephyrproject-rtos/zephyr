@@ -1,9 +1,9 @@
-# Kconfig.intel64 - Intel64-specific X86 subarchitecture options
-#
+# Intel64-specific X86 subarchitecture options
+
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-if X86_LONGMODE
+if X86_64
 
 config MAIN_STACK_SIZE
 	default 8192
@@ -32,6 +32,14 @@ config EXCEPTION_STACK_SIZE
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	depends on NO_OPTIMIZATIONS
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
 	default 33
@@ -58,4 +66,13 @@ config ISR_SUBSTACK_SIZE
 	  CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH must be equal to
 	  CONFIG_ISR_STACK_SIZE.
 
-endif # X86_LONGMODE
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
+	help
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
+
+endif # X86_64

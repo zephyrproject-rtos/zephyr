@@ -60,10 +60,102 @@ static int mcp2515_cmd_write_reg(struct device *dev, u8_t reg_addr,
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
+/*
+ * Load TX buffer instruction
+ *
+ * When loading a transmit buffer, reduces the overhead of a normal WRITE
+ * command by placing the Address Pointer at one of six locations, as
+ * selected by parameter abc.
+ *
+ *   0: TX Buffer 0, Start at TXB0SIDH (0x31)
+ *   1: TX Buffer 0, Start at TXB0D0 (0x36)
+ *   2: TX Buffer 1, Start at TXB1SIDH (0x41)
+ *   3: TX Buffer 1, Start at TXB1D0 (0x46)
+ *   4: TX Buffer 2, Start at TXB2SIDH (0x51)
+ *   5: TX Buffer 2, Start at TXB2D0 (0x56)
+ */
+static int mcp2515_cmd_load_tx_buffer(struct device *dev, u8_t abc,
+				 u8_t *buf_data, u8_t buf_len)
+{
+	__ASSERT(abc <= 5, "abc <= 5");
+
+	u8_t cmd_buf[] = { MCP2515_OPCODE_LOAD_TX_BUFFER | abc };
+
+	struct spi_buf tx_buf[] = {
+		{ .buf = cmd_buf, .len = sizeof(cmd_buf) },
+		{ .buf = buf_data, .len = buf_len }
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
+	};
+
+	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+}
+
+/*
+ * Request-to-Send Instruction
+ *
+ * Parameter nnn is the combination of bits at positions 0, 1 and 2 in the RTS
+ * opcode that respectively initiate transmission for buffers TXB0, TXB1 and
+ * TXB2.
+ */
+static int mcp2515_cmd_rts(struct device *dev, u8_t nnn)
+{
+	__ASSERT(nnn < BIT(MCP2515_TX_CNT), "nnn < BIT(MCP2515_TX_CNT)");
+
+	u8_t cmd_buf[] = { MCP2515_OPCODE_RTS | nnn };
+
+	struct spi_buf tx_buf[] = {
+		{ .buf = cmd_buf, .len = sizeof(cmd_buf) }
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
+	};
+
+	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+}
+
 static int mcp2515_cmd_read_reg(struct device *dev, u8_t reg_addr,
 				u8_t *buf_data, u8_t buf_len)
 {
 	u8_t cmd_buf[] = { MCP2515_OPCODE_READ, reg_addr };
+
+	struct spi_buf tx_buf[] = {
+		{ .buf = cmd_buf, .len = sizeof(cmd_buf) },
+		{ .buf = NULL, .len = buf_len }
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
+	};
+	struct spi_buf rx_buf[] = {
+		{ .buf = NULL, .len = sizeof(cmd_buf) },
+		{ .buf = buf_data, .len = buf_len }
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)
+	};
+
+	return spi_transceive(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg,
+			      &tx, &rx);
+}
+
+/*
+ * Read RX Buffer instruction
+ *
+ * When reading a receive buffer, reduces the overhead of a normal READ
+ * command by placing the Address Pointer at one of four locations selected by
+ * parameter nm:
+ *   0: Receive Buffer 0, Start at RXB0SIDH (0x61)
+ *   1: Receive Buffer 0, Start at RXB0D0 (0x66)
+ *   2: Receive Buffer 1, Start at RXB1SIDH (0x71)
+ *   3: Receive Buffer 1, Start at RXB1D0 (0x76)
+ */
+static int mcp2515_cmd_read_rx_buffer(struct device *dev, u8_t nm,
+				u8_t *buf_data, u8_t buf_len)
+{
+	__ASSERT(nm <= 0x03, "nm <= 0x03");
+
+	u8_t cmd_buf[] = { MCP2515_OPCODE_READ_RX_BUFFER | (nm << 1) };
 
 	struct spi_buf tx_buf[] = {
 		{ .buf = cmd_buf, .len = sizeof(cmd_buf) },
@@ -124,7 +216,7 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 
 	target[MCP2515_FRAME_OFFSET_DLC] = rtr | dlc;
 
-	for (; data_idx < 8; data_idx++) {
+	for (; data_idx < CAN_MAX_DLC; data_idx++) {
 		target[MCP2515_FRAME_OFFSET_D0 + data_idx] =
 			source->data[data_idx];
 	}
@@ -153,7 +245,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const u8_t *source,
 	target->rtr = source[MCP2515_FRAME_OFFSET_DLC] & BIT(6) ?
 		      CAN_REMOTEREQUEST : CAN_DATAFRAME;
 
-	for (; data_idx < 8; data_idx++) {
+	for (; data_idx < CAN_MAX_DLC; data_idx++) {
 		target->data[data_idx] = source[MCP2515_FRAME_OFFSET_D0 +
 						data_idx];
 	}
@@ -181,6 +273,8 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 			     u32_t bitrate)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	int ret;
 
 	/* CNF3, CNF2, CNF1, CANINTE */
 	u8_t config_buf[4];
@@ -213,12 +307,9 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 
 	const u8_t cnf3 = sof | wakfil | und | phseg2;
 
-	/* CANINTE
-	 * MERRE<7>:WAKIE<6>:ERRIE<5>:TX2IE<4>:TX1IE<3>:TX0IE<2>:RX1IE<1>:
-	 * RX0IE<0>
-	 * all TX and RX buffer interrupts enabled
-	 */
-	const u8_t caninte = BIT(4) | BIT(3) | BIT(2) | BIT(1) | BIT(0);
+	const u8_t caninte = MCP2515_INTE_RX0IE | MCP2515_INTE_RX1IE |
+			     MCP2515_INTE_TX0IE | MCP2515_INTE_TX1IE |
+			     MCP2515_INTE_TX2IE | MCP2515_INTE_ERRIE;
 
 	/* Receive everything, filtering done in driver, RXB0 roll over into
 	 * RXB1 */
@@ -251,17 +342,41 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 	config_buf[2] = cnf1;
 	config_buf[3] = caninte;
 
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	/* will enter configuration mode automatically */
-	mcp2515_cmd_soft_reset(dev);
+	ret = mcp2515_cmd_soft_reset(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to reset the device [%d]", ret);
+		goto done;
+	}
 
-	mcp2515_cmd_write_reg(dev, MCP2515_ADDR_CNF3, config_buf,
-			      sizeof(config_buf));
+	ret = mcp2515_cmd_write_reg(dev, MCP2515_ADDR_CNF3, config_buf,
+				    sizeof(config_buf));
+	if (ret < 0) {
+		LOG_ERR("Failed to write the configuration [%d]", ret);
+	}
 
-	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB0CTRL, rx0_ctrl, rx0_ctrl);
-	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB1CTRL, rx1_ctrl, rx1_ctrl);
+	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB0CTRL, rx0_ctrl,
+				     rx0_ctrl);
+	if (ret < 0) {
+		LOG_ERR("Failed to write RXB0CTRL [%d]", ret);
+	}
 
-	return mcp2515_set_mode(dev,
-				mcp2515_convert_canmode_to_mcp2515mode(mode));
+	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB1CTRL, rx1_ctrl,
+				     rx1_ctrl);
+	if (ret < 0) {
+		LOG_ERR("Failed to write RXB1CTRL [%d]", ret);
+	}
+
+done:
+	ret = mcp2515_set_mode(dev,
+			       mcp2515_convert_canmode_to_mcp2515mode(mode));
+	if (ret < 0) {
+		LOG_ERR("Failed to set the mode [%d]", ret);
+	}
+
+	k_mutex_unlock(&dev_data->mutex);
+	return ret;
 }
 
 static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
@@ -269,14 +384,21 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
-	u8_t addr_tx_ctrl;
+	u8_t abc;
+	u8_t nnn;
+	u8_t len;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
+
+	if (msg->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		return CAN_TX_EINVAL;
+	}
 
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
 		return CAN_TIMEOUT;
 	}
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	/* find a free tx slot */
 	for (; tx_idx < MCP2515_TX_CNT; tx_idx++) {
@@ -286,7 +408,7 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 		}
 	}
 
-	k_mutex_unlock(&dev_data->tx_mutex);
+	k_mutex_unlock(&dev_data->mutex);
 
 	if (tx_idx == MCP2515_TX_CNT) {
 		LOG_WRN("no free tx slot available");
@@ -296,16 +418,19 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	dev_data->tx_cb[tx_idx].cb = callback;
 	dev_data->tx_cb[tx_idx].cb_arg = callback_arg;
 
-	addr_tx_ctrl = MCP2515_ADDR_TXB0CTRL +
-		       (tx_idx * MCP2515_ADDR_OFFSET_FRAME2FRAME);
-
 	mcp2515_convert_zcanframe_to_mcp2515frame(msg, tx_frame);
-	mcp2515_cmd_write_reg(dev,
-			      addr_tx_ctrl + MCP2515_ADDR_OFFSET_CTRL2FRAME,
-			      tx_frame, sizeof(tx_frame));
+
+	/* Address Pointer selection */
+	abc = 2 * tx_idx;
+
+	/* Calculate minimum length to transfer */
+	len = sizeof(tx_frame) - CAN_MAX_DLC + msg->dlc;
+
+	mcp2515_cmd_load_tx_buffer(dev, abc, tx_frame, len);
+
 	/* request tx slot transmission */
-	mcp2515_cmd_bit_modify(dev, addr_tx_ctrl, MCP2515_TXCTRL_TXREQ,
-			       MCP2515_TXCTRL_TXREQ);
+	nnn = BIT(tx_idx);
+	mcp2515_cmd_rts(dev, nnn);
 
 	if (callback == NULL) {
 		k_sem_take(&dev_data->tx_cb[tx_idx].sem, K_FOREVER);
@@ -323,7 +448,7 @@ static int mcp2515_attach_isr(struct device *dev, can_rx_callback_t rx_cb,
 
 	__ASSERT(rx_cb != NULL, "response_ptr can not be null");
 
-	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	/* find free filter */
 	while ((BIT(filter_idx) & dev_data->filter_usage)
@@ -343,7 +468,7 @@ static int mcp2515_attach_isr(struct device *dev, can_rx_callback_t rx_cb,
 		filter_idx = CAN_NO_FREE_FILTER;
 	}
 
-	k_mutex_unlock(&dev_data->filter_mutex);
+	k_mutex_unlock(&dev_data->mutex);
 
 	return filter_idx;
 }
@@ -352,9 +477,17 @@ static void mcp2515_detach(struct device *dev, int filter_nr)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
-	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	dev_data->filter_usage &= ~BIT(filter_nr);
-	k_mutex_unlock(&dev_data->filter_mutex);
+	k_mutex_unlock(&dev_data->mutex);
+}
+
+static void mcp2515_register_state_change_isr(struct device *dev,
+						can_state_change_isr_t isr)
+{
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+
+	dev_data->state_change_isr = isr;
 }
 
 static u8_t mcp2515_filter_match(struct zcan_frame *msg,
@@ -388,7 +521,7 @@ static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
 	can_rx_callback_t callback;
 	struct zcan_frame tmp_msg;
 
-	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	for (; filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER; filter_idx++) {
 		if (!(BIT(filter_idx) & dev_data->filter_usage)) {
@@ -407,20 +540,22 @@ static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
 		callback(&tmp_msg, dev_data->cb_arg[filter_idx]);
 	}
 
-	k_mutex_unlock(&dev_data->filter_mutex);
+	k_mutex_unlock(&dev_data->mutex);
 }
 
 static void mcp2515_rx(struct device *dev, u8_t rx_idx)
 {
+	__ASSERT(rx_idx < MCP2515_RX_CNT, "rx_idx < MCP2515_RX_CNT");
+
 	struct zcan_frame msg;
 	u8_t rx_frame[MCP2515_FRAME_LEN];
-	u8_t addr_rx_ctrl = MCP2515_ADDR_RXB0CTRL +
-			    (rx_idx * MCP2515_ADDR_OFFSET_FRAME2FRAME);
+	u8_t nm;
+
+	/* Address Pointer selection */
+	nm = 2 * rx_idx;
 
 	/* Fetch rx buffer */
-	mcp2515_cmd_read_reg(dev,
-			     addr_rx_ctrl + MCP2515_ADDR_OFFSET_CTRL2FRAME,
-			     rx_frame, sizeof(rx_frame));
+	mcp2515_cmd_read_rx_buffer(dev, nm, rx_frame, sizeof(rx_frame));
 	mcp2515_convert_mcp2515frame_to_zcanframe(rx_frame, &msg);
 	mcp2515_rx_filter(dev, &msg);
 }
@@ -435,25 +570,105 @@ static void mcp2515_tx_done(struct device *dev, u8_t tx_idx)
 		dev_data->tx_cb[tx_idx].cb(0, dev_data->tx_cb[tx_idx].cb_arg);
 	}
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	dev_data->tx_busy_map &= ~BIT(tx_idx);
-	k_mutex_unlock(&dev_data->tx_mutex);
+	k_mutex_unlock(&dev_data->mutex);
 	k_sem_give(&dev_data->tx_sem);
 }
 
+static enum can_state mcp2515_get_state(struct device *dev,
+					struct can_bus_err_cnt *err_cnt)
+{
+	u8_t eflg;
+	u8_t err_cnt_buf[2];
+	int ret;
+
+	ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_EFLG, &eflg, sizeof(eflg));
+	if (ret < 0) {
+		LOG_ERR("Failed to read error register [%d]", ret);
+		return CAN_BUS_UNKNOWN;
+	}
+
+	if (err_cnt) {
+		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_TEC, err_cnt_buf,
+					   sizeof(err_cnt_buf));
+		if (ret < 0) {
+			LOG_ERR("Failed to read error counters [%d]", ret);
+			return CAN_BUS_UNKNOWN;
+		}
+
+		err_cnt->tx_err_cnt = err_cnt_buf[0];
+		err_cnt->rx_err_cnt = err_cnt_buf[1];
+	}
+
+	if (eflg & MCP2515_EFLG_TXBO) {
+		return CAN_BUS_OFF;
+	}
+
+	if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
+		return CAN_ERROR_PASSIVE;
+	}
+
+	return CAN_ERROR_ACTIVE;
+}
+
+static void mcp2515_handle_errors(struct device *dev)
+{
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	can_state_change_isr_t state_change_isr = dev_data->state_change_isr;
+	enum can_state state;
+	struct can_bus_err_cnt err_cnt;
+
+	state = mcp2515_get_state(dev, state_change_isr ? &err_cnt : NULL);
+
+	if (state_change_isr && dev_data->old_state != state) {
+		dev_data->old_state = state;
+		state_change_isr(state, err_cnt);
+	}
+}
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+static void mcp2515_recover(struct device *dev, s32_t timeout)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timeout);
+}
+#endif
+
 static void mcp2515_handle_interrupts(struct device *dev)
 {
+	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	u32_t pin;
+	int ret;
 	u8_t canintf;
 
-	mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF, &canintf, 1);
+	/* Loop until INT pin is high (all interrupt flags handled) */
+	while (1) {
+		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF,
+				&canintf, 1);
+		if (ret != 0) {
+			LOG_ERR("Couldn't read INTF register %d", ret);
+			continue;
+		}
 
-	while (canintf != 0) {
+		if (canintf == 0) {
+			/* No interrupt flags set */
+			break;
+		}
+
 		if (canintf & MCP2515_CANINTF_RX0IF) {
 			mcp2515_rx(dev, 0);
+
+			/* RX0IF flag cleared automatically during read */
+			canintf &= ~MCP2515_CANINTF_RX0IF;
 		}
 
 		if (canintf & MCP2515_CANINTF_RX1IF) {
 			mcp2515_rx(dev, 1);
+
+			/* RX1IF flag cleared automatically during read */
+			canintf &= ~MCP2515_CANINTF_RX1IF;
 		}
 
 		if (canintf & MCP2515_CANINTF_TX0IF) {
@@ -468,13 +683,24 @@ static void mcp2515_handle_interrupts(struct device *dev)
 			mcp2515_tx_done(dev, 2);
 		}
 
-		/* clear the flags we handled */
-		mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_CANINTF, canintf,
-				       ~canintf);
+		if (canintf & MCP2515_CANINTF_ERRIF) {
+			mcp2515_handle_errors(dev);
+		}
 
-		/* check that no new interrupts happened while clearing known
-		 * ones */
-		mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF, &canintf, 1);
+		if (canintf != 0) {
+			/* Clear remaining flags */
+			mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_CANINTF,
+					canintf, ~canintf);
+		}
+
+		/* Break from loop if INT pin is no longer low */
+		ret = gpio_pin_read(dev_data->int_gpio, dev_cfg->int_pin, &pin);
+		if (ret != 0) {
+			LOG_ERR("Couldn't read INT pin");
+		} else if (pin != 0) {
+			/* All interrupt flags handled */
+			break;
+		}
 	}
 }
 
@@ -501,7 +727,12 @@ static const struct can_driver_api can_api_funcs = {
 	.configure = mcp2515_configure,
 	.send = mcp2515_send,
 	.attach_isr = mcp2515_attach_isr,
-	.detach = mcp2515_detach
+	.detach = mcp2515_detach,
+	.get_state = mcp2515_get_state,
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	.recover = mcp2515_recover,
+#endif
+	.register_state_change_isr = mcp2515_register_state_change_isr
 };
 
 
@@ -511,13 +742,12 @@ static int mcp2515_init(struct device *dev)
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	int ret;
 
-	k_sem_init(&dev_data->int_sem, 0, UINT_MAX);
-	k_mutex_init(&dev_data->tx_mutex);
-	k_sem_init(&dev_data->tx_sem, 3, 3);
+	k_sem_init(&dev_data->int_sem, 0, 1);
+	k_mutex_init(&dev_data->mutex);
+	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 	k_sem_init(&dev_data->tx_cb[0].sem, 0, 1);
 	k_sem_init(&dev_data->tx_cb[1].sem, 0, 1);
 	k_sem_init(&dev_data->tx_cb[2].sem, 0, 1);
-	k_mutex_init(&dev_data->filter_mutex);
 
 	/* SPI config */
 	dev_data->spi_cfg.operation = SPI_WORD_SET(8);
@@ -585,6 +815,7 @@ static int mcp2515_init(struct device *dev)
 
 	(void)memset(dev_data->rx_cb, 0, sizeof(dev_data->rx_cb));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
+	dev_data->old_state = CAN_ERROR_ACTIVE;
 
 	ret = mcp2515_configure(dev, CAN_NORMAL_MODE, dev_cfg->bus_speed);
 

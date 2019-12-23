@@ -1,25 +1,15 @@
-# Kconfig.ia32 - IA32-specific X86 subarchitecture options
-#
+# IA32-specific X86 subarchitecture options
+
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-if !X86_LONGMODE
+if !X86_64
 
 config NESTED_INTERRUPTS
 	bool "Enable nested interrupts"
 	default y
 	help
 	  This option enables support for nested interrupts.
-
-config EXCEPTION_DEBUG
-	bool "Unhandled exception debugging"
-	default y
-	depends on LOG
-	help
-	  Install handlers for various CPU exception/trap vectors to
-	  make debugging them easier, at a small expense in code size.
-	  This prints out the specific exception vector and any associated
-	  error codes.
 
 menu "Memory Layout Options"
 
@@ -101,71 +91,6 @@ config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	  to be immune to it.
 
 menu "Processor Capabilities"
-
-config X86_MMU
-	bool "Enable Memory Management Unit"
-	select MEMORY_PROTECTION
-	help
-	  This options enables the memory management unit present in x86
-	  and creates a set of page tables at boot time. Requires an MMU
-	  which supports PAE page tables.
-
-config X86_MMU_PAGE_POOL_PAGES
-	int "Number of pages to reserve for building page tables"
-	default 16
-	depends on X86_MMU
-	help
-	  Building page tables at boot requires a pool of free memory pages
-	  to construct it. This can't be derived at build time, tune this
-	  to your SoC's specific memory map.
-
-config X86_NO_MELTDOWN
-	bool
-	help
-	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability,
-	  as described in CVE-2017-5754.
-
-config X86_NO_SPECTRE_V1
-	bool
-	help
-	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC is not vulnerable to the Spectre V1, V1.1, and V1.2
-	  CPU vulnerabilities as described in CVE-2017-5753 and CVE-2018-3693.
-
-config X86_NO_SPECTRE_V2
-	bool
-	help
-	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC is not vulnerable to the Spectre V2 CPU
-	  vulnerability, as described in CVE-2017-5715.
-
-config X86_NO_SPECTRE_V4
-	bool
-	help
-	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC is not vulnerable to the Spectre V4 CPU
-	  vulnerability, as described in CVE-2018-3639.
-
-config X86_NO_LAZY_FP
-	bool
-	help
-	  This hidden option should be set on a per-SOC basis to indicate
-	  that a particular SOC is not vulnerable to the Lazy FP CPU
-	  vulnerability, as described in CVE-2018-3665.
-
-config X86_NO_SPECULATIVE_VULNERABILITIES
-	bool
-	select X86_NO_MELTDOWN
-	select X86_NO_SPECTRE_V1
-	select X86_NO_SPECTRE_V2
-	select X86_NO_SPECTRE_V4
-	select X86_NO_LAZY_FP
-	help
-	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC does not perform any kind of speculative execution,
-	  or is a newer chip which is immune to the class of vulnerabilities
-	  which exploit speculative execution side channel attacks.
 
 config X86_ENABLE_TSS
 	bool
@@ -349,4 +274,11 @@ config X86_DYNAMIC_IRQ_STUBS
 
 endmenu
 
-endif # !X86_LONGMODE
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+endif # !X86_64

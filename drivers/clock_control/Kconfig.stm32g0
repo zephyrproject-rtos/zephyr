@@ -1,9 +1,7 @@
-# Kconfig - STM32G0 PLL configuration options
-#
+# STM32G0 PLL configuration options
+
 # Copyright (c) 2019 Linaro
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32G0X
 
@@ -13,8 +11,8 @@ config CLOCK_STM32_PLL_N_MULTIPLIER
 	default 8
 	range 8 86
 	help
-	 PLL multiplier, allowed values: 8-86
-	 PLL output must not exceed 56MHz(1.8V)/26MHz(1.2V).
+	  PLL multiplier, allowed values: 8-86
+	  PLL output must not exceed 56MHz(1.8V)/26MHz(1.2V).
 
 config CLOCK_STM32_PLL_M_DIVISOR
 	int "PLL divisor"

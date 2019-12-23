@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <kernel_structs.h>
 #include <offsets_short_arch.h>
 #include <ksched.h>
@@ -221,7 +221,7 @@ static void alt_thread_entry(void)
 	zassert_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
 		"ztest thread basepri not preserved in swap-out\n");
 
-	/* Verify original swap return value (set by z_arch_swap() */
+	/* Verify original swap return value (set by arch_swap() */
 	zassert_true(p_ztest_thread->arch.swap_return_value == -EAGAIN,
 		"ztest thread swap-return-value not preserved in swap-out\n");
 #endif
@@ -370,7 +370,7 @@ void test_arm_thread_swap(void)
 
 #if defined(CONFIG_USERSPACE)
 	/* The main test thread is set to run in privilege mode */
-	zassert_false((z_arch_is_user_context()),
+	zassert_false((arch_is_user_context()),
 		"Main test thread does not start in privilege mode\n");
 
 	/* Assert that the mode status variable indicates privilege mode */
@@ -482,7 +482,7 @@ void test_arm_thread_swap(void)
 	 * This will be verified by the alternative test thread.
 	 */
 	register int swap_return_val __asm__("r0") =
-		z_arch_swap(BASEPRI_MODIFIED_1);
+		arch_swap(BASEPRI_MODIFIED_1);
 
 #endif /* CONFIG_NO_OPTIMIZATIONS */
 

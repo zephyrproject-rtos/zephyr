@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: MCUX PWM
-
-description: >
-    This binding gives a base representation of the NXP MCUX PWM
+description: NXP MCUX PWM
 
 compatible: "nxp,imx-pwm"
 

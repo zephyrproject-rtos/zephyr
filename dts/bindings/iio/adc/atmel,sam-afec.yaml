@@ -1,7 +1,4 @@
-title: Atmel SAM Family AFEC
-
-description: >
-    This binding gives a base representation of the Atmel SAM AFEC
+description: Atmel SAM family AFEC
 
 compatible: "atmel,sam-afec"
 

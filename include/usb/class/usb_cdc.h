@@ -40,13 +40,6 @@
 #define DATA_INTERFACE_CLASS		0x0A
 
 /**
- * @brief Values for the bDescriptorType Field
- * @note CDC120-20101103-track.pdf, 5.2.3, Table 12
- */
-#define CS_INTERFACE			0x24
-#define CS_ENDPOINT			0x25
-
-/**
  * @brief bDescriptor SubType for Communications
  * Class Functional Descriptors
  * @note CDC120-20101103-track.pdf, 5.2.3, Table 13
@@ -73,9 +66,9 @@
 #define SET_CONTROL_LINE_STATE_DTR	0x01
 
 /** Enhance enum uart_line_ctrl with CDC specific values */
-#define USB_CDC_LINE_CTRL_BAUD_RATE	LINE_CTRL_BAUD_RATE
-#define USB_CDC_LINE_CTRL_DCD		LINE_CTRL_DCD
-#define USB_CDC_LINE_CTRL_DSR		LINE_CTRL_DSR
+#define USB_CDC_LINE_CTRL_BAUD_RATE	UART_LINE_CTRL_BAUD_RATE
+#define USB_CDC_LINE_CTRL_DCD		UART_LINE_CTRL_DCD
+#define USB_CDC_LINE_CTRL_DSR		UART_LINE_CTRL_DSR
 #define USB_CDC_LINE_CTRL_BREAK		BIT(5)
 #define USB_CDC_LINE_CTRL_RING_SIGNAL	BIT(6)
 #define USB_CDC_LINE_CTRL_FRAMING	BIT(7)

@@ -1,0 +1,6 @@
+sample:
+  description: MQTT sample app to Google IoT cloud
+  name: google_iot_mqtt
+common:
+  tags: net mqtt cloud
+  harness: net

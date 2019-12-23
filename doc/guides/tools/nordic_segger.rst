@@ -241,4 +241,3 @@ References
 .. _blacklist Segger devices by editing udev rules: http://www.at91.com/linux4sam/bin/view/Linux4SAM/SoftwareTools#Device_or_resource_busy_dev_ttyA
 
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-

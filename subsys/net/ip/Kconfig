@@ -1,10 +1,7 @@
-# Kconfig - IP stack config
+# IP stack config
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "IP stack"
 
@@ -238,14 +235,14 @@ config NET_ROUTING
 	  would need to populate the routing table. RPL used to do that
 	  earlier but currently there is no RPL support in Zephyr.
 
-config	NET_MAX_ROUTES
+config NET_MAX_ROUTES
 	int "Max number of routing entries stored."
 	default NET_IPV6_MAX_NEIGHBORS
 	depends on NET_ROUTE
 	help
 	  This determines how many entries can be stored in routing table.
 
-config	NET_MAX_NEXTHOPS
+config NET_MAX_NEXTHOPS
 	int "Max number of next hop entries stored."
 	default NET_MAX_ROUTES
 	depends on NET_ROUTE
@@ -256,7 +253,7 @@ config NET_ROUTE_MCAST
 	bool
 	depends on NET_ROUTE
 
-config	NET_MAX_MCAST_ROUTES
+config NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
 	default 1
 	depends on NET_ROUTE_MCAST
@@ -293,6 +290,17 @@ config NET_TCP_BACKLOG_SIZE
 	help
 	  The number of simultaneous TCP connection attempts, i.e. outstanding
 	  TCP connections waiting for initial ACK.
+
+config NET_TCP_AUTO_ACCEPT
+	bool "Auto accept incoming TCP data"
+	depends on NET_TCP
+	help
+	  Automatically accept incoming TCP data packet to the valid
+	  connection even if the application has not yet called accept().
+	  This speeds up incoming data processing and is done like in Linux.
+	  Drawback is that we allocate data for the incoming packets even if
+	  the application has not yet accepted the connection. If the peer
+	  sends lot of packets, we might run out of memory in this case.
 
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
@@ -351,6 +359,30 @@ config NET_TCP_RETRY_COUNT
 	  below 9, though.
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
+
+choice
+	prompt "Select TCP stack"
+	depends on NET_TCP
+	default NET_TCP1
+	help
+	  Select the TCP stack implementation to use.
+
+config NET_TCP1
+	bool "Current stable TCP stack"
+	help
+	  The current TCP stack that has been in use since Zephyr 1.0.
+
+config NET_TCP2
+	bool "Experimental TCP stack"
+	help
+	  Enable experimental TCP which is under development.
+
+endchoice
+
+config NET_TEST_PROTOCOL
+	bool "Enable JSON based test protocol (UDP)"
+	help
+	  Enable JSON based test protocol (UDP).
 
 config NET_UDP
 	bool "Enable UDP"
@@ -549,8 +581,8 @@ config NET_BUF_DATA_POOL_SIZE
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
-	 This value tell what is the size of the memory pool where each
-	 network buffer is allocated from.
+	  This value tell what is the size of the memory pool where each
+	  network buffer is allocated from.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool

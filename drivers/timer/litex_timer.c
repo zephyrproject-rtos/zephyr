@@ -30,7 +30,7 @@ static void litex_timer_irq_handler(void *device)
 	int key = irq_lock();
 
 	sys_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
-	accumulated_cycle_count += sys_clock_hw_cycles_per_tick();
+	accumulated_cycle_count += k_ticks_to_cyc_floor32(1);
 	z_clock_announce(1);
 
 	irq_unlock(key);
@@ -57,9 +57,9 @@ int z_clock_driver_init(struct device *device)
 	sys_write8(TIMER_DISABLE, TIMER_EN_ADDR);
 
 	for (int i = 0; i < 4; i++) {
-		sys_write8(sys_clock_hw_cycles_per_tick() >> (24 - i * 8),
+		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
 				TIMER_RELOAD_ADDR + i * 0x4);
-		sys_write8(sys_clock_hw_cycles_per_tick() >> (24 - i * 8),
+		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
 				TIMER_LOAD_ADDR + i * 0x4);
 	}
 

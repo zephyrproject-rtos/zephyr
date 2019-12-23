@@ -1,10 +1,7 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: iMX Uart
-
-description: >
-    This binding gives a base representation of the iMX UART
+description: iMX UART
 
 compatible: "nxp,imx-uart"
 

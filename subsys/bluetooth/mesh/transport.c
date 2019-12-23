@@ -34,6 +34,7 @@
 #include "foundation.h"
 #include "settings.h"
 #include "transport.h"
+#include "nodes.h"
 
 /* The transport layer needs at least three buffers for itself to avoid
  * deadlocks. Ensure that there are a sufficient number of advertising
@@ -131,7 +132,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 
 	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
-	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
+	if (BT_MESH_IS_DEV_KEY(tx->ctx->app_idx)) {
 		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
 	} else {
 		net_buf_add_u8(buf, UNSEG_HDR(1, tx->aid));
@@ -203,6 +204,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 			continue;
 		}
 
+		BT_MESH_ADV(tx->seg[i])->busy = 0U;
 		net_buf_unref(tx->seg[i]);
 		tx->seg[i] = NULL;
 	}
@@ -345,7 +347,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		return -EBUSY;
 	}
 
-	if (net_tx->ctx->app_idx == BT_MESH_KEY_DEV) {
+	if (BT_MESH_IS_DEV_KEY(net_tx->ctx->app_idx)) {
 		seg_hdr = SEG_HDR(0, 0);
 	} else {
 		seg_hdr = SEG_HDR(1, net_tx->aid);
@@ -501,8 +503,8 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	       tx->ctx->app_idx, tx->ctx->addr);
 	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
-	err = bt_mesh_app_key_get(tx->sub, tx->ctx->app_idx, &key,
-				  &aid);
+	err = bt_mesh_app_key_get(tx->sub, tx->ctx->app_idx,
+				  tx->ctx->addr, &key, &aid);
 	if (err) {
 		return err;
 	}
@@ -521,10 +523,9 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		ad = NULL;
 	}
 
-	err = bt_mesh_app_encrypt(key, tx->ctx->app_idx == BT_MESH_KEY_DEV,
-				  tx->aszmic, msg, ad, tx->src,
-				  tx->ctx->addr, bt_mesh.seq,
-				  BT_MESH_NET_IVI_TX);
+	err = bt_mesh_app_encrypt(key, BT_MESH_IS_DEV_KEY(tx->ctx->app_idx),
+				  tx->aszmic, msg, ad, tx->src, tx->ctx->addr,
+				  bt_mesh.seq, BT_MESH_NET_IVI_TX);
 	if (err) {
 		return err;
 	}
@@ -644,13 +645,45 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 					  rx->ctx.recv_dst, seq,
 					  BT_MESH_NET_IVI_RX(rx));
 		if (err) {
-			BT_ERR("Unable to decrypt with DevKey");
-			return -EINVAL;
+			BT_WARN("Unable to decrypt with local DevKey");
+		} else {
+			rx->ctx.app_idx = BT_MESH_KEY_DEV_LOCAL;
+			bt_mesh_model_recv(rx, &sdu);
+			return 0;
 		}
 
-		rx->ctx.app_idx = BT_MESH_KEY_DEV;
-		bt_mesh_model_recv(rx, &sdu);
-		return 0;
+		if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
+			struct bt_mesh_node *node;
+
+			/*
+			 * There is no way of knowing if we should use our
+			 * local DevKey or the remote DevKey to decrypt the
+			 * message so we must try both.
+			 */
+
+			node = bt_mesh_node_find(rx->ctx.addr);
+			if (node == NULL) {
+				BT_ERR("No node found for addr 0x%04x",
+				       rx->ctx.addr);
+				return -EINVAL;
+			}
+
+			net_buf_simple_reset(&sdu);
+			err = bt_mesh_app_decrypt(node->dev_key, true, aszmic,
+						  buf, &sdu, ad, rx->ctx.addr,
+						  rx->ctx.recv_dst, seq,
+						  BT_MESH_NET_IVI_RX(rx));
+			if (err) {
+				BT_ERR("Unable to decrypt with node DevKey");
+				return -EINVAL;
+			}
+
+			rx->ctx.app_idx = BT_MESH_KEY_DEV_REMOTE;
+			bt_mesh_model_recv(rx, &sdu);
+			return 0;
+		}
+
+		return -EINVAL;
 	}
 
 	for (i = 0U; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
@@ -1590,13 +1623,28 @@ void bt_mesh_heartbeat_send(void)
 }
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
-			const u8_t **key, u8_t *aid)
+			u16_t addr, const u8_t **key, u8_t *aid)
 {
 	struct bt_mesh_app_key *app_key;
 
-	if (app_idx == BT_MESH_KEY_DEV) {
+	if (app_idx == BT_MESH_KEY_DEV_LOCAL ||
+	    (app_idx == BT_MESH_KEY_DEV_REMOTE &&
+	     bt_mesh_elem_find(addr) != NULL)) {
 		*aid = 0;
 		*key = bt_mesh.dev_key;
+		return 0;
+	} else if (app_idx == BT_MESH_KEY_DEV_REMOTE) {
+		if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
+			return -EINVAL;
+		}
+
+		struct bt_mesh_node *node = bt_mesh_node_find(addr);
+		if (!node) {
+			return -EINVAL;
+		}
+
+		*key = node->dev_key;
+		*aid = 0;
 		return 0;
 	}
 

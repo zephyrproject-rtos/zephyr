@@ -17,7 +17,7 @@
 
 /* In fact, each work item could take up to this value */
 #define WORK_ITEM_WAIT_ALIGNED	\
-	__ticks_to_ms(z_ms_to_ticks(WORK_ITEM_WAIT) + _TICK_ALIGN)
+	k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(WORK_ITEM_WAIT) + _TICK_ALIGN)
 
 /*
  * Wait 50ms between work submissions, to ensure co-op and prempt

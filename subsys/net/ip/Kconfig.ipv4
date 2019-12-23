@@ -1,10 +1,7 @@
-# Kconfig.ipv4 - IPv4 Options
+# IPv4 Options
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_IPV4
 	bool "IPv4"
@@ -66,6 +63,13 @@ config NET_IPV4_AUTO
 	depends on NET_ARP
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
+
+config NET_IPV4_HDR_OPTIONS
+	bool "Enable IPv4 Header options support"
+	help
+	  Enables IPv4 header options support. Current support for only
+	  ICMPv4 Echo request. Only RecordRoute and Timestamp are handled.
+
 
 module = NET_IPV4
 module-dep = NET_LOG

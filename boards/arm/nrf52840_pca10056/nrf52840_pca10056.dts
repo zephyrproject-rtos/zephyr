@@ -73,6 +73,8 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
 			   <1 0 &gpio0 4 0>,	/* A1 */
 			   <2 0 &gpio0 28 0>,	/* A2 */
@@ -192,11 +194,14 @@ arduino_i2c: &i2c0 {
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <33000000>;
 		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		size = <67108864>;
 		has-be32k;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		dpd-wakeup-sequence = <30000 20 45000>;
 		wp-gpios = <&gpio0 22 0>;
 		hold-gpios = <&gpio0 23 0>;
 	};

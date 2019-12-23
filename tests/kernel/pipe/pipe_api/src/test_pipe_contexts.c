@@ -7,12 +7,15 @@
 #include <ztest.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define PIPE_LEN	16
-#define BYTES_TO_WRITE	4
+#define PIPE_LEN	(4 * _MPOOL_MINBLK)
+#define BYTES_TO_WRITE	_MPOOL_MINBLK
 #define BYTES_TO_READ BYTES_TO_WRITE
-K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
+K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, 4);
 
-static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
+static ZTEST_DMEM unsigned char __aligned(4) data[] =
+"abcd1234$%^&PIPEefgh5678!/?*EPIPijkl9012[]<>PEPImnop3456{}()IPEP";
+BUILD_ASSERT(sizeof(data) >= PIPE_LEN);
+
 /**TESTPOINT: init via K_PIPE_DEFINE*/
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);
@@ -32,7 +35,12 @@ K_SEM_DEFINE(end_sema, 0, 1);
  * to allocate the pipe object, one for its buffer. Both should be auto-
  * released when the thread exits
  */
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 4, 4);
+#ifdef CONFIG_64BIT
+#define SZ	256
+#else
+#define SZ	128
+#endif
+K_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
 
 static void tpipe_put(struct k_pipe *ppipe, int timeout)
 {
@@ -299,6 +307,36 @@ void test_half_pipe_get_put(void)
 }
 
 /**
+ * @brief Test get/put with saturating smaller pipe buffer
+ * @see k_pipe_put(), k_pipe_get()
+ */
+void test_half_pipe_saturating_block_put(void)
+{
+	int r[3];
+	struct k_mem_block blocks[3];
+
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_half_pipe_block_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+
+	k_sleep(10);
+
+	/* Ensure half the mempool is still queued in the pipe */
+	r[0] = k_mem_pool_alloc(&mpool, &blocks[0], BYTES_TO_WRITE, K_NO_WAIT);
+	r[1] = k_mem_pool_alloc(&mpool, &blocks[1], BYTES_TO_WRITE, K_NO_WAIT);
+	r[2] = k_mem_pool_alloc(&mpool, &blocks[2], BYTES_TO_WRITE, K_NO_WAIT);
+	zassert_true(r[0] == 0 && r[1] == 0 && r[2] == -ENOMEM, NULL);
+	k_mem_pool_free(&blocks[0]);
+	k_mem_pool_free(&blocks[1]);
+
+	tpipe_get(&khalfpipe, K_FOREVER);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid);
+}
+
+/**
  * @brief Test pipe block put with semaphore and smaller pipe buffer
  * @see k_pipe_block_put()
  */
@@ -337,9 +375,9 @@ void test_pipe_alloc(void)
 	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
 	k_pipe_cleanup(&pipe_test_alloc);
 
-	ret = k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN * 8);
+	ret = k_pipe_alloc_init(&pipe_test_alloc, 1024);
 	zassert_true(ret == -ENOMEM,
-		"resource pool is smaller then requested buffer");
+		"resource pool max block size is not smaller then requested buffer");
 }
 
 /**

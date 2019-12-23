@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: ARM Cortex-M4 CPU
-
-description: >
-    This binding gives a base representation for ARM Cortex-M4 CPU.
+description: ARM Cortex-M4 CPU
 
 compatible: "arm,cortex-m4"
 

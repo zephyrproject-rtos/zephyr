@@ -1,10 +1,8 @@
 # Copyright (c) 2018, Sundar Subramaniyan <sundar.subramaniyan@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF52 USBD
-
-description: >
-    This binding gives a base representation of the Nordic nRF52 USB device controller
+description: |
+    Nordic nRF52 USB device controller
 
 compatible: "nordic,nrf-usbd"
 

@@ -52,32 +52,86 @@ struct bt_uuid_128 {
 
 #define BT_UUID_INIT_16(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_16,	\
+	.uuid = { BT_UUID_TYPE_16 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_32(value)		\
 {					\
-	.uuid.type = BT_UUID_TYPE_32,	\
+	.uuid = { BT_UUID_TYPE_32 },	\
 	.val = (value),			\
 }
 
 #define BT_UUID_INIT_128(value...)	\
 {					\
-	.uuid.type = BT_UUID_TYPE_128,	\
+	.uuid = { BT_UUID_TYPE_128 },	\
 	.val = { value },		\
 }
 
 #define BT_UUID_DECLARE_16(value) \
-	((struct bt_uuid *) (&(struct bt_uuid_16) BT_UUID_INIT_16(value)))
+	((struct bt_uuid *) ((struct bt_uuid_16[]) {BT_UUID_INIT_16(value)}))
 #define BT_UUID_DECLARE_32(value) \
-	((struct bt_uuid *) (&(struct bt_uuid_32) BT_UUID_INIT_32(value)))
+	((struct bt_uuid *) ((struct bt_uuid_32[]) {BT_UUID_INIT_32(value)}))
 #define BT_UUID_DECLARE_128(value...) \
-	((struct bt_uuid *) (&(struct bt_uuid_128) BT_UUID_INIT_128(value)))
+	((struct bt_uuid *) ((struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
 
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
+
+/**
+ * @brief Encode 128 bit UUID into an array values
+ *
+ * Helper macro to initialize a 128-bit UUID value from the UUID format.
+ * Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID from
+ * the readable form of UUIDs.
+ *
+ * Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *
+ * @code
+ * BT_UUID_DECLARE_128(
+ *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
+ * @endcode
+ *
+ * Just replace the hyphen by the comma and add `0x` prefixes.
+ *
+ * @param w32 First part of the UUID (32 bits)
+ * @param w1  Second part of the UUID (16 bits)
+ * @param w2  Third part of the UUID (16 bits)
+ * @param w3  Fourth part of the UUID (16 bits)
+ * @param w48 Fifth part of the UUID (48 bits)
+ *
+ * @return The comma separated values for UUID 128 initializer that
+ *         may be used directly as an argument for
+ *         @ref BT_UUID_INIT_128 or @ref BT_UUID_DECLARE_128
+ */
+#define BT_UUID_128_ENCODE(w32, w1, w2, w3, w48) \
+	(((w48) >>  0) & 0xFF), \
+	(((w48) >>  8) & 0xFF), \
+	(((w48) >> 16) & 0xFF), \
+	(((w48) >> 24) & 0xFF), \
+	(((w48) >> 32) & 0xFF), \
+	(((w48) >> 40) & 0xFF), \
+	(((w3)  >>  0) & 0xFF), \
+	(((w3)  >>  8) & 0xFF), \
+	(((w2)  >>  0) & 0xFF), \
+	(((w2)  >>  8) & 0xFF), \
+	(((w1)  >>  0) & 0xFF), \
+	(((w1)  >>  8) & 0xFF), \
+	(((w32) >>  0) & 0xFF), \
+	(((w32) >>  8) & 0xFF), \
+	(((w32) >> 16) & 0xFF), \
+	(((w32) >> 24) & 0xFF)
+
+/** @def BT_UUID_STR_LEN
+ *
+ *  @brief Recommended length of user string buffer for Bluetooth UUID.
+ *
+ *  @details The recommended length guarantee the output of UUID
+ *  conversion will not lose valuable information about the UUID being
+ *  processed. If the length of the UUID is known the string can be shorter.
+ */
+#define BT_UUID_STR_LEN 37
 
 /** @def BT_UUID_GAP
  *  @brief Generic Access
@@ -479,11 +533,10 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  */
 bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
 
-#if defined(CONFIG_BT_DEBUG)
 /** @brief Convert Bluetooth UUID to string.
  *
- *  Converts Bluetooth UUID to string. UUID has to be in 16 bits or 128 bits
- *  format.
+ *  Converts Bluetooth UUID to string.
+ *  UUID can be in any format, 16-bit, 32-bit or 128-bit.
  *
  *  @param uuid Bluetooth UUID
  *  @param str pointer where to put converted string
@@ -492,34 +545,6 @@ bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
  *  @return N/A
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
-
-const char *bt_uuid_str_real(const struct bt_uuid *uuid);
-
-/** @def bt_uuid_str
- *  @brief Convert Bluetooth UUID to string in place.
- *
- *  Converts Bluetooth UUID to string in place. UUID has to be in 16 bits or
- *  128 bits format.
- *
- *  @param uuid Bluetooth UUID
- *
- *  @return String representation of the UUID given
- */
-#define bt_uuid_str(_uuid) log_strdup(bt_uuid_str_real(_uuid))
-#else
-static inline void bt_uuid_to_str(const struct bt_uuid *uuid, char *str,
-				  size_t len)
-{
-	if (len > 0) {
-		str[0] = '\0';
-	}
-}
-
-static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
-{
-	return "";
-}
-#endif /* CONFIG_BT_DEBUG */
 
 #ifdef __cplusplus
 }

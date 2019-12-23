@@ -11,9 +11,6 @@
  * Linker script for the Nios II platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <autoconf.h>
 #include <linker/sections.h>
 
@@ -123,6 +120,12 @@ SECTIONS
         . = ALT_CPU_RESET_ADDR;
 
         _image_text_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
+
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
@@ -302,4 +305,3 @@ SECTIONS
 #include <linker/debug-sections.ld>
 
     }
-

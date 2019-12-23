@@ -842,6 +842,13 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		return -ENOMEM;
 	}
 
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+	mbedtls_ssl_conf_legacy_renegotiation(&context->tls->config,
+					   MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE);
+	mbedtls_ssl_conf_renegotiation(&context->tls->config,
+				       MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+#endif
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 		/* DTLS requires timer callbacks to operate */
@@ -1267,10 +1274,6 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
-	if (net_context_get_ip_proto(parent) == IPPROTO_TCP) {
-		net_context_set_state(parent, NET_CONTEXT_LISTENING);
-	}
-
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
 
 	#ifdef CONFIG_USERSPACE
@@ -1293,6 +1296,8 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			goto error;
 		}
 	}
+
+	net_context_set_accepting(child, false);
 
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
@@ -1457,6 +1462,29 @@ ssize_t ztls_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	errno = ENOTSUP;
 	return -1;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+}
+
+ssize_t ztls_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+			 int flags)
+{
+	ssize_t len;
+	ssize_t ret;
+	int i;
+
+	len = 0;
+	if (msg) {
+		for (i = 0; i < msg->msg_iovlen; i++) {
+			ret = ztls_sendto_ctx(ctx, msg->msg_iov[i].iov_base,
+					      msg->msg_iov[i].iov_len, flags,
+					      msg->msg_name, msg->msg_namelen);
+			if (ret < 0) {
+				return ret;
+			}
+			len += ret;
+		}
+	}
+
+	return len;
 }
 
 static ssize_t recv_tls(struct net_context *ctx, void *buf,
@@ -1986,6 +2014,12 @@ static ssize_t tls_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 	return ztls_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
+static ssize_t tls_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+				      int flags)
+{
+	return ztls_sendmsg_ctx(obj, msg, flags);
+}
+
 static ssize_t tls_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 				       int flags, struct sockaddr *src_addr,
 				       socklen_t *addrlen)
@@ -2018,6 +2052,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.listen = tls_sock_listen_vmeth,
 	.accept = tls_sock_accept_vmeth,
 	.sendto = tls_sock_sendto_vmeth,
+	.sendmsg = tls_sock_sendmsg_vmeth,
 	.recvfrom = tls_sock_recvfrom_vmeth,
 	.getsockopt = tls_sock_getsockopt_vmeth,
 	.setsockopt = tls_sock_setsockopt_vmeth,

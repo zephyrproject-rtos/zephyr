@@ -67,10 +67,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <device.h>
-#include <sys/util.h>
-#include <random/rand32.h>
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */

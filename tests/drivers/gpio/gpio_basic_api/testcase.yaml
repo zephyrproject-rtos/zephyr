@@ -1,6 +1,6 @@
 tests:
-  peripheral.gpio:
+  drivers.gpio:
     tags: drivers gpio
     depends_on: gpio
     harness: loopback # see documentation
-    filter: DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
+    filter: dt_alias_exists("gpio-0") or dt_alias_exists("gpio-1")

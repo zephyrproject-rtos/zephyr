@@ -1,9 +1,7 @@
 # Copyright (c) 2018 Aurelien Jarno
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM USBHS
-
-description: >
+description: |
     Atmel SAM Family USB (USBHS) in device mode
 
 compatible: "atmel,sam-usbhs"

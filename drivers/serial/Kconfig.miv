@@ -1,18 +1,16 @@
+# Mi-V UART configuration option
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-# Kconfig.miv - Mi-V UART configuration option
-#
-# Copyright (c) 2018 Antmicro <www.antmicro.com>
-#
-
-menuconfig UART_MIV
+config UART_MIV
 	bool "Mi-V serial driver"
 	depends on SOC_RISCV32_MIV
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables the Mi-V serial driver.
 
-menuconfig UART_MIV_PORT_0
+config UART_MIV_PORT_0
 	bool "Enable Mi-V Port 0"
 	depends on UART_MIV
 	help

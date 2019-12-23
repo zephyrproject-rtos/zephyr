@@ -1,11 +1,9 @@
-# Kconfig - MCUXpresso SDK SIM
-#
-# Copyright (c) 2017, NXP
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# MCUXpresso SDK SIM
 
-menuconfig CLOCK_CONTROL_MCUX_SIM
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCUX_SIM
 	bool "MCUX SIM driver"
 	depends on HAS_MCUX_SIM
 	help

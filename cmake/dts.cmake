@@ -8,7 +8,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # encoded in DTS.
 #
 # Here we call on dtc, the gcc preprocessor, and
-# scripts/dts/extract_dts_includes.py to generate this header file at
+# scripts/dts/gen_defines.py to generate this header file at
 # CMake configure-time.
 #
 # See ~/zephyr/doc/dts
@@ -17,7 +17,11 @@ set(GENERATED_DTS_BOARD_CONF      ${PROJECT_BINARY_DIR}/include/generated/genera
 set(DTS_POST_CPP                  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
-set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
+
+if(DEFINED DTS_COMMON_OVERLAYS)
+  # TODO: remove this warning in version 1.16
+  message(FATAL_ERROR "DTS_COMMON_OVERLAYS is no longer supported. Use DTC_OVERLAY_FILE instead.")
+endif()
 
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
 # files may be found. It always includes the application directory,
@@ -28,10 +32,14 @@ list(APPEND
   ${BOARD_DIR}
   ${ZEPHYR_BASE}
   )
+list(REMOVE_DUPLICATES
+  DTS_ROOT
+  )
+
+list(REMOVE_DUPLICATES DTS_ROOT)
 
 set(dts_files
   ${DTS_SOURCE}
-  ${DTS_COMMON_OVERLAYS}
   ${shield_dts_files}
   )
 
@@ -65,15 +73,10 @@ if(SUPPORTS_DTS)
       message(STATUS "Overlaying ${dts_file}")
     endif()
 
-    # Ensure that changes to 'dts_file's cause CMake to be re-run
-    set_property(DIRECTORY APPEND PROPERTY
-      CMAKE_CONFIGURE_DEPENDS
-      ${dts_file}
-      )
-
     math(EXPR i "${i}+1")
   endforeach()
 
+  unset(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
   foreach(dts_root ${DTS_ROOT})
     foreach(dts_root_path
         include
@@ -91,6 +94,7 @@ if(SUPPORTS_DTS)
     endforeach()
   endforeach()
 
+  unset(DTS_ROOT_BINDINGS)
   foreach(dts_root ${DTS_ROOT})
     set(full_path ${dts_root}/dts/bindings)
     if(EXISTS ${full_path})
@@ -101,6 +105,11 @@ if(SUPPORTS_DTS)
     endif()
   endforeach()
 
+  # Cache the location of the root bindings so they can be used by
+  # scripts which use the build directory.
+  set(CACHED_DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} CACHE INTERNAL
+    "DT bindings root directories")
+
   # TODO: Cut down on CMake configuration time by avoiding
   # regeneration of generated_dts_board_unfixed.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
@@ -109,7 +118,8 @@ if(SUPPORTS_DTS)
 
   # Run the C preprocessor on an empty C source file that has one or
   # more DTS source files -include'd into it to create the
-  # intermediary file *.dts.pre.tmp
+  # intermediary file *.dts.pre.tmp. Also, generate a dependency file
+  # so that changes to DT sources are detected.
   execute_process(
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
@@ -119,14 +129,30 @@ if(SUPPORTS_DTS)
     ${NOSYSDEF_CFLAG}
     -D__DTS__
     -P
-    -E ${ZEPHYR_BASE}/misc/empty_file.c
-    -o ${BOARD}.dts.pre.tmp
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    -E   # Stop after preprocessing
+    -MD  # Generate a dependency file as a side-effect
+    -MF ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    -o  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp
+    ${ZEPHYR_BASE}/misc/empty_file.c
+    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
+
+  # Parse the generated dependency file to find the DT sources that
+  # were included and then add them to the list of files that trigger
+  # a re-run of CMake.
+  toolchain_parse_make_rule(
+    ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    include_files # Output parameter
+    )
+
+  set_property(DIRECTORY APPEND PROPERTY
+    CMAKE_CONFIGURE_DEPENDS
+    ${include_files}
+    )
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
 
@@ -177,31 +203,6 @@ if(SUPPORTS_DTS)
     message(FATAL_ERROR "new extractor failed with return code: ${ret}")
   endif()
 
-  #
-  # Run extract_dts_includes.py (the older DT/binding parser) to generate some
-  # legacy identifiers (via --deprecated-only). This will go away later.
-  #
-
-  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
-    --deprecated-only
-    --dts ${BOARD}.dts_compiled
-    --yaml ${DTS_ROOT_BINDINGS}
-    --include ${GENERATED_DTS_BOARD_UNFIXED_H}.deprecated
-    --old-alias-names
-    )
-
-  execute_process(
-    COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-
-  import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
-
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
-  file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H}.deprecated "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
 endif(SUPPORTS_DTS)

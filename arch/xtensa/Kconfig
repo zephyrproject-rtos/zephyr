@@ -1,5 +1,5 @@
-# Kconfig - XTENSA architecture configuration options
-#
+# XTENSA architecture configuration options
+
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,21 +16,6 @@ config IRQ_OFFLOAD_INTNUM
 	  Please note that in order for IRQ offload to work correctly the selected
 	  interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
 
-config XTENSA_OMIT_HIGH_INTERRUPTS
-	bool "Skip generation of vectors for high priority interrupts"
-	help
-	  Setting this to y causes the interrupt vectors for "high
-	  priority" Xtensa interrupts (those not masked by the EXCM bit
-	  in PS) to be left ungenerated, so they can be handled by
-	  application code instead.  Note that high priority interrupts
-	  cannot safely be handled by C code anyway (they will interrupt
-	  register window exceptions, which cannot be made reentrant, so
-	  the code under the handler must not emit them), though some
-	  devices might still want to use built-in handling for things
-	  like watchdogs which do not need to return into interrupted
-	  code.  Default is "n" for legacy compatibility. Consider
-	  changing to "y" in the future.
-
 endmenu
 
 config ARCH
@@ -42,7 +27,7 @@ config SIMULATOR_XTENSA
 	  Specify if the board configuration should be treated as a simulator.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int "Hardware clock cycles per second, 2000000 for ISS"
+	prompt "Hardware clock cycles per second, 2000000 for ISS"
 	default 2000000
 	range 1000000 1000000000
 	help
@@ -54,15 +39,6 @@ config XTENSA_NO_IPC
 	help
 	  Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
 	  instruction.
-
-config SW_ISR_TABLE
-	bool "Enable software interrupt handler table"
-	default y
-	help
-	  Enable an interrupt handler table implemented in software. This
-	  table, unlike ISRs connected directly in the vector table, allow
-	  a parameter to be passed to the interrupt handlers. Also, invoking
-	  the exception/interrupt exit stub is automatically done.
 
 config XTENSA_RESET_VECTOR
 	bool "Build reset vector code"

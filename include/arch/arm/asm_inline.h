@@ -1,23 +1,16 @@
-/* Intel ARM inline assembler functions and macros for public functions */
-
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_H_
 
-/*
- * The file must not be included directly
- * Include kernel.h instead
- */
-
-#if defined(__GNUC__)
-#include <arch/arm/asm_inline_gcc.h>
-#else
-#include <arch/arm/asm_inline_other.h>
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/aarch32/asm_inline.h> instead."
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_H_ */
+#include <arch/arm/aarch32/asm_inline.h>
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_H_ */

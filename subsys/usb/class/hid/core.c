@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
+#define LOG_LEVEL CONFIG_USB_HID_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_hid);
 
@@ -149,7 +149,7 @@ static int hid_on_get_idle(struct hid_device_info *dev_data,
 	LOG_DBG("Get Idle callback, report_id: %d", report_id);
 
 	*data = &dev_data->idle_rate[report_id];
-	len = &size;
+	*len = size;
 	return 0;
 #else
 	return -ENOTSUP;
@@ -182,7 +182,7 @@ static int hid_on_get_protocol(struct hid_device_info *dev_data,
 	LOG_DBG("Get Protocol callback, protocol: %d", dev_data->protocol);
 
 	*data = &dev_data->protocol;
-	len = &size;
+	*len = size;
 	return 0;
 #else
 	return -ENOTSUP;
@@ -376,9 +376,6 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 		break;
 	}
 
-	if (dev_data->ops && dev_data->ops->status_cb) {
-		dev_data->ops->status_cb(status, param);
-	}
 }
 
 static void hid_status_cb(struct usb_cfg_data *cfg,

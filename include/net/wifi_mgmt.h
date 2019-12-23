@@ -131,6 +131,11 @@ struct net_wifi_mgmt_offload {
 	int (*ap_disable)(struct device *dev);
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * Wifi mgmt offload API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, iface_api) == 0);
+
 #ifdef CONFIG_WIFI_OFFLOAD
 
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);

@@ -1,11 +1,9 @@
 # Copyright (c) 2018, I-SENSE group of ICCS
 # SPDX-License-Identifier: Apache-2.0
 
-title: Bluetooth module based on Zephyr's Bluetooth HCI SPI driver
-
-description: >
-    This binding gives the base representation of a bluetooth module which use
-    Zephyr's bluetooth Host Controller Interface SPI driver (e.g. nRF51822).
+description: |
+    Bluetooth module that uses Zephyr's Bluetooth Host Controller Interface SPI
+    driver (e.g. nRF51822)
 
 compatible: "zephyr,bt-hci-spi"
 

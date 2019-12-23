@@ -25,3 +25,11 @@ extern bool ull_filter_lll_rl_addr_allowed(u8_t id_addr_type, u8_t *id_addr,
 extern bool ull_filter_lll_rl_addr_resolve(u8_t id_addr_type, u8_t *id_addr,
 					   u8_t rl_idx);
 extern bool ull_filter_lll_rl_enabled(void);
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+typedef void (*resolve_callback_t)(void *param);
+extern u8_t ull_filter_deferred_resolve(bt_addr_t *rpa,
+					resolve_callback_t cb);
+extern u8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa,
+						u8_t rl_idx,
+						resolve_callback_t cb);
+#endif

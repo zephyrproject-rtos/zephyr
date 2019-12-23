@@ -1,0 +1,41 @@
+# nRF IPM driver configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if IPM_NRFX
+
+nrfx_ipc_num = 0
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 1
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 2
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 3
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 4
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 5
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 6
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 7
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 8
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 9
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 10
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 11
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 12
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 13
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 14
+rsource "Kconfig.nrfx_ipc_channel"
+nrfx_ipc_num = 15
+rsource "Kconfig.nrfx_ipc_channel"
+
+endif # IPM_NRFX

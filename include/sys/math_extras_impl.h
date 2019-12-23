@@ -146,7 +146,7 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
  *			return NULL;
  *		}
  *
- *		struct k_thread *t = NULL;
+ *		struct k_thread *thread = NULL;
  *		sys_dlist_t *l =
  *			&pq->queues[u32_count_trailing_zeros(pq->bitmask)];
  *

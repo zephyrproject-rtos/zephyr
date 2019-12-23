@@ -1,10 +1,7 @@
-# Kconfig - IEEE 802.15.4 driver configuration options
+# IEEE 802.15.4 driver configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # IEEE 802.15.4 options
@@ -35,6 +32,8 @@ source "drivers/ieee802154/Kconfig.nrf5"
 source "drivers/ieee802154/Kconfig.cc1200"
 
 source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
+
+source "drivers/ieee802154/Kconfig.rf2xx"
 
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"

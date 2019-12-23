@@ -120,6 +120,13 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 	case MQTT_PKT_TYPE_PINGRSP:
 		MQTT_TRC("[CID %p]: Received MQTT_PKT_TYPE_PINGRSP!", client);
 
+		if (client->unacked_ping <= 0) {
+			MQTT_TRC("Unexpected PINGRSP");
+			client->unacked_ping = 0;
+		} else {
+			client->unacked_ping--;
+		}
+
 		/* No notification of Ping response to application. */
 		notify_event = false;
 		break;

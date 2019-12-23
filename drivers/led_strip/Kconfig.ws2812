@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # The following blog post is an excellent resource about pulse timing:
 #
@@ -12,14 +9,14 @@ menuconfig WS2812_STRIP
 	bool "Enable WS2812 (and compatible) LED strip driver"
 	depends on SPI
 	help
-		Enable LED strip driver for daisy chains of WS2812-ish
-		(or WS2812B, WS2813, SK6812, or compatible) devices.
-		These devices have a one-wire communications interface
-		which encodes bits using pulses. Short pulses indicate
-		zero bits, and long pulses indicate ones; refer to the
-		chip datasheets for precise specifications. To implement
-		this in a multitasking operating system, this driver
-		generates the pulses using a SPI peripheral.
+	  Enable LED strip driver for daisy chains of WS2812-ish
+	  (or WS2812B, WS2813, SK6812, or compatible) devices.
+	  These devices have a one-wire communications interface
+	  which encodes bits using pulses. Short pulses indicate
+	  zero bits, and long pulses indicate ones; refer to the
+	  chip datasheets for precise specifications. To implement
+	  this in a multitasking operating system, this driver
+	  generates the pulses using a SPI peripheral.
 
 if WS2812_STRIP
 
@@ -27,33 +24,33 @@ config WS2812_STRIP_MAX_PIXELS
 	int "Maximum number of pixels in a strip"
 	default 12
 	help
-		Set this to the maximum number of pixels you need
-		to control at once. There is an 8x memory penalty associated
-		with each increment of this value, so it's worth optimizing.
+	  Set this to the maximum number of pixels you need
+	  to control at once. There is an 8x memory penalty associated
+	  with each increment of this value, so it's worth optimizing.
 
 config WS2812_STRIP_ONE_FRAME
 	hex "SPI frame to shift out to signal a one bit"
 	default 0x7c if SOC_SERIES_STM32F4X
 	default 0x70 if SOC_FAMILY_NRF
 	help
-		When shifted out at the configured clock frequency,
-		this must generate a pulse whose width fits within the chipset
-		specifications for T1H, and whose interpulse timing meets low
-		times. It is recommended that the first and last bits in the
-		frame be zero; this "encourages" SPI IPs to leave MOSI low
-		between frames.
+	  When shifted out at the configured clock frequency,
+	  this must generate a pulse whose width fits within the chipset
+	  specifications for T1H, and whose interpulse timing meets low
+	  times. It is recommended that the first and last bits in the
+	  frame be zero; this "encourages" SPI IPs to leave MOSI low
+	  between frames.
 
 config WS2812_STRIP_ZERO_FRAME
 	hex "SPI frame to shift out to signal a zero bit"
 	default 0x60 if SOC_SERIES_STM32F4X
 	default 0x40 if SOC_FAMILY_NRF
 	help
-		When shifted out at the configured clock frequency,
-		this must generate a pulse whose width fits within the chipset
-		specifications for T0H, and whose interpulse timing meets low
-		times. It is recommended that the first and last bits in the
-		frame be zero; this "encourages" SPI IPs to leave MOSI low
-		between frames.
+	  When shifted out at the configured clock frequency,
+	  this must generate a pulse whose width fits within the chipset
+	  specifications for T0H, and whose interpulse timing meets low
+	  times. It is recommended that the first and last bits in the
+	  frame be zero; this "encourages" SPI IPs to leave MOSI low
+	  between frames.
 
 # By default, we use GRBW [sic] (and ignore W).
 comment "The following options determine channel data order on the wire."
@@ -63,32 +60,32 @@ config WS2812_RED_ORDER
 	default 1
 	range 0 3
 	help
-		If the red channel is shifted out first, specify 0.
-		If second, specify 1, and so on.
+	  If the red channel is shifted out first, specify 0.
+	  If second, specify 1, and so on.
 
 config WS2812_GRN_ORDER
 	int "Order in which a green pixel should be shifted out"
 	default 0
 	range 0 3
 	help
-		If the green channel is shifted out first, specify 0.
-		If second, specify 1, and so on.
+	  If the green channel is shifted out first, specify 0.
+	  If second, specify 1, and so on.
 
 config WS2812_BLU_ORDER
 	int "Order in which a blue pixel should be shifted out"
 	default 2
 	range 0 3
 	help
-		If the blue channel is shifted out first, specify 0.
-		If second, specify 1, and so on.
+	  If the blue channel is shifted out first, specify 0.
+	  If second, specify 1, and so on.
 
 config WS2812_HAS_WHITE_CHANNEL
 	bool "Does the chip have a white channel on wire?"
 	default y
 	help
-		If the chipset has a white channel, say y. White channels
-		are not used by the driver, but must be declared if expected
-		by the chip.
+	  If the chipset has a white channel, say y. White channels
+	  are not used by the driver, but must be declared if expected
+	  by the chip.
 
 config WS2812_WHT_ORDER
 	int "Order in which a white pixel should be shifted out"
@@ -96,7 +93,7 @@ config WS2812_WHT_ORDER
 	range 0 3
 	depends on WS2812_HAS_WHITE_CHANNEL
 	help
-		If the blue channel is shifted out first, specify 0.
-		If second, specify 1, and so on.
+	  If the blue channel is shifted out first, specify 0.
+	  If second, specify 1, and so on.
 
 endif # WS2812_STRIP

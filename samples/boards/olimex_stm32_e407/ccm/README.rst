@@ -137,4 +137,3 @@ When the board is reset (without power-cycling), the output looks like this:
 The difference with the first run is that the ccm_noinit section still has the
 values from the last write. It is important to notice that this is not guaranteed,
 it still should be considered uninitialized leftover data.
-

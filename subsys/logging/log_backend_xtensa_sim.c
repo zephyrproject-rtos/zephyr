@@ -15,7 +15,8 @@
 #include "log_backend_std.h"
 #include <xtensa/simcall.h>
 
-#define CHAR_BUF_SIZE CONFIG_LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
+#define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? \
+		1 : CONFIG_LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE)
 
 static u8_t buf[CHAR_BUF_SIZE];
 

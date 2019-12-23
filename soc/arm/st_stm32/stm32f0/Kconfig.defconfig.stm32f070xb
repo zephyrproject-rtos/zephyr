@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32F070XB MCU
-#
+# ST Microelectronics STM32F070XB MCU
+
 # Copyright (c) 2018 qianfan Zhao
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F070XB
 
 config SOC
-	string
 	default "stm32f070xb"
 
 config NUM_IRQS
-	int
 	default 32
 
 endif # SOC_STM32F070XB

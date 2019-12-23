@@ -40,7 +40,7 @@ static const char content[] = {
 #endif
 };
 
-int main(void)
+void main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;

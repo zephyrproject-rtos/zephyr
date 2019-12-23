@@ -1,7 +1,4 @@
-title: GECKO USART
-
-description: >
-    This binding gives a base representation of the Gecko USART
+description: Gecko USART
 
 compatible: "silabs,gecko-usart"
 

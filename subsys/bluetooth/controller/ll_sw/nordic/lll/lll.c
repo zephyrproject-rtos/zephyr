@@ -28,9 +28,9 @@
 #include "lll_vendor.h"
 #include "lll_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll
 #include "common/log.h"
-
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_ZLI)
@@ -48,7 +48,7 @@ static struct {
 } event;
 
 static struct {
-	struct device *clk_hf;
+	struct device *clk;
 } lll;
 
 /* Entropy device */
@@ -127,7 +127,7 @@ static void swi_ull_low_nrf5_isr(void *arg)
 
 int lll_init(void)
 {
-	struct device *clk_k32;
+	struct device *clk;
 	int err;
 
 	/* Get reference to entropy device */
@@ -140,19 +140,15 @@ int lll_init(void)
 	event.curr.abort_cb = NULL;
 
 	/* Initialize LF CLK */
-	clk_k32 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
-	if (!clk_k32) {
+	clk = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	if (!clk) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, NULL);
+	clock_control_on(clk, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	/* Initialize HF CLK */
-	lll.clk_hf =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	if (!lll.clk_hf) {
-		return -ENODEV;
-	}
+	lll.clk = clk;
 
 	err = init_reset();
 	if (err) {
@@ -165,13 +161,8 @@ int lll_init(void)
 	/* Connect ISRs */
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
-#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
-	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
-		    rtc0_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#else
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-#endif
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
@@ -326,7 +317,7 @@ int lll_clk_on(void)
 	int err;
 
 	/* turn on radio clock in non-blocking mode. */
-	err = clock_control_on(lll.clk_hf, NULL);
+	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err || err == -EINPROGRESS) {
 		DEBUG_RADIO_XTAL(1);
 	}
@@ -339,9 +330,9 @@ int lll_clk_on_wait(void)
 	int err;
 
 	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk_hf, NULL);
+	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
-	while (clock_control_get_status(lll.clk_hf, NULL) !=
+	while (clock_control_get_status(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF) !=
 			CLOCK_CONTROL_STATUS_ON) {
 		k_cpu_idle();
 	}
@@ -356,7 +347,7 @@ int lll_clk_off(void)
 	int err;
 
 	/* turn off radio clock in non-blocking mode. */
-	err = clock_control_off(lll.clk_hf, NULL);
+	err = clock_control_off(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	if (!err) {
 		DEBUG_RADIO_XTAL(0);
 	} else if (err == -EBUSY) {
@@ -437,6 +428,20 @@ u32_t lll_radio_is_idle(void)
 	return radio_is_idle();
 }
 
+s8_t lll_radio_tx_pwr_min_get(void)
+{
+	return radio_tx_power_min_get();
+}
+
+s8_t lll_radio_tx_pwr_max_get(void)
+{
+	return radio_tx_power_max_get();
+}
+
+s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl)
+{
+	return radio_tx_power_floor(tx_pwr_lvl);
+}
 
 static int init_reset(void)
 {

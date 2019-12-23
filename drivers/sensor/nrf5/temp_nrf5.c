@@ -8,6 +8,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <drivers/clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <logging/log.h>
 #include <hal/nrf_temp.h>
 
@@ -22,7 +23,7 @@ LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
 	s32_t sample;
-	struct device *hfclk_dev;
+	struct device *clk_dev;
 };
 
 static void hfclk_on_callback(struct device *dev, void *user_data)
@@ -39,17 +40,22 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	int r;
 
+	/* Error if before sensor initialized */
+	if (data->clk_dev == NULL) {
+		return -EAGAIN;
+	}
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
-	r = clock_control_async_on(data->hfclk_dev, NULL, &clk_data);
+	r = clock_control_async_on(data->clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
+					&clk_data);
 	__ASSERT_NO_MSG(!r);
 
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
-	r = clock_control_off(data->hfclk_dev, 0);
+	r = clock_control_off(data->clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	__ASSERT_NO_MSG(!r);
 
 	data->sample = nrf_temp_result_get(NRF_TEMP);
@@ -102,9 +108,10 @@ static int temp_nrf5_init(struct device *dev)
 
 	LOG_DBG("");
 
-	data->hfclk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	__ASSERT_NO_MSG(data->hfclk_dev);
+	/* A null clk_dev indicates sensor has not been initialized */
+	data->clk_dev =
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	__ASSERT_NO_MSG(data->clk_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	IRQ_CONNECT(
@@ -123,7 +130,7 @@ static int temp_nrf5_init(struct device *dev)
 static struct temp_nrf5_data temp_nrf5_driver;
 
 DEVICE_AND_API_INIT(temp_nrf5,
-		    CONFIG_TEMP_NRF5_NAME,
+		    DT_INST_0_NORDIC_NRF_TEMP_LABEL,
 		    temp_nrf5_init,
 		    &temp_nrf5_driver,
 		    NULL,

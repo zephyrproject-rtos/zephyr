@@ -1,9 +1,7 @@
-# Kconfig - EFM32WG MCU line
-#
+# EFM32WG MCU line
+
 # Copyright (c) 2017 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_EFM32WG
 	bool "EFM32WG Series MCU"

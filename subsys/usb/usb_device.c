@@ -110,6 +110,8 @@ LOG_MODULE_REGISTER(usb_device);
 extern struct usb_cfg_data __usb_data_start[];
 extern struct usb_cfg_data __usb_data_end[];
 
+K_MUTEX_DEFINE(usb_enable_lock);
+
 struct usb_transfer_data {
 	/** endpoint associated to the transfer */
 	u8_t ep;
@@ -148,8 +150,10 @@ static struct usb_dev_priv {
 	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
-	/** USB stack status clalback */
+	/** USB stack status callback */
 	usb_dc_status_callback status_callback;
+	/** USB user status callback */
+	usb_dc_status_callback user_status_callback;
 	/** Pointer to registered descriptors */
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
@@ -440,8 +444,8 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	 * Invalid types of descriptors,
 	 * see USB Spec. Revision 2.0, 9.4.3 Get Descriptor
 	 */
-	if ((type == DESC_INTERFACE) || (type == DESC_ENDPOINT) ||
-	    (type > DESC_OTHER_SPEED)) {
+	if ((type == USB_INTERFACE_DESC) || (type == USB_ENDPOINT_DESC) ||
+	    (type > USB_OTHER_SPEED)) {
 		return false;
 	}
 
@@ -464,7 +468,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		/* set data pointer */
 		*data = p;
 		/* get length from structure */
-		if (type == DESC_CONFIGURATION) {
+		if (type == USB_CONFIGURATION_DESC) {
 			/* configuration descriptor is an
 			 * exception, length is at offset
 			 * 2 and 3
@@ -539,7 +543,7 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	/* configure endpoints for this configuration/altsetting */
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_CONFIGURATION:
+		case USB_CONFIGURATION_DESC:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
 			if (cur_config == config_index) {
@@ -548,13 +552,13 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 
 			break;
 
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting =
 			    p[INTF_DESC_bAlternateSetting];
 			break;
 
-		case DESC_ENDPOINT:
+		case USB_ENDPOINT_DESC:
 			if ((cur_config != config_index) ||
 			    (cur_alt_setting != alt_setting)) {
 				break;
@@ -598,7 +602,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
@@ -610,10 +614,9 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 
 			LOG_DBG("iface_num %u alt_set %u", iface, alt_setting);
 			break;
-		case DESC_ENDPOINT:
+		case USB_ENDPOINT_DESC:
 			if ((cur_iface != iface) ||
 			    (cur_alt_setting != alt_setting)) {
-				break;
 			}
 
 			found = set_endpoint((struct usb_ep_descriptor *)p);
@@ -978,6 +981,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 			cfg->cb_usb_status(cfg, status, param);
 		}
 	}
+
+	if (usb_dev.user_status_callback) {
+		usb_dev.user_status_callback(status, param);
+	}
 }
 
 /**
@@ -1033,6 +1040,9 @@ int usb_deconfig(void)
 
 	/* unregister status callback */
 	usb_register_status_callback(NULL);
+
+	/* unregister user status callback */
+	usb_dev.user_status_callback = NULL;
 
 	/* Reset USB controller */
 	usb_dc_reset();
@@ -1532,28 +1542,36 @@ int usb_set_config(const u8_t *device_descriptor)
 	return 0;
 }
 
-int usb_enable(void)
+int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
 	u32_t i;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
+	/* Prevent from calling usb_enable form different contex.
+	 * This should only be called once.
+	 */
+	LOG_DBG("lock usb_enable_lock mutex");
+	k_mutex_lock(&usb_enable_lock, K_FOREVER);
+
 	if (usb_dev.enabled == true) {
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
+	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
 
 	ret = usb_dc_attach();
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Configure control EP */
@@ -1563,32 +1581,32 @@ int usb_enable(void)
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Register endpoint 0 handlers*/
 	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Register endpoint handlers*/
 	ret = composite_setup_ep_cb();
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Init transfer slots */
@@ -1600,17 +1618,20 @@ int usb_enable(void)
 	/* Enable control EP */
 	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = usb_dc_ep_enable(USB_CONTROL_IN_EP0);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	usb_dev.enabled = true;
-
-	return 0;
+	ret = 0;
+out:
+	LOG_DBG("unlock usb_enable_lock mutex");
+	k_mutex_unlock(&usb_enable_lock);
+	return ret;
 }
 
 /*
@@ -1634,9 +1655,7 @@ static int usb_device_init(struct device *dev)
 
 	usb_set_config(device_descriptor);
 
-	usb_enable();
-
 	return 0;
 }
 
-SYS_INIT(usb_device_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

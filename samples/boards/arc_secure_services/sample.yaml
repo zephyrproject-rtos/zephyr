@@ -3,7 +3,7 @@ sample:
      Designware ARC SecureShiled.
   name: Designware ARC Secure monitor
 tests:
-  sample.arc_secure_services:
+  sample.board.arc_secure_services:
     platform_whitelist: nsim_sem em_starterkit_em7d_secure
     tags: secure
     harness: console

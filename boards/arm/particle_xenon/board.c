@@ -29,11 +29,11 @@ static inline void external_antenna(bool on)
 			   GPIO_DIR_OUT | SKY_PCBn_GPIO_FLAGS);
 
 	if (on) {
-		gpio_pin_write(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 1);
-		gpio_pin_write(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 0);
-	} else {
 		gpio_pin_write(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 0);
 		gpio_pin_write(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 1);
+	} else {
+		gpio_pin_write(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 1);
+		gpio_pin_write(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 0);
 	}
 }
 

@@ -1,7 +1,4 @@
-title: Atmel SAM0 GPIO PORT driver
-
-description: >
-    This is a representation of the SAM0 GPIO PORT nodes
+description: SAM0 GPIO PORT node
 
 compatible: "atmel,sam0-gpio"
 

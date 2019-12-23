@@ -174,7 +174,7 @@ do {                                                                  \
 	}                                                             \
 								      \
 	delta = k_cycle_get_32() - tsc;                               \
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS64(delta);                   \
+	delta = k_cyc_to_ns_floor64(delta);                   \
 								      \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \
@@ -288,7 +288,7 @@ typedef struct {
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
-int main(int argc, char *argv[])
+void main(void)
 {
 	mbedtls_ssl_config conf;
 	unsigned char tmp[200];
@@ -1062,6 +1062,4 @@ int main(int argc, char *argv[])
 	}
 #endif
 	mbedtls_printf("\n       Done\n");
-
-	return 0;
 }

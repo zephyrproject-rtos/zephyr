@@ -1,7 +1,4 @@
-title: STM32 USART
-
-description: >
-    This binding gives a base representation of the STM32 USART
+description: STM32 USART
 
 compatible: "st,stm32-usart"
 

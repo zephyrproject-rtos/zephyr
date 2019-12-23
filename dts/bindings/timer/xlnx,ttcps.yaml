@@ -1,7 +1,4 @@
-title: Xilinx ZynqMP PS TTC TIMERS
-
-description: >
-    This binding gives a base representation of the Xilinx ZynqMP PS TTC TIMERS
+description: Xilinx ZynqMP PS TTC timer
 
 compatible: "cdns,ttc"
 

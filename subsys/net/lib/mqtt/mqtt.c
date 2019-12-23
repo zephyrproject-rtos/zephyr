@@ -111,6 +111,9 @@ static int client_connect(struct mqtt_client *client)
 
 	client->internal.last_activity = mqtt_sys_tick_in_ms_get();
 
+	/* Reset the unanswered ping count for a new connection */
+	client->unacked_ping = 0;
+
 	MQTT_TRC("Connect completed");
 
 	return 0;
@@ -548,6 +551,12 @@ int mqtt_ping(struct mqtt_client *client)
 
 	err_code = client_write(client, packet.cur, packet.end - packet.cur);
 
+	if (client->unacked_ping >= INT8_MAX) {
+		MQTT_TRC("PING count overflow!");
+	} else {
+		client->unacked_ping++;
+	}
+
 error:
 	mqtt_mutex_unlock(client);
 
@@ -689,4 +698,3 @@ int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
 
 	return 0;
 }
-

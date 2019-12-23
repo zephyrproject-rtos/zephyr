@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 #include <6lo.h>
 #include <timeout_q.h>
 #include <string.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <net/ethernet.h>
 #include <net/net_ip.h>
 #include <string.h>
@@ -160,7 +160,7 @@ static s32_t canbus_stmin_to_ticks(u8_t stmin)
 		time_ms = stmin;
 	}
 
-	return z_ms_to_ticks(time_ms);
+	return k_ms_to_ticks_ceil32(time_ms);
 }
 
 static u16_t canbus_get_lladdr(struct net_linkaddr *net_lladdr)
@@ -533,7 +533,7 @@ static enum net_verdict canbus_process_cf(struct net_pkt *pkt)
 		}
 	} else {
 		z_add_timeout(&rx_ctx->timeout, canbus_rx_timeout,
-			      z_ms_to_ticks(NET_CAN_BS_TIME));
+			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
 
 		if (NET_CAN_BS != 0 && !mcast) {
 			rx_ctx->act_block_nr++;
@@ -637,7 +637,7 @@ static enum net_verdict canbus_process_ff(struct net_pkt *pkt)
 
 	/* At this point we expect to get Consecutive frames directly */
 	z_add_timeout(&rx_ctx->timeout, canbus_rx_timeout,
-		      z_ms_to_ticks(NET_CAN_BS_TIME));
+		      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
 
 	rx_ctx->state = NET_CAN_RX_STATE_CF;
 
@@ -764,7 +764,7 @@ static void canbus_tx_work(struct net_pkt *pkt)
 					ctx);
 				ctx->state = NET_CAN_TX_STATE_WAIT_FC;
 				z_add_timeout(&ctx->timeout, canbus_tx_timeout,
-					      z_ms_to_ticks(NET_CAN_BS_TIME));
+					      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
 				break;
 			} else if (ctx->opts.stmin) {
 				ctx->state = NET_CAN_TX_STATE_WAIT_ST;
@@ -777,7 +777,7 @@ static void canbus_tx_work(struct net_pkt *pkt)
 	case NET_CAN_TX_STATE_WAIT_ST:
 		NET_DBG("SM wait ST. CTX: %p", ctx);
 		z_add_timeout(&ctx->timeout, canbus_st_min_timeout,
-			      z_ms_to_ticks(canbus_stmin_to_ticks(ctx->opts.stmin)));
+			      k_ms_to_ticks_ceil32(canbus_stmin_to_ticks(ctx->opts.stmin)));
 		ctx->state = NET_CAN_TX_STATE_SEND_CF;
 		break;
 
@@ -833,7 +833,7 @@ static enum net_verdict canbus_process_fc_data(struct canbus_isotp_tx_ctx *ctx,
 		NET_DBG("Got WAIT frame. CTX: %p", ctx);
 		z_abort_timeout(&ctx->timeout);
 		z_add_timeout(&ctx->timeout, canbus_tx_timeout,
-			      z_ms_to_ticks(NET_CAN_BS_TIME));
+			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
 		if (ctx->wft >= NET_CAN_WFTMAX) {
 			NET_INFO("Got to many wait frames. CTX: %p", ctx);
 			ctx->state = NET_CAN_TX_STATE_ERR;
@@ -1023,12 +1023,12 @@ static int canbus_send_multiple_frames(struct net_pkt *pkt, size_t len,
 
 	if (!mcast) {
 		z_add_timeout(&tx_ctx->timeout, canbus_tx_timeout,
-			      z_ms_to_ticks(NET_CAN_BS_TIME));
+			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
 		tx_ctx->state = NET_CAN_TX_STATE_WAIT_FC;
 	} else {
 		tx_ctx->state = NET_CAN_TX_STATE_SEND_CF;
 		z_add_timeout(&tx_ctx->timeout, canbus_start_sending_cf,
-			      z_ms_to_ticks(NET_CAN_FF_CF_TIME));
+			      k_ms_to_ticks_ceil32(NET_CAN_FF_CF_TIME));
 	}
 
 	return 0;

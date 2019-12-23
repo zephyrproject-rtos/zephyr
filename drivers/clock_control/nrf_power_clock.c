@@ -14,57 +14,123 @@
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-/* Helper logging macros which prepends device name to the log. */
-#define CLOCK_LOG(lvl, dev, ...) \
-	LOG_##lvl("%s: " GET_ARG1(__VA_ARGS__), dev->config->name \
-			COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
-					(), (, GET_ARGS_LESS_1(__VA_ARGS__))))
-#define ERR(dev, ...) CLOCK_LOG(ERR, dev, __VA_ARGS__)
-#define WRN(dev, ...) CLOCK_LOG(WRN, dev, __VA_ARGS__)
-#define INF(dev, ...) CLOCK_LOG(INF, dev, __VA_ARGS__)
-#define DBG(dev, ...) CLOCK_LOG(DBG, dev, __VA_ARGS__)
+/* Helper logging macros which prepends subsys name to the log. */
+#ifdef CONFIG_LOG
+#define CLOCK_LOG(lvl, dev, subsys, ...) \
+	LOG_##lvl("%s: " GET_ARG1(__VA_ARGS__), \
+		get_sub_config(dev, (enum clock_control_nrf_type)subsys)->name \
+		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
+				(), (, GET_ARGS_LESS_1(__VA_ARGS__))))
+#else
+#define CLOCK_LOG(...)
+#endif
+
+#define ERR(dev, subsys, ...) CLOCK_LOG(ERR, dev, subsys, __VA_ARGS__)
+#define WRN(dev, subsys, ...) CLOCK_LOG(WRN, dev, subsys, __VA_ARGS__)
+#define INF(dev, subsys, ...) CLOCK_LOG(INF, dev, subsys, __VA_ARGS__)
+#define DBG(dev, subsys, ...) CLOCK_LOG(DBG, dev, subsys, __VA_ARGS__)
 
 /* returns true if clock stopping or starting can be performed. If false then
  * start/stop will be deferred and performed later on by handler owner.
  */
 typedef bool (*nrf_clock_handler_t)(struct device *dev);
 
-/* Clock instance structure */
-struct nrf_clock_control {
+/* Clock subsys structure */
+struct nrf_clock_control_sub_data {
 	sys_slist_t list;	/* List of users requesting callback */
-	s8_t ref;		/* Users counter */
+	u8_t ref;		/* Users counter */
 	bool started;		/* Indicated that clock is started */
 };
 
-/* Clock instance static configuration */
-struct nrf_clock_control_config {
+/* Clock subsys static configuration */
+struct nrf_clock_control_sub_config {
 	nrf_clock_handler_t start_handler; /* Called before start */
 	nrf_clock_handler_t stop_handler; /* Called before stop */
 	nrf_clock_event_t started_evt;	/* Clock started event */
 	nrf_clock_task_t start_tsk;	/* Clock start task */
 	nrf_clock_task_t stop_tsk;	/* Clock stop task */
+#ifdef CONFIG_LOG
+	const char *name;
+#endif
 };
+
+struct nrf_clock_control_data {
+	struct nrf_clock_control_sub_data subsys[CLOCK_CONTROL_NRF_TYPE_COUNT];
+};
+
+struct nrf_clock_control_config {
+	struct nrf_clock_control_sub_config
+					subsys[CLOCK_CONTROL_NRF_TYPE_COUNT];
+};
+
+static void clkstarted_handle(struct device *dev,
+			      enum clock_control_nrf_type type);
 
 /* Return true if given event has enabled interrupt and is triggered. Event
  * is cleared.
  */
 static bool clock_event_check_and_clean(nrf_clock_event_t evt, u32_t intmask)
 {
-	bool ret = nrf_clock_event_check(evt) &&
-			nrf_clock_int_enable_check(intmask);
+	bool ret = nrf_clock_event_check(NRF_CLOCK, evt) &&
+			nrf_clock_int_enable_check(NRF_CLOCK, intmask);
 
 	if (ret) {
-		nrf_clock_event_clear(evt);
+		nrf_clock_event_clear(NRF_CLOCK, evt);
 	}
 
 	return ret;
 }
 
-static enum clock_control_status get_status(struct device *dev,
-					    clock_control_subsys_t sys)
+static void clock_irqs_disable(void)
 {
-	struct nrf_clock_control *data = dev->driver_data;
+	nrf_clock_int_disable(NRF_CLOCK,
+			(NRF_CLOCK_INT_HF_STARTED_MASK |
+			 NRF_CLOCK_INT_LF_STARTED_MASK |
+			 COND_CODE_1(CONFIG_USB_NRFX,
+				(NRF_POWER_INT_USBDETECTED_MASK |
+				 NRF_POWER_INT_USBREMOVED_MASK |
+				 NRF_POWER_INT_USBPWRRDY_MASK),
+				(0))));
+}
 
+static void clock_irqs_enable(void)
+{
+	nrf_clock_int_enable(NRF_CLOCK,
+			(NRF_CLOCK_INT_HF_STARTED_MASK |
+			 NRF_CLOCK_INT_LF_STARTED_MASK |
+			 COND_CODE_1(CONFIG_USB_NRFX,
+				(NRF_POWER_INT_USBDETECTED_MASK |
+				 NRF_POWER_INT_USBREMOVED_MASK |
+				 NRF_POWER_INT_USBPWRRDY_MASK),
+				(0))));
+}
+
+static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
+					      enum clock_control_nrf_type type)
+{
+	struct nrf_clock_control_data *data = dev->driver_data;
+
+	return &data->subsys[type];
+}
+
+static const struct nrf_clock_control_sub_config *get_sub_config(
+					struct device *dev,
+					enum clock_control_nrf_type type)
+{
+	const struct nrf_clock_control_config *config =
+						dev->config->config_info;
+
+	return &config->subsys[type];
+}
+
+static enum clock_control_status get_status(struct device *dev,
+					    clock_control_subsys_t subsys)
+{
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	struct nrf_clock_control_sub_data *data;
+
+	__ASSERT_NO_MSG(type < CLOCK_CONTROL_NRF_TYPE_COUNT);
+	data = get_sub_data(dev, type);
 	if (data->started) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
@@ -76,42 +142,48 @@ static enum clock_control_status get_status(struct device *dev,
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static int clock_stop(struct device *dev, clock_control_subsys_t sub_system)
+static int clock_stop(struct device *dev, clock_control_subsys_t subsys)
 {
-	const struct nrf_clock_control_config *config =
-						dev->config->config_info;
-	struct nrf_clock_control *data = dev->driver_data;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	const struct nrf_clock_control_sub_config *config;
+	struct nrf_clock_control_sub_data *data;
 	int err = 0;
 	int key;
 
+	__ASSERT_NO_MSG(type < CLOCK_CONTROL_NRF_TYPE_COUNT);
+	config = get_sub_config(dev, type);
+	data = get_sub_data(dev, type);
+
 	key = irq_lock();
+	if (data->ref == 0) {
+		err = -EALREADY;
+		goto out;
+	}
 	data->ref--;
 	if (data->ref == 0) {
 		bool do_stop;
 
-		DBG(dev, "Stopping");
+		DBG(dev, subsys, "Stopping");
 		sys_slist_init(&data->list);
 
 		do_stop =  (config->stop_handler) ?
 				config->stop_handler(dev) : true;
 
 		if (do_stop) {
-			nrf_clock_task_trigger(config->stop_tsk);
+			nrf_clock_task_trigger(NRF_CLOCK, config->stop_tsk);
 			/* It may happen that clock is being stopped when it
 			 * has just been started and start is not yet handled
 			 * (due to irq_lock). In that case after stopping the
 			 * clock, started event is cleared to prevent false
 			 * interrupt being triggered.
 			 */
-			nrf_clock_event_clear(config->started_evt);
+			nrf_clock_event_clear(NRF_CLOCK, config->started_evt);
 		}
 
 		data->started = false;
-	} else if (data->ref < 0) {
-		data->ref = 0;
-		err = -EALREADY;
 	}
 
+out:
 	irq_unlock(key);
 
 	return err;
@@ -132,50 +204,94 @@ static bool is_in_list(sys_slist_t *list, sys_snode_t *node)
 	return false;
 }
 
+static void list_append(sys_slist_t *list, sys_snode_t *node)
+{
+	int key;
+
+	key = irq_lock();
+	sys_slist_append(list, node);
+	irq_unlock(key);
+}
+
+static struct clock_control_async_data *list_get(sys_slist_t *list)
+{
+	struct clock_control_async_data *async_data;
+	sys_snode_t *node;
+	int key;
+
+	key = irq_lock();
+	node = sys_slist_get(list);
+	irq_unlock(key);
+	async_data = CONTAINER_OF(node,
+		struct clock_control_async_data, node);
+
+	return async_data;
+}
+
 static int clock_async_start(struct device *dev,
-			     clock_control_subsys_t sub_system,
+			     clock_control_subsys_t subsys,
 			     struct clock_control_async_data *data)
 {
-	const struct nrf_clock_control_config *config =
-						dev->config->config_info;
-	struct nrf_clock_control *clk_data = dev->driver_data;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	const struct nrf_clock_control_sub_config *config;
+	struct nrf_clock_control_sub_data *clk_data;
 	int key;
-	s8_t ref;
+	u8_t ref;
+
+	__ASSERT_NO_MSG(type < CLOCK_CONTROL_NRF_TYPE_COUNT);
+	config = get_sub_config(dev, type);
+	clk_data = get_sub_data(dev, type);
 
 	__ASSERT_NO_MSG((data == NULL) ||
 			((data != NULL) && (data->cb != NULL)));
 
+	/* if node is in the list it means that it is scheduled for
+	 * the second time.
+	 */
+	if ((data != NULL)
+	    && is_in_list(&clk_data->list, &data->node)) {
+		return -EBUSY;
+	}
+
 	key = irq_lock();
 	ref = ++clk_data->ref;
+	__ASSERT_NO_MSG(clk_data->ref > 0);
 	irq_unlock(key);
 
-	if (clk_data->started) {
-		if (data) {
+	if (data) {
+		bool already_started;
+
+		clock_irqs_disable();
+		already_started = clk_data->started;
+		if (!already_started) {
+			list_append(&clk_data->list, &data->node);
+		}
+		clock_irqs_enable();
+
+		if (already_started) {
 			data->cb(dev, data->user_data);
 		}
-	} else {
-		if (ref == 1) {
-			bool do_start;
+	}
 
-			do_start =  (config->start_handler) ?
-					config->start_handler(dev) : true;
-			if (do_start) {
-				nrf_clock_task_trigger(config->start_tsk);
-				DBG(dev, "Triggered start task");
-			} else if (data) {
-				data->cb(dev, data->user_data);
-			}
-		}
+	if (ref == 1) {
+		bool do_start;
 
-		/* if node is in the list it means that it is scheduled for
-		 * the second time.
-		 */
-		if (data) {
-			if (is_in_list(&clk_data->list, &data->node)) {
-				return -EALREADY;
-			}
-
-			sys_slist_append(&clk_data->list, &data->node);
+		do_start =  (config->start_handler) ?
+				config->start_handler(dev) : true;
+		if (do_start) {
+			DBG(dev, subsys, "Triggering start task");
+			nrf_clock_task_trigger(NRF_CLOCK,
+					       config->start_tsk);
+		} else {
+			/* If external start_handler indicated that clcok is
+			 * still running (it may happen in case of LF RC clock
+			 * which was requested to be stopped during ongoing
+			 * calibration (clock will not be stopped in that case)
+			 * and requested to be started before calibration is
+			 * completed. In that case clock is still running and
+			 * we can notify enlisted requests.
+			 */
+			clkstarted_handle(dev, type);
 		}
 	}
 
@@ -197,7 +313,7 @@ static int clock_start(struct device *dev, clock_control_subsys_t sub_system)
  */
 void nrf_power_clock_isr(void *arg);
 
-static int hfclk_init(struct device *dev)
+static int clk_init(struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0,
 		    DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0_PRIORITY,
@@ -205,32 +321,21 @@ static int hfclk_init(struct device *dev)
 
 	irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
-	nrf_clock_lf_src_set(CLOCK_CONTROL_NRF_K32SRC);
+	nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
 		z_nrf_clock_calibration_init(dev);
 	}
 
-	nrf_clock_int_enable((
-		NRF_CLOCK_INT_HF_STARTED_MASK |
-		NRF_CLOCK_INT_LF_STARTED_MASK |
-		COND_CODE_1(CONFIG_USB_NRF52840,
-			(NRF_POWER_INT_USBDETECTED_MASK |
-			NRF_POWER_INT_USBREMOVED_MASK |
-			NRF_POWER_INT_USBPWRRDY_MASK),
-			(0))));
+	clock_irqs_enable();
 
-	sys_slist_init(&((struct nrf_clock_control *)dev->driver_data)->list);
+	for (enum clock_control_nrf_type i = 0;
+		i < CLOCK_CONTROL_NRF_TYPE_COUNT; i++) {
+		sys_slist_init(&(get_sub_data(dev, i)->list));
+	}
 
 	return 0;
 }
-
-static int lfclk_init(struct device *dev)
-{
-	sys_slist_init(&((struct nrf_clock_control *)dev->driver_data)->list);
-	return 0;
-}
-
 static const struct clock_control_driver_api clock_control_api = {
 	.on = clock_start,
 	.off = clock_stop,
@@ -238,64 +343,60 @@ static const struct clock_control_driver_api clock_control_api = {
 	.get_status = get_status,
 };
 
-static struct nrf_clock_control hfclk;
-static const struct nrf_clock_control_config hfclk_config = {
-	.start_tsk = NRF_CLOCK_TASK_HFCLKSTART,
-	.started_evt = NRF_CLOCK_EVENT_HFCLKSTARTED,
-	.stop_tsk = NRF_CLOCK_TASK_HFCLKSTOP
+static struct nrf_clock_control_data data;
+
+static const struct nrf_clock_control_config config = {
+	.subsys = {
+		[CLOCK_CONTROL_NRF_TYPE_HFCLK] = {
+			.start_tsk = NRF_CLOCK_TASK_HFCLKSTART,
+			.started_evt = NRF_CLOCK_EVENT_HFCLKSTARTED,
+			.stop_tsk = NRF_CLOCK_TASK_HFCLKSTOP,
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclk",))
+		},
+		[CLOCK_CONTROL_NRF_TYPE_LFCLK] = {
+			.start_tsk = NRF_CLOCK_TASK_LFCLKSTART,
+			.started_evt = NRF_CLOCK_EVENT_LFCLKSTARTED,
+			.stop_tsk = NRF_CLOCK_TASK_LFCLKSTOP,
+			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
+			IF_ENABLED(
+				CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION,
+				(
+				.start_handler = z_nrf_clock_calibration_start,
+				.stop_handler = z_nrf_clock_calibration_stop,
+				)
+			)
+		}
+	}
 };
 
-DEVICE_AND_API_INIT(clock_nrf5_m16src,
-		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_16M",
-		    hfclk_init, &hfclk, &hfclk_config, PRE_KERNEL_1,
+DEVICE_AND_API_INIT(clock_nrf,
+		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL,
+		    clk_init, &data, &config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
 
-
-static struct nrf_clock_control lfclk;
-static const struct nrf_clock_control_config lfclk_config = {
-	.start_tsk = NRF_CLOCK_TASK_LFCLKSTART,
-	.started_evt = NRF_CLOCK_EVENT_LFCLKSTARTED,
-	.stop_tsk = NRF_CLOCK_TASK_LFCLKSTOP,
-	.start_handler =
-		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) ?
-			z_nrf_clock_calibration_start : NULL,
-	.stop_handler =
-		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) ?
-			z_nrf_clock_calibration_stop : NULL
-};
-
-DEVICE_AND_API_INIT(clock_nrf5_k32src,
-		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL  "_32K",
-		    lfclk_init, &lfclk, &lfclk_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &clock_control_api);
-
-static void clkstarted_handle(struct device *dev)
+static void clkstarted_handle(struct device *dev,
+			      enum clock_control_nrf_type type)
 {
+	struct nrf_clock_control_sub_data *sub_data = get_sub_data(dev, type);
 	struct clock_control_async_data *async_data;
-	struct nrf_clock_control *data = dev->driver_data;
-	sys_snode_t *node = sys_slist_get(&data->list);
 
-	DBG(dev, "Clock started");
-	data->started = true;
+	DBG(dev, type, "Clock started");
+	sub_data->started = true;
 
-	while (node != NULL) {
-		async_data = CONTAINER_OF(node,
-				struct clock_control_async_data, node);
+	while ((async_data = list_get(&sub_data->list)) != NULL) {
 		async_data->cb(dev, async_data->user_data);
-		node = sys_slist_get(&data->list);
 	}
 }
 
-#if defined(CONFIG_USB_NRF52840)
+#if defined(CONFIG_USB_NRFX)
 static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
 {
-	bool ret = nrf_power_event_check(evt) &&
-			nrf_power_int_enable_check(intmask);
+	bool ret = nrf_power_event_check(NRF_POWER, evt) &&
+			nrf_power_int_enable_check(NRF_POWER, intmask);
 
 	if (ret) {
-		nrf_power_event_clear(evt);
+		nrf_power_event_clear(NRF_POWER, evt);
 	}
 
 	return ret;
@@ -304,7 +405,7 @@ static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
 
 static void usb_power_isr(void)
 {
-#if defined(CONFIG_USB_NRF52840)
+#if defined(CONFIG_USB_NRFX)
 	extern void usb_dc_nrfx_power_event_callback(nrf_power_event_t event);
 
 	if (power_event_check_and_clean(NRF_POWER_EVENT_USBDETECTED,
@@ -327,29 +428,28 @@ static void usb_power_isr(void)
 void nrf_power_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+	struct device *dev = DEVICE_GET(clock_nrf);
 
 	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_HFCLKSTARTED,
 					NRF_CLOCK_INT_HF_STARTED_MASK)) {
-		struct device *hfclk_dev = DEVICE_GET(clock_nrf5_m16src);
-		struct nrf_clock_control *data = hfclk_dev->driver_data;
+		struct nrf_clock_control_sub_data *data =
+				get_sub_data(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
 
 		/* Check needed due to anomaly 201:
 		 * HFCLKSTARTED may be generated twice.
 		 */
 		if (!data->started) {
-			clkstarted_handle(hfclk_dev);
+			clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
 		}
 	}
 
 	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_LFCLKSTARTED,
 					NRF_CLOCK_INT_LF_STARTED_MASK)) {
-		struct device *lfclk_dev = DEVICE_GET(clock_nrf5_k32src);
-
 		if (IS_ENABLED(
 			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
-			z_nrf_clock_calibration_lfclk_started(lfclk_dev);
+			z_nrf_clock_calibration_lfclk_started(dev);
 		}
-		clkstarted_handle(lfclk_dev);
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 	}
 
 	usb_power_isr();
@@ -359,9 +459,9 @@ void nrf_power_clock_isr(void *arg)
 	}
 }
 
+#ifdef CONFIG_USB_NRFX
 void nrf5_power_usb_power_int_enable(bool enable)
 {
-#ifdef CONFIG_USB_NRF52840
 	u32_t mask;
 
 	mask = NRF_POWER_INT_USBDETECTED_MASK |
@@ -369,10 +469,10 @@ void nrf5_power_usb_power_int_enable(bool enable)
 	       NRF_POWER_INT_USBPWRRDY_MASK;
 
 	if (enable) {
-		nrf_power_int_enable(mask);
+		nrf_power_int_enable(NRF_POWER, mask);
 		irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 	} else {
-		nrf_power_int_disable(mask);
+		nrf_power_int_disable(NRF_POWER, mask);
 	}
-#endif
 }
+#endif

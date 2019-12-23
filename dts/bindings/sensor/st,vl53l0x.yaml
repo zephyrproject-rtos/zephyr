@@ -1,11 +1,13 @@
 # Copyright (c) 2017, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors VL53L0X
-
-description: >
-    This binding gives a base representation of VL53L0X Time Of Flight sensor
+description: STMicroelectronics VL53L0X Time of Flight sensor
 
 compatible: "st,vl53l0x"
 
 include: i2c-device.yaml
+
+properties:
+    xshut-gpios:
+      type: phandle-array
+      required: false

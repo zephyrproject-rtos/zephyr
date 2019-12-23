@@ -1,0 +1,15 @@
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC SPI controller
+
+compatible: "nxp,lpc-spi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

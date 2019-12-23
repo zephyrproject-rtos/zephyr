@@ -1,10 +1,7 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: LPC MAILBOX
-
-description: >
-    This binding gives a base representation of the LPC MAILBOX
+description: LPC MAILBOX
 
 compatible: "nxp,lpc-mailbox"
 

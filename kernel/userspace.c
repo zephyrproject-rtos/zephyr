@@ -20,6 +20,7 @@
 #include <app_memory/app_memdomain.h>
 #include <sys/libc-hooks.h>
 #include <sys/mutex.h>
+#include <inttypes.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -185,7 +186,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
  *
  * @return true if successful, false if failed
  **/
-static bool thread_idx_alloc(u32_t *tidx)
+static bool thread_idx_alloc(uintptr_t *tidx)
 {
 	int i;
 	int idx;
@@ -224,7 +225,7 @@ static bool thread_idx_alloc(u32_t *tidx)
  *
  * @param tidx The thread index to be freed
  **/
-static void thread_idx_free(u32_t tidx)
+static void thread_idx_free(uintptr_t tidx)
 {
 	/* To prevent leaked permission when index is recycled */
 	z_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
@@ -235,7 +236,7 @@ static void thread_idx_free(u32_t tidx)
 void *z_impl_k_object_alloc(enum k_objects otype)
 {
 	struct dyn_obj *dyn_obj;
-	u32_t tidx;
+	uintptr_t tidx;
 
 	/* Stacks are not supported, we don't yet have mem pool APIs
 	 * to request memory that is aligned
@@ -339,11 +340,11 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static int thread_index_get(struct k_thread *t)
+static int thread_index_get(struct k_thread *thread)
 {
 	struct _k_object *ko;
 
-	ko = z_object_find(t);
+	ko = z_object_find(thread);
 
 	if (ko == NULL) {
 		return -1;
@@ -352,7 +353,7 @@ static int thread_index_get(struct k_thread *t)
 	return ko->data;
 }
 
-static void unref_check(struct _k_object *ko, int index)
+static void unref_check(struct _k_object *ko, uintptr_t index)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
@@ -444,14 +445,14 @@ void z_thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 {
-	int id = (int)ctx_ptr;
+	uintptr_t id = (uintptr_t)ctx_ptr;
 
 	unref_check(ko, id);
 }
 
 void z_thread_perms_all_clear(struct k_thread *thread)
 {
-	int index = thread_index_get(thread);
+	uintptr_t index = thread_index_get(thread);
 
 	if (index != -1) {
 		z_object_wordlist_foreach(clear_perms_cb, (void *)index);
@@ -753,21 +754,23 @@ void z_app_shmem_bss_zero(void)
  * Default handlers if otherwise unimplemented
  */
 
-static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
-				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
+				     uintptr_t arg3, uintptr_t arg4,
+				     uintptr_t arg5, uintptr_t arg6,
+				     void *ssf)
 {
-	LOG_ERR("Bad system call id %u invoked", bad_id);
-	z_arch_syscall_oops(_current_cpu->syscall_frame);
+	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
+	arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
-				 u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
+				    uintptr_t arg3, uintptr_t arg4,
+				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
 	LOG_ERR("Unimplemented system call");
-	z_arch_syscall_oops(_current_cpu->syscall_frame);
+	arch_syscall_oops(_current_cpu->syscall_frame);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 #include <syscall_dispatch.c>
-

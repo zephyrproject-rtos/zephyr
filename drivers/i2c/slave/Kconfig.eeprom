@@ -1,21 +1,9 @@
-# Kconfig - I2C EEPROM Slave configuration options
+# I2C EEPROM Slave configuration options
 
-#
 # Copyright (c) 2017 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config I2C_EEPROM_SLAVE
 	bool "I2C Slave EEPROM driver"
 	help
 	  Enable virtual I2C Slave EEPROM driver
-
-config I2C_EEPROM_SLAVE_0
-	bool "Enable I2C Slave EEPROM driver instance 0"
-	depends on I2C_EEPROM_SLAVE
-	default y
-
-config I2C_EEPROM_SLAVE_1
-	bool "Enable I2C Slave EEPROM driver instance 1"
-	depends on I2C_EEPROM_SLAVE

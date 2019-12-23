@@ -1,10 +1,10 @@
 sample:
   name: Demo for Fujitsu MB85RC256V FRAM (I2C)
 tests:
-  sample.driver.i2c_fujitsu_fram:
+  sample.drivers.i2c.fujitsu_fram:
     tags: drivers
     depends_on: i2c
-    filter: DT_ALIAS_I2C_0_LABEL
+    filter: dt_alias_exists("i2c-0")
     harness: console
     harness_config:
         type: one_line

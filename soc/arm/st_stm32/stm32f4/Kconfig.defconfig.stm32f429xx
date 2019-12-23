@@ -1,18 +1,14 @@
-# Kconfig - ST STM32F429XX MCU configuration options
-#
+# ST STM32F429XX MCU configuration options
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F429XX
 
 config SOC
-	string
 	default "stm32f429xx"
 
 config NUM_IRQS
-	int
 	default 91
 
 if GPIO_STM32

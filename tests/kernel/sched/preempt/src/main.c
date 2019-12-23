@@ -102,8 +102,8 @@ void wakeup_src_thread(int id)
 	for (int i = 0; i < NUM_THREADS; i++) {
 		k_tid_t th = &worker_threads[i];
 
-		zassert_true(th->base.thread_state & _THREAD_PENDING,
-			     "worker thread %d not pending?", i);
+		zassert_equal(strcmp(k_thread_state_str(th), "pending"),
+				0, "worker thread %d not pending?", i);
 	}
 
 	/* Wake the src worker up */

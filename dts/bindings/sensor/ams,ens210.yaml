@@ -1,11 +1,8 @@
 # Copyright (c) 2018, Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-title: AMS (Austria Mikro Systeme) Relative Humidity and Temperature Sensor
-
-description: >
-    This binding gives a base representation of ens210 Relative Humidity and
-    Temperature Sensor
+description: |
+    AMS (Austria Mikro Systeme) ens210 Relative Humidity and Temperature Sensor
 
 compatible: "ams,ens210"
 

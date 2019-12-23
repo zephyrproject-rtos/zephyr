@@ -1,14 +1,12 @@
-# Kconfig.mcp2515 - MCP2515 CAN configuration options
+# MCP2515 CAN configuration options
 
-#
 # Copyright (c) 2018 Karsten Koenig
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_MCP2515
 	bool "MCP2515 CAN Driver"
 	depends on SPI
+	select CAN_AUTO_BUS_OFF_RECOVERY
 	help
 	  Enable MCP2515 CAN Driver
 

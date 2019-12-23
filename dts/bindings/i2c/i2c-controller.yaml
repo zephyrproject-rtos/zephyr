@@ -5,7 +5,7 @@
 
 include: base.yaml
 
-child-bus: i2c
+bus: i2c
 
 properties:
     "#address-cells":

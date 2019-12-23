@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: Synopys DesignWare I2C controller
-
-description: >
-    This is a representation of the Synopsys DesignWare i2c node
+description: Synopsys DesignWare I2C node
 
 compatible: "snps,designware-i2c"
 

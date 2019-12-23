@@ -1,7 +1,7 @@
 sample:
   name: Counter RTC Driver Sample
 tests:
-  sample.driver.counter.alarm:
+  sample.drivers.counter.alarm:
     tags: drivers
     harness: console
     platform_whitelist: nucleo_f746zg nrf51_pca10028 nrf52_pca10040

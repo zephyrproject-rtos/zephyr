@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "Seeed Studio Nitrogen 96board";

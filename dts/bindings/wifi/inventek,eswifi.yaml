@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: Inventek eS-WiFi WiFi module
-
-description: >
-    This binding gives the base representation of es-WiFi module
+description: es-WiFi module
 
 compatible: "inventek,eswifi"
 

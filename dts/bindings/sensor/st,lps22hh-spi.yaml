@@ -1,11 +1,9 @@
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LPS22HH
-
-description: >
-    This binding gives a base representation of LPS22HH pressure and
-    temperature sensor connected to SPI bus
+description: |
+    STMicroelectronics LPS22HH pressure and temperature sensor connected to SPI
+    bus
 
 compatible: "st,lps22hh"
 

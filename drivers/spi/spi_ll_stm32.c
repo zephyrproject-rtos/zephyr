@@ -73,28 +73,41 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
+static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
+				      struct spi_stm32_data *data)
 {
+	struct spi_context *ctx = &(data->ctx);
 	u16_t tx_frame = SPI_STM32_TX_NOP;
+	u16_t rx_frame;
+	bool xfer_16;
 
-	if (spi_context_tx_buf_on(&data->ctx)) {
-		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
-		} else {
-			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
-		}
+	if (spi_context_tx_buf_on(ctx) && spi_context_rx_buf_on(ctx)) {
+		xfer_16 = (MIN(ctx->tx_len, ctx->rx_len) > 1) ? true : false;
+	} else if (spi_context_tx_buf_on(ctx)) {
+		xfer_16 = (ctx->tx_len > 1) ? true : false;
+	} else if (spi_context_rx_buf_on(ctx)) {
+		xfer_16 = (ctx->rx_len > 1) ? true : false;
+	} else {
+		/* Should never get here, but place case for it anyways */
+		return;
 	}
 
-	return tx_frame;
-}
+#if defined(CONFIG_SPI_STM32_HAS_FIFO)
+	if (xfer_16) {
+		ll_func_set_fifo_threshold_16bit(spi);
+	} else {
+		ll_func_set_fifo_threshold_8bit(spi);
+	}
+#endif
 
-/* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
-{
-	u16_t tx_frame;
-	u16_t rx_frame;
+	if (xfer_16 && spi_context_tx_buf_on(ctx)) {
+		tx_frame = UNALIGNED_GET((u16_t *)(ctx->tx_buf));
+		spi_context_update_tx(ctx, 1, 2);
+	} else if (spi_context_tx_buf_on(ctx)) {
+		tx_frame = UNALIGNED_GET((u8_t *)(ctx->tx_buf));
+		spi_context_update_tx(ctx, 1, 1);
+	}
 
-	tx_frame = spi_stm32_next_tx(data);
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
@@ -111,31 +124,68 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	}
 #endif
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		LL_SPI_TransmitData8(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1, 1);
-	} else {
+	if (xfer_16) {
 		LL_SPI_TransmitData16(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 2, 1);
+	} else {
+		LL_SPI_TransmitData8(spi, tx_frame);
 	}
 
 	while (!ll_func_rx_is_not_empty(spi)) {
 		/* NOP */
 	}
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
-		}
-		spi_context_update_rx(&data->ctx, 1, 1);
-	} else {
+	if (xfer_16) {
 		rx_frame = LL_SPI_ReceiveData16(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
+		if (spi_context_rx_buf_on(ctx)) {
+			UNALIGNED_PUT(rx_frame, (u16_t *)ctx->rx_buf);
+			spi_context_update_rx(ctx, 1, 2);
 		}
+	} else {
+		rx_frame = LL_SPI_ReceiveData8(spi);
+		if (spi_context_rx_buf_on(ctx)) {
+			UNALIGNED_PUT(rx_frame, (u8_t *)ctx->rx_buf);
+			spi_context_update_rx(ctx, 1, 1);
+		}
+	}
+}
+
+static inline void spi_stm32_shift_m16(SPI_TypeDef *spi,
+				       struct spi_stm32_data *data)
+{
+	u16_t tx_frame = SPI_STM32_TX_NOP;
+	u16_t rx_frame;
+
+	if (spi_context_tx_buf_on(&data->ctx)) {
+		tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+		spi_context_update_tx(&data->ctx, 2, 1);
+	}
+
+	while (!ll_func_tx_is_empty(spi)) {
+		/* NOP */
+	}
+
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+	/* With the STM32MP1, if the device is the SPI master, we need to enable
+	 * the start of the transfer with LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif
+
+	LL_SPI_TransmitData16(spi, tx_frame);
+
+	while (!ll_func_rx_is_not_empty(spi)) {
+		/* NOP */
+	}
+
+	rx_frame = LL_SPI_ReceiveData16(spi);
+
+	if (spi_context_rx_buf_on(&data->ctx)) {
+		UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
 		spi_context_update_rx(&data->ctx, 2, 1);
 	}
 }
@@ -144,12 +194,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
-		u16_t tx_frame = spi_stm32_next_tx(data);
+		u16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData8(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData16(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
@@ -184,7 +236,11 @@ static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	u16_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
-		spi_stm32_shift_m(spi, data);
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			spi_stm32_shift_m8(spi, data);
+		} else {
+			spi_stm32_shift_m16(spi, data);
+		}
 	} else {
 		spi_stm32_shift_s(spi, data);
 	}
@@ -281,8 +337,11 @@ static int spi_stm32_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			       (clock_control_subsys_t) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
 		u32_t clk = clock >> br;

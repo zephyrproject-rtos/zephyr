@@ -80,9 +80,10 @@ static inline bool is_thread_dummy(struct k_thread *thread)
 }
 #endif
 
-bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
+bool z_is_t1_higher_prio_than_t2(struct k_thread *thread_1,
+				 struct k_thread *thread_2)
 {
-	if (t1->base.prio < t2->base.prio) {
+	if (thread_1->base.prio < thread_2->base.prio) {
 		return true;
 	}
 
@@ -93,10 +94,10 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 	 * deadlines when the job is complete.  Letting the deadlines
 	 * go negative is fine and in fact prevents aliasing bugs.
 	 */
-	if (t1->base.prio == t2->base.prio) {
+	if (thread_1->base.prio == thread_2->base.prio) {
 		int now = (int) k_cycle_get_32();
-		int dt1 = t1->base.prio_deadline - now;
-		int dt2 = t2->base.prio_deadline - now;
+		int dt1 = thread_1->base.prio_deadline - now;
+		int dt2 = thread_2->base.prio_deadline - now;
 
 		return dt1 < dt2;
 	}
@@ -105,7 +106,8 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 	return false;
 }
 
-static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
+static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
+					 int preempt_ok)
 {
 	/* Preemption is OK if it's being explicitly allowed by
 	 * software state (e.g. the thread called k_yield())
@@ -127,14 +129,14 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
 	 * hit this.
 	 */
 	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
-	    && z_is_thread_timeout_active(th)) {
+	    && z_is_thread_timeout_active(thread)) {
 		return true;
 	}
 
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
-	if (is_preempt(_current) || is_metairq(th)) {
+	if (is_preempt(_current) || is_metairq(thread)) {
 		return true;
 	}
 
@@ -156,11 +158,11 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 	/* With masks enabled we need to be prepared to walk the list
 	 * looking for one we can run
 	 */
-	struct k_thread *t;
+	struct k_thread *thread;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
-		if ((t->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
-			return t;
+	SYS_DLIST_FOR_EACH_CONTAINER(pq, thread, base.qnode_dlist) {
+		if ((thread->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
+			return thread;
 		}
 	}
 	return NULL;
@@ -169,6 +171,25 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
+	struct k_thread *thread = _priq_run_best(&_kernel.ready_q.runq);
+
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+	/* MetaIRQs must always attempt to return back to a
+	 * cooperative thread they preempted and not whatever happens
+	 * to be highest priority now. The cooperative thread was
+	 * promised it wouldn't be preempted (by non-metairq threads)!
+	 */
+	struct k_thread *mirqp = _current_cpu->metairq_preempted;
+
+	if (mirqp != NULL && (thread == NULL || !is_metairq(thread))) {
+		if (!z_is_thread_prevented_from_running(mirqp)) {
+			thread = mirqp;
+		} else {
+			_current_cpu->metairq_preempted = NULL;
+		}
+	}
+#endif
+
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
 	 * the queue (actually we have to, otherwise the assembly
@@ -176,14 +197,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * responsible for putting it back in z_swap and ISR return!),
 	 * which makes this choice simple.
 	 */
-	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-
-	return th ? th : _current_cpu->idle_thread;
+	return thread ? thread : _current_cpu->idle_thread;
 #else
-
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
-	 * _current against the best choice from the queue.
+	 * _current against the best choice from the queue.  Here, the
+	 * thread selected above represents "the best thread that is
+	 * not current".
 	 *
 	 * Subtle note on "queued": in SMP mode, _current does not
 	 * live in the queue, so this isn't exactly the same thing as
@@ -193,37 +213,35 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	int queued = z_is_thread_queued(_current);
 	int active = !z_is_thread_prevented_from_running(_current);
 
-	/* Choose the best thread that is not current */
-	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-	if (th == NULL) {
-		th = _current_cpu->idle_thread;
+	if (thread == NULL) {
+		thread = _current_cpu->idle_thread;
 	}
 
 	if (active) {
 		if (!queued &&
-		    !z_is_t1_higher_prio_than_t2(th, _current)) {
-			th = _current;
+		    !z_is_t1_higher_prio_than_t2(thread, _current)) {
+			thread = _current;
 		}
 
-		if (!should_preempt(th, _current_cpu->swap_ok)) {
-			th = _current;
+		if (!should_preempt(thread, _current_cpu->swap_ok)) {
+			thread = _current;
 		}
 	}
 
 	/* Put _current back into the queue */
-	if (th != _current && active && !z_is_idle_thread_object(_current) &&
-	    !queued) {
+	if (thread != _current && active &&
+		!z_is_idle_thread_object(_current) && !queued) {
 		_priq_run_add(&_kernel.ready_q.runq, _current);
 		z_mark_thread_as_queued(_current);
 	}
 
 	/* Take the new _current out of the queue */
-	if (z_is_thread_queued(th)) {
-		_priq_run_remove(&_kernel.ready_q.runq, th);
+	if (z_is_thread_queued(thread)) {
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
 	}
-	z_mark_thread_as_not_queued(th);
+	z_mark_thread_as_not_queued(thread);
 
-	return th;
+	return thread;
 #endif
 }
 
@@ -257,18 +275,18 @@ void k_sched_time_slice_set(s32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
-		slice_time = z_ms_to_ticks(slice);
+		slice_time = k_ms_to_ticks_ceil32(slice);
 		slice_max_prio = prio;
 		z_reset_time_slice();
 	}
 }
 
-static inline int sliceable(struct k_thread *t)
+static inline int sliceable(struct k_thread *thread)
 {
-	return is_preempt(t)
-		&& !z_is_prio_higher(t->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(t)
-		&& !z_is_thread_timeout_active(t);
+	return is_preempt(thread)
+		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
+		&& !z_is_idle_thread_object(thread)
+		&& !z_is_thread_timeout_active(thread);
 }
 
 /* Called out of each timer interrupt */
@@ -295,18 +313,37 @@ void z_time_slice(int ticks)
 }
 #endif
 
+/* Track cooperative threads preempted by metairqs so we can return to
+ * them specifically.  Called at the moment a new thread has been
+ * selected to run.
+ */
+static void update_metairq_preempt(struct k_thread *thread)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+	if (is_metairq(thread) && !is_metairq(_current) &&
+	    !is_preempt(_current)) {
+		/* Record new preemption */
+		_current_cpu->metairq_preempted = _current;
+	} else if (!is_metairq(thread)) {
+		/* Returning from existing preemption */
+		_current_cpu->metairq_preempted = NULL;
+	}
+#endif
+}
+
 static void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
-	struct k_thread *th = next_up();
+	struct k_thread *thread = next_up();
 
-	if (should_preempt(th, preempt_ok)) {
+	if (should_preempt(thread, preempt_ok)) {
 #ifdef CONFIG_TIMESLICING
-		if (th != _current) {
+		if (thread != _current) {
 			z_reset_time_slice();
 		}
 #endif
-		_kernel.ready_q.cache = th;
+		update_metairq_preempt(thread);
+		_kernel.ready_q.cache = thread;
 	} else {
 		_kernel.ready_q.cache = _current;
 	}
@@ -329,7 +366,7 @@ void z_add_thread_to_ready_q(struct k_thread *thread)
 		z_mark_thread_as_queued(thread);
 		update_cache(0);
 #if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
-		z_arch_sched_ipi();
+		arch_sched_ipi();
 #endif
 	}
 }
@@ -368,7 +405,16 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	}
 
 	if (timeout != K_FOREVER) {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(timeout);
+		s32_t ticks;
+
+		__ASSERT(timeout >= 0,
+			"Only non-negative values are accepted.");
+
+		if (timeout < 0) {
+			timeout = 0;
+		}
+
+		ticks = _TICK_ALIGN + k_ms_to_ticks_ceil32(timeout);
 
 		z_add_thread_timeout(thread, ticks);
 	}
@@ -415,16 +461,17 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /* Timeout handler for *_thread_timeout() APIs */
-void z_thread_timeout(struct _timeout *to)
+void z_thread_timeout(struct _timeout *timeout)
 {
-	struct k_thread *th = CONTAINER_OF(to, struct k_thread, base.timeout);
+	struct k_thread *thread = CONTAINER_OF(timeout,
+					       struct k_thread, base.timeout);
 
-	if (th->base.pended_on != NULL) {
-		z_unpend_thread_no_timeout(th);
+	if (thread->base.pended_on != NULL) {
+		z_unpend_thread_no_timeout(thread);
 	}
-	z_mark_thread_as_started(th);
-	z_mark_thread_as_not_suspended(th);
-	z_ready_thread(th);
+	z_mark_thread_as_started(thread);
+	z_mark_thread_as_not_suspended(thread);
+	z_ready_thread(thread);
 }
 #endif
 
@@ -459,13 +506,13 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 
 struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 {
-	struct k_thread *t = z_unpend1_no_timeout(wait_q);
+	struct k_thread *thread = z_unpend1_no_timeout(wait_q);
 
-	if (t != NULL) {
-		(void)z_abort_thread_timeout(t);
+	if (thread != NULL) {
+		(void)z_abort_thread_timeout(thread);
 	}
 
-	return t;
+	return thread;
 }
 
 void z_unpend_thread(struct k_thread *thread)
@@ -523,7 +570,7 @@ static inline int resched(u32_t key)
 	_current_cpu->swap_ok = 0;
 #endif
 
-	return z_arch_irq_unlocked(key) && !z_arch_is_in_isr();
+	return arch_irq_unlocked(key) && !arch_is_in_isr();
 }
 
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
@@ -555,7 +602,7 @@ void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(_current->base.sched_locked != 0, "");
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
@@ -597,15 +644,17 @@ void *z_get_next_switch_handle(void *interrupted)
 
 #ifdef CONFIG_SMP
 	LOCKED(&sched_spinlock) {
-		struct k_thread *th = next_up();
+		struct k_thread *thread = next_up();
 
-		if (_current != th) {
+		if (_current != thread) {
+			update_metairq_preempt(thread);
+
 #ifdef CONFIG_TIMESLICING
 			z_reset_time_slice();
 #endif
 			_current_cpu->swap_ok = 0;
-			set_current(th);
-#ifdef SPIN_VALIDATE
+			set_current(thread);
+#ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
 			 * bookeeping so the validation doesn't get
 			 * confused when the "wrong" thread tries to
@@ -664,28 +713,29 @@ void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 
 struct k_thread *z_priq_dumb_best(sys_dlist_t *pq)
 {
-	struct k_thread *t = NULL;
+	struct k_thread *thread = NULL;
 	sys_dnode_t *n = sys_dlist_peek_head(pq);
 
 	if (n != NULL) {
-		t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 	}
-	return t;
+	return thread;
 }
 
 bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
 {
-	struct k_thread *ta, *tb;
+	struct k_thread *thread_a, *thread_b;
 
-	ta = CONTAINER_OF(a, struct k_thread, base.qnode_rb);
-	tb = CONTAINER_OF(b, struct k_thread, base.qnode_rb);
+	thread_a = CONTAINER_OF(a, struct k_thread, base.qnode_rb);
+	thread_b = CONTAINER_OF(b, struct k_thread, base.qnode_rb);
 
-	if (z_is_t1_higher_prio_than_t2(ta, tb)) {
+	if (z_is_t1_higher_prio_than_t2(thread_a, thread_b)) {
 		return true;
-	} else if (z_is_t1_higher_prio_than_t2(tb, ta)) {
+	} else if (z_is_t1_higher_prio_than_t2(thread_b, thread_a)) {
 		return false;
 	} else {
-		return ta->base.order_key < tb->base.order_key ? 1 : 0;
+		return thread_a->base.order_key < thread_b->base.order_key
+			? 1 : 0;
 	}
 }
 
@@ -731,13 +781,13 @@ void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread)
 
 struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 {
-	struct k_thread *t = NULL;
+	struct k_thread *thread = NULL;
 	struct rbnode *n = rb_get_min(&pq->tree);
 
 	if (n != NULL) {
-		t = CONTAINER_OF(n, struct k_thread, base.qnode_rb);
+		thread = CONTAINER_OF(n, struct k_thread, base.qnode_rb);
 	}
-	return t;
+	return thread;
 }
 
 #ifdef CONFIG_SCHED_MULTIQ
@@ -776,24 +826,24 @@ struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 		return NULL;
 	}
 
-	struct k_thread *t = NULL;
+	struct k_thread *thread = NULL;
 	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
 	sys_dnode_t *n = sys_dlist_peek_head(l);
 
 	if (n != NULL) {
-		t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 	}
-	return t;
+	return thread;
 }
 
 int z_unpend_all(_wait_q_t *wait_q)
 {
 	int need_sched = 0;
-	struct k_thread *th;
+	struct k_thread *thread;
 
-	while ((th = z_waitq_head(wait_q)) != NULL) {
-		z_unpend_thread(th);
-		z_ready_thread(th);
+	while ((thread = z_waitq_head(wait_q)) != NULL) {
+		z_unpend_thread(thread);
+		z_ready_thread(thread);
 		need_sched = 1;
 	}
 
@@ -847,7 +897,7 @@ void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	struct k_thread *thread = (struct k_thread *)tid;
 
@@ -872,13 +922,13 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #ifdef CONFIG_SCHED_DEADLINE
 void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
-	struct k_thread *th = tid;
+	struct k_thread *thread = tid;
 
 	LOCKED(&sched_spinlock) {
-		th->base.prio_deadline = k_cycle_get_32() + deadline;
-		if (z_is_thread_queued(th)) {
-			_priq_run_remove(&_kernel.ready_q.runq, th);
-			_priq_run_add(&_kernel.ready_q.runq, th);
+		thread->base.prio_deadline = k_cycle_get_32() + deadline;
+		if (z_is_thread_queued(thread)) {
+			_priq_run_remove(&_kernel.ready_q.runq, thread);
+			_priq_run_add(&_kernel.ready_q.runq, thread);
 		}
 	}
 }
@@ -886,7 +936,7 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
-	struct k_thread *thread = (struct k_thread *)thread_p;
+	struct k_thread *thread = tid;
 
 	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(deadline > 0,
@@ -901,7 +951,7 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 
 void z_impl_k_yield(void)
 {
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	if (!z_is_idle_thread_object(_current)) {
 		LOCKED(&sched_spinlock) {
@@ -931,7 +981,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 #ifdef CONFIG_MULTITHREADING
 	u32_t expected_wakeup_time;
 
-	__ASSERT(!z_arch_is_in_isr(), "");
+	__ASSERT(!arch_is_in_isr(), "");
 
 	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
 
@@ -975,9 +1025,16 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
-	ticks = z_ms_to_ticks(ms);
+	__ASSERT(!arch_is_in_isr(), "");
+
+	if (ms == K_FOREVER) {
+		k_thread_suspend(_current);
+		return K_FOREVER;
+	}
+
+	ticks = k_ms_to_ticks_ceil32(ms);
 	ticks = z_tick_sleep(ticks);
-	return __ticks_to_ms(ticks);
+	return k_ticks_to_ms_floor64(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -992,9 +1049,9 @@ s32_t z_impl_k_usleep(int us)
 {
 	s32_t ticks;
 
-	ticks = z_us_to_ticks(us);
+	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);
-	return __ticks_to_us(ticks);
+	return k_ticks_to_us_floor64(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1012,13 +1069,16 @@ void z_impl_k_wakeup(k_tid_t thread)
 	}
 
 	if (z_abort_thread_timeout(thread) < 0) {
-		return;
+		/* Might have just been sleeping forever */
+		if (thread->base.thread_state != _THREAD_SUSPENDED) {
+			return;
+		}
 	}
 
 	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
-	if (!z_arch_is_in_isr()) {
+	if (!arch_is_in_isr()) {
 		z_reschedule_unlocked();
 	}
 
@@ -1047,6 +1107,8 @@ void z_sched_ipi(void)
 
 void z_sched_abort(struct k_thread *thread)
 {
+	k_spinlock_key_t key;
+
 	if (thread == _current) {
 		z_remove_thread_from_ready_q(thread);
 		return;
@@ -1058,24 +1120,26 @@ void z_sched_abort(struct k_thread *thread)
 	 */
 	thread->base.thread_state |= _THREAD_ABORTING;
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-	z_arch_sched_ipi();
+	arch_sched_ipi();
 #endif
 
 	/* Wait for it to be flagged dead either by the CPU it was
 	 * running on or because we caught it idle in the queue
 	 */
 	while ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
-		LOCKED(&sched_spinlock) {
-			if (z_is_thread_prevented_from_running(thread)) {
-				__ASSERT(!z_is_thread_queued(thread), "");
-				thread->base.thread_state |= _THREAD_DEAD;
-			} else if (z_is_thread_queued(thread)) {
-				_priq_run_remove(&_kernel.ready_q.runq, thread);
-				z_mark_thread_as_not_queued(thread);
-				thread->base.thread_state |= _THREAD_DEAD;
-			} else {
-				k_busy_wait(100);
-			}
+		key = k_spin_lock(&sched_spinlock);
+		if (z_is_thread_prevented_from_running(thread)) {
+			__ASSERT(!z_is_thread_queued(thread), "");
+			thread->base.thread_state |= _THREAD_DEAD;
+			k_spin_unlock(&sched_spinlock, key);
+		} else if (z_is_thread_queued(thread)) {
+			_priq_run_remove(&_kernel.ready_q.runq, thread);
+			z_mark_thread_as_not_queued(thread);
+			thread->base.thread_state |= _THREAD_DEAD;
+			k_spin_unlock(&sched_spinlock, key);
+		} else {
+			k_spin_unlock(&sched_spinlock, key);
+			k_busy_wait(100);
 		}
 	}
 }
@@ -1105,7 +1169,7 @@ static inline k_tid_t z_vrfy_k_current_get(void)
 
 int z_impl_k_is_preempt_thread(void)
 {
-	return !z_arch_is_in_isr() && is_preempt(_current);
+	return !arch_is_in_isr() && is_preempt(_current);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1123,14 +1187,14 @@ BUILD_ASSERT_MSG(CONFIG_MP_NUM_CPUS <= 8, "Too many CPUs for mask word");
 # endif
 
 
-static int cpu_mask_mod(k_tid_t t, u32_t enable_mask, u32_t disable_mask)
+static int cpu_mask_mod(k_tid_t thread, u32_t enable_mask, u32_t disable_mask)
 {
 	int ret = 0;
 
 	LOCKED(&sched_spinlock) {
-		if (z_is_thread_prevented_from_running(t)) {
-			t->base.cpu_mask |= enable_mask;
-			t->base.cpu_mask  &= ~disable_mask;
+		if (z_is_thread_prevented_from_running(thread)) {
+			thread->base.cpu_mask |= enable_mask;
+			thread->base.cpu_mask  &= ~disable_mask;
 		} else {
 			ret = -EINVAL;
 		}

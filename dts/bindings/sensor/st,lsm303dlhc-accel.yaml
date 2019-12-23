@@ -1,11 +1,8 @@
 # Copyright (c) 2018 Philémon Jaermann
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LSM303DLHC
-
-description: >
-    This binding gives a base representation of LSM303DLHC acceleration sensor
+description: LSM303DLHC acceleration sensor
 
 compatible: "st,lsm303dlhc-accel"
 
-include: i2c-device.yaml
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]

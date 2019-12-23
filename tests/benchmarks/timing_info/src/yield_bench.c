@@ -48,12 +48,12 @@ void yield_bench(void)
 				     0 /*priority*/, 0, K_NO_WAIT);
 
 	/*read the time of start of the sleep till the swap happens */
-	z_arch_timing_value_swap_end = 1U;
+	arch_timing_value_swap_end = 1U;
 
 	TIMING_INFO_PRE_READ();
 	thread_sleep_start_time =   TIMING_INFO_OS_GET_TIME();
 	k_sleep(K_MSEC(1000));
-	thread_sleep_end_time =   ((u32_t)z_arch_timing_value_swap_common);
+	thread_sleep_end_time =   ((u32_t)arch_timing_value_swap_common);
 
 	u32_t yield_cycles = (thread_end_time - thread_start_time) / 2000U;
 	u32_t sleep_cycles = thread_sleep_end_time - thread_sleep_start_time;

@@ -217,16 +217,22 @@ int usb_set_config(const u8_t *usb_descriptor);
 int usb_deconfig(void);
 
 /**
- * @brief Enable USB for host/device connection
+ * @brief Enable the USB subsystem and associated hardware
  *
- * Function to enable USB for host/device connection.
- * Upon success, the USB module is no longer clock gated in hardware,
- * it is now capable of transmitting and receiving on the USB bus and
- * of generating interrupts.
+ * This function initializes the USB core subsystem and enables the
+ * corresponding hardware so that it can begin transmitting and receiving
+ * on the USB bus, as well as generating interrupts.
+ *
+ * Class-specific initialization and registration must be performed by the user
+ * before invoking this, so that any data or events on the bus are processed
+ * correctly by the associated class handling code.
+ *
+ * @param[in] status_cb Callback registered by user to notify
+ *                      about USB device controller state.
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_enable(void);
+int usb_enable(usb_dc_status_callback status_cb);
 
 /**
  * @brief Disable the USB device

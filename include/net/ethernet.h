@@ -82,10 +82,10 @@ struct net_eth_addr {
 
 /** Ethernet hardware capabilities */
 enum ethernet_hw_caps {
-	/** TX Checksum offloading supported */
+	/** TX Checksum offloading supported for all of IPv4, UDP, TCP */
 	ETHERNET_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
 
-	/** RX Checksum offloading supported */
+	/** RX Checksum offloading supported for all of IPv4, UDP, TCP */
 	ETHERNET_HW_RX_CHKSUM_OFFLOAD	= BIT(1),
 
 	/** VLAN supported */
@@ -264,6 +264,11 @@ struct ethernet_api {
 	/** Send a network packet */
 	int (*send)(struct device *dev, struct net_pkt *pkt);
 };
+
+/* Make sure that the network interface API is properly setup inside
+ * Ethernet API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 struct net_eth_hdr {

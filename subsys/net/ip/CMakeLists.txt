@@ -32,7 +32,9 @@ zephyr_library_sources_ifdef(CONFIG_NET_IPV6_MLD     ipv6_mld.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_FRAGMENT     ipv6_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ROUTE        route.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
-zephyr_library_sources_ifdef(CONFIG_NET_TCP          connection.c tcp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_TCP1         connection.c tcp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_TCP2         connection.c tcp2.c)
+zephyr_library_sources_ifdef(CONFIG_NET_TEST_PROTOCOL           tp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TRICKLE      trickle.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          connection.c udp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET  connection.c
@@ -41,6 +43,11 @@ zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN  connection.c
                                                      canbus_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
 endif()
+
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  )
 
 if(CONFIG_NET_SHELL)
 zephyr_library_sources(net_shell.c)

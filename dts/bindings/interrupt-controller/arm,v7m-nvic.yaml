@@ -1,7 +1,4 @@
-title: ARMv7-M NVIC Interrupt Controller
-
-description: >
-    This binding describes the ARMv7-M Nested Vectored Interrupt Controller.
+description: ARMv7-M NVIC (Nested Vectored Interrupt Controller)
 
 compatible: "arm,v7m-nvic"
 

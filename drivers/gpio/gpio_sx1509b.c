@@ -14,12 +14,6 @@
 #include <sys/byteorder.h>
 #include <sys/util.h>
 
-#ifdef CONFIG_HAS_DTS_I2C
-#define CONFIG_GPIO_SX1509B_DEV_NAME	DT_INST_0_SEMTECH_SX1509B_LABEL
-#define CONFIG_GPIO_SX1509B_I2C_ADDR	DT_INST_0_SEMTECH_SX1509B_BASE_ADDRESS
-#define CONFIG_GPIO_SX1509B_I2C_MASTER_DEV_NAME DT_INST_0_SEMTECH_SX1509B_BUS_NAME
-#endif
-
 /** Cache of the output configuration and data of the pins */
 struct gpio_sx1509b_pin_state {
 	u16_t input_disable;
@@ -367,8 +361,8 @@ out:
 }
 
 static const struct gpio_sx1509b_config gpio_sx1509b_cfg = {
-	.i2c_master_dev_name = CONFIG_GPIO_SX1509B_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr	= CONFIG_GPIO_SX1509B_I2C_ADDR,
+	.i2c_master_dev_name = DT_INST_0_SEMTECH_SX1509B_BUS_NAME,
+	.i2c_slave_addr	= DT_INST_0_SEMTECH_SX1509B_BASE_ADDRESS,
 };
 
 static struct gpio_sx1509b_drv_data gpio_sx1509b_drvdata = {
@@ -381,7 +375,7 @@ static const struct gpio_driver_api gpio_sx1509b_drv_api_funcs = {
 	.read	= gpio_sx1509b_read,
 };
 
-DEVICE_AND_API_INIT(gpio_sx1509b, CONFIG_GPIO_SX1509B_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_sx1509b, DT_INST_0_SEMTECH_SX1509B_LABEL,
 		    gpio_sx1509b_init, &gpio_sx1509b_drvdata, &gpio_sx1509b_cfg,
 		    POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
 		    &gpio_sx1509b_drv_api_funcs);

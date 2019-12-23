@@ -1,7 +1,4 @@
-title: STM32 G0 Flash Controller
-
-description: >
-    This binding gives a base representation of the STM32 G0 Flash Controller
+description: STM32 G0 flash controller
 
 compatible: "st,stm32g0-flash-controller"
 

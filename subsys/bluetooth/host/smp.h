@@ -146,11 +146,6 @@ int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data **oobd_local,
 			      const struct bt_le_oob_sc_data **oobd_remote);
 
-
-void smp_ident_sent(struct bt_conn *conn, void *user_data);
-void smp_id_sent(struct bt_conn *conn, void *user_data);
-void smp_sign_info_sent(struct bt_conn *conn, void *user_data);
-
 /** brief Verify signed message
  *
  *  @param conn Bluetooth connection
@@ -168,3 +163,6 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
  *  @return 0 in success, error code otherwise
  */
 int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
+
+/** Generate IRK from Identity Root (IR) */
+int bt_smp_irk_get(u8_t *ir, u8_t *irk);

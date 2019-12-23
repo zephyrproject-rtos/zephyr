@@ -3,7 +3,7 @@
 if BOARD_QEMU_X86
 
 config BUILD_OUTPUT_BIN
-        default n
+	default n
 
 config BOARD
 	default "qemu_x86"
@@ -17,9 +17,9 @@ endif
 
 endif # BOARD_QEMU_X86
 
-if BOARD_QEMU_X86_LONG
+if BOARD_QEMU_X86_64
 
 config BOARD
-	default "qemu_x86_long"
+	default "qemu_x86_64"
 
-endif # BOARD_QEMU_X86_LONG
+endif # BOARD_QEMU_X86_64

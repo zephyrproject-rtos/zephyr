@@ -18,7 +18,11 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
-#include <net/socks.h>
+
+#if defined(CONFIG_SOCKS)
+#include "socks.h"
+#endif
+
 #include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
@@ -402,15 +406,12 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 {
 	s32_t timeout = K_FOREVER;
 	struct net_context *ctx;
+	struct net_pkt *last_pkt;
 	int fd;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
-	}
-
-	if (net_context_get_ip_proto(parent) == IPPROTO_TCP) {
-		net_context_set_state(parent, NET_CONTEXT_LISTENING);
 	}
 
 	if (sock_is_nonblock(parent)) {
@@ -422,6 +423,23 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		errno = EAGAIN;
 		return -1;
 	}
+
+	/* Check if the connection is already disconnected */
+	last_pkt = k_fifo_peek_tail(&ctx->recv_q);
+	if (last_pkt) {
+		if (net_pkt_eof(last_pkt)) {
+			sock_set_eof(ctx);
+			errno = ECONNABORTED;
+			return -1;
+		}
+	}
+
+	if (net_context_is_closing(ctx)) {
+		errno = ECONNABORTED;
+		return -1;
+	}
+
+	net_context_set_accepting(ctx, false);
 
 #ifdef CONFIG_USERSPACE
 	z_object_recycle(ctx);
@@ -626,7 +644,9 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 
 		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
 							pkt, &ipv4_access);
-		if (!ipv4_hdr || net_pkt_acknowledge_data(pkt, &ipv4_access)) {
+		if (!ipv4_hdr ||
+		    net_pkt_acknowledge_data(pkt, &ipv4_access) ||
+		    net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
 			ret = -ENOBUFS;
 			goto error;
 		}

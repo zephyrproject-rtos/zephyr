@@ -260,7 +260,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			k_cpu_idle();
 		}
 		/* calculating milliseconds per tick*/
-		tms += __ticks_to_ms(1);
+		tms += k_ticks_to_ms_floor64(1);
 		tms2 = k_uptime_get_32();
 		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
 			      "got %d which is less than %d\n",
@@ -699,7 +699,7 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 	timestamp = k_uptime_get() - timestamp;
 	TC_PRINT(" thread back from sleep\n");
 
-	int slop = MAX(__ticks_to_ms(2), 1);
+	int slop = MAX(k_ticks_to_ms_floor64(2), 1);
 
 	if (timestamp < timeout || timestamp > timeout + slop) {
 		TC_ERROR("timestamp out of range, got %d\n", (int)timestamp);

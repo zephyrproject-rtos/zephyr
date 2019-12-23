@@ -1,0 +1,15 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMG160 gyroscope.  See more info at:
+    https://www.bosch-sensortec.com/bst/products/all_products/bmg160
+
+compatible: "bosch,bmg160"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false

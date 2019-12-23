@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic VMC
-
-description: >
-    Binding for the Nordic VMC (Volatile Memory Controller)
+description: Nordic VMC (Volatile Memory Controller)
 
 compatible: "nordic,nrf-vmc"
 

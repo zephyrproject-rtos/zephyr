@@ -1,10 +1,7 @@
-# Kconfig - debug configuration options
+# Debug configuration options
 
-#
 # Copyright (c) 2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "System Monitoring Options"
 
@@ -54,6 +51,25 @@ config ASAN
 	  only supported by boards based on the posix architecture, and requires a
 	  recent-ish compiler with the ``-fsanitize=address`` command line option,
 	  and the libasan library.
+
+	  Note that at exit leak detection is disabled for 64-bit boards when
+	  GCC is used due to potential risk of a deadlock in libasan.
+	  This behavior can be changes by adding leak_check_at_exit=1 to the
+	  environment variable ASAN_OPTIONS.
+
+if ASAN
+config ASAN_NOP_DLCLOSE
+	bool "Override host OS dlclose() with a NOP"
+	default y if HAS_SDL
+	help
+	  Override host OS dlclose() with a NOP.
+
+	  This NOP implementation is needed as workaround for a known limitation in
+	  LSAN (leak sanitizer) that if dlcose is called before performing the leak
+	  check, "<unknown module>" is reported in the stack traces during the leak
+	  check and these can not be suppressed, see
+	  https://github.com/google/sanitizers/issues/89 for more info.
+endif # ASAN
 
 config UBSAN
 	bool "Build with undefined behavior sanitizer"
@@ -146,6 +162,16 @@ config ASSERT_LEVEL
 	  Level 0: off
 	  Level 1: on + warning in every file that includes __assert.h
 	  Level 2: on + no warning
+
+config SPIN_VALIDATE
+	bool "Enable spinlock validation"
+	depends on ASSERT
+	depends on MP_NUM_CPUS < 4
+	default y if !FLASH || FLASH_SIZE > 32
+	help
+	  There's a spinlock validation framework available when asserts are
+	  enabled. It adds a relatively hefty overhead (about 3k or so) to
+	  kernel code size, don't use on platforms known to be small.
 
 config FORCE_NO_ASSERT
 	bool "Force-disable no assertions"

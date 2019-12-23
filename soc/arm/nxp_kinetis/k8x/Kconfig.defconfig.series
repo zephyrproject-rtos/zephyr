@@ -1,9 +1,7 @@
-# Kconfig - Kinetis K8x series configuration options
-#
+# Kinetis K8x series configuration options
+
 # Copyright (c) 2019 SEAL AG
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_KINETIS_K8X
 
@@ -11,9 +9,11 @@ config SOC_SERIES
 	default "k8x"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 106
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
 
 if KINETIS_FLASH_CONFIG
 

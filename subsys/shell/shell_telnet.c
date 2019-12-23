@@ -238,6 +238,8 @@ static void telnet_accept(struct net_context *client,
 		goto error;
 	}
 
+	net_context_set_accepting(client, false);
+
 	LOG_DBG("Telnet client connected (family AF_INET%s)",
 		net_context_get_family(client) == AF_INET ? "" : "6");
 

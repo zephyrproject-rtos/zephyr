@@ -14,7 +14,7 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/pinmux.h>
 #include <sys/util.h>
-#include <interrupt_controller/exti_stm32.h>
+#include <drivers/interrupt_controller/exti_stm32.h>
 
 #include "gpio_stm32.h"
 #include "gpio_utils.h"
@@ -185,10 +185,79 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 	return 0;
 }
 
+static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X)
+	return ((pin % 4 * 4) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	return (((pin * 8) % 32) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
+#else
+	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
+#endif
+}
+
+static void gpio_stm32_set_exti_source(int port, int pin)
+{
+	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt should be enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == STM32_PORTH) {
+		port = LL_SYSCFG_EXTI_PORTH;
+	}
+#endif
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	LL_GPIO_AF_SetEXTISource(port, line);
+#elif CONFIG_SOC_SERIES_STM32MP1X
+	LL_EXTI_SetEXTISource(port, line);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	LL_EXTI_SetEXTISource(port, line);
+#else
+	LL_SYSCFG_SetEXTISource(port, line);
+#endif
+}
+
+static int gpio_stm32_get_exti_source(int pin)
+{
+	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
+	int port;
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	port = LL_GPIO_AF_GetEXTISource(line);
+#elif CONFIG_SOC_SERIES_STM32MP1X
+	port = LL_EXTI_GetEXTISource(line);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	port = LL_EXTI_GetEXTISource(line);
+#else
+	port = LL_SYSCFG_GetEXTISource(line);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt is enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == LL_SYSCFG_EXTI_PORTH) {
+		port = STM32_PORTH;
+	}
+#endif
+
+	return port;
+}
+
 /**
  * @brief Enable EXTI of the specific line
  */
-const int gpio_stm32_enable_int(int port, int pin)
+static int gpio_stm32_enable_int(int port, int pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
@@ -212,45 +281,25 @@ const int gpio_stm32_enable_int(int port, int pin)
 	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 #endif
 
-	uint32_t line;
-
 	if (pin > 15) {
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X)
-	line = ((pin % 4 * 4) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-	line = (((pin * 8) % 32) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-	line = ((pin & 0x3) << (16 + 3)) | (pin >> 2);
-#else
-	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
-	/*
-	 * Ports F and G are not present on some STM32L0 parts, so
-	 * for these parts port H external interrupt should be enabled
-	 * by writing value 0x5 instead of 0x7.
-	 */
-	if (port == STM32_PORTH) {
-		port = LL_SYSCFG_EXTI_PORTH;
-	}
-#endif
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	LL_GPIO_AF_SetEXTISource(port, line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
-	LL_EXTI_SetEXTISource(port, line);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-	LL_EXTI_SetEXTISource(port, line);
-#else
-	LL_SYSCFG_SetEXTISource(port, line);
-#endif
+	gpio_stm32_set_exti_source(port, pin);
 
 	return 0;
+}
+
+/**
+ * @brief Get enabled GPIO port for EXTI of the specific pin number
+ */
+static int gpio_stm32_int_enabled_port(int pin)
+{
+	if (pin > 15) {
+		return -EINVAL;
+	}
+
+	return gpio_stm32_get_exti_source(pin);
 }
 
 /**
@@ -260,6 +309,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			     u32_t pin, int flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	int err = 0;
 	int pincfg;
 	int map_res;
 
@@ -282,18 +332,24 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	 */
 	map_res = gpio_stm32_flags_to_conf(flags, &pincfg);
 	if (map_res != 0) {
-		return map_res;
+		err = map_res;
+		goto release_lock;
 	}
 
 	if (gpio_stm32_configure(cfg->base, pin, pincfg, 0) != 0) {
-		return -EIO;
+		err = -EIO;
+		goto release_lock;
 	}
 
-	if (IS_ENABLED(CONFIG_EXTI_STM32) && (flags & GPIO_INT) != 0) {
+	if (!IS_ENABLED(CONFIG_EXTI_STM32)) {
+		goto release_lock;
+	}
 
+	if (flags & GPIO_INT) {
 		if (stm32_exti_set_callback(pin, cfg->port,
 					    gpio_stm32_isr, dev) != 0) {
-			return -EBUSY;
+			err = -EBUSY;
+			goto release_lock;
 		}
 
 		gpio_stm32_enable_int(cfg->port, pin);
@@ -313,20 +369,27 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			stm32_exti_trigger(pin, edge);
 		} else {
 			/* Level trigger interrupts not supported */
-			return -ENOTSUP;
+			err = -ENOTSUP;
+			goto release_lock;
 		}
 
 		if (stm32_exti_enable(pin) != 0) {
-			return -ENOSYS;
+			err = -EIO;
+			goto release_lock;
 		}
-
+	} else {
+		if (gpio_stm32_int_enabled_port(pin) == cfg->port) {
+			stm32_exti_disable(pin);
+			stm32_exti_unset_callback(pin);
+		}
 	}
 
+release_lock:
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
-	return 0;
+	return err;
 }
 
 /**

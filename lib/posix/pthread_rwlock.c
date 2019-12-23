@@ -253,5 +253,3 @@ static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 	}
 	return ret;
 }
-
-

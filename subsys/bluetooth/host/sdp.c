@@ -68,8 +68,8 @@ static u8_t num_services;
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
+			  BT_L2CAP_BUF_SIZE(SDP_MTU), NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 
@@ -1388,7 +1388,7 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
  */
 static int bt_sdp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_sdp_connected,
 		.disconnected = bt_sdp_disconnected,
 		.recv = bt_sdp_recv,
@@ -1888,7 +1888,7 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 		     sizeof(*session) - sizeof(session->chan));
 }
 
-static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
+static const struct bt_l2cap_chan_ops sdp_client_chan_ops = {
 		.connected = sdp_client_connected,
 		.disconnected = sdp_client_disconnected,
 		.recv = sdp_client_receive,

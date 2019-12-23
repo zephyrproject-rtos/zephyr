@@ -50,7 +50,6 @@ set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
-set(SYSCALL_MACROS_H_TARGET    syscall_macros_h_target)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
@@ -73,8 +72,6 @@ add_library(zephyr_interface INTERFACE)
 zephyr_library_named(zephyr)
 
 zephyr_include_directories(
-  kernel/include
-  ${ARCH_DIR}/${ARCH}/include
   include
   include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
@@ -331,12 +328,14 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
 
-# If both match then the last one wins. This matters for tests/ and
-# samples/ inside *both* CMAKE_SOURCE_DIR and ZEPHYR_BASE: for them
-# let's strip the shortest prefix.
+# If several match then the last one wins. This matters for instances
+# like tests/ and samples/: they're inside all of them! Then let's
+# strip as little as possible.
 zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
 zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
-# TODO: -fmacro-prefix-map=modules/etc. "build/zephyr_modules.txt" might help.
+if(WEST_TOPDIR)
+  zephyr_cc_option(-fmacro-prefix-map=${WEST_TOPDIR}=WEST_TOPDIR)
+endif()
 
 # TODO: Archiver arguments
 # ar_option(D)
@@ -458,6 +457,7 @@ add_subdirectory(drivers)
 if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 	file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
 		ENCODING UTF-8)
+  set(module_names)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
     # Match "<name>":"<path>" for each line of file, each corresponding to
@@ -465,26 +465,26 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # lazy regexes (it supports greedy only).
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+
+    list(APPEND module_names ${module_name})
+
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+  endforeach()
+
+  foreach(module_name ${module_names})
     # Note the second, binary_dir parameter requires the added
     # subdirectory to have its own, local cmake target(s). If not then
     # this binary_dir is created but stays empty. Object files land in
     # the main binary dir instead.
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
-    add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
+    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+    set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
+    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/${module_name})
   endforeach()
+  # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
+  set(ZEPHYR_CURRENT_MODULE_DIR)
 endif()
-
-set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
-
-add_custom_target(${SYSCALL_MACROS_H_TARGET} DEPENDS ${syscall_macros_h})
-add_custom_command(                          OUTPUT  ${syscall_macros_h}
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
-  > ${syscall_macros_h}
-  DEPENDS ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
-  )
-
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -567,6 +567,10 @@ if(CONFIG_APPLICATION_DEFINED_SYSCALL)
   set(SYSCALL_INCLUDE_DIRECTORY --include ${APPLICATION_SOURCE_DIR})
 endif()
 
+if(CONFIG_ZTEST)
+  set(SYSCALL_ZTEST_DIRECTORY --include ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+endif()
+
 add_custom_command(
   OUTPUT
   ${syscalls_json}
@@ -575,11 +579,20 @@ add_custom_command(
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
   ${SYSCALL_INCLUDE_DIRECTORY}
+  ${SYSCALL_ZTEST_DIRECTORY}
   --json-file        ${syscalls_json}              # Write this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
+
+# 64-bit systems do not require special handling of 64-bit system call
+# parameters or return values, indicate this to the system call boilerplate
+# generation script.
+if(CONFIG_64BIT)
+  set(SYSCALL_LONG_REGISTERS_ARG --long-registers)
+endif()
+
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   # Also, some files are written to include/generated/syscalls/
   COMMAND
@@ -589,6 +602,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
   --syscall-list     ${syscall_list_h}
+  ${SYSCALL_LONG_REGISTERS_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${syscalls_json}
   )
@@ -618,10 +632,13 @@ set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
+target_include_directories(${OFFSETS_LIB} PRIVATE
+  kernel/include
+  ${ARCH_DIR}/${ARCH}/include
+  )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(     ${OFFSETS_LIB}
   ${SYSCALL_LIST_H_TARGET}
-  ${SYSCALL_MACROS_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
   )
@@ -1041,8 +1058,8 @@ if(CONFIG_USERSPACE)
   if(CONFIG_NEWLIB_LIBC)
     set(NEWLIB_PART -l libc.a z_libc_partition)
   endif()
-  if(CONFIG_MBEDTLS)
-    set(MBEDTLS_PART -l lib..__modules__crypto__mbedtls.a k_mbedtls_partition)
+  if(CONFIG_NEWLIB_LIBC_NANO)
+    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
   endif()
 
   add_custom_command(
@@ -1051,12 +1068,14 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_UNALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
+    $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
     kernel
     ${ZEPHYR_LIBS_PROPERTY}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+    COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_unaligned linker section"
     )
 
@@ -1100,13 +1119,15 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
     -o ${APP_SMEM_ALIGNED_LD}
-    ${NEWLIB_PART} ${MBEDTLS_PART}
+    ${NEWLIB_PART}
+    $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
     kernel
     ${ZEPHYR_LIBS_PROPERTY}
     app_smem_unaligned_prebuilt
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+    COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_aligned linker section"
     )
 endif()
@@ -1478,12 +1499,7 @@ add_subdirectory(cmake/reports)
 
 if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
-  message(WARNING "
-      ------------------------------------------------------------
-      --- WARNING:  __ASSERT() statements are globally ENABLED ---
-      --- The kernel will run more slowly and use more memory  ---
-      ------------------------------------------------------------"
-  )
+  message(WARNING "__ASSERT() statements are globally ENABLED")
 endif()
 endif()
 
@@ -1492,6 +1508,23 @@ if(CONFIG_BOARD_DEPRECATED)
       WARNING:  The board '${BOARD}' is deprecated and will be
       removed in version ${CONFIG_BOARD_DEPRECATED}"
   )
+endif()
+
+# In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
+# optimization flag, but in Zephyr it is determined through
+# Kconfig. Here we give a warning when there is a mismatch between the
+# two in case the user is not aware of this.
+set(build_types None Debug Release RelWithDebInfo MinSizeRel)
+
+if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_uppercase)
+
+  if(NOT (${OPTIMIZATION_FLAG} IN_LIST CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase}))
+    message(WARNING "
+      The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
+      This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"
+      )
+  endif()
 endif()
 
 # @Intent: Set compiler specific flags for standard C includes

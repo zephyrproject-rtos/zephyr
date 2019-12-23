@@ -80,4 +80,3 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
 	s32_t timeout = (s32_t)timespec_to_timeoutms(abstime);
 	return cond_wait(cv, mut, timeout);
 }
-

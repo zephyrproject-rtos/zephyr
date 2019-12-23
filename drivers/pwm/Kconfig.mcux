@@ -1,10 +1,7 @@
-# Kconfig.stm32 - STM32 PWM configuration options
-#
-#
+# STM32 PWM configuration options
+
 # Copyright (c) 2019 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM_MCUX
 	bool "MCUX PWM driver"

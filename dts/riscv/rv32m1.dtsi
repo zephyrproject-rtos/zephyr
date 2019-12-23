@@ -32,6 +32,10 @@
 		i2c-1 = &i2c1;
 		i2c-2 = &i2c2;
 		i2c-3 = &i2c3;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		spi-2 = &spi2;
+		spi-3 = &spi3;
 	};
 
 	cpus {
@@ -441,6 +445,53 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		spi0: spi@4003f000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x4003f000 0x78>;
+			label = "SPI_0";
+			status = "disabled";
+			clocks = <&pcc0 0xfc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@40040000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x40040000 0x78>;
+			label = "SPI_1";
+			status = "disabled";
+			clocks = <&pcc0 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi2: spi@40041000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x40041000 0x78>;
+			label = "SPI_2";
+			status = "disabled";
+			clocks = <&pcc0 0x104>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi3: spi@41035000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x41035000 0x78>;
+			label = "SPI_3";
+			status = "disabled";
+			clocks = <&pcc1 0xd4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		generic_fsk: generic_fsk@41033000 {
+			compatible = "openisa,rv32m1-genfsk";
+			reg = <0x41033000 0x90>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		flash-controller@40023000 {

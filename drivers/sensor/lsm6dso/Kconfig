@@ -1,9 +1,8 @@
 # ST Microelectronics LSM6DSO 6-axis IMU sensor driver
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig LSM6DSO
 	bool "LSM6DSO I2C/SPI accelerometer and gyroscope Chip"
 	depends on (I2C && HAS_DTS_I2C) || SPI
@@ -98,7 +97,7 @@ config LSM6DSO_EXT_HTS221
 config LSM6DSO_EXT_LPS22HB
 	bool "Enable LPS22HB as external sensor"
 
-endif #LSM6DSO_SENSORHUB
+endif # LSM6DSO_SENSORHUB
 
 menu "Attributes"
 

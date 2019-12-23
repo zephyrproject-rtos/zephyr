@@ -1,9 +1,7 @@
-# Kconfig - 96Boards STM32 Sensor Mezzanine board configuration
-#
+# 96Boards STM32 Sensor Mezzanine board configuration
+
 # Copyright (c) 2018 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_96B_STM32_SENSOR_MEZ
 
@@ -53,19 +51,15 @@ config I2S_2
 
 endif # I2S
 
-if DMA
-
-config DMA_STM32F4X
-	default y
-
-endif # DMA
-
 if SPI
 
 config SPI_1
 	default y
 
 config SPI_2
+	default y
+
+config SPI_4
 	default y
 
 config SPI_STM32_INTERRUPT

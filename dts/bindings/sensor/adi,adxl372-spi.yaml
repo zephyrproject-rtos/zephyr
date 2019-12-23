@@ -2,11 +2,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: ADXL372 Three Axis High-g I2C/SPI accelerometer
-
-description: >
-    This is a representation of the ADXL372 Three Axis High-g accelerometer,
-    accessed through SPI bus
+description: ADXL372 3-axis high-g accelerometer, accessed through SPI bus
 
 compatible: "adi,adxl372"
 

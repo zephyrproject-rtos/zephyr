@@ -7,9 +7,9 @@
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
-#include <misc/util.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/util.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 #include <kernel.h>
 
@@ -51,7 +51,7 @@ static inline int tmp116_device_id_check(struct device *dev)
 		return -EIO;
 	}
 
-	if (value != TMP116_DEVICE_ID) {
+	if ((value != TMP116_DEVICE_ID) && (value != TMP117_DEVICE_ID)) {
 		LOG_ERR("%s: Failed to match the device IDs!",
 			DT_INST_0_TI_TMP116_LABEL);
 		return -EINVAL;
@@ -100,9 +100,9 @@ static int tmp116_channel_get(struct device *dev, enum sensor_channel chan,
 	 * See datasheet "Temperature Results and Limits" section for more
 	 * details on processing sample data.
 	 */
-	tmp = (s32_t)drv_data->sample * TMP116_RESOLUTION;
-	val->val1 = tmp / 10000000; /* Tens of uCelsius */
-	val->val2 = tmp % 10000000;
+	tmp = ((s16_t)drv_data->sample * (s32_t)TMP116_RESOLUTION) / 10;
+	val->val1 = tmp / 1000000; /* uCelsius */
+	val->val2 = tmp % 1000000;
 
 	return 0;
 }

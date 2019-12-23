@@ -1,7 +1,4 @@
-title: Atmel SAM Family USART
-
-description: >
-    This binding gives a base representation of the Atmel SAM USART
+description: Atmel SAM family USART
 
 compatible: "atmel,sam-usart"
 

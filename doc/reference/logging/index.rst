@@ -556,4 +556,3 @@ Logger output formatting
 
 .. doxygengroup:: log_output
    :project: Zephyr
-

@@ -38,12 +38,11 @@ static struct bt_conn *pairing_conn;
 
 #define DATA_BREDR_MTU		48
 
-NET_BUF_POOL_DEFINE(data_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
-		    NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_BREDR_MTU, NULL);
 
 #define SDP_CLIENT_USER_BUF_LEN		512
-NET_BUF_POOL_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
-		    SDP_CLIENT_USER_BUF_LEN, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
+			  SDP_CLIENT_USER_BUF_LEN, NULL);
 
 static int cmd_auth_pincode(const struct shell *shell,
 			    size_t argc, char *argv[])
@@ -231,7 +230,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.connected	= l2cap_connected,

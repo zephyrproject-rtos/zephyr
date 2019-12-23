@@ -28,7 +28,6 @@
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
-
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
 {
@@ -440,6 +439,8 @@ static u16_t common_beginning_find(const struct shell *shell,
 
 	shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 		      first, &match, &dynamic_entry);
+	strncpy(shell->ctx->temp_buff, match->syntax,
+			sizeof(shell->ctx->temp_buff) - 1);
 
 	*str = match->syntax;
 
@@ -455,7 +456,7 @@ static u16_t common_beginning_find(const struct shell *shell,
 			break;
 		}
 
-		curr_common = str_common(match->syntax, match2->syntax,
+		curr_common = str_common(shell->ctx->temp_buff, match2->syntax,
 					 UINT16_MAX);
 		if ((arg_len == 0U) || (curr_common >= arg_len)) {
 			--cnt;

@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 
 /*

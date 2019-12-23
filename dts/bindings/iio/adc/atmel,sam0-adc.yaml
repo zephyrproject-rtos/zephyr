@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 Family ADC
-
-description: >
-    This binding gives a base representation of the Atmel SAM0 ADC
+description: Atmel SAM0 family ADC
 
 compatible: "atmel,sam0-adc"
 

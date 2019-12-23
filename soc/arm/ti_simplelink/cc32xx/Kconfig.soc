@@ -1,11 +1,10 @@
+# Texas Instruments CC32XX
+
 # SPDX-License-Identifier: Apache-2.0
 
-# Kconfig.soc - Texas Instruments CC32XX
-#
-
 choice
-prompt "TI SimpleLink MCU Selection"
-depends on SOC_SERIES_CC32XX
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_CC32XX
 
 config SOC_CC3220SF
 	bool "CC3220SF"

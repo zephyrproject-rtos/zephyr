@@ -157,23 +157,23 @@ int sx9500_setup_interrupt(struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio = device_get_binding(CONFIG_SX9500_GPIO_CONTROLLER);
+	gpio = device_get_binding(DT_INST_0_SEMTECH_SX9500_INT_GPIOS_CONTROLLER);
 	if (!gpio) {
 		LOG_DBG("sx9500: gpio controller %s not found",
-			    CONFIG_SX9500_GPIO_CONTROLLER);
+			    DT_INST_0_SEMTECH_SX9500_INT_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(gpio, CONFIG_SX9500_GPIO_PIN,
+	gpio_pin_configure(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&data->gpio_cb,
 			   sx9500_gpio_cb,
-			   BIT(CONFIG_SX9500_GPIO_PIN));
+			   BIT(DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN));
 
 	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_enable_callback(gpio, CONFIG_SX9500_GPIO_PIN);
+	gpio_pin_enable_callback(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,

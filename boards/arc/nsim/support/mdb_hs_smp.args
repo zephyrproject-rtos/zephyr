@@ -23,6 +23,7 @@
 	-action_points=8
 	-Xstack_check
 	-interrupts=72
+	-firq
 	-interrupt_priorities=2
 	-ext_interrupts=70
 	-interrupt_base=0x0

@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Synopsys ARC EM CPU
-
-description: >
-    This binding gives a base representation for Synopsys ARC EM CPU.
+description: Synopsys ARC EM CPU
 
 compatible: "snps,arcem"
 

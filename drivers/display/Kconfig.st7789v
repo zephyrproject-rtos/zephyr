@@ -1,10 +1,7 @@
-# Kconfig - ST7789V display driver configuration options
+# ST7789V display driver configuration options
 
-#
 # Copyright (c) 2019 Marc Reilly <marc@cpdesign.com.au>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ST7789V
 	bool "ST7789V display driver"
@@ -63,6 +60,6 @@ config ST7789V_REVERSE_Y
 	help
 	  Address pixels from bottom to top.
 
-endif #ST7789V_RGB565
+endif # ST7789V_RGB565
 
-endif #ST7789V
+endif # ST7789V

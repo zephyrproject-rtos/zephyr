@@ -149,8 +149,8 @@ pairs:
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report (sanitycheck_discard.csv)
+can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
@@ -165,11 +165,6 @@ Most everyday users will run with no arguments.
 """
 
 import os
-if os.name == 'nt':
-    print("Running sanitycheck on Windows is not supported yet.")
-    print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
-    exit(1)
-
 import contextlib
 import string
 import mmap
@@ -187,31 +182,38 @@ import concurrent.futures
 from threading import BoundedSemaphore
 import queue
 import time
-import datetime
 import csv
 import yaml
 import glob
 import serial
 import concurrent
 import xml.etree.ElementTree as ET
+import logging
+from colorama import Fore
 from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
 
-import logging
+try:
+    from anytree import Node, RenderTree, find
+except ImportError:
+    print("Install the anytree module to use the --test-tree option")
 
+try:
+    from tabulate import tabulate
+except ImportError:
+    print("Install tabulate python module with pip to use --device-testing option.")
+
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
+    sys.exit("$ZEPHYR_BASE environment variable undefined")
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
+import edtlib
 
 hw_map_local = threading.Lock()
-
-
-log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
-logging.basicConfig(format=log_format, level=30)
-
-ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
-    exit(1)
+report_lock = threading.Lock()
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
@@ -226,24 +228,15 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 from sanity_chk import scl
 from sanity_chk import expr_parser
 
-
 VERBOSE = 0
 
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 
-if os.isatty(sys.stdout.fileno()):
-    TERMINAL = True
-    COLOR_NORMAL = '\033[0m'
-    COLOR_RED = '\033[91m'
-    COLOR_GREEN = '\033[92m'
-    COLOR_YELLOW = '\033[93m'
-else:
-    TERMINAL = False
-    COLOR_NORMAL = ""
-    COLOR_RED = ""
-    COLOR_GREEN = ""
-    COLOR_YELLOW = ""
+
+logger = logging.getLogger('sanitycheck')
+logger.setLevel(logging.DEBUG)
+
 
 class CMakeCacheEntry:
     '''Represents a CMake cache entry.
@@ -322,7 +315,7 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + ('on line {}: {}'.format(line_no, line),)
                 raise ValueError(args) from exc
-        elif type_ in ['STRING','INTERNAL']:
+        elif type_ in ['STRING', 'INTERNAL']:
             # If the value is a CMake list (i.e. is a string which
             # contains a ';'), convert to a Python list.
             if ';' in value:
@@ -400,6 +393,7 @@ class CMakeCache:
     def __iter__(self):
         return iter(self._entries.values())
 
+
 class SanityCheckException(Exception):
     pass
 
@@ -407,9 +401,11 @@ class SanityCheckException(Exception):
 class SanityRuntimeError(SanityCheckException):
     pass
 
+
 class ConfigurationError(SanityCheckException):
     def __init__(self, cfile, message):
         SanityCheckException.__init__(self, cfile + ": " + message)
+
 
 class BuildError(SanityCheckException):
     pass
@@ -418,39 +414,6 @@ class BuildError(SanityCheckException):
 class ExecutionError(SanityCheckException):
     pass
 
-
-log_file = None
-
-# Debug Functions
-def info(what, show_time=True):
-    if options.timestamps and show_time:
-        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        what = "{}: {}".format(date, what)
-    sys.stdout.write(what + "\n")
-    sys.stdout.flush()
-    if log_file:
-        log_file.write(what + "\n")
-        log_file.flush()
-
-
-def error(what):
-    if options.timestamps:
-        date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        what = "{}: {}".format(date, what)
-    sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
-    if log_file:
-        log_file(what + "\n")
-        log_file.flush()
-
-
-def debug(what):
-    if VERBOSE >= 1:
-        info(what)
-
-
-def verbose(what):
-    if VERBOSE >= 2:
-        info(what)
 
 class HarnessImporter:
 
@@ -463,6 +426,7 @@ class HarnessImporter:
             my_class = getattr(module, "Test")
 
         self.instance = my_class()
+
 
 class Handler:
     def __init__(self, instance, type_str="build"):
@@ -505,14 +469,13 @@ class Handler:
 
     def record(self, harness):
         if harness.recording:
-            filename = os.path.join(options.outdir,
-                    self.instance.platform.name,
-                    self.instance.testcase.name, "recording.csv")
+            filename = os.path.join(self.build_dir, "recording.csv")
             with open(filename, "at") as csvfile:
                 cw = csv.writer(csvfile, harness.fieldnames, lineterminator=os.linesep)
                 cw.writerow(harness.fieldnames)
                 for instance in harness.recording:
                     cw.writerow(instance)
+
 
 class BinaryHandler(Handler):
     def __init__(self, instance, type_str):
@@ -522,8 +485,13 @@ class BinaryHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.valgrind = False
         self.terminated = False
+
+        # Tool options
+        self.valgrind = False
+        self.lsan = False
+        self.asan = False
+        self.coverage = False
 
     def try_kill_process_by_pid(self):
         if self.pid_fn:
@@ -535,21 +503,30 @@ class BinaryHandler(Handler):
             except ProcessLookupError:
                 pass
 
+    def terminate(self, proc):
+        # encapsulate terminate functionality so we do it consistently where ever
+        # we might want to terminate the proc.  We need try_kill_process_by_pid
+        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
+        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
+        # so we need to use try_kill_process_by_pid.
+        self.try_kill_process_by_pid()
+        proc.terminate()
+        self.terminated = True
+
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
         for line in iter(proc.stdout.readline, b''):
-            verbose("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
+            logger.debug("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
             log_out_fp.write(line.decode('utf-8'))
             log_out_fp.flush()
             harness.handle(line.decode('utf-8').rstrip())
             if harness.state:
                 try:
-                    #POSIX arch based ztests end on their own,
-                    #so let's give it up to 100ms to do so
+                    # POSIX arch based ztests end on their own,
+                    # so let's give it up to 100ms to do so
                     proc.wait(0.1)
                 except subprocess.TimeoutExpired:
-                    proc.terminate()
-                    self.terminated = True
+                    self.terminate(proc)
                 break
 
         log_out_fp.close()
@@ -566,37 +543,44 @@ class BinaryHandler(Handler):
         else:
             command = [self.binary]
 
+        run_valgrind = False
         if self.valgrind and shutil.which("valgrind"):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
-                       "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
-                       "--log-file="+self.build_dir+"/valgrind.log"
+                       "--suppressions=" + ZEPHYR_BASE + "/scripts/valgrind.supp",
+                       "--log-file=" + self.build_dir + "/valgrind.log"
                        ] + command
+            run_valgrind = True
 
-        verbose("Spawning process: " +
-                " ".join(shlex.quote(word) for word in command) + os.linesep +
-                "Spawning process in directory: " + self.build_dir)
+        logger.debug("Spawning process: " +
+                     " ".join(shlex.quote(word) for word in command) + os.linesep +
+                     "in directory: " + self.build_dir)
 
         start_time = time.time()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
-            verbose("Spawning BinaryHandler Thread for %s" % self.name)
-            t = threading.Thread(target=self._output_reader, args=(proc, harness, ), daemon=True)
+        env = os.environ.copy()
+        if self.asan:
+            env["ASAN_OPTIONS"] = "log_path=stdout:" + \
+                                  env.get("ASAN_OPTIONS", "")
+            if not self.lsan:
+                env["ASAN_OPTIONS"] += "detect_leaks=0"
+        with subprocess.Popen(command, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
+            logger.debug("Spawning BinaryHandler Thread for %s" % self.name)
+            t = threading.Thread(target=self._output_reader, args=(proc, harness,), daemon=True)
             t.start()
             t.join(self.timeout)
             if t.is_alive():
-                self.try_kill_process_by_pid()
-                proc.terminate()
-                self.terminated = True
+                self.terminate(proc)
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
 
         handler_time = time.time() - start_time
 
-        if options.enable_coverage:
+        if self.coverage:
             subprocess.call(["GCOV_PREFIX=" + self.build_dir,
-                "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
+                             "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
 
         self.try_kill_process_by_pid()
 
@@ -605,18 +589,23 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
+
         if not self.terminated and self.returncode != 0:
-            #When a process is killed, the default handler returns 128 + SIGTERM
-            #so in that case the return code itself is not meaningful
-            self.set_state("error", handler_time)
-            self.instance.reason = "Handler error"
+            # When a process is killed, the default handler returns 128 + SIGTERM
+            # so in that case the return code itself is not meaningful
+            self.set_state("failed", handler_time)
+            self.instance.reason = "Failed"
+        elif run_valgrind and self.returncode == 2:
+            self.set_state("failed", handler_time)
+            self.instance.reason = "Valgrind error"
         elif harness.state:
             self.set_state(harness.state, handler_time)
         else:
             self.set_state("timeout", handler_time)
-            self.instance.reason = "Handler timeout"
+            self.instance.reason = "Timeout"
 
         self.record(harness)
+
 
 class DeviceHandler(Handler):
 
@@ -639,11 +628,11 @@ class DeviceHandler(Handler):
             readable, _, _ = select.select(readlist, [], [], self.timeout)
 
             if halt_fileno in readable:
-                verbose('halted')
+                logger.debug('halted')
                 ser.close()
                 break
             if ser_fileno not in readable:
-                continue        # Timeout.
+                continue  # Timeout.
 
             serial_line = None
             try:
@@ -658,7 +647,7 @@ class DeviceHandler(Handler):
             # is available yet.
             if serial_line:
                 sl = serial_line.decode('utf-8', 'ignore')
-                verbose("DEVICE: {0}".format(sl.rstrip()))
+                logger.debug("DEVICE: {0}".format(sl.rstrip()))
 
                 log_out_fp.write(sl)
                 log_out_fp.flush()
@@ -672,14 +661,14 @@ class DeviceHandler(Handler):
 
     def device_is_available(self, device):
         for i in self.suite.connected_hardware:
-            if i['platform'] == device and i['available'] and i['connected']:
+            if i['platform'] == device and i['available'] and i['serial']:
                 return True
 
         return False
 
     def get_available_device(self, device):
         for i in self.suite.connected_hardware:
-            if i['platform'] == device and i['available']:
+            if i['platform'] == device and i['available'] and i['serial']:
                 i['available'] = False
                 i['counter'] += 1
                 return i
@@ -713,7 +702,6 @@ class DeviceHandler(Handler):
         else:
             command = [get_generator()[0], "-C", self.build_dir, "flash"]
 
-
         while not self.device_is_available(self.instance.platform.name):
             time.sleep(1)
 
@@ -721,7 +709,7 @@ class DeviceHandler(Handler):
 
         runner = hardware.get('runner', None)
         if runner:
-            board_id = hardware.get("id", None)
+            board_id = hardware.get("probe_id", hardware.get("id", None))
             product = hardware.get("product", None)
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command.append("--runner")
@@ -736,28 +724,29 @@ class DeviceHandler(Handler):
             elif runner == "openocd" and product == "STM32 STLink":
                 command.append('--')
                 command.append("--cmd-pre-init")
-                command.append("hla_serial %s" %(board_id))
+                command.append("hla_serial %s" % (board_id))
             elif runner == "openocd" and product == "EDBG CMSIS-DAP":
                 command.append('--')
                 command.append("--cmd-pre-init")
-                command.append("cmsis_dap_serial %s" %(board_id))
+                command.append("cmsis_dap_serial %s" % (board_id))
             elif runner == "jlink":
-                command.append("--tool-opt=-SelectEmuBySN  %s" %(board_id))
+                command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
 
         serial_device = hardware['serial']
 
         try:
             ser = serial.Serial(
-                    serial_device,
-                    baudrate=115200,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    bytesize=serial.EIGHTBITS,
-                    timeout=self.timeout
-                    )
+                serial_device,
+                baudrate=115200,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=self.timeout
+            )
         except serial.SerialException as e:
             self.set_state("failed", 0)
-            error("Serial device err: %s" %(str(e)))
+            self.instance.reason = "Failed"
+            logger.error("Serial device error: %s" % (str(e)))
             self.make_device_available(serial_device)
             return
 
@@ -770,19 +759,48 @@ class DeviceHandler(Handler):
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
 
+
+        pre_script = hardware.get('pre_script')
+        post_script = hardware.get('post_script')
+
+        if pre_script:
+            with subprocess.Popen(pre_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    logger.error("{} timed out".format(post_script))
+
         t = threading.Thread(target=self.monitor_serial, daemon=True,
-                            args=(ser, read_pipe, harness))
+                             args=(ser, read_pipe, harness))
         t.start()
 
-        logging.debug('Flash command: %s', command)
+        d_log = "{}/device.log".format(self.instance.build_dir)
+        logger.debug('Flash command: %s', command)
         try:
-            if VERBOSE and not runner:
-                subprocess.check_call(command)
-            else:
-                subprocess.check_output(command, stderr=subprocess.PIPE)
+            stdout = stderr = None
+            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                    if proc.returncode != 0:
+                        self.instance.reason = "Device issue (Flash?)"
+                        with open(d_log, "w") as dlog_fp:
+                            dlog_fp.write(stderr.decode())
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    self.instance.reason = "Device issue (Timeout)"
+
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
 
         except subprocess.CalledProcessError:
-            os.write(write_pipe, b'x')    # halt the thread
+            os.write(write_pipe, b'x')  # halt the thread
 
         t.join(self.timeout)
         if t.is_alive():
@@ -791,21 +809,39 @@ class DeviceHandler(Handler):
         if ser.isOpen():
             ser.close()
 
+        handler_time = time.time() - start_time
+
         if out_state == "timeout":
             for c in self.instance.testcase.cases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
 
-
-        handler_time = time.time() - start_time
+            self.instance.reason = "Timeout"
 
         self.instance.results = harness.tests
+
         if harness.state:
             self.set_state(harness.state, handler_time)
+            if  harness.state == "failed":
+                self.instance.reason = "Failed"
         else:
             self.set_state(out_state, handler_time)
 
+        if post_script:
+            with subprocess.Popen(post_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    logger.error("{} timed out".format(post_script))
+
         self.make_device_available(serial_device)
+
+        self.record(harness)
+
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
@@ -815,7 +851,6 @@ class QEMUHandler(Handler):
     Test cases emit special messages to the console as they run, we check
     for these to collect whether the test passed or failed.
     """
-
 
     def __init__(self, instance, type_str):
         """Constructor
@@ -827,7 +862,6 @@ class QEMUHandler(Handler):
         self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
-
 
     @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
@@ -884,7 +918,7 @@ class QEMUHandler(Handler):
             log_out_fp.write(line)
             log_out_fp.flush()
             line = line.strip()
-            verbose("QEMU: %s" % line)
+            logger.debug("QEMU: %s" % line)
 
             harness.handle(line)
             if harness.state:
@@ -900,7 +934,7 @@ class QEMUHandler(Handler):
                 # coverage is enabled since dumping this information can
                 # take some time.
                 if not timeout_extended or harness.capture_coverage:
-                    timeout_extended= True
+                    timeout_extended = True
                     if harness.capture_coverage:
                         timeout_time = time.time() + 30
                     else:
@@ -910,9 +944,13 @@ class QEMUHandler(Handler):
         handler.record(harness)
 
         handler_time = time.time() - start_time
-        verbose("QEMU complete (%s) after %f seconds" %
-                (out_state, handler_time))
+        logger.debug("QEMU complete (%s) after %f seconds" %
+                     (out_state, handler_time))
         handler.set_state(out_state, handler_time)
+        if out_state == "timeout":
+            handler.instance.reason = "Timeout"
+        elif out_state == "failed":
+            handler.instance.reason = "Failed"
 
         log_out_fp.close()
         out_fp.close()
@@ -955,15 +993,28 @@ class QEMUHandler(Handler):
 
         self.instance.results = harness.tests
         self.thread.daemon = True
-        verbose("Spawning QEMUHandler Thread for %s" % self.name)
+        logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
         subprocess.call(["stty", "sane"])
+
+        logger.debug("Running %s (%s)" % (self.name, self.type_str))
+        command = [get_generator()[0]]
+        command += ["-C", self.build_dir, "run"]
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+            logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+            proc.wait()
+            self.returncode = proc.returncode
+
+        if self.returncode != 0:
+            self.set_state("failed", 0)
+            self.instance.reason = "Exited with {}".format(self.returncode)
 
     def get_fifo(self):
         return self.fifo_fn
 
-class SizeCalculator:
 
+class SizeCalculator:
     alloc_sections = [
         "bss",
         "noinit",
@@ -971,7 +1022,7 @@ class SizeCalculator:
         "app_noinit",
         "ccm_bss",
         "ccm_noinit"
-        ]
+    ]
 
     rw_sections = [
         "datas",
@@ -1018,7 +1069,7 @@ class SizeCalculator:
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
         "nocache"
-        ]
+    ]
 
     # These get copied into RAM only on non-XIP
     ro_sections = [
@@ -1039,7 +1090,7 @@ class SizeCalculator:
         "vectors",
         "net_socket_register",
         "net_ppp_proto"
-        ]
+    ]
 
     def __init__(self, filename, extra_sections):
         """Constructor
@@ -1062,7 +1113,7 @@ class SizeCalculator:
         # GREP can not be used as it returns an error if the symbol is not
         # found.
         is_xip_command = "nm " + filename + \
-            " | awk '/CONFIG_XIP/ { print $3 }'"
+                         " | awk '/CONFIG_XIP/ { print $3 }'"
         is_xip_output = subprocess.check_output(
             is_xip_command, shell=True, stderr=subprocess.STDOUT).decode(
             "utf-8").strip()
@@ -1117,15 +1168,15 @@ class SizeCalculator:
         for line in objdump_output:
             words = line.split()
 
-            if not words:               # Skip lines that are too short
+            if not words:  # Skip lines that are too short
                 continue
 
             index = words[0]
-            if not index[0].isdigit():        # Skip lines that do not start
-                continue                        # with a digit
+            if not index[0].isdigit():  # Skip lines that do not start
+                continue  # with a digit
 
-            name = words[1]                     # Skip lines with section names
-            if name[0] == '.':                # starting with '.'
+            name = words[1]  # Skip lines with section names
+            if name[0] == '.':  # starting with '.'
                 continue
 
             # TODO this doesn't actually reflect the size in flash or RAM as
@@ -1175,9 +1226,9 @@ class SizeCalculator:
 # XXX Be sure to update __doc__ if you change any of this!!
 
 platform_valid_keys = {
-                       "supported_toolchains": {"type": "list", "default": []},
-                       "env": {"type": "list", "default": []}
-                       }
+    "supported_toolchains": {"type": "list", "default": []},
+    "env": {"type": "list", "default": []}
+}
 
 testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
@@ -1203,6 +1254,7 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "harness_config": {"type": "map", "default": {}}
                        }
 
+
 class SanityConfigParser:
     """Class to read test case files with semantic checking
     """
@@ -1225,7 +1277,6 @@ class SanityConfigParser:
             self.tests = self.data['tests']
         if 'common' in self.data:
             self.common = self.data['common']
-
 
     def _cast_value(self, value, typestr):
         if isinstance(value, str):
@@ -1337,7 +1388,7 @@ class SanityConfigParser:
                 except ValueError:
                     raise ConfigurationError(
                         self.filename, "bad %s value '%s' for key '%s' in name '%s'" %
-                        (kinfo["type"], d[k], k, name))
+                                       (kinfo["type"], d[k], k, name))
 
         return d
 
@@ -1348,7 +1399,7 @@ class Platform:
     Maps directly to BOARD when building"""
 
     platform_schema = scl.yaml_load(os.path.join(ZEPHYR_BASE,
-            "scripts","sanity_chk","platform-schema.yaml"))
+                                                 "scripts", "sanity_chk", "platform-schema.yaml"))
 
     def __init__(self):
         """Constructor.
@@ -1403,14 +1454,13 @@ class Platform:
             if not os.environ.get(env, None):
                 self.env_satisfied = False
 
-
     def __repr__(self):
         return "<%s on %s>" % (self.name, self.arch)
+
 
 class TestCase(object):
     """Class representing a test application
     """
-
 
     def __init__(self):
         """TestCase constructor.
@@ -1464,7 +1514,6 @@ class TestCase(object):
         self.min_flash = None
         self.extra_sections = None
 
-
     @staticmethod
     def get_unique(testcase_root, workdir, name):
 
@@ -1473,7 +1522,7 @@ class TestCase(object):
             # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
             relative_tc_root = os.path.relpath(canonical_testcase_root,
-                                         start=canonical_zephyr_base)
+                                               start=canonical_zephyr_base)
         else:
             relative_tc_root = ""
 
@@ -1490,13 +1539,13 @@ class TestCase(object):
             br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
         stc_regex = re.compile(
-            br"^\s*"		# empy space at the beginning is ok
+            br"^\s*"  # empy space at the beginning is ok
             # catch the case where it is declared in the same sentence, e.g:
             #
             # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
             br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
             # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            br"ztest_(?:user_)?unit_test(?:_setup_teardown)?"
+            br"ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?"
             # Consume the argument that becomes the extra testcse
             br"\(\s*"
             br"(?P<stc_name>[a-zA-Z0-9_]+)"
@@ -1514,8 +1563,16 @@ class TestCase(object):
         warnings = None
 
         with open(inf_name) as inf:
-            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
-                                              mmap.PROT_READ, 0)) as main_c:
+            if os.name == 'nt':
+                mmap_args = {'fileno': inf.fileno(), 'length': 0, 'access': mmap.ACCESS_READ}
+            else:
+                mmap_args = {'fileno': inf.fileno(), 'length': 0, 'flags': mmap.MAP_PRIVATE, 'prot': mmap.PROT_READ,
+                             'offset': 0}
+
+            with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
+                # contextlib makes pylint think main_c isn't subscriptable
+                # pylint: disable=unsubscriptable-object
+
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
@@ -1535,7 +1592,7 @@ class TestCase(object):
                 _matches = re.findall(
                     stc_regex,
                     main_c[suite_regex_match.end():suite_run_match.start()])
-                matches = [ match.decode().replace("test_", "") for match in _matches ]
+                matches = [match.decode().replace("test_", "") for match in _matches]
                 return matches, warnings
 
     def scan_path(self, path):
@@ -1544,22 +1601,30 @@ class TestCase(object):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
-                    error("%s: %s" % (filename, warnings))
+                    logger.error("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
-                error("%s: can't find: %s" % (filename, e))
+                logger.error("%s: can't find: %s" % (filename, e))
+        for filename in glob.glob(os.path.join(path, "*.c")):
+            try:
+                _subcases, warnings = self.scan_file(filename)
+                if warnings:
+                    logger.error("%s: %s" % (filename, warnings))
+                if _subcases:
+                    subcases += _subcases
+            except ValueError as e:
+                logger.error("%s: can't find: %s" % (filename, e))
         return subcases
 
     def parse_subcases(self, test_path):
-        results = self.scan_path(os.path.dirname(test_path))
+        results = self.scan_path(test_path)
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
 
         if not results:
             self.cases.append(self.id)
-
 
     def __str__(self):
         return self.name
@@ -1574,7 +1639,7 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, testcase, platform, base_outdir):
+    def __init__(self, testcase, platform, outdir):
 
         self.testcase = testcase
         self.platform = platform
@@ -1583,40 +1648,47 @@ class TestInstance:
         self.reason = "N/A"
         self.metrics = dict()
         self.handler = None
-
+        self.outdir = outdir
 
         self.name = os.path.join(platform.name, testcase.name)
-        self.build_dir = os.path.join(base_outdir, platform.name, testcase.name)
+        self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
-        self.build_only = self.check_build_or_run()
-        self.run = not self.build_only
+        self.build_only = True
+        self.run = False
 
         self.results = {}
 
     def __lt__(self, other):
         return self.name < other.name
 
-    def check_build_or_run(self):
+    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixture=[]):
 
-        build_only = True
+        # right now we only support building on windows. running is still work
+        # in progress.
+        if os.name == 'nt':
+            self.build_only = True
+            self.run = False
+            return
+
+        _build_only = True
 
         # we asked for build-only on the command line
-        if options.build_only:
-            return True
-
-        # The testcase is designed to be build only.
-        if self.testcase.build_only:
-            return True
+        if build_only or self.testcase.build_only:
+            self.build_only = True
+            self.run = False
+            return
 
         # Do not run slow tests:
-        skip_slow = self.testcase.slow and not options.enable_slow
+        skip_slow = self.testcase.slow and not enable_slow
         if skip_slow:
-            return True
+            self.build_only = True
+            self.run = False
+            return
 
-        runnable =bool(self.testcase.type == "unit" or \
-            self.platform.type == "native" or \
-            self.platform.simulation in ["nsim", "renode", "qemu"] or \
-            options.device_testing)
+        runnable = bool(self.testcase.type == "unit" or \
+                        self.platform.type == "native" or \
+                        self.platform.simulation in ["nsim", "renode", "qemu"] or \
+                        device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
@@ -1632,21 +1704,23 @@ class TestInstance:
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
             if "fixture" in self.testcase.harness_config:
-                fixture = self.testcase.harness_config['fixture']
-                if fixture in options.fixture:
-                    build_only = False
+                fixture_cfg = self.testcase.harness_config['fixture']
+                if fixture_cfg in fixture:
+                    _build_only = False
                 else:
-                    build_only = True
+                    _build_only = True
             else:
-                build_only = False
+                _build_only = False
         elif self.testcase.harness:
-            build_only = True
+            _build_only = True
         else:
-            build_only = False
+            _build_only = False
 
-        return not (not build_only and runnable)
+        self.build_only = not (not _build_only and runnable)
+        self.run = not self.build_only
+        return
 
-    def create_overlay(self, platform):
+    def create_overlay(self, platform, enable_asan=False, enable_coverage=False, coverage_platform=[]):
         # Create this in a "sanitycheck/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
@@ -1654,15 +1728,20 @@ class TestInstance:
         subdir = os.path.join(self.build_dir, "sanitycheck")
         os.makedirs(subdir, exist_ok=True)
         file = os.path.join(subdir, "testcase_extra.conf")
+
         with open(file, "w") as f:
             content = ""
 
             if self.testcase.extra_configs:
                 content = "\n".join(self.testcase.extra_configs)
 
-            if options.enable_coverage:
-                if platform in options.coverage_platform:
+            if enable_coverage:
+                if platform.name in coverage_platform:
                     content = content + "\nCONFIG_COVERAGE=y"
+
+            if enable_asan:
+                if platform.type == "native":
+                    content = content + "\nCONFIG_ASAN=y"
 
             f.write(content)
 
@@ -1687,7 +1766,6 @@ class TestInstance:
 
 
 class CMake():
-
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -1698,7 +1776,6 @@ class CMake():
 
         self.defconfig = {}
         self.cmake_cache = {}
-        self.devicetree = {}
 
         self.instance = None
         self.testcase = testcase
@@ -1713,7 +1790,7 @@ class CMake():
 
     def run_build(self, args=[]):
 
-        verbose("Building %s for %s" % (self.source_dir, self.platform.name))
+        logger.debug("Building %s for %s" % (self.source_dir, self.platform.name))
 
         cmake_args = []
         cmake_args.extend(args)
@@ -1734,10 +1811,9 @@ class CMake():
 
         results = {}
         if p.returncode == 0:
-            msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
+            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
 
             self.instance.status = "passed"
-            self.instance.reason = ""
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
@@ -1759,7 +1835,7 @@ class CMake():
 
             if log_msg:
                 if log_msg.find(overflow_flash) > 0 or log_msg.find(overflow_ram) > 0:
-                    verbose("RAM/ROM Overflow")
+                    logger.debug("RAM/ROM Overflow")
                     self.instance.status = "skipped"
                     self.instance.reason = "overflow"
                 else:
@@ -1767,19 +1843,29 @@ class CMake():
                     self.instance.reason = "Build failure"
 
             results = {
-                    "returncode": p.returncode,
-                    "instance": self.instance,
-                    }
+                "returncode": p.returncode,
+                "instance": self.instance,
+            }
 
         return results
 
     def run_cmake(self, args=[]):
 
-        verbose("Running cmake on %s for %s" %(self.source_dir, self.platform.name))
+        ldflags = "-Wl,--fatal-warnings"
+        logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
 
-        cmake_args = ['-B{}'.format(self.build_dir),
-                      '-S{}'.format(self.source_dir),
-                      '-G{}'.format(get_generator()[1])]
+        # fixme: add additional cflags based on options
+        cmake_args = [
+            '-B{}'.format(self.build_dir),
+            '-S{}'.format(self.source_dir),
+            '-DEXTRA_CFLAGS="-Werror ',
+            '-DEXTRA_AFLAGS=-Wa,--fatal-warnings',
+            '-DEXTRA_LDFLAGS="{}'.format(ldflags),
+            '-G{}'.format(get_generator()[1])
+        ]
+
+        if options.cmake_only:
+            cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
         cmake_args.extend(args)
@@ -1804,7 +1890,7 @@ class CMake():
 
         if p.returncode == 0:
             filter_results = self.parse_generated()
-            msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
+            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
 
             results = {'msg': msg, 'filter': filter_results}
 
@@ -1812,7 +1898,6 @@ class CMake():
             self.instance.status = "failed"
             self.instance.reason = "Cmake build failure"
             results = {"returncode": p.returncode}
-
 
         if out:
             with open(os.path.join(self.build_dir, self.log), "a") as log:
@@ -1834,10 +1919,7 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        _generated_dt_confg = "include/generated/generated_dts_board.conf"
-
         cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-        dt_config_path = os.path.join(self.build_dir, "zephyr", _generated_dt_confg)
         defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
 
         with open(defconfig_path, "r") as fp:
@@ -1863,18 +1945,6 @@ class FilterBuilder(CMake):
 
         self.cmake_cache = cmake_conf
 
-        dt_conf = {}
-        if os.path.exists(dt_config_path):
-            with open(dt_config_path, "r") as fp:
-                for line in fp.readlines():
-                    m = self.dt_re.match(line)
-                    if not m:
-                        if line.strip() and not line.startswith("#"):
-                            sys.stderr.write("Unrecognized line %s\n" % line)
-                        continue
-                    dt_conf[m.group(1)] = m.group(2).strip()
-        self.devicetree = dt_conf
-
         filter_data = {
             "ARCH": self.platform.arch,
             "PLATFORM": self.platform.name
@@ -1882,11 +1952,16 @@ class FilterBuilder(CMake):
         filter_data.update(os.environ)
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
-        filter_data.update(self.devicetree)
 
+        dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
         if self.testcase and self.testcase.tc_filter:
             try:
-                res = expr_parser.parse(self.testcase.tc_filter, filter_data)
+                if os.path.exists(dts_path):
+                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
+                else:
+                    edt = None
+                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
+
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
                     "Failed processing %s\n" % self.testcase.yamlfile)
@@ -1903,12 +1978,55 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, suite, instance):
+    def __init__(self, suite, instance, **kwargs):
         super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
         self.suite = suite
+
+        self.lsan = kwargs.get('lsan', False)
+        self.asan = kwargs.get('asan', False)
+        self.valgrind = kwargs.get('valgrind', False)
+        self.extra_args = kwargs.get('extra_args', [])
+        self.device_testing = kwargs.get('device_testing', False)
+        self.cmake_only = kwargs.get('cmake_only', False)
+        self.coverage = kwargs.get('coverage', False)
+        self.inline_logs = kwargs.get('inline_logs', False)
+
+    @staticmethod
+    def log_info(filename, inline_logs):
+        filename = os.path.relpath(os.path.realpath(filename))
+        if inline_logs:
+            logger.info("{:-^100}".format(filename))
+
+            try:
+                with open(filename) as fp:
+                    data = fp.read()
+            except Exception as e:
+                data = "Unable to read log data (%s)\n" % (str(e))
+
+            logger.error(data)
+
+            logger.info("{:-^100}".format(filename))
+        else:
+            logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
+
+    def log_info_file(self, inline_logs):
+        build_dir = self.instance.build_dir
+        h_log = "{}/handler.log".format(build_dir)
+        b_log = "{}/build.log".format(build_dir)
+        v_log = "{}/valgrind.log".format(build_dir)
+        d_log = "{}/device.log".format(build_dir)
+
+        if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
+            self.log_info("{}".format(v_log), inline_logs)
+        elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
+            self.log_info("{}".format(d_log), inline_logs)
+        elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
+            self.log_info("{}".format(h_log), inline_logs)
+        else:
+            self.log_info("{}".format(b_log), inline_logs)
 
     def setup_handler(self):
 
@@ -1924,8 +2042,15 @@ class ProjectBuilder(FilterBuilder):
             instance.handler = BinaryHandler(instance, "unit")
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
         elif instance.platform.type == "native":
-            instance.handler = BinaryHandler(instance, "native")
-            instance.handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            handler = BinaryHandler(instance, "native")
+
+            handler.asan = self.asan
+            handler.valgrind = self.valgrind
+            handler.lsan = self.lsan
+            handler.coverage = self.coverage
+
+            handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            instance.handler = handler
         elif instance.platform.simulation == "nsim":
             if find_executable("nsimdrv"):
                 instance.handler = BinaryHandler(instance, "nsim")
@@ -1935,7 +2060,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler = BinaryHandler(instance, "renode")
                 instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
                 instance.handler.call_make_run = True
-        elif options.device_testing:
+        elif self.device_testing:
             instance.handler = DeviceHandler(instance, "device")
 
         if instance.handler:
@@ -1952,20 +2077,19 @@ class ProjectBuilder(FilterBuilder):
             results = self.cmake()
             if self.instance.status == "failed":
                 pipeline.put({"op": "report", "test": self.instance})
-            elif options.cmake_only:
+            elif self.cmake_only:
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 if self.instance.name in results['filter'] and results['filter'][self.instance.name]:
-                    verbose("filtering %s" % self.instance.name)
+                    logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
 
-
         elif op == "build":
-            verbose("build test: %s" %self.instance.name)
+            logger.debug("build test: %s" % self.instance.name)
             results = self.build()
 
             if results.get('returncode', 1) > 0:
@@ -1977,21 +2101,21 @@ class ProjectBuilder(FilterBuilder):
                     pipeline.put({"op": "report", "test": self.instance})
         # Run the generated binary using one of the supported handlers
         elif op == "run":
-            verbose("run test: %s" %self.instance.name)
+            logger.debug("run test: %s" % self.instance.name)
             self.run()
             self.instance.status, _ = self.instance.handler.get_state()
-            self.instance.reason = ""
             pipeline.put({
                 "op": "report",
                 "test": self.instance,
                 "state": "executed",
                 "status": self.instance.status,
-                "reason": self.instance.status}
-                )
+                "reason": self.instance.reason}
+            )
 
         # Report results and output progress to screen
         elif op == "report":
-            self.report_out()
+            with report_lock:
+                self.report_out()
 
     def report_out(self):
         total_tests_width = len(str(self.suite.total_tests))
@@ -2000,34 +2124,27 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.status in ["failed", "timeout"]:
             self.suite.total_failed += 1
-            if VERBOSE or not TERMINAL:
-                status = COLOR_RED + "FAILED " + COLOR_NORMAL + instance.reason
+            if VERBOSE:
+                status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
             else:
-                info(
+                print("")
+                logger.error(
                     "{:<25} {:<50} {}FAILED{}: {}".format(
                         instance.platform.name,
                         instance.testcase.name,
-                        COLOR_RED,
-                        COLOR_NORMAL,
-                        instance.reason), False)
-
-                # FIXME
-                h_log = "{}/handler.log".format(instance.build_dir)
-                b_log = "{}/build.log".format(instance.build_dir)
-                if os.path.exists(h_log):
-                    log_info("{}".format(h_log))
-                else:
-                    log_info("{}".format(b_log))
-
+                        Fore.RED,
+                        Fore.RESET,
+                        instance.reason))
+            if not VERBOSE:
+                self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
-            status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
-
+            status = Fore.YELLOW + "SKIPPED" + Fore.RESET
         else:
-            status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
+            status = Fore.GREEN + "PASSED" + Fore.RESET
 
-        if VERBOSE or not TERMINAL:
-            if options.cmake_only:
+        if VERBOSE:
+            if self.cmake_only:
                 more_info = "cmake"
             elif instance.status == "skipped":
                 more_info = instance.reason
@@ -2040,42 +2157,34 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
-            info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
+            logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["failed", "timeout"]:
-                h_log = "{}/handler.log".format(instance.build_dir)
-                b_log = "{}/build.log".format(instance.build_dir)
-                if os.path.exists(h_log):
-                    log_info("{}".format(h_log))
-                else:
-                    log_info("{}".format(b_log))
-
+                self.log_info_file(self.inline_logs)
         else:
-            sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
-                        COLOR_GREEN,
-                        self.suite.total_done,
-                        self.suite.total_tests,
-                        COLOR_NORMAL,
-                        int((float(self.suite.total_done) / self.suite.total_tests) * 100),
-                        COLOR_YELLOW if self.suite.total_skipped > 0 else COLOR_NORMAL,
-                        self.suite.total_skipped,
-                        COLOR_NORMAL,
-                        COLOR_RED if self.suite.total_failed > 0 else COLOR_NORMAL,
-                        self.suite.total_failed,
-                        COLOR_NORMAL
-                        )
-                    )
+            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+                Fore.GREEN,
+                self.suite.total_done,
+                self.suite.total_tests,
+                Fore.RESET,
+                int((float(self.suite.total_done) / self.suite.total_tests) * 100),
+                Fore.YELLOW if self.suite.total_skipped > 0 else Fore.RESET,
+                self.suite.total_skipped,
+                Fore.RESET,
+                Fore.RED if self.suite.total_failed > 0 else Fore.RESET,
+                self.suite.total_failed,
+                Fore.RESET
+            )
+                             )
         sys.stdout.flush()
 
     def cmake(self):
 
         instance = self.instance
         args = self.testcase.extra_args[:]
-
-        if options.extra_args:
-            args += options.extra_args
+        args += self.extra_args
 
         if instance.handler:
             args += instance.handler.args
@@ -2090,10 +2199,11 @@ class ProjectBuilder(FilterBuilder):
                 del args[idx]
                 idx += 1
 
-        if self.testcase.extra_configs or options.coverage:
-            args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
-                        os.path.join(instance.build_dir,
-                                     "sanitycheck", "testcase_extra.conf")))
+        if (self.testcase.extra_configs or self.coverage or
+                self.asan):
+            args.append("OVERLAY_CONFIG=\"%s %s\"" % (overlays,
+                                                      os.path.join(instance.build_dir,
+                                                                   "sanitycheck", "testcase_extra.conf")))
 
         results = self.run_cmake(args)
         return results
@@ -2111,20 +2221,11 @@ class ProjectBuilder(FilterBuilder):
 
         instance.handler.handle()
 
-        if instance.handler.type_str == "qemu":
-            verbose("Running %s (%s)" %(instance.name, instance.handler.type_str))
-            command = [get_generator()[0]]
-            command += ["-C", self.build_dir, "run"]
-
-            with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
-                verbose("Spawning QEMUHandler Thread for %s" % instance.name)
-                proc.wait()
-                self.returncode = proc.returncode
-
         sys.stdout.flush()
 
 
 pipeline = queue.LifoQueue()
+
 
 class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
     """BoundedExecutor behaves as a ThreadPoolExecutor which will block on
@@ -2133,24 +2234,22 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
     :param bound: Integer - the maximum number of items in the work queue
     :param max_workers: Integer - the size of the thread pool
     """
+
     def __init__(self, bound, max_workers, **kwargs):
         super().__init__(max_workers)
-        #self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        # self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.semaphore = BoundedSemaphore(bound + max_workers)
 
     def submit(self, fn, *args, **kwargs):
         self.semaphore.acquire()
         try:
             future = super().submit(fn, *args, **kwargs)
-        except:
+        except Exception:
             self.semaphore.release()
             raise
         else:
             future.add_done_callback(lambda x: self.semaphore.release())
             return future
-
-    def shutdown(self, wait=True):
-        super().shutdown(wait)
 
 
 class TestSuite:
@@ -2165,22 +2264,38 @@ class TestSuite:
 
         self.roots = testcase_roots
         if not isinstance(board_root_list, list):
-            self.board_roots= [board_root_list]
+            self.board_roots = [board_root_list]
         else:
             self.board_roots = board_root_list
+
+        # Testsuite Options
+        self.coverage_platform = []
+        self.build_only = False
+        self.cmake_only = False
+        self.enable_slow = False
+        self.device_testing = False
+        self.fixture = []
+        self.enable_coverage = False
+        self.enable_lsan = False
+        self.enable_asan = False
+        self.enable_valgrind = False
+        self.extra_args = []
+        self.inline_logs = False
+        self.enable_sizes_report = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
         self.platforms = []
+        self.selected_platforms = []
         self.default_platforms = []
         self.outdir = os.path.abspath(outdir)
         self.discards = None
         self.load_errors = 0
         self.instances = dict()
 
-        self.total_tests = 0 # number of test instances
-        self.total_cases = 0 # number of test cases
-        self.total_done = 0 # tests completed
+        self.total_tests = 0  # number of test instances
+        self.total_cases = 0  # number of test cases
+        self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
 
@@ -2193,29 +2308,26 @@ class TestSuite:
         # hardcoded for now
         self.connected_hardware = []
 
+    def config(self):
+        logger.info("coverage platform: {}".format(self.coverage_platform))
 
-        if options.jobs:
-            self.jobs = options.jobs
-        elif options.build_only:
-            self.jobs = multiprocessing.cpu_count() * 2
-        else:
-            self.jobs = multiprocessing.cpu_count()
-
-        info("JOBS: %d" % self.jobs)
+    # Debug Functions
+    @staticmethod
+    def info(what):
+        sys.stdout.write(what + "\n")
+        sys.stdout.flush()
 
     def update(self):
         self.total_tests = len(self.instances)
         self.total_cases = len(self.testcases)
-
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
         interesting_metrics = [("ram_size", int, True),
                                ("rom_size", int, True)]
 
-
         if not os.path.exists(filename):
-            info("Cannot compare metrics, %s not found" % filename)
+            logger.info("Cannot compare metrics, %s not found" % filename)
             return []
 
         results = []
@@ -2241,7 +2353,7 @@ class TestSuite:
                 delta = instance.metrics.get(metric, 0) - mtype(sm[metric])
                 if delta == 0:
                     continue
-                results.append((instance, metric, instance.metrics.get(metric, 0 ), delta,
+                results.append((instance, metric, instance.metrics.get(metric, 0), delta,
                                 lower_better))
         return results
 
@@ -2256,23 +2368,23 @@ class TestSuite:
         if deltas and show_footprint:
             for i, metric, value, delta, lower_better in deltas:
                 if not all_deltas and ((delta < 0 and lower_better) or
-                                            (delta > 0 and not lower_better)):
+                                       (delta > 0 and not lower_better)):
                     continue
 
                 percentage = (float(delta) / float(value - delta))
                 if not all_deltas and (percentage <
-                                            (footprint_threshold / 100.0)):
+                                       (footprint_threshold / 100.0)):
                     continue
 
-                info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
-                     i.platform.name, i.testcase.name, COLOR_YELLOW,
-                     "INFO" if all_deltas else "WARNING", COLOR_NORMAL,
-                     metric, delta, value, percentage))
+                logger.info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
+                    i.platform.name, i.testcase.name, Fore.YELLOW,
+                    "INFO" if all_deltas else "WARNING", Fore.RESET,
+                    metric, delta, value, percentage))
                 warnings += 1
 
         if warnings:
-            info("Deltas based on metrics from last %s" %
-                 ("release" if not last_metrics else "run"))
+            logger.warning("Deltas based on metrics from last %s" %
+                           ("release" if not last_metrics else "run"))
 
     def summary(self, unrecognized_sections):
         failed = 0
@@ -2280,99 +2392,79 @@ class TestSuite:
             if instance.status == "failed":
                 failed += 1
             elif instance.metrics.get("unrecognized") and not unrecognized_sections:
-                info("%sFAILED%s: %s has unrecognized binary sections: %s" %
-                     (COLOR_RED, COLOR_NORMAL, instance.name,
-                      str(instance.metrics.get("unrecognized", []))))
+                logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
+                             (Fore.RED, Fore.RESET, instance.name,
+                              str(instance.metrics.get("unrecognized", []))))
                 failed += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:
-            pass_rate = (float(self.total_tests - self.total_failed - self.total_skipped)/ float(self.total_tests - self.total_skipped))
+            pass_rate = (float(self.total_tests - self.total_failed - self.total_skipped) / float(
+                self.total_tests - self.total_skipped))
         else:
             pass_rate = 0
 
-        info("{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
-            COLOR_RED if failed else COLOR_GREEN,
-            self.total_tests - self.total_failed - self.total_skipped,
-            self.total_tests,
-            COLOR_NORMAL,
-            pass_rate,
-            COLOR_RED if self.total_failed else COLOR_NORMAL,
-            self.total_failed,
-            COLOR_NORMAL,
-            self.total_skipped,
-            COLOR_YELLOW if self.warnings else COLOR_NORMAL,
-            self.warnings,
-            COLOR_NORMAL,
-            self.duration))
+        logger.info(
+            "{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
+                Fore.RED if failed else Fore.GREEN,
+                self.total_tests - self.total_failed - self.total_skipped,
+                self.total_tests,
+                Fore.RESET,
+                pass_rate,
+                Fore.RED if self.total_failed else Fore.RESET,
+                self.total_failed,
+                Fore.RESET,
+                self.total_skipped,
+                Fore.YELLOW if self.warnings else Fore.RESET,
+                self.warnings,
+                Fore.RESET,
+                self.duration))
 
-        platforms = set(p.platform for p in self.instances.values())
         self.total_platforms = len(self.platforms)
         if self.platforms:
-            info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
+            logger.info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
                 self.total_cases,
-                len(platforms),
+                len(self.selected_platforms),
                 self.total_platforms,
-                (100 * len(platforms) / len(self.platforms))
+                (100 * len(self.selected_platforms) / len(self.platforms))
             ))
 
-    def save_reports(self):
+    def save_reports(self, name, report_dir, no_update, release, only_failed):
         if not self.instances:
             return
 
-        report_name = "sanitycheck"
-        if options.report_name:
-            report_name = options.report_name
-
-        if options.report_dir:
-            os.makedirs(options.report_dir, exist_ok=True)
-            filename = os.path.join(options.report_dir, report_name)
-            outdir = options.report_dir
+        if name:
+            report_name = name
         else:
-            filename = os.path.join(options.outdir, report_name)
-            outdir = options.outdir
+            report_name = "sanitycheck"
 
-        if not options.no_update:
-            self.xunit_report(filename + ".xml")
+        if report_dir:
+            os.makedirs(report_dir, exist_ok=True)
+            filename = os.path.join(report_dir, report_name)
+            outdir = report_dir
+        else:
+            filename = os.path.join(self.outdir, report_name)
+            outdir = self.outdir
+
+        if not no_update:
+            self.xunit_report(filename + ".xml", only_failed)
             self.csv_report(filename + ".csv")
             self.target_report(outdir)
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
-        if options.release:
+        if release:
             self.csv_report(RELEASE_DATA)
-
-        if log_file:
-            log_file.close()
-
-    def load_hardware_map_from_cmdline(self, serial, platform):
-        device = {
-            "serial": serial,
-            "platform": platform,
-            "counter": 0,
-            "available": True,
-            "connected": True
-        }
-        self.connected_hardware = [device]
-
-    def load_hardware_map(self, map_file):
-        with open(map_file, 'r') as stream:
-            try:
-                self.connected_hardware = yaml.safe_load(stream)
-            except yaml.YAMLError as exc:
-                print(exc)
-        for i in self.connected_hardware:
-            i['counter'] = 0
 
     def add_configurations(self):
 
         for board_root in self.board_roots:
             board_root = os.path.abspath(board_root)
 
-            debug("Reading platform configuration files under %s..." %
-                board_root)
+            logger.debug("Reading platform configuration files under %s..." %
+                         board_root)
 
             for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
-                verbose("Found plaform configuration " + file)
+                logger.debug("Found plaform configuration " + file)
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -2382,8 +2474,16 @@ class TestSuite:
                             self.default_platforms.append(platform.name)
 
                 except RuntimeError as e:
-                    error("E: %s: can't load: %s" % (file, e))
+                    logger.error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
+
+    def get_all_tests(self):
+        tests = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                tests.append(case)
+
+        return tests
 
     @staticmethod
     def get_toolchain():
@@ -2403,15 +2503,14 @@ class TestSuite:
 
         return toolchain
 
-
     def add_testcases(self):
         for root in self.roots:
             root = os.path.abspath(root)
 
-            debug("Reading test case configuration files under %s..." %root)
+            logger.debug("Reading test case configuration files under %s..." % root)
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
-                verbose("scanning %s" % dirpath)
+                logger.debug("scanning %s" % dirpath)
                 if 'sample.yaml' in filenames:
                     filename = 'sample.yaml'
                 elif 'testcase.yaml' in filenames:
@@ -2419,7 +2518,7 @@ class TestSuite:
                 else:
                     continue
 
-                verbose("Found possible test case in " + dirpath)
+                logger.debug("Found possible test case in " + dirpath)
 
                 dirnames[:] = []
                 tc_path = os.path.join(dirpath, filename)
@@ -2472,12 +2571,11 @@ class TestSuite:
                     self.testcases[tc.name] = tc
 
         except Exception as e:
-            error("E: %s: can't load (skipping): %s" % (tc_data_file, e))
+            logger.error("%s: can't load (skipping): %s" % (tc_data_file, e))
             self.load_errors += 1
             return False
 
         return True
-
 
     def get_platform(self, name):
         selected_platform = None
@@ -2488,10 +2586,10 @@ class TestSuite:
         return selected_platform
 
     def get_last_failed(self):
-        last_run = os.path.join(options.outdir, "sanitycheck.csv")
+        last_run = os.path.join(self.outdir, "sanitycheck.csv")
         try:
             if not os.path.exists(last_run):
-                raise SanityRuntimeError("Couldn't find last sanitycheck run.: %s" %last_run)
+                raise SanityRuntimeError("Couldn't find last sanitycheck run.: %s" % last_run)
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -2507,12 +2605,18 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                )
+                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
         tests_to_run = len(self.instances)
-        info("%d tests passed already, retyring %d tests" %(total_tests - tests_to_run, tests_to_run))
+        logger.info("%d tests passed already, retrying %d tests" % (total_tests - tests_to_run, tests_to_run))
 
     def load_from_file(self, file):
         try:
@@ -2532,26 +2636,34 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                )
+                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
-
-    def apply_filters(self):
+    def apply_filters(self, **kwargs):
 
         toolchain = self.get_toolchain()
 
         discards = {}
-        platform_filter = options.platform
-        testcase_filter = run_individual_tests
-        arch_filter = options.arch
-        tag_filter = options.tag
-        exclude_tag = options.exclude_tag
+        platform_filter = kwargs.get('platform')
+        testcase_filter = kwargs.get('run_individual_tests')
+        arch_filter = kwargs.get('arch')
+        tag_filter = kwargs.get('tag')
+        exclude_tag = kwargs.get('exclude_tag')
+        all_filter = kwargs.get('all')
+        device_testing_filter = kwargs.get('device_testing')
+        force_toolchain = kwargs.get('force_toolchain')
 
-        verbose("platform filter: " + str(platform_filter))
-        verbose("    arch_filter: " + str(arch_filter))
-        verbose("     tag_filter: " + str(tag_filter))
-        verbose("    exclude_tag: " + str(exclude_tag))
+        logger.debug("platform filter: " + str(platform_filter))
+        logger.debug("    arch_filter: " + str(arch_filter))
+        logger.debug("     tag_filter: " + str(tag_filter))
+        logger.debug("    exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
 
@@ -2560,27 +2672,33 @@ class TestSuite:
         else:
             platforms = self.platforms
 
-        if options.all:
-            info("Selecting all possible platforms per test case")
+        if all_filter:
+            logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
         elif not platform_filter:
-            info("Selecting default platforms per test case")
+            logger.info("Selecting default platforms per test case")
             default_platforms = True
 
-        info("Building initial testcase list...")
+        logger.info("Building initial testcase list...")
 
         for tc_name, tc in self.testcases.items():
             # list of instances per testcase, aka configurations.
             instance_list = []
             for plat in platforms:
                 instance = TestInstance(tc, plat, self.outdir)
+                instance.check_build_or_run(
+                    self.build_only,
+                    self.enable_slow,
+                    self.device_testing,
+                    self.fixture
+                )
 
                 if (plat.arch == "unit") != (tc.type == "unit"):
                     # Discard silently
                     continue
 
-                if options.device_testing and instance.build_only:
+                if device_testing_filter and instance.build_only:
                     discards[instance] = "Not runnable on device"
                     continue
 
@@ -2639,9 +2757,9 @@ class TestSuite:
                     discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
                     continue
 
-                if not options.force_toolchain \
-                    and toolchain and (toolchain not in plat.supported_toolchains) \
-                    and tc.type != 'unit':
+                if not force_toolchain \
+                        and toolchain and (toolchain not in plat.supported_toolchains) \
+                        and tc.type != 'unit':
                     discards[instance] = "Not supported by the toolchain"
                     continue
 
@@ -2679,12 +2797,12 @@ class TestSuite:
                     b = set(tc.platform_whitelist)
                     c = a.intersection(b)
                     if c:
-                        aa = list( filter( lambda tc: tc.platform.name in c, instance_list))
+                        aa = list(filter(lambda tc: tc.platform.name in c, instance_list))
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list[:1])
                 else:
-                    instances = list( filter( lambda tc: tc.platform.default, instance_list))
+                    instances = list(filter(lambda tc: tc.platform.default, instance_list))
                     self.add_instances(instances)
 
                 for instance in list(filter(lambda tc: not tc.platform.default, instance_list)):
@@ -2694,9 +2812,10 @@ class TestSuite:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform.name)
+            case.create_overlay(case.platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
 
         self.discards = discards
+        self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
         return discards
 
@@ -2704,9 +2823,9 @@ class TestSuite:
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self):
+    def add_tasks_to_queue(self, test_only=False):
         for instance in self.instances.values():
-            if options.test_only:
+            if test_only:
                 if instance.run:
                     pipeline.put({"op": "run", "test": instance, "status": "built"})
             else:
@@ -2731,19 +2850,19 @@ class TestSuite:
 
                 instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
 
-        info("Adding tasks to the queue...")
+        logger.info("Adding tasks to the queue...")
         # We can use a with statement to ensure threads are cleaned up promptly
         with BoundedExecutor(bound=self.jobs, max_workers=self.jobs) as executor:
 
             # start a future for a thread which sends work in through the queue
             future_to_test = {
-                    executor.submit(self.add_tasks_to_queue): 'FEEDER DONE'}
+                executor.submit(self.add_tasks_to_queue, self.test_only): 'FEEDER DONE'}
 
             while future_to_test:
                 # check for status of the futures which are currently working
                 done, _ = concurrent.futures.wait(
-                        future_to_test, timeout=0.25,
-                        return_when=concurrent.futures.FIRST_COMPLETED)
+                    future_to_test, timeout=0.25,
+                    return_when=concurrent.futures.FIRST_COMPLETED)
 
                 # if there is incoming work, start a new future
                 while not pipeline.empty():
@@ -2752,7 +2871,17 @@ class TestSuite:
                     test = message['test']
 
                     # Start the load operation and mark the future with its URL
-                    pb = ProjectBuilder(self, test)
+                    pb = ProjectBuilder(self,
+                                        test,
+                                        lsan=self.enable_lsan,
+                                        asan=self.enable_asan,
+                                        coverage=self.enable_coverage,
+                                        extra_args=self.extra_args,
+                                        device_testing=self.device_testing,
+                                        cmake_only=self.cmake_only,
+                                        valgrind=self.enable_valgrind,
+                                        inline_logs=self.inline_logs
+                                        )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
                 # process any completed futures
@@ -2761,15 +2890,16 @@ class TestSuite:
                     try:
                         data = future.result()
                     except Exception as exc:
-                        print('%r generated an exception: %s' % (test, exc))
+                        sys.exit('%r generated an exception: %s' % (test, exc))
+
                     else:
                         if data:
-                            verbose(data)
+                            logger.debug(data)
 
                     # remove the now completed future
                     del future_to_test[future]
 
-        if options.enable_size_report and not options.cmake_only:
+        if self.enable_size_report and not self.cmake_only:
             # Parallelize size calculation
             executor = concurrent.futures.ThreadPoolExecutor(self.jobs)
             futures = [executor.submit(calc_one_elf_size, instance)
@@ -2782,14 +2912,13 @@ class TestSuite:
                 instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
                 instance.metrics["unrecognized"] = []
 
-
     def discard_report(self, filename):
 
         try:
             if self.discards is None:
                 raise SanityRuntimeError("apply_filters() hasn't been run!")
         except Exception as e:
-            error(str(e))
+            logger.error(str(e))
             sys.exit(2)
 
         with open(filename, "wt") as csvfile:
@@ -2803,12 +2932,11 @@ class TestSuite:
                            "reason": reason}
                 cw.writerow(rowdict)
 
-
     def target_report(self, outdir):
         run = "Sanitycheck"
         eleTestsuite = None
 
-        platforms = {inst.platform.name for _,inst in self.instances.items()}
+        platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
             errors = 0
             passes = 0
@@ -2833,10 +2961,10 @@ class TestSuite:
 
             eleTestsuites = ET.Element('testsuites')
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                        name=run, time="%f" % duration,
-                                        tests="%d" % (errors + passes + fails),
-                                        failures="%d" % fails,
-                                        errors="%d" % errors, skipped="%d" %skips)
+                                         name=run, time="%f" % duration,
+                                         tests="%d" % (errors + passes + fails),
+                                         failures="%d" % fails,
+                                         errors="%d" % errors, skipped="%d" % skips)
 
             handler_time = 0
 
@@ -2847,8 +2975,9 @@ class TestSuite:
                 handler_time = instance.metrics.get('handler_time', 0)
                 for k in instance.results.keys():
                     eleTestcase = ET.SubElement(
-                            eleTestsuite, 'testcase', classname="%s:%s" %(instance.platform.name, os.path.basename(instance.testcase.name)),
-                            name="%s" % (k), time="%f" %handler_time)
+                        eleTestsuite, 'testcase',
+                        classname="%s:%s" % (instance.platform.name, os.path.basename(instance.testcase.name)),
+                        name="%s" % (k), time="%f" % handler_time)
                     if instance.results[k] in ['FAIL', 'BLOCK']:
                         el = None
 
@@ -2864,7 +2993,7 @@ class TestSuite:
                                 'error',
                                 type="failure",
                                 message="failed")
-                        p = os.path.join(options.outdir, instance.platform.name, instance.testcase.name)
+                        p = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
                         log_file = os.path.join(p, "handler.log")
 
                         if os.path.exists(log_file):
@@ -2880,13 +3009,11 @@ class TestSuite:
                             type="skipped",
                             message="Skipped")
 
-
             result = ET.tostring(eleTestsuites)
             with open(os.path.join(outdir, platform + ".xml"), 'wb') as f:
                 f.write(result)
 
-
-    def xunit_report(self, filename):
+    def xunit_report(self, filename, append=False):
         fails = 0
         passes = 0
         errors = 0
@@ -2908,7 +3035,6 @@ class TestSuite:
 
         run = "Sanitycheck"
         eleTestsuite = None
-        append = options.only_failed
 
         # When we re-run the tests, we re-use the results and update only with
         # the newly run tests.
@@ -2922,7 +3048,7 @@ class TestSuite:
                                          name=run, time="%f" % duration,
                                          tests="%d" % (errors + passes + fails + skips),
                                          failures="%d" % fails,
-                                         errors="%d" %(errors), skip="%s" %(skips))
+                                         errors="%d" % (errors), skip="%s" % (skips))
 
         for instance in self.instances.values():
 
@@ -2937,10 +3063,13 @@ class TestSuite:
             if instance.status != "failed" and instance.handler:
                 handler_time = instance.metrics.get("handler_time", 0)
 
+
             eleTestcase = ET.SubElement(
-                eleTestsuite, 'testcase', classname="%s:%s" %
-                (instance.platform.name, instance.testcase.name), name="%s" %
-                (instance.testcase.name), time="%f" %handler_time)
+                eleTestsuite,
+                'testcase',
+                classname="%s:%s" % (instance.platform.name, instance.testcase.name),
+                name="%s" % (instance.testcase.name),
+                time="%f" % handler_time)
 
             if instance.status == "failed":
                 failure = ET.SubElement(
@@ -2948,7 +3077,7 @@ class TestSuite:
                     'failure',
                     type="failure",
                     message=instance.reason)
-                p = ("%s/%s/%s" % (options.outdir, instance.platform.name, instance.testcase.name))
+                p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
                 bl = os.path.join(p, "build.log")
                 hl = os.path.join(p, "handler.log")
                 log_file = bl
@@ -2965,12 +3094,11 @@ class TestSuite:
                         failure.text = filtered_string
                         f.close()
             elif instance.status == "skipped":
-                ET.SubElement( eleTestcase, 'skipped', type="skipped", message="Skipped")
+                ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
 
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
-
 
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
@@ -2999,9 +3127,16 @@ class TestSuite:
                     rowdict["rom_size"] = rom_size
                 cw.writerow(rowdict)
 
+    def get_testcase(self, identifier):
+        results = []
+        for _, tc in self.testcases.items():
+            for case in tc.cases:
+                if case == identifier:
+                    results.append(tc)
+        return results
+
 
 def parse_arguments():
-
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -3021,34 +3156,34 @@ Artificially long but functional example:
     """)
 
     parser.add_argument("--force-toolchain", action="store_true",
-            help="Do not filter based on toolchain, use the set "
-            " toolchain unconditionally")
+                        help="Do not filter based on toolchain, use the set "
+                             " toolchain unconditionally")
     parser.add_argument(
         "-p", "--platform", action="append",
         help="Platform filter for testing. This option may be used multiple "
-        "times. Testcases will only be built/run on the platforms "
-        "specified. If this option is not used, then platforms marked "
-        "as default in the platform metadata file will be chosen "
-        "to build and test. ")
+             "times. Testcases will only be built/run on the platforms "
+             "specified. If this option is not used, then platforms marked "
+             "as default in the platform metadata file will be chosen "
+             "to build and test. ")
     parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
-        "If unspecified, test all arches. Multiple invocations "
-        "are treated as a logical 'or' relationship")
+             "If unspecified, test all arches. Multiple invocations "
+             "are treated as a logical 'or' relationship")
     parser.add_argument(
         "-t", "--tag", action="append",
         help="Specify tags to restrict which tests to run by tag value. "
-        "Default is to not do any tag filtering. Multiple invocations "
-        "are treated as a logical 'or' relationship")
+             "Default is to not do any tag filtering. Multiple invocations "
+             "are treated as a logical 'or' relationship")
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
-                        "Default is to run all tests with all tags.")
+                             "Default is to run all tests with all tags.")
     case_select.add_argument(
         "-f",
         "--only-failed",
         action="store_true",
         help="Run only those tests that failed the previous sanity check "
-        "invocation.")
+             "invocation.")
 
     parser.add_argument(
         "--retry-failed", type=int, default=0,
@@ -3059,7 +3194,7 @@ Artificially long but functional example:
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-        "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
@@ -3073,7 +3208,7 @@ Artificially long but functional example:
     parser.add_argument(
         "-l", "--all", action="store_true",
         help="Build/test on all platforms. Any --platform arguments "
-        "ignored.")
+             "ignored.")
 
     parser.add_argument(
         "-o", "--report-dir",
@@ -3088,18 +3223,9 @@ Artificially long but functional example:
         help="""Create a report with a custom name.
         """)
 
-    parser.add_argument("--detailed-report",
-        action="store",
-        metavar="FILENAME",
-        help="""Generate a junit report with detailed testcase results.
-        Unlike the CSV file produced by --testcase-report, this XML
-        report includes only tests which have run and none which were
-        merely built. If an image with multiple tests crashes early then
-        later tests are not accounted for either.""")
-
     parser.add_argument("--report-excluded",
-            action="store_true",
-            help="""List all tests that are never run based on current scope and
+                        action="store_true",
+                        help="""List all tests that are never run based on current scope and
             coverage. If you are looking for accurate results, run this with
             --all, but this will take a while...""")
 
@@ -3109,9 +3235,9 @@ Artificially long but functional example:
     parser.add_argument(
         "-B", "--subset",
         help="Only run a subset of the tests, 1/4 for running the first 25%%, "
-        "3/5 means run the 3rd fifth of the total. "
-        "This option is useful when running a large number of tests on "
-        "different hosts to speed up execution time.")
+             "3/5 means run the 3rd fifth of the total. "
+             "This option is useful when running a large number of tests on "
+             "different hosts to speed up execution time.")
 
     parser.add_argument(
         "-N", "--ninja", action="store_true",
@@ -3119,15 +3245,17 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
-        help="Create the filtered list of test cases, but don't actually "
-        "run them. Useful if you're just interested in "
-        "--discard-report")
+        help="""Create the filtered list of test cases, but don't actually
+        run them. Useful if you're just interested in the discard report
+        generated for every run and saved in the specified output
+        directory (sanitycheck_discard.csv).
+        """)
 
     parser.add_argument("--list-tags", action="store_true",
-            help="list all tags in selected tests")
+                        help="list all tags in selected tests")
 
     case_select.add_argument("--list-tests", action="store_true",
-        help="""List of all sub-test functions recursively found in
+                             help="""List of all sub-test functions recursively found in
         all --testcase-root arguments. Note different sub-tests can share
         the same section name and come from different directories.
         The output is flattened and reports --sub-test names only,
@@ -3135,21 +3263,27 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    parser.add_argument("--export-tests", action="store",
-            metavar="FILENAME",
-            help="Export tests case meta-data to a file in CSV format.")
+    case_select.add_argument("--test-tree", action="store_true",
+                             help="""Output the testsuite in a tree form""")
 
+    case_select.add_argument("--list-test-duplicates", action="store_true",
+                             help="""List tests with duplicate identifiers.
+        """)
+
+    parser.add_argument("--export-tests", action="store",
+                        metavar="FILENAME",
+                        help="Export tests case meta-data to a file in CSV format.")
 
     parser.add_argument("--timestamps",
-            action="store_true",
-            help="Print all messages with time stamps")
+                        action="store_true",
+                        help="Print all messages with time stamps")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
         help="Update the benchmark database with the results of this test "
-        "run. Intended to be run by CI when tagging an official "
-        "release. This database is used as a basis for comparison "
-        "when looking for deltas in metrics such as footprint")
+             "run. Intended to be run by CI when tagging an official "
+             "release. This database is used as a basis for comparison "
+             "when looking for deltas in metrics such as footprint")
     parser.add_argument("-w", "--warnings-as-errors", action="store_true",
                         help="Treat warning conditions as errors")
     parser.add_argument(
@@ -3158,24 +3292,24 @@ Artificially long but functional example:
         action="count",
         default=0,
         help="Emit debugging information, call multiple times to increase "
-        "verbosity")
+             "verbosity")
     parser.add_argument(
         "-i", "--inline-logs", action="store_true",
         help="Upon test failure, print relevant log data to stdout "
-        "instead of just a path to it")
+             "instead of just a path to it")
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
                         help="log also to file")
     parser.add_argument(
         "-m", "--last-metrics", action="store_true",
         help="Instead of comparing metrics from the last --release, "
-        "compare with the results of the previous sanity check "
-        "invocation")
+             "compare with the results of the previous sanity check "
+             "invocation")
     parser.add_argument(
         "-u",
         "--no-update",
         action="store_true",
         help="do not update the results of the last run of the sanity "
-        "checks")
+             "checks")
     case_select.add_argument(
         "-F",
         "--load-tests",
@@ -3206,44 +3340,44 @@ Artificially long but functional example:
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads, "
-        "overcommited by factor 2 when --build-only")
+             "overcommited by factor 2 when --build-only")
 
     parser.add_argument(
-            "--show-footprint", action="store_true",
-            help="Show footprint statistics and deltas since last release."
-            )
+        "--show-footprint", action="store_true",
+        help="Show footprint statistics and deltas since last release."
+    )
     parser.add_argument(
         "-H", "--footprint-threshold", type=float, default=5,
         help="When checking test case footprint sizes, warn the user if "
-        "the new app size is greater then the specified percentage "
-        "from the last release. Default is 5. 0 to warn on any "
-        "increase on app size")
+             "the new app size is greater then the specified percentage "
+             "from the last release. Default is 5. 0 to warn on any "
+             "increase on app size")
     parser.add_argument(
         "-D", "--all-deltas", action="store_true",
         help="Show all footprint deltas, positive or negative. Implies "
-        "--footprint-threshold=0")
+             "--footprint-threshold=0")
     parser.add_argument(
         "-O", "--outdir",
-        default=os.path.join(os.getcwd(),"sanity-out"),
+        default=os.path.join(os.getcwd(), "sanity-out"),
         help="Output directory for logs and binaries. "
-        "Default is 'sanity-out' in the current directory. "
-        "This directory will be deleted unless '--no-clean' is set.")
+             "Default is 'sanity-out' in the current directory. "
+             "This directory will be deleted unless '--no-clean' is set.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
-        "faster compilation since builds will be incremental")
+             "faster compilation since builds will be incremental")
     case_select.add_argument(
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
-        "testcase.yaml files under here will be processed. May be "
-        "called multiple times. Defaults to the 'samples/' and "
-        "'tests/' directories at the base of the Zephyr tree.")
+             "testcase.yaml files under here will be processed. May be "
+             "called multiple times. Defaults to the 'samples/' and "
+             "'tests/' directories at the base of the Zephyr tree.")
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
 
     parser.add_argument(
-        "-A", "--board-root", default=board_root_list,
+        "-A", "--board-root", action="append", default=board_root_list,
         help="""Directory to search for board configuration files. All .yaml
 files in the directory will be processed. The directory should have the same
 structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
@@ -3251,12 +3385,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-z", "--size", action="append",
         help="Don't run sanity  checks. Instead, produce a report to "
-        "stdout detailing RAM/ROM sizes on the specified filenames. "
-        "All other command line arguments ignored.")
+             "stdout detailing RAM/ROM sizes on the specified filenames. "
+             "All other command line arguments ignored.")
     parser.add_argument(
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
-        "as 'slow' in testcase.yaml. Normally these are only built.")
+             "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument(
         "--disable-unrecognized-section-test", action="store_true",
         default=False,
@@ -3335,161 +3469,256 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """
     )
 
+    valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    valgrind_asan_group.add_argument(
+        "--enable-valgrind", action="store_true",
+        help="""Run binary through valgrind and check for several memory access
+        errors. Valgrind needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-asan.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-asan", action="store_true",
+        help="""Enable address sanitizer to check for several memory access
+        errors. Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-valgrind.
+        """)
+
+    parser.add_argument(
+        "--enable-lsan", action="store_true",
+        help="""Enable leak sanitizer to check for heap memory leaks.
+        Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and when --enable-asan is given.
+        """)
+
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
-                        "--enable_coverage and --enable-slow")
+                             "--enable_coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
-                        "This option may be used multiple times. "
-                        "Default to what was selected with --platform.")
+                             "This option may be used multiple times. "
+                             "Default to what was selected with --platform.")
 
     parser.add_argument("--gcov-tool", default=None,
                         help="Path to the gcov tool to use for code coverage "
-                        "reports")
+                             "reports")
+
+    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
+                        help="Tool to use to generate coverage report.")
 
     return parser.parse_args()
 
 
-def log_info(filename):
-    filename = os.path.relpath(os.path.realpath(filename))
-    if options.inline_logs:
-        info("{:-^100}".format(filename))
-
-        try:
-            with open(filename) as fp:
-                data = fp.read()
-        except Exception as e:
-            data = "Unable to read log data (%s)\n" % (str(e))
-
-        sys.stdout.write(data)
-        if log_file:
-            log_file.write(data)
-        info("{:-^100}".format(filename))
-    else:
-        info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
-
 def size_report(sc):
-    info(sc.filename)
-    info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
+    logger.info(sc.filename)
+    logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
     for i in range(len(sc.sections)):
         v = sc.sections[i]
 
-        info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-             (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-              v["type"]))
+        logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
+                    (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
+                     v["type"]))
 
-    info("Totals: %d bytes (ROM), %d bytes (RAM)" %
-         (sc.rom_size, sc.ram_size))
-    info("")
+    logger.info("Totals: %d bytes (ROM), %d bytes (RAM)" %
+                (sc.rom_size, sc.ram_size))
+    logger.info("")
 
-def retrieve_gcov_data(intput_file):
-    if VERBOSE:
-        print("Working on %s" %intput_file)
-    extracted_coverage_info = {}
-    capture_data = False
-    capture_complete = False
-    with open(intput_file, 'r') as fp:
-        for line in fp.readlines():
-            if re.search("GCOV_COVERAGE_DUMP_START", line):
-                capture_data = True
-                continue
-            if re.search("GCOV_COVERAGE_DUMP_END", line):
-                capture_complete = True
-                break
-            # Loop until the coverage data is found.
-            if not capture_data:
-                continue
-            if line.startswith("*"):
-                sp = line.split("<")
-                if len(sp) > 1:
-                    # Remove the leading delimiter "*"
-                    file_name = sp[0][1:]
-                    # Remove the trailing new line char
-                    hex_dump = sp[1][:-1]
+
+class CoverageTool:
+    """ Base class for every supported coverage tool
+    """
+
+    def __init__(self):
+        self.gcov_tool = options.gcov_tool
+
+    @staticmethod
+    def factory(tool):
+        if tool == 'lcov':
+            return Lcov()
+        if tool == 'gcovr':
+            return Gcovr()
+        logger.error("Unsupported coverage tool specified: {}".format(tool))
+
+    @staticmethod
+    def retrieve_gcov_data(intput_file):
+        if VERBOSE:
+            logger.debug("Working on %s" % intput_file)
+        extracted_coverage_info = {}
+        capture_data = False
+        capture_complete = False
+        with open(intput_file, 'r') as fp:
+            for line in fp.readlines():
+                if re.search("GCOV_COVERAGE_DUMP_START", line):
+                    capture_data = True
+                    continue
+                if re.search("GCOV_COVERAGE_DUMP_END", line):
+                    capture_complete = True
+                    break
+                # Loop until the coverage data is found.
+                if not capture_data:
+                    continue
+                if line.startswith("*"):
+                    sp = line.split("<")
+                    if len(sp) > 1:
+                        # Remove the leading delimiter "*"
+                        file_name = sp[0][1:]
+                        # Remove the trailing new line char
+                        hex_dump = sp[1][:-1]
+                    else:
+                        continue
                 else:
                     continue
-            else:
+                extracted_coverage_info.update({file_name: hex_dump})
+        if not capture_data:
+            capture_complete = True
+        return {'complete': capture_complete, 'data': extracted_coverage_info}
+
+    @staticmethod
+    def create_gcda_files(extracted_coverage_info):
+        if VERBOSE:
+            logger.debug("Generating gcda files")
+        for filename, hexdump_val in extracted_coverage_info.items():
+            # if kobject_hash is given for coverage gcovr fails
+            # hence skipping it problem only in gcovr v4.1
+            if "kobject_hash" in filename:
+                filename = (filename[:-4]) + "gcno"
+                try:
+                    os.remove(filename)
+                except Exception:
+                    pass
                 continue
-            extracted_coverage_info.update({file_name:hex_dump})
-    if not capture_data:
-        capture_complete = True
-    return {'complete': capture_complete, 'data': extracted_coverage_info}
 
-def create_gcda_files(extracted_coverage_info):
-    if VERBOSE:
-        print("Generating gcda files")
-    for filename, hexdump_val in extracted_coverage_info.items():
-        # if kobject_hash is given for coverage gcovr fails
-        # hence skipping it problem only in gcovr v4.1
-        if "kobject_hash" in filename:
-            filename = (filename[:-4]) +"gcno"
-            try:
-                os.remove(filename)
-            except Exception:
-                pass
-            continue
+            with open(filename, 'wb') as fp:
+                fp.write(bytes.fromhex(hexdump_val))
 
-        with open(filename, 'wb') as fp:
-            fp.write(bytes.fromhex(hexdump_val))
+    def generate(self, outdir):
+        for filename in glob.glob("%s/**/handler.log" % outdir, recursive=True):
+            gcov_data = self.__class__.retrieve_gcov_data(filename)
+            capture_complete = gcov_data['complete']
+            extracted_coverage_info = gcov_data['data']
+            if capture_complete:
+                self.__class__.create_gcda_files(extracted_coverage_info)
+                logger.debug("Gcov data captured: {}".format(filename))
+            else:
+                logger.error("Gcov data capture incomplete: {}".format(filename))
 
-def generate_coverage(outdir, ignores):
+        with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+            ret = self._generate(outdir, coveragelog)
+            if ret == 0:
+                logger.info("HTML report generated: {}".format(
+                    os.path.join(outdir, "coverage", "index.html")))
 
-    for filename in glob.glob("%s/**/handler.log" %outdir, recursive=True):
-        gcov_data = retrieve_gcov_data(filename)
-        capture_complete = gcov_data['complete']
-        extracted_coverage_info = gcov_data['data']
-        if capture_complete:
-            create_gcda_files(extracted_coverage_info)
-            verbose("Gcov data captured: {}".format(filename))
-        else:
-            error("Gcov data capture incomplete: {}".format(filename))
 
-    gcov_tool = options.gcov_tool
+class Lcov(CoverageTool):
 
-    with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+    def __init__(self):
+        super().__init__()
+        self.ignores = []
+
+    def add_ignore_file(self, pattern):
+        self.ignores.append('*' + pattern + '*')
+
+    def add_ignore_directory(self, pattern):
+        self.ignores.append(pattern + '/*')
+
+    def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
-        subprocess.call(["lcov", "--gcov-tool", gcov_tool,
-                            "--capture", "--directory", outdir,
-                            "--rc", "lcov_branch_coverage=1",
-                            "--output-file", coveragefile], stdout=coveragelog)
+        subprocess.call(["lcov", "--gcov-tool", self.gcov_tool,
+                         "--capture", "--directory", outdir,
+                         "--rc", "lcov_branch_coverage=1",
+                         "--output-file", coveragefile], stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--extract", coveragefile,
+        subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--extract",
+                         coveragefile,
                          os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
                          "--output-file", ztestfile,
                          "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
-            subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--remove", ztestfile,
+            subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--remove",
+                             ztestfile,
                              os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
                              "--output-file", ztestfile,
                              "--rc", "lcov_branch_coverage=1"],
-                             stdout=coveragelog)
+                            stdout=coveragelog)
             files = [coveragefile, ztestfile]
         else:
             files = [coveragefile]
 
-        for i in ignores:
+        for i in self.ignores:
             subprocess.call(
-                ["lcov", "--gcov-tool", gcov_tool, "--remove",
-                    coveragefile, i, "--output-file",
-                    coveragefile, "--rc", "lcov_branch_coverage=1"],
+                ["lcov", "--gcov-tool", self.gcov_tool, "--remove",
+                 coveragefile, i, "--output-file",
+                 coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
 
-        #The --ignore-errors source option is added to avoid it exiting due to
-        #samples/application_development/external_lib/
-        ret = subprocess.call(["genhtml", "--legend", "--branch-coverage",
-                               "--ignore-errors", "source",
-                               "-output-directory",
-                               os.path.join(outdir, "coverage")] + files,
+        # The --ignore-errors source option is added to avoid it exiting due to
+        # samples/application_development/external_lib/
+        return subprocess.call(["genhtml", "--legend", "--branch-coverage",
+                                "--ignore-errors", "source",
+                                "-output-directory",
+                                os.path.join(outdir, "coverage")] + files,
                                stdout=coveragelog)
-        if ret==0:
-            info("HTML report generated: %s"%
-                 os.path.join(outdir, "coverage","index.html"))
+
+
+class Gcovr(CoverageTool):
+
+    def __init__(self):
+        super().__init__()
+        self.ignores = []
+
+    def add_ignore_file(self, pattern):
+        self.ignores.append('.*' + pattern + '.*')
+
+    def add_ignore_directory(self, pattern):
+        self.ignores.append(pattern + '/.*')
+
+    @staticmethod
+    def _interleave_list(prefix, list):
+        tuple_list = [(prefix, item) for item in list]
+        return [item for sublist in tuple_list for item in sublist]
+
+    def _generate(self, outdir, coveragelog):
+        coveragefile = os.path.join(outdir, "coverage.json")
+        ztestfile = os.path.join(outdir, "ztest.json")
+
+        excludes = Gcovr._interleave_list("-e", self.ignores)
+
+        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
+        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+                         self.gcov_tool, "-e", "tests/*"] + excludes +
+                        ["--json", "-o", coveragefile, outdir],
+                        stdout=coveragelog)
+
+        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+                         self.gcov_tool, "-f", "tests/ztest", "-e",
+                         "tests/ztest/test/*", "--json", "-o", ztestfile,
+                         outdir], stdout=coveragelog)
+
+        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
+            files = [coveragefile, ztestfile]
+        else:
+            files = [coveragefile]
+
+        subdir = os.path.join(outdir, "coverage")
+        os.makedirs(subdir, exist_ok=True)
+
+        tracefiles = self._interleave_list("--add-tracefile", files)
+
+        return subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--html",
+                                "--html-details"] + tracefiles +
+                               ["-o", os.path.join(subdir, "index.html")],
+                               stdout=coveragelog)
+
 
 def get_generator():
     if options.ninja:
@@ -3507,27 +3736,17 @@ def export_tests(filename, tests):
         cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
         for test in tests:
             data = test.split(".")
-            subsec = " ".join(data[1].split("_")).title()
-            rowdict = {
+            if len(data) > 1:
+                subsec = " ".join(data[1].split("_")).title()
+                rowdict = {
                     "section": data[0].capitalize(),
                     "subsection": subsec,
                     "title": test,
                     "reference": test
-                    }
-            cw.writerow(rowdict)
-
-def get_unique_tests(suite):
-    unq = []
-    run_individual_tests = []
-    for _, tc in suite.testcases.items():
-        for c in tc.cases:
-            if options.sub_test and c in options.sub_test:
-                if tc.name not in run_individual_tests:
-                    run_individual_tests.append(tc.name)
-            unq.append(c)
-
-    return unq
-
+                }
+                cw.writerow(rowdict)
+            else:
+                logger.info("{} can't be exported".format(test))
 
 
 def native_and_unit_first(a, b):
@@ -3539,153 +3758,302 @@ def native_and_unit_first(a, b):
         return -1
     if b[0].startswith('native_posix'):
         return 1
-    if a[0].split("/",1)[0].endswith("_bsim"):
+    if a[0].split("/", 1)[0].endswith("_bsim"):
         return -1
-    if b[0].split("/",1)[0].endswith("_bsim"):
+    if b[0].split("/", 1)[0].endswith("_bsim"):
         return 1
 
     return (a > b) - (a < b)
 
 
-run_individual_tests = None
-options = None
+class HardwareMap:
 
-def main():
-    start_time = time.time()
-    global VERBOSE, log_file
-    global options
-    global run_individual_tests
+    schema_path = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk", "hwmap-schema.yaml")
 
-    options = parse_arguments()
+    manufacturer = [
+        'ARM',
+        'SEGGER',
+        'MBED',
+        'STMicroelectronics',
+        'Atmel Corp.',
+        'Texas Instruments',
+        'Silicon Labs',
+        'NXP Semiconductors',
+        'Microchip Technology Inc.',
+        'FTDI'
+    ]
 
+    runner_mapping = {
+        'pyocd': [
+            'DAPLink CMSIS-DAP',
+            'MBED CMSIS-DAP'
+        ],
+        'jlink': [
+            'J-Link',
+            'J-Link OB'
+        ],
+        'openocd': [
+            'STM32 STLink', '^XDS110.*'
+        ],
+        'dediprog': [
+            'TTL232R-3V3',
+            'MCP2200 USB Serial Port Emulator'
+        ]
+    }
 
-    if options.generate_hardware_map:
+    def __init__(self):
+        self.detected = []
+        self.connected_hardware = []
+
+    def load_device_from_cmdline(self, serial, platform):
+        device = {
+            "serial": serial,
+            "platform": platform,
+            "counter": 0,
+            "available": True,
+            "connected": True
+        }
+        self.connected_hardware.append(device)
+
+    def load_hardware_map(self, map_file):
+        hwm_schema = scl.yaml_load(self.schema_path)
+        self.connected_hardware = scl.yaml_load_verify(map_file, hwm_schema)
+        for i in self.connected_hardware:
+            i['counter'] = 0
+
+    def scan_hw(self):
         from serial.tools import list_ports
+
         serial_devices = list_ports.comports()
-        filtered = []
+        logger.info("Scanning connected hardware...")
         for d in serial_devices:
-            if d.manufacturer in ['ARM', 'SEGGER', 'MBED', 'STMicroelectronics', 'Atmel Corp.']:
+            if d.manufacturer in self.manufacturer:
+
+                # TI XDS110 can have multiple serial devices for a single board
+                # assume endpoint 0 is the serial, skip all others
+                if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
+                    continue
                 s_dev = {}
                 s_dev['platform'] = "unknown"
                 s_dev['id'] = d.serial_number
                 s_dev['serial'] = d.device
                 s_dev['product'] = d.product
-                if s_dev['product'] in ['DAPLink CMSIS-DAP', 'MBED CMSIS-DAP']:
-                    s_dev['runner'] = "pyocd"
-                else:
-                    s_dev['runner'] = "unknown"
+                s_dev['runner'] = 'unknown'
+                for runner, _ in self.runner_mapping.items():
+                    products = self.runner_mapping.get(runner)
+                    if d.product in products:
+                        s_dev['runner'] = runner
+                        continue
+                    # Try regex matching
+                    for p in products:
+                        if re.match(p, d.product):
+                            s_dev['runner'] = runner
+
                 s_dev['available'] = True
                 s_dev['connected'] = True
-                filtered.append(s_dev)
+                self.detected.append(s_dev)
             else:
-                print("Unsupported device (%s): %s" %(d.manufacturer, d))
+                logger.warning("Unsupported device (%s): %s" % (d.manufacturer, d))
 
-        if os.path.exists(options.generate_hardware_map):
-            # use existing map
-
-            with open(options.generate_hardware_map, 'r') as yaml_file:
+    def write_map(self, hwm_file):
+        # use existing map
+        if os.path.exists(hwm_file):
+            with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=yaml.FullLoader)
                 # disconnect everything
                 for h in hwm:
                     h['connected'] = False
+                    h['serial'] = None
 
-                for d in filtered:
+                for d in self.detected:
                     for h in hwm:
                         if d['id'] == h['id'] and d['product'] == h['product']:
-                            print("Already in map: %s (%s)" %(d['product'], d['id']))
                             h['connected'] = True
                             h['serial'] = d['serial']
                             d['match'] = True
 
-                new = list(filter(lambda n:  not n.get('match', False), filtered))
+                new = list(filter(lambda n: not n.get('match', False), self.detected))
                 hwm = hwm + new
 
-                #import pprint
-                #pprint.pprint(hwm)
-            with open(options.generate_hardware_map, 'w') as yaml_file:
-                yaml.dump(hwm, yaml_file, default_flow_style=False)
+                logger.info("Registered devices:")
+                self.dump(hwm)
 
+            with open(hwm_file, 'w') as yaml_file:
+                yaml.dump(hwm, yaml_file, default_flow_style=False)
 
         else:
             # create new file
-            with open(options.generate_hardware_map, 'w') as yaml_file:
-                yaml.dump(filtered, yaml_file, default_flow_style=False)
+            with open(hwm_file, 'w') as yaml_file:
+                yaml.dump(self.detected, yaml_file, default_flow_style=False)
+            logger.info("Detected devices:")
+            self.dump(self.detected)
 
+    @staticmethod
+    def dump(hwmap=[], filtered=[], header=[], connected_only=False):
+        print("")
+        table = []
+        if not header:
+            header = ["Platform", "ID", "Serial device"]
+        for p in sorted(hwmap, key=lambda i: i['platform']):
+            platform = p.get('platform')
+            connected = p.get('connected', False)
+            if filtered and platform not in filtered:
+                continue
+
+            if not connected_only or connected:
+                table.append([platform, p.get('id', None), p.get('serial')])
+
+        print(tabulate(table, headers=header, tablefmt="github"))
+
+options = None
+
+
+def main():
+    start_time = time.time()
+    global VERBOSE
+    global options
+
+    options = parse_arguments()
+
+    # Cleanup
+    if options.no_clean or options.only_failed or options.test_only:
+        if os.path.exists(options.outdir):
+            logger.info("Keeping artifacts untouched")
+    elif os.path.exists(options.outdir):
+        for i in range(1, 100):
+            new_out = options.outdir + ".{}".format(i)
+            if not os.path.exists(new_out):
+                logger.info("Renaming output directory to {}".format(new_out))
+                shutil.move(options.outdir, new_out)
+                break
+
+    os.makedirs(options.outdir, exist_ok=True)
+
+    # create file handler which logs even debug messages
+    if options.log_file:
+        fh = logging.FileHandler(options.log_file)
+    else:
+        fh = logging.FileHandler(os.path.join(options.outdir, "sanitycheck.log"))
+
+    fh.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+
+    VERBOSE += options.verbose
+    if VERBOSE > 1:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    if options.timestamps:
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    else:
+        formatter = logging.Formatter('%(levelname)-7s - %(message)s')
+
+    formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter_file)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
+    hwm = HardwareMap()
+    if options.generate_hardware_map:
+        hwm.scan_hw()
+        hwm.write_map(options.generate_hardware_map)
         return
 
+    if not options.device_testing and options.hardware_map:
+        hwm.load_hardware_map(options.hardware_map)
+
+        logger.info("Available devices:")
+        table = []
+        hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
+        return
 
     if options.west_runner and not options.west_flash:
-        error("west-runner requires west-flash to be enabled")
+        logger.error("west-runner requires west-flash to be enabled")
         sys.exit(1)
 
     if options.west_flash and not options.device_testing:
-        error("west-flash requires device-testing to be enabled")
+        logger.error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True
-        options.enable_slow = True
-        if not options.coverage_platform:
-            options.coverage_platform = options.platform
+
+    if not options.coverage_platform:
+        options.coverage_platform = options.platform
 
     if options.size:
         for fn in options.size:
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-    VERBOSE += options.verbose
-
-    if options.log_file:
-        log_file = open(options.log_file, "w")
-
     if options.subset:
         subset, sets = options.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
-            info("Running only a subset: %s/%s" % (subset, sets))
+            logger.info("Running only a subset: %s/%s" % (subset, sets))
         else:
-            error("You have provided a wrong subset value: %s." % options.subset)
+            logger.error("You have provided a wrong subset value: %s." % options.subset)
             return
-
-    # Cleanup
-
-    if options.no_clean or options.only_failed or options.test_only:
-        if os.path.exists(options.outdir):
-            info("Keeping artifacts untouched")
-    elif os.path.exists(options.outdir):
-        for i in range(1,100):
-            new_out = options.outdir + ".{}".format(i)
-            if not os.path.exists(new_out):
-                info("Renaming output directory to {}".format(new_out))
-                shutil.move(options.outdir, new_out)
-                break
-                #shutil.rmtree("%s.old" %options.outdir)
 
     if not options.testcase_root:
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
-                              os.path.join(ZEPHYR_BASE, "samples")]
+                                 os.path.join(ZEPHYR_BASE, "samples")]
+
+    if options.show_footprint or options.compare_report or options.release:
+        options.enable_size_report = True
 
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+
+    # Set testsuite options from command line.
+    suite.build_only = options.build_only
+    suite.cmake_only = options.cmake_only
+    suite.test_only = options.test_only
+    suite.enable_slow = options.enable_slow
+    suite.device_testing = options.device_testing
+    suite.fixture = options.fixture
+    suite.enable_asan = options.enable_asan
+    suite.enable_lsan = options.enable_lsan
+    suite.enable_coverage = options.enable_coverage
+    suite.enable_valgrind = options.enable_valgrind
+    suite.coverage_platform = options.coverage_platform
+    suite.inline_logs = options.inline_logs
+    suite.enable_size_report = options.enable_size_report
+
+    # Set number of jobs
+    if options.jobs:
+        suite.jobs = options.jobs
+    elif options.build_only:
+        suite.jobs = multiprocessing.cpu_count() * 2
+    else:
+        suite.jobs = multiprocessing.cpu_count()
+    logger.info("JOBS: %d" % suite.jobs)
+
     suite.add_testcases()
     suite.add_configurations()
 
     if options.device_testing:
         if options.hardware_map:
-            suite.load_hardware_map(options.hardware_map)
+            hwm.load_hardware_map(options.hardware_map)
+            suite.connected_hardware = hwm.connected_hardware
             if not options.platform:
                 options.platform = []
-                for platform in suite.connected_hardware:
+                for platform in hwm.connected_hardware:
                     if platform['connected']:
                         options.platform.append(platform['platform'])
 
-        elif options.device_serial: #back-ward compatibility
+        elif options.device_serial:  # back-ward compatibility
             if options.platform and len(options.platform) == 1:
-                suite.load_hardware_map_from_cmdline(options.device_serial,
-                                                    options.platform[0])
+                hwm.load_device_from_cmdline(options.device_serial, options.platform[0])
+                suite.connected_hardware = hwm.connected_hardware
             else:
-                error("""When --device-testing is used with --device-serial, only one
+                logger.error("""When --device-testing is used with --device-serial, only one
                       platform is allowed""")
-
-
 
     if suite.load_errors:
         sys.exit(1)
@@ -3702,12 +4070,7 @@ def main():
 
     if options.export_tests:
         cnt = 0
-        unq = []
-        for _, tc in suite.testcases.items():
-            for c in tc.cases:
-                unq.append(c)
-
-        tests = sorted(set(unq))
+        tests = suite.get_all_tests()
         export_tests(options.export_tests, tests)
         return
 
@@ -3716,37 +4079,102 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    if options.list_tests or options.sub_test:
+    if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
         cnt = 0
-        unq = get_unique_tests(suite)
+        all_tests = suite.get_all_tests()
+
+        if options.list_test_duplicates:
+            import collections
+            dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+            if dupes:
+                print("Tests with duplicate identifiers:")
+                for dupe in dupes:
+                    print("- {}".format(dupe))
+                    for dc in suite.get_testcase(dupe):
+                        print("  - {}".format(dc))
+            else:
+                print("No duplicates found.")
+            return
 
         if options.sub_test:
+            for st in options.sub_test:
+                subtests = suite.get_testcase(st)
+                for sti in subtests:
+                    run_individual_tests.append(sti.name)
+
             if run_individual_tests:
-                info("Running the following tests:")
-                for t in run_individual_tests:
-                    print(" - {}".format(t))
+                logger.info("Running the following tests:")
+                for test in run_individual_tests:
+                    print(" - {}".format(test))
             else:
-                info("Tests not found")
+                logger.info("Tests not found")
                 return
 
-        elif options.list_tests:
-            for u in sorted(set(unq)):
+        elif options.list_tests or options.test_tree:
+            if options.test_tree:
+                testsuite = Node("Testsuite")
+                samples = Node("Samples", parent=testsuite)
+                tests = Node("Tests", parent=testsuite)
+
+            for test in sorted(all_tests):
                 cnt = cnt + 1
-                print(" - {}".format(u))
-            print("{} total.".format(cnt))
+                if options.list_tests:
+                    print(" - {}".format(test))
+
+                if options.test_tree:
+                    if test.startswith("sample."):
+                        sec = test.split(".")
+                        area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
+                        if not area:
+                            area = Node(sec[1], parent=samples)
+
+                        t = Node(test, parent=area)
+                    else:
+                        sec = test.split(".")
+                        area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
+                        if not area:
+                            area = Node(sec[0], parent=tests)
+
+                        if area and len(sec) > 2:
+                            subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
+                            if not subarea:
+                                subarea = Node(sec[1], parent=area)
+
+                            t = Node(test, parent=subarea)
+
+            if options.list_tests:
+                print("{} total.".format(cnt))
+
+            if options.test_tree:
+                for pre, _, node in RenderTree(testsuite):
+                    print("%s%s" % (pre, node.name))
+
             return
 
     discards = []
 
     if options.only_failed:
         suite.get_last_failed()
+        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
         suite.load_from_file(options.load_tests)
     elif options.test_only:
         last_run = os.path.join(options.outdir, "sanitycheck.csv")
         suite.load_from_file(last_run)
     else:
-        discards = suite.apply_filters()
+        discards = suite.apply_filters(
+            build_only=options.build_only,
+            enable_slow=options.enable_slow,
+            platform=options.platform,
+            arch=options.arch,
+            tag=options.tag,
+            exclude_tag=options.exclude_tag,
+            force_toolchain=options.force_toolchain,
+            all=options.all,
+            run_individual_tests=run_individual_tests,
+            device_testing=options.device_testing
+
+        )
 
     if VERBOSE > 1 and discards:
         # if we are using command line platform filter, no need to list every
@@ -3757,18 +4185,18 @@ def main():
         for i, reason in discards.items():
             if options.platform and i.platform.name not in options.platform:
                 continue
-            debug(
+            logger.debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
                     i.testcase.name,
-                    COLOR_YELLOW,
-                    COLOR_NORMAL,
+                    Fore.YELLOW,
+                    Fore.RESET,
                     reason))
 
     if options.report_excluded:
-        all_tests = set(get_unique_tests(suite))
+        all_tests = suite.get_all_tests()
         to_be_run = set()
-        for i,p in suite.instances.items():
+        for i, p in suite.instances.items():
             to_be_run.update(p.testcase.cases)
 
         if all_tests - to_be_run:
@@ -3779,7 +4207,7 @@ def main():
         return
 
     if options.subset:
-        #suite.instances = OrderedDict(sorted(suite.instances.items(),
+        # suite.instances = OrderedDict(sorted(suite.instances.items(),
         #                    key=cmp_to_key(native_and_unit_first)))
         subset, sets = options.subset.split("/")
         total = len(suite.instances)
@@ -3793,17 +4221,21 @@ def main():
         sliced_instances = islice(suite.instances.items(), start, end)
         suite.instances = OrderedDict(sliced_instances)
 
-
     if options.save_tests:
         suite.csv_report(options.save_tests)
         return
 
-    info("%d test configurations selected, %d configurations discarded due to filters." %
-        (len(suite.instances), len(discards)))
+    logger.info("%d test configurations selected, %d configurations discarded due to filters." %
+                (len(suite.instances), len(discards)))
+
+    if options.device_testing:
+        print("\nDevice testing on:")
+        hwm.dump(suite.connected_hardware, suite.selected_platforms)
+        print("")
 
     if options.dry_run:
         duration = time.time() - start_time
-        info("Completed in %d seconds" % (duration))
+        logger.info("Completed in %d seconds" % (duration))
         return
 
     retries = options.retry_failed + 1
@@ -3816,21 +4248,23 @@ def main():
         completed += 1
 
         if completed > 1:
-            info("%d Iteration:" %(completed ))
-            time.sleep(60) # waiting for the system to settle down
+            logger.info("%d Iteration:" % (completed))
+            time.sleep(60)  # waiting for the system to settle down
             suite.total_done = suite.total_tests - suite.total_failed
             suite.total_failed = 0
 
         suite.execute()
-        info("", False)
+        print("")
 
         retries = retries - 1
         if retries == 0 or suite.total_failed == 0:
             break
 
     suite.misc_reports(options.compare_report, options.show_footprint,
-                options.all_deltas, options.footprint_threshold, options.last_metrics)
-    suite.save_reports()
+                       options.all_deltas, options.footprint_threshold, options.last_metrics)
+
+    suite.duration = time.time() - start_time
+    suite.summary(options.disable_unrecognized_section_test)
 
     if options.coverage:
         if options.gcov_tool is None:
@@ -3845,22 +4279,34 @@ def main():
                 options.gcov_tool = "gcov"
             else:
                 options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                    "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
+                                                 "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
 
-        info("Generating coverage files...")
-        generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
-
-    suite.duration = time.time() - start_time
-    suite.summary(options.disable_unrecognized_section_test)
+        logger.info("Generating coverage files...")
+        coverage_tool = CoverageTool.factory(options.coverage_tool)
+        coverage_tool.add_ignore_file('generated')
+        coverage_tool.add_ignore_directory('tests')
+        coverage_tool.add_ignore_directory('samples')
+        coverage_tool.generate(options.outdir)
 
     if options.device_testing:
         print("\nHardware distribution summary:\n")
-        for p in suite.connected_hardware:
-            if p['connected']:
-                print("%s (%s): %d" %(p['platform'], p.get('id', None), p['counter']))
+        table = []
+        header = ['Board', 'ID', 'Counter']
+        for p in hwm.connected_hardware:
+            if p['connected'] and p['platform'] in suite.selected_platforms:
+                row = [p['platform'], p.get('id', None), p['counter']]
+                table.append(row)
+        print(tabulate(table, headers=header, tablefmt="github"))
+
+    suite.save_reports(options.report_name,
+                       options.report_dir,
+                       options.no_update,
+                       options.release,
+                       options.only_failed)
 
     if suite.total_failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

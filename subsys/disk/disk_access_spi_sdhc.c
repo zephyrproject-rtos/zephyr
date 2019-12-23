@@ -563,11 +563,6 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 				break;
 			}
 		} while (sdhc_retry_ok(&retry));
-
-		if (err != 0) {
-			/* Card never finished power-up */
-			return -ETIMEDOUT;
-		}
 	}
 
 	if ((ocr & SDHC_CCS) != 0U) {
@@ -866,11 +861,6 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
-
-	if (data->status == DISK_STATUS_OK) {
-		/* Called twice, don't re-init. */
-		return 0;
-	}
 
 	err = sdhc_spi_detect(data);
 	sdhc_spi_set_cs(data, 1);

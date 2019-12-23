@@ -116,7 +116,7 @@ void main(void)
 			K_FOREVER);
 	k_thread_access_grant(tENC, &allforone);
 	/* use K_FOREVER followed by k_thread_start*/
-	printk("ENC Thread Created %08X\n", (unsigned int) tENC);
+	printk("ENC Thread Created %p\n", tENC);
 	k_mem_domain_init(&dom1, 3, dom1_parts);
 	printk("Partitions added to dom1\n");
 	k_mem_domain_add_thread(&dom1, tENC);
@@ -128,7 +128,7 @@ void main(void)
 			-1, K_USER,
 			K_FOREVER);
 	k_thread_access_grant(tPT, &allforone);
-	printk("PT Thread Created %08X\n", (unsigned int) tPT);
+	printk("PT Thread Created %p\n", tPT);
 	k_mem_domain_init(&dom0, 2, dom0_parts);
 	k_mem_domain_add_thread(&dom0, tPT);
 	printk("dom0 Created\n");
@@ -138,7 +138,7 @@ void main(void)
 			-1, K_USER,
 			K_FOREVER);
 	k_thread_access_grant(tCT, &allforone);
-	printk("CT Thread Created %08X\n", (unsigned int) tCT);
+	printk("CT Thread Created %p\n", tCT);
 	k_mem_domain_init(&dom2, 2, dom2_parts);
 	k_mem_domain_add_thread(&dom2, tCT);
 	printk("dom2 Created\n");

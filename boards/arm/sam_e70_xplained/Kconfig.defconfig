@@ -1,13 +1,11 @@
-# Kconfig - Atmel SMART SAM E70 Xplained Board configuration
-#
+# Atmel SMART SAM E70 Xplained Board configuration
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_SAM_E70_XPLAINED
 
 config BOARD
-	string
 	default "sam_e70_xplained"
 
 if I2S
@@ -28,23 +26,18 @@ choice ETH_SAM_GMAC_MAC_SELECT
 endchoice
 
 config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
-	hex
 	default 0x5F
 
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
-	hex
 	default 0x9A
 
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
-	int
 	default 1
 
 config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
-	string
 	default "I2C_0"
 
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
-	bool
 	select I2C
 
 endif # ETH_SAM_GMAC

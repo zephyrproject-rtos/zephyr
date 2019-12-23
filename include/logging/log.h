@@ -306,7 +306,7 @@ static inline char *log_strdup(const char *str)
 #define _LOG_ARG1(arg1, ...) arg1
 
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
-	COND_CODE_1(LOG_IN_CPLUSPLUS, (extern), ())			     \
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
@@ -322,11 +322,8 @@ static inline char *log_strdup(const char *str)
 	__attribute__((used))
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
-	COND_CODE_1(						\
-		CONFIG_LOG_RUNTIME_FILTERING,			\
-		(_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);),	\
-		()						\
-		)
+	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING,		\
+		  (_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);))
 
 #define _LOG_MODULE_DATA_CREATE(_name, _level)			\
 	_LOG_MODULE_CONST_DATA_CREATE(_name, _level);		\

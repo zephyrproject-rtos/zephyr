@@ -27,6 +27,41 @@ config NRFX_DPPI
 	bool "Enable DPPI allocator"
 	depends on HAS_HW_NRF_DPPIC
 
+config NRFX_EGU
+	bool "Enable EGU driver"
+	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
+		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5
+
+config NRFX_EGU0
+	bool "Enable EGU0 instance"
+	depends on HAS_HW_NRF_EGU0
+	select NRFX_EGU
+
+config NRFX_EGU1
+	bool "Enable EGU1 instance"
+	depends on HAS_HW_NRF_EGU1
+	select NRFX_EGU
+
+config NRFX_EGU2
+	bool "Enable EGU2 instance"
+	depends on HAS_HW_NRF_EGU2
+	select NRFX_EGU
+
+config NRFX_EGU3
+	bool "Enable EGU3 instance"
+	depends on HAS_HW_NRF_EGU3
+	select NRFX_EGU
+
+config NRFX_EGU4
+	bool "Enable EGU4 instance"
+	depends on HAS_HW_NRF_EGU4
+	select NRFX_EGU
+
+config NRFX_EGU5
+	bool "Enable EGU5 instance"
+	depends on HAS_HW_NRF_EGU5
+	select NRFX_EGU
+
 config NRFX_GPIOTE
 	bool "Enable GPIOTE driver"
 	depends on HAS_HW_NRF_GPIOTE
@@ -35,6 +70,10 @@ config NRFX_I2S
 	bool "Enable I2S driver"
 	depends on HAS_HW_NRF_I2S
 
+config NRFX_IPC
+	bool "Enable IPC driver"
+	depends on HAS_HW_NRF_IPC
+
 config NRFX_LPCOMP
 	bool "Enable LPCOMP driver"
 	depends on HAS_HW_NRF_LPCOMP
@@ -42,7 +81,8 @@ config NRFX_LPCOMP
 config NRFX_NFCT
 	bool "Enable NFCT driver"
 	depends on HAS_HW_NRF_NFCT
-	select NRFX_TIMER4
+	select NRFX_TIMER4 if SOC_SERIES_NRF52X
+	select NRFX_TIMER2 if SOC_SERIES_NRF53X
 
 config NRFX_NVMC
 	bool "Enable NVMC driver"
@@ -188,13 +228,6 @@ config NRFX_SPIS3
 	depends on HAS_HW_NRF_SPIS3
 	select NRFX_SPIS
 
-config NRFX_SWI
-	bool "Enable SWI/EGU allocator"
-	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
-		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5 || \
-		   HAS_HW_NRF_SWI0 || HAS_HW_NRF_SWI1 || HAS_HW_NRF_SWI2 || \
-		   HAS_HW_NRF_SWI3 || HAS_HW_NRF_SWI4 || HAS_HW_NRF_SWI5
-
 config NRFX_SYSTICK
 	bool "Enable SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
@@ -339,7 +372,17 @@ config NRFX_USBD
 
 config NRFX_WDT
 	bool "Enable WDT driver"
-	depends on HAS_HW_NRF_WDT
+	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0 || HAS_HW_NRF_WDT1
+
+config NRFX_WDT0
+	bool "Enable WDT0 instance"
+	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0
+	select NRFX_WDT
+
+config NRFX_WDT1
+	bool "Enable WDT1 instance"
+	depends on HAS_HW_NRF_WDT1
+	select NRFX_WDT
 
 config NRFX_PRS
 	bool "Enable Peripheral Resource Sharing module"

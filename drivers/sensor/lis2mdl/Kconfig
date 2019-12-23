@@ -1,7 +1,5 @@
 # Copyright (c) 2018-2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
@@ -51,25 +49,12 @@ config LIS2MDL_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
-	prompt "Magnetometer sampling frequency (ODR)"
-	default LIS2MDL_MAG_ODR_RUNTIME
-
 config LIS2MDL_MAG_ODR_RUNTIME
-	bool "Set ODR at runtime (default 10 Hz)"
+	bool "Set magnetometer sampling frequency (ODR) at runtime (default: 10 Hz)"
+	default y
 
-config LIS2MDL_MAG_ODR_10
-	bool "10 Hz"
-
-config LIS2MDL_MAG_ODR_20
-	bool "20 Hz"
-
-config LIS2MDL_MAG_ODR_50
-	bool "50 Hz"
-
-config LIS2MDL_MAG_ODR_100
-	bool "100 Hz"
-
-endchoice
+config LIS2MDL_SPI_FULL_DUPLEX
+	bool "Enable SPI 4wire mode (separated MISO and MOSI lines)"
+	depends on SPI
 
 endif # LIS2MDL

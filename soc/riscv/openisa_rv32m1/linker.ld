@@ -5,15 +5,12 @@
  *
  * This file is based on:
  *
- * - include/arch/arm/cortex_m/scripts/linker.ld
+ * - include/arch/arm/aarch32/cortex_m/scripts/linker.ld
  * - include/arch/riscv/common/linker.ld
  * - include/arch/riscv/pulpino/linker.ld
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define _LINKER
-#define _ASMLANGUAGE
 
 #include <generated_dts_board.h>
 #include <autoconf.h>
@@ -29,9 +26,9 @@
 #define ROMABLE_REGION              ROM
 #define RAMABLE_REGION              RAM
 
-#define VECTOR_SIZE CONFIG_RISCV_RV32M1_VECTOR_SIZE
+#define VECTOR_SIZE 0x100
 
-#ifdef CONFIG_USE_CODE_PARTITION
+#ifdef CONFIG_USE_DT_CODE_PARTITION
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
@@ -106,36 +103,14 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	. = CONFIG_TEXT_SECTION_OFFSET;
-	. = ALIGN(4);
 
-	/*
-	 * Respect for CONFIG_TEXT_SECTION_OFFSET is mandatory
-	 * for MCUboot support, so .reset.* and .exception.*
-	 * must come after that offset from ROM_BASE.
-	 */
-
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-	/*
-	 * For CONFIG_BOOTLOADER_MCUBOOT, the vector table is located at the
-	 * end of the image header of the MCUboot. After the tagert image is
-	 * boot, the register Machine Trap-Vector Base Address (MTVEC) is
-	 * set with the value of _vector_start in the reset handler.
-	 */
-	_vector_start = .;
-	KEEP(*(.vectors.*))
-	_vector_end = .;
-	. = ALIGN(4);
-#endif
-
-	KEEP(*(.reset.*))
-	KEEP(*(".exception.entry.*")) /* contains __irq_wrapper */
-	*(".exception.other.*")
-
-	KEEP(*(.openocd_debug))
-	KEEP(*(".openocd_debug.*"))
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text-start.ld>
 
 	_image_text_start = .;
+
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
 	*(.eh_frame)

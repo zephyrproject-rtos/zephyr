@@ -47,7 +47,6 @@
 #endif
 #endif
 
-#endif /* !_LINKER */
 
 /* C++11 has static_assert built in */
 #ifdef __cplusplus
@@ -72,6 +71,8 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #if defined(CONFIG_ARCH_POSIX)
+#include <arch/posix/posix_trace.h>
+
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \
 {\
@@ -212,7 +213,7 @@ do {                                                                    \
 
 /* These macros allow having ARM asm functions callable from thumb */
 
-#if defined(_ASMLANGUAGE) && !defined(_LINKER)
+#if defined(_ASMLANGUAGE)
 
 #ifdef CONFIG_ARM
 
@@ -239,7 +240,7 @@ do {                                                                    \
 
 #endif /* !CONFIG_ARM */
 
-#endif /* _ASMLANGUAGE && !_LINKER */
+#endif /* _ASMLANGUAGE */
 
 /*
  * These macros are used to declare assembly language symbols that need
@@ -248,7 +249,7 @@ do {                                                                    \
  * correctly.  This is an elfism. Use #if 0 for a.out.
  */
 
-#if defined(_ASMLANGUAGE) && !defined(_LINKER)
+#if defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA)
@@ -341,7 +342,7 @@ do {                                                                    \
 
 #endif /* CONFIG_ARC */
 
-#endif /* _ASMLANGUAGE && !_LINKER */
+#endif /* _ASMLANGUAGE */
 
 #if defined(CONFIG_ARM) && defined(_ASMLANGUAGE)
 #if defined(CONFIG_ISA_THUMB2)
@@ -387,13 +388,6 @@ do {                                                                    \
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
 		",%c0"                              \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#elif defined(CONFIG_X86_64)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%0"                               \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
 #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
@@ -445,4 +439,5 @@ do {                                                                    \
 		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
 	})
 
+#endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

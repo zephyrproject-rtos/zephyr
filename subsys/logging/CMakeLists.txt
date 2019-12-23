@@ -45,8 +45,8 @@ if(NOT CONFIG_LOG_MINIMAL)
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_QEMU_X86_64
-    log_backend_qemu_x86_64.c
+    CONFIG_LOG_MIPI_SYST_ENABLE
+    log_output_syst.c
   )
 else()
   zephyr_sources(log_minimal.c)

@@ -1,7 +1,4 @@
-title: STM32 WB Flash Controller
-
-description: >
-    This binding gives a base representation of the STM32 wb Flash Controller
+description: STM32 WB flash controller
 
 compatible: "st,stm32wb-flash-controller"
 

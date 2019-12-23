@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
-#include <kernel_internal.h>
 #include <sys/errno_private.h>
 #include <sys/libc-hooks.h>
 #include <syscall_handler.h>
@@ -175,7 +174,7 @@ int _read(int fd, char *buf, int nbytes)
 
 	return z_impl_zephyr_read_stdin(buf, nbytes);
 }
-FUNC_ALIAS(_read, read, int);
+__weak FUNC_ALIAS(_read, read, int);
 
 int _write(int fd, const void *buf, int nbytes)
 {
@@ -183,25 +182,25 @@ int _write(int fd, const void *buf, int nbytes)
 
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
-FUNC_ALIAS(_write, write, int);
+__weak FUNC_ALIAS(_write, write, int);
 
 int _open(const char *name, int mode)
 {
 	return -1;
 }
-FUNC_ALIAS(_open, open, int);
+__weak FUNC_ALIAS(_open, open, int);
 
 int _close(int file)
 {
 	return -1;
 }
-FUNC_ALIAS(_close, close, int);
+__weak FUNC_ALIAS(_close, close, int);
 
 int _lseek(int file, int ptr, int dir)
 {
 	return 0;
 }
-FUNC_ALIAS(_lseek, lseek, int);
+__weak FUNC_ALIAS(_lseek, lseek, int);
 #else
 extern ssize_t write(int file, const char *buffer, size_t count);
 #define _write	write
@@ -211,28 +210,28 @@ int _isatty(int file)
 {
 	return 1;
 }
-FUNC_ALIAS(_isatty, isatty, int);
+__weak FUNC_ALIAS(_isatty, isatty, int);
 
 int _kill(int i, int j)
 {
 	return 0;
 }
-FUNC_ALIAS(_kill, kill, int);
+__weak FUNC_ALIAS(_kill, kill, int);
 
 int _getpid(void)
 {
 	return 0;
 }
-FUNC_ALIAS(_getpid, getpid, int);
+__weak FUNC_ALIAS(_getpid, getpid, int);
 
 int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
-FUNC_ALIAS(_fstat, fstat, int);
+__weak FUNC_ALIAS(_fstat, fstat, int);
 
-void _exit(int status)
+__weak void _exit(int status)
 {
 	_write(1, "exit\n", 5);
 	while (1) {
@@ -265,9 +264,9 @@ void *_sbrk(int count)
 
 	return ret;
 }
-FUNC_ALIAS(_sbrk, sbrk, void *);
+__weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
-int *__errno(void)
+__weak int *__errno(void)
 {
 	return z_errno();
 }

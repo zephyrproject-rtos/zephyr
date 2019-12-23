@@ -275,6 +275,7 @@ void main(void)
 	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
 	struct device *stts751 = device_get_binding(DT_INST_0_ST_STTS751_LABEL);
 	struct device *iis3dhhc = device_get_binding(DT_INST_0_ST_IIS3DHHC_LABEL);
+	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_LABEL);
 
 	if (!hts221) {
 		printk("Could not get pointer to %s sensor\n",
@@ -307,6 +308,11 @@ void main(void)
 		return;
 	}
 
+	if (lis2mdl == NULL) {
+		printf("Could not get LIS2MDL device\n");
+		return;
+	}
+
 	lis2dw12_config(lis2dw12);
 	lps22hh_config(lps22hh);
 	lsm6dso_config(lsm6dso);
@@ -320,6 +326,7 @@ void main(void)
 		struct sensor_value iis3dhhc_accel[3];
 		struct sensor_value lsm6dso_accel[3], lsm6dso_gyro[3];
 		struct sensor_value stts751_temp;
+		struct sensor_value magn[3];
 
 		/* handle HTS221 sensor */
 		if (sensor_sample_fetch(hts221) < 0) {
@@ -363,6 +370,11 @@ void main(void)
 		}
 #endif
 
+		if (sensor_sample_fetch(lis2mdl) < 0) {
+			printf("LIS2MDL Sensor sample update error\n");
+			return;
+		}
+
 		sensor_channel_get(hts221, SENSOR_CHAN_HUMIDITY, &hts221_hum);
 		sensor_channel_get(hts221, SENSOR_CHAN_AMBIENT_TEMP, &hts221_temp);
 		sensor_channel_get(lis2dw12, SENSOR_CHAN_ACCEL_XYZ, lis2dw12_accel);
@@ -372,6 +384,7 @@ void main(void)
 		sensor_channel_get(lsm6dso, SENSOR_CHAN_GYRO_XYZ, lsm6dso_gyro);
 		sensor_channel_get(stts751, SENSOR_CHAN_AMBIENT_TEMP, &stts751_temp);
 		sensor_channel_get(iis3dhhc, SENSOR_CHAN_ACCEL_XYZ, iis3dhhc_accel);
+		sensor_channel_get(lis2mdl, SENSOR_CHAN_MAGN_XYZ, magn);
 
 		/* Display sensor data */
 
@@ -420,6 +433,11 @@ void main(void)
 		printf("STTS751: Temperature: %.1f C\n",
 		       sensor_value_to_double(&stts751_temp));
 
+		printf("LIS2MDL: Magn (Gauss): x: %.3f, y: %.3f, z: %.3f\n",
+			sensor_value_to_double(&magn[0]),
+			sensor_value_to_double(&magn[1]),
+			sensor_value_to_double(&magn[2]));
+
 #if defined(CONFIG_LPS22HH_TRIGGER)
 		printk("%d:: lps22hh trig %d\n", cnt, lps22hh_trig_cnt);
 #endif
@@ -444,5 +462,3 @@ void main(void)
 		k_sleep(K_MSEC(2000));
 	}
 }
-
-

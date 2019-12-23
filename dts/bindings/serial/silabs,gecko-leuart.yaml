@@ -1,7 +1,4 @@
-title: GECKO LEUART
-
-description: >
-    This binding gives a base representation of the Gecko LEUART
+description: Gecko LEUART
 
 compatible: "silabs,gecko-leuart"
 

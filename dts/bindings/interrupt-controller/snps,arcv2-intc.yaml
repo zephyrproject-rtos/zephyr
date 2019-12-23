@@ -1,10 +1,7 @@
 # Copyright (c) 2018, synopsys
 # SPDX-License-Identifier: Apache-2.0
 
-title: ARCV2 Interrupt Controller
-
-description: >
-    This binding describes the ARCV2 IRQ controller
+description: ARCV2 interrupt controller
 
 compatible: "snps,arcv2-intc"
 

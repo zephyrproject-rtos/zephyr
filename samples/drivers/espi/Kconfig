@@ -1,10 +1,7 @@
-# Kconfig - Private config options for eSPI sample app
+# Private config options for eSPI sample app
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Enhanced Serial Peripheral Interface application"
 
@@ -22,7 +19,6 @@ config ESPI_VIRTUAL_WIRE_TIMEOUT
 
 config ESPI_GPIO_DEV_NEEDED
 	bool "GPIO required for minimum eSPI handshake"
-	default n
 
 if ESPI_GPIO_DEV_NEEDED
 
@@ -30,13 +26,13 @@ config ESPI_GPIO_DEV0
 	string "Name of the GPIO port 0"
 	default "GPIO_0"
 	help
-	  Name of the port used in mimimal handshake
+	  Name of the port used in minimal handshake
 
 config ESPI_GPIO_DEV1
 	string "Name of the GPIO port 1"
 	default "GPIO_1"
 	help
-	  Name of the port used in mimimal handshake
+	  Name of the port used in minimal handshake
 
 config ESPI_INIT_PIN
 	int "eSPI master enable pin"

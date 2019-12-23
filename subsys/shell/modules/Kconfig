@@ -1,11 +1,7 @@
-# Kconfig - Shell configuration options
+# Shell configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 config KERNEL_SHELL
 	bool "Enable kernel shell"

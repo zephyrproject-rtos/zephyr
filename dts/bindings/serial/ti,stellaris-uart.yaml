@@ -1,7 +1,4 @@
-title: TI Stellaris UART
-
-description: >
-    This binding gives a base representation of the TI Stellaris UART
+description: TI Stellaris UART
 
 compatible: "ti,stellaris-uart"
 

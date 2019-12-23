@@ -23,7 +23,6 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include <kernel_arch_thread.h>
 
 /* stacks */
 
@@ -31,16 +30,15 @@
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <cortex_m/stack.h>
-#include <cortex_m/exc.h>
+#include <aarch32/cortex_m/stack.h>
+#include <aarch32/cortex_m/exc.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <cortex_r/stack.h>
-#include <cortex_r/exc.h>
+#include <aarch32/cortex_r/stack.h>
+#include <aarch32/cortex_r/exc.h>
 #endif
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
-#include <kernel_internal.h>
 #include <zephyr/types.h>
 #include <sys/dlist.h>
 #include <sys/atomic.h>

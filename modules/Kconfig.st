@@ -1,9 +1,9 @@
-# Kconfig - STLIB config
+# STLIB config
 
 # Copyright (c) 2017 STMicroelectronics
 
 config HAS_STLIB
-    bool
+	bool
 
 config HAS_STMEMSC
 	bool

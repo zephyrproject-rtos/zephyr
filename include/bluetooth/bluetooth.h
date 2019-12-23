@@ -321,11 +321,11 @@ struct bt_le_adv_param {
   * @param _int_max   Maximum advertising interval
   */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
-		(&(struct bt_le_adv_param) { \
+		((struct bt_le_adv_param[]) { { \
 			.options = (_options), \
 			.interval_min = (_int_min), \
 			.interval_max = (_int_max), \
-		 })
+		 } })
 
 #define BT_LE_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, \
 				       BT_GAP_ADV_FAST_INT_MIN_2, \
@@ -452,12 +452,12 @@ struct bt_le_scan_param {
   * @param _window   Scan Window (N * 0.625 ms)
   */
 #define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
-		(&(struct bt_le_scan_param) { \
+		((struct bt_le_scan_param[]) { { \
 			.type = (_type), \
 			.filter_dup = (_filter), \
 			.interval = (_interval), \
 			.window = (_window), \
-		 })
+		 } })
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \

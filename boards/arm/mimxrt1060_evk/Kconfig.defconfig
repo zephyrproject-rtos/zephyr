@@ -1,9 +1,7 @@
-# Kconfig - MIMXRT1060-EVK board
-#
+# MIMXRT1060-EVK board
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH
 

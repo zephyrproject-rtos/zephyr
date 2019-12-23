@@ -59,7 +59,7 @@ static inline nrf_spim_frequency_t get_nrf_spim_frequency(u32_t frequency)
 		return NRF_SPIM_FREQ_2M;
 	} else if (frequency < 8000000) {
 		return NRF_SPIM_FREQ_4M;
-#ifdef CONFIG_SOC_NRF52840
+#if defined(CONFIG_SOC_NRF52833) || defined(CONFIG_SOC_NRF52840)
 	} else if (frequency < 16000000) {
 		return NRF_SPIM_FREQ_8M;
 	} else if (frequency < 32000000) {
@@ -360,14 +360,33 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-#if NRFX_CHECK(NRFX_SPIM_EXTENDED_ENABLED)
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx) \
-	.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,
-#else
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)
-#endif
+#define SPIM_NRFX_MISO_PULL_DOWN(idx) \
+	IS_ENABLED(DT_NORDIC_NRF_SPIM_SPI_##idx##_MISO_PULL_DOWN)
+
+#define SPIM_NRFX_MISO_PULL_UP(idx) \
+	IS_ENABLED(DT_NORDIC_NRF_SPIM_SPI_##idx##_MISO_PULL_UP)
+
+#define SPIM_NRFX_MISO_PULL(idx)			\
+	(SPIM_NRFX_MISO_PULL_UP(idx)			\
+		? SPIM_NRFX_MISO_PULL_DOWN(idx)		\
+			? -1 /* invalid configuration */\
+			: NRF_GPIO_PIN_PULLUP		\
+		: SPIM_NRFX_MISO_PULL_DOWN(idx)		\
+			? NRF_GPIO_PIN_PULLDOWN		\
+			: NRF_GPIO_PIN_NOPULL)
+
+#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
+	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
+		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
+		 IF_ENABLED(SPIM##idx##_FEATURE_RXDELAY_PRESENT,	\
+			(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,))	\
+		))
 
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG(						       \
+		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
+		"SPIM"#idx						       \
+		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
@@ -392,6 +411,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			.frequency = NRF_SPIM_FREQ_4M,			       \
 			.mode      = NRF_SPIM_MODE_0,			       \
 			.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST,	       \
+			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		}							       \
 	};								       \

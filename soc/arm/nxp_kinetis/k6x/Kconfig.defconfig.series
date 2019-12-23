@@ -1,10 +1,7 @@
-# Kconfig - Kinetis K6x series configuration options
+# Kinetis K6x series configuration options
 
-#
 # Copyright (c) 2014-2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_KINETIS_K6X
 
@@ -12,9 +9,11 @@ config SOC_SERIES
 	default "k6x"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 86
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
 
 source "soc/arm/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
 

@@ -1,11 +1,9 @@
-# Kconfig - MCUXpresso SDK SPI
-#
-# Copyright (c) 2018, NXP
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# MCUXpresso SDK SPI
 
-menuconfig SPI_MCUX_LPSPI
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_LPSPI
 	bool "MCUX SPI driver"
 	depends on HAS_MCUX_LPSPI && CLOCK_CONTROL
 	help

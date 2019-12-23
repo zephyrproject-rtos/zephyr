@@ -18,4 +18,9 @@ struct dht_data {
 	u8_t sample[4];
 };
 
+struct dht_config {
+	const char *ctrl;
+	u8_t pin;
+};
+
 #endif

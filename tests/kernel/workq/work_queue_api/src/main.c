@@ -141,10 +141,10 @@ static void tdelayed_work_submit(void *data)
 
 		/**TESTPOINT: check remaining timeout after submit */
 		zassert_true(
-		    time_remaining <= __ticks_to_ms(z_ms_to_ticks(TIMEOUT)
+		    time_remaining <= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT)
 						    + _TICK_ALIGN) &&
-		    time_remaining >= __ticks_to_ms(z_ms_to_ticks(TIMEOUT) -
-						    z_ms_to_ticks(15)), NULL);
+		    time_remaining >= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT) -
+						    k_ms_to_ticks_ceil32(15)), NULL);
 		/**TESTPOINT: check pending after delayed work submit*/
 		zassert_true(k_work_pending((struct k_work *)&delayed_work[i])
 			     == 0, NULL);

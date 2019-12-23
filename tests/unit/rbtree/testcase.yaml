@@ -1,4 +1,4 @@
 tests:
-  libraries.data_structures.rbtree:
+  utilities.red_black_tree:
     tags: rbtree
     type: unit

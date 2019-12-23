@@ -1,10 +1,7 @@
 # Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-title: LiteX VexRiscV Interrupt Controller
-
-description: >
-    This binding describes LiteX VexRiscV Interrupt Controller
+description: LiteX VexRiscV interrupt controller
 
 compatible: "vexriscv,intc0"
 

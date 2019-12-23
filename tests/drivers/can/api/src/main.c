@@ -47,6 +47,8 @@
 #define CAN_DEVICE_NAME DT_CAN_0_NAME
 #elif defined(DT_CAN_1_NAME)
 #define CAN_DEVICE_NAME DT_CAN_1_NAME
+#elif defined(DT_INST_0_MICROCHIP_MCP2515_LABEL)
+#define CAN_DEVICE_NAME DT_INST_0_MICROCHIP_MCP2515_LABEL
 #else
 #define CAN_DEVICE_NAME ""
 #endif
@@ -593,6 +595,21 @@ static void test_send_receive_wrong_id(void)
 	can_detach(can_dev, filter_id);
 }
 
+/*
+ * Check if a call with dlc > CAN_MAX_DLC returns CAN_TX_EINVAL
+ */
+static void test_send_invalid_dlc(void)
+{
+	struct zcan_frame frame;
+	int ret;
+
+	frame.dlc = CAN_MAX_DLC + 1;
+
+	ret = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, tx_std_isr, NULL);
+	zassert_equal(ret, CAN_TX_EINVAL,
+		      "ret [%d] not equal to %d", ret, CAN_TX_EINVAL);
+}
+
 void test_main(void)
 {
 	k_sem_init(&rx_isr_sem, 0, 1);
@@ -612,6 +629,7 @@ void test_main(void)
 			 ztest_unit_test(test_send_receive_std_masked),
 			 ztest_unit_test(test_send_receive_ext_masked),
 			 ztest_unit_test(test_send_receive_buffer),
-			 ztest_unit_test(test_send_receive_wrong_id));
+			 ztest_unit_test(test_send_receive_wrong_id),
+			 ztest_unit_test(test_send_invalid_dlc));
 	ztest_run_test_suite(can_driver);
 }

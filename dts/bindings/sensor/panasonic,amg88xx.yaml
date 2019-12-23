@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-title: Panasonic AMG88XX 8x8 (64) pixel infrared array sensor
-
-description: >
-    This is a representation of the AMG88XX sensor
+description: Panasonic AMG88XX 8x8 (64) pixel infrared array sensor
 
 compatible: "panasonic,amg88xx"
 

@@ -300,6 +300,9 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 void lll_resume(void *param);
 void lll_disable(void *param);
 u32_t lll_radio_is_idle(void);
+s8_t lll_radio_tx_pwr_min_get(void);
+s8_t lll_radio_tx_pwr_max_get(void);
+s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl);
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,

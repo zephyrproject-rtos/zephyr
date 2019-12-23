@@ -1,10 +1,7 @@
-# Kconfig -HW Info driver configuration options
+# HW Info driver configuration options
 
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig HWINFO
 	bool "Hardware Information driver"
@@ -30,7 +27,7 @@ config HWINFO_STM32
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on (SOC_SERIES_NRF52X || SOC_SERIES_NRF51X)
+	depends on SOC_FAMILY_NRF
 	help
 	  Enable Nordic NRF hwinfo driver.
 

@@ -7,6 +7,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -104,9 +108,6 @@
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
 			label = "UART_0";
 
-			pinctrl-0 = <&uart0_default>;
-			pinctrl-names = "default";
-
 			status = "disabled";
 		};
 
@@ -129,9 +130,6 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
 			label = "UART_2";
 
-			pinctrl-0 = <&uart2_default>;
-			pinctrl-names = "default";
-
 			status = "disabled";
 		};
 
@@ -139,26 +137,12 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
-
-			uart0_default: uart0_default {
-				rx-tx {
-					pins = <1>, <2>;
-					function = <2>;
-				};
-			};
 		};
 
 		pinmux_b: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
-
-			spi1_default: spi1_default {
-				miso-mosi-clk {
-					pins = <17>, <16>, <11>;
-					function = <2>;
-				};
-			};
 		};
 
 		pinmux_c: pinmux@4004b000 {
@@ -171,13 +155,6 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
-
-			uart2_default: uart2_default {
-				rx-tx {
-					pins = <2>, <3>;
-					function = <3>;
-				};
-			};
 		};
 
 		pinmux_e: pinmux@4004d000 {
@@ -249,8 +226,6 @@
 			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 
-			pinctrl-0 = <&spi1_default>;
-			pinctrl-names = "default";
 			#address-cells = <1>;
 			#size-cells = <0>;
 

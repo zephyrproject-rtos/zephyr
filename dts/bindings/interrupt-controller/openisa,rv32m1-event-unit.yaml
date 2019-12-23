@@ -2,10 +2,7 @@
 # Copyright (c) 2018, Foundries.io
 # SPDX-License-Identifier: Apache-2.0
 
-title: RV32M1 Event Unit
-
-description: >
-    This binding describes the RV32M1 Event Unit
+description: RV32M1 Event Unit
 
 compatible: "openisa,rv32m1-event-unit"
 

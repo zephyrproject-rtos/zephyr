@@ -213,6 +213,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 
 void main(void)
 {
+	int ret;
 	u8_t report[4] = { 0x00 };
 	u8_t toggle = 0U;
 	struct device *led_dev, *hid_dev;
@@ -261,13 +262,17 @@ void main(void)
 	}
 #endif
 
-	static const struct hid_ops ops = {
-			.status_cb = status_cb
-	};
 	usb_hid_register_device(hid_dev,
 				hid_report_desc, sizeof(hid_report_desc),
-				&ops);
+				NULL);
+
 	usb_hid_init(hid_dev);
+
+	ret = usb_enable(status_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	while (true) {
 		k_sem_take(&sem, K_FOREVER);

@@ -101,9 +101,6 @@ int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	if (settings_name_steq(name, "mybar", &next) && !next) {
 		rc = read_cb(cb_arg, &val8, sizeof(val8));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
-		if (rc == 0) {
-			val8 = VAL8_DELETED;
-		}
 		return 0;
 	}
 

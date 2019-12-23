@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP MCUX CMOS sensor interface
+
+compatible: "nxp,imx-csi"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    sensor-label:
+      required: true
+      type: string
+      description: label of connected sensor device

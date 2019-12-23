@@ -10,7 +10,23 @@
 #include <device.h>
 #include <hal/nrf_clock.h>
 
-/* TODO: move all these to clock_control.h ? */
+/** @brief Clocks handled by the CLOCK peripheral.
+ *
+ * Enum shall be used as a sys argument in clock_control API.
+ */
+enum clock_control_nrf_type {
+	CLOCK_CONTROL_NRF_TYPE_HFCLK,
+	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+	CLOCK_CONTROL_NRF_TYPE_COUNT
+};
+
+/* Define can be used with clock control API instead of enum directly to
+ * increase code readability.
+ */
+#define CLOCK_CONTROL_NRF_SUBSYS_HF \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
+#define CLOCK_CONTROL_NRF_SUBSYS_LF \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
 
 /* Define 32KHz clock source */
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC
@@ -55,7 +71,9 @@
 #define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7
 #endif
 
+#if defined(CONFIG_USB_NRFX)
 void nrf5_power_usb_power_int_enable(bool enable);
+#endif
 
 /** @brief Force LF clock calibration. */
 void z_nrf_clock_calibration_force_start(void);

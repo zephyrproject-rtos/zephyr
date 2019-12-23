@@ -9,8 +9,8 @@
 #include <kernel_structs.h>
 
 
-#if defined(CONFIG_ARM)
-#include <arch/arm/cortex_m/cmsis.h>
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 static u32_t get_available_nvic_line(u32_t initial_offset)
 {
@@ -76,4 +76,3 @@ static void trigger_irq(int irq)
 /* for not supported architecture */
 #define NO_TRIGGER_FROM_SW
 #endif
-

@@ -16,23 +16,23 @@ if [ -z "$1" ]; then
     exit
 fi
 
-BUILD_DIR="$1"
+build_dir="$1"
 
-if [ ! -d $BUILD_DIR ]; then
-    echo "Directory $BUILD_DIR not found!"
+if [ ! -d $build_dir ]; then
+    echo "Directory $build_dir not found!"
     exit
 fi
 
-KCONFIG_DIR=$BUILD_DIR/rst/doc/reference/kconfig
+kconfig_dir=$build_dir/rst/doc/reference/kconfig
 
-if [ ! -d $KCONFIG_DIR ]; then
-    echo "Kconfig documentation not found at $KCONFIG_DIR"
+if [ ! -d $kconfig_dir ]; then
+    echo "Kconfig documentation not found at $kconfig_dir"
     exit
 fi
 
 get_options()
 {
-    cd $KCONFIG_DIR; ls CONFIG_DNS* CONFIG_NET* CONFIG_IEEE802154* | sed 's/\.rst//g'
+    cd $kconfig_dir; ls CONFIG_DNS* CONFIG_NET* CONFIG_IEEE802154* | sed 's/\.rst//g'
 }
 
 get_options | while read opt

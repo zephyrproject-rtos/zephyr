@@ -1,10 +1,7 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: Kinetis ADC16
-
-description: >
-    This binding gives a base representation of the Kinetis ADC16
+description: Kinetis ADC16
 
 compatible: "nxp,kinetis-adc16"
 

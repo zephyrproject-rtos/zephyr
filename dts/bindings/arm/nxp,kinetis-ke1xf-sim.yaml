@@ -1,10 +1,7 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: Kinetis KE1xF System Integration Module (SIM)
-
-description: >
-    This is a representation of the Kinetis SIM IP node
+description: Kinetis KE1xF System Integration Module (SIM) IP node
 
 compatible: "nxp,kinetis-ke1xf-sim"
 
@@ -19,10 +16,10 @@ properties:
 
     clkout-source:
       type: int
-      required: true
+      required: false
       description: clkout clock source
 
     clkout-divider:
       type: int
-      required: true
+      required: false
       description: clkout divider

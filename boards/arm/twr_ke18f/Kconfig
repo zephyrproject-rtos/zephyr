@@ -1,7 +1,6 @@
-# Kconfig - TWR-KE18F board configuration
-#
+# TWR-KE18F board configuration
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_TWR_KE18F
@@ -27,4 +26,4 @@ config BOARD_TWR_KE18F_SPI_1_PCS2
 	depends on SPI_1
 	default y
 
-endif #BOARD_TWR_KE18F
+endif # BOARD_TWR_KE18F

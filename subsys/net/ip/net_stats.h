@@ -327,7 +327,7 @@ static inline void net_stats_update_tx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.tx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.tx_time.count += 1);
 }
 #else
@@ -342,7 +342,7 @@ static inline void net_stats_update_rx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.rx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.rx_time.count += 1);
 }
 #else
@@ -379,7 +379,7 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.count += 1);
 
 	net_stats_update_tx_time(iface, start_time, end_time);
@@ -398,7 +398,7 @@ static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.count += 1);
 
 	net_stats_update_rx_time(iface, start_time, end_time);

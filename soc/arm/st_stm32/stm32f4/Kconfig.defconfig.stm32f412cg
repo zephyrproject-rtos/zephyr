@@ -1,18 +1,14 @@
-# Kconfig - ST STM32F412CG MCU configuration options
-#
+# ST STM32F412CG MCU configuration options
+
 # Copyright (c) 2018, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F412CG
 
 config SOC
-	string
 	default "stm32f412cx"
 
 config NUM_IRQS
-	int
 	default 97
 
 if GPIO_STM32

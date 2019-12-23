@@ -1,11 +1,8 @@
-# Kconfig - Bluetooth LE stack configuration options
+# Bluetooth LE stack configuration options
 
-#
 # Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 comment "Host Stack Configuration"
 
@@ -25,6 +22,7 @@ config BT_HCI_CMD_COUNT
 
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 3 if BT_RECV_IS_RX_THREAD
 	default 20 if (BT_MESH && !(BT_DISCARDABLE_BUF_COUNT > 0))
 	default 10
@@ -53,7 +51,7 @@ config BT_DISCARDABLE_BUF_COUNT
 	range 1 255
 	default 20 if BT_MESH
 	default 3
-	depends on BT_H4 || BT_CTLR
+	depends on BT_H4 || BT_RPMSG || BT_CTLR
 	help
 	  Number of buffers in a separate buffer pool for events which
 	  the HCI driver considers discardable. Examples of such events
@@ -65,7 +63,8 @@ config BT_DISCARDABLE_BUF_COUNT
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
-	int "HCI Tx thread stack size"
+	int
+	prompt "HCI Tx thread stack size" if BT_HCI_TX_STACK_SIZE_WITH_PROMPT
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
@@ -82,6 +81,9 @@ config BT_HCI_TX_STACK_SIZE
 	  Stack size needed for executing bt_send with specified driver.
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
+
+config BT_HCI_TX_STACK_SIZE_WITH_PROMPT
+	bool "Override HCI Tx thread stack size"
 
 config BT_HCI_ECC_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
@@ -176,6 +178,15 @@ config BT_SETTINGS
 	  instead of each subsystem doing it independently.
 
 if BT_SETTINGS
+config BT_SETTINGS_CCC_LAZY_LOADING
+	bool "Load CCC values from settings when peer connects"
+	default y
+	help
+	  Load Client Configuration Characteristic setting right after a bonded
+	  device connects.
+	  Disabling this option will increase memory usage as CCC values for all
+	  bonded devices will be loaded when calling settings_load.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	help
@@ -223,6 +234,7 @@ if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 6
 	range 1 64
 	help
@@ -230,13 +242,13 @@ config BT_ACL_RX_COUNT
 endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers"
-	default BT_CTLR_TX_BUFFERS if BT_CTLR
-	default 7
-	range 1 128
+	int "Maximum number of pending TX buffers with a callback"
+	default BT_L2CAP_TX_BUF_COUNT
+	range BT_L2CAP_TX_BUF_COUNT 255
 	help
-	  Maximum number of pending TX buffers that have not yet
-	  been acknowledged by the controller.
+	  Maximum number of pending TX buffers that have an associated
+	  callback. Normally this can be left to the default value, which
+	  is equal to the number of TX buffers in the stack-internal pool.
 
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
@@ -248,6 +260,22 @@ config BT_AUTO_PHY_UPDATE
 	  Disable this if you want PHY Update Procedure feature supported but
 	  want to rely on remote device to initiate the procedure at its
 	  discretion.
+
+config BT_REMOTE_INFO
+	bool "Enable application access to remote information"
+	help
+	  Enable application access to the remote information available in the
+	  stack. The remote information is retrieved once a connection has been
+	  established and the application will be notified when this information
+	  is available through the remote_version_available connection callback.
+
+config BT_REMOTE_VERSION
+	bool "Enable remote version information"
+	depends on BT_REMOTE_INFO
+	help
+	  Enable this to get access to the remote version through
+	  the remote_version_available callback. The host will automatically ask
+	  the remote device after the connection has been established.
 
 config BT_SMP
 	bool "Security Manager Protocol support"
@@ -301,6 +329,17 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	bool "Allow unauthenticated pairing for paired device"
+	help
+	  This option allows all unauthenticated pairing attempts made by the
+	  peer where an unauthenticated bond already exists.
+	  This would enable cases where an attacker could copy the peer device
+	  address to connect and start an unauthenticated pairing procedure
+	  to replace the existing bond. When this option is disabled in order
+	  to create a new bond the old bond has to be explicitly deleted with
+	  bt_unpair.
+
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"
 	help
@@ -326,6 +365,14 @@ config BT_BONDABLE
 	  This option enables support for Bondable Mode. In this mode,
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
+
+config BT_BONDING_REQUIRED
+	bool "Always require bonding"
+	depends on BT_BONDABLE
+	help
+	  When this option is enabled remote devices are required to always
+	  set the bondable flag in their pairing request. Any other kind of
+	  requests will be rejected.
 
 config BT_STORE_DEBUG_KEYS
 	bool "Store Debug Mode bonds"
@@ -364,7 +411,7 @@ config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	help
 	  With this option enabled, aging counter will be stored in settings every
 	  time a successful pairing occurs. This increases flash wear out but offers
-	  a more correct finding of the oldest unused paiting info.
+	  a more correct finding of the oldest unused pairing info.
 
 endif # BT_SMP
 

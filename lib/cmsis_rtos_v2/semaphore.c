@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <string.h>
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem),
@@ -76,7 +77,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
 		status = k_sem_take(&semaphore->z_semaphore,
-				    __ticks_to_ms(timeout));
+				    k_ticks_to_ms_floor64(timeout));
 	}
 
 	if (status == -EBUSY) {
