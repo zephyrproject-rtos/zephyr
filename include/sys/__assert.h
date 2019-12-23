@@ -26,31 +26,35 @@
 #define __ASSERT_PRINT(fmt, ...)
 #endif /* CONFIG_ASSERT_VERBOSE */
 
-#ifdef CONFIG_ASSERT_NO_FILE_INFO
-#define __ASSERT_FILE_INFO ""
-#define __ASSERT_LINE_INFO 0
-#else  /* CONFIG_ASSERT_NO_FILE_INFO */
-#define __ASSERT_FILE_INFO __FILE__
-#define __ASSERT_LINE_INFO __LINE__
-#endif /* CONFIG_ASSERT_NO_FILE_INFO */
-
-#ifdef CONFIG_ASSERT_NO_COND_INFO
-#define __ASSERT_COND_INFO(test) ""
-#else  /* CONFIG_ASSERT_NO_COND_INFO */
-#define __ASSERT_COND_INFO(test) Z_STRINGIFY(test)
-#endif /* CONFIG_ASSERT_NO_COND_INFO */
-
 #ifdef CONFIG_ASSERT_NO_MSG_INFO
 #define __ASSERT_MSG_INFO(fmt, ...)
 #else  /* CONFIG_ASSERT_NO_MSG_INFO */
 #define __ASSERT_MSG_INFO(fmt, ...) __ASSERT_PRINT("\t" fmt "\n", ##__VA_ARGS__)
 #endif /* CONFIG_ASSERT_NO_MSG_INFO */
 
-#define __ASSERT_LOC(test)                               \
-	__ASSERT_PRINT("ASSERTION FAIL [%s] @ %s:%d\n",  \
-	       __ASSERT_COND_INFO(test),                 \
-	       __ASSERT_FILE_INFO,                       \
-	       __ASSERT_LINE_INFO)                       \
+#if !defined(CONFIG_ASSERT_NO_COND_INFO) && !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __ASSERT_LOC(test)                              \
+	__ASSERT_PRINT("ASSERTION FAIL [%s] @ %s:%d\n", \
+		Z_STRINGIFY(test),                      \
+		__FILE__, __LINE__)
+#endif
+
+#if defined(CONFIG_ASSERT_NO_COND_INFO) && !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __ASSERT_LOC(test)                         \
+	__ASSERT_PRINT("ASSERTION FAIL @ %s:%d\n", \
+		__FILE__, __LINE__)
+#endif
+
+#if !defined(CONFIG_ASSERT_NO_COND_INFO) && defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __ASSERT_LOC(test)                      \
+	__ASSERT_PRINT("ASSERTION FAIL [%s]\n", \
+		Z_STRINGIFY(test))
+#endif
+
+#if defined(CONFIG_ASSERT_NO_COND_INFO) && defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __ASSERT_LOC(test)                 \
+	__ASSERT_PRINT("ASSERTION FAIL\n")
+#endif
 
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
@@ -65,7 +69,13 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_ASSERT_NO_FILE_INFO
+void assert_post_action(void);
+#define __ASSERT_POST_ACTION() assert_post_action()
+#else  /* CONFIG_ASSERT_NO_FILE_INFO */
 void assert_post_action(const char *file, unsigned int line);
+#define __ASSERT_POST_ACTION() assert_post_action(__FILE__, __LINE__)
+#endif /* CONFIG_ASSERT_NO_FILE_INFO */
 
 #ifdef __cplusplus
 }
@@ -75,8 +85,7 @@ void assert_post_action(const char *file, unsigned int line);
 	do {                                                              \
 		if (!(test)) {                                            \
 			__ASSERT_LOC(test);                               \
-			assert_post_action(__ASSERT_FILE_INFO,            \
-					   __ASSERT_LINE_INFO);           \
+			__ASSERT_POST_ACTION();                           \
 		}                                                         \
 	} while (false)
 
@@ -85,8 +94,7 @@ void assert_post_action(const char *file, unsigned int line);
 		if (!(test)) {                                            \
 			__ASSERT_LOC(test);                               \
 			__ASSERT_MSG_INFO(fmt, ##__VA_ARGS__);            \
-			assert_post_action(__ASSERT_FILE_INFO,            \
-					   __ASSERT_LINE_INFO);           \
+			__ASSERT_POST_ACTION();                           \
 		}                                                         \
 	} while (false)
 
