@@ -1296,6 +1296,24 @@ extern bool k_is_in_isr(void);
 __syscall int k_is_preempt_thread(void);
 
 /**
+ * @brief Test whether startup is in the before-main-task phase.
+ *
+ * This routine allows the caller to customize its actions, depending on
+ * whether it being invoked before the kernel is fully active.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @return true if invoked before post-kernel initialization
+ * @return false if invoked during/after post-kernel initialization
+ */
+static inline bool k_is_pre_kernel(void)
+{
+	extern bool z_sys_post_kernel; /* in init.c */
+
+	return !z_sys_post_kernel;
+}
+
+/**
  * @}
  */
 

@@ -212,6 +212,8 @@ void z_data_copy(void)
 
 /* LCOV_EXCL_STOP */
 
+bool z_sys_post_kernel;
+
 /**
  *
  * @brief Mainline for kernel's background thread
@@ -232,6 +234,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #else
 	static const unsigned int boot_delay;
 #endif
+
+	z_sys_post_kernel = true;
 
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM
