@@ -25,22 +25,6 @@ extern "C" {
 #define _SYS_INIT_LEVEL_POST_KERNEL	2
 #define _SYS_INIT_LEVEL_APPLICATION	3
 
-extern s8_t z_sys_device_level;
-
-/**
- * @brief Test whether startup is in the before-main-task phase.
- *
- * This impacts which services are available for use, and the context
- * in which functions are run.
- *
- * @return true if and only if start up is still running pre-kernel
- * initialization.
- */
-static inline bool k_is_pre_kernel(void)
-{
-	return (z_sys_device_level < _SYS_INIT_LEVEL_POST_KERNEL);
-}
-
 /* A counter is used to avoid issues when two or more system devices
  * are declared in the same C file with the same init function.
  */

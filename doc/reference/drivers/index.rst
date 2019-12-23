@@ -361,6 +361,9 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
+Drivers and other system utilities can determine whether startup is
+still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+function.
 
 System Drivers
 **************
