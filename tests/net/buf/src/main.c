@@ -484,6 +484,8 @@ static void net_buf_test_byte_order(void)
 	zassert_equal(u16, net_buf_pull_be16(buf),
 		      "Invalid 16 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_le16(buf, u16);
 	net_buf_add_be16(buf, u16);
 
@@ -492,12 +494,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be16, net_buf_pull_mem(buf, sizeof(be16)),
 			  sizeof(be16), "Invalid 16 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le24, sizeof(le24));
 	net_buf_add_mem(buf, &be24, sizeof(be24));
 
 	u32 = net_buf_pull_le24(buf);
 	zassert_equal(u32, net_buf_pull_be24(buf),
 		      "Invalid 24 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le24(buf, u32);
 	net_buf_add_be24(buf, u32);
@@ -507,12 +513,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be24, net_buf_pull_mem(buf, sizeof(be24)),
 			  sizeof(be24), "Invalid 24 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le32, sizeof(le32));
 	net_buf_add_mem(buf, &be32, sizeof(be32));
 
 	u32 = net_buf_pull_le32(buf);
 	zassert_equal(u32, net_buf_pull_be32(buf),
 		      "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le32(buf, u32);
 	net_buf_add_be32(buf, u32);
@@ -522,12 +532,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le48, sizeof(le48));
 	net_buf_add_mem(buf, &be48, sizeof(be48));
 
 	u64 = net_buf_pull_le48(buf);
 	zassert_equal(u64, net_buf_pull_be48(buf),
 		      "Invalid 48 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le48(buf, u64);
 	net_buf_add_be48(buf, u64);
@@ -537,12 +551,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be48, net_buf_pull_mem(buf, sizeof(be48)),
 			  sizeof(be48), "Invalid 48 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le64, sizeof(le64));
 	net_buf_add_mem(buf, &be64, sizeof(be64));
 
 	u64 = net_buf_pull_le64(buf);
 	zassert_equal(u64, net_buf_pull_be64(buf),
 		      "Invalid 64 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le64(buf, u64);
 	net_buf_add_be64(buf, u64);
