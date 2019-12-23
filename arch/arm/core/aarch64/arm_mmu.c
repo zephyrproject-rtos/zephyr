@@ -332,6 +332,31 @@ static void init_xlat_tables(const struct arm_mmu_region *region)
 	}
 }
 
+/* zephyr execution regions with appropriate attributes */
+static const struct arm_mmu_region mmu_zephyr_regions[] = {
+
+	/* Mark text segment cacheable,read only and executable */
+	MMU_REGION_FLAT_ENTRY("zephyr_code",
+			      (uintptr_t)_image_text_start,
+			      (uintptr_t)_image_text_size,
+			      MT_CODE | MT_SECURE),
+
+	/* Mark rodata segment cacheable, read only and execute-never */
+	MMU_REGION_FLAT_ENTRY("zephyr_rodata",
+			      (uintptr_t)_image_rodata_start,
+			      (uintptr_t)_image_rodata_size,
+			      MT_RODATA | MT_SECURE),
+
+	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
+	 * cacheable, read-write
+	 * Note: read-write region is marked execute-ever internally
+	 */
+	MMU_REGION_FLAT_ENTRY("zephyr_data",
+			      (uintptr_t)__kernel_ram_start,
+			      (uintptr_t)__kernel_ram_size,
+			      MT_NORMAL | MT_RW | MT_SECURE),
+};
+
 static void setup_page_tables(void)
 {
 	unsigned int index;
@@ -352,6 +377,13 @@ static void setup_page_tables(void)
 	/* create translation tables for user provided platform regions */
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
+		if (region->size || region->attrs)
+			init_xlat_tables(region);
+	}
+
+	/* setup translation table for zephyr execution regions */
+	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_regions); index++) {
+		region = &mmu_zephyr_regions[index];
 		if (region->size || region->attrs)
 			init_xlat_tables(region);
 	}
