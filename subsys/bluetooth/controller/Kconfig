@@ -704,6 +704,13 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	  PPI channels for the controller, resulting in 4 channels
 	  less left for other uses
 
+config BT_CTLR_PARAM_CHECK
+	bool "Enable HCI Command Parameter checking"
+	default y if BT_HCI_RAW
+	help
+	  Enable code checking HCI Command Parameters. This is not needed in
+	  combined host plus controller builds, saving some code space.
+
 if BT_CONN
 
 config BT_CTLR_FAST_ENC
