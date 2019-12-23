@@ -238,18 +238,38 @@ def run(cmd, cwd=TOP_DIR):
     try:
         process = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
-    except FileNotFoundError:
-        sys.exit("'{}' not found".format(cmd[0]))
     except OSError as e:
-        sys.exit("Failed to run '{}': {}".format(cmd_s, e))
+        err("Failed to run '{}': {}".format(cmd_s, e))
 
     stdout, stderr = process.communicate()
-    if process.returncode or stderr:
-        sys.exit("'{}' exited with status {}.\n\nstdout:\n{}\n\nstderr:\n{}"
-                 .format(cmd_s, process.returncode,
-                         stdout.decode("utf-8"), stderr.decode("utf-8")))
+    stdout = stdout.decode("utf-8")
+    stderr = stderr.decode("utf-8")
+    if process.returncode:
+        err("""\
+'{}' exited with status {}.
 
-    return stdout.decode("utf-8")
+===stdout===
+{}
+===stderr===
+{}""".format(cmd_s, process.returncode, stdout, stderr))
+
+    if stderr:
+        warn("'{}' wrote to stderr:\n{}".format(cmd_s, stderr))
+
+    return stdout
+
+
+def err(msg):
+    sys.exit(executable() + "error: " + msg)
+
+
+def warn(msg):
+    print(executable() + "warning: " + msg, file=sys.stderr)
+
+
+def executable():
+    cmd = sys.argv[0]  # Empty string if missing
+    return cmd + ": " if cmd else ""
 
 
 if __name__ == "__main__":
