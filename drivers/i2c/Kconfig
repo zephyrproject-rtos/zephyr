@@ -44,6 +44,11 @@ config I2C_INIT_PRIORITY
 	help
 	  I2C device driver initialization priority.
 
+config I2C_USE_MNGR
+	bool "Use i2c manager"
+	select QOP_MNGR
+	help
+	  Using i2c manager allows coexistence of synchronous and asynchronous API.
 
 module = I2C
 module-str = i2c

@@ -21,6 +21,8 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <sys/qop_mngr.h>
+#include <logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +98,14 @@ extern "C" {
  * @note Not all SoC I2C implementations support this feature. */
 #define I2C_MSG_ADDR_10_BITS		BIT(3)
 
+#define I2C_MSG_DELAY_BITS		3
+#define I2C_MSG_DELAY_OFFSET		4
+#define I2C_MSG_DELAY_MASK \
+	((BIT(I2C_MSG_DELAY_BITS) - 1) << I2C_MSG_DELAY_OFFSET)
+/** Add delay before starting operation. */
+#define I2C_MSG_DELAY(ms) \
+	((ms /*& I2C_MSG_DELAY_MASK*/) << I2C_MSG_DELAY_OFFSET)
+
 /**
  * @brief One I2C Message.
  *
@@ -118,7 +128,7 @@ struct i2c_msg {
 	u32_t	len;
 
 	/** Flags for this message */
-	u8_t		flags;
+	u8_t	flags;
 };
 
 /**
@@ -128,6 +138,7 @@ struct i2c_msg {
  * public documentation.
  */
 struct i2c_slave_config;
+
 
 typedef int (*i2c_slave_write_requested_cb_t)(
 		struct i2c_slave_config *config);
@@ -163,12 +174,21 @@ struct i2c_slave_config {
 	const struct i2c_slave_callbacks *callbacks;
 };
 
+typedef void (*i2c_transfer_callback_t)(struct device *dev, int res,
+					void *user_data);
+
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   u32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 struct i2c_msg *msgs,
 				 u8_t num_msgs,
 				 u16_t addr);
+
+typedef int (*i2c_api_single_io_t)(struct device *dev,
+				   const struct i2c_msg *msg,
+				   u16_t addr,
+				   i2c_transfer_callback_t callback,
+				   void *user_data);
 typedef int (*i2c_api_slave_register_t)(struct device *dev,
 					struct i2c_slave_config *cfg);
 typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
@@ -177,6 +197,7 @@ typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
+	i2c_api_single_io_t single_transfer;
 	i2c_api_slave_register_t slave_register;
 	i2c_api_slave_unregister_t slave_unregister;
 };
@@ -191,6 +212,16 @@ struct i2c_slave_driver_api {
 /**
  * @endcond
  */
+
+#define Z_I2C_LOG(lvl, dev, ...) \
+	LOG_INST_##lvl(((struct i2c_common_data *)dev->driver_data)->log,\
+			__VA_ARGS__)
+
+/* Set of macros for instance logging in i2c drivers. */
+#define I2C_ERR(dev, ...) Z_I2C_LOG(ERR, dev, __VA_ARGS__)
+#define I2C_WRN(dev, ...) Z_I2C_LOG(WRN, dev, __VA_ARGS__)
+#define I2C_INF(dev, ...) Z_I2C_LOG(INF, dev, __VA_ARGS__)
+#define I2C_DBG(dev, ...) Z_I2C_LOG(DBG, dev, __VA_ARGS__)
 
 /**
  * @brief Configure operation of a host controller.
@@ -210,6 +241,132 @@ static inline int z_impl_i2c_configure(struct device *dev, u32_t dev_config)
 		(const struct i2c_driver_api *)dev->driver_api;
 
 	return api->configure(dev, dev_config);
+}
+
+/* Structure is used internally to pass data between transfer function caller
+ * and asynchronous callback.
+ */
+struct z_i2c_with_mngr_data {
+	struct k_sem sem;
+	int res;
+};
+
+/** @brief Create TXRX messages set */
+#define I2C_MSG_TXRX(txbuf, txlen, rxbuf, rxlen, delay) \
+	{ \
+		.buf = (u8_t *)txbuf, \
+		.len = txlen, \
+		.flags = I2C_MSG_WRITE | I2C_MSG_DELAY(delay) \
+	}, \
+	{ \
+		.buf = (u8_t *)rxbuf, \
+		.len = rxlen, \
+		.flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP \
+	}
+
+#define I2C_MSG_TXTX(txbuf0, txlen0, txbuf1, txlen1, delay) \
+	{ \
+		.buf = (u8_t *)txbuf0, \
+		.len = txlen0, \
+		.flags = I2C_MSG_WRITE | I2C_MSG_DELAY(delay) \
+	}, \
+	{ \
+		.buf = (u8_t *)txbuf1, \
+		.len = txlen1, \
+		.flags = I2C_MSG_WRITE | I2C_MSG_STOP \
+	}
+
+#define I2C_MSG_TX(txbuf, txlen, delay) \
+	{ \
+		.buf = (u8_t *)txbuf, \
+		.len = txlen, \
+		.flags = I2C_MSG_WRITE | I2C_MSG_STOP | I2C_MSG_DELAY(delay) \
+	}
+
+
+/** @brief Transaction structure.
+ *
+ * Structure defines a transaction to another device on the bus. It contains
+ * destination identifier and specified transfers to be performed as part of
+ * given transaction.
+ */
+struct i2c_transaction {
+	struct qop_op op;
+	u16_t addr;
+	u8_t num_msgs;
+	const struct i2c_msg *msgs;
+};
+
+/** @brief I2C transaction manager instance. */
+struct i2c_mngr {
+	struct qop_mngr mngr; /* queued operations manager. */
+	struct device *dev; /* back reference to owning device. */
+	struct k_timer timer;
+	u8_t current_idx; /* Index of current message within transaction. */
+};
+
+/** @brief Structure should be part of driver data when i2c_mngr is enabled.
+ *
+ * Structure must be the first item in the driver data structure.
+ */
+struct i2c_common_data {
+	struct i2c_mngr mngr;
+	LOG_INSTANCE_PTR_DECLARE(log);
+};
+
+/** @brief Initialize i2c transaction manager.
+ *
+ * Function is intended to be called during I2C device initialization.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
+int z_i2c_mngr_init(struct device *dev);
+
+/** @brief Schedule I2C transaction.
+ *
+ * Function is asynchronous and user is notified on completion. Notification
+ * method is defined by client type which is part of the transaction.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param transaction Transaction.
+ *
+ * @return 0 or positive on success, error code otherwise.
+ */
+int i2c_schedule(struct device *dev, struct i2c_transaction *transaction);
+
+int i2c_cancel(struct device *dev, struct i2c_transaction *transaction);
+
+/** @brief Perform data transfer to another device.
+ *
+ * This routine provides a generic interface to perform asynchronous transfer of
+ * single message to another I2C device. Function can be called from interrupt
+ * context.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param msg Message to transfer.
+ * @param addr Address of the I2C target device.
+ * @param callback Callback called on transfer completion.
+ * @param user_data User data passed to the callback.
+ */
+static inline int i2c_single_transfer(struct device *dev,
+					const struct i2c_msg *msg, u16_t addr,
+					i2c_transfer_callback_t callback,
+					void *user_data)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
+
+	return api->single_transfer(dev, msg, addr, callback, user_data);
+}
+
+static inline void z_i2c_transaction_callback(int res, void *user_data)
+{
+	struct z_i2c_with_mngr_data *data = user_data;
+
+	data->res = res;
+	k_sem_give(&data->sem);
 }
 
 /**
@@ -248,8 +405,29 @@ static inline int z_impl_i2c_transfer(struct device *dev,
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
+	struct z_i2c_with_mngr_data data = { };
+	struct async_client client;
+	struct i2c_transaction transaction = {
+		.addr = addr ,
+		.num_msgs = num_msgs,
+		.msgs = msgs
+	};
+	int err;
 
-	return api->transfer(dev, msgs, num_msgs, addr);
+	transaction.op.async_cli = &client;
+	k_sem_init(&data.sem, 0, 1);
+	async_client_init_callback(&client, z_i2c_transaction_callback, &data);
+	if (!IS_ENABLED(CONFIG_I2C_USE_MNGR)) {
+		return api->transfer(dev, msgs, num_msgs, addr);
+	}
+
+	err = i2c_schedule(dev, &transaction);
+	if (err == 0) {
+		k_sem_take(&data.sem, K_FOREVER);
+		err = data.res;
+	}
+
+	return err;
 }
 
 /**
