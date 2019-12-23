@@ -472,6 +472,7 @@ class EDT:
             node.edt = self
             node._node = dt_node
             node.bus_node = node._bus_node()
+            node._init_status()
             node._init_binding()
             node._init_regs()
 
@@ -723,7 +724,7 @@ class Node:
       A list with the nodes that the node directly depends on
 
     enabled:
-      True unless the node has 'status = "disabled"'
+      True unless the node or one of its parents has 'status = "disabled"'.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -855,12 +856,6 @@ class Node:
         return self.edt._graph.depends_on(self)
 
     @property
-    def enabled(self):
-        "See the class docstring"
-        return "status" not in self._node.props or \
-            self._node.props["status"].to_string() != "disabled"
-
-    @property
     def read_only(self):
         "See the class docstring"
         return "read-only" in self._node.props
@@ -923,6 +918,17 @@ class Node:
             self.path, self.edt.dts_path,
             "binding " + self.binding_path if self.binding_path
                 else "no binding")
+
+    def _init_status(self):
+        # Initializes Node.enabled.
+        #
+        # Evaluate 'status' property for both Node and Node.parent to
+        # determine final Node.enabled condition. This ensures that
+        # the whole tree branch is disabled when appropriate.
+        parent_enabled = self.parent.enabled if self.parent else True
+        self_enabled = "status" not in self._node.props or \
+            self._node.props["status"].to_string() != "disabled"
+        self.enabled = parent_enabled and self_enabled
 
     def _init_binding(self):
         # Initializes Node.matching_compat, Node._binding, and
