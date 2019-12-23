@@ -939,6 +939,20 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (cmd->type != BT_LE_ADV_DIRECT_IND)) {
+		u16_t max_interval = sys_le16_to_cpu(cmd->max_interval);
+
+		if ((min_interval > max_interval) ||
+		    (min_interval < 0x0020) ||
+		    (max_interval > 0x4000)) {
+			ccst = hci_cmd_complete(evt, sizeof(*ccst));
+			ccst->status = BT_HCI_ERR_INVALID_PARAM;
+
+			return;
+		}
+	}
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = ll_adv_params_set(0, 0, min_interval, cmd->type,
 				   cmd->own_addr_type, cmd->direct_addr.type,
