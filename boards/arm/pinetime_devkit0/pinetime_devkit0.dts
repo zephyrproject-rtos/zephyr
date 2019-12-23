@@ -26,25 +26,38 @@
 	};
 
 	aliases {
-		led0 = &led0;
-		status-led= &led0;
-		sw0 = &button0;
-		key-in = &button0;
+		led0 = &blled0;	/* backlight low */
+		led1 = &blled1;	/* backlight mid */
+		led2 = &blled2;	/* backlight high */
+		sw0 = &key_in;  /* key in */
+		sw1 = &key_pu;  /* key pull-up */
 	};
 
 	leds {
 		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 27 0>;
-			label = "Green LED";
+		blled0: bl_led_0 {
+			gpios = <&gpio0 14 GPIO_DIR_OUT>;
+			label = "Backlight LED 0";
+		};
+		blled1: bl_led_1 {
+			gpios = <&gpio0 22 GPIO_DIR_OUT>;
+			label = "Backlight LED 1";
+		};
+		blled2: bl_led_2 {
+			gpios = <&gpio0 23 GPIO_DIR_OUT>;
+			label = "Backlight LED 2";
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpio0 13 GPIO_INT_ACTIVE_HIGH>;
-			label = "Button";
+		key_in: button_0 {
+			gpios = <&gpio0 13 (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH | GPIO_INT_ACTIVE_LOW)>;
+			label = "Key in";
+		};
+		key_pu: button_1 {
+			gpios = <&gpio0 15 (GPIO_DIR_IN | GPIO_PUD_PULL_UP)>;
+			label = "Key pullup";
 		};
 	};
 };
@@ -124,9 +137,6 @@
 		height = <240>;
 		cmd-data-gpios = <&gpio0 18 0>;	/* DET */
 		reset-gpios = <&gpio0 26 0>;	/* RESX reset */
-		bklight1-gpios = <&gpio0 14 0>;	/* backlight low */
-		bklight2-gpios = <&gpio0 22 0>;	/* backlight mid */
-		bklight3-gpios = <&gpio0 23 0>;	/* backlight high */
 	};
 };
 
