@@ -301,15 +301,15 @@ int bmi160_trigger_mode_init(struct device *dev)
 	}
 
 	gpio_pin_configure(bmi160->gpio, cfg->int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | cfg->int_flags);
 
 	gpio_init_callback(&bmi160->gpio_cb,
 			   bmi160_gpio_callback,
 			   BIT(cfg->int_pin));
 
 	gpio_add_callback(bmi160->gpio, &bmi160->gpio_cb);
-	gpio_pin_enable_callback(bmi160->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(bmi160->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,
 				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL);
