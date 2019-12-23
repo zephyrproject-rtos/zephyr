@@ -91,5 +91,5 @@ You can build toolchains from source code using crosstool-NG.
       $ echo $XTOOLS_TOOLCHAIN_PATH
       /Volumes/CrossToolNGNew/build/output/
 
-.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _GNU ARM Embedded: https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
 .. _crosstool-ng site: http://crosstool-ng.org
