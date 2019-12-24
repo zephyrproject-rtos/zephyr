@@ -1,0 +1,53 @@
+tests:
+  libraries.cmsis_dsp.transform:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    skip: true
+  libraries.cmsis_dsp.transform.q15:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 512
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_Q15=y
+  libraries.cmsis_dsp.transform.q31:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_Q31=y
+  libraries.cmsis_dsp.transform.cf32:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF32=y
+  libraries.cmsis_dsp.transform.rf32:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 512
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF32=y
+  libraries.cmsis_dsp.transform.cf64:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
+  libraries.cmsis_dsp.transform.rf64:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y
