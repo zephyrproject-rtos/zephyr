@@ -41,6 +41,10 @@ static void tty_uart_isr(void *user_data)
 			if (tty->tx_get >= tty->tx_ringbuf_sz) {
 				tty->tx_get = 0U;
 			}
+
+			while (!uart_irq_tx_complete(dev)) {
+			}
+
 			k_sem_give(&tty->tx_sem);
 		}
 	}
