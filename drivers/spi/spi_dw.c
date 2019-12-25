@@ -342,6 +342,12 @@ static int transceive(struct device *dev,
 
 	spi_context_lock(&spi->ctx, asynchronous, signal);
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if (device_busy_check(dev) != (-EBUSY)) {
+		device_busy_set(dev);
+	}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
 	/* Configure */
 	ret = spi_dw_configure(info, spi, config);
 	if (ret) {
@@ -426,6 +432,8 @@ static int transceive(struct device *dev,
 	ret = spi_context_wait_for_completion(&spi->ctx);
 out:
 	spi_context_release(&spi->ctx, ret);
+
+	device_busy_clear(dev);
 
 	return ret;
 }
