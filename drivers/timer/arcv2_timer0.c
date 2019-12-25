@@ -49,10 +49,12 @@
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
+#define SMP_TIMER_DRIVER (CONFIG_SMP && CONFIG_MP_NUM_CPUS > 1)
+
 static struct k_spinlock lock;
 
 
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 volatile static u64_t last_time;
 volatile static u64_t start_time;
 
@@ -128,7 +130,7 @@ static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 	z_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
 }
 
-#ifndef CONFIG_SMP
+#if !SMP_TIMER_DRIVER
 static u32_t elapsed(void)
 {
 	u32_t val, ov, ctrl;
@@ -161,7 +163,7 @@ static void timer_int_handler(void *unused)
 	/* clear the interrupt by writing 0 to IP bit of the control register */
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	u64_t curr_time;
 	k_spinlock_key_t key;
 
@@ -200,7 +202,7 @@ int z_clock_driver_init(struct device *device)
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);
 
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
 		    timer_int_handler, NULL, 0);
 
@@ -234,7 +236,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * then shut off the counter. (Note: we can assume if idle==true
 	 * that interrupts are already disabled)
 	 */
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 	/* as 64-bits GFRC is used as wall clock, it's ok to ignore idle
 	 * systick will not be missed.
 	 * However for single core using 32-bits arc timer, idle cannot
@@ -313,7 +315,7 @@ u32_t z_clock_elapsed(void)
 	u32_t cyc;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 	cyc = (z_arc_connect_gfrc_read() - last_time) / CYC_PER_TICK;
 #else
 	cyc = elapsed() / CYC_PER_TICK;
@@ -326,7 +328,7 @@ u32_t z_clock_elapsed(void)
 
 u32_t z_timer_cycle_get_32(void)
 {
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 	return z_arc_connect_gfrc_read() - start_time;
 #else
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -366,7 +368,7 @@ void sys_clock_disable(void)
 }
 
 
-#ifdef CONFIG_SMP
+#if SMP_TIMER_DRIVER
 void smp_timer_init(void)
 {
 	/* set the initial status of timer0 of each slave core
