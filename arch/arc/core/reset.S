@@ -126,7 +126,7 @@ done_cache_invalidate:
         jl @_sys_resume_from_deep_sleep
 #endif
 
-#if CONFIG_MP_NUM_CPUS  > 1
+#if defined(CONFIG_SMP) || CONFIG_MP_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
 
@@ -134,6 +134,9 @@ done_cache_invalidate:
  * Non-masters wait for master core (core 0) to boot enough
  */
 _slave_core_wait:
+#if CONFIG_MP_NUM_CPUS == 1
+	kflag	1
+#endif
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _slave_core_wait
 
