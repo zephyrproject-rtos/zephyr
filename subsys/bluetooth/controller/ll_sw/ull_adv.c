@@ -1183,7 +1183,7 @@ static void disabled_cb(void *param)
 
 	cc = (void *)rx->pdu;
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
-	cc->status = 0x3c;
+	cc->status = BT_HCI_ERR_ADV_TIMEOUT;
 
 	ftr = &(rx->hdr.rx_ftr);
 	ftr->param = param;
