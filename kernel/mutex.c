@@ -176,10 +176,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	struct k_thread *waiter = z_waitq_head(&mutex->wait_q);
 
-	new_prio = mutex->owner_orig_prio;
 	new_prio = (waiter != NULL) ?
-		new_prio_for_inheritance(waiter->base.prio, new_prio) :
-		new_prio;
+		new_prio_for_inheritance(waiter->base.prio, mutex->owner_orig_prio) :
+		mutex->owner_orig_prio;
 
 	K_DEBUG("adjusting prio down on mutex %p\n", mutex);
 
