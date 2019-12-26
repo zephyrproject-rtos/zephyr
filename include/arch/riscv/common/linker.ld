@@ -35,7 +35,7 @@ MEMORY
 #ifdef CONFIG_XIP
     ROM (rx)  : ORIGIN = DT_FLASH_BASE_ADDRESS, LENGTH = KB(DT_FLASH_SIZE)
 #endif
-    RAM (rwx) : ORIGIN = DT_SRAM_BASE_ADDRESS, LENGTH = KB(DT_SRAM_SIZE)
+    RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }

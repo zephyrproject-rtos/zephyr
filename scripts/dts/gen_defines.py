@@ -68,7 +68,6 @@ def main():
         out("COMPAT_{}".format(str2ident(compat)), 1)
 
     # Derived from /chosen
-    write_addr_size(edt, "zephyr,sram", "SRAM")
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
     write_addr_size(edt, "zephyr,ipc_shm", "IPC_SHM")
