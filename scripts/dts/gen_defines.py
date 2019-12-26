@@ -42,8 +42,6 @@ def main():
 
     write_top_comment(edt)
 
-    active_compats = set()
-
     for node in edt.nodes:
         if node.enabled and node.matching_compat:
             # Skip 'fixed-partitions' devices since they are handled by
@@ -60,12 +58,10 @@ def main():
             write_bus(node)
             write_existence_flags(node)
 
-            active_compats.update(node.compats)
-
-    out_comment("Active compatibles (mentioned in DTS + binding found)")
-    for compat in sorted(active_compats):
+    out_comment("Compatibles appearing on enabled nodes")
+    for compat in sorted(edt.compat2nodes):
         #define DT_COMPAT_<COMPAT> 1
-        out("COMPAT_{}".format(str2ident(compat)), 1)
+        out("COMPAT_" + str2ident(compat), 1)
 
     # Derived from /chosen
     write_addr_size(edt, "zephyr,sram", "SRAM")
@@ -266,7 +262,7 @@ def write_existence_flags(node):
     # These are flags for which devices exist.
 
     for compat in node.compats:
-        out("INST_{}_{}".format(node.instance_no[compat],
+        out("INST_{}_{}".format(node.edt.compat2nodes[compat].index(node),
                                 str2ident(compat)), 1)
 
 
@@ -358,7 +354,8 @@ def dev_instance_aliases(node):
     # This is a list since a device can have multiple 'compatible' strings,
     # each with their own instance number.
 
-    return ["INST_{}_{}".format(node.instance_no[compat], str2ident(compat))
+    return ["INST_{}_{}".format(node.edt.compat2nodes[compat].index(node),
+                                str2ident(compat))
             for compat in node.compats]
 
 
