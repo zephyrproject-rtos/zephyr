@@ -85,8 +85,6 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
@@ -94,17 +92,19 @@ config SRAM_SIZE
 	int "SRAM Size in kB"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
-	  This option specifies the size of the SRAM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
+	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
+	  devicetree. The user should generally avoid changing it via menuconfig or
+	  in configuration files.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  This option specifies the base address of the SRAM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
+	  The SRAM base address. The default value comes from from
+	  /chosen/zephyr,sram in devicetree. The user should generally avoid
+	  changing it via menuconfig or in configuration files.
+
+if ARC || ARM || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
