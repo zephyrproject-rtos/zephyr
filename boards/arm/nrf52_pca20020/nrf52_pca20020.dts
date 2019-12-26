@@ -55,6 +55,14 @@
 			label = "Button";
 		};
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 4>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+		power-gpios = <&sx1509b 4 0>;
+	};
 };
 
 &adc {
