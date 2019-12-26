@@ -478,6 +478,21 @@ identifiers that start with ``CONFIG_*`` are generated from Kconfig symbols
 that reference devicetree data via the :ref:`Kconfig preprocessor
 <kconfig-functions>`.
 
+.. note::
+
+   Since the particular devicetree isn't known while generating Kconfig
+   documentation, the Kconfig symbol reference pages linked below do not
+   include information derived from devicetree. Instead, you might see e.g. an
+   empty default:
+
+   .. code-block:: none
+
+      default "" if HAS_DTS
+
+   To see how the preprocessor is used for a symbol, look it up directly in the
+   :file:`Kconfig` file where it is defined instead. The reference page for the
+   symbol gives the definition location.
+
 .. list-table::
    :header-rows: 1
 
@@ -489,7 +504,7 @@ that reference devicetree data via the :ref:`Kconfig preprocessor
    * - ``zephyr,code-partition``
      - ``DT_CODE_PARTITION_OFFSET``/``DT_CODE_PARTITION_SIZE``
    * - ``zephyr,sram``
-     - ``CONFIG_SRAM_BASE_ADDRESS``/``CONFIG_SRAM_SIZE``
+     - :option:`CONFIG_SRAM_BASE_ADDRESS`/:option:`CONFIG_SRAM_SIZE`
    * - ``zephyr,ccm``
      - ``DT_CCM_BASE_ADDRESS``/``DT_CCM_SIZE``
    * - ``zephyr,dtcm``
@@ -497,19 +512,19 @@ that reference devicetree data via the :ref:`Kconfig preprocessor
    * - ``zephyr,ipc_shm``
      - ``DT_IPC_SHM_BASE_ADDRESS``/``DT_IPC_SHM_SIZE``
    * - ``zephyr,console``
-     - ``CONFIG_UART_CONSOLE_ON_DEV_NAME``
+     - :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
    * - ``zephyr,shell-uart``
-     - ``CONFIG_UART_SHELL_ON_DEV_NAME``
+     - :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
    * - ``zephyr,bt-uart``
-     - ``CONFIG_BT_UART_ON_DEV_NAME``
+     - :option:`CONFIG_BT_UART_ON_DEV_NAME`
    * - ``zephyr,uart-pipe``
-     - ``CONFIG_UART_PIPE_ON_DEV_NAME``
+     - :option:`CONFIG_UART_PIPE_ON_DEV_NAME`
    * - ``zephyr,bt-mon-uart``
-     - ``CONFIG_BT_MONITOR_ON_DEV_NAME``
+     - :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
    * - ``zephyr,bt-c2h-uart``
-     - ``CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME``
+     - :option:`CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`
    * - ``zephyr,uart-mcumgr``
-     - ``CONFIG_UART_MCUMGR_ON_DEV_NAME``
+     - :option:`CONFIG_UART_MCUMGR_ON_DEV_NAME`
 
 
 Adding support for devicetree in drivers
