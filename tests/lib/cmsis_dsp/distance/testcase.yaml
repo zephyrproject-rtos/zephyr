@@ -1,0 +1,6 @@
+tests:
+  libraries.cmsis_dsp.distance:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 64
+    min_ram: 32
