@@ -1,0 +1,7 @@
+tests:
+  libraries.cmsis_dsp.distance:
+    arch_whitelist: arm
+    filter: CONFIG_HAS_CMSIS_CORE
+    tags: cmsis_dsp
+    min_flash: 64
+    min_ram: 32
