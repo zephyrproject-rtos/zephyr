@@ -705,12 +705,21 @@ void ll_rx_mem_release(void **node_rx)
 		switch (rx_free->type) {
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
-#if defined(CONFIG_BT_CENTRAL)
 		{
-			struct node_rx_pdu *rx = (void *)rx_free;
+			struct node_rx_cc *cc =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
 
-			if (*((u8_t *)rx->pdu) ==
-			    BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			if (0) {
+
+#if defined(CONFIG_BT_PERIPHERAL)
+			} else if (cc->status == BT_HCI_ERR_ADV_TIMEOUT) {
+				mem_release(rx_free, &mem_pdu_rx.free);
+
+				break;
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
 				struct lll_conn *conn_lll;
 				struct ll_scan_set *scan;
 				struct ll_conn *conn;
@@ -737,15 +746,19 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
 				if (!ull_adv_is_enabled_get(0))
-#endif
+#endif /* CONFIG_BT_BROADCASTER */
 				{
 					ull_filter_adv_scan_state_cb(0);
 				}
-#endif
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 				break;
+#endif /* CONFIG_BT_CENTRAL */
+
+			} else {
+				LL_ASSERT(!cc->status);
 			}
 		}
-#endif /* CONFIG_BT_CENTRAL */
+
 		/* passthrough */
 		case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
