@@ -292,6 +292,7 @@ u8_t ll_connect_disable(void **rx)
 	status = ull_scan_disable(0, scan);
 	if (!status) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
+		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *cc;
 		memq_link_t *link;
 
@@ -305,6 +306,10 @@ u8_t ll_connect_disable(void **rx)
 		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
 		cc->hdr.handle = 0xffff;
 		*((u8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+
+		ftr = &(cc->hdr.rx_ftr);
+		ftr->param = &scan->lll;
+
 		*rx = cc;
 	}
 

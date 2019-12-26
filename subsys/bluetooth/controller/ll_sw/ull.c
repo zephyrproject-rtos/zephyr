@@ -720,13 +720,12 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_CENTRAL)
 			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+				struct node_rx_ftr *ftr = &rx_free->rx_ftr;
+				struct ll_scan_set *scan =
+					(void *)HDR_LLL2EVT(ftr->param);
 				struct lll_conn *conn_lll;
-				struct ll_scan_set *scan;
 				struct ll_conn *conn;
 				memq_link_t *link;
-
-				scan = ull_scan_is_enabled_get(0);
-				LL_ASSERT(scan);
 
 				conn_lll = scan->lll.conn;
 				LL_ASSERT(conn_lll);
