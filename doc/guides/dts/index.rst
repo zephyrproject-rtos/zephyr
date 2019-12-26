@@ -480,10 +480,16 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
 
    * - ``zephyr,flash``
      - ``DT_FLASH_BASE_ADDRESS``/``DT_FLASH_SIZE``/``DT_FLASH_ERASE_BLOCK_SIZE``/``DT_FLASH_WRITE_BLOCK_SIZE``
+   * - ``zephyr,code-partition``
+     - ``DT_CODE_PARTITION_OFFSET``/``DT_CODE_PARTITION_SIZE``
    * - ``zephyr,sram``
      - ``CONFIG_SRAM_BASE_ADDRESS``/``CONFIG_SRAM_SIZE``
    * - ``zephyr,ccm``
      - ``DT_CCM_BASE_ADDRESS``/``DT_CCM_SIZE``
+   * - ``zephyr,dtcm``
+     - ``DT_DTCM_BASE_ADDRESS``/``DT_DTCM_SIZE``
+   * - ``zephyr,ipc_shm``
+     - ``DT_IPC_SHM_BASE_ADDRESS``/``DT_IPC_SHM_SIZE``
    * - ``zephyr,console``
      - ``CONFIG_UART_CONSOLE_ON_DEV_NAME``
    * - ``zephyr,shell-uart``
@@ -494,6 +500,8 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
      - ``CONFIG_UART_PIPE_ON_DEV_NAME``
    * - ``zephyr,bt-mon-uart``
      - ``CONFIG_BT_MONITOR_ON_DEV_NAME``
+   * - ``zephyr,bt-c2h-uart``
+     - ``CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME``
    * - ``zephyr,uart-mcumgr``
      - ``CONFIG_UART_MCUMGR_ON_DEV_NAME``
 
