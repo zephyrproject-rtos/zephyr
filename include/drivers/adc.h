@@ -44,6 +44,25 @@ enum adc_gain {
 	ADC_GAIN_64,  /**< x 64. */
 };
 
+/**
+ * @brief Invert the application of gain to a measurement value.
+ *
+ * For example, if the gain passed in is ADC_GAIN_1_6 and the
+ * referenced value is 10, the value after the function returns is 60.
+ *
+ * @param gain the gain used to amplify the input signal.
+ *
+ * @param value a pointer to a value that initially has the effect of
+ * the applied gain but has that effect removed whe this function
+ * successfully returns.  If the gain cannot be reversed the value
+ * remains unchanged.
+ *
+ * @retval 0 if the gain was successfully reversed
+ * @retval -EINVAL if the gain could not be interpreted
+ */
+int adc_gain_invert(enum adc_gain gain,
+		    s32_t *value);
+
 /** @brief ADC references. */
 enum adc_reference {
 	ADC_REF_VDD_1,     /**< VDD. */
@@ -54,6 +73,27 @@ enum adc_reference {
 	ADC_REF_EXTERNAL0, /**< External, input 0. */
 	ADC_REF_EXTERNAL1, /**< External, input 1. */
 };
+
+/**
+ * @brief Reverse the effect of VDD reference scaling.
+ *
+ * For example, if a measurement was collected with ADC_REF_VDD_1_4
+ * then the output measurement is multiplied by 4.
+ *
+ * @param ref the reference voltage selector.
+ *
+ * @param value a pointer to a value collected relative to the given
+ * reference voltage.  If the reference voltage is divided VDD then on
+ * return the value has been scaled to counteract the voltage gain.
+ * If the reference voltage is not divided VDD the value is left
+ * unchanged.
+ *
+ * @retval 0 if the gain was successfully reversed.
+ * @retval -ENOTSUP if the reference voltage was not divided VDD.
+ * @retval -EINVAL if the ref parameter could not be interpreted.
+ */
+int adc_vdd_ref_invert(enum adc_reference ref,
+		       s32_t *value);
 
 /** Acquisition time is expressed in microseconds. */
 #define ADC_ACQ_TIME_MICROSECONDS  (1u)
@@ -134,6 +174,41 @@ struct adc_channel_cfg {
 #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
 };
 
+/**
+ * @brief Convert a raw ADC value to millivolts.
+ *
+ * This function performs the necessary conversion to transform a raw
+ * ADC measurement to a voltage in millivolts.
+ *
+ * @param ref_mv the reference voltage used for the measurement, in
+ * millivolts.  This may be from adc_ref_internal() or a known
+ * external reference.
+ *
+ * @param gain the ADC gain configuration used to sample the input
+ *
+ * @param resolution the resolution used to sample the input
+ *
+ * @param valp pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion.  If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @retval 0 on successful conversion
+ * @retval -ENOTSUP if the gain is not reversible
+ */
+static inline int adc_convert_millivolt(s32_t ref_mv,
+					enum adc_gain gain,
+					u8_t resolution,
+					s32_t *valp)
+{
+	s32_t adc_mv = *valp * ref_mv;
+	int ret = adc_gain_invert(gain, &adc_mv);
+
+	if (ret == 0) {
+		*valp = (adc_mv >> resolution);
+	}
+
+	return ret;
+}
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
