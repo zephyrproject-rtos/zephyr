@@ -1431,7 +1431,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		hdr = net_buf_push(buf, sizeof(*hdr) + 1);
 		len = (u16_t *)&hdr->length;
 		*len = BT_RFCOMM_SET_LEN_16(sys_cpu_to_le16(buf->len -
-							    sizeof(*hdr) + 1));
+							    sizeof(*hdr) - 1));
 	} else {
 		hdr = net_buf_push(buf, sizeof(*hdr));
 		hdr->length = BT_RFCOMM_SET_LEN_8(buf->len - sizeof(*hdr));
