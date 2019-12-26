@@ -548,6 +548,7 @@ void ll_rx_dequeue(void)
 
 				conn_lll = lll->conn;
 				LL_ASSERT(conn_lll);
+				lll->conn = NULL;
 
 				LL_ASSERT(!conn_lll->link_tx_free);
 				link = memq_deinit(&conn_lll->memq_tx.head,
@@ -557,8 +558,6 @@ void ll_rx_dequeue(void)
 
 				conn = (void *)HDR_LLL2EVT(conn_lll);
 				ll_conn_release(conn);
-
-				lll->conn = NULL;
 			} else {
 				/* Release un-utilized node rx */
 				if (adv->node_rx_cc_free) {
@@ -567,7 +566,7 @@ void ll_rx_dequeue(void)
 					rx_free = adv->node_rx_cc_free;
 					adv->node_rx_cc_free = NULL;
 
-					ll_rx_release(rx_free);
+					mem_release(rx_free, &mem_pdu_rx.free);
 				}
 			}
 
@@ -722,6 +721,7 @@ void ll_rx_mem_release(void **node_rx)
 
 				conn_lll = scan->lll.conn;
 				LL_ASSERT(conn_lll);
+				scan->lll.conn = NULL;
 
 				LL_ASSERT(!conn_lll->link_tx_free);
 				link = memq_deinit(&conn_lll->memq_tx.head,
@@ -733,8 +733,6 @@ void ll_rx_mem_release(void **node_rx)
 				ll_conn_release(conn);
 
 				scan->is_enabled = 0U;
-
-				scan->lll.conn = NULL;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
