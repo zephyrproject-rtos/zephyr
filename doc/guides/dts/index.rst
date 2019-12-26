@@ -476,27 +476,26 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    :header-rows: 1
 
    * - ``chosen`` node name
-     - Generated symbol
+     - Generated macros
 
    * - ``zephyr,flash``
-     - ``CONFIG_FLASH``
+     - ``DT_FLASH_BASE_ADDRESS``/``DT_FLASH_SIZE``/``DT_FLASH_ERASE_BLOCK_SIZE``/``DT_FLASH_WRITE_BLOCK_SIZE``
    * - ``zephyr,sram``
-     - ``CONFIG_SRAM_SIZE``/``CONFIG_SRAM_BASE_ADDRESS``
-       (via ``DT_SRAM_SIZE``/``DT_SRAM_BASE_ADDRESS``)
+     - ``CONFIG_SRAM_BASE_ADDRESS``/``CONFIG_SRAM_SIZE``
    * - ``zephyr,ccm``
-     - ``DT_CCM``
+     - ``DT_CCM_BASE_ADDRESS``/``DT_CCM_SIZE``
    * - ``zephyr,console``
-     - ``DT_UART_CONSOLE_ON_DEV_NAME``
+     - ``CONFIG_UART_CONSOLE_ON_DEV_NAME``
    * - ``zephyr,shell-uart``
-     - ``DT_UART_SHELL_ON_DEV_NAME``
+     - ``CONFIG_UART_SHELL_ON_DEV_NAME``
    * - ``zephyr,bt-uart``
-     - ``DT_BT_UART_ON_DEV_NAME``
+     - ``CONFIG_BT_UART_ON_DEV_NAME``
    * - ``zephyr,uart-pipe``
-     - ``DT_UART_PIPE_ON_DEV_NAME``
+     - ``CONFIG_UART_PIPE_ON_DEV_NAME``
    * - ``zephyr,bt-mon-uart``
-     - ``DT_BT_MONITOR_ON_DEV_NAME``
+     - ``CONFIG_BT_MONITOR_ON_DEV_NAME``
    * - ``zephyr,uart-mcumgr``
-     - ``DT_UART_MCUMGR_ON_DEV_NAME``
+     - ``CONFIG_UART_MCUMGR_ON_DEV_NAME``
 
 
 Adding support for devicetree in drivers
