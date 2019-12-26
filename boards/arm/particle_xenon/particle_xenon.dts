@@ -19,4 +19,11 @@
 		vctl1-gpios = <&gpio0 24 0>;
 		vctl2-gpios = <&gpio0 25 0>;
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 3>;
+		output-ohms = <2100000>;
+		full-ohms = <(2100000 + 806000)>;
+	};
 };
