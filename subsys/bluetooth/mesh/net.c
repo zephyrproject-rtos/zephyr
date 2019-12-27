@@ -52,8 +52,7 @@
 #define NID(pdu)           ((pdu)[0] & 0x7f)
 #define CTL(pdu)           ((pdu)[1] >> 7)
 #define TTL(pdu)           ((pdu)[1] & 0x7f)
-#define SEQ(pdu)           (((u32_t)(pdu)[2] << 16) | \
-			    ((u32_t)(pdu)[3] << 8) | (u32_t)(pdu)[4]);
+#define SEQ(pdu)           (sys_get_be24(&pdu[2]))
 #define SRC(pdu)           (sys_get_be16(&(pdu)[5]))
 #define DST(pdu)           (sys_get_be16(&(pdu)[7]))
 
@@ -759,9 +758,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
 	/* Update with a new sequence number */
 	seq = bt_mesh_next_seq();
-	buf->data[2] = seq >> 16;
-	buf->data[3] = seq >> 8;
-	buf->data[4] = seq;
+	sys_put_be24(seq, &buf->data[2]);
 
 	/* Get destination, in case it's a proxy client */
 	dst = DST(buf->data);
@@ -803,10 +800,8 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy)
 {
 	const bool ctl = (tx->ctx->app_idx == BT_MESH_KEY_UNUSED);
-	u32_t seq_val;
 	u8_t nid;
 	const u8_t *enc, *priv;
-	u8_t *seq;
 	int err;
 
 	if (ctl && net_buf_simple_tailroom(buf) < 8) {
@@ -822,12 +817,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 
 	net_buf_simple_push_be16(buf, tx->ctx->addr);
 	net_buf_simple_push_be16(buf, tx->src);
-
-	seq = net_buf_simple_push(buf, 3);
-	seq_val = bt_mesh_next_seq();
-	seq[0] = seq_val >> 16;
-	seq[1] = seq_val >> 8;
-	seq[2] = seq_val;
+	net_buf_simple_push_be24(buf, bt_mesh_next_seq());
 
 	if (ctl) {
 		net_buf_simple_push_u8(buf, tx->ctx->send_ttl | 0x80);
