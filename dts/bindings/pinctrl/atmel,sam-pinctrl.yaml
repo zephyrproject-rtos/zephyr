@@ -19,6 +19,7 @@ child-binding:
     description: atmel pins
     properties:
       "atmel,pins":
+        required: false
         type: phandle-array
 
       bias-pull-up:

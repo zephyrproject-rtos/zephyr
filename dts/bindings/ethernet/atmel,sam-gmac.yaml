@@ -19,6 +19,7 @@ properties:
 
     max-frame-size:
         type: int
+        required: false
         description:
           Maximum transfer unit (IEEE defined MTU), rather than the
           maximum frame size (there\'s contradiction in the Devicetree
@@ -28,12 +29,14 @@ properties:
 
     max-speed:
         type: int
+        required: false
         description:
           Specifies maximum speed in Mbit/s supported by the device.
         default: 100
 
     phy-connection-type:
         type: string
+        required: false
         description:
           Operation mode of the PHY interface
         enum:

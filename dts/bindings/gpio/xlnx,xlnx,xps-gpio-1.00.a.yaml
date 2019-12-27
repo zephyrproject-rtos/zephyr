@@ -18,56 +18,67 @@ properties:
 
     xlnx,all-inputs:
       type: int
+      required: false
       description: |
         1 if all GPIOs are inputs, 0 otherwise
 
     xlnx,all-outputs:
       type: int
+      required: false
       description: |
         1 if all GPIOs are outputs, 0 otherwise
 
     xlnx,dout-default:
       type: int
+      required: false
       description: |
         Default output value. If n-th bit is 1, GPIO-n default value is 1.
 
     xlnx,gpio-width:
       type: int
+      required: false
       description: |
         Number of GPIOs supported
 
     xlnx,tri-default:
       type: int
+      required: false
       description: |
         Default tristate register value. If n-th bit is 1, GPIO-n is an input.
 
     xlnx,is-dual:
       type: int
+      required: false
       description: |
         1 if controller has GPIO2 enabled, 0 otherwise
 
     xlnx,all-inputs-2:
       type: int
+      required: false
       description: |
         1 if all GPIO2s are inputs, 0 otherwise
 
     xlnx,all-outputs-2:
       type: int
+      required: false
       description: |
         1 if all GPIO2s are outputs, 0 otherwise
 
     xlnx,dout-default-2:
       type: int
+      required: false
       description: |
         Default output value. If n-th bit is 1, GPIO2-n default value is 1.
 
     xlnx,gpio2-width:
       type: int
+      required: false
       description: |
         Number of GPIO2s supported
 
     xlnx,tri-default-2:
       type: int
+      required: false
       description: |
         Default tristate register value. If n-th bit is 1, GPIO2-n is an input.
 

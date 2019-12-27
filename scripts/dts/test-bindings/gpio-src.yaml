@@ -7,3 +7,4 @@ compatible: "gpio-src"
 properties:
     foo-gpios:
         type: phandle-array
+        required: false

@@ -15,6 +15,7 @@ child-binding:
 
        wui_map:
         type: phandle
+        required: false
         description: |
             Mapping table between Wake-Up Input (WUI) and vw input signal.
 

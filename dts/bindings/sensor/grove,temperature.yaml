@@ -15,5 +15,6 @@ properties:
 
   v1p0:
     type: boolean
+    required: false
     description: |
       Set to indicate a v1.0 sensor.  Leave unset for v1.1 or v1.2.

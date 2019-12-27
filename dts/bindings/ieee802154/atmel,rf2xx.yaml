@@ -34,5 +34,6 @@ properties:
 
     local-mac-address:
       type: uint8-array
+      required: false
       description:
         Specifies the MAC address that was assigned to the network device

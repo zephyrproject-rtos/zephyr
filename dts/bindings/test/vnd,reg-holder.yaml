@@ -16,3 +16,4 @@ properties:
 
     misc-prop:
       type: int
+      required: false

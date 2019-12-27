@@ -8,9 +8,15 @@ compatible: "vnd,array-holder"
 include: [base.yaml]
 
 properties:
-  a: {type: "array"}
-  b: {type: "uint8-array"}
-  c: {type: "string-array"}
+  a:
+    type: "array"
+    required: true
+  b:
+    type: "uint8-array"
+    required: true
+  c:
+    type: "string-array"
+    required: true
 
 gpio-cells:
   - pin
