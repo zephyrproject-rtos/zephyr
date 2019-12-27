@@ -582,6 +582,10 @@ class EDT:
 
         for prop_name, options in binding["properties"].items():
             for key in options:
+                if not options.keys() & {"required", "category"}:
+                    _err("missing 'required: true/false' for '{}' in "
+                         "'properties:' in {}".format(prop_name, binding_path))
+
                 if key == "category":
                     self._warn(
                         "please put 'required: {}' instead of 'category: {}' "
@@ -1713,7 +1717,7 @@ def _check_prop_type_and_default(prop_name, prop_type, required, default,
     # named 'prop_name'
 
     if prop_type is None:
-        _err("missing 'type:' for '{}' in 'properties' in {}"
+        _err("missing 'type:' for '{}' in 'properties:' in {}"
              .format(prop_name, binding_path))
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",

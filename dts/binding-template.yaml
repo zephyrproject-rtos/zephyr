@@ -84,12 +84,13 @@ on-bus: <string describing bus type, e.g. "i2c">
 # special-cased properties like 'reg', only properties listed here will
 # generate output.
 #
-# A typical property entry looks like this:
+# A typical property entry looks like this. The 'type:' and 'required:' keys
+# are required.
 #
 #   <property name>:
-#     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array |
 #            phandle | phandles | phandle-array | path | compound>
+#     required: <true | false>
 #     description: <description of the property>
 #     enum:
 #       - <item1>
