@@ -6,7 +6,6 @@
 
 #include <zephyr.h>
 #include <init.h>
-#include <sys/printk.h>
 #include <stdio.h>
 #include <drivers/sensor.h>
 
@@ -14,10 +13,10 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(CONFIG_GROVE_LIGHT_SENSOR_NAME);
+	struct device *dev = device_get_binding(DT_INST_0_GROVE_LIGHT_LABEL);
 
 	if (dev == NULL) {
-		printk("device not found.  aborting test.\n");
+		printf("device not found.  aborting test.\n");
 		return;
 	}
 	while (1) {
@@ -26,17 +25,14 @@ void main(void)
 
 		read = sensor_sample_fetch(dev);
 		if (read) {
-			printk("sample fetch error %d\n", read);
+			printf("sample fetch error %d\n", read);
 			continue;
 		}
 
 		sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &lux);
 
-#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
-		printk("lux: %d\n", sensor_value_to_double(&lux));
-#else
-		printk("lux: %d\n", lux.val1);
-#endif
+		printf("lux: %f\n", sensor_value_to_double(&lux));
+
 		k_sleep(SLEEP_TIME);
 	}
 }
