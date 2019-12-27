@@ -1,0 +1,13 @@
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config CMSIS_DSP_TEST_FILTERING_BIQUAD
+	bool "Test: Filtering BIQUAD"
+
+config CMSIS_DSP_TEST_FILTERING_FIR
+	bool "Test: Filtering FIR"
+
+config CMSIS_DSP_TEST_FILTERING_MISC
+	bool "Test: Filtering MISC"
+
+source "Kconfig"
