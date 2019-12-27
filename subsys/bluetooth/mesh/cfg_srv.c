@@ -2785,9 +2785,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 	timeout = k_delayed_work_remaining_get(&frnd->timer) / 100;
 
 send_rsp:
-	net_buf_simple_add_u8(&msg, timeout);
-	net_buf_simple_add_u8(&msg, timeout >> 8);
-	net_buf_simple_add_u8(&msg, timeout >> 16);
+	net_buf_simple_add_le24(&msg, timeout);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send LPN PollTimeout Status");
