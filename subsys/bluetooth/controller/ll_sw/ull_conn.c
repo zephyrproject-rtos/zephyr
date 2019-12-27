@@ -2695,12 +2695,8 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		(void)memset(&pdu->llctrl.feature_rsp.features[0], 0x00,
 			sizeof(pdu->llctrl.feature_rsp.features));
-		pdu->llctrl.feature_req.features[0] =
-			conn->llcp_feature.features & 0xFF;
-		pdu->llctrl.feature_req.features[1] =
-			(conn->llcp_feature.features >> 8) & 0xFF;
-		pdu->llctrl.feature_req.features[2] =
-			(conn->llcp_feature.features >> 16) & 0xFF;
+		sys_put_le24(conn->llcp_feature.features,
+			     pdu->llctrl.feature_req.features);
 
 		/* enqueue feature rsp structure into rx queue */
 		ll_rx_put(rx->hdr.link, rx);
@@ -2729,12 +2725,8 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		(void)memset(&pdu->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
-		pdu->llctrl.feature_req.features[0] =
-			conn->llcp_feature.features & 0xFF;
-		pdu->llctrl.feature_req.features[1] =
-			(conn->llcp_feature.features >> 8) & 0xFF;
-		pdu->llctrl.feature_req.features[2] =
-			(conn->llcp_feature.features >> 16) & 0xFF;
+		sys_put_le24(conn->llcp_feature.features,
+			     pdu->llctrl.feature_req.features);
 
 		ctrl_tx_enqueue(conn, tx);
 
@@ -3987,12 +3979,8 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	pdu_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	(void)memset(&pdu_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_tx->llctrl.feature_rsp.features));
-	pdu_tx->llctrl.feature_req.features[0] =
-		conn->llcp_feature.features & 0xFF;
-	pdu_tx->llctrl.feature_req.features[1] =
-		(conn->llcp_feature.features >> 8) & 0xFF;
-	pdu_tx->llctrl.feature_req.features[2] =
-		(conn->llcp_feature.features >> 16) & 0xFF;
+	sys_put_le24(conn->llcp_feature.features,
+		     pdu_tx->llctrl.feature_req.features);
 
 	ctrl_tx_sec_enqueue(conn, tx);
 

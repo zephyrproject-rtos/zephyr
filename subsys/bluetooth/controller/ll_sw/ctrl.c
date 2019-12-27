@@ -7915,12 +7915,8 @@ static inline void event_fex_prep(struct connection *conn)
 		pdu_ctrl_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		(void)memset(&pdu_ctrl_rx->llctrl.feature_rsp.features[0], 0x00,
 			     sizeof(pdu_ctrl_rx->llctrl.feature_rsp.features));
-		pdu_ctrl_rx->llctrl.feature_req.features[0] =
-			conn->llcp_feature.features & 0xFF;
-		pdu_ctrl_rx->llctrl.feature_req.features[1] =
-			(conn->llcp_feature.features >> 8) & 0xFF;
-		pdu_ctrl_rx->llctrl.feature_req.features[2] =
-			(conn->llcp_feature.features >> 16) & 0xFF;
+		sys_put_le24(conn->llcp_feature.features,
+			     pdu_ctrl_rx->llctrl.feature_req.features);
 
 		/* enqueue feature rsp structure into rx queue */
 		packet_rx_enqueue();
@@ -7950,12 +7946,8 @@ static inline void event_fex_prep(struct connection *conn)
 		(void)memset(&pdu_ctrl_tx->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
-		pdu_ctrl_tx->llctrl.feature_req.features[0] =
-			conn->llcp_feature.features & 0xFF;
-		pdu_ctrl_tx->llctrl.feature_req.features[1] =
-			(conn->llcp_feature.features >> 8) & 0xFF;
-		pdu_ctrl_tx->llctrl.feature_req.features[2] =
-			(conn->llcp_feature.features >> 16) & 0xFF;
+		sys_put_le24(conn->llcp_feature.features,
+			     pdu_ctrl_tx->llctrl.feature_req.features);
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -10851,12 +10843,8 @@ static u8_t feature_rsp_send(struct connection *conn,
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	(void)memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
-	pdu_ctrl_tx->llctrl.feature_req.features[0] =
-		conn->llcp_feature.features & 0xFF;
-	pdu_ctrl_tx->llctrl.feature_req.features[1] =
-		(conn->llcp_feature.features >> 8) & 0xFF;
-	pdu_ctrl_tx->llctrl.feature_req.features[2] =
-		(conn->llcp_feature.features >> 16) & 0xFF;
+	sys_put_le24(conn->llcp_feature.features,
+		     pdu_ctrl_tx->llctrl.feature_req.features);
 
 	ctrl_tx_sec_enqueue(conn, node_tx);
 
