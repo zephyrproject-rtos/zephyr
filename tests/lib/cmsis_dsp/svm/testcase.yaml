@@ -1,0 +1,6 @@
+tests:
+  libraries.cmsis_dsp.svm:
+    arch_whitelist: arm
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
