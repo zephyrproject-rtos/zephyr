@@ -3,5 +3,6 @@ sample:
 tests:
   sample.sensor.grove_light:
     tags: drivers sensor grove light
+    platform_whitelist: nrf52_pca10040
     harness: grove
     depends_on: adc
