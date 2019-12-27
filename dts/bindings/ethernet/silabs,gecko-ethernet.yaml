@@ -90,12 +90,15 @@ properties:
     # PHY control pins
     location-phy_pwr_enable:
       type: array
+      required: false
       description: PHY power enable individual pin configuration defined as <port pin>
 
     location-phy_reset:
       type: array
+      required: false
       description: PHY reset individual pin configuration defined as <port pin>
 
     location-phy_interrupt:
       type: array
+      required: false
       description: PHY interrupt individual pin configuration defined as <port pin>

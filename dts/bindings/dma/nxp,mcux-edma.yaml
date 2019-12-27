@@ -22,10 +22,12 @@ properties:
 
     nxp,mem2mem:
       type: boolean
+      required: false
       description: If the DMA controller supports memory to memory transfer
 
     nxp,a_on:
       type: boolean
+      required: false
       description: If the DMA controller supports always on
 
     "#dma-cells":

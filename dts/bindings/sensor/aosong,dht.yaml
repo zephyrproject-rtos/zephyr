@@ -27,6 +27,7 @@ properties:
 
   dht22:
     type: boolean
+    required: false
     description: |
       Set to identify sensor as a DHT22/AM2303.  Leave unset to identify
       sensor as a DHT11.

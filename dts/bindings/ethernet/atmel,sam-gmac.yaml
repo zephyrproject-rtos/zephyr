@@ -19,6 +19,7 @@ properties:
 
     max-frame-size:
         type: int
+        required: false
         description:
           Maximum transfer unit (IEEE defined MTU), rather than the
           maximum frame size (there\'s contradiction in the Devicetree
