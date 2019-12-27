@@ -9,6 +9,6 @@ include: i2c-device.yaml
 
 properties:
     alert-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
       description: ALERT pin
