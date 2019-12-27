@@ -19,7 +19,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(CONFIG_GROVE_TEMPERATURE_SENSOR_NAME);
+	struct device *dev = device_get_binding(DT_INST_0_GROVE_TEMPERATURE_LABEL);
 	struct sensor_value temp;
 	int read;
 
