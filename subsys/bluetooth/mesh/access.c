@@ -57,7 +57,7 @@ void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 
 s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 {
-	int period;
+	int period, min_period;
 
 	if (!mod->pub) {
 		return 0;
@@ -85,7 +85,10 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 	}
 
 	if (mod->pub->fast_period) {
-		return period >> mod->pub->period_div;
+		period >>= mod->pub->period_div;
+		min_period = (int)1 << mod->pub->min_period;
+
+		return MAX(period, min_period);
 	} else {
 		return period;
 	}

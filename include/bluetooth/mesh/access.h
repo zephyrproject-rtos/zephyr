@@ -404,6 +404,7 @@ struct bt_mesh_model_pub {
 	u8_t  period_div:4, /**< Divisor for the Period. */
 	      fast_period:1,/**< Use FastPeriodDivisor */
 	      count:3;      /**< Retransmissions left. */
+	u8_t  min_period;   /**< Minimum Period of Publish. */
 
 	u32_t period_start; /**< Start of the current period. */
 

@@ -348,6 +348,8 @@ static int health_pub_update(struct bt_mesh_model *mod)
 		pub->fast_period = 0U;
 	}
 
+	pub->min_period = 0U;
+
 	return 0;
 }
 
