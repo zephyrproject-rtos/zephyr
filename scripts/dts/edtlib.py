@@ -1157,7 +1157,9 @@ class Node:
         address_cells = _address_cells(node)
         size_cells = _size_cells(node)
 
-        for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
+        for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells),
+                              "4*(<#address-cells> (= {}) + <#size-cells> (= {}))"
+                              .format(address_cells, size_cells)):
             reg = Register()
             reg.node = self
             reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
@@ -1735,7 +1737,12 @@ def _translate(addr, node):
     # Number of cells for one translation 3-tuple in 'ranges'
     entry_cells = child_address_cells + parent_address_cells + child_size_cells
 
-    for raw_range in _slice(node.parent, "ranges", 4*entry_cells):
+    for raw_range in _slice(node.parent, "ranges", 4*entry_cells,
+                            "4*(<#address-cells> (= {}) + "
+                            "<#address-cells for parent> (= {}) + "
+                            "<#size-cells> (= {}))"
+                            .format(child_address_cells, parent_address_cells,
+                                    child_size_cells)):
         child_addr = to_num(raw_range[:4*child_address_cells])
         raw_range = raw_range[4*child_address_cells:]
 
@@ -1815,7 +1822,8 @@ def _interrupts(node):
         interrupt_cells = _interrupt_cells(iparent)
 
         return [_map_interrupt(node, iparent, raw)
-                for raw in _slice(node, "interrupts", 4*interrupt_cells)]
+                for raw in _slice(node, "interrupts", 4*interrupt_cells,
+                                  "4*<#interrupt-cells>")]
 
     return []
 
@@ -2104,15 +2112,19 @@ def _interrupt_cells(node):
     return node.props["#interrupt-cells"].to_num()
 
 
-def _slice(node, prop_name, size):
+def _slice(node, prop_name, size, size_hint):
     # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
     # list of chunks. Raises EDTError if the length of the property is not
-    # evenly divisible by 'size'.
+    # evenly divisible by 'size'. 'size_hint' is a string shown on errors that
+    # gives a hint on how 'size' was calculated.
 
     raw = node.props[prop_name].value
     if len(raw) % size:
         _err("'{}' property in {!r} has length {}, which is not evenly "
-             "divisible by {}".format(prop_name, node, len(raw), size))
+             "divisible by {} (= {}). Note that #*-cells "
+             "properties come either from the parent node or from the "
+             "controller (in the case of 'interrupts')."
+             .format(prop_name, node, len(raw), size, size_hint))
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
 
