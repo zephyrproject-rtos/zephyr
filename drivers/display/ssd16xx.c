@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_SPI_FREQ DT_INST_0_SOLOMON_SSD16XXFB_SPI_MAX_FREQUENCY
 #define SSD16XX_BUS_NAME DT_INST_0_SOLOMON_SSD16XXFB_BUS_NAME
 #define SSD16XX_DC_PIN DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_PIN
+#define SSD16XX_DC_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_FLAGS
 #define SSD16XX_DC_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_CONTROLLER
 #define SSD16XX_CS_PIN DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_PIN
 #if defined(DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_CONTROLLER)
@@ -33,8 +34,10 @@ LOG_MODULE_REGISTER(ssd16xx);
 #endif
 #define SSD16XX_BUSY_PIN DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_PIN
 #define SSD16XX_BUSY_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_CONTROLLER
+#define SSD16XX_BUSY_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_FLAGS
 #define SSD16XX_RESET_PIN DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_PIN
 #define SSD16XX_RESET_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_CONTROLLER
+#define SSD16XX_RESET_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_FLAGS
 
 #define EPD_PANEL_WIDTH			DT_INST_0_SOLOMON_SSD16XXFB_WIDTH
 #define EPD_PANEL_HEIGHT		DT_INST_0_SOLOMON_SSD16XXFB_HEIGHT
@@ -85,7 +88,7 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
+	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 1);
 	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 	if (err < 0) {
 		return err;
@@ -94,7 +97,7 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 1);
+		gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 0);
 		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 		if (err < 0) {
 			return err;
@@ -106,12 +109,12 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 
 static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 {
-	u32_t val = 0U;
+	int pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
 
-	gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
-	while (val) {
+	while (pin > 0) {
+		__ASSERT(pin >= 0, "Failed to get pin level");
 		k_sleep(SSD16XX_BUSY_DELAY);
-		gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
+		pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
 	}
 }
 
@@ -413,7 +416,7 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
+	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 1);
 
 	sbuf.buf = &ram_cmd;
 	sbuf.len = 1;
@@ -422,7 +425,7 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 1);
+	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 0);
 
 	memset(clear_page, 0xff, sizeof(clear_page));
 	sbuf.buf = clear_page;
@@ -450,9 +453,9 @@ static int ssd16xx_controller_init(struct device *dev)
 
 	LOG_DBG("");
 
-	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 0);
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
 	k_sleep(SSD16XX_RESET_DELAY);
-	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 1);
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
 	k_sleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(driver);
 
@@ -571,7 +574,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->reset, SSD16XX_RESET_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE | SSD16XX_RESET_FLAGS);
 
 	driver->dc = device_get_binding(SSD16XX_DC_CNTRL);
 	if (driver->dc == NULL) {
@@ -580,7 +583,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->dc, SSD16XX_DC_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE | SSD16XX_DC_FLAGS);
 
 	driver->busy = device_get_binding(SSD16XX_BUSY_CNTRL);
 	if (driver->busy == NULL) {
@@ -589,7 +592,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->busy, SSD16XX_BUSY_PIN,
-			   GPIO_DIR_IN);
+			   GPIO_INPUT | SSD16XX_BUSY_FLAGS);
 
 #if defined(SSD16XX_CS_CNTRL)
 	driver->cs_ctrl.gpio_dev = device_get_binding(SSD16XX_CS_CNTRL);
