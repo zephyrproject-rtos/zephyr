@@ -364,14 +364,12 @@ static int ssd1306_init_device(struct device *dev)
 	};
 
 #ifdef DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
+	gpio_pin_set(driver->reset,
+		     DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
+	gpio_pin_set(driver->reset,
+		     DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
 #endif
 
 	/* Turn display off */
@@ -434,7 +432,8 @@ static int ssd1306_init(struct device *dev)
 
 	gpio_pin_configure(driver->reset,
 			   DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_FLAGS);
 #endif
 
 	if (ssd1306_init_device(dev)) {
