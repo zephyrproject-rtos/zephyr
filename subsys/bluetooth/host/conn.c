@@ -2126,6 +2126,10 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EINVAL;
 	}
 
+	if (!bt_le_scan_random_addr_check()) {
+		return -EINVAL;
+	}
+
 	conn = bt_conn_add_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE);
 	if (!conn) {
 		return -ENOMEM;
@@ -2204,6 +2208,10 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
+	if (!bt_le_scan_random_addr_check()) {
+		return NULL;
+	}
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
 	if (conn) {
 		/* Connection object already exists.
@@ -2269,6 +2277,10 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 	}
 
 	if (param && !bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
+	if (!bt_le_scan_random_addr_check()) {
 		return -EINVAL;
 	}
 

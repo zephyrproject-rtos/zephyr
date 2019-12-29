@@ -609,6 +609,78 @@ static int le_set_private_addr(u8_t id)
 }
 #endif
 
+bool bt_le_scan_random_addr_check(void)
+{
+	/* If the advertiser is not enabled or not active there is no issue */
+	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return true;
+	}
+
+	/* When privacy is enabled the random address will not be set
+	 * immediately before starting the role, because the RPA might still be
+	 * valid and only updated on RPA timeout.
+	 */
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		/* Cannot start scannor or initiator if the random address is
+		 * used by the advertiser for an RPA with a different identity
+		 * or for a random static identity address.
+		 */
+		if ((atomic_test_bit(bt_dev.flags,
+				     BT_DEV_ADVERTISING_IDENTITY) &&
+		     bt_dev.id_addr[bt_dev.adv_id].type == BT_ADDR_LE_RANDOM) ||
+		     bt_dev.adv_id != BT_ID_DEFAULT) {
+			return false;
+		}
+	}
+
+	/* If privacy is not enabled then the random address will be attempted
+	 * to be set before enabling the role. If another role is already using
+	 * the random address then this command will fail, and should return
+	 * the error code to the application.
+	 */
+	return true;
+}
+
+static bool bt_le_adv_random_addr_check(const struct bt_le_adv_param *param)
+{
+	/* If scanner roles are not enabled or not active there is no issue.
+	 * Passive scanner does not have an active address, unless it is a
+	 * passive scanner that will start the initiator.
+	 */
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) ||
+	    !(atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
+	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+	       (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN) ||
+		atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN))))) {
+		return true;
+	}
+
+	/* When privacy is enabled the random address will not be set
+	 * immediately before starting the role, because the RPA might still be
+	 * valid and only updated on RPA timeout.
+	 */
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		/* Cannot start an advertiser with random static identity or
+		 * using an RPA generated for a different identity than scanner
+		 * roles.
+		 */
+		if (((param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
+		     bt_dev.id_addr[param->id].type == BT_ADDR_LE_RANDOM) ||
+		    param->id != BT_ID_DEFAULT) {
+			return false;
+		}
+	}
+
+	/* If privacy is not enabled then the random address will be attempted
+	 * to be set before enabling the role. If another role is already using
+	 * the random address then this command will fail, and should return
+	 * the error code to the application.
+	 */
+	return true;
+}
+
+
 #if defined(CONFIG_BT_OBSERVER)
 static int set_le_scan_enable(u8_t enable)
 {
@@ -5803,6 +5875,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		return -EALREADY;
 	}
 
+	if (!bt_le_adv_random_addr_check(param)) {
+		return -EINVAL;
+	}
+
 	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
@@ -5967,6 +6043,9 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE,
 			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
 
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY,
+			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
+
 	return 0;
 }
 
@@ -6100,6 +6179,9 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		return -EINVAL;
 	}
 
+	if (param->type && !bt_le_scan_random_addr_check()) {
+		return -EINVAL;
+	}
 	/* Return if active scan is already enabled */
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EALREADY;
