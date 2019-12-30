@@ -1,0 +1,16 @@
+identifier: wio_lte_cat_1
+name: WIO-LTE-CAT.1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - counter
+  - spi
+  - usb_device

@@ -1,0 +1,33 @@
+# Seeed Wio LTE Cat.1 board configuration
+
+# Copyright (c) 2020, Kieran Bingham <kbingham@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WIO_LTE_CAT_1
+
+config BOARD
+	default "wio_lte_cat_1"
+
+if UART_CONSOLE || SERIAL
+
+config UART_1
+	default y
+
+endif # UART_CONSOLE || SERIAL
+
+if SERIAL
+
+# QUACTEL Modem is attached to USART_2
+config UART_2
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+endif # BOARD_WIO_LTE_CAT_1
