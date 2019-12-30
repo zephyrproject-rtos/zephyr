@@ -1303,7 +1303,6 @@ enum {
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
-	bt_addr_le_t _peer;
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
 	/** Subscribe value handle */
