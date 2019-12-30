@@ -1109,6 +1109,9 @@ class Node:
 
             return self._standard_phandle_val_list(prop)
 
+        if prop_type == "path":
+            return self.edt._node2enode[prop.to_path()]
+
         # prop_type == "compound". We have already checked that the 'type:'
         # value is valid, in _check_binding().
         #
@@ -1438,7 +1441,8 @@ class Property:
         - For 'type: int/array/string/string-array', 'val' is what you'd expect
           (a Python integer or string, or a list of them)
 
-        - For 'type: phandle', 'val' is the pointed-to Node instance
+        - For 'type: phandle' and 'type: path', 'val' is the pointed-to Node
+          instance
 
         - For 'type: phandles', 'val' is a list of the pointed-to Node
           instances
@@ -1651,7 +1655,7 @@ def _check_prop_type_and_default(prop_name, prop_type, required, default,
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
-                "compound"}
+                "path", "compound"}
 
     if prop_type not in ok_types:
         _err("'{}' in 'properties:' in {} has unknown type '{}', expected one "
@@ -1670,7 +1674,7 @@ def _check_prop_type_and_default(prop_name, prop_type, required, default,
         return
 
     if prop_type in {"boolean", "compound", "phandle", "phandles",
-                     "phandle-array"}:
+                     "phandle-array", "path"}:
         _err("'default:' can't be combined with 'type: {}' for '{}' in "
              "'properties:' in {}".format(prop_type, prop_name, binding_path))
 

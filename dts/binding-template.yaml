@@ -182,9 +182,19 @@ on-bus: <string describing bus type, e.g. "i2c">
 #     All phandle-array properties support mapping through *-map properties,
 #     e.g. gpio-map. See the devicetree spec.
 #
+#   - 'type: path' is for properties that are assigned a path. Usually, this
+#     would be done with a path reference:
+#
+#         foo = &label;
+#
+#     Plain strings are accepted too, and are verified to be a path to an
+#     existing node:
+#
+#         foo = "/path/to/some/node";
+#
 #   - 'type: compound' is a catch-all for more complex types, e.g.
 #
-#         foo = <&label1>, [01 02];
+#         foo = <&label>, [01 02];
 #
 # 'type: array' and the other array types also allow splitting the value into
 # several <> blocks, e.g. like this:

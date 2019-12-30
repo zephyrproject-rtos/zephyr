@@ -211,6 +211,9 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     verify_streq(edt.get_node("/props").props["foo-gpios"],
                  "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: OrderedDict([('gpio-one', 1)])>]>")
 
+    verify_streq(edt.get_node("/props").props["path"],
+                 "<Property, name: path, type: path, value: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>>")
+
     #
     # Test <prefix>-map, via gpio-map (the most common case)
     #
