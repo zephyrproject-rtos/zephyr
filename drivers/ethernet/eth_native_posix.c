@@ -18,8 +18,13 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdio.h>
+#include <semaphore.h>
 
 #include <kernel.h>
+#include <irq.h>
+#include <soc.h>
+#include <irq_ctrl.h>
+
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
@@ -55,6 +60,9 @@ struct eth_context {
 	bool init_done;
 	bool status;
 	bool promisc_mode;
+
+	struct k_sem sem_got_data; /* Signal Zephyr thread about new data */
+	struct eth_poll_context poll_context;
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
@@ -367,28 +375,44 @@ static int read_data(struct eth_context *ctx, int fd)
 	return 0;
 }
 
+static void eth_isr(void *arg)
+{
+	struct eth_context *ctx = arg;
+
+	k_sem_give(&ctx->sem_got_data);
+}
+
+static void wait_data(struct eth_context *ctx)
+{
+	sem_post(&ctx->poll_context.sem_wait_for_data);
+	k_sem_take(&ctx->sem_got_data, K_FOREVER);
+}
+
 static void eth_rx(struct eth_context *ctx)
 {
-	int ret;
-
 	LOG_DBG("Starting ZETH RX thread");
 
 	while (1) {
 		if (net_if_is_up(ctx->iface)) {
-			ret = eth_wait_data(ctx->dev_fd);
-			if (!ret) {
-				read_data(ctx, ctx->dev_fd);
-			} else {
-				eth_stats_update_errors_rx(ctx->iface);
-			}
+			wait_data(ctx);
+			read_data(ctx, ctx->dev_fd);
+		} else {
+			k_sleep(K_MSEC(50));
 		}
-
-		k_sleep(K_MSEC(50));
 	}
 }
 
 static void create_rx_handler(struct eth_context *ctx)
 {
+	k_sem_init(&ctx->sem_got_data, 0, 1);
+
+	IRQ_CONNECT(ETHERNET_IRQ, 0, eth_isr, ctx, 0);
+	irq_enable(ETHERNET_IRQ);
+
+	ctx->poll_context.fd = ctx->dev_fd;
+	ctx->poll_context.irq_no = ETHERNET_IRQ;
+	eth_create_poll_thread(&ctx->poll_context);
+
 	k_thread_create(&rx_thread_data, eth_rx_stack,
 			K_THREAD_STACK_SIZEOF(eth_rx_stack),
 			(k_thread_entry_t)eth_rx,

@@ -25,11 +25,21 @@
 #define ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER ""
 #endif
 
+/**
+ * Context for pthread's side of waiting for new incoming data
+ */
+struct eth_poll_context {
+	int fd;
+	int irq_no;
+	sem_t sem_wait_for_data;   /* Signal pthread to wait for data */
+};
+
+
 int eth_iface_create(const char *if_name, bool tun_only);
 int eth_iface_remove(int fd);
 int eth_setup_host(const char *if_name);
 int eth_start_script(const char *if_name);
-int eth_wait_data(int fd);
+int eth_create_poll_thread(struct eth_poll_context *ctx);
 ssize_t eth_read_data(int fd, void *buf, size_t buf_len);
 ssize_t eth_write_data(int fd, void *buf, size_t buf_len);
 int eth_if_up(const char *if_name);

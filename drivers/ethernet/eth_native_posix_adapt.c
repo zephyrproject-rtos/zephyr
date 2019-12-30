@@ -26,6 +26,8 @@
 #include <net/if.h>
 #include <time.h>
 #include <arch/posix/posix_trace.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #ifdef __linux
 #include <linux/if_tun.h>
@@ -42,6 +44,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 #include <sys_clock.h>
+#include <irq_ctrl.h>
 
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
@@ -140,29 +143,38 @@ int eth_start_script(const char *if_name)
 	}
 }
 
-int eth_wait_data(int fd)
+static void *poll_thread(void *arg)
 {
-	struct timeval timeout;
 	fd_set rset;
 	int ret;
+	struct eth_poll_context *ctx = arg;
 
-	FD_ZERO(&rset);
+	while (1) {
+		FD_ZERO(&rset);
+		FD_SET(ctx->fd, &rset);
 
-	FD_SET(fd, &rset);
+		sem_wait(&ctx->sem_wait_for_data);
 
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 0;
-
-	ret = select(fd + 1, &rset, NULL, NULL, &timeout);
-	if (ret < 0 && errno != EINTR) {
-		return -errno;
-	} else if (ret > 0) {
-		if (FD_ISSET(fd, &rset)) {
-			return 0;
+		ret = select(ctx->fd + 1, &rset, NULL, NULL, NULL);
+		if (ret > 0 && FD_ISSET(ctx->fd, &rset)) {
+			hw_irq_ctrl_set_irq(ctx->irq_no);
 		}
 	}
 
-	return -EAGAIN;
+	return NULL;
+}
+
+int eth_create_poll_thread(struct eth_poll_context *ctx)
+{
+	pthread_t thread;
+	int ret;
+
+	ret = sem_init(&ctx->sem_wait_for_data, 0, 0);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return pthread_create(&thread, NULL, poll_thread, ctx);
 }
 
 ssize_t eth_read_data(int fd, void *buf, size_t buf_len)
