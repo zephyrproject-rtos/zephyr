@@ -123,6 +123,8 @@ the vendor requests:
 The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
+.. _testing_USB_native_posix:
+
 Testing USB over USP/IP in native_posix
 ***************************************
 

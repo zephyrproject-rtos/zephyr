@@ -516,6 +516,11 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
+**USB controller**:
+  It's possible to use the Virtual USB controller working over USB/IP
+  protocol. More information can be found in
+  :ref:`Testing USB over USP/IP in native_posix <testing_USB_native_posix>`.
+
 **Display driver**:
   A display driver is provided that creates a window on the host machine to
   render display content.
