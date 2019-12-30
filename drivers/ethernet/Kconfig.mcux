@@ -79,7 +79,6 @@ endchoice
 
 config ETH_MCUX_HW_ACCELERATION
 	bool "Enable hardware acceleration"
-	default y
 	help
 	  Enable hardware acceleration for the following:
 	  - IPv4, UDP and TCP checksum (both Rx and Tx)
