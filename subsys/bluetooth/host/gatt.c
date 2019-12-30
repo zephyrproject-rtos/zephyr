@@ -1602,13 +1602,23 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 	int err;
 
 	if (params) {
-		struct bt_att_req *req = params;
+		struct bt_att_req *req;
+
+		/* Allocate new request */
+		req = bt_att_req_alloc(BT_ATT_TIMEOUT);
+		if (!req) {
+			return -ENOMEM;
+		}
 
 		req->buf = buf;
 		req->func = func;
 		req->destroy = destroy;
+		req->user_data = params;
 
 		err = bt_att_req_send(conn, req);
+		if (err) {
+			bt_att_req_free(req);
+		}
 	} else {
 		err = bt_att_send(conn, buf, NULL, NULL);
 	}
