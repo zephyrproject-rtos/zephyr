@@ -34,6 +34,10 @@
 #define ESPI_XEC_PORT80_BAR_ADDRESS 0x00800000
 #define ESPI_XEC_PORT81_BAR_ADDRESS 0x00810000
 
+#define MAX_OOB_BUFFER_SIZE         128
+/* 1s */
+#define MAX_OOB_TIMEOUT             1000
+
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_isr {
@@ -50,6 +54,8 @@ struct espi_xec_config {
 
 struct espi_xec_data {
 	sys_slist_t callbacks;
+	struct k_sem tx_lock;
+	struct k_sem rx_lock;
 	u8_t plt_rst_asserted;
 	u8_t espi_rst_asserted;
 	u8_t sx_state;
@@ -178,6 +184,9 @@ static const struct xec_signal vw_tbl[] = {
 	[ESPI_VWIRE_SIGNAL_DNX_WARN]      = {MCHP_MSVW08, ESPI_VWIRE_SRC_ID1,
 					     ESPI_MASTER_TO_SLAVE},
 };
+
+static u32_t slave_rx_mem[MAX_OOB_BUFFER_SIZE];
+static u32_t slave_tx_mem[MAX_OOB_BUFFER_SIZE];
 
 static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 {
@@ -397,6 +406,81 @@ static int espi_xec_receive_vwire(struct device *dev,
 	return 0;
 }
 
+static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
+{
+	int ret;
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	u8_t err_mask = MCHP_ESPI_OOB_TX_STS_IBERR |
+			MCHP_ESPI_OOB_TX_STS_OVRUN |
+			MCHP_ESPI_OOB_TX_STS_BADREQ;
+
+	LOG_DBG("%s\n", __func__);
+
+	if (!(ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_CHEN)) {
+		LOG_WRN("OOB channel is disabled\n");
+		return -EIO;
+	}
+
+	if (ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_BUSY) {
+		LOG_WRN("OOB channel is busy\n");
+		return -EBUSY;
+	}
+
+	if (pckt.len > MAX_OOB_BUFFER_SIZE) {
+		return -EINVAL;
+	}
+
+	memcpy(slave_tx_mem, pckt.buf, pckt.len);
+
+	ESPI_OOB_REGS->TX_LEN = pckt.len;
+	ESPI_OOB_REGS->TX_CTRL = MCHP_ESPI_OOB_TX_CTRL_START;
+	LOG_DBG("%s %d\n", __func__, ESPI_OOB_REGS->TX_LEN);
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&data->tx_lock, MAX_OOB_TIMEOUT);
+	if (ret == -EAGAIN) {
+		return -ETIMEDOUT;
+	}
+
+	if (ESPI_OOB_REGS->TX_STS & err_mask) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int espi_xec_receive_oob(struct device *dev,
+				struct espi_oob_packet pckt)
+{
+	int ret;
+	u8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
+			MCHP_ESPI_OOB_RX_STS_OVRUN;
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+
+	LOG_DBG("%s\n", __func__);
+
+
+	if (ESPI_OOB_REGS->TX_STS & err_mask) {
+		return -EIO;
+	}
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&data->rx_lock, MAX_OOB_TIMEOUT);
+	if (ret == -EAGAIN) {
+		return -ETIMEDOUT;
+	}
+
+	/* Check if buffer passed to driver can fit the received packet */
+	if (ESPI_OOB_REGS->RX_LEN > pckt.len) {
+		return -EIO;
+	}
+
+	pckt.len = ESPI_OOB_REGS->RX_LEN;
+	memcpy(pckt.buf, slave_rx_mem, pckt.len);
+
+	return 0;
+}
+
 static int espi_xec_manage_callback(struct device *dev,
 				    struct espi_callback *callback, bool set)
 {
@@ -427,15 +511,16 @@ static void espi_init_oob(struct device *dev)
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = (MCHP_ESPI_OOB_UP_GIRQ_VAL |
 			MCHP_ESPI_OOB_DN_GIRQ_VAL);
 
-	ESPI_OOB_REGS->TX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
-	ESPI_OOB_REGS->RX_ADDR_MSW = ESPI_XEC_OOB_ADDR_MSW;
-	ESPI_OOB_REGS->TX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
-	ESPI_OOB_REGS->RX_ADDR_LSW = ESPI_XEC_OOB_ADDR_LSW;
-	ESPI_OOB_REGS->RX_LEN = (ESPI_XEC_OOB_RX_LEN &
-				 ESPI_XEC_OOB_RX_LEN_MASK);
+	ESPI_OOB_REGS->TX_ADDR_MSW = 0;
+	ESPI_OOB_REGS->RX_ADDR_MSW = 0;
+	ESPI_OOB_REGS->TX_ADDR_LSW = (u32_t)&slave_tx_mem[0];
+	ESPI_OOB_REGS->RX_ADDR_LSW = (u32_t)&slave_rx_mem[0];
+	ESPI_OOB_REGS->RX_LEN = 0x00FF0000;
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 
 	/* Enable OOB Tx channel enable change status interrupt */
 	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
+
 	ESPI_CAP_REGS->OOB_RDY = 1;
 }
 #endif
@@ -592,33 +677,37 @@ static void espi_vwire_chanel_isr(struct device *dev)
 static void espi_oob_down_isr(struct device *dev)
 {
 	u32_t status;
-
-	LOG_DBG("%s\n", __func__);
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	status = ESPI_OOB_REGS->RX_STS;
+
+	LOG_DBG("%s %x\n", __func__, status);
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
-		ESPI_OOB_REGS->RX_IEN = ~MCHP_ESPI_OOB_RX_IEN;
+		ESPI_OOB_REGS->RX_STS |= MCHP_ESPI_OOB_RX_STS_DONE;
+
+		k_sem_give(&data->rx_lock);
 	}
 }
 
 static void espi_oob_up_isr(struct device *dev)
 {
 	u32_t status;
-
-	LOG_DBG("%s\n", __func__);
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	status = ESPI_OOB_REGS->TX_STS;
+	LOG_DBG("%s sts:%x\n", __func__, status);
 
 	if (status & MCHP_ESPI_OOB_TX_STS_DONE) {
 		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_DONE;
+		k_sem_give(&data->tx_lock);
 	}
 
 	if (status & MCHP_ESPI_OOB_TX_STS_CHG_EN) {
 		if (status & MCHP_ESPI_OOB_TX_STS_CHEN) {
 			espi_init_oob(dev);
-			ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
 
-			/* Re-enable interrupts */
+			ESPI_OOB_REGS->TX_IEN = MCHP_ESPI_OOB_TX_IEN_CHG_EN |
+						MCHP_ESPI_OOB_TX_IEN_DONE;
 			ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
 		}
 		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_CHG_EN;
@@ -873,6 +962,8 @@ static const struct espi_driver_api espi_xec_driver_api = {
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,
 	.receive_vwire = espi_xec_receive_vwire,
+	.send_oob = espi_xec_send_oob,
+	.receive_oob = espi_xec_receive_oob,
 	.manage_callback = espi_xec_manage_callback,
 	.read_lpc_request = espi_xec_read_lpc_request,
 	.write_lpc_request = espi_xec_write_lpc_request,
@@ -914,6 +1005,9 @@ static int espi_xec_init(struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	ESPI_CAP_REGS->GLB_CAP0 |= MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 	ESPI_CAP_REGS->OOB_CAP |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
+
+	k_sem_init(&data->tx_lock, 0, 1);
+	k_sem_init(&data->rx_lock, 0, 1);
 #else
 	ESPI_CAP_REGS->GLB_CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 #endif
