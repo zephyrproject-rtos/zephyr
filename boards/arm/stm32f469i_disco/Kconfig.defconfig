@@ -39,4 +39,11 @@ config I2C_1
 
 endif # I2C
 
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
+
 endif # BOARD_STM32F469I_DISCO
