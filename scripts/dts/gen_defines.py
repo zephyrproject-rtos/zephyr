@@ -229,14 +229,12 @@ def write_props(node):
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
                 out_dev(node, "{}_{}".format(ident, i), val)
-            out_dev(node, ident,
-                    "{" + ", ".join(map(str, prop.val)) + "}")
+            out_dev_init(node, ident, prop.val)
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
                 out_dev_s(node, "{}_{}".format(ident, i), val)
         elif prop.type == "uint8-array":
-            out_dev(node, ident,
-                    "{ " + ", ".join("0x{:02x}".format(b) for b in prop.val) + " }")
+            out_dev_init(node, ident, ["0x{:02x}".format(b) for b in prop.val])
         elif prop.type == "phandle-array":
             write_phandle_val_list(prop)
 
@@ -565,7 +563,7 @@ def write_phandle_val_list(prop):
 
     if len(prop.val) > 1:
         out_dev(prop.node, ident + "_COUNT", len(initializer_vals))
-        out_dev(prop.node, ident, "{" + ", ".join(initializer_vals) + "}")
+        out_dev_init(prop.node, ident, initializer_vals)
 
 
 def write_phandle_val_list_entry(node, entry, i, ident):
@@ -612,9 +610,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         name_alias = None
     if i is not None:
         initializer_ident += "_{}".format(i)
-    return out_dev(node, initializer_ident,
-                   "{" + ", ".join(map(str, initializer_vals)) + "}",
-                   name_alias)
+    return out_dev_init(node, initializer_ident, initializer_vals, name_alias)
 
 
 def write_clocks(node):
@@ -703,6 +699,16 @@ def out_dev_s(node, ident, s, name_alias=None):
     # Returns the generated macro name for 'ident'.
 
     return out_dev(node, ident, quote_str(s), name_alias)
+
+
+def out_dev_init(node, ident, elms, name_alias=None):
+    # Like out_dev(), but generates an {e1, e2, ...} initializer with the
+    # elements in the iterable 'elms'.
+    #
+    # Returns the generated macro name for 'ident'.
+
+    return out_dev(node, ident, "{" + ", ".join(map(str, elms)) + "}",
+                   name_alias)
 
 
 def out_s(ident, val):
