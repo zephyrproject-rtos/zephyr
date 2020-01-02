@@ -6,10 +6,10 @@ ST Nucleo F767ZI
 Overview
 ********
 
-The STM32 Nucleo-144 F767ZI boards offer combinations of performance and power that
-provide an affordable and flexible way for users to build prototypes and try
-out new concepts. For compatible boards, the SMPS significantly reduces power
-consumption in Run mode.
+The STM32 Nucleo-144 F767ZI boards offer combinations of performance and
+power that provide an affordable and flexible way for users to build
+prototypes and try out new concepts. For compatible boards, the SMPS
+significantly reduces power consumption in Run mode.
 
 The Arduino-compatible ST Zio connector expands functionality of the Nucleo
 open development platform, with a wide choice of specialized Arduino* Uno V3
@@ -217,7 +217,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://www.st.com/en/evaluation-tools/nucleo-f767zi.html
 
 .. _STM32 Nucleo-144 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   http://www.st.com/resource/en/user_manual/dm00244518.pdf
 
 .. _STM32f767zi on www.st.com:
    https://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-high-performance-mcus/stm32f7-series/stm32f7x&/stm32f767zi.html
