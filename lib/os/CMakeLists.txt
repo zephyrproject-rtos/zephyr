@@ -11,6 +11,7 @@ zephyr_sources(
   fdtable.c
   hex.c
   mempool.c
+  printk.c
   rb.c
   sem.c
   thread_entry.c
@@ -19,8 +20,6 @@ zephyr_sources(
   )
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
-
-zephyr_sources_if_kconfig(printk.c)
 
 zephyr_sources_if_kconfig(ring_buffer.c)
 
