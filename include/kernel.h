@@ -5274,6 +5274,7 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
 
 /** @} */
 
+#ifdef CONFIG_PRINTK
 /**
  * @brief Emit a character buffer to the console device
  *
@@ -5283,6 +5284,7 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @req K-MISC-006
  */
 __syscall void k_str_out(char *c, size_t n);
+#endif
 
 /**
  * @brief Disable preservation of floating point context information.
