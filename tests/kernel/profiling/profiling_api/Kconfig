@@ -10,4 +10,4 @@ config KERNEL_PROFILING_API_TEST
 	  test to profile idle thread will be executed.
 
 # Include Zephyr's Kconfig.
-source "$ZEPHYR_BASE/Kconfig"
+source "Kconfig"
