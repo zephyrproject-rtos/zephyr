@@ -9,4 +9,7 @@ config SOC
 config NUM_IRQS
 	default 32
 
+config CPU_CORTEX_M_HAS_DWT
+	default n
+
 endif
