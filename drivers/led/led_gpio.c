@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_GPIO_LOG_LEVEL);
 	DT_LABEL(node_id),                     \
 	DT_PROP(node_id, id)                   \
 },
+#define LED_SW_BLINK BIT(0)
+#define LED_BLINK_DISABLE BIT(1)
 
 struct gpio_cfg {
 	const char *port;
@@ -36,6 +38,13 @@ struct led_dts_cfg {
 struct led_gpio_data {
 	struct device *gpio_dev;
 	const struct led_dts_cfg *cfg;
+#if defined(CONFIG_LED_SOFTWARE_BLINK)
+	struct k_timer timer;
+	atomic_t flags;
+	uint32_t blink_delay_on;
+	uint32_t blink_delay_off;
+	bool next_state;
+#endif
 	bool state;
 };
 
@@ -92,6 +101,18 @@ static int gpio_led_set_no_delay(struct led_gpio_data *data, bool state)
 
 static int gpio_led_set(struct led_gpio_data *data, bool state)
 {
+#if defined(CONFIG_LED_SOFTWARE_BLINK)
+	if (atomic_test_bit(&data->flags, LED_SW_BLINK)) {
+		data->next_state = state;
+
+		atomic_set_bit(&data->flags, LED_BLINK_DISABLE);
+		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
+
+		return 0;
+
+	}
+#endif /* defined(CONFIG_LED_SOFTWARE_BLINK) */
+
 	return gpio_led_set_no_delay(data, state);
 }
 
@@ -117,7 +138,78 @@ static int gpio_led_off(struct device *dev, uint32_t led)
 	return gpio_led_set(data, false);
 }
 
+#if defined(CONFIG_LED_SOFTWARE_BLINK)
+static void stop_sw_blink(struct led_gpio_data *data)
+{
+	k_timer_stop(&data->timer);
+	data->blink_delay_on = 0;
+	data->blink_delay_off = 0;
+	atomic_clear_bit(&data->flags, LED_SW_BLINK);
+}
+
+static void led_timer_handler(struct k_timer *timer)
+{
+	struct led_gpio_data *data;
+	uint32_t delay;
+	bool state;
+	int err;
+
+	data = CONTAINER_OF(timer, struct led_gpio_data, timer);
+
+	if (atomic_test_and_clear_bit(&data->flags, LED_BLINK_DISABLE)) {
+		stop_sw_blink(data);
+		gpio_led_set_no_delay(data, data->next_state);
+
+		return;
+	}
+
+	if (data->state) {
+		delay = data->blink_delay_off;
+		state = 0;
+	} else {
+		delay = data->blink_delay_on;
+		state = 1;
+	}
+
+	err = gpio_led_set_no_delay(data, state);
+	if (err) {
+		LOG_DBG("%s blink error: %d", data->cfg->label, err);
+	}
+
+	k_timer_start(&data->timer, K_MSEC(delay), K_NO_WAIT);
+}
+
+static int gpio_led_blink(struct device *dev, uint32_t led,
+			  uint32_t delay_on, uint32_t delay_off)
+{
+	struct led_gpio_data *data = led_parameters_get(dev, led);
+
+	if (!delay_on) {
+		return gpio_led_off(dev, led);
+	}
+
+	if (!delay_off) {
+		return gpio_led_on(dev, led);
+	}
+
+	data->blink_delay_on = delay_on;
+	data->blink_delay_off = delay_off;
+
+	atomic_set_bit(&data->flags, LED_SW_BLINK);
+
+	LOG_DBG("%s blink start, delay on: %d, delay off: %d",
+		data->cfg->label, delay_on, delay_off);
+
+	k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
+
+	return 0;
+}
+#endif /* defined(CONFIG_LED_SOFTWARE_BLINK) */
+
 static const struct led_driver_api led_api = {
+#if defined(CONFIG_LED_SOFTWARE_BLINK)
+	.blink = gpio_led_blink,
+#endif
 	.on = gpio_led_on,
 	.off = gpio_led_off,
 };
@@ -149,6 +241,10 @@ static int gpio_led_init(struct device *dev)
 
 
 		data[i].cfg = &cfg->led[i];
+
+#if defined(CONFIG_LED_SOFTWARE_BLINK)
+		k_timer_init(&data[i].timer, led_timer_handler, NULL);
+#endif
 	}
 
 	return 0;

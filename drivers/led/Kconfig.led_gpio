@@ -11,6 +11,12 @@ config LED_GPIO
 
 if LED_GPIO
 
+config LED_SOFTWARE_BLINK
+	bool "Software blink"
+	help
+	 Support for an LED software blink based on
+	 system timers
+
 module = LED_GPIO
 module-str = LED GPIO
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
