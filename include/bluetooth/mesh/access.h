@@ -244,6 +244,31 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
 	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
 
+/** @def BT_MESH_MODEL_SCENE
+ *
+ *  @brief Composition data SIG model entry with Scene callback functions.
+ *
+ *  @param _id        Model ID.
+ *  @param _op        Array of model opcode handlers.
+ *  @param _pub       Model publish parameters.
+ *  @param _user_data User data for the model.
+ *  @param _cb        Callback structure, or NULL to keep no callbacks.
+ *  @param _s_cb      Scene Callback structure, or NULL to keep no callbacks.
+ */
+#define BT_MESH_MODEL_SCENE(_id, _op, _pub, _user_data, _cb, _s_cb)      \
+{                                                                        \
+	.id = (_id),                                                         \
+	.op = _op,                                                           \
+	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
+			BT_MESH_KEY_UNUSED },                                \
+	.pub = _pub,                                                         \
+	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
+			BT_MESH_ADDR_UNASSIGNED },                           \
+	.user_data = _user_data,                                             \
+	.cb = _cb,                                                           \
+	.s_cb = _s_cb,                                                       \
+}
+
 /** @def BT_MESH_MODEL_CB
  *
  *  @brief Composition data SIG model entry with callback functions.
@@ -254,18 +279,8 @@ struct bt_mesh_model_op {
  *  @param _user_data User data for the model.
  *  @param _cb        Callback structure, or NULL to keep no callbacks.
  */
-#define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                    \
-{                                                                            \
-	.id = (_id),                                                         \
-	.op = _op,                                                           \
-	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
-			BT_MESH_KEY_UNUSED },                                \
-	.pub = _pub,                                                         \
-	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
-			BT_MESH_ADDR_UNASSIGNED },                           \
-	.user_data = _user_data,                                             \
-	.cb = _cb,                                                           \
-}
+#define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                \
+	BT_MESH_MODEL_SCENE(_id, _op, _pub, _user_data, _cb, NULL)
 
 /** @def BT_MESH_MODEL_VND_CB
  *
@@ -278,8 +293,8 @@ struct bt_mesh_model_op {
  *  @param _user_data User data for the model.
  *  @param _cb        Callback structure, or NULL to keep no callbacks.
  */
-#define BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb)      \
-{                                                                            \
+#define BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb)  \
+{                                                                        \
 	.vnd.company = (_company),                                           \
 	.vnd.id = (_id),                                                     \
 	.op = _op,                                                           \
@@ -500,6 +515,45 @@ struct bt_mesh_model_cb {
 	void (*const reset)(struct bt_mesh_model *model);
 };
 
+/** Model Scene callback functions. */
+struct bt_mesh_scene_cb {
+	/** @brief Model Scene Store Callback.
+	 * 
+	 *  Called on every scene store operation started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be stored.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const store)(struct bt_mesh_model *model, u16_t scene_number);
+
+	/** @brief Model Scene Recall Callback.
+	 *
+	 *  This handler gets called after the scene recall operation started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be recall.
+	 *  @param trans_time    Model States transition times.
+	 *  @param delay         Message execution delay times.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const recall)(struct bt_mesh_model *model,
+                  u16_t scene_number, u8_t trans_time, u8_t delay);
+
+	/** @brief Model Scane Delete callback.
+	 * 
+	 *  Called on every scene store delete started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be deleted.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const delete)(struct bt_mesh_model *model, u16_t scene_number);
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
@@ -531,6 +585,9 @@ struct bt_mesh_model {
 
 	/** Model callback structure. */
 	const struct bt_mesh_model_cb * const cb;
+
+	/** Model Scene callback structure. */
+	const struct bt_mesh_scene_cb * const s_cb;
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
 	/* Pointer to the next model in a model extension tree. */
