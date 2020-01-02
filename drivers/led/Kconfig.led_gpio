@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_GPIO
+	bool "LED GPIO driver"
+	depends on GPIO
+	help
+	  This option enables support for the LEDs connected to GPIO
+	  outputs. To be useful the particular board must have LEDs
+	  and they must be connected to the GPIO lines.
+
+if LED_GPIO
+
+module = LED_GPIO
+module-str = LED GPIO
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # LED_GPIO

@@ -5,6 +5,13 @@ description: GPIO LEDs parent node
 
 compatible: "gpio-leds"
 
+properties:
+   driver:
+      required: false
+      type: string
+      description: GPIO LED driver name
+      default: "LED_GPIO_0"
+
 child-binding:
     description: GPIO LED child node
     properties:
@@ -15,3 +22,7 @@ child-binding:
           required: true
           type: string
           description: Human readable string describing the device (used as device_get_binding() argument)
+       id:
+          required: false
+          type: int
+          description: Id needed for the GPIO LED driver to identify an LED
