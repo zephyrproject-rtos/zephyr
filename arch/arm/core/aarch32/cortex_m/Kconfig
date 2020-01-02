@@ -70,6 +70,14 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
+config CPU_CORTEX_M_HAS_DWT
+	bool
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS
+	default y
+	help
+	  This option signifies that the CPU implements the Data Watchpoint and
+	  Trace (DWT) feature.
+
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
 	depends on ARMV7_M_ARMV8_M_MAINLINE
