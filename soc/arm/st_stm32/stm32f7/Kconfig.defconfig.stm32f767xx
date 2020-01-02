@@ -1,6 +1,6 @@
 # Kconfig - ST STM32F767ZI MCU configuration options
 #
-# Copyright (c) 2018 Yurii Hamann
+# Copyright (c) 2019 Roland Ma
 #
 # SPDX-License-Identifier: Apache-2.0
 #

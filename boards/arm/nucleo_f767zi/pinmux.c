@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 AJ Palmer
+ * Copyright (c) 2019 Roland Ma
  *
  * SPDX-License-Identifier: Apache-2.0
  */

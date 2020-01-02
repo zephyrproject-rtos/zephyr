@@ -49,3 +49,5 @@ TAGS
 tags
 
 .idea
+
+samples/wasm-simple/*
