@@ -35,33 +35,23 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
-# We can set "default" value for QEMU_PTY & QEMU_PIPE on cmake invocation.
+# Set up chardev for console.
 if(QEMU_PTY)
-  # Send console output to a pseudo-tty, used for running automated tests
-  set(CMAKE_QEMU_SERIAL0 pty)
+  # Redirect console to a pseudo-tty, used for running automated tests.
+  list(APPEND QEMU_FLAGS -chardev pty,id=con,mux=on)
+elseif(QEMU_PIPE)
+  # Redirect console to a pipe, used for running automated tests.
+  list(APPEND QEMU_FLAGS -chardev pipe,id=con,mux=on,path=${QEMU_PIPE})
 else()
-  if(QEMU_PIPE)
-    # Send console output to a pipe, used for running automated tests
-    set(CMAKE_QEMU_SERIAL0 pipe:${QEMU_PIPE})
-  else()
-    set(CMAKE_QEMU_SERIAL0 mon:stdio)
-  endif()
+  # Redirect console to stdio, used for manual debugging.
+  list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
 endif()
 
-# But also can set QEMU_PTY & QEMU_PIPE on *make* (not cmake) invocation,
-# like it was before cmake.
-if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-  list(APPEND QEMU_FLAGS
-    -serial
-    \${if \${QEMU_PTY}, pty, \${if \${QEMU_PIPE}, pipe:\${QEMU_PIPE}, ${CMAKE_QEMU_SERIAL0}}}
-    # NB: \$ is not supported by Ninja
-    )
-else()
-  list(APPEND QEMU_FLAGS
-    -serial
-    ${CMAKE_QEMU_SERIAL0}
-    )
-endif()
+# Connect main serial port to the console chardev.
+list(APPEND QEMU_FLAGS -serial chardev:con)
+
+# Connect monitor to the console chardev.
+list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
