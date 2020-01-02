@@ -449,6 +449,45 @@ struct bt_mesh_model_pub {
 		.msg = &bt_mesh_pub_msg_##_name, \
 	}
 
+/** Model Scene callback functions. */
+struct bt_mesh_scene_cb {
+	/** @brief Model Scene Store Callback.
+	 * 
+	 *  Called on every scene store operation started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be stored.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const store)(struct bt_mesh_model *model, u16_t scene_number);
+
+	/** @brief Model Scene Recall Callback.
+	 *
+	 *  This handler gets called after the scene recall operation started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be recall.
+	 *  @param trans_time    Model States transition times.
+	 *  @param delay         Message execution delay times.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const recall)(struct bt_mesh_model *model,
+                  u16_t scene_number, u8_t trans_time, u8_t delay);
+
+	/** @brief Model Scane Delete callback.
+	 * 
+	 *  Called on every scene store delete started.
+	 *
+	 *  @param model         Model this callback belongs to.
+	 *  @param scene_number  The number of the scene to be deleted.
+	 *
+	 *  @return 0 on success, error otherwise.
+	 */
+	int (*const delete)(struct bt_mesh_model *model, u16_t scene_number);
+};
+
 /** Model callback functions. */
 struct bt_mesh_model_cb {
 	/** @brief Set value handler of user data tied to the model.
@@ -498,6 +537,9 @@ struct bt_mesh_model_cb {
 	 *  @param model Model this callback belongs to.
 	 */
 	void (*const reset)(struct bt_mesh_model *model);
+
+	/** Model Scene callback structure. */
+	const struct bt_mesh_scene_cb * const scene_cb;
 };
 
 /** Abstraction that describes a Mesh Model instance */
