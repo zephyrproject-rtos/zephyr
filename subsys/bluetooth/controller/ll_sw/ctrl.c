@@ -8405,8 +8405,13 @@ static inline int event_len_prep(struct connection *conn)
 		   ) {
 			lr->max_rx_time =
 				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, 0);
+#if defined(CONFIG_BT_CTLR_PHY)
+			lr->max_tx_time = conn->default_tx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
 			lr->max_tx_time =
 				RADIO_PKT_TIME(conn->default_tx_octets, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 		} else if (conn->llcp_feature.features &
