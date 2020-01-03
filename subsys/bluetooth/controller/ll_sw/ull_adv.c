@@ -468,10 +468,10 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			/* TODO: Privacy */
 			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
 
-			if (!mem_nz(tx_addr, BDADDR_SIZE)) {
+			/* TODO: Privacy check */
+			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -518,7 +518,8 @@ u8_t ll_adv_enable(u8_t enable)
 		 * found the fallback address was used instead, check
 		 * that a valid address has been set.
 		 */
-		if (!mem_nz(&pdu_adv->adv_ind.addr[0], BDADDR_SIZE)) {
+		if (pdu_adv->tx_addr &&
+		    !mem_nz(pdu_adv->adv_ind.addr, BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
