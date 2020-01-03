@@ -484,6 +484,16 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	return found;
 }
 
+/*
+ * @brief configure and enable endpoint
+ *
+ * This function sets endpoint configuration according to one specified in USB
+ * endpoint descriptor and then enables it for data transfers.
+ *
+ * @param [in]  ep_desc Endpoint descriptor byte array
+ *
+ * @return true if successfully configured and enabled
+ */
 static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
@@ -497,20 +507,71 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	ep_cfg.ep_type = ep_desc->bmAttributes;
 
-	LOG_DBG("Configure endpoint 0x%x type %u MPS %u",
+	LOG_DBG("Set endpoint 0x%x type %u MPS %u",
 		ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
 	if (usb_dc_ep_configure(&ep_cfg) < 0) {
-		LOG_WRN("Failed to configure endpoint %x", ep_cfg.ep_addr);
+		LOG_WRN("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
 	}
 
 	if (usb_dc_ep_enable(ep_cfg.ep_addr) < 0) {
-		LOG_WRN("Failed to enable endpoint %x", ep_cfg.ep_addr);
+		LOG_WRN("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
 	}
 
 	usb_dev.configured = true;
 
 	return true;
+}
+
+/*
+ * @brief Disable endpoint for transferring data
+ *
+ * This function cancels transfers that are associated with endpoint and
+ * disabled endpoint itself.
+ *
+ * @param [in]  ep_desc Endpoint descriptor byte array
+ *
+ * @return true if successfully deconfigured and disabled
+ */
+static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
+{
+	struct usb_dc_ep_cfg_data ep_cfg;
+
+	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
+	ep_cfg.ep_type = ep_desc->bmAttributes;
+
+	if (ep_desc->bmAttributes > USB_DC_EP_INTERRUPT) {
+		return false;
+	}
+
+	LOG_DBG("Reset endpoint 0x%02x type %u",
+		ep_cfg.ep_addr, ep_cfg.ep_type);
+
+	usb_cancel_transfer(ep_cfg.ep_addr);
+
+	if (usb_dc_ep_disable(ep_cfg.ep_addr) < 0) {
+		LOG_ERR("Failed to disable endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
+	}
+
+	return true;
+}
+
+static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
+				u8_t cur_alt_setting,
+				u8_t alt_setting)
+{
+	bool ret;
+
+	if (cur_alt_setting != alt_setting) {
+		LOG_DBG("Disable endpoint 0x%02x", ep_desc->bEndpointAddress);
+		ret = reset_endpoint(ep_desc);
+	} else {
+		LOG_DBG("Enable endpoint 0x%02x", ep_desc->bEndpointAddress);
+		ret = set_endpoint(ep_desc);
+	}
+
+	return ret;
 }
 
 /*
@@ -592,9 +653,10 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 {
 	const u8_t *p = usb_dev.descriptors;
 	const u8_t *if_desc = NULL;
+	struct usb_ep_descriptor *ep;
 	u8_t cur_alt_setting = 0xFF;
 	u8_t cur_iface = 0xFF;
-	bool found = false;
+	bool ret = false;
 
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
 
@@ -610,14 +672,15 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 				if_desc = (void *)p;
 			}
 
-			LOG_DBG("iface_num %u alt_set %u", iface, alt_setting);
+			LOG_DBG("Current iface %u alt setting %u",
+				cur_iface, cur_alt_setting);
 			break;
 		case USB_ENDPOINT_DESC:
-			if ((cur_iface != iface) ||
-			    (cur_alt_setting != alt_setting)) {
+			if (cur_iface == iface) {
+				ep = (struct usb_ep_descriptor *)p;
+				ret = usb_eps_reconfigure(ep, cur_alt_setting,
+							  alt_setting);
 			}
-
-			found = set_endpoint((struct usb_ep_descriptor *)p);
 			break;
 		default:
 			break;
@@ -631,7 +694,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 		usb_dev.status_callback(USB_DC_INTERFACE, if_desc);
 	}
 
-	return found;
+	return ret;
 }
 
 /*
