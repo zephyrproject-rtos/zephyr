@@ -27,9 +27,6 @@ static int hts221_channel_get(struct device *dev,
 	struct hts221_data *drv_data = dev->driver_data;
 	s32_t conv_val;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP ||
-			chan == SENSOR_CHAN_HUMIDITY);
-
 	/*
 	 * see "Interpreting humidity and temperature readings" document
 	 * for more details
@@ -44,7 +41,7 @@ static int hts221_channel_get(struct device *dev,
 		/* convert temperature x8 to degrees Celsius */
 		val->val1 = conv_val / 8;
 		val->val2 = (conv_val % 8) * (1000000 / 8);
-	} else { /* SENSOR_CHAN_HUMIDITY */
+	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		conv_val = (s32_t)(drv_data->h1_rh_x2 - drv_data->h0_rh_x2) *
 			   (drv_data->rh_sample - drv_data->h0_t0_out) /
 			   (drv_data->h1_t0_out - drv_data->h0_t0_out) +
@@ -53,6 +50,8 @@ static int hts221_channel_get(struct device *dev,
 		/* convert humidity x2 to percent */
 		val->val1 = conv_val / 2;
 		val->val2 = (conv_val % 2) * 500000;
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;
