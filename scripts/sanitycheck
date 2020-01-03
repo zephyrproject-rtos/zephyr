@@ -4,7 +4,7 @@
 """Zephyr Sanity Tests
 
 Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
-
+vfhuv
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
 build each test case on one platform per architecture, using a precedence
