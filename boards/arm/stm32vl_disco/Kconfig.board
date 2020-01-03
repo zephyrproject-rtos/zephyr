@@ -1,0 +1,8 @@
+# Board configuration
+
+# Copyright (c) 2020 Jonas Eriksson, Up to Code AB
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32VL_DISCO
+	bool "STM32VLDISCOVERY Development Board"
+	depends on SOC_STM32F100XB
