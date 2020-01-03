@@ -802,6 +802,16 @@ class DeviceHandler(Handler):
         except subprocess.CalledProcessError:
             os.write(write_pipe, b'x')  # halt the thread
 
+        if post_script:
+            with subprocess.Popen(post_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=30)
+                    logger.debug(stdout.decode())
+
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+
         t.join(self.timeout)
         if t.is_alive():
             out_state = "timeout"
@@ -826,17 +836,6 @@ class DeviceHandler(Handler):
                 self.instance.reason = "Failed"
         else:
             self.set_state(out_state, handler_time)
-
-        if post_script:
-            with subprocess.Popen(post_script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-                try:
-                    (stdout, stderr) = proc.communicate(timeout=30)
-                    logger.debug(stdout.decode())
-
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                    (stdout, stderr) = proc.communicate()
-                    logger.error("{} timed out".format(post_script))
 
         self.make_device_available(serial_device)
 
