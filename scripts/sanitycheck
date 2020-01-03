@@ -719,6 +719,7 @@ class DeviceHandler(Handler):
             command = [get_generator()[0], "-C", self.build_dir, "flash"]
 
         while not self.device_is_available(self.instance.platform.name):
+            logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
 
         hardware = self.get_available_device(self.instance.platform.name)
@@ -774,7 +775,6 @@ class DeviceHandler(Handler):
         harness.configure(self.instance)
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
-
 
         pre_script = hardware.get('pre_script')
         post_script = hardware.get('post_script')
@@ -1892,12 +1892,13 @@ class CMake():
         if p.returncode == 0:
             filter_results = self.parse_generated()
             msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
-
+            logger.debug(msg)
             results = {'msg': msg, 'filter': filter_results}
 
         else:
             self.instance.status = "failed"
             self.instance.reason = "Cmake build failure"
+            logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
 
         if out:
@@ -2465,7 +2466,7 @@ class TestSuite:
                          board_root)
 
             for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
-                logger.debug("Found plaform configuration " + file)
+                logger.debug("Found platform configuration " + file)
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -2891,6 +2892,7 @@ class TestSuite:
                     try:
                         data = future.result()
                     except Exception as exc:
+                        logger.error('%r generated an exception: %s' % (test, exc))
                         sys.exit('%r generated an exception: %s' % (test, exc))
 
                     else:
