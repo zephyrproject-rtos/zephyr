@@ -95,6 +95,30 @@ struct device *z_impl_device_get_binding(const char *name)
 	return NULL;
 }
 
+struct device *z_impl_device_get_by_prefix(const char *prefix, int idx)
+{
+	struct device *info;
+	int n = 0;
+	int len;
+
+	for (info = __device_init_start; info != __device_init_end; info++) {
+		if (info->driver_api == NULL || info->config->name == NULL) {
+			continue;
+		}
+
+		len = strnlen(prefix, Z_DEVICE_MAX_NAME_LEN);
+		if (strncmp(info->config->name, prefix, len) == 0) {
+			if (idx == n) {
+				return info;
+			}
+
+			n++;
+		}
+	}
+
+	return NULL;
+}
+
 #ifdef CONFIG_USERSPACE
 static inline struct device *z_vrfy_device_get_binding(const char *name)
 {
@@ -108,6 +132,20 @@ static inline struct device *z_vrfy_device_get_binding(const char *name)
 	return z_impl_device_get_binding(name_copy);
 }
 #include <syscalls/device_get_binding_mrsh.c>
+
+static inline struct device *z_vrfy_device_get_by_prefix(const char *prefix,
+							 int idx)
+{
+	char prefix_copy[Z_DEVICE_MAX_NAME_LEN];
+
+	if (z_user_string_copy(prefix_copy, (char *)prefix, sizeof(prefix_copy))
+	    != 0) {
+		return 0;
+	}
+
+	return z_impl_device_get_by_prefix(prefix_copy, idx);
+}
+#include <syscalls/device_get_by_prefix_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

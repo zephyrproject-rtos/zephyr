@@ -294,6 +294,21 @@ void z_sys_device_do_config_level(s32_t level);
 __syscall struct device *device_get_binding(const char *name);
 
 /**
+ * @brief Retrieve the device structure for a driver by prefix
+ *
+ * @details Device objects are created via the DEVICE_INIT() macro and
+ * placed in memory by the linker. If a driver needs to bind to another driver
+ * it can use this function to retrieve the device structure of the lower level
+ * driver by the prefix from the name the driver exposes to the system.
+ *
+ * @param prefix device name prefix to search for.
+ * @param idx device index to search for.
+ *
+ * @return pointer to device structure; NULL if not found or cannot be used.
+ */
+__syscall struct device *device_get_by_prefix(const char *prefix, int idx);
+
+/**
  * @}
  */
 
