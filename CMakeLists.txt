@@ -1479,6 +1479,8 @@ if(HEX_FILES_TO_MERGE)
 
   add_custom_target(mergehex ALL DEPENDS ${MERGED_HEX_NAME})
   list(APPEND FLASH_DEPS mergehex)
+
+  message(VERBOSE "Merging hex files: ${HEX_FILES_TO_MERGE}")
 endif()
 
 if(EMU_PLATFORM)
