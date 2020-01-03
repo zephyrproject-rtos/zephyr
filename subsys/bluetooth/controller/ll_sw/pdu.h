@@ -18,6 +18,8 @@
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
 /* Advertisement channel maximum PDU size */
 #define PDU_AC_SIZE_MAX        (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
+/* Advertisement channel Access Address */
+#define PDU_AC_ACCESS_ADDR     0x8e89bed6
 
 #define ACCESS_ADDR_SIZE        4
 #define ADVA_SIZE               6
