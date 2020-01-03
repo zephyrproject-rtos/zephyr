@@ -6,9 +6,3 @@ description: Texas Instruments TMP116 temperature sensor
 compatible: "ti,tmp116"
 
 include: i2c-device.yaml
-
-properties:
-    alert-gpios:
-      type: compound
-      required: false
-      description: ALERT pin
