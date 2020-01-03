@@ -326,10 +326,14 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	}
 
 	runtime_sn_len = strlen(runtime_sn);
+	if (!runtime_sn_len) {
+		return;
+	}
+
 	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
 
 	if (runtime_sn_len != default_sn_len) {
-		LOG_ERR("the new SN descriptor doesn't has the same "
+		LOG_ERR("the new SN descriptor doesn't have the same "
 			"length as CONFIG_USB_DEVICE_SN");
 		return;
 	}
