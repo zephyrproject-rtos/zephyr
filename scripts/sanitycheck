@@ -3361,11 +3361,16 @@ Artificially long but functional example:
         default=os.path.join(os.getcwd(), "sanity-out"),
         help="Output directory for logs and binaries. "
              "Default is 'sanity-out' in the current directory. "
-             "This directory will be deleted unless '--no-clean' is set.")
+             "This directory will be cleaned unless '--no-clean' is set. "
+             "The '--clobber-output' option controls what cleaning does.")
+    parser.add_argument(
+        "-c", "--clobber-output", action="store_true",
+        help="Cleaning the output directory will simply delete it instead "
+             "of the default policy of renaming.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
-        help="Do not delete the outdir before building. Will result in "
-             "faster compilation since builds will be incremental")
+        help="Re-use the outdir before building. Will result in "
+             "faster compilation since builds will be incremental.")
     case_select.add_argument(
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
@@ -3920,12 +3925,16 @@ def main():
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif os.path.exists(options.outdir):
-        for i in range(1, 100):
-            new_out = options.outdir + ".{}".format(i)
-            if not os.path.exists(new_out):
-                print("Renaming output directory to {}".format(new_out))
-                shutil.move(options.outdir, new_out)
-                break
+        if options.clobber_output:
+            print("Deleting output directory {}".format(options.outdir))
+            shutil.rmtree(options.outdir)
+        else:
+            for i in range(1, 100):
+                new_out = options.outdir + ".{}".format(i)
+                if not os.path.exists(new_out):
+                    print("Renaming output directory to {}".format(new_out))
+                    shutil.move(options.outdir, new_out)
+                    break
 
     os.makedirs(options.outdir, exist_ok=True)
 
