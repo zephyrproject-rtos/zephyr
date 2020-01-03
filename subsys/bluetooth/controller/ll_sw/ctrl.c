@@ -6603,7 +6603,7 @@ again:
 	 * It shall not be a sequence that differs from the advertising channel
 	 * packets Access Address by only one bit.
 	 */
-	adv_aa_check = access_addr ^ 0x8e89bed6;
+	adv_aa_check = access_addr ^ PDU_AC_ACCESS_ADDR;
 	if (util_ones_count_get((u8_t *)&adv_aa_check,
 				sizeof(adv_aa_check)) <= 1) {
 		goto again;
@@ -6719,7 +6719,7 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 		      u16_t lazy, void *context)
 {
 	u32_t remainder_us;
-	u32_t aa = 0x8e89bed6;
+	u32_t aa = PDU_AC_ACCESS_ADDR;
 
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
@@ -7151,7 +7151,7 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 {
 	u32_t remainder_us;
 	u32_t ret;
-	u32_t aa = 0x8e89bed6;
+	u32_t aa = PDU_AC_ACCESS_ADDR;
 
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);

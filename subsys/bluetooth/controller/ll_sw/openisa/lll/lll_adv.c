@@ -118,7 +118,7 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv *lll = prepare_param->param;
-	u32_t aa = sys_cpu_to_le32(0x8e89bed6);
+	u32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	u32_t ticks_at_event, ticks_at_start;
 	struct evt_hdr *evt;
 	u32_t remainder_us;

@@ -824,7 +824,7 @@ again:
 	 * It shall not be a sequence that differs from the advertising channel
 	 * packets Access Address by only one bit.
 	 */
-	adv_aa_check = aa ^ 0x8e89bed6;
+	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
 	if (util_ones_count_get((u8_t *)&adv_aa_check,
 				sizeof(adv_aa_check)) <= 1) {
 		goto again;
