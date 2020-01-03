@@ -80,9 +80,11 @@ static void test_starve(void)
 			     tag(), -(s32_t)ticks_diff);
 		last_ticks = ticks;
 
-		zassert_equal(na, 0,
+		u32_t na_capture = na;
+
+		zassert_equal(na_capture, 0,
 			      "%sTimer alarm fired: %u\n",
-			      na);
+			      na_capture);
 
 		k_timer_start(&tmr, K_MSEC(TIMER_DELAY_ms), K_NO_WAIT);
 
