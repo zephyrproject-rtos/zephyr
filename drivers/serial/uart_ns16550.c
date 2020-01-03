@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
+ * Copyright (c) 2020 Intel Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -203,19 +204,21 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define DEV_DATA(dev) \
 	((struct uart_ns16550_dev_data_t *)(dev)->driver_data)
 
-#define THR(dev) (DEV_DATA(dev)->port + REG_THR * UART_REG_ADDR_INTERVAL)
-#define RDR(dev) (DEV_DATA(dev)->port + REG_RDR * UART_REG_ADDR_INTERVAL)
-#define BRDL(dev) (DEV_DATA(dev)->port + REG_BRDL * UART_REG_ADDR_INTERVAL)
-#define BRDH(dev) (DEV_DATA(dev)->port + REG_BRDH * UART_REG_ADDR_INTERVAL)
-#define IER(dev) (DEV_DATA(dev)->port + REG_IER * UART_REG_ADDR_INTERVAL)
-#define IIR(dev) (DEV_DATA(dev)->port + REG_IIR * UART_REG_ADDR_INTERVAL)
-#define FCR(dev) (DEV_DATA(dev)->port + REG_FCR * UART_REG_ADDR_INTERVAL)
-#define LCR(dev) (DEV_DATA(dev)->port + REG_LCR * UART_REG_ADDR_INTERVAL)
-#define MDC(dev) (DEV_DATA(dev)->port + REG_MDC * UART_REG_ADDR_INTERVAL)
-#define LSR(dev) (DEV_DATA(dev)->port + REG_LSR * UART_REG_ADDR_INTERVAL)
-#define MSR(dev) (DEV_DATA(dev)->port + REG_MSR * UART_REG_ADDR_INTERVAL)
-#define DLF(dev) (DEV_DATA(dev)->port + REG_DLF)
-#define PCP(dev) (DEV_DATA(dev)->port + REG_PCP)
+#define THR(dev) (DEV_CFG(dev)->devconf.port + REG_THR * UART_REG_ADDR_INTERVAL)
+#define RDR(dev) (DEV_CFG(dev)->devconf.port + REG_RDR * UART_REG_ADDR_INTERVAL)
+#define BRDL(dev) \
+	(DEV_CFG(dev)->devconf.port + REG_BRDL * UART_REG_ADDR_INTERVAL)
+#define BRDH(dev) \
+	(DEV_CFG(dev)->devconf.port + REG_BRDH * UART_REG_ADDR_INTERVAL)
+#define IER(dev) (DEV_CFG(dev)->devconf.port + REG_IER * UART_REG_ADDR_INTERVAL)
+#define IIR(dev) (DEV_CFG(dev)->devconf.port + REG_IIR * UART_REG_ADDR_INTERVAL)
+#define FCR(dev) (DEV_CFG(dev)->devconf.port + REG_FCR * UART_REG_ADDR_INTERVAL)
+#define LCR(dev) (DEV_CFG(dev)->devconf.port + REG_LCR * UART_REG_ADDR_INTERVAL)
+#define MDC(dev) (DEV_CFG(dev)->devconf.port + REG_MDC * UART_REG_ADDR_INTERVAL)
+#define LSR(dev) (DEV_CFG(dev)->devconf.port + REG_LSR * UART_REG_ADDR_INTERVAL)
+#define MSR(dev) (DEV_CFG(dev)->devconf.port + REG_MSR * UART_REG_ADDR_INTERVAL)
+#define DLF(dev) (DEV_CFG(dev)->devconf.port + REG_DLF)
+#define PCP(dev) (DEV_CFG(dev)->devconf.port + REG_PCP)
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
@@ -248,14 +251,9 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define OUTBYTE(x, d) OUTWORD(x, d)
 #endif
 
-
+/* device config */
 struct uart_ns16550_device_config {
-	u32_t sys_clk_freq;
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_config_func_t	irq_config_func;
-#endif
-
+	struct uart_device_config devconf;
 #ifdef UART_NS16550_PCP_ENABLED
 	u32_t pcp;
 #endif
@@ -269,8 +267,7 @@ struct uart_ns16550_device_config {
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
-	u32_t port;
-	u32_t baud_rate;	/**< Baud rate */
+	struct uart_config uart_config;
 	u8_t options;	/**< Serial port options */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -293,12 +290,12 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 	u32_t divisor; /* baud rate divisor */
 	u8_t lcr_cache;
 
-	if ((baud_rate != 0U) && (dev_cfg->sys_clk_freq != 0U)) {
+	if ((baud_rate != 0U) && (dev_cfg->devconf.sys_clk_freq != 0U)) {
 		/*
 		 * calculate baud rate divisor. a variant of
 		 * (u32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
 		 */
-		divisor = ((dev_cfg->sys_clk_freq + (baud_rate << 3))
+		divisor = ((dev_cfg->devconf.sys_clk_freq + (baud_rate << 3))
 					/ baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
@@ -310,20 +307,12 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 		/* restore the DLAB to access the baud rate divisor registers */
 		OUTBYTE(LCR(dev), lcr_cache);
 
-		dev_data->baud_rate = baud_rate;
+		dev_data->uart_config.baudrate = baud_rate;
 	}
 }
 
-/**
- * @brief Initialize individual UART port
- *
- * This routine is called to reset the chip in a quiescent state.
- *
- * @param dev UART device struct
- *
- * @return 0 if successful, failed otherwise
- */
-static int uart_ns16550_init(struct device *dev)
+static int uart_ns16550_configure(struct device *dev,
+				const struct uart_config *cfg)
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
@@ -364,7 +353,7 @@ static int uart_ns16550_init(struct device *dev)
 	}
 #endif
 
-	set_baud_rate(dev, dev_data->baud_rate);
+	set_baud_rate(dev, dev_data->uart_config.baudrate);
 
 	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
 	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
@@ -396,8 +385,36 @@ static int uart_ns16550_init(struct device *dev)
 
 	irq_unlock(old_level);
 
+    return 0;
+};
+
+static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
+{
+	struct uart_ns16550_dev_data_t *data = DEV_DATA(dev);
+
+	cfg->baudrate = data->uart_config.baudrate;
+	cfg->parity = UART_CFG_PARITY_NONE;    /* use uart_config_parity */
+	cfg->stop_bits = UART_CFG_STOP_BITS_1; /* use uart_config_stop_bits */
+	cfg->data_bits = UART_CFG_DATA_BITS_8; /* use uart_config_data_bits */
+	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;/* use uart_config_flow_control */
+	return 0;
+}
+
+/**
+ * @brief Initialize individual UART port
+ *
+ * This routine is called to reset the chip in a quiescent state.
+ *
+ * @param dev UART device struct
+ *
+ * @return 0 if successful, failed otherwise
+ */
+static int uart_ns16550_init(struct device *dev)
+{
+    uart_ns16550_configure(dev, &DEV_DATA(dev)->uart_config);
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	DEV_CFG(dev)->irq_config_func(dev);
+	DEV_CFG(dev)->devconf.irq_config_func(dev);
 #endif
 
 	return 0;
@@ -757,6 +774,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	.poll_in = uart_ns16550_poll_in,
 	.poll_out = uart_ns16550_poll_out,
 	.err_check = uart_ns16550_err_check,
+	.configure = uart_ns16550_configure,
+	.config_get = uart_ns16550_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 	.fifo_fill = uart_ns16550_fifo_fill,
