@@ -787,7 +787,7 @@ static void spawn_user(void)
 
 	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
 			user_ctx_switch_half, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), K_INHERIT_PERMS | K_USER,
+			-1, K_INHERIT_PERMS | K_USER,
 			K_NO_WAIT);
 
 	k_sem_take(&uthread_end_sem, K_FOREVER);
