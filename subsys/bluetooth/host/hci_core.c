@@ -3055,6 +3055,11 @@ static void link_key_notify(struct net_buf *buf)
 		break;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND)) {
+		bt_keys_link_key_store(conn->br.link_key);
+	}
+
 	bt_conn_unref(conn);
 }
 

@@ -102,16 +102,25 @@ enum {
 
 struct bt_keys_link_key {
 	bt_addr_t               addr;
-	uint8_t                    flags;
-	uint8_t                    val[16];
+	uint8_t                 storage_start[0]  __aligned(sizeof(void *));
+	uint8_t                 flags;
+	uint8_t                 val[16];
+#if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
+	uint32_t                aging_counter;
+#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
+#define BT_KEYS_LINK_KEY_STORAGE_LEN     (sizeof(struct bt_keys_link_key) - \
+	offsetof(struct bt_keys_link_key, storage_start))
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr);
 void bt_keys_link_key_clear(struct bt_keys_link_key *link_key);
 void bt_keys_link_key_clear_addr(const bt_addr_t *addr);
+void bt_keys_link_key_store(struct bt_keys_link_key *link_key);
+
 
 /* This function is used to signal that the key has been used for paring */
 /* It updates the aging counter and saves it to flash if configuration option */
 /* BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING is enabled */
 void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr);
+void bt_keys_link_key_update_usage(const bt_addr_t *addr);
