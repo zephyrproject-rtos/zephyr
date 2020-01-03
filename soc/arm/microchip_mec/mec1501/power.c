@@ -75,7 +75,9 @@ static void z_power_soc_deep_sleep(void)
 	soc_deep_sleep_periph_restore();
 
 }
+#endif
 
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
 
 /*
  * Light Sleep
