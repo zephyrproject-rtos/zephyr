@@ -812,11 +812,14 @@ class DeviceHandler(Handler):
 
         t.join(self.timeout)
         if t.is_alive():
-            logger.debug("Timed out")
+            logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
             out_state = "timeout"
 
         if ser.isOpen():
             ser.close()
+
+        os.close(write_pipe)
+        os.close(read_pipe)
 
         handler_time = time.time() - start_time
 
