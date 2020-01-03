@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -14,32 +13,8 @@
 
 #include <usb/bos.h>
 
-/* Helpers */
-static void hexdump(const u8_t *data, size_t len)
-{
-	int n = 0;
-
-	while (len--) {
-		if (n % 16 == 0) {
-			printk("%08X ", n);
-		}
-
-		printk("%02X ", *data++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printk("\n");
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printk("\n");
-	}
-}
+#include <logging/log.h>
+LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 /*
  * Compare old style USB BOS definition with section aligned
@@ -203,9 +178,11 @@ static void test_usb_bos_macros(void)
 
 	/* usb_bos_fix_total_length(); corrected with register */
 
-	hexdump((void *)hdr, len);
-	hexdump((void *)&webusb_bos_descriptor, sizeof(cap_webusb));
-	hexdump((void *)&webusb_bos_descriptor_2, sizeof(cap_msosv2));
+	LOG_HEXDUMP_DBG((void *)hdr, len, "Header");
+	LOG_HEXDUMP_DBG((void *)&webusb_bos_descriptor, sizeof(cap_webusb),
+			"webusb cap");
+	LOG_HEXDUMP_DBG((void *)&webusb_bos_descriptor_2, sizeof(cap_msosv2),
+			"webusb cap msos v2");
 
 	zassert_true(len ==
 		     sizeof(struct usb_bos_descriptor) +
@@ -239,7 +216,7 @@ static void test_usb_bos(void)
 		     "Wrong data");
 }
 
-/*test case main entry*/
+/* test case main entry */
 void test_main(void)
 {
 	/* Prepare webusb_bos_descriptor_2 */
