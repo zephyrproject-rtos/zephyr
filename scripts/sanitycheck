@@ -1996,7 +1996,7 @@ class ProjectBuilder(FilterBuilder):
 
     @staticmethod
     def log_info(filename, inline_logs):
-        filename = os.path.relpath(os.path.realpath(filename))
+        filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
             logger.info("{:-^100}".format(filename))
 
