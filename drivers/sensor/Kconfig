@@ -22,6 +22,8 @@ config SENSOR_INIT_PRIORITY
 
 config SENSOR_SHELL
 	bool "Enable sensor shell"
+	depends on SHELL
+	default y
 	help
 	  This shell provides access to basic sensor data.
 
