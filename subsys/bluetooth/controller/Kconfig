@@ -38,6 +38,12 @@ config BT_CTLR_ADV_EXT_SUPPORT
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
+config BT_CTLR_MIN_USED_CHAN_SUPPORT
+	bool
+
+config BT_CTLR_DTM_HCI_SUPPORT
+	bool
+
 config BT_CTLR_XTAL_ADVANCED_SUPPORT
 	bool
 
@@ -90,6 +96,8 @@ config BT_LL_SW_LEGACY
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_DTM_HCI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
@@ -120,6 +128,8 @@ config BT_LLL_VENDOR_NORDIC
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_DTM_HCI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
@@ -333,16 +343,6 @@ comment "BLE Controller features"
 
 if BT_CONN
 
-config BT_CTLR_LLCP_CONN
-	int "Number of connections with worst-case overlapping procedures"
-	default 1
-	range 1 BT_MAX_CONN
-	help
-	  Set the number connections for which worst-case buffer requirements
-	  for LLCP procedures must be met. Executing LLCP procedures on
-	  more than this number of connections simultaneously may cause
-	  instabilities.
-
 config BT_CTLR_LE_ENC
 	bool "LE Encryption"
 	depends on BT_CTLR_LE_ENC_SUPPORT
@@ -450,6 +450,7 @@ config BT_CTLR_PHY
 
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
+	depends on BT_CTLR_MIN_USED_CHAN_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Minimum Number of Used Channels
@@ -488,9 +489,12 @@ config BT_CTLR_DTM
 
 config BT_CTLR_DTM_HCI
 	bool "Direct Test Mode over HCI"
+	depends on BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_DTM
 	help
 	  Enable support for Direct Test Mode over the HCI transport.
+
+if BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
 
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
@@ -728,6 +732,16 @@ config BT_CTLR_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
+config BT_CTLR_LLCP_CONN
+	int "Number of connections with worst-case overlapping procedures"
+	default 1
+	range 1 BT_MAX_CONN
+	help
+	  Set the number connections for which worst-case buffer requirements
+	  for LLCP procedures must be met. Executing LLCP procedures on
+	  more than this number of connections simultaneously may cause
+	  instabilities.
+
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
@@ -906,15 +920,6 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 
 comment "BLE Controller debug configuration"
 
-config BT_CTLR_ASSERT_HANDLER
-	bool "Application Defined Assertion Handler"
-	help
-	  This option enables an application-defined sink for the
-	  controller assertion mechanism. This must be defined in
-	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
-	  and will be invoked whenever the controller code encounters
-	  an unrecoverable error.
-
 config BT_CTLR_PROFILE_ISR
 	bool "Profile radio ISR"
 	help
@@ -930,5 +935,16 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
+
+endif # BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
+
+config BT_CTLR_ASSERT_HANDLER
+	bool "Application Defined Assertion Handler"
+	help
+	  This option enables an application-defined sink for the
+	  controller assertion mechanism. This must be defined in
+	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
+	  and will be invoked whenever the controller code encounters
+	  an unrecoverable error.
 
 endif # BT_CTLR
