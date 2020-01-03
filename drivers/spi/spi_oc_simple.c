@@ -68,6 +68,10 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 			break;
 		}
 
+    if (i == 12) {
+        i = 11;
+    }
+
 	sys_write8((DIVIDERS[i] >> 4) & 0x3, SPI_OC_SIMPLE_SPER(info));
 	spcr |= (DIVIDERS[i] & 0x3);
 
