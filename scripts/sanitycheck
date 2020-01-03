@@ -3918,12 +3918,12 @@ def main():
     # Cleanup
     if options.no_clean or options.only_failed or options.test_only:
         if os.path.exists(options.outdir):
-            logger.info("Keeping artifacts untouched")
+            print("Keeping artifacts untouched")
     elif os.path.exists(options.outdir):
         for i in range(1, 100):
             new_out = options.outdir + ".{}".format(i)
             if not os.path.exists(new_out):
-                logger.info("Renaming output directory to {}".format(new_out))
+                print("Renaming output directory to {}".format(new_out))
                 shutil.move(options.outdir, new_out)
                 break
 
