@@ -105,7 +105,7 @@ enum power_states _sys_suspend(s32_t ticks)
 #if CONFIG_DEVICE_POWER_MANAGEMENT
 		/* Suspend peripherals. */
 		if (sys_pm_suspend_devices()) {
-			LOG_ERR("System level device suspend failed!");
+			LOG_DBG("Some devices didn't enter suspend state!");
 			sys_pm_notify_power_state_exit(pm_state);
 			pm_state = SYS_POWER_STATE_ACTIVE;
 			return pm_state;
