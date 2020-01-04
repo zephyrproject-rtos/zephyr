@@ -413,7 +413,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	case PPP_PROTOCOL_REJ:
 		len = sizeof(ppp) + sizeof(u16_t) +
 			net_pkt_remaining_data(req_pkt);
-		protocol = data_len;
+		protocol = PPP_LCP;
 		break;
 
 	case PPP_TERMINATE_REQ:
@@ -500,9 +500,9 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		fsm ? fsm->name : "?", fsm, net_pkt_get_len(pkt), pkt,
 		data_len);
 
-	if (fsm) {
-		net_pkt_set_ppp(pkt, true);
+	net_pkt_set_ppp(pkt, true);
 
+	if (fsm) {
 		/* Do not call net_send_data() directly in order to make this
 		 * thread run before the sending happens. If we call the
 		 * net_send_data() from this thread, then in fast link (like
@@ -1151,7 +1151,7 @@ void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
 		goto quit;
 	}
 
-	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, protocol);
+	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, 0);
 
 quit:
 	return;
