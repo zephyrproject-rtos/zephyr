@@ -76,6 +76,8 @@ def main():
 
     print("Devicetree configuration written to " + args.conf_out)
 
+    conf_file.close()
+    header_file.close()
 
 def parse_args():
     # Returns parsed command-line arguments
