@@ -603,7 +603,7 @@ struct rtio_output_config {
 	struct k_fifo *fifo;
 
 	/**
-	 *@brief Timeout in cycles
+	 *@brief Timeout in milliseconds
 	 *
 	 * This timeout is used with a k_timer to ensure a block is produced
 	 * at some maximum allowable timeout whether empty or not. This is
@@ -625,7 +625,7 @@ struct rtio_output_config {
 	 *
 	 * If set to K_FOREVER no k_timeout is started.
 	 */
-	u32_t timeout;
+	s32_t timeout;
 
 	/**
 	 * @brief The number of bytes to read before making the block ready
