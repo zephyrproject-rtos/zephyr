@@ -19,7 +19,7 @@
 
 void __weak arch_cpu_idle(void)
 {
-	irq_unlock(SOC_MSTATUS_IEN);
+	irq_unlock(MSTATUS_IEN);
 }
 
 void __weak arch_cpu_atomic_idle(unsigned int key)

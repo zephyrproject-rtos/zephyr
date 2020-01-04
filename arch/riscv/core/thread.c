@@ -45,7 +45,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *
 	 * Given that context switching is performed via a system call exception
 	 * within the RISCV architecture implementation, initially set:
-	 * 1) MSTATUS to SOC_MSTATUS_DEF_RESTORE in the thread stack to enable
+	 * 1) MSTATUS to MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
 	 * 2) MEPC to the address of the z_thread_entry_wrapper in the thread
 	 *    stack.
@@ -57,7 +57,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
-	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
+	stack_init->mstatus = MSTATUS_DEF_RESTORE;
 	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
 
 	thread->callee_saved.sp = (ulong_t)stack_init;

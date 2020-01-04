@@ -45,10 +45,10 @@ static inline void vexriscv_litex_irq_setie(u32_t ie)
 {
 	if (ie) {
 		__asm__ volatile ("csrrs x0, mstatus, %0"
-				:: "r"(SOC_MSTATUS_IEN));
+				:: "r"(MSTATUS_IEN));
 	} else {
 		__asm__ volatile ("csrrc x0, mstatus, %0"
-				:: "r"(SOC_MSTATUS_IEN));
+				:: "r"(MSTATUS_IEN));
 	}
 }
 

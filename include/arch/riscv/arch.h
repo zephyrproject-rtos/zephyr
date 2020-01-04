@@ -40,6 +40,24 @@
 #define RV_REGSHIFT 2
 #endif
 
+/* Common mstatus bits. All supported cores today have the same
+ * layouts.
+ */
+
+#define MSTATUS_IEN	(1UL << 3)
+#define MSTATUS_MPP_M	(3UL << 11)
+#define MSTATUS_MPIE_EN (1UL << 7)
+
+/* This comes from openisa_rv32m1, but doesn't seem to hurt on other
+ * platforms:
+ * - Preserve machine privileges in MPP. If you see any documentation
+ *   telling you that MPP is read-only on this SoC, don't believe its
+ *   lies.
+ * - Enable interrupts when exiting from exception into a new thread
+ *   by setting MPIE now, so it will be copied into IE on mret.
+ */
+#define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
 
@@ -96,10 +114,10 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (SOC_MSTATUS_IEN)
+			  : "r" (MSTATUS_IEN)
 			  : "memory");
 
-	key = (mstatus & SOC_MSTATUS_IEN);
+	key = (mstatus & MSTATUS_IEN);
 	return key;
 }
 
@@ -113,7 +131,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 
 	__asm__ volatile ("csrrs %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (key & SOC_MSTATUS_IEN)
+			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
 }
 
@@ -126,7 +144,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	 * that something elseswhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
-	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
+	return (key & MSTATUS_IEN) == MSTATUS_IEN;
 }
 
 static ALWAYS_INLINE void arch_nop(void)
