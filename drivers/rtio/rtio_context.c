@@ -54,16 +54,15 @@ int rtio_context_configure_begin(struct rtio_context *ctx)
 void rtio_context_configure_end(struct rtio_context *ctx,
 				struct rtio_config *config)
 {
+	s32_t timeout;
+
 	memcpy(&ctx->config, config, sizeof(struct rtio_config));
 
 	/* Setup timer if needed */
 	k_timer_stop(&ctx->output_timer);
-	if (ctx->config.output_config.timeout != K_FOREVER
-	    || ctx->config.output_config.timeout != K_NO_WAIT) {
-		u32_t timeout_ns = SYS_CLOCK_HW_CYCLES_TO_NS(ctx->config.output_config.timeout);
-		s32_t timeout_ms = timeout_ns/1000000;
-
-		k_timer_start(&ctx->output_timer, timeout_ms, timeout_ms);
+	timeout = ctx->config.output_config.timeout;
+	if (timeout != K_FOREVER && timeout != K_NO_WAIT) {
+		k_timer_start(&ctx->output_timer, timeout, timeout);
 	}
 
 	k_sem_give(&ctx->sem);
