@@ -98,7 +98,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save SOC-specific MSTATUS register */
-	csrr t0, SOC_MSTATUS_REG
+	csrr t0, mstatus
 	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -426,7 +426,7 @@ no_reschedule:
 
 	/* Restore SOC-specific MSTATUS register */
 	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
-	csrw SOC_MSTATUS_REG, t0
+	csrw mstatus, t0
 
 	/* Restore caller-saved registers from thread stack */
 	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)
