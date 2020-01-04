@@ -150,8 +150,7 @@ static int lvgl_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct device *display_dev =
-		device_get_binding(CONFIG_LVGL_DISPLAY_DEV_NAME);
+	struct device *display_dev = device_get_by_prefix("DISPLAY", 0);
 	lv_disp_drv_t disp_drv;
 
 	if (display_dev == NULL) {

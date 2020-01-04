@@ -12,12 +12,6 @@ module = LVGL
 module-str = lvgl
 source "subsys/logging/Kconfig.template.log_config"
 
-config LVGL_DISPLAY_DEV_NAME
-	string "Display device name"
-	default "DISPLAY"
-	help
-	  Name of the display device to use for rendering.
-
 config LVGL_HOR_RES
 	int "Horizontal Screen Resolution"
 	default 320

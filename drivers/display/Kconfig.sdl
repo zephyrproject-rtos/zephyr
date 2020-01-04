@@ -14,7 +14,7 @@ if SDL_DISPLAY
 
 config SDL_DISPLAY_DEV_NAME
 	string "SDL display device name"
-	default "SDL_DISPLAY"
+	default "DISPLAY_SDL"
 
 config SDL_DISPLAY_X_RES
 	int "X resolution for SDL display"

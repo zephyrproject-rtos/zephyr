@@ -211,7 +211,7 @@
 			compatible = "fsl,imx6sx-lcdif";
 			reg = <0x402b8000 0x4000>;
 			interrupts = <42 0>;
-			label = "ELCDIF_1";
+			label = "DISPLAY_ELCDIF_1";
 			status = "disabled";
 		};
 

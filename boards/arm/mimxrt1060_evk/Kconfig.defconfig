@@ -56,9 +56,6 @@ endif # NETWORKING
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ELCDIF_1"
-
 config LVGL_HOR_RES
 	default 480
 

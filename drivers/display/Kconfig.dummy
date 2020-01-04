@@ -12,7 +12,7 @@ if DUMMY_DISPLAY
 
 config DUMMY_DISPLAY_DEV_NAME
 	string "Dummy display device name"
-	default "DUMMY_DISPLAY"
+	default "DISPLAY_DUMMY"
 
 config DUMMY_DISPLAY_X_RES
 	int "X resolution for dummy display"

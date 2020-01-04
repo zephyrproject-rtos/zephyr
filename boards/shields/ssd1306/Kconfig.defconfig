@@ -13,9 +13,6 @@ config SSD1306
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "SSD1306"
-
 config LVGL_HOR_RES
 	default 128
 

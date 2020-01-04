@@ -13,9 +13,6 @@ config ILI9340
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ILI9340"
-
 config LVGL_HOR_RES
 	default 320
 

@@ -9,18 +9,6 @@
 #include <display/cfb.h>
 #include <stdio.h>
 
-#if defined(CONFIG_SSD16XX)
-#define DISPLAY_DRIVER		"SSD16XX"
-#endif
-
-#if defined(CONFIG_SSD1306)
-#define DISPLAY_DRIVER		"SSD1306"
-#endif
-
-#ifndef DISPLAY_DRIVER
-#define DISPLAY_DRIVER		"DISPLAY"
-#endif
-
 void main(void)
 {
 	struct device *dev;
@@ -29,7 +17,7 @@ void main(void)
 	u8_t font_width;
 	u8_t font_height;
 
-	dev = device_get_binding(DISPLAY_DRIVER);
+	dev = device_get_by_prefix("DISPLAY", 0);
 
 	if (dev == NULL) {
 		printf("Device not found\n");
@@ -41,7 +29,7 @@ void main(void)
 		return;
 	}
 
-	printf("initialized %s\n", DISPLAY_DRIVER);
+	printf("Device label %s\n", dev->config->name);
 
 	if (cfb_framebuffer_init(dev)) {
 		printf("Framebuffer initialization failed!\n");

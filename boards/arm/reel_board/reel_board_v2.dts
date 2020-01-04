@@ -36,7 +36,7 @@
 
 	ssd16xxfb@0 {
 		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
-		label = "SSD16XX";
+		label = "DISPLAY_SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;

@@ -11,7 +11,7 @@
 
 	ili9340@0 {
 		compatible = "ilitek,ili9340";
-		label = "ILI9340";
+		label = "DISPLAY_ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 0>;	/* D9 */
