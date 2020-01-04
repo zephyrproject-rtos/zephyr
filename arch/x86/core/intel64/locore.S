@@ -310,8 +310,12 @@ __resume:
 	jz 1f
 	swapgs
 #endif /* CONFIG_USERSPACE */
-
-1:	iretq
+1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+	iretq
 
 
 
@@ -329,6 +333,10 @@ except: /*
 	jz 1f
 	swapgs
 1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
 #endif /* CONFIG_USERSPACE */
 	pushq %r15
 	subq $X86_FXSAVE_SIZE, %rsp
@@ -427,6 +435,10 @@ irq:
 	jz 1f
 	swapgs
 1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
 #endif /* CONFIG_USERSPACE */
 	pushq %rsi
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
