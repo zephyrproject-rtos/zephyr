@@ -11,7 +11,7 @@ menuconfig ST7789V
 
 if ST7789V
 
-choice
+choice ST7789V_PIXEL_FORMAT
 	prompt "Color pixel format"
 	default ST7789V_RGB565
 	help
