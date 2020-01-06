@@ -69,7 +69,6 @@
 	status = "okay";
 };
 
-
 &iwdg {
 	status = "okay";
 };

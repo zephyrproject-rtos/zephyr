@@ -102,7 +102,6 @@
 	scl-pin = <28>;
 };
 
-
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
