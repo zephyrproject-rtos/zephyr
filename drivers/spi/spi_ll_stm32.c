@@ -102,14 +102,6 @@ static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
 	}
 #endif
 
-	if (xfer_16 && spi_context_tx_buf_on(ctx)) {
-		tx_frame = UNALIGNED_GET((u16_t *)(ctx->tx_buf));
-		spi_context_update_tx(ctx, 1, 2);
-	} else if (spi_context_tx_buf_on(ctx)) {
-		tx_frame = UNALIGNED_GET((u8_t *)(ctx->tx_buf));
-		spi_context_update_tx(ctx, 1, 1);
-	}
-
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
@@ -125,6 +117,14 @@ static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
 		}
 	}
 #endif
+
+	if (xfer_16 && spi_context_tx_on(ctx)) {
+		tx_frame = UNALIGNED_GET((u16_t *)(ctx->tx_buf));
+		spi_context_update_tx(ctx, 1, 2);
+	} else if (spi_context_tx_on(ctx)) {
+		tx_frame = UNALIGNED_GET((u8_t *)(ctx->tx_buf));
+		spi_context_update_tx(ctx, 1, 1);
+	}
 
 	if (xfer_16) {
 		LL_SPI_TransmitData16(spi, tx_frame);
@@ -140,14 +140,14 @@ static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
 		rx_frame = LL_SPI_ReceiveData16(spi);
 		if (spi_context_rx_buf_on(ctx)) {
 			UNALIGNED_PUT(rx_frame, (u16_t *)ctx->rx_buf);
-			spi_context_update_rx(ctx, 1, 2);
 		}
+		spi_context_update_rx(ctx, 1, 2);
 	} else {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_buf_on(ctx)) {
 			UNALIGNED_PUT(rx_frame, (u8_t *)ctx->rx_buf);
-			spi_context_update_rx(ctx, 1, 1);
 		}
+		spi_context_update_rx(ctx, 1, 1);
 	}
 }
 
@@ -156,11 +156,6 @@ static inline void spi_stm32_shift_m16(SPI_TypeDef *spi,
 {
 	u16_t tx_frame = SPI_STM32_TX_NOP;
 	u16_t rx_frame;
-
-	if (spi_context_tx_buf_on(&data->ctx)) {
-		tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
-		spi_context_update_tx(&data->ctx, 2, 1);
-	}
 
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
@@ -178,6 +173,11 @@ static inline void spi_stm32_shift_m16(SPI_TypeDef *spi,
 	}
 #endif
 
+	if (spi_context_tx_on(&data->ctx)) {
+		tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+		spi_context_update_tx(&data->ctx, 2, 1);
+	}
+
 	LL_SPI_TransmitData16(spi, tx_frame);
 
 	while (!ll_func_rx_is_not_empty(spi)) {
@@ -188,8 +188,9 @@ static inline void spi_stm32_shift_m16(SPI_TypeDef *spi,
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
-		spi_context_update_rx(&data->ctx, 2, 1);
 	}
+	spi_context_update_rx(&data->ctx, 2, 1);
+
 }
 
 /* Shift a SPI frame as slave. */
