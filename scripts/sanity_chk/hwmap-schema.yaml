@@ -27,6 +27,9 @@ sequence:
       "post_script":
         type: str
         required: false
+      "post_flash_script":
+        type: str
+        required: false
       "pre_script":
         type: str
         required: false
