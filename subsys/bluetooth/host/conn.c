@@ -2200,9 +2200,24 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 start_scan:
 	bt_conn_set_param_le(conn, param);
 
-	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+#if defined(CONFIG_BT_SMP)
+	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
-	bt_le_scan_update(true);
+		bt_le_scan_update(true);
+
+		return conn;
+	}
+#endif
+	if (bt_le_direct_conn(conn)) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+
+		bt_le_scan_update(false);
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
 
 	return conn;
 }

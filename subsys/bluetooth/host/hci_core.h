@@ -185,6 +185,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
 int bt_le_scan_update(bool fast_scan);
 
+int bt_le_direct_conn(const struct bt_conn *conn);
 int bt_le_auto_conn(const struct bt_le_conn_param *conn_param);
 int bt_le_auto_conn_cancel(void);
 
