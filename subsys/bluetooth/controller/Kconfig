@@ -147,6 +147,7 @@ config BT_LLL_VENDOR_OPENISA
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_HAS_HCI_VS
 	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT
 	default y
 	help
 	  Use OpenISA Lower Link Layer implementation.
@@ -403,9 +404,11 @@ config BT_CTLR_RL_SIZE
 	depends on BT_CTLR_PRIVACY
 	default 8
 	range 1 8 if SOC_COMPATIBLE_NRF
+	range 1 8 if SOC_OPENISA_RV32M1_RISCV32
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
+	  On OpenISA-based controllers, the hardware imposes a limit of 8 devices.
 
 config BT_CTLR_EXT_SCAN_FP
 	bool "LE Extended Scanner Filter Policies"

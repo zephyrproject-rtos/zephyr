@@ -23,7 +23,8 @@ config BT_CTLR
 
 config HAS_RV32M1_CAU3_BLE
 	bool
-	default y if BT_CTLR_CRYPTO && BT_CTLR_LE_ENC_SUPPORT
+	default y if BT_CTLR_CRYPTO && \
+		(BT_CTLR_LE_ENC_SUPPORT || BT_CTLR_PRIVACY_SUPPORT)
 
 config RV32M1_INTMUX_CHANNEL_2
 	default n
