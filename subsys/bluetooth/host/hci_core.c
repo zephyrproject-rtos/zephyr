@@ -813,8 +813,7 @@ int bt_le_auto_conn_cancel(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
 }
 #endif /* defined(CONFIG_BT_WHITELIST) */
-
-static int hci_le_create_conn(const struct bt_conn *conn)
+int bt_le_direct_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
@@ -1634,7 +1633,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
-	if (hci_le_create_conn(conn)) {
+	if (bt_le_direct_conn(conn)) {
 		goto failed;
 	}
 
