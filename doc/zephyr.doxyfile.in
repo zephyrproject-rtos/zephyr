@@ -1960,35 +1960,35 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
-                         "CONFIG_THREAD_MONITOR=y" \
-                         "CONFIG_SCHED_CPU_MASK=y" \
-                         "CONFIG_SCHED_DEADLINE=y" \
-                         "CONFIG_NET_MGMT_EVENT=y" \
-			 "CONFIG_NET_UDP=y" \
-			 "CONFIG_NET_TCP=y" \
-			 "CONFIG_NET_L2_ETHERNET_MGMT=y" \
-                         "CONFIG_THREAD_CUSTOM_DATA=y" \
-			 "CONFIG_SCHED_DEADLINE=y" \
-                         "CONFIG_ERRNO=y" \
-                         "CONFIG_THREAD_STACK_INFO=y" \
-                         "CONFIG_UART_INTERRUPT_DRIVEN=y" \
-                         "CONFIG_UART_DRV_CMD=y" \
-                         "CONFIG_SYS_POWER_MANAGEMENT=y" \
-                         "CONFIG_DEVICE_POWER_MANAGEMENT=y" \
-                         "CONFIG_BT_SMP=y" \
-                         "CONFIG_BT_REMOTE_INFO=y" \
-                         "CONFIG_USERSPACE=y" \
-                         "CONFIG_BT_BREDR=y" \
-                         "CONFIG_FLASH_PAGE_LAYOUT=y" \
-                         "CONFIG_BT_MESH_MODEL_EXTENSIONS=y" \
-                         "CONFIG_SMP=y" \
-                         "CONFIG_FLOAT=y" \
-                         "CONFIG_FP_SHARING=y" \
-                         "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT=y" \
-                         "CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y" \
-                         "CONFIG_USE_SWITCH=y" \
-                         "CONFIG_EXECUTION_BENCHMARKING=y" \
+PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
+                         "CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN" \
+                         "CONFIG_BT_BREDR" \
+                         "CONFIG_BT_MESH_MODEL_EXTENSIONS" \
+                         "CONFIG_BT_REMOTE_INFO" \
+                         "CONFIG_BT_SMP" \
+                         "CONFIG_DEVICE_POWER_MANAGEMENT" \
+                         "CONFIG_ERRNO" \
+                         "CONFIG_EXECUTION_BENCHMARKING" \
+                         "CONFIG_FLASH_PAGE_LAYOUT" \
+                         "CONFIG_FLOAT" \
+                         "CONFIG_FP_SHARING" \
+                         "CONFIG_NET_L2_ETHERNET_MGMT" \
+                         "CONFIG_NET_MGMT_EVENT" \
+                         "CONFIG_NET_TCP" \
+                         "CONFIG_NET_UDP" \
+                         "CONFIG_SCHED_CPU_MASK" \
+                         "CONFIG_SCHED_DEADLINE" \
+                         "CONFIG_SCHED_DEADLINE" \
+                         "CONFIG_SMP" \
+                         "CONFIG_SYS_CLOCK_EXISTS" \
+                         "CONFIG_SYS_POWER_MANAGEMENT" \
+                         "CONFIG_THREAD_CUSTOM_DATA" \
+                         "CONFIG_THREAD_MONITOR" \
+                         "CONFIG_THREAD_STACK_INFO" \
+                         "CONFIG_UART_DRV_CMD" \
+                         "CONFIG_UART_INTERRUPT_DRIVEN" \
+                         "CONFIG_USERSPACE" \
+                         "CONFIG_USE_SWITCH" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
                          "DEVICE_DEFINE()=" \
                          "DEVICE_AND_API_INIT()=" \
