@@ -777,6 +777,7 @@ class DeviceHandler(Handler):
         start_time = time.time()
 
         pre_script = hardware.get('pre_script')
+        post_flash_script = hardware.get('post_flash_script')
         post_script = hardware.get('post_script')
 
         if pre_script:
@@ -809,6 +810,10 @@ class DeviceHandler(Handler):
 
         except subprocess.CalledProcessError:
             os.write(write_pipe, b'x')  # halt the thread
+
+        if post_flash_script:
+            self.run_custom_script(post_flash_script, 30)
+
 
         t.join(self.timeout)
         if t.is_alive():
