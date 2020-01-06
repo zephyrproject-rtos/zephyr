@@ -26,6 +26,10 @@ if(LIBC_LIBRARY_DIR)
   set(LIBC_LIBRARY_DIR_FLAG -L${LIBC_LIBRARY_DIR})
 endif()
 
+# Enable GNU extensions support in the newlib. This is required to allow the
+# use of various de facto standard functions, such as `strnlen`.
+zephyr_compile_definitions(_GNU_SOURCE)
+
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
