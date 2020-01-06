@@ -79,8 +79,9 @@ static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
 	struct spi_context *ctx = &(data->ctx);
 	u16_t tx_frame = SPI_STM32_TX_NOP;
 	u16_t rx_frame;
-	bool xfer_16;
+	bool xfer_16 = false;
 
+#ifdef CONFIG_SPI_STM32_8BITS_MODE_16BITS_TX
 	if (spi_context_tx_buf_on(ctx) && spi_context_rx_buf_on(ctx)) {
 		xfer_16 = (MIN(ctx->tx_len, ctx->rx_len) > 1) ? true : false;
 	} else if (spi_context_tx_buf_on(ctx)) {
@@ -91,6 +92,7 @@ static inline void spi_stm32_shift_m8(SPI_TypeDef *spi,
 		/* Should never get here, but place case for it anyways */
 		return;
 	}
+#endif /* CONFIG_SPI_STM32_8BITS_MODE_16BITS_TX */
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	if (xfer_16) {
