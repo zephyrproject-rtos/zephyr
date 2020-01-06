@@ -12,15 +12,15 @@
  */
 
 / {
-    chosen {
-      /* shared memory reserved for the inter-processor communication */
-      zephyr,ipc_shm = &sram0_shared;
-    };
+	chosen {
+		/* shared memory reserved for the inter-processor communication */
+		zephyr,ipc_shm = &sram0_shared;
+	};
 
-    /* SRAM allocated to shared memory */
-    sram0_shared: memory@20010000 {
-      device_type = "memory";
-      compatible = "mmio-sram";
-      reg = <0x20010000 DT_SIZE_K(64)>;
-    };
-  };
+	/* SRAM allocated to shared memory */
+	sram0_shared: memory@20010000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20010000 DT_SIZE_K(64)>;
+	};
+};

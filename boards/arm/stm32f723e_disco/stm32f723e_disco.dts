@@ -64,7 +64,6 @@ arduino_serial: &usart2 {};
 	status = "okay";
 };
 
-
 &i2c1 {
 	status = "okay";
 };

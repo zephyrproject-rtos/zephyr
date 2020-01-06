@@ -59,7 +59,7 @@
 };
 
 &spi2 {
-      status = "okay";
+	status = "okay";
 };
 
 &timers1 {

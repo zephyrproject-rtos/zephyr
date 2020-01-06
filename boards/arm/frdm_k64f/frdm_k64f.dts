@@ -205,7 +205,6 @@ arduino_spi: &spi0 {
 	};
 };
 
-
 &can0 {
 	status = "okay";
 	bus-speed = <125000>;

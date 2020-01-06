@@ -62,13 +62,12 @@
 };
 
 &spi1 {
-      status = "okay";
+	status = "okay";
 };
 
 &spi2 {
-      status = "okay";
+	status = "okay";
 };
-
 
 &iwdg {
 	status = "okay";
