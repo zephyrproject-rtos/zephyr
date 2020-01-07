@@ -181,10 +181,9 @@ void test_icmpv4(void)
 
 	pkt = net_pkt_alloc_with_buffer(NULL, sizeof(icmpv4_echo_req),
 					AF_UNSPEC, 0, K_SECONDS(1));
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
 	zassert_not_null(pkt, "Allocation failed");
 
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_write(pkt, icmpv4_echo_req, sizeof(icmpv4_echo_req));
 
 	net_pkt_cursor_init(pkt);
@@ -214,10 +213,9 @@ void test_icmpv4(void)
 
 	pkt = net_pkt_alloc_with_buffer(NULL, sizeof(icmpv4_echo_rep),
 					AF_UNSPEC, 0, K_SECONDS(1));
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
 	zassert_not_null(pkt, "Allocation failed");
 
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_write(pkt, icmpv4_echo_rep, sizeof(icmpv4_echo_rep));
 
 	net_pkt_cursor_init(pkt);
@@ -247,10 +245,9 @@ void test_icmpv4(void)
 
 	pkt = net_pkt_alloc_with_buffer(NULL, sizeof(icmpv4_echo_req_opt),
 					AF_UNSPEC, 0, K_SECONDS(1));
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
 	zassert_not_null(pkt, "Allocation failed");
 
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_write(pkt, icmpv4_echo_req_opt, sizeof(icmpv4_echo_req_opt));
 
 	net_pkt_cursor_init(pkt);
