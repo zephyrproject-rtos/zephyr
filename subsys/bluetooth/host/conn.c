@@ -2293,19 +2293,6 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 	if (conn) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_DIR_ADV:
-			/* Handle the case when advertising is stopped with
-			 * bt_le_adv_stop function
-			 */
-			err = bt_le_adv_start_internal(&param_int, NULL, 0,
-						       NULL, 0, peer);
-			if (err && (err != -EALREADY)) {
-				BT_WARN("Directed advertising could not be"
-					" started: %d", err);
-				bt_conn_unref(conn);
-				return NULL;
-			}
-
-		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
 		case BT_CONN_DISCONNECTED:
