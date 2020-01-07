@@ -5992,6 +5992,16 @@ int bt_le_adv_stop(void)
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		struct bt_conn *conn;
+
+		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_DIR_ADV);
+		if (conn) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+		}
+	}
+
 	err = set_advertise_enable(false);
 	if (err) {
 		return err;
