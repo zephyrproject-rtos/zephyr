@@ -1980,6 +1980,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_SCHED_DEADLINE" \
                          "CONFIG_SCHED_DEADLINE" \
                          "CONFIG_SMP" \
+                         "CONFIG_SPI_ASYNC" \
                          "CONFIG_SYS_CLOCK_EXISTS" \
                          "CONFIG_SYS_POWER_MANAGEMENT" \
                          "CONFIG_THREAD_CUSTOM_DATA" \
