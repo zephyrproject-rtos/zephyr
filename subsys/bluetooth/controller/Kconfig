@@ -482,7 +482,7 @@ config BT_ADV_SET
 	  Maximum supported advertising sets.
 
 config BT_CTLR_DTM
-	bool
+	bool "Direct Test Mode"
 	help
 	  Enable support for Direct Test Mode in the Controller.
 
