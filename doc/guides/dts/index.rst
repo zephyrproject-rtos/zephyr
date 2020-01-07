@@ -191,40 +191,176 @@ more detail.
 
    Devicetree input (green) and output (yellow) files
 
-DTS files usually have ``.dts`` or ``.dtsi`` (for Devicetree Source Include)
-extensions. Zephyr's build system looks for a file named :file:`BOARD.dts` in
-the board definition directory; this file contains the board's base
-devicetree. See :ref:`dt_k6x_example` for real-world examples.
+DTS files usually have a :file:`.dts`, :file:`.dtsi` (*i* for *include*), or
+:file:`.overlay` extension. The C preprocessor is run on all devicetree files
+to expand macro references. :file:`.dts` files usually include :file:`.dtsi`
+files via the C preprocessor with ``#include``.
 
-The build system combines the board's DTS with additional input files called
-*overlays* to produce a final devicetree source file. Overlays are also written
-in the DTS format, but have a :file:`.overlay` extension to make it clear that
-they're overlays. You can specify the overlay files to use at build time using
-the :makevar:`DTC_OVERLAY_FILE` CMake variable described in
-:ref:`important-build-vars`. The build system also looks for devicetree
-overlays in several locations by default; see :ref:`application_dt` for the
-list.
+.. note::
 
-Overlays can be used to add or delete nodes from the tree, or to modify node
-properties and their values. Along with Kconfig, devicetree overlays let you
-reconfigure the kernel and device drivers without modifying their source code.
+   DTS also also has a native mechanism, ``/include/ "<filename>"``, for
+   including other files, though it is less commonly used.
 
-Before they are combined, the C preprocessor is run on :file:`BOARD.dts` and any
-overlays. This allows these files to use C macros and include directives.
+Each board has a base devicetree, stored in the board's directory in
+:file:`boards/` as :file:`BOARD.dts`. This base devicetree can be extended or
+modified with one or more *overlays* -- DTS files with a :file:`.overlay`
+extension. Overlays adapt the base devicetree for different board variants or
+applications. Along with :ref:`kconfig`, this makes it possible to reconfigure
+the kernel and device drivers without modifying source code.
 
-The combined devicetree is written to a DTS file named
-:file:`BOARD.dts_compiled` in the application build directory. This file
-contains the final devicetree.
+The build system automatically picks up :file:`.overlay` files stored in
+certain locations. It is also possible to explicitly list the overlays to
+include, via the :makevar:`DTC_OVERLAY_FILE` CMake variable. See
+:ref:`application_dt` and :ref:`important-build-vars` for details.
 
-This devicetree and the set of :ref:`bindings` are then used to generate C
-definitions using scripts in :zephyr_file:`scripts/dts/`. These definitions can
-be included via the ``generated_dts_board.h`` header file, which the build
-system places on the C preprocessor include path. This file is not generated;
-it is in :zephyr_file:`include/generated_dts_board.h`.  (Its name was chosen
-for backwards compatibility.)
+After running the C preprocessor, the resulting :file:`BOARD.dts` and
+:file:`.overlay` files are combined by concatenating them, with the overlays
+put last. This relies on DTS merging multiple definitions of nodes. See
+:ref:`dt_k6x_example` for an example of how this works (in the context of
+``.dtsi`` files, but the principle is the same for overlays). Putting the
+contents of the :file:`.overlay` files last allows them to override properties
+from the base devicetree, if needed.
 
-**Do not include the generated C headers in the build directory directly**. Use
-``generated_dts_board.h`` instead.
+.. note::
+
+   The preprocessed and concatenated DTS sources are stored in
+   :file:`zephyr/BOARD.dts.pre.tmp` in the build directory. Looking at this
+   file can be handy for debugging.
+
+The merged devicetree, along with any :ref:`bindings <bindings>` referenced
+from it, is used to generate C preprocessor macros. This is handled by the
+libraries and scripts listed below, located in :zephyr_file:`scripts/dts/`.
+Note that the source code has extensive comments and documentation.
+
+:zephyr_file:`dtlib.py <scripts/dts/dtlib.py>`
+    A low-level DTS parsing library
+
+:zephyr_file:`edtlib.py <scripts/dts/edtlib.py>`
+    A library layered on top of dtlib that uses bindings to interpret
+    properties and give a higher-level view of the devicetree. Uses dtlib to do
+    the DTS parsing.
+
+:zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>`
+    A script that uses edtlib to generate C preprocessor macros from the
+    devicetree and bindings.
+
+The output from :file:`gen_defines.py` is stored in
+:file:`include/generated/generated_dts_board_unfixed.h` in the build directory.
+
+.. note::
+
+   In addition to the Python code above, the standard ``dtc`` DTS compiler is
+   also run on the devicetree. This is just to catch any errors or warnings it
+   generates. The output is unused.
+
+Most devices currently use :file:`dts_fixup.h` files that rename macros from
+:file:`generated_dts_board_unfixed.h` to names that are more meaningful for the
+device. By default, these fixup files are in the :file:`board/` and
+:file:`soc/` directories. Any :file:`dts_fixup.h` files are concatenated and
+stored as :file:`include/generated_dts_board_fixups.h` in the build directory.
+
+Fixup files exist for historical reasons, and Zephyr might move away from using
+them. When writing new code, feel free to create any macro aliases you need in
+whatever way is handiest for the code.
+
+To reference macros generated from devicetree, code should include the
+:file:`generated_dts_board.h` header, which appears on the C preprocessor
+include path. This file appears at :zephyr_file:`include/generated_dts_board.h`
+and is not a generated file. It includes the generated
+:file:`include/generated_dts_board_unfixed.h` and
+:file:`include/generated_dts_board_fixups.h` files.
+
+.. warning::
+
+   Do not include the generated C headers from the build directory directly.
+   Include ``generated_dts_board.h`` instead.
+
+Generated macros
+================
+
+Take the DTS node below as an example.
+
+.. code-block:: none
+
+   sim@40047000 {
+   	compatible = "nxp,kinetis-sim";
+   	reg = <0x40047000 0x1060>;
+   	label = "SIM";
+   	...
+   };
+
+Below is sample header content generated for this node, in
+:file:`include/generated_dts_board_unfixed.h` in the build directory.
+
+.. code-block:: c
+
+   /*
+    * Devicetree node:
+    *   /soc/sim@40047000
+    *
+    * Binding (compatible = nxp,kinetis-sim):
+    *   $ZEPHYR_BASE/dts/bindings/arm/nxp,kinetis-sim.yaml
+    *
+    * Dependency Ordinal: 24
+    *
+    * Requires:
+    *   7   /soc
+    *
+    * Supports:
+    *   25  /soc/i2c@40066000
+    *   26  /soc/i2c@40067000
+    *   ...
+    *
+    * Description:
+    *   Kinetis System Integration Module (SIM) IP node
+    */
+   #define DT_NXP_KINETIS_SIM_40047000_BASE_ADDRESS    0x40047000
+   #define DT_INST_0_NXP_KINETIS_SIM_BASE_ADDRESS      DT_NXP_KINETIS_SIM_40047000_BASE_ADDRESS
+   #define DT_NXP_KINETIS_SIM_40047000_SIZE            4192
+   #define DT_INST_0_NXP_KINETIS_SIM_SIZE              DT_NXP_KINETIS_SIM_40047000_SIZE
+   /* Human readable string describing the device (used by Zephyr for API name) */
+   #define DT_NXP_KINETIS_SIM_40047000_LABEL           "SIM"
+   #define DT_INST_0_NXP_KINETIS_SIM_LABEL             DT_NXP_KINETIS_SIM_40047000_LABEL
+   #define DT_INST_0_NXP_KINETIS_SIM                   1
+
+Generated macro names follow the format ``DT_<node>_<property>``. For
+``DT_NXP_KINETIS_SIM_40047000_BASE_ADDRESS``, the node part is
+``NXP_KINETIS_SIM_40047000``, based on the compatible string that matched a
+binding for the node (``nxp,kinetis-sim``) and the node's unit address
+(``...@4004700``).
+
+The ``*_BASE_ADDRESS`` part of the identifier is a fixed identifier generated
+from the special ``reg`` property on the node. ``*_SIZE`` is also generated
+from ``reg``. Other suffixes, like ``*_LABEL``, are generated directly from the
+property name.
+
+The second macro (``DT_INST_0_NXP_KINETIS_SIM_BASE_ADDRESS``) is an alias for
+the first macro. The node identifier ``...INST_0_NXP_KINETIS_SIM_...`` means
+"the first node with compatible string ``nxp,kinetis-sim``.
+
+Aliases are also generated from any properties in the ``/aliases`` node. Take
+the DTS fragment below as an example.
+
+.. code-block:: none
+
+   aliases {
+   	i2c-1 = &i2c;
+   };
+
+This would generate additional ``DT_ALIAS_I2C_1_...`` aliases for all
+properties in the output for the node with the devicetree label ``i2c``.
+
+Aliases that replace the property name part can also be generated, e.g. via
+``*-names = "foo", "bar"`` properties. For example, ``reg-names = "control",
+"mem"`` will generate ``DT_<node>_CONTROL_BASE_ADDRESS/SIZE`` and
+``DT_<node>_MEM_BASE_ADDRESS_SIZE`` aliases.
+
+.. note::
+
+   The above is just a short overview of common ways macro names get generated,
+   and not complete. For the nitty-gritty, see the source code in
+   :zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>`, and check the
+   output generated for some existing boards and applications.
 
 Zephyr device drivers typically use information from ``generated_dts_board.h``
 to statically allocate and initialize :ref:`struct device <device_struct>`
@@ -238,12 +374,6 @@ it to driver APIs in :zephyr_file:`include/drivers/`. These API functions
 usually take a ``struct device*`` as their first argument. This allows the
 driver API to use information from devicetree to interact with the device
 hardware.
-
-Temporary "fixup" files are currently required for devicetree support on most
-devices.  These fixup files by default reside in the board and soc directories
-and are named ``dts_fixup.h``. These fixup files map the generated include
-information to the current driver/source usage. They exist for historical
-reasons; Zephyr is moving away from needing or using these files.
 
 .. _dt_k6x_example:
 
@@ -703,44 +833,6 @@ This should now be written like this:
 
 The legacy syntax is still supported for backwards compatibility, but generates
 deprecation warnings. Support will be dropped in the Zephyr 2.3 release.
-
-Include files generation
-************************
-
-At build time, after a board's ``.dts`` file has been processed by the DTC
-(Devicetree Compiler), a corresponding ``.dts_compiled`` file is generated
-under the ``zephyr`` directory.
-This ``.dts_compiled`` file is processed by the python DTS parsing script
-and generates an include file named
-``include/generated/generated_dts_board_unfixed.h``
-that holds all the information extracted from the DTS file with
-the format specified by the YAML bindings.  For example:
-
-.. code-block:: c
-
-   /* gpio_keys */
-   #define DT_GPIO_KEYS_0		1
-
-   /* button_0 */
-   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER	"GPIO_2"
-   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS	0
-   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN		6
-   #define DT_GPIO_KEYS_BUTTON_0_LABEL		"User SW2"
-
-   #define DT_GPIO_KEYS_SW1_GPIOS_CONTROLLER		DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER
-   #define DT_GPIO_KEYS_SW1_GPIOS_FLAGS			DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS
-   #define DT_GPIO_KEYS_SW1_GPIOS_PIN			DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN
-   #define DT_ALIAS_SW1_GPIOS_CONTROLLE			DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER
-   #define DT_ALIAS_SW1_GPIOS_FLAGS			DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS
-   #define DT_ALIAS_SW1_GPIOS_PIN			DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN
-   #define DT_ALIAS_SW1_LABEL				DT_GPIO_KEYS_BUTTON_0_LABEL
-
-
-Additionally, a file named ``generated_dts_board_fixups.h`` is
-generated in the same directory concatenating all board-related fixup files.
-
-The include file ``include/generated_dts_board.h`` includes both these generated
-files, giving Zephyr C source files access to the board's devicetree information.
 
 GPIO Nexus Nodes
 ****************
