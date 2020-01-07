@@ -12,6 +12,17 @@ Concepts
 The scheduler determines which thread is allowed to execute
 at any point in time; this thread is known as the **current thread**.
 
+There are various points in time when the scheduler is given an
+opportunity to change the identity of the current thread.  These points
+are called **reschedule points**. Some potential reschedule points are:
+
+- transition of a thread to the :ref:`ready state <thread_states>`, for
+  example by :cpp:func:`k_sem_give` or :cpp:func:`k_thread_start`
+- transition of a thread from running state to a suspended or waiting
+  state, for example by :cpp:func:`k_sem_take` or :cpp:func:`k_sleep`
+- return to thread context after processing an interrupt
+- when a running thread invokes :cpp:func:`k_yield()`
+
 Whenever the scheduler changes the identity of the current thread,
 or when execution of the current thread is replaced by an ISR,
 the kernel first saves the current thread's CPU register values.
