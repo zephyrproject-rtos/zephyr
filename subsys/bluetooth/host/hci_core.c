@@ -946,13 +946,10 @@ static void hci_disconn_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 
 advertise:
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
 	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			le_set_private_addr(bt_dev.adv_id);
-		}
-
-		set_advertise_enable(true);
+		bt_le_adv_resume();
 	}
 }
 
@@ -1117,6 +1114,11 @@ static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_SLAVE) {
 		conn = bt_conn_lookup_state_le(peer_addr,
 					       BT_CONN_CONNECT_DIR_ADV);
+		if (!conn) {
+			conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE,
+						       BT_CONN_CONNECT_ADV);
+		}
+
 		return conn;
 	}
 
@@ -1263,16 +1265,10 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    evt->role == BT_HCI_ROLE_SLAVE) {
-		/*
-		 * clear advertising even if we are not able to add connection
+		/* Clear advertising even if we are not able to add connection
 		 * object to keep host in sync with controller state
 		 */
 		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-
-		/* for slave we may need to add new connection */
-		if (!conn) {
-			conn = bt_conn_add_le(bt_dev.adv_id, &id_addr);
-		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -1321,11 +1317,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		 */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
 		    BT_LE_STATES_SLAVE_CONN_ADV(bt_dev.le.states)) {
-			if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-				le_set_private_addr(bt_dev.adv_id);
-			}
-
-			set_advertise_enable(true);
+			bt_le_adv_resume();
 		}
 	}
 
@@ -5808,6 +5800,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 {
 	struct bt_hci_cp_le_set_adv_param set_param;
 	const bt_addr_le_t *id_addr;
+	struct bt_conn *conn = NULL;
 	struct net_buf *buf;
 	bool dir_adv = (peer != NULL);
 	int err = 0;
@@ -5948,11 +5941,35 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		if (err) {
 			return err;
 		}
+
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+			conn = bt_conn_add_le(param->id, BT_ADDR_LE_NONE);
+			if (!conn) {
+				return -ENOMEM;
+			}
+
+			bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
+		}
 	}
 
 	err = set_advertise_enable(true);
 	if (err) {
+		BT_ERR("Failed to start advertiser");
+		if (conn) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+		}
 		return err;
+	}
+
+	if (conn) {
+		/* If undirected connectable advertiser we have created a
+		 * connection object that we don't yet give to the application.
+		 * Since we don't give the application a reference to manage in
+		 * this case, we need to release this reference here
+		 */
+		bt_conn_unref(conn);
 	}
 
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING,
@@ -5994,6 +6011,13 @@ int bt_le_adv_stop(void)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		struct bt_conn *conn;
 
+		conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE,
+					       BT_CONN_CONNECT_ADV);
+		if (conn) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+		}
+
 		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_DIR_ADV);
 		if (conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
@@ -6016,6 +6040,38 @@ int bt_le_adv_stop(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+void bt_le_adv_resume(void)
+{
+	struct bt_conn *adv_conn;
+	int err;
+
+	BT_ASSERT(atomic_test_bit(bt_dev.flags,
+				  BT_DEV_ADVERTISING_CONNECTABLE));
+
+	adv_conn = bt_conn_add_le(bt_dev.adv_id, BT_ADDR_LE_NONE);
+	if (!adv_conn) {
+		return;
+	}
+
+	bt_conn_set_state(adv_conn, BT_CONN_CONNECT_ADV);
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		le_set_private_addr(bt_dev.adv_id);
+	}
+
+	err = set_advertise_enable(true);
+	if (err) {
+		bt_conn_set_state(adv_conn, BT_CONN_DISCONNECTED);
+	}
+
+	/* Since we don't give the application a reference to manage in
+	 * this case, we need to release this reference here.
+	 */
+	bt_conn_unref(adv_conn);
+}
+#endif /* defined(CONFIG_BT_PERIPHERAL) */
 
 #if defined(CONFIG_BT_OBSERVER)
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)

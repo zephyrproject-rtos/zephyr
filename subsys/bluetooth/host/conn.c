@@ -117,6 +117,8 @@ static inline const char *state2str(bt_conn_state_t state)
 		return "connect-scan";
 	case BT_CONN_CONNECT_DIR_ADV:
 		return "connect-dir-adv";
+	case BT_CONN_CONNECT_ADV:
+		return "connect-adv";
 	case BT_CONN_CONNECT_AUTO:
 		return "connect-auto";
 	case BT_CONN_CONNECT:
@@ -337,6 +339,16 @@ static void conn_update_timeout(struct k_work *work)
 		 * state transition.
 		 */
 		bt_conn_unref(conn);
+
+		/* A new reference likely to have been released here,
+		 * Resume advertising.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+			bt_le_adv_resume();
+		}
+
 		return;
 	}
 
@@ -1707,9 +1719,16 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			 * by the application, so don't notify.
 			 */
 			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_CONNECT_ADV) {
+			/* This can only happen when application stops the
+			 * advertiser, conn->err is never set in this case.
+			 */
+			bt_conn_unref(conn);
 		}
 		break;
 	case BT_CONN_CONNECT_AUTO:
+		break;
+	case BT_CONN_CONNECT_ADV:
 		break;
 	case BT_CONN_CONNECT_SCAN:
 		break;
