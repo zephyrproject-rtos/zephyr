@@ -428,12 +428,14 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 {
 	u32_t conn_offset_us, conn_interval_us;
 	u8_t ticker_id_scan, ticker_id_conn;
+	u8_t peer_addr[BDADDR_SIZE];
 	u32_t ticks_slot_overhead;
 	u32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	struct pdu_adv *pdu_tx;
+	u8_t peer_addr_type;
 	u32_t ticker_status;
 	u8_t chan_sel;
 
@@ -447,12 +449,12 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t own_addr_type = pdu_tx->tx_addr;
 	u8_t own_addr[BDADDR_SIZE];
-	u8_t peer_addr[BDADDR_SIZE];
 	u8_t rl_idx = ftr->rl_idx;
 
 	memcpy(own_addr, &pdu_tx->connect_ind.init_addr[0], BDADDR_SIZE);
-	memcpy(peer_addr, &pdu_tx->connect_ind.adv_addr[0], BDADDR_SIZE);
 #endif
+	peer_addr_type = pdu_tx->rx_addr;
+	memcpy(peer_addr, &pdu_tx->connect_ind.adv_addr[0], BDADDR_SIZE);
 
 	/* This is the chan sel bit from the received adv pdu */
 	chan_sel = pdu_tx->chan_sel;
@@ -480,8 +482,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #else
 	if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-		cc->peer_addr_type = scan->lll.adv_addr_type;
-		memcpy(cc->peer_addr, scan->lll.adv_addr, BDADDR_SIZE);
+		cc->peer_addr_type = peer_addr_type;
+		memcpy(cc->peer_addr, &peer_addr[0], BDADDR_SIZE);
 	}
 
 	cc->interval = lll->interval;
