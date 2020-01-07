@@ -1273,6 +1273,12 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    IS_ENABLED(CONFIG_BT_WHITELIST) &&
 	    evt->role == BT_HCI_ROLE_MASTER) {
+		/*
+		 * Clear auto conn even if we are not able to add connection
+		 * object to keep the host in sync with controller state.
+		 */
+		atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
+
 		/* for whitelist initiator me may need to add new connection. */
 		if (!conn) {
 			conn = bt_conn_add_le(BT_ID_DEFAULT, &id_addr);
@@ -1326,12 +1332,6 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_MASTER) {
-		if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
-		    atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
-			conn->id = BT_ID_DEFAULT;
-			atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
-		}
-
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
