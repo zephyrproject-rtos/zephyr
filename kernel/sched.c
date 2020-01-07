@@ -383,6 +383,76 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 	}
 }
 
+void z_thread_single_suspend(struct k_thread *thread)
+{
+	(void)z_abort_thread_timeout(thread);
+
+	LOCKED(&sched_spinlock) {
+		if (z_is_thread_queued(thread)) {
+			_priq_run_remove(&_kernel.ready_q.runq, thread);
+			z_mark_thread_as_not_queued(thread);
+		}
+		z_mark_thread_as_suspended(thread);
+		update_cache(thread == _current);
+	}
+
+	if (thread == _current) {
+		z_reschedule_unlocked();
+	}
+}
+
+static _wait_q_t *pended_on(struct k_thread *thread)
+{
+	__ASSERT_NO_MSG(thread->base.pended_on);
+
+	return thread->base.pended_on;
+}
+
+void z_thread_single_abort(struct k_thread *thread)
+{
+	if (thread->fn_abort != NULL) {
+		thread->fn_abort();
+	}
+
+	(void)z_abort_thread_timeout(thread);
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		z_sched_abort(thread);
+	}
+
+	LOCKED(&sched_spinlock) {
+		if (z_is_thread_ready(thread)) {
+			if (z_is_thread_queued(thread)) {
+				_priq_run_remove(&_kernel.ready_q.runq,
+						 thread);
+				z_mark_thread_as_not_queued(thread);
+			}
+			update_cache(thread == _current);
+		} else {
+			if (z_is_thread_pending(thread)) {
+				_priq_wait_remove(&pended_on(thread)->waitq,
+						  thread);
+				z_mark_thread_as_not_pending(thread);
+				thread->base.pended_on = NULL;
+			}
+		}
+		thread->base.thread_state |= _THREAD_DEAD;
+	}
+
+	sys_trace_thread_abort(thread);
+
+#ifdef CONFIG_USERSPACE
+	/* Clear initialized state so that this thread object may be re-used
+	 * and triggers errors if API calls are made on it from user threads
+	 */
+	z_object_uninit(thread->stack_obj);
+	z_object_uninit(thread);
+
+	/* Revoke permissions on thread's ID so that it may be recycled */
+	z_thread_perms_all_clear(thread);
+#endif
+}
+
 void z_remove_thread_from_ready_q(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
@@ -426,13 +496,6 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	pend(thread, wait_q, timeout);
-}
-
-static _wait_q_t *pended_on(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(thread->base.pended_on);
-
-	return thread->base.pended_on;
 }
 
 ALWAYS_INLINE struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,

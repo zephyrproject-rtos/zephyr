@@ -671,20 +671,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-void z_thread_single_suspend(struct k_thread *thread)
-{
-	if (z_is_thread_ready(thread)) {
-		z_remove_thread_from_ready_q(thread);
-	}
-
-	(void)z_abort_thread_timeout(thread);
-
-	z_mark_thread_as_suspended(thread);
-
-	if (thread == _current) {
-		z_reschedule_unlocked();
-	}
-}
+extern void z_thread_single_suspend(struct k_thread *thread);
 
 void z_impl_k_thread_suspend(struct k_thread *thread)
 {
@@ -734,43 +721,6 @@ static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 }
 #include <syscalls/k_thread_resume_mrsh.c>
 #endif
-
-void z_thread_single_abort(struct k_thread *thread)
-{
-	if (thread->fn_abort != NULL) {
-		thread->fn_abort();
-	}
-
-	if (IS_ENABLED(CONFIG_SMP)) {
-		z_sched_abort(thread);
-	}
-
-	if (z_is_thread_ready(thread)) {
-		z_remove_thread_from_ready_q(thread);
-	} else {
-		if (z_is_thread_pending(thread)) {
-			z_unpend_thread_no_timeout(thread);
-		}
-		if (z_is_thread_timeout_active(thread)) {
-			(void)z_abort_thread_timeout(thread);
-		}
-	}
-
-	thread->base.thread_state |= _THREAD_DEAD;
-
-	sys_trace_thread_abort(thread);
-
-#ifdef CONFIG_USERSPACE
-	/* Clear initialized state so that this thread object may be re-used
-	 * and triggers errors if API calls are made on it from user threads
-	 */
-	z_object_uninit(thread->stack_obj);
-	z_object_uninit(thread);
-
-	/* Revoke permissions on thread's ID so that it may be recycled */
-	z_thread_perms_all_clear(thread);
-#endif
-}
 
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_USERSPACE
