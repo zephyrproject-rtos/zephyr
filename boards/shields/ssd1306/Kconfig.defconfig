@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if SHIELD_SSD1306_128X64 || SHIELD_SSD1306_128X32
+if SHIELD_SSD1306_128X64 || SHIELD_SSD1306_128X32 || SHIELD_SH1106_96X64
 
 if DISPLAY
 
@@ -11,15 +11,21 @@ config I2C
 config SSD1306
 	default y
 
+choice SSD1306_CONTROLLER_TYPE
+	default SSD1306_SH1106_COMPATIBLE if SHIELD_SH1106_96X64
+endchoice
+
 if LVGL
 
 config LVGL_DISPLAY_DEV_NAME
 	default "SSD1306"
 
 config LVGL_HOR_RES
+	default 96 if SHIELD_SSH1106_96X64
 	default 128
 
 config LVGL_VER_RES
+	default 64 if SHIELD_SSH1106_96X64
 	default 64 if SHIELD_SSD1306_128X64
 	default 32 if SHIELD_SSD1306_128X32
 
