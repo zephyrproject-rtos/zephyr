@@ -13,7 +13,7 @@ packaging
 ply>=3.10
 pyelftools>=0.24
 pykwalify
-pyocd>=0.21.0
+pyocd>=0.24.0
 pyserial
 pytest
 sphinx>=1.7.5
