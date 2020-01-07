@@ -202,7 +202,7 @@ files via the C preprocessor with ``#include``.
    including other files, though it is less commonly used.
 
 Each board has a base devicetree, stored in the board's directory in
-:file:`boards/` as :file:`BOARD.dts`. This base devicetree can be extended or
+:file:`boards/` as :file:`<BOARD>.dts`. This base devicetree can be extended or
 modified with one or more *overlays* -- DTS files with a :file:`.overlay`
 extension. Overlays adapt the base devicetree for different board variants or
 applications. Along with :ref:`kconfig`, this makes it possible to reconfigure
@@ -213,7 +213,7 @@ certain locations. It is also possible to explicitly list the overlays to
 include, via the :makevar:`DTC_OVERLAY_FILE` CMake variable. See
 :ref:`application_dt` and :ref:`important-build-vars` for details.
 
-After running the C preprocessor, the resulting :file:`BOARD.dts` and
+After running the C preprocessor, the resulting :file:`<BOARD>.dts` and
 :file:`.overlay` files are combined by concatenating them, with the overlays
 put last. This relies on DTS merging multiple definitions of nodes. See
 :ref:`dt_k6x_example` for an example of how this works (in the context of
@@ -224,7 +224,7 @@ from the base devicetree, if needed.
 .. note::
 
    The preprocessed and concatenated DTS sources are stored in
-   :file:`zephyr/BOARD.dts.pre.tmp` in the build directory. Looking at this
+   :file:`zephyr/<BOARD>.dts.pre.tmp` in the build directory. Looking at this
    file can be handy for debugging.
 
 The merged devicetree, along with any :ref:`bindings <bindings>` referenced
