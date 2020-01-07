@@ -84,4 +84,11 @@ config BT_CTLR
 
 endif # BT
 
+if DISPLAY
+
+config SSD16XX
+	default y
+
+endif #DISPLAY
+
 endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
