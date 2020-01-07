@@ -117,6 +117,8 @@ static inline const char *state2str(bt_conn_state_t state)
 		return "connect-scan";
 	case BT_CONN_CONNECT_DIR_ADV:
 		return "connect-dir-adv";
+	case BT_CONN_CONNECT_AUTO:
+		return "connect-auto";
 	case BT_CONN_CONNECT:
 		return "connect";
 	case BT_CONN_CONNECTED:
@@ -1682,7 +1684,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			notify_connected(conn);
 			bt_conn_unref(conn);
 		} else if (old_state == BT_CONN_CONNECT_SCAN) {
-			/* this indicate LE Create Connection failed */
+			/* this indicate LE Create Connection with peer address
+			 * has been stopped. This could either be triggered by
+			 * the application through bt_conn_disconnect or by
+			 * timeout set by CONFIG_BT_CREATE_CONN_TIMEOUT.
+			 */
 			if (conn->err) {
 				notify_connected(conn);
 			}
@@ -1695,8 +1701,15 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_CONNECT_AUTO) {
+			/* this indicates LE Create Connection with filter
+			 * policy has been stopped. This can only be triggered
+			 * by the application, so don't notify.
+			 */
+			bt_conn_unref(conn);
 		}
-
+		break;
+	case BT_CONN_CONNECT_AUTO:
 		break;
 	case BT_CONN_CONNECT_SCAN:
 		break;
@@ -2111,17 +2124,32 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EINVAL;
 	}
 
+	conn = bt_conn_add_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT_AUTO);
+
 	err = bt_le_auto_conn(param);
 	if (err) {
 		BT_ERR("Failed to start whitelist scan");
+
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
 		return err;
 	}
 
+	/* Since we don't give the application a reference to manage in
+	 * this case, we need to release this reference here.
+	 */
+	bt_conn_unref(conn);
 	return 0;
 }
 
 int bt_conn_create_auto_stop(void)
 {
+	struct bt_conn *conn;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
@@ -2130,6 +2158,12 @@ int bt_conn_create_auto_stop(void)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
 		return -EINVAL;
+	}
+
+	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
+	if (conn) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
 	}
 
 	err = bt_le_auto_conn_cancel();
