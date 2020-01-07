@@ -211,6 +211,14 @@ static void rf2xx_thread_main(void *arg)
 			k_timer_start(&ctx->trx_isr_timeout, K_MSEC(10), 0);
 		} else if (isr_status & (1 << RF2XX_TRX_END)) {
 			if (ctx->trx_state == RF2XX_TRX_PHY_BUSY_RX) {
+				/* Ensures that automatically ACK will be sent
+				 * when requested
+				 */
+				while (rf2xx_iface_reg_read(dev,
+							    RF2XX_TRX_STATUS_REG) ==
+				       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
+				};
+
 				/* Set PLL_ON to avoid transceiver receive
 				 * new data until finish reading process
 				 */
