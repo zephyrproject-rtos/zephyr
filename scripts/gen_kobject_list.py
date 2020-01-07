@@ -375,10 +375,10 @@ def main():
                              % args.kernel)
 
         thread_counter = eh.get_thread_counter()
-        if thread_counter > max_threads:
+        if thread_counter >= max_threads:
             sys.exit("Too many thread objects ({})\n"
                      "Increase CONFIG_MAX_THREAD_BYTES to {}"
-                     .format(thread_counter, -(-thread_counter // 8)))
+                     .format(thread_counter, -(-(thread_counter+1) // 8)))
 
         with open(args.gperf_output, "w") as fp:
             write_gperf_table(fp, eh, objs,
