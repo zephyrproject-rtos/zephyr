@@ -1096,7 +1096,7 @@ static void update_pending_id(struct bt_keys *keys, void *data)
 }
 #endif
 
-static struct bt_conn *find_pending_connect(bt_addr_le_t *peer_addr)
+static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 {
 	struct bt_conn *conn;
 
@@ -1104,12 +1104,18 @@ static struct bt_conn *find_pending_connect(bt_addr_le_t *peer_addr)
 	 * Make lookup to check if there's a connection object in
 	 * CONNECT or DIR_ADV state associated with passed peer LE address.
 	 */
-	conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT);
-	if (conn) {
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_MASTER) {
+		conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT);
 		return conn;
 	}
 
-	return bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_SLAVE) {
+		conn = bt_conn_lookup_state_le(peer_addr,
+					       BT_CONN_CONNECT_DIR_ADV);
+		return conn;
+	}
+
+	return NULL;
 }
 
 static void conn_auto_initiate(struct bt_conn *conn)
@@ -1185,7 +1191,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		 *
 		 * Depending on error code address might not be valid anyway.
 		 */
-		conn = find_pending_connect(NULL);
+		conn = find_pending_connect(evt->role, NULL);
 		if (!conn) {
 			return;
 		}
@@ -1248,7 +1254,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
 	}
 
-	conn = find_pending_connect(&id_addr);
+	conn = find_pending_connect(evt->role, &id_addr);
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    evt->role == BT_HCI_ROLE_SLAVE) {
