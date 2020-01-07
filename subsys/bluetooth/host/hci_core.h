@@ -208,3 +208,4 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const struct bt_data *ad, size_t ad_len,
 			     const struct bt_data *sd, size_t sd_len,
 			     const bt_addr_le_t *peer);
+void bt_le_adv_resume(void);
