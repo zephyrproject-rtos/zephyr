@@ -154,7 +154,11 @@ if(SUPPORTS_DTS)
     ${include_files}
     )
 
-  # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
+  #
+  # Run the C devicetree compiler on *.dts.pre.tmp, just to catch any
+  # warnings/errors from it. dtlib and edtlib parse the devicetree files
+  # themselves, so we don't rely on the C compiler otherwise.
+  #
 
   set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
   check_dtc_flag("-Wunique_unit_address_if_enabled" check)
@@ -169,13 +173,14 @@ if(SUPPORTS_DTS)
   execute_process(
     COMMAND ${DTC}
     -O dts
-    -o ${BOARD}.dts_compiled
+    -o - # Write output to stdout, which we discard below
     -b 0
     -E unit_address_vs_reg
     ${DTC_NO_WARN_UNIT_ADDR}
     ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
     ${EXTRA_DTC_FLAGS} # User settable
     ${BOARD}.dts.pre.tmp
+    OUTPUT_QUIET # Discard stdout
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )

@@ -604,7 +604,7 @@ The &quot;base&quot; devicetree.<xhtml:div>Includes .dtsi files.<xhtml:br />
            style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 116px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
           <xhtml:div
              style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
-            <xhtml:div>BOARD.dts_compiled<xhtml:br />
+            <xhtml:div>BOARD.dts.pre.tmp<xhtml:br />
 </xhtml:div>
           </xhtml:div>
         </xhtml:div>
@@ -619,7 +619,7 @@ The &quot;base&quot; devicetree.<xhtml:div>Includes .dtsi files.<xhtml:br />
            y="12"
            x="58"
            id="tspan200"
-           sodipodi:role="line">BOARD.dts_compiled</tspan>
+           sodipodi:role="line">BOARD.dts.pre.tmp</tspan>
       </text>
     </switch>
   </g>
