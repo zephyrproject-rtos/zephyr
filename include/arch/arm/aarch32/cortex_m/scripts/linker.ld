@@ -294,7 +294,6 @@ SECTIONS
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
-#endif  /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
@@ -342,6 +341,8 @@ SECTIONS
 
         } GROUP_LINK_IN(RAMABLE_REGION)
 
+#endif  /* CONFIG_USERSPACE */
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 	__data_ram_start = .;
@@ -377,6 +378,53 @@ SECTIONS
 
     __data_ram_end = .;
 
+#ifndef CONFIG_USERSPACE
+   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	{
+        /*
+         * For performance, BSS section is assumed to be 4 byte aligned and
+         * a multiple of 4 bytes
+         */
+        . = ALIGN(4);
+	__bss_start = .;
+	__kernel_ram_start = .;
+
+	*(.bss)
+	*(".bss.*")
+	*(COMMON)
+	*(".kernel_bss.*")
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
+        /*
+         * As memory is cleared in words only, it is simpler to ensure the BSS
+         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		 */
+	__bss_end = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+    SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
+        {
+        /*
+         * This section is used for non-initialized objects that
+         * will not be cleared during the boot process.
+         */
+        *(.noinit)
+        *(".noinit.*")
+	*(".kernel_noinit.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
+#ifdef CONFIG_SOC_NOINIT_LD
+#include <soc-noinit.ld>
+#endif
+
+        } GROUP_LINK_IN(RAMABLE_REGION)
+#endif /* CONFIG_USERSPACE */
 
     /* Define linker symbols */
 
