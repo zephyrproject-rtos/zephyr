@@ -9,24 +9,24 @@
 
 static inline int z_vrfy_wdt_setup(struct device *dev, u8_t options)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, wdt_setup));
+	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, setup));
 	return z_impl_wdt_setup(dev, options);
 }
 
-#include <syscalls/wdt_setup.c>
+#include <syscalls/wdt_setup_mrsh.c>
 
 static inline int z_vrfy_wdt_disable(struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, wdt_disable));
+	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, disable));
 	return z_impl_wdt_disable(dev);
 }
 
-#include <syscalls/wdt_disable.c>
+#include <syscalls/wdt_disable_mrsh.c>
 
-static inline int z_vrfy_wdt_feed(struct device *dev)
+static inline int z_vrfy_wdt_feed(struct device *dev, int channel_id)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, wdt_feed));
-	return z_impl_wdt_feed(dev);
+	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, feed));
+	return z_impl_wdt_feed(dev, channel_id);
 }
 
-#include <syscalls/wdt_feed.c>
+#include <syscalls/wdt_feed_mrsh.c>
