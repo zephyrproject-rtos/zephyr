@@ -9,9 +9,4 @@ toolchain:
 ram: 128
 testing:
   ignore_tags:
-    - console
-    - drivers
     - interrupt
-    - net
-    - nfc
-    - shell
