@@ -9,7 +9,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <unistd.h>
+#include <sys/types.h>
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
