@@ -3,7 +3,6 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC13XX_CC26XX gpio_cc13xx_cc26xx.c)
-zephyr_library_sources_ifdef(CONFIG_GPIO_CC2650     gpio_cc2650.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC32XX     gpio_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CMSDK_AHB  gpio_cmsdk_ahb.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_DW         gpio_dw.c)
