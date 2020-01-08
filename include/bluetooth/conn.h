@@ -295,6 +295,11 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 /** @brief Automatically connect to remote devices in whitelist.
  *
  *  This uses the Auto Connection Establishment procedure.
+ *  The procedure will continue until a single connection is established or the
+ *  procedure is stopped through @ref bt_conn_create_auto_stop.
+ *  To establish connections to all devices in the whitelist the procedure
+ *  should be started again in the connected callback after a new connection has
+ *  been established.
  *
  *  @param param Initial connection parameters.
  *
