@@ -73,7 +73,6 @@ zephyr_library_named(zephyr)
 
 zephyr_include_directories(
   include
-  include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
