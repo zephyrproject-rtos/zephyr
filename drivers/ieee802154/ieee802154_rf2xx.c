@@ -39,7 +39,28 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_rf2xx_regs.h"
 #include "ieee802154_rf2xx_iface.h"
 
-#define RF2XX_OT_PSDU_LENGTH    1280
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <net/openthread.h>
+
+#define RF2XX_OT_PSDU_LENGTH            1280
+
+#define RF2XX_ACK_FRAME_LEN             3
+#define RF2XX_ACK_FRAME_TYPE           (2 << 0)
+#define RF2XX_ACK_FRAME_PENDING_BIT    (1 << 4)
+
+static u8_t rf2xx_ack_psdu[RF2XX_ACK_FRAME_LEN] = { 0 };
+static struct net_buf rf2xx_ack_frame = {
+	.data  = rf2xx_ack_psdu,
+	.size  = RF2XX_ACK_FRAME_LEN,
+	.len   = RF2XX_ACK_FRAME_LEN,
+	.__buf = rf2xx_ack_psdu,
+};
+static struct net_pkt rf2xx_ack_pkt = {
+	.buffer = &rf2xx_ack_frame,
+	.ieee802154_lqi = 80,
+	.ieee802154_rssi = -40,
+};
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 
 /* Radio Transceiver ISR */
 static inline void trx_isr_handler(struct device *port,
@@ -386,13 +407,35 @@ static int rf2xx_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+static void rf2xx_handle_ack(struct rf2xx_context *ctx, u8_t seq_number)
+{
+	rf2xx_ack_psdu[0] = ACK_FRAME_TYPE;
+	rf2xx_ack_psdu[2] = seq_number;
+
+	if (ctx->trx_trac == RF2XX_TRX_PHY_STATE_TRAC_SUCCESS_DATA_PENDING) {
+		rf2xx_ack_psdu[0] |=  ACK_FRAME_PENDING_BIT;
+	}
+
+	rf2xx_ack_frame.data = rf2xx_ack_psdu;
+
+	if (ieee802154_radio_handle_ack(ctx->iface, rf2xx_ack_pkt) != NET_OK) {
+		LOG_INF("ACK packet not handled.");
+	}
+}
+#else
+	#define rf2xx_handle_ack(...)
+#endif
+
 static int rf2xx_tx(struct device *dev,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
+	ARG_UNUSED(pkt);
+
 	struct rf2xx_context *ctx = dev->driver_data;
 	bool abort = true;
-	int response;
+	int response = 0;
 
 	k_mutex_lock(&ctx->phy_mutex, K_FOREVER);
 	/* Reset semaphore in case ACK was received after timeout */
@@ -451,7 +494,8 @@ static int rf2xx_tx(struct device *dev,
 	 * acknowledgment frame was set.
 	 */
 	default:
-		response = 0;
+		rf2xx_handle_ack(ctx, frag->data[2]);
+		break;
 	}
 
 	return response;
