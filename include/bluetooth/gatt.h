@@ -1261,6 +1261,9 @@ struct bt_gatt_subscribe_params;
  *  @param params Subscription parameters.
  *  @param data Attribute value data. If NULL then subscription was removed.
  *  @param length Attribute value length.
+ *
+ *  @return BT_GATT_ITER_CONTINUE to continue receiving value notifications.
+ *          BT_GATT_ITER_STOP to unsubscribe from value notifications.
  */
 typedef u8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 				      struct bt_gatt_subscribe_params *params,
