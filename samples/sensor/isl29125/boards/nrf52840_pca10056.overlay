@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020, Intive.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	isl29125@44 {
+		compatible = "isil,isl29125";
+		reg = < 0x44 >;
+		label = "COLOR_SENSOR";
+		int-gpios = <&gpio1 1 GPIO_INT_ACTIVE_HIGH>;
+	};
+};

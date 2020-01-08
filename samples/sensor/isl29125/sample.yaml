@@ -1,0 +1,8 @@
+sample:
+  name: ISL29125 Digital Light Sensor
+tests:
+  sample.sensor.isl29125:
+    harness: console
+    tags: sensors
+    depends_on: gpio,i2c
+    platform_whitelist: nrf52840_pca10056

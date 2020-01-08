@@ -1,0 +1,15 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ISL29125 Color Light to Digital Converter datasheet at
+    https://www.renesas.com/eu/en/www/doc/datasheet/isl29125.pdf
+
+compatible: "isil,isl29125"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
