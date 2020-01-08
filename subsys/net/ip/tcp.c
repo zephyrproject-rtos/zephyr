@@ -1725,7 +1725,7 @@ int net_tcp_get(struct net_context *context)
 {
 	context->tcp = net_tcp_alloc(context);
 	if (!context->tcp) {
-		NET_ASSERT_INFO(context->tcp, "Cannot allocate TCP context");
+		NET_ASSERT(context->tcp, "Cannot allocate TCP context");
 		return -ENOBUFS;
 	}
 
@@ -2481,8 +2481,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 		} else if (new_context->remote.sa_family == AF_INET6) {
 			addrlen = sizeof(struct sockaddr_in6);
 		} else {
-			NET_ASSERT_INFO(false, "Invalid protocol family %d",
-					new_context->remote.sa_family);
+			NET_ASSERT(false, "Invalid protocol family %d",
+				   new_context->remote.sa_family);
 			net_context_unref(new_context);
 			return NET_DROP;
 		}
