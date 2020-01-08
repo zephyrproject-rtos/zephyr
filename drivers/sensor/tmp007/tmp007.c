@@ -18,22 +18,12 @@
 
 LOG_MODULE_REGISTER(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
-int tmp007_reg_read(struct tmp007_data *drv_data, u8_t reg, u16_t *val)
+int tmp007_reg_read(struct tmp007_data *drv_data,
+		u8_t reg, u16_t *val)
 {
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = (u8_t *)val,
-			.len = 2,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	if (i2c_transfer(drv_data->i2c, msgs, 2, TMP007_I2C_ADDRESS) < 0) {
+	if (i2c_burst_read(drv_data->i2c, TMP007_I2C_ADDRESS,
+				reg, (u8_t *) val, 2) < 0) {
+		LOG_ERR("I2C read failed");
 		return -EIO;
 	}
 
