@@ -511,6 +511,7 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
+		subscribe_params.value_handle = 0U;
 		shell_error(shell, "Subscribe failed (err %d)", err);
 	} else {
 		shell_print(shell, "Subscribed");
