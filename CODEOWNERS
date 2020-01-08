@@ -14,8 +14,7 @@
 # *                                        @galak @nashif
 
 /.known-issues/                           @nashif
-/.github/				  @nashif
-/.github/workflows/                       @galak @nashif
+/.github/                                 @thst-nordic
 /.buildkite/				  @galak
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
@@ -367,6 +366,7 @@
 /include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
 /include/zephyr.h                         @andrewboie @andyross
+/Jenkinsfile                              @thst-nordic
 /kernel/                                  @andrewboie @andyross
 /lib/fnmatch/                             @carlescufi
 /lib/gui/                                 @vanwinkeljan
