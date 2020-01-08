@@ -1,0 +1,7 @@
+identifier: bcm958401m2
+name: Broadcom BCM958401M2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
