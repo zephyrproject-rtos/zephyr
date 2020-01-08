@@ -488,7 +488,7 @@ static void test_send_ns_extra_options(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_invalid),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 	net_pkt_lladdr_clear(pkt);
@@ -511,7 +511,7 @@ static void test_send_ns_no_options(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_no_sllao),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 	net_pkt_lladdr_clear(pkt);
@@ -627,7 +627,7 @@ static void test_hbho_message(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	net_pkt_lladdr_clear(pkt);
@@ -678,7 +678,7 @@ static void test_hbho_message_1(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_1),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
 
@@ -738,7 +738,7 @@ static void test_hbho_message_2(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_2),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 
 	net_pkt_write(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
@@ -901,7 +901,7 @@ static void test_hbho_message_3(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_3),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	net_pkt_lladdr_clear(pkt);

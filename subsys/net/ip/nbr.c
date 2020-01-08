@@ -179,9 +179,9 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
 
 struct net_linkaddr_storage *net_nbr_get_lladdr(u8_t idx)
 {
-	NET_ASSERT_INFO(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS,
-			"idx %d >= max %d", idx,
-			CONFIG_NET_IPV6_MAX_NEIGHBORS);
+	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS,
+		   "idx %d >= max %d", idx,
+		   CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
 	return &net_neighbor_lladdr[idx].lladdr;
 }

@@ -1410,7 +1410,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 		switch (data->state) {
 		case NET_IPV6_NBR_STATE_STATIC:
-			NET_ASSERT_INFO(false, "Static entry shall never timeout");
+			NET_ASSERT(false, "Static entry shall never timeout");
 			break;
 
 		case NET_IPV6_NBR_STATE_INCOMPLETE:
@@ -1489,7 +1489,7 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 
 	time = net_if_ipv6_get_reachable_time(iface);
 
-	NET_ASSERT_INFO(time, "Zero reachable timeout!");
+	NET_ASSERT(time, "Zero reachable timeout!");
 
 	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
 		nbr, net_ipv6_nbr_data(nbr), time);
