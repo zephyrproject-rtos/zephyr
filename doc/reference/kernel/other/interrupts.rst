@@ -152,6 +152,32 @@ The IRQ must be subsequently **enabled** to permit the ISR to execute.
     Disabling an IRQ prevents *all* threads in the system from being preempted
     by the associated ISR, not just the thread that disabled the IRQ.
 
+Zero Latency Interrupts
+-----------------------
+
+Preventing interruptions by applying an IRQ lock may increase the observed
+interrupt latency. A high interrupt latency, however, may not be acceptable
+for certain low-latency use-cases.
+
+The kernel addresses such use-cases by allowing interrupts with critical
+latency constraints to execute at a priority level that cannot be blocked
+by interrupt locking. These interrupts are defined as
+*zero-latency interrupts*. The support for zero-latency interrupts requires
+:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled.
+
+Zero-latency interrupts are expected to be used to manage hardware events
+directly, and not to interoperate with the kernel code at all. They should
+treat all kernel APIs as undefined behavior (i.e. an application that uses the
+APIs inside a zero-latency interrupt context is responsible for directly
+verifying correct behavior). Zero-latency interrupts may not modify any data
+inspected by kernel APIs invoked from normal Zephyr contexts and shall not
+generate exceptions that need to be handled synchronously (e.g. kernel panic).
+
+.. important::
+    Zero-latency interrupts are supported on an architecture-specific basis.
+    The feature is currently implemented in the ARM Cortex-M architecture
+    variant.
+
 Offloading ISR Work
 ===================
 
