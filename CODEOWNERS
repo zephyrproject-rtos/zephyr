@@ -13,9 +13,8 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
-/.known-issues/                           @nashif
-/.github/				  @nashif
-/.github/workflows/                       @galak @nashif
+/.known-issues/                           @inakypg @nashif
+/.github/                                 @thst-nordic
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
@@ -359,6 +358,7 @@
 /include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
 /include/zephyr.h                         @andrewboie @andyross
+/Jenkinsfile                              @thst-nordic
 /kernel/                                  @andrewboie @andyross
 /lib/fnmatch/                             @carlescufi
 /lib/gui/                                 @vanwinkeljan
