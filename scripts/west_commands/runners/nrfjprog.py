@@ -88,6 +88,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                 'disabled since standard input is not a terminal.) '
                 'Please specify a serial number on the command line.')
 
+        snrs = sorted(snrs)
         print('There are multiple boards connected.')
         for i, snr in enumerate(snrs, 1):
             print('{}. {}'.format(i, snr))
