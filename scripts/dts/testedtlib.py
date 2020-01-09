@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import io
+import os
 import sys
 
 import edtlib
@@ -13,8 +14,9 @@ import edtlib
 #
 #   $ ./testedtlib.py
 #
-# test.dts is the test file. test-bindings/ has bindings. The tests mostly use
-# string comparisons via the various __repr__() methods.
+# test.dts is the main test file. test-bindings/ and test-bindings-2/ has
+# bindings. The tests mostly use string comparisons via the various __repr__()
+# methods.
 
 
 def run():
@@ -22,18 +24,6 @@ def run():
     Runs all edtlib tests. Immediately exits with status 1 and a message on
     stderr on test suite failures.
     """
-
-    def fail(msg):
-        sys.exit("test failed: " + msg)
-
-    def verify_eq(actual, expected):
-        if actual != expected:
-            # Put values on separate lines to make it easy to spot differences
-            fail("not equal (expected value last):\n'{}'\n'{}'"
-                 .format(actual, expected))
-
-    def verify_streq(actual, expected):
-        verify_eq(str(actual), expected)
 
     warnings = io.StringIO()
     edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
@@ -240,7 +230,6 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     verify_streq(edt.get_node("/in-dir-2").binding_path,
                  "test-bindings-2/multidir.yaml")
 
-
     #
     # Test dependency relations
     #
@@ -252,7 +241,96 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     if edt.get_node("/in-dir-1") not in edt.get_node("/").required_by:
         fail("/in-dir-1 should directly depend on /")
 
+    #
+    # Test error messages from _slice()
+    #
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <2>;
+
+	sub {
+		reg = <3>;
+	};
+};
+""", "'reg' property in <Node /sub in 'error.dts'> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	sub {
+		interrupts = <1>;
+		interrupt-parent = < &{/controller} >;
+	};
+	controller {
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+};
+""", "'interrupts' property in <Node /sub in 'error.dts'> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+
+	sub-1 {
+		#address-cells = <2>;
+		#size-cells = <3>;
+		ranges = <4 5>;
+
+		sub-2 {
+			reg = <1 2 3 4 5>;
+		};
+	};
+};
+""", "'ranges' property in <Node /sub-1 in 'error.dts'> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+
     print("all tests passed")
+
+
+def verify_error(dts, error):
+    # Verifies that parsing a file with the contents 'dts' (a string) raises an
+    # EDTError with the message 'error'
+
+    # Could use the 'tempfile' module instead of 'error.dts', but having a
+    # consistent filename makes error messages consistent and easier to test.
+    # error.dts is kept if the test fails, which is helpful.
+
+    with open("error.dts", "w", encoding="utf-8") as f:
+        f.write(dts)
+        f.flush()  # Can't have unbuffered text IO, so flush() instead
+        try:
+            edtlib.EDT("error.dts", [])
+        except edtlib.EDTError as e:
+            if str(e) != error:
+                fail(f"expected the EDTError '{error}', got the EDTError '{e}'")
+        except Exception as e:
+            fail(f"expected the EDTError '{error}', got the {type(e).__name__} '{e}'")
+        else:
+            fail(f"expected the error '{error}', got no error")
+
+    os.remove("error.dts")
+
+
+def fail(msg):
+    sys.exit("test failed: " + msg)
+
+
+def verify_eq(actual, expected):
+    if actual != expected:
+        # Put values on separate lines to make it easy to spot differences
+        fail("not equal (expected value last):\n'{}'\n'{}'"
+             .format(actual, expected))
+
+
+def verify_streq(actual, expected):
+    verify_eq(str(actual), expected)
 
 
 if __name__ == "__main__":
