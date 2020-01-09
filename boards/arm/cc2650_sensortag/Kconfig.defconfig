@@ -7,4 +7,7 @@ if BOARD_CC2650_SENSORTAG
 config BOARD
 	default "cc2650_sensortag"
 
+config BOARD_DEPRECATED_RELEASE
+	default "2.2.0"
+
 endif # BOARD_CC2650_SENSORTAG
