@@ -241,7 +241,7 @@ def id_fn(test_case):
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
+@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
 def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
@@ -262,7 +262,7 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
+@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
 def test_nrfjprog_create(cc, get_snr, req, test_case, runner_config):
