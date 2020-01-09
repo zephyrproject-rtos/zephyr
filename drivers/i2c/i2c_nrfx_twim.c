@@ -167,11 +167,12 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
+	u32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		u32_t new_state = *((const u32_t *)context);
 
-		if (new_state != get_dev_data(dev)->pm_state) {
+		if (new_state != pm_current_state) {
 			switch (new_state) {
 			case DEVICE_PM_ACTIVE_STATE:
 				init_twim(dev);
@@ -185,6 +186,9 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			case DEVICE_PM_LOW_POWER_STATE:
 			case DEVICE_PM_SUSPEND_STATE:
 			case DEVICE_PM_OFF_STATE:
+				if (pm_current_state != DEVICE_PM_ACTIVE_STATE) {
+					break;
+				}
 				nrfx_twim_uninit(&get_dev_config(dev)->twim);
 				break;
 
