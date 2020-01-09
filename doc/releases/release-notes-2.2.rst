@@ -52,6 +52,12 @@ Stable API changes in this release
 Removed APIs in this release
 ============================
 
+* Shell
+
+  * SHELL_CREATE_STATIC_SUBCMD_SET (deprecated), replaced by
+    SHELL_STATIC_SUBCMD_SET_CREATE
+  * SHELL_CREATE_DYNAMIC_CMD (deprecated), replaced by SHELL_DYNAMIC_CMD_CREATE
+
 Kernel
 ******
 
