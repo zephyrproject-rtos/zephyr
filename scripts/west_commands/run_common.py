@@ -295,6 +295,12 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     except MissingProgram as e:
         log.die('required program', e.filename,
                 'not found; install it or add its location to PATH')
+    except RuntimeError as re:
+        if not args.verbose:
+            log.die(re)
+        else:
+            log.err('verbose mode enabled, dumping stack:', fatal=True)
+            raise
 
 
 #
