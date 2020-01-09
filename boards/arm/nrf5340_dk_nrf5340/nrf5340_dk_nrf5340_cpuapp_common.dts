@@ -163,11 +163,22 @@
 	};
 };
 
-/ {
-	/* SRAM allocated to the Non-Secure image */
-	sram0_ns: memory@20020000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
+&sram0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* SRAM allocated to the Secure image */
+		sram0_s: memory@20000000 {
+			label = "secure_sram_partition";
+		};
+
+		/* SRAM allocated to the Non-Secure image */
+		sram0_ns: memory@20010000 {
+			label = "non_secure_sram_partition";
+		};
 	};
 };
 
