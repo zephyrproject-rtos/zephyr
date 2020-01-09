@@ -285,7 +285,14 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     parsed_args, unknown = parser.parse_known_args(args=final_runner_args)
     if unknown:
         log.die('Runner', runner, 'received unknown arguments:', unknown)
-    runner = runner_cls.create(cfg, parsed_args)
+    try:
+        runner = runner_cls.create(cfg, parsed_args)
+    except RuntimeError as re:
+        if not args.verbose:
+            log.die(re)
+        else:
+            log.err('verbose mode enabled, dumping stack:', fatal=True)
+            raise
     try:
         runner.run(command_name)
     except ValueError as ve:
