@@ -55,3 +55,6 @@
 &sram0_ns {
 	reg = <0x20010000 0x60000>;
 };
+
+/* Include shared RAM configuration file */
+#include "nrf5340_dk_nrf5340_shared_sram_planning_conf.dts"
