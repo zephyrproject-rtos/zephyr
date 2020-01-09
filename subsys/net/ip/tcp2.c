@@ -452,30 +452,30 @@ out:
 	return prefix ? s : (s + 4);
 }
 
-static void tcp_win_append(struct tcp *conn, struct tcp_win *w,
-				const char *name, const void *data,
-				size_t data_len)
+static void tcp_win_append(struct tcp *conn, struct tcp_win *win,
+			   const char *name, const void *buf, size_t len)
 {
-	size_t total = data_len, prev_len = w->len, len;
-	struct net_buf *buf;
+	ssize_t total = len, prev_len = win->len, size;
+	size_t off = 0;
+	struct net_buf *nb;
 
-	NET_ASSERT(data_len, "Zero length data");
+	NET_ASSERT(total);
 
 	while (total) {
-		len = (total <= CONFIG_NET_BUF_DATA_SIZE) ?
-			total : CONFIG_NET_BUF_DATA_SIZE;
+		size = MIN(total, CONFIG_NET_BUF_DATA_SIZE);
 
-		buf = tcp_nbuf_alloc(conn, len);
+		nb = tcp_nbuf_alloc(conn, size);
 
-		memcpy(net_buf_add(buf, len), data, len);
+		memcpy(net_buf_add(nb, size), (u8_t *)buf + off, size);
 
-		sys_slist_append(&w->bufs, (void *)&buf->user_data);
+		sys_slist_append(&win->bufs, (void *)&nb->user_data);
 
-		total -= len;
-		w->len += len;
+		total -= size;
+		win->len += size;
+		off += size;
 	}
 
-	NET_DBG("%s %p %zu->%zu byte(s)", name, buf, prev_len, w->len);
+	NET_DBG("%s %zu->%zu byte(s)", name, prev_len, win->len);
 }
 
 static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
