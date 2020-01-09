@@ -15,7 +15,7 @@
 #include <device.h>
 #include <fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
-#include <nffs/nffs.h>
+#include <fs/littlefs.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_OS_MGMT
 #include "os_mgmt/os_mgmt.h"
@@ -48,12 +48,12 @@ STATS_NAME_END(smp_svr_stats);
 STATS_SECT_DECL(smp_svr_stats) smp_svr_stats;
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-static struct nffs_flash_desc flash_desc;
-
-static struct fs_mount_t nffs_mnt = {
-	.type = FS_NFFS,
-	.mnt_point = "/nffs",
-	.fs_data = &flash_desc
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
+static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &cstorage,
+	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.mnt_point = "/lfs"
 };
 #endif
 
@@ -115,9 +115,6 @@ static void bt_ready(int err)
 
 void main(void)
 {
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	struct device *flash_dev;
-#endif
 	int rc;
 
 	rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
@@ -125,17 +122,9 @@ void main(void)
 
 	/* Register the built-in mcumgr command handlers. */
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		printk("Error getting NFFS flash device binding\n");
-	} else {
-		/* set backend storage dev */
-		nffs_mnt.storage_dev = flash_dev;
-
-		rc = fs_mount(&nffs_mnt);
-		if (rc < 0) {
-			printk("Error mounting nffs [%d]\n", rc);
-		}
+	rc = fs_mount(&littlefs_mnt);
+	if (rc < 0) {
+		printk("Error mounting littlefs [%d]\n", rc);
 	}
 
 	fs_mgmt_register_group();
