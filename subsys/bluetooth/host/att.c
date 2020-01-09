@@ -86,7 +86,8 @@ struct bt_att {
 #endif
 };
 
-static struct bt_att bt_req_pool[CONFIG_BT_MAX_CONN];
+K_MEM_SLAB_DEFINE(att_slab, sizeof(struct bt_att),
+		  CONFIG_BT_MAX_CONN, 16);
 static struct bt_att_req cancel;
 
 static void att_req_destroy(struct bt_att_req *req)
@@ -2126,6 +2127,8 @@ static void att_timeout(struct k_work *work)
 	/* Consider the channel disconnected */
 	bt_gatt_disconnected(ch->chan.conn);
 	ch->chan.conn = NULL;
+
+	k_mem_slab_free(&att_slab, (void **)&att);
 }
 
 static void bt_att_connected(struct bt_l2cap_chan *chan)
@@ -2157,6 +2160,8 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 	att_reset(att);
 
 	bt_gatt_disconnected(ch->chan.conn);
+
+	k_mem_slab_free(&att_slab, (void **)&att);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -2207,7 +2212,6 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 
 static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	int i;
 	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_att_connected,
 		.disconnected = bt_att_disconnected,
@@ -2216,29 +2220,21 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.encrypt_change = bt_att_encrypt_change,
 #endif /* CONFIG_BT_SMP */
 	};
+	struct bt_att *att;
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
-	for (i = 0; i < ARRAY_SIZE(bt_req_pool); i++) {
-		struct bt_att *att = &bt_req_pool[i];
-
-		if (att->chan.chan.conn) {
-			continue;
-		}
-
-		(void)memset(att, 0, sizeof(*att));
-		att->chan.chan.ops = &ops;
-		k_sem_init(&att->tx_sem, CONFIG_BT_ATT_TX_MAX,
-			   CONFIG_BT_ATT_TX_MAX);
-
-		*chan = &att->chan.chan;
-
-		return 0;
+	if (k_mem_slab_alloc(&att_slab, (void **)&att, K_NO_WAIT)) {
+		BT_ERR("No available ATT context for conn %p", conn);
+		return -ENOMEM;
 	}
 
-	BT_ERR("No available ATT context for conn %p", conn);
+	(void)memset(att, 0, sizeof(*att));
+	att->chan.chan.ops = &ops;
+	k_sem_init(&att->tx_sem, CONFIG_BT_ATT_TX_MAX, CONFIG_BT_ATT_TX_MAX);
+	*chan = &att->chan.chan;
 
-	return -ENOMEM;
+	return 0;
 }
 
 BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept);
