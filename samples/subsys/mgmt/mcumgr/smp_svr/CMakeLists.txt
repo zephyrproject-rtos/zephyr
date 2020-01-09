@@ -15,5 +15,3 @@ project(smp_svr)
 target_sources(app PRIVATE
     src/main.c
 )
-
-zephyr_link_libraries_ifdef(CONFIG_FILE_SYSTEM_NFFS NFFS)
