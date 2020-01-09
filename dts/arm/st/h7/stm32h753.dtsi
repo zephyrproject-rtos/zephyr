@@ -21,7 +21,7 @@
 	};
 
 	soc {
-    	i2c1: i2c@0x40005400 {
+		i2c1: i2c@0x40005400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -34,7 +34,7 @@
 			label = "I2C_1";
 		};
 
-    	i2c2: i2c@0x40005800 {
+		i2c2: i2c@0x40005800 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -47,7 +47,7 @@
 			label = "I2C_2";
 		};
 
-    	i2c3: i2c@0x40005C00 {
+		i2c3: i2c@0x40005C00 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -60,7 +60,7 @@
 			label = "I2C_3";
 		};
 
-    	i2c4: i2c@0x58001C00 {
+		i2c4: i2c@0x58001C00 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
