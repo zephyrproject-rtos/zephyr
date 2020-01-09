@@ -480,7 +480,7 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
     string(TOUPPER ${module_name} MODULE_NAME_UPPER)
     set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
-    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/${module_name})
+    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
   endforeach()
   # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
   set(ZEPHYR_CURRENT_MODULE_DIR)
