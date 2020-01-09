@@ -1505,10 +1505,10 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
 endif()
 endif()
 
-if(CONFIG_BOARD_DEPRECATED)
+if(CONFIG_BOARD_DEPRECATED_RELEASE)
   message(WARNING "
       WARNING:  The board '${BOARD}' is deprecated and will be
-      removed in version ${CONFIG_BOARD_DEPRECATED}"
+      removed in version ${CONFIG_BOARD_DEPRECATED_RELEASE}"
   )
 endif()
 
