@@ -129,25 +129,30 @@ a gray background, except for the root node, which is shown using its path
 
 Some important properties are:
 
-- **compatible**: this says what "kind" of device the node represents. Its
-  value is a null-terminated string in the format "vendor,device", like
-  ``"avago,apds9960"``, or a sequence of these, like ``"ti,hdc",
-  "ti,hdc1010"``. The build system uses the compatible property to find the
-  right bindings for the node.
-- **label**: the device's name according to Zephyr's :ref:`device_drivers`. The
-  value can be passed to :c:func:`device_get_binding()` to retrieve the
-  corresponding driver-level :ref:`struct device* <device_struct>`. This
-  pointer can then be passed to the correct driver API by application code to
-  interact with the device. For example, calling
-  ``device_get_binding("I2C_0")`` would return a pointer to a device
-  structure which could be passed to :ref:`I2C API <i2c_api>` functions like
-  :c:func:`i2c_transfer()`. The generated C header will also contain a macro
-  which expands to this string.
-- **reg**: information used to address the device. This could be a
-  memory-mapped I/O address range (as with ``i2c@40003000``\ 's reg property),
-  an I2C bus address (as with ``apds9960@39`` and its devicetree siblings), a
-  SPI chip select line, or some other value depending on the kind of device the
-  node represents.
+compatible
+    Says what kind of device the node represents. The value is a
+    string in the format "vendor,device", like ``"avago,apds9960"``, or a
+    sequence of these, like ``"ti,hdc", "ti,hdc1010"``. The build system uses
+    the compatible property to find the right :ref:`binding <bindings>` for the
+    node.
+
+label
+    The device's name according to Zephyr's :ref:`device_drivers`. The value
+    can be passed to :c:func:`device_get_binding()` to retrieve the
+    corresponding driver-level :ref:`struct device* <device_struct>`. This
+    pointer can then be passed to the correct driver API by application code to
+    interact with the device. For example, calling
+    ``device_get_binding("I2C_0")`` would return a pointer to a device
+    structure which could be passed to :ref:`I2C API <i2c_api>` functions like
+    :c:func:`i2c_transfer()`. The generated C header will also contain a macro
+    which expands to this string.
+
+reg
+    Information used to address the device. This could be a memory-mapped I/O
+    address range (as with ``i2c@40003000``\ 's reg property), an I2C bus
+    address (as with ``apds9960@39`` and its devicetree siblings), a SPI chip
+    select line, or some other value depending on the kind of device the node
+    represents.
 
 This tree has the following DTS.
 
