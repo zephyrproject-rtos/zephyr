@@ -576,9 +576,6 @@ class BinaryHandler(Handler):
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
-            _, stderr = proc.communicate(timeout=30)
-            if stderr:
-                logger.error(stderr.decode())
 
         handler_time = time.time() - start_time
 
