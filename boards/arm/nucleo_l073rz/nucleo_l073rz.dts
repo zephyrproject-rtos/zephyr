@@ -38,6 +38,8 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		adc1 = &adc1;
+		dac1 = &dac1;
 	};
 };
 
@@ -64,5 +66,9 @@
 };
 
 &adc1 {
+	status = "okay";
+};
+
+&dac1 {
 	status = "okay";
 };
