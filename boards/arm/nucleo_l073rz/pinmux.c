@@ -34,6 +34,9 @@ static const struct pin_config pinconf[] = {
 #ifdef CONFIG_ADC_1
 	{STM32_PIN_PA0, STM32L0_PINMUX_FUNC_PA0_ADC_IN0},
 #endif /* CONFIG_ADC_1 */
+#if DT_HAS_NODE(DT_NODELABEL(dac1))
+	{STM32_PIN_PA4, STM32L0_PINMUX_FUNC_PA4_DAC_OUT1},
+#endif /* dac1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
