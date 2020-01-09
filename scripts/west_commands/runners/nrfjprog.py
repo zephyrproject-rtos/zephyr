@@ -54,11 +54,9 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        ret = NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                   args.snr, erase=args.erase,
-                                   tool_opt=args.tool_opt)
-        ret.ensure_snr()
-        return ret
+        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
+                                    args.snr, erase=args.erase,
+                                    tool_opt=args.tool_opt)
 
     def ensure_snr(self):
         if not self.snr:
@@ -101,6 +99,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require('nrfjprog')
+
+        self.ensure_snr()
 
         commands = []
         if self.snr is None:
