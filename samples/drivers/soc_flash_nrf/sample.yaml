@@ -4,3 +4,20 @@ tests:
   sample.drivers.flash.soc_flash_nrf::
     platform_whitelist: nrf52_pca10040 nrf9160_pca10090 nrf9160_pca10090ns
     tags: flash nrf52
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        -  "Flash erase succeeded"
+        -  "Data read: 1234"
+        -  "Data read matches data written. Good!"
+        -  "Flash erase succeeded"
+        -  "Data read: 1122"
+        -  "Data read matches data written. Good!"
+        -  "Flash erase succeeded"
+        -  "Data read: 1234"
+        -  "Data read: 1234"
+        -  "Data read matches data written. Good!"
+        -  "SoC flash consists of \\d+ pages."
+        -  "write-block-size = 1"
