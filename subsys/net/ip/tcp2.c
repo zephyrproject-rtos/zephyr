@@ -1155,9 +1155,13 @@ next_state:
 static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
 				int flags)
 {
+	int x = irq_lock();
+
 	tcp_win_append(conn, conn->snd, "SND", buf, len);
 
 	tcp_in(conn, NULL);
+
+	irq_unlock(x);
 
 	return len;
 }
