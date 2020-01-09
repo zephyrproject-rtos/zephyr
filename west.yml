@@ -85,9 +85,6 @@ manifest:
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
       path: tools/net-tools
-    - name: nffs
-      revision: 00dd4fab1a00f2f6e995ef3f2e7c3814689f8885
-      path: modules/fs/nffs
     - name: hal_nxp
       revision: 7f45cbef08deca18b3931c087fd28ea34f45bade
       path: modules/hal/nxp
