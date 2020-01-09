@@ -1,0 +1,11 @@
+sample:
+  name: DAC driver sample
+tests:
+  sample.drivers.dac:
+    tags: DAC
+    depends_on: dac
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Generating sawtooth signal at DAC channel ([0-9]*)."
