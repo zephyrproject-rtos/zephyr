@@ -1512,6 +1512,13 @@ if(CONFIG_BOARD_DEPRECATED_RELEASE)
   )
 endif()
 
+if(CONFIG_SOC_DEPRECATED_RELEASE)
+  message(WARNING "
+      WARNING:  The SoC '${SOC_NAME}' is deprecated and will be
+      removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
+  )
+endif()
+
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through
 # Kconfig. Here we give a warning when there is a mismatch between the
