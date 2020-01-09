@@ -9,19 +9,20 @@
 #include <zephyr.h>
 #include <device.h>
 #include <fs/fs.h>
-#include <nffs/nffs.h>
+#include <fs/littlefs.h>
 #include <ztest.h>
 
 #include <lvgl.h>
 
 #define IMG_FILE_PATH "/mnt/img.bin"
 
-static struct nffs_flash_desc flash_desc;
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 static struct fs_mount_t mnt = {
-	.type = FS_NFFS,
-	.mnt_point = "/mnt",
-	.fs_data = &flash_desc,
+	.type = FS_LITTLEFS,
+	.fs_data = &cstorage,
+	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.mnt_point = "/mnt"
 };
 
 void test_get_default_screen(void)
@@ -73,19 +74,11 @@ void test_add_img(void)
 
 void setup_fs(void)
 {
-	struct device *flash_dev;
 	struct fs_file_t img;
 	struct fs_dirent info;
 	int ret;
 	const lv_img_dsc_t *c_img = get_lvgl_img();
 
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	if (flash_dev == NULL) {
-		TC_PRINT("Could not get flash device \"%s\"\n",
-				CONFIG_FS_NFFS_FLASH_DEV_NAME);
-		ztest_test_fail();
-	}
-	mnt.storage_dev = flash_dev;
 	ret = fs_mount(&mnt);
 	if (ret < 0) {
 		TC_PRINT("Failed to mount file system: %d\n", ret);
