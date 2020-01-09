@@ -99,7 +99,7 @@
 # All cmake related files
 /cmake/                                   @SebastianBoe @nashif
 /CMakeLists.txt                           @SebastianBoe @nashif
-/doc/                                     @dbkinder
+# /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
 /doc/scripts/                             @carlescufi
@@ -415,5 +415,5 @@
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
-*.rst                                     @dbkinder
-*posix*.rst                               @dbkinder @aescolar
+# *.rst                                     @dbkinder
+*posix*.rst                               @aescolar
