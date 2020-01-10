@@ -575,7 +575,7 @@ static int erase_storage(void)
 	struct device *dev;
 
 	dev = device_get_binding(DT_FLASH_DEV_NAME);
-	
+
 	flash_write_protection_set(dev, false);
 
 	return flash_erase(dev, DT_FLASH_AREA_STORAGE_OFFSET,
