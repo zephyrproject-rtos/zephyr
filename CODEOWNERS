@@ -394,6 +394,7 @@
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
+/tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
