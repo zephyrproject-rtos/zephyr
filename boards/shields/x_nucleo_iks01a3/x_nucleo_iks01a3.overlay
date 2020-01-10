@@ -22,7 +22,7 @@
 	stts751@4a {
 		compatible = "st,stts751";
 		reg = <0x4a>;
-		drdy-gpios =  <&arduino_header 4 0>; /* A4 */
+		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_LOW>; /* A4 */
 		label = "STTS751";
 	};
 

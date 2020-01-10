@@ -30,6 +30,7 @@ struct stts751_config {
 #ifdef CONFIG_STTS751_TRIGGER
 	const char *event_port;
 	u8_t event_pin;
+	u8_t int_flags;
 #endif
 #ifdef DT_ST_STTS751_BUS_I2C
 	u16_t i2c_slv_addr;
