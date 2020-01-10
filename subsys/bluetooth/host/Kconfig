@@ -60,6 +60,16 @@ config BT_DISCARDABLE_BUF_COUNT
 	  it will not cause the allocation for other critical events to
 	  block and may even eliminate deadlocks in some cases.
 
+config BT_DISCARDABLE_BUF_SIZE
+	int "Size of discardable event buffers"
+	range 44 257
+	default 257 if BT_BREDR
+	default 44
+	help
+	  Size of buffers in the separate discardable event buffer pool.
+	  The minimum size is set based on the Advertising Report. Setting
+	  the buffer size different than BT_RX_BUF_LEN can save memory.
+
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
