@@ -72,6 +72,10 @@
 };
 
 / {
+	aliases {
+		gpio-2 = &gpio2_rt1010;
+	};
+
 	soc {
 		gpio2_rt1010: gpio@42000000 {
 			compatible = "nxp,imx-gpio";
