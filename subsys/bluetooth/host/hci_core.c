@@ -159,12 +159,15 @@ NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 
 #if defined(CONFIG_BT_CONN)
+#define NUM_COMLETE_EVENT_SIZE BT_BUF_SIZE(                            \
+	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
+	CONFIG_BT_MAX_CONN * sizeof(struct bt_hci_handle_count))
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
  * consumed synchronously by bt_recv_prio() so a single buffer is enough.
  * Having a dedicated pool for it ensures that exhaustion of the RX pool
  * cannot block the delivery of this priority event.
  */
-NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, BT_BUF_RX_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, NULL);
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
