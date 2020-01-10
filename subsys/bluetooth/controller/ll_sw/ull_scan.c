@@ -167,7 +167,6 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 	struct lll_scan *lll = &scan->lll;
 	uint32_t ticks_slot_overhead;
-	uint32_t ticks_slot_offset;
 	uint32_t ticks_interval;
 	uint32_t ticks_anchor;
 	uint32_t ret;
@@ -205,11 +204,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		lll->ticks_window = 0;
 	}
 
-	ticks_slot_offset = MAX(scan->evt.ticks_active_to_start,
-				scan->evt.ticks_xtal_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = ticks_slot_offset;
+		ticks_slot_overhead = MAX(scan->evt.ticks_active_to_start,
+					  scan->evt.ticks_xtal_to_start);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -222,8 +219,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		uint32_t offset_us = 0U;
 
 		ull_sched_after_mstr_slot_get(TICKER_USER_ID_THREAD,
-					      (ticks_slot_offset +
-					       scan->evt.ticks_slot),
+					      (scan->evt.ticks_slot +
+					       ticks_slot_overhead),
 					      &ticks_ref, &offset_us);
 
 		/* Use the ticks_ref as scanner's anchor if a free time space
@@ -402,26 +399,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
 	LL_ASSERT(!ret);
-
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-	/* calc next group in us for the anchor where first connection event
-	 * to be placed
-	 */
-	if (scan->lll.conn) {
-		static memq_link_t s_link;
-		static struct mayfly s_mfy_sched_after_mstr_offset_get = {
-			0, 0, &s_link, NULL,
-			ull_sched_mfy_after_mstr_offset_get};
-		uint32_t retval;
-
-		s_mfy_sched_after_mstr_offset_get.param = (void *)scan;
-
-		retval = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-				TICKER_USER_ID_ULL_LOW, 1,
-				&s_mfy_sched_after_mstr_offset_get);
-		LL_ASSERT(!retval);
-	}
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	DEBUG_RADIO_PREPARE_O(1);
 }

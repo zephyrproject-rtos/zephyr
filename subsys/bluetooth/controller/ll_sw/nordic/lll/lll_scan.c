@@ -30,6 +30,7 @@
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
+#include "lll_sched.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -117,11 +118,11 @@ static int init_reset(void)
 	return 0;
 }
 
-static int prepare_cb(struct lll_prepare_param *prepare_param)
+static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct lll_scan *lll = prepare_param->param;
 	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	uint32_t ticks_at_event, ticks_at_start;
+	struct lll_scan *lll = p->param;
 	struct node_rx_pdu *node_rx;
 	struct evt_hdr *evt;
 	uint32_t remainder_us;
@@ -200,14 +201,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 				       (uint8_t *)wl->bdaddr);
 	}
 
-	ticks_at_event = prepare_param->ticks_at_expire;
+	ticks_at_event = p->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
 	ticks_at_event += lll_evt_offset_get(evt);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	remainder = prepare_param->remainder;
+	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
@@ -255,6 +256,26 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 				  (ret == TICKER_STATUS_BUSY));
 		}
+
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+		/* calc next group in us for the anchor where first connection
+		 * event to be placed.
+		 */
+		if (lll->conn) {
+			static memq_link_t link;
+			static struct mayfly mfy_after_mstr_offset_get = {
+				0, 0, &link, NULL,
+				ull_sched_mfy_after_mstr_offset_get};
+			uint32_t retval;
+
+			mfy_after_mstr_offset_get.param = p;
+
+			retval = mayfly_enqueue(TICKER_USER_ID_LLL,
+						TICKER_USER_ID_ULL_LOW, 1,
+						&mfy_after_mstr_offset_get);
+			LL_ASSERT(!retval);
+		}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
