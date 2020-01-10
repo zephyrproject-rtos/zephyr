@@ -33,7 +33,7 @@ int edtt_write(u8_t *ptr, size_t size, int flags);
  */
 void enable_edtt_mode(void);
 void set_edtt_autoshutdown(bool mode);
-#endif /* CONFIG_POSIX_ARCH */
+#endif /* CONFIG_ARCH_POSIX */
 
 #ifdef __cplusplus
 }
