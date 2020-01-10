@@ -9,6 +9,7 @@ Peripherals
    adc.rst
    counter.rst
    clock_control.rst
+   dac.rst
    dma.rst
    eeprom.rst
    entropy.rst

@@ -144,6 +144,7 @@
 /drivers/console/*mux*                    @jukkar
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @andrewboie
+/drivers/dac/                             @martinjaeger
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale
@@ -285,6 +286,7 @@
 /include/drivers/adc.h                    @anangl
 /include/drivers/can.h                    @alexanderwachter
 /include/drivers/counter.h                @nordic-krch
+/include/drivers/dac.h                    @martinjaeger
 /include/drivers/display.h                @vanwinkeljan
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
