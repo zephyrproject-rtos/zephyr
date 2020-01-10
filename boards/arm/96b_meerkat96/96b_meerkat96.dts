@@ -39,13 +39,10 @@
 	};
 
 	aliases {
-		gpio-1 = &gpio1;
 		led0   = &green_led_0;
 		led1   = &green_led_1;
 		led2   = &green_led_2;
 		led3   = &green_led_3;
-		uart-1 = &uart1;
-		mu-b   = &mub;
 	};
 };
 
