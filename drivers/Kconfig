@@ -45,6 +45,8 @@ source "drivers/pinmux/Kconfig"
 
 source "drivers/adc/Kconfig"
 
+source "drivers/dac/Kconfig"
+
 source "drivers/watchdog/Kconfig"
 
 source "drivers/clock_control/Kconfig"
