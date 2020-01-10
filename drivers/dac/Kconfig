@@ -17,4 +17,6 @@ module = DAC
 module-str = DAC
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/dac/Kconfig.stm32"
+
 endif # DAC
