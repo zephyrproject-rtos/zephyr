@@ -1035,13 +1035,18 @@ int ull_disable(void *lll)
 	u32_t ret;
 
 	hdr = HDR_ULL(((struct lll_hdr *)lll)->parent);
-	if (!hdr || !hdr->ref) {
+	if (!hdr) {
 		return ULL_STATUS_SUCCESS;
 	}
 
 	k_sem_init(&sem, 0, 1);
+
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
+
+	if (!hdr->ref) {
+		return ULL_STATUS_SUCCESS;
+	}
 
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
