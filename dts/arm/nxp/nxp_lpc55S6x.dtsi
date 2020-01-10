@@ -9,6 +9,15 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases{
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		gpio-3 = &gpio3;
+		spi-8 = &spi8;
+		usart-0 = &usart0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
