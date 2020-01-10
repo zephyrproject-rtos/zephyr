@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,8 @@
 
 #define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 
+void test_uart_configure(void);
+void test_uart_config_get(void);
 void test_uart_poll_out(void);
 void test_uart_fifo_fill(void);
 void test_uart_fifo_read(void);
