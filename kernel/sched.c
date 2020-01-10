@@ -197,6 +197,16 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 #endif
 
+	/* If the current thread is marked aborting, mark it
+	 * dead so it will not be scheduled again.
+	 */
+	if (_current->base.thread_state & _THREAD_ABORTING) {
+		_current->base.thread_state |= _THREAD_DEAD;
+#ifdef CONFIG_SMP
+		_current_cpu->swap_ok = true;
+#endif
+	}
+
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
 	 * the queue (actually we have to, otherwise the assembly
@@ -636,10 +646,6 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	arch_sched_ipi();
-#endif
-
 	if (need_sched && _current->base.sched_locked == 0) {
 		z_reschedule_unlocked();
 	}
@@ -749,16 +755,6 @@ void *z_get_next_switch_handle(void *interrupted)
 	set_current(z_get_next_ready_thread());
 #endif
 
-	/* Some architectures don't have a working IPI, so the best we
-	 * can do there is check the abort status of the current
-	 * thread here on ISR exit
-	 */
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
-	}
-
-	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
@@ -1164,27 +1160,14 @@ void z_impl_k_wakeup(k_tid_t thread)
 	if (!arch_is_in_isr()) {
 		z_reschedule_unlocked();
 	}
-
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	arch_sched_ipi();
-#endif
 }
 
 #ifdef CONFIG_SMP
-/* Called out of the scheduler interprocessor interrupt.  All it does
- * is flag the current thread as dead if it needs to abort, so the ISR
- * return into something else and the other thread which called
- * k_thread_abort() can finish its work knowing the thing won't be
- * rescheduled.
- */
 void z_sched_ipi(void)
 {
-	LOCKED(&sched_spinlock) {
-		if (_current->base.thread_state & _THREAD_ABORTING) {
-			_current->base.thread_state |= _THREAD_DEAD;
-			_current_cpu->swap_ok = true;
-		}
-	}
+	/* NOTE: When adding code to this, make sure this is called
+	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
+	 */
 }
 
 void z_sched_abort(struct k_thread *thread)
