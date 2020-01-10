@@ -77,10 +77,10 @@ manifest:
       revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: v1.5.0
+      revision: 470e2f3d5bdcb1892d76a534a745186fd8ff5aab
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 0a7149965a5684a539213e9295115d6ee90be716
+      revision: 301892dad2eb97294f634b632c4ab6a6c56426b5
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 4bff01084d225996e4aae84b98be5969e2f9f33d
@@ -102,7 +102,7 @@ manifest:
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 0fc68fceacd1efc1ce809c5880c380f3d98b7b6e
+      revision: 3cb8555348358d437893d3ab8e8de4e3b916afae
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
