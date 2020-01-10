@@ -13,24 +13,6 @@
 	compatible = "nxp,mk22f12", "nxp,k22f", "nxp,k2x";
 
 	aliases {
-		adc-0 = &adc0;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
-		uart-0 = &uart0;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
