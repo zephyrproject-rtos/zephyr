@@ -9,22 +9,11 @@
 	compatible = "nxp,kw41z", "nxp,mkw41z4";
 
 	aliases {
-		adc-0 = &adc0;
-		lpuart-0 = &lpuart0;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_4;
-		rtc-0 = &rtc0;
 	};
 
 	chosen {
