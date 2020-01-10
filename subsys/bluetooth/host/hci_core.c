@@ -5266,12 +5266,6 @@ int bt_set_name(const char *name)
 		struct bt_ad sd = { data, ARRAY_SIZE(data) };
 
 		set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, &sd, 1);
-
-		/* Make sure the new name is set */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-			set_advertise_enable(false);
-			set_advertise_enable(true);
-		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
