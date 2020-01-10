@@ -162,42 +162,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	rep stosq
 #endif
 
-	xorl %edi, %edi
-	call x86_sse_init
-
-#ifdef CONFIG_LOAPIC
-	call z_loapic_enable
-#endif
-
-#ifdef CONFIG_USERSPACE
-	/* Set landing site for system calls made with 'syscall' instruction */
-	movq $z_x86_syscall_entry_stub, %rax
-	movq %rax, %rdx
-	shrq $32, %rdx
-	movl $X86_LSTAR_MSR, %ecx
-	/* LSTAR set to 64-bit address denoted by EDX:EAX */
-	wrmsr
-
-	/* Set segment descriptors in STAR */
-	xorl %eax, %eax			/* Zero low bits, reserved */
-	movl $X86_STAR_UPPER, %edx
-	movl $X86_STAR_MSR, %ecx
-	wrmsr
-
-	/* Set EFLAGS mask applied when making system calls. Currently we
-	 * mask interrupts and clear direction flag.
-	 */
-	movl $0x600, %eax
-	xorl %edx, %edx
-	movl $X86_FMASK_MSR, %ecx
-	wrmsr
-#endif /* CONFIG_USERSPACE */
-
-	/* don't replace CALL with JMP; honor the ABI stack alignment! */
-
-	incl __x86_cpuboot_t_ready_OFFSET(%rbp)
-	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rdi
-	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
+	/* Enter C domain now that we have a stack set up, never to return */
+	movq %rbp, %rdi
+	call z_x86_cpu_init
 
 /*
  * void x86_sse_init(struct k_thread *thread);
