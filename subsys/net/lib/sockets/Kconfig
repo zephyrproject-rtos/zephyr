@@ -48,6 +48,7 @@ config NET_SOCKETS_DNS_TIMEOUT
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
+	depends on MBEDTLS
 	select TLS_CREDENTIALS
 	help
 	  Enable TLS socket option support which automatically establishes
