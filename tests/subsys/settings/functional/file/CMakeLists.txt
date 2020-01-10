@@ -9,7 +9,6 @@ target_sources(app PRIVATE ${app_sources})
 zephyr_include_directories(
 	$ENV{ZEPHYR_BASE}/subsys/settings/include
 	$ENV{ZEPHYR_BASE}/subsys/settings/src
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/nffs/src
 	)
 
 if(TEST)
