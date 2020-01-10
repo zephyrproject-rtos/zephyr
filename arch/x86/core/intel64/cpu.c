@@ -117,3 +117,28 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (x86_cpuboot[cpu_num].ready == 0) {
 	}
 }
+
+/* Per-CPU initialization, C domain. On the first CPU, z_x86_prep_c is the
+ * next step. For other CPUs it is probably smp_init_top().
+ */
+FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
+{
+	x86_sse_init(NULL);
+
+	z_loapic_enable();
+
+#ifdef CONFIG_USERSPACE
+	/* Set landing site for 'syscall' instruction */
+	z_x86_msr_write(X86_LSTAR_MSR, (u64_t)z_x86_syscall_entry_stub);
+
+	/* Set segment descriptors for syscall privilege transitions */
+	z_x86_msr_write(X86_STAR_MSR, (u64_t)X86_STAR_UPPER << 32);
+
+	/* Mask applied to RFLAGS when making a syscall */
+	z_x86_msr_write(X86_FMASK_MSR, EFLAGS_SYSCALL);
+#endif
+
+	/* Enter kernel, never return */
+	cpuboot->ready++;
+	cpuboot->fn(cpuboot->arg);
+}

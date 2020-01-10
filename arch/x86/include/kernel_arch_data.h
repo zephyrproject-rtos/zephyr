@@ -41,9 +41,11 @@
  * EFLAGS/RFLAGS definitions. (RFLAGS is just zero-extended EFLAGS.)
  */
 
-#define EFLAGS_IF	0x00000200U	/* interrupts enabled */
-#define EFLAGS_INITIAL	(EFLAGS_IF)
+#define EFLAGS_IF	BIT(9)	/* interrupts enabled */
+#define EFLAGS_DF	BIT(10)	/* Direction flag */
 
+#define EFLAGS_INITIAL	(EFLAGS_IF)
+#define EFLAGS_SYSCALL	(EFLAGS_IF | EFLAGS_DF)
 /*
  * Control register definitions.
  */
