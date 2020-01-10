@@ -48,6 +48,8 @@
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
+inline void ull_conn_upd_curr_reset(void);
+
 static int init_reset(void);
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -644,7 +646,7 @@ int ull_conn_reset(void)
 	MFIFO_INIT(conn_ack);
 
 	/* Reset the current conn update conn context pointer */
-	conn_upd_curr = NULL;
+	ull_conn_upd_curr_reset();
 
 	err = init_reset();
 	if (err) {
@@ -1580,6 +1582,11 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 	return max_tx_octets;
 }
 
+inline void ull_conn_upd_curr_reset(void)
+{
+	conn_upd_curr = NULL;
+}
+
 static int init_reset(void)
 {
 	/* Initialize conn pool. */
@@ -2144,7 +2151,6 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 	uint16_t instant_latency;
 	uint16_t event_counter;
 
-
 	conn_upd = conn_upd_curr;
 
 	/* set mutex */
@@ -2239,7 +2245,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 
 		/* reset mutex */
 		if (conn_upd_curr == conn) {
-			conn_upd_curr = NULL;
+			ull_conn_upd_curr_reset();
 		}
 
 		lll = &conn->lll;
@@ -2980,7 +2986,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 		/* reset mutex */
-		conn_upd_curr = NULL;
+		ull_conn_upd_curr_reset();
 
 		return;
 	}
@@ -3054,7 +3060,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 	conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 	/* reset mutex */
-	conn_upd_curr = NULL;
+	ull_conn_upd_curr_reset();
 }
 
 static inline void event_conn_param_app_req(struct ll_conn *conn)
@@ -4295,7 +4301,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 		LL_ASSERT(conn_upd_curr == conn);
 
 		/* reset mutex */
-		conn_upd_curr = NULL;
+		ull_conn_upd_curr_reset();
 
 		/* Procedure complete */
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
@@ -5912,7 +5918,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			LL_ASSERT(conn_upd_curr == conn);
 
 			/* reset mutex */
-			conn_upd_curr = NULL;
+			ull_conn_upd_curr_reset();
 
 			/* Procedure complete */
 			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
