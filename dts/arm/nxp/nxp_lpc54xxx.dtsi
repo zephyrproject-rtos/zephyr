@@ -7,6 +7,14 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases{
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		mailbox-0 = &mailbox0;
+		spi-5 = &spi5;
+		usart-0 = &usart0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
