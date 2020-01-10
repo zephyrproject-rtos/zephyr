@@ -24,7 +24,7 @@
 #define ARCV2_ICI_IRQ_PRIORITY 1
 
 volatile struct {
-	void (*fn)(int, void*);
+	arch_cpustart_t fn;
 	void *arg;
 } arc_cpu_init[CONFIG_MP_NUM_CPUS];
 
@@ -46,7 +46,7 @@ volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		    void (*fn)(int, void *), void *arg)
+		    arch_cpustart_t fn, void *arg)
 {
 	_curr_cpu[cpu_num] = &(_kernel.cpus[cpu_num]);
 	arc_cpu_init[cpu_num].fn = fn;
@@ -69,7 +69,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 /* the C entry of slave cores */
 void z_arc_slave_start(int cpu_num)
 {
-	void (*fn)(int, void*);
+	arch_cpustart_t fn;
 
 #ifdef CONFIG_SMP
 	z_icache_setup();
@@ -82,7 +82,7 @@ void z_arc_slave_start(int cpu_num)
 	/* call the function set by arch_start_cpu */
 	fn = arc_cpu_init[cpu_num].fn;
 
-	fn(cpu_num, arc_cpu_init[cpu_num].arg);
+	fn(arc_cpu_init[cpu_num].arg);
 }
 
 #ifdef CONFIG_SMP

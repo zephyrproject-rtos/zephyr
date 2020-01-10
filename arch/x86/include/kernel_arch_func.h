@@ -36,7 +36,7 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 
 struct multiboot_info;
 
-extern FUNC_NORETURN void z_x86_prep_c(int dummy, struct multiboot_info *info);
+extern FUNC_NORETURN void z_x86_prep_c(void *arg);
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 /* Setup ultra-minimal serial driver for printk() */

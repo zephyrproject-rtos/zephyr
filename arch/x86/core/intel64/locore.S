@@ -196,7 +196,7 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
 	incl __x86_cpuboot_t_ready_OFFSET(%rbp)
-	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rsi
+	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rdi
 	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
 
 /*

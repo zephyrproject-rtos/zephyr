@@ -94,11 +94,11 @@ struct x86_cpuboot x86_cpuboot[] = {
 
 /*
  * Send the INIT/STARTUP IPI sequence required to start up CPU 'cpu_num', which
- * will enter the kernel at fn(---, arg), running on the specified stack.
+ * will enter the kernel at fn(arg), running on the specified stack.
  */
 
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-			void (*fn)(int key, void *data), void *arg)
+		    arch_cpustart_t fn, void *arg)
 {
 	u8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	u8_t apic_id = x86_cpu_loapics[cpu_num];

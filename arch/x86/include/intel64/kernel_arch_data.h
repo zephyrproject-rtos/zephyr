@@ -23,7 +23,7 @@ struct x86_cpuboot {
 	u16_t tr;		/* selector for task register */
 	struct x86_tss64 *gs_base; /* Base address for GS segment */
 	u64_t sp;		/* initial stack pointer */
-	void *fn;		/* kernel entry function */
+	arch_cpustart_t fn;	/* kernel entry function */
 	void *arg;		/* argument for above function */
 #ifdef CONFIG_X86_MMU
 	struct x86_page_tables *ptables; /* Runtime page tables to install */

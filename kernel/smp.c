@@ -65,7 +65,7 @@ extern k_thread_stack_t _interrupt_stack2[];
 extern k_thread_stack_t _interrupt_stack3[];
 
 #if CONFIG_MP_NUM_CPUS > 1
-static void smp_init_top(int key, void *arg)
+static FUNC_NORETURN void smp_init_top(void *arg)
 {
 	atomic_t *start_flag = arg;
 
