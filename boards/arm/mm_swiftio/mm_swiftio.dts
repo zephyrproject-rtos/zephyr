@@ -13,7 +13,6 @@
 	compatible = "nxp,mimxrt1052";
 
 	aliases {
-		uart-1 = &uart1;
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
