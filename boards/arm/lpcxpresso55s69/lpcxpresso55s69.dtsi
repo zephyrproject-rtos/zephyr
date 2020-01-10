@@ -6,11 +6,9 @@
 
 / {
 	aliases{
-		usart-0 = &usart0;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
-		spi-8 = &spi8;
 	};
 
 	leds {
