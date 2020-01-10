@@ -9,6 +9,7 @@
 #include <drivers/i2c.h>
 #include <string.h>
 #include <sys/util.h>
+#include <stdlib.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
@@ -87,6 +88,61 @@ static int cmd_i2c_recover(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_i2c_write_byte(const struct shell *shell,
+			      size_t argc, char **argv)
+{
+	struct device *dev;
+	int reg_addr;
+	int dev_addr;
+	int out_byte;
+
+	dev = device_get_binding(argv[1]);
+	if (!dev) {
+		shell_error(shell, "I2C: Device driver %s not found.",
+			    argv[1]);
+		return -ENODEV;
+	}
+
+	dev_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
+	out_byte = strtol(argv[4], NULL, 16);
+
+	if (i2c_reg_write_byte(dev, dev_addr, reg_addr, out_byte) < 0) {
+		shell_error(shell, "Failed to write to device: %s", argv[1]);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int cmd_i2c_read_byte(const struct shell *shell,
+			     size_t argc, char **argv)
+{
+	struct device *dev;
+	int reg_addr;
+	int dev_addr;
+	u8_t out;
+
+	dev = device_get_binding(argv[1]);
+	if (!dev) {
+		shell_error(shell, "I2C: Device driver %s not found.",
+			    argv[1]);
+		return -ENODEV;
+	}
+
+	dev_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
+
+	if (i2c_reg_read_byte(dev, dev_addr, reg_addr, &out) < 0) {
+		shell_error(shell, "Failed to read from device: %s", argv[1]);
+		return -EIO;
+	}
+
+	shell_print(shell, "Output: 0x%x", out);
+
+	return 0;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -119,6 +175,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 					 "Scan I2C devices", cmd_i2c_scan),
 			       SHELL_CMD(recover, &dsub_device_name,
 					 "Recover I2C bus", cmd_i2c_recover),
+			       SHELL_CMD_ARG(read_byte, &dsub_device_name,
+					     "Read a byte from an I2C device",
+					     cmd_i2c_read_byte, 3, 1),
+			       SHELL_CMD_ARG(write_byte, &dsub_device_name,
+					     "Write a byte to an I2C device",
+					     cmd_i2c_write_byte, 4, 1),
 			       SHELL_SUBCMD_SET_END     /* Array terminated. */
 			       );
 
