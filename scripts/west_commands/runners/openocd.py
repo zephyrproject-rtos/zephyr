@@ -30,7 +30,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 config = default
         self.openocd_config = config
 
-        if path.exists(self.openocd_config):
+        if self.openocd_config is not None and path.exists(self.openocd_config):
             search_args = ['-s', path.dirname(self.openocd_config)]
         else:
             search_args = []
