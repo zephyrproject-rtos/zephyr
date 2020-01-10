@@ -6,6 +6,7 @@
 config SOC_SERIES_KINETIS_KV5X
 	bool "Kinetis KV5x Series MCU"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_KINETIS
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
