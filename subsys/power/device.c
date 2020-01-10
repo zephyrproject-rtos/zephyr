@@ -24,9 +24,8 @@ LOG_MODULE_DECLARE(power);
  */
 #if defined(CONFIG_SOC_FAMILY_NRF)
 #define MAX_PM_DEVICES	15
-#define NUM_CORE_DEVICES	4
 #define MAX_DEV_NAME_LEN	16
-static const char core_devices[NUM_CORE_DEVICES][MAX_DEV_NAME_LEN] = {
+static const char core_devices[][MAX_DEV_NAME_LEN] = {
 	"CLOCK_32K",
 	"CLOCK_16M",
 	"sys_clock",
@@ -130,12 +129,14 @@ void sys_pm_create_device_list(void)
 	device_list_get(&pm_device_list, &count);
 
 	/* Reserve for 32KHz, 16MHz, system clock, etc... */
-	device_count = NUM_CORE_DEVICES;
+	device_count = ARRAY_SIZE(core_devices);
 
 	for (i = 0; (i < count) && (device_count < MAX_PM_DEVICES); i++) {
 
 		/* Check if the device is core device */
-		for (j = 0, is_core_dev = false; j < NUM_CORE_DEVICES; j++) {
+		for (j = 0, is_core_dev = false;
+		     j < ARRAY_SIZE(core_devices);
+		     j++) {
 			if (!strcmp(pm_device_list[i].config->name,
 						&core_devices[j][0])) {
 				is_core_dev = true;
