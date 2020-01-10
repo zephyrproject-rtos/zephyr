@@ -267,89 +267,45 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
+#define SPI_MCUX_DSPI_DEVICE(id)					\
+	static void spi_mcux_config_func_##id(struct device *dev);	\
+	static const struct spi_mcux_config spi_mcux_config_##id = {	\
+		.base =							\
+		(SPI_Type *)DT_NXP_KINETIS_DSPI_SPI_##id##_BASE_ADDRESS,\
+		.clock_name = DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_CONTROLLER,\
+		.clock_subsys = 					\
+		(clock_control_subsys_t)DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_NAME,\
+		.irq_config_func = spi_mcux_config_func_##id,		\
+	};								\
+	static struct spi_mcux_data spi_mcux_data_##id = {		\
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+	};								\
+	DEVICE_AND_API_INIT(spi_mcux_##id,				\
+			    DT_NXP_KINETIS_DSPI_SPI_##id##_LABEL,	\
+			    &spi_mcux_init,				\
+			    &spi_mcux_data_##id,			\
+			    &spi_mcux_config_##id,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &spi_mcux_driver_api);			\
+	static void spi_mcux_config_func_##id(struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0,	\
+			    DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0_PRIORITY,\
+			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
+			    0);						\
+		irq_enable(DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0);	\
+	}
+
 #ifdef CONFIG_SPI_0
-static void spi_mcux_config_func_0(struct device *dev);
-
-static const struct spi_mcux_config spi_mcux_config_0 = {
-	.base = (SPI_Type *) DT_SPI_0_BASE_ADDRESS,
-	.clock_name = DT_SPI_0_CLOCK_NAME,
-	.clock_subsys = (clock_control_subsys_t) DT_SPI_0_CLOCK_SUBSYS,
-	.irq_config_func = spi_mcux_config_func_0,
-};
-
-static struct spi_mcux_data spi_mcux_data_0 = {
-	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_0, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_0, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_mcux_0, DT_SPI_0_NAME, &spi_mcux_init,
-		    &spi_mcux_data_0, &spi_mcux_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &spi_mcux_driver_api);
-
-static void spi_mcux_config_func_0(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
-		    spi_mcux_isr, DEVICE_GET(spi_mcux_0), 0);
-
-	irq_enable(DT_SPI_0_IRQ);
-}
+SPI_MCUX_DSPI_DEVICE(0)
 #endif /* CONFIG_SPI_0 */
 
 #ifdef CONFIG_SPI_1
-static void spi_mcux_config_func_1(struct device *dev);
-
-static const struct spi_mcux_config spi_mcux_config_1 = {
-	.base = (SPI_Type *) DT_SPI_1_BASE_ADDRESS,
-	.clock_name = DT_SPI_1_CLOCK_NAME,
-	.clock_subsys = (clock_control_subsys_t) DT_SPI_1_CLOCK_SUBSYS,
-	.irq_config_func = spi_mcux_config_func_1,
-};
-
-static struct spi_mcux_data spi_mcux_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_mcux_1, DT_SPI_1_NAME, &spi_mcux_init,
-		    &spi_mcux_data_1, &spi_mcux_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &spi_mcux_driver_api);
-
-static void spi_mcux_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
-		    spi_mcux_isr, DEVICE_GET(spi_mcux_1), 0);
-
-	irq_enable(DT_SPI_1_IRQ);
-}
+SPI_MCUX_DSPI_DEVICE(1)
 #endif /* CONFIG_SPI_1 */
 
 #ifdef CONFIG_SPI_2
-static void spi_mcux_config_func_2(struct device *dev);
-
-static const struct spi_mcux_config spi_mcux_config_2 = {
-	.base = (SPI_Type *) DT_SPI_2_BASE_ADDRESS,
-	.clock_name = DT_SPI_2_CLOCK_NAME,
-	.clock_subsys = (clock_control_subsys_t) DT_SPI_2_CLOCK_SUBSYS,
-	.irq_config_func = spi_mcux_config_func_2,
-};
-
-static struct spi_mcux_data spi_mcux_data_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_2, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_mcux_2, DT_SPI_2_NAME, &spi_mcux_init,
-		    &spi_mcux_data_2, &spi_mcux_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &spi_mcux_driver_api);
-
-static void spi_mcux_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
-		    spi_mcux_isr, DEVICE_GET(spi_mcux_2), 0);
-
-	irq_enable(DT_SPI_2_IRQ);
-}
+SPI_MCUX_DSPI_DEVICE(2)
 #endif /* CONFIG_SPI_2 */
