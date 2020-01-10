@@ -43,8 +43,10 @@ enum bt_buf_type {
 #define BT_BUF_RESERVE CONFIG_BT_HCI_RESERVE
 #endif
 
+#define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))
+
 /** Data size neeed for HCI RX buffers */
-#define BT_BUF_RX_SIZE (BT_BUF_RESERVE + CONFIG_BT_RX_BUF_LEN)
+#define BT_BUF_RX_SIZE (BT_BUF_SIZE(CONFIG_BT_RX_BUF_LEN))
 
 /** Allocate a buffer for incoming data
  *
