@@ -1053,7 +1053,7 @@ next_state:
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
-			if (FL(&fl, &, PSH)) {
+			if (len) {
 				tcp_data_get(conn, pkt);
 			}
 		}
