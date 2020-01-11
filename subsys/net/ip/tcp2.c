@@ -1055,6 +1055,8 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 			if (len) {
 				tcp_data_get(conn, pkt);
+				conn_ack(conn, + len);
+				tcp_out(conn, ACK);
 			}
 		}
 		break;
