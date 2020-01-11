@@ -57,9 +57,6 @@ const char *devices[] = {
 #ifdef CONFIG_COUNTER_IMX_EPIT_2
 	DT_COUNTER_IMX_EPIT_2_LABEL,
 #endif
-#ifdef DT_RTC_MCUX_0_NAME
-	DT_RTC_MCUX_0_NAME,
-#endif
 #ifdef DT_INST_0_ARM_CMSDK_TIMER_LABEL
 	DT_INST_0_ARM_CMSDK_TIMER_LABEL,
 #endif
