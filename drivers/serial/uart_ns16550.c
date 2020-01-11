@@ -199,7 +199,7 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((const struct uart_ns16550_device_config * const) \
+	((struct uart_ns16550_device_config * const) \
 	 (dev)->config->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_ns16550_dev_data_t *)(dev)->driver_data)
@@ -315,7 +315,7 @@ static int uart_ns16550_configure(struct device *dev,
 				const struct uart_config *cfg)
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
-	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
+	struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
 
 	unsigned int old_level;     /* old interrupt lock level */
 	u8_t mdc = 0U;
@@ -328,7 +328,7 @@ static int uart_ns16550_configure(struct device *dev,
 			return -EINVAL;
 		}
 
-		dev_data->port = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
+		dev_cfg->devconf.port = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
 		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 	}
 #endif
@@ -353,10 +353,53 @@ static int uart_ns16550_configure(struct device *dev,
 	}
 #endif
 
-	set_baud_rate(dev, dev_data->uart_config.baudrate);
+	set_baud_rate(dev, cfg->baudrate);
 
-	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
-	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
+	/* Local structure to hold temporary values to pass to OUTBYTE() */
+	struct uart_config uart_cfg;
+
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		uart_cfg.data_bits = LCR_CS5;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		uart_cfg.data_bits = LCR_CS6;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		uart_cfg.data_bits = LCR_CS7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		uart_cfg.data_bits = LCR_CS8;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		uart_cfg.stop_bits = LCR_1_STB;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		uart_cfg.stop_bits = LCR_2_STB;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		uart_cfg.parity = LCR_PDIS;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		uart_cfg.parity = LCR_EPS;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	/* data bits, stop bits, parity, clear DLAB */
+	OUTBYTE(LCR(dev),
+		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
 	if ((dev_data->options & UART_OPTION_AFCE) == UART_OPTION_AFCE) {
@@ -385,7 +428,7 @@ static int uart_ns16550_configure(struct device *dev,
 
 	irq_unlock(old_level);
 
-    return 0;
+	return 0;
 };
 
 static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
@@ -393,10 +436,11 @@ static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
 	struct uart_ns16550_dev_data_t *data = DEV_DATA(dev);
 
 	cfg->baudrate = data->uart_config.baudrate;
-	cfg->parity = UART_CFG_PARITY_NONE;    /* use uart_config_parity */
-	cfg->stop_bits = UART_CFG_STOP_BITS_1; /* use uart_config_stop_bits */
-	cfg->data_bits = UART_CFG_DATA_BITS_8; /* use uart_config_data_bits */
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;/* use uart_config_flow_control */
+	cfg->parity = data->uart_config.parity;
+	cfg->stop_bits = data->uart_config.stop_bits;
+	cfg->data_bits = data->uart_config.data_bits;
+	cfg->flow_ctrl = data->uart_config.flow_ctrl;
+
 	return 0;
 }
 
@@ -411,7 +455,7 @@ static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
  */
 static int uart_ns16550_init(struct device *dev)
 {
-    uart_ns16550_configure(dev, &DEV_DATA(dev)->uart_config);
+	uart_ns16550_configure(dev, &DEV_DATA(dev)->uart_config);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_CFG(dev)->devconf.irq_config_func(dev);
