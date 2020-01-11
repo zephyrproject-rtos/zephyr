@@ -1151,6 +1151,45 @@ void test_oops_stackcheck(void)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
 }
 
+struct k_timer user_timer;
+ZTEST_BMEM volatile bool timer_fired;
+
+void user_timer_func(struct k_timer *unused)
+{
+	ARG_UNUSED(unused);
+
+	printk("timer fired\n");
+	timer_fired = true;
+}
+
+/* Test scenario where a user thread is running and gets preempted by a timer
+ * interrupt while still in user mode (and not in, for example, a system call).
+ * When we return, verify that we are still in user mode.
+ */
+void test_survive_interrupt(void)
+{
+	k_timer_start(&user_timer, 200, 200);
+	printk("spinning\n");
+	while (timer_fired == false) {
+		/* spin */
+	}
+	printk("done\n");
+	k_timer_stop(&user_timer);
+
+	timer_fired = false;
+
+	k_timer_start(&user_timer, 200, 200);
+	printk("spinning\n");
+	while (timer_fired == false) {
+		/* spin */
+	}
+	printk("done\n");
+	k_timer_stop(&user_timer);
+
+
+	zassert_true(_is_user_context(), "user thread promoted to supervisor mode");
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1169,11 +1208,15 @@ void test_main(void)
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
 			  (sizeof(hdr->privilege_stack) - 1));
 #endif
+
+	k_timer_init(&user_timer, user_timer_func, NULL);
+
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
 			      &uthread_start_sem, &uthread_end_sem,
-			      &test_revoke_sem, &kpipe, &expect_fault_sem);
+			      &test_revoke_sem, &kpipe, &expect_fault_sem,
+			      &user_timer);
 	ztest_test_suite(userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),
@@ -1213,7 +1256,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_exception),
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
-			 ztest_unit_test(test_object_recycle)
+			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_survive_interrupt)
 			 );
 	ztest_run_test_suite(userspace);
 }
