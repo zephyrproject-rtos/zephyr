@@ -1080,7 +1080,7 @@ next_state:
 		if (!th && conn->snd->len) { /* TODO: Out of the loop */
 			ssize_t data_len;
 
-			tcp_out(conn, PSH, &data_len);
+			tcp_out(conn, PSH | ACK, &data_len);
 			conn_seq(conn, + data_len);
 			break;
 		}
