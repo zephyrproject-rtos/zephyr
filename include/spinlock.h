@@ -71,7 +71,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	k.key = arch_irq_lock();
 
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock");
+	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock %p", l);
 #endif
 
 #ifdef CONFIG_SMP
@@ -90,7 +90,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
+	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
 
 #ifdef CONFIG_SMP
@@ -113,7 +113,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
+	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
 #ifdef CONFIG_SMP
 	atomic_clear(&l->locked);
