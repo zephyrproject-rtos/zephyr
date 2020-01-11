@@ -1065,7 +1065,7 @@ next_state:
 		 * ACK , shouldn't we go to SYN RECEIVED state? See Figure
 		 * 6 of RFC 793
 		 */
-		if (FL(&fl, &, ACK, th_seq(th) == conn->ack)) {
+		if (FL(&fl, &, ACK, th && th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
