@@ -1047,7 +1047,8 @@ next_state:
 		}
 		break;
 	case TCP_SYN_RECEIVED:
-		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+		if (FL(&fl, &, ACK, th_ack(th) == conn->seq &&
+				th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
