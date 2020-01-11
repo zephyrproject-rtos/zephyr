@@ -1017,6 +1017,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = th_get(pkt);
 	u8_t next = 0, fl = th ? th->th_flags : 0;
+	size_t len;
 
 	NET_DBG("%s", tcp_conn_state(conn, pkt));
 
@@ -1030,6 +1031,8 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		conn_state(conn, TCP_CLOSED);
 	}
 next_state:
+	len = pkt ? tcp_data_len(pkt) : 0;
+
 	switch (conn->state) {
 	case TCP_LISTEN:
 		if (FL(&fl, ==, SYN)) {
