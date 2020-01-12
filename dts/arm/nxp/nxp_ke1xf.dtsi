@@ -51,6 +51,42 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP0";
+		status = "disabled";
+	};
+
+	temp1: temp1 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc1 26>, <&adc1 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP1";
+		status = "disabled";
+	};
+
+	temp2: temp2 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc2 26>, <&adc2 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP2";
+		status = "disabled";
+	};
+
 	soc {
 		mpu: mpu@4000d000 {
 			compatible = "nxp,kinetis-mpu";
