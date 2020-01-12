@@ -87,6 +87,13 @@ config ADC_0
 
 endif # ADC
 
+if SENSOR
+
+config TEMP_KINETIS
+	default y
+
+endif # SENSOR
+
 if PWM
 
 config PWM_0

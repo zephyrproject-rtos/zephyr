@@ -195,6 +195,10 @@
 	sample-time = <12>;
 };
 
+&temp0 {
+	status = "okay";
+};
+
 &can0 {
 	status = "okay";
 	bus-speed = <125000>;
