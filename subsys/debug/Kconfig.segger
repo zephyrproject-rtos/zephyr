@@ -3,6 +3,8 @@
 
 config HAS_SEGGER_RTT
 	bool
+	help
+	  Indicates that the platform supports SEGGER J-Link RTT.
 
 config USE_SEGGER_RTT
 	bool "Enable SEGGER RTT libraries."
