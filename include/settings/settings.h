@@ -191,7 +191,7 @@ struct settings_handler_static {
  * Initialization of settings and backend
  *
  * Can be called at application startup.
- * In case the backend is NFFS Remember to call it after FS was mounted.
+ * In case the backend is a FS Remember to call it after the FS was mounted.
  * For FCB backend it can be called without such a restriction.
  *
  * @return 0 on success, non-zero on failure.
