@@ -85,6 +85,27 @@ void arch_busy_wait(u32_t time_us)
 
 void z_platform_init(void)
 {
+	if (IS_ENABLED(CONFIG_NRF52_ANOMALY_132_WORKAROUND)) {
+		/* Due to anomaly 136 if reset pin reason is set then other
+		 * reset reasons are cleared during startup. Clear reset reason
+		 * to be able to check if system reset occurred.
+		 */
+		if (nrf_power_resetreas_get(NRF_POWER) &
+			NRF_POWER_RESETREAS_RESETPIN_MASK) {
+			nrf_power_resetreas_clear(NRF_POWER,
+					NRF_POWER_RESETREAS_RESETPIN_MASK);
+		}
+
+		/* Start systick in case of system reset to measure startup
+		 * time.
+		 */
+		if (nrf_power_resetreas_get(NRF_POWER) &
+				NRF_POWER_RESETREAS_SREQ_MASK) {
+			SysTick->LOAD = 0x00ffffff;
+			SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;
+		}
+	}
+
 	SystemInit();
 }
 

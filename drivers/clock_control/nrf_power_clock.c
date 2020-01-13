@@ -30,6 +30,14 @@ LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define INF(dev, subsys, ...) CLOCK_LOG(INF, dev, subsys, __VA_ARGS__)
 #define DBG(dev, subsys, ...) CLOCK_LOG(DBG, dev, subsys, __VA_ARGS__)
 
+/* If LF RC is started within given window after soft reset occurred then
+ * LF RC fails to start. A workaround is applied that time from reset is
+ * measured (using systick) and attempt to start LF clock is delayed if it would
+ * occur in that window.
+ */
+#define NRF52_ANOMALY_132_WINDOW_START_US 225
+#define NRF52_ANOMALY_132_WINDOW_END_US 330
+
 /* returns true if clock stopping or starting can be performed. If false then
  * start/stop will be deferred and performed later on by handler owner.
  */
@@ -228,6 +236,48 @@ static struct clock_control_async_data *list_get(sys_slist_t *list)
 	return async_data;
 }
 
+static void nrf52_anomaly_132_workaround(u32_t start_task)
+{
+	u32_t startup_us;
+
+	if (!IS_ENABLED(CONFIG_NRF52_ANOMALY_132_WORKAROUND)) {
+		return;
+	}
+
+	/* If systick is disabled then it means that there are no conditions
+	 * to apply workaround and startup time measurement (using systick) is
+	 * not started.
+	 */
+	if (!(SysTick->CTRL & SysTick_CTRL_ENABLE_Msk)) {
+		return;
+	}
+
+	/* Workaround applies only to LF clock */
+	if (!(config->start_tsk == NRF_CLOCK_TASK_LFCLKSTART)) {
+		return;
+	}
+
+	/* If systick status indicates that it wrapped since last read then
+	 * it means that startup time exceeded 2^24/64 microseconds (262144 us).
+	 */
+	if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Pos) {
+		return;
+	}
+
+	/* Systick is counting down. nrf52832 clock frequency is 64MHz. */
+	startup_us = (0x00FFFFFF - SysTick->VAL) / 64;
+
+	/* Make sure that clock is started after the window within which there
+	 * is a risk of LF clock start failure.
+	 */
+	if ((startup_us > NRF52_ANOMALY_132_WINDOW_START_US) &&
+		(startup_us < NRF52_ANOMALY_132_WINDOW_END_US)) {
+		k_busy_wait(NRF52_ANOMALY_132_WINDOW_END_US - startup_us);
+	}
+	/* Disable systick */
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+}
+
 static int clock_async_start(struct device *dev,
 			     clock_control_subsys_t subsys,
 			     struct clock_control_async_data *data)
@@ -279,6 +329,7 @@ static int clock_async_start(struct device *dev,
 		do_start =  (config->start_handler) ?
 				config->start_handler(dev) : true;
 		if (do_start) {
+			nrf52_anomaly_132_workaround();
 			DBG(dev, subsys, "Triggering start task");
 			nrf_clock_task_trigger(NRF_CLOCK,
 					       config->start_tsk);
