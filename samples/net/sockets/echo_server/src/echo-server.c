@@ -41,15 +41,29 @@ void quit(void)
 
 static void init_app(void)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+	int err;
+#endif
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	LOG_INF(APP_BANNER);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
-				     TLS_CREDENTIAL_SERVER_CERTIFICATE,
-				     server_certificate,
-				     sizeof(server_certificate));
+#if defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC)
+	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_CA_CERTIFICATE,
+				 ca_certificate,
+				 sizeof(ca_certificate));
+	if (err < 0) {
+		LOG_ERR("Failed to register CA certificate: %d", err);
+	}
+#endif
+
+	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				 server_certificate,
+				 sizeof(server_certificate));
 	if (err < 0) {
 		LOG_ERR("Failed to register public certificate: %d", err);
 	}
