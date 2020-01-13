@@ -39,4 +39,11 @@ config PWM_0
 
 endif # PWM
 
+if IEEE802154
+
+config IEEE802154_NRF5
+	default y
+
+endif # IEEE802154
+
 endif # BOARD_NRF52811_PCA10056
