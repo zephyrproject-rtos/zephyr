@@ -2082,7 +2082,7 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		return -EINVAL;
+		return -EAGAIN;
 	}
 
 	if (!bt_le_conn_params_valid(param)) {
