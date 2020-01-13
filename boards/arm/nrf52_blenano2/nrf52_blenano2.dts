@@ -91,8 +91,9 @@
 		/*
 		 * The flash starting at 0x0007a000 and ending at
 		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for FCB/NFFS
-		 * will be created in this area.
+		 * by the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
 		 */
 		storage_partition: partition@7a000 {
 			label = "storage";
