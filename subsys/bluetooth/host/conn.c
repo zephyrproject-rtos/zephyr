@@ -2220,20 +2220,18 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
 	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT_SCAN:
-			bt_conn_set_param_le(conn, param);
-			return conn;
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		case BT_CONN_DISCONNECTED:
-			BT_WARN("Found valid but disconnected conn object");
-			goto start_scan;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
+		/* Connection object already exists.
+		 * If the connection state is "connect" or "connected" then
+		 * this connection object was created using this API but has not
+		 * yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return NULL;
 	}
 
 	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
@@ -2250,7 +2248,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-start_scan:
 	bt_conn_set_param_le(conn, param);
 
 #if defined(CONFIG_BT_SMP)
@@ -2344,17 +2341,18 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 	conn = bt_conn_lookup_addr_le(param->id, peer);
 	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT_DIR_ADV:
-		case BT_CONN_CONNECTED:
-			return conn;
-		case BT_CONN_DISCONNECTED:
-			BT_WARN("Found valid but disconnected conn object");
-			goto start_adv;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
+		/* Connection object already exists.
+		 * If the connection state is "connect-dir-adv" or "connected"
+		 * then this connection object was created using this API but
+		 * has not yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return NULL;
 	}
 
 	conn = bt_conn_add_le(param->id, peer);
@@ -2362,7 +2360,6 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-start_adv:
 	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
 
 	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);
