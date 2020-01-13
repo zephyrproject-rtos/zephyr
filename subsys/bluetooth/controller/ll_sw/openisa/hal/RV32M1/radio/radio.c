@@ -51,6 +51,9 @@ static void *isr_cb_param;
 				 * buffer
 				 */
 
+#define RADIO_ACTIVE_MASK 0x1fff
+#define RADIO_DISABLE_TMR 4		/* us */
+
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
 
@@ -156,9 +159,9 @@ static void pkt_rx(void)
 	if (next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		idx = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(idx) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
@@ -199,8 +202,17 @@ void isr_radio(void *arg)
 
 	u32_t tmr = GENFSK->EVENT_TMR & GENFSK_EVENT_TMR_EVENT_TMR_MASK;
 	u32_t irq = GENFSK->IRQ_CTRL;
+	u32_t valid = 0;
+	/* We need to check for a valid IRQ source.
+	 * In theory, we could get to this ISR after the IRQ source was cleared.
+	 * This could happen due to the way LLL interacts with IRQs
+	 * (radio_isr_set(), radio_disable()) and their propagation path:
+	 * GENFSK -> INTMUX(does not latch pending source interrupts)
+	 * INTMUX -> EVENT_UNIT
+	 */
 
 	if (irq & GENFSK_IRQ_CTRL_TX_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_TX_IRQ_MASK);
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
@@ -212,6 +224,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK) {
+		valid = 1;
 		/* Disable Rx timeout */
 		/* 0b1010..RX Cancel -- Cancels pending RX events but do not
 		 *			abort a RX-in-progress
@@ -239,6 +252,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_T2_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_T2_IRQ_MASK);
 		/* Disable both comparators */
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
@@ -248,24 +262,30 @@ void isr_radio(void *arg)
 	if (radio_trx && next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		tmr = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(tmr) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
-	isr_cb(isr_cb_param);
+	if (valid) {
+		isr_cb(isr_cb_param);
+	}
 }
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
+	irq_disable(LL_RADIO_IRQn);
 
 	isr_cb_param = param;
 	isr_cb = cb;
 
 	/* Clear pending interrupts */
 	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	irq_enable(LL_RADIO_IRQn);
 	irq_enable(LL_RADIO_IRQn_2nd_lvl);
 }
 
@@ -603,7 +623,7 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 void radio_rx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0101..RX Start Now */
@@ -613,7 +633,7 @@ void radio_rx_enable(void)
 void radio_tx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0001..TX Start Now */
@@ -622,14 +642,29 @@ void radio_tx_enable(void)
 
 void radio_disable(void)
 {
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
+
 	/*
 	 * 0b1011..Abort All - Cancels all pending events and abort any
 	 * sequence-in-progress
 	 */
 	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0xb);
 
+	/* Wait for idle state */
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
+	}
+
+	/* Clear pending interrupts */
+	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	next_radio_cmd = 0;
+	radio_trx = 0;
+
 	/* generate T2 interrupt to get into isr_radio() */
-	u32_t tmr = GENFSK->EVENT_TMR + 8;
+	u32_t tmr = GENFSK->EVENT_TMR + RADIO_DISABLE_TMR;
 
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(tmr) | GENFSK_T2_CMP_T2_CMP_EN(1);
 }
@@ -814,6 +849,10 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 {
 	u32_t radio_start_now_cmd = 0;
 
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
+
 	/* Save it for later */
 	rtc_start = ticks_start;
 
@@ -927,11 +966,11 @@ void radio_tmr_hcto_configure(u32_t hcto)
 		return;
 	}
 
+	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
+	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(hcto) |
 			 GENFSK_T2_CMP_T2_CMP_EN(1);
 
-	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
-	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
 }
 
 void radio_tmr_aa_capture(void)

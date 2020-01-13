@@ -7,9 +7,13 @@
 
 #define HAL_TICKER_CNTR_CLK_FREQ_HZ 32768U
 
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 2
 
-#define HAL_TICKER_CNTR_SET_LATENCY 0
+#define HAL_TICKER_CNTR_SET_LATENCY 1
+/*
+ * When the LPTMR is enabled, the first increment will take an additional
+ * one or two prescaler clock cycles due to synchronization logic.
+ */
 
 #define HAL_TICKER_US_TO_TICKS(x) \
 	( \
