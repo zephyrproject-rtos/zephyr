@@ -37,4 +37,11 @@ config ENTROPY_STM32_RNG
 
 endif # ENTROPY_GENERATOR
 
+if CRYPTO
+
+config CRYPTO_STM32
+	default y
+
+endif # CRYPTO
+
 endif # SOC_STM32F437XX
