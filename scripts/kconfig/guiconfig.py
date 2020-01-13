@@ -1967,9 +1967,7 @@ def _sorted_sc_nodes(cached_nodes=[]):
                          key=lambda choice: choice.name or "")
 
         cached_nodes += sorted(
-            [node
-             for choice in choices
-                 for node in choice.nodes],
+            [node for choice in choices for node in choice.nodes],
             key=lambda node: node.prompt[0] if node.prompt else "")
 
     return cached_nodes
