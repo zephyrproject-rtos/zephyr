@@ -304,6 +304,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  *  @param param Initial connection parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOMEM No free connection object available.
  */
 int bt_conn_create_auto_le(const struct bt_le_conn_param *param);
 
@@ -491,6 +492,15 @@ struct bt_conn_cb {
 	 *
 	 *  This callback notifies the application that a connection
 	 *  has been disconnected.
+	 *
+	 *  When this callback is called the stack still has one reference to
+	 *  the connection object. If the application in this callback tries to
+	 *  start either a connectable advertiser or create a new connection
+	 *  this might fail because there are no free connection objects
+	 *  available.
+	 *  To avoid this issue it is recommended to either start connectable
+	 *  advertise or create a new connection using @ref k_work_submit or
+	 *  increase :option:`CONFIG_BT_MAX_CONN`.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason HCI reason for the disconnection.
