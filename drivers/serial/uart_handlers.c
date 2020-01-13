@@ -38,6 +38,32 @@ Z_SYSCALL_HANDLER(uart_poll_out, dev, out_char)
 	return 0;
 }
 
+#ifdef CONFIG_UART_ASYNC_API
+/* callback_set() excluded as we don't allow ISR callback installation from
+ * user mode
+ *
+ * rx_buf_rsp() excluded as it's designed to be called from ISR callbacks
+ */
+Z_SYSCALL_HANDLER(uart_tx, dev, buf, len, timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, len));
+	return z_impl_uart_tx((struct device *)dev, (u8_t *)buf, len, timeout);
+}
+
+UART_SIMPLE(tx_abort);
+
+Z_SYSCALL_HANDLER(uart_rx_enable, dev, buf, len, timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
+	return z_impl_uart_rx_enable((struct device *)dev, (u8_t *)buf, len,
+				     timeout);
+}
+
+UART_SIMPLE(rx_disable);
+#endif /* CONFIG_UART_ASYNC_API */
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 UART_SIMPLE_VOID(irq_tx_enable)
 UART_SIMPLE_VOID(irq_tx_disable)
