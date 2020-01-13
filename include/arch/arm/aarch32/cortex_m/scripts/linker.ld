@@ -135,7 +135,7 @@ SECTIONS
 
 	_image_rom_start = ROM_ADDR;
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+    SECTION_PROLOGUE(rom_start,,)
 	{
 
 /* Located in generated directory. This file is populated by the
@@ -151,7 +151,7 @@ SECTIONS
 
 #endif /* CONFIG_CODE_DATA_RELOCATION */
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME_2,,)
+    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	_image_text_start = .;
 
