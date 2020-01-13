@@ -777,6 +777,12 @@ static void modem_reset(void)
 		/* use external SIM */
 		SETUP_CMD_NOHANDLE("AT+UGPIOC=23,0,0"),
 #endif
+#if defined(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
+		/* enable the network status indication */
+		SETUP_CMD_NOHANDLE("AT+UGPIOC="
+			STRINGIFY(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
+			",2"),
+#endif
 		/* UNC messages for registration */
 		SETUP_CMD_NOHANDLE("AT+CREG=1"),
 		/* HEX receive data mode */
