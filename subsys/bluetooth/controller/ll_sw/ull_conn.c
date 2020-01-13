@@ -3170,7 +3170,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 		      1)
 #else /* !CONFIG_BT_CTLR_PHY */
-		    0
+		    1
 #endif /* !CONFIG_BT_CTLR_PHY */
 		   ) {
 			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
