@@ -135,6 +135,11 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
+#ifdef CONFIG_TEMP_KINETIS
+	/* enable bandgap buffer */
+	PMC->REGSC |= PMC_REGSC_BGBE_MASK;
+#endif /* CONFIG_TEMP_KINETIS */
+
 #if !defined(CONFIG_ARM_MPU)
 	/*
 	 * Disable memory protection and clear slave port errors.
