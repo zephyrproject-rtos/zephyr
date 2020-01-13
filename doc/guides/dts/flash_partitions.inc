@@ -228,4 +228,4 @@ File System Partitions
 ======================
 
 **storage_partition**
-  This is the area where e.g. NFFS expects its partition.
+  This is the area where e.g. LittleFS or NVS or FCB expects its partition.

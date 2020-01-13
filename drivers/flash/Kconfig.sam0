@@ -18,6 +18,6 @@ config SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 	depends on SOC_FLASH_SAM0
 	help
 	  Emulate a device with byte-sized pages by doing a
-	  read/modify/erase/write.  Needed for NFFS.
+	  read/modify/erase/write.
 
 endif
