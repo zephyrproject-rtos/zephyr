@@ -190,6 +190,12 @@
 			status = "disabled";
 			label = "DMA_1";
 		};
+
+		eeprom: eeprom@8080000{
+			compatible = "st,stm32-eeprom";
+			status = "disabled";
+			label = "EEPROM_0";
+		};
 	};
 };
 
