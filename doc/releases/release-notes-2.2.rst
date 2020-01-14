@@ -24,6 +24,10 @@ API Changes
 Deprecated in this release
 ==========================
 
+* Settings
+
+  * SETTINGS_USE_BASE64, encoding values in base64 is marked for removal.
+
 Stable API changes in this release
 ==================================
 
@@ -300,4 +304,3 @@ release:
 
 .. comment  List derived from GitHub Issue query: ...
    * :github:`issuenumber` - issue title
-
