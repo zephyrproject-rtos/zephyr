@@ -79,7 +79,7 @@ uext_serial: &usart1 {};
 
 &spi2 {
 	status = "okay";
-	cs-gpios = <&gpiod 2 0>;
+	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,mmc-spi-slot";
