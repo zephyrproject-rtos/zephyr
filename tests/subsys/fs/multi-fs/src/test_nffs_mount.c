@@ -29,7 +29,7 @@ static int test_mount(void)
 	struct device *flash_dev;
 	int res;
 
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
+	/*flash_dev = device_get_binding();*/
 	if (!flash_dev) {
 		return -ENODEV;
 	}

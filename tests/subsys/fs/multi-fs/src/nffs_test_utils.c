@@ -31,7 +31,7 @@ void nffs_test_util_overwrite_data(u8_t *data, u32_t data_len,
 	struct flash_pages_info info;
 	off_t off;
 
-	dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
+	/*dev = device_get_binding();*/
 	flash_get_page_info_by_offs(dev, addr, &info);
 
 	nffs_os_flash_read(0, info.start_offset, area_buf, info.size);
