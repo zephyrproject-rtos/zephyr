@@ -15,6 +15,13 @@
 #include <stdbool.h>
 #include <kernel_internal.h>
 
+/* Maximum time between the time a self-aborting thread flags itself
+ * DEAD and the last read or write to its stack memory (i.e. the time
+ * of its next swap()).  In theory this might be tuned per platform,
+ * but in practice this conservative value should be safe.
+ */
+#define THREAD_ABORT_DELAY_US 500
+
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		z_priq_dumb_add
 #define _priq_run_remove	z_priq_dumb_remove
@@ -436,7 +443,20 @@ void z_thread_single_abort(struct k_thread *thread)
 				thread->base.pended_on = NULL;
 			}
 		}
-		thread->base.thread_state |= _THREAD_DEAD;
+
+		u32_t mask = _THREAD_DEAD;
+
+		/* If the abort is happening in interrupt context,
+		 * that means that execution will never return to the
+		 * thread's stack and that the abort is known to be
+		 * complete.  Otherwise the thread still runs a bit
+		 * until it can swap, requiring a delay.
+		 */
+		if (IS_ENABLED(CONFIG_SMP) && arch_is_in_isr()) {
+			mask |= _THREAD_ABORTED_IN_ISR;
+		}
+
+		thread->base.thread_state |= mask;
 	}
 
 	sys_trace_thread_abort(thread);
@@ -1178,7 +1198,9 @@ void z_sched_abort(struct k_thread *thread)
 	 * it locally.  Not all architectures support that, alas.  If
 	 * we don't have it, we need to wait for some other interrupt.
 	 */
+	key = k_spin_lock(&sched_spinlock);
 	thread->base.thread_state |= _THREAD_ABORTING;
+	k_spin_unlock(&sched_spinlock, key);
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 	arch_sched_ipi();
 #endif
@@ -1201,6 +1223,16 @@ void z_sched_abort(struct k_thread *thread)
 			k_spin_unlock(&sched_spinlock, key);
 			k_busy_wait(100);
 		}
+	}
+
+	/* If the thread self-aborted (e.g. its own exit raced with
+	 * this external abort) then even though it is flagged DEAD,
+	 * it's still running until its next swap and thus the thread
+	 * object is still in use.  We have to resort to a fallback
+	 * delay in that circumstance.
+	 */
+	if ((thread->base.thread_state & _THREAD_ABORTED_IN_ISR) == 0U) {
+		k_busy_wait(THREAD_ABORT_DELAY_US);
 	}
 }
 #endif

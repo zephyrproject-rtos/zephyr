@@ -59,8 +59,11 @@
 /* Thread is being aborted (SMP only) */
 #define _THREAD_ABORTING (BIT(5))
 
+/* Thread was aborted in interrupt context (SMP only) */
+#define _THREAD_ABORTED_IN_ISR (BIT(6))
+
 /* Thread is present in the ready queue */
-#define _THREAD_QUEUED (BIT(6))
+#define _THREAD_QUEUED (BIT(7))
 
 /* end - states */
 
