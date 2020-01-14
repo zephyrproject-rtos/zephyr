@@ -62,6 +62,10 @@ Removed APIs in this release
     SHELL_STATIC_SUBCMD_SET_CREATE
   * SHELL_CREATE_DYNAMIC_CMD (deprecated), replaced by SHELL_DYNAMIC_CMD_CREATE
 
+* Newtron Flash File System (NFFS) was removed. NFFS was removed since it has
+    serious issues, not fixed since a long time. Where it was possible
+    NFFS usage was replaced by LittleFS usage as the better substitute.
+
 Kernel
 ******
 
