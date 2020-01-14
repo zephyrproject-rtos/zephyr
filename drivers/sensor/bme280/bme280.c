@@ -347,6 +347,20 @@ static inline int bme280_spi_init(struct bme280_data *data)
 	data->spi_cfg.frequency = DT_INST_0_BOSCH_BME280_SPI_MAX_FREQUENCY;
 	data->spi_cfg.slave = DT_INST_0_BOSCH_BME280_BASE_ADDRESS;
 
+#if defined(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER)
+	data->spi_cs_control.gpio_dev =
+		device_get_binding(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER);
+	if (!data->spi_cs_control.gpio_dev) {
+		LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
+	}
+
+	data->spi_cs_control.gpio_pin = DT_INST_0_BOSCH_BME280_CS_GPIOS_PIN;
+	data->spi_cs_control.delay = 0U;
+
+	data->spi_cfg.cs = &data->spi_cs_control;
+#endif /* DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER */
+
 	return 0;
 }
 #endif
