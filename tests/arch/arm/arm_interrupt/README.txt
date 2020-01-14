@@ -1,10 +1,16 @@
-Title: Test to verify code fault handling in ISR execution context (ARM Only)
+Title: Test to verify code fault handling in ISR execution context
+       and the behavior of irq_lock() and irq_unlock() when invoked
+       from User Mode. (ARM Only)
 
 Description:
 
-This test verifies that we can handle system fault conditions
+The first test verifies that we can handle system fault conditions
 while running in handler mode (i.e. in an ISR). Only for ARM
 Cortex-M targets.
+
+The second test verifies that threads in user mode, despite being able to call
+the irq_lock() and irq_unlock() functions without triggering a CPU fault,
+they won't be able to read or modify the current IRQ locking status.
 
 ---------------------------------------------------------------------------
 
@@ -62,6 +68,13 @@ Sample Output:
 
  PASS - test_arm_interrupt
  ===================================================================
+ starting test - test_arm_user_interrupt
+ PASS - test_arm_user_interrupt
+ ===================================================================
+ Test suite arm_interrupt succeeded
+ ===================================================================
+ PROJECT EXECUTION SUCCESSFUL
+
  Test suite arm_interrupt succeeded
  ===================================================================
  PROJECT EXECUTION SUCCESSFUL

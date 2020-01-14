@@ -114,6 +114,86 @@ void test_arm_interrupt(void)
 		zassert_true(post_flag == j, "Test flag not set by ISR\n");
 	}
 }
+
+#if defined(CONFIG_USERSPACE)
+#include <syscall_handler.h>
+#include "test_syscalls.h"
+
+void z_impl_test_arm_user_interrupt_syscall(void)
+{
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Confirm IRQs are not locked */
+	zassert_false(__get_PRIMASK(), "PRIMASK is set\n");
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+
+	static bool first_call = 1;
+
+	if (first_call == 1) {
+
+		/* First time the syscall is invoked */
+		first_call = 0;
+
+		/* Lock IRQs in supervisor mode */
+		int key = irq_lock();
+
+		/* Verify that IRQs were not already locked */
+		zassert_false(key, "IRQs locked in system call\n");
+	}
+
+	/* Confirm IRQs are still locked */
+	zassert_true(__get_BASEPRI(), "BASEPRI not set\n");
+#endif
+}
+
+static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
+{
+	z_impl_test_arm_user_interrupt_syscall();
+}
+#include <syscalls/test_arm_user_interrupt_syscall_mrsh.c>
+
+void test_arm_user_interrupt(void)
+{
+	/* Test thread executing in user mode */
+	zassert_true(arch_is_user_context(),
+		"Test thread not running in user mode\n");
+
+	/* Attempt to lock IRQs in user mode */
+	irq_lock();
+	/* Attempt to lock again should return non-zero value of previous
+	 * locking attempt, if that were to be successful.
+	 */
+	int lock = irq_lock();
+
+	zassert_false(lock, "IRQs shown locked in user mode\n");
+
+	/* Generate a system call to manage the IRQ locking */
+	test_arm_user_interrupt_syscall();
+
+	/* Attempt to unlock IRQs in user mode */
+	irq_unlock(0);
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* The first system call has left the IRQs locked.
+	 * Generate a second system call to inspect the IRQ locking.
+	 *
+	 * In Cortex-M Baseline system calls cannot be invoked
+	 * with interrupts locked, so we skip this part of the
+	 * test.
+	 */
+	test_arm_user_interrupt_syscall();
+
+	/* Verify that thread is not able to infer that IRQs are locked. */
+	zassert_false(irq_lock(), "IRQs are shown to be locked\n");
+#endif
+}
+#else
+void test_arm_user_interrupt(void)
+{
+	TC_PRINT("Skipped\n");
+}
+#endif /* CONFIG_USERSPACE */
+
+
 /**
  * @}
  */
