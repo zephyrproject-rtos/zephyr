@@ -9,6 +9,7 @@ zephyr_sources_ifdef(CONFIG_DUMMY_DISPLAY	display_dummy.c)
 zephyr_sources_ifdef(CONFIG_FRAMEBUF_DISPLAY	display_framebuf.c)
 zephyr_sources_ifdef(CONFIG_ILI9340		display_ili9340.c)
 zephyr_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
+zephyr_sources_ifdef(CONFIG_GD7965		gd7965.c)
 
 zephyr_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
