@@ -1151,6 +1151,32 @@ void test_oops_stackcheck(void)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
 }
 
+void z_impl_check_syscall_context(void)
+{
+	int key = irq_lock();
+
+	irq_unlock(key);
+
+	/* Make sure that interrupts aren't locked when handling system calls;
+	 * key has the previous locking state before the above irq_lock() call.
+	 */
+	zassert_true(arch_irq_unlocked(key), "irqs locked during syscall");
+
+	/* The kernel should not think we are in ISR context either */
+	zassert_false(k_is_in_isr(), "kernel reports irq context");
+}
+
+static inline void z_vrfy_check_syscall_context(void)
+{
+	return z_impl_check_syscall_context();
+}
+#include <syscalls/check_syscall_context_mrsh.c>
+
+void test_syscall_context(void)
+{
+	check_syscall_context();
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1213,7 +1239,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_exception),
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
-			 ztest_unit_test(test_object_recycle)
+			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_syscall_context)
 			 );
 	ztest_run_test_suite(userspace);
 }
