@@ -38,6 +38,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom;
 	};
 };
 
@@ -56,5 +57,9 @@
 };
 
 &spi1 {
+	status = "okay";
+};
+
+&eeprom {
 	status = "okay";
 };
