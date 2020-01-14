@@ -227,15 +227,15 @@ config BT_CTLR_TX_BUFFERS
 
 config BT_CTLR_TX_BUFFER_SIZE
 	int "Tx buffer size"
-	range 27 16384
+	range 27 251
 	default 27
 	help
 	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
 	  Size command response. If this size if greater than effective PDU size
 	  then controller will perform fragmentation before transmitting on the
 	  the packet on air.
-	  Maximum is set to 16384 due to implementation limitations (use of
-	  u16_t for size/length variables).
+	  Maximum is set to 251 due to implementation limitations (use of
+	  u8_t for length field in PDU buffer structure).
 
 choice
 	prompt "Tx Power"
