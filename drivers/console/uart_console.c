@@ -170,8 +170,10 @@ static void insert_char(char *pos, char c, u8_t end)
 {
 	char tmp;
 
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 	/* Echo back to console */
 	uart_poll_out(uart_console_dev, c);
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 
 	if (end == 0U) {
 		*pos = c;
@@ -184,7 +186,9 @@ static void insert_char(char *pos, char c, u8_t end)
 	cursor_save();
 
 	while (end-- > 0) {
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 		uart_poll_out(uart_console_dev, tmp);
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 		c = *pos;
 		*(pos++) = tmp;
 		tmp = c;
@@ -196,11 +200,15 @@ static void insert_char(char *pos, char c, u8_t end)
 
 static void del_char(char *pos, u8_t end)
 {
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 	uart_poll_out(uart_console_dev, '\b');
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 
 	if (end == 0U) {
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 		uart_poll_out(uart_console_dev, ' ');
 		uart_poll_out(uart_console_dev, '\b');
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 		return;
 	}
 
@@ -208,10 +216,14 @@ static void del_char(char *pos, u8_t end)
 
 	while (end-- > 0) {
 		*pos = *(pos + 1);
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 		uart_poll_out(uart_console_dev, *(pos++));
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 	}
 
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 	uart_poll_out(uart_console_dev, ' ');
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 
 	/* Move cursor back to right place */
 	cursor_restore();
@@ -508,8 +520,10 @@ void uart_console_isr(struct device *unused)
 				break;
 			case '\r':
 				cmd->line[cur + end] = '\0';
+#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 				uart_poll_out(uart_console_dev, '\r');
 				uart_poll_out(uart_console_dev, '\n');
+#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
 				cur = 0U;
 				end = 0U;
 				k_fifo_put(lines_queue, cmd);
