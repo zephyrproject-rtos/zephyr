@@ -3194,7 +3194,8 @@ static inline void event_len_prep(struct ll_conn *conn)
 		    (!feature_coded_phy && !feature_phy_2m)) {
 			rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
 #if defined(CONFIG_BT_CTLR_PHY)
-			tx_time = conn->default_tx_time;
+			tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0),
+				      conn->default_tx_time);
 #else /* !CONFIG_BT_CTLR_PHY */
 			tx_time = PKT_US(conn->default_tx_octets, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */
