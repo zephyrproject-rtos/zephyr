@@ -1052,7 +1052,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
-		struct net_context *ctx;
+		void *ctx;
 		int result;
 
 		/* Per POSIX, negative fd's are just ignored */
@@ -1077,6 +1077,16 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			 */
 			timeout = K_NO_WAIT;
 			continue;
+		} else if (result == -EXDEV) {
+			/* If POLL_PREPARE returned EXDEV, it means
+			 * it detected an offloaded socket.
+			 * In case the fds array contains a mixup of offloaded
+			 * and non-offloaded sockets, the offloaded poll handler
+			 * shall return an error.
+			 */
+			return z_fdtable_call_ioctl(vtable, ctx,
+						    ZFD_IOCTL_POLL_OFFLOAD,
+						    fds, nfds, timeout);
 		} else if (result != 0) {
 			errno = -result;
 			return -1;
@@ -1098,7 +1108,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 		pev = poll_events;
 		for (pfd = fds, i = nfds; i--; pfd++) {
-			struct net_context *ctx;
+			void *ctx;
 			int result;
 
 			pfd->revents = 0;
