@@ -35,6 +35,8 @@ void test_arm_dynamic_direct_interrupts(void)
 	 * in the ROM ISR table.
 	 */
 	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(DIRECT_ISR_OFFSET, 0, 0, no_reschedule);
+	/* Disable the interrupt */
+	irq_disable(DIRECT_ISR_OFFSET);
 
 	/* Attach the ISR handler at run time. */
 	irq_connect_dynamic(DIRECT_ISR_OFFSET, 0 /* highest priority */,
