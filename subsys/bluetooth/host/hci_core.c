@@ -6865,7 +6865,8 @@ int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob)
 	}
 
 
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
+	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	    !IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
 		err = bt_smp_le_oob_generate_sc_data(&oob->le_sc_data);
 		if (err) {
 			return err;
@@ -6883,6 +6884,7 @@ int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const u8_t *tk)
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 
+#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote)
@@ -6904,4 +6906,5 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 
 	return bt_smp_le_oob_get_sc_data(conn, oobd_local, oobd_remote);
 }
+#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 #endif /* defined(CONFIG_BT_SMP) */

@@ -1123,6 +1123,11 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 		return -EOPNOTSUPP;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) &&
+	    sec > BT_SECURITY_L3) {
+		return -EOPNOTSUPP;
+	}
+
 	/* nothing to do */
 	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
 		return 0;
