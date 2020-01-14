@@ -175,12 +175,12 @@ int flash_stm32_check_status(struct device *dev)
 	u32_t error = 0;
 
 	/* Save Flash errors */
-	error = (regs->sr & FLASH_FLAG_SR_ERROR);
+	error = (regs->sr & FLASH_FLAG_SR_ERRORS);
 	error |= (regs->eccr & FLASH_FLAG_ECCC);
 
 	/* Clear systematic Option and Enginneering bits validity error */
 	if (error & FLASH_FLAG_OPTVERR) {
-		regs->sr |= FLASH_FLAG_SR_ERROR;
+		regs->sr |= FLASH_FLAG_SR_ERRORS;
 		return 0;
 	}
 
