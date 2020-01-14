@@ -43,7 +43,7 @@ config CONSOLE_HANDLER
 	help
 	  This option enables console input handler allowing to write simple
 	  interaction between serial console and the OS.
-	  
+
 config UART_CONSOLE_SUPPRESS_ECHO
 	bool "Supresses echo of input data"
 	depends on UART_CONSOLE
