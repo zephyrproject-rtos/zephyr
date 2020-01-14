@@ -11,6 +11,23 @@ based on SSD1306 controller. These displays have an I2C interface and
 usually only four pins: GND, VCC, SCL and SDA. Display pins can be
 connected to the pin header of a board using jumper wires.
 
+Current supported displays
+==========================
+
++---------------------+---------------------+---------------------+
+| Display             | Controller /        | Shield Designation  |
+|                     | Driver              |                     |
++=====================+=====================+=====================+
+| No Name             | SSD1306 /           | ssd1306_128x64      |
+| 128x64 pixel        | ssd1306             |                     |
++---------------------+---------------------+---------------------+
+| No Name             | SSD1306 /           | ssd1306_128x32      |
+| 128x32 pixel        | ssd1306             |                     |
++---------------------+---------------------+---------------------+
+| No Name             | SH1106 /            | sh1106_128x64       |
+| 128x64 pixel        | ssd1306             |                     |
++---------------------+---------------------+---------------------+
+
 Requirements
 ************
 
