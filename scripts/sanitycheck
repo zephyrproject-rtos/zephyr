@@ -1877,6 +1877,8 @@ class CMake():
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
+
+        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
         kwargs = dict()
@@ -4040,6 +4042,7 @@ def main():
     suite.coverage_platform = options.coverage_platform
     suite.inline_logs = options.inline_logs
     suite.enable_size_report = options.enable_size_report
+    suite.extra_args = options.extra_args
 
     # Set number of jobs
     if options.jobs:
