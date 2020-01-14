@@ -808,7 +808,6 @@ This should now be written like this:
 
 .. code-block:: yaml
 
-   title: ...
    description: ...
 
    compatible: "company,device"
@@ -823,7 +822,6 @@ This should now be written like this:
            required: false
 
    child-binding:
-       title: ...
        description: ...
 
        properties:
