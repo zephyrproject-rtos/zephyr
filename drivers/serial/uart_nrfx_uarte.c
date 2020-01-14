@@ -1266,6 +1266,9 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		uarte_nrfx_pins_enable(dev, true);
 		nrf_uarte_enable(uarte);
 #ifdef CONFIG_UART_ASYNC_API
+		if (hw_rx_counting_enabled(get_dev_data(dev))) {
+			nrfx_timer_enable(&get_dev_config(dev)->timer);
+		}
 		if (get_dev_data(dev)->async) {
 			return;
 		}
@@ -1287,6 +1290,9 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		 * only sent after each RX if async UART API is used.
 		 */
 #ifdef CONFIG_UART_ASYNC_API
+		if (hw_rx_counting_enabled(get_dev_data(dev))) {
+			nrfx_timer_disable(&get_dev_config(dev)->timer);
+		}
 		if (get_dev_data(dev)->async) {
 			nrf_uarte_disable(uarte);
 			uarte_nrfx_pins_enable(dev, false);
