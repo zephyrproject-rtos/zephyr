@@ -62,9 +62,9 @@ config BT_DISCARDABLE_BUF_COUNT
 
 config BT_DISCARDABLE_BUF_SIZE
 	int "Size of discardable event buffers"
-	range 44 257
+	range 45 257
 	default 257 if BT_BREDR
-	default 44
+	default 45
 	help
 	  Size of buffers in the separate discardable event buffer pool.
 	  The minimum size is set based on the Advertising Report. Setting
