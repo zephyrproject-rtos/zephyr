@@ -233,7 +233,7 @@ enum {
 
 static atomic_t esc_state;
 static unsigned int ansi_val, ansi_val_2;
-static u8_t cur, end;
+static u16_t cur, end;
 
 static void handle_ansi(u8_t byte, char *line)
 {
