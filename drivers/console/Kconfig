@@ -44,14 +44,6 @@ config CONSOLE_HANDLER
 	  This option enables console input handler allowing to write simple
 	  interaction between serial console and the OS.
 
-config UART_CONSOLE_SUPPRESS_ECHO
-	bool "Supresses echo of input data"
-	depends on UART_CONSOLE
-	default n
-	help
-	  Enable this option to suppress the echo of input characters
-	  on the UART console.
-
 config UART_CONSOLE
 	bool "Use UART for console"
 	depends on SERIAL && SERIAL_HAS_DRIVER
@@ -88,6 +80,14 @@ config UART_CONSOLE_MCUMGR
 	  and device management.  When enabled, the UART console does not
 	  process mcumgr frames, but it hands them up to a higher level module
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
+
+config UART_CONSOLE_SUPPRESS_ECHO
+	bool "Suppresses echo of input data"
+	depends on UART_CONSOLE
+	default n
+	help
+	  Enable this option to suppress the echo of input characters
+	  on the UART console.
 
 config USB_UART_CONSOLE
 	bool "Use USB port for console outputs"

@@ -30,6 +30,7 @@
 #include <linker/sections.h>
 #include <sys/atomic.h>
 #include <sys/printk.h>
+#include <sys/util.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"
 #endif
@@ -166,14 +167,19 @@ static inline void cursor_restore(void)
 	printk("\x1b[u");
 }
 
+static void console_echo_back(struct device *dev, char c)
+{
+	if (!(IS_ENABLED(CONFIG_UART_CONSOLE_SUPPRESS_ECHO))) {
+		uart_poll_out(dev, c);
+	}
+}
+
 static void insert_char(char *pos, char c, u8_t end)
 {
 	char tmp;
 
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
 	/* Echo back to console */
-	uart_poll_out(uart_console_dev, c);
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+	console_echo_back(uart_console_dev, c);
 
 	if (end == 0U) {
 		*pos = c;
@@ -186,9 +192,7 @@ static void insert_char(char *pos, char c, u8_t end)
 	cursor_save();
 
 	while (end-- > 0) {
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-		uart_poll_out(uart_console_dev, tmp);
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+		console_echo_back(uart_console_dev, tmp);
 		c = *pos;
 		*(pos++) = tmp;
 		tmp = c;
@@ -200,15 +204,11 @@ static void insert_char(char *pos, char c, u8_t end)
 
 static void del_char(char *pos, u8_t end)
 {
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-	uart_poll_out(uart_console_dev, '\b');
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+	console_echo_back(uart_console_dev, '\b');
 
 	if (end == 0U) {
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-		uart_poll_out(uart_console_dev, ' ');
-		uart_poll_out(uart_console_dev, '\b');
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+		console_echo_back(uart_console_dev, ' ');
+		console_echo_back(uart_console_dev, '\b');
 		return;
 	}
 
@@ -216,14 +216,10 @@ static void del_char(char *pos, u8_t end)
 
 	while (end-- > 0) {
 		*pos = *(pos + 1);
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-		uart_poll_out(uart_console_dev, *(pos++));
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+		console_echo_back(uart_console_dev, *(pos++));
 	}
 
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-	uart_poll_out(uart_console_dev, ' ');
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+	console_echo_back(uart_console_dev, ' ');
 
 	/* Move cursor back to right place */
 	cursor_restore();
@@ -520,10 +516,8 @@ void uart_console_isr(struct device *unused)
 				break;
 			case '\r':
 				cmd->line[cur + end] = '\0';
-#ifndef CONFIG_UART_CONSOLE_SUPPRESS_ECHO
-				uart_poll_out(uart_console_dev, '\r');
-				uart_poll_out(uart_console_dev, '\n');
-#endif /* CONFIG_UART_CONSOLE_SUPPRESS_ECHO */
+				console_echo_back(uart_console_dev, '\r');
+				console_echo_back(uart_console_dev, '\n');
 				cur = 0U;
 				end = 0U;
 				k_fifo_put(lines_queue, cmd);
