@@ -2414,7 +2414,7 @@ class TestSuite:
             "{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 self.total_tests - self.total_failed - self.total_skipped,
-                self.total_tests,
+                self.total_tests - self.total_skipped,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if self.total_failed else Fore.RESET,
