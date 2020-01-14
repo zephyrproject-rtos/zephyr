@@ -48,7 +48,6 @@
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
-#define RPA_TIMEOUT          K_SECONDS(CONFIG_BT_RPA_TIMEOUT)
 
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
@@ -61,6 +60,11 @@ static struct k_thread tx_thread_data;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
+
+#if defined(CONFIG_BT_PRIVACY)
+/* Set default for run-time configurable RPA timeout */
+static u16_t rpa_timeout_seconds = CONFIG_BT_RPA_TIMEOUT;
+#endif /* CONFIG_BT_PRIVACY */
 
 struct bt_dev bt_dev = {
 	.init          = Z_WORK_INITIALIZER(init_work),
@@ -530,7 +534,8 @@ static int le_set_private_addr(u8_t id)
 	}
 
 	/* restart timer even if failed to set new RPA */
-	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	k_delayed_work_submit(&bt_dev.rpa_update,
+			      K_SECONDS(rpa_timeout_seconds));
 
 	return err;
 }
@@ -1698,6 +1703,7 @@ static void unpair(u8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys = NULL;
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, addr);
+
 	if (conn) {
 		/* Clear the conn->le.keys pointer since we'll invalidate it,
 		 * and don't want any subsequent code (like disconnected
@@ -2099,7 +2105,8 @@ static void link_key_notify(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
+	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr),
+		evt->key_type);
 
 	if (!conn->br.link_key) {
 		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
@@ -4268,6 +4275,31 @@ static int le_set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
 
+#if defined(CONFIG_BT_PRIVACY)
+static int bt_hci_set_rpa_timeout(u16_t timeout)
+{
+	struct bt_hci_cp_le_set_rpa_timeout *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->rpa_timeout = sys_cpu_to_le16(timeout);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf,
+				   NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PRIVACY */
+
 static int le_init(void)
 {
 	struct bt_hci_cp_write_le_host_supp *cp_le;
@@ -4368,18 +4400,7 @@ static int le_init(void)
 #if defined(CONFIG_BT_SMP)
 	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 #if defined(CONFIG_BT_PRIVACY)
-		struct bt_hci_cp_le_set_rpa_timeout *cp;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
-					sizeof(*cp));
-		if (!buf) {
-			return -ENOBUFS;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->rpa_timeout = sys_cpu_to_le16(CONFIG_BT_RPA_TIMEOUT);
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf,
-					   NULL);
+		err = bt_hci_set_rpa_timeout(rpa_timeout_seconds);
 		if (err) {
 			return err;
 		}
@@ -6692,3 +6713,20 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 	return bt_smp_le_oob_get_sc_data(conn, oobd_local, oobd_remote);
 }
 #endif
+
+#if defined(CONFIG_BT_PRIVACY)
+int bt_set_rpa_timeout(u16_t timeout)
+{
+	int err;
+
+	/* Restart timer even with new value */
+	k_delayed_work_cancel(&bt_dev.rpa_update);
+	k_delayed_work_submit(&bt_dev.rpa_update,
+			      K_SECONDS(rpa_timeout_seconds));
+
+	rpa_timeout_seconds = timeout;
+	err = bt_hci_set_rpa_timeout(rpa_timeout_seconds);
+
+	return err;
+}
+#endif /* CONFIG_BT_PRIVACY */

@@ -207,9 +207,9 @@ int bt_id_delete(u8_t id);
 /* Advertising API */
 
 /** Description of different data types that can be encoded into
-  * advertising data. Used to form arrays that are passed to the
-  * bt_le_adv_start() function.
-  */
+ *  advertising data. Used to form arrays that are passed to the
+ *  bt_le_adv_start() function.
+ */
 struct bt_data {
 	u8_t type;
 	u8_t data_len;
@@ -315,11 +315,11 @@ struct bt_le_adv_param {
 };
 
 /** Helper to declare advertising parameters inline
-  *
-  * @param _options   Advertising Options
-  * @param _int_min   Minimum advertising interval
-  * @param _int_max   Maximum advertising interval
-  */
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
 		((struct bt_le_adv_param[]) { { \
 			.options = (_options), \
@@ -473,13 +473,13 @@ struct bt_le_scan_cb {
 };
 
 /** Helper to declare scan parameters inline
-  *
-  * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
-  *                  BT_LE_SCAN_TYPE_PASSIVE.
-  * @param _filter   Filter options
-  * @param _interval Scan Interval (N * 0.625 ms)
-  * @param _window   Scan Window (N * 0.625 ms)
-  */
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _filter   Filter options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
 #define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
 		((struct bt_le_scan_param[]) { { \
 			.type = (_type), \
@@ -857,13 +857,13 @@ int bt_br_set_discoverable(bool enable);
 int bt_br_set_connectable(bool enable);
 
 /** Clear pairing information.
-  *
-  * @param id    Local identity (mostly just BT_ID_DEFAULT).
-  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
-  *              devices.
-  *
-  * @return 0 on success or negative error value on failure.
-  */
+ *
+ *  @param id    Local identity (mostly just BT_ID_DEFAULT).
+ *  @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+ *              devices.
+ *
+ *  @return 0 on success or negative error value on failure.
+ */
 int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
 /** Information about a bond with a remote device. */
@@ -873,14 +873,27 @@ struct bt_bond_info {
 };
 
 /** Iterate through all existing bonds.
-  *
-  * @param id         Local identity (mostly just BT_ID_DEFAULT).
-  * @param func       Function to call for each bond.
-  * @param user_data  Data to pass to the callback function.
-  */
+ *
+ *  @param id         Local identity (mostly just BT_ID_DEFAULT).
+ *  @param func       Function to call for each bond.
+ *  @param user_data  Data to pass to the callback function.
+ */
 void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
+
+/** Set the RPA timeout.
+ *
+ *  @param timeout RPA timeout is seconds.
+ *
+ *  Setting the RPA timeout allows run-time control of how often the host
+ *  changes the resolvable private address to reduce trackability. This is
+ *  used by non-directed RPA advertising, with no controller privacy bonding
+ *  information. Default timeout is defined by CONFIG_BT_RPA_TIMEOUT.
+ *
+ *  @return 0 on success or negative error value on failure.
+ */
+int bt_set_rpa_timeout(u16_t timeout);
 
 /**
  * @}
