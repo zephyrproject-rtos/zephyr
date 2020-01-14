@@ -160,6 +160,7 @@ NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 
 #if defined(CONFIG_BT_CONN)
 #define NUM_COMLETE_EVENT_SIZE BT_BUF_SIZE(                            \
+	sizeof(struct bt_hci_evt_hdr) +                                \
 	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
 	CONFIG_BT_MAX_CONN * sizeof(struct bt_hci_handle_count))
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
