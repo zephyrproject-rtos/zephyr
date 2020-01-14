@@ -13,6 +13,10 @@
 
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Attempt to boot the contents of slot 0. */
 #define BOOT_SWAP_TYPE_NONE     1
 
@@ -176,5 +180,9 @@ int boot_request_upgrade(int permanent);
  * @return 0 on success, negative errno code on fail.
  */
 int boot_erase_img_bank(u8_t area_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* ZEPHYR_INCLUDE_DFU_MCUBOOT_H_ */
