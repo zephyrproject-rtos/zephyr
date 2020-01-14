@@ -619,6 +619,20 @@ void bt_set_bondable(bool enable);
 void bt_set_oob_data_flag(bool enable);
 
 /**
+ * @brief Set OOB Temporary Key to be used for pairing
+ *
+ * This function allows to set OOB data for the LE legacy pairing procedure. The
+ * function should only be called in response to the oob_data_request() callback
+ * provided that the legacy method is user pairing.
+ *
+ * @param conn Connection object
+ * @param tk Pointer to 16 byte long TK array
+ *
+ * @return Zero on success or -EINVAL if NULL
+ */
+int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const u8_t *tk);
+
+/**
  * @brief Set OOB data during LE SC pairing procedure
  *
  * This function allows to set OOB data during the LE SC pairing procedure. The
