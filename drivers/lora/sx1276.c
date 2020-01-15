@@ -53,6 +53,8 @@ struct sx1276_data {
 	RadioEvents_t sx1276_event;
 	u8_t *rx_buf;
 	u8_t rx_len;
+	s8_t snr;
+	s16_t rssi;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -347,12 +349,14 @@ static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
 
 	dev_data.rx_buf = payload;
 	dev_data.rx_len = size;
+	dev_data.rssi = rssi;
+	dev_data.snr = snr;
 
 	k_sem_give(&dev_data.data_sem);
 }
 
 static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    s32_t timeout)
+			    s32_t timeout, s16_t *rssi, s8_t *snr)
 {
 	int ret;
 
@@ -380,6 +384,14 @@ static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
 	 * wise method to fix this!
 	 */
 	memcpy(data, dev_data.rx_buf, dev_data.rx_len);
+
+	if (rssi != NULL) {
+		*rssi = dev_data.rssi;
+	}
+
+	if (snr != NULL) {
+		*snr = dev_data.snr;
+	}
 
 	return dev_data.rx_len;
 }
