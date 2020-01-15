@@ -537,22 +537,10 @@ static int le_set_private_addr(u8_t id)
 	return err;
 }
 
-static void rpa_timeout(struct k_work *work)
+static void le_update_private_addr(void)
 {
 	bool adv_enabled = false;
 	int err;
-
-	BT_DBG("");
-
-	/* Invalidate RPA */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
-
-	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (!(atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) ||
-	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
-		return;
-	}
 
 	/*
 	 * we need to update rpa only if advertising is ongoing, with
@@ -572,6 +560,14 @@ static void rpa_timeout(struct k_work *work)
 		scan_enabled = true;
 	}
 #endif
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		/* Canceled initiating procedure will be restarted by
+		 * connection complete event.
+		 */
+		bt_le_create_conn_cancel();
+	}
 
 	/* If both advertiser and scanner is running then the advertiser ID must
 	 * be BT_ID_DEFAULT, this will update the RPA address for both roles.
@@ -592,6 +588,34 @@ static void rpa_timeout(struct k_work *work)
 	}
 #endif
 }
+
+static void rpa_timeout(struct k_work *work)
+{
+	BT_DBG("");
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		struct bt_conn *conn =
+			bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
+
+		if (conn) {
+			bt_conn_unref(conn);
+			bt_le_create_conn_cancel();
+		}
+	}
+
+	/* Invalidate RPA */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
+	/* IF no roles using the RPA is running we can stop the RPA timer */
+	if (!(atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) ||
+	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
+	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
+		return;
+	}
+
+	le_update_private_addr();
+}
 #else
 static int le_set_private_addr(u8_t id)
 {
@@ -607,7 +631,7 @@ static int le_set_private_addr(u8_t id)
 
 	return set_random_address(&nrpa);
 }
-#endif
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 bool bt_le_scan_random_addr_check(void)
 {
@@ -846,10 +870,21 @@ int bt_le_create_conn(const struct bt_conn *conn)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		err = le_set_private_addr(BT_ID_DEFAULT);
-		if (err) {
-			return err;
+		if (use_filter) {
+			err = le_set_private_addr(bt_dev.adv_id);
+			if (err) {
+				return err;
+			}
+		} else {
+			/* Force new RPA timeout so that RPA timeout is not
+			 * triggered while direct initiator is active.
+			 */
+			atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+#if defined(CONFIG_BT_PRIVACY)
+			le_update_private_addr();
+#endif
 		}
+
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
 		} else {
@@ -1282,18 +1317,33 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			 * Handle cancellation of outgoing connection attempt.
 			 */
 			if (conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+#if !defined(CONFIG_BT_WHITELIST)
 				/* We notify before checking autoconnect flag
 				 * as application may choose to change it from
 				 * callback.
 				 */
 				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
-#if !defined(CONFIG_BT_WHITELIST)
 				/* Check if device is marked for autoconnect. */
 				if (atomic_test_bit(conn->flags,
 						    BT_CONN_AUTO_CONNECT)) {
+					/* Restart passive scanner for device */
 					bt_conn_set_state(conn,
 							  BT_CONN_CONNECT_SCAN);
+				}
+#else
+				if (atomic_test_bit(conn->flags,
+						    BT_CONN_AUTO_CONNECT)) {
+
+					/* Restart whitelist initiator after
+					 * RPA timeout.
+					 */
+					bt_le_create_conn(conn);
+				} else {
+					/* Create connection canceled by timeout
+					 */
+					bt_conn_set_state(conn,
+							  BT_CONN_DISCONNECTED);
 				}
 #endif /* !defined(CONFIG_BT_WHITELIST) */
 				goto done;

@@ -2253,6 +2253,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return conn;
 	}
 #endif
+
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
 
 	if (bt_le_create_conn(conn)) {
