@@ -111,10 +111,23 @@ static void rv32m1_intmux_isr(void *arg)
 	struct device *dev = DEVICE_GET(intmux);
 	INTMUX_Type *regs = DEV_REGS(dev);
 	u32_t channel = POINTER_TO_UINT(arg);
-	u32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2) - VECN_OFFSET;
+	u32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
 	struct _isr_table_entry *isr_base = DEV_CFG(dev)->isr_base;
-	struct _isr_table_entry *entry = &isr_base[ISR_ENTRY(channel, line)];
+	struct _isr_table_entry *entry;
 
+	/*
+	 * Make sure the vector is valid, there is a note of page 1243~1244
+	 * of chapter 36 INTMUX of RV32M1 RM,
+	 * Note: Unlike the NVIC, the INTMUX does not latch pending source
+	 * interrupts. This means that the INTMUX output channel ISRs must
+	 * check for and handle a 0 value of the CHn_VEC register to
+	 * account for spurious interrupts.
+	 */
+	if (line < VECN_OFFSET) {
+		return;
+	}
+
+	entry = &isr_base[ISR_ENTRY(channel, (line - VECN_OFFSET))];
 	entry->isr(entry->arg);
 }
 
