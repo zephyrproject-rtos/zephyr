@@ -25,6 +25,10 @@ extern "C" {
 #define _SYS_INIT_LEVEL_POST_KERNEL	2
 #define _SYS_INIT_LEVEL_APPLICATION	3
 
+#ifdef CONFIG_SMP
+#define _SYS_INIT_LEVEL_SMP		4
+#endif
+
 /* A counter is used to avoid issues when two or more system devices
  * are declared in the same C file with the same init function.
  */
