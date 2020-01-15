@@ -2248,6 +2248,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return conn;
 	}
 #endif
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+
 	if (bt_le_direct_conn(conn)) {
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
@@ -2255,8 +2257,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		bt_le_scan_update(false);
 		return NULL;
 	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
 
 	return conn;
 }
