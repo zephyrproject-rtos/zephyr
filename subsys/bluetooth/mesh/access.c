@@ -187,6 +187,14 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 	return bt_mesh_trans_send(&tx, &sdu, &pub_sent_cb, mod);
 }
 
+static void publish_retransmit_end(int err, struct bt_mesh_model_pub *pub)
+{
+	/* Cancel all retransmits for this publish attempt */
+	pub->count = 0U;
+	/* Make sure the publish timer gets reset */
+	publish_sent(err, pub->mod);
+}
+
 static void mod_publish(struct k_work *work)
 {
 	struct bt_mesh_model_pub *pub = CONTAINER_OF(work,
@@ -224,7 +232,10 @@ static void mod_publish(struct k_work *work)
 
 	err = pub->update(pub->mod);
 	if (err) {
-		BT_ERR("Failed to update publication message");
+		/* Cancel this publish attempt. */
+		BT_DBG("Update failed, skipping publish (err: %d)", err);
+		pub->period_start = k_uptime_get_32();
+		publish_retransmit_end(err, pub);
 		return;
 	}
 
@@ -744,10 +755,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	err = model_send(model, &tx, true, &sdu, &pub_sent_cb, model);
 	if (err) {
-		/* Don't try retransmissions for this publish attempt */
-		pub->count = 0U;
-		/* Make sure the publish timer gets reset */
-		publish_sent(err, model);
+		publish_retransmit_end(err, pub);
 		return err;
 	}
 
