@@ -8,6 +8,7 @@
 import os
 import shlex
 import sys
+from intelhex import IntelHex
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -113,8 +114,46 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                              format(self.hex_) +
                              'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
+        if self.family == 'NRF53':
+            # self.hex_ can contain code for both application core and network
+            # core. Code being flashed to the network core needs to have a
+            # specific argument provided to nrfjprog. If network code is found,
+            # generate two new hex files, one for each core, and flash them
+            # with the correct '--coprocessor' argument.
+            ih = IntelHex(self.hex_)
+            net_hex = IntelHex()
+            app_hex = IntelHex()
+            for s in ih.segments():
+                if s[0] >= 0x01000000:
+                    net_hex.merge(ih[s[0]:s[1]])
+                else:
+                    app_hex.merge(ih[s[0]:s[1]])
+
+            if len(net_hex) > 0:
+                wd = os.path.dirname(self.hex_)
+                net_hex_file = os.path.join(wd, 'GENERATED_CP_NETWORK_'
+                                            + os.path.basename(self.hex_))
+                self.logger.info("Generating CP_NETWORK hex file {}"
+                                 .format(net_hex_file))
+                net_hex.write_hex_file(net_hex_file)
+
+                program_net_cmd = ['nrfjprog', '--coprocessor', 'CP_NETWORK',
+                                   '--program', net_hex_file, '-f',
+                                   self.family, '--snr', board_snr,
+                                   '--sectorerase']
+                commands.extend([program_net_cmd])
+                self.logger.info('Flashing file: {}'.format(net_hex_file))
+
+                if len(app_hex) > 0:
+                    app_hex_file = os.path.join(wd, 'GENERATED_CP_APPLICATION_'
+                                                + os.path.basename(self.hex_))
+                    self.logger.info("Generating CP_APPLICATION hex file {}"
+                                     .format(net_hex_file))
+                    app_hex.write_hex_file(app_hex_file)
+                    self.hex_ = app_hex_file
+
         program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
-                    '--snr', board_snr] + self.tool_opt
+                       '--snr', board_snr] + self.tool_opt
 
         self.logger.info('Flashing file: {}'.format(self.hex_))
         if self.erase:
