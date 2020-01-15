@@ -51,7 +51,7 @@ struct eth_context {
 	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 	struct net_if *iface;
-	const char *if_name;
+	char if_name[16];
 	k_tid_t rx_thread;
 	struct z_thread_stack_element *rx_stack;
 	size_t rx_stack_size;
@@ -465,23 +465,17 @@ static void eth_iface_init(struct net_if *iface)
 	}
 #endif
 
-	/* If we have only one network interface, then use the name
-	 * defined in the Kconfig directly. This way there is no need to
-	 * change the documentation etc. and break things.
-	 */
-	if (CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1) {
-		ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
-	}
-
-	LOG_DBG("Interface %p using \"%s\"", iface, log_strdup(ctx->if_name));
-
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
+	strncpy(ctx->if_name, ETH_NATIVE_POSIX_DRV_NAME, sizeof(ctx->if_name) - 1);
+	ctx->if_name[sizeof(ctx->if_name) - 1] = 0;
+
+	ctx->dev_fd = eth_iface_create(ctx->if_name, sizeof(ctx->if_name), false);
 	if (ctx->dev_fd < 0) {
 		LOG_ERR("Cannot create %s (%d)", ctx->if_name, -errno);
 	} else {
+		LOG_DBG("Interface %p using \"%s\"", iface, log_strdup(ctx->if_name));
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);
 
