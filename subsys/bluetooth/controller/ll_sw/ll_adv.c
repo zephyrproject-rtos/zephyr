@@ -478,8 +478,8 @@ u8_t ll_adv_enable(u8_t enable)
 		 * found the fallback address was used instead, check
 		 * that a valid address has been set.
 		 */
-		if ((priv || pdu_adv->tx_addr) &&
-		    !mem_nz(&pdu_adv->adv_ind.addr[0], BDADDR_SIZE)) {
+		if (pdu_adv->tx_addr &&
+		    !mem_nz(pdu_adv->adv_ind.addr, BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
