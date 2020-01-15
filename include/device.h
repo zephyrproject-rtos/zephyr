@@ -69,6 +69,9 @@ extern "C" {
  * \li POST_KERNEL: Used for devices that require kernel services during
  * configuration.
  * \n
+ * \li POST_KERNEL_SMP: Used for devices that require kernel services during
+ * configuration after SMP initialization.
+ * \n
  * \li APPLICATION: Used for application components (i.e. non-kernel components)
  * that need automatic configuration. These devices can use all services
  * provided by the kernel during configuration.
