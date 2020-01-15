@@ -1,3 +1,6 @@
+runtime:
+  nodePool: misc_L
+
 language: c
 
 compiler: gcc
@@ -6,13 +9,14 @@ env:
     global:
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.10.3
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        - MATRIX_BUILDS="5"
+        - MATRIX_BUILDS="6"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
         - MATRIX_BUILD="5"
+        - MATRIX_BUILD="6"
 
 build:
     cache: false
