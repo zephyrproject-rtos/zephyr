@@ -25,7 +25,7 @@
 #define ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER ""
 #endif
 
-int eth_iface_create(const char *if_name, bool tun_only);
+int eth_iface_create(char *if_name, size_t if_namelen, bool tun_only);
 int eth_iface_remove(int fd);
 int eth_setup_host(const char *if_name);
 int eth_start_script(const char *if_name);

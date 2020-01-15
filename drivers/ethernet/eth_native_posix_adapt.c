@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Note that we cannot create the TUN/TAP device from the setup script
  * as we need to get a file descriptor to communicate with the interface.
  */
-int eth_iface_create(const char *if_name, bool tun_only)
+int eth_iface_create(char *if_name, size_t if_namelen, bool tun_only)
 {
 	struct ifreq ifr;
 	int fd, ret = -EINVAL;
@@ -75,6 +75,8 @@ int eth_iface_create(const char *if_name, bool tun_only)
 		close(fd);
 		return ret;
 	}
+	strncpy(if_name, ifr.ifr_name, if_namelen - 1);
+	if_name[if_namelen - 1] = 0;
 #endif
 
 	return fd;
