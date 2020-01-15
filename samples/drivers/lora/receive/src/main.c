@@ -22,6 +22,8 @@ void main(void)
 	struct lora_modem_config config;
 	int ret, len;
 	u8_t data[MAX_DATA_LEN] = {0};
+	s16_t rssi;
+	s8_t snr;
 
 	lora_dev = device_get_binding(DT_INST_0_SEMTECH_SX1276_LABEL);
 	if (!lora_dev) {
@@ -45,12 +47,14 @@ void main(void)
 
 	while (1) {
 		/* Block until data arrives */
-		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER);
+		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER,
+				&rssi, &snr);
 		if (len < 0) {
 			LOG_ERR("LoRa receive failed");
 			return;
 		}
 
-		LOG_INF("Received data: %s", log_strdup(data));
+		LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
+			log_strdup(data), rssi, snr);
 	}
 }
