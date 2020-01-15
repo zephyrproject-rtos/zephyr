@@ -178,9 +178,9 @@ def write_regs(node):
         else:
             ident = base_ident
 
-        out_dev(node, ident, val,
-                # Name alias from 'reg-names = ...'
-                str2ident(reg.name) + "_" + base_ident if reg.name else None)
+        out_node(node, ident, val,
+                 # Name alias from 'reg-names = ...'
+                 str2ident(reg.name) + "_" + base_ident if reg.name else None)
 
     for reg in node.regs:
         write_reg(reg, "BASE_ADDRESS", hex(reg.addr))
@@ -202,26 +202,27 @@ def write_props(node):
         ident = str2ident(prop.name)
 
         if prop.type == "boolean":
-            out_dev(node, ident, 1 if prop.val else 0)
+            out_node(node, ident, 1 if prop.val else 0)
         elif prop.type == "string":
-            out_dev_s(node, ident, prop.val)
+            out_node_s(node, ident, prop.val)
         elif prop.type == "int":
-            out_dev(node, ident, prop.val)
+            out_node(node, ident, prop.val)
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
-                out_dev(node, "{}_{}".format(ident, i), val)
-            out_dev_init(node, ident, prop.val)
+                out_node(node, "{}_{}".format(ident, i), val)
+            out_node_init(node, ident, prop.val)
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
-                out_dev_s(node, "{}_{}".format(ident, i), val)
+                out_node_s(node, "{}_{}".format(ident, i), val)
         elif prop.type == "uint8-array":
-            out_dev_init(node, ident, ["0x{:02x}".format(b) for b in prop.val])
+            out_node_init(node, ident,
+                          ["0x{:02x}".format(b) for b in prop.val])
         else:  # prop.type == "phandle-array"
             write_phandle_val_list(prop)
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
-            out_dev(node, ident + "_ENUM", prop.enum_index)
+            out_node(node, ident + "_ENUM", prop.enum_index)
 
 
 def should_write(prop):
@@ -262,7 +263,7 @@ def write_bus(node):
         err("missing 'label' property on bus node {!r}".format(node.bus_node))
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_dev_s(node, "BUS_NAME", str2ident(node.bus_node.label))
+    out_node_s(node, "BUS_NAME", str2ident(node.bus_node.label))
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
@@ -281,9 +282,8 @@ def write_existence_flags(node):
                                 str2ident(compat)), 1)
 
 
-def dev_ident(node):
-    # Returns an identifier for the device given by 'node'. Used when building
-    # e.g. macro names.
+def node_ident(node):
+    # Returns an identifier for 'node'. Used e.g. when building macro names.
 
     # TODO: Handle PWM on STM
     # TODO: Better document the rules of how we generate things
@@ -307,17 +307,15 @@ def dev_ident(node):
     return ident
 
 
-def dev_aliases(node):
-    # Returns a list of aliases for the device given by 'node', used e.g. when
-    # building macro names
+def node_aliases(node):
+    # Returns a list of aliases for 'node', used e.g. when building macro names
 
-    return dev_path_aliases(node) + dev_instance_aliases(node)
+    return node_path_aliases(node) + node_instance_aliases(node)
 
 
-def dev_path_aliases(node):
-    # Returns a list of aliases for the device given by 'node', based on the
-    # aliases registered for it, in the /aliases node. Used when building e.g.
-    # macro names.
+def node_path_aliases(node):
+    # Returns a list of aliases for 'node', based on the aliases registered for
+    # it in the /aliases node. Used e.g. when building macro names.
 
     if node.matching_compat is None:
         return []
@@ -333,13 +331,13 @@ def dev_path_aliases(node):
     return aliases
 
 
-def dev_instance_aliases(node):
-    # Returns a list of aliases for the device given by 'node', based on the
-    # instance number of the device (based on how many instances of that
-    # particular device there are).
+def node_instance_aliases(node):
+    # Returns a list of aliases for 'node', based on the compatible string and
+    # the instance number (each node with a particular compatible gets its own
+    # instance number, starting from zero).
     #
-    # This is a list since a device can have multiple 'compatible' strings,
-    # each with their own instance number.
+    # This is a list since a node can have multiple 'compatible' strings, each
+    # with their own instance number.
 
     return ["INST_{}_{}".format(node.instance_no[compat], str2ident(compat))
             for compat in node.compats]
@@ -523,8 +521,8 @@ def write_irqs(node):
             else:
                 ident += "_" + str2ident(cell_name)
 
-            out_dev(node, ident, cell_value,
-                    name_alias=irq_name_alias(irq, cell_name))
+            out_node(node, ident, cell_value,
+                     name_alias=irq_name_alias(irq, cell_name))
 
 
 def write_spi_dev(node):
@@ -551,14 +549,14 @@ def write_phandle_val_list(prop):
     # The base identifier is derived from the property name. For example, 'pwms = ...'
     # generates output like this:
     #
-    #   #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
-    #   #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from *-cells in binding)
-    #   #define <device prefix>_PWMS_0 {"PWM_0", 123}
-    #   #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
-    #   #define <device prefix>_PWMS_CHANNEL_1 456
-    #   #define <device prefix>_PWMS_1 {"PWM_1", 456}
-    #   #define <device prefix>_PWMS_COUNT 2
-    #   #define <device prefix>_PWMS {<device prefix>_PWMS_0, <device prefix>_PWMS_1}
+    #   #define <node prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
+    #   #define <node prefix>_PWMS_CHANNEL_0 123         (name taken from *-cells in binding)
+    #   #define <node prefix>_PWMS_0 {"PWM_0", 123}
+    #   #define <node prefix>_PWMS_CONTROLLER_1 "PWM_1"
+    #   #define <node prefix>_PWMS_CHANNEL_1 456
+    #   #define <node prefix>_PWMS_1 {"PWM_1", 456}
+    #   #define <node prefix>_PWMS_COUNT 2
+    #   #define <node prefix>_PWMS {<node prefix>_PWMS_0, <node prefix>_PWMS_1}
     #   ...
 
     # pwms -> PWMS
@@ -571,8 +569,8 @@ def write_phandle_val_list(prop):
             prop.node, entry, i if len(prop.val) > 1 else None, ident))
 
     if len(prop.val) > 1:
-        out_dev(prop.node, ident + "_COUNT", len(initializer_vals))
-        out_dev_init(prop.node, ident, initializer_vals)
+        out_node(prop.node, ident + "_COUNT", len(initializer_vals))
+        out_node_init(prop.node, ident, initializer_vals)
 
 
 def write_phandle_val_list_entry(node, entry, i, ident):
@@ -596,7 +594,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         if i is not None:
             ctrl_ident += "_{}".format(i)
         initializer_vals.append(quote_str(entry.controller.label))
-        out_dev_s(node, ctrl_ident, entry.controller.label, name_alias)
+        out_node_s(node, ctrl_ident, entry.controller.label, name_alias)
 
     for cell, val in entry.data.items():
         cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
@@ -608,7 +606,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         # Backwards compatibility (see above)
         if i is not None:
             cell_ident += "_{}".format(i)
-        out_dev(node, cell_ident, val, name_alias)
+        out_node(node, cell_ident, val, name_alias)
 
     initializer_vals += entry.data.values()
 
@@ -619,7 +617,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         name_alias = None
     if i is not None:
         initializer_ident += "_{}".format(i)
-    return out_dev_init(node, initializer_ident, initializer_vals, name_alias)
+    return out_node_init(node, initializer_ident, initializer_vals, name_alias)
 
 
 def write_clocks(node):
@@ -638,7 +636,7 @@ def write_clocks(node):
         controller = clock.controller
 
         if controller.label is not None:
-            out_dev_s(node, "CLOCK_CONTROLLER", controller.label)
+            out_node_s(node, "CLOCK_CONTROLLER", controller.label)
 
         for name, val in clock.data.items():
             if clock_i == 0:
@@ -646,8 +644,8 @@ def write_clocks(node):
             else:
                 clk_name_alias = None
 
-            out_dev(node, "CLOCK_{}_{}".format(str2ident(name), clock_i), val,
-                    name_alias=clk_name_alias)
+            out_node(node, "CLOCK_{}_{}".format(str2ident(name), clock_i), val,
+                     name_alias=clk_name_alias)
 
         if "fixed-clock" not in controller.compats:
             continue
@@ -656,8 +654,8 @@ def write_clocks(node):
             err("{!r} is a 'fixed-clock' but lacks a 'clock-frequency' "
                 "property".format(controller))
 
-        out_dev(node, "CLOCKS_CLOCK_FREQUENCY",
-                controller.props["clock-frequency"].val)
+        out_node(node, "CLOCKS_CLOCK_FREQUENCY",
+                 controller.props["clock-frequency"].val)
 
 
 def str2ident(s):
@@ -672,52 +670,52 @@ def str2ident(s):
             .upper()
 
 
-def out_dev(node, ident, val, name_alias=None):
-    # Writes an
+def out_node(node, ident, val, name_alias=None):
+    # Writes a
     #
-    #   <device prefix>_<ident> = <val>
+    #   <node prefix>_<ident> = <val>
     #
     # assignment, along with a set of
     #
-    #   <device alias>_<ident>
+    #   <node alias>_<ident>
     #
-    # aliases, for each device alias. If 'name_alias' (a string) is passed,
-    # then these additional aliases are generated:
+    # aliases, for each path/instance alias for the node. If 'name_alias' (a
+    # string) is passed, then these additional aliases are generated:
     #
-    #   <device prefix>_<name alias>
-    #   <device alias>_<name alias> (for each device alias)
+    #   <node prefix>_<name alias>
+    #   <node alias>_<name alias> (for each node alias)
     #
     # 'name_alias' is used for reg-names and the like.
     #
     # Returns the identifier used for the macro that provides the value
     # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
-    dev_prefix = dev_ident(node)
+    node_prefix = node_ident(node)
 
-    aliases = [alias + "_" + ident for alias in dev_aliases(node)]
+    aliases = [alias + "_" + ident for alias in node_aliases(node)]
     if name_alias is not None:
-        aliases.append(dev_prefix + "_" + name_alias)
-        aliases += [alias + "_" + name_alias for alias in dev_aliases(node)]
+        aliases.append(node_prefix + "_" + name_alias)
+        aliases += [alias + "_" + name_alias for alias in node_aliases(node)]
 
-    return out(dev_prefix + "_" + ident, val, aliases)
+    return out(node_prefix + "_" + ident, val, aliases)
 
 
-def out_dev_s(node, ident, s, name_alias=None):
-    # Like out_dev(), but emits 's' as a string literal
+def out_node_s(node, ident, s, name_alias=None):
+    # Like out_node(), but emits 's' as a string literal
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_dev(node, ident, quote_str(s), name_alias)
+    return out_node(node, ident, quote_str(s), name_alias)
 
 
-def out_dev_init(node, ident, elms, name_alias=None):
-    # Like out_dev(), but generates an {e1, e2, ...} initializer with the
+def out_node_init(node, ident, elms, name_alias=None):
+    # Like out_node(), but generates an {e1, e2, ...} initializer with the
     # elements in the iterable 'elms'.
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_dev(node, ident, "{" + ", ".join(map(str, elms)) + "}",
-                   name_alias)
+    return out_node(node, ident, "{" + ", ".join(map(str, elms)) + "}",
+                    name_alias)
 
 
 def out_s(ident, val):
