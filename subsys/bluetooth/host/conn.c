@@ -362,7 +362,7 @@ static void conn_update_timeout(struct k_work *work)
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
 		 */
-		bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
+		bt_le_create_conn_cancel();
 		return;
 	}
 
@@ -2071,8 +2071,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 			k_delayed_work_cancel(&conn->update_work);
-			return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL,
-					       NULL);
+			return bt_le_create_conn_cancel();
 		}
 
 		return 0;
@@ -2110,25 +2109,20 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-		return -EINVAL;
-	}
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
+	if (conn) {
+		bt_conn_unref(conn);
 		return -EALREADY;
 	}
 
-	/* Don't start initiator if we have general discovery procedure. */
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
-	if (conn) {
-		bt_conn_unref(conn);
+	/* Scanning either to connect or explicit scan, either case scanner was
+	 * started by application and should not be stopped.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		return -EINVAL;
 	}
 
-	/* Don't start initiator if we have direct discovery procedure. */
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
-	if (conn) {
-		bt_conn_unref(conn);
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		return -EINVAL;
 	}
 
@@ -2137,9 +2131,11 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -ENOMEM;
 	}
 
+	atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	bt_conn_set_param_le(conn, param);
 	bt_conn_set_state(conn, BT_CONN_CONNECT_AUTO);
 
-	err = bt_le_auto_conn(param);
+	err = bt_le_create_conn(conn);
 	if (err) {
 		BT_ERR("Failed to start whitelist scan");
 
@@ -2164,17 +2160,19 @@ int bt_conn_create_auto_stop(void)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
+	if (!conn) {
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
-	if (conn) {
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		bt_conn_unref(conn);
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		return -EINVAL;
 	}
 
-	err = bt_le_auto_conn_cancel();
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	bt_conn_unref(conn);
+
+	err = bt_le_create_conn_cancel();
 	if (err) {
 		BT_ERR("Failed to stop initiator");
 		return err;
@@ -2202,8 +2200,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		return NULL;
 	}
 
@@ -2250,7 +2247,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 #endif
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
 
-	if (bt_le_direct_conn(conn)) {
+	if (bt_le_create_conn(conn)) {
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
 

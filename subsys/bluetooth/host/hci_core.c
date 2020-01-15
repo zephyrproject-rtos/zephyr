@@ -740,20 +740,17 @@ static void hci_num_completed_packets(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-#if defined(CONFIG_BT_WHITELIST)
-int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
+int bt_le_create_conn(const struct bt_conn *conn)
 {
-	struct net_buf *buf;
-	struct cmd_state_set state;
 	struct bt_hci_cp_le_create_conn *cp;
+	struct cmd_state_set state;
+	bool use_filter = false;
+	struct net_buf *buf;
 	u8_t own_addr_type;
 	int err;
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-		err = set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
-		if (err) {
-			return err;
-		}
+	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -789,102 +786,53 @@ int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
-
-	cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
 	cp->own_addr_type = own_addr_type;
 
-	/* User Initiated procedure use fast scan parameters. */
-	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
-	cp->scan_window = sys_cpu_to_le16(BT_GAP_SCAN_FAST_WINDOW);
+	if (use_filter) {
+		/* User Initiated procedure use fast scan parameters. */
+		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
+		cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
+		cp->scan_window = sys_cpu_to_le16(BT_GAP_SCAN_FAST_WINDOW);
+	} else {
+		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-	cp->conn_interval_min = sys_cpu_to_le16(conn_param->interval_min);
-	cp->conn_interval_max = sys_cpu_to_le16(conn_param->interval_max);
-	cp->conn_latency = sys_cpu_to_le16(conn_param->latency);
-	cp->supervision_timeout = sys_cpu_to_le16(conn_param->timeout);
+#if defined(CONFIG_BT_SMP)
+		if (!bt_dev.le.rl_size ||
+		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+			/* Host resolving is used, use the RPA directly. */
+			peer_addr = &conn->le.resp_addr;
+		}
+#endif
+		bt_addr_le_copy(&cp->peer_addr, peer_addr);
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_DIRECT;
+		/* Interval == window for continuous scanning */
+		cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
+		cp->scan_window = cp->scan_interval;
+	}
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_AUTO_CONN, true);
+	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
+	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
+	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
+	cp->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
+
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, true);
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 
-int bt_le_auto_conn_cancel(void)
+int bt_le_create_conn_cancel(void)
 {
 	struct net_buf *buf;
 	struct cmd_state_set state;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_AUTO_CONN, false);
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, false);
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
-}
-#endif /* defined(CONFIG_BT_WHITELIST) */
-int bt_le_direct_conn(const struct bt_conn *conn)
-{
-	struct net_buf *buf;
-	struct bt_hci_cp_le_create_conn *cp;
-	u8_t own_addr_type;
-	const bt_addr_le_t *peer_addr;
-	int err;
-
-	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		err = le_set_private_addr(conn->id);
-		if (err) {
-			return err;
-		}
-
-		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-			own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
-		} else {
-			own_addr_type = BT_ADDR_LE_RANDOM;
-		}
-	} else {
-		/* If Static Random address is used as Identity address we
-		 * need to restore it before creating connection. Otherwise
-		 * NRPA used for active scan could be used for connection.
-		 */
-		const bt_addr_le_t *own_addr = &bt_dev.id_addr[conn->id];
-
-		if (own_addr->type == BT_ADDR_LE_RANDOM) {
-			err = set_random_address(&own_addr->a);
-			if (err) {
-				return err;
-			}
-		}
-
-		own_addr_type = own_addr->type;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
-
-	/* Interval == window for continuous scanning */
-	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
-	cp->scan_window = cp->scan_interval;
-
-	peer_addr = &conn->le.dst;
-#if defined(CONFIG_BT_SMP)
-	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
-		/* Host resolving is used, use the RPA directly. */
-		peer_addr = &conn->le.resp_addr;
-	}
-#endif
-	bt_addr_le_copy(&cp->peer_addr, peer_addr);
-	cp->own_addr_type = own_addr_type;
-	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
-	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
-	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
-	cp->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -1290,12 +1238,11 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    IS_ENABLED(CONFIG_BT_WHITELIST) &&
 	    evt->role == BT_HCI_ROLE_MASTER) {
-		/* Clear auto conn even if we are not able to add connection
+		/* Clear initiating even if we are not able to add connection
 		 * object to keep the host in sync with controller state.
 		 */
-		atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
+		atomic_clear_bit(bt_dev.flags, BT_DEV_INITIATING);
 	}
 
 	if (!conn) {
@@ -1657,7 +1604,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
-	if (bt_le_direct_conn(conn)) {
+	if (bt_le_create_conn(conn)) {
 		goto failed;
 	}
 
