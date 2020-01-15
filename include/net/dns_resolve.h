@@ -208,6 +208,14 @@ struct dns_resolve_context {
 
 		/** DNS id of this query */
 		u16_t id;
+
+		/** Hash of the DNS name + query type we are querying.
+		 * This hash is calculated so we can match the response that
+		 * we are receiving. This is needed mainly for mDNS which is
+		 * setting the DNS id to 0, which means that the id alone
+		 * cannot be used to find correct pending query.
+		 */
+		u16_t query_hash;
 	} queries[CONFIG_DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
@@ -269,6 +277,23 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  */
 int dns_resolve_cancel(struct dns_resolve_context *ctx,
 		       u16_t dns_id);
+
+/**
+ * @brief Cancel a pending DNS query using id, name and type.
+ *
+ * @details This releases DNS resources used by a pending query.
+ *
+ * @param ctx DNS context
+ * @param dns_id DNS id of the pending query
+ * @param query_name Name of the resource we are trying to query (hostname)
+ * @param query_type Type of the query (A or AAAA)
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
+				 u16_t dns_id,
+				 const char *query_name,
+				 enum dns_query_type query_type);
 
 /**
  * @brief Resolve DNS name.
