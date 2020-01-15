@@ -3128,11 +3128,38 @@ static inline void event_len_prep(struct ll_conn *conn)
 		struct pdu_data_llctrl_length_req *lr;
 		struct pdu_data *pdu_ctrl_tx;
 		struct node_tx *tx;
+		u16_t rx_time;
+		u16_t tx_time;
+		/*
+		 * Using bool instead of u8_t increases code size
+		 * in this case.
+		 */
+		u8_t feature_coded_phy;
+		u8_t feature_phy_2m;
 
 		tx = mem_acquire(&mem_conn_tx_ctrl.free);
 		if (!tx) {
 			return;
 		}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		feature_coded_phy = (conn->llcp_feature.features &
+				     BIT(BT_LE_FEAT_BIT_PHY_CODED));
+#else
+		feature_coded_phy = 0;
+#endif
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+		feature_phy_2m = (conn->llcp_feature.features &
+				  BIT(BT_LE_FEAT_BIT_PHY_2M));
+#else
+		feature_phy_2m = 0;
+#endif
+#else
+		feature_coded_phy = 0;
+		feature_phy_2m = 0;
+#endif
 
 		/* wait for resp before completing the procedure */
 		conn->llcp_length.state = LLCP_LENGTH_STATE_REQ_ACK_WAIT;
@@ -3157,59 +3184,35 @@ static inline void event_len_prep(struct ll_conn *conn)
 		lr->max_tx_octets = sys_cpu_to_le16(conn->default_tx_octets);
 
 		if (!conn->common.fex_valid ||
+		    (!feature_coded_phy && !feature_phy_2m)) {
+			rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
 #if defined(CONFIG_BT_CTLR_PHY)
-		     (
+			tx_time = conn->default_tx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
+			tx_time = PKT_US(conn->default_tx_octets, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-		      !(conn->llcp_feature.features &
-			BIT(BT_LE_FEAT_BIT_PHY_CODED)) &&
+		} else if (feature_coded_phy) {
+			rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2));
+			tx_time = conn->default_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-		      !(conn->llcp_feature.features &
-			BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
-#endif /* CONFIG_BT_CTLR_PHY_2M */
-		      1)
-#else /* !CONFIG_BT_CTLR_PHY */
-		    1
-#endif /* !CONFIG_BT_CTLR_PHY */
-		   ) {
-			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
-#if defined(CONFIG_BT_CTLR_PHY)
-			u16_t tx_time = conn->default_tx_time;
-#else /* !CONFIG_BT_CTLR_PHY */
-			u16_t tx_time = PKT_US(conn->default_tx_octets, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
-			lr->max_rx_time = sys_cpu_to_le16(rx_time);
-			lr->max_tx_time = sys_cpu_to_le16(tx_time);
-#if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		} else if (conn->llcp_feature.features &
-			   BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
-			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2));
-			u16_t tx_time = conn->default_tx_time;
-
-			lr->max_rx_time = sys_cpu_to_le16(rx_time);
-			lr->max_tx_time = sys_cpu_to_le16(tx_time);
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-		} else if (conn->llcp_feature.features &
-			   BIT(BT_LE_FEAT_BIT_PHY_2M)) {
-			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(1));
-			u16_t tx_time;
-
+		} else if (feature_phy_2m) {
+			rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(1));
 			if (conn->default_tx_time > rx_time) {
 				tx_time = rx_time;
 			} else {
 				tx_time = conn->default_tx_time;
 			}
-
-			lr->max_rx_time = sys_cpu_to_le16(rx_time);
-			lr->max_tx_time = sys_cpu_to_le16(tx_time);
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 #endif /* CONFIG_BT_CTLR_PHY */
 		}
+
+		lr->max_rx_time = sys_cpu_to_le16(rx_time);
+		lr->max_tx_time = sys_cpu_to_le16(tx_time);
+
 
 		ctrl_tx_enqueue(conn, tx);
 
