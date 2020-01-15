@@ -375,6 +375,7 @@ static void eth_rx(struct eth_context *ctx)
 		if (net_if_is_up(ctx->iface)) {
 			while (!eth_wait_data(ctx->dev_fd)) {
 				read_data(ctx, ctx->dev_fd);
+				k_yield();
 			}
 		}
 
