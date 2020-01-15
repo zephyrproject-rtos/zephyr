@@ -16,6 +16,7 @@ if USE_SEGGER_RTT
 
 config SEGGER_SYSTEMVIEW
 	bool "Segger SystemView support"
+	select CONSOLE
 	select RTT_CONSOLE
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
