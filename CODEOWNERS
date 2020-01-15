@@ -280,6 +280,7 @@
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/infineon/                        @parthitce
 /dts/arm/qemu-virt/                       @carlocaione
+/dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
