@@ -607,7 +607,8 @@ static void rpa_timeout(struct k_work *work)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
 	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (!(atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) ||
+	if (!((atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) &&
+	       !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY)) ||
 	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
 	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
@@ -6172,7 +6173,8 @@ void bt_le_adv_resume(void)
 
 	bt_conn_set_state(adv_conn, BT_CONN_CONNECT_ADV);
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY)) {
 		le_set_private_addr(bt_dev.adv_id);
 	}
 
