@@ -1022,25 +1022,6 @@ static bool read_llao(struct net_pkt *pkt,
 	return true;
 }
 
-static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
-						 u8_t ll_len)
-{
-	struct net_linkaddr lladdr;
-	struct net_linkaddr_storage llstorage;
-
-	if (!read_llao(pkt, ll_len, &llstorage)) {
-		return NULL;
-	}
-
-	lladdr.len = llstorage.len;
-	lladdr.addr = llstorage.addr;
-
-	return net_ipv6_nbr_add(net_pkt_iface(pkt),
-				&NET_IPV6_HDR(pkt)->src,
-				&lladdr, false,
-				NET_IPV6_NBR_STATE_INCOMPLETE);
-}
-
 int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		     const struct in6_addr *dst, const struct in6_addr *tgt,
 		     u8_t flags)
@@ -1150,6 +1131,10 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	struct net_if_addr *ifaddr;
 	const struct in6_addr *src;
 	struct in6_addr *tgt;
+	struct net_linkaddr_storage src_lladdr_s;
+	struct net_linkaddr src_lladdr;
+
+	src_lladdr.len = 0;
 
 	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data(pkt, &ns_access);
 	if (!ns_hdr) {
@@ -1190,15 +1175,12 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 				goto drop;
 			}
 
-			if (nd_opt_hdr->len > 2) {
-				NET_ERR("DROP: Too long source ll address "
-					"in NS option");
+			if (!read_llao(pkt, nd_opt_hdr->len, &src_lladdr_s)) {
 				goto drop;
 			}
 
-			if (!handle_ns_neighbor(pkt, nd_opt_hdr->len)) {
-				goto drop;
-			}
+			src_lladdr.len = src_lladdr_s.len;
+			src_lladdr.addr = src_lladdr_s.addr;
 
 			break;
 		default:
@@ -1356,6 +1338,15 @@ nexthop_found:
 	}
 
 send_na:
+	if (src_lladdr.len) {
+		if (!net_ipv6_nbr_add(net_pkt_iface(pkt),
+				      &NET_IPV6_HDR(pkt)->src,
+				      &src_lladdr, false,
+				      NET_IPV6_NBR_STATE_INCOMPLETE)) {
+			goto drop;
+		}
+	}
+
 	if (!net_ipv6_send_na(net_pkt_iface(pkt), src,
 			      &ip_hdr->dst, tgt, flags)) {
 		net_pkt_unref(pkt);
