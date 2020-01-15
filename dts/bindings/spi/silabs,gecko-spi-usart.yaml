@@ -1,7 +1,4 @@
-title: GECKO USART SPI
-
-description: >
-    This binding gives a base representation of the Gecko USART SPI
+description: GECKO USART SPI
 
 compatible: "silabs,gecko-spi-usart"
 
