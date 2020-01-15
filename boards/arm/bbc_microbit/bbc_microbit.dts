@@ -81,7 +81,7 @@
 		status = "disabled";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";
-		irq-gpios = <&gpio0 27 0>;	/* A3 */
+		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
 	lsm303agr-accel@19 {
