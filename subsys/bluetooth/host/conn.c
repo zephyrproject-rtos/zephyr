@@ -1978,22 +1978,11 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 	}
 }
 
-static int bt_hci_disconnect(struct bt_conn *conn, u8_t reason)
+static int conn_disconnect(struct bt_conn *conn, u8_t reason)
 {
-	struct net_buf *buf;
-	struct bt_hci_cp_disconnect *disconn;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	disconn = net_buf_add(buf, sizeof(*disconn));
-	disconn->handle = sys_cpu_to_le16(conn->handle);
-	disconn->reason = reason;
-
-	err = bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	err = bt_hci_disconnect(conn->handle, reason);
 	if (err) {
 		return err;
 	}
@@ -2088,7 +2077,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 
 		return 0;
 	case BT_CONN_CONNECTED:
-		return bt_hci_disconnect(conn, reason);
+		return conn_disconnect(conn, reason);
 	case BT_CONN_DISCONNECT:
 		return 0;
 	case BT_CONN_DISCONNECTED:
