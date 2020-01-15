@@ -657,6 +657,8 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 		} else if (!strcmp(arg, "wl-conn")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
+		} else if (!strcmp(arg, "identity")) {
+			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else {
 			goto fail;
 		}
@@ -1696,8 +1698,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
-		      "[whitelist: wl, wl-scan, wl-conn]",
-		      cmd_advertise, 2, 2),
+		      "[whitelist: wl, wl-scan, wl-conn] [identity]",
+		      cmd_advertise, 2, 3),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
 		      cmd_directed_adv, 3, 1),
