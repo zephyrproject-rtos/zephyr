@@ -888,6 +888,23 @@ int bt_le_direct_conn(const struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
+int bt_hci_disconnect(u16_t handle, u8_t reason)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_disconnect *disconn;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	disconn = net_buf_add(buf, sizeof(*disconn));
+	disconn->handle = sys_cpu_to_le16(handle);
+	disconn->reason = reason;
+
+	return bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+}
+
 static void hci_disconn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
@@ -1283,6 +1300,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (!conn) {
 		BT_ERR("Unable to add new conn for handle %u", handle);
+		bt_hci_disconnect(handle, BT_HCI_ERR_MEM_CAPACITY_EXCEEDED);
 		return;
 	}
 
