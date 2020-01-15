@@ -133,7 +133,7 @@ endfunction()
 # includes, options).
 #
 # The naming convention follows:
-# zephyr_get_${build_information}_for_lang${format}(lang x [SKIP_PREFIX])
+# zephyr_get_${build_information}_for_lang${format}(lang x [STRIP_PREFIX])
 # Where
 #  the argument 'x' is written with the result
 # and
@@ -152,11 +152,11 @@ endfunction()
 #   - CXX
 #   - ASM
 #
-# SKIP_PREFIX
+# STRIP_PREFIX
 #
 # By default the result will be returned ready to be passed directly
 # to a compiler, e.g. prefixed with -D, or -I, but it is possible to
-# omit this prefix by specifying 'SKIP_PREFIX' . This option has no
+# omit this prefix by specifying 'STRIP_PREFIX' . This option has no
 # effect for 'compile_options'.
 #
 # e.g.
