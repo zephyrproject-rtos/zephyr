@@ -2652,12 +2652,14 @@ int bt_conn_init(void)
 				continue;
 			}
 
+#if !defined(CONFIG_BT_WHITELIST)
 			if (atomic_test_bit(conn->flags,
 					    BT_CONN_AUTO_CONNECT)) {
 				/* Only the default identity is supported */
 				conn->id = BT_ID_DEFAULT;
 				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 			}
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 		}
 	}
 
