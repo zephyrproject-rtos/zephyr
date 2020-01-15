@@ -3,7 +3,7 @@ sample:
 tests:
   sample.drivers.flash.soc_flash_nrf::
     platform_whitelist: nrf52_pca10040 nrf9160_pca10090 nrf9160_pca10090ns
-    tags: flash nrf52
+    tags: flash nrf52 nrf9160
     harness: console
     harness_config:
       type: multi_line
