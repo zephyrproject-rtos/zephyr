@@ -5957,14 +5957,14 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	err = set_advertise_enable(true);
 	if (err) {
 		BT_ERR("Failed to start advertiser");
-		if (conn) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
 		}
 		return err;
 	}
 
-	if (conn) {
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 		/* If undirected connectable advertiser we have created a
 		 * connection object that we don't yet give to the application.
 		 * Since we don't give the application a reference to manage in
