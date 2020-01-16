@@ -315,8 +315,8 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 
-			ngpios = <64>;
-			pin-offset = <13>;
+			ngpios = <13>;
+			pin-offset = <64>;
 
 			status = "okay";
 		};
