@@ -27,6 +27,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Display pixel formats
+ *
+ * Display pixel format enumeration.
+ *
+ * In case a pixel format consists out of multiple bytes the byte order is
+ * big endian.
+ */
 enum display_pixel_format {
 	PIXEL_FORMAT_RGB_888		= BIT(0),
 	PIXEL_FORMAT_MONO01		= BIT(1), /* 0=Black 1=White */
