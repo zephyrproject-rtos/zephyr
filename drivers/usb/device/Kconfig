@@ -30,7 +30,7 @@ config USB_DC_STM32
 	bool "USB device controller driver for STM32 devices"
 	depends on SOC_FAMILY_STM32
 	select USB_DEVICE_DRIVER
-	select USE_STM32_LL_USB if !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32F3X && !SOC_SERIES_STM32L0X
+	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
