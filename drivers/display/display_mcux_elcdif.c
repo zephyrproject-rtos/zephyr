@@ -245,7 +245,7 @@ static struct mcux_elcdif_config mcux_elcdif_config_1 = {
 		.pixelFormat = kELCDIF_PixelFormatRGB565,
 		.dataBus = kELCDIF_DataBus16Bit,
 	},
-	.pixel_format = PIXEL_FORMAT_RGB_565,
+	.pixel_format = PIXEL_FORMAT_BGR_565,
 	.bits_per_pixel = 16,
 #endif
 };
