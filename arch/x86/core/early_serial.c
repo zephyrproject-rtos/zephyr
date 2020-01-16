@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <kernel.h>
 #include <sys/util.h>
 

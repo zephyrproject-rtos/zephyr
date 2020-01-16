@@ -13,7 +13,7 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /**
  * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS

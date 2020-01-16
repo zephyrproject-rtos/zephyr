@@ -25,7 +25,7 @@
 #include <stm32f4xx.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #ifdef CONFIG_EXTI_STM32
 #include <stm32f4xx_ll_exti.h>

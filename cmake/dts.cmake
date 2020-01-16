@@ -3,18 +3,17 @@
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 # Zephyr code can configure itself based on a KConfig'uration with the
-# header file autoconf.h. There exists an analogous file
-# generated_dts_board_unfixed.h that allows configuration based on information
-# encoded in DTS.
+# header file autoconf.h. There exists an analogous file devicetree_unfixed.h
+# that allows configuration based on information encoded in DTS.
 #
 # Here we call on dtc, the gcc preprocessor, and
 # scripts/dts/gen_defines.py to generate this header file at
 # CMake configure-time.
 #
 # See ~/zephyr/doc/dts
-set(GENERATED_DTS_BOARD_UNFIXED_H ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board_unfixed.h)
-set(GENERATED_DTS_BOARD_CONF      ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
-set(DTS_POST_CPP                  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
+set(DEVICETREE_UNFIXED_H ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
+set(DEVICETREE_CONF      ${PROJECT_BINARY_DIR}/include/generated/devicetree.conf)
+set(DTS_POST_CPP         ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 
@@ -111,7 +110,7 @@ if(SUPPORTS_DTS)
     "DT bindings root directories")
 
   # TODO: Cut down on CMake configuration time by avoiding
-  # regeneration of generated_dts_board_unfixed.h on every configure. How
+  # regeneration of devicetree_unfixed.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
   # preprocessor, and it seems to be including all kinds of
   # directories with who-knows how many header files.
@@ -195,8 +194,8 @@ if(SUPPORTS_DTS)
   set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
   --dts ${BOARD}.dts.pre.tmp
   --bindings-dirs ${DTS_ROOT_BINDINGS}
-  --conf-out ${GENERATED_DTS_BOARD_CONF}
-  --header-out ${GENERATED_DTS_BOARD_UNFIXED_H}
+  --conf-out ${DEVICETREE_CONF}
+  --header-out ${DEVICETREE_UNFIXED_H}
   )
 
   execute_process(
@@ -209,5 +208,5 @@ if(SUPPORTS_DTS)
   endif()
 
 else()
-  file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
+  file(WRITE ${DEVICETREE_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
 endif(SUPPORTS_DTS)

@@ -250,7 +250,7 @@ Note that the source code has extensive comments and documentation.
     devicetree and bindings.
 
 The output from :file:`gen_defines.py` is stored in
-:file:`include/generated/generated_dts_board_unfixed.h` in the build directory.
+:file:`include/generated/devicetree_unfixed.h` in the build directory.
 
 .. note::
 
@@ -259,26 +259,25 @@ The output from :file:`gen_defines.py` is stored in
    generates. The output is unused.
 
 Most devices currently use :file:`dts_fixup.h` files that rename macros from
-:file:`generated_dts_board_unfixed.h` to names that are more meaningful for the
+:file:`devicetree_unfixed.h` to names that are more meaningful for the
 device. By default, these fixup files are in the :file:`board/` and
 :file:`soc/` directories. Any :file:`dts_fixup.h` files are concatenated and
-stored as :file:`include/generated_dts_board_fixups.h` in the build directory.
+stored as :file:`include/devicetree_fixups.h` in the build directory.
 
 Fixup files exist for historical reasons, and Zephyr might move away from using
 them. When writing new code, feel free to create any macro aliases you need in
 whatever way is handiest for the code.
 
 To reference macros generated from devicetree, code should include the
-:file:`generated_dts_board.h` header, which appears on the C preprocessor
-include path. This file appears at :zephyr_file:`include/generated_dts_board.h`
-and is not a generated file. It includes the generated
-:file:`include/generated_dts_board_unfixed.h` and
-:file:`include/generated_dts_board_fixups.h` files.
+:file:`devicetree.h` header, which appears on the C preprocessor include path.
+This file appears at :zephyr_file:`include/devicetree.h` and is not a generated
+file. It includes the generated :file:`include/devicetree_unfixed.h` and
+:file:`include/devicetree_fixups.h` files.
 
 .. warning::
 
    Do not include the generated C headers from the build directory directly.
-   Include ``generated_dts_board.h`` instead.
+   Include :file:`devicetree.h` instead.
 
 Generated macros
 ================
@@ -295,7 +294,7 @@ Take the DTS node below as an example.
    };
 
 Below is sample header content generated for this node, in
-:file:`include/generated_dts_board_unfixed.h` in the build directory.
+:file:`include/devicetree_unfixed.h` in the build directory.
 
 .. code-block:: c
 
@@ -367,10 +366,10 @@ Aliases that replace the property name part can also be generated, e.g. via
    :zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>`, and check the
    output generated for some existing boards and applications.
 
-Zephyr device drivers typically use information from ``generated_dts_board.h``
-to statically allocate and initialize :ref:`struct device <device_struct>`
-instances. Property values from ``generated_dts_board.h`` are usually stored in
-ROM in the value pointed to by a ``device->config->config_info`` field. For
+Zephyr device drivers typically use information from :file:`devicetree.h` to
+statically allocate and initialize :ref:`struct device <device_struct>`
+instances. Property values from :file:`devicetree.h` are usually stored in ROM
+in the value pointed to by a ``device->config->config_info`` field. For
 example, a ``struct device`` corresponding to an I2C peripheral would store the
 peripheral address in its ``reg`` property there.
 

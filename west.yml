@@ -29,7 +29,7 @@ manifest:
       revision: 5690f5b84495c8b657ff204c5c827df1ab9e12e3
       path: modules/hal/atmel
     - name: ci-tools
-      revision: eb7f1e19eff28d486c64b850ef7b9dcd0331a7af
+      revision: c7d432c9c3674f5d646cf8f8a56f79a469e4e2a2
       path: tools/ci-tools
     - name: civetweb
       revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
@@ -62,7 +62,7 @@ manifest:
       revision: 2f1923cb2067bbddb89716896cf27d7c2245f580
       path: modules/hal/stm32
     - name: hal_ti
-      revision: 879c7d08ffc6cd18737847030b906cffe3b0a8fb
+      revision: c9fd9faeaba28c23998a83b37054805259dd8de8
       path: modules/hal/ti
     - name: libmetal
       revision: 45e630d6152824f807d3f919958605c4626cbdff
@@ -74,7 +74,7 @@ manifest:
       revision: 3776c158fe138a72c97c187e4d31c81c37884be9
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: c2bd757332bfde11c27019f937b0c61d5e9b9fd9
+      revision: e96b6873bd8a64185796ac47b941f56dd29b6e3f
       path: bootloader/mcuboot
     - name: mcumgr
       revision: b18b3d16441f40cf983aa034258e8f7c97bfe9bf

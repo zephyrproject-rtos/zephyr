@@ -6,7 +6,7 @@
  */
 
 #include <autoconf.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #define PHYS_LOAD_ADDR	DT_PHYS_RAM_ADDR
 #define PHYS_RAM_ADDR	DT_PHYS_RAM_ADDR

@@ -12,7 +12,7 @@
 #define __RISCV_SIFIVE_FREEDOM_SOC_H_
 
 #include <soc_common.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /* PINMUX Configuration */
 #define SIFIVE_PINMUX_0_BASE_ADDR     (DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS + 0x38)
