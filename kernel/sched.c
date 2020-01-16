@@ -616,10 +616,9 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
 
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
-	}
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	arch_sched_ipi();
+#endif
 
 	if (need_sched && _current->base.sched_locked == 0) {
 		z_reschedule_unlocked();
@@ -1144,10 +1143,9 @@ void z_impl_k_wakeup(k_tid_t thread)
 		z_reschedule_unlocked();
 	}
 
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
-	}
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	arch_sched_ipi();
+#endif
 }
 
 #ifdef CONFIG_SMP
