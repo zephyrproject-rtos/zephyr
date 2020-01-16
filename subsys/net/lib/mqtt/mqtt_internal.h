@@ -140,10 +140,6 @@ enum mqtt_state {
 
 	/** MQTT Connection successful. */
 	MQTT_STATE_CONNECTED            = 0x00000004,
-
-	/** TCP Disconnect has been requested, awaiting result of the request.
-	 */
-	MQTT_STATE_DISCONNECTING        = 0x00000008
 };
 
 /**@brief Notify application about MQTT event.
