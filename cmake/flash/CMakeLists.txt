@@ -199,6 +199,7 @@ foreach(target flash debug debugserver attach)
       ${target}
       --skip-rebuild
       DEPENDS ${FLASH_DEPS}
+              $<TARGET_PROPERTY:zephyr_property_target,FLASH_DEPENDENCIES>
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
 
