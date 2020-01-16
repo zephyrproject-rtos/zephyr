@@ -402,11 +402,11 @@ set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}
 set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
 set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
 
-set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generated_dts_board_fixups.h)
+set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/devicetree_fixups.h)
 
 # Concatenate the fixups into a single header file for easy
 # #include'ing
-file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
+file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by devicetree.h */\n\n")
 foreach(fixup_file
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}

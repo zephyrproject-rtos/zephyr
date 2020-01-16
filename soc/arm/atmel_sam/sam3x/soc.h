@@ -36,7 +36,7 @@
 #endif
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #define ID_UART0   ID_UART
 #define UART0      UART

@@ -24,7 +24,7 @@
 #include <stm32wbxx.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #ifdef CONFIG_GPIO_STM32
 #include <stm32wbxx_ll_gpio.h>

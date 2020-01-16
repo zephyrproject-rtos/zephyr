@@ -15,7 +15,7 @@
 
 #include <irq.h>
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <zephyr/types.h>
 #include <arch/common/sys_io.h>
