@@ -3,6 +3,58 @@
 
 config HAS_NORDIC_DRIVERS
 	bool
+	default y if HAS_HW_NRF_RADIO_IEEE802154
+
+menu "Nordic drivers"
+	depends on HAS_NORDIC_DRIVERS
+
+menuconfig NRF_802154_RADIO_DRIVER
+	bool "Enable nRF IEEE 802.15.4 radio driver"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+
+if NRF_802154_RADIO_DRIVER
+
+choice NRF_802154_CCA_MODE
+	prompt "nRF IEEE 802.15.4 CCA mode"
+	default NRF_802154_CCA_MODE_ED
+	help
+	  CCA mode
+
+config NRF_802154_CCA_MODE_ED
+	bool "Energy Above Threshold"
+
+config NRF_802154_CCA_MODE_CARRIER
+	bool "Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_AND_ED
+	bool "Energy Above Threshold AND Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_OR_ED
+	bool "Energy Above Threshold OR Carrier Seen"
+
+endchoice
+
+config NRF_802154_CCA_ED_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Energy Detection threshold"
+	default 45
+	help
+	  If energy detected in a given channel is above the value then the
+	  channel is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+
+config NRF_802154_CCA_CORR_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Correlator threshold"
+	default 45
+
+config NRF_802154_CCA_CORR_LIMIT
+	int "nRF IEEE 802.15.4 CCA Correlator limit"
+	default 2
+	help
+	  Limit for occurrences above correlator threshold. When not equal to
+	  zero the correlator based signal detect is enabled.
+
+endif # NRF_802154_RADIO_DRIVER
+
+endmenu
 
 config HAS_NRFX
 	bool
