@@ -231,18 +231,18 @@ static void configure_button(void)
 	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 
 	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
+			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
 	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
+			   GPIO_INPUT | DT_ALIAS_SW1_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&button_cb, button_pressed,
 			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN));
 	gpio_add_callback(gpio, &button_cb);
-
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW1_GPIOS_PIN);
 }
 
 void board_init(u16_t *addr)
