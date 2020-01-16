@@ -997,33 +997,47 @@ static inline bool set_llao(struct net_pkt *pkt,
 	return true;
 }
 
+static bool read_llao(struct net_pkt *pkt,
+		      u8_t len,
+		      struct net_linkaddr_storage *llstorage)
+{
+	u8_t padding;
+
+	llstorage->len = NET_LINK_ADDR_MAX_LENGTH;
+	if (net_pkt_lladdr_src(pkt)->len < llstorage->len) {
+		llstorage->len = net_pkt_lladdr_src(pkt)->len;
+	}
+
+	if (net_pkt_read(pkt, llstorage->addr, llstorage->len)) {
+		return false;
+	}
+
+	padding = len * 8U - 2 - llstorage->len;
+	if (padding) {
+		if (net_pkt_skip(pkt, padding)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 						 u8_t ll_len)
 {
-	struct net_linkaddr_storage lladdr;
-	struct net_linkaddr nbr_lladdr;
+	struct net_linkaddr lladdr;
+	struct net_linkaddr_storage llstorage;
 
-	lladdr.len = ll_len * 8U - 2;
-
-	if (net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
+	if (!read_llao(pkt, ll_len, &llstorage)) {
 		return NULL;
 	}
 
-	nbr_lladdr.len = lladdr.len;
-	nbr_lladdr.addr = lladdr.addr;
-
-	/**
-	 * IEEE802154 lladdress is 8 bytes long, so it requires
-	 * 2 * 8 bytes - 2 - padding.
-	 * The formula above needs to be adjusted.
-	 */
-	if (net_pkt_lladdr_src(pkt)->len < nbr_lladdr.len) {
-		nbr_lladdr.len = net_pkt_lladdr_src(pkt)->len;
-	}
+	lladdr.len = llstorage.len;
+	lladdr.addr = llstorage.addr;
 
 	return net_ipv6_nbr_add(net_pkt_iface(pkt),
 				&NET_IPV6_HDR(pkt)->src,
-				&nbr_lladdr, false,
+				&lladdr, false,
 				NET_IPV6_NBR_STATE_INCOMPLETE);
 }
 
@@ -1991,29 +2005,16 @@ int net_ipv6_start_rs(struct net_if *iface)
 }
 
 static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
-
 {
 	struct net_linkaddr lladdr;
 	struct net_linkaddr_storage llstorage;
-	u8_t padding;
 
-	llstorage.len = NET_LINK_ADDR_MAX_LENGTH;
-	lladdr.addr = llstorage.addr;
-	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
-	if (net_pkt_lladdr_src(pkt)->len < lladdr.len) {
-		lladdr.len = net_pkt_lladdr_src(pkt)->len;
-	}
-
-	if (net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
+	if (!read_llao(pkt, len, &llstorage)) {
 		return NULL;
 	}
 
-	padding = len * 8U - 2 - lladdr.len;
-	if (padding) {
-		if (net_pkt_skip(pkt, padding)) {
-			return NULL;
-		}
-	}
+	lladdr.len = llstorage.len;
+	lladdr.addr = llstorage.addr;
 
 	return net_ipv6_nbr_add(net_pkt_iface(pkt),
 				&NET_IPV6_HDR(pkt)->src,
