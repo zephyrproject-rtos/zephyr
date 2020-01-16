@@ -220,6 +220,13 @@ z_x86_switch:
 	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
 	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
 #endif
+	/* Store the handle (i.e. our thread struct address) into the
+	 * switch handle field, this is a synchronization signal that
+	 * must occur after the last data from the old context is
+	 * saved.
+	 */
+	movq %rsi, ___thread_t_switch_handle_OFFSET(%rsi)
+
 	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
 	/* fall through to __resume */

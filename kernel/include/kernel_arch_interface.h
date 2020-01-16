@@ -89,12 +89,31 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
  * 3) Set the stack pointer to the value provided in switch_to
  * 4) Pop off all thread state from the stack we switched to and return.
  *
- * Some arches may implement thread->switch handle as a pointer to the thread
- * itself, and save context somewhere in thread->arch. In this case, on initial
- * context switch from the dummy thread, thread->switch handle for the outgoing
- * thread is NULL. Instead of dereferencing switched_from all the way to get
- * the thread pointer, subtract ___thread_t_switch_handle_OFFSET to obtain the
- * thread pointer instead.
+ * Some arches may implement thread->switch handle as a pointer to the
+ * thread itself, and save context somewhere in thread->arch. In this
+ * case, on initial context switch from the dummy thread,
+ * thread->switch handle for the outgoing thread is NULL. Instead of
+ * dereferencing switched_from all the way to get the thread pointer,
+ * subtract ___thread_t_switch_handle_OFFSET to obtain the thread
+ * pointer instead.  That is, such a scheme would have behavior like
+ * (in C pseudocode):
+ *
+ * void arch_switch(void *switch_to, void **switched_from)
+ * {
+ *     struct k_thread *new = switch_to;
+ *     struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+ *                                         switch_handle);
+ *
+ *     // save old context...
+ *     *switched_from = old;
+ *     // restore new context...
+ * }
+ *
+ * Note that, regardless of the underlying handle representation, the
+ * incoming switched_from pointer MUST be written through with a
+ * non-NULL value after all relevant thread state has been saved.  The
+ * kernel uses this as a synchronization signal to be able to wait for
+ * switch completion from another CPU.
  *
  * @param switch_to Incoming thread's switch handle
  * @param switched_from Pointer to outgoing thread's switch handle storage
