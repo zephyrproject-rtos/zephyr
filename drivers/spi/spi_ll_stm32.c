@@ -96,14 +96,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #endif
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		if (spi_context_tx_on(&data->ctx)) {
+		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
-		if (spi_context_tx_on(&data->ctx)) {
+		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData16(spi, tx_frame);
