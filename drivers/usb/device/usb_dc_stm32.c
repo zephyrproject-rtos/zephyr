@@ -990,17 +990,10 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 
 	usb_disconnect = device_get_binding(
 				DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_CONTROLLER);
-	gpio_pin_configure(usb_disconnect,
-			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN, GPIO_DIR_OUT);
 
-	if (state) {
-		gpio_pin_write(usb_disconnect,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS);
-	} else {
-		gpio_pin_write(usb_disconnect,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
-			       !DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS);
-	}
+	gpio_pin_configure(usb_disconnect,
+			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
+			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS |
+			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 #endif /* USB && CONFIG_USB_DC_STM32_DISCONN_ENABLE */
