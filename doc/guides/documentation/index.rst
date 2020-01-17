@@ -601,4 +601,5 @@ Put your right hand in
 
 See the :zephyr_raw:`doc/getting_started/index.rst` source file and compare
 with the :ref:`getting_started` to see a full example.  As implemented,
-only one set of numbered steps is intended per document.
+only one set of numbered steps is intended per document. To build, don't
+forget to take look at :ref:`zephyr_doc`.
