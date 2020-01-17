@@ -122,6 +122,15 @@ struct zsock_pollfd {
 
 /** @} */
 
+/* Valid values for TLS_PEER_VERIFY option */
+#define TLS_PEER_VERIFY_NONE 0 /**< Peer verification disabled. */
+#define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
+#define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
+
+/* Valid values for TLS_DTLS_ROLE option */
+#define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
+#define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;

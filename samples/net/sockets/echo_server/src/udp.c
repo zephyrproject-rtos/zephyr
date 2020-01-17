@@ -55,7 +55,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 		PSK_TAG,
 #endif
 	};
-	int role = 1;
+	int role = TLS_DTLS_ROLE_SERVER;
 
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
