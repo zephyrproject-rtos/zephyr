@@ -15,6 +15,9 @@ storage medium, and even change it later as needs change.
 The runtime configuration system is used by various Zephyr
 components and can be used simultaneously by user applications.
 
+For an example of the settings module refer to
+:ref:`the sample <settings_subsys_sample>`.
+
 .. toctree::
    :maxdepth: 1
 
