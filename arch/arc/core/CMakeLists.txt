@@ -31,4 +31,4 @@ zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT arc_smp.c)
 add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARC_SECURE_FIRMWARE secureshield)
 
-zephyr_linker_sources(TEXT_START SORT_KEY 0x0vectors vector_table.ld)
+zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)

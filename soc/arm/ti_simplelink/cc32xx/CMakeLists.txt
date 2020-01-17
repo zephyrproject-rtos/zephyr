@@ -3,5 +3,5 @@
 zephyr_sources(soc.c)
 
 if (DEFINED CONFIG_CC3220SF_DEBUG OR DEFINED CONFIG_CC3235SF_DEBUG)
-  zephyr_linker_sources(TEXT_START SORT_KEY 0 cc32xx_debug.ld)
+  zephyr_linker_sources(ROM_START SORT_KEY 0 cc32xx_debug.ld)
 endif()

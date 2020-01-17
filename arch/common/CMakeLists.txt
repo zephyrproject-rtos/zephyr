@@ -34,7 +34,8 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   nocache.ld
 )
 
-# Only ARM, X86 and RISCV use TEXT_SECTION_OFFSET
-if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_RISCV)
-  zephyr_linker_sources(TEXT_START SORT_KEY 0x0 text_section_offset.ld)
+# Only ARM, X86 and OPENISA_RV32M1_RISCV32 use TEXT_SECTION_OFFSET.
+if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86
+    OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+  zephyr_linker_sources(ROM_START SORT_KEY 0x0 text_section_offset.ld)
 endif()
