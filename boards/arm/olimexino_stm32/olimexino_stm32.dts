@@ -92,7 +92,7 @@ uext_serial: &usart1 {};
 
 &usb {
 	status = "okay";
-	disconnect-gpios = <&gpioc 12 0>;
+	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 };
 
 &timers1 {
