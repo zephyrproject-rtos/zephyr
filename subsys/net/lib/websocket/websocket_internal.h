@@ -67,6 +67,10 @@ struct websocket_context {
 	 */
 	size_t tmp_buf_len;
 
+	/** Current reading position in the tmp_buf
+	 */
+	size_t tmp_buf_pos;
+
 	/** The real TCP socket to use when sending Websocket data to peer.
 	 */
 	int real_sock;
@@ -77,13 +81,6 @@ struct websocket_context {
 	/** Timeout for Websocket operations.
 	 */
 	s32_t timeout;
-
-	/** Internal buffer for Websocket header when reading data.
-	 */
-	struct {
-		u8_t header[MAX_HEADER_LEN];
-		u8_t pos;
-	};
 
 	/** Amount of data received. */
 	u64_t total_read;
