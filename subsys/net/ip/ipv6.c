@@ -417,6 +417,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_set_ipv6_ext_len(pkt, 0);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	net_pkt_set_family(pkt, PF_INET6);
 
 	if (!net_ipv6_is_my_addr(&hdr->dst) &&
 	    !net_ipv6_is_my_maddr(&hdr->dst) &&
@@ -520,7 +521,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
-	net_pkt_set_family(pkt, PF_INET6);
 
 	switch (nexthdr) {
 	case IPPROTO_ICMPV6:
