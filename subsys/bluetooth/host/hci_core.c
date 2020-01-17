@@ -1269,6 +1269,31 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	}
 }
 
+static void le_conn_cancel_complete(struct bt_conn *conn)
+{
+	/* Handle cancellation of outgoing connection attempt. */
+	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
+		/* We notify before checking autoconnect flag
+		 * as application may choose to change it from
+		 * callback.
+		 */
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		/* Check if device is marked for autoconnect. */
+		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+			/* Restart passive scanner for device */
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
+	} else {
+		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+			/* Restart whitelist initiator after RPA timeout. */
+			bt_le_create_conn(conn);
+		} else {
+			/* Create connection canceled by timeout */
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		}
+	}
+}
+
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 	u16_t handle = sys_le16_to_cpu(evt->handle);
@@ -1299,56 +1324,22 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		conn->err = evt->status;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
 			/*
 			 * Handle advertising timeout after high duty directed
 			 * advertising.
 			 */
-			if (conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
-				atomic_clear_bit(bt_dev.flags,
-						 BT_DEV_ADVERTISING);
-				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
-				goto done;
-			}
+			atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			goto done;
 		}
 
-		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			/*
-			 * Handle cancellation of outgoing connection attempt.
-			 */
-			if (conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-#if !defined(CONFIG_BT_WHITELIST)
-				/* We notify before checking autoconnect flag
-				 * as application may choose to change it from
-				 * callback.
-				 */
-				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-
-				/* Check if device is marked for autoconnect. */
-				if (atomic_test_bit(conn->flags,
-						    BT_CONN_AUTO_CONNECT)) {
-					/* Restart passive scanner for device */
-					bt_conn_set_state(conn,
-							  BT_CONN_CONNECT_SCAN);
-				}
-#else
-				if (atomic_test_bit(conn->flags,
-						    BT_CONN_AUTO_CONNECT)) {
-
-					/* Restart whitelist initiator after
-					 * RPA timeout.
-					 */
-					bt_le_create_conn(conn);
-				} else {
-					/* Create connection canceled by timeout
-					 */
-					bt_conn_set_state(conn,
-							  BT_CONN_DISCONNECTED);
-				}
-#endif /* !defined(CONFIG_BT_WHITELIST) */
-				goto done;
-			}
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		    conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			le_conn_cancel_complete(conn);
+			goto done;
 		}
 
 		BT_WARN("Unexpected status 0x%02x", evt->status);
