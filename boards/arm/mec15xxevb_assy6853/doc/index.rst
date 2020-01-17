@@ -183,7 +183,7 @@ PVT SPI, SHD SPI and LED0-2 respectively.
 |          |          |        | 17-18     | 20-21    |         |
 +----------+----------+--------+-----------+----------+---------+
 
-.. note:: An additional setting for UART2 is to make sure JP39 does not have any jumper.
+.. note:: For UART2 make sure JP39 have jumpers connected 1-2, 3-4.
 
 To receive UART2 serial output, please refer to the picture below
 to make sure that JP9 configured for UART2 output.
