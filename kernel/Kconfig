@@ -722,7 +722,7 @@ config MP_NUM_CPUS
 	  multicpu API and SMP features.
 
 config SCHED_IPI_SUPPORTED
-	bool "Architecture supports broadcast interprocessor interrupts"
+	bool
 	help
 	  True if the architecture supports a call to
 	  arch_sched_ipi() to broadcast an interrupt that will call
