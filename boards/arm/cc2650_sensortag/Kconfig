@@ -1,7 +1,0 @@
-# TI CC2650 SensorTag configuration
-
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_CC2650_SENSORTAG
-
-endif # BOARD_CC2650_SENSORTAG

@@ -43,8 +43,6 @@ source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"
 
-source "drivers/gpio/Kconfig.cc2650"
-
 source "drivers/gpio/Kconfig.esp32"
 
 source "drivers/gpio/Kconfig.gecko"

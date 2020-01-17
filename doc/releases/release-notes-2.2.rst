@@ -76,7 +76,7 @@ Architectures
 
 * ARM:
 
-  * <TBD>
+  * Removed support for CC2650
 
 * POSIX:
 
