@@ -327,6 +327,20 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			return NET_OK;
 		}
 	} else {
+		struct net_if *iface = NULL;
+		int ret;
+
+		if (net_if_ipv6_addr_onlink(&iface, &hdr->dst)) {
+			ret = net_route_packet_if(pkt, iface);
+			if (ret < 0) {
+				NET_DBG("Cannot re-route pkt %p "
+					"at iface %p (%d)",
+					pkt, net_pkt_iface(pkt), ret);
+			} else {
+				return NET_OK;
+			}
+		}
+
 		NET_DBG("No route to %s pkt %p dropped",
 			log_strdup(net_sprint_ipv6_addr(&hdr->dst)), pkt);
 	}
