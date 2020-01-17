@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "display.h"
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 
