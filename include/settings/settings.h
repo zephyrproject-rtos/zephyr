@@ -67,6 +67,8 @@ struct settings_handler {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -80,11 +82,15 @@ struct settings_handler {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 *  Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
 	/**< This handler gets called after settings has been loaded in full.
 	 * User might use it to apply setting to the application.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_export)(int (*export_func)(const char *name, const void *val,
@@ -101,6 +107,8 @@ struct settings_handler {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	sys_snode_t node;
@@ -125,6 +133,8 @@ struct settings_handler_static {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -138,6 +148,8 @@ struct settings_handler_static {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
@@ -159,6 +171,8 @@ struct settings_handler_static {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 };
 
@@ -534,9 +548,9 @@ int settings_runtime_set(const char *name, void *data, size_t len);
  *
  * @param name Key in string format.
  * @param data Returned binary value.
- * @param len Returned value length in bytes.
+ * @param len requested value length in bytes.
  *
- * @return 0 on success, non-zero on failure.
+ * @return length of data read on success, negative on failure.
  */
 int settings_runtime_get(const char *name, void *data, size_t len);
 
