@@ -138,10 +138,11 @@ SECTIONS
     SECTION_PROLOGUE(rom_start,,)
 	{
 
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
  */
-#include <snippets-text-start.ld>
+#include <snippets-rom-start.ld>
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
