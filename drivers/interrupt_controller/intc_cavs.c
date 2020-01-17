@@ -8,6 +8,27 @@
 #include <irq_nextlevel.h>
 #include "intc_cavs.h"
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if defined(CONFIG_SOC_INTEL_S1000)
+#define PER_CPU_OFFSET(x)	(0x40 * x)
+#else
+#error "Must define PER_CPU_OFFSET(x) for SoC"
+#endif
+#else
+#define PER_CPU_OFFSET(x)	0
+#endif
+
+static ALWAYS_INLINE
+struct cavs_registers *get_base_address(struct cavs_ictl_runtime *context)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+	return UINT_TO_POINTER(context->base_addr +
+			       PER_CPU_OFFSET(arch_curr_cpu()->id));
+#else
+	return UINT_TO_POINTER(context->base_addr);
+#endif
+}
+
 static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(u32_t intr_status,
 						       u32_t isr_base_offset)
 {
@@ -31,7 +52,7 @@ static void cavs_ictl_isr(void *arg)
 	const struct cavs_ictl_config *config = port->config->config_info;
 
 	volatile struct cavs_registers * const regs =
-			(struct cavs_registers *)context->base_addr;
+					get_base_address(context);
 
 	cavs_ictl_dispatch_child_isrs(regs->status_il,
 				      config->isr_table_offset);
