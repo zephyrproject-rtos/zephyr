@@ -516,7 +516,7 @@ static u32_t get_pending_int(struct device *dev)
 	return 0;
 }
 
-static int init_rtc(struct device *dev, u8_t prescaler)
+static int init_rtc(struct device *dev, u32_t prescaler)
 {
 	struct device *clock;
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
