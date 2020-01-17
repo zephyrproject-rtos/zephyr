@@ -798,7 +798,7 @@ static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll)
 	return p;
 }
 
-void lll_conn_flush(struct lll_conn *lll)
+void lll_conn_flush(u16_t handle, struct lll_conn *lll)
 {
 	/* Nothing to be flushed */
 }
