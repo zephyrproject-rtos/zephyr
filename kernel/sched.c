@@ -757,6 +757,8 @@ void *z_get_next_switch_handle(void *interrupted)
 	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
 		z_sched_ipi();
 	}
+
+	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
