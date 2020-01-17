@@ -11,6 +11,8 @@
 #if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 #if defined(CONFIG_SOC_INTEL_S1000)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
+#elif defined(CONFIG_SOC_INTEL_APL_ADSP)
+#define PER_CPU_OFFSET(x)	(0x40 * x)
 #else
 #error "Must define PER_CPU_OFFSET(x) for SoC"
 #endif
