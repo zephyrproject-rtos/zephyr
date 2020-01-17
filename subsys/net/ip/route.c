@@ -825,6 +825,24 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	return net_send_data(pkt);
 }
 
+int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
+{
+	/* The destination is reachable via iface. But since no valid nexthop
+	 * is known, net_pkt_lladdr_dst(pkt) cannot be set here.
+	 */
+
+	net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
+	net_pkt_set_iface(pkt, iface);
+
+	net_pkt_set_forwarding(pkt, true);
+
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
+	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+
+	return net_send_data(pkt);
+}
+
 void net_route_init(void)
 {
 	NET_DBG("Allocated %d routing entries (%zu bytes)",
