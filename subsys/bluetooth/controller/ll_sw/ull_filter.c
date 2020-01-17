@@ -51,35 +51,11 @@ u8_t wl_anon;
 #include "common/rpa.h"
 
 /* Whitelist peer list */
-static struct {
-	u8_t      taken:1;
-	u8_t      id_addr_type:1;
-	u8_t      rl_idx;
-	bt_addr_t id_addr;
-} wl[WL_SIZE];
+static struct lll_whitelist wl[WL_SIZE];
 
 static u8_t rl_enable;
 
-static struct rl_dev {
-	u8_t      taken:1;
-	u8_t      rpas_ready:1;
-	u8_t      pirk:1;
-	u8_t      lirk:1;
-	u8_t      dev:1;
-	u8_t      wl:1;
-
-	u8_t      id_addr_type:1;
-	bt_addr_t id_addr;
-
-	u8_t      local_irk[IRK_SIZE];
-	u8_t      pirk_idx;
-	bt_addr_t curr_rpa;
-	bt_addr_t peer_rpa;
-	bt_addr_t *local_rpa;
-#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
-	bt_addr_t target_rpa;
-#endif
-} rl[CONFIG_BT_CTLR_RL_SIZE];
+static struct lll_resolvelist rl[CONFIG_BT_CTLR_RL_SIZE];
 
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 /* Cache of known unknown peer RPAs */
@@ -748,6 +724,16 @@ struct lll_filter *ull_filter_lll_get(bool whitelist)
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+struct lll_whitelist *ull_filter_lll_whitelist_get(void)
+{
+	return wl;
+}
+
+struct lll_resolvelist *ull_filter_lll_resolvelist_get(void)
+{
+	return rl;
+}
+
 bool ull_filter_lll_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx)
 {
 	/* If AR is disabled or we don't know the device or we matched an IRK
@@ -1239,4 +1225,3 @@ static u8_t prpa_cache_find(bt_addr_t *rpa)
 	return FILTER_IDX_NONE;
 }
 #endif /* !CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
-
