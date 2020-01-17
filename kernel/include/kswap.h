@@ -29,6 +29,26 @@ void z_smp_release_global_lock(struct k_thread *thread);
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
+/* There is an unavoidable SMP race when threads swap -- their thread
+ * record is in the queue (and visible to other CPUs) before
+ * arch_switch() finishes saving state.  We must spin for the switch
+ * handle before entering a new thread.  See docs on arch_switch().
+ *
+ * Note: future SMP architectures may need a fence/barrier or cache
+ * invalidation here.  Current ones don't, and sadly Zephyr doesn't
+ * have a framework for that yet.
+ */
+static inline void wait_for_switch(struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	volatile void **shp = (void *)&thread->switch_handle;
+
+	while (*shp == NULL) {
+		k_busy_wait(1);
+	}
+#endif
+}
+
 /* New style context switching.  arch_switch() is a lower level
  * primitive that doesn't know about the scheduler or return value.
  * Needed for SMP, where the scheduler requires spinlocking that we
@@ -57,7 +77,24 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		k_spin_release(lock);
 	}
 
+#ifdef CONFIG_SMP
+	/* Null out the switch handle, see wait_for_switch() above.
+	 * Note that we set it back to a non-null value if we are not
+	 * switching!  The value itself doesn't matter, because by
+	 * definition _current is running and has no saved state.
+	 */
+	volatile void **shp = (void *)&old_thread->switch_handle;
+
+	*shp = NULL;
+#endif
+
 	new_thread = z_get_next_ready_thread();
+
+#ifdef CONFIG_SMP
+	if (new_thread == old_thread) {
+		*shp = old_thread;
+	}
+#endif
 
 	if (new_thread != old_thread) {
 		sys_trace_thread_switched_out();
@@ -77,6 +114,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		}
 #endif
 		_current = new_thread;
+		wait_for_switch(new_thread);
 		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
 
