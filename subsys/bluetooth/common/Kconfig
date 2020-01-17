@@ -12,8 +12,8 @@ config BT_HAS_HCI_VS
 
 config BT_HCI_VS
 	bool "Zephyr HCI Vendor-Specific Commands"
-	depends on BT_HAS_HCI_VS
-	default y
+	depends on BT_HAS_HCI_VS || !BT_CTLR
+	default y if BT_HAS_HCI_VS
 	help
 	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
 	  Host and/or Controller. This enables Set Version Information,
