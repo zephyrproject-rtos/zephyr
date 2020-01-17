@@ -25,9 +25,17 @@ When deciding whether something belongs in Kconfig, it helps to distinguish
 between symbols that have prompts and symbols that don't.
 
 If a symbol has a prompt (e.g. ``bool "Enable foo"``), then the user can change
-the symbol's value in the ``menuconfig`` or ``guiconfig`` interface (or by
-manually editing configuration files). Therefore, only put a prompt on a symbol
-if it makes sense for the user to change its value.
+the symbol's value in the ``menuconfig`` or ``guiconfig`` interface (see
+:ref:`menuconfig`), or by manually editing configuration files. Conversely, a
+symbol without a prompt can never be changed directly by the user, not even by
+manually editing configuration files.
+
+Only put a prompt on a symbol if it makes sense for the user to change its
+value.
+
+Symbols without prompts are called *hidden* or *invisible* symbols, because
+they don't show up in ``menuconfig`` and ``guiconfig``. Symbols that have
+prompts can also be invisible, when their dependencies are not satisfied.
 
 In Zephyr, Kconfig configuration is done after selecting a machine, so in
 general, it does not make sense to put a prompt on a symbol that corresponds to
@@ -414,6 +422,40 @@ with suggestions:
 It is a good idea to try out changes in the ``menuconfig`` or ``guiconfig``
 interface, to make sure that things behave the way you expect. This is
 especially true when making moderately complex changes like these.
+
+
+Assignments to promptless symbols in configuration files
+********************************************************
+
+Assignments to hidden (promptless, also called *invisible*) symbols in
+configuration files are always ignored. Hidden symbols get their value
+indirectly from other symbols, via e.g. ``default`` and ``select``.
+
+A common source of confusion is opening the output configuration file
+(:file:`zephyr/.config`), seeing a bunch of assignments to hidden symbols,
+and assuming that those assignments must be respected when the configuration is
+read back in by Kconfig. In reality, all assignments to hidden symbols in
+:file:`zephyr/.config` are ignored by Kconfig, like for other configuration
+files.
+
+To understand why :file:`zephyr/.config` still includes assignments to hidden
+symbols, it helps to realize that :file:`zephyr/.config` serves two separate
+purposes:
+
+1. It holds the saved configuration, and
+
+2. it holds configuration output. :file:`zephyr/.config` is parsed by the CMake
+   files to let them query configuration settings, for example.
+
+The assignments to hidden symbols in :file:`zephyr/.config` are just
+configuration output. Kconfig itself ignores assignments to hidden symbols when
+calculating symbol values.
+
+.. note::
+
+   A *minimal configuration*, which can be generated from within the
+   :ref:`menuconfig and guiconfig interfaces <menuconfig>`, could be considered
+   closer to just a saved configuration, without the full configuration output.
 
 
 ``depends on`` and ``string``/``int``/``hex`` symbols
