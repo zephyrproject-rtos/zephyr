@@ -78,7 +78,6 @@ struct k_thread ct_thread;
 K_THREAD_STACK_DEFINE(ct_stack, STACKSIZE);
 
 _app_enc_d char encMSG[] = "ENC!\n";
-_app_enc_d int enc_state = 1;
 _app_enc_b char enc_pt[50];  /* Copy form shared pt */
 _app_enc_b char enc_ct[50]; /* Copy to shared ct */
 
@@ -103,6 +102,15 @@ void main(void)
 	struct k_mem_partition *dom2_parts[] = {&part4, &part3};
 	struct k_mem_partition *dom0_parts[] = {&part0, &part1};
 	k_tid_t tPT, tENC, tCT;
+
+	fBUFIN = 0; /* clear flags */
+	fBUFOUT = 0;
+	calc_rev_wheel((BYTE *) &W1, (BYTE *)&W1R);
+	calc_rev_wheel((BYTE *) &W2, (BYTE *)&W2R);
+	calc_rev_wheel((BYTE *) &W3, (BYTE *)&W3R);
+	IW1 = 0;
+	IW2 = 0;
+	IW3 = 0;
 
 	k_thread_access_grant(k_current_get(), &allforone);
 
@@ -169,17 +177,6 @@ void enc(void)
 {
 
 	int index, index_out;
-	if (enc_state == 1) {
-		fBUFIN = 0; /* clear flags */
-		fBUFOUT = 0;
-		calc_rev_wheel((BYTE *) &W1, (BYTE *)&W1R);
-		calc_rev_wheel((BYTE *) &W2, (BYTE *)&W2R);
-		calc_rev_wheel((BYTE *) &W3, (BYTE *)&W3R);
-		IW1 = 0;
-		IW2 = 0;
-		IW3 = 0;
-		enc_state = 0;
-	}
 
 	while (1) {
 		k_sem_take(&allforone, K_FOREVER);
