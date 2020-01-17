@@ -1739,12 +1739,13 @@ static void tx_ull_flush(struct ll_conn *conn)
 static void tx_lll_flush(void *param)
 {
 	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
+	u16_t handle = ll_conn_handle_get(conn);
 	struct lll_conn *lll = param;
 	struct node_rx_pdu *rx;
 	struct node_tx *tx;
 	memq_link_t *link;
 
-	lll_conn_flush(lll);
+	lll_conn_flush(handle, lll);
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 			    (void **)&tx);
