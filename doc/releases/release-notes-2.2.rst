@@ -53,6 +53,14 @@ Stable API changes in this release
     which can be set by the application to a callback to receive status events
     from the USB stack. The parameter can also be set to NULL if no callback is required.
 
+* nRF flash driver
+
+  * The nRF Flash driver has changed its default write block size to 32-bit
+    aligned. Previous emulation of 8-bit write block size can be selected using
+    the CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS Kconfig option.
+    Usage of 8-bit write block size emulation is only recommended for
+    compatibility with older storage contents.
+
 Removed APIs in this release
 ============================
 
