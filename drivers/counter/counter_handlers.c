@@ -64,12 +64,14 @@ static inline u64_t z_vrfy_counter_ticks_to_us(const struct device *dev,
 }
 #include <syscalls/counter_ticks_to_us_mrsh.c>
 
-static inline u32_t z_vrfy_counter_read(struct device *dev)
+static inline int z_vrfy_counter_get_value(struct device *dev,
+					   u32_t *ticks)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, read));
-	return z_impl_counter_read((struct device *)dev);
+	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, get_value));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ticks, sizeof(ticks)));
+	return z_impl_counter_get_value((struct device *)dev, ticks);
 }
-#include <syscalls/counter_read_mrsh.c>
+#include <syscalls/counter_get_value_mrsh.c>
 
 static inline int z_vrfy_counter_set_channel_alarm(struct device *dev,
 			u8_t chan_id, const struct counter_alarm_cfg *alarm_cfg)

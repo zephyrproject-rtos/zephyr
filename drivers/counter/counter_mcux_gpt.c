@@ -42,11 +42,12 @@ static int mcux_gpt_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t mcux_gpt_read(struct device *dev)
+static int mcux_gpt_get_value(struct device *dev, u32_t *ticks)
 {
 	const struct mcux_gpt_config *config = dev->config->config_info;
 
-	return GPT_GetCurrentTimerCount(config->base);
+	*ticks = GPT_GetCurrentTimerCount(config->base);
+	return 0;
 }
 
 static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
@@ -55,7 +56,7 @@ static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
 	const struct mcux_gpt_config *config = dev->config->config_info;
 	struct mcux_gpt_data *data = dev->driver_data;
 
-	u32_t current = mcux_gpt_read(dev);
+	u32_t current = GPT_GetCurrentTimerCount(config->base);
 	u32_t ticks = alarm_cfg->ticks;
 
 	if (chan_id != 0) {
@@ -102,7 +103,7 @@ void mcux_gpt_isr(void *p)
 	struct device *dev = p;
 	const struct mcux_gpt_config *config = dev->config->config_info;
 	struct mcux_gpt_data *data = dev->driver_data;
-	u32_t current = mcux_gpt_read(dev);
+	u32_t current = GPT_GetCurrentTimerCount(config->base);
 	u32_t status;
 
 	status =  GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag |
@@ -189,7 +190,7 @@ static int mcux_gpt_init(struct device *dev)
 static const struct counter_driver_api mcux_gpt_driver_api = {
 	.start = mcux_gpt_start,
 	.stop = mcux_gpt_stop,
-	.read = mcux_gpt_read,
+	.get_value = mcux_gpt_get_value,
 	.set_alarm = mcux_gpt_set_alarm,
 	.cancel_alarm = mcux_gpt_cancel_alarm,
 	.set_top_value = mcux_gpt_set_top_value,

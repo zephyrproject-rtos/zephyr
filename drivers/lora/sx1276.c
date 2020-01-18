@@ -106,7 +106,16 @@ void BoardCriticalSectionEnd(uint32_t *mask)
 
 uint32_t RtcGetTimerElapsedTime(void)
 {
-	return counter_read(dev_data.counter);
+	u32_t ticks;
+	int err;
+
+	err = counter_get_value(dev_data.counter, &ticks);
+	if (err) {
+		LOG_ERR("Failed to read counter value (err %d)", err);
+		return 0;
+	}
+
+	return ticks;
 }
 
 u32_t RtcGetMinimumTimeout(void)

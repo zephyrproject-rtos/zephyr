@@ -124,11 +124,11 @@ static u32_t hinnant(int y, int m, int d)
 }
 
 /*
- * Returns the Unix epoch time (assuming UTC) read from the CMOS RTC.
+ * Get the Unix epoch time (assuming UTC) read from the CMOS RTC.
  * This function is long, but linear and easy to follow.
  */
 
-u32_t read(struct device *dev)
+int get_value(struct device *dev, u32_t *ticks)
 {
 	struct state state, state2;
 	u64_t *pun = (u64_t *) &state;
@@ -188,7 +188,8 @@ u32_t read(struct device *dev)
 	epoch += state.minute * 60; /* seconds per minute */
 	epoch += state.second;
 
-	return epoch;
+	*ticks = epoch;
+	return 0;
 }
 
 static int init(struct device *dev)
@@ -204,7 +205,7 @@ static const struct counter_config_info info = {
 };
 
 static const struct counter_driver_api api = {
-	.read = read
+	.get_value = get_value
 };
 
 DEVICE_AND_API_INIT(counter_cmos, "CMOS", init, NULL, &info,

@@ -79,6 +79,12 @@ static u32_t mcux_rtc_read(struct device *dev)
 	return ticks;
 }
 
+static int mcux_rtc_get_value(struct device *dev, u32_t *ticks)
+{
+	*ticks = mcux_rtc_read(dev);
+	return 0;
+}
+
 static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -245,7 +251,7 @@ static int mcux_rtc_init(struct device *dev)
 static const struct counter_driver_api mcux_rtc_driver_api = {
 	.start = mcux_rtc_start,
 	.stop = mcux_rtc_stop,
-	.read = mcux_rtc_read,
+	.get_value = mcux_rtc_get_value,
 	.set_alarm = mcux_rtc_set_alarm,
 	.cancel_alarm = mcux_rtc_cancel_alarm,
 	.set_top_value = mcux_rtc_set_top_value,

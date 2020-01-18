@@ -171,7 +171,9 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 	k_busy_wait(5000);
 
-	cnt = counter_read(dev);
+	err = counter_get_value(dev, &cnt);
+	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+		     err);
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
 	} else {
@@ -217,7 +219,9 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 
 	k_busy_wait(5000);
 
-	cnt = counter_read(dev);
+	err = counter_get_value(dev, &cnt);
+	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+		     err);
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
 	} else {
@@ -244,7 +248,12 @@ void test_set_top_value_without_alarm(void)
 static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 			  void *user_data)
 {
-	u32_t now = counter_read(dev);
+	u32_t now;
+	int err;
+
+	err = counter_get_value(dev, &now);
+	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
+		     dev->config->name, err);
 
 	if (counter_is_counting_up(dev)) {
 		zassert_true(now >= counter,
@@ -569,7 +578,10 @@ void test_late_alarm_instance(const char *dev_name)
 			"%s: Expected %d callbacks, got %d\n",
 			dev_name, 1, alarm_cnt);
 
-	alarm_cfg.ticks = counter_read(dev);
+	err = counter_get_value(dev, &(alarm_cfg.ticks));
+	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+		     err);
+
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err, "%s: Failed to set an alarm (err: %d)",
 			dev_name, err);
@@ -610,7 +622,10 @@ void test_late_alarm_error_instance(const char *dev_name)
 			"%s: Failed to detect late setting (err: %d)",
 			dev_name, err);
 
-	alarm_cfg.ticks = counter_read(dev);
+	err = counter_get_value(dev, &(alarm_cfg.ticks));
+	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+		     err);
+
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err,
 			"%s: Counter failed to detect late setting (err: %d)",
@@ -755,7 +770,11 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 
 
 	for (int i = 0; i < us/2; ++i) {
-		alarm_cfg.ticks = counter_read(dev) + ticks;
+		err = counter_get_value(dev, &(alarm_cfg.ticks));
+		zassert_true(err == 0, "%s: Counter read failed (err: %d)",
+			     dev_name, err);
+
+		alarm_cfg.ticks	+= ticks;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 		zassert_equal(0, err, "%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
