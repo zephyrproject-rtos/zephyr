@@ -37,6 +37,7 @@ void main(void)
 	count_label = lv_label_create(lv_scr_act(), NULL);
 	lv_obj_align(count_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
+	lv_task_handler();
 	display_blanking_off(display_dev);
 
 	while (1) {
