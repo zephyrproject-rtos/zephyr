@@ -171,7 +171,7 @@ struct counter_config_info {
 
 typedef int (*counter_api_start)(struct device *dev);
 typedef int (*counter_api_stop)(struct device *dev);
-typedef u32_t (*counter_api_read)(struct device *dev);
+typedef int (*counter_api_get_value)(struct device *dev, u32_t *ticks);
 typedef int (*counter_api_set_alarm)(struct device *dev, u8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg);
 typedef int (*counter_api_cancel_alarm)(struct device *dev, u8_t chan_id);
@@ -187,7 +187,7 @@ typedef int (*counter_api_set_guard_period)(struct device *dev, u32_t ticks,
 struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
-	counter_api_read read;
+	counter_api_get_value get_value;
 	counter_api_set_alarm set_alarm;
 	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
@@ -345,19 +345,21 @@ static inline int z_impl_counter_stop(struct device *dev)
 }
 
 /**
- * @brief Read current counter value.
+ * @brief Get current counter value.
  * @param dev Pointer to the device structure for the driver instance.
+ * @param ticks Pointer to where to store the current counter value
  *
- * @return  32-bit value
+ * @retval 0 If successful.
+ * @retval Negative error code on failure getting the counter value
  */
-__syscall u32_t counter_read(struct device *dev);
+__syscall int counter_get_value(struct device *dev, u32_t *ticks);
 
-static inline u32_t z_impl_counter_read(struct device *dev)
+static inline int z_impl_counter_get_value(struct device *dev, u32_t *ticks)
 {
 	const struct counter_driver_api *api =
 				(struct counter_driver_api *)dev->driver_api;
 
-	return api->read(dev);
+	return api->get_value(dev, ticks);
 }
 
 /**
@@ -589,6 +591,18 @@ static inline u32_t z_impl_counter_get_guard_period(struct device *dev,
 
 /* Deprecated counter callback. */
 typedef void (*counter_callback_t)(struct device *dev, void *user_data);
+
+/* Deprecated counter read function. Use counter_get_value() instead. */
+__deprecated static inline u32_t counter_read(struct device *dev)
+{
+	u32_t ticks;
+
+	if (counter_get_value(dev, &ticks) == 0) {
+		return ticks;
+	}
+
+	return 0;
+}
 
 #ifdef __cplusplus
 }

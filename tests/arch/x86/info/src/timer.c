@@ -12,11 +12,21 @@
 static u32_t sync(struct device *cmos)
 {
 	u32_t this, last;
+	int err;
 
-	this = counter_read(cmos);
+	err = counter_get_value(cmos, &this);
+	if (err) {
+		printk("\tCan't read CMOS clock device.\n");
+		return 0;
+	}
+
 	do {
 		last = this;
-		this = counter_read(cmos);
+		err = counter_get_value(cmos, &this);
+		if (err) {
+			printk("\tCan't read CMOS clock device.\n");
+			return 0;
+		}
 	} while (last == this);
 
 	return z_timer_cycle_get_32();
