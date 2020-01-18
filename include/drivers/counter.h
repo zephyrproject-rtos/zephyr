@@ -198,7 +198,6 @@ struct counter_driver_api {
 	counter_api_set_guard_period set_guard_period;
 };
 
-
 /**
  * @brief Function to check if counter is counting up.
  *
@@ -207,7 +206,9 @@ struct counter_driver_api {
  * @retval true if counter is counting up.
  * @retval false if counter is counting down.
  */
-static inline bool counter_is_counting_up(const struct device *dev)
+__syscall bool counter_is_counting_up(const struct device *dev);
+
+static inline bool z_impl_counter_is_counting_up(const struct device *dev)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -222,7 +223,9 @@ static inline bool counter_is_counting_up(const struct device *dev)
  *
  * @return Number of alarm channels.
  */
-static inline u8_t counter_get_num_of_channels(const struct device *dev)
+__syscall u8_t counter_get_num_of_channels(const struct device *dev);
+
+static inline u8_t z_impl_counter_get_num_of_channels(const struct device *dev)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -238,7 +241,9 @@ static inline u8_t counter_get_num_of_channels(const struct device *dev)
  * @return Frequency of the counter in Hz, or zero if the counter does
  * not have a fixed frequency.
  */
-static inline u32_t counter_get_frequency(const struct device *dev)
+__syscall u32_t counter_get_frequency(const struct device *dev);
+
+static inline u32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -254,7 +259,10 @@ static inline u32_t counter_get_frequency(const struct device *dev)
  *
  * @return Converted ticks. Ticks will be saturated if exceed 32 bits.
  */
-static inline u32_t counter_us_to_ticks(const struct device *dev, u64_t us)
+__syscall u32_t counter_us_to_ticks(const struct device *dev, u64_t us);
+
+static inline u32_t z_impl_counter_us_to_ticks(const struct device *dev,
+					       u64_t us)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -271,7 +279,10 @@ static inline u32_t counter_us_to_ticks(const struct device *dev, u64_t us)
  *
  * @return Converted microseconds.
  */
-static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
+__syscall u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks);
+
+static inline u64_t z_impl_counter_ticks_to_us(const struct device *dev,
+					       u32_t ticks)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -286,7 +297,9 @@ static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
  *
  * @return Max top value.
  */
-static inline u32_t counter_get_max_top_value(const struct device *dev)
+__syscall u32_t counter_get_max_top_value(const struct device *dev);
+
+static inline u32_t z_impl_counter_get_max_top_value(const struct device *dev)
 {
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
@@ -366,8 +379,11 @@ static inline u32_t z_impl_counter_read(struct device *dev)
  * @retval -EINVAL if alarm settings are invalid.
  * @retval -ETIME  if absolute alarm was set too late.
  */
-static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
-				      const struct counter_alarm_cfg *alarm_cfg)
+__syscall int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg);
+
+static inline int z_impl_counter_set_channel_alarm(struct device *dev,
+			u8_t chan_id, const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_driver_api *api =
 				(struct counter_driver_api *)dev->driver_api;
@@ -391,8 +407,10 @@ static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
  * @retval -ENOTSUP if request is not supported or the counter was not started
  *		    yet.
  */
-static inline int counter_cancel_channel_alarm(struct device *dev,
-						u8_t chan_id)
+__syscall int counter_cancel_channel_alarm(struct device *dev, u8_t chan_id);
+
+static inline int z_impl_counter_cancel_channel_alarm(struct device *dev,
+						      u8_t chan_id)
 {
 	const struct counter_driver_api *api =
 				(struct counter_driver_api *)dev->driver_api;
@@ -428,8 +446,12 @@ static inline int counter_cancel_channel_alarm(struct device *dev,
  * @retval -ETIME if @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
  *		  is smaller than current counter value (counter counting up).
  */
-static inline int counter_set_top_value(struct device *dev,
-					const struct counter_top_cfg *cfg)
+__syscall int counter_set_top_value(struct device *dev,
+				    const struct counter_top_cfg *cfg);
+
+static inline int z_impl_counter_set_top_value(struct device *dev,
+					       const struct counter_top_cfg
+					       *cfg)
 {
 	const struct counter_driver_api *api =
 				(struct counter_driver_api *)dev->driver_api;
