@@ -90,39 +90,6 @@ struct mcux_flexcan_data {
 	can_state_change_isr_t state_change_isr;
 };
 
-#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
-	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-static void mcux_flexcan_freeze(struct device *dev)
-{
-	const struct mcux_flexcan_config *config = dev->config->config_info;
-
-	/*
-	 * Simple freeze implementation without support for
-	 * FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595.
-	 *
-	 * This can be removed once the MCUX FlexCAN driver supports
-	 * setting the MCR->LOM and CTRL1->SRXDIS bits or exposes its
-	 * internal freeze/unfreeze functions through the API.
-	 */
-	config->base->MCR |= CAN_MCR_FRZ_MASK;
-	config->base->MCR |= CAN_MCR_HALT_MASK;
-
-	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) == 0U)	{
-	}
-}
-
-static void mcux_flexcan_thaw(struct device *dev)
-{
-	const struct mcux_flexcan_config *config = dev->config->config_info;
-
-	config->base->MCR &= ~CAN_MCR_HALT_MASK;
-	config->base->MCR &= ~CAN_MCR_FRZ_MASK;
-
-	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) != 0U)	{
-	}
-}
-#endif
-
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 				  u32_t bitrate)
 {
@@ -130,13 +97,6 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	flexcan_config_t flexcan_config;
 	struct device *clock_dev;
 	u32_t clock_freq;
-
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) && \
-	FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		return -ENOTSUP;
-	}
-#endif
 
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
@@ -151,7 +111,6 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
 	flexcan_config.clkSrc = config->clk_source;
 	flexcan_config.baudRate = bitrate ? bitrate : config->bitrate;
-	flexcan_config.enableLoopBack = (mode == CAN_LOOPBACK_MODE);
 	flexcan_config.enableIndividMask = true;
 
 	flexcan_config.timingConfig.rJumpwidth = config->sjw;
@@ -159,20 +118,18 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	flexcan_config.timingConfig.phaseSeg1 = config->phase_seg1;
 	flexcan_config.timingConfig.phaseSeg2 = config->phase_seg2;
 
-	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
-
-#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
-	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-	mcux_flexcan_freeze(dev);
-	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		config->base->CTRL1 |= CAN_CTRL1_LOM(1);
-	}
-	if (mode != CAN_LOOPBACK_MODE && mode != CAN_SILENT_LOOPBACK_MODE) {
+	if (mode == CAN_LOOPBACK_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+		flexcan_config.enableLoopBack = true;
+	} else {
 		/* Disable self-reception unless loopback is requested */
-		config->base->MCR |= CAN_MCR_SRXDIS(1);
+		flexcan_config.disableSelfReception = true;
 	}
-	mcux_flexcan_thaw(dev);
-#endif
+
+	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+		flexcan_config.enableListenOnlyMode = true;
+	}
+
+	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
 
 	return 0;
 }
