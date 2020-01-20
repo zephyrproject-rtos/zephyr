@@ -62,10 +62,9 @@ void cpu_stats_get_ns(struct cpu_stats *cpu_stats_ns)
 	int key = irq_lock();
 
 	cpu_stats_update_counters();
-	cpu_stats_ns->idle = (u32_t)k_cyc_to_ns_floor64(stats_hw_tick.idle);
-	cpu_stats_ns->non_idle = (u32_t)k_cyc_to_ns_floor64(
-					  stats_hw_tick.non_idle);
-	cpu_stats_ns->sched = (u32_t)k_cyc_to_ns_floor64(stats_hw_tick.sched);
+	cpu_stats_ns->idle = k_cyc_to_ns_floor64(stats_hw_tick.idle);
+	cpu_stats_ns->non_idle = k_cyc_to_ns_floor64(stats_hw_tick.non_idle);
+	cpu_stats_ns->sched = k_cyc_to_ns_floor64(stats_hw_tick.sched);
 	irq_unlock(key);
 }
 
