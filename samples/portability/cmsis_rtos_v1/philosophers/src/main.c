@@ -72,7 +72,7 @@ osSemaphoreId forks[NUM_PHIL];
 
 #define fork(x) (forks[x])
 
-#define STACK_SIZE 512
+#define STACK_SIZE CONFIG_CMSIS_THREAD_MAX_STACK_SIZE
 
 #if DEBUG_PRINTF
 #define PR_DEBUG printk
