@@ -12,6 +12,11 @@
 #include <errno.h>
 #include <sys/printk.h>
 
+#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#include <fs/fs.h>
+#include <fs/littlefs.h>
+#endif
+
 #define GAMMA_DEFAULT_VAl 0
 #define FAIL_MSG "fail (err %d)\n"
 #define SECTION_BEGIN_LINE \
@@ -413,6 +418,31 @@ static void example_without_handler(void)
 static void example_initialization(void)
 {
 	int rc;
+
+#if IS_ENABLED(CONFIG_SETTINGS_FS)
+	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
+
+	/* mounting info */
+	static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &cstorage,
+	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.mnt_point = "/ff"
+	};
+
+	rc = fs_mount(&littlefs_mnt);
+	if (rc != 0) {
+		printk("mounting littlefs error: [%d]\n", rc);
+	} else {
+
+		rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
+		if ((rc != 0) && (rc != -ENOENT)) {
+			printk("can't delete config file%d\n", rc);
+		} else {
+			printk("FS initiqalized: OK\n");
+		}
+	}
+#endif
 
 	rc = settings_subsys_init();
 	if (rc) {
