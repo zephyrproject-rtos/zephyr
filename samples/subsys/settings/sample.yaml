@@ -5,7 +5,7 @@ tests:
   sample.subsys.settings:
     tags: settings
     timeout: 10
-    platform_whitelist: qemu_x86
+    platform_whitelist: qemu_x86 native_posix native_posix_64
     harness: console
     harness_config:
       type: multi_line
@@ -16,14 +16,16 @@ tests:
         - "[.]*Can\\'t to load the <alpha/length> value as expected"
         - "<gamma> = 0 \\(default\\)"
         - "# iteration 1"
+        - "<alpha/length/2> = 59"
+        - "# iteration 2"
+        - "<alpha/length/1> = 42"
+        - "# iteration 3"
+        - "<alpha/beta/voltage> = -3100"
         - "# iteration 4"
         - "<alpha/beta/source> = abcd"
         - "# iteration 5"
-        - "<alpha/length/2> = 55"
-        - "<alpha/length/1> = 45"
         - "<alpha/angle/1> = 5"
         - "<alpha/beta/source> is not compatible with the application"
-        - "<alpha/beta/voltage> = -3125"
         - "direct.length = 100"
         - "direct.length_1 = 46"
         - "direct.length_2 = 54"
