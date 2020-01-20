@@ -28,31 +28,34 @@ def fatal(warning):
 def main():
     args = parse_args()
 
-    print("Parsing Kconfig tree in " + args.kconfig_root)
-    kconf = Kconfig(args.kconfig_root, warn_to_stderr=False,
+    print("Parsing " + args.kconfig_file)
+    kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
                     suppress_traceback=True)
 
-    # Warn for assignments to undefined symbols
-    kconf.warn_assign_undef = True
+    if args.handwritten_input_configs:
+        # Warn for assignments to undefined symbols, but only for handwritten
+        # fragments, to avoid warnings-turned-errors when using an old
+        # configuration file together with updated Kconfig files
+        kconf.warn_assign_undef = True
 
-    # prj.conf may override settings from the board configuration, so disable
-    # warnings about symbols being assigned more than once
-    kconf.warn_assign_override = False
-    kconf.warn_assign_redun = False
+        # prj.conf may override settings from the board configuration, so
+        # disable warnings about symbols being assigned more than once
+        kconf.warn_assign_override = False
+        kconf.warn_assign_redun = False
 
-    print(kconf.load_config(args.conf_fragments[0]))
-    for config in args.conf_fragments[1:]:
+    # Load configuration files
+    print(kconf.load_config(args.configs_in[0]))
+    for config in args.configs_in[1:]:
         # replace=False creates a merged configuration
         print(kconf.load_config(config, replace=False))
 
-    if not os.path.exists(args.autoconf):
-        # If zephyr/.config does not exist, it means we just merged
-        # configuration fragments. Check that there were no assignments to
-        # promptless symbols in them. Such assignments have no effect.
+    if args.handwritten_input_configs:
+        # Check that there are no assignments to promptless symbols, which
+        # have no effect.
         #
-        # This won't work if zephyr/.config already exists (which means it's
-        # being loaded), because zephyr/.config is a full configuration file
-        # that includes values for promptless symbols.
+        # This only makes sense when loading handwritten fragments and not when
+        # loading zephyr/.config, because zephyr/.config is configuration
+        # output and also assigns promptless symbols.
         check_no_promptless_assign(kconf)
 
     # Print warnings for symbols whose actual value doesn't match the assigned
@@ -97,11 +100,11 @@ point to an actual problem, you can add it to the whitelist at the top of {}.\
 """.format(warning, sys.argv[0]))
 
     # Write the merged configuration and the C header
-    print(kconf.write_config(args.dotconfig))
-    kconf.write_autoconf(args.autoconf)
+    print(kconf.write_config(args.config_out))
+    kconf.write_autoconf(args.header_out)
 
-    # Write the list of processed Kconfig sources to a file
-    write_kconfig_filenames(kconf.kconfig_filenames, kconf.srctree, args.sources)
+    # Write the list of parsed Kconfig files to a file
+    write_kconfig_filenames(kconf, args.kconfig_list_out)
 
 
 def check_no_promptless_assign(kconf):
@@ -173,32 +176,39 @@ def promptless(sym):
     return not any(node.prompt for node in sym.nodes)
 
 
-def write_kconfig_filenames(paths, root_path, output_file_path):
-    # 'paths' is a list of paths. The list has duplicates and the
-    # paths are either absolute or relative to 'root_path'.
+def write_kconfig_filenames(kconf, kconfig_list_path):
+    # Writes a sorted list with the absolute paths of all parsed Kconfig files
+    # to 'kconfig_list_path'. The paths are realpath()'d, and duplicates are
+    # removed. This file is used by CMake to look for changed Kconfig files. It
+    # needs to be deterministic.
 
-    # We need to write this list, in a format that CMake can easily
-    # parse, to the output file at 'output_file_path'.
-
-    # The written list has sorted real (absolute) paths, and it does not have
-    # duplicates. The list is sorted to be deterministic. It is realpath()'d
-    # to ensure that different representations of the same path does not end
-    # up with two entries, as that could cause the build system to fail.
-
-    with open(output_file_path, 'w') as out:
-        for path in sorted({os.path.realpath(os.path.join(root_path, path))
-                            for path in paths}):
+    with open(kconfig_list_path, 'w') as out:
+        for path in sorted({os.path.realpath(os.path.join(kconf.srctree, path))
+                            for path in kconf.kconfig_filenames}):
             print(path, file=out)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("kconfig_root")
-    parser.add_argument("dotconfig")
-    parser.add_argument("autoconf")
-    parser.add_argument("sources")
-    parser.add_argument("conf_fragments", nargs='+')
+    parser.add_argument("--handwritten-input-configs",
+                        action="store_true",
+                        help="Assume the input configuration fragments are "
+                             "handwritten fragments and do additional checks "
+                             "on them, like no promptless symbols being "
+                             "assigned")
+    parser.add_argument("kconfig_file",
+                        help="Top-level Kconfig file")
+    parser.add_argument("config_out",
+                        help="Output configuration file")
+    parser.add_argument("header_out",
+                        help="Output header file")
+    parser.add_argument("kconfig_list_out",
+                        help="Output file for list of parsed Kconfig files")
+    parser.add_argument("configs_in",
+                        nargs="+",
+                        help="Input configuration fragments. Will be merged "
+                             "together.")
 
     return parser.parse_args()
 
