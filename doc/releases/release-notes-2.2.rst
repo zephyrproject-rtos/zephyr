@@ -9,7 +9,7 @@ We are pleased to announce the release of Zephyr kernel version 2.2.0.
 
 Major enhancements with this release include:
 
-* <TBD>
+* CANopen protocol support through 3rd party CANopenNode stack
 
 The following sections provide detailed lists of changes by component.
 
