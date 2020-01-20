@@ -237,8 +237,8 @@ exit:
 	b	z_arm64_exit_exc
 
 inv:
-	/* K_ERR_CPU_EXCEPTION */
-	mov	x0, #0
+	mov	x1, sp
+	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 	b	z_arm64_fatal_error
 
 

@@ -56,10 +56,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
 				    sizeof(struct __basic_sf)));
 
-	pInitCtx->basic.x0 = (u64_t)pEntry;
-	pInitCtx->basic.x1 = (u64_t)parameter1;
-	pInitCtx->basic.x2 = (u64_t)parameter2;
-	pInitCtx->basic.x3 = (u64_t)parameter3;
+	pInitCtx->basic.regs[0] = (u64_t)pEntry;
+	pInitCtx->basic.regs[1] = (u64_t)parameter1;
+	pInitCtx->basic.regs[2] = (u64_t)parameter2;
+	pInitCtx->basic.regs[3] = (u64_t)parameter3;
 
 	/*
 	 * We are saving:

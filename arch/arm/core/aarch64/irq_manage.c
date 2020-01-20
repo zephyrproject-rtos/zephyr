@@ -19,7 +19,7 @@
 #include <linker/sections.h>
 #include <sw_isr_table.h>
 
-extern void z_arm64_fatal_error(unsigned int reason);
+void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 void arch_irq_enable(unsigned int irq)
 {
@@ -56,5 +56,5 @@ void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	z_arm64_fatal_error(K_ERR_SPURIOUS_IRQ);
+	z_arm64_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }

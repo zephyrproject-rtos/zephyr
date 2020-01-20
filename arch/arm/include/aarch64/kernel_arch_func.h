@@ -38,7 +38,7 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 	thread->arch.swap_return_value = value;
 }
 
-extern void z_arm64_fatal_error(unsigned int reason);
+extern void z_arm64_fatal_error(const z_arch_esf_t *esf, unsigned int reason);
 
 #endif /* _ASMLANGUAGE */
 
