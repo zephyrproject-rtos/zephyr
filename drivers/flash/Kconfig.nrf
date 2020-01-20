@@ -9,7 +9,7 @@ config FLASH_NRF_FORCE_ALT
 
 if !FLASH_NRF_FORCE_ALT
 
-config SOC_FLASH_NRF
+menuconfig SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
 	depends on SOC_FAMILY_NRF
 	select FLASH_HAS_PAGE_LAYOUT
