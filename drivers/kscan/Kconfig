@@ -10,6 +10,7 @@ menuconfig KSCAN
 
 if KSCAN
 
+source "drivers/kscan/Kconfig.ft5336"
 source "drivers/kscan/Kconfig.xec"
 
 module = KSCAN
