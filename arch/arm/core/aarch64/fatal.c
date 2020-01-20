@@ -131,7 +131,31 @@ static void print_EC_cause(u64_t esr)
 	}
 }
 
-void z_arm64_fatal_error(unsigned int reason)
+static void esf_dump(const z_arch_esf_t *esf)
+{
+	LOG_ERR("x1:  %-8llx  x0:  %llx",
+		esf->basic.regs[18], esf->basic.regs[19]);
+	LOG_ERR("x2:  %-8llx  x3:  %llx",
+		esf->basic.regs[16], esf->basic.regs[17]);
+	LOG_ERR("x4:  %-8llx  x5:  %llx",
+		esf->basic.regs[14], esf->basic.regs[15]);
+	LOG_ERR("x6:  %-8llx  x7:  %llx",
+		esf->basic.regs[12], esf->basic.regs[13]);
+	LOG_ERR("x8:  %-8llx  x9:  %llx",
+		esf->basic.regs[10], esf->basic.regs[11]);
+	LOG_ERR("x10: %-8llx  x11: %llx",
+		esf->basic.regs[8], esf->basic.regs[9]);
+	LOG_ERR("x12: %-8llx  x13: %llx",
+		esf->basic.regs[6], esf->basic.regs[7]);
+	LOG_ERR("x14: %-8llx  x15: %llx",
+		esf->basic.regs[4], esf->basic.regs[5]);
+	LOG_ERR("x16: %-8llx  x17: %llx",
+		esf->basic.regs[2], esf->basic.regs[3]);
+	LOG_ERR("x18: %-8llx  x30: %llx",
+		esf->basic.regs[0], esf->basic.regs[1]);
+}
+
+void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	u64_t el, esr, elr, far;
 
@@ -170,7 +194,10 @@ void z_arm64_fatal_error(unsigned int reason)
 
 	}
 
-	z_fatal_error(reason, NULL);
+	if (esf != NULL) {
+		esf_dump(esf);
+	}
+	z_fatal_error(reason, esf);
 
 	CODE_UNREACHABLE;
 }
