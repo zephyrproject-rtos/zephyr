@@ -27,14 +27,12 @@ static int bme680_reg_read(struct bme680_data *data, u8_t start, u8_t *buf,
 {
 	return i2c_burst_read(data->i2c_master, data->i2c_slave_addr, start,
 			      buf, size);
-	//return 0;
 }
 
 static int bme680_reg_write(struct bme680_data *data, u8_t reg, u8_t val)
 {
 	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
 				  reg, val);
-	//return 0;
 }
 
 static void bme680_calc_temp(struct bme680_data *data, u32_t adc_temp)
