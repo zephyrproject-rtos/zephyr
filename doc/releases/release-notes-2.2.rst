@@ -140,7 +140,9 @@ Drivers and Sensors
 
 * Counter
 
-  * <TBD>
+  * The counter_read() API function is deprecated in favor of
+    counter_get_value(). The new API function adds a return value for
+    indicating whether the counter was read successfully.
 
 * Display
 
