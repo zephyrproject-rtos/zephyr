@@ -38,6 +38,7 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
  * Power state mapping:
  * SYS_POWER_STATE_SLEEP_1: Idle
  * SYS_POWER_STATE_SLEEP_2: Standby
+ * SYS_POWER_STATE_DEEP_SLEEP_1: Shutdown
  */
 
 /* Invoke Low Power/System Off specific Tasks */
@@ -95,6 +96,12 @@ void sys_set_power_state(enum power_states state)
 		Power_sleep(PowerCC26XX_STANDBY);
 		ClockP_stop(ClockP_handle((ClockP_Struct *)
 			&PowerCC26X2_module.clockObj));
+		break;
+#endif
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		Power_shutdown(0, 0);
 		break;
 #endif
 	default:
