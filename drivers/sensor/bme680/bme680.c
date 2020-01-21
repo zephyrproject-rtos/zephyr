@@ -276,7 +276,7 @@ static int bme680_channel_get(struct device *dev, enum sensor_channel chan,
 
 static int bme680_read_compensation(struct bme680_data *data)
 {
-	u8_t buff[BME680_LEN_COEFF_ALL] = {0};
+	u8_t buff[BME680_LEN_COEFF_ALL] = { 0 };
 	int err = 0;
 
 	err = bme680_reg_read(data, BME680_REG_COEFF1, buff, BME680_LEN_COEFF1);
