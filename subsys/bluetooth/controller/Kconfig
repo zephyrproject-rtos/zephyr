@@ -388,7 +388,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	default y
-	select BT_CTLR_FILTER
+	select BT_CTLR_FILTER if (BT_LL_SW_SPLIT || BT_LL_SW_LEGACY)
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
