@@ -2693,6 +2693,7 @@ class TestSuite:
 
         discards = {}
         platform_filter = kwargs.get('platform')
+        exclude_platform = kwargs.get('exclude_platform')
         testcase_filter = kwargs.get('run_individual_tests')
         arch_filter = kwargs.get('arch')
         tag_filter = kwargs.get('tag')
@@ -2734,6 +2735,9 @@ class TestSuite:
                     self.device_testing,
                     self.fixture
                 )
+                if plat.name in exclude_platform:
+                    discards[instance] = "Platform is excluded on command line."
+                    continue
 
                 if (plat.arch == "unit") != (tc.type == "unit"):
                     # Discard silently
@@ -3208,6 +3212,13 @@ Artificially long but functional example:
              "specified. If this option is not used, then platforms marked "
              "as default in the platform metadata file will be chosen "
              "to build and test. ")
+
+    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
+        help="""Exclude platforms and do not build or run any tests
+        on those platforms. This option can be called multiple times.
+        """
+        )
+
     parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
@@ -4225,6 +4236,7 @@ def main():
             build_only=options.build_only,
             enable_slow=options.enable_slow,
             platform=options.platform,
+            exclude_platform=options.exclude_platform,
             arch=options.arch,
             tag=options.tag,
             exclude_tag=options.exclude_tag,
