@@ -101,7 +101,7 @@ extern "C" {
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
 			    level, prio, api)				  \
-	static struct device_config _CONCAT(__config_, dev_name) __used	  \
+	static const struct device_config _CONCAT(__config_, dev_name) __used \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
 		.name = drv_name, .init = (init_fn),			  \
 		.config_info = (cfg_info)				  \
@@ -272,7 +272,7 @@ struct device_config {
  * @param driver_data driver instance data. For driver use only
  */
 struct device {
-	struct device_config *config;
+	const struct device_config *config;
 	const void *driver_api;
 	void *driver_data;
 };
