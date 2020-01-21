@@ -114,9 +114,9 @@ endif # SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
 	bool "Enable RTT backend"
-	select USE_SEGGER_RTT
 	select CONSOLE
 	select RTT_CONSOLE
+	depends on USE_SEGGER_RTT
 	help
 	  Enable RTT backend.
 
