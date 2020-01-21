@@ -96,9 +96,9 @@ static void i2c_start(struct i2c_bitbang *context)
 		 */
 		i2c_set_scl(context, 0);
 		i2c_delay(context->delays[T_LOW]);
-		i2c_set_scl(context, 1);
-		i2c_delay(context->delays[T_SU_STA]);
 	}
+	i2c_set_scl(context, 1);
+	i2c_delay(context->delays[T_SU_STA]);
 	i2c_set_sda(context, 0);
 	i2c_delay(context->delays[T_HD_STA]);
 
