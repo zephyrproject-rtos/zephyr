@@ -80,19 +80,24 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 
 void main(void)
 {
-	static struct gpio_callback button_cb;
+	static struct gpio_callback button_cb_data;
 
 	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 
 	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
+			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
 	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN));
-	gpio_add_callback(gpio, &button_cb);
+			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
+
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
+	gpio_init_callback(&button_cb_data, button_pressed,
+			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
+			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
 
 	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
 
@@ -100,6 +105,5 @@ void main(void)
 	/* Notify with a beep that we've started */
 	k_work_submit(&beep_work);
 
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW1_GPIOS_PIN);
+	gpio_add_callback(gpio, &button_cb_data);
 }
