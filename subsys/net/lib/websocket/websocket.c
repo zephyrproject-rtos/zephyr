@@ -642,6 +642,20 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 	size_t can_copy, left;
 	int ret;
 
+#if defined(CONFIG_NET_TEST)
+	/* Websocket unit test does not use socket layer but feeds
+	 * the data directly here when testing this function.
+	 */
+	struct test_data {
+		u8_t *input_buf;
+		size_t input_len;
+		struct websocket_context *ctx;
+	};
+
+	struct test_data *test_data = INT_TO_POINTER(ws_sock);
+
+	ctx = test_data->ctx;
+#else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
@@ -650,12 +664,24 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 	if (!PART_OF_ARRAY(contexts, ctx)) {
 		return -ENOENT;
 	}
+#endif /* CONFIG_NET_TEST */
 
 	/* If we have not received the websocket header yet, read it first */
 	if (!ctx->header_received) {
+#if defined(CONFIG_NET_TEST)
+		size_t input_len = MIN(ctx->tmp_buf_len - ctx->tmp_buf_pos,
+				       test_data->input_len);
+
+		memcpy(&ctx->tmp_buf[ctx->tmp_buf_pos], test_data->input_buf,
+		       input_len);
+		test_data->input_buf += input_len;
+		ret = input_len;
+#else
 		ret = recv(ctx->real_sock, &ctx->tmp_buf[ctx->tmp_buf_pos],
 			   ctx->tmp_buf_len - ctx->tmp_buf_pos,
 			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
+
 		if (ret < 0) {
 			return -errno;
 		}
@@ -730,8 +756,18 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 
 	if (ctx->tmp_buf_pos == 0) {
 		/* Read more data into temp buffer */
+#if defined(CONFIG_NET_TEST)
+		size_t input_len = MIN(ctx->tmp_buf_len, test_data->input_len);
+
+		memcpy(ctx->tmp_buf, test_data->input_buf, input_len);
+		test_data->input_buf += input_len;
+
+		ret = input_len;
+#else
 		ret = recv(ctx->real_sock, ctx->tmp_buf, ctx->tmp_buf_len,
 			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
+
 		if (ret < 0) {
 			return -errno;
 		}
