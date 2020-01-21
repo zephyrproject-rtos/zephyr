@@ -362,6 +362,13 @@ __syscall struct device *device_get_binding(const char *name);
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 /**
+ * @brief Get name of device PM state
+ *
+ * @param state State id which name should be returned
+ */
+const char *device_pm_state_str(u32_t state);
+
+/**
  * @brief Indicate that the device is in the middle of a transaction
  *
  * Called by a device driver to indicate that it is in the middle of a
