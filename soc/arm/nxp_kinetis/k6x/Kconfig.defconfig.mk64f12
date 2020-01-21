@@ -115,4 +115,11 @@ config WDT_MCUX_WDOG
 
 endif # WATCHDOG
 
+if COUNTER
+
+config COUNTER_MCUX_RTC
+	default y
+
+endif # COUNTER
+
 endif # SOC_MK64F12
