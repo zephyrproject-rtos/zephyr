@@ -187,7 +187,7 @@ static u8_t bme680_calc_gas_wait(u16_t dur)
 static int bme680_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bme680_data *data = dev->driver_data;
-	u8_t buff[BME680_LEN_FIELD] = { 0 };
+	u8_t buff[BME680_LEN_FIELD] = {0};
 	u8_t gas_range;
 	u32_t adc_temp, adc_press;
 	u16_t adc_hum, adc_gas_res;
