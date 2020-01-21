@@ -113,9 +113,9 @@
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
-		irq-gpios = <&gpio0 22 0>;
-		reset-gpios = <&sx1509b 11 0>;
-		wake-gpios = <&sx1509b 12 0>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
 	};
 };
 
