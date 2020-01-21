@@ -26,8 +26,8 @@ unsigned char speed_hex[1];
 static void line_detection(struct device *dev, struct gpio_callback *cb,
 			   u32_t pins)
 {
-	gpio_pin_read(gpio, EXT_P13_GPIO_PIN, left_line);
-	gpio_pin_read(gpio, EXT_P14_GPIO_PIN, right_line);
+	left_line[0] = gpio_pin_get_raw(gpio, EXT_P13_GPIO_PIN);
+	right_line[0] = gpio_pin_get_raw(gpio, EXT_P14_GPIO_PIN);
 	/* printk("%d  %d\n", left_line[0], right_line[0]); */
 }
 /* Function to convert decimal speed value to hex speed value */
@@ -118,18 +118,19 @@ void main(void)
 	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 	i2c_dev = device_get_binding(I2C_DEV);
 	/* Setup gpio to read data from digital line sensors of the robot */
-	gpio_pin_configure(gpio, EXT_P13_GPIO_PIN, (GPIO_DIR_IN |
-		GPIO_INT | GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE));
-	gpio_pin_configure(gpio, EXT_P14_GPIO_PIN, (GPIO_DIR_IN |
-		GPIO_INT | GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE));
+	gpio_pin_configure(gpio, EXT_P13_GPIO_PIN, GPIO_INPUT);
+	gpio_pin_configure(gpio, EXT_P14_GPIO_PIN, GPIO_INPUT);
+
+	gpio_pin_interrupt_configure(gpio, EXT_P13_GPIO_PIN,
+				     GPIO_INT_EDGE_BOTH);
+
+	gpio_pin_interrupt_configure(gpio, EXT_P14_GPIO_PIN,
+				     GPIO_INT_EDGE_BOTH);
 
 	gpio_init_callback(&line_sensors, line_detection,
 			   BIT(EXT_P13_GPIO_PIN) | BIT(EXT_P14_GPIO_PIN));
 
 	gpio_add_callback(gpio, &line_sensors);
-
-	gpio_pin_enable_callback(gpio, EXT_P13_GPIO_PIN);
-	gpio_pin_enable_callback(gpio, EXT_P14_GPIO_PIN);
 
 	while (1) {
 		line_follow();
