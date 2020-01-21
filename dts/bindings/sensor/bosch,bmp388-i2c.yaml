@@ -1,0 +1,8 @@
+# Copyright (c) 2020, Ioannis Konstantelias
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMP388 Digital pressure sensor connected to I2C bus
+
+compatible: "bosch,bmp388"
+
+include: i2c-device.yaml

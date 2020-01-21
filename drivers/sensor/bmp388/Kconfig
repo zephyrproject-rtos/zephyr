@@ -1,0 +1,134 @@
+# BMP388 Digital pressure sensor configuration options
+
+# Copyright (c) 2020 Ioannis Konstantelias
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP388
+	bool "BMP388 sensor"
+	depends on I2C || SPI
+	help
+	  Enable driver for BME388 I2C-based or SPI-based pressure sensor.
+
+if BMP388
+
+config BMP388_PRESSURE_ENABLE
+	prompt "BMP388 enable pressure readings"
+	def_bool y
+	help
+	  Enable pressure readings from the BMP388 sensor.
+
+config BMP388_TEMPERATURE_ENABLE
+	prompt "BMP388 enable temperature readings"
+	def_bool y
+	help
+	  Enable temperature readings from the BMP388 sensor.
+
+choice
+	prompt "BMP388 pressure oversampling"
+	default BMP388_PRESS_OVER_16X
+	help
+	  Select pressure oversampling for the BMP388 sensor. Higher values
+	  lead to more accurate readings, but higher power consumption. It is
+	  omitted if pressure readings are disabled.
+config BMP388_PRESS_OVER_1X
+	bool "x1"
+config BMP388_PRESS_OVER_2X
+	bool "x2"
+config BMP388_PRESS_OVER_4X
+	bool "x4"
+config BMP388_PRESS_OVER_8X
+	bool "x8"
+config BMP388_PRESS_OVER_16X
+	bool "x16"
+config BMP388_PRESS_OVER_32X
+	bool "x32"
+endchoice
+
+choice
+	prompt "BMP388 temperature oversampling"
+	default BMP388_TEMP_OVER_2X
+	help
+	  Select temperature oversampling for the BMP388 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption. It is
+	  omitted if temperature readings are disabled.
+config BMP388_TEMP_OVER_1X
+	bool "x1"
+config BMP388_TEMP_OVER_2X
+	bool "x2"
+config BMP388_TEMP_OVER_4X
+	bool "x4"
+config BMP388_TEMP_OVER_8X
+	bool "x8"
+config BMP388_TEMP_OVER_16X
+	bool "x16"
+config BMP388_TEMP_OVER_32X
+	bool "x32"
+endchoice
+
+choice
+	prompt "BMP388 filter coefficient"
+	default BMP388_FILTER_15
+	help
+	  Select the filter coefficient for the BMP388 sensor.
+config BMP388_FILTER_OFF
+	bool "filter off"
+config BMP388_FILTER_1
+	bool "1"
+config BMP388_FILTER_3
+	bool "3"
+config BMP388_FILTER_7
+	bool "7"
+config BMP388_FILTER_15
+	bool "15"
+config BMP388_FILTER_31
+	bool "31"
+config BMP388_FILTER_63
+	bool "63"
+config BMP388_FILTER_127
+	bool "127"
+endchoice
+
+choice
+	prompt "BMP388 output data rate"
+	default BMP388_ODR_25
+	help
+	  Select the filter coefficient for the BMP388 sensor.
+config BMP388_ODR_200
+	bool "200Hz"
+config BMP388_ODR_100
+	bool "100Hz"
+config BMP388_ODR_50
+	bool "50Hz"
+config BMP388_ODR_25
+	bool "25Hz"
+config BMP388_ODR_12p5
+	bool "25/2Hz"
+config BMP388_ODR_6p25
+	bool "25/4Hz"
+config BMP388_ODR_3p1
+	bool "25/8Hz"
+config BMP388_ODR_1p5
+	bool "25/16Hz"
+config BMP388_ODR_0p78
+	bool "25/32Hz"
+config BMP388_ODR_0p39
+	bool "25/64Hz"
+config BMP388_ODR_0p2
+	bool "25/128Hz"
+config BMP388_ODR_0p1
+	bool "25/256Hz"
+config BMP388_ODR_0p05
+	bool "25/512Hz"
+config BMP388_ODR_0p02
+	bool "25/1024Hz"
+config BMP388_ODR_0p01
+	bool "25/2048Hz"
+config BMP388_ODR_0p006
+	bool "25/4096Hz"
+config BMP388_ODR_0p003
+	bool "25/8192Hz"
+config BMP388_ODR_0p0015
+	bool "25/16384Hz"
+endchoice
+
+endif # BMP388
