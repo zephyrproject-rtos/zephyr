@@ -50,8 +50,10 @@
 struct ccs811_data {
 	struct device *i2c;
 #ifdef DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER
-	struct device *int_gpio;
+	struct device *irq_gpio;
 #ifdef CONFIG_CCS811_TRIGGER
+	struct device *dev;
+
 	/*
 	 * DATARDY is configured through SENSOR_CHAN_ALL.
 	 * THRESH would be configured through SENSOR_CHAN_CO2.
@@ -65,7 +67,6 @@ struct ccs811_data {
 	struct k_thread thread;
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 	u16_t co2_l2m;
 	u16_t co2_m2h;
