@@ -44,7 +44,25 @@ static int device_retval[MAX_PM_DEVICES];
 static struct device *pm_device_list;
 static int device_count;
 
-int sys_pm_suspend_devices(void)
+const char *device_pm_state_str(u32_t state)
+{
+	switch (state) {
+	case DEVICE_PM_ACTIVE_STATE:
+		return "active";
+	case DEVICE_PM_LOW_POWER_STATE:
+		return "low power";
+	case DEVICE_PM_SUSPEND_STATE:
+		return "suspend";
+	case DEVICE_PM_FORCE_SUSPEND_STATE:
+		return "force suspend";
+	case DEVICE_PM_OFF_STATE:
+		return "off";
+	default:
+		return "";
+	}
+}
+
+static int _sys_pm_devices(u32_t state)
 {
 	for (int i = device_count - 1; i >= 0; i--) {
 		int idx = device_ordered_list[i];
@@ -53,52 +71,32 @@ int sys_pm_suspend_devices(void)
 		 * and set the device states accordingly.
 		 */
 		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_SUSPEND_STATE,
+						state,
 						NULL, NULL);
 		if (device_retval[i]) {
-			LOG_DBG("%s did not enter suspend state",
-					pm_device_list[idx].config->name);
+			LOG_DBG("%s did not enter %s state",
+				pm_device_list[idx].config->name,
+				device_pm_state_str(state));
 			return device_retval[i];
 		}
 	}
 
 	return 0;
+}
+
+int sys_pm_suspend_devices(void)
+{
+	return _sys_pm_devices(DEVICE_PM_SUSPEND_STATE);
 }
 
 int sys_pm_low_power_devices(void)
 {
-	for (int i = device_count - 1; i >= 0; i--) {
-		int idx = device_ordered_list[i];
-
-		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_LOW_POWER_STATE,
-						NULL, NULL);
-		if (device_retval[i]) {
-			LOG_DBG("%s did not enter low power state",
-				pm_device_list[idx].config->name);
-			return device_retval[i];
-		}
-	}
-
-	return 0;
+	return _sys_pm_devices(DEVICE_PM_LOW_POWER_STATE);
 }
 
 int sys_pm_force_suspend_devices(void)
 {
-	for (int i = device_count - 1; i >= 0; i--) {
-		int idx = device_ordered_list[i];
-
-		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-					DEVICE_PM_FORCE_SUSPEND_STATE,
-					NULL, NULL);
-		if (device_retval[i]) {
-			LOG_ERR("%s force suspend operation failed",
-				pm_device_list[idx].config->name);
-			return device_retval[i];
-		}
-	}
-
-	return 0;
+	return _sys_pm_devices(DEVICE_PM_FORCE_SUSPEND_STATE);
 }
 
 void sys_pm_resume_devices(void)
