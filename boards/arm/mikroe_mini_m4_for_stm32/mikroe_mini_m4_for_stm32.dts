@@ -61,3 +61,7 @@
 &usbotg_fs {
 	status = "okay";
 };
+
+&cryp {
+	status = "okay";
+};
