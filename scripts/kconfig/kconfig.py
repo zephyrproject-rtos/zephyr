@@ -12,9 +12,6 @@ from kconfiglib import Kconfig, BOOL, TRISTATE, TRI_TO_STR
 # identified by a substring of the warning. The warning texts from Kconfiglib
 # are guaranteed to not change.
 WARNING_WHITELIST = (
-    # Warning generated when a symbol with unsatisfied dependencies is being
-    # selected. These should be investigated, but whitelist them for now.
-    "y-selected",
 )
 
 
