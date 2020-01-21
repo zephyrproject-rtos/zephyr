@@ -17,13 +17,15 @@
 
 #include "ccs811.h"
 
+#define WAKE_PIN DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN
+#define RESET_PIN DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN
+
 LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
 static void set_wake(struct ccs811_data *drv_data, bool enable)
 {
-	/* Always active-low */
-	gpio_pin_write(drv_data->wake_gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, !enable);
+	gpio_pin_set(drv_data->wake_gpio, WAKE_PIN, enable);
 	if (enable) {
 		k_busy_wait(50);        /* t_WAKE = 50 us */
 	} else {
@@ -455,8 +457,9 @@ static int ccs811_init(struct device *dev)
 	 * any I2C transfer.  If it has been tied to GND by
 	 * default, skip this part.
 	 */
-	gpio_pin_configure(drv_data->wake_gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN,
-			   GPIO_DIR_OUT);
+	gpio_pin_configure(drv_data->wake_gpio, WAKE_PIN,
+			   GPIO_OUTPUT_INACTIVE
+			   | DT_INST_0_AMS_CCS811_WAKE_GPIOS_FLAGS);
 
 	set_wake(drv_data, true);
 	k_sleep(1);
@@ -468,16 +471,16 @@ static int ccs811_init(struct device *dev)
 			DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
-	gpio_pin_configure(drv_data->reset_gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->reset_gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
+	gpio_pin_configure(drv_data->reset_gpio, RESET_PIN,
+			   GPIO_OUTPUT_ACTIVE
+			   | DT_INST_0_AMS_CCS811_RESET_GPIOS_FLAGS);
 
 	k_sleep(1);
 #endif
 
 #ifdef DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER
-	drv_data->int_gpio = device_get_binding(DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER);
-	if (drv_data->int_gpio == NULL) {
+	drv_data->irq_gpio = device_get_binding(DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER);
+	if (drv_data->irq_gpio == NULL) {
 		LOG_ERR("Failed to get pointer to INT device: %s",
 			DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER);
 		return -EINVAL;
@@ -488,10 +491,10 @@ static int ccs811_init(struct device *dev)
 	 * and validating any errors or configuration inconsistencies
 	 * after a reset that left the device running.
 	 */
-#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN
-	gpio_pin_write(drv_data->reset_gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 0);
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
+	gpio_pin_set(drv_data->reset_gpio, RESET_PIN, 1);
 	k_busy_wait(15);        /* t_RESET */
-	gpio_pin_write(drv_data->reset_gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
+	gpio_pin_set(drv_data->reset_gpio, RESET_PIN, 0);
 #else
 	{
 		static u8_t const reset_seq[] = {
