@@ -30,6 +30,7 @@
 		pwm-1 = &pwm1;
 		pwm-2 = &pwm2;
 		pwm-3 = &pwm3;
+		rtc-0 = &rtc0;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
@@ -120,10 +121,14 @@
 			enable-external-reference;
 		};
 
-		rtc@4003d000 {
-			compatible = "nxp,k64f-rtc";
-			reg = <0x4003d000 0x808>;
+		rtc0: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <46 0>, <47 0>;
+			interrupt-names = "alarm", "seconds";
 			clock-frequency = <32768>;
+			prescaler = <32768>;
+			label = "RTC_0";
 		};
 
 		sim: sim@40047000 {
