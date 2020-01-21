@@ -57,7 +57,7 @@ static void init_timer_data(void)
 static void duration_expire(struct k_timer *timer)
 {
 	/** TESTPOINT: expire function */
-	s64_t interval = k_uptime_delta(&tdata.timestamp);
+	volatile s64_t interval = k_uptime_delta(&tdata.timestamp);
 
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
