@@ -1353,7 +1353,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		frag = pkt->buffer;
 		net_buf_add(frag, diff);
 		cursor = frag->data + diff;
-		memmove(cursor, frag->data, frag->len);
+		memmove(cursor, frag->data, frag->len - diff);
 	} else {
 		NET_DBG("Not enough tailroom. Get new fragment");
 		cursor =  pkt->buffer->data;
