@@ -165,15 +165,15 @@ int sx9500_setup_interrupt(struct device *dev)
 	}
 
 	gpio_pin_configure(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | DT_INST_0_SEMTECH_SX9500_INT_GPIOS_FLAGS);
 
 	gpio_init_callback(&data->gpio_cb,
 			   sx9500_gpio_cb,
 			   BIT(DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN));
 
 	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_enable_callback(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN);
+	gpio_pin_interrupt_configure(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,
