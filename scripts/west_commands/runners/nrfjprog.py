@@ -83,7 +83,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             return board_snr
         elif not sys.stdin.isatty():
             raise RuntimeError(
-                f'refusing to guess which of {len(snrs)} '
+                'refusing to guess which of {len(snrs)} '
                 'connected boards to use. (Interactive prompts '
                 'disabled since standard input is not a terminal.) '
                 'Please specify a serial number on the command line.')
