@@ -5,6 +5,9 @@ properties:
     irq-gpios:
       type: phandle-array
       required: false
+      description: |
+        The INT1 and (optional) INT2 signal connections.  These signals
+        are active-high as produced by the sensor.
 
     disconnect-sdo-sa0-pull-up:
       type: boolean
