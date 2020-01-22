@@ -334,7 +334,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
-		      LOG_CURRENT_MODULE_ID(),		       \
+		      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length, _str)
 
