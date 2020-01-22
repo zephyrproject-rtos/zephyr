@@ -51,11 +51,7 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 	struct net_buf *buf;
 	bool added;
 
-	my_addr = net_if_ipv4_select_src_addr(ctx->iface,
-					      &ctx->ipcp.peer_options.address);
-	if (!my_addr) {
-		my_addr = net_ipv4_unspecified_address();
-	}
+	my_addr = &ctx->ipcp.my_options.address;
 
 	option[0] = IPCP_OPTION_IP_ADDRESS;
 	option[1] = IP_ADDRESS_OPTION_LEN;
@@ -70,6 +66,9 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 	if (!added) {
 		goto out_of_mem;
 	}
+
+	NET_DBG("Added IPCP IP Address option %d.%d.%d.%d",
+		option[2], option[3], option[4], option[5]);
 
 	return buf;
 
@@ -267,10 +266,13 @@ bail_out:
 	return -ENOMEM;
 }
 
-static int ipcp_config_info_rej(struct ppp_fsm *fsm,
-				struct net_pkt *pkt,
-				u16_t length)
+static int ipcp_config_info_nack(struct ppp_fsm *fsm,
+				 struct net_pkt *pkt,
+				 u16_t length,
+				 bool rejected)
 {
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       ipcp.fsm);
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
 	enum net_verdict verdict;
 	int i, ret, address_option_idx = -1;
@@ -325,6 +327,8 @@ static int ipcp_config_info_rej(struct ppp_fsm *fsm,
 		return -EMSGSIZE;
 	}
 
+	memcpy(&ctx->ipcp.my_options.address, &addr, sizeof(addr));
+
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char dst[INET_ADDRSTRLEN];
 		char *addr_str;
@@ -363,11 +367,27 @@ static void ipcp_up(struct ppp_fsm *fsm)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
+	struct net_if_addr *addr;
+	char dst[INET_ADDRSTRLEN];
+	char *addr_str;
 
 	if (ctx->is_ipcp_up) {
 		return;
 	}
 
+	addr_str = net_addr_ntop(AF_INET, &ctx->ipcp.my_options.address,
+				 dst, sizeof(dst));
+
+	addr = net_if_ipv4_addr_add(ctx->iface,
+				    &ctx->ipcp.my_options.address,
+				    NET_ADDR_MANUAL,
+				    0);
+	if (addr == NULL) {
+		NET_ERR("Could not set IP address %s", log_strdup(addr_str));
+		return;
+	}
+
+	NET_DBG("PPP up with address %s", log_strdup(addr_str));
 	ppp_network_up(ctx, PPP_IP);
 
 	ctx->is_network_up = true;
@@ -428,7 +448,7 @@ static void ipcp_init(struct ppp_context *ctx)
 	ctx->ipcp.fsm.cb.proto_reject = ipcp_proto_reject;
 	ctx->ipcp.fsm.cb.config_info_add = ipcp_config_info_add;
 	ctx->ipcp.fsm.cb.config_info_req = ipcp_config_info_req;
-	ctx->ipcp.fsm.cb.config_info_rej = ipcp_config_info_rej;
+	ctx->ipcp.fsm.cb.config_info_nack = ipcp_config_info_nack;
 }
 
 PPP_PROTOCOL_REGISTER(IPCP, PPP_IPCP,
