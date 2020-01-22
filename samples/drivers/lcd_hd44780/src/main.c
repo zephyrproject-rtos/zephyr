@@ -140,7 +140,7 @@
 
 #define GPIO_PIN_WR(dev, pin, bit)						\
 	do {									\
-		if (gpio_pin_write((dev), (pin), (bit))) {			\
+		if (gpio_pin_set_raw((dev), (pin), (bit))) {			\
 			printk("Err set " GPIO_NAME "%d! %x\n", (pin), (bit));	\
 		}								\
 	} while (0)								\
@@ -534,16 +534,16 @@ void main(void)
 	}
 
 	/* Setup GPIO output */
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC25_E, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC28_RS, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC12_D0, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC13_D1, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC14_D2, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC15_D3, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC24_D4, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC23_D5, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC22_D6, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC21_D7, GPIO_DIR_OUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC25_E, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC28_RS, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC12_D0, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC13_D1, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC14_D2, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC15_D3, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC24_D4, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC23_D5, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC22_D6, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC21_D7, GPIO_OUTPUT);
 
 	printk("LCD Init\n");
 	pi_lcd_init(gpio_dev, 20, 4, LCD_5x8_DOTS);
