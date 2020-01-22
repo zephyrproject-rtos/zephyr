@@ -61,9 +61,7 @@
 #include <sys/util.h>
 #include <sys/__assert.h>
 #include <init.h>
-#if defined(CONFIG_USB_VBUS_GPIO)
 #include <drivers/gpio.h>
-#endif
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usbstruct.h>
@@ -994,26 +992,27 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
  */
 static int usb_vbus_set(bool on)
 {
-#if defined(CONFIG_USB_VBUS_GPIO)
+#ifdef DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER
 	int ret = 0;
 	struct device *gpio_dev;
 
-	gpio_dev = device_get_binding(CONFIG_USB_VBUS_GPIO_DEV_NAME);
+	gpio_dev = device_get_binding(DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
 	if (!gpio_dev) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			CONFIG_USB_VBUS_GPIO_DEV_NAME);
+			DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
 		return -ENODEV;
 	}
 
 	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
-				 GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+				 GPIO_OUTPUT |
+				 DT_ALIAS_USBD_0_VBUS_GPIOS_FLAGS);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_write(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
-			     on == true ? 1 : 0);
+	ret = gpio_pin_set(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+			   on == true ? 1 : 0);
 	if (ret) {
 		return ret;
 	}
