@@ -793,20 +793,14 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
  */
 static int uart_ns16550_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
 {
-	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
-
-	ARG_UNUSED(dev_data);
-
-	switch (cmd) {
-
 #ifdef UART_NS16550_DLF_ENABLED
-	case CMD_SET_DLF:
+	if (cmd == CMD_SET_DLF) {
+		struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 		dev_data->dlf = p;
 		OUTBYTE(DLF(dev), dev_data->dlf);
 		return 0;
-#endif
-
 	}
+#endif
 
 	return -ENOTSUP;
 }
