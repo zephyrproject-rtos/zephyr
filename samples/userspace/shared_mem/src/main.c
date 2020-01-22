@@ -161,8 +161,6 @@ void main(void)
 	k_thread_start(&ct_thread);
 	k_sem_give(&allforone);
 	printk("CT thread started\n");
-	k_thread_abort(k_current_get());
-
 }
 
 
