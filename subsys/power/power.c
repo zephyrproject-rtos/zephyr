@@ -152,6 +152,8 @@ enum power_states _sys_suspend(s32_t ticks)
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
+		/* clear forced_pm_state */
+		forced_pm_state = SYS_POWER_STATE_AUTO;
 		sys_pm_notify_power_state_exit(pm_state);
 		_sys_pm_power_state_exit_post_ops(pm_state);
 	}
