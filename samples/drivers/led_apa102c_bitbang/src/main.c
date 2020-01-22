@@ -55,7 +55,7 @@ void send_rgb(struct device *gpio_dev, u32_t rgb)
 
 	for (i = 0; i < 32; i++) {
 		/* MSB goes in first */
-		gpio_pin_set_raw(gpio_dev, GPIO_DATA_PIN, !!(rgb & 0x80000000));
+		gpio_pin_set_raw(gpio_dev, GPIO_DATA_PIN, (rgb & BIT(31)) != 0);
 
 		/* Latch data into LED */
 		gpio_pin_set_raw(gpio_dev, GPIO_CLK_PIN, 1);
