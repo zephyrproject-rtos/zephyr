@@ -61,7 +61,7 @@ static void bma280_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, CONFIG_BMA280_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
 
 #if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -108,7 +108,8 @@ static void bma280_thread_cb(void *arg)
 		}
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_BMA280_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio,
+				 DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
 }
 
 #ifdef CONFIG_BMA280_TRIGGER_OWN_THREAD
@@ -209,20 +210,22 @@ int bma280_init_interrupt(struct device *dev)
 	}
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_BMA280_GPIO_DEV_NAME);
+	drv_data->gpio =
+		device_get_binding(DT_INST_0_BOSCH_BMA280_INT1_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Cannot get pointer to %s device",
-		    CONFIG_BMA280_GPIO_DEV_NAME);
+		    DT_INST_0_BOSCH_BMA280_INT1_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_BMA280_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio,
+			   DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   bma280_gpio_callback,
-			   BIT(CONFIG_BMA280_GPIO_PIN_NUM));
+			   BIT(DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
@@ -275,7 +278,8 @@ int bma280_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_BMA280_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio,
+				 DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
 
 	return 0;
 }
