@@ -121,6 +121,7 @@ struct bma280_data {
 	s8_t temp_sample;
 
 #ifdef CONFIG_BMA280_TRIGGER
+	struct device *dev;
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -136,7 +137,6 @@ struct bma280_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_BMA280_TRIGGER */
