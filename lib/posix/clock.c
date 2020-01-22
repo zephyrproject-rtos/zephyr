@@ -49,7 +49,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 
 	ts->tv_sec += base.tv_sec;
 	ts->tv_nsec += base.tv_nsec;
-	if (ts->tv_nsec > NSEC_PER_SEC) {
+	if (ts->tv_nsec >= NSEC_PER_SEC) {
 		ts->tv_sec++;
 		ts->tv_nsec -= NSEC_PER_SEC;
 	}
