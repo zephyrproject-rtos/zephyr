@@ -15,6 +15,18 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline void setup_int1(struct device *dev,
+			      bool enable)
+{
+	struct bma280_data *data = dev->driver_data;
+
+	gpio_pin_interrupt_configure(data->gpio,
+				     DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN,
+				     (enable
+				      ? GPIO_INT_EDGE_TO_ACTIVE
+				      : GPIO_INT_DISABLE));
+}
+
 int bma280_attr_set(struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
@@ -61,7 +73,7 @@ static void bma280_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
+	setup_int1(drv_data->dev, false);
 
 #if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -108,8 +120,7 @@ static void bma280_thread_cb(void *arg)
 		}
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
+	setup_int1(dev, true);
 }
 
 #ifdef CONFIG_BMA280_TRIGGER_OWN_THREAD
@@ -220,8 +231,8 @@ int bma280_init_interrupt(struct device *dev)
 
 	gpio_pin_configure(drv_data->gpio,
 			   DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   DT_INST_0_BOSCH_BMA280_INT1_GPIOS_FLAGS
+			   | GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   bma280_gpio_callback,
@@ -265,6 +276,8 @@ int bma280_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 #if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
@@ -275,11 +288,9 @@ int bma280_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = bma280_work_cb;
-	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN);
+	setup_int1(dev, true);
 
 	return 0;
 }
