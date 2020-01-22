@@ -332,8 +332,9 @@ const struct bmg160_device_config bmg160_config = {
 	.i2c_addr = DT_INST_0_BOSCH_BMG160_BASE_ADDRESS,
 	.i2c_speed = BMG160_BUS_SPEED,
 #ifdef CONFIG_BMG160_TRIGGER
-	.gpio_port = DT_INST_0_BOSCH_BMG160_INT_GPIOS_CONTROLLER,
 	.int_pin = DT_INST_0_BOSCH_BMG160_INT_GPIOS_PIN,
+	.int_flags = DT_INST_0_BOSCH_BMG160_INT_GPIOS_FLAGS,
+	.gpio_port = DT_INST_0_BOSCH_BMG160_INT_GPIOS_CONTROLLER,
 #endif
 };
 
