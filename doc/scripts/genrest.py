@@ -34,7 +34,7 @@ def rst_link(sc):
         if sc.nodes:
             # The "\ " avoids RST issues for !CONFIG_FOO -- see
             # http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#character-level-inline-markup
-            return r"\ :option:`{0} <CONFIG_{0}>`".format(sc.name)
+            return fr"\ :option:`{sc.name} <CONFIG_{sc.name}>`"
 
     elif isinstance(sc, kconfiglib.Choice):
         # Choices appear as dependencies of choice symbols.
@@ -45,8 +45,7 @@ def rst_link(sc):
         #
         # Note that the first pair of <...> is non-syntactic here. We just display
         # choices links within <> in the documentation.
-        return r"\ :ref:`<{}> <{}>`" \
-               .format(choice_desc(sc), choice_id(sc))
+        return fr"\ :ref:`<{choice_desc(sc)}> <{choice_id(sc)}>`"
 
     # Can't turn 'sc' into a link. Use the standard Kconfig format.
     return kconfiglib.standard_sc_expr_str(sc)
@@ -124,16 +123,15 @@ def init():
         elif len(spec_parts) == 4:
             title, suffix, path_s, desc_path = spec_parts
         else:
-            sys.exit("error: --modules argument '{}' should have the format "
-                     "<title>,<suffix>,<path> or the format "
+            sys.exit(f"error: --modules argument '{module_spec}' should have "
+                     "the format <title>,<suffix>,<path> or the format "
                      "<title>,<suffix>,<path>,<index description filename>. "
-                     "A doubled ',,' in any part is treated as a literal comma."
-                     .format(module_spec))
+                     "A doubled ',,' in any part is treated as a literal "
+                     "comma.")
 
         abspath = pathlib.Path(path_s).resolve()
         if not abspath.exists():
-            sys.exit("error: path '{}' in --modules argument does not exist"
-                     .format(abspath))
+            sys.exit(f"error: path '{abspath}' in --modules argument does not exist")
 
         modules.append((title, suffix, abspath, desc_path))
 
@@ -317,17 +315,17 @@ def write_module_index_pages():
         rst += sym_table_rst("Configuration Options",
                              module2syms[title])
 
-        write_if_updated("index-{}.rst".format(suffix), rst)
+        write_if_updated(f"index-{suffix}.rst", rst)
 
 
 def sym_table_rst(title, syms):
     # Returns RST for the list of symbols on index pages. 'title' is the
     # heading to use.
 
-    rst = """
+    rst = f"""
 
-{}
-{}
+{title}
+{len(title)*'*'}
 
 .. list-table::
    :header-rows: 1
@@ -335,13 +333,13 @@ def sym_table_rst(title, syms):
 
    * - Symbol name
      - Help/prompt
-""".format(title, len(title)*"*")
+"""
 
     for sym in sorted(syms, key=attrgetter("name")):
-        rst += """\
-   * - :option:`CONFIG_{}`
-     - {}
-""".format(sym.name, sym_index_desc(sym))
+        rst += f"""\
+   * - :option:`CONFIG_{sym.name}`
+     - {sym_index_desc(sym)}
+"""
 
     return rst
 
@@ -383,23 +381,20 @@ def index_header(title, link, desc_path):
             with open(desc_path, encoding="utf-8") as f:
                 desc = f.read()
         except OSError as e:
-            sys.exit("error: failed to open index description file '{}': {}"
-                     .format(desc_path, e))
+            sys.exit("error: failed to open index description file "
+                     f"'{desc_path}': {e}")
 
-    return """\
-.. _{}:
+    return f"""\
+.. _{link}:
 
-{}
-{}
+{title}
+{len(title)*'='}
 
-{}
+{desc}
 
 This documentation is generated automatically from the :file:`Kconfig` files by
-the :file:`{}` script. Click on symbols for more information.""".format(
-    link,
-    title, len(title)*"=",
-    desc,
-    os.path.basename(__file__))
+the :file:`{os.path.basename(__file__)}` script. Click on symbols for more
+information."""
 
 
 DEFAULT_INDEX_DESC = """\
@@ -429,7 +424,7 @@ def write_dummy_syms_page():
 
     rst = ":orphan:\n\nDummy symbols page for turbo mode.\n\n"
     for sym in kconf.unique_defined_syms:
-        rst += ".. option:: CONFIG_{}\n".format(sym.name)
+        rst += f".. option:: CONFIG_{sym.name}\n"
 
     write_if_updated("dummy-syms.rst", rst)
 
@@ -437,7 +432,7 @@ def write_dummy_syms_page():
 def write_sym_page(sym):
     # Writes documentation for 'sym' to <out_dir>/CONFIG_<sym.name>.rst
 
-    write_if_updated("CONFIG_{}.rst".format(sym.name),
+    write_if_updated(f"CONFIG_{sym.name}.rst",
                      sym_header_rst(sym) +
                      help_rst(sym) +
                      direct_deps_rst(sym) +
@@ -470,31 +465,27 @@ def sym_header_rst(sym):
     # - '.. title::' sets the title of the document (e.g. <title>). This seems
     #   to be poorly documented at the moment.
     return ":orphan:\n\n" \
-           ".. title:: {0}\n\n" \
-           ".. option:: CONFIG_{0}\n\n" \
-           "{1}\n\n" \
-           "Type: ``{2}``\n\n" \
-           .format(sym.name, prompt_rst(sym),
-                   kconfiglib.TYPE_TO_STR[sym.type])
+           f".. title:: {sym.name}\n\n" \
+           f".. option:: CONFIG_{sym.name}\n\n" \
+           f"{prompt_rst(sym)}\n\n" \
+           f"Type: ``{kconfiglib.TYPE_TO_STR[sym.type]}``\n\n"
 
 
 def choice_header_rst(choice):
     # Returns RST that appears at the top of choice reference pages
 
     return ":orphan:\n\n" \
-           ".. title:: {0}\n\n" \
-           ".. _{1}:\n\n" \
-           ".. describe:: {0}\n\n" \
-           "{2}\n\n" \
-           "Type: ``{3}``\n\n" \
-           .format(choice_desc(choice), choice_id(choice),
-                   prompt_rst(choice), kconfiglib.TYPE_TO_STR[choice.type])
+           f".. title:: {choice_desc(choice)}\n\n" \
+           f".. _{choice_id(choice)}:\n\n" \
+           f".. describe:: {choice_desc(choice)}\n\n" \
+           f"{prompt_rst(choice)}\n\n" \
+           f"Type: ``{kconfiglib.TYPE_TO_STR[choice.type]}``\n\n"
 
 
 def prompt_rst(sc):
     # Returns RST that lists the prompts of 'sc' (symbol or choice)
 
-    return "\n\n".join("*{}*".format(node.prompt[0])
+    return "\n\n".join(f"*{node.prompt[0]}*"
                        for node in sc.nodes if node.prompt) \
            or "*(No prompt -- not directly user assignable.)*"
 
@@ -510,8 +501,7 @@ def help_rst(sc):
         if node.help is not None:
             rst += "Help\n" \
                    "====\n\n" \
-                   "{}\n\n" \
-                   .format(node.help)
+                   f"{node.help}\n\n"
 
     return rst
 
@@ -524,9 +514,8 @@ def direct_deps_rst(sc):
 
     return "Direct dependencies\n" \
            "===================\n\n" \
-           "{}\n\n" \
-           "*(Includes any dependencies from ifs and menus.)*\n\n" \
-           .format(expr_str(sc.direct_dep))
+           f"{expr_str(sc.direct_dep)}\n\n" \
+           "*(Includes any dependencies from ifs and menus.)*\n\n"
 
 
 def defaults_rst(sc):
@@ -541,7 +530,7 @@ def defaults_rst(sc):
     heading = "Default"
     if len(sc.defaults) != 1:
         heading += "s"
-    rst = "{}\n{}\n\n".format(heading, len(heading)*"=")
+    rst = f"{heading}\n{len(heading)*'='}\n\n"
 
     if sc.defaults:
         for value, cond in sc.orig_defaults:
@@ -574,7 +563,7 @@ def choice_syms_rst(choice):
 
     for sym in choice.syms:
         # Generates a link
-        rst += "- {}\n".format(expr_str(sym))
+        rst += f"- {expr_str(sym)}\n"
 
     return rst + "\n"
 
@@ -592,8 +581,8 @@ def select_imply_rst(sym):
         nonlocal rst
 
         if lst:
-            heading = "Symbols {} by this symbol".format(type_str)
-            rst += "{}\n{}\n\n".format(heading, len(heading)*"=")
+            heading = f"Symbols {type_str} by this symbol"
+            rst += f"{heading}\n{len(heading)*'='}\n\n"
 
             for select, cond in lst:
                 rst += "- " + rst_link(select)
@@ -625,8 +614,8 @@ def selecting_implying_rst(sym):
         nonlocal rst
 
         if expr is not sym.kconfig.n:
-            heading = "Symbols that {} this symbol".format(type_str)
-            rst += "{}\n{}\n\n".format(heading, len(heading)*"=")
+            heading = f"Symbols that {type_str} this symbol"
+            rst += f"{heading}\n{len(heading)*'='}\n\n"
 
             # The reverse dependencies from each select/imply are ORed together
             for select in kconfiglib.split_expr(expr, kconfiglib.OR):
@@ -661,7 +650,7 @@ def kconfig_definition_rst(sc):
             return ""
 
         return "Included via {}\n\n".format(
-            arrow.join("``{}:{}``".format(strip_module_path(filename), linenr)
+            arrow.join(f"``{strip_module_path(filename)}:{linenr}``"
                        for filename, linenr in node.include_path))
 
     def menu_path(node):
@@ -683,19 +672,17 @@ def kconfig_definition_rst(sc):
 
     heading = "Kconfig definition"
     if len(sc.nodes) > 1: heading += "s"
-    rst = "{}\n{}\n\n".format(heading, len(heading)*"=")
+    rst = f"{heading}\n{len(heading)*'='}\n\n"
 
     rst += ".. highlight:: kconfig"
 
     for node in sc.nodes:
         rst += "\n\n" \
-               "At ``{}:{}``\n\n" \
-               "{}" \
-               "Menu path: {}\n\n" \
-               ".. parsed-literal::\n\n{}" \
-               .format(strip_module_path(node.filename), node.linenr,
-                       include_path(node), menu_path(node),
-                       textwrap.indent(node.custom_str(rst_link), 4*" "))
+               f"At ``{strip_module_path(node.filename)}:{node.linenr}``\n\n" \
+               f"{include_path(node)}" \
+               f"Menu path: {menu_path(node)}\n\n" \
+               ".. parsed-literal::\n\n" \
+               f"{textwrap.indent(node.custom_str(rst_link), 4*' ')}"
 
         # Not the last node?
         if node is not sc.nodes[-1]:
@@ -718,7 +705,7 @@ def choice_id(choice):
     # we can't use that, and the prompt isn't guaranteed to be unique.
 
     # Pretty slow, but fast enough
-    return "choice_{}".format(choice.kconfig.unique_choices.index(choice))
+    return f"choice_{choice.kconfig.unique_choices.index(choice)}"
 
 
 def choice_desc(choice):
@@ -775,7 +762,7 @@ def strip_module_path(path):
                 # Not within the module
                 continue
 
-            return "<{}>{}{}".format(title, os.path.sep, relpath)
+            return f"<{title}>{os.path.sep}{relpath}"
 
     return path
 
