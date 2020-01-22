@@ -47,3 +47,7 @@
  */
 #define HAL_TICKER_REMAINDER_RANGE \
 	HAL_TICKER_TICKS_TO_US(1000000)
+
+/* Macro defining the margin for positioning re-scheduled nodes */
+#define HAL_TICKER_RESCHEDULE_MARGIN \
+	HAL_TICKER_US_TO_TICKS(150)

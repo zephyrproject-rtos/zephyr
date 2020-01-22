@@ -818,6 +818,15 @@ config BT_TICKER_COMPATIBILITY_MODE
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_EXT
+	bool "Ticker extensions"
+	default y if !BT_TICKER_COMPATIBILITY_MODE
+	help
+	  This option enables ticker extensions such as re-scheduling of
+	  ticker nodes with slot_window set to non-zero. Ticker extensions
+	  are invoked by using available '_ext' versions of ticker interface
+	  functions.
+
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
 	depends on BT_LL_SW_SPLIT
