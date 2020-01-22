@@ -51,6 +51,11 @@ extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 }
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(const void *unused);
 

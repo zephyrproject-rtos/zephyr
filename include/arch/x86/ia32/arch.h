@@ -219,6 +219,11 @@ typedef struct s_isrList {
 				   (flags_p)); \
 }
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 /* Direct interrupts won't work as expected with KPTI turned on, because
  * all non-user accessible pages in the page table are marked non-present.
  * It's likely possible to add logic to ARCH_ISR_DIRECT_HEADER/FOOTER to do
