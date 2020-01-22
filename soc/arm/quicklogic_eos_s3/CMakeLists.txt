@@ -3,4 +3,5 @@
 
 zephyr_sources(
   soc.c
+  irq_handlers.c
   )
