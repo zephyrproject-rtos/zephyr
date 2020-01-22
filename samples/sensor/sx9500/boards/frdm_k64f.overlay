@@ -8,7 +8,7 @@
 	sx9500@28 {
 		compatible = "semtech,sx9500";
 		reg = <0x28>;
-		int-gpios = <&gpioc 6 0>;
+		int-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 		label = "SX9500";
 	};
 };
