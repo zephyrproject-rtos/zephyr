@@ -90,10 +90,10 @@ def main():
     # now as well.
     for warning in kconf.warnings:
         if fatal(warning):
-            err("""\
-Aborting due to non-whitelisted Kconfig warning '{}'. If this warning doesn't
-point to an actual problem, you can add it to the whitelist at the top of {}.\
-""".format(warning, sys.argv[0]))
+            err(f"""\
+Aborting due to non-whitelisted Kconfig warning '{warning}'. If this warning
+doesn't point to an actual problem, you can add it to the whitelist at the top
+of {sys.argv[0]}.""")
 
     # Write the merged configuration and the C header
     print(kconf.write_config(args.config_out))
@@ -108,11 +108,10 @@ def check_no_promptless_assign(kconf):
 
     for sym in kconf.unique_defined_syms:
         if sym.user_value is not None and promptless(sym):
-            err(("""\
-{0.name_and_loc} is assigned in a configuration file, but is not
-directly user-configurable (has no prompt). It gets its value indirectly from
-other symbols. \
-""" + SYM_INFO_HINT).format(sym))
+            err(f"""\
+{sym.name_and_loc} is assigned in a configuration file, but is not directly
+user-configurable (has no prompt). It gets its value indirectly from other
+symbols. """ + SYM_INFO_HINT.format(sym))
 
 
 def check_assigned_sym_values(kconf):
@@ -198,12 +197,10 @@ def check_assigned_choice_values(kconf):
         if choice.user_selection and \
            choice.user_selection is not choice.selection:
 
-            warn(("""\
-the choice symbol {0.name_and_loc} was selected (set =y), but {1} ended up as
-the choice selection. \
-""" + SYM_INFO_HINT).format(
-            choice.user_selection,
-            choice.selection.name_and_loc if choice.selection else "no symbol"))
+            warn(f"""\
+the choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
+but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
+up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
 
 
 # Hint on where to find symbol information. Used like
