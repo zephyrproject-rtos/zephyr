@@ -146,14 +146,13 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
 /**
  * @brief Force usage of given power state.
  *
- * This function overrides decision made by PM policy
- * forcing usage of given power state in all subsequent
- * suspend operations. Forcing the SYS_POWER_STATE_AUTO
- * state restores normal operation.
+ * This function overrides decision made by PM policy forcing
+ * usage of given power state in the ongoing suspend operation.
+ * And before the end of suspend, the state of forced_pm_state
+ * is cleared with interrupt disabled.
  *
- * @param state Power state which should be used in all
- *		subsequent suspend operations or
- *		SYS_POWER_STATE_AUTO.
+ * @param state Power state which should be used in the ongoing
+ *		suspend operation or SYS_POWER_STATE_AUTO.
  */
 void sys_pm_force_power_state(enum power_states state);
 
