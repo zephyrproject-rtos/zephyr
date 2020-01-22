@@ -3070,7 +3070,7 @@ class TestSuite:
         for instance in self.instances.values():
             handler_time = instance.metrics.get('handler_time', 0)
             duration += handler_time
-            if instance.status == "failed":
+            if instance.status in ["failed", "timeout"]:
                 if instance.reason in ['build_error', 'handler_crash']:
                     errors += 1
                 else:
@@ -3118,7 +3118,7 @@ class TestSuite:
                 name="%s" % (instance.testcase.name),
                 time="%f" % handler_time)
 
-            if instance.status == "failed":
+            if instance.status in ["failed", "timeout"]:
                 failure = ET.SubElement(
                     eleTestcase,
                     'failure',
