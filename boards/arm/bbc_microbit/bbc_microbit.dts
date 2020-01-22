@@ -89,7 +89,7 @@
 		status = "disabled";
 		reg = <0x19>;
 		label = "LSM303AGR-ACCEL";
-		irq-gpios = <&gpio0 28 0>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };
 
