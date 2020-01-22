@@ -3026,15 +3026,13 @@ class TestSuite:
                         classname="%s:%s" % (instance.platform.name, os.path.basename(instance.testcase.name)),
                         name="%s" % (k), time="%f" % handler_time)
                     if instance.results[k] in ['FAIL', 'BLOCK']:
-                        el = None
-
                         if instance.results[k] == 'FAIL':
                             el = ET.SubElement(
                                 eleTestcase,
                                 'failure',
                                 type="failure",
                                 message="failed")
-                        elif instance.results[k] == 'BLOCK':
+                        else:
                             el = ET.SubElement(
                                 eleTestcase,
                                 'error',
