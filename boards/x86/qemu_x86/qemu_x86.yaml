@@ -10,5 +10,6 @@ supported:
   - pci
   - nvs
   - netif:serial-net
+  - ieee802154
 testing:
   default: true
