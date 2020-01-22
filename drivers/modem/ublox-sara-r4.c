@@ -425,16 +425,20 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 {
-	int rsrp;
+	int rsrp, rxlev;
 
 	rsrp = ATOI(argv[5], 0, "rsrp");
+	rxlev = ATOI(argv[0], 0, "rxlev");
 	if (rsrp >= 0 && rsrp <= 97) {
-		mctx.data_rssi = -140 + rsrp;
+		mctx.data_rssi = -140 + (rsrp - 1);
+		LOG_INF("RSRP: %d", mctx.data_rssi);
+	} else if (rxlev >= 0 && rxlev <= 63) {
+		mctx.data_rssi = -110 + (rxlev - 1);
+		LOG_INF("RSSI: %d", mctx.data_rssi);
 	} else {
 		mctx.data_rssi = -1000;
+		LOG_INF("RSRP/RSSI not known");
 	}
-
-	LOG_INF("RSRP: %d", mctx.data_rssi);
 }
 #endif
 
@@ -799,8 +803,8 @@ static void modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 	};
 
+	static struct setup_cmd post_setup_cmds[] = {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	static struct setup_cmd u2_setup_cmds[] = {
 		/* set the APN */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
 				CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO "\""),
@@ -808,8 +812,11 @@ static void modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,7,\"0.0.0.0\""),
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
-	};
+#else
+		/* activate the PDP context */
+		SETUP_CMD_NOHANDLE("AT+CGACT=1,1"),
 #endif
+	};
 
 restart:
 	/* stop RSSI delay work */
@@ -923,16 +930,14 @@ restart:
 		goto restart;
 	}
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					   u2_setup_cmds,
-					   ARRAY_SIZE(u2_setup_cmds),
+					   post_setup_cmds,
+					   ARRAY_SIZE(post_setup_cmds),
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
 		goto error;
 	}
-#endif
 
 	LOG_INF("Network is ready.");
 
