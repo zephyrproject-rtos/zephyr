@@ -3152,7 +3152,7 @@ class TestSuite:
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for instance in sorted(self.instances.values()):
+            for instance in self.instances.values():
                 rowdict = {"test": instance.testcase.name,
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
@@ -3810,23 +3810,6 @@ def export_tests(filename, tests):
                 logger.info("{} can't be exported".format(test))
 
 
-def native_and_unit_first(a, b):
-    if a[0].startswith('unit_testing'):
-        return -1
-    if b[0].startswith('unit_testing'):
-        return 1
-    if a[0].startswith('native_posix'):
-        return -1
-    if b[0].startswith('native_posix'):
-        return 1
-    if a[0].split("/", 1)[0].endswith("_bsim"):
-        return -1
-    if b[0].split("/", 1)[0].endswith("_bsim"):
-        return 1
-
-    return (a > b) - (a < b)
-
-
 class HardwareMap:
 
     schema_path = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk", "hwmap-schema.yaml")
@@ -4276,8 +4259,9 @@ def main():
         return
 
     if options.subset:
-        # suite.instances = OrderedDict(sorted(suite.instances.items(),
-        #                    key=cmp_to_key(native_and_unit_first)))
+        suite.instances = OrderedDict(sorted(suite.instances.items(),
+                            key=lambda x: x[0][x[0].find("/") + 1:]))
+
         subset, sets = options.subset.split("/")
         total = len(suite.instances)
         per_set = round(total / int(sets))
