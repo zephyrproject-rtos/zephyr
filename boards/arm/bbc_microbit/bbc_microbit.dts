@@ -31,12 +31,12 @@
 		compatible = "gpio-keys";
 		buttonA: button_0 {
 			label = "BTN_A";
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		};
 
 		buttonB: button_1 {
 			label = "BTN_B";
-			gpios = <&gpio0 26 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 		};
 	};
 
