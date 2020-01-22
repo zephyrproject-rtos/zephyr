@@ -151,6 +151,9 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
  * And before the end of suspend, the state of forced_pm_state
  * is cleared with interrupt disabled.
  *
+ * If enabled SYS_PM_DIRECT_FORCE_MODE, this function can only
+ * run in thread context.
+ *
  * @param state Power state which should be used in the ongoing
  *		suspend operation or SYS_POWER_STATE_AUTO.
  */
