@@ -231,6 +231,17 @@ extern void z_irq_spurious(const void *unused);
 extern void _isr_wrapper(void);
 #endif
 
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+/* Architecture-specific definition for the target security
+ * state of an NVIC IRQ line.
+ */
+typedef enum {
+	IRQ_TARGET_STATE_SECURE = 0,
+	IRQ_TARGET_STATE_NON_SECURE
+} irq_target_state_t;
+
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

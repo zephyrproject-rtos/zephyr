@@ -211,25 +211,31 @@ void _arch_isr_direct_pm(void)
  * to NVIC.ITNS register is write-ignored(WI), as the ITNS register is not
  * banked between security states and, therefore, has no Non-Secure instance.
  *
- * It shall assert if the operation is not performed successfully.
+ * It shall return the resulting target state of the given IRQ, indicating
+ * whether the operation has been performed successfully.
  *
  * @param irq IRQ line
- * @param secure_state 1 if target state is Secure, 0 otherwise.
+ * @param irq_target_state the desired IRQ target state
  *
- * @return N/A
+ * @return The resulting target state of the given IRQ
  */
-void irq_target_state_set(unsigned int irq, int secure_state)
+irq_target_state_t irq_target_state_set(unsigned int irq,
+	irq_target_state_t irq_target_state)
 {
-	if (secure_state) {
+	uint32_t result;
+
+	if (irq_target_state == IRQ_TARGET_STATE_SECURE) {
 		/* Set target to Secure */
-		if (NVIC_ClearTargetState(irq) != 0) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		result = NVIC_ClearTargetState(irq);
 	} else {
-		/* Set target state to Non-Secure */
-		if (NVIC_SetTargetState(irq) != 1) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		/* Set target to Non-Secure */
+		result = NVIC_SetTargetState(irq);
+	}
+
+	if (result) {
+		return IRQ_TARGET_STATE_NON_SECURE;
+	} else {
+		return IRQ_TARGET_STATE_SECURE;
 	}
 }
 
