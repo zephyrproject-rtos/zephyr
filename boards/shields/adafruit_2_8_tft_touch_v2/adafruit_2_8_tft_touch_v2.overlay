@@ -14,6 +14,6 @@
 		label = "ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
-		cmd-data-gpios = <&arduino_header 15 0>;	/* D9 */
+		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 	};
 };
