@@ -330,10 +330,8 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	printk("addr 0x%02x state 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, onoff_state->current);
 
-	/* Pin set low turns on LED's on the nrf52840-pca10056 board */
-	gpio_pin_write(onoff_state->led_device,
-		       onoff_state->led_gpio_pin,
-		       onoff_state->current ? 0 : 1);
+	gpio_pin_set(onoff_state->led_device, onoff_state->led_gpio_pin,
+		     onoff_state->current);
 
 	/*
 	 * If a server has a publish address, it is required to
@@ -588,12 +586,11 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 }
 
-void init_led(u8_t dev, const char *port, u32_t pin_num)
+void init_led(u8_t dev, const char *port, u32_t pin_num, gpio_flags_t flags)
 {
 	onoff_state[dev].led_device = device_get_binding(port);
-	gpio_pin_configure(onoff_state[dev].led_device,
-			   pin_num, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(onoff_state[dev].led_device, pin_num, 1);
+	gpio_pin_configure(onoff_state[dev].led_device, pin_num,
+			   flags | GPIO_OUTPUT_INACTIVE);
 }
 
 void main(void)
@@ -613,31 +610,35 @@ void main(void)
 
 	sw_device = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 	gpio_pin_configure(sw_device, DT_ALIAS_SW0_GPIOS_PIN,
-			  (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
 	gpio_pin_configure(sw_device, DT_ALIAS_SW1_GPIOS_PIN,
-			  (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+			   GPIO_INPUT | DT_ALIAS_SW1_GPIOS_FLAGS);
 	gpio_pin_configure(sw_device, DT_ALIAS_SW2_GPIOS_PIN,
-			  (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+			   GPIO_INPUT | DT_ALIAS_SW2_GPIOS_FLAGS);
 	gpio_pin_configure(sw_device, DT_ALIAS_SW3_GPIOS_PIN,
-			  (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+			   GPIO_INPUT | DT_ALIAS_SW3_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW1_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW2_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW3_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 	gpio_init_callback(&button_cb, button_pressed,
 			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN) |
 			   BIT(DT_ALIAS_SW2_GPIOS_PIN) | BIT(DT_ALIAS_SW3_GPIOS_PIN));
 	gpio_add_callback(sw_device, &button_cb);
-	gpio_pin_enable_callback(sw_device, DT_ALIAS_SW0_GPIOS_PIN);
-	gpio_pin_enable_callback(sw_device, DT_ALIAS_SW1_GPIOS_PIN);
-	gpio_pin_enable_callback(sw_device, DT_ALIAS_SW2_GPIOS_PIN);
-	gpio_pin_enable_callback(sw_device, DT_ALIAS_SW3_GPIOS_PIN);
 
 	/* Initialize LED's */
-	init_led(0, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN);
-	init_led(1, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN);
-	init_led(2, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN);
-	init_led(3, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN);
+	init_led(0, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN,
+		 DT_ALIAS_LED0_GPIOS_FLAGS);
+	init_led(1, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN,
+		 DT_ALIAS_LED1_GPIOS_FLAGS);
+	init_led(2, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN,
+		 DT_ALIAS_LED2_GPIOS_FLAGS);
+	init_led(3, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN,
+		 DT_ALIAS_LED3_GPIOS_FLAGS);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
