@@ -35,9 +35,9 @@
 
 #define PKT_US(octets, phy) (((phy) & BIT(2)) ?		   \
 			     (CODED_PHY_PREAMBLE_TIME_US + \
-			      FEC_BLOCK1_TIME_US +	    \
+			      FEC_BLOCK1_TIME_US + \
 			      FEC_BLOCK2_TIME_US(octets)) : \
-			     (((PREAMBLE_SIZE(1) +	    \
+			     (((PREAMBLE_SIZE(1) + \
 				ACCESS_ADDR_SIZE + \
 				PAYLOAD_OVERHEAD_SIZE + \
 				(octets) + \
