@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2019-2020 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,11 +226,11 @@ static int hex_to_binary(struct modem_cmd_handler_data *data,
 }
 
 /* send binary data via the +USO[ST/WR] commands */
-static int send_socket_data(struct modem_socket *sock,
-			    const struct sockaddr *dst_addr,
-			    struct modem_cmd *handler_cmds,
-			    size_t handler_cmds_len,
-			    const char *buf, size_t buf_len, int timeout)
+static ssize_t send_socket_data(struct modem_socket *sock,
+				const struct sockaddr *dst_addr,
+				struct modem_cmd *handler_cmds,
+				size_t handler_cmds_len,
+				const char *buf, size_t buf_len, int timeout)
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
@@ -304,7 +304,11 @@ exit:
 					    NULL, 0U, false);
 	k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
 
-	return ret;
+	if (ret < 0) {
+		return ret;
+	}
+
+	return buf_len;
 }
 
 /*
