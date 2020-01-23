@@ -113,6 +113,9 @@ if DMA
 config DMA_STM32
 	default y
 
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
 endif # DMA
 
 endif # SOC_FAMILY_STM32
