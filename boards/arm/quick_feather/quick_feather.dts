@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2020 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <quicklogic/quicklogic_eos_s3.dtsi>
+
+/ {
+	model = "QuickLogic Quick Feather board";
+	compatible = "quicklogic,eos_s3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <61440000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
