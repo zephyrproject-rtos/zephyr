@@ -7,3 +7,6 @@ config BOARD_FRDM_KW41Z
 	bool "NXP FRDM-KW41Z"
 	depends on SOC_SERIES_KINETIS_KWX
 	select SOC_PART_NUMBER_MKW41Z512VHT4
+	# Since Voltage Reference block is not supported, the ADC does not work
+	# properly
+	imply ADC_MCUX_ADC16_VREF_ALTERNATE_ONLY

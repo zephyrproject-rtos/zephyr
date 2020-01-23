@@ -35,12 +35,19 @@ config ADC_MCUX_ADC16_CLK_DIV_RATIO_8
 
 endchoice
 
+config ADC_MCUX_ADC16_VREF_ALTERNATE_ONLY
+	bool
+	help
+	  Selected to indicate that only the alternate voltage reference pair is
+	  supported
+
 choice
 	prompt "Voltage Reference Selection"
 	default ADC_MCUX_ADC16_VREF_DEFAULT
 
 config ADC_MCUX_ADC16_VREF_DEFAULT
 	bool "Default voltage reference pair V_REFH and V_REFL"
+	depends on !ADC_MCUX_ADC16_VREF_ALTERNATE_ONLY
 
 config ADC_MCUX_ADC16_VREF_ALTERNATE
 	bool "Alternate reference pair"
