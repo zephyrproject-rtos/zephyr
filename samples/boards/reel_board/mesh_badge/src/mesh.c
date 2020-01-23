@@ -62,7 +62,8 @@ static struct k_work mesh_start_work;
 
 /* Definitions of models user data (Start) */
 static struct led_onoff_state led_onoff_state[] = {
-	{ .dev_id = DEV_IDX_LED0 },
+	/* Use LED 0 for this model */
+	{ .dev_id = 0 },
 };
 
 static void heartbeat(u8_t hops, u16_t feat)
@@ -155,7 +156,6 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	printk("addr 0x%02x state 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, state->current);
 
-	/* Pin set low turns on LED's on the reel board */
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
 
