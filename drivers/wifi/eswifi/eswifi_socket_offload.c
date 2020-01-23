@@ -17,13 +17,22 @@ LOG_MODULE_REGISTER(wifi_eswifi, CONFIG_WIFI_LOG_LEVEL);
 
 #include <net/socket_offload.h>
 #include <net/tls_credentials.h>
+
+#include "sockets_internal.h"
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "tls_internal.h"
 #endif
 #include "eswifi.h"
 #include <net/net_pkt.h>
 
+/* Increment by 1 to make sure we do not store the value of 0, which has
+ * a special meaning in the fdtable subsys.
+ */
+#define SD_TO_OBJ(sd) ((void *)(sd + 1))
+#define OBJ_TO_SD(obj) (((int)obj) - 1)
+
 static struct eswifi_dev *eswifi;
+static const struct socket_op_vtable eswifi_socket_fd_op_vtable;
 
 static void __process_received(struct net_context *context,
 			      struct net_pkt *pkt,
@@ -39,9 +48,10 @@ static void __process_received(struct net_context *context,
 	eswifi_unlock(eswifi);
 }
 
-static int eswifi_socket_connect(int sock, const struct sockaddr *addr,
+static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 				 socklen_t addrlen)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
@@ -77,9 +87,10 @@ static int eswifi_socket_connect(int sock, const struct sockaddr *addr,
 	return ret;
 }
 
-static int eswifi_socket_accept(int sock, struct sockaddr *addr,
-				socklen_t *addrlen)
+static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
+				  socklen_t *addrlen)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
@@ -95,6 +106,29 @@ static int eswifi_socket_accept(int sock, struct sockaddr *addr,
 	eswifi_unlock(eswifi);
 
 	return ret;
+}
+
+static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
+				socklen_t *addrlen)
+{
+	int fd = z_reserve_fd();
+	int sock;
+
+	if (fd < 0) {
+		return -1;
+	}
+
+	sock = __eswifi_socket_accept(obj, addr, addrlen);
+	if (sock < 0) {
+		z_free_fd(fd);
+		return -1;
+	}
+
+	z_finalize_fd(fd, SD_TO_OBJ(sock),
+		      (const struct fd_op_vtable *)
+					&eswifi_socket_fd_op_vtable);
+
+	return fd;
 }
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -169,9 +203,10 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 }
 #endif
 
-static int eswifi_socket_setsockopt(int sd, int level, int optname,
+static int eswifi_socket_setsockopt(void *obj, int level, int optname,
 				    const void *optval, socklen_t optlen)
 {
+	int sd = OBJ_TO_SD(obj);
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
@@ -193,9 +228,10 @@ static int eswifi_socket_setsockopt(int sd, int level, int optname,
 	return ret;
 }
 
-static ssize_t eswifi_socket_send(int sock, const void *buf, size_t len,
+static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 				  int flags)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 	int offset;
@@ -235,9 +271,22 @@ static ssize_t eswifi_socket_send(int sock, const void *buf, size_t len,
 	return ret;
 }
 
-static ssize_t eswifi_socket_recv(int sock, void *buf, size_t max_len,
+static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
+				    int flags, const struct sockaddr *to,
+				    socklen_t tolen)
+{
+	if (to != NULL) {
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	return eswifi_socket_send(obj, buf, len, flags);
+}
+
+static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 				  int flags)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int len = 0, ret = 0;
 	struct net_pkt *pkt;
@@ -285,6 +334,18 @@ done:
 	}
 
 	return len;
+}
+
+static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
+				      int flags, struct sockaddr *from,
+				      socklen_t *fromlen)
+{
+	if (fromlen != NULL) {
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	return eswifi_socket_recv(obj, buf, len, flags);
 }
 
 static int eswifi_socket_close(int sock)
@@ -355,27 +416,45 @@ static int eswifi_socket_poll(struct pollfd *fds, int nfds, int msecs)
 {
 	struct eswifi_off_socket *socket;
 	int sock, ret;
+	void *obj;
 
-	if (nfds > 1 ||
-	    fds[0].fd  > ESWIFI_OFFLOAD_MAX_SOCKETS) {
-		return -EINVAL;
+	if (nfds > 1) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	obj = z_get_fd_obj(fds[0].fd,
+			   (const struct fd_op_vtable *)
+						&eswifi_socket_fd_op_vtable,
+			   0);
+	if (obj != NULL) {
+		sock = OBJ_TO_SD(obj);
+	} else {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (sock > ESWIFI_OFFLOAD_MAX_SOCKETS) {
+		errno = EINVAL;
+		return -1;
 	}
 
 	eswifi_lock(eswifi);
-	sock = fds[0].fd;
 	socket = &eswifi->socket[sock];
 	eswifi_unlock(eswifi);
 	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	ret = k_sem_take(&socket->read_sem, msecs);
 	return ret;
 }
 
-static int ewifi_socket_bind(int sock, const struct sockaddr *addr,
-			     socklen_t addrlen)
+static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
+			      socklen_t addrlen)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
@@ -392,22 +471,98 @@ static int ewifi_socket_bind(int sock, const struct sockaddr *addr,
 	return ret;
 }
 
-const struct socket_offload eswifi_socket_ops = {
-	/* POSIX Socket Functions: */
-	.socket = eswifi_socket_open,
-	.close = eswifi_socket_close,
-	.accept = eswifi_socket_accept,
-	.bind = ewifi_socket_bind,
+static bool eswifi_socket_is_supported(int family, int type, int proto)
+{
+	return true;
+}
+
+static int eswifi_socket_create(int family, int type, int proto)
+{
+	int fd = z_reserve_fd();
+	int sock;
+
+	if (fd < 0) {
+		return -1;
+	}
+
+	sock = eswifi_socket_open(family, type, proto);
+	if (sock < 0) {
+		z_free_fd(fd);
+		return -1;
+	}
+
+	z_finalize_fd(fd, SD_TO_OBJ(sock),
+		      (const struct fd_op_vtable *)
+					&eswifi_socket_fd_op_vtable);
+
+	return fd;
+}
+
+static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
+{
+	int sd = OBJ_TO_SD(obj);
+
+	switch (request) {
+	/* Handle close specifically. */
+	case ZFD_IOCTL_CLOSE:
+		return eswifi_socket_close(sd);
+
+	case ZFD_IOCTL_POLL_PREPARE:
+		return -EXDEV;
+
+	case ZFD_IOCTL_POLL_UPDATE:
+		return -EOPNOTSUPP;
+
+	case ZFD_IOCTL_POLL_OFFLOAD: {
+		struct zsock_pollfd *fds;
+		int nfds;
+		int timeout;
+
+		fds = va_arg(args, struct zsock_pollfd *);
+		nfds = va_arg(args, int);
+		timeout = va_arg(args, int);
+
+		return eswifi_socket_poll(fds, nfds, timeout);
+	}
+
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+}
+
+static ssize_t eswifi_socket_read(void *obj, void *buffer, size_t count)
+{
+	return eswifi_socket_recvfrom(obj, buffer, count, 0, NULL, 0);
+}
+
+static ssize_t eswifi_socket_write(void *obj, const void *buffer,
+				   size_t count)
+{
+	return eswifi_socket_sendto(obj, buffer, count, 0, NULL, 0);
+}
+
+static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
+	.fd_vtable = {
+		.read = eswifi_socket_read,
+		.write = eswifi_socket_write,
+		.ioctl = eswifi_socket_ioctl,
+	},
+	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,
+	.accept = eswifi_socket_accept,
+	.sendto = eswifi_socket_sendto,
+	.recvfrom = eswifi_socket_recvfrom,
 	.setsockopt = eswifi_socket_setsockopt,
-	.recv = eswifi_socket_recv,
-	.send = eswifi_socket_send,
-	.poll = eswifi_socket_poll,
 };
+
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+NET_SOCKET_REGISTER(eswifi, AF_UNSPEC, eswifi_socket_is_supported,
+		    eswifi_socket_create);
+#endif
 
 int eswifi_socket_offload_init(struct eswifi_dev *leswifi)
 {
 	eswifi = leswifi;
-	socket_offload_register(&eswifi_socket_ops);
 	return 0;
 }
