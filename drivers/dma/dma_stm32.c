@@ -117,7 +117,7 @@ static void dma_stm32_irq_handler(void *arg)
 	}
 }
 
-static u32_t dma_stm32_width_config(struct dma_config *config,
+static int dma_stm32_width_config(struct dma_config *config,
 				    bool source_periph,
 				    DMA_TypeDef *dma,
 				    LL_DMA_InitTypeDef *DMA_InitStruct,
