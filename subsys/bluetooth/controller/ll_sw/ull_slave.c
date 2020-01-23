@@ -396,45 +396,7 @@ void ull_slave_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			    u8_t const *const ltk)
 {
-	struct ll_conn *conn;
-
-	conn = ll_connected_get(handle);
-	if (!conn) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
-
-	if (error_code) {
-		if (conn->llcp_enc.refresh == 0U) {
-			if ((conn->llcp_req == conn->llcp_ack) ||
-			     (conn->llcp_type != LLCP_ENCRYPTION)) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-		} else {
-			if (conn->llcp_terminate.ack !=
-			    conn->llcp_terminate.req) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp_terminate.reason_own = error_code;
-
-			conn->llcp_terminate.req++;
-		}
-	} else {
-		if ((conn->llcp_req == conn->llcp_ack) ||
-		     (conn->llcp_type != LLCP_ENCRYPTION)) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		memcpy(&conn->llcp_enc.ltk[0], ltk,
-		       sizeof(conn->llcp_enc.ltk));
-
-		conn->llcp.encryption.error_code = 0U;
-		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-	}
-
+	// TODO(LLCP)
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */

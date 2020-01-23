@@ -650,36 +650,17 @@ u8_t ll_adv_enable(u8_t enable)
 		conn->common.fex_valid = 0;
 		conn->slave.latency_cancel = 0;
 
-		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
-		conn->llcp_rx = NULL;
-		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
-		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
-		conn->llcp_feature.features = LL_FEAT;
-		conn->llcp_version.req = conn->llcp_version.ack = 0;
-		conn->llcp_version.tx = conn->llcp_version.rx = 0;
-		conn->llcp_terminate.reason_peer = 0;
-		/* NOTE: use allocated link for generating dedicated
-		 * terminate ind rx node
-		 */
-		conn->llcp_terminate.node_rx.hdr.link = link;
+		// TODO(LLCP)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		conn_lll->enc_rx = conn_lll->enc_tx = 0U;
-		conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
-		conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
-		conn->llcp_enc.refresh = 0U;
+		// TODO(LLCP)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		conn->llcp_conn_param.req = 0;
-		conn->llcp_conn_param.ack = 0;
-		conn->llcp_conn_param.disabled = 0;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+		// TODO(LLCP)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		conn->llcp_length.req = conn->llcp_length.ack = 0U;
-		conn->llcp_length.disabled = 0U;
-		conn->llcp_length.cache.tx_octets = 0U;
+		// TODO(LLCP)
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -688,9 +669,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
-		conn->llcp_phy.disabled = 0U;
-		conn->llcp_phy.pause_tx = 0U;
+		// TODO(LLCP)
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 		conn->phy_pref_flags = 0;

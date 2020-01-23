@@ -197,36 +197,15 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn->common.fex_valid = 0U;
 	conn->master.terminate_ack = 0U;
 
-	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
-	conn->llcp_rx = NULL;
-	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
-	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
-	conn->llcp_feature.features = LL_FEAT;
-	conn->llcp_version.req = conn->llcp_version.ack = 0;
-	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
-	conn->llcp_terminate.reason_peer = 0U;
-	/* NOTE: use allocated link for generating dedicated
-	 * terminate ind rx node
-	 */
-	conn->llcp_terminate.node_rx.hdr.link = link;
+	// TODO(LLCP))
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
-	conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
-	conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
-	conn->llcp_enc.refresh = 0U;
+	// TODO(LLCP))
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	conn->llcp_conn_param.req = 0U;
-	conn->llcp_conn_param.ack = 0U;
-	conn->llcp_conn_param.disabled = 0U;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	conn->llcp_length.req = conn->llcp_length.ack = 0U;
-	conn->llcp_length.disabled = 0U;
-	conn->llcp_length.cache.tx_octets = 0U;
+	// TODO(LLCP))
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -235,9 +214,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn->llcp_phy.req = conn->llcp_phy.ack = 0U;
-	conn->llcp_phy.disabled = 0U;
-	conn->llcp_phy.pause_tx = 0U;
+	// TODO(LLCP))
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 	conn->phy_pref_flags = 0U;
@@ -303,12 +280,12 @@ u8_t ll_connect_disable(void **rx)
 
 	status = ull_scan_disable(0, scan);
 	if (!status) {
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
+		// TODO(LLCP) struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *cc;
 		memq_link_t *link;
 
-		cc = (void *)&conn->llcp_terminate.node_rx;
+		cc = 0; // TODO(LLCP)
 		link = cc->hdr.link;
 		LL_ASSERT(link);
 
@@ -349,13 +326,7 @@ u8_t ll_chm_update(u8_t *chm)
 			return ret;
 		}
 
-		memcpy(conn->llcp.chan_map.chm, chm,
-		       sizeof(conn->llcp.chan_map.chm));
-		/* conn->llcp.chan_map.instant     = 0; */
-		conn->llcp.chan_map.initiate = 1U;
-
-		conn->llcp_type = LLCP_CHAN_MAP;
-		conn->llcp_req++;
+		// TODO(LLCP)
 	}
 
 	return 0;
@@ -364,73 +335,7 @@ u8_t ll_chm_update(u8_t *chm)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 {
-	struct ll_conn *conn;
-	struct node_tx *tx;
-
-	conn = ll_connected_get(handle);
-	if (!conn) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
-
-	if ((conn->llcp_enc.req != conn->llcp_enc.ack) ||
-	    ((conn->llcp_req != conn->llcp_ack) &&
-	     (conn->llcp_type == LLCP_ENCRYPTION))) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	tx = ll_tx_mem_acquire();
-	if (tx) {
-		struct pdu_data *pdu_data_tx;
-
-		pdu_data_tx = (void *)tx->pdu;
-
-		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
-
-		if (!conn->lll.enc_rx && !conn->lll.enc_tx) {
-			struct pdu_data_llctrl_enc_req *enc_req;
-
-			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_data_tx->len =
-				offsetof(struct pdu_data_llctrl, enc_rsp) +
-				sizeof(struct pdu_data_llctrl_enc_req);
-			pdu_data_tx->llctrl.opcode =
-				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
-			enc_req = (void *)
-				&pdu_data_tx->llctrl.enc_req;
-			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
-			enc_req->ediv[0] = ediv[0];
-			enc_req->ediv[1] = ediv[1];
-			util_rand(enc_req->skdm, sizeof(enc_req->skdm));
-			util_rand(enc_req->ivm, sizeof(enc_req->ivm));
-		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
-			memcpy(&conn->llcp_enc.rand[0], rand,
-			       sizeof(conn->llcp_enc.rand));
-
-			conn->llcp_enc.ediv[0] = ediv[0];
-			conn->llcp_enc.ediv[1] = ediv[1];
-
-			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_data_tx->len = offsetof(struct pdu_data_llctrl,
-						    enc_req);
-			pdu_data_tx->llctrl.opcode =
-				PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
-		} else {
-			ll_tx_mem_release(tx);
-
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		if (ll_tx_mem_enqueue(handle, tx)) {
-			ll_tx_mem_release(tx);
-
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		conn->llcp_enc.req++;
-
-		return 0;
-	}
-
+	// TODO(LLCP)
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -872,11 +777,7 @@ static inline void conn_release(struct ll_scan_set *scan)
 
 	conn = (void *)HDR_LLL2EVT(lll);
 
-	cc = (void *)&conn->llcp_terminate.node_rx;
-	link = cc->hdr.link;
-	LL_ASSERT(link);
-
-	ll_rx_link_release(link);
+	// TODO (LLCP)
 
 	ll_conn_release(conn);
 	scan->lll.conn = NULL;
