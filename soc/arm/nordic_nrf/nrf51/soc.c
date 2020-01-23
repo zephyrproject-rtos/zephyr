@@ -18,6 +18,7 @@
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
+#include <../soc/arm/nordic_nrf/nrf_reset_reason.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
@@ -52,6 +53,9 @@ static int nordicsemi_nrf51_init(struct device *arg)
 	NMI_INIT();
 
 	irq_unlock(key);
+
+	/* Read to ensure that reset reason is cleared. */
+	(void)nrf_reset_reason_get();
 
 	return 0;
 }
