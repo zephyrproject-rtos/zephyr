@@ -30,28 +30,29 @@
 #define LOG_MODULE_NAME hci_spi
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_SCO                 0x03
-#define HCI_EVT                 0x04
+#define HCI_CMD                0x01
+#define HCI_ACL                0x02
+#define HCI_SCO                0x03
+#define HCI_EVT                0x04
 
 /* Special Values */
-#define SPI_WRITE               0x0A
-#define SPI_READ                0x0B
-#define READY_NOW               0x02
-#define SANITY_CHECK            0x02
+#define SPI_WRITE              0x0A
+#define SPI_READ               0x0B
+#define READY_NOW              0x02
+#define SANITY_CHECK           0x02
 
 /* Offsets */
-#define STATUS_HEADER_READY     0
-#define STATUS_HEADER_TOREAD    3
+#define STATUS_HEADER_READY    0
+#define STATUS_HEADER_TOREAD   3
 
-#define PACKET_TYPE             0
-#define EVT_BLUE_INITIALIZED    0x01
+#define PACKET_TYPE            0
+#define EVT_BLUE_INITIALIZED   0x01
 
-#define GPIO_IRQ_PIN            DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_PIN
+#define GPIO_IRQ_PIN           DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_PIN
+#define GPIO_IRQ_FLAGS         DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_FLAGS
 
 /* Needs to be aligned with the SPI master buffer size */
-#define SPI_MAX_MSG_LEN         255
+#define SPI_MAX_MSG_LEN        255
 
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
 static struct spi_buf rx;
@@ -131,7 +132,7 @@ static inline int spi_send(struct net_buf *buf)
 	}
 	header_slave[STATUS_HEADER_TOREAD] = buf->len;
 
-	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 1);
+	gpio_pin_set(gpio_dev, GPIO_IRQ_PIN, 1);
 
 	/* Coordinate transfer lock with the spi rx thread */
 	k_sem_take(&sem_spi_tx, K_FOREVER);
@@ -156,7 +157,7 @@ static inline int spi_send(struct net_buf *buf)
 	}
 	net_buf_unref(buf);
 
-	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 0);
+	gpio_pin_set(gpio_dev, GPIO_IRQ_PIN, 0);
 	k_sem_give(&sem_spi_rx);
 
 	return 0;
@@ -282,7 +283,7 @@ static int hci_spi_init(struct device *unused)
 		return -EINVAL;
 	}
 	gpio_pin_configure(gpio_dev, GPIO_IRQ_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
+			   GPIO_OUTPUT_INACTIVE | GPIO_IRQ_FLAGS);
 
 	return 0;
 }
