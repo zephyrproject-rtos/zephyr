@@ -98,6 +98,7 @@
 /boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg
+/boards/arm/quick_feather/                @kowalewskijan @kgugala
 /boards/arm/xmc45_relax_kit/              @parthitce
 /boards/arm/sam4e_xpro/                   @nandojve
 /boards/arm/sam4s_xplained/               @fallrisk
