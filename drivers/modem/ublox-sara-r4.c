@@ -528,14 +528,6 @@ static void on_cmd_sockread_common(int socket_id,
 	/* remove packet from list (ignore errors) */
 	ret = modem_socket_packet_size_update(&mdata.socket_config, sock,
 					      -socket_data_length);
-	if (ret > 0) {
-		/* unblock sockets waiting on recv() */
-		k_sem_give(&sock->sem_data_ready);
-		if (sock->is_polled) {
-			/* unblock poll() */
-			k_sem_give(&mdata.socket_config.sem_poll);
-		}
-	}
 
 	/* don't give back semaphore -- OK to follow */
 }
