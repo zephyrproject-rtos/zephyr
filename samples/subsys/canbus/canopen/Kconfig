@@ -4,24 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "CAN interface to use for CANopen"
-
-config CANOPEN_INTERFACE_CAN_0
-	bool "CAN 0"
-	depends on CAN_0
-
-config CANOPEN_INTERFACE_CAN_1
-	bool "CAN 1"
-	depends on CAN_1
-
-endchoice
-
-config CANOPEN_INTERFACE
-	int
-	default 0 if CANOPEN_INTERFACE_CAN0
-	default 1 if CANOPEN_INTERFACE_CAN1
-
 config CANOPEN_NODE_ID
 	int "CANopen node ID"
 	default 10

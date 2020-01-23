@@ -38,6 +38,7 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		can-primary = &can1;
 	};
 };
 

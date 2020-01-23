@@ -33,14 +33,6 @@
  * @}
  */
 
-#if defined(DT_CAN_0_NAME)
-#define CAN_NAME DT_CAN_0_NAME
-#elif defined(DT_CAN_1_NAME)
-#define CAN_NAME DT_CAN_1_NAME
-#else
-#error No CAN device available
-#endif
-
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
 #define TEST_RECEIVE_TIMEOUT K_MSEC(100)
 
@@ -138,7 +130,7 @@ static void test_filter_handling(void)
 	int ret, filter_id_1, filter_id_2;
 	struct zcan_frame msg_buffer;
 
-	can_dev = device_get_binding(CAN_NAME);
+	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
 
 	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
 
