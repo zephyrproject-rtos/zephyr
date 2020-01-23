@@ -473,26 +473,33 @@ void z_thread_single_abort(struct k_thread *thread)
 #endif
 }
 
+static void unready_thread(struct k_thread *thread)
+{
+	if (z_is_thread_queued(thread)) {
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
+		z_mark_thread_as_not_queued(thread);
+	}
+	update_cache(thread == _current);
+}
+
 void z_remove_thread_from_ready_q(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		if (z_is_thread_queued(thread)) {
-			_priq_run_remove(&_kernel.ready_q.runq, thread);
-			z_mark_thread_as_not_queued(thread);
-		}
-		update_cache(thread == _current);
+		unready_thread(thread);
 	}
 }
 
 static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
-	z_remove_thread_from_ready_q(thread);
-	z_mark_thread_as_pending(thread);
-	sys_trace_thread_pend(thread);
+	LOCKED(&sched_spinlock) {
+		unready_thread(thread);
+		z_mark_thread_as_pending(thread);
+		sys_trace_thread_pend(thread);
 
-	if (wait_q != NULL) {
-		thread->base.pended_on = wait_q;
-		z_priq_wait_add(&wait_q->waitq, thread);
+		if (wait_q != NULL) {
+			thread->base.pended_on = wait_q;
+			z_priq_wait_add(&wait_q->waitq, thread);
+		}
 	}
 
 	if (timeout != K_FOREVER) {
@@ -536,9 +543,8 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 	LOCKED(&sched_spinlock) {
 		_priq_wait_remove(&pended_on(thread)->waitq, thread);
 		z_mark_thread_as_not_pending(thread);
+		thread->base.pended_on = NULL;
 	}
-
-	thread->base.pended_on = NULL;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
