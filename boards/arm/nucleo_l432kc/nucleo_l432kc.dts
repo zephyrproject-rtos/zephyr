@@ -28,6 +28,7 @@
 
 	aliases {
 		led0 = &green_led;
+		can-primary = &can1;
 	};
 };
 

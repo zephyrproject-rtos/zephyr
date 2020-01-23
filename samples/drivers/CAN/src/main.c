@@ -195,13 +195,7 @@ void main(void)
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
-	/* Usually the CAN device is either called CAN_0 or CAN_1, depending
-	 * on the SOC. Let's check both and take the first valid one.
-	 */
-	can_dev = device_get_binding("CAN_0");
-	if (!can_dev) {
-		can_dev = device_get_binding("CAN_1");
-	}
+	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
 
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");
