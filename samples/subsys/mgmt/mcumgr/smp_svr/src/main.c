@@ -58,6 +58,8 @@ static struct fs_mount_t littlefs_mnt = {
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_BT
+static struct k_work advertise_work;
+
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
@@ -65,7 +67,7 @@ static const struct bt_data ad[] = {
 		      0xd3, 0x4c, 0xb7, 0x1d, 0x1d, 0xdc, 0x53, 0x8d),
 };
 
-static void advertise(void)
+static void advertise(struct k_work *work)
 {
 	int rc;
 
@@ -92,7 +94,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
-	advertise();
+	k_work_submit(&advertise_work);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -109,7 +111,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	advertise();
+	k_work_submit(&advertise_work);
 }
 #endif
 
@@ -140,6 +142,8 @@ void main(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_BT
+	k_work_init(&advertise_work, advertise);
+
 	/* Enable Bluetooth. */
 	rc = bt_enable(bt_ready);
 	if (rc != 0) {
