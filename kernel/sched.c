@@ -366,15 +366,23 @@ static void update_cache(int preempt_ok)
 #endif
 }
 
-void z_add_thread_to_ready_q(struct k_thread *thread)
+static void ready_thread(struct k_thread *thread)
 {
-	LOCKED(&sched_spinlock) {
+	if (z_is_thread_ready(thread)) {
+		sys_trace_thread_ready(thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		z_mark_thread_as_queued(thread);
 		update_cache(0);
 #if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
 		arch_sched_ipi();
 #endif
+	}
+}
+
+void z_ready_thread(struct k_thread *thread)
+{
+	LOCKED(&sched_spinlock) {
+		ready_thread(thread);
 	}
 }
 
@@ -388,6 +396,20 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 		z_mark_thread_as_queued(thread);
 		update_cache(thread == _current);
 	}
+}
+
+void z_sched_start(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+	if (z_has_thread_started(thread)) {
+		k_spin_unlock(&sched_spinlock, key);
+		return;
+	}
+
+	z_mark_thread_as_started(thread);
+	ready_thread(thread);
+	z_reschedule(&sched_spinlock, key);
 }
 
 void z_thread_single_suspend(struct k_thread *thread)
