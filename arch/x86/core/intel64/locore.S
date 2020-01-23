@@ -263,6 +263,16 @@ __resume:
 #endif
 	pushq _thread_offset_to_rip(%rdi)	/* RIP */
 
+#ifdef CONFIG_ASSERT
+	/* Poison the old thread's saved RIP pointer with a
+	 * recognizable value near NULL, to easily catch reuse of the
+	 * thread object across CPUs in SMP.  Strictly speaking this
+	 * is not an assertion, but it's very cheap and worth having
+	 * on during routine testing.
+	 */
+	movq $0xB9, _thread_offset_to_rip(%rdi)
+#endif
+
 	movq _thread_offset_to_rbx(%rdi), %rbx
 	movq _thread_offset_to_rbp(%rdi), %rbp
 	movq _thread_offset_to_r12(%rdi), %r12
