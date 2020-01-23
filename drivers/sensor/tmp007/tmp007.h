@@ -40,6 +40,7 @@ struct tmp007_data {
 #ifdef CONFIG_TMP007_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
+	struct device *dev;
 
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
@@ -53,7 +54,6 @@ struct tmp007_data {
 	struct k_thread thread;
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_TMP007_TRIGGER */
