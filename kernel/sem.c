@@ -113,8 +113,8 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
 
 	if (thread != NULL) {
-		z_ready_thread(thread);
 		arch_thread_return_value_set(thread, 0);
+		z_ready_thread(thread);
 	} else {
 		sem->count += (sem->count != sem->limit) ? 1U : 0U;
 		handle_poll_events(sem);
