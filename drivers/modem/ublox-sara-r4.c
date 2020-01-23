@@ -187,8 +187,8 @@ static int hex_to_binary(struct modem_cmd_handler_data *data,
 	int i;
 	u8_t c = 0U, c2;
 
-	/* make sure we have room for a NUL char at the end of bin_buf */
-	if (data_length > bin_buf_len - 1) {
+	/* make sure we have room */
+	if (data_length > bin_buf_len) {
 		return -ENOMEM;
 	}
 
@@ -220,8 +220,11 @@ static int hex_to_binary(struct modem_cmd_handler_data *data,
 		}
 	}
 
-	/* end with a NUL char */
-	bin_buf[i / 2] = '\0';
+	/* if we have room, add a NUL char at the end of bin_buf */
+	if (data_length <= bin_buf_len - 1) {
+		bin_buf[i / 2] = '\0';
+	}
+
 	return 0;
 }
 
