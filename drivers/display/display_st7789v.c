@@ -21,7 +21,9 @@ LOG_MODULE_REGISTER(display_st7789v);
 
 #define ST7789V_CS_PIN		DT_INST_0_SITRONIX_ST7789V_CS_GPIOS_PIN
 #define ST7789V_CMD_DATA_PIN	DT_INST_0_SITRONIX_ST7789V_CMD_DATA_GPIOS_PIN
+#define ST7789V_CMD_DATA_FLAGS	DT_INST_0_SITRONIX_ST7789V_CMD_DATA_GPIOS_FLAGS
 #define ST7789V_RESET_PIN	DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_PIN
+#define ST7789V_RESET_FLAGS	DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_FLAGS
 
 static u8_t st7789v_porch_param[] = DT_INST_0_SITRONIX_ST7789V_PORCH_PARAM;
 static u8_t st7789v_cmd2en_param[] = DT_INST_0_SITRONIX_ST7789V_CMD2EN_PARAM;
@@ -64,7 +66,7 @@ static void st7789v_set_lcd_margins(struct st7789v_data *data,
 
 static void st7789v_set_cmd(struct st7789v_data *data, int is_cmd)
 {
-	gpio_pin_write(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, !is_cmd);
+	gpio_pin_set(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, is_cmd);
 }
 
 static void st7789v_transmit(struct st7789v_data *data, u8_t cmd,
@@ -73,13 +75,13 @@ static void st7789v_transmit(struct st7789v_data *data, u8_t cmd,
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	st7789v_set_cmd(data, true);
+	st7789v_set_cmd(data, 1);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_count;
-		st7789v_set_cmd(data, false);
+		st7789v_set_cmd(data, 0);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
 }
@@ -94,11 +96,10 @@ static void st7789v_reset_display(struct st7789v_data *data)
 {
 	LOG_DBG("Resetting display");
 #ifdef DT_INST_0_SITRONIX_ST7789V_RESET_GPIOS_CONTROLLER
-	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 1);
 	k_sleep(K_MSEC(1));
-	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 0);
+	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 1);
 	k_sleep(K_MSEC(6));
-	gpio_pin_write(data->reset_gpio, ST7789V_RESET_PIN, 1);
+	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 0);
 	k_sleep(K_MSEC(20));
 #else
 	st7789v_transmit(p_st7789v, ST7789V_CMD_SW_RESET, NULL, 0);
@@ -360,7 +361,7 @@ static int st7789v_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(data->reset_gpio, ST7789V_RESET_PIN,
-			       GPIO_DIR_OUT)) {
+			       GPIO_OUTPUT_INACTIVE | ST7789V_RESET_FLAGS)) {
 		LOG_ERR("Couldn't configure reset pin");
 		return -EIO;
 	}
@@ -373,7 +374,7 @@ static int st7789v_init(struct device *dev)
 		return -EPERM;
 	}
 	if (gpio_pin_configure(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN,
-			       GPIO_DIR_OUT)) {
+			       GPIO_OUTPUT | ST7789V_CMD_DATA_FLAGS)) {
 		LOG_ERR("Couldn't configure cmd/DATA pin");
 		return -EIO;
 	}
