@@ -29,24 +29,20 @@ void app_gpio_init(void)
 
 	led_device[0] = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
 	gpio_pin_configure(led_device[0], DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[0], DT_ALIAS_LED0_GPIOS_PIN, 1);
+			   DT_ALIAS_LED0_GPIOS_FLAGS | GPIO_OUTPUT_INACTIVE);
 
 #ifndef ONE_LED_ONE_BUTTON_BOARD
 	led_device[1] = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
 	gpio_pin_configure(led_device[1], DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
+			   DT_ALIAS_LED1_GPIOS_FLAGS | GPIO_OUTPUT_INACTIVE);
 
 	led_device[2] = device_get_binding(DT_ALIAS_LED2_GPIOS_CONTROLLER);
 	gpio_pin_configure(led_device[2], DT_ALIAS_LED2_GPIOS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[2], DT_ALIAS_LED2_GPIOS_PIN, 1);
+			   DT_ALIAS_LED2_GPIOS_FLAGS | GPIO_OUTPUT_INACTIVE);
 
 	led_device[3] = device_get_binding(DT_ALIAS_LED3_GPIOS_CONTROLLER);
 	gpio_pin_configure(led_device[3], DT_ALIAS_LED3_GPIOS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[3], DT_ALIAS_LED3_GPIOS_PIN, 1);
+			   DT_ALIAS_LED3_GPIOS_FLAGS | GPIO_OUTPUT_INACTIVE);
 #endif
 	/* Buttons configuration & setting */
 
@@ -54,47 +50,43 @@ void app_gpio_init(void)
 
 	button_device[0] = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 	gpio_pin_configure(button_device[0], DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[0],
-			   button_pressed,
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE |
+			   DT_ALIAS_SW0_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(button_device[0], DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&button_cb[0], button_pressed,
 			   BIT(DT_ALIAS_SW0_GPIOS_PIN));
 	gpio_add_callback(button_device[0], &button_cb[0]);
-	gpio_pin_enable_callback(button_device[0], DT_ALIAS_SW0_GPIOS_PIN);
 
 #ifndef ONE_LED_ONE_BUTTON_BOARD
 	button_device[1] = device_get_binding(DT_ALIAS_SW1_GPIOS_CONTROLLER);
 	gpio_pin_configure(button_device[1], DT_ALIAS_SW1_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[1],
-			   button_pressed,
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE |
+			   DT_ALIAS_SW1_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(button_device[1], DT_ALIAS_SW1_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&button_cb[1], button_pressed,
 			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
 	gpio_add_callback(button_device[1], &button_cb[1]);
-	gpio_pin_enable_callback(button_device[1], DT_ALIAS_SW1_GPIOS_PIN);
 
 	button_device[2] = device_get_binding(DT_ALIAS_SW2_GPIOS_CONTROLLER);
 	gpio_pin_configure(button_device[2], DT_ALIAS_SW2_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[2],
-			   button_pressed,
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE |
+			   DT_ALIAS_SW2_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(button_device[2], DT_ALIAS_SW2_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&button_cb[2], button_pressed,
 			   BIT(DT_ALIAS_SW2_GPIOS_PIN));
 	gpio_add_callback(button_device[2], &button_cb[2]);
-	gpio_pin_enable_callback(button_device[2], DT_ALIAS_SW2_GPIOS_PIN);
 
 	button_device[3] = device_get_binding(DT_ALIAS_SW3_GPIOS_CONTROLLER);
 	gpio_pin_configure(button_device[3], DT_ALIAS_SW3_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[3],
-			   button_pressed,
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE |
+			   DT_ALIAS_SW3_GPIOS_FLAGS);
+	gpio_pin_interrupt_configure(button_device[3], DT_ALIAS_SW3_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&button_cb[3], button_pressed,
 			   BIT(DT_ALIAS_SW3_GPIOS_PIN));
 	gpio_add_callback(button_device[3], &button_cb[3]);
-	gpio_pin_enable_callback(button_device[3], DT_ALIAS_SW3_GPIOS_PIN);
 #endif
 }
