@@ -23,15 +23,15 @@ short char_to_index(char c);
 int calc_rev_wheel(BYTE *wheel, BYTE *backpath);
 char enig_enc(char pt);
 
-extern BYTE W1[26];
-extern BYTE W2[26];
-extern BYTE W3[26];
-extern BYTE R[26];
-extern BYTE W1R[26];
-extern BYTE W2R[26];
-extern BYTE W3R[26];
-extern int IW1;
-extern int IW2;
-extern int IW3;
+extern volatile BYTE W1[26];
+extern volatile BYTE W2[26];
+extern volatile BYTE W3[26];
+extern volatile BYTE R[26];
+extern volatile BYTE W1R[26];
+extern volatile BYTE W2R[26];
+extern volatile BYTE W3R[26];
+extern volatile int IW1;
+extern volatile int IW2;
+extern volatile int IW3;
 
 #endif
