@@ -28,7 +28,7 @@
 	leds {
 		compatible = "gpio-leds";
 		back_led: led_3 {
-			gpios = <&gpio0 13 0>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "User D13 green";
 		};
 	};
