@@ -6,7 +6,9 @@ zephyr_library_named(settings_test_fs)
 # zephyr_library() is here in "app-mode", see
 # https://github.com/zephyrproject-rtos/zephyr/issues/19582
 # Random build failures without this, depends on the number of threads.
-add_dependencies(    settings_test_fs offsets_h)
+add_dependencies(settings_test_fs
+  zephyr_generated_headers
+  )
 
 FILE(GLOB fssources *.c )
 zephyr_library_sources(${fssources})

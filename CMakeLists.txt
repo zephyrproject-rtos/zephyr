@@ -626,6 +626,14 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Add a pseudo-target that is up-to-date when all generated headers
+# are up-to-date.
+
+add_custom_target(zephyr_generated_headers)
+add_dependencies(zephyr_generated_headers
+  offsets_h
+  )
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -668,7 +676,7 @@ get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
+  add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
@@ -683,7 +691,7 @@ configure_linker_script(
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
-  ${OFFSETS_H_TARGET}
+  zephyr_generated_headers
   )
 
 add_custom_target(
@@ -1088,7 +1096,7 @@ if(CONFIG_USERSPACE)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   add_custom_target(
@@ -1142,7 +1150,7 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   add_custom_target(
@@ -1200,7 +1208,7 @@ else()
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
