@@ -3191,6 +3191,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 #else /* !CONFIG_BT_CTLR_PHY */
 			tx_time = PKT_US(conn->default_tx_octets, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */
+			conn->default_tx_time = tx_time;
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 		} else if (feature_coded_phy) {
@@ -3212,7 +3213,6 @@ static inline void event_len_prep(struct ll_conn *conn)
 
 		lr->max_rx_time = sys_cpu_to_le16(rx_time);
 		lr->max_tx_time = sys_cpu_to_le16(tx_time);
-
 
 		ctrl_tx_enqueue(conn, tx);
 
