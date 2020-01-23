@@ -15,6 +15,9 @@ flag are assigned the highest priority in the system (and, therefore,
 cannot be masked-out by irq_lock()).
 Only for ARMv7-M and ARMv8-M Mainline targets.
 
+The third test verifies the behavior of the IRQ Target State API for
+TrustZone-M enabled Cortex-M Mainline CPUs.
+
 ---------------------------------------------------------------------------
 
 Building and Running Project:
@@ -50,6 +53,10 @@ PASS - test_arm_dynamic_direct_interrupts
 starting test - test_arm_zero_latency_irqs
 Available IRQ line: 57
 PASS - test_arm_zero_latency_irqs
+===================================================================
+starting test - test_arm_irq_target_state
+Available IRQ line: 93
+PASS - test_arm_irq_target_state
 ===================================================================
 Test suite arm_irq_advanced_features succeeded
 ===================================================================
