@@ -176,15 +176,15 @@ static inline void update_pins(struct mb_display *disp, u32_t val)
 	u32_t pin, prev = (disp->cur + 2) % 3;
 
 	/* Disable the previous row */
-	gpio_pin_write(disp->dev, ROW_PIN(prev), 0);
+	gpio_pin_set_raw(disp->dev, ROW_PIN(prev), 0);
 
 	/* Set the column pins to their correct values */
 	for (pin = LED_COL1_GPIO_PIN; pin <= LED_COL9_GPIO_PIN; pin++) {
-		gpio_pin_write(disp->dev, pin, !!(val & BIT(pin)));
+		gpio_pin_set_raw(disp->dev, pin, !!(val & BIT(pin)));
 	}
 
 	/* Enable the new row */
-	gpio_pin_write(disp->dev, ROW_PIN(disp->cur), 1);
+	gpio_pin_set_raw(disp->dev, ROW_PIN(disp->cur), 1);
 }
 
 static void reset_display(struct mb_display *disp)
@@ -434,18 +434,18 @@ static int mb_display_init(struct device *dev)
 
 	__ASSERT(dev, "No GPIO device found");
 
-	gpio_pin_configure(display.dev, LED_ROW1_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_ROW2_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_ROW3_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL1_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL2_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL3_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL4_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL5_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL6_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL7_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL8_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(display.dev, LED_COL9_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(display.dev, LED_ROW1_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_ROW2_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_ROW3_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL1_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL2_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL3_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL4_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL5_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL6_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL7_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL8_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(display.dev, LED_COL9_GPIO_PIN, GPIO_OUTPUT);
 
 	return 0;
 }
