@@ -2268,9 +2268,7 @@ struct bt_att_req *bt_att_req_alloc(s32_t timeout)
 
 	BT_DBG("req %p", req);
 
-	req->func = NULL;
-	req->destroy = NULL;
-	req->user_data = NULL;
+	memset(req, 0, sizeof(*req));
 
 	return req;
 }
