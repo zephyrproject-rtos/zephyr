@@ -711,8 +711,72 @@ struct bt_conn_oob_info {
 	};
 };
 
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+/** @brief Pairing request and pairing response info structure.
+ *
+ *  This structure is the same for both smp_pairing_req and smp_pairing_rsp
+ *  and a subset of the packet data, except for the initial Code octet.
+ *  It is documented in Core Spec. Vol. 3, Part H, 3.5.1 and 3.5.2.
+ */
+struct bt_conn_pairing_feat {
+	/** IO Capability, Core Spec. Vol 3, Part H, 3.5.1, Table 3.4 */
+	u8_t io_capability;
+
+	/** OOB data flag, Core Spec. Vol 3, Part H, 3.5.1, Table 3.5 */
+	u8_t oob_data_flag;
+
+	/** AuthReq, Core Spec. Vol 3, Part H, 3.5.1, Fig. 3.3 */
+	u8_t auth_req;
+
+	/** Maximum Encryption Key Size, Core Spec. Vol 3, Part H, 3.5.1 */
+	u8_t max_enc_key_size;
+
+	/** Initiator Key Distribution/Generation, Core Spec. Vol 3, Part H,
+	 *  3.6.1, Fig. 3.11
+	 */
+	u8_t init_key_dist;
+
+	/** Responder Key Distribution/Generation, Core Spec. Vol 3, Part H
+	 *  3.6.1, Fig. 3.11
+	 */
+	u8_t resp_key_dist;
+};
+#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+	/** @brief Query to proceed incoming pairing or not.
+	 *
+	 *  On any incoming pairing req/rsp this callback will be called for
+	 *  the application to decide whether to allow for the pairing to
+	 *  continue.
+	 *
+	 *  The pairing info received from the peer is passed to assist
+	 *  making the decision.
+	 *
+	 *  As this callback is synchronous the application should return
+	 *  a response value immediately. Otherwise it may affect the
+	 *  timing during pairing. Hence, this information should not be
+	 *  conveyed to the user to take action.
+	 *
+	 *  The remaining callbacks are not affected by this, but do notice
+	 *  that other callbacks can be called during the pairing. Eg. if
+	 *  pairing_confirm is registered both will be called for Just-Works
+	 *  pairings.
+	 *
+	 *  This callback may be unregistered in which case pairing continues
+	 *  as if the Kconfig flag was not set.
+	 *
+	 *  This callback is not called for BR/EDR Secure Simple Pairing (SSP).
+	 *
+	 *  @param conn Connection where pairing is initiated.
+	 *  @param feat Pairing req/resp info.
+	 */
+	enum bt_security_err (*pairing_accept)(struct bt_conn *conn,
+			      const struct bt_conn_pairing_feat *const feat);
+#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
 	/** @brief Display a passkey to the user.
 	 *
 	 *  When called the application is expected to display the given

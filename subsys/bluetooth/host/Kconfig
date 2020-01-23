@@ -320,6 +320,16 @@ config BT_SIGNING
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
+config BT_SMP_APP_PAIRING_ACCEPT
+	bool "Accept or reject pairing initiative"
+	help
+	  When receiving pairing request or pairing response query the
+	  application whether to accept to proceed with pairing or not. This is
+	  for pairing over SMP and does not affect SSP, which will continue
+	  pairing without querying the application.
+	  The application can return an error code, which is translated into
+	  a SMP return value if the pairing is not allowed.
+
 config BT_SMP_SC_PAIR_ONLY
 	bool "Disable legacy pairing"
 	help
