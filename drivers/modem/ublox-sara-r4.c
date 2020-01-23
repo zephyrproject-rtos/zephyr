@@ -1094,8 +1094,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     cmd, ARRAY_SIZE(cmd), sendbuf, &mdata.sem_response,
-			     flags & MSG_DONTWAIT ? K_NO_WAIT :
-						    MDM_CMD_TIMEOUT);
+			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		goto exit;
 	}
