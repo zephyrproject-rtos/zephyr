@@ -32,7 +32,7 @@ manifest:
       path: modules/lib/canopennode
       revision: 5c6b0566d56264efd4bf23ed58bc7cb8b32fe063
     - name: ci-tools
-      revision: c7d432c9c3674f5d646cf8f8a56f79a469e4e2a2
+      revision: 84334a4fdcd3dd8078b3ba20f7ba4efe2a2ad952
       path: tools/ci-tools
     - name: civetweb
       revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
