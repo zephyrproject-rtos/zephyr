@@ -12,6 +12,10 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases {
+		rtc-0 = &rtc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

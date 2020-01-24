@@ -23,6 +23,8 @@
 		i2c-2 = &i2c2;
 		i2c-3 = &i2c3;
 		i2c-4 = &i2c4;
+		rtc-0 = &gpt1;
+		rtc-1 = &gpt2;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
 		spi-3 = &spi3;

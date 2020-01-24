@@ -35,6 +35,7 @@
 		i2c-smb-2 = &i2c_smb_2;
 		i2c-smb-3 = &i2c_smb_3;
 		i2c-smb-4 = &i2c_smb_4;
+		rtc-0 = &timer3;
 	};
 
 	soc {
