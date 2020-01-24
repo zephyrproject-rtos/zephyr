@@ -931,6 +931,9 @@ class Node:
         # Initializes Node.matching_compat, Node._binding, and
         # Node.binding_path.
         #
+        # Attach a default binding to the /chosen node, /aliases node and the
+        # pin controller pinctrl state and pin configuration nodes.
+        #
         # Node._binding holds the data from the node's binding file, in the
         # format returned by PyYAML (plain Python lists, dicts, etc.), or None
         # if the node has no binding.
@@ -941,6 +944,43 @@ class Node:
 
         if "compatible" in self._node.props:
             self.compats = self._node.props["compatible"].to_strings()
+        elif self._node.name == "chosen":
+            # use default compatible for chosen node
+            self.compats = ["chosen"]
+        elif self._node.name == "aliases":
+            # use default compatible for chosen node
+            self.compats = ["aliases"]
+        elif self._node.parent and "compatible" in self._node.parent.props and \
+            "fixed-partitions" in self._node.parent.props.get("compatible") \
+                                      .to_strings():
+            # Child of a 'fixed-partions' node
+            # Assume it is a fixed partion node (note singular)
+            self.compats = ["fixed-partition"]
+        elif self._node.parent and "compatible" in self._node.parent.props and \
+            "gpio-leds" in self._node.parent.props.get("compatible") \
+                               .to_strings():
+            # Child of a 'gpio-leds' node
+            # Assume it is a gpio-led node (note singular)
+            self.compats = ["gpio-led"]
+        elif self._node.parent and \
+            self._node.parent.props.get("pin-controller", False):
+            # child of pin controller node
+            if self._node.nodes:
+                # the pin controller sub nodes has sub nodes in itself
+                # Assume it is a pinctr state node
+                self.compats = ["pinctrl-state"]
+            else:
+                # No sub nodes - assume a pin configuration node
+                self.compats = ["pincfg"]
+        elif self._node.parent and self._node.parent.parent and \
+            self._node.parent.parent.props.get("pin-controller", False):
+            # Grand child of pin controller node
+            # Assume  a pin configuration node
+            self.compats = ["pincfg"]
+        else:
+            self.compats = []
+
+        if self.compats:
             on_bus = self.on_bus
 
             for compat in self.compats:
@@ -949,7 +989,6 @@ class Node:
                     self.matching_compat = compat
                     self._binding, self.binding_path = \
                         self.edt._compat2binding[compat, on_bus]
-
                     return
         else:
             # No 'compatible' property. See if the parent binding has a
@@ -1536,10 +1575,15 @@ def _dt_compats(dt):
     # Returns a set() with all 'compatible' strings in the devicetree
     # represented by dt (a dtlib.DT instance)
 
-    return {compat
-            for node in dt.node_iter()
-                if "compatible" in node.props
-                    for compat in node.props["compatible"].to_strings()}
+    compats = [compat
+                for node in dt.node_iter()
+                    if "compatible" in node.props
+                        for compat in node.props["compatible"].to_strings()]
+    # Append generic compatibles for special nodes without compatibles
+    compats.extend(["aliases", "chosen", "fixed-partition", "gpio-led",
+                    "pinctrl-state", "pincfg"])
+
+    return set(compats)
 
 
 def _binding_paths(bindings_dirs):
