@@ -49,7 +49,7 @@ static inline void z_vrfy_uart_poll_out(struct device *dev,
  */
 
 static inline int z_vrfy_uart_tx(struct device *dev, const u8_t *buf,
-				 size_t len, u32_t timeout)
+				 size_t len, s32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, len));
@@ -61,7 +61,7 @@ UART_SIMPLE(tx_abort);
 #include <syscalls/uart_tx_abort_mrsh.c>
 
 static inline int z_vrfy_uart_rx_enable(struct device *dev, u8_t *buf,
-					size_t len, u32_t timeout)
+					size_t len, s32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
