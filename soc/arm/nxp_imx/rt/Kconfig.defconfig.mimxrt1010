@@ -1,9 +1,7 @@
-# Kconfig - i.MX RT1010
-#
+# i.MX RT1010
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MIMXRT1011
 
