@@ -1,0 +1,5 @@
+common:
+  tags: bluetooth
+tests:
+  bluetooth.ctrl_tx_queue.test:
+    platform_whitelist: native_posix
