@@ -66,6 +66,7 @@
 		led0 = &green_led_6;
 		led1 = &green_led_7;
 		sw0 = &user_button;
+		can-primary = &can1;
 	};
 };
 
@@ -115,6 +116,10 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&can1 {
 	status = "okay";
 };
 
