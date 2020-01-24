@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(gsm_ppp, CONFIG_NET_PPP_LOG_LEVEL);
 #include <sys/ring_buffer.h>
 #include <sys/util.h>
 #include <net/ppp.h>
+#include <console/uart_pipe.h>
+#include <drivers/uart.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"
@@ -36,7 +38,15 @@ static struct gsm_modem {
 	struct k_delayed_work gsm_configure_work;
 	char gsm_isr_buf[PPP_MRU];
 	char gsm_rx_rb_buf[PPP_MRU * 3];
+
+	bool setup_done;
+	u8_t *ppp_recv_buf;
+	size_t ppp_recv_buf_len;
+	uart_pipe_recv_cb ppp_recv_cb;
+	struct k_sem ppp_send_sem;
 } gsm;
+
+static size_t recv_buf_offset;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 		    0, NULL);
@@ -46,13 +56,37 @@ struct k_thread gsm_rx_thread;
 
 static void gsm_rx(void)
 {
+	int bytes, r;
+
 	LOG_DBG("starting");
 
 	while (true) {
 		k_sem_take(&gsm.gsm_data.rx_sem, K_FOREVER);
-		gsm.context.cmd_handler.process(&gsm.context.cmd_handler,
-						&gsm.context.iface);
-		k_yield();
+
+		if (gsm.setup_done == false) {
+			gsm.context.cmd_handler.process(&gsm.context.cmd_handler,
+							&gsm.context.iface);
+			continue;
+		}
+
+		if (gsm.ppp_recv_cb == NULL || gsm.ppp_recv_buf == NULL ||
+		    gsm.ppp_recv_buf_len == 0) {
+			return;
+		}
+
+		r = gsm.context.iface.read(&gsm.context.iface,
+					   &gsm.ppp_recv_buf[recv_buf_offset],
+					   gsm.ppp_recv_buf_len -
+					   recv_buf_offset,
+					   &bytes);
+		if (r < 0 || bytes == 0) {
+			continue;
+		}
+
+		recv_buf_offset += bytes;
+
+		gsm.ppp_recv_buf = gsm.ppp_recv_cb(gsm.ppp_recv_buf,
+						   &recv_buf_offset);
 	}
 }
 
@@ -124,8 +158,15 @@ static void gsm_configure(struct k_work *work)
 		if (r < 0) {
 			LOG_DBG("modem setup returned %d, %s",
 				r, "retrying...");
+		} else {
+			LOG_DBG("modem setup returned %d, %s",
+				r, "enable PPP");
+			break;
 		}
 	}
+
+	gsm->setup_done = true;
+	k_sem_give(&gsm->ppp_send_sem);
 }
 
 int gsm_init(struct device *device)
@@ -133,6 +174,8 @@ int gsm_init(struct device *device)
 	int r;
 
 	LOG_DBG("");
+
+	k_sem_init(&gsm.ppp_send_sem, 0, 1);
 
 	gsm.cmd_handler_data.cmds[CMD_RESP] = response_cmds;
 	gsm.cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
@@ -181,6 +224,24 @@ int gsm_init(struct device *device)
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm.context.iface.read, gsm.context.iface.write);
 	return 0;
+}
+
+int uart_pipe_send(const u8_t *data, int len)
+{
+	k_sem_take(&gsm.ppp_send_sem, K_FOREVER);
+
+	(void)gsm.context.iface.write(&gsm.context.iface, data, len);
+
+	k_sem_give(&gsm.ppp_send_sem);
+
+	return 0;
+}
+
+void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb)
+{
+	gsm.ppp_recv_buf = buf;
+	gsm.ppp_recv_buf_len = len;
+	gsm.ppp_recv_cb = cb;
 }
 
 DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, NULL, NULL, POST_KERNEL,

@@ -8,7 +8,7 @@ menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
-	select UART_PIPE
+	select UART_PIPE if ! MODEM_GSM_PPP
 	select UART_INTERRUPT_DRIVEN
 
 if NET_PPP
