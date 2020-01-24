@@ -1,8 +1,13 @@
 sample:
+  description: A basic demo to showcase eSPI driver usage and handshake with
+    eSPI master
   name: eSPI driver sample
 tests:
   sample.drivers.espi:
-    tags: drivers
+    tags: drivers espi
+    filter: dt_compat_enabled_with_alias("gpio-espi", "gpioespi0") and
+            dt_compat_enabled_with_alias("gpio-espi", "gpioespi1")
+    depends_on: espi
     harness: console
     harness_config:
         type: multi_line
@@ -14,4 +19,4 @@ tests:
             - "eSPI test - callbacks initialization... complete"
             - "eSPI test - Power initialization...complete"
             - "eSPI BUS reset (.*)"
-    depends_on: espi
+    

@@ -12,10 +12,13 @@
 #include <drivers/gpio.h>
 #include <drivers/espi.h>
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
+#ifdef DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER
 static struct device *gpio_dev0;
-static struct device *gpio_dev1;
 #define PWR_SEQ_TIMEOUT    3000
+#endif
+
+#ifdef DT_GPIO_ESPI_RESUME_GPIOS_CONTROLLER
+static struct device *gpio_dev1;
 #endif
 
 static struct device *espi_dev;
@@ -224,20 +227,24 @@ void main(void)
 
 	k_sleep(K_MSEC(500));
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
+#ifdef DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER
+	gpio_dev0 = device_get_binding(DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER);
 	if (!gpio_dev0) {
-		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV0);
+		printk("Fail to find: %s!\n",
+			DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER);
 		return;
 	}
-
-	gpio_dev1 = device_get_binding(CONFIG_ESPI_GPIO_DEV1);
+#endif
+#ifdef DT_GPIO_ESPI_RESUME_GPIOS_CONTROLLER
+	gpio_dev1 = device_get_binding(DT_GPIO_ESPI_RESUME_GPIOS_CONTROLLER);
 	if (!gpio_dev1) {
-		printk("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV1);
+		printk("Fail to find: %s!\n",
+			DT_GPIO_ESPI_RESUME_GPIOS_CONTROLLER);
 		return;
 	}
 
 #endif
+
 	espi_dev = device_get_binding(CONFIG_ESPI_DEV);
 	if (!espi_dev) {
 		printk("Fail to find %s!\n", CONFIG_ESPI_DEV);
@@ -246,38 +253,43 @@ void main(void)
 
 	printk("Hello eSPI test! %s\n", CONFIG_BOARD);
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN, GPIO_DIR_IN);
+#ifdef DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER
+	ret = gpio_pin_configure(gpio_dev0, DT_GPIO_ESPI_PWRGD_GPIOS_PIN,
+				 DT_GPIO_ESPI_PWRGD_GPIOS_FLAGS);
 	if (ret) {
-		printk("Unable to configure PWRGD %d\n", CONFIG_PWRGD_PIN);
+		printk("Unable to configure PWRGD %d\n", ret );
+		return;
+	}
+#endif
+#ifdef DT_GPIO_ESPI_RESUME_GPIOS_CONTROLLER
+	ret = gpio_pin_configure(gpio_dev1, DT_GPIO_ESPI_RESUME_GPIOS_PIN,
+				 GPIO_OUTPUT_ACTIVE
+				 | DT_GPIO_ESPI_RESUME_GPIOS_FLAGS);
+	if (ret) {
+		printk("Unable to configure RSMRST %d\n", ret);
 		return;
 	}
 
-	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN, GPIO_DIR_OUT);
+	ret = gpio_pin_set(gpio_dev1, DT_GPIO_ESPI_RESUME_GPIOS_PIN, 0);
 	if (ret) {
-		printk("Unable to configure RSMRST %d\n", CONFIG_ESPI_INIT_PIN);
-		return;
-	}
-
-	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
-	if (ret) {
-		printk("Unable to initialize %d\n", CONFIG_ESPI_INIT_PIN);
+		printk("Unable to initialize %d\n", ret);
 		return;
 	}
 #endif
 
 	espi_init();
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = wait_for_pin(gpio_dev0, CONFIG_PWRGD_PIN, PWR_SEQ_TIMEOUT, 1);
+#ifdef DT_GPIO_ESPI_PWRGD_GPIOS_CONTROLLER
+	ret = wait_for_pin(gpio_dev0, DT_GPIO_ESPI_PWRGD_GPIOS_PIN,
+			   PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
 		printk("RSMRST_PWRGD timeout!\n");
 		return;
 	}
 
-	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
+	ret = gpio_pin_write(gpio_dev1, DT_GPIO_ESPI_RESUME_GPIOS_PIN, 1);
 	if (ret) {
-		printk("Failed to write %x %d\n", CONFIG_ESPI_INIT_PIN, ret);
+		printk("Failed to write %d\n", ret);
 		return;
 	}
 #endif
