@@ -66,8 +66,8 @@ static const char * const devices[] = {
 #ifdef DT_INST_0_ARM_CMSDK_DTIMER_LABEL
 	DT_INST_0_ARM_CMSDK_DTIMER_LABEL,
 #endif
-#ifdef DT_RTC_0_NAME
-	DT_RTC_0_NAME,
+#ifdef DT_ALIAS_RTC_0_LABEL
+	DT_ALIAS_RTC_0_LABEL,
 #endif
 
 };
