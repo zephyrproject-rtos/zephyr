@@ -509,6 +509,10 @@ class EDT:
             # run them separately
             node._init_props()
             node._init_interrupts()
+            node._init_gpio_ranges()
+
+        for node in self.nodes:
+            # These depend on the referenced nodes' props already initialized.
             node._init_pinctrls()
             node._init_partitions()
 
@@ -787,6 +791,24 @@ class Node:
       A list of PinCtrl objects for the pinctrl-<index> properties on the
       node, sorted by index. The list is empty if the node does not have any
       pinctrl-<index> properties.
+
+    pinctrl_states:
+      A list with the Node instances for the 'pinctrl-state' children of
+      a pin controller node. The list is empty if the node does not have any
+      pinctrl state children.
+
+    pinctrl_gpio_ranges:
+      A list of ControllerAndData objects of the gpio ranges a pin controller
+      controls. The list is empty if the node is not a pin controller or no
+      'gpio-ranges' are defined by the gpio nodes.
+
+    pincfgs:
+      A list of PinCfg objects for the 'pinctrl-state' node. The list is
+      empty if the node is not a 'pinctrl-state' node.
+
+    pin_controller:
+      The pin controller for the node. Only meaningful for nodes representing
+      pinctrl states.
 
     bus:
       If the node is a bus node (has a 'bus:' key in its binding), then this
@@ -1247,6 +1269,26 @@ class Node:
                      .format(prop_name, self._node.path, self.edt.dts_path,
                              self.binding_path))
 
+    def _init_gpio_ranges(self):
+        # Initialize self.pinctrl_gpio_ranges
+
+        if not hasattr(self, 'pinctrl_gpio_ranges'):
+            self.pinctrl_gpio_ranges = []
+
+        if 'gpio-ranges' not in self.props:
+            return
+
+        for prop_value in self.props['gpio-ranges'].val:
+            entry = ControllerAndData()
+            entry.node = prop_value.node
+            entry.name = prop_value.name
+            entry.controller = self
+            entry.data = prop_value.data
+            # Add to pin controller
+            if not hasattr(prop_value.controller, 'pinctrl_gpio_ranges'):
+                prop_value.controller.pinctrl_gpio_ranges = []
+            prop_value.controller.pinctrl_gpio_ranges.append(entry)
+
     def _init_regs(self):
         # Initializes self.regs
 
@@ -1293,6 +1335,84 @@ class Node:
 
         self.partitions = _partitions_list(self.children['partitions'], self)
 
+    def _init_pinctrl_states_append_pincfg_entry(self, pinctrl_node,
+                                            pinctrl_state_node, pincfg_node):
+        # Append a pin configuration to a pin control state of a pin controller
+        # The pin configuration was requested by the pinctrl node.
+
+        pincfg = PinCfg()
+        pincfg.node = pincfg_node
+        pincfg.name = pincfg_node.name
+        pincfg.pinctrl_state_node = pinctrl_state_node
+        pincfg.pinctrl_nodes = [pinctrl_node]
+        pincfg.pin_controller_node = self
+        pincfg.groups = []
+        pincfg.pins = []
+        pincfg.muxes = []
+        pincfg.function = None
+        pincfg.configs = {}
+
+        for prop_name, prop in pincfg_node.props.items():
+            _pincfg_check_type(pincfg_node, prop)
+            if prop_name in PinCfg.pinspec_props:
+                _pincfg_set_pinspec(pincfg_node, pincfg, prop)
+            elif prop_name in  PinCfg.bool_props:
+                if prop.type == 'int':
+                    if prop.val == 0:
+                        pincfg.configs[prop_name] = False
+                    else:
+                        pincfg.configs[prop_name] = True
+                else: # boolean
+                    pincfg.configs[prop_name] = prop.val
+            elif prop_name in PinCfg.bool_or_value_props:
+                pincfg.configs[prop_name] = prop.val
+            elif prop_name in PinCfg.value_props:
+                pincfg.configs[prop_name] = prop.val
+            else: # Unknown property name
+                self.edt._warn("{!r} uses unexpected property '{}'"
+                               .format(pincfg_node, prop_name))
+                pincfg.configs[prop_name] = prop.val
+
+        if not pincfg.pins and not pincfg.groups:
+            _err("{!r} misses one of 'pins', 'pinmux', 'groups' property"
+                 .format(pincfg_node))
+        pinctrl_state_node.pincfgs.append(pincfg)
+
+    def _init_pinctrl_states(self, pinctrl_node, pinctrl_state_node):
+        # Initialise self.pinctrl_states and self.pincfgs from sub-nodes
+        # of a pin controller device node.
+
+        # Add a pin control state to self.pinctrl_states
+        if not hasattr(self, 'pinctrl_states'):
+            self.pinctrl_states = []
+        if pinctrl_state_node in self.pinctrl_states:
+            # Already in pinctrl states.
+            # Make the pin configurations aware that they are referenced by a
+            # pinctrl client node.
+            for pincfg in pinctrl_state_node.pincfgs:
+                pincfg.pinctrl_nodes.append(pinctrl_node)
+            return
+        self.pinctrl_states.append(pinctrl_state_node)
+
+        # Remember the pin controller that owns the pin control state
+        pinctrl_state_node.pin_controller = self
+
+        # Add pin configurations to pinctrl_state_node.pincfgs
+        if not hasattr(pinctrl_state_node, 'pincfgs'):
+            pinctrl_state_node.pincfgs = []
+        if pinctrl_state_node.children:
+            # There are pin configuration child nodes underneath
+            # the pinctrl state node
+            pinctrl_state_node_children = pinctrl_state_node.children
+        else:
+            # The pinctrl state node does not have children. Assume it is it's own
+            # pin configuration node.
+            pinctrl_state_node_children = { pinctrl_state_node.name : pinctrl_state_node }
+
+        for pincfg_node in pinctrl_state_node_children.values():
+            self._init_pinctrl_states_append_pincfg_entry(pincfg_node,
+                                                pinctrl_state_node, pincfg_node)
+
     def _init_pinctrls(self):
         # Initializes self.pinctrls from any pinctrl-<index> properties
 
@@ -1310,6 +1430,11 @@ class Node:
                 _err("missing 'pinctrl-{}' property on {!r} - indices should "
                      "be contiguous and start from zero".format(i, node))
 
+        # Assure node has pinctrl related properties
+        if not hasattr(self, 'pinctrl_states'):
+            self.pinctrl_states = []
+        if not hasattr(self, 'pincfgs'):
+            self.pincfgs = []
         self.pinctrls = []
         for prop in pinctrl_props:
             pinctrl = PinCtrl()
@@ -1318,7 +1443,12 @@ class Node:
                 self.edt._node2enode[node] for node in prop.to_nodes()
             ]
             self.pinctrls.append(pinctrl)
-
+            # Make pin controller node aware of the pinctrl state.
+            for pinctrl_state_node in pinctrl.conf_nodes:
+                # pin controller node: pinctrl_state_node.parent
+                # pinctrl client node: self
+                pinctrl_state_node.parent._init_pinctrl_states(self,
+                                                            pinctrl_state_node)
         _add_names(node, "pinctrl", self.pinctrls)
 
     def _init_interrupts(self):
@@ -1610,6 +1740,83 @@ class PinCtrl:
         fields.append("configuration nodes: " + str(self.conf_nodes))
 
         return "<PinCtrl, {}>".format(", ".join(fields))
+
+
+class PinCfg:
+    """
+    Represents a pin configuration for a set of pins on a device.
+
+    These attributes are available on PinCfg objects:
+
+    name:
+      The name of the configuration, as given by the node label.
+
+    node:
+      The Node instance the pin configuration is on.
+
+    pin_controller_node:
+      The node instance of the pin controller that may apply this pin
+      configuration.
+
+    pinctrl_nodes:
+      A list of Node instances that use this configuration in their pinctrl.
+
+    pinctrl_state_node:
+      The pinctrl state node this pin configuration belongs to.
+
+    groups:
+      A list of names of the groups (of pins) this configuration applies to.
+      If no group name is given the list is empty.
+
+    pins:
+      A list of pin identifiers that this configuration applies to.
+      The pin identifiers are the ones used by the pin controller.
+
+    muxes:
+      A list of numerical multiplex settings for the pins. Multiplex settings
+      follow the sequence of the pins list. If no mux settings are given the
+      list is empty.
+
+    function:
+      The name of the function the pins shall be multiplexed to. If no function
+      is given the value is None.
+
+    configs:
+      A dictionary of pin configuration values indexed by the property name.
+    """
+    ##
+    # @brief Properties to specify the pins the configuration applies to.
+    pinspec_props = [
+        "pins", "pinmux", "groups", "pinctrl-pin-array", "function"]
+    ##
+    # @brief Boolean type properties for pin configuration by pinctrl.
+    bool_props = [
+        "bias-disable", "bias-high-impedance", "bias-bus-hold",
+        "drive-push-pull", "drive-open-drain", "drive-open-source",
+        "input-enable", "input-disable", "input-schmitt-enable",
+        "input-schmitt-disable", "low-power-enable", "low-power-disable",
+        "output-disable", "output-enable", "output-low","output-high"]
+    ##
+    # @brief Boolean or value type properties for pin configuration by pinctrl.
+    bool_or_value_props = [
+        "bias-pull-up", "bias-pull-down", "bias-pull-pin-default"]
+    ##
+    # @brief Value type properties for pin configuration by pinctrl.
+    value_props = [
+        "drive-strength", "input-debounce", "power-source", "slew-rate",
+        "skew-delay"]
+
+    def __repr__(self):
+        fields = []
+
+        fields.append("name: " + str(self.name))
+        fields.append("groups: " + str(self.groups))
+        fields.append("pins: " + str(self.pins))
+        fields.append("muxes: " + str(self.muxes))
+        fields.append("function: " + str(self.function))
+        fields.append("configs: " + str(self.configs))
+
+        return "<PinCfg, {}>".format(", ".join(fields))
 
 
 class Property:
@@ -1976,6 +2183,93 @@ def _add_names(node, names_ident, objs):
     else:
         for obj in objs:
             obj.name = None
+
+
+def _pincfg_check_type(pincfg_node, prop):
+    # Check pin configuration property type to be inline with expectations.
+    # Bindings may specify different types for certain properties.
+
+    type_ok = True
+    if prop.name in PinCfg.pinspec_props:
+        if (prop.name == "groups"
+                and prop.type not in ("string-array", "string")) \
+            or (prop.name == "pinmux"
+                and prop.type not in "array") \
+            or (prop.name == "pins"
+                and prop.type not in ("int", "array") \
+            or (prop.name == "pinctrl-pin-array"
+                and prop.type not in "array") \
+            or (prop.name == "function"
+                and prop.type not in "string")):
+            type_ok = False
+    elif prop.name in PinCfg.bool_props:
+        if prop.type not in ("boolean", "int"):
+            type_ok = False
+    elif prop.name in PinCfg.bool_or_value_props:
+        if prop.type not in ("boolean", "int"):
+            type_ok = False
+    elif prop.name in PinCfg.value_props:
+        if prop.type not in "int":
+            type_ok = False
+    else:
+        # unknown property name - accept any type
+        pass
+    if not type_ok:
+        _err("{!r} uses unsupported type '{}' for property '{}'"
+             .format(pincfg_node, prop.type, prop.name))
+
+
+def _pincfg_set_pinspec(pincfg_node, pincfg, prop):
+    # Helper to set the pin specification of a pin configuration object.
+    #
+    # pincfg_node:
+    #   edtlib.Node instance
+    #
+    # pincfg:
+    #   PinCfg instance
+    #
+    # prop:
+    #   Property that is one of the PinCtrl.pinspec_props.
+
+    # Expects property to be checked with _pincfg_check_type()
+    if prop.name == "groups":
+        if pincfg.pins:
+            # pins already set by either pins or pinmux
+            _err("{!r} uses 'groups' and one of 'pins', 'pinmux' property"
+                 .format(pincfg_node))
+        if prop.type == 'string-array':
+            pincfg.groups = prop.val
+        elif prop.type == 'string':
+            pincfg.groups = [prop.val]
+        else:
+            raise TypeError
+    elif prop.name == 'pinmux':
+        if pincfg.pins or pincfg.groups:
+            # pins or groups already set by either pins or groups
+            _err("{!r} uses 'pinmux' and one of 'pins', 'groups' property"
+                 .format(pincfg_node))
+        pincfg.pins = [prop.val[i] for i in range(0, len(prop.val), 2)]
+        pincfg.muxes = [prop.val[i] for i in range(1, len(prop.val), 2)]
+    elif prop.name == 'pins':
+        if pincfg.pins or pincfg.groups:
+            # pins or groups already set by either pinmux or groups
+            _err("{!r} uses 'pins' and one of 'pinmux', 'groups' property"
+                 .format(pincfg_node))
+        if prop.type == 'int':
+            pincfg.pins = [prop.val]
+        elif prop.type == 'array':
+            pincfg.pins = prop.val
+        else:
+            raise TypeError
+    elif prop.name == "function":
+        pincfg.function = prop.val
+    elif prop.name == "pinctrl-pin-array":
+        ## @TODO Support pinctrl-pin-array
+        _err("{!r} uses unsupported '{}' property"
+             .format(pincfg_node, prop.name))
+    else:
+        # should not happen
+        raise ValueError
 
 
 def _interrupt_parent(node):
