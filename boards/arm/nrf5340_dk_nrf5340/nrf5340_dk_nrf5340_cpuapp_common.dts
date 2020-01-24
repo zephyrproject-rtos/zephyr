@@ -108,6 +108,7 @@
 };
 
 &spi2 {
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 	sck-pin = <32>;
 	mosi-pin = <32>;
