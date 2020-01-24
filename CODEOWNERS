@@ -145,6 +145,7 @@
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
+/drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/flash/                           @nashif @nvlsianpu
@@ -285,6 +286,7 @@
 /include/drivers/sensor.h                 @MaureenHelm
 /include/drivers/spi.h                    @tbursztyka
 /include/drivers/lora.h                   @Mani-Sadhasivam
+/include/drivers/peci.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/app_memory/                      @andrewboie
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
