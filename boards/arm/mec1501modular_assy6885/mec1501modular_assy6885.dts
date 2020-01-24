@@ -19,6 +19,15 @@
 		zephyr,flash = &flash0;
 	};
 
+	pins {
+		compatible = "gpio-espi";
+		/* MCHP_GPIO_012 */
+		pwrg-gpios = <&gpioa 10 0>;
+
+		/* MCHP_GPIO_0054 */
+		rsm-gpios = <&gpiob 12 0>;
+	};
+
 	aliases {
 		pwm-0 = &pwm0;
 	};
