@@ -20,9 +20,6 @@ if I2C
 config I2C_2
 	default y
 
-config I2C_STM32_INTERRUPT
-	default y
-
 endif # I2C
 
 if SPI
