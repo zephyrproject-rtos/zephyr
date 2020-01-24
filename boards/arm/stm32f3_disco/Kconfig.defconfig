@@ -35,4 +35,11 @@ config SPI_2
 
 endif # SPI
 
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
+
 endif # BOARD_STM32F3_DISCO
