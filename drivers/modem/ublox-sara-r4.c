@@ -755,9 +755,6 @@ static void modem_reset(void)
 	};
 #endif
 
-	/* bring down network interface */
-	atomic_clear_bit(mdata.net_iface->if_dev->flags, NET_IF_UP);
-
 restart:
 	/* stop RSSI delay work */
 	k_delayed_work_cancel(&mdata.rssi_query_work);
@@ -866,9 +863,6 @@ restart:
 #endif
 
 	LOG_INF("Network is ready.");
-
-	/* Set iface up */
-	net_if_up(mdata.net_iface);
 
 	/* start RSSI query */
 	k_delayed_work_submit_to_queue(&modem_workq,
