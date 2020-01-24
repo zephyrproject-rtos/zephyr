@@ -70,7 +70,7 @@ struct uarte_async_cb {
 	u8_t *rx_next_buf;
 	u32_t rx_total_byte_cnt; /* Total number of bytes received */
 	u32_t rx_total_user_byte_cnt; /* Total number of bytes passed to user */
-	u32_t rx_timeout; /* Timeout set by user */
+	s32_t rx_timeout; /* Timeout set by user */
 	s32_t rx_timeout_slab; /* rx_timeout divided by RX_TIMEOUT_DIV */
 	s32_t rx_timeout_left; /* Current time left until user callback */
 	struct k_timer rx_timeout_timer;
@@ -470,7 +470,7 @@ static int uarte_nrfx_init(struct device *dev)
 }
 
 static int uarte_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
-			 u32_t timeout)
+			 s32_t timeout)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -486,7 +486,8 @@ static int uarte_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 	data->async->tx_size = len;
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
-	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS
+	    && timeout != K_FOREVER) {
 		k_timer_start(&data->async->tx_timeout_timer, timeout,
 			      K_NO_WAIT);
 	}
@@ -508,7 +509,7 @@ static int uarte_nrfx_tx_abort(struct device *dev)
 }
 
 static int uarte_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
-				u32_t timeout)
+				s32_t timeout)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
@@ -690,7 +691,7 @@ static void rxstarted_isr(struct device *dev)
 		.type = UART_RX_BUF_REQUEST,
 	};
 	user_callback(dev, &evt);
-	if (data->async->rx_timeout) {
+	if (data->async->rx_timeout != K_FOREVER) {
 		data->async->rx_timeout_left = data->async->rx_timeout;
 		k_timer_start(&data->async->rx_timeout_timer,
 			      data->async->rx_timeout_slab,
