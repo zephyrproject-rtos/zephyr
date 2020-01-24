@@ -233,7 +233,7 @@ config NRFX_SPI2
 config NRFX_SPIM
 	bool "Enable SPIM driver"
 	depends on HAS_HW_NRF_SPIM0 || HAS_HW_NRF_SPIM1 || \
-		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3
+		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3 || HAS_HW_NRF_SPIM4
 
 config NRFX_SPIM0
 	bool "Enable SPIM0 instance"
@@ -253,6 +253,11 @@ config NRFX_SPIM2
 config NRFX_SPIM3
 	bool "Enable SPIM3 instance"
 	depends on HAS_HW_NRF_SPIM3
+	select NRFX_SPIM
+
+config NRFX_SPIM4
+	bool "Enable SPIM4 instance"
+	depends on HAS_HW_NRF_SPIM4
 	select NRFX_SPIM
 
 config NRFX_SPIS
@@ -421,6 +426,10 @@ config NRFX_USBD
 	bool "Enable USBD driver"
 	depends on HAS_HW_NRF_USBD
 	select NRFX_SYSTICK
+
+config NRFX_USBREG
+	bool "Enable USBREG driver"
+	depends on HAS_HW_NRF_USBREG
 
 config NRFX_WDT
 	bool "Enable WDT driver"
