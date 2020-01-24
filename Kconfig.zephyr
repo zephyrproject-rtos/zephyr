@@ -45,6 +45,7 @@ source "subsys/Kconfig"
 
 source "ext/Kconfig"
 
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
 menu "Build and Link Features"
 
