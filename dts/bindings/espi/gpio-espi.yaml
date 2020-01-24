@@ -1,0 +1,19 @@
+# Copyright (c) 2018, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO eSPI parent node
+
+compatible: "gpio-espi"
+
+description: GPIOs required for eSPI handshake
+properties:
+   pwrg-gpios:
+      type: phandle-array
+      required: true
+      description: Board GPIO used to detect power rails are stable.
+   rsm-gpios:
+      type: phandle-array
+      required: true
+      description: Board GPIO used to notify eSPI master that handshake
+         power has stabilized and bare minimum initialization in eSPI slave
+         is complete so eSPI master can initiate eSPI handshake.
