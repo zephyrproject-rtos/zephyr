@@ -244,6 +244,30 @@ class EDT:
         # Node.
         self.scc_order()
 
+    def _init_binding_paths(self, bindings_dirs):
+        # Creates self._binding_paths. A list with the paths to all bindings
+        # (.yaml files) in 'bindings_dirs'
+        #
+        # In case of duplicate file names uses the first found.
+        # This allows to override bindings based on file names.
+
+        self._binding_paths = []
+        binding_filenames = {}
+
+        for bindings_dir in bindings_dirs:
+            for root, _, filenames in os.walk(bindings_dir):
+                for filename in filenames:
+                    if filename.endswith(".yaml"):
+                        binding_path = os.path.join(root, filename)
+                        if filename not in binding_filenames:
+                            self._binding_paths.append(binding_path)
+                            binding_filenames[filename] = binding_path
+                        else:
+                            self._warn("multiple candidates for binding file "
+                                       "'{}': skipping '{}' and using '{}'"
+                                       .format(filename, binding_path,
+                                            binding_filenames[filename]))
+
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
         # (<compatible>, <bus>) tuples (both strings) to (<binding>, <path>)
@@ -267,7 +291,7 @@ class EDT:
             "|".join(re.escape(compat) for compat in dt_compats)
         ).search
 
-        self._binding_paths = _binding_paths(bindings_dirs)
+        self._init_binding_paths(bindings_dirs)
 
         self._compat2binding = {}
         for binding_path in self._binding_paths:
@@ -1584,22 +1608,6 @@ def _dt_compats(dt):
                     "pinctrl-state", "pincfg"])
 
     return set(compats)
-
-
-def _binding_paths(bindings_dirs):
-    # Returns a list with the paths to all bindings (.yaml files) in
-    # 'bindings_dirs'
-
-    binding_paths = []
-
-    for bindings_dir in bindings_dirs:
-        for root, _, filenames in os.walk(bindings_dir):
-            for filename in filenames:
-                if filename.endswith(".yaml"):
-                    binding_paths.append(os.path.join(root, filename))
-
-    return binding_paths
-
 
 def _on_bus_from_binding(binding):
     # Returns the bus specified by 'on-bus:' in the binding (or the
