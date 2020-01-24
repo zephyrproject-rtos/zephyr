@@ -360,6 +360,77 @@ void test_write_abort(void)
 		      "RX_DISABLED timeout");
 }
 
+
+void test_forever_timeout_callback(struct uart_event *evt, void *user_data)
+{
+	switch (evt->type) {
+	case UART_TX_DONE:
+		k_sem_give(&tx_done);
+		break;
+	case UART_TX_ABORTED:
+		sent = evt->data.tx.len;
+		k_sem_give(&tx_aborted);
+		break;
+	case UART_RX_RDY:
+		received = evt->data.rx.len;
+		k_sem_give(&rx_rdy);
+		break;
+	case UART_RX_BUF_RELEASED:
+		k_sem_give(&rx_buf_released);
+		break;
+	case UART_RX_DISABLED:
+		k_sem_give(&rx_disabled);
+		break;
+	default:
+		break;
+	}
+}
+
+void test_forever_timeout_setup(void)
+{
+	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+
+	uart_callback_set(uart_dev, test_forever_timeout_callback, NULL);
+}
+
+void test_forever_timeout(void)
+{
+	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+
+	u8_t rx_buf[100];
+	u8_t tx_buf[100];
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	memset(tx_buf, 1, sizeof(tx_buf));
+
+	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), K_FOREVER);
+
+	uart_tx(uart_dev, tx_buf, 5, K_FOREVER);
+	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
+			  "TX_ABORTED timeout");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
+	zassert_not_equal(k_sem_take(&rx_rdy, K_MSEC(1000)), 0,
+			  "RX_RDY timeout");
+
+	uart_tx(uart_dev, tx_buf, 95, K_FOREVER);
+
+	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
+			  "TX_ABORTED timeout");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
+
+
+	zassert_equal(memcmp(tx_buf, rx_buf, 100), 0, "Buffers not equal");
+
+	uart_rx_disable(uart_dev);
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)),
+		      0,
+		      "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
+		      "RX_DISABLED timeout");
+}
+
+
 ZTEST_DMEM u8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 ZTEST_DMEM bool chained_write_next_buf = true;
 ZTEST_BMEM volatile u8_t tx_sent;
