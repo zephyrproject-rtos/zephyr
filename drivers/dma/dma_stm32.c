@@ -605,14 +605,17 @@ static void dma_stm32_config_irq_0(struct device *dev)
 	IRQ_INIT(0, 4);
 #ifdef DT_INST_0_ST_STM32_DMA_IRQ_5
 	IRQ_INIT(0, 5);
+#ifdef DT_INST_0_ST_STM32_DMA_IRQ_6
 	IRQ_INIT(0, 6);
 #ifdef DT_INST_0_ST_STM32_DMA_IRQ_7
 	IRQ_INIT(0, 7);
-#endif
-#endif
-/* Either 5 or 7 or 8 channels for DMA1 across all stm32 series. */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_5 */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_6 */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_7 */
+/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif
+#endif /* DT_INST_0_ST_STM32_DMA */
+
 
 #ifdef DT_INST_1_ST_STM32_DMA
 DMA_INIT(1);
@@ -621,7 +624,6 @@ static void dma_stm32_config_irq_1(struct device *dev)
 {
 	struct dma_stm32_data *data = dev->driver_data;
 
-#ifdef DT_INST_1_ST_STM32_DMA_IRQ_0
 	IRQ_INIT(1, 0);
 	IRQ_INIT(1, 1);
 	IRQ_INIT(1, 2);
@@ -629,12 +631,13 @@ static void dma_stm32_config_irq_1(struct device *dev)
 	IRQ_INIT(1, 4);
 #ifdef DT_INST_1_ST_STM32_DMA_IRQ_5
 	IRQ_INIT(1, 5);
+#ifdef DT_INST_1_ST_STM32_DMA_IRQ_6
 	IRQ_INIT(1, 6);
 #ifdef DT_INST_1_ST_STM32_DMA_IRQ_7
 	IRQ_INIT(1, 7);
-#endif
-#endif
-#endif
-/* Either 0 or 5 or 7 or 8 channels for DMA1 across all stm32 series. */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_5 */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_6 */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_7 */
+/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif
+#endif /* DT_INST_1_ST_STM32_DMA */
