@@ -18,20 +18,12 @@
 
 int modem_pin_read(struct modem_context *ctx, u32_t pin)
 {
-	int ret = 0;
-	u32_t value = 0;
-
 	if (pin < 0 || pin >= ctx->pins_len) {
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_read(ctx->pins[pin].gpio_port_dev, ctx->pins[pin].pin,
-			    &value);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return (int)value;
+	return gpio_pin_get_raw(ctx->pins[pin].gpio_port_dev,
+				ctx->pins[pin].pin);
 }
 
 int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value)
@@ -40,8 +32,8 @@ int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value)
 		return -ENODEV;
 	}
 
-	return gpio_pin_write(ctx->pins[pin].gpio_port_dev, ctx->pins[pin].pin,
-			      value);
+	return gpio_pin_set_raw(ctx->pins[pin].gpio_port_dev,
+				ctx->pins[pin].pin, value);
 }
 
 int modem_pin_config(struct modem_context *ctx, u32_t pin, int flags)
