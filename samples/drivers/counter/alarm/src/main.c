@@ -58,7 +58,7 @@ void main(void)
 	int err;
 
 	printk("Counter alarm sample\n\n");
-	counter_dev = device_get_binding(DT_RTC_0_NAME);
+	counter_dev = device_get_binding(DT_ALIAS_RTC_0_LABEL);
 	if (counter_dev == NULL) {
 		printk("Device not found\n");
 		return;
