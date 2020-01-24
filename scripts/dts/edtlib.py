@@ -1339,6 +1339,47 @@ class Node:
         #
         # Returns a list of ControllerAndData instances.
 
+        if prop.name == "gpio-ranges":
+            # Special case
+            cell_names = ("gpio-base", "pinctrl-base", "count")
+            names_ident = "gpio-ranges-groups"
+
+            n_cells = len(cell_names)
+            phandle_val_list = []
+            raw = prop.value
+            while raw:
+                if len(raw) < 4:
+                    # Not enough room for phandle
+                    _err("bad value for " + repr(prop))
+                phandle = to_num(raw[:4])
+                raw = raw[4:]
+
+                node = prop.node.dt.phandle2node.get(phandle)
+                if not node:
+                    _err("bad phandle in " + repr(prop))
+
+                if len(raw) < 4*n_cells:
+                    _err("missing data after phandle in " + repr(prop))
+
+                phandle_val_list.append((node, raw[:4*n_cells]))
+                raw = raw[4*n_cells:]
+
+            res = []
+            for controller_node, data in phandle_val_list:
+                data_list = [int.from_bytes(data[i:i + 4], "big",
+                                            signed=False)
+                    for i in range(0, len(data), 4)]
+
+                entry = ControllerAndData()
+                entry.node = self
+                entry.controller = self.edt._node2enode[controller_node]
+                entry.data = OrderedDict(zip(cell_names, data_list))
+                res.append(entry)
+
+            _add_names(self._node, names_ident, res)
+
+            return res
+
         if prop.name.endswith("gpios"):
             # There's some slight special-casing for *-gpios properties in that
             # e.g. foo-gpios still maps to #gpio-cells rather than
