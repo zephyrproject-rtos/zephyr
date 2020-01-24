@@ -22,6 +22,13 @@ LOG_MODULE_REGISTER(winc1500);
 
 #include "wifi_winc1500_config.h"
 
+static
+struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {
+	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_PIN },
+	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_PIN },
+	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_PIN },
+};
+
 #define NM_BUS_MAX_TRX_SZ	256
 
 tstrNmBusCapabilities egstrNmBusCapabilities = {
@@ -86,6 +93,37 @@ static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
 }
 
 #endif
+
+struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
+{
+	struct device *gpio_en, *gpio_irq, *gpio_reset;
+
+	gpio_en = device_get_binding(
+		DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_CONTROLLER);
+	gpio_irq = device_get_binding(
+		DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_CONTROLLER);
+	gpio_reset = device_get_binding(
+		DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_CONTROLLER);
+
+	gpio_pin_configure(gpio_en,
+			   winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].pin,
+			   GPIO_OUTPUT_LOW |
+			   DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_FLAGS);
+	gpio_pin_configure(gpio_irq,
+			   winc1500_gpios[WINC1500_GPIO_IDX_IRQN].pin,
+			   GPIO_INPUT |
+			   DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_FLAGS);
+	gpio_pin_configure(gpio_reset,
+			   winc1500_gpios[WINC1500_GPIO_IDX_RESET_N].pin,
+			   GPIO_OUTPUT_LOW |
+			   DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_FLAGS);
+
+	winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].dev = gpio_en;
+	winc1500_gpios[WINC1500_GPIO_IDX_IRQN].dev = gpio_irq;
+	winc1500_gpios[WINC1500_GPIO_IDX_RESET_N].dev = gpio_reset;
+
+	return winc1500_gpios;
+}
 
 s8_t nm_bus_init(void *pvinit)
 {
