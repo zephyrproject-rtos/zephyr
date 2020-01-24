@@ -16,7 +16,7 @@ properties:
 
     st,mem2mem:
       type: boolean
-      description: If the controller supports memory to memory transfer
+      description: If the DMA controller V1 supports memory to memory transfer
 
     "#dma-cells":
       const: 4
