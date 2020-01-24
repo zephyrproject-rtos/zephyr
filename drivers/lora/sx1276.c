@@ -491,9 +491,10 @@ static int sx1276_lora_init(struct device *dev)
 		return -EIO;
 	}
 
-	dev_data.counter = device_get_binding(DT_RTC_0_NAME);
+	dev_data.counter = device_get_binding(DT_ALIAS_RTC_0_LABEL);
 	if (!dev_data.counter) {
-		LOG_ERR("Cannot get pointer to %s device", DT_RTC_0_NAME);
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_ALIAS_RTC_0_LABEL);
 		return -EIO;
 	}
 
