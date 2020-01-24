@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Ioannis Konstantelias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+
+	bmp388@77 {
+		compatible = "bosch,bmp388";
+		reg = <0x77>;
+		label = "BMP388";
+	};
+
+};

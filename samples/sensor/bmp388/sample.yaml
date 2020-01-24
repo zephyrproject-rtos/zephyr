@@ -1,0 +1,12 @@
+sample:
+  name: BMP388 Sensor sample
+tests:
+  sample.sensor.bmp388:
+    harness: console
+    tags: sensors
+    depends_on: i2c bmp388
+    harness_config:
+        type: one_line
+        regex:
+            - "press: (.*) kPa; temp: (.*) oC; altitude: (.*) m"
+        fixture: fixture_i2c_bmp388
