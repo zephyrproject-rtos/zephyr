@@ -1,0 +1,17 @@
+# Copyright (c) 2018, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO eSPI parent node
+
+compatible: "gpio-espi"
+
+child-binding:
+    description: GPIOs eSPI child node
+    properties:
+       gpios:
+          type: phandle-array
+          required: true
+       label:
+          required: true
+          type: string
+          description: GPIOs needed for minimum eSPI handshake
