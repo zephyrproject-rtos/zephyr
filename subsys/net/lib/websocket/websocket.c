@@ -48,6 +48,10 @@ static struct k_sem contexts_lock;
 extern const struct socket_op_vtable sock_fd_op_vtable;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
+#if defined(CONFIG_NET_TEST)
+int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg);
+#endif
+
 static const char *opcode2str(enum websocket_opcode opcode)
 {
 	switch (opcode) {
@@ -465,8 +469,15 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		LOG_HEXDUMP_DBG(payload, payload_len, "Payload");
 	}
 
+#if defined(CONFIG_NET_TEST)
+	/* Simulate a case where the payload is split to two. The unit test
+	 * does not set mask bit in this case.
+	 */
+	return verify_sent_and_received_msg(&msg, !(header[1] & BIT(7)));
+#else
 	return sendmsg(ctx->real_sock, &msg,
 		       timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
 }
 
 int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
@@ -487,6 +498,12 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_NET_TEST)
+	/* Websocket unit test does not use socket layer but feeds
+	 * the data directly here when testing this function.
+	 */
+	ctx = INT_TO_POINTER(ws_sock);
+#else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
@@ -495,6 +512,7 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 	if (!PART_OF_ARRAY(contexts, ctx)) {
 		return -ENOENT;
 	}
+#endif /* CONFIG_NET_TEST */
 
 	NET_DBG("[%p] Len %zd %s/%d/%s", ctx, payload_len, opcode2str(opcode),
 		mask, final ? "final" : "more");
