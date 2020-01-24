@@ -789,18 +789,43 @@ static void vw_host_rst_warn_isr(struct device *dev)
 {
 	u8_t status;
 
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+#endif
+
 	espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_WARN, &status);
+
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	evt.evt_details = ESPI_VWIRE_SIGNAL_HOST_RST_WARN;
+	evt.evt_details = ESPI_BUS_EVENT_VWIRE_RECEIVED;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#else
+
 	k_busy_wait(ESPI_XEC_VWIRE_ACK_DELAY);
 	espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, status);
+#endif
 }
 
 static void vw_sus_warn_isr(struct device *dev)
 {
 	u8_t status;
 
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+#endif
+
 	espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_WARN, &status);
+
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	evt.evt_details = ESPI_BUS_EVENT_VWIRE_RECEIVED;
+	evt.evt_data = status;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#else
 	k_busy_wait(ESPI_XEC_VWIRE_ACK_DELAY);
 	espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK, status);
+#endif
 }
 
 static void ibf_isr(struct device *dev)
