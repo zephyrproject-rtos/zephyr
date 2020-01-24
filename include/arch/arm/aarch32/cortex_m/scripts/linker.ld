@@ -39,7 +39,7 @@
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#ifdef CONFIG_TI_CCFG_PRESENT
+#ifdef CONFIG_HAS_TI_CCFG
 #define CCFG_SIZE 88
 #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
 	CCFG_SIZE)
@@ -92,7 +92,7 @@ _region_min_align = 4;
 MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-#ifdef CONFIG_TI_CCFG_PRESENT
+#ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
 #ifdef DT_CCM_BASE_ADDRESS
@@ -246,7 +246,7 @@ SECTIONS
     GROUP_END(ROMABLE_REGION)
 
 /* Some TI SoCs have a special configuration footer, at the end of flash. */
-#ifdef CONFIG_TI_CCFG_PRESENT
+#ifdef CONFIG_HAS_TI_CCFG
     SECTION_PROLOGUE(.ti_ccfg,,)
     {
     KEEP(*(TI_CCFG))
