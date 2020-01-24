@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig I2C_XEC
+config I2C_XEC
 	bool "XEC Microchip I2C driver"
 	depends on SOC_FAMILY_MEC
 	help

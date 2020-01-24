@@ -1,9 +1,7 @@
-# Kconfig - MM-SWIFTIO board
-#
+# MM-SWIFTIO board
+
 # Copyright (c) 2019, MADMACHINE LIMITED
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MM_SWIFTIO
 

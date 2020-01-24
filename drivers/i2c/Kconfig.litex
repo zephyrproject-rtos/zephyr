@@ -1,10 +1,7 @@
-#
 # Copyright (c) 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig I2C_LITEX
+config I2C_LITEX
 	bool "LiteX I2C driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	select HAS_DTS_I2C
