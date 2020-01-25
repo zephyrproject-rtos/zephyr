@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_lmp90xxx);
 
-#include <adc/lmp90xxx.h>
+#include <drivers/adc/lmp90xxx.h>
 
 #include "gpio_utils.h"
 
