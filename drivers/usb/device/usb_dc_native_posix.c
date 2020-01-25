@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/byteorder.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <net/net_ip.h>
 
