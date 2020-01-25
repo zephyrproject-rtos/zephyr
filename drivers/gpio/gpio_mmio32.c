@@ -26,7 +26,7 @@
  * gpio_port_write.
  */
 
-#include <gpio/gpio_mmio32.h>
+#include <drivers/gpio/gpio_mmio32.h>
 #include <errno.h>
 
 static int gpio_mmio32_config(struct device *dev, int access_op,
