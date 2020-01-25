@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 #include <openamp/open_amp.h>
 #include <metal/sys.h>
