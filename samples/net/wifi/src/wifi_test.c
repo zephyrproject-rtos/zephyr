@@ -11,7 +11,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <wifi/winc1500.h>
+#include <drivers/wifi/winc1500.h>
 
 static
 struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {

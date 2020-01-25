@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
 
-#include <wifi/winc1500.h>
+#include <drivers/wifi/winc1500.h>
 
 #include "wifi_winc1500_config.h"
 #include <bus_wrapper/include/nm_bus_wrapper.h>
