@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/dummy.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
