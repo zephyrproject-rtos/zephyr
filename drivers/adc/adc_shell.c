@@ -6,7 +6,7 @@
 
 #include <shell/shell.h>
 #include <stdlib.h>
-#include <adc.h>
+#include <drivers/adc.h>
 #include <ctype.h>
 #include <sys/util.h>
 
