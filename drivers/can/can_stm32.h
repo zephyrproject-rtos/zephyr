@@ -69,6 +69,7 @@ struct can_stm32_data {
 
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
+	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
 	u32_t bus_speed;
 	u8_t sjw;
 	u8_t prop_ts1;
