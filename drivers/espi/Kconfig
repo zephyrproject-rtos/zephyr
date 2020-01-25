@@ -23,10 +23,10 @@ config ESPI_SLAVE
 	  Enables eSPI driver in slave mode.
 
 config ESPI_INIT_PRIORITY
-	int "IRQ Priority for ESPI Controller"
+	int "ESPI Controller driver initialization priority"
 	default 3
 	help
-	  IRQ Priority for ESPI Controller.
+	  Driver initialization priority for eSPI driver.
 
 config ESPI_PERIPHERAL_CHANNEL
 	bool "eSPI peripheral channel"
