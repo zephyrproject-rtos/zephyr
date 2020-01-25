@@ -13,7 +13,7 @@
 #include <sys/atomic.h>
 #include <drivers/spi.h>
 
-#include <ieee802154/cc2520.h>
+#include <drivers/ieee802154/cc2520.h>
 
 /* Runtime context structure
  ***************************
