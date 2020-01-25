@@ -8,7 +8,7 @@
 #include <sys/printk.h>
 #include <drivers/gpio.h>
 #include <soc.h>
-#include <kscan.h>
+#include <drivers/kscan.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
