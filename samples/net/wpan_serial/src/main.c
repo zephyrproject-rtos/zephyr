@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <zephyr.h>
 
 #include <net/buf.h>
