@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
 #define ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
 
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define SDMMC_CLOCK_400KHZ (400000U)
 #define SD_CLOCK_25MHZ (25000000U)
