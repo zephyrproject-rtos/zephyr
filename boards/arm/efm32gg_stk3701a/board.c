@@ -7,7 +7,7 @@
 
 #include <init.h>
 #include "board.h"
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <sys/printk.h>
 #include "em_cmu.h"
 
