@@ -15,7 +15,7 @@
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include "lps22hh_reg.h"

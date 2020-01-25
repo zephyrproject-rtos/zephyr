@@ -8,7 +8,7 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
