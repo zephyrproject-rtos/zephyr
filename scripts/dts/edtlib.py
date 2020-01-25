@@ -510,6 +510,7 @@ class EDT:
             node._init_props()
             node._init_interrupts()
             node._init_pinctrls()
+            node._init_partitions()
 
     def _init_compat2enabled(self):
         # Creates self.compat2enabled
@@ -805,6 +806,11 @@ class Node:
     flash_controller:
       The flash controller for the node. Only meaningful for nodes representing
       flash partitions.
+
+    partitions:
+      A list of Partition objects of the partitions of the 'partitions' node of
+      a flash. Only meaningful for nodes representing a flash - otherwise an
+      empty list.
     """
     global dtc_flags
 
@@ -940,10 +946,7 @@ class Node:
             _err("flash partition {!r} lacks parent or grandparent node"
                  .format(self))
 
-        controller = self.parent.parent
-        if controller.matching_compat == "soc-nv-flash":
-            return controller.parent
-        return controller
+        return _flash_controller(self.parent.parent)
 
     def __repr__(self):
         return "<Node {} in '{}', {}>".format(
@@ -1273,6 +1276,23 @@ class Node:
 
         _add_names(node, "reg", self.regs)
 
+    def _init_partitions(self):
+        # Initializes self.partitions
+
+        self.partitions = []
+
+        if 'partitions' not in self.children:
+            # This node does not have partitions
+            return
+
+        if self.name == "partitions" or \
+              (self.parent and self.parent.name == "partitions"):
+            # This node is a partitions node or the child of a
+            # partitions node - but we expect a flash node
+            return
+
+        self.partitions = _partitions_list(self.children['partitions'], self)
+
     def _init_pinctrls(self):
         # Initializes self.pinctrls from any pinctrl-<index> properties
 
@@ -1508,6 +1528,57 @@ class ControllerAndData:
         fields.append("data: {}".format(self.data))
 
         return "<ControllerAndData, {}>".format(", ".join(fields))
+
+
+class Partition:
+    """
+    Represents a partition node.
+
+    These attributes are available on Partition objects:
+
+    node:
+      The Node instance of the partition.
+
+    name:
+      The name of the partition taken from the 'label' property of the node. If
+      omitted, the name is taken from the node name (excluding the unit
+      address).
+
+    flash:
+      The Node instance of the flash this partition belongs to.
+
+    controller:
+      The Node instance of the flash controller that controls the flash this
+      partition belongs to. Might be same as the flash.
+
+    partitions:
+      A list of Partition objects of the partition. An empty list if there are
+      None.
+
+    addr:
+      The starting address of the partition, in the parent flash/ partition
+      address space. Taken from the 'reg' property of the node. 0 in case
+      there is no 'reg' property.
+
+    size:
+      The size of the partition. Taken from the 'reg' property of the node.
+      0 in case there is no 'reg' property.
+
+    attributes:
+      A dictionary of partition property values indexed by the property name.
+    """
+    def __repr__(self):
+        fields = []
+
+        fields.append("name: " + self.name)
+        fields.append("flash: {}".format(self.flash))
+        fields.append("controller: {}".format(self.controller))
+        fields.append("partitions: {}".format(self.partitions))
+        fields.append("addr: {}".format(self.addr))
+        fields.append("size: {}".format(self.size))
+        fields.append("attributes: {}".format(self.attributes))
+
+        return "<Partition, {}>".format(", ".join(fields))
 
 
 class PinCtrl:
@@ -2202,6 +2273,80 @@ def _phandle_val_list(prop, n_cells_name):
         raw = raw[4*n_cells:]
 
     return res
+
+def _flash_controller(node):
+    # The flash controller for the node. Only meaningful for nodes representing
+    # - a flash           '.../flash@0' or
+    # - a partitions list '.../flash@0/partitions' or
+    # - a partition       '.../flash@0/partitions/partition@fc000'
+    # - None otherwise.
+
+    # The flash controller might be the flash itself (for cases like NOR
+    # flashes). For the case of 'soc-nv-flash', we assume the controller is the
+    # parent of the flash node.
+    if node.matching_compat == "soc-nv-flash":
+        # This is a flash
+        controller = node.parent
+    elif node.name == 'partitions':
+        # This is a partitions list
+        if not node.parent:
+            # A partitions list must have a parent.
+            _err("flash partitions {!r} lack parent node".format(node))
+        controller = _flash_controller(node.parent)
+    elif 'partitions' in node.children:
+        # This might be a flash or a partition
+        if not node.parent or not 'partitions' in node.parent.children:
+            # This is a flash
+            controller = node
+        else:
+            # This is a partition node.
+            if not node.parent.parent:
+                # A partition must have a grandparent.
+                _err("flash partition {!r} lacks grandparent node".format(node))
+            controller =_flash_controller(node.parent.parent)
+    elif node.parent and 'partitions' in node.parent.children:
+        # This is a partition within a partitions node.
+        if not node.parent.parent:
+            # A partition must have a grandparent.
+            _err("flash partition {!r} lacks grandparent node".format(node))
+        controller = _flash_controller(node.parent.parent)
+    else:
+        controller = None
+    return controller
+
+def _partitions_list(partitions_node, flash_node):
+    # Returns a list of Partition objects for partitions
+
+    partitions_list = []
+    for partition_node in partitions_node.children.values():
+        partition = Partition()
+        partition.node = partition_node
+        partition.flash = flash_node
+        partition.controller = _flash_controller(flash_node)
+        partition.attributes = {}
+        partition.name = None
+        partition.addr = 0
+        partition.size = 0
+        for prop_name, prop in partition_node.props.items():
+            if prop_name == 'reg':
+                partition.addr = prop.val[0]
+                partition.size = prop.val[1]
+            elif prop_name == 'label':
+                partition.name = prop.val
+            else:
+                partition.attributes[prop_name] = prop.val
+        partition.partitions = []
+        if 'partitions' in partition_node.children:
+            child_partitions = partition_node.children['partitions']
+            partition.partitions = _partitions_list(child_partitions,
+                                                    flash_node)
+        # Assure the partition gets a name
+        if not partition.name:
+            # From Linux partitions.txt: "If omitted, the label is taken from
+            # the node name (excluding the unit address)."
+            partition.name = partition_node.name.split('@')[0]
+        partitions_list.append(partition)
+    return partitions_list
 
 
 def _address_cells(node):
