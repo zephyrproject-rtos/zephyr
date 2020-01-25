@@ -22,4 +22,11 @@ config PWM_STM32_2
 
 endif # PWM
 
+if CAN
+
+config CAN_2
+	default y
+
+endif # CAN
+
 endif # BOARD_STM32F4_DISCO
