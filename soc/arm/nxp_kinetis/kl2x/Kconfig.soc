@@ -77,4 +77,12 @@ config SOC_PART_NUMBER_KINETIS_KL2X
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+config WDOG_INIT
+	def_bool y
+	help
+	  This processor enables the watchdog timer with a short
+	  window for configuration upon reset. Therefore, this
+	  requires that the watchdog be configured during reset
+	  handling.
+
 endif # SOC_SERIES_KINETIS_KL2X
