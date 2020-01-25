@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <device.h>
 #include <errno.h>
 #include <ipm.h>
