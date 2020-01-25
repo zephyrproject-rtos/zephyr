@@ -23,7 +23,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
