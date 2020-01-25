@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <fsl_gpt.h>
 #include <logging/log.h>
 

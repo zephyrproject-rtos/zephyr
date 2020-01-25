@@ -5,7 +5,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <counter.h>
+#include <drivers/counter.h>
 
 #define NR_SAMPLES 10	/* sample timer 10 times */
 
