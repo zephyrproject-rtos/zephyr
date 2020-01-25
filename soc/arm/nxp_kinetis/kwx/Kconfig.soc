@@ -113,11 +113,4 @@ config KW2XD_FLASH_CLOCK_DIVIDER
 
 endif # SOC_MKW24D5 || SOC_MKW22D5
 
-config WDOG_INIT
-	def_bool y
-	help
-	  This processor enables the watchdog timer with a short timeout
-	  upon reset. Therefore, this requires that the watchdog be configured
-	  during reset handling.
-
 endif # SOC_SERIES_KINETIS_KWX
