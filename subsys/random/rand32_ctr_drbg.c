@@ -6,7 +6,7 @@
 
 #include <init.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <kernel.h>
 #include <string.h>
 
