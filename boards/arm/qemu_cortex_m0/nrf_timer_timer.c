@@ -96,7 +96,7 @@ int z_clock_driver_init(struct device *device)
 	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_START);
 
-	if (!IS_ENABLED(TICKLESS_KERNEL)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		set_comparator(counter() + CYC_PER_TICK);
 	}
 
