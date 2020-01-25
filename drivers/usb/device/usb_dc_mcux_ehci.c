@@ -6,7 +6,7 @@
 
 #include <soc.h>
 #include <string.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <soc.h>
 #include <device.h>
 #include "usb_dc_mcux.h"
