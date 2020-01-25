@@ -9,7 +9,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 #include <errno.h>
 
