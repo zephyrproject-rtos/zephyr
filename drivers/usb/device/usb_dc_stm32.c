@@ -47,7 +47,7 @@
 #include <soc.h>
 #include <string.h>
 #include <usb/usb_device.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
 

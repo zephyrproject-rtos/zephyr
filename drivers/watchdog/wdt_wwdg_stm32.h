@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_WATCHDOG_WWDG_STM32_H_
 
 #include <zephyr/types.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 /**

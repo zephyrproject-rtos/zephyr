@@ -17,7 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32);
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 static u32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,

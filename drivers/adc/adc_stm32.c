@@ -21,7 +21,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_stm32);
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X)

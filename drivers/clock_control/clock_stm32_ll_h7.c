@@ -8,7 +8,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
 #define z_sysclk_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v

@@ -9,7 +9,7 @@
 #include <drivers/i2s.h>
 #include <dt-bindings/dma/stm32_dma.h>
 #include <soc.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 #include "i2s_ll_stm32.h"
