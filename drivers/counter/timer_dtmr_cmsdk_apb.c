@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <init.h>
 #include <soc.h>
-#include <clock_control/arm_clock_control.h>
+#include <drivers/clock_control/arm_clock_control.h>
 
 #include "dualtimer_cmsdk_apb.h"
 
