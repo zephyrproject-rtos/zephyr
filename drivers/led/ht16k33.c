@@ -20,7 +20,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ht16k33);
 
-#include <led/ht16k33.h>
+#include <drivers/led/ht16k33.h>
 
 #include "led_context.h"
 

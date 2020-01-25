@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_ht16k33);
 
-#include <led/ht16k33.h>
+#include <drivers/led/ht16k33.h>
 
 #include "gpio_utils.h"
 
