@@ -9,7 +9,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #define SENSOR_GET_HELP \
 	"Get sensor data. Channel names are optional. All channels are read " \

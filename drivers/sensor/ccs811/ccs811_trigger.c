@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include "ccs811.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

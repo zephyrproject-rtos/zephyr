@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
