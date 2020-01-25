@@ -60,7 +60,6 @@ config CANOPEN_STORAGE
 config CANOPEN_STORAGE_HANDLER_ERASES_EEPROM
 	bool "Erase CANopen object dictionary EEPROM entries in storage handler"
 	depends on CANOPEN_STORAGE
-	default n
 	help
 	  Erase CANopen object dictionary EEPROM entries upon write to
 	  object dictionary index 0x1011 subindex 1.
