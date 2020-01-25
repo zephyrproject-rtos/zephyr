@@ -11,7 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
