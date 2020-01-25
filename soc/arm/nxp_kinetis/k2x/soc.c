@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
