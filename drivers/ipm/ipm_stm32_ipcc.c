@@ -10,7 +10,7 @@
 #include <ipm.h>
 #include <soc.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);

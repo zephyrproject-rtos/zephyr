@@ -7,7 +7,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 /**
  * @brief fill in AHB/APB buses configuration structure

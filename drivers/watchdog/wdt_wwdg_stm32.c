@@ -8,7 +8,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <assert.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 #include "wdt_wwdg_stm32.h"

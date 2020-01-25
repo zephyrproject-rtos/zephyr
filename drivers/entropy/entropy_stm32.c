@@ -15,7 +15,7 @@
 #include <soc.h>
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X) && !defined(CONFIG_SOC_SERIES_STM32G4X)
 #error RNG only available on STM32F4, STM32F7, STM32L4 and STM32G4 series

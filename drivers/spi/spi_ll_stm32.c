@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <drivers/spi.h>
 #include <toolchain.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 #include "spi_ll_stm32.h"

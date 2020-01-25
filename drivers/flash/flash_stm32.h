@@ -17,7 +17,7 @@
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 #include <drivers/clock_control.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {

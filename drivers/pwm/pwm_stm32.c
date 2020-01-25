@@ -12,7 +12,7 @@
 #include <kernel.h>
 #include <init.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include "pwm_stm32.h"
 
