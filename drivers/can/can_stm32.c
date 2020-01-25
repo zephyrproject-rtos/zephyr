@@ -341,13 +341,16 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 			    bitrate);
 	}
 
-	__ASSERT(cfg->sjw <= 0x03,      "SJW maximum is 3");
-	__ASSERT(cfg->prop_ts1 <= 0x0F, "PROP_BS1 maximum is 15");
-	__ASSERT(cfg->ts2 <= 0x07,      "BS2 maximum is 7");
+	__ASSERT(cfg->sjw >= 1,      "SJW minimum is 1");
+	__ASSERT(cfg->sjw <= 4,      "SJW maximum is 4");
+	__ASSERT(cfg->prop_ts1 >= 1, "PROP_TS1 minimum is 1");
+	__ASSERT(cfg->prop_ts1 <= 16, "PROP_TS1 maximum is 16");
+	__ASSERT(cfg->ts2 >= 1,      "TS2 minimum is 1");
+	__ASSERT(cfg->ts2 <= 8,      "TS2 maximum is 8");
 
-	ts1 = ((cfg->prop_ts1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
-	ts2 = ((cfg->ts2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
-	sjw = ((cfg->sjw      & 0x07) - 1) << CAN_BTR_SJW_Pos;
+	ts1 = ((cfg->prop_ts1 - 1) & 0x0F) << CAN_BTR_TS1_Pos;
+	ts2 = ((cfg->ts2      - 1) & 0x07) << CAN_BTR_TS2_Pos;
+	sjw = ((cfg->sjw      - 1) & 0x07) << CAN_BTR_SJW_Pos;
 
 	reg_mode =  (mode == CAN_NORMAL_MODE)   ? 0U   :
 		    (mode == CAN_LOOPBACK_MODE) ? CAN_BTR_LBKM :
