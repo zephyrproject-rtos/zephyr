@@ -13,7 +13,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <drivers/gpio.h>
-#include <gpio/gpio_esp32.h>
+#include <drivers/gpio/gpio_esp32.h>
 #include <drivers/i2c.h>
 #include <sys/util.h>
 #include <string.h>
