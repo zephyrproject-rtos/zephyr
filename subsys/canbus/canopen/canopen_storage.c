@@ -100,7 +100,7 @@ static CO_SDO_abortCode_t canopen_odf_1011(CO_ODF_arg_t *odf_arg)
 		LOG_DBG("deleted object dictionary ROM entries");
 	}
 
-#ifdef CANOPEN_STORAGE_HANDLER_ERASES_EEPROM
+#ifdef CONFIG_CANOPEN_STORAGE_HANDLER_ERASES_EEPROM
 	err = canopen_storage_erase(CANOPEN_STORAGE_EEPROM);
 	if (err == -ENOENT) {
 		LOG_DBG("no object dictionary EEPROM entries to delete");
