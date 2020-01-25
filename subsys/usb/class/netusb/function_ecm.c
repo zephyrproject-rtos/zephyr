@@ -253,7 +253,7 @@ static int ecm_send(struct net_pkt *pkt)
 	size_t len = net_pkt_get_len(pkt);
 	int ret;
 
-	if (IS_ENABLED(VERBOSE_DEBUG)) {
+	if (VERBOSE_DEBUG) {
 		net_pkt_hexdump(pkt, "<");
 	}
 
@@ -310,7 +310,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		goto done;
 	}
 
-	if (IS_ENABLED(VERBOSE_DEBUG)) {
+	if (VERBOSE_DEBUG) {
 		net_pkt_hexdump(pkt, ">");
 	}
 
