@@ -48,6 +48,7 @@
 	};
 
 	aliases {
+		can-primary = &can2;
 		led0 = &green_led_4;
 		led1 = &orange_led_3;
 		led2 = &red_led_5;
@@ -79,5 +80,15 @@
 };
 
 &usbotg_fs {
+	status = "okay";
+};
+
+&can1 {
+	bus-speed = <125000>;
+	status = "okay";
+};
+
+&can2 {
+	bus-speed = <125000>;
 	status = "okay";
 };
