@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <kernel.h>
 #include <pinmux.h>
