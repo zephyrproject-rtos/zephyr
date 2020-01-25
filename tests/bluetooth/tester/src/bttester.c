@@ -14,7 +14,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <sys/byteorder.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester

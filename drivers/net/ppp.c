@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 #include <sys/crc.h>
 
 #include "../../subsys/net/ip/net_stats.h"
