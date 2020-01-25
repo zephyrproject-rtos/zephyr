@@ -7,7 +7,7 @@
 #include <drivers/clock_control.h>
 #include <device.h>
 #include <errno.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <soc.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>

@@ -14,7 +14,7 @@
 #include <sys/byteorder.h>
 #include <logging/log.h>
 #include <sys/util.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 #include <openamp/open_amp.h>
 #include <metal/sys.h>
