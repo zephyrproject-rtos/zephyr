@@ -507,7 +507,8 @@ static int rf2xx_start(struct device *dev)
 	struct rf2xx_context *ctx = dev->driver_data;
 
 	k_mutex_lock(&ctx->phy_mutex, K_FOREVER);
-	gpio_pin_enable_callback(ctx->irq_gpio, conf->irq.pin);
+	gpio_pin_interrupt_configure(ctx->irq_gpio, conf->irq.pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 	rf2xx_trx_set_rx_state(dev);
 	k_mutex_unlock(&ctx->phy_mutex);
 
@@ -520,7 +521,8 @@ static int rf2xx_stop(struct device *dev)
 	struct rf2xx_context *ctx = dev->driver_data;
 
 	k_mutex_lock(&ctx->phy_mutex, K_FOREVER);
-	gpio_pin_disable_callback(ctx->irq_gpio, conf->irq.pin);
+	gpio_pin_interrupt_configure(ctx->irq_gpio, conf->irq.pin,
+				     GPIO_INT_DISABLE);
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
 	k_mutex_unlock(&ctx->phy_mutex);
 
@@ -621,9 +623,10 @@ static inline int configure_gpios(struct device *dev)
 			conf->irq.devname);
 		return -EINVAL;
 	}
-	gpio_pin_configure(ctx->irq_gpio, conf->irq.pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH);
+	gpio_pin_configure(ctx->irq_gpio, conf->irq.pin, conf->irq.flags |
+			   GPIO_INPUT);
+	gpio_pin_interrupt_configure(ctx->irq_gpio, conf->irq.pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Chip RESET line */
 	ctx->reset_gpio = device_get_binding(conf->reset.devname);
@@ -632,8 +635,8 @@ static inline int configure_gpios(struct device *dev)
 			conf->reset.devname);
 		return -EINVAL;
 	}
-	gpio_pin_configure(ctx->reset_gpio, conf->reset.pin,
-			   GPIO_DIR_OUT | GPIO_PUD_NORMAL | GPIO_POL_NORMAL);
+	gpio_pin_configure(ctx->reset_gpio, conf->reset.pin, conf->reset.flags |
+			   GPIO_OUTPUT_INACTIVE);
 
 	/* Chip SLPTR line */
 	ctx->slptr_gpio = device_get_binding(conf->slptr.devname);
@@ -642,8 +645,8 @@ static inline int configure_gpios(struct device *dev)
 			conf->slptr.devname);
 		return -EINVAL;
 	}
-	gpio_pin_configure(ctx->slptr_gpio, conf->slptr.pin,
-			   GPIO_DIR_OUT | GPIO_PUD_NORMAL | GPIO_POL_NORMAL);
+	gpio_pin_configure(ctx->slptr_gpio, conf->slptr.pin, conf->slptr.flags |
+			   GPIO_OUTPUT_INACTIVE);
 
 	/* Chip DIG2 line (Optional feature) */
 	ctx->dig2_gpio = device_get_binding(conf->dig2.devname);
@@ -651,9 +654,9 @@ static inline int configure_gpios(struct device *dev)
 		LOG_INF("Optional instance of %s device activated",
 			conf->dig2.devname);
 		gpio_pin_configure(ctx->dig2_gpio, conf->dig2.pin,
-				   GPIO_DIR_IN |
-				   GPIO_PUD_PULL_DOWN |
-				   GPIO_INT_ACTIVE_HIGH);
+				   conf->dig2.flags | GPIO_INPUT);
+		gpio_pin_interrupt_configure(ctx->dig2_gpio, conf->dig2.pin,
+					     GPIO_INT_EDGE_TO_ACTIVE);
 	}
 
 	/* Chip CLKM line (Optional feature) */
@@ -662,7 +665,7 @@ static inline int configure_gpios(struct device *dev)
 		LOG_INF("Optional instance of %s device activated",
 			conf->clkm.devname);
 		gpio_pin_configure(ctx->clkm_gpio, conf->clkm.pin,
-				   GPIO_DIR_IN | GPIO_PUD_NORMAL);
+				   conf->clkm.flags | GPIO_INPUT);
 	}
 
 	return 0;
