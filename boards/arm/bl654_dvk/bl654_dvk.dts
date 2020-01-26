@@ -26,19 +26,19 @@
 	leds {
 		compatible = "gpio-leds";
 		led1: led_1 {
-			gpios = <&gpio0 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
 		led3: led_3 {
-			gpios = <&gpio0 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 3";
 		};
 		led4: led_4 {
-			gpios = <&gpio0 16 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 4";
 		};
 	};
