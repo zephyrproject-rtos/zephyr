@@ -24,7 +24,7 @@ else()
     set(EVERGLADES_SPI_GEN_FILENAME everglades_spi_gen.exe)
   endif()
 
-  find_file(EVERGLADES_SPI_GEN_FINDFILE ${EVERGLADES_SPI_GEN_FILENAME})
+  find_file(EVERGLADES_SPI_GEN_FINDFILE ${EVERGLADES_SPI_GEN_FILENAME} NO_DEFAULT_PATH)
   if(EVERGLADES_SPI_GEN_FINDFILE STREQUAL EVERGLADES_SPI_GEN_FINDFILE-NOTFOUND)
     message(WARNING "Microchip SPI Image Generation tool (${EVERGLADES_SPI_GEN_FILENAME}) is not available. SPI Image will not be generated.")
   else()
