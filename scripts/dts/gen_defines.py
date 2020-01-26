@@ -238,8 +238,8 @@ def should_write(prop):
         return False
 
     # For these, Property.val becomes an edtlib.Node, a list of edtlib.Nodes,
-    # and None, respectively. Nothing is generated for them though.
-    if prop.type in {"phandle", "phandles", "compound"}:
+    # or None. Nothing is generated for them at the moment.
+    if prop.type in {"phandle", "phandles", "path", "compound"}:
         return False
 
     # Skip properties that we handle elsewhere
