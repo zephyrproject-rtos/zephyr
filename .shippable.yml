@@ -6,13 +6,38 @@ env:
     global:
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.10.3
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        - MATRIX_BUILDS="5"
+        - MATRIX_BUILDS="30"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
         - MATRIX_BUILD="5"
+        - MATRIX_BUILD="6"
+        - MATRIX_BUILD="7"
+        - MATRIX_BUILD="8"
+        - MATRIX_BUILD="9"
+        - MATRIX_BUILD="10"
+        - MATRIX_BUILD="11"
+        - MATRIX_BUILD="12"
+        - MATRIX_BUILD="13"
+        - MATRIX_BUILD="14"
+        - MATRIX_BUILD="15"
+        - MATRIX_BUILD="16"
+        - MATRIX_BUILD="17"
+        - MATRIX_BUILD="18"
+        - MATRIX_BUILD="19"
+        - MATRIX_BUILD="20"
+        - MATRIX_BUILD="21"
+        - MATRIX_BUILD="22"
+        - MATRIX_BUILD="23"
+        - MATRIX_BUILD="24"
+        - MATRIX_BUILD="25"
+        - MATRIX_BUILD="26"
+        - MATRIX_BUILD="27"
+        - MATRIX_BUILD="28"
+        - MATRIX_BUILD="29"
+        - MATRIX_BUILD="30"
 
 build:
     cache: false
