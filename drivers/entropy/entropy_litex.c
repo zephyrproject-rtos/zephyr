@@ -61,4 +61,3 @@ DEVICE_AND_API_INIT(entropy_prbs, CONFIG_ENTROPY_NAME,
 		    entropy_prbs_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_prbs_api);
-

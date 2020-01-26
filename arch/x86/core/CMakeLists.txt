@@ -27,4 +27,3 @@ if(CONFIG_X86_64)
 else()
   include(ia32.cmake)
 endif()
-
