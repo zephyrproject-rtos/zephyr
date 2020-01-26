@@ -111,8 +111,8 @@ struct lmp90xxx_config {
 	u8_t spi_cs_pin;
 	struct spi_config spi_cfg;
 	const char *drdyb_dev_name;
-	u32_t drdyb_pin;
-	int drdyb_flags;
+	gpio_pin_t drdyb_pin;
+	gpio_devicetree_flags_t drdyb_flags;
 	u8_t rtd_current;
 	u8_t resolution;
 	u8_t channels;
@@ -990,8 +990,7 @@ static int lmp90xxx_init(struct device *dev)
 		}
 
 		err = gpio_pin_configure(drdyb_dev, config->drdyb_pin,
-					 (GPIO_DIR_IN | GPIO_INT |
-					 GPIO_INT_EDGE | config->drdyb_flags));
+					 GPIO_INPUT | config->drdyb_flags);
 		if (err) {
 			LOG_ERR("failed to configure DRDYB GPIO pin (err %d)",
 				err);
@@ -1015,10 +1014,10 @@ static int lmp90xxx_init(struct device *dev)
 			return err;
 		}
 
-		err = gpio_pin_enable_callback(drdyb_dev,
-					       config->drdyb_pin);
+		err = gpio_pin_interrupt_configure(drdyb_dev, config->drdyb_pin,
+						   GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to enable DRDBY callback (err %d)",
+			LOG_ERR("failed to configure DRDBY interrupt (err %d)",
 				err);
 			return -EINVAL;
 		}
