@@ -1,7 +1,7 @@
 /* ieee802154_rf2xx_iface.c - ATMEL RF2XX IEEE 802.15.4 Interface */
 
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,4 +247,50 @@ void rf2xx_iface_frame_write(struct device *dev,
 
 	LOG_DBG("Frame W: PhyStatus: %02X. length: %02X", status, length);
 	LOG_HEXDUMP_DBG(data, length, "payload");
+}
+
+void rf2xx_iface_sram_read(struct device *dev,
+			    u8_t address,
+			    u8_t *data,
+			    u8_t length)
+{
+	const struct rf2xx_context *ctx = dev->driver_data;
+	u8_t cmd = RF2XX_RF_CMD_SRAM_R;
+	u8_t status[2];
+
+	const struct spi_buf tx_buf[2] = {
+		{
+			.buf = &cmd,
+			.len = 1
+		},
+		{
+			.buf = &address,
+			.len = 1
+		},
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf,
+		.count = 2
+	};
+	const struct spi_buf rx_buf[2] = {
+		{
+			.buf = status,
+			.len = 2
+		},
+		{
+			.buf = data,
+			.len = length
+		},
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_buf,
+		.count = 2
+	};
+
+	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+		LOG_ERR("Failed to exec rf2xx_sram_read");
+	}
+
+	LOG_DBG("SRAM R: length: %02X, status: %02X", length, status[0]);
+	LOG_HEXDUMP_DBG(data, length, "content");
 }

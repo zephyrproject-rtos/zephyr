@@ -1,7 +1,7 @@
 /* ieee802154_rf2xx_iface.h - ATMEL RF2XX transceiver interface */
 
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,5 +106,20 @@ void rf2xx_iface_frame_read(struct device *dev,
 void rf2xx_iface_frame_write(struct device *dev,
 			     u8_t *data,
 			     u8_t length);
+
+/**
+ * @brief Reads sram data from the transceiver
+ *
+ * This function reads the sram data of the transceiver.
+ *
+ * @param[in]   dev     Transceiver device instance
+ * @param[in]   address Start address to be read
+ * @param[out]  data    Pointer to the location to store data
+ * @param[in]   length  Number of bytes to be read from the sram space
+ */
+void rf2xx_iface_sram_read(struct device *dev,
+			    u8_t address,
+			    u8_t *data,
+			    u8_t length);
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_IFACE_H_ */
