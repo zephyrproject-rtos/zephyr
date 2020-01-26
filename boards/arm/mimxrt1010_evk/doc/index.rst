@@ -191,4 +191,3 @@ see the following message in the terminal:
 
 .. _i.MX RT1010 Reference Manual:
    https://www.nxp.com/docs/en/reference-manual/IMXRT1010RM.pdf
-
