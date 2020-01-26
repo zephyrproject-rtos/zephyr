@@ -42,8 +42,7 @@ static struct gpio_callback button_callback;
 
 struct led_indicator {
 	struct device *dev;
-	u32_t pin;
-	u32_t flags;
+	gpio_pin_t pin;
 };
 
 static struct led_indicator led_green;
@@ -65,11 +64,7 @@ static void led_callback(bool value, void *arg)
 		return;
 	}
 
-	if ((led->flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_LOW) {
-		drive = !drive;
-	}
-
-	gpio_pin_write(led->dev, led->pin, drive);
+	gpio_pin_set(led->dev, led->pin, drive);
 }
 
 /**
@@ -85,17 +80,19 @@ static void config_leds(CO_NMT_t *nmt)
 #ifdef LED_GREEN_PORT
 	led_green.dev = device_get_binding(LED_GREEN_PORT);
 	led_green.pin = LED_GREEN_PIN;
-	led_green.flags = LED_GREEN_FLAGS;
 	if (led_green.dev) {
-		gpio_pin_configure(led_green.dev, LED_GREEN_PIN, GPIO_DIR_OUT);
+		gpio_pin_configure(led_green.dev, LED_GREEN_PIN,
+				   GPIO_OUTPUT_INACTIVE
+				   | LED_GREEN_FLAGS);
 	}
 #endif /* LED_GREEN_PORT */
 #ifdef LED_RED_PORT
 	led_red.dev = device_get_binding(LED_RED_PORT);
 	led_red.pin = LED_RED_PIN;
-	led_red.flags = LED_RED_FLAGS;
 	if (led_red.dev) {
-		gpio_pin_configure(led_red.dev, LED_RED_PIN, GPIO_DIR_OUT);
+		gpio_pin_configure(led_red.dev, LED_RED_PIN,
+				   GPIO_OUTPUT_INACTIVE
+				   | LED_RED_FLAGS);
 	}
 #endif /* LED_RED_PORT */
 
@@ -172,9 +169,8 @@ static void config_button(void)
 		return;
 	}
 
-	err = gpio_pin_configure(dev, BUTTON_PIN, GPIO_DIR_IN |
-				 GPIO_INT_DEBOUNCE | GPIO_INT |
-				 GPIO_INT_EDGE | BUTTON_FLAGS);
+	err = gpio_pin_configure(dev, BUTTON_PIN,
+				 GPIO_INPUT | BUTTON_FLAGS);
 
 	gpio_init_callback(&button_callback, button_isr_callback,
 			   BIT(BUTTON_PIN));
@@ -185,7 +181,8 @@ static void config_button(void)
 		return;
 	}
 
-	err = gpio_pin_enable_callback(dev, BUTTON_PIN);
+	err = gpio_pin_interrupt_configure(dev, BUTTON_PIN,
+					   GPIO_INT_EDGE_TO_ACTIVE);
 	if (err) {
 		LOG_ERR("failed to enable button callback");
 		return;
