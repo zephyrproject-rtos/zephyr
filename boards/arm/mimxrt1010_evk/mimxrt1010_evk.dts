@@ -25,7 +25,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 11 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -34,7 +34,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW4";
-			gpios = <&gpio2_rt1010 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio2_rt1010 5 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
