@@ -11,38 +11,27 @@ source "modules/Kconfig"
 
 endmenu
 
-# Include these first so that any properties (e.g. defaults) below can be
-# overridden in *.defconfig files (by defining symbols in multiple locations).
-# After merging all the symbol definitions, Kconfig picks the first property
-# (e.g. the first default) with a satisfied condition.
+# Include Kconfig.defconfig files first so that they can override defaults and
+# other symbol/choice properties by adding extra symbol/choice definitions.
+# After merging all definitions for a symbol/choice, Kconfig picks the first
+# property (e.g. the first default) with a satisfied condition.
 #
-# Board defaults should be parsed before SoC defaults, because boards usually
-# overrides SoC values. Similarly shields defaults should be parsed before
-# boards defaults, because shields defaults override boards defaults.
+# Shield defaults should have precedence over board defaults, which should have
+# precedence over SoC defaults, so include them in that order.
 #
-# Note: $ARCH and $BOARD_DIR might be glob patterns.
+# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
 source "boards/shields/*/Kconfig.defconfig"
-
 source "$(BOARD_DIR)/Kconfig.defconfig"
-
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
 
 source "boards/Kconfig"
-
 source "$(SOC_DIR)/Kconfig"
-
 source "arch/Kconfig"
-
 source "kernel/Kconfig"
-
 source "dts/Kconfig"
-
 source "drivers/Kconfig"
-
 source "lib/Kconfig"
-
 source "subsys/Kconfig"
-
 source "ext/Kconfig"
 
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
