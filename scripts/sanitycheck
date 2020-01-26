@@ -4365,4 +4365,5 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        os.system("stty sane")
+        if os.isatty(1): # stdout is interactive
+            os.system("stty sane")
