@@ -82,10 +82,10 @@
 		reg = <0x0>;
 		label = "RF2XX_0";
 		spi-max-frequency = <8000000>;
-		irq-gpios = <&portb 0 0>;
-		reset-gpios = <&portb 15 0>;
-		slptr-gpios = <&porta 20 0>;
-		dig2-gpios = <&portb 17 0>;
+		irq-gpios = <&portb 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
+		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
+		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
 };
