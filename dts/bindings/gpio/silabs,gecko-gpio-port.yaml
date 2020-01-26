@@ -1,0 +1,19 @@
+description: SiLabs Gecko GPIO port node
+
+compatible: "silabs,gecko-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

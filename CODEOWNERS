@@ -242,6 +242,7 @@
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efm32_jg_pg*              @chrta
+/dts/arm/silabs/efr32bg13p*               @mnkp
 /dts/arm/silabs/efm32jg12b*               @chrta
 /dts/arm/silabs/efm32pg12b*               @chrta
 /dts/riscv/microsemi-miv.dtsi             @galak

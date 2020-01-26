@@ -1,0 +1,32 @@
+# Silicon Labs EFR32BG13P (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+if GPIO
+
+config GPIO_GECKO
+	default y
+
+endif # GPIO
+
+if I2C
+
+config I2C_GECKO
+	default y
+
+endif # I2C
+
+if FLASH
+
+config SOC_FLASH_GECKO
+	default y
+
+endif # FLASH
+
+if SPI
+
+config SPI_GECKO
+	default y
+
+endif # SPI
