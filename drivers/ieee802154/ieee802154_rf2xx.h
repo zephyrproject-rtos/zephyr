@@ -1,7 +1,7 @@
 /* ieee802154_rf2xx.h - IEEE 802.15.4 Driver definition for ATMEL RF2XX */
 
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -139,6 +139,7 @@ struct rf2xx_context {
 	u8_t pkt_ed;
 	s8_t trx_rssi_base;
 	u8_t trx_version;
+	u8_t rx_phr;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_H_ */
