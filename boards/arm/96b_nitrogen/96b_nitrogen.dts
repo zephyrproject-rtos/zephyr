@@ -49,7 +49,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "User Push Button";
 		};
 	};
