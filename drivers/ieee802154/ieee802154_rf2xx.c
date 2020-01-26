@@ -1,7 +1,7 @@
 /* ieee802154_rf2xx.c - ATMEL RF2XX IEEE 802.15.4 Driver */
 
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,25 @@ static void rf2xx_trx_set_state(struct device *dev,
 		  RF2XX_TRX_PHY_STATUS_MASK));
 }
 
+static void rf2xx_trx_set_tx_state(struct device *dev)
+{
+	u8_t status;
+
+	/**
+	 * Ensures that RX automatically ACK will be sent when requested.
+	 * Datasheet: Chapter 7.2.3 RX_AACK_ON – Receive with Automatic ACK
+	 * Datasheet: Figure 7-13. Timing Example of an RX_AACK Transaction
+	 * for Slotted Operation.
+	 */
+	do {
+		status = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) &
+			  RF2XX_TRX_PHY_STATUS_MASK);
+	} while (status == RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK ||
+		 status == RF2XX_TRX_PHY_STATUS_STATE_TRANSITION);
+
+	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TX_ARET_ON);
+}
+
 static void rf2xx_trx_set_rx_state(struct device *dev)
 {
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
@@ -131,8 +150,12 @@ static void rf2xx_trx_rx(struct device *dev)
 	 * This obligate the driver to have rx_buf statically allocated with
 	 * RX2XX_MAX_FRAME_SIZE.
 	 */
-	rf2xx_iface_frame_read(dev, rx_buf, RX2XX_FRAME_HEADER_SIZE);
-	pkt_len = rx_buf[RX2XX_FRAME_PHR_INDEX];
+	if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
+		pkt_len = ctx->rx_phr;
+	} else {
+		rf2xx_iface_frame_read(dev, rx_buf, RX2XX_FRAME_HEADER_SIZE);
+		pkt_len = rx_buf[RX2XX_FRAME_PHR_INDEX];
+	}
 
 	if (pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
 		LOG_ERR("invalid RX frame length");
@@ -195,21 +218,26 @@ static void rf2xx_process_rx_frame(struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->driver_data;
 
-	/* Ensures that automatically ACK will be sent
-	 * when requested
-	 */
-	while (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) ==
-	       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
-		;
-	};
-
-	/* Set PLL_ON to avoid transceiver receive
-	 * new data until finish reading process
-	 */
-	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_PLL_ON);
 	k_timer_stop(&ctx->trx_isr_timeout);
-	rf2xx_trx_rx(dev);
-	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_RX_AACK_ON);
+
+	if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
+		rf2xx_trx_rx(dev);
+	} else {
+		/* Ensures that automatically ACK will be sent
+		 * when requested
+		 */
+		while (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) ==
+		       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
+			;
+		};
+
+		/* Set PLL_ON to avoid transceiver receive
+		 * new data until finish reading process
+		 */
+		rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_PLL_ON);
+		rf2xx_trx_rx(dev);
+		rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_RX_AACK_ON);
+	}
 }
 
 static void rf2xx_process_tx_frame(struct device *dev)
@@ -274,6 +302,10 @@ static void rf2xx_thread_main(void *arg)
 		if (isr_status & (1 << RF2XX_RX_START)) {
 			ctx->trx_state = RF2XX_TRX_PHY_BUSY_RX;
 			k_timer_start(&ctx->trx_isr_timeout, K_MSEC(10), 0);
+
+			if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
+				rf2xx_iface_sram_read(dev, 0, &ctx->rx_phr, 1);
+			}
 		} else if (isr_status & (1 << RF2XX_TRX_END)) {
 			rf2xx_process_trx_end(dev);
 		}
@@ -462,11 +494,7 @@ static int rf2xx_tx(struct device *dev,
 		ctx->trx_state = RF2XX_TRX_PHY_BUSY_TX;
 		abort = false;
 
-		/**
-		 * Set extended TX mode
-		 * Datasheet: chapter 7.2 Extended Operating Mode
-		 */
-		rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TX_ARET_ON);
+		rf2xx_trx_set_tx_state(dev);
 		rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);
 		rf2xx_iface_frame_write(dev, frag->data, frag->len);
 		rf2xx_iface_phy_tx_start(dev);
