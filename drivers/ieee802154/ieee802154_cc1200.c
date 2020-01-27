@@ -200,15 +200,10 @@ static inline void gpio0_int_handler(struct device *port,
 
 static void enable_gpio0_interrupt(struct cc1200_context *cc1200, bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin);
-	} else {
-		gpio_pin_disable_callback(
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin);
-	}
+	gpio_pin_interrupt_configure(
+		cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
+		cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
+		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 static void setup_gpio_callback(struct device *dev)
@@ -732,6 +727,23 @@ static int power_on_and_setup(struct device *dev)
 	return rf_calibrate(cc1200);
 }
 
+static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
+{
+	struct cc1200_context *cc1200 = dev->driver_data;
+
+	gpio = device_get_binding(DT_CC1200_GPIO_INT_DRV_NAME);
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_CC1200_GPIO_INT;
+	gpio_pin_configure(gpio, cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
+			   GPIO_INPUT | DT_CC1200_GPIO_INT_FLAGS);
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev = gpio;
+
+	return cc1200->gpios;
+}
+
 static int configure_spi(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
@@ -777,8 +789,7 @@ static int cc1200_init(struct device *dev)
 	k_sem_init(&cc1200->rx_lock, 0, 1);
 	k_sem_init(&cc1200->tx_sync, 0, 1);
 
-	cc1200->gpios = cc1200_configure_gpios();
-	if (!cc1200->gpios) {
+	if (!configure_gpios(dev)) {
 		LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
