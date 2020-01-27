@@ -2712,8 +2712,8 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 	rssi = -(*extra);
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
-	BT_DBG("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=%d dB",
-	       phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
+	BT_INFO("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=%d dB",
+		phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
 
 	if ((adv->type == PDU_ADV_TYPE_EXT_IND) && adv->len) {
 		struct pdu_adv_com_ext_adv *p;
@@ -2724,8 +2724,8 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (u8_t *)h + sizeof(*h);
 
-		BT_DBG("Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
-		       p->ext_hdr_len);
+		BT_INFO("Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
+			p->ext_hdr_len);
 
 		if (!p->ext_hdr_len) {
 			goto no_ext_hdr;
@@ -2738,7 +2738,38 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
-			BT_DBG("AdvA: %s", bt_addr_le_str(&addr));
+			BT_INFO("AdvA: %s", bt_addr_le_str(&addr));
+		}
+
+		if (h->tgt_addr) {
+			bt_addr_le_t addr;
+
+			addr.type = adv->rx_addr;
+			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
+			ptr += BDADDR_SIZE;
+
+			BT_INFO("TgtA: %s", bt_addr_le_str(&addr));
+		}
+
+		if (h->adi) {
+			struct ext_adv_adi *adi;
+
+			adi = (void *)ptr;
+			ptr += sizeof(*adi);
+
+			BT_INFO("AdvDataInfo DID = 0x%x, SID = 0x%x",
+				adi->did, adi->sid);
+		}
+
+		if (h->aux_ptr) {
+			struct ext_adv_aux_ptr *aux;
+
+			aux = (void *)ptr;
+			ptr += sizeof(*aux);
+
+			BT_INFO("AuxPtr chan_idx = %u, ca = %u, offs_units = %u"
+				" offs = 0x%x, phy = 0x%x", aux->chan_idx,
+				aux->ca, aux->offs_units, aux->offs, aux->phy);
 		}
 
 		if (h->tx_pwr) {
@@ -2747,7 +2778,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			tx_pwr = *(s8_t *)ptr;
 			ptr++;
 
-			BT_DBG("Tx pwr= %d dB", tx_pwr);
+			BT_INFO("Tx pwr= %d dB", tx_pwr);
 		}
 
 		/* TODO: length check? */
