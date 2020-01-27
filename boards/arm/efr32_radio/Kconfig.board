@@ -1,0 +1,16 @@
+# EFR32BG13 BRD4104A board
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFR32_RADIO_BRD4104A
+	bool "Silicon Labs BRD4104A (Blue Gecko Radio Board)"
+	depends on SOC_SERIES_EFR32BG13P
+	select BOARD_EFR32_RADIO
+	select SOC_PART_NUMBER_EFR32BG13P632F512GM48
+
+config BOARD_EFR32_RADIO_BRD4250B
+	bool "Silicon Labs BRD4250B (Flex Gecko Radio Board)"
+	depends on SOC_SERIES_EFR32FG1P
+	select BOARD_EFR32_RADIO
+	select SOC_PART_NUMBER_EFR32FG1P133F256GM48
