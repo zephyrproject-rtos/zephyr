@@ -15,7 +15,13 @@ EXPECTED_COMMANDS = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '1200', 'ospeed', '1200',
      'cs8', '-cstopb', 'ignpar', 'eol', '255', 'eof', '255'],
     ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
-     '-o', str(TEST_OFFSET), '-b', RC_KERNEL_BIN],
+     '-b', RC_KERNEL_BIN],
+]
+EXPECTED_COMMANDS_WITH_OFFSET = [
+    ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '1200', 'ospeed', '1200',
+     'cs8', '-cstopb', 'ignpar', 'eol', '255', 'eof', '255'],
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+     '-b', RC_KERNEL_BIN, '-o', str(TEST_OFFSET)],
 ]
 
 def require_patch(program):
@@ -28,11 +34,23 @@ def test_bossac_init(cc, req, runner_config):
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT,
                                 offset=TEST_OFFSET)
     runner.run('flash')
-    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create(cc, req, runner_config):
+    '''Test commands using a runner created from command line parameters.'''
+    args = ['--bossac-port', str(TEST_BOSSAC_PORT)]
+    parser = argparse.ArgumentParser()
+    BossacBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(args)
+    runner = BossacBinaryRunner.create(runner_config, arg_namespace)
+    runner.run('flash')
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
+
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_create_with_offset(cc, req, runner_config):
     '''Test commands using a runner created from command line parameters.'''
     args = ['--bossac-port', str(TEST_BOSSAC_PORT),
             '--offset', str(TEST_OFFSET)]
@@ -41,4 +59,4 @@ def test_bossac_create(cc, req, runner_config):
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     runner.run('flash')
-    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
