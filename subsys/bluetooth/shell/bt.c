@@ -2487,8 +2487,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_BROADCASTER)
-	SHELL_CMD_ARG(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx,
-		      2, 3),
+	SHELL_CMD_ARG(advx, NULL,
+		      "<on hdcd ldcd off> [coded] [anon] [txp] [ad]",
+		      cmd_advx, 2, 4),
 #endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scanx, NULL, "<on passive off> [coded]", cmd_scanx,
