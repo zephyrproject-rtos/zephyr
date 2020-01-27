@@ -9,8 +9,6 @@ struct ll_adv_set {
 	struct ull_hdr ull;
 	struct lll_adv lll;
 
-	u8_t is_enabled:1;
-
 #if defined(CONFIG_BT_PERIPHERAL)
 	memq_link_t        *link_cc_free;
 	struct node_rx_pdu *node_rx_cc_free;
@@ -18,9 +16,13 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u32_t interval;
+	u8_t  sid:4;
+	u8_t  phy_s:3;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	u16_t interval;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
+	u8_t is_enabled:1;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t  own_addr_type:2;
