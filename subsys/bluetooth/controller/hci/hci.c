@@ -1634,6 +1634,39 @@ static void le_enh_tx_test(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_adv_param *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_ext_adv_param *rp;
+	uint32_t min_interval;
+	uint8_t adv_type = 0;
+	uint16_t evt_prop;
+	uint8_t tx_pwr;
+	uint8_t status;
+
+	evt_prop = sys_le16_to_cpu(cmd->props);
+	min_interval = sys_get_le24(cmd->prim_min_interval);
+	tx_pwr = cmd->tx_power;
+
+	if (!(evt_prop & BIT(4))) {
+		adv_type = 0x05; /* Extending advertising */
+	}
+
+	status = ll_adv_params_set(cmd->handle, evt_prop, min_interval,
+				   adv_type, cmd->own_addr_type,
+				   cmd->peer_addr.type, cmd->peer_addr.a.val,
+				   cmd->prim_channel_map, cmd->filter_policy,
+				   &tx_pwr, cmd->prim_adv_phy,
+				   cmd->sec_adv_max_skip, cmd->sec_adv_phy,
+				   cmd->sid, cmd->scan_req_notify_enable);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = 0x00;
+	rp->tx_power = tx_pwr;
+}
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt, void **node_rx)
 {
@@ -1803,6 +1836,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_ADV_PARAM):
+		le_set_ext_adv_param(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_RL):
