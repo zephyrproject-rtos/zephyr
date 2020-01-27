@@ -841,6 +841,11 @@ u8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, u8_t rl_idx,
 static void wl_clear(void)
 {
 	for (int i = 0; i < WL_SIZE; i++) {
+		u8_t j = wl[i].rl_idx;
+
+		if (j < ARRAY_SIZE(rl)) {
+			rl[j].wl = 0U;
+		}
 		wl[i].taken = 0U;
 	}
 }
