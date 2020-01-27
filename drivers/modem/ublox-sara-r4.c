@@ -69,6 +69,7 @@ static struct modem_pin modem_pins[] = {
 
 #define MDM_CMD_TIMEOUT			K_SECONDS(10)
 #define MDM_DNS_TIMEOUT			K_SECONDS(70)
+#define MDM_CMD_CONN_TIMEOUT		K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
 #define MDM_PROMPT_CMD_DELAY		K_MSEC(75)
 
@@ -1086,7 +1087,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		 modem_context_sprint_ip_addr(addr), dst_port);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     NULL, 0U, buf,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 	}
