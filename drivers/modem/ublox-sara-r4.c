@@ -1375,7 +1375,7 @@ static int net_offload_dummy_get(sa_family_t family,
 				 struct net_context **context)
 {
 
-	LOG_ERR("NET_SOCKET_OFFLOAD must be configured for this driver");
+	LOG_ERR("CONFIG_NET_SOCKETS_OFFLOAD must be enabled for this driver");
 
 	return -ENOTSUP;
 }
