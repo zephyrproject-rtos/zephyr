@@ -429,7 +429,7 @@ endif # LOG_BACKEND_RTT_BUFFER
 # interrupted by an interrupt.
 config LOG_BACKEND_RTT_FORCE_PRINTK
 	bool
-	default y if LOG_BACKEND_RTT_BUFFER = 0
+	default y if LOG_BACKEND_RTT_BUFFER = 0 && RTT_CONSOLE
 	select LOG_PRINTK
 
 endif # LOG_BACKEND_RTT
