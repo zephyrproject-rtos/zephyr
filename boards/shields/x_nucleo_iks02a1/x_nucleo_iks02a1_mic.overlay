@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2s {
+	status = "okay";
+
+	mp34dt05@0 {
+		compatible = "st,mpxxdtyy";
+		reg = <0>;
+		label = "MP34DT05";
+	};
+};
