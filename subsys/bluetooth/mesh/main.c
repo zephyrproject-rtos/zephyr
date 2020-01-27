@@ -304,6 +304,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
+		bt_mesh_proxy_init();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		err = bt_mesh_prov_init(prov);
 		if (err) {
@@ -315,10 +319,6 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	bt_mesh_trans_init();
 	bt_mesh_beacon_init();
 	bt_mesh_adv_init();
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
-		bt_mesh_proxy_init();
-	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_settings_init();
