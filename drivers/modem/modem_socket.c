@@ -218,6 +218,7 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	z_free_fd(sock->sock_fd);
 	sock->id = cfg->base_socket_num - 1;
 	sock->sock_fd = -1;
+	sock->is_waiting = false;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
 	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
 
@@ -291,6 +292,35 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 
 	errno = 0;
 	return found_count;
+}
+
+void modem_socket_wait_data(struct modem_socket_config *cfg,
+			    struct modem_socket *sock)
+{
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+	sock->is_waiting = true;
+	k_sem_give(&cfg->sem_lock);
+
+	k_sem_take(&sock->sem_data_ready, K_FOREVER);
+}
+
+void modem_socket_data_ready(struct modem_socket_config *cfg,
+			     struct modem_socket *sock)
+{
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+
+	if (sock->is_waiting) {
+		/* unblock sockets waiting on recv() */
+		sock->is_waiting = false;
+		k_sem_give(&sock->sem_data_ready);
+	}
+
+	if (sock->is_polled) {
+		/* unblock poll() */
+		k_sem_give(&cfg->sem_poll);
+	}
+
+	k_sem_give(&cfg->sem_lock);
 }
 
 int modem_socket_init(struct modem_socket_config *cfg,
