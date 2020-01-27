@@ -268,13 +268,14 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 		}
 
 		/* load match_buf with content up to the next CR/LF */
+		/* NOTE: keep room in match_buf for ending NUL char */
 		match_len = net_buf_linearize(data->match_buf,
-					      data->match_buf_len,
+					      data->match_buf_len - 1,
 					      data->rx_buf, 0, len);
-		if (data->match_buf_len < match_len) {
+		if ((data->match_buf_len - 1) < match_len) {
 			LOG_ERR("Match buffer size (%zu) is too small for "
 				"incoming command size: %u!  Truncating!",
-				data->match_buf_len, match_len);
+				data->match_buf_len - 1, match_len);
 		}
 
 #if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
