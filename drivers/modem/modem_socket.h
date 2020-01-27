@@ -40,6 +40,7 @@ struct modem_socket {
 	struct k_sem sem_data_ready;
 
 	/** socket state */
+	bool is_connected;
 	bool is_waiting;
 	bool is_polled;
 
