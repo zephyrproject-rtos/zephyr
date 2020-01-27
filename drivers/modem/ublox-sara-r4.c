@@ -1161,6 +1161,21 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 			&mdata.socket_config, sock);
 	}
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_R4)
+	/* max length in hex mode is MDM_MAX_DATA_LENGTH / 2 */
+	if (next_packet_size > (MDM_MAX_DATA_LENGTH / 2)) {
+		next_packet_size = (MDM_MAX_DATA_LENGTH / 2);
+	}
+#else
+	/*
+	 * Binary and ASCII mode allows sending MDM_MAX_DATA_LENGTH bytes to
+	 * the socket in one command
+	 */
+	if (next_packet_size > MDM_MAX_DATA_LENGTH) {
+		next_packet_size = MDM_MAX_DATA_LENGTH;
+	}
+#endif
+
 	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%d",
 		 from ? "RF" : "RD", sock->id,
 		 len < next_packet_size ? len : next_packet_size);
