@@ -382,15 +382,15 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 		wait(remaining);
 
 		rc = mqtt_live(client);
-		if (rc != 0) {
+		if (rc != 0 && rc != -EAGAIN) {
 			PRINT_RESULT("mqtt_live", rc);
 			return rc;
-		}
-
-		rc = mqtt_input(client);
-		if (rc != 0) {
-			PRINT_RESULT("mqtt_input", rc);
-			return rc;
+		} else if (rc == 0) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
 		}
 
 		remaining = timeout + start_time - k_uptime_get();
