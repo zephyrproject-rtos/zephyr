@@ -19,6 +19,10 @@ LOG_MODULE_REGISTER(gsm_ppp, CONFIG_NET_PPP_LOG_LEVEL);
 #include "modem_iface_uart.h"
 #include "modem_cmd_handler.h"
 
+#if defined(CONFIG_MODEM_GSM_MUX)
+#include "gsm_mux.h"
+#endif
+
 #define GSM_CMD_READ_BUF       128
 #define GSM_CMD_AT_TIMEOUT     K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT  K_SECONDS(6)
@@ -44,6 +48,10 @@ static struct gsm_modem {
 	size_t ppp_recv_buf_len;
 	uart_pipe_recv_cb ppp_recv_cb;
 	struct k_sem ppp_send_sem;
+
+#if defined(CONFIG_MODEM_GSM_MUX)
+	struct gsm_mux *mux;
+#endif
 } gsm;
 
 static size_t recv_buf_offset;
@@ -119,6 +127,10 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
+#if defined(CONFIG_MODEM_GSM_MUX)
+	/* Enable mux with Basic option */
+	SETUP_CMD_NOHANDLE("AT+CMUX=0"),
+#endif
 	/* create PDP context */
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 	/* connect to network */
@@ -230,18 +242,41 @@ int uart_pipe_send(const u8_t *data, int len)
 {
 	k_sem_take(&gsm.ppp_send_sem, K_FOREVER);
 
+#if defined(CONFIG_MODEM_GSM_MUX)
+	(void)gsm_mux_send(gsm.mux, data, len);
+#else
 	(void)gsm.context.iface.write(&gsm.context.iface, data, len);
+#endif
 
 	k_sem_give(&gsm.ppp_send_sem);
 
 	return 0;
 }
 
+#if defined(CONFIG_MODEM_GSM_MUX)
+static u8_t *gsm_mux_recv_cb(u8_t *buf, size_t *off)
+{
+	return gsm_mux_recv(gsm.mux, buf, off);
+}
+#endif /* CONFIG_MODEM_GSM_MUX */
+
 void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb)
 {
 	gsm.ppp_recv_buf = buf;
 	gsm.ppp_recv_buf_len = len;
+
+#if defined(CONFIG_MODEM_GSM_MUX)
+	gsm.mux = gsm_mux_alloc(&gsm.context.iface, cb,
+				gsm.context.iface.write);
+	if (!gsm.mux) {
+		LOG_ERR("Cannot allocate GSM mux, GSM 07.10 disabled");
+		return;
+	}
+
+	gsm.ppp_recv_cb = gsm_mux_recv_cb;
+#else
 	gsm.ppp_recv_cb = cb;
+#endif
 }
 
 DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, NULL, NULL, POST_KERNEL,

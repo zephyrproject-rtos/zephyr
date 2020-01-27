@@ -29,4 +29,43 @@ config MODEM_GSM_APN
 	  Specify Access Point Name, i.e. the name to identify Internet IP
 	  GPRS cellular data context.
 
+config MODEM_GSM_MUX
+	bool "Enable GSM 07.10 muxing"
+	default y
+	help
+	  Enable GSM 07.10 muxing protocol defined in
+	  https://www.etsi.org/deliver/etsi_ts/101300_101399/101369/07.01.00_60/ts_101369v070100p.pdf
+	  The muxing protocol allows GSM modem to share the same UART for both
+	  the PPP data and AT commands. The muxing support is enabled by
+	  default as that is normally the desired functionality.
+
+config MODEM_GSM_MUX_MAX
+	int "Max number of GSM mux instances"
+	default 1
+	depends on MODEM_GSM_MUX
+	help
+	  Usually we only need one GSM mux instance. You might need to increase
+	  this if you have more than one PPP network interface enabled.
+
+config MODEM_GSM_MUX_DLCI_MAX
+	int "Max number of GSM data link connection (DLC) instances"
+	default 3
+	range 1 64
+	depends on MODEM_GSM_MUX
+	help
+	  For our purposes we will manage with 3 DLCI (control, ppp, and AT
+	  commands) so making it the default value. You need to increase this
+	  value if max number of muxes is > 1.
+
+if MODEM_GSM_MUX
+
+module = MODEM_GSM_MUX
+module-dep = LOG
+module-str = Log level for GSM 07.10 Mux driver
+module-help = Sets log level for GSM 07.10 Mux Device Driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif
+
+
 endif
