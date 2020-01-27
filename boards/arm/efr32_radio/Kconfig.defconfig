@@ -1,0 +1,61 @@
+# EFR32 radio board
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFR32_RADIO
+
+config BOARD
+	default "efr32_radio_brd4104a" if BOARD_EFR32_RADIO_BRD4104A
+	default "efr32_radio_brd4250b" if BOARD_EFR32_RADIO_BRD4250B
+
+config CMU_HFXO_FREQ
+	default 38400000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if LOG_BACKEND_SWO
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
+endif # LOG_BACKEND_SWO
+
+if GPIO_GECKO
+
+config GPIO_GECKO_PORTA
+	default y
+
+config GPIO_GECKO_PORTB
+	default y
+
+config GPIO_GECKO_PORTC
+	default y
+
+config GPIO_GECKO_PORTD
+	default y
+
+config GPIO_GECKO_PORTE
+	default n
+
+config GPIO_GECKO_PORTF
+	default y
+
+endif # GPIO_GECKO
+
+if SERIAL
+
+config UART_GECKO
+	default y
+
+endif # SERIAL
+
+if COUNTER
+
+config COUNTER_GECKO_RTCC
+	default y
+
+endif # COUNTER
+
+endif # BOARD_EFR32_RADIO
