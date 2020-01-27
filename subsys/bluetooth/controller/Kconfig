@@ -510,6 +510,12 @@ config BT_CTLR_SMI_TX
 	help
 	  Enable support for Bluetooth 5.0 SMI TX in the Controller.
 
+config BT_CTLR_SMI_TX_SETTING
+	bool "Stable modulation index - Transmitter as setting"
+	depends on BT_CTLR_SMI_TX && BT_CTLR_SETTINGS
+	help
+	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
+
 if BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
 
 config BT_CTLR_ADVANCED_FEATURES

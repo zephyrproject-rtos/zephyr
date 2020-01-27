@@ -21,6 +21,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 
 #include "lll.h"
 #include "lll_vendor.h"
