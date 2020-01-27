@@ -581,6 +581,7 @@ int mqtt_live(struct mqtt_client *client)
 {
 	int err_code = 0;
 	u32_t elapsed_time;
+	bool ping_sent = false;
 
 	NULL_PARAM_CHECK(client);
 
@@ -591,11 +592,16 @@ int mqtt_live(struct mqtt_client *client)
 	if ((client->keepalive > 0) &&
 	    (elapsed_time >= (client->keepalive * 1000))) {
 		err_code = mqtt_ping(client);
+		ping_sent = true;
 	}
 
 	mqtt_mutex_unlock(client);
 
-	return err_code;
+	if (ping_sent) {
+		return err_code;
+	} else {
+		return -EAGAIN;
+	}
 }
 
 u32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
