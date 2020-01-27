@@ -40,6 +40,7 @@ struct modem_socket {
 	struct k_sem sem_data_ready;
 
 	/** socket state */
+	bool is_waiting;
 	bool is_polled;
 
 	/** temporary socket data */
@@ -71,6 +72,10 @@ struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg);
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd);
 int modem_socket_poll(struct modem_socket_config *cfg,
 		      struct pollfd *fds, int nfds, int msecs);
+void modem_socket_wait_data(struct modem_socket_config *cfg,
+			    struct modem_socket *sock);
+void modem_socket_data_ready(struct modem_socket_config *cfg,
+			     struct modem_socket *sock);
 int modem_socket_init(struct modem_socket_config *cfg,
 		      const struct socket_op_vtable *vtable);
 
