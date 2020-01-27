@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2019-2020 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,23 +83,26 @@ static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
 }
 
 /* return scanned length for params */
-static int parse_params(u8_t *buf, size_t buf_len, struct modem_cmd *cmd,
+static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
+			struct modem_cmd *cmd,
 			u8_t **argv, size_t argv_len, u16_t *argc)
 {
 	int i;
-	size_t begin = 0U, end = 0U;
+	size_t begin, end;
 
-	if (!buf || !buf_len || !cmd || !argv || !argc) {
+	if (!data || !data->match_buf || !match_len || !cmd || !argv || !argc) {
 		return -EINVAL;
 	}
 
-	while (end < buf_len) {
+	begin = cmd->cmd_len;
+	end = cmd->cmd_len;
+	while (end < match_len) {
 		for (i = 0; i < strlen(cmd->delim); i++) {
-			if (buf[end] == cmd->delim[i]) {
+			if (data->match_buf[end] == cmd->delim[i]) {
 				/* mark a parameter beginning */
-				argv[*argc] = &buf[begin];
+				argv[*argc] = &data->match_buf[begin];
 				/* end parameter with NUL char */
-				buf[end] = '\0';
+				data->match_buf[end] = '\0';
 				/* bump begin */
 				begin = end + 1;
 				(*argc)++;
@@ -117,12 +120,12 @@ static int parse_params(u8_t *buf, size_t buf_len, struct modem_cmd *cmd,
 	/* consider the ending portion a param if end > begin */
 	if (end > begin) {
 		/* mark a parameter beginning */
-		argv[*argc] = &buf[begin];
+		argv[*argc] = &data->match_buf[begin];
 		/* end parameter with NUL char
-		 * NOTE: if this is at the end of buf_len will probably
+		 * NOTE: if this is at the end of match_len will probably
 		 * be overwriting a NUL that's already ther
 		 */
-		buf[end] = '\0';
+		data->match_buf[end] = '\0';
 		(*argc)++;
 	}
 
@@ -135,7 +138,7 @@ static int parse_params(u8_t *buf, size_t buf_len, struct modem_cmd *cmd,
 	 * return the beginning of the next unfinished param so we don't
 	 * "skip" any data that could be parsed later.
 	 */
-	return begin;
+	return begin - cmd->cmd_len;
 }
 
 /* process a "matched" command */
@@ -152,9 +155,8 @@ static void process_cmd(struct modem_cmd *cmd, size_t match_len,
 	/* do we need to parse arguments? */
 	if (cmd->arg_count > 0U) {
 		/* returns < 0 on error and > 0 for parsed len */
-		parsed_len = parse_params(data->match_buf + cmd->cmd_len,
-					  match_len - cmd->cmd_len,
-					  cmd, argv, ARRAY_SIZE(argv), &argc);
+		parsed_len = parse_params(data, match_len, cmd,
+					  argv, ARRAY_SIZE(argv), &argc);
 		if (parsed_len < 0) {
 			LOG_ERR("param parse error: %d", parsed_len);
 			return;
