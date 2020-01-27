@@ -26,15 +26,15 @@
 };
 
 &slot0_ns_partition {
-	reg = <0x00040000 0x40000>;
+	reg = <0x00040000 0x45000>;
 };
 
 &slot1_partition {
-	reg = <0x00080000 0x30000>;
+	reg = <0x00085000 0x30000>;
 };
 
 &slot1_ns_partition {
-	reg = <0x000b0000 0x40000>;
+	reg = <0x000b5000 0x45000>;
 };
 
 /* Default SRAM planning when building for nRF9160 with
