@@ -54,8 +54,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 		}
 
 		if (first_free_slot == ARRAY_SIZE(key_pool) &&
-		    (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY) ||
-		     !keys->enc_size)) {
+		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = i;
 		}
 	}

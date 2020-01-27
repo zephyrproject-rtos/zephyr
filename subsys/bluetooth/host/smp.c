@@ -1763,6 +1763,14 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 	} else {
 		u8_t auth_err = auth_err_get(status);
 
+		/*
+		 * Clear the key pool entry in case of pairing failure.
+		 */
+		if (smp->chan.chan.conn->le.keys) {
+			bt_keys_clear(smp->chan.chan.conn->le.keys);
+			smp->chan.chan.conn->le.keys = NULL;
+		}
+
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
 			bt_conn_security_changed(smp->chan.chan.conn, auth_err);
 		}
@@ -1780,15 +1788,6 @@ static void smp_timeout(struct k_work *work)
 	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
 
 	BT_ERR("SMP Timeout");
-
-	/*
-	 * If SMP timeout occurred during key distribution we should assume
-	 * pairing failed and don't store any keys from this pairing.
-	 */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->le.keys) {
-		bt_keys_clear(smp->chan.chan.conn->le.keys);
-	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 
@@ -3517,15 +3516,6 @@ static u8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 		if (bt_auth && bt_auth->cancel) {
 			bt_auth->cancel(conn);
 		}
-	}
-
-	/*
-	 * Pairing Failed command may be sent at any time during the pairing,
-	 * so if there are any keys distributed, shall be cleared.
-	 */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->le.keys) {
-		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
 	smp_pairing_complete(smp, req->reason);
