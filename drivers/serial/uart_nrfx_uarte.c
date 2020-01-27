@@ -514,6 +514,9 @@ static int uarte_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
 	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
+	__ASSERT(nrf_uarte_rx_pin_get(uarte) != NRF_UARTE_PSEL_DISCONNECTED,
+			"TX only UARTE instance");
+
 	if (hw_rx_counting_enabled(data)) {
 		nrfx_timer_clear(&cfg->timer);
 	} else {
@@ -1164,11 +1167,11 @@ static int uarte_instance_init(struct device *dev,
 	nrf_gpio_pin_write(config->pseltxd, 1);
 	nrf_gpio_cfg_output(config->pseltxd);
 
-	nrf_gpio_cfg_input(config->pselrxd, NRF_GPIO_PIN_NOPULL);
+	if (config->pselrxd !=  NRF_UARTE_PSEL_DISCONNECTED) {
+		nrf_gpio_cfg_input(config->pselrxd, NRF_GPIO_PIN_NOPULL);
+	}
 
-	nrf_uarte_txrx_pins_set(uarte,
-				config->pseltxd,
-				config->pselrxd);
+	nrf_uarte_txrx_pins_set(uarte, config->pseltxd, config->pselrxd);
 
 	if (config->pselcts != NRF_UARTE_PSEL_DISCONNECTED &&
 	    config->pselrts != NRF_UARTE_PSEL_DISCONNECTED) {
@@ -1200,10 +1203,12 @@ static int uarte_instance_init(struct device *dev,
 	/* Enable receiver and transmitter */
 	nrf_uarte_enable(uarte);
 
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+	if (config->pselrxd != NRF_UARTE_PSEL_DISCONNECTED) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 
-	nrf_uarte_rx_buffer_set(uarte, &data->rx_data, 1);
-	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+		nrf_uarte_rx_buffer_set(uarte, &data->rx_data, 1);
+		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+	}
 
 #ifdef UARTE_INTERRUPT_DRIVEN
 	if (interrupts_active) {
@@ -1239,7 +1244,9 @@ static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 	if (enable) {
 		nrf_gpio_pin_write(tx_pin, 1);
 		nrf_gpio_cfg_output(tx_pin);
-		nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+		if (rx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
+			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+		}
 
 		if (get_dev_config(dev)->rts_cts_pins_set) {
 			nrf_gpio_pin_write(rts_pin, 1);
@@ -1249,7 +1256,9 @@ static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 		}
 	} else {
 		nrf_gpio_cfg_default(tx_pin);
-		nrf_gpio_cfg_default(rx_pin);
+		if (rx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
+			nrf_gpio_cfg_default(rx_pin);
+		}
 		if (get_dev_config(dev)->rts_cts_pins_set) {
 			nrf_gpio_cfg_default(cts_pin);
 			nrf_gpio_cfg_default(rts_pin);
@@ -1436,6 +1445,9 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	    defined(DT_NORDIC_NRF_UARTE_UART_0_CTS_PIN)
 		#define UARTE_0_CONFIG_RTS_CTS 1
 	#endif
+	#if !defined(DT_NORDIC_NRF_UARTE_UART_0_RX_PIN)
+	#define DT_NORDIC_NRF_UARTE_UART_0_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
+	#endif
 
 	UART_NRF_UARTE_DEVICE(0);
 #endif /* CONFIG_UART_0_NRF_UARTE */
@@ -1444,6 +1456,9 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	#if defined(DT_NORDIC_NRF_UARTE_UART_1_RTS_PIN) && \
 	    defined(DT_NORDIC_NRF_UARTE_UART_1_CTS_PIN)
 		#define UARTE_1_CONFIG_RTS_CTS 1
+	#endif
+	#if !defined(DT_NORDIC_NRF_UARTE_UART_1_RX_PIN)
+	#define DT_NORDIC_NRF_UARTE_UART_1_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
 	#endif
 
 	UART_NRF_UARTE_DEVICE(1);
@@ -1454,6 +1469,9 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	    defined(DT_NORDIC_NRF_UARTE_UART_2_CTS_PIN)
 		#define UARTE_2_CONFIG_RTS_CTS 1
 	#endif
+	#if !defined(DT_NORDIC_NRF_UARTE_UART_2_RX_PIN)
+	#define DT_NORDIC_NRF_UARTE_UART_2_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
+	#endif
 
 	UART_NRF_UARTE_DEVICE(2);
 #endif /* CONFIG_UART_2_NRF_UARTE */
@@ -1462,6 +1480,9 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	#if defined(DT_NORDIC_NRF_UARTE_UART_3_RTS_PIN) && \
 	    defined(DT_NORDIC_NRF_UARTE_UART_3_CTS_PIN)
 		#define UARTE_3_CONFIG_RTS_CTS 1
+	#endif
+	#if !defined(DT_NORDIC_NRF_UARTE_UART_3_RX_PIN)
+	#define DT_NORDIC_NRF_UARTE_UART_3_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
 	#endif
 
 	UART_NRF_UARTE_DEVICE(3);
