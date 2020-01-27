@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2019-2020 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,7 @@ struct modem_socket_config {
 	/* beginning socket id (modems can set this to 0 or 1 as needed) */
 	int base_socket_num;
 	struct k_sem sem_poll;
+	struct k_sem sem_lock;
 
 	const struct socket_op_vtable *vtable;
 };
