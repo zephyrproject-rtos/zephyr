@@ -122,6 +122,7 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #include "../controller/ll_sw/ll_adv_aux.h"
 #include "../controller/ll_sw/lll.h"
 
+#if defined(CONFIG_BT_BROADCASTER)
 #define OWN_ADDR_TYPE 1
 #define PEER_ADDR_TYPE 0
 #define PEER_ADDR NULL
@@ -135,15 +136,11 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 
 #define AD_OP 0x03
 #define AD_FRAG_PREF 0x00
-#define AD_LEN 0x00
-#define AD_DATA NULL
 
-#define SCAN_INTERVAL 0x0004
-#define SCAN_WINDOW 0x0004
-#define SCAN_OWN_ADDR_TYPE 1
-#define SCAN_FILTER_POLICY 0
+static const struct bt_data adv_data[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
+	};
 
-#if defined(CONFIG_BT_BROADCASTER)
 int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t adv_interval = 0x20;
@@ -151,6 +148,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 	u16_t evt_prop = 0U;
 	u8_t adv_type;
 	u8_t enable;
+	u8_t ad = 0;
 	u8_t phy_p;
 	s32_t err;
 
@@ -188,6 +186,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 		} else if (!strcmp(argv[2], "txp")) {
 			evt_prop |= BIT(6);
 		} else if (!strcmp(argv[2], "ad")) {
+			ad = 1;
 		} else {
 			handle = strtoul(argv[2], NULL, 16);
 			if (handle >= BT_CTLR_ADV_MAX) {
@@ -202,6 +201,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 		} else if (!strcmp(argv[3], "txp")) {
 			evt_prop |= BIT(6);
 		} else if (!strcmp(argv[3], "ad")) {
+			ad = 1;
 		} else {
 			handle = strtoul(argv[3], NULL, 16);
 			if (handle >= BT_CTLR_ADV_MAX) {
@@ -214,6 +214,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 		if (!strcmp(argv[4], "txp")) {
 			evt_prop |= BIT(6);
 		} else if (!strcmp(argv[4], "ad")) {
+			ad = 1;
 		} else {
 			handle = strtoul(argv[4], NULL, 16);
 			if (handle >= BT_CTLR_ADV_MAX) {
@@ -224,6 +225,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc > 5) {
 		if (!strcmp(argv[5], "ad")) {
+			ad = 1;
 		} else {
 			handle = strtoul(argv[5], NULL, 16);
 			if (handle >= BT_CTLR_ADV_MAX) {
@@ -255,11 +257,14 @@ do_enable:
 	}
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-	shell_print(shell, "ad data set...");
-	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF, AD_LEN,
-				     AD_DATA);
-	if (err) {
-		goto exit;
+	if (ad) {
+		shell_print(shell, "ad data set...");
+		err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+					     ARRAY_SIZE(adv_data),
+					     (void *)adv_data);
+		if (err) {
+			goto exit;
+		}
 	}
 #endif
 
@@ -282,6 +287,11 @@ exit:
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
+#define SCAN_INTERVAL 0x0004
+#define SCAN_WINDOW 0x0004
+#define SCAN_OWN_ADDR_TYPE 1
+#define SCAN_FILTER_POLICY 0
+
 int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u8_t type = 0U;
