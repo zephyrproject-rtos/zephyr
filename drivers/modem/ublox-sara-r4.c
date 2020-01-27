@@ -637,12 +637,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 	}
 
 	if (new_total > 0) {
-		/* unblock sockets waiting on recv() */
-		k_sem_give(&sock->sem_data_ready);
-		if (sock->is_polled) {
-			/* unblock poll() */
-			k_sem_give(&mdata.socket_config.sem_poll);
-		}
+		modem_socket_data_ready(&mdata.socket_config, sock);
 	}
 }
 
@@ -1134,7 +1129,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 				socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
-	int ret;
+	int ret, next_packet_size;
 	struct modem_cmd cmd[] = {
 		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
@@ -1148,22 +1143,27 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 
 	if (flags & MSG_PEEK) {
 		return -ENOTSUP;
-	} else if (flags & MSG_DONTWAIT && !sock->packet_sizes[0]) {
-		return 0;
 	}
 
-	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-		return -ENOTCONN;
-	}
+	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config,
+							 sock);
+	if (!next_packet_size) {
+		if (flags & MSG_DONTWAIT) {
+			return 0;
+		}
 
-	if (!sock->packet_sizes[0]) {
-		k_sem_take(&sock->sem_data_ready, K_FOREVER);
+		if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+			return -ENOTCONN;
+		}
+
+		modem_socket_wait_data(&mdata.socket_config, sock);
+		next_packet_size = modem_socket_next_packet_size(
+			&mdata.socket_config, sock);
 	}
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%d",
 		 from ? "RF" : "RD", sock->id,
-		 len < sock->packet_sizes[0] ? len :
-					       sock->packet_sizes[0]);
+		 len < next_packet_size ? len : next_packet_size);
 
 	/* socket read settings */
 	(void)memset(&sock_data, 0, sizeof(sock_data));
