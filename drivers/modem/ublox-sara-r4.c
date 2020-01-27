@@ -613,7 +613,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 		return;
 	}
 
-	modem_socket_put(&mdata.socket_config, sock->sock_fd);
+	sock->is_connected = false;
 }
 
 /* Handler: +UUSOR[D|F]: <socket_id>[0],<length>[1] */
@@ -1014,13 +1014,15 @@ static int offload_close(struct modem_socket *sock)
 		return 0;
 	}
 
-	snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
+	if (sock->is_connected) {
+		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, buf,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-	if (ret < 0) {
-		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				     NULL, 0U, buf,
+				     &mdata.sem_response, MDM_CMD_TIMEOUT);
+		if (ret < 0) {
+			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		}
 	}
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
@@ -1090,6 +1092,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+	} else {
+		sock->is_connected = true;
 	}
 
 	return ret;
@@ -1148,6 +1152,10 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return 0;
 	}
 
+	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+		return -ENOTCONN;
+	}
+
 	if (!sock->packet_sizes[0]) {
 		k_sem_take(&sock->sem_data_ready, K_FOREVER);
 	}
@@ -1198,6 +1206,10 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 
 	if (!buf || len == 0) {
 		return -EINVAL;
+	}
+
+	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+		return -ENOTCONN;
 	}
 
 	if (!to && sock->ip_proto == IPPROTO_UDP) {
