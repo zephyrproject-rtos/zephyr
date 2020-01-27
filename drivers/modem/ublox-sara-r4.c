@@ -141,6 +141,9 @@ struct modem_data {
 	/* modem state */
 	int ev_creg;
 
+  /* bytes written to socket in last transaction */
+  int sock_written;
+  
 	/* response semaphore */
 	struct k_sem sem_response;
 };
@@ -238,6 +241,19 @@ static int send_socket_data(struct modem_socket *sock,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_R4)
+	/* Hex mode allows sending 512 bytes to the socket in one command */
+	if(buf_len > 512)
+	  buf_len = 512;
+#else
+	/* Binary and ASCII mode allows sending 1024 bytes to the socket in one command */
+	if(buf_len > 1024)
+	  buf_len = 1024;
+#endif
+
+	/* The number of bytes written will be reported by the modem */
+	mdata.sock_written = 0;
+	
 	if (sock->ip_proto == IPPROTO_UDP) {
 		ret = modem_context_get_addr_port(dst_addr, &dst_port);
 		snprintk(send_buf, sizeof(send_buf),
@@ -302,7 +318,7 @@ exit:
 					    NULL, 0U, false);
 	k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
 
-	return ret;
+	return mdata.sock_written;
 }
 
 /*
@@ -448,9 +464,8 @@ MODEM_CMD_DEFINE(on_cmd_sockcreate)
 /* Handler: +USO[WR|ST]: <socket_id>[0],<length>[1] */
 MODEM_CMD_DEFINE(on_cmd_sockwrite)
 {
-	/* TODO: check length against original send length*/
-
-	/* don't give back semaphore -- OK to follow */
+  mdata.sock_written = ATOI(argv[1], 0, "length");
+  LOG_DBG("bytes written: %d",mdata.sock_written);
 }
 
 /* Common code for +USOR[D|F]: "<hex_data>" */
