@@ -469,10 +469,9 @@ struct gpio_callback;
  * @typedef gpio_callback_handler_t
  * @brief Define the application callback handler function signature
  *
- * @param "struct device *port" Device struct for the GPIO device.
- * @param "struct gpio_callback *cb" Original struct gpio_callback
- *        owning this handler
- * @param "u32_t pins" Mask of pins that triggers the callback handler
+ * @param port Device struct for the GPIO device.
+ * @param cb Original struct gpio_callback owning this handler
+ * @param pins Mask of pins that triggers the callback handler
  *
  * Note: cb pointer can be used to retrieve private data through
  * CONTAINER_OF() if original struct gpio_callback is stored in
@@ -1339,8 +1338,8 @@ static inline int gpio_remove_callback(struct device *port,
  *       the pin to trigger an interruption. So as a semantic detail, if no
  *       callback is registered, of course none will be called.
  *
- * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
- * ``GPIO_INT_ENABLE`` along with other interrupt configuration flags.
+ * @deprecated Replace with ``gpio_pin_interrupt_configure()`` passing
+ * interrupt configuration flags such as ``GPIO_INT_EDGE_TO_ACTIVE``.
  */
 static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
