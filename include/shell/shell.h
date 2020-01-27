@@ -162,7 +162,7 @@ struct shell_static_entry {
 					mandatory, optional) \
 		), \
 		(\
-		static shell_cmd_handler dummy_##syntax##handler \
+		static shell_cmd_handler dummy_##syntax##_handler \
 			__attribute__((unused)) = handler;\
 		static const struct shell_cmd_entry *dummy_subcmd_##syntax \
 			__attribute__((unused)) = subcmd\
