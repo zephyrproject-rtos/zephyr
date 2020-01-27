@@ -2128,8 +2128,6 @@ static void att_timeout(struct k_work *work)
 	/* Consider the channel disconnected */
 	bt_gatt_disconnected(ch->chan.conn);
 	ch->chan.conn = NULL;
-
-	k_mem_slab_free(&att_slab, (void **)&att);
 }
 
 static void bt_att_connected(struct bt_l2cap_chan *chan)
@@ -2161,8 +2159,6 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 	att_reset(att);
 
 	bt_gatt_disconnected(ch->chan.conn);
-
-	k_mem_slab_free(&att_slab, (void **)&att);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -2238,7 +2234,17 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return 0;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept, NULL);
+void bt_att_destroy(struct bt_l2cap_chan *chan)
+{
+	struct bt_att *att = ATT_CHAN(chan);
+
+	BT_DBG("chan %p", chan);
+
+	k_mem_slab_free(&att_slab, (void **)&att);
+}
+
+BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept,
+			bt_att_destroy);
 
 void bt_att_init(void)
 {
