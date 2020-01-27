@@ -126,7 +126,7 @@ struct modem_data {
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
 	u8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
-	u8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
+	u8_t cmd_match_buf[MDM_RECV_BUF_SIZE + 1];
 
 	/* socket data */
 	struct modem_socket_config socket_config;
