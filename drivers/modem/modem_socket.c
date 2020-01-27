@@ -219,6 +219,7 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	sock->id = cfg->base_socket_num - 1;
 	sock->sock_fd = -1;
 	sock->is_waiting = false;
+	sock->is_polled = false;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
 	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
 
