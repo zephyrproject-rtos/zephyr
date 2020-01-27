@@ -159,6 +159,7 @@ if(SUPPORTS_DTS)
   # themselves, so we don't rely on the C compiler otherwise.
   #
 
+  if(DTC)
   set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
   check_dtc_flag("-Wunique_unit_address_if_enabled" check)
   if (check)
@@ -186,6 +187,7 @@ if(SUPPORTS_DTS)
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
+  endif(DTC)
 
   #
   # Run gen_defines.py to create a .conf file and a header file
