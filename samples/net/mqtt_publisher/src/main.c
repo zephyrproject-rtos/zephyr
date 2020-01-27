@@ -113,13 +113,18 @@ static void clear_fds(void)
 	nfds = 0;
 }
 
-static void wait(int timeout)
+static int wait(int timeout)
 {
+	int ret = 0;
+
 	if (nfds > 0) {
-		if (poll(fds, nfds, timeout) < 0) {
+		ret = poll(fds, nfds, timeout);
+		if (ret < 0) {
 			LOG_ERR("poll error: %d", errno);
 		}
 	}
+
+	return ret;
 }
 
 void mqtt_evt_handler(struct mqtt_client *const client,
@@ -357,8 +362,9 @@ static int try_to_connect(struct mqtt_client *client)
 
 		prepare_fds(client);
 
-		wait(APP_SLEEP_MSECS);
-		mqtt_input(client);
+		if (wait(APP_SLEEP_MSECS)) {
+			mqtt_input(client);
+		}
 
 		if (!connected) {
 			mqtt_abort(client);
@@ -379,7 +385,13 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 	int rc;
 
 	while (remaining > 0 && connected) {
-		wait(remaining);
+		if (wait(remaining)) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
+		}
 
 		rc = mqtt_live(client);
 		if (rc != 0 && rc != -EAGAIN) {
