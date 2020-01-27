@@ -416,8 +416,8 @@ typedef u32_t gpio_port_value_t;
 /**
  * @brief Provides a type to hold a GPIO pin index.
  *
- * This can be used to record the pin number from a devicetree GPIOS
- * property.
+ * This reduced-size type is sufficient to record a pin number,
+ * e.g. from a devicetree GPIOS property.
  */
 typedef u8_t gpio_pin_t;
 
@@ -560,11 +560,11 @@ struct gpio_driver_api {
 	u32_t (*get_pending_int)(struct device *dev);
 };
 
-__syscall int gpio_config(struct device *port, u32_t pin,
+__syscall int gpio_config(struct device *port, gpio_pin_t pin,
 			  gpio_flags_t flags);
 
 static inline int z_impl_gpio_config(struct device *port,
-				    u32_t pin, gpio_flags_t flags)
+				     gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -639,10 +639,12 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
  * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_pin_interrupt_configure(struct device *port,
-		unsigned int pin, gpio_flags_t flags);
+					   gpio_pin_t pin,
+					   gpio_flags_t flags);
 
 static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
-		unsigned int pin, gpio_flags_t flags)
+						      gpio_pin_t pin,
+						      gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -706,7 +708,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_configure(struct device *port, u32_t pin,
+static inline int gpio_pin_configure(struct device *port, gpio_pin_t pin,
 				     gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
@@ -1035,7 +1037,7 @@ static inline int gpio_port_set_clr_bits(struct device *port,
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_get_raw(struct device *port, unsigned int pin)
+static inline int gpio_pin_get_raw(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config->config_info;
@@ -1073,7 +1075,7 @@ static inline int gpio_pin_get_raw(struct device *port, unsigned int pin)
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_get(struct device *port, unsigned int pin)
+static inline int gpio_pin_get(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config->config_info;
@@ -1107,7 +1109,7 @@ static inline int gpio_pin_get(struct device *port, unsigned int pin)
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_set_raw(struct device *port, unsigned int pin,
+static inline int gpio_pin_set_raw(struct device *port, gpio_pin_t pin,
 				   int value)
 {
 	const struct gpio_driver_config *const cfg =
@@ -1148,7 +1150,7 @@ static inline int gpio_pin_set_raw(struct device *port, unsigned int pin,
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_set(struct device *port, unsigned int pin, int value)
+static inline int gpio_pin_set(struct device *port, gpio_pin_t pin, int value)
 {
 	const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config->config_info;
@@ -1176,7 +1178,7 @@ static inline int gpio_pin_set(struct device *port, unsigned int pin, int value)
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
+static inline int gpio_pin_toggle(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config->config_info;
@@ -1321,7 +1323,7 @@ static inline int gpio_remove_callback(struct device *port,
  */
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_enable_callback(struct device *port,
-							u32_t pin)
+							gpio_pin_t pin)
 {
 	return gpio_enable_callback(port, pin);
 }
@@ -1337,7 +1339,7 @@ __deprecated static inline int gpio_pin_enable_callback(struct device *port,
  */
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_disable_callback(struct device *port,
-							 u32_t pin)
+							 gpio_pin_t pin)
 {
 	return gpio_disable_callback(port, pin);
 }
