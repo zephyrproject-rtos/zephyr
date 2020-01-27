@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019, Manivannan Sadhasivam
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 description: Semtech SX1276 LoRa Modem
 
@@ -18,4 +15,3 @@ properties:
     dio-gpios:
       type: phandle-array
       required: true
-...
