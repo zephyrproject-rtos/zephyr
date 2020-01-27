@@ -191,7 +191,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
-		struct ext_adv_hdr _h, *h;
+		struct ext_adv_hdr *h, _h;
 		uint8_t *_ptr, *ptr;
 		uint8_t len;
 
@@ -222,7 +222,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			ptr += BDADDR_SIZE;
 		}
 
-		/* TODO: TargetA flag */
+		/* TODO: TargetA flag in primary channel PDU only for directed
+		 */
+
+		/* No CTEInfo flag in primary channel PDU */
 
 		/* ADI flag */
 		if (_h.adi) {
@@ -239,6 +242,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* No SyncInfo flag in primary channel PDU */
 
 		/* Tx Power flag */
+		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
+		 * for future use on the LE Coded PHY.
+		 */
 		if (evt_prop & BIT(6) &&
 		    (!_h.aux_ptr || (phy_p != BIT(2)))) {
 			h->tx_pwr = 1;
@@ -295,18 +301,23 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			aux = (void *)ptr;
 			aux->phy = find_lsb_set(phy_s);
 		}
+		adv->phy_s = phy_s;
 
 		/* ADI */
 		if (h->adi) {
 			struct ext_adv_adi *adi;
 
 			ptr -= sizeof(struct ext_adv_adi);
+
 			/* NOTE: memcpy shall handle overlapping buffers */
 			memcpy(ptr, _ptr, sizeof(struct ext_adv_adi));
 
 			adi = (void *)ptr;
 			adi->sid = sid;
 		}
+		adv->sid = sid;
+
+		/* No CTEInfo field in primary channel PDU */
 
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
