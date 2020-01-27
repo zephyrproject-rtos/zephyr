@@ -165,13 +165,9 @@
 		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
-		};
-		storage_partition: partition@fa000 {
+		storage_partition: partition@f0000 {
 			label = "storage";
-			reg = <0x000fa000 0x00006000>;
+			reg = <0x000f0000 0x00010000>;
 		};
 	};
 };
