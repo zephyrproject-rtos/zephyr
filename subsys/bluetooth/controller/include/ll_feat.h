@@ -91,7 +91,12 @@
 #endif /* !CONFIG_BT_CTLR_SMI_RX */
 
 #if defined(CONFIG_BT_CTLR_SMI_TX)
+#if defined(CONFIG_BT_CTLR_SMI_TX_SETTING)
+#define LL_FEAT_BIT_SMI_TX (ll_settings_smi_tx() ? \
+			    BIT64(BT_LE_FEAT_BIT_SMI_TX) : 0)
+#else /* !CONFIG_BT_CTLR_SMI_TX_SETTING */
 #define LL_FEAT_BIT_SMI_TX BIT64(BT_LE_FEAT_BIT_SMI_TX)
+#endif /* !CONFIG_BT_CTLR_SMI_TX_SETTING */
 #else /* !CONFIG_BT_CTLR_SMI_TX */
 #define LL_FEAT_BIT_SMI_TX 0
 #endif /* !CONFIG_BT_CTLR_SMI_TX */

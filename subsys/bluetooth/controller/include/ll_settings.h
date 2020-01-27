@@ -21,3 +21,5 @@ static inline u16_t ll_settings_subversion_number(void)
 }
 
 #endif /* CONFIG_BT_CTLR_VERSION_SETTINGS */
+
+bool ll_settings_smi_tx(void);
