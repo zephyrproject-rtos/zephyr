@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2019-2020 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,12 @@ int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 	if (new_total < old_total) {
 		/* remove packets that are not included in new_size */
 		while (old_total > new_total && sock->packet_count > 0) {
+			/* handle partial read */
+			if (old_total - new_total < sock->packet_sizes[0]) {
+				sock->packet_sizes[0] -= old_total - new_total;
+				break;
+			}
+
 			old_total -= sock->packet_sizes[0];
 			modem_socket_packet_drop_first(sock);
 		}
