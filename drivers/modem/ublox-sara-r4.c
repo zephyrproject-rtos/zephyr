@@ -864,7 +864,23 @@ restart:
 
 	/* wait for +CREG: 1(normal) or 5(roaming) */
 	counter = 0;
-	while (counter++ < 20 && mdata.ev_creg != 1 && mdata.ev_creg != 5) {
+	while (counter++ < 40 && mdata.ev_creg != 1 && mdata.ev_creg != 5) {
+		if (counter == 20) {
+			LOG_WRN("Force restart of RF functionality");
+
+			/* Disable RF temporarily */
+			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				NULL, 0, "AT+CFUN=0", &mdata.sem_response,
+				MDM_CMD_TIMEOUT);
+
+			k_sleep(K_SECONDS(1));
+
+			/* Enable RF */
+			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				NULL, 0, "AT+CFUN=1", &mdata.sem_response,
+				MDM_CMD_TIMEOUT);
+		}
+
 		k_sleep(K_SECONDS(1));
 	}
 
