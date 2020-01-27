@@ -11,51 +11,18 @@
  *        implemented in dma_stm32_v*.c
  */
 
-#include "dma_stm32.h"
-
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_stm32);
-
+#include <soc.h>
+#include <init.h>
+#include <drivers/dma.h>
+#include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
-static u32_t table_m_size[] = {
-	LL_DMA_MDATAALIGN_BYTE,
-	LL_DMA_MDATAALIGN_HALFWORD,
-	LL_DMA_MDATAALIGN_WORD,
-};
+#include "dma_stm32.h"
 
-static u32_t table_p_size[] = {
-	LL_DMA_PDATAALIGN_BYTE,
-	LL_DMA_PDATAALIGN_HALFWORD,
-	LL_DMA_PDATAALIGN_WORD,
-};
+#include <logging/log.h>
+LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
-struct dma_stm32_stream {
-	u32_t direction;
-	bool source_periph;
-	bool busy;
-	u32_t src_size;
-	u32_t dst_size;
-	void *callback_arg;
-	void (*dma_callback)(void *arg, u32_t id,
-			     int error_code);
-};
-
-struct dma_stm32_data {
-	int max_streams;
-	struct dma_stm32_stream *streams;
-};
-
-struct dma_stm32_config {
-	struct stm32_pclken pclken;
-	void (*config_irq)(struct device *dev);
-	bool support_m2m;
-	u32_t base;
-};
-
-/* Maximum data sent in single transfer (Bytes) */
-#define DMA_STM32_MAX_DATA_ITEMS		0xffff
+#include <drivers/clock_control/stm32_clock_control.h>
 
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
