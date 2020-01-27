@@ -19,6 +19,24 @@
  * Packet Size Support Functions
  */
 
+u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+				    struct modem_socket *sock)
+{
+	u16_t total = 0U;
+
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+
+	if (!sock || !sock->packet_count) {
+		goto exit;
+	}
+
+	total = sock->packet_sizes[0];
+
+exit:
+	k_sem_give(&cfg->sem_lock);
+	return total;
+}
+
 static u16_t modem_socket_packet_get_total(struct modem_socket *sock)
 {
 	int i;

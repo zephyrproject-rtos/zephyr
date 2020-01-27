@@ -59,7 +59,9 @@ struct modem_socket_config {
 	const struct socket_op_vtable *vtable;
 };
 
-/* return total size of remaining packets */
+/* return size of the first packet */
+u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+				    struct modem_socket *sock);
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total);
 int modem_socket_get(struct modem_socket_config *cfg, int family, int type,
