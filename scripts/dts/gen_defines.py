@@ -42,8 +42,6 @@ def main():
 
     write_top_comment(edt)
 
-    active_compats = set()
-
     for node in edt.nodes:
         if node.enabled and node.matching_compat:
             # Skip 'fixed-partitions' devices since they are handled by
@@ -60,10 +58,8 @@ def main():
             write_bus(node)
             write_existence_flags(node)
 
-            active_compats.update(node.compats)
-
-    out_comment("Active compatibles (mentioned in DTS + binding found)")
-    for compat in sorted(active_compats):
+    out_comment("Compatibles appearing on enabled nodes")
+    for compat in sorted(edt.compat2enabled):
         #define DT_COMPAT_<COMPAT> 1
         out(f"COMPAT_{str2ident(compat)}", 1)
 
@@ -272,12 +268,13 @@ def write_bus(node):
 def write_existence_flags(node):
     # Generate #defines of the form
     #
-    #   #define DT_INST_<INSTANCE>_<COMPAT> 1
+    #   #define DT_INST_<instance no.>_<compatible string> 1
     #
-    # These are flags for which devices exist.
+    # for enabled nodes. These are flags for which devices exist.
 
     for compat in node.compats:
-        out(f"INST_{node.instance_no[compat]}_{str2ident(compat)}", 1)
+        instance_no = node.edt.compat2enabled[compat].index(node)
+        out(f"INST_{instance_no}_{str2ident(compat)}", 1)
 
 
 def node_ident(node):
@@ -337,8 +334,11 @@ def node_instance_aliases(node):
     # This is a list since a node can have multiple 'compatible' strings, each
     # with their own instance number.
 
-    return [f"INST_{node.instance_no[compat]}_{str2ident(compat)}"
-            for compat in node.compats]
+    res = []
+    for compat in node.compats:
+        instance_no = node.edt.compat2enabled[compat].index(node)
+        res.append(f"INST_{instance_no}_{str2ident(compat)}")
+    return res
 
 
 def write_addr_size(edt, prop_name, prefix):
