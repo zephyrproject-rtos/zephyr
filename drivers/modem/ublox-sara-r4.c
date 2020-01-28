@@ -1315,6 +1315,7 @@ static int modem_init(struct device *dev)
 	mdata.cmd_handler_data.match_buf_len = sizeof(mdata.cmd_match_buf);
 	mdata.cmd_handler_data.buf_pool = &mdm_recv_pool;
 	mdata.cmd_handler_data.alloc_timeout = BUF_ALLOC_TIMEOUT;
+	mdata.cmd_handler_data.eol = "\r";
 	ret = modem_cmd_handler_init(&mctx.cmd_handler,
 				     &mdata.cmd_handler_data);
 	if (ret < 0) {

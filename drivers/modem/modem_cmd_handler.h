@@ -75,6 +75,9 @@ struct modem_cmd_handler_data {
 
 	int last_error;
 
+	const char *eol;
+	size_t eol_len;
+
 	/* rx net buffer */
 	struct net_buf *rx_buf;
 
