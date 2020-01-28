@@ -26,3 +26,7 @@ zephyr_sources_if_kconfig(ring_buffer.c)
 zephyr_sources_ifdef(CONFIG_ASSERT assert.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c)
+
+zephyr_sources_ifdef(CONFIG_ASYNC_CLIENT async_client.c)
+
+zephyr_sources_ifdef(CONFIG_QOP_MNGR qop_mngr.c)

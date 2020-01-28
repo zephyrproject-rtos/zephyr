@@ -21,4 +21,13 @@ config BASE64
 	help
 	  Enable base64 encoding and decoding functionality
 
+config ASYNC_CLIENT
+	bool
+
+config QOP_MNGR
+	bool "Queued operations manager"
+	select ASYNC_CLIENT
+	help
+	  Enable library for handling asynchronous operations which can be queued.
+
 endmenu
