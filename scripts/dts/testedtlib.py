@@ -165,6 +165,15 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "OrderedDict([('foos', <Property, name: foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /deprecated in 'test.dts', binding test-bindings/deprecated.yaml>, data: OrderedDict([('foo', 1), ('bar', 2)])>]>)])")
 
     #
+    # Test EDT.compat2enabled
+    #
+
+    verify_streq(edt.compat2enabled["compat2enabled"], "[<Node /compat2enabled/foo-1 in 'test.dts', no binding>, <Node /compat2enabled/foo-2 in 'test.dts', no binding>]")
+
+    if "compat2enabled-disabled" in edt.compat2enabled:
+        fail("'compat2enabled-disabled' should not appear in edt.compat2enabled")
+
+    #
     # Test Node.props (derived from DT and 'properties:' in the binding)
     #
 

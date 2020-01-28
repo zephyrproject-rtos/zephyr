@@ -295,6 +295,31 @@
 	};
 
 	//
+	// For testing EDT.compat2enabled
+	//
+
+	compat2enabled {
+		foo-1 {
+			status = "okay";
+			compatible = "compat2enabled";
+		};
+		foo-disabled {
+			status = "disabled";
+			compatible = "compat2enabled";
+		};
+		foo-2 {
+			// No 'status', which is also treated as enabled
+			compatible = "compat2enabled";
+		};
+		// Should not create an entry in compat2enabled, since all nodes
+		// with the compatible are disabled
+		bar {
+			status = "disabled";
+			compatible = "compat2enabled-disabled";
+		};
+	};
+
+	//
 	// For testing 'bus:' and 'on-bus:'
 	//
 

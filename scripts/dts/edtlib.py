@@ -65,7 +65,7 @@ a .dts file to parse and a list of paths to directories containing bindings.
 # - Please use ""-quoted strings instead of ''-quoted strings, just to make
 #   things consistent (''-quoting is more common otherwise in Python)
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import os
 import re
 import sys
@@ -95,6 +95,25 @@ class EDT:
 
     nodes:
       A list of Node objects for the nodes that appear in the devicetree
+
+    compat2enabled:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some enabled Node to a list of enabled Nodes.
+
+      For example, edt.compat2enabled["bar"] would include the 'foo' and 'bar'
+      nodes below.
+
+        foo {
+                compatible = "bar";
+                status = "okay";
+                ...
+        };
+        bar {
+                compatible = "foo", "bar", "baz";
+                status = "okay";
+                ...
+        };
+
 
     dts_path:
       The .dts path passed to __init__()
@@ -128,6 +147,7 @@ class EDT:
 
         self._init_compat2binding(bindings_dirs)
         self._init_nodes()
+        self._init_compat2enabled()
 
         self._define_order()
 
@@ -443,7 +463,6 @@ class EDT:
             node.bus_node = node._bus_node()
             node._init_binding()
             node._init_regs()
-            node._set_instance_no()
 
             self.nodes.append(node)
             self._node2enode[dt_node] = node
@@ -455,6 +474,15 @@ class EDT:
             node._init_props()
             node._init_interrupts()
             node._init_pinctrls()
+
+    def _init_compat2enabled(self):
+        # Creates self.compat2enabled
+
+        self.compat2enabled = defaultdict(list)
+        for node in self.nodes:
+            if node.enabled:
+                for compat in node.compats:
+                    self.compat2enabled[compat].append(node)
 
     def _check_binding(self, binding, binding_path):
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
@@ -688,16 +716,6 @@ class Node:
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
-
-    instance_no:
-      Dictionary that maps each 'compatible' string for the node to a unique
-      index among all nodes that have that 'compatible' string.
-
-      As an example, 'instance_no["foo,led"] == 3' can be read as "this is the
-      fourth foo,led node".
-
-      Only enabled nodes (status != "disabled") are counted. 'instance_no' is
-      meaningless for disabled nodes.
 
     matching_compat:
       The 'compatible' string for the binding that matched the node, or None if
@@ -1296,17 +1314,6 @@ class Node:
                          len(data_list)))
 
         return OrderedDict(zip(cell_names, data_list))
-
-    def _set_instance_no(self):
-        # Initializes self.instance_no
-
-        self.instance_no = {}
-
-        for compat in self.compats:
-            self.instance_no[compat] = 0
-            for other_node in self.edt.nodes:
-                if compat in other_node.compats and other_node.enabled:
-                    self.instance_no[compat] += 1
 
 
 class Register:
