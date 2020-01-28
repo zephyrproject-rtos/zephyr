@@ -51,8 +51,8 @@ struct modem_cmd_handler {
 struct modem_pin {
 	struct device *gpio_port_dev;
 	char *dev_name;
-	u32_t pin;
-	int init_flags;
+	gpio_pin_t pin;
+	gpio_flags_t init_flags;
 };
 
 struct modem_context {
@@ -128,7 +128,7 @@ int modem_context_register(struct modem_context *ctx);
 /* pin config functions */
 int modem_pin_read(struct modem_context *ctx, u32_t pin);
 int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value);
-int modem_pin_config(struct modem_context *ctx, u32_t pin, int flags);
+int modem_pin_config(struct modem_context *ctx, u32_t pin, bool enable);
 int modem_pin_init(struct modem_context *ctx);
 
 #ifdef __cplusplus
