@@ -731,14 +731,14 @@ static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
 
-	gpio = device_get_binding(DT_CC1200_GPIO_INT_DRV_NAME);
+	gpio = device_get_binding(DT_INST_0_TI_CC1200_INT_GPIOS_CONTROLLER);
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_CC1200_GPIO_INT;
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_INST_0_TI_CC1200_INT_GPIOS_PIN;
 	gpio_pin_configure(gpio, cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
-			   GPIO_INPUT | DT_CC1200_GPIO_INT_FLAGS);
+			   GPIO_INPUT | DT_INST_0_TI_CC1200_INT_GPIOS_FLAGS);
 	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev = gpio;
 
 	return cc1200->gpios;
