@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(gsm_ppp, CONFIG_NET_PPP_LOG_LEVEL);
 #include <sys/ring_buffer.h>
 #include <sys/util.h>
 #include <net/ppp.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 #include <drivers/uart.h>
 
 #include "modem_context.h"
