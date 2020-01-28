@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+# Writes/updates the zephyr/.config configuration file by merging configuration
+# files passed as arguments, e.g. board *_defconfig and application prj.conf
+# files.
+#
+# When fragments haven't changed, zephyr/.config is both the input and the
+# output, which just updates it. This is handled in the CMake files.
+#
+# Also does various checks (most via Kconfiglib warnings).
+
 import argparse
 import os
 import sys
