@@ -2238,7 +2238,7 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return 0;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept);
+BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept, NULL);
 
 void bt_att_init(void)
 {

@@ -354,7 +354,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		ch->rx.cid = fchan->cid;
 		ch->tx.cid = fchan->cid;
 
-		if (!l2cap_chan_add(conn, chan, NULL)) {
+		if (!l2cap_chan_add(conn, chan, fchan->destroy)) {
 			return;
 		}
 
@@ -1919,7 +1919,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept);
+BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept, NULL);
 
 void bt_l2cap_init(void)
 {

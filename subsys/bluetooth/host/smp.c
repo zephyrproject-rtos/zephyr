@@ -5311,10 +5311,10 @@ static bool le_sc_supported(void)
 	       BT_CMD_TEST(bt_dev.supported_commands, 34, 2);
 }
 
-BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept);
+BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
 #if defined(CONFIG_BT_BREDR)
 BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
-			bt_smp_br_accept);
+			bt_smp_br_accept, NULL);
 #endif /* CONFIG_BT_BREDR */
 
 int bt_smp_init(void)
