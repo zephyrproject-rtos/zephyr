@@ -45,11 +45,12 @@ static int board_particle_boron_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio_dev, V_INT_DETECT_GPIO_PIN, GPIO_DIR_IN);
+	gpio_pin_configure(gpio_dev, V_INT_DETECT_GPIO_PIN,
+			   GPIO_INPUT | V_INT_DETECT_GPIO_FLAGS);
 
 	gpio_pin_configure(gpio_dev, SERIAL_BUFFER_ENABLE_GPIO_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_write(gpio_dev, SERIAL_BUFFER_ENABLE_GPIO_PIN, 0);
+			   GPIO_OUTPUT_ACTIVE
+			   | SERIAL_BUFFER_ENABLE_GPIO_FLAGS);
 #endif
 
 	return 0;
