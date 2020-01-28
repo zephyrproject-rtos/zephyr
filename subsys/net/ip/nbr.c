@@ -84,7 +84,7 @@ struct net_nbr *net_nbr_get(struct net_nbr_table *table)
 }
 
 int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
-		 struct net_linkaddr *lladdr)
+		 const struct net_linkaddr *lladdr)
 {
 	int i, avail = -1;
 

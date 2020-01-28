@@ -178,7 +178,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
  * @return 0 if ok, <0 if linking failed
  */
 int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
-		 struct net_linkaddr *lladdr);
+		 const struct net_linkaddr *lladdr);
 
 /**
  * @brief Unlink a neighbor from specific link layer address.
