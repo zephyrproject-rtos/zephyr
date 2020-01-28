@@ -114,20 +114,20 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 
 	struct device *gpio_dev = device_get_binding(DT_ALIAS_GPIO_B_LABEL);
 
-	gpio_pin_configure(gpio_dev, 29, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
 
 	gpio_dev = device_get_binding(DT_ALIAS_GPIO_C_LABEL);
-	gpio_pin_configure(gpio_dev, 28, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 29, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 30, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_dev, 28, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 30, GPIO_OUTPUT);
 
 	gpio_dev = device_get_binding(DT_ALIAS_GPIO_D_LABEL);
-	gpio_pin_configure(gpio_dev, 0, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 1, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 2, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 3, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 4, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev, 5, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_dev, 0, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 1, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 2, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 3, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 4, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 5, GPIO_OUTPUT);
 #endif
 
 	return 0;
