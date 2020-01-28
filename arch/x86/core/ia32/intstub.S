@@ -130,7 +130,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	pushl	%edi
 
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING_ISR)
 
 	/* Save these as we are using to keep track of isr and isr_param */
 	pushl	%eax

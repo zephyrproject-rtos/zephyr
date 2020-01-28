@@ -228,7 +228,7 @@ on_irq_stack:
 
 call_irq:
 #endif /* CONFIG_IRQ_OFFLOAD */
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
 

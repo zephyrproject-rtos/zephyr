@@ -64,7 +64,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl read_timer_start_of_isr
 #endif
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
 
@@ -162,7 +162,7 @@ _idle_state_cleared:
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
 #endif
 
