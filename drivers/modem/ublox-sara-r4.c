@@ -679,7 +679,7 @@ static int pin_init(void)
 	k_sleep(K_SECONDS(10));
 #endif
 
-	modem_pin_config(&mctx, MDM_POWER, GPIO_DIR_IN);
+	modem_pin_config(&mctx, MDM_POWER, false);
 
 	LOG_INF("... Done!");
 
