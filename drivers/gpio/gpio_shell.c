@@ -49,7 +49,7 @@ static const struct args_number args_no = {
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 {
 	u8_t index = 0U;
-	int type = GPIO_DIR_OUT;
+	int type = GPIO_OUTPUT;
 	struct device *dev;
 
 	if (argc == args_no.conf &&
@@ -57,9 +57,9 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 	    isalpha((unsigned char)argv[args_indx.mode][0])) {
 		index = (u8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
-			type = GPIO_DIR_IN;
+			type = GPIO_INPUT;
 		} else if (!strcmp(argv[args_indx.mode], "out")) {
-			type = GPIO_DIR_OUT;
+			type = GPIO_OUTPUT;
 		} else {
 			return 0;
 		}
