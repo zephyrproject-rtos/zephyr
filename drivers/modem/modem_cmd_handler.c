@@ -388,7 +388,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	}
 
 	iface->write(iface, buf, strlen(buf));
-	iface->write(iface, "\r", 1);
+	iface->write(iface, data->eol, data->eol_len);
 
 	if (timeout == K_NO_WAIT) {
 		ret = 0;
@@ -480,6 +480,12 @@ int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 
 	if (!data->read_buf_len || !data->match_buf_len) {
 		return -EINVAL;
+	}
+
+	if (data->eol == NULL) {
+		data->eol_len = 0;
+	} else {
+		data->eol_len = strlen(data->eol);
 	}
 
 	handler->cmd_handler_data = data;
