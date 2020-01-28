@@ -153,7 +153,7 @@ endif # KINETIS_FLASH_CONFIG
 
 config WDOG_INIT
 	bool
-	default y
+	default !BOOTLOADER_MCUBOOT
 	help
 	  This processor enables the watchdog timer with a short
 	  window for configuration upon reset. Therefore, this
