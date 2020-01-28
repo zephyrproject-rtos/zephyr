@@ -62,16 +62,16 @@ static int pinmux_stm32_init(struct device *port)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpioa, 4, GPIO_DIR_OUT);
+	gpio_pin_configure(gpioa, 4, GPIO_OUTPUT);
 	gpio_pin_set_raw(gpioa, 4, 1);
 
-	gpio_pin_configure(gpiob, 6, GPIO_DIR_OUT);
+	gpio_pin_configure(gpiob, 6, GPIO_OUTPUT);
 	gpio_pin_set_raw(gpiob, 6, 1);
 
-	gpio_pin_configure(gpiob, 7, GPIO_DIR_OUT);
+	gpio_pin_configure(gpiob, 7, GPIO_OUTPUT);
 	gpio_pin_set_raw(gpiob, 7, 0);
 
-	gpio_pin_configure(gpioh, 1, GPIO_DIR_OUT);
+	gpio_pin_configure(gpioh, 1, GPIO_OUTPUT);
 	gpio_pin_set_raw(gpioh, 1, 1);
 
 	return 0;
