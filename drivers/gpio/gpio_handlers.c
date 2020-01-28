@@ -15,24 +15,6 @@ static inline int z_vrfy_gpio_config(struct device *port, int access_op,
 }
 #include <syscalls/gpio_config_mrsh.c>
 
-static inline int z_vrfy_gpio_write(struct device *port, int access_op,
-				   u32_t pin, u32_t value)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, write));
-	return z_impl_gpio_write((struct device *)port, access_op, pin, value);
-}
-#include <syscalls/gpio_write_mrsh.c>
-
-static inline int z_vrfy_gpio_read(struct device *port, int access_op,
-				  u32_t pin, u32_t *value)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, read));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(u32_t)));
-	return z_impl_gpio_read((struct device *)port, access_op, pin,
-			       (u32_t *)value);
-}
-#include <syscalls/gpio_read_mrsh.c>
-
 static inline int z_vrfy_gpio_port_get_raw(struct device *port,
 					   gpio_port_value_t *value)
 {
