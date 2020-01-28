@@ -229,8 +229,9 @@ from the base devicetree, if needed.
 .. note::
 
    The preprocessed and concatenated DTS sources are stored in
-   :file:`zephyr/<BOARD>.dts.pre.tmp` in the build directory. Looking at this
-   file can be handy for debugging.
+   :file:`zephyr/<BOARD>.dts.pre.tmp` in the build directory. The final merged
+   devicetree in DTS format is in :file:`zephyr/<BOARD>.dts_compiled`.
+   These files can be useful for debugging.
 
 The merged devicetree, along with any :ref:`bindings <bindings>` referenced
 from it, is used to generate C preprocessor macros. This is handled by the

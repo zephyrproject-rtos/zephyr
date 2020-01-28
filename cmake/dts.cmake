@@ -173,14 +173,16 @@ if(SUPPORTS_DTS)
   execute_process(
     COMMAND ${DTC}
     -O dts
-    -o - # Write output to stdout, which we discard below
+    # BOARD.dts_compiled isn't read further by these scripts. However,
+    # it's useful for debugging, as it's a clean view of the entire
+    # devicetree in DTS format, so we keep it around.
+    -o ${BOARD}.dts_compiled
     -b 0
     -E unit_address_vs_reg
     ${DTC_NO_WARN_UNIT_ADDR}
     ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
     ${EXTRA_DTC_FLAGS} # User settable
     ${BOARD}.dts.pre.tmp
-    OUTPUT_QUIET # Discard stdout
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
