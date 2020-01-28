@@ -280,7 +280,7 @@ const char *k_thread_state_str(k_tid_t thread_id)
 		return "pending";
 		break;
 	case _THREAD_PRESTART:
-		return "restart";
+		return "prestart";
 		break;
 	case _THREAD_DEAD:
 		return "dead";
