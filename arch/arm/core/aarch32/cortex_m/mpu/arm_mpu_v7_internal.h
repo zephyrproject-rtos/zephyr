@@ -26,12 +26,17 @@ static void mpu_init(void)
 static void region_init(const u32_t index,
 	const struct arm_mpu_region *region_conf)
 {
+	int key;
+
+	key = irq_lock();
 	/* Select the region you want to access */
 	MPU->RNR = index;
 	/* Configure the region */
 	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
 	MPU->RASR = region_conf->attr.rasr | MPU_RASR_ENABLE_Msk;
+	irq_unlock(key);
+
 	LOG_DBG("[%d] 0x%08x 0x%08x",
 		index, region_conf->base, region_conf->attr.rasr);
 }
@@ -131,14 +136,25 @@ static inline u32_t mpu_rasr_size_to_size(u32_t rasr_size)
 
 static inline u32_t mpu_region_get_base(u32_t index)
 {
+	u32_t base;
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
-	return MPU->RBAR & MPU_RBAR_ADDR_Msk;
+	base = MPU->RBAR & MPU_RBAR_ADDR_Msk;
+	irq_unlock(key);
+
+	return base;
 }
 
 static inline u32_t mpu_region_get_size(u32_t index)
 {
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
 	u32_t rasr_size = (MPU->RASR & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos;
+	irq_unlock(key);
 
 	return mpu_rasr_size_to_size(rasr_size);
 }
@@ -151,8 +167,14 @@ static inline u32_t mpu_region_get_size(u32_t index)
  */
 static inline int is_enabled_region(u32_t index)
 {
+	int result, key;
+
+	key = irq_lock();
 	MPU->RNR = index;
-	return (MPU->RASR & MPU_RASR_ENABLE_Msk) ? 1 : 0;
+	result = (MPU->RASR & MPU_RASR_ENABLE_Msk) ? 1 : 0;
+	irq_unlock(key);
+
+	return result;
 }
 
 /* Only a single bit is set for all user accessible permissions.
@@ -169,8 +191,15 @@ static inline int is_enabled_region(u32_t index)
  */
 static inline u32_t get_region_ap(u32_t r_index)
 {
+	int key;
+	u32_t attr;
+
+	key = irq_lock();
 	MPU->RNR = r_index;
-	return (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
+	attr = (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
+	irq_unlock(key);
+
+	return attr;
 }
 
 /**
@@ -184,11 +213,15 @@ static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_addr_start;
 	u32_t r_size_lshift;
 	u32_t r_addr_end;
+	int key;
 
+	key = irq_lock();
 	MPU->RNR = r_index;
 	r_addr_start = MPU->RBAR & MPU_RBAR_ADDR_Msk;
 	r_size_lshift = ((MPU->RASR & MPU_RASR_SIZE_Msk) >>
 			MPU_RASR_SIZE_Pos) + 1;
+	irq_unlock(key);
+
 	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1;
 
 	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {

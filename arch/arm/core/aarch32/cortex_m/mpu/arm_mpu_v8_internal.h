@@ -60,6 +60,9 @@ static void mpu_init(void)
 static void region_init(const u32_t index,
 	const struct arm_mpu_region *region_conf)
 {
+	int key;
+
+	key = irq_lock();
 	ARM_MPU_SetRegion(
 		/* RNR */
 		index,
@@ -73,6 +76,7 @@ static void region_init(const u32_t index,
 			& MPU_RLAR_AttrIndx_Msk)
 		| MPU_RLAR_EN_Msk
 	);
+	irq_unlock(key);
 
 	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
 			index, region_conf->base, region_conf->attr.rbar,
@@ -132,15 +136,26 @@ static inline int get_region_index(u32_t start, u32_t size)
 
 static inline u32_t mpu_region_get_base(const u32_t index)
 {
+	u32_t base;
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
-	return MPU->RBAR & MPU_RBAR_BASE_Msk;
+	base = MPU->RBAR & MPU_RBAR_BASE_Msk;
+	irq_unlock(key);
+
+	return base;
 }
 
 static inline void mpu_region_set_base(const u32_t index, const u32_t base)
 {
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
 	MPU->RBAR = (MPU->RBAR & (~MPU_RBAR_BASE_Msk))
 		| (base & MPU_RBAR_BASE_Msk);
+	irq_unlock(key);
 }
 
 static inline u32_t mpu_region_get_last_addr(const u32_t index)
@@ -151,25 +166,36 @@ static inline u32_t mpu_region_get_last_addr(const u32_t index)
 
 static inline void mpu_region_set_limit(const u32_t index, const u32_t limit)
 {
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
 	MPU->RLAR = (MPU->RLAR & (~MPU_RLAR_LIMIT_Msk))
 		| (limit & MPU_RLAR_LIMIT_Msk);
+	irq_unlock(key);
 }
 
 static inline void mpu_region_get_access_attr(const u32_t index,
 	arm_mpu_region_attr_t *attr)
 {
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
 
 	attr->rbar = MPU->RBAR &
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
 	attr->mair_idx = (MPU->RLAR & MPU_RLAR_AttrIndx_Msk) >>
 		MPU_RLAR_AttrIndx_Pos;
+	irq_unlock(key);
 }
 
 static inline void mpu_region_get_conf(const u32_t index,
 	struct arm_mpu_region *region_conf)
 {
+	int key;
+
+	key = irq_lock();
 	MPU->RNR = index;
 
 	/* Region attribution:
@@ -184,6 +210,7 @@ static inline void mpu_region_get_conf(const u32_t index,
 
 	/* Region limit address */
 	region_conf->attr.r_limit = MPU->RLAR & MPU_RLAR_LIMIT_Msk;
+	irq_unlock(key);
 }
 
 /**
@@ -242,9 +269,14 @@ static inline u32_t mpu_region_get_size(u32_t index)
  */
 static inline int is_enabled_region(u32_t index)
 {
-	MPU->RNR = index;
+	int result, key;
 
-	return (MPU->RLAR & MPU_RLAR_EN_Msk) ? 1 : 0;
+	key = irq_lock();
+	MPU->RNR = index;
+	result = (MPU->RLAR & MPU_RLAR_EN_Msk) ? 1 : 0;
+	irq_unlock(key);
+
+	return result;
 }
 
 /**

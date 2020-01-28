@@ -25,10 +25,12 @@ void disable_mpu_rasr_xn(void)
 	 * would most likely be set at index 2.
 	 */
 	for (index = 0U; index < 8; index++) {
+		int key = irq_lock();
 		MPU->RNR = index;
 		if (MPU->RASR & MPU_RASR_XN_Msk) {
 			MPU->RASR ^= MPU_RASR_XN_Msk;
 		}
+		irq_unlock(key);
 	}
 
 }
