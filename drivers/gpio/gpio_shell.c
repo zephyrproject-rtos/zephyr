@@ -85,7 +85,6 @@ static int cmd_gpio_get(const struct shell *shell,
 {
 	struct device *dev;
 	u8_t index = 0U;
-	u32_t value = 0U;
 	int rc;
 
 	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
@@ -101,11 +100,11 @@ static int cmd_gpio_get(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Reading %s pin %d",
 			     argv[args_indx.port], index);
-		rc = gpio_pin_read(dev, index, &value);
-		if (rc == 0) {
-			shell_print(shell, "Value %d", value);
+		rc = gpio_pin_get_raw(dev, index);
+		if (rc >= 0) {
+			shell_print(shell, "Value %d", rc);
 		} else {
-			shell_error(shell, "Error reading value");
+			shell_error(shell, "Error %d reading value", rc);
 			return -EIO;
 		}
 	}
