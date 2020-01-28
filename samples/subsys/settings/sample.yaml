@@ -1,0 +1,7 @@
+sample:
+  name: Settings subsystem sample
+tests:
+  sample.settings.read_write:
+    build_only: true
+    platform_whitelist: nrf52840_pca10056 qemu_cortex_m3
+    tags: settings
