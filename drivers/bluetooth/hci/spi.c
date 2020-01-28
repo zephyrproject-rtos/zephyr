@@ -225,13 +225,13 @@ static void release_cs(void)
 
 static bool irq_pin_high(void)
 {
-	u32_t pin_state;
+	int pin_state;
 
-	gpio_pin_read(irq_dev, GPIO_IRQ_PIN, &pin_state);
+	pin_state = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
 
 	BT_DBG("IRQ Pin: %d", pin_state);
 
-	return pin_state;
+	return pin_state > 0;
 }
 
 static void init_irq_high_loop(void)
@@ -394,7 +394,7 @@ static void bt_spi_rx_thread(void)
 static int bt_spi_send(struct net_buf *buf)
 {
 	u8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	u32_t pending;
+	int pending;
 	int ret;
 
 	BT_DBG("");
@@ -407,8 +407,8 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Allow time for the read thread to handle interrupt */
 	while (true) {
-		gpio_pin_read(irq_dev, GPIO_IRQ_PIN, &pending);
-		if (!pending) {
+		pending = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+		if (pending <= 0) {
 			break;
 		}
 		k_sleep(K_MSEC(1));
