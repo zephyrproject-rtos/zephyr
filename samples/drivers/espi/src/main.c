@@ -135,14 +135,13 @@ int espi_init(void)
 static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
 			u32_t exp_level)
 {
-	int ret;
+	int level;
 	u16_t loop_cnt = timeout;
-	u32_t level;
 
 	do {
-		ret = gpio_pin_read(dev, pin, &level);
-		if (ret) {
-			printk("Failed to read %x %d\n", pin, ret);
+		level = gpio_pin_get(dev, pin);
+		if (level < 0) {
+			printk("Failed to read %x %d\n", pin, level);
 			return -EIO;
 		}
 
@@ -292,19 +291,21 @@ int espi_test(void)
 	LOG_INF("Hello eSPI test! %s\n", CONFIG_BOARD);
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN, GPIO_DIR_IN);
+	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN,
+				 GPIO_INPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
 		printk("Unable to configure %d:%d\n", CONFIG_PWRGD_PIN, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN,
+				 GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
 		LOG_WRN("Unable to config %d: %d\n", CONFIG_ESPI_INIT_PIN, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
+	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
 	if (ret) {
 		LOG_WRN("Unable to initialize %d\n", CONFIG_ESPI_INIT_PIN);
 		return -1;
@@ -320,7 +321,7 @@ int espi_test(void)
 		return ret;
 	}
 
-	ret = gpio_pin_write(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
+	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
 	if (ret) {
 		printk("Failed to write %x %d\n", CONFIG_ESPI_INIT_PIN, ret);
 		return ret;
