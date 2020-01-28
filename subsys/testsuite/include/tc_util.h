@@ -12,7 +12,9 @@
 #include <zephyr.h>
 
 #include <string.h>
+#ifdef CONFIG_SHELL
 #include <shell/shell.h>
+#endif
 #include <sys/printk.h>
 
 #if defined CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE
