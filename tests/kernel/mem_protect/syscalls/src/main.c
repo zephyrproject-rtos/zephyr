@@ -261,7 +261,77 @@ void test_arg64(void)
 		      "syscall didn't match impl");
 }
 
-K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4, 4);
+#define NR_THREADS	(CONFIG_MP_NUM_CPUS * 4)
+#define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+struct k_thread torture_threads[NR_THREADS];
+K_THREAD_STACK_ARRAY_DEFINE(torture_stacks, NR_THREADS, STACK_SZ);
+
+void syscall_torture(void *arg1, void *arg2, void *arg3)
+{
+	int count = 0;
+	uintptr_t id = (uintptr_t)arg1;
+	int ret, err;
+	char buf[BUF_SIZE];
+
+	for (;; ) {
+		/* Run a bunch of our test syscalls in scenarios that are
+		 * expected to succeed in a tight loop to look
+		 * for concurrency problems.
+		 */
+		ret = string_nlen(user_string, BUF_SIZE, &err);
+		zassert_equal(err, 0, "user string faulted");
+		zassert_equal(ret, strlen(user_string),
+			      "incorrect length returned");
+
+		ret = string_alloc_copy("this is a kernel string");
+		zassert_equal(ret, 0, "string should have matched");
+
+		ret = string_copy("this is a kernel string");
+		zassert_equal(ret, 0, "string should have matched");
+
+		ret = to_copy(buf);
+		zassert_equal(ret, 0, "copy should have been a success");
+		ret = strcmp(buf, user_string);
+		zassert_equal(ret, 0, "string should have matched");
+
+		test_arg64();
+
+		if (count++ == 30000) {
+			printk("%ld", id);
+			count = 0;
+		}
+	}
+}
+
+void test_syscall_torture(void)
+{
+	uintptr_t i;
+
+	printk("Running syscall torture test with %d threads on %d cpu(s)\n",
+	       NR_THREADS, CONFIG_MP_NUM_CPUS);
+
+	for (i = 0; i < NR_THREADS; i++) {
+		k_thread_create(&torture_threads[i], torture_stacks[i],
+				STACK_SZ, syscall_torture,
+				(void *)i, NULL, NULL,
+				2, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+	}
+
+	/* Let the torture threads hog the system for 15 seconds before we
+	 * abort them. They will all be hammering the cpu(s) with system calls,
+	 * hopefully smoking out any issues and causing a crash.
+	 */
+	k_sleep(15000);
+
+	for (i = 0; i < NR_THREADS; i++) {
+		k_thread_abort(&torture_threads[i]);
+	}
+
+	printk("\n");
+}
+
+K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
 
 void test_main(void)
 {
@@ -275,6 +345,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_to_copy),
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
-			 ztest_user_unit_test(test_arg64));
+			 ztest_user_unit_test(test_arg64),
+			 ztest_unit_test(test_syscall_torture)
+			 );
 	ztest_run_test_suite(syscalls);
 }
