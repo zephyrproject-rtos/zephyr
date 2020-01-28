@@ -95,7 +95,13 @@ static void counter_tear_down_instance(const char *dev_name)
 
 	top_cfg.ticks = counter_get_max_top_value(dev);
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err,
+	if (err == -ENOTSUP) {
+		/* If resetting is not support, attempt without reset. */
+		top_cfg.flags = COUNTER_TOP_CFG_DONT_RESET;
+		err = counter_set_top_value(dev, &top_cfg);
+
+	}
+	zassert_true((err == 0) || (err == -ENOTSUP),
 			"%s: Setting top value to default failed", dev_name);
 
 	err = counter_stop(dev);
