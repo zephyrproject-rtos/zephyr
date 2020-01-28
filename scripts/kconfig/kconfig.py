@@ -183,7 +183,7 @@ def check_assigned_choice_values(kconf):
            choice.user_selection is not choice.selection:
 
             warn(f"""\
-the choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
+The choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
 but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
 up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
 
@@ -244,14 +244,14 @@ def parse_args():
 
 def warn(msg):
     # Use a large fill() width to try to avoid linebreaks in the symbol
-    # reference link. Add some extra newlines to set the message off from
+    # reference link, and add some extra newlines to set the message off from
     # surrounding text (this usually gets printed as part of spammy CMake
-    # output).
-    print("\nwarning: " + textwrap.fill(msg, 100) + "\n", file=sys.stderr)
+    # output)
+    print("\n" + textwrap.fill("warning: " + msg, 100) + "\n", file=sys.stderr)
 
 
 def err(msg):
-    sys.exit("\nerror: " + textwrap.fill(msg, 100) + "\n")
+    sys.exit("\n" + textwrap.fill("error: " + msg, 100) + "\n")
 
 
 if __name__ == "__main__":
