@@ -569,30 +569,6 @@ static inline int z_impl_gpio_config(struct device *port, int access_op,
 	return api->config(port, access_op, pin, (int)flags);
 }
 
-__syscall int gpio_write(struct device *port, int access_op, u32_t pin,
-			 u32_t value);
-
-static inline int z_impl_gpio_write(struct device *port, int access_op,
-				   u32_t pin, u32_t value)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
-
-	return api->write(port, access_op, pin, value);
-}
-
-__syscall int gpio_read(struct device *port, int access_op, u32_t pin,
-			u32_t *value);
-
-static inline int z_impl_gpio_read(struct device *port, int access_op,
-				  u32_t pin, u32_t *value)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
-
-	return api->read(port, access_op, pin, value);
-}
-
 __syscall int gpio_enable_callback(struct device *port, int access_op,
 				   u32_t pin);
 
@@ -1217,19 +1193,16 @@ static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
  * @param value Value set on the pin.
  * @return 0 if successful, negative errno code on failure.
  *
- * @deprecated Replace with gpio_pin_set_raw() or gpio_pin_set().
+ * @deprecated Replace with gpio_pin_set assuming active level is
+ * handled correctly.  gpio_pin_set_raw() may be more correct for some
+ * drivers.
  */
-static inline int gpio_pin_write(struct device *port, u32_t pin,
-				 u32_t value)
+/* Deprecated in 2.2 release */
+__deprecated static inline int gpio_pin_write(struct device *port,
+					      gpio_pin_t pin,
+					      u32_t value)
 {
-	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config->config_info;
-
-	(void)cfg;
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
-
-	return gpio_write(port, GPIO_ACCESS_BY_PIN, pin, value);
+	return gpio_pin_set(port, pin, value != 0);
 }
 
 /**
@@ -1242,19 +1215,22 @@ static inline int gpio_pin_write(struct device *port, u32_t pin,
  * @param value Integer pointer to receive the data values from the pin.
  * @return 0 if successful, negative errno code on failure.
  *
- * @deprecated Replace with gpio_pin_get_raw() or gpio_pin_get().
+ * @deprecated Replace with gpio_pin_get() assuming active level is
+ * handled correctly.  gpio_pin_get_raw() may be more correct for some
+ * drivers.
  */
-static inline int gpio_pin_read(struct device *port, u32_t pin,
-				u32_t *value)
+/* Deprecated in 2.2 release */
+__deprecated static inline int gpio_pin_read(struct device *port,
+					     gpio_pin_t pin,
+					     u32_t *value)
 {
-	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config->config_info;
+	int rv = gpio_pin_get(port, pin);
 
-	(void)cfg;
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
-
-	return gpio_read(port, GPIO_ACCESS_BY_PIN, pin, value);
+	if (rv >= 0) {
+		*value = rv;
+		rv = 0;
+	}
+	return rv;
 }
 
 /**
