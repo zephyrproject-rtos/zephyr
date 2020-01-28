@@ -253,13 +253,13 @@ extern "C" {
 #define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
 /** @} */
 
-/** @name Deprecated Flags
- * @{
- */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_DIR_MASK		(GPIO_INPUT | GPIO_OUTPUT)
 /** @endcond */
+
+/** @name Deprecated Flags
+ * @{
+ */
 
 /** Legacy flag indicating pin is configured as input only.
  *
