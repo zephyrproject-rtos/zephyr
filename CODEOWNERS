@@ -332,6 +332,7 @@
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pabigot
+/samples/userspace/                       @andrewboie
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/kconfig/                         @ulfalizer
