@@ -114,7 +114,7 @@
 			lpo: lpo128k {
 			/* LPO clock */
 				compatible = "fixed-clock";
-				clock-frequency = <125000>;
+				clock-frequency = <128000>;
 				#clock-cells = <0>;
 			};
 		};
