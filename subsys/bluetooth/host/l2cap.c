@@ -257,7 +257,6 @@ destroy:
 		chan->destroy(chan);
 	}
 
-	atomic_clear(chan->status);
 }
 
 static void l2cap_rtx_timeout(struct k_work *work)
@@ -315,6 +314,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
+	atomic_clear(chan->status);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
