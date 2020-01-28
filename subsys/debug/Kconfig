@@ -158,6 +158,12 @@ config TRACING_CMD_BUFFER_SIZE
 	help
 	  Size of tracing command buffer.
 
+config TRACING_ISR
+	bool "Enabling Tracing ISR"
+	help
+	  Enable tracing ISR. This requires the backend to be
+	  very low-latency.
+
 endif
 
 config ASAN
