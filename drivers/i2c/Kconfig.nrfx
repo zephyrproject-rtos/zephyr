@@ -25,6 +25,7 @@ config I2C_0_NRF_TWI
 config I2C_0_NRF_TWIM
 	def_bool $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM0
+	select I2C_ASYNC
 	help
 	  Enable nRF TWI Master with EasyDMA on port 0.
 	  This peripheral accepts transfers from RAM only,
@@ -39,6 +40,7 @@ config I2C_1_NRF_TWI
 config I2C_1_NRF_TWIM
 	def_bool $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM1
+	select I2C_ASYNC
 	help
 	  Enable nRF TWI Master with EasyDMA on port 1.
 	  This peripheral accepts transfers from RAM only,
@@ -47,6 +49,7 @@ config I2C_1_NRF_TWIM
 config I2C_2_NRF_TWIM
 	def_bool $(dt_nodelabel_has_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM2
+	select I2C_ASYNC
 	help
 	  Enable nRF TWI Master with EasyDMA on port 2.
 	  This peripheral accepts transfers from RAM only,
@@ -55,6 +58,7 @@ config I2C_2_NRF_TWIM
 config I2C_3_NRF_TWIM
 	def_bool $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM3
+	select I2C_ASYNC
 	help
 	  Enable nRF TWI Master with EasyDMA on port 3.
 	  This peripheral accepts transfers from RAM only,
