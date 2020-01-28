@@ -45,14 +45,14 @@ static void i2c_gpio_set_scl(void *io_context, int state)
 {
 	struct i2c_gpio_context *context = io_context;
 
-	gpio_pin_write(context->gpio, context->scl_pin, state);
+	gpio_pin_set_raw(context->gpio, context->scl_pin, state);
 }
 
 static void i2c_gpio_set_sda(void *io_context, int state)
 {
 	struct i2c_gpio_context *context = io_context;
 
-	gpio_pin_write(context->gpio, context->sda_pin, state);
+	gpio_pin_set_raw(context->gpio, context->sda_pin, state);
 }
 
 static int i2c_gpio_get_sda(void *io_context)

@@ -135,7 +135,7 @@ static int cmd_gpio_set(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
-		gpio_pin_write(dev, index, value);
+		gpio_pin_set_raw(dev, index, value);
 	}
 
 	return 0;
