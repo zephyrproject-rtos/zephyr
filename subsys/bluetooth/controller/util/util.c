@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/types.h>
+#include <drivers/entropy.h>
 #include "util.h"
 
 /**
@@ -35,4 +36,22 @@ u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
 	}
 
 	return one_count;
+}
+
+int util_rand(void *buf, size_t len)
+{
+	static struct device *dev;
+
+	if (unlikely(!dev)) {
+		/* Only one entropy device exists, so this is safe even
+		 * if the whole operation isn't atomic.
+		 */
+		dev = device_get_binding(CONFIG_ENTROPY_NAME);
+		__ASSERT((dev != NULL),
+			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
+			"Check your build configuration!",
+			CONFIG_ENTROPY_NAME);
+	}
+
+	return entropy_get_entropy(dev, (u8_t *)buf, len);
 }

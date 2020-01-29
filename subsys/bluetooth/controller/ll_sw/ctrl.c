@@ -6489,7 +6489,7 @@ again:
 	LL_ASSERT(retry);
 	retry--;
 
-	bt_rand(&access_addr, sizeof(u32_t));
+	util_rand(&access_addr, sizeof(u32_t));
 
 	bit_idx = 31U;
 	transitions = 0U;
@@ -11992,7 +11992,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->llcp_feature.features = LL_FEAT;
 	access_addr = access_addr_get();
 	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
-	bt_rand(&conn->crc_init[0], 3);
+	util_rand(&conn->crc_init[0], 3);
 	memcpy(&conn->data_chan_map[0], &_radio.data_chan_map[0],
 	       sizeof(conn->data_chan_map));
 	conn->data_chan_count = _radio.data_chan_count;
@@ -12333,8 +12333,8 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
-			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
-			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
+			util_rand(enc_req->skdm, sizeof(enc_req->skdm));
+			util_rand(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if (conn->enc_rx && conn->enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
