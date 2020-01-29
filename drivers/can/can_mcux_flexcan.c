@@ -721,6 +721,39 @@ static void mcux_flexcan_config_func_0(struct device *dev)
 	irq_enable(DT_INST_0_NXP_KINETIS_FLEXCAN_IRQ_MB_0_15);
 }
 
+#if defined(CONFIG_NET_SOCKETS_CAN)
+
+#include "socket_can_generic.h"
+
+static int socket_can_init_0(struct device *dev)
+{
+	struct device *can_dev = DEVICE_GET(can_mcux_flexcan_0);
+	struct socket_can_context *socket_context = dev->driver_data;
+
+	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
+		dev, dev->config->name, can_dev, can_dev->config->name);
+
+	socket_context->can_dev = can_dev;
+	socket_context->msgq = &socket_can_msgq;
+
+	socket_context->rx_tid =
+		k_thread_create(&socket_context->rx_thread_data,
+				rx_thread_stack,
+				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				rx_thread, socket_context, NULL, NULL,
+				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	return 0;
+}
+
+NET_DEVICE_INIT(socket_can_flexcan_0, SOCKET_CAN_NAME_1, socket_can_init_0,
+		&socket_can_context_1, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		&socket_can_api,
+		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+
+#endif /* CONFIG_NET_SOCKETS_CAN */
+
 #endif /* CONFIG_CAN_0 */
 
 #ifdef CONFIG_CAN_1
