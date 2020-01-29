@@ -805,7 +805,8 @@ def out_comment(s, blank_before=True):
         #   /* foo bar */
         print("/* " + s + " */", file=header_file)
 
-    print("\n".join("# " + line for line in s.splitlines()), file=conf_file)
+    print("\n".join("# " + line if line.strip() else "#"
+                    for line in s.splitlines()), file=conf_file)
 
 
 def escape(s):
