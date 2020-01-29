@@ -227,7 +227,7 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 			} else {
 				int_type = GPIO_FALLING_EDGE;
 			}
-		} else { /* GPIO_INT_LEVEL */
+		} else { /* GPIO_INT_MODE_LEVEL */
 			if (trig == GPIO_INT_TRIG_HIGH) {
 				int_type = GPIO_HIGH_LEVEL;
 			} else {
