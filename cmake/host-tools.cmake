@@ -75,13 +75,11 @@ if(${CMAKE_MATCH_1} VERSION_LESS ${MIN_DTC_VERSION})
 endif()
 endif(DTC)
 
+# gperf is an optional dependency
 find_program(
   GPERF
   gperf
   )
-if(${GPERF} STREQUAL GPERF-NOTFOUND)
-  message(FATAL_ERROR "Unable to find gperf")
-endif()
 
 # openocd is an optional dependency
 find_program(

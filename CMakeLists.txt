@@ -797,6 +797,10 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     )
   add_custom_target(priv_stacks DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS})
 
+  if(${GPERF} STREQUAL GPERF-NOTFOUND)
+    message(FATAL_ERROR "Unable to find gperf")
+  endif()
+
   # Use gperf to generate C code (PRIV_STACKS_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on PRIV_STACKS
   add_custom_command(
