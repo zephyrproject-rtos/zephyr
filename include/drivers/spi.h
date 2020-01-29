@@ -22,6 +22,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
+#include <sys/qop_mngr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +118,66 @@ extern "C" {
  */
 #define SPI_CS_ACTIVE_HIGH	BIT(15)
 
+/**@defgroup SPI_MSG_FLAGS SPI message flags
+ *
+ * @brief Used for message configuration.
+ * @{ */
+
+/** @brief Message for reading the data. */
+#define SPI_MSG_READ		(0)
+
+/** @brief Message for writing the data. */
+#define SPI_MSG_WRITE		BIT(0)
+#define SPI_MSG_DIR_MASK	SPI_MSG_WRITE
+
+/** @brief Indicate that transfer should be started after this message.
+ *
+ * Duplex transfer (RXTX) is described by two messages. First comes read message
+ * without commit flag and it is followed by write message with commit flag set.
+ */
+#define SPI_MSG_COMMIT		BIT(1)
+
+/** @brief Activate CS_0 on message start. */
+#define SPI_MSG_CS0_START_SET	BIT(2)
+#define SPI_MSG_CS0_START_MASK	SPI_MSG_CS0_START_SET
+
+/** @brief No CS_0 action on message start. */
+#define SPI_MSG_CS0_START_NOP	(0)
+
+/** @brief Deactivate CS_0 on message end. */
+#define SPI_MSG_CS0_END_CLR	BIT(3)
+#define SPI_MSG_CS0_END_MASK	SPI_MSG_CS0_END_CLR
+
+/** @brief No CS_0 action on message end. */
+#define SPI_MSG_CS0_END_NOP	(0))
+
+/** @brief Activate CS_1 on message start. */
+#define SPI_MSG_CS1_START_SET	BIT(4)
+#define SPI_MSG_CS1_START_MASK	SPI_MSG_CS1_START_SET
+
+/** @brief No CS_1 action on message start. */
+#define SPI_MSG_CS1_START_NOP	(0)
+
+/** @brief Deactivate CS_1
+ *  on message end. */
+#define SPI_MSG_CS1_END_CLR	BIT(5)
+#define SPI_MSG_CS1_END_MASK	SPI_MSG_CS1_END_CLR
+
+/** @brief No CS_1 action on message end. */
+#define SPI_MSG_CS1_END_NOP	(0))
+
+#define SPI_MSG_DELAY_BITS		3
+#define SPI_MSG_DELAY_OFFSET		5
+#define SPI_MSG_DELAY_MASK \
+	((BIT(SPI_MSG_DELAY_BITS) - 1) << SPI_MSG_DELAY_OFFSET)
+/** @brief Add delay before starting operation. */
+#define SPI_MSG_DELAY(ms) \
+	((ms /*& SPI_MSG_DELAY_MASK*/) << SPI_MSG_DELAY_OFFSET)
+
+/** @brief Pause transaction after that message. Use spi_resume() to resume. */
+#define SPI_MSG_PAUSE_AFTER	BIT(9)
+/**@} */
+
 /**
  * @brief SPI Chip Select control structure
  *
@@ -151,8 +212,11 @@ struct spi_cs_control {
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
  *     cs_active_high      [ 15 ]      - Active high CS logic.
  * @param slave is the slave number from 0 to host controller slave limit.
- * @param cs is a valid pointer on a struct spi_cs_control is CS line is
- *    emulated through a gpio line, or NULL otherwise.
+ * @param cs is a pointer to an array of chip select objects. CS line is
+ *    emulated through a gpio line, or NULL for no CS control.
+ * @param num_cs Number of chip select objects. For backward compatibity, if
+ *		pointer is not NULL and num_cs is 0, it is still assumed that
+ *		there is one chip select object.
  *
  * @note Only cs_hold and lock_on can be changed between consecutive
  * transceive call. Rest of the attributes are not meant to be tweaked.
@@ -163,6 +227,7 @@ struct spi_config {
 	u16_t		slave;
 
 	const struct spi_cs_control *cs;
+	u8_t num_cs;
 };
 
 /**
@@ -189,6 +254,95 @@ struct spi_buf_set {
 	size_t count;
 };
 
+/** @brief Callback called on completion of single message transfer.
+ *
+ * Callback can be called from two contexts:
+ * - SPI transfer completion interrupt if message had SPI_MSG_COMMIT flag set
+ * - spi_single_transfer() call context if message did not have flag set.
+ */
+typedef void (*spi_transfer_callback_t)(struct device *dev, int res,
+					void *user_data);
+
+/** @brief SPI simplex message.
+ *
+ * Message contains single data (read or write). Flags contains message details.
+ */
+struct spi_msg {
+	u8_t *buf;
+	u16_t len;
+	u16_t flags; /* see SPI_MSG_FLAGS */
+};
+
+/* Forward declaration. */
+struct spi_transaction;
+
+typedef void (*spi_paused_callback_t)(struct device *dev,
+				struct spi_transaction *transaction,
+				u8_t msg_idx);
+
+/** @brief SPI transaction.
+ *
+ * Transaction contains single SPI configuration and 1 or many messages. User
+ * is notified once transaction is completed (all messages proceeded or error
+ * occured.)
+ */
+struct spi_transaction {
+	struct qop_op op;
+	const struct spi_config *config;
+	spi_paused_callback_t paused_callback;
+	const struct spi_msg *msgs;
+	u8_t num_msgs;
+	bool paused;
+};
+
+
+/** @brief Create set of messages needed for TXRX transfer with CS. */
+#define SPI_MSG_TXRX(txbuf, txlen, rxbuf, rxlen, _flags) \
+	{ \
+		.buf = (u8_t *)txbuf, \
+		.len = txlen, \
+		.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT | \
+			SPI_MSG_CS0_START_SET | _flags\
+	}, \
+	{ \
+		.buf = (u8_t *)rxbuf, \
+		.len = rxlen, \
+		.flags = SPI_MSG_READ | SPI_MSG_COMMIT | SPI_MSG_CS0_END_CLR \
+	}
+
+/** @brief Create set of messages needed for TXTX transfer with CS. */
+#define SPI_MSG_TXTX(txbuf0, txlen0, txbuf1, txlen1, _flags) \
+	{ \
+		.buf = (u8_t *)txbuf0, \
+		.len = txlen0, \
+		.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT | \
+			SPI_MSG_CS0_START_SET | _flags \
+	}, \
+	{ \
+		.buf = (u8_t *)txbuf1, \
+		.len = txlen1, \
+		.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT | SPI_MSG_CS0_END_CLR \
+	}
+
+/** @brief Create message for for TX transfer with CS. */
+#define SPI_MSG_TX(txbuf, txlen, _flags) \
+	{ \
+		.buf = (u8_t *)txbuf, \
+		.len = txlen, \
+		.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT | SPI_MSG_CS0_END_CLR |\
+			SPI_MSG_CS0_START_SET | _flags \
+	}
+
+/** @brief Create message for for RX transfer with CS. */
+#define SPI_MSG_RX(rxbuf, rxlen, _flags) \
+	{ \
+		.buf = (u8_t *)rxbuf, \
+		.len = rxlen, \
+		.flags = SPI_MSG_READ | SPI_MSG_COMMIT | SPI_MSG_CS0_END_CLR |\
+			SPI_MSG_CS0_START_SET | _flags \
+	}
+
+
 /**
  * @typedef spi_api_io
  * @brief Callback API for I/O
@@ -210,6 +364,14 @@ typedef int (*spi_api_io_async)(struct device *dev,
 				const struct spi_buf_set *rx_bufs,
 				struct k_poll_signal *async);
 
+
+typedef int (*spi_api_single_async)(struct device *dev,
+				const struct spi_msg *msg,
+				spi_transfer_callback_t callback,
+				void *user_data);
+
+typedef int (*spi_api_configure)(struct device *dev,
+				const struct spi_config *config);
 /**
  * @typedef spi_api_release
  * @brief Callback API for unlocking SPI device.
@@ -225,19 +387,121 @@ typedef int (*spi_api_release)(struct device *dev,
  */
 struct spi_driver_api {
 	spi_api_io transceive;
+	spi_api_single_async single_transfer;
+	spi_api_configure configure;
 #ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
 #endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
 };
 
+/** @brief Asynchronously process single message.
+ *
+ * SPI must be configured prior issueing the message.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param msg Message.
+ * @param callback Callback called on message completion. Callback is called
+ * 			from interrupt context or caller context.
+ * @param user_data User data passed to the callback.
+ *
+ * @retval 0 on success.
+ * @retval -EBUSY if driver is busy.
+ * @retval -ENOTSUP if not supported.
+ * @retval -EINVAL if write message without commit flag.
+ * @retval -EIO on internal driver error.
+ */
+static inline int spi_single_transfer(struct device *dev,
+				const struct spi_msg *msg,
+				spi_transfer_callback_t callback,
+				void *user_data)
+{
+	__ASSERT_NO_MSG(msg);
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->driver_api;
+
+	if (api->single_transfer == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->single_transfer(dev, msg, callback, user_data);
+}
+
+/** @brief Set asynchrnous client for transaction.
+ *
+ * @param transaction	Transaction.
+ * @param client	Asynchronous client to be used for transaction.
+ */
+static inline void spi_set_async_client(struct spi_transaction *transaction,
+					struct async_client *client)
+{
+	__ASSERT_NO_MSG(transaction);
+	__ASSERT_NO_MSG(client);
+	transaction->op.async_cli = client;
+}
+
+/** @brief Configure SPI.
+ *
+ * Manually configure SPI. Must be used if spi_single_transfer() is used
+ * explicitly.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ */
+static inline int spi_configure(struct device *dev,
+				const struct spi_config *config)
+{
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->driver_api;
+
+	return api->configure(dev, config);
+}
+
+/** @brief Asynchronously schedule SPI transaction.
+ *
+ * User is notified once transaction is completed or error occured.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param transaction Pointer to the transaction.
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP if not supported.
+ * @retval other negative value if fails to start.
+ */
+int spi_schedule(struct device *dev, const struct spi_transaction *transaction);
+
+/** @brief Cancel transaction.
+ *
+ * Transaction can be cancelled if it is not yet started.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param transaction Pointer to the transaction.
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP if not supported.
+ * @retval -EALREADY if already in progress.
+ * @retval -EINVAL if transaction not active.
+ */
+int spi_cancel(struct device *dev, const struct spi_transaction *transaction);
+
+/** @brief Resume transaction.
+ *
+ * If transaction contains message with SPI_MSG_PAUSE_AFTER flag set then
+ * next transfer is holded until it is resumed.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP if not supported.
+ * @retval -EFAULT if transaction not in paused state.
+ */
+int spi_resume(struct device *dev);
+
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
  * Note: This function is synchronous.
  *
- * @param dev Pointer to the device structure for the driver instance
- * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from,
  *        or NULL if none.
  * @param rx_bufs Buffer array where data to be read will be written to,

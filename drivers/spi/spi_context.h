@@ -14,6 +14,7 @@
 
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
+#include <sys/qop_mngr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,14 @@ extern "C" {
 enum spi_ctx_runtime_op_mode {
 	SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
 	SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
+};
+
+/** @brief SPI transaction manager instance. */
+struct spi_mngr {
+	struct qop_mngr mngr; /* queued operations manager. */
+	struct device *dev; /* back reference to owning device. */
+	struct k_timer timer;
+	u8_t current_idx; /* Index of current message within transaction. */
 };
 
 struct spi_context {
@@ -49,6 +58,13 @@ struct spi_context {
 	int recv_frames;
 #endif /* CONFIG_SPI_SLAVE */
 };
+
+struct spi_common_data {
+	struct spi_mngr mngr;
+	struct spi_context ctx;
+};
+
+int z_spi_mngr_init(struct device *dev);
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
 	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
@@ -178,38 +194,58 @@ static inline void spi_context_cs_configure(struct spi_context *ctx)
 	}
 }
 
-static inline void _spi_context_cs_control(struct spi_context *ctx,
+static inline void spi_context_cs_n_configure(struct spi_context *ctx, int n)
+{
+	if (&ctx->config->cs[n] && ctx->config->cs[n].gpio_dev) {
+		gpio_pin_configure(ctx->config->cs->gpio_dev,
+				   ctx->config->cs->gpio_pin, GPIO_DIR_OUT);
+		gpio_pin_write(ctx->config->cs->gpio_dev,
+			       ctx->config->cs->gpio_pin,
+			       spi_context_cs_inactive_value(ctx));
+	} else {
+		LOG_INF("CS control inhibited (no GPIO device)");
+	}
+}
+
+static inline void _spi_context_cs_control(struct spi_context *ctx, int n,
 					   bool on, bool force_off)
 {
-	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio_dev) {
+	if (ctx->config && &ctx->config->cs[n] &&
+		ctx->config->cs[n].gpio_dev) {
 		if (on) {
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin,
+			gpio_pin_write(ctx->config->cs[n].gpio_dev,
+				       ctx->config->cs[n].gpio_pin,
 				       spi_context_cs_active_value(ctx));
-			k_busy_wait(ctx->config->cs->delay);
+			k_busy_wait(ctx->config->cs[n].delay);
 		} else {
 			if (!force_off &&
 			    ctx->config->operation & SPI_HOLD_ON_CS) {
 				return;
 			}
 
-			k_busy_wait(ctx->config->cs->delay);
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin,
+			k_busy_wait(ctx->config->cs[n].delay);
+			gpio_pin_write(ctx->config->cs[n].gpio_dev,
+				       ctx->config->cs[n].gpio_pin,
 				       spi_context_cs_inactive_value(ctx));
 		}
 	}
 }
 
+static inline void spi_context_cs_n_control(struct spi_context *ctx, int idx,
+						bool on)
+{
+	_spi_context_cs_control(ctx, idx, on, false);
+}
+
 static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 {
-	_spi_context_cs_control(ctx, on, false);
+	_spi_context_cs_control(ctx, 0, on, false);
 }
 
 static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 {
 	/* Forcing CS to go to inactive status */
-	_spi_context_cs_control(ctx, false, true);
+	_spi_context_cs_control(ctx, false, true, 0);
 
 	if (!k_sem_count_get(&ctx->lock)) {
 		k_sem_give(&ctx->lock);
