@@ -925,8 +925,13 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	/* For VLAN, this value is only used to get the correct L2 driver */
-	context->iface = iface;
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (context->iface == NULL) {
+		context->iface = iface;
+	}
 
 	ethernet_init(iface);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
