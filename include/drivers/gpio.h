@@ -566,8 +566,6 @@ struct gpio_driver_api {
 				       enum gpio_int_mode, enum gpio_int_trig);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
-	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
-	int (*disable_callback)(struct device *port, int access_op, u32_t pin);
 	u32_t (*get_pending_int)(struct device *dev);
 };
 
@@ -607,49 +605,6 @@ static inline int z_impl_gpio_read(struct device *port, int access_op,
 	return api->read(port, access_op, pin, value);
 }
 
-__syscall int gpio_enable_callback(struct device *port, int access_op,
-				   u32_t pin);
-
-static inline int z_impl_gpio_enable_callback(struct device *port,
-					     int access_op, u32_t pin)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
-	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config->config_info;
-
-	(void)cfg;
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
-
-	if (api->enable_callback == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->enable_callback(port, access_op, pin);
-}
-
-__syscall int gpio_disable_callback(struct device *port, int access_op,
-				    u32_t pin);
-
-static inline int z_impl_gpio_disable_callback(struct device *port,
-					      int access_op, u32_t pin)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
-	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config->config_info;
-
-	(void)cfg;
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
-
-	if (api->disable_callback == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->disable_callback(port, access_op, pin);
-}
 /**
  * @endcond
  */
@@ -1353,9 +1308,16 @@ static inline int gpio_remove_callback(struct device *port,
  * @deprecated Replace with ``gpio_pin_interrupt_configure()`` passing
  * interrupt configuration flags such as ``GPIO_INT_EDGE_TO_ACTIVE``.
  */
+/* Deprecated in 2.2 release */
 static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
-	return gpio_enable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	/*
+	 * This API cannot be implemented in terms of the new API
+	 * because the application-desired interrupt configuration is
+	 * not available.
+	 */
+	__ASSERT(false, "Replace with gpio_pin_interrupt_configure");
+	return -ENOTSUP;
 }
 
 /**
@@ -1367,9 +1329,10 @@ static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
  * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
  * ``GPIO_INT_DISABLE``.
  */
+/* Deprecated in 2.2 release */
 static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
 {
-	return gpio_disable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	return gpio_pin_interrupt_configure(port, pin, GPIO_INT_DISABLE);
 }
 
 /**

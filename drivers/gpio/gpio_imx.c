@@ -218,46 +218,6 @@ static int imx_gpio_manage_callback(struct device *port,
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
-static int imx_gpio_enable_callback(struct device *port, int access_op,
-				    u32_t pin)
-{
-	const struct imx_gpio_config *config = port->config->config_info;
-	struct imx_gpio_data *data = port->driver_data;
-	u32_t i;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables |= BIT(pin);
-		GPIO_SetPinIntMode(config->base, pin, true);
-	} else {
-		data->pin_callback_enables = 0xFFFFFFFFU;
-		for (i = 0U; i < 32U; i++) {
-			GPIO_SetPinIntMode(config->base, i, true);
-		}
-	}
-
-	return 0;
-}
-
-static int imx_gpio_disable_callback(struct device *port, int access_op,
-				     u32_t pin)
-{
-	const struct imx_gpio_config *config = port->config->config_info;
-	struct imx_gpio_data *data = port->driver_data;
-	u32_t i;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		GPIO_SetPinIntMode(config->base, pin, false);
-		data->pin_callback_enables &= ~BIT(pin);
-	} else {
-		for (i = 0U; i < 32U; i++) {
-			GPIO_SetPinIntMode(config->base, i, false);
-		}
-		data->pin_callback_enables = 0U;
-	}
-
-	return 0;
-}
-
 static void imx_gpio_port_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
@@ -282,8 +242,6 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 	.port_toggle_bits = imx_gpio_port_toggle_bits,
 	.pin_interrupt_configure = imx_gpio_pin_interrupt_configure,
 	.manage_callback = imx_gpio_manage_callback,
-	.enable_callback = imx_gpio_enable_callback,
-	.disable_callback = imx_gpio_disable_callback,
 };
 
 #ifdef CONFIG_GPIO_IMX_PORT_1
