@@ -105,15 +105,13 @@ static int test_callback(int mode)
 	}
 	if ((mode & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
 		if (cb_cnt != 1) {
-			TC_ERROR("not trigger callback correctly\n");
+			TC_ERROR("edge not trigger callback correctly\n");
 			goto err_exit;
 		}
 		goto pass_exit;
-	}
-
-	if ((mode & GPIO_INT_EDGE) == GPIO_INT_LEVEL) {
+	} else {
 		if (cb_cnt != MAX_INT_CNT) {
-			TC_ERROR("not trigger callback correctly\n");
+			TC_ERROR("level not trigger callback correctly\n");
 			goto err_exit;
 		}
 	}
