@@ -338,7 +338,7 @@ struct mqtt_sec_config {
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.
 	 */
-	char *hostname;
+	const char *hostname;
 };
 
 /** @brief MQTT transport type. */
