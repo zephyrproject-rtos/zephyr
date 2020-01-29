@@ -22,6 +22,9 @@ properties:
     description: |
       Pin on which sensor communication will be performed.
 
+      Control and data are encoded by the duration of active low
+      signals.  A pull up may be appropriate.
+
   dht22:
     type: boolean
     description: |

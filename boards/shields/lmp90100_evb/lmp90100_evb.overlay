@@ -13,13 +13,15 @@
 		spi-max-frequency = <1000000>;
 		label = "LMP90100";
 		/* Uncomment to use IRQ instead of polling: */
-		/* drdyb-gpios = <&arduino_header 15 GPIO_INT_ACTIVE_LOW>; */
+		/* drdyb-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; */
 		#io-channel-cells = <2>;
 
-		gpio {
+		lmp90100_gpio: gpio {
 			compatible = "ti,lmp90xxx-gpio";
 			gpio-controller;
 			label = "LMP90100_GPIO";
+			/* Reduce to 6 if drdyb is used */
+			ngpios = <7>;
 			#gpio-cells = <2>;
 		};
 	};

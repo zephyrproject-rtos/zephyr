@@ -29,15 +29,15 @@ void rf2xx_iface_phy_rst(struct device *dev)
 	const struct rf2xx_context *ctx = dev->driver_data;
 
 	/* Ensure control lines have correct levels. */
-	gpio_pin_write(ctx->reset_gpio, conf->reset.pin, 1);
-	gpio_pin_write(ctx->slptr_gpio, conf->slptr.pin, 0);
+	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
+	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
 
 	/* Wait typical time of timer TR1. */
 	k_busy_wait(330);
 
-	gpio_pin_write(ctx->reset_gpio, conf->reset.pin, 0);
+	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 1);
 	k_busy_wait(10);
-	gpio_pin_write(ctx->reset_gpio, conf->reset.pin, 1);
+	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
 }
 void rf2xx_iface_phy_tx_start(struct device *dev)
 {
@@ -45,11 +45,11 @@ void rf2xx_iface_phy_tx_start(struct device *dev)
 	const struct rf2xx_context *ctx = dev->driver_data;
 
 	/* Start TX transmission at rise edge */
-	gpio_pin_write(ctx->slptr_gpio, conf->slptr.pin, 1);
+	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 1);
 	/* 16.125[μs] delay to detect signal */
 	k_busy_wait(20);
 	/* restore initial pin state */
-	gpio_pin_write(ctx->slptr_gpio, conf->slptr.pin, 0);
+	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
 }
 
 u8_t rf2xx_iface_reg_read(struct device *dev,

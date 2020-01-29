@@ -31,7 +31,7 @@
  *
  * @param line EXTI# line
  */
-int stm32_exti_enable(int line);
+void stm32_exti_enable(int line);
 
 /**
  * @brief disable EXTI interrupt for specific line
@@ -44,10 +44,14 @@ void stm32_exti_disable(int line);
  * @brief EXTI trigger flags
  */
 enum stm32_exti_trigger {
+	/* clear trigger */
+	STM32_EXTI_TRIG_NONE  = 0x0,
 	/* trigger on rising edge */
 	STM32_EXTI_TRIG_RISING  = 0x1,
 	/* trigger on falling endge */
 	STM32_EXTI_TRIG_FALLING = 0x2,
+	/* trigger on falling endge */
+	STM32_EXTI_TRIG_BOTH = 0x3,
 };
 
 /**
@@ -65,12 +69,10 @@ typedef void (*stm32_exti_callback_t) (int line, void *user);
  * @brief set EXTI interrupt callback
  *
  * @param line EXI# line
- * @param port port index
  * @param cb   user callback
  * @param data user data
  */
-int stm32_exti_set_callback(int line, int port,
-			    stm32_exti_callback_t cb, void *data);
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *data);
 
 /**
  * @brief unset EXTI interrupt callback

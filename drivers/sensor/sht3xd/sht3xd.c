@@ -232,6 +232,7 @@ static const struct sht3xd_config sht3xd0_cfg = {
 	.base_address = DT_INST_0_SENSIRION_SHT3XD_BASE_ADDRESS,
 #ifdef CONFIG_SHT3XD_TRIGGER
 	.alert_pin = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_PIN,
+	.alert_flags = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_FLAGS,
 #endif
 };
 

@@ -34,15 +34,15 @@
 		compatible = "gpio-leds";
 		/* Lightwell RGB */
 		led0: led_0 {
-			gpios = <&sx1509b 5 0>;
+			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			gpios = <&sx1509b 6 0>;
+			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			gpios = <&sx1509b 7 0>;
+			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 	};
@@ -51,7 +51,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 11 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
 		};
 	};
@@ -91,6 +91,9 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;
+		/* Active-low LEDs init high, all else init low */
+		init-out-high = <0xe0e0>;
+		init-out-low = <0x1f1f>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {
@@ -103,16 +106,16 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
-		drdy-gpios = <&gpio0 24 GPIO_INT_ACTIVE_HIGH>;
+		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
-		irq-gpios = <&gpio0 22 0>;
-		reset-gpios = <&sx1509b 11 0>;
-		wake-gpios = <&sx1509b 12 0>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -126,7 +129,7 @@
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios = <&gpio0 12 GPIO_INT_ACTIVE_HIGH>;
+		irq-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		label = "LIS2DH12-ACCEL";
 	};
 };

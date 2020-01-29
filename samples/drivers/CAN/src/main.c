@@ -90,10 +90,10 @@ void change_led(struct zcan_frame *msg, void *led_dev_param)
 
 	switch (msg->data[0]) {
 	case SET_LED:
-		gpio_pin_write(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 1);
+		gpio_pin_set(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 1);
 		break;
 	case RESET_LED:
-		gpio_pin_write(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 0);
+		gpio_pin_set(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 0);
 		break;
 	}
 #else
@@ -214,7 +214,7 @@ void main(void)
 	}
 
 	ret = gpio_pin_configure(led_gpio_dev, DT_ALIAS_LED0_GPIOS_PIN,
-				 GPIO_DIR_OUT);
+				 GPIO_OUTPUT_HIGH | DT_ALIAS_LED0_GPIOS_FLAGS);
 	if (ret < 0) {
 		printk("Error setting LED pin to output mode [%d]", ret);
 	}

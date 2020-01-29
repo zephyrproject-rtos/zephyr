@@ -259,6 +259,7 @@ static const struct lis2mdl_config lis2mdl_dev_config = {
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	.gpio_name = DT_INST_0_ST_LIS2MDL_IRQ_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_ST_LIS2MDL_IRQ_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_ST_LIS2MDL_IRQ_GPIOS_FLAGS,
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
 #if defined(DT_ST_LIS2MDL_BUS_SPI)
 	.bus_init = lis2mdl_spi_init,

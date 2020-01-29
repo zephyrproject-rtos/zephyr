@@ -9,15 +9,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpio0 11 0>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			label = "User D3 red";
 		};
 		green_led: led_1 {
-			gpios = <&gpio0 12 0>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			label = "User D3 green";
 		};
 		blue_led: led_2 {
-			gpios = <&gpio1 9 0>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User D3 blue";
 		};
 	};
@@ -38,7 +38,7 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: button_0 {
-			gpios = <&gpio0 7 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Button";
 		};
 	};
@@ -124,22 +124,22 @@ arduino_i2c: &i2c0 {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
 		label = "MMA8652FC";
-		int1-gpios = <&gpio0 24 0>;
-		int2-gpios = <&gpio0 25 0>;
+		int1-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	};
 
 	ti_hdc@43 {
 		compatible = "ti,hdc","ti,hdc1010";
 		reg = <0x43>;
 		label = "HDC1010";
-		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
+		drdy-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
 	apds9960@39 {
 		compatible = "avago,apds9960";
 		reg = <0x39>;
 		label = "APDS9960";
-		int-gpios = <&gpio0 23 0>;
+		int-gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
 
