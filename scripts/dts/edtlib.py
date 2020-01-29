@@ -118,6 +118,10 @@ class EDT:
     dts_path:
       The .dts path passed to __init__()
 
+    dts_source:
+      The final DTS source code of the loaded devicetree after merging nodes
+      and processing /delete-node/ and /delete-property/, as a string
+
     bindings_dirs:
       The bindings directory paths passed to __init__()
     """
@@ -177,6 +181,10 @@ class EDT:
 
         # to_path() checks that the node exists
         return self._node2enode[chosen.props[name].to_path()]
+
+    @property
+    def dts_source(self):
+        return f"{self._dt}"
 
     def __repr__(self):
         return "<EDT for '{}', binding directories '{}'>".format(
