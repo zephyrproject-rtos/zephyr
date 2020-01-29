@@ -21,7 +21,7 @@ zephyr_cc_option(-ffunction-sections -fdata-sections)
 
 zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   SECTIONS
-  isr_tables.ld
+  ${ZEPHYR_BASE}/include/linker/intlist.ld
 )
 
 zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
