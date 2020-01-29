@@ -48,11 +48,15 @@ struct gpio_gecko_common_data {
 };
 
 struct gpio_gecko_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	GPIO_P_TypeDef *gpio_base;
 	GPIO_Port_TypeDef gpio_index;
 };
 
 struct gpio_gecko_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
@@ -66,7 +70,6 @@ static inline void gpio_gecko_add_port(struct gpio_gecko_common_data *data,
 	data->ports[data->count++] = dev;
 }
 
-
 static int gpio_gecko_configure(struct device *dev,
 				int access_op, u32_t pin, int flags)
 {
@@ -76,33 +79,42 @@ static int gpio_gecko_configure(struct device *dev,
 	GPIO_Mode_TypeDef mode;
 	unsigned int out = 0U;
 
-	/* Check for an invalid pin configuration */
-	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
-		return -EINVAL;
-	}
-
-	/* Interrupt on static level is not supported by the hardware */
-	if ((flags & GPIO_INT) && !(flags & GPIO_INT_EDGE)) {
-		return -ENOTSUP;
-	}
-
 	/* Setting interrupt flags for a complete port is not implemented */
-	if ((flags & GPIO_INT) && (access_op == GPIO_ACCESS_BY_PORT)) {
+	if ((flags & GPIO_INT_ENABLE) && (access_op == GPIO_ACCESS_BY_PORT)) {
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+	if (flags & GPIO_OUTPUT) {
+		/* Following modes enable both output and input */
+		if (flags & GPIO_SINGLE_ENDED) {
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				mode = gpioModeWiredAnd;
+			} else {
+				mode = gpioModeWiredOr;
+			}
+		} else {
+			mode = gpioModePushPull;
+		}
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			out = 1U;
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			out = 0U;
+		} else {
+			out = GPIO_PinOutGet(gpio_index, pin);
+		}
+	} else if (flags & GPIO_INPUT) {
+		if (flags & GPIO_PULL_UP) {
 			mode = gpioModeInputPull;
 			out = 1U; /* pull-up*/
-		} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
+		} else if (flags & GPIO_PULL_DOWN) {
 			mode = gpioModeInputPull;
 			/* out = 0 means pull-down*/
 		} else {
 			mode = gpioModeInput;
 		}
-	} else { /* GPIO_DIR_OUT */
-		mode = gpioModePushPull;
+	} else {
+		/* Neither input nor output mode is selected */
+		mode = gpioModeDisabled;
 	}
 	/* The flags contain options that require touching registers in the
 	 * GPIO module and the corresponding PORT module.
@@ -128,15 +140,6 @@ static int gpio_gecko_configure(struct device *dev,
 			| GECKO_GPIO_MODEH(9, mode)
 			| GECKO_GPIO_MODEH(8, mode);
 		gpio_base->DOUT = (out ? 0xFFFF : 0x0000);
-	}
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		GPIO_IntConfig(gpio_index, pin,
-			       (flags & GPIO_INT_ACTIVE_HIGH)
-			       || (flags & GPIO_INT_DOUBLE_EDGE),
-			       !(flags & GPIO_INT_ACTIVE_HIGH)
-			       || (flags & GPIO_INT_DOUBLE_EDGE),
-			       !!(flags & GPIO_INT));
 	}
 
 	return 0;
@@ -183,6 +186,108 @@ static int gpio_gecko_read(struct device *dev,
 	}
 
 	/* nothing more to do for GPIO_ACCESS_BY_PORT */
+
+	return 0;
+}
+
+static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+
+	*value = gpio_base->DIN;
+
+	return 0;
+}
+
+static int gpio_gecko_port_set_masked_raw(struct device *dev, u32_t mask,
+					  u32_t value)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+
+	gpio_base->DOUT = (gpio_base->DOUT & ~mask) | (mask & value);
+
+	return 0;
+}
+
+static int gpio_gecko_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+
+#if defined(_GPIO_P_DOUTSET_MASK)
+	gpio_base->DOUTSET = mask;
+#else
+	BUS_RegMaskedSet(&gpio_base->DOUT, mask);
+#endif
+
+	return 0;
+}
+
+static int gpio_gecko_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+
+#if defined(_GPIO_P_DOUTCLR_MASK)
+	gpio_base->DOUTCLR = mask;
+#else
+	BUS_RegMaskedClear(&gpio_base->DOUT, mask);
+#endif
+
+	return 0;
+}
+
+static int gpio_gecko_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+
+	gpio_base->DOUTTGL = mask;
+
+	return 0;
+}
+
+static int gpio_gecko_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	const struct gpio_gecko_config *config = dev->config->config_info;
+	struct gpio_gecko_data *data = dev->driver_data;
+
+	/* Interrupt on static level is not supported by the hardware */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		return -ENOTSUP;
+	}
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		GPIO_IntDisable(BIT(pin));
+	} else {
+		/* Interrupt line is already in use */
+		if ((GPIO->IEN & BIT(pin)) != 0) {
+			/* TODO: Return an error only if request is done for
+			 * a pin from a different port.
+			 */
+			return -EBUSY;
+		}
+
+		bool rising_edge = true;
+		bool falling_edge = true;
+
+		if (trig == GPIO_INT_TRIG_LOW) {
+			rising_edge = false;
+			falling_edge = true;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			rising_edge = true;
+			falling_edge = false;
+		} /* default is GPIO_INT_TRIG_BOTH */
+
+		GPIO_IntConfig(config->gpio_index, pin,
+			       rising_edge, falling_edge, true);
+	}
+
+	WRITE_BIT(data->pin_callback_enables, pin, mode != GPIO_INT_DISABLE);
 
 	return 0;
 }
@@ -242,13 +347,13 @@ static void gpio_gecko_common_isr(void *arg)
 		port_dev = data->ports[i];
 		port_data = port_dev->driver_data;
 		enabled_int = int_status & port_data->pin_callback_enables;
-		int_status &= ~enabled_int;
-
-		gpio_fire_callbacks(&port_data->callbacks, port_dev,
-				     enabled_int);
+		if (enabled_int != 0) {
+			int_status &= ~enabled_int;
+			GPIO->IFC = enabled_int;
+			gpio_fire_callbacks(&port_data->callbacks, port_dev,
+					    enabled_int);
+		}
 	}
-	/* Clear the pending interrupts */
-	GPIO->IFC = 0xFFFF;
 }
 
 
@@ -256,6 +361,12 @@ static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.config = gpio_gecko_configure,
 	.write = gpio_gecko_write,
 	.read = gpio_gecko_read,
+	.port_get_raw = gpio_gecko_port_get_raw,
+	.port_set_masked_raw = gpio_gecko_port_set_masked_raw,
+	.port_set_bits_raw = gpio_gecko_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_gecko_port_clear_bits_raw,
+	.port_toggle_bits = gpio_gecko_port_toggle_bits,
+	.pin_interrupt_configure = gpio_gecko_pin_interrupt_configure,
 	.manage_callback = gpio_gecko_manage_callback,
 	.enable_callback = gpio_gecko_enable_callback,
 	.disable_callback = gpio_gecko_disable_callback,
@@ -301,6 +412,9 @@ static int gpio_gecko_common_init(struct device *dev)
 static int gpio_gecko_port##pl##_init(struct device *dev); \
 \
 static const struct gpio_gecko_config gpio_gecko_port##pl##_config = { \
+	.common = { \
+		.port_pin_mask = (gpio_port_pins_t)(-1), \
+	}, \
 	.gpio_base = &GPIO->P[gpioPort##pu], \
 	.gpio_index = gpioPort##pu, \
 }; \

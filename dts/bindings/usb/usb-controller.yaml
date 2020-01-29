@@ -22,3 +22,8 @@ properties:
 
     label:
       required: true
+
+    vbus-gpios:
+      type: phandle-array
+      required: false
+      description: Control VBUS via GPIO pin.

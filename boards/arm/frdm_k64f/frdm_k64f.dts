@@ -29,15 +29,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpiob 22 0>;
+			gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpioe 26 0>;
+			gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpiob 21 0>;
+			gpios = <&gpiob 21 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 		};
 	};
@@ -46,11 +46,11 @@
 		compatible = "gpio-keys";
 		user_button_2: button_0 {
 			label = "User SW2";
-			gpios = <&gpioc 6 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
-			gpios = <&gpioa 4 (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)>;
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -115,8 +115,8 @@ arduino_i2c: &i2c0 {
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 6 0>;
-		int2-gpios = <&gpioc 13 0>;
+		int1-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 	};
 };
 

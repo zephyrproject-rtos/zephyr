@@ -26,7 +26,9 @@ static void ti_hdc_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN);
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     DT_INST_0_TI_HDC_DRDY_GPIOS_PIN,
+				     GPIO_INT_DISABLE);
 	k_sem_give(&drv_data->data_sem);
 }
 #endif
@@ -39,7 +41,9 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN);
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     DT_INST_0_TI_HDC_DRDY_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 #endif
 
 	buf[0] = TI_HDC_REG_TEMP;
@@ -150,11 +154,7 @@ static int ti_hdc_init(struct device *dev)
 	}
 
 	gpio_pin_configure(drv_data->gpio, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_FLAGS)
-			   DT_INST_0_TI_HDC_DRDY_GPIOS_FLAGS |
-#endif
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | DT_INST_0_TI_HDC_DRDY_GPIOS_FLAGS);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   ti_hdc_gpio_callback,
@@ -164,6 +164,10 @@ static int ti_hdc_init(struct device *dev)
 		LOG_DBG("Failed to set GPIO callback");
 		return -EIO;
 	}
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     DT_INST_0_TI_HDC_DRDY_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 #endif
 
 	LOG_INF("Initialized device successfully");

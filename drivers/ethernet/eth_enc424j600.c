@@ -630,10 +630,8 @@ static int enc424j600_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			    config->gpio_pin);
+			       GPIO_INPUT | config->gpio_flags)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -644,9 +642,9 @@ static int enc424j600_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(context->gpio,
+				     config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Check SPI connection */
 	do {
@@ -756,6 +754,7 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 static const struct enc424j600_config enc424j600_0_config = {
 	.gpio_port = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_FLAGS,
 	.spi_port = DT_INST_0_MICROCHIP_ENC424J600_BUS_NAME,
 	.spi_freq  = DT_INST_0_MICROCHIP_ENC424J600_SPI_MAX_FREQUENCY,
 	.spi_slave = DT_INST_0_MICROCHIP_ENC424J600_BASE_ADDRESS,

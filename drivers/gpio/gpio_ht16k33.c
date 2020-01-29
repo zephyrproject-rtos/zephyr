@@ -24,25 +24,30 @@ LOG_MODULE_REGISTER(gpio_ht16k33);
 #define HT16K33_KEYSCAN_ROWS 3
 
 struct gpio_ht16k33_cfg {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	char *parent_dev_name;
 	u8_t keyscan_idx;
 };
 
 struct gpio_ht16k33_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	struct device *parent;
 	sys_slist_t callbacks;
 };
 
 static int gpio_ht16k33_cfg(struct device *dev, int access_op,
-			       u32_t pin, int flags)
+			    u32_t pin, int flags)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
 	/* Keyscan is input-only */
-	if ((flags & GPIO_DIR_MASK) != GPIO_DIR_IN) {
-		return -EINVAL;
+	if (((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED)
+	    || ((flags & GPIO_OUTPUT) != 0)) {
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -70,6 +75,72 @@ static int gpio_ht16k33_read(struct device *dev, int access_op,
 
 	/* Keyscan only supports interrupt mode */
 	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_port_get_raw(struct device *port,
+				     gpio_port_value_t *value)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(value);
+
+	/* Keyscan only supports interrupt mode */
+	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_port_set_masked_raw(struct device *port,
+					    gpio_port_pins_t mask,
+					    gpio_port_value_t value)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(mask);
+	ARG_UNUSED(value);
+
+	/* Keyscan is input-only */
+	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_port_set_bits_raw(struct device *port,
+					  gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	/* Keyscan is input-only */
+	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_port_clear_bits_raw(struct device *port,
+					    gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	/* Keyscan is input-only */
+	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_port_toggle_bits(struct device *port,
+					 gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	/* Keyscan is input-only */
+	return -ENOTSUP;
+}
+
+static int gpio_ht16k33_pin_interrupt_configure(struct device *port,
+						unsigned int pin,
+						enum gpio_int_mode int_mode,
+						enum gpio_int_trig int_trig)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(int_mode);
+	ARG_UNUSED(int_trig);
+
+	/* Interrupts are always enabled */
+	return 0;
 }
 
 void ht16k33_process_keyscan_row_data(struct device *dev,
@@ -139,6 +210,12 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 	.config = gpio_ht16k33_cfg,
 	.write = gpio_ht16k33_write,
 	.read = gpio_ht16k33_read,
+	.port_get_raw = gpio_ht16k33_port_get_raw,
+	.port_set_masked_raw = gpio_ht16k33_port_set_masked_raw,
+	.port_set_bits_raw = gpio_ht16k33_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_ht16k33_port_clear_bits_raw,
+	.port_toggle_bits = gpio_ht16k33_port_toggle_bits,
+	.pin_interrupt_configure = gpio_ht16k33_pin_interrupt_configure,
 	.manage_callback = gpio_ht16k33_manage_callback,
 	.enable_callback = gpio_ht16k33_enable_callback,
 	.disable_callback = gpio_ht16k33_disable_callback,
@@ -147,6 +224,9 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 
 #define GPIO_HT16K33_DEVICE(id)						\
 	static const struct gpio_ht16k33_cfg gpio_ht16k33_##id##_cfg = {\
+		.common = {						\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(13),		\
+		},							\
 		.parent_dev_name =					\
 			DT_INST_##id##_HOLTEK_HT16K33_KEYSCAN_BUS_NAME,	\
 		.keyscan_idx     =					\

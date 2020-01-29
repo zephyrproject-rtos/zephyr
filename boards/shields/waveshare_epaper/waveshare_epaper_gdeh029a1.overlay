@@ -17,9 +17,9 @@
 		height = <128>;
 		pp-width-bits = <16>;
 		pp-height-bits = <16>;
-		dc-gpios = <&arduino_header 15 0>;	/* D9 */
-		reset-gpios = <&arduino_header 14 0>;	/* D8 */
-		busy-gpios = <&arduino_header 13 0>;	/* D7 */
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
 		gdv = [16];
 		sdv = [0a];
 		vcom = <0xa8>;

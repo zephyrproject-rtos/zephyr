@@ -23,4 +23,7 @@ properties:
     wp-gpios:
       type: phandle-array
       required: false
-      description: GPIO to which the write-protect pin of the chip is connected
+      description: |
+        GPIO to which the write-protect pin of the chip is connected.
+
+        The device will interpret this signal as active-low.

@@ -176,20 +176,16 @@ static int pins_configure(struct device *port, const struct pin_config cfg[],
 {
 	int err;
 
-	/* Write to the pins before configuring them as output,
-	 * to make sure we are driving them to the correct level
-	 * right after they are configured.
-	 */
 	for (size_t i = 0; i < pins; i++) {
-		/* The swiches on the board are active low, so we need
-		 * to negate the IS_ENABLED() value from the tables.
+		/* A given pin controlling the switch needs to be driven
+		 * to the low state to activate the routing indicated by
+		 * the corresponding IS_ENABLED() macro in the table,
+		 * so configure the pin as output with the proper initial
+		 * state.
 		 */
-		err = gpio_pin_write(port, cfg[i].pin, !cfg[i].val);
-		if (err) {
-			return cfg[i].pin;
-		}
-
-		err = gpio_pin_configure(port, cfg[i].pin, GPIO_DIR_OUT);
+		u32_t flag = (cfg[i].val ? GPIO_OUTPUT_LOW
+					 : GPIO_OUTPUT_HIGH);
+		err = gpio_pin_configure(port, cfg[i].pin, flag);
 		if (err) {
 			return cfg[i].pin;
 		}
@@ -214,13 +210,12 @@ static void chip_reset(struct device *gpio,
 
 static void reset_pin_wait_low(struct device *port, u32_t pin)
 {
-	int err;
-	u32_t val;
+	int val;
 
 	/* Wait until the pin is pulled low */
 	do {
-		err = gpio_pin_read(port, pin, &val);
-	} while (err == 0 && val != 0);
+		val = gpio_pin_get_raw(port, pin);
+	} while (val > 0);
 }
 
 static int reset_pin_configure(struct device *p0, struct device *p1)
@@ -260,9 +255,7 @@ static int reset_pin_configure(struct device *p0, struct device *p1)
 
 	__ASSERT_NO_MSG(port != NULL);
 
-	err = gpio_pin_configure(port, pin,
-				 GPIO_DIR_IN | GPIO_INT | GPIO_PUD_PULL_DOWN |
-				 GPIO_INT_ACTIVE_HIGH | GPIO_INT_EDGE);
+	err = gpio_pin_configure(port, pin, GPIO_INPUT | GPIO_PULL_DOWN);
 	if (err) {
 		return err;
 	}
@@ -274,7 +267,7 @@ static int reset_pin_configure(struct device *p0, struct device *p1)
 		return err;
 	}
 
-	err = gpio_pin_enable_callback(port, pin);
+	err = gpio_pin_interrupt_configure(port, pin, GPIO_INT_EDGE_RISING);
 	if (err) {
 		return err;
 	}

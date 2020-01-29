@@ -594,12 +594,13 @@ static int bmc150_magn_init(struct device *dev)
 }
 
 static const struct bmc150_magn_config bmc150_magn_config = {
-	.i2c_master_dev_name = DT_INST_0_BOSCH_BMC150_MAGN_BUS_NAME,
-	.i2c_slave_addr = BMC150_MAGN_I2C_ADDR,
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	.gpio_drdy_dev_name = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_CONTROLLER,
 	.gpio_drdy_int_pin = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_PIN,
+	.gpio_drdy_int_flags = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_FLAGS,
 #endif
+	.i2c_master_dev_name = DT_INST_0_BOSCH_BMC150_MAGN_BUS_NAME,
+	.i2c_slave_addr = BMC150_MAGN_I2C_ADDR,
 };
 
 static struct bmc150_magn_data bmc150_magn_data;

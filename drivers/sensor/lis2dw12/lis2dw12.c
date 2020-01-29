@@ -376,6 +376,7 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	.int_gpio_port = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_CONTROLLER,
 	.int_gpio_pin = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_PIN,
+	.int_gpio_flags = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_FLAGS,
 #if defined(CONFIG_LIS2DW12_INT_PIN_1)
 	.int_pin = 1,
 #elif defined(CONFIG_LIS2DW12_INT_PIN_2)
