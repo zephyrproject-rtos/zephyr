@@ -36,54 +36,44 @@ if(CONFIG_BT_LL_SW_LEGACY)
 endif()
 
 if(CONFIG_BT_LL_SW_SPLIT)
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_LLL_VENDOR_NORDIC
+  zephyr_library_sources(
     ll_sw/nordic/lll/lll.c
     )
   if(CONFIG_BT_BROADCASTER)
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
+    zephyr_library_sources(
       ll_sw/nordic/lll/lll_adv.c
       )
   endif()
   if(CONFIG_BT_OBSERVER)
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
+    zephyr_library_sources(
       ll_sw/nordic/lll/lll_scan.c
       )
   endif()
   if(CONFIG_BT_CONN)
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
+    zephyr_library_sources(
       ll_sw/nordic/lll/lll_clock.c
       ll_sw/nordic/lll/lll_conn.c
       )
-    if(CONFIG_BT_PERIPHERAL)
-      zephyr_library_sources_ifdef(
-        CONFIG_BT_LLL_VENDOR_NORDIC
-        ll_sw/nordic/lll/lll_slave.c
-        )
-    endif()
-    if(CONFIG_BT_CENTRAL)
-      zephyr_library_sources_ifdef(
-        CONFIG_BT_LLL_VENDOR_NORDIC
-        ll_sw/nordic/lll/lll_master.c
-        )
-    endif()
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_PERIPHERAL
+      ll_sw/nordic/lll/lll_slave.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CENTRAL
+      ll_sw/nordic/lll/lll_master.c
+      )
   endif()
-  if(CONFIG_BT_LLL_VENDOR_NORDIC)
-    zephyr_library_include_directories(
-      ll_sw/nordic/lll
-      )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_CTLR_DTM
-      ll_sw/nordic/lll/lll_test.c
-      )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_CTLR_PROFILE_ISR
-      ll_sw/nordic/lll/lll_prof.c
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_DTM
+    ll_sw/nordic/lll/lll_test.c
     )
-  endif()
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_PROFILE_ISR
+    ll_sw/nordic/lll/lll_prof.c
+    )
+  zephyr_library_include_directories(
+    ll_sw/nordic/lll
+    )
 endif()
 
 zephyr_library_sources(
