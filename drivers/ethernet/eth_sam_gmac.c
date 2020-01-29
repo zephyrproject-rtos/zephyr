@@ -1656,8 +1656,13 @@ static void eth0_iface_init(struct net_if *iface)
 	int result;
 	int i;
 
-	/* For VLAN, this value is only used to get the correct L2 driver */
-	dev_data->iface = iface;
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (dev_data->iface == NULL) {
+		dev_data->iface = iface;
+	}
 
 	ethernet_init(iface);
 

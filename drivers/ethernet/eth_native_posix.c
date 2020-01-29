@@ -397,7 +397,12 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_context *ctx = net_if_get_device(iface)->driver_data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
 
-	ctx->iface = iface;
+	/* The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (ctx->iface == NULL) {
+		ctx->iface = iface;
+	}
 
 	ethernet_init(iface);
 
