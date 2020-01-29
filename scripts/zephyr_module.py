@@ -174,7 +174,7 @@ def main():
     parser.add_argument('-m', '--modules', nargs='+',
                         help="""List of modules to parse instead of using `west
                              list`""")
-    parser.add_argument('-x', '--extra-modules', nargs='+',
+    parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
                         help='List of extra modules to parse')
     parser.add_argument('-w', '--west-path', default='west',
                         help='Path to west executable')
@@ -201,9 +201,8 @@ def main():
     else:
         projects = args.modules
 
-    if args.extra_modules is not None:
-        projects += args.extra_modules
-
+    projects += args.extra_modules
+    extra_modules = set(args.extra_modules)
 
     kconfig = ""
     cmake = ""
@@ -219,6 +218,9 @@ def main():
             kconfig += process_kconfig(project, meta)
             cmake += process_cmake(project, meta)
             sanitycheck += process_sanitycheck(project, meta)
+        elif project in extra_modules:
+            sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
+                     'is not a valid zephyr module')
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
