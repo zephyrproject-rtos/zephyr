@@ -252,7 +252,7 @@ void stop_udp(void)
 		k_delayed_work_cancel(&conf.ipv6.udp.recv);
 		k_delayed_work_cancel(&conf.ipv6.udp.transmit);
 
-		if (conf.ipv6.udp.sock > 0) {
+		if (conf.ipv6.udp.sock >= 0) {
 			(void)close(conf.ipv6.udp.sock);
 		}
 	}
@@ -261,7 +261,7 @@ void stop_udp(void)
 		k_delayed_work_cancel(&conf.ipv4.udp.recv);
 		k_delayed_work_cancel(&conf.ipv4.udp.transmit);
 
-		if (conf.ipv4.udp.sock > 0) {
+		if (conf.ipv4.udp.sock >= 0) {
 			(void)close(conf.ipv4.udp.sock);
 		}
 	}
