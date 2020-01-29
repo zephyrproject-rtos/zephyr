@@ -24,6 +24,7 @@ Samples and Demos
    portability/*
    posix/*
    video/*
+   scheduler/*
    smp/*
 
 .. comment
