@@ -86,6 +86,8 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | EEPROM    | on-chip    | eeprom                              |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
