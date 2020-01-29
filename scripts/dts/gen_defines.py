@@ -52,6 +52,7 @@ def main():
                 continue
 
             write_node_comment(node)
+            write_deps(node)
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -164,6 +165,21 @@ def relativize(path):
     except ValueError:
         # Not within ZEPHYR_BASE
         return path
+
+
+def write_deps(node):
+    # Writes dependency ordinal information for the node.
+
+    def dep_ords(nodes):
+        return [node.dep_ordinal for node in nodes]
+
+    out_node(node, 'ORDINAL', node.dep_ordinal)
+    out_node_init(node, 'REQUIRES_NODES', dep_ords(node.depends_on))
+    out_node_init(node, 'REQUIRES_DEVS',
+                  dep_ords([n for n in node.depends_on if n.is_device]))
+    out_node_init(node, 'SUPPORTS_NODES', dep_ords(node.required_by))
+    out_node_init(node, 'SUPPORTS_DEVS',
+                  dep_ords([n for n in node.required_by if n.is_device]))
 
 
 def write_regs(node):
