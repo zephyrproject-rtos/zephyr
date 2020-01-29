@@ -191,10 +191,15 @@ The first figure in the :ref:`device-tree-intro` shows how devicetree fits into
 the Zephyr build system. This section describes the input and output files in
 more detail.
 
-.. figure:: zephyr_dt_inputs_outputs.png
+.. figure:: zephyr_dt_inputs_outputs.svg
    :figclass: align-center
 
    Devicetree input (green) and output (yellow) files
+
+.. note::
+
+   For a higher-level overview over of the build, see :ref:`the build overview
+   <build_overview>`.
 
 DTS files usually have a :file:`.dts`, :file:`.dtsi` (*i* for *include*), or
 :file:`.overlay` extension. The C preprocessor is run on all devicetree files
@@ -203,8 +208,8 @@ files via the C preprocessor with ``#include``.
 
 .. note::
 
-   DTS also also has a native mechanism, ``/include/ "<filename>"``, for
-   including other files, though it is less commonly used.
+   DTS also has a native mechanism, ``/include/ "<filename>"``, for including
+   other files, though it is less commonly used.
 
 Each board has a base devicetree, stored in the board's directory in
 :file:`boards/` as :file:`<BOARD>.dts`. This base devicetree can be extended or
@@ -228,9 +233,15 @@ from the base devicetree, if needed.
 
 .. note::
 
-   The preprocessed and concatenated DTS sources are stored in
-   :file:`zephyr/<BOARD>.dts.pre.tmp` in the build directory. Looking at this
-   file can be handy for debugging.
+   These files in the build directory can be useful as a debugging aid when
+   working with devicetree:
+
+   zephyr/<BOARD>.dts.pre.tmp
+       The preprocessed and concatenated DTS sources
+
+   zephyr/zephyr.dts
+       The final merged devicetree. This file is specifically output as a
+       debugging aid, and is unused otherwise.
 
 The merged devicetree, along with any :ref:`bindings <bindings>` referenced
 from it, is used to generate C preprocessor macros. This is handled by the
