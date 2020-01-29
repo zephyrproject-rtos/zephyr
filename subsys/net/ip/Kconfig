@@ -371,10 +371,12 @@ config NET_TCP1
 	help
 	  The current TCP stack that has been in use since Zephyr 1.0.
 
+if HEAP_MEM_POOL_SIZE > 0
 config NET_TCP2
 	bool "Experimental TCP stack"
 	help
 	  Enable experimental TCP which is under development.
+endif
 
 endchoice
 
