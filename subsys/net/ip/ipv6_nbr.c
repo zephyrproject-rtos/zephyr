@@ -1816,11 +1816,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 		llao_len = 0U;
 	} else {
 		if (!src) {
-			src = net_if_ipv6_select_src_addr(iface, dst);
+			src = net_if_ipv6_select_src_addr(iface, tgt);
 		}
 
 		if (net_ipv6_is_addr_unspecified(src)) {
-			NET_DBG("No source address for NS");
+			NET_DBG("No source address for NS (tgt %s)",
+				log_strdup(net_sprint_ipv6_addr(tgt)));
 			ret = -EINVAL;
 
 			goto drop;
