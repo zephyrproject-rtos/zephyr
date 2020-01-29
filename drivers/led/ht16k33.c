@@ -397,14 +397,6 @@ static int ht16k33_init(struct device *dev)
 			return -EINVAL;
 		}
 
-		err = gpio_pin_interrupt_configure(irq_dev, config->irq_pin,
-						   GPIO_INT_EDGE_FALLING);
-		if (err) {
-			LOG_ERR("Failed to configure IRQ pin flags (err %d)",
-				err);
-			return -EINVAL;
-		}
-
 		gpio_init_callback(&data->irq_cb, &ht16k33_irq_callback,
 				   BIT(config->irq_pin));
 
@@ -429,9 +421,11 @@ static int ht16k33_init(struct device *dev)
 			return -EIO;
 		}
 
-		err = gpio_pin_enable_callback(irq_dev, config->irq_pin);
+		err = gpio_pin_interrupt_configure(irq_dev, config->irq_pin,
+						   GPIO_INT_EDGE_FALLING);
 		if (err) {
-			LOG_ERR("Failed to enable IRQ callback (err %d)", err);
+			LOG_ERR("Failed to configure IRQ pin flags (err %d)",
+				err);
 			return -EINVAL;
 		}
 	} else {
