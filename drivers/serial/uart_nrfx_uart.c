@@ -54,7 +54,7 @@ static struct {
 	bool rx_enabled;
 
 	bool tx_abort;
-	const u8_t *tx_buffer;
+	const u8_t *volatile tx_buffer;
 	size_t tx_buffer_length;
 	volatile size_t tx_counter;
 #if defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
@@ -209,26 +209,56 @@ static int uart_nrfx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
+#ifdef CONFIG_UART_0_ASYNC
+static void uart_nrfx_isr(void *arg);
+#endif
+
 /**
  * @brief Output a character in polled mode.
  *
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_nrfx_poll_out(struct device *dev,
-					unsigned char c)
+static void uart_nrfx_poll_out(struct device *dev, unsigned char c)
 {
-	/* The UART API dictates that poll_out should wait for the transmitter
-	 * to be empty before sending a character. However, without locking,
-	 * this introduces a rare yet possible race condition if the thread is
-	 * preempted between sending the byte and checking for completion.
-
-	 * Because of this race condition, the while loop has to be placed
-	 * after the write to TXD, and we can't wait for an empty transmitter
-	 * before writing. This is a trade-off between losing a byte once in a
-	 * blue moon against hanging up the whole thread permanently
+	atomic_t *lock;
+#ifdef CONFIG_UART_0_ASYNC
+	while (uart0_cb.tx_buffer) {
+		/* If there is ongoing asynchronous transmission, and we are in
+		 * ISR, then call uart interrupt routine, otherwise
+		 * busy wait until transmission is finished.
+		 */
+		if (k_is_in_isr()) {
+			uart_nrfx_isr((void *) dev);
+		}
+	}
+	/* Use tx_buffer_length as lock, this way uart_nrfx_tx will
+	 * return -EBUSY during poll_out.
 	 */
+	lock = &uart0_cb.tx_buffer_length;
+#else
+	static atomic_val_t poll_out_lock;
 
+	lock = &poll_out_lock;
+#endif
+
+	if (!k_is_in_isr()) {
+		u8_t safety_cnt = 100;
+
+		while (atomic_cas((atomic_t *) lock,
+				  (atomic_val_t) 0,
+				  (atomic_val_t) 1) == false) {
+			/* k_sleep allows other threads to execute and finish
+			 * their transactions.
+			 */
+			k_sleep(1);
+			if (--safety_cnt == 0) {
+				return;
+			}
+		}
+	} else {
+		*lock = 1;
+	}
 	/* Reset the transmitter ready state. */
 	event_txdrdy_clear();
 
@@ -239,13 +269,17 @@ static void uart_nrfx_poll_out(struct device *dev,
 	nrf_uart_txd_set(uart0_addr, (u8_t)c);
 
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
-	while (!event_txdrdy_check()) {
-	}
+	int res;
 
-	/* Deactivate the transmitter so that it does not needlessly consume
-	 * power.
+	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
+
+	/* Deactivate the transmitter so that it does not needlessly
+	 * consume power.
 	 */
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
+
+	/* Release the lock. */
+	*lock = 0;
 }
 
 /** Console I/O function */
@@ -355,19 +389,19 @@ static int uart_nrfx_callback_set(struct device *dev, uart_callback_t callback,
 static int uart_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 			s32_t timeout)
 {
-	if (uart0_cb.tx_buffer_length != 0) {
+	if (atomic_cas((atomic_t *) &uart0_cb.tx_buffer_length,
+		       (atomic_val_t) 0,
+		       (atomic_val_t) len) == false) {
 		return -EBUSY;
 	}
 
 	uart0_cb.tx_buffer = buf;
-	uart0_cb.tx_buffer_length = len;
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
 	uart0_cb.tx_timeout = timeout;
 #endif
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
-	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
 
 	u8_t txd = uart0_cb.tx_buffer[uart0_cb.tx_counter];
@@ -576,14 +610,18 @@ static void tx_isr(void)
 			k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
 		}
 #endif
-		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
-		uart0_cb.tx_buffer_length = 0;
-		uart0_cb.tx_counter = 0;
+		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 		struct uart_event event = {
 			.type = UART_TX_DONE,
 			.data.tx.buf = uart0_cb.tx_buffer,
 			.data.tx.len = uart0_cb.tx_counter
 		};
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
+		uart0_cb.tx_buffer_length = 0;
+		uart0_cb.tx_counter = 0;
+		uart0_cb.tx_buffer = NULL;
+
+		nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
 		user_callback(&event);
 	}
 }
@@ -653,7 +691,9 @@ void uart_nrfx_isr(void *arg)
 		rx_isr(uart);
 	}
 
-	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)) {
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)
+	    && nrf_uart_int_enable_check(uart0_addr,
+					 NRF_UART_INT_MASK_TXDRDY)) {
 		tx_isr();
 	}
 
