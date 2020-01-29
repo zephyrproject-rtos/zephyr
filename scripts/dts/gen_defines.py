@@ -37,6 +37,10 @@ def main():
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
+    # Save merged DTS source, as a debugging aid
+    with open(args.dts_out, "w", encoding="utf-8") as f:
+        print(edt.dts_source, file=f)
+
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
 
@@ -87,6 +91,9 @@ def parse_args():
                         help="path to write header to")
     parser.add_argument("--conf-out", required=True,
                         help="path to write configuration file to")
+    parser.add_argument("--dts-out", required=True,
+                        help="path to write merged DTS source code to (e.g. "
+                             "as a debugging aid)")
 
     return parser.parse_args()
 
