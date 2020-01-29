@@ -315,7 +315,9 @@ static void bt_spi_rx_thread(void)
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);
 		/* Disable IRQ pin callback to avoid spurious IRQs */
-		gpio_pin_disable_callback(irq_dev, GPIO_IRQ_PIN);
+
+		gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
+					     GPIO_INT_DISABLE);
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		BT_DBG("");
@@ -339,7 +341,9 @@ static void bt_spi_rx_thread(void)
 			}
 
 			release_cs();
-			gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
+			gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
+						     GPIO_INT_EDGE_TO_ACTIVE);
+
 			k_sem_give(&sem_busy);
 
 			if (ret || size == 0) {
