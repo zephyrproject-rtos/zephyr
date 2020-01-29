@@ -29,6 +29,7 @@ import edtlib
 def main():
     global conf_file
     global header_file
+    global flash_area_num
 
     args = parse_args()
 
@@ -43,17 +44,21 @@ def main():
 
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
+    flash_area_num = 0
 
     write_top_comment(edt)
 
-    for node in edt.nodes:
-        if node.enabled and node.matching_compat:
-            # Skip 'fixed-partitions' devices since they are handled by
-            # write_flash() and would generate extra spurious #defines
-            if node.matching_compat == "fixed-partitions":
-                continue
+    for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        write_node_comment(node)
 
-            write_node_comment(node)
+        # Flash partition nodes are handled as a special case. It
+        # would be nicer if we had bindings that would let us
+        # avoid that, but this will do for now.
+        if node.name.startswith("partition@"):
+            write_flash_partition(node, flash_area_num)
+            flash_area_num += 1
+
+        if node.enabled and node.matching_compat:
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -67,11 +72,10 @@ def main():
         #define DT_COMPAT_<COMPAT> 1
         out(f"COMPAT_{str2ident(compat)}", 1)
 
-    # Derived from /chosen
+    # Definitions derived from /chosen nodes
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
     write_addr_size(edt, "zephyr,ipc_shm", "IPC_SHM")
-
     write_flash(edt)
 
     conf_file.close()
@@ -121,6 +125,12 @@ Nodes in dependency order (ordinal and path):
                 + ", ".join(node.path for node in scc))
         s += f"  {scc[0].dep_ordinal:<3} {scc[0].path}\n"
 
+    s += """
+Definitions derived from these nodes in dependency order are next,
+followed by tree-wide information (active compatibles, chosen nodes,
+etc.).
+"""
+
     out_comment(s, blank_before=False)
 
 
@@ -130,12 +140,16 @@ def write_node_comment(node):
     s = f"""\
 Devicetree node:
   {node.path}
-
+"""
+    if node.matching_compat:
+        s += f"""
 Binding (compatible = {node.matching_compat}):
   {relativize(node.binding_path)}
-
-Dependency Ordinal: {node.dep_ordinal}
 """
+    else:
+        s += "\nNo matching binding.\n"
+
+    s += f"\nDependency Ordinal: {node.dep_ordinal}\n"
 
     if node.depends_on:
         s += "\nRequires:\n"
@@ -147,9 +161,15 @@ Dependency Ordinal: {node.dep_ordinal}
         for req in node.required_by:
             s += f"  {req.dep_ordinal:<3} {req.path}\n"
 
-    # Indent description by two spaces
-    s += "\nDescription:\n" + \
-         "\n".join("  " + line for line in node.description.splitlines())
+    if node.description:
+        # Indent description by two spaces
+        s += "\nDescription:\n" + \
+            "\n".join("  " + line for line in
+                      node.description.splitlines()) + \
+            "\n"
+
+    if not node.enabled:
+        s += "\nNode is disabled.\n"
 
     out_comment(s)
 
@@ -367,20 +387,14 @@ def write_addr_size(edt, prop_name, prefix):
 
 
 def write_flash(edt):
-    # Writes flash-related output
+    # Writes chosen and tree-wide flash-related output
 
     write_flash_node(edt)
     write_code_partition(edt)
 
-    flash_index = 0
-    for node in edt.nodes:
-        if node.name.startswith("partition@"):
-            write_flash_partition(node, flash_index)
-            flash_index += 1
-
-    if flash_index != 0:
+    if flash_area_num != 0:
         out_comment("Number of flash partitions")
-        out("FLASH_AREA_NUM", flash_index)
+        out("FLASH_AREA_NUM", flash_area_num)
 
 
 def write_flash_node(edt):
@@ -439,8 +453,6 @@ def write_code_partition(edt):
 
 
 def write_flash_partition(partition_node, index):
-    out_comment("Flash partition at " + partition_node.path)
-
     if partition_node.label is None:
         err(f"missing 'label' property on {partition_node!r}")
 
