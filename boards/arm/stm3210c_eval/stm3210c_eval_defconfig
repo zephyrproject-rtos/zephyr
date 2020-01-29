@@ -6,7 +6,6 @@ CONFIG_SOC_SERIES_STM32F1X=y
 
 # Platform Configuration
 CONFIG_SOC_STM32F107XC=y
-CONFIG_BOARD_STM3210C_EVAL=y
 
 # General Kernel Options
 # 72MHz system clock
