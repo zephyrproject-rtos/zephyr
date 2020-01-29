@@ -253,13 +253,13 @@ extern "C" {
 #define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
 /** @} */
 
-/** @name Deprecated Flags
- * @{
- */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_DIR_MASK		(GPIO_INPUT | GPIO_OUTPUT)
 /** @endcond */
+
+/** @name Deprecated Flags
+ * @{
+ */
 
 /** Legacy flag indicating pin is configured as input only.
  *
@@ -469,10 +469,9 @@ struct gpio_callback;
  * @typedef gpio_callback_handler_t
  * @brief Define the application callback handler function signature
  *
- * @param "struct device *port" Device struct for the GPIO device.
- * @param "struct gpio_callback *cb" Original struct gpio_callback
- *        owning this handler
- * @param "u32_t pins" Mask of pins that triggers the callback handler
+ * @param port Device struct for the GPIO device.
+ * @param cb Original struct gpio_callback owning this handler
+ * @param pins Mask of pins that triggers the callback handler
  *
  * Note: cb pointer can be used to retrieve private data through
  * CONTAINER_OF() if original struct gpio_callback is stored in
@@ -1339,8 +1338,8 @@ static inline int gpio_remove_callback(struct device *port,
  *       the pin to trigger an interruption. So as a semantic detail, if no
  *       callback is registered, of course none will be called.
  *
- * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
- * ``GPIO_INT_ENABLE`` along with other interrupt configuration flags.
+ * @deprecated Replace with ``gpio_pin_interrupt_configure()`` passing
+ * interrupt configuration flags such as ``GPIO_INT_EDGE_TO_ACTIVE``.
  */
 static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
@@ -1387,34 +1386,6 @@ static inline int z_impl_gpio_get_pending_int(struct device *dev)
 
 	return api->get_pending_int(dev);
 }
-
-/** @cond INTERNAL_HIDDEN */
-struct gpio_pin_config {
-	char *gpio_controller;
-	u32_t gpio_pin;
-};
-
-#define GPIO_DECLARE_PIN_CONFIG_IDX(_idx)	\
-	struct gpio_pin_config gpio_pin_ ##_idx
-#define GPIO_DECLARE_PIN_CONFIG		\
-	GPIO_DECLARE_PIN_CONFIG_IDX()
-
-#define GPIO_PIN_IDX(_idx, _controller, _pin)	\
-	.gpio_pin_ ##_idx = {			\
-		.gpio_controller = (_controller),\
-		.gpio_pin = (_pin),		\
-	}
-#define GPIO_PIN(_controller, _pin)		\
-	GPIO_PIN_IDX(, _controller, _pin)
-
-#define GPIO_GET_CONTROLLER_IDX(_idx, _conf)	\
-	((_conf)->gpio_pin_ ##_idx.gpio_controller)
-#define GPIO_GET_PIN_IDX(_idx, _conf)	\
-	((_conf)->gpio_pin_ ##_idx.gpio_pin)
-
-#define GPIO_GET_CONTROLLER(_conf)	GPIO_GET_CONTROLLER_IDX(, _conf)
-#define GPIO_GET_PIN(_conf)		GPIO_GET_PIN_IDX(, _conf)
-/** @endcond */
 
 /**
  * @}

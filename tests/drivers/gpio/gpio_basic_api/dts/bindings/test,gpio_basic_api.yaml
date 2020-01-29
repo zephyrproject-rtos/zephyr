@@ -4,9 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: Hardware resources required for the gpio_basic_api test.
-
-description: >
+description: |
     This binding provides resources required to build and run the
     tests/drivers/gpio/gpio_basic_api test in Zephyr.
 
@@ -16,7 +14,7 @@ properties:
     out-gpios:
         type: phandle-array
         required: true
-        description: >
+        description: |
           Identity of a GPIO that will be configured as an output.  This
           must be on the same device as in-gpios, and physically
           connected to in-gpios.
@@ -24,7 +22,7 @@ properties:
     in-gpios:
         type: phandle-array
         required: true
-        description: >
+        description: |
           Identity of a GPIO that will be configured as an input.  This
           must be on the same device as out-gpios,and physically
           connected to out-gpios.
