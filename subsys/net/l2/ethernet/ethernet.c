@@ -815,6 +815,39 @@ static struct ethernet_vlan *get_vlan(struct ethernet_context *ctx,
 	return NULL;
 }
 
+static void setup_ipv6_link_local_addr(struct net_if *iface)
+{
+	struct net_linkaddr link_addr;
+	struct net_if_addr *ifaddr;
+	struct in6_addr addr;
+	u32_t entropy;
+	u8_t mac_addr[6];
+
+	entropy = sys_rand32_get();
+	mac_addr[0] = entropy >> 0;
+	mac_addr[1] = entropy >> 8;
+	mac_addr[2] = entropy >> 16;
+
+	entropy = sys_rand32_get();
+	mac_addr[3] = entropy >> 0;
+	mac_addr[4] = entropy >> 8;
+	mac_addr[5] = entropy >> 16;
+
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
+	link_addr.len = sizeof(mac_addr);
+	link_addr.type = NET_LINK_ETHERNET;
+	link_addr.addr = mac_addr;
+
+	net_ipv6_addr_create_iid(&addr, &link_addr);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		NET_DBG("Cannot add %s address to VLAN interface %p",
+			log_strdup(net_sprint_ipv6_addr(&addr)), iface);
+	}
+}
+
 int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -856,6 +889,17 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 		NET_DBG("[%d] Adding vlan tag %d to iface %p", i, tag, iface);
 
 		ctx->vlan[i].tag = tag;
+
+		/* Add a link local IPv6 address to VLAN interface here.
+		 * Each network interface needs LL address, but as there is
+		 * only one link (MAC) address defined for all the master and
+		 * slave interfaces, the VLAN interface might be left without
+		 * a LL address. In order to solve this issue, we create a
+		 * random LL address and set it to the VLAN network interface.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			setup_ipv6_link_local_addr(iface);
+		}
 
 		enable_vlan_iface(ctx, iface);
 
