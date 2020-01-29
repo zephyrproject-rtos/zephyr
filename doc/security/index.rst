@@ -13,3 +13,4 @@ for ensuring security is addressed within the Zephyr project.
    security-overview.rst
    secure-coding.rst
    sensor-threat.rst
+   hardening-tool.rst
