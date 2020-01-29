@@ -73,14 +73,14 @@ static int gpio_cc13xx_cc26xx_config(struct device *port, int access_op,
 	config |= (flags & GPIO_INT_DEBOUNCE) ? IOC_HYST_ENABLE :
 							IOC_HYST_DISABLE;
 
-	switch (flags & GPIO_PUD_MASK) {
-	case GPIO_PUD_NORMAL:
+	switch (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+	case 0:
 		config |= IOC_NO_IOPULL;
 		break;
-	case GPIO_PUD_PULL_UP:
+	case GPIO_PULL_UP:
 		config |= IOC_IOPULL_UP;
 		break;
-	case GPIO_PUD_PULL_DOWN:
+	case GPIO_PULL_DOWN:
 		config |= IOC_IOPULL_DOWN;
 		break;
 	default:
