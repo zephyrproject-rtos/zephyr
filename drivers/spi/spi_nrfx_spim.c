@@ -9,14 +9,17 @@
 #include <string.h>
 
 #define LOG_DOMAIN "spi_nrfx_spim"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_nrfx_spim);
+LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
-
 struct spi_nrfx_data {
-	struct spi_context ctx;
+	struct spi_common_data common_data;
+	spi_transfer_callback_t callback;
+	void *user_data;
+	u8_t *duplex_rxbuf;
+	size_t duplex_rxlen;
+	u32_t msg_flags;
 	size_t chunk_len;
 	bool   busy;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -102,7 +105,7 @@ static inline nrf_spim_bit_order_t get_nrf_spim_bit_order(u16_t operation)
 static int configure(struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
+	struct spi_context *ctx = &get_dev_data(dev)->common_data.ctx;
 	const nrfx_spim_t *spim = &get_dev_config(dev)->spim;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
@@ -149,63 +152,171 @@ static int configure(struct device *dev,
 	return 0;
 }
 
-static void transfer_next_chunk(struct device *dev)
+static int single_transfer(struct device *dev, const struct spi_msg *msg,
+			   spi_transfer_callback_t callback, void *user_data)
+{
+	u8_t *txbuf;
+	u8_t *rxbuf;
+	size_t rxlen;
+	size_t txlen;
+	int err;
+	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+
+	if (!atomic_cas((atomic_t *)&dev_data->callback,
+			(atomic_val_t)NULL, (atomic_val_t)callback)) {
+		return -EBUSY;
+	}
+
+	if ((msg->flags & SPI_MSG_DIR_MASK) == SPI_MSG_READ) {
+		if (dev_data->duplex_rxbuf) {
+			return -EBUSY;
+		}
+		if ((msg->flags & SPI_MSG_COMMIT) == SPI_MSG_COMMIT) {
+			rxbuf = msg->buf;
+			rxlen = msg->len;
+			txbuf = NULL;
+			txlen = 0;
+		} else {
+			dev_data->duplex_rxbuf = msg->buf;
+			dev_data->duplex_rxlen = msg->len;
+			dev_data->callback = NULL;
+			callback(dev, 0, user_data);
+			return 0;
+		}
+	} else if ((msg->flags & SPI_MSG_DIR_MASK) == SPI_MSG_WRITE) {
+		if ((msg->flags & SPI_MSG_COMMIT) != SPI_MSG_COMMIT) {
+			/* TX must always be the last one */
+			return -EINVAL;
+		}
+#if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
+		if (!nrfx_is_in_ram(msg->buf)) {
+			if (msg->len > sizeof(dev_data->buffer)) {
+				err = -ENOMEM;
+				goto on_error;
+			}
+			memcpy(dev_data->buffer, msg->buf, msg->len);
+			txbuf = dev_data->buffer;
+		} else
+#endif
+		{
+			txbuf = msg->buf;
+		}
+		txlen = msg->len;
+		rxbuf = dev_data->duplex_rxbuf;
+		rxlen = dev_data->duplex_rxlen;
+	}
+	dev_data->user_data = user_data;
+	dev_data->msg_flags = msg->flags;
+
+	if (IS_ENABLED(CONFIG_SOC_NRF52832) && (rxlen == 1 && txlen <= 1)) {
+		LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
+		err= -EIO;
+		goto on_error;
+	}
+
+	nrfx_spim_xfer_desc_t xfer = {
+		.p_tx_buffer = txbuf,
+		.tx_length = txlen,
+		.p_rx_buffer = rxbuf,
+		.rx_length = rxlen
+	};
+	nrfx_err_t nrfx_err = nrfx_spim_xfer(&get_dev_config(dev)->spim,
+						&xfer, 0);
+	LOG_INF("spi xfer len(tx:%d, rx:%d) err:%d",
+		xfer.tx_length, xfer.rx_length, nrfx_err);
+	if (nrfx_err == NRFX_SUCCESS) {
+		return 0;
+	}
+	err = -EIO;
+on_error:
+	get_dev_data(dev)->callback = NULL;
+	return err;
+}
+
+static void complete_sequence(struct device *dev, int res)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
-	struct spi_context *ctx = &dev_data->ctx;
-	int error = 0;
-
-	size_t chunk_len = spi_context_longest_current_buf(ctx);
-
-	if (chunk_len > 0) {
-		nrfx_spim_xfer_desc_t xfer;
-		nrfx_err_t result;
-		const u8_t *tx_buf = ctx->tx_buf;
-#if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
-		if (spi_context_tx_buf_on(ctx) && !nrfx_is_in_ram(tx_buf)) {
-			if (chunk_len > sizeof(dev_data->buffer)) {
-				chunk_len = sizeof(dev_data->buffer);
-			}
-
-			memcpy(dev_data->buffer, tx_buf, chunk_len);
-			tx_buf = dev_data->buffer;
-		}
-#endif
-		if (chunk_len > dev_config->max_chunk_len) {
-			chunk_len = dev_config->max_chunk_len;
-		}
-
-		dev_data->chunk_len = chunk_len;
-
-		xfer.p_tx_buffer = tx_buf;
-		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
-		xfer.p_rx_buffer = ctx->rx_buf;
-		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-
-		/* This SPIM driver is only used by the NRF52832 if
-		   SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 is enabled */
-		if (IS_ENABLED(CONFIG_SOC_NRF52832) &&
-		   (xfer.rx_length == 1 && xfer.tx_length <= 1)) {
-			LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
-			error = -EIO;
-		}
-
-		if (!error) {
-			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-			if (result == NRFX_SUCCESS) {
-				return;
-			}
-			error = -EIO;
-		}
-	}
+	struct spi_context *ctx = &dev_data->common_data.ctx;
 
 	spi_context_cs_control(ctx, false);
 
-	LOG_DBG("Transaction finished with status %d", error);
+	LOG_DBG("Transaction finished with status %d", res);
 
-	spi_context_complete(ctx, error);
+	spi_context_complete(ctx, res);
 	dev_data->busy = false;
+}
+
+static void transfer_next_chunk(struct device *dev);
+
+static void completed_callback(struct device *dev, int res, void *user_data)
+{
+	struct spi_context *ctx = &get_dev_data(dev)->common_data.ctx;
+
+	if (res < 0) {
+		complete_sequence(dev, res);
+		return;
+	}
+
+	spi_context_update_tx(ctx, 1, ctx->current_tx->len);
+	spi_context_update_rx(ctx, 1, ctx->current_rx->len);
+
+	transfer_next_chunk(dev);
+}
+
+static void partial_callback(struct device *dev, int res, void *user_data)
+{
+	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_context *ctx = &dev_data->common_data.ctx;
+	struct spi_msg msg;
+	int err;
+
+	if (res < 0) {
+		completed_callback(dev, res, user_data);
+		return;
+	}
+
+	msg.buf = ctx->current_tx->buf;
+	msg.len = ctx->current_tx->len;
+	msg.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT;
+
+	err = single_transfer(dev, &msg, completed_callback, user_data);
+	LOG_DBG("Partial (RX) transfer, scheduled TX part (err: %d) ", err);
+	if (err < 0) {
+		completed_callback(dev, err, user_data);
+	}
+}
+
+static void transfer_next_chunk(struct device *dev)
+{
+	struct spi_context *ctx = &get_dev_data(dev)->common_data.ctx;
+	int err = 0;
+	struct spi_msg msg;
+	spi_transfer_callback_t callback;
+	size_t chunk_len = spi_context_longest_current_buf(ctx);
+
+	if (chunk_len) {
+		if (ctx->current_rx) {
+			msg.buf = ctx->current_rx->buf;
+			msg.len = ctx->current_rx->len;
+			msg.flags = SPI_MSG_READ |
+				(ctx->current_tx->len ? 0 : SPI_MSG_COMMIT);
+			callback = ctx->current_tx ?
+				partial_callback : completed_callback;
+		} else {
+			/* tx only */
+			msg.buf = ctx->current_tx->buf;
+			msg.len = ctx->current_tx->len;
+			msg.flags = SPI_MSG_WRITE | SPI_MSG_COMMIT;
+			callback = completed_callback;
+		}
+
+		err = single_transfer(dev, &msg, callback, NULL);
+		if (err >= 0) {
+			return;
+		}
+	}
+
+	complete_sequence(dev, err);
 }
 
 static int transceive(struct device *dev,
@@ -214,21 +325,24 @@ static int transceive(struct device *dev,
 		      const struct spi_buf_set *rx_bufs)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_context *ctx = &get_dev_data(dev)->common_data.ctx;
 	int error;
 
 	error = configure(dev, spi_cfg);
 	if (error == 0) {
 		dev_data->busy = true;
 
-		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
-		spi_context_cs_control(&dev_data->ctx, true);
+		spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
+		spi_context_cs_control(ctx, true);
 
 		transfer_next_chunk(dev);
 
-		error = spi_context_wait_for_completion(&dev_data->ctx);
+		error = spi_context_wait_for_completion(ctx);
+	} else {
+		LOG_ERR("Failed to configure (%d)", error);
 	}
 
-	spi_context_release(&dev_data->ctx, error);
+	spi_context_release(ctx, error);
 
 	return error;
 }
@@ -238,7 +352,7 @@ static int spi_nrfx_transceive(struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, false, NULL);
+	spi_context_lock(&get_dev_data(dev)->common_data.ctx, false, NULL);
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
 }
 
@@ -249,7 +363,7 @@ static int spi_nrfx_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, true, async);
+	spi_context_lock(&get_dev_data(dev)->common_data->ctx, true, async);
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
 }
 #endif /* CONFIG_SPI_ASYNC */
@@ -258,8 +372,9 @@ static int spi_nrfx_release(struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_context *ctx = &dev_data->common_data.ctx;
 
-	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
+	if (!spi_context_configured(ctx, spi_cfg)) {
 		return -EINVAL;
 	}
 
@@ -267,7 +382,7 @@ static int spi_nrfx_release(struct device *dev,
 		return -EBUSY;
 	}
 
-	spi_context_unlock_unconditionally(&dev_data->ctx);
+	spi_context_unlock_unconditionally(ctx);
 
 	return 0;
 }
@@ -278,6 +393,8 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 	.transceive_async = spi_nrfx_transceive_async,
 #endif
 	.release = spi_nrfx_release,
+	.single_transfer = single_transfer,
+	.configure = configure
 };
 
 
@@ -287,10 +404,14 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 
 	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
-		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
-		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
+		spi_transfer_callback_t callback = dev_data->callback;
+		void *user_data = dev_data->user_data;
 
-		transfer_next_chunk(dev);
+		dev_data->callback = NULL;
+		dev_data->user_data = NULL;
+		dev_data->duplex_rxlen = 0;
+		dev_data->duplex_rxbuf = NULL;
+		callback(dev, 0, user_data);
 	}
 }
 
@@ -312,9 +433,9 @@ static int init_spim(struct device *dev)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
-	spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);
+	spi_context_unlock_unconditionally(&get_dev_data(dev)->common_data.ctx);
 
-	return 0;
+	return z_spi_mngr_init(dev);
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -331,7 +452,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			case DEVICE_PM_ACTIVE_STATE:
 				init_spim(dev);
 				/* Force reconfiguration before next transfer */
-				get_dev_data(dev)->ctx.config = NULL;
+				get_dev_data(dev)->common_data->ctx.config = NULL;
 				break;
 
 			case DEVICE_PM_LOW_POWER_STATE:
@@ -395,8 +516,10 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		return init_spim(dev);					       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		.common_data = {					       \
+			SPI_CONTEXT_INIT_LOCK(spi_##idx##_data.common_data, ctx),	       \
+			SPI_CONTEXT_INIT_SYNC(spi_##idx##_data.common_data, ctx),	       \
+		},							       \
 		.busy = false,						       \
 	};								       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
