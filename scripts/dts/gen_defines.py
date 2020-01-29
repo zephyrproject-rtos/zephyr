@@ -60,6 +60,7 @@ def main():
             flash_area_num += 1
 
         if node.enabled and node.matching_compat:
+            write_deps(node)
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -190,6 +191,12 @@ def relativize(path):
     except ValueError:
         # Not within ZEPHYR_BASE
         return path
+
+
+def write_deps(node):
+    # Writes dependency ordinal information for the node.
+
+    out_node(node, 'DEP_ORDINAL', node.dep_ordinal)
 
 
 def write_regs(node):
