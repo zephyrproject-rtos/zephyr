@@ -7,6 +7,13 @@ description: |
 # Used to map nodes to bindings
 compatible: "manufacturer,device"
 
+# Set this to a truthy value if this binding is describing a node that
+# has a struct device representation within the Zephyr device
+# hierarchy.
+#
+# (This is used to track dependencies between such devices.)
+is-device: true
+
 # The 'compatible' above would match this node:
 #
 #     device {

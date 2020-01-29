@@ -484,9 +484,9 @@ class EDT:
                 _err("malformed or empty '{}' in {}"
                      .format(prop, binding_path))
 
-        ok_top = {"title", "description", "compatible", "properties", "#cells",
-                  "bus", "on-bus", "parent-bus", "child-bus", "parent", "child",
-                  "child-binding", "sub-node"}
+        ok_top = {"title", "description", "compatible", "is-device",
+                  "properties", "#cells", "bus", "on-bus", "parent-bus",
+                  "child-bus", "parent", "child", "child-binding", "sub-node"}
 
         for prop in binding:
             if prop not in ok_top and not prop.endswith("-cells"):
@@ -645,6 +645,10 @@ class Node:
     name:
       The name of the node
 
+    is_device:
+      True if the node's binding signals that it corresponds to a Zephyr
+      device model struct device. False otherwise.
+
     unit_addr:
       An integer with the ...@<unit-address> portion of the node name,
       translated through any 'ranges' properties on parent nodes, or None if
@@ -754,6 +758,11 @@ class Node:
     def name(self):
         "See the class docstring"
         return self._node.name
+
+    @property
+    def is_device(self):
+        "See the class docstring"
+        return self._binding and self._binding.get('is-device', False)
 
     @property
     def unit_addr(self):
