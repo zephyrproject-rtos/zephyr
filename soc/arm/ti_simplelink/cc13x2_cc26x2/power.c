@@ -7,6 +7,9 @@
 #include <init.h>
 #include <power/power.h>
 
+#include <driverlib/pwr_ctrl.h>
+#include <driverlib/sys_ctrl.h>
+
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
 
@@ -137,6 +140,23 @@ static int power_initialize(struct device *dev)
 }
 
 /*
+ * Unlatch IO pins after waking up from shutdown
+ * This needs to be called during POST_KERNEL in order for "Booting Zephyr"
+ * message to show up
+ */
+static int unlatch_pins(struct device *dev)
+{
+	/* Get the reason for reset. */
+	u32_t rSrc = SysCtrlResetSourceGet();
+
+	if (rSrc == RSTSRC_WAKEUP_FROM_SHUTDOWN) {
+		PowerCtrlPadSleepDisable();
+	}
+
+	return 0;
+}
+
+/*
  *  ======== PowerCC26XX_schedulerDisable ========
  */
 void PowerCC26XX_schedulerDisable(void)
@@ -161,3 +181,4 @@ void PowerCC26XX_schedulerRestore(void)
 }
 
 SYS_INIT(power_initialize, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(unlatch_pins, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
