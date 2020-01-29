@@ -3643,7 +3643,6 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 		 * (through Kconfig), or if there is no advertising ongoing.
 		 */
 		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-		    scan_type == BT_HCI_LE_SCAN_ACTIVE &&
 		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_private_addr(BT_ID_DEFAULT);
 			if (err) {
@@ -3651,7 +3650,13 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 			}
 
 			set_param.addr_type = BT_ADDR_LE_RANDOM;
-		} else if (set_param.addr_type == BT_ADDR_LE_RANDOM) {
+		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+			   set_param.addr_type == BT_ADDR_LE_RANDOM) {
+			/* If scanning with Identity Address we must set the
+			 * random identity address for both active and passive
+			 * scanner in order to receive adv reports that are
+			 * directed towards this identity.
+			 */
 			err = set_random_address(&bt_dev.id_addr[0].a);
 			if (err) {
 				return err;
@@ -5057,6 +5062,17 @@ static int hci_init(void)
 			BT_ERR("Unable to set identity address");
 			return err;
 		}
+
+		/* The passive scanner just sends a dummy address type in the
+		 * command. If the first activity does this, and the dummy type
+		 * is a random address, it needs a valid value, even though it's
+		 * not actually used.
+		 */
+		err = set_random_address(&bt_dev.id_addr[0].a);
+		if (err) {
+			BT_ERR("Unable to set random address");
+			return err;
+		}
 	}
 
 	return 0;
@@ -5749,7 +5765,7 @@ int bt_setup_random_id_addr(void)
 				id_create(i, &addr, irk);
 			}
 
-			return set_random_address(&bt_dev.id_addr[0].a);
+			return 0;
 		}
 	}
 #endif /* defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR) */
