@@ -360,6 +360,19 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
 
+config BT_SMP_USB_HCI_CTLR_WORKAROUND
+	bool "Workaround for USB HCI controller out-of-order events"
+	depends on BT_TESTING
+	help
+	  This option enables support for USB HCI controllers that sometimes
+	  send out-of-order HCI events and ACL Data due to using different USB
+	  endpoints.
+	  Enabling this option will make the master role not require the
+	  encryption-change event to be received before accepting key-distribution
+	  data.
+	  It opens up for a potential vulnerability as the master cannot detect
+	  if the keys are distributed over an encrypted link.
+
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"
 	help
