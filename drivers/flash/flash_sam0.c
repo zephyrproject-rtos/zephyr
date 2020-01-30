@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(flash_sam0);
  * Number of lock regions.  The number is fixed and the region size
  * grows with the flash size.
  */
-#define LOCK_REGIONS DT_ATMEL_SAM0_NVMCTRL_0_LOCK_REGIONS
+#define LOCK_REGIONS DT_INST_0_ATMEL_SAM0_NVMCTRL_LOCK_REGIONS
 #define LOCK_REGION_SIZE (FLASH_SIZE / LOCK_REGIONS)
 
 #if defined(NVMCTRL_BLOCK_SIZE)
