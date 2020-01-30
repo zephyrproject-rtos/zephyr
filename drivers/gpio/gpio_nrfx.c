@@ -128,7 +128,7 @@ static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 }
 
 static int gpio_nrfx_config(struct device *port,
-			    u32_t pin, int flags)
+			    gpio_pin_t pin, gpio_flags_t flags)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 	nrf_gpio_pin_pull_t pull;
@@ -250,7 +250,7 @@ static int gpio_nrfx_port_toggle_bits(struct device *port, u32_t mask)
 }
 
 static int gpio_nrfx_pin_interrupt_configure(struct device *port,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
@@ -296,19 +296,19 @@ static int gpio_nrfx_pin_manage_callback(struct device *port,
 }
 
 static inline int gpio_nrfx_pin_enable_callback(struct device *port,
-						u32_t pin)
+						gpio_pin_t pin)
 {
 	return gpio_nrfx_pin_manage_callback(port, pin, true);
 }
 
 static inline int gpio_nrfx_pin_disable_callback(struct device *port,
-						 u32_t pin)
+						 gpio_pin_t pin)
 {
 	return gpio_nrfx_pin_manage_callback(port, pin, false);
 }
 
 static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
-	.config = gpio_nrfx_config,
+	.pin_configure = gpio_nrfx_config,
 	.port_get_raw = gpio_nrfx_port_get_raw,
 	.port_set_masked_raw = gpio_nrfx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_nrfx_port_set_bits_raw,

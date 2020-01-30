@@ -305,7 +305,7 @@ static int setup_pin_pullupdown(struct device *dev, u32_t pin, int flags)
  * @return 0 if successful, failed otherwise
  */
 static int gpio_pca95xx_config(struct device *dev,
-				 u32_t pin, int flags)
+			       gpio_pin_t pin, gpio_flags_t flags)
 {
 	int ret;
 	struct gpio_pca95xx_drv_data * const drv_data =
@@ -441,7 +441,7 @@ static int gpio_pca95xx_port_toggle_bits(struct device *dev, u32_t mask)
 }
 
 static int gpio_pca95xx_pin_interrupt_configure(struct device *dev,
-						  unsigned int pin,
+						  gpio_pin_t pin,
 						  enum gpio_int_mode mode,
 						  enum gpio_int_trig trig)
 {
@@ -449,7 +449,7 @@ static int gpio_pca95xx_pin_interrupt_configure(struct device *dev,
 }
 
 static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
-	.config = gpio_pca95xx_config,
+	.pin_configure = gpio_pca95xx_config,
 	.port_get_raw = gpio_pca95xx_port_get_raw,
 	.port_set_masked_raw = gpio_pca95xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_pca95xx_port_set_bits_raw,

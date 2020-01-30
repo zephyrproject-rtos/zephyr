@@ -38,7 +38,8 @@ struct gpio_ht16k33_data {
 };
 
 static int gpio_ht16k33_cfg(struct device *dev,
-			    u32_t pin, int flags)
+			    gpio_pin_t pin,
+			    gpio_flags_t flags)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -105,7 +106,7 @@ static int gpio_ht16k33_port_toggle_bits(struct device *port,
 }
 
 static int gpio_ht16k33_pin_interrupt_configure(struct device *port,
-						unsigned int pin,
+						gpio_pin_t pin,
 						enum gpio_int_mode int_mode,
 						enum gpio_int_trig int_trig)
 {
@@ -136,14 +137,14 @@ static int gpio_ht16k33_manage_callback(struct device *dev,
 }
 
 static int gpio_ht16k33_enable_callback(struct device *dev,
-					u32_t pin)
+					gpio_pin_t pin)
 {
 	/* All callbacks are always enabled */
 	return 0;
 }
 
 static int gpio_ht16k33_disable_callback(struct device *dev,
-					u32_t pin)
+					gpio_pin_t pin)
 {
 	/* Individual callbacks can not be disabled */
 	return -ENOTSUP;
@@ -180,7 +181,7 @@ static int gpio_ht16k33_init(struct device *dev)
 }
 
 static const struct gpio_driver_api gpio_ht16k33_api = {
-	.config = gpio_ht16k33_cfg,
+	.pin_configure = gpio_ht16k33_cfg,
 	.port_get_raw = gpio_ht16k33_port_get_raw,
 	.port_set_masked_raw = gpio_ht16k33_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ht16k33_port_set_bits_raw,

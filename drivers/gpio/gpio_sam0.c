@@ -50,8 +50,8 @@ static void gpio_sam0_isr(u32_t pins, void *arg)
 }
 #endif
 
-static int gpio_sam0_config(struct device *dev, u32_t pin,
-			    int flags)
+static int gpio_sam0_config(struct device *dev, gpio_pin_t pin,
+			    gpio_flags_t flags)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 	PortGroup *regs = config->regs;
@@ -160,7 +160,7 @@ static int gpio_sam0_port_toggle_bits(struct device *dev,
 #ifdef CONFIG_SAM0_EIC
 
 static int gpio_sam0_pin_interrupt_configure(struct device *dev,
-					     unsigned int pin,
+					     gpio_pin_t pin,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
@@ -258,14 +258,14 @@ static int gpio_sam0_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-int gpio_sam0_enable_callback(struct device *dev, u32_t pin)
+int gpio_sam0_enable_callback(struct device *dev, gpio_pin_t pin)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 
 	return sam0_eic_enable_interrupt(config->id, pin);
 }
 
-int gpio_sam0_disable_callback(struct device *dev, u32_t pin)
+int gpio_sam0_disable_callback(struct device *dev, gpio_pin_t pin)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 
@@ -282,7 +282,7 @@ static u32_t gpio_sam0_get_pending_int(struct device *dev)
 #endif
 
 static const struct gpio_driver_api gpio_sam0_api = {
-	.config = gpio_sam0_config,
+	.pin_configure = gpio_sam0_config,
 	.port_get_raw = gpio_sam0_port_get_raw,
 	.port_set_masked_raw = gpio_sam0_port_set_masked_raw,
 	.port_set_bits_raw = gpio_sam0_port_set_bits_raw,

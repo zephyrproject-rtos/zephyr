@@ -42,7 +42,8 @@ static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
 	u32_t mask);
 
 static int gpio_cc13xx_cc26xx_config(struct device *port,
-				     u32_t pin, int flags)
+				     gpio_pin_t pin,
+				     gpio_flags_t flags)
 {
 	u32_t config = 0;
 
@@ -141,7 +142,7 @@ static int gpio_cc13xx_cc26xx_port_toggle_bits(struct device *port, u32_t mask)
 }
 
 static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
@@ -184,7 +185,7 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 }
 
 static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
-					      u32_t pin)
+					      gpio_pin_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 
@@ -195,7 +196,7 @@ static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
 }
 
 static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
-					       u32_t pin)
+					       gpio_pin_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 
@@ -260,7 +261,7 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 }
 
 static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
-	.config = gpio_cc13xx_cc26xx_config,
+	.pin_configure = gpio_cc13xx_cc26xx_config,
 	.port_get_raw = gpio_cc13xx_cc26xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc13xx_cc26xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cc13xx_cc26xx_port_set_bits_raw,

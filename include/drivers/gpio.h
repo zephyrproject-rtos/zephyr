@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
  * Copyright (c) 2019 Piotr Mienkowski
  * Copyright (c) 2017 ARM Ltd
  * Copyright (c) 2015-2016 Intel Corporation.
@@ -544,19 +545,19 @@ enum gpio_int_trig {
 };
 
 struct gpio_driver_api {
-	int (*config)(struct device *port, u32_t pin, int flags);
+	int (*pin_configure)(struct device *port, gpio_pin_t pin, gpio_flags_t flags);
 	int (*port_get_raw)(struct device *port, gpio_port_value_t *value);
 	int (*port_set_masked_raw)(struct device *port, gpio_port_pins_t mask,
 				   gpio_port_value_t value);
 	int (*port_set_bits_raw)(struct device *port, gpio_port_pins_t pins);
 	int (*port_clear_bits_raw)(struct device *port, gpio_port_pins_t pins);
 	int (*port_toggle_bits)(struct device *port, gpio_port_pins_t pins);
-	int (*pin_interrupt_configure)(struct device *port, unsigned int pin,
+	int (*pin_interrupt_configure)(struct device *port, gpio_pin_t pin,
 				       enum gpio_int_mode, enum gpio_int_trig);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
-	int (*enable_callback)(struct device *port, u32_t pin);
-	int (*disable_callback)(struct device *port, u32_t pin);
+	int (*enable_callback)(struct device *port, gpio_pin_t pin);
+	int (*disable_callback)(struct device *port, gpio_pin_t pin);
 	u32_t (*get_pending_int)(struct device *dev);
 };
 
@@ -569,13 +570,13 @@ static inline int z_impl_gpio_config(struct device *port,
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	return api->config(port, pin, (int)flags);
+	return api->pin_configure(port, pin, flags);
 }
 
-__syscall int gpio_enable_callback(struct device *port, u32_t pin);
+__syscall int gpio_enable_callback(struct device *port, gpio_pin_t pin);
 
 static inline int z_impl_gpio_enable_callback(struct device *port,
-					     u32_t pin)
+					     gpio_pin_t pin)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -593,11 +594,10 @@ static inline int z_impl_gpio_enable_callback(struct device *port,
 	return api->enable_callback(port, pin);
 }
 
-__syscall int gpio_disable_callback(struct device *port,
-				    u32_t pin);
+__syscall int gpio_disable_callback(struct device *port, gpio_pin_t pin);
 
 static inline int z_impl_gpio_disable_callback(struct device *port,
-					      u32_t pin)
+					      gpio_pin_t pin)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
