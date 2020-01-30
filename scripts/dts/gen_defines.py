@@ -67,6 +67,7 @@ def main():
             write_spi_dev(node)
             write_bus(node)
             write_existence_flags(node)
+            write_deprecated_clocks(node)
 
     out_comment("Compatibles appearing on enabled nodes")
     for compat in sorted(edt.compat2enabled):
@@ -654,6 +655,35 @@ def write_freq(node):
             out_node(node, "CLOCKS_CLOCK_FREQUENCY",
                      clock.controller.props["clock-frequency"].val)
             return
+
+
+def write_deprecated_clocks(node):
+    # Writes deprecated clock-related defines that shouldn't be used, just to
+    # generate helpful warnings for them. See the commit 'scripts: dts: Remove
+    # special-casing for clocks'.
+
+    if "clocks" not in node.props:
+        return
+
+    msg = "Please use *_CLOCKS_* instead of *_CLOCK_*. The output for " \
+          "clock properties is now consistent with other phandle-array " \
+          "properties."
+
+    for clock_i, clock in enumerate(node.props["clocks"].val):
+        controller = clock.controller
+
+        if controller.label is not None:
+            out_node_s(node, "CLOCK_CONTROLLER", controller.label,
+                       deprecation_msg=msg)
+
+        for name, val in clock.data.items():
+            if clock_i == 0:
+                clk_name_alias = "CLOCK_" + str2ident(name)
+            else:
+                clk_name_alias = None
+
+            out_node(node, f"CLOCK_{str2ident(name)}_{clock_i}", val,
+                     name_alias=clk_name_alias, deprecation_msg=msg)
 
 
 def str2ident(s):
