@@ -151,54 +151,6 @@ static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 	return ret;
 }
 
-static int gpio_sam_write(struct device *dev, int access_op, u32_t pin,
-			  u32_t value)
-{
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio * const pio = cfg->regs;
-	u32_t mask = 1 << pin;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if (value) {
-			/* Set the pin. */
-			pio->PIO_SODR = mask;
-		} else {
-			/* Clear the pin. */
-			pio->PIO_CODR = mask;
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		pio->PIO_ODSR = value;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-static int gpio_sam_read(struct device *dev, int access_op, u32_t pin,
-			 u32_t *value)
-{
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio * const pio = cfg->regs;
-
-	*value = pio->PIO_PDSR;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		*value = (*value >> pin) & 1;
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 static int gpio_sam_port_get_raw(struct device *dev, u32_t *value)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
@@ -354,8 +306,6 @@ static int gpio_sam_disable_callback(struct device *port,
 
 static const struct gpio_driver_api gpio_sam_api = {
 	.config = gpio_sam_config,
-	.write = gpio_sam_write,
-	.read = gpio_sam_read,
 	.port_get_raw = gpio_sam_port_get_raw,
 	.port_set_masked_raw = gpio_sam_port_set_masked_raw,
 	.port_set_bits_raw = gpio_sam_port_set_bits_raw,

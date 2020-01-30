@@ -53,30 +53,6 @@ static int gpio_ht16k33_cfg(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_ht16k33_write(struct device *dev, int access_op,
-			      u32_t pin, u32_t value)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(value);
-
-	/* Keyscan is input-only */
-	return -ENOTSUP;
-}
-
-static int gpio_ht16k33_read(struct device *dev, int access_op,
-			     u32_t pin, u32_t *value)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(value);
-
-	/* Keyscan only supports interrupt mode */
-	return -ENOTSUP;
-}
-
 static int gpio_ht16k33_port_get_raw(struct device *port,
 				     gpio_port_value_t *value)
 {
@@ -206,8 +182,6 @@ static int gpio_ht16k33_init(struct device *dev)
 
 static const struct gpio_driver_api gpio_ht16k33_api = {
 	.config = gpio_ht16k33_cfg,
-	.write = gpio_ht16k33_write,
-	.read = gpio_ht16k33_read,
 	.port_get_raw = gpio_ht16k33_port_get_raw,
 	.port_set_masked_raw = gpio_ht16k33_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ht16k33_port_set_bits_raw,

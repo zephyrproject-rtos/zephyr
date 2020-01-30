@@ -70,35 +70,6 @@ static int imx_gpio_configure(struct device *port, int access_op, u32_t pin,
 	return 0;
 }
 
-static int imx_gpio_write(struct device *port,
-			  int access_op, u32_t pin, u32_t value)
-{
-	const struct imx_gpio_config *config = port->config->config_info;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		GPIO_WritePinOutput(config->base, pin,
-					(gpio_pin_action_t)value);
-	} else { /* GPIO_ACCESS_BY_PORT */
-		GPIO_WritePortOutput(config->base, value);
-	}
-
-	return 0;
-}
-
-static int imx_gpio_read(struct device *port,
-			 int access_op, u32_t pin, u32_t *value)
-{
-	const struct imx_gpio_config *config = port->config->config_info;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = GPIO_ReadPinInput(config->base, pin);
-	} else { /* GPIO_ACCESS_BY_PORT */
-		*value = GPIO_ReadPortInput(config->base);
-	}
-
-	return 0;
-}
-
 static int imx_gpio_port_get_raw(struct device *port, u32_t *value)
 {
 	const struct imx_gpio_config *config = port->config->config_info;
@@ -257,8 +228,6 @@ static void imx_gpio_port_isr(void *arg)
 
 static const struct gpio_driver_api imx_gpio_driver_api = {
 	.config = imx_gpio_configure,
-	.write = imx_gpio_write,
-	.read = imx_gpio_read,
 	.port_get_raw = imx_gpio_port_get_raw,
 	.port_set_masked_raw = imx_gpio_port_set_masked_raw,
 	.port_set_bits_raw = imx_gpio_port_set_bits_raw,

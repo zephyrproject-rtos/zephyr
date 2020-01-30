@@ -117,42 +117,6 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_esp32_write(struct device *dev, int access_op,
-			    u32_t pin, u32_t value)
-{
-	struct gpio_esp32_data *data = dev->driver_data;
-	u32_t v;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	v = BIT(pin - data->port.pin_offset);
-	if (value) {
-		*data->port.set_reg = v;
-	} else {
-		*data->port.clear_reg = v;
-	}
-
-	return 0;
-}
-
-static int gpio_esp32_read(struct device *dev, int access_op,
-			   u32_t pin, u32_t *value)
-{
-	struct gpio_esp32_data *data = dev->driver_data;
-	u32_t v;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	v = *data->port.input_reg;
-	*value = !!(v & BIT(pin - data->port.pin_offset));
-
-	return 0;
-}
-
 static int gpio_esp32_port_get_raw(struct device *port, u32_t *value)
 {
 	struct gpio_esp32_data *data = port->driver_data;
@@ -359,8 +323,6 @@ static int gpio_esp32_init(struct device *device)
 
 static const struct gpio_driver_api gpio_esp32_driver = {
 	.config = gpio_esp32_config,
-	.write = gpio_esp32_write,
-	.read = gpio_esp32_read,
 	.port_get_raw = gpio_esp32_port_get_raw,
 	.port_set_masked_raw = gpio_esp32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_esp32_port_set_bits_raw,

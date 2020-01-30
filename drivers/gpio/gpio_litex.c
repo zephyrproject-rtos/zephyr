@@ -24,8 +24,6 @@ LOG_MODULE_REGISTER(gpio_litex);
 
 static const char *LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH =
 	"Cannot handle all of the gpios with the register of given size\n";
-static const char *LITEX_LOG_WRONG_DIR =
-	"Direction chosen in device tree do not match with the operation\n";
 static const char *LITEX_LOG_CANNOT_CHANGE_DIR =
 	"Cannot change port direction selected in device tree\n";
 
@@ -133,39 +131,6 @@ static int gpio_litex_configure(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_litex_write(struct device *dev, int access_op,
-			    u32_t pin, u32_t value)
-{
-	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
-
-	if (!gpio_config->port_is_output) {
-		LOG_ERR("%s", LITEX_LOG_WRONG_DIR);
-		return -EINVAL;
-	}
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	set_bit(gpio_config, pin, value);
-
-	return 0;
-}
-
-static int gpio_litex_read(struct device *dev, int access_op,
-			   u32_t pin, u32_t *value)
-{
-	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	*value = get_bit(gpio_config, pin);
-
-	return 0;
-}
-
 static int gpio_litex_port_get_raw(struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -242,8 +207,6 @@ static int gpio_litex_pin_interrupt_configure(struct device *dev,
 
 static const struct gpio_driver_api gpio_litex_driver_api = {
 	.config = gpio_litex_configure,
-	.write = gpio_litex_write,
-	.read = gpio_litex_read,
 	.port_get_raw = gpio_litex_port_get_raw,
 	.port_set_masked_raw = gpio_litex_port_set_masked_raw,
 	.port_set_bits_raw = gpio_litex_port_set_bits_raw,

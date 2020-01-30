@@ -102,45 +102,6 @@ static int gpio_mcux_lpc_configure(struct device *dev, int access_op, u32_t pin,
 	return 0;
 }
 
-static int gpio_mcux_lpc_write(struct device *dev, int access_op, u32_t pin,
-			       u32_t value)
-{
-	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
-	GPIO_Type *gpio_base = config->gpio_base;
-	u32_t port = config->port_no;
-
-	/* Check for an invalid pin number */
-	if (pin >= ARRAY_SIZE(gpio_base->B[port])) {
-		return -EINVAL;
-	}
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		/* Set/Clear the data output for the respective pin */
-		gpio_base->B[port][pin] = value;
-	} else { /* return an error for all other options */
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int gpio_mcux_lpc_read(struct device *dev, int access_op, u32_t pin,
-			      u32_t *value)
-{
-	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
-	GPIO_Type *gpio_base = config->gpio_base;
-
-	*value = gpio_base->PIN[config->port_no];
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (*value & BIT(pin)) >> pin;
-	} else { /* return an error for all other options */
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int gpio_mcux_lpc_port_get_raw(struct device *dev, u32_t *value)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
@@ -380,8 +341,6 @@ static int gpio_mcux_lpc_init(struct device *dev)
 
 static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 	.config = gpio_mcux_lpc_configure,
-	.write = gpio_mcux_lpc_write,
-	.read = gpio_mcux_lpc_read,
 	.port_get_raw = gpio_mcux_lpc_port_get_raw,
 	.port_set_masked_raw = gpio_mcux_lpc_port_set_masked_raw,
 	.port_set_bits_raw = gpio_mcux_lpc_port_set_bits_raw,

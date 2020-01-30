@@ -325,74 +325,6 @@ static int pin_interrupt_configure(struct device *dev,
 	return ret;
 }
 
-static int sx1509b_write(struct device *dev, int access_op, u32_t pin,
-			 u32_t value)
-{
-	const struct sx1509b_config *cfg = dev->config->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
-	u16_t *pin_data = &drv_data->pin_state.data;
-	int ret = 0;
-
-	k_sem_take(&drv_data->lock, K_FOREVER);
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if (value) {
-			*pin_data |= BIT(pin);
-		} else {
-			*pin_data &= ~BIT(pin);
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		*pin_data = value;
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto out;
-	}
-
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_DATA, *pin_data);
-out:
-	k_sem_give(&drv_data->lock);
-	return ret;
-}
-
-static int sx1509b_read(struct device *dev, int access_op, u32_t pin,
-			u32_t *value)
-{
-	const struct sx1509b_config *cfg = dev->config->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
-	u16_t pin_data;
-	int ret;
-
-	k_sem_take(&drv_data->lock, K_FOREVER);
-
-	ret = i2c_burst_read(drv_data->i2c_master, cfg->i2c_slave_addr,
-			     SX1509B_REG_DATA, (u8_t *)&pin_data,
-			     sizeof(pin_data));
-	if (ret) {
-		goto out;
-	}
-
-	pin_data = sys_be16_to_cpu(pin_data);
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		*value = !!(pin_data & (BIT(pin)));
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		*value = pin_data;
-		break;
-	default:
-		ret = -ENOTSUP;
-	}
-
-out:
-	k_sem_give(&drv_data->lock);
-	return ret;
-}
-
 /**
  * @brief Initialization function of SX1509B
  *
@@ -467,8 +399,6 @@ out:
 
 static const struct gpio_driver_api api_table = {
 	.config = sx1509b_config,
-	.write = sx1509b_write,
-	.read = sx1509b_read,
 	.port_get_raw = port_get,
 	.port_set_masked_raw = port_set_masked,
 	.port_set_bits_raw = port_set_bits,

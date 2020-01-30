@@ -105,30 +105,6 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 	return 0;
 }
 
-static int gpio_sam0_write(struct device *dev, int access_op, u32_t pin,
-			   u32_t value)
-{
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
-
-	if (value != 0U) {
-		config->regs->OUTSET.reg = BIT(pin);
-	} else {
-		config->regs->OUTCLR.reg = BIT(pin);
-	}
-
-	return 0;
-}
-
-static int gpio_sam0_read(struct device *dev, int access_op, u32_t pin,
-			  u32_t *value)
-{
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
-
-	*value = (config->regs->IN.reg & BIT(pin)) != 0;
-
-	return 0;
-}
-
 static int gpio_sam0_port_get_raw(struct device *dev,
 				  gpio_port_value_t *value)
 {
@@ -307,8 +283,6 @@ static u32_t gpio_sam0_get_pending_int(struct device *dev)
 
 static const struct gpio_driver_api gpio_sam0_api = {
 	.config = gpio_sam0_config,
-	.write = gpio_sam0_write,
-	.read = gpio_sam0_read,
 	.port_get_raw = gpio_sam0_port_get_raw,
 	.port_set_masked_raw = gpio_sam0_port_set_masked_raw,
 	.port_set_bits_raw = gpio_sam0_port_set_bits_raw,
