@@ -2905,8 +2905,7 @@ class TestSuite:
 
             while future_to_test:
                 # check for status of the futures which are currently working
-                done, _ = concurrent.futures.wait(
-                    future_to_test, timeout=0.25,
+                done, _ = concurrent.futures.wait(future_to_test, timeout=1,
                     return_when=concurrent.futures.FIRST_COMPLETED)
 
                 # if there is incoming work, start a new future
@@ -2915,7 +2914,6 @@ class TestSuite:
                     message = pipeline.get()
                     test = message['test']
 
-                    # Start the load operation and mark the future with its URL
                     pb = ProjectBuilder(self,
                                         test,
                                         lsan=self.enable_lsan,
