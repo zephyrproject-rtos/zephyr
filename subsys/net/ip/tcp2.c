@@ -113,7 +113,7 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 
 	switch (af) {
 	case AF_INET: {
-		struct net_ipv4_hdr *ip = ip_get(pkt);
+		struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
 		struct tcphdr *th = th_get(pkt);
 
 		ep->sin.sin_port = src ? th->th_sport : th->th_dport;
@@ -123,7 +123,7 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 		break;
 	}
 	case AF_INET6: {
-		struct net_ipv6_hdr *ip = (void *)ip_get(pkt);
+		struct net_ipv6_hdr *ip = (void *)NET_IPV4_HDR(pkt);
 		struct tcphdr *th = (void *)(ip + 1);
 
 		ep->sin6.sin6_port = src ? th->th_sport : th->th_dport;
@@ -224,9 +224,10 @@ static const char *tcp_th(struct net_pkt *pkt)
 	}
 
 	{
-		struct net_ipv4_hdr *ip = ip_get(pkt);
+		struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
 		ssize_t data_len = ntohs(ip->len) -
-					(sizeof(*ip) + th->th_off * 4);
+			net_pkt_ip_hdr_len(pkt) -
+			net_pkt_ip_opts_len(pkt) + (th->th_off * 4);
 
 		len += snprintk(buf + len, BUF_SIZE - len,
 				" Len=%ld", (long int)data_len);
@@ -555,10 +556,9 @@ end:
 
 static size_t tcp_data_len(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
 	u8_t off = th->th_off;
-	ssize_t len = ntohs(ip->len) - sizeof(*ip) - off * 4;
+	ssize_t len = net_pkt_ip_payload_len(pkt) - off * 4;
 
 	if (off > 5 && false == tcp_options_check((th + 1), (off - 5) * 4)) {
 		len = 0;
@@ -569,7 +569,6 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
 	ssize_t len = tcp_data_len(pkt);
 
@@ -583,7 +582,8 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		buf = tcp_malloc(len);
 
-		net_pkt_skip(pkt, sizeof(*ip) + th->th_off * 4);
+		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ip_opts_len(pkt) + th->th_off * 4);
 
 		net_pkt_read(pkt, buf, len);
 
@@ -623,7 +623,7 @@ static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
 {
 	const size_t len = 40;
 	struct net_pkt *pkt = tcp_pkt_alloc(len);
-	struct net_ipv4_hdr *ip = ip_get(pkt);
+	struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
 	struct tcphdr *th = (void *) (ip + 1);
 
 	memset(ip, 0, len);
@@ -880,19 +880,15 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	struct tcphdr *th;
 
 	ARG_UNUSED(net_conn);
-	ARG_UNUSED(proto);
-
-	if (ip->ipv4->vhl != 0x45) {
-		NET_ERR("Unsupported IP version: 0x%hx", (u16_t)ip->ipv4->vhl);
-		goto out;
-	}
 
 	conn = tcp_conn_search(pkt);
 	if (conn) {
 		goto in;
 	}
 
-	th = th_get(pkt);
+	/* protocol header location and contiguousness is already received
+	 * via with net_tcp_input(); else we could have used th_get() here */
+	th = (struct tcphdr *)proto;
 
 	if (th->th_flags & SYN) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
@@ -910,7 +906,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	if (conn) {
 		tcp_in(conn, pkt);
 	}
-out:
+
 	return NET_DROP;
 }
 
@@ -1484,7 +1480,7 @@ static void tcp_to_json(struct tcp *conn, void *data, size_t *data_len)
 
 bool tp_input(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
+	struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
 	struct net_udp_hdr *uh = (void *) (ip + 1);
 	size_t data_len = ntohs(uh->len) - sizeof(*uh);
 	struct tcp *conn = tcp_conn_search(pkt);
