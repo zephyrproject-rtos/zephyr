@@ -611,12 +611,20 @@ out:
 	return len;
 }
 
-static void tcp_adj(struct net_pkt *pkt, int req_len)
+static u16_t tcp_adj(struct net_pkt *pkt, u16_t req_len)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	u16_t len = ntohs(ip->len) + req_len;
+	u32_t len = net_pkt_ip_hdr_len(pkt) +
+		net_pkt_ip_opts_len(pkt) + req_len;
 
-	ip->len = htons(len);
+	if (len > 0xffff) {
+		req_len = 0xffff - net_pkt_ip_hdr_len(pkt) -
+			net_pkt_ip_opts_len(pkt);
+		len = 0xffff;
+	}
+
+	net_pkt_set_ip_payload_len(pkt, len);
+
+	return req_len;
 }
 
 static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
