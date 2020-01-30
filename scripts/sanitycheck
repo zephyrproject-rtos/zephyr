@@ -2905,7 +2905,7 @@ class TestSuite:
 
             while future_to_test:
                 # check for status of the futures which are currently working
-                done, _ = concurrent.futures.wait(future_to_test, timeout=1,
+                done, pending = concurrent.futures.wait(future_to_test, timeout=1,
                     return_when=concurrent.futures.FIRST_COMPLETED)
 
                 # if there is incoming work, start a new future
@@ -2943,6 +2943,20 @@ class TestSuite:
 
                     # remove the now completed future
                     del future_to_test[future]
+
+                for future in pending:
+                    test = future_to_test[future]
+                    #if future.running():
+                    #    logger.info("{} is running".format(test))
+
+                    try:
+                        future.result(timeout=120)
+                    except concurrent.futures.TimeoutError:
+                        logger.error("{} stuck?".format(test))
+
+
+
+
 
         if self.enable_size_report and not self.cmake_only:
             # Parallelize size calculation
