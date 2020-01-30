@@ -669,15 +669,10 @@ bool bt_le_scan_random_addr_check(void)
 
 static bool bt_le_adv_random_addr_check(const struct bt_le_adv_param *param)
 {
-	/* If scanner roles are not enabled or not active there is no issue.
-	 * Passive scanner does not have an active address, unless it is a
-	 * passive scanner that will start the initiator.
-	 */
-	if (IS_ENABLED(CONFIG_BT_OBSERVER) ||
+	/* If scanner roles are not enabled or not active there is no issue. */
+	if (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
 	    !(atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
-	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	       (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN) ||
-		atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN))))) {
+	      atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING))) {
 		return true;
 	}
 
@@ -693,6 +688,28 @@ static bool bt_le_adv_random_addr_check(const struct bt_le_adv_param *param)
 		if (((param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
 		     bt_dev.id_addr[param->id].type == BT_ADDR_LE_RANDOM) ||
 		    param->id != BT_ID_DEFAULT) {
+			return false;
+		}
+	} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+		   atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+		   bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+		/* Scanning with random static identity. Stop the advertiser
+		 * from overwriting the passive scanner identity address.
+		 * In this case the LE Set Random Address command does not
+		 * protect us in the case of a passive scanner.
+		 * Explicitly stop it here.
+		 */
+
+		if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE) &&
+		     (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
+			/* Attempt to set non-connectable NRPA */
+			return false;
+		} else if (bt_dev.id_addr[param->id].type ==
+			   BT_ADDR_LE_RANDOM &&
+			   param->id != BT_ID_DEFAULT) {
+			/* Attempt to set connectable, or non-connectable with
+			 * identity different than scanner.
+			 */
 			return false;
 		}
 	}
