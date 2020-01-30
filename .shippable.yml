@@ -1,3 +1,6 @@
+runtime:
+  nodePool: test_2xl
+
 language: c
 
 compiler: gcc
