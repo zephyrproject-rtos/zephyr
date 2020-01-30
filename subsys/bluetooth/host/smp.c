@@ -2311,6 +2311,19 @@ static u8_t legacy_pairing_random(struct bt_smp *smp)
 
 		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
+		if (IS_ENABLED(CONFIG_BT_SMP_USB_HCI_CTLR_WORKAROUND)) {
+			if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
+				atomic_set_bit(&smp->allowed_cmds,
+					       BT_SMP_CMD_ENCRYPT_INFO);
+			} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+				atomic_set_bit(&smp->allowed_cmds,
+					       BT_SMP_CMD_IDENT_INFO);
+			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+				atomic_set_bit(&smp->allowed_cmds,
+					       BT_SMP_CMD_SIGNING_INFO);
+			}
+		}
+
 		return 0;
 	}
 
@@ -3999,6 +4012,17 @@ static u8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 		}
 
 		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
+
+		if (IS_ENABLED(CONFIG_BT_SMP_USB_HCI_CTLR_WORKAROUND)) {
+			if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+				atomic_set_bit(&smp->allowed_cmds,
+					       BT_SMP_CMD_IDENT_INFO);
+			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+				atomic_set_bit(&smp->allowed_cmds,
+					       BT_SMP_CMD_SIGNING_INFO);
+			}
+		}
+
 		return 0;
 	}
 
@@ -5317,6 +5341,11 @@ int bt_smp_init(void)
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) && !sc_supported) {
 		BT_ERR("SC Pair Only Mode selected but LE SC not supported");
 		return -ENOENT;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP_USB_HCI_CTLR_WORKAROUND)) {
+		BT_WARN("BT_SMP_USB_HCI_CTLR_WORKAROUND is enabled, which "
+			"exposes a security vulnerability!");
 	}
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
