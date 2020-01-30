@@ -205,7 +205,7 @@ static inline u32_t dw_get_dir_port(u32_t base_addr)
 }
 
 static int gpio_dw_pin_interrupt_configure(struct device *port,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
@@ -302,7 +302,8 @@ static inline void dw_pin_config(struct device *port,
 }
 
 static inline int gpio_dw_config(struct device *port,
-				 u32_t pin, int flags)
+				 gpio_pin_t pin,
+				 gpio_flags_t flags)
 {
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t io_flags;
@@ -419,7 +420,7 @@ static inline int gpio_dw_manage_callback(struct device *port,
 }
 
 static inline int gpio_dw_enable_callback(struct device *port,
-					  u32_t pin)
+					  gpio_pin_t pin)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
@@ -436,7 +437,7 @@ static inline int gpio_dw_enable_callback(struct device *port,
 }
 
 static inline int gpio_dw_disable_callback(struct device *port,
-					   u32_t pin)
+					   gpio_pin_t pin)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
@@ -537,7 +538,7 @@ static void gpio_dw_isr(void *arg)
 }
 
 static const struct gpio_driver_api api_funcs = {
-	.config = gpio_dw_config,
+	.pin_configure = gpio_dw_config,
 	.port_get_raw = gpio_dw_port_get_raw,
 	.port_set_masked_raw = gpio_dw_port_set_masked_raw,
 	.port_set_bits_raw = gpio_dw_port_set_bits_raw,

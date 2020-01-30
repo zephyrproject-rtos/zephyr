@@ -45,7 +45,7 @@ struct gpio_xec_config {
 };
 
 static int gpio_xec_configure(struct device *dev,
-			      u32_t pin, int flags)
+			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
 	__IO u32_t *current_pcr1;
@@ -124,7 +124,7 @@ static int gpio_xec_configure(struct device *dev,
 }
 
 static int gpio_xec_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
@@ -277,7 +277,7 @@ static int gpio_xec_manage_callback(struct device *dev,
 }
 
 static int gpio_xec_enable_callback(struct device *dev,
-				    u32_t pin)
+				    gpio_pin_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
 
@@ -287,7 +287,7 @@ static int gpio_xec_enable_callback(struct device *dev,
 }
 
 static int gpio_xec_disable_callback(struct device *dev,
-				     u32_t pin)
+				     gpio_pin_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
 
@@ -317,7 +317,7 @@ static void gpio_gpio_xec_port_isr(void *arg)
 }
 
 static const struct gpio_driver_api gpio_xec_driver_api = {
-	.config = gpio_xec_configure,
+	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
 	.port_set_masked_raw = gpio_xec_port_set_masked_raw,
 	.port_set_bits_raw = gpio_xec_port_set_bits_raw,

@@ -30,7 +30,7 @@
 #include <errno.h>
 
 static int gpio_mmio32_config(struct device *dev,
-					u32_t pin, int flags)
+			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
@@ -143,7 +143,7 @@ static int gpio_mmio32_port_toggle_bits(struct device *dev, u32_t mask)
 }
 
 static int gpio_mmio32_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	if (mode != GPIO_INT_MODE_DISABLED) {
@@ -154,7 +154,7 @@ static int gpio_mmio32_pin_interrupt_configure(struct device *dev,
 }
 
 static const struct gpio_driver_api gpio_mmio32_api = {
-	.config = gpio_mmio32_config,
+	.pin_configure = gpio_mmio32_config,
 	.port_get_raw = gpio_mmio32_port_get_raw,
 	.port_set_masked_raw = gpio_mmio32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_mmio32_port_set_bits_raw,

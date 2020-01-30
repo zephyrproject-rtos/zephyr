@@ -56,8 +56,8 @@ struct gpio_mcux_lpc_data {
 	u32_t isr_list_idx;
 };
 
-static int gpio_mcux_lpc_configure(struct device *dev, u32_t pin,
-				   int flags)
+static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
+				   gpio_flags_t flags)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
@@ -227,7 +227,7 @@ static void gpio_mcux_lpc_port_isr(void *arg);
 
 
 static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
@@ -299,7 +299,7 @@ static int gpio_mcux_lpc_manage_cb(struct device *port,
 }
 
 static int gpio_mcux_lpc_enable_cb(struct device *port,
-				   u32_t pin)
+				   gpio_pin_t pin)
 {
 	struct gpio_mcux_lpc_data *data = port->driver_data;
 
@@ -309,7 +309,7 @@ static int gpio_mcux_lpc_enable_cb(struct device *port,
 }
 
 static int gpio_mcux_lpc_disable_cb(struct device *port,
-				    u32_t pin)
+				    gpio_pin_t pin)
 {
 	struct gpio_mcux_lpc_data *data = port->driver_data;
 
@@ -336,7 +336,7 @@ static int gpio_mcux_lpc_init(struct device *dev)
 }
 
 static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
-	.config = gpio_mcux_lpc_configure,
+	.pin_configure = gpio_mcux_lpc_configure,
 	.port_get_raw = gpio_mcux_lpc_port_get_raw,
 	.port_set_masked_raw = gpio_mcux_lpc_port_set_masked_raw,
 	.port_set_bits_raw = gpio_mcux_lpc_port_set_bits_raw,

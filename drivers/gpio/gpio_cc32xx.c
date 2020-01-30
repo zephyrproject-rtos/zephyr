@@ -70,7 +70,8 @@ static int gpio_cc32xx_port_set_bits_raw(struct device *port, u32_t mask);
 static int gpio_cc32xx_port_clear_bits_raw(struct device *port, u32_t mask);
 
 static inline int gpio_cc32xx_config(struct device *port,
-				   u32_t pin, int flags)
+				     gpio_pin_t pin,
+				     gpio_flags_t flags)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
@@ -160,7 +161,7 @@ static int gpio_cc32xx_port_toggle_bits(struct device *port, u32_t mask)
 }
 
 static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
@@ -209,7 +210,7 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 
 
 static int gpio_cc32xx_enable_callback(struct device *dev,
-				    u32_t pin)
+				    gpio_pin_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
@@ -222,7 +223,7 @@ static int gpio_cc32xx_enable_callback(struct device *dev,
 
 
 static int gpio_cc32xx_disable_callback(struct device *dev,
-				     u32_t pin)
+				     gpio_pin_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
@@ -258,7 +259,7 @@ static void gpio_cc32xx_port_isr(void *arg)
 }
 
 static const struct gpio_driver_api api_funcs = {
-	.config = gpio_cc32xx_config,
+	.pin_configure = gpio_cc32xx_config,
 	.port_get_raw = gpio_cc32xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc32xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cc32xx_port_set_bits_raw,

@@ -56,7 +56,8 @@ struct gpio_esp32_data {
 };
 
 static int gpio_esp32_config(struct device *dev,
-			     u32_t pin, int flags)
+			     gpio_pin_t pin,
+			     gpio_flags_t flags)
 {
 	struct gpio_esp32_data *data = dev->driver_data;
 	u32_t io_pin = pin + data->port.pin_offset; /* Range from 0 - 39 */
@@ -212,7 +213,7 @@ static int convert_int_type(enum gpio_int_mode mode,
 }
 
 static int gpio_esp32_pin_interrupt_configure(struct device *port,
-					      unsigned int pin,
+					      gpio_pin_t pin,
 					      enum gpio_int_mode mode,
 					      enum gpio_int_trig trig)
 {
@@ -258,7 +259,7 @@ static int gpio_esp32_manage_callback(struct device *dev,
 }
 
 static int gpio_esp32_enable_callback(struct device *dev,
-				      u32_t pin)
+				      gpio_pin_t pin)
 {
 	struct gpio_esp32_data *data = dev->driver_data;
 
@@ -268,7 +269,7 @@ static int gpio_esp32_enable_callback(struct device *dev,
 }
 
 static int gpio_esp32_disable_callback(struct device *dev,
-				       u32_t pin)
+				       gpio_pin_t pin)
 {
 	struct gpio_esp32_data *data = dev->driver_data;
 
@@ -318,7 +319,7 @@ static int gpio_esp32_init(struct device *device)
 }
 
 static const struct gpio_driver_api gpio_esp32_driver = {
-	.config = gpio_esp32_config,
+	.pin_configure = gpio_esp32_config,
 	.port_get_raw = gpio_esp32_port_get_raw,
 	.port_set_masked_raw = gpio_esp32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_esp32_port_set_bits_raw,

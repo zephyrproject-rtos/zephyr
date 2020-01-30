@@ -10,7 +10,7 @@
 static inline int z_vrfy_gpio_config(struct device *port,
 				     gpio_pin_t pin, gpio_flags_t flags)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, config));
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_configure));
 	return z_impl_gpio_config((struct device *)port, pin, flags);
 }
 #include <syscalls/gpio_config_mrsh.c>
@@ -69,14 +69,14 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(struct device *port,
 #include <syscalls/gpio_pin_interrupt_configure_mrsh.c>
 
 static inline int z_vrfy_gpio_enable_callback(struct device *port,
-					     u32_t pin)
+					     gpio_pin_t pin)
 {
 	return z_impl_gpio_enable_callback((struct device *)port, pin);
 }
 #include <syscalls/gpio_enable_callback_mrsh.c>
 
 static inline int z_vrfy_gpio_disable_callback(struct device *port,
-					      u32_t pin)
+					      gpio_pin_t pin)
 {
 	return z_impl_gpio_disable_callback((struct device *)port, pin);
 }

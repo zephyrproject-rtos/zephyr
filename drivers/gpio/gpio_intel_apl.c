@@ -206,7 +206,7 @@ static int gpio_intel_apl_isr(struct device *dev)
 }
 
 static int gpio_intel_apl_config(struct device *dev,
-				 u32_t pin, int flags)
+				 gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
@@ -280,7 +280,7 @@ static int gpio_intel_apl_config(struct device *dev,
 }
 
 static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
@@ -369,7 +369,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 }
 
 static int gpio_intel_apl_enable_callback(struct device *dev,
-					  u32_t pin)
+					  gpio_pin_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	u32_t raw_pin, reg;
@@ -394,7 +394,7 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 }
 
 static int gpio_intel_apl_disable_callback(struct device *dev,
-					   u32_t pin)
+					   gpio_pin_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	u32_t raw_pin, reg;
@@ -533,7 +533,7 @@ static int gpio_intel_apl_port_get_raw(struct device *dev, u32_t *value)
 }
 
 static const struct gpio_driver_api gpio_intel_apl_api = {
-	.config = gpio_intel_apl_config,
+	.pin_configure = gpio_intel_apl_config,
 	.manage_callback = gpio_intel_apl_manage_callback,
 	.enable_callback = gpio_intel_apl_enable_callback,
 	.disable_callback = gpio_intel_apl_disable_callback,

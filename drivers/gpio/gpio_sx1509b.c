@@ -111,8 +111,8 @@ static inline int i2c_reg_write_word_be(struct device *dev, u16_t dev_addr,
 }
 
 static int sx1509b_config(struct device *dev,
-			  u32_t pin,
-			  int flags)
+			  gpio_pin_t pin,
+			  gpio_flags_t flags)
 {
 	const struct sx1509b_config *cfg = dev->config->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
@@ -312,7 +312,7 @@ static int port_toggle_bits(struct device *dev,
 }
 
 static int pin_interrupt_configure(struct device *dev,
-				   unsigned int pin,
+				   gpio_pin_t pin,
 				   enum gpio_int_mode mode,
 				   enum gpio_int_trig trig)
 {
@@ -397,7 +397,7 @@ out:
 }
 
 static const struct gpio_driver_api api_table = {
-	.config = sx1509b_config,
+	.pin_configure = sx1509b_config,
 	.port_get_raw = port_get,
 	.port_set_masked_raw = port_set_masked,
 	.port_set_bits_raw = port_set_bits,
