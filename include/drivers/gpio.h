@@ -392,13 +392,6 @@ extern "C" {
 
 /** @} */
 
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_ACCESS_BY_PIN 0
-#define GPIO_ACCESS_BY_PORT 1
-/**
- * @endcond
- */
-
 /**
  * @brief Identifies a set of pins associated with a port.
  *
@@ -551,7 +544,7 @@ enum gpio_int_trig {
 };
 
 struct gpio_driver_api {
-	int (*config)(struct device *port, int access_op, u32_t pin, int flags);
+	int (*config)(struct device *port, u32_t pin, int flags);
 	int (*port_get_raw)(struct device *port, gpio_port_value_t *value);
 	int (*port_set_masked_raw)(struct device *port, gpio_port_pins_t mask,
 				   gpio_port_value_t value);
@@ -567,16 +560,16 @@ struct gpio_driver_api {
 	u32_t (*get_pending_int)(struct device *dev);
 };
 
-__syscall int gpio_config(struct device *port, int access_op, u32_t pin,
+__syscall int gpio_config(struct device *port, u32_t pin,
 			  gpio_flags_t flags);
 
-static inline int z_impl_gpio_config(struct device *port, int access_op,
+static inline int z_impl_gpio_config(struct device *port,
 				    u32_t pin, gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	return api->config(port, access_op, pin, (int)flags);
+	return api->config(port, pin, (int)flags);
 }
 
 __syscall int gpio_enable_callback(struct device *port, u32_t pin);
@@ -754,7 +747,7 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
-	ret = gpio_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
+	ret = gpio_config(port, pin, flags);
 	if (ret != 0) {
 		return ret;
 	}

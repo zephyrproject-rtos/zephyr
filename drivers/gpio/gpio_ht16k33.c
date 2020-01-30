@@ -37,11 +37,10 @@ struct gpio_ht16k33_data {
 	sys_slist_t callbacks;
 };
 
-static int gpio_ht16k33_cfg(struct device *dev, int access_op,
+static int gpio_ht16k33_cfg(struct device *dev,
 			    u32_t pin, int flags)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
 	/* Keyscan is input-only */

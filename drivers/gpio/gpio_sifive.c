@@ -147,22 +147,16 @@ static void gpio_sifive_irq_handler(void *arg)
  * @brief Configure pin
  *
  * @param dev Device structure
- * @param access_op Access operation
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
  * @return 0 if successful, failed otherwise
  */
 static int gpio_sifive_config(struct device *dev,
-			     int access_op,
 			     u32_t pin,
 			     int flags)
 {
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;

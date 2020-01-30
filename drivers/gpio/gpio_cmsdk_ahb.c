@@ -130,29 +130,15 @@ static int cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
  * @brief Configure pin or port
  *
  * @param dev Device struct
- * @param access_op Access operation (pin or port)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
  * @return 0 if successful, failed otherwise
  */
-static int gpio_cmsdk_ahb_config(struct device *dev, int access_op,
+static int gpio_cmsdk_ahb_config(struct device *dev,
 				 u32_t pin, int flags)
 {
-	int ret = 0;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		ret = cmsdk_ahb_gpio_config(dev, BIT(pin), flags);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		ret = cmsdk_ahb_gpio_config(dev, (0xFFFF), flags);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return ret;
+	return cmsdk_ahb_gpio_config(dev, BIT(pin), flags);
 }
 
 static int gpio_cmsdk_ahb_pin_interrupt_configure(struct device *dev,

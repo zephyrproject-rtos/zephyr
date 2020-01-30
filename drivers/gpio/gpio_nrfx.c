@@ -127,7 +127,7 @@ static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 	return res;
 }
 
-static int gpio_nrfx_config(struct device *port, int access_op,
+static int gpio_nrfx_config(struct device *port,
 			    u32_t pin, int flags)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
@@ -135,8 +135,6 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 	nrf_gpio_pin_drive_t drive;
 	nrf_gpio_pin_dir_t dir;
 	nrf_gpio_pin_input_t input;
-	u8_t from_pin;
-	u8_t to_pin;
 
 	switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK |
 			 GPIO_OPEN_DRAIN)) {
@@ -187,27 +185,16 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 		? NRF_GPIO_PIN_INPUT_CONNECT
 		: NRF_GPIO_PIN_INPUT_DISCONNECT;
 
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0U;
-		to_pin   = 31U;
-	} else {
-		from_pin = pin;
-		to_pin   = pin;
-	}
-
-	for (u8_t curr_pin = from_pin; curr_pin <= to_pin; ++curr_pin) {
-		if ((flags & GPIO_OUTPUT) != 0) {
-			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-				nrf_gpio_port_out_set(reg, BIT(curr_pin));
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-				nrf_gpio_port_out_clear(reg, BIT(curr_pin));
-			}
+	if ((flags & GPIO_OUTPUT) != 0) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			nrf_gpio_port_out_set(reg, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			nrf_gpio_port_out_clear(reg, BIT(pin));
 		}
-
-		nrf_gpio_cfg(NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num,
-					      curr_pin),
-			     dir, input, pull, drive, NRF_GPIO_PIN_NOSENSE);
 	}
+
+	nrf_gpio_cfg(NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin),
+		     dir, input, pull, drive, NRF_GPIO_PIN_NOSENSE);
 
 	return 0;
 }

@@ -205,16 +205,12 @@ static int gpio_intel_apl_isr(struct device *dev)
 	return 0;
 }
 
-static int gpio_intel_apl_config(struct device *dev, int access_op,
+static int gpio_intel_apl_config(struct device *dev,
 				 u32_t pin, int flags)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
 	u32_t raw_pin, reg, cfg0, cfg1;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	/* Only support push-pull mode */
 	if ((flags & GPIO_SINGLE_ENDED) != 0U) {

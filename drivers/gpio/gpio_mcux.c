@@ -32,14 +32,13 @@ struct gpio_mcux_data {
 };
 
 static int gpio_mcux_configure(struct device *dev,
-			       int access_op, u32_t pin, int flags)
+			       u32_t pin, int flags)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
 	u32_t mask = 0U;
 	u32_t pcr = 0U;
-	u8_t i;
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
@@ -61,28 +60,20 @@ static int gpio_mcux_configure(struct device *dev,
 	 * 0 - pin is input, 1 - pin is output
 	 */
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		switch (flags & GPIO_DIR_MASK) {
-		case GPIO_INPUT:
-			gpio_base->PDDR &= ~BIT(pin);
-			break;
-		case GPIO_OUTPUT:
-			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-				gpio_base->PSOR = BIT(pin);
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-				gpio_base->PCOR = BIT(pin);
-			}
-			gpio_base->PDDR |= BIT(pin);
-			break;
-		default:
-			return -ENOTSUP;
+	switch (flags & GPIO_DIR_MASK) {
+	case GPIO_INPUT:
+		gpio_base->PDDR &= ~BIT(pin);
+		break;
+	case GPIO_OUTPUT:
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			gpio_base->PSOR = BIT(pin);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			gpio_base->PCOR = BIT(pin);
 		}
-	} else {	/* GPIO_ACCESS_BY_PORT */
-		if ((flags & GPIO_INPUT) != 0) {
-			gpio_base->PDDR = 0x0;
-		} else {  /* GPIO_OUTPUT */
-			gpio_base->PDDR = 0xFFFFFFFF;
-		}
+		gpio_base->PDDR |= BIT(pin);
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	/* Now do the PORT module. Figure out the pullup/pulldown
@@ -101,17 +92,8 @@ static int gpio_mcux_configure(struct device *dev,
 		pcr |= PORT_PCR_PE_MASK;
 	}
 
-	/* Now we can write the PORT PCR register(s). If accessing by pin, we
-	 * only need to write one PCR register. Otherwise, write all the PCR
-	 * registers in the PORT module (one for each pin).
-	 */
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
-	} else {  /* GPIO_ACCESS_BY_PORT */
-		for (i = 0U; i < ARRAY_SIZE(port_base->PCR); i++) {
-			port_base->PCR[i] = (port_base->PCR[pin] & ~mask) | pcr;
-		}
-	}
+	/* Accessing by pin, we only need to write one PCR register. */
+	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
 
 	return 0;
 }
