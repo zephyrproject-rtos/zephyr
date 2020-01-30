@@ -3787,6 +3787,14 @@ static void le_adv_report(struct net_buf *buf)
 		info = net_buf_pull_mem(buf, sizeof(*info));
 		rssi = info->data[info->length];
 
+		if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN) &&
+		    info->evt_type == BT_LE_ADV_DIRECT_IND) {
+			BT_DBG("Dropped direct adv report");
+			continue;
+		}
+
 		BT_DBG("%s event %u, len %u, rssi %d dBm",
 		       bt_addr_le_str(&info->addr),
 		       info->evt_type, info->length, rssi);
