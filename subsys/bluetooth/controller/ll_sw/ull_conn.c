@@ -999,7 +999,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    0 ||
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
-			    conn->master.terminate_ack
+			    conn->master.terminate_ack ||
+			    (reason_peer == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
 			    1
 #endif /* CONFIG_BT_CENTRAL */
