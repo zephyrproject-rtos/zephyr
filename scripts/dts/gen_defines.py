@@ -63,7 +63,7 @@ def main():
             write_regs(node)
             write_irqs(node)
             write_props(node)
-            write_clocks(node)
+            write_freq(node)
             write_spi_dev(node)
             write_bus(node)
             write_existence_flags(node)
@@ -257,10 +257,6 @@ def should_write(prop):
     # Skip #size-cell and other property starting with #. Also skip mapping
     # properties like 'gpio-map'.
     if prop.name[0] == "#" or prop.name.endswith("-map"):
-        return False
-
-    # See write_clocks()
-    if prop.name == "clocks":
         return False
 
     # For these, Property.val becomes an edtlib.Node, a list of edtlib.Nodes,
@@ -637,42 +633,27 @@ def write_phandle_val_list_entry(node, entry, i, ident):
     return out_node_init(node, initializer_ident, initializer_vals, name_alias)
 
 
-def write_clocks(node):
-    # Writes clock information.
-    #
-    # Most of this ought to be handled in write_props(), but the identifiers
-    # that get generated for 'clocks' are inconsistent with the with other
-    # 'phandle-array' properties.
-    #
-    # See https://github.com/zephyrproject-rtos/zephyr/pull/19327#issuecomment-534081845.
+def write_freq(node):
+    # Writes the clock frequency for 'node', if any. Derived by searching
+    # 'clocks' for a controller with "compatible = 'fixed-clock'", which should
+    # have a 'clock-frequency' property.
 
-    if "clocks" not in node.props:
+    clocks_prop = node.props.get("clocks")
+    if not clocks_prop:
         return
 
-    for clock_i, clock in enumerate(node.props["clocks"].val):
-        controller = clock.controller
+    if clocks_prop.type != "phandle-array":
+        err(f"'clocks' property on {clocks_prop.node!r} should be a phandle-array")
 
-        if controller.label is not None:
-            out_node_s(node, "CLOCK_CONTROLLER", controller.label)
+    for clock in clocks_prop.val:
+        if "fixed-clock" in clock.controller.compats:
+            if "clock-frequency" not in clock.controller.props:
+                err(f"{clock.controller!r} is a 'fixed-clock' but lacks a "
+                    "'clock-frequency' property")
 
-        for name, val in clock.data.items():
-            if clock_i == 0:
-                clk_name_alias = "CLOCK_" + str2ident(name)
-            else:
-                clk_name_alias = None
-
-            out_node(node, f"CLOCK_{str2ident(name)}_{clock_i}", val,
-                     name_alias=clk_name_alias)
-
-        if "fixed-clock" not in controller.compats:
-            continue
-
-        if "clock-frequency" not in controller.props:
-            err(f"{controller!r} is a 'fixed-clock' but lacks a "
-                "'clock-frequency' property")
-
-        out_node(node, "CLOCKS_CLOCK_FREQUENCY",
-                 controller.props["clock-frequency"].val)
+            out_node(node, "CLOCKS_CLOCK_FREQUENCY",
+                     clock.controller.props["clock-frequency"].val)
+            return
 
 
 def str2ident(s):
