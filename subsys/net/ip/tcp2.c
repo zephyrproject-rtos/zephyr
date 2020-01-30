@@ -668,54 +668,21 @@ static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
 	return pkt;
 }
 
-static u32_t sum(void *data, size_t len)
-{
-	u32_t s = 0;
-
-	for ( ; len > 1; len -= 2, data = (u8_t *)data + 2) {
-		s += *((u16_t *)data);
-	}
-
-	if (len) {
-		s += *((u8_t *)data);
-	}
-
-	return s;
-}
-
-static uint16_t cs(int32_t s)
-{
-	return ~((s & 0xFFFF) + (s >> 16));
-}
-
 static void tcp_csum(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct tcphdr *th = (void *)(ip + 1);
-	struct net_buf *buf = pkt->frags;
-	size_t hlen = sizeof(struct net_ipv4_hdr);
-	u16_t len = ntohs(ip->len) - hlen;
-	u32_t s;
-	int i, j = 0;
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_tcp_hdr *tcp_hdr;
 
-	ip->chksum = cs(sum(ip, sizeof(*ip)));
-
-	s = sum(&ip->src, sizeof(struct in_addr) * 2);
-	s += ntohs(ip->proto + len);
-
-	th->th_sum = 0;
-
-	s += sum(th, buf->len - hlen);
-
-	SYS_SLIST_FOR_EACH_CONTAINER((sys_slist_t *)&buf->node, buf, node) {
-
-		for (i = 0; i < buf->len; i++, j++) {
-
-			s += (j % 2) ? buf->data[i] << 8 : buf->data[i];
-		}
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		return;
 	}
 
-	th->th_sum = cs(s);
+	tcp_hdr->chksum = 0U;
+
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+	}
 }
 
 static void tcp_chain_free(struct net_buf *head)
