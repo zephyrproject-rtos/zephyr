@@ -382,7 +382,7 @@ static int gpio_stm32_port_toggle_bits(struct device *dev,
  * @brief Configure pin or port
  */
 static int gpio_stm32_config(struct device *dev,
-			     u32_t pin, int flags)
+			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	int err = 0;
@@ -420,7 +420,7 @@ release_lock:
 }
 
 static int gpio_stm32_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, enum gpio_int_mode mode,
+		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
@@ -493,7 +493,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 }
 
 static int gpio_stm32_enable_callback(struct device *dev,
-				      u32_t pin)
+				      gpio_pin_t pin)
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
@@ -503,7 +503,7 @@ static int gpio_stm32_enable_callback(struct device *dev,
 }
 
 static int gpio_stm32_disable_callback(struct device *dev,
-				       u32_t pin)
+				       gpio_pin_t pin)
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
@@ -513,7 +513,7 @@ static int gpio_stm32_disable_callback(struct device *dev,
 }
 
 static const struct gpio_driver_api gpio_stm32_driver = {
-	.config = gpio_stm32_config,
+	.pin_configure = gpio_stm32_config,
 	.port_get_raw = gpio_stm32_port_get_raw,
 	.port_set_masked_raw = gpio_stm32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_stm32_port_set_bits_raw,

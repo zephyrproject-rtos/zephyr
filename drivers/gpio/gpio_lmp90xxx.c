@@ -33,7 +33,7 @@ struct gpio_lmp90xxx_data {
 };
 
 static int gpio_lmp90xxx_config(struct device *dev,
-				u32_t pin, int flags)
+				gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct gpio_lmp90xxx_data *data = dev->driver_data;
 	int err = 0;
@@ -122,7 +122,7 @@ static int gpio_lmp90xxx_port_toggle_bits(struct device *dev,
 }
 
 static int gpio_lmp90xxx_pin_interrupt_configure(struct device *dev,
-						 unsigned int pin,
+						 gpio_pin_t pin,
 						 enum gpio_int_mode mode,
 						 enum gpio_int_trig trig)
 {
@@ -150,7 +150,7 @@ static int gpio_lmp90xxx_init(struct device *dev)
 }
 
 static const struct gpio_driver_api gpio_lmp90xxx_api = {
-	.config = gpio_lmp90xxx_config,
+	.pin_configure = gpio_lmp90xxx_config,
 	.port_set_masked_raw = gpio_lmp90xxx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_lmp90xxx_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_lmp90xxx_port_clear_bits_raw,

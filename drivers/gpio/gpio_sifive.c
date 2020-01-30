@@ -153,8 +153,8 @@ static void gpio_sifive_irq_handler(void *arg)
  * @return 0 if successful, failed otherwise
  */
 static int gpio_sifive_config(struct device *dev,
-			     u32_t pin,
-			     int flags)
+			      gpio_pin_t pin,
+			      gpio_flags_t flags)
 {
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 
@@ -244,7 +244,7 @@ static int gpio_sifive_port_toggle_bits(struct device *dev,
 }
 
 static int gpio_sifive_pin_interrupt_configure(struct device *dev,
-					      unsigned int pin,
+					      gpio_pin_t pin,
 					      enum gpio_int_mode mode,
 					      enum gpio_int_trig trig)
 {
@@ -325,7 +325,7 @@ static int gpio_sifive_manage_callback(struct device *dev,
 }
 
 static int gpio_sifive_enable_callback(struct device *dev,
-				      u32_t pin)
+				      gpio_pin_t pin)
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
@@ -340,7 +340,7 @@ static int gpio_sifive_enable_callback(struct device *dev,
 }
 
 static int gpio_sifive_disable_callback(struct device *dev,
-				       u32_t pin)
+				       gpio_pin_t pin)
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
@@ -355,7 +355,7 @@ static int gpio_sifive_disable_callback(struct device *dev,
 }
 
 static const struct gpio_driver_api gpio_sifive_driver = {
-	.config                  = gpio_sifive_config,
+	.pin_configure           = gpio_sifive_config,
 	.port_get_raw            = gpio_sifive_port_get_raw,
 	.port_set_masked_raw     = gpio_sifive_port_set_masked_raw,
 	.port_set_bits_raw       = gpio_sifive_port_set_bits_raw,
