@@ -474,8 +474,10 @@ config BT_SCAN_WITH_IDENTITY
 	  Enable this if you want to perform active scanning using the local
 	  identity address as the scanner address. By default the stack will
 	  always use a non-resolvable private address (NRPA) in order to avoid
-	  disclosing local identity information. However, if the use case
-	  requires disclosing it then enable this option.
+	  disclosing local identity information. By not scanning with the
+	  identity address the scanner will receive directed advertise reports
+	  for for the local identity. If this use case is required, then enable
+	  this option.
 
 config BT_DEVICE_NAME_DYNAMIC
 	bool "Allow to set Bluetooth device name on runtime"
