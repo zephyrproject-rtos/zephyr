@@ -404,7 +404,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 
 	/* the ready queue cache already contains the main thread */
 
-#ifdef CONFIG_ARM_MPU
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 	/*
 	 * If stack protection is enabled, make sure to set it
 	 * before jumping to thread entry function

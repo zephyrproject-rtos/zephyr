@@ -198,7 +198,7 @@ out_fp_endif:
     cpsie i
 _thread_irq_disabled:
 
-#if defined(CONFIG_ARM_MPU)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
     push {r2,lr}
     mov r0, r2
@@ -278,7 +278,7 @@ in_fp_endif:
     isb
 #endif
 
-#if defined (CONFIG_ARM_MPU)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
     push {r2,lr}
     mov r0, r2 /* _current thread */
