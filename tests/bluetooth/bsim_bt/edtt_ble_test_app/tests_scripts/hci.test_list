@@ -1,7 +1,7 @@
 # Copyright 2019 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-HCI/CCO/BV-07-C
+#HCI/CCO/BV-07-C #See GH issue #22085
 HCI/CCO/BV-09-C
 HCI/CCO/BV-10-C
 HCI/CCO/BV-11-C
@@ -27,5 +27,5 @@ HCI/DSU/BV-03-C
 HCI/DSU/BV-04-C
 HCI/DSU/BV-05-C
 HCI/DSU/BV-06-C
-HCI/GEV/BV-01-C
+#HCI/GEV/BV-01-C #See GH issue #22085
 HCI/HFC/BV-04-C
