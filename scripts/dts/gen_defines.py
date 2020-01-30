@@ -687,7 +687,7 @@ def str2ident(s):
             .upper()
 
 
-def out_node(node, ident, val, name_alias=None):
+def out_node(node, ident, val, name_alias=None, deprecation_msg=None):
     # Writes a
     #
     #   <node prefix>_<ident> = <val>
@@ -704,6 +704,9 @@ def out_node(node, ident, val, name_alias=None):
     #
     # 'name_alias' is used for reg-names and the like.
     #
+    # If a 'deprecation_msg' string is passed, the generated identifiers will
+    # generate a warning if used, via __WARN(<deprecation_msg>)).
+    #
     # Returns the identifier used for the macro that provides the value
     # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
@@ -714,25 +717,25 @@ def out_node(node, ident, val, name_alias=None):
         aliases.append(f"{node_prefix}_{name_alias}")
         aliases += [f"{alias}_{name_alias}" for alias in node_aliases(node)]
 
-    return out(f"{node_prefix}_{ident}", val, aliases)
+    return out(f"{node_prefix}_{ident}", val, aliases, deprecation_msg)
 
 
-def out_node_s(node, ident, s, name_alias=None):
+def out_node_s(node, ident, s, name_alias=None, deprecation_msg=None):
     # Like out_node(), but emits 's' as a string literal
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_node(node, ident, quote_str(s), name_alias)
+    return out_node(node, ident, quote_str(s), name_alias, deprecation_msg)
 
 
-def out_node_init(node, ident, elms, name_alias=None):
+def out_node_init(node, ident, elms, name_alias=None, deprecation_msg=None):
     # Like out_node(), but generates an {e1, e2, ...} initializer with the
     # elements in the iterable 'elms'.
     #
     # Returns the generated macro name for 'ident'.
 
     return out_node(node, ident, "{" + ", ".join(map(str, elms)) + "}",
-                    name_alias)
+                    name_alias, deprecation_msg)
 
 
 def out_s(ident, val):
@@ -744,7 +747,7 @@ def out_s(ident, val):
     return out(ident, quote_str(val))
 
 
-def out(ident, val, aliases=()):
+def out(ident, val, aliases=(), deprecation_msg=None):
     # Writes '#define <ident> <val>' to the header and '<ident>=<val>' to the
     # the configuration file.
     #
@@ -752,9 +755,11 @@ def out(ident, val, aliases=()):
     # header, these look like '#define <alias> <ident>'. For the configuration
     # file, the value is just repeated as '<alias>=<val>' for each alias.
     #
+    # See out_node() for the meaning of 'deprecation_msg'.
+    #
     # Returns the generated macro name for 'ident'.
 
-    print(f"#define DT_{ident:40} {val}", file=header_file)
+    out_define(ident, val, deprecation_msg, header_file)
     primary_ident = f"DT_{ident}"
 
     # Exclude things that aren't single token values from .conf.  At
@@ -767,13 +772,24 @@ def out(ident, val, aliases=()):
 
     for alias in aliases:
         if alias != ident:
-            print(f"#define DT_{alias:40} DT_{ident}", file=header_file)
+            out_define(alias, "DT_" + ident, deprecation_msg, header_file)
             if output_to_conf:
                 # For the configuration file, the value is just repeated for all
                 # the aliases
                 print(f"DT_{alias}={val}", file=conf_file)
 
     return primary_ident
+
+
+def out_define(ident, val, deprecation_msg, out_file):
+    # out() helper for writing a #define. See out_node() for the meaning of
+    # 'deprecation_msg'.
+
+    s = f"#define DT_{ident:40}"
+    if deprecation_msg:
+        s += fr' __WARN("{deprecation_msg}")'
+    s += f" {val}"
+    print(s, file=out_file)
 
 
 def out_comment(s, blank_before=True):
