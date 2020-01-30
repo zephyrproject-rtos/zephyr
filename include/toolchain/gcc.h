@@ -206,11 +206,24 @@ do {                                                                    \
 #define HAS_BUILTIN___builtin_ctzll 1
 #endif
 
-/* Be *very* careful with this, you cannot filter out with -wno-deprecated,
- * which has implications for -Werror
+/*
+ * Be *very* careful with these. You cannot filter out __DEPRECATED_MACRO with
+ * -wno-deprecated, which has implications for -Werror.
  */
+
+/*
+ * Expands to nothing and generates a warning. Used like
+ *
+ *   #define FOO __WARN("Please use BAR instead") ...
+ *
+ * The warning points to the location where the macro is expanded.
+ */
+#define __WARN(msg) __WARN1(GCC warning msg)
+#define __WARN1(s) _Pragma(#s)
+
+/* Generic message */
 #ifndef __DEPRECATED_MACRO
-#define __DEPRECATED_MACRO _Pragma("GCC warning \"Macro is deprecated\"")
+#define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */
