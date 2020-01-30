@@ -350,39 +350,6 @@ static inline int gpio_dw_config(struct device *port, int access_op,
 	return 0;
 }
 
-static inline int gpio_dw_write(struct device *port, int access_op,
-				u32_t pin, u32_t value)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u32_t port_base_addr = context->base_addr;
-	u32_t data_port = dw_get_data_port(port_base_addr);
-
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_set_bit(base_addr, data_port, pin, value);
-	} else {
-		dw_write(base_addr, data_port, value);
-	}
-
-	return 0;
-}
-
-static inline int gpio_dw_read(struct device *port, int access_op,
-			       u32_t pin, u32_t *value)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u32_t port_base_addr = context->base_addr;
-	u32_t ext_port = dw_get_ext_port(port_base_addr);
-
-	*value = dw_read(base_addr, ext_port);
-
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		*value = !!(*value & BIT(pin));
-	}
-	return 0;
-}
-
 static int gpio_dw_port_get_raw(struct device *port, u32_t *value)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
@@ -585,8 +552,6 @@ static void gpio_dw_isr(void *arg)
 
 static const struct gpio_driver_api api_funcs = {
 	.config = gpio_dw_config,
-	.write = gpio_dw_write,
-	.read = gpio_dw_read,
 	.port_get_raw = gpio_dw_port_get_raw,
 	.port_set_masked_raw = gpio_dw_port_set_masked_raw,
 	.port_set_bits_raw = gpio_dw_port_set_bits_raw,

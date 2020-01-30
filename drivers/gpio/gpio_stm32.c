@@ -423,47 +423,6 @@ release_lock:
 	return err;
 }
 
-/**
- * @brief Set the pin or port output
- */
-static int gpio_stm32_write(struct device *dev, int access_op,
-			    u32_t pin, u32_t value)
-{
-	const struct gpio_stm32_config *cfg = dev->config->config_info;
-	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	pin = stm32_pinval_get(pin);
-	if (value != 0U) {
-		LL_GPIO_SetOutputPin(gpio, pin);
-	} else {
-		LL_GPIO_ResetOutputPin(gpio, pin);
-	}
-
-	return 0;
-}
-
-/**
- * @brief Read the pin or port status
- */
-static int gpio_stm32_read(struct device *dev, int access_op,
-			   u32_t pin, u32_t *value)
-{
-	const struct gpio_stm32_config *cfg = dev->config->config_info;
-	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	*value = (LL_GPIO_ReadInputPort(gpio) >> pin) & 0x1;
-
-	return 0;
-}
-
 static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		unsigned int pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
@@ -559,8 +518,6 @@ static int gpio_stm32_disable_callback(struct device *dev,
 
 static const struct gpio_driver_api gpio_stm32_driver = {
 	.config = gpio_stm32_config,
-	.write = gpio_stm32_write,
-	.read = gpio_stm32_read,
 	.port_get_raw = gpio_stm32_port_get_raw,
 	.port_set_masked_raw = gpio_stm32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_stm32_port_set_bits_raw,

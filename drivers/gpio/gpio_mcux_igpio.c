@@ -63,34 +63,6 @@ static int mcux_igpio_configure(struct device *dev,
 	return 0;
 }
 
-static int mcux_igpio_write(struct device *dev,
-			   int access_op, u32_t pin, u32_t value)
-{
-	const struct mcux_igpio_config *config = dev->config->config_info;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		GPIO_PinWrite(config->base, pin, value);
-	} else { /* GPIO_ACCESS_BY_PORT */
-		config->base->DR = value;
-	}
-
-	return 0;
-}
-
-static int mcux_igpio_read(struct device *dev,
-			  int access_op, u32_t pin, u32_t *value)
-{
-	const struct mcux_igpio_config *config = dev->config->config_info;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = GPIO_PinRead(config->base, pin);
-	} else { /* GPIO_ACCESS_BY_PORT */
-		*value = config->base->DR;
-	}
-
-	return 0;
-}
-
 static int mcux_igpio_port_get_raw(struct device *dev, u32_t *value)
 {
 	const struct mcux_igpio_config *config = dev->config->config_info;
@@ -233,8 +205,6 @@ static void mcux_igpio_port_isr(void *arg)
 
 static const struct gpio_driver_api mcux_igpio_driver_api = {
 	.config = mcux_igpio_configure,
-	.write = mcux_igpio_write,
-	.read = mcux_igpio_read,
 	.port_get_raw = mcux_igpio_port_get_raw,
 	.port_set_masked_raw = mcux_igpio_port_set_masked_raw,
 	.port_set_bits_raw = mcux_igpio_port_set_bits_raw,

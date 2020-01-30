@@ -155,90 +155,6 @@ static int gpio_cmsdk_ahb_config(struct device *dev, int access_op,
 	return ret;
 }
 
-/**
- * @brief Set the pin or port output
- *
- * @param dev Device struct
- * @param access_op Access operation (pin or port)
- * @param pin The pin number
- * @param value Value to set (0 or 1)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_cmsdk_ahb_write(struct device *dev, int access_op,
-				u32_t pin, u32_t value)
-{
-	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	u32_t key;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if (value) {
-			/*
-			 * The irq_lock() here is required to prevent concurrent
-			 * callers to corrupt the pin states.
-			 */
-			key = irq_lock();
-			/* set the pin */
-			cfg->port->dataout |= BIT(pin);
-			irq_unlock(key);
-		} else {
-			/*
-			 * The irq_lock() here is required to prevent concurrent
-			 * callers to corrupt the pin states.
-			 */
-			key = irq_lock();
-			/* clear the pin */
-			cfg->port->dataout &= ~(BIT(pin));
-			irq_unlock(key);
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		if (value) {
-			/* set all pins */
-			cfg->port->dataout = 0xFFFF;
-		} else {
-			/* clear all pins */
-			cfg->port->dataout = 0x0;
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-/**
- * @brief Read the pin or port status
- *
- * @param dev Device struct
- * @param access_op Access operation (pin or port)
- * @param pin The pin number
- * @param value Value of input pin(s)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_cmsdk_ahb_read(struct device *dev, int access_op,
-			       u32_t pin, u32_t *value)
-{
-	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-
-	*value = cfg->port->data;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		*value = (*value >> pin) & 0x1;
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 static int gpio_cmsdk_ahb_pin_interrupt_configure(struct device *dev,
 		unsigned int pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
@@ -326,8 +242,6 @@ static int gpio_cmsdk_ahb_disable_callback(struct device *dev,
 
 static const struct gpio_driver_api gpio_cmsdk_ahb_drv_api_funcs = {
 	.config = gpio_cmsdk_ahb_config,
-	.write = gpio_cmsdk_ahb_write,
-	.read = gpio_cmsdk_ahb_read,
 	.port_get_raw = gpio_cmsdk_ahb_port_get_raw,
 	.port_set_masked_raw = gpio_cmsdk_ahb_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cmsdk_ahb_port_set_bits_raw,

@@ -198,83 +198,6 @@ static int gpio_sifive_config(struct device *dev,
 	return 0;
 }
 
-/**
- * @brief Set the pin
- *
- * @param dev Device struct
- * @param access_op Access operation
- * @param pin The pin number
- * @param value Value to set (0 or 1)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_sifive_write(struct device *dev,
-			    int access_op,
-			    u32_t pin,
-			    u32_t value)
-{
-	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	if (pin >= SIFIVE_PINMUX_PINS)
-		return -EINVAL;
-
-	/* If pin is configured as input return with error */
-	if (gpio->in_en & BIT(pin)) {
-		return -EINVAL;
-	}
-
-	if (value) {
-		gpio->out_val |= BIT(pin);
-	} else {
-		gpio->out_val &= ~BIT(pin);
-	}
-
-	return 0;
-}
-
-/**
- * @brief Read the pin
- *
- * @param dev Device struct
- * @param access_op Access operation
- * @param pin The pin number
- * @param value Value of input pin(s)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_sifive_read(struct device *dev,
-			   int access_op,
-			   u32_t pin,
-			   u32_t *value)
-{
-	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	if (pin >= SIFIVE_PINMUX_PINS) {
-		return -EINVAL;
-	}
-
-	/*
-	 * If gpio is configured as output,
-	 * read gpio value from out_val register,
-	 * otherwise read gpio value from in_val register
-	 */
-	if (gpio->out_en & BIT(pin)) {
-		*value = !!(gpio->out_val & BIT(pin));
-	} else {
-		*value = !!(gpio->in_val & BIT(pin));
-	}
-
-	return 0;
-}
-
 static int gpio_sifive_port_get_raw(struct device *dev,
 				   gpio_port_value_t *value)
 {
@@ -439,8 +362,6 @@ static int gpio_sifive_disable_callback(struct device *dev,
 
 static const struct gpio_driver_api gpio_sifive_driver = {
 	.config                  = gpio_sifive_config,
-	.write                   = gpio_sifive_write,
-	.read                    = gpio_sifive_read,
 	.port_get_raw            = gpio_sifive_port_get_raw,
 	.port_set_masked_raw     = gpio_sifive_port_set_masked_raw,
 	.port_set_bits_raw       = gpio_sifive_port_set_bits_raw,
