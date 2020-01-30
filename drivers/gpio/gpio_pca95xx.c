@@ -361,104 +361,6 @@ done:
 	return ret;
 }
 
-/**
- * @brief Set the pin or port output
- *
- * @param dev Device struct of the PCA95XX
- * @param access_op Access operation (pin or port)
- * @param pin The pin number
- * @param value Value to set (0 or 1)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_pca95xx_write(struct device *dev, int access_op,
-				u32_t pin, u32_t value)
-{
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t reg_out;
-	int ret;
-
-	/* Can't do I2C bus operations from an ISR */
-	if (k_is_in_isr()) {
-		return -EWOULDBLOCK;
-	}
-
-	k_sem_take(&drv_data->lock, K_FOREVER);
-
-	reg_out = drv_data->reg_cache.output;
-
-	/* Invert input value for pins configurated as active low. */
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if (value) {
-			reg_out |= BIT(pin);
-		} else {
-			reg_out &= ~BIT(pin);
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		reg_out = value;
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto done;
-	}
-
-	ret = update_output_regs(dev, reg_out);
-
-done:
-	k_sem_give(&drv_data->lock);
-	return ret;
-}
-
-/**
- * @brief Read the pin or port status
- *
- * @param dev Device struct of the PCA95XX
- * @param access_op Access operation (pin or port)
- * @param pin The pin number
- * @param value Value of input pin(s)
- *
- * @return 0 if successful, failed otherwise
- */
-static int gpio_pca95xx_read(struct device *dev, int access_op,
-			       u32_t pin, u32_t *value)
-{
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
-	u16_t buf;
-	int ret;
-
-	/* Can't do I2C bus operations from an ISR */
-	if (k_is_in_isr()) {
-		return -EWOULDBLOCK;
-	}
-
-	k_sem_take(&drv_data->lock, K_FOREVER);
-
-	ret = read_port_regs(dev, REG_INPUT_PORT0, &buf);
-	if (ret != 0) {
-		goto done;
-	}
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		*value = (buf >> pin) & 0x01;
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		*value = buf;
-		break;
-	default:
-		ret = -ENOTSUP;
-		break;
-	}
-
-done:
-	k_sem_give(&drv_data->lock);
-	return ret;
-}
-
 static int gpio_pca95xx_port_get_raw(struct device *dev, u32_t *value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
@@ -554,8 +456,6 @@ static int gpio_pca95xx_pin_interrupt_configure(struct device *dev,
 
 static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
 	.config = gpio_pca95xx_config,
-	.write = gpio_pca95xx_write,
-	.read = gpio_pca95xx_read,
 	.port_get_raw = gpio_pca95xx_port_get_raw,
 	.port_set_masked_raw = gpio_pca95xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_pca95xx_port_set_bits_raw,

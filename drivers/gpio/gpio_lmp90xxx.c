@@ -84,46 +84,6 @@ static int gpio_lmp90xxx_config(struct device *dev, int access_op,
 	return err;
 }
 
-static int gpio_lmp90xxx_write(struct device *dev, int access_op,
-			       u32_t pin, u32_t value)
-{
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	if (pin > LMP90XXX_GPIO_MAX) {
-		return -EINVAL;
-	}
-
-	return lmp90xxx_gpio_set_pin_value(data->parent, pin,
-					   value ? true : false);
-}
-
-static int gpio_lmp90xxx_read(struct device *dev, int access_op,
-			      u32_t pin, u32_t *value)
-{
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
-	bool set;
-	int err;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	if (pin > LMP90XXX_GPIO_MAX) {
-		return -EINVAL;
-	}
-
-	err = lmp90xxx_gpio_get_pin_value(data->parent, pin, &set);
-	if (!err) {
-		*value = set ? 1 : 0;
-	}
-
-	return err;
-}
-
 static int gpio_lmp90xxx_port_get_raw(struct device *dev,
 				      gpio_port_value_t *value)
 {
@@ -195,8 +155,6 @@ static int gpio_lmp90xxx_init(struct device *dev)
 
 static const struct gpio_driver_api gpio_lmp90xxx_api = {
 	.config = gpio_lmp90xxx_config,
-	.write = gpio_lmp90xxx_write,
-	.read = gpio_lmp90xxx_read,
 	.port_set_masked_raw = gpio_lmp90xxx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_lmp90xxx_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_lmp90xxx_port_clear_bits_raw,

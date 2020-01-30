@@ -127,44 +127,6 @@ static int gpio_stellaris_configure(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_stellaris_write(struct device *dev,
-				int access_op, u32_t pin, u32_t value)
-{
-	const struct gpio_stellaris_config *cfg = DEV_CFG(dev);
-	u32_t base = cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -EINVAL;
-	}
-
-	/* Set/Clear the data output for the respective pin */
-	if (value) {
-		sys_set_bit(GPIO_RW_ADDR(base, GPIO_DATA_OFFSET, pin),
-			    pin);
-	} else {
-		sys_clear_bit(GPIO_RW_ADDR(base, GPIO_DATA_OFFSET, pin),
-			      pin);
-	}
-
-	return 0;
-}
-
-static int gpio_stellaris_read(struct device *dev,
-			       int access_op, u32_t pin, u32_t *value)
-{
-	const struct gpio_stellaris_config *cfg = DEV_CFG(dev);
-	u32_t base = cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -EINVAL;
-	}
-
-	*value = sys_test_bit(GPIO_RW_ADDR(base, GPIO_DATA_OFFSET, pin),
-			      pin);
-
-	return 0;
-}
-
 static int gpio_stellaris_port_get_raw(struct device *dev, u32_t *value)
 {
 	const struct gpio_stellaris_config *cfg = DEV_CFG(dev);
@@ -295,8 +257,6 @@ static int gpio_stellaris_manage_callback(struct device *dev,
 
 static const struct gpio_driver_api gpio_stellaris_driver_api = {
 	.config = gpio_stellaris_configure,
-	.write = gpio_stellaris_write,
-	.read = gpio_stellaris_read,
 	.port_get_raw = gpio_stellaris_port_get_raw,
 	.port_set_masked_raw = gpio_stellaris_port_set_masked_raw,
 	.port_set_bits_raw = gpio_stellaris_port_set_bits_raw,

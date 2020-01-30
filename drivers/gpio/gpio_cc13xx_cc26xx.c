@@ -104,52 +104,6 @@ static int gpio_cc13xx_cc26xx_config(struct device *port, int access_op,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_write(struct device *port, int access_op,
-				    u32_t pin, u32_t value)
-{
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-		if (value) {
-			GPIO_setDio(pin);
-		} else {
-			GPIO_clearDio(pin);
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		if (value) {
-			GPIO_setMultiDio(GPIO_DIO_ALL_MASK);
-		} else {
-			GPIO_clearMultiDio(GPIO_DIO_ALL_MASK);
-		}
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int gpio_cc13xx_cc26xx_read(struct device *port, int access_op,
-				   u32_t pin, u32_t *value)
-{
-	__ASSERT_NO_MSG(value != NULL);
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-		*value = GPIO_readDio(pin);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		*value = GPIO_readMultiDio(GPIO_DIO_ALL_MASK);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, u32_t *value)
 {
 	__ASSERT_NO_MSG(value != NULL);
@@ -311,8 +265,6 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 
 static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.config = gpio_cc13xx_cc26xx_config,
-	.write = gpio_cc13xx_cc26xx_write,
-	.read = gpio_cc13xx_cc26xx_read,
 	.port_get_raw = gpio_cc13xx_cc26xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc13xx_cc26xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cc13xx_cc26xx_port_set_bits_raw,

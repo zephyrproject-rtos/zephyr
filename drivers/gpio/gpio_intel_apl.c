@@ -363,66 +363,6 @@ static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_apl_write(struct device *dev, int access_op,
-				u32_t pin, u32_t value)
-{
-	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t raw_pin, reg, val;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
-
-	raw_pin = cfg->pin_offset + pin;
-
-	if (!check_perm(dev, raw_pin)) {
-		return -EINVAL;
-	}
-
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
-	val = sys_read32(reg);
-
-	if (value) {
-		val |= PAD_CFG0_TXSTATE;
-	} else {
-		val &= ~PAD_CFG0_TXSTATE;
-	}
-
-	sys_write32(val, reg);
-
-	return 0;
-}
-
-static int gpio_intel_apl_read(struct device *dev, int access_op,
-			       u32_t pin, u32_t *value)
-{
-	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t raw_pin, reg, val;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
-
-	raw_pin = cfg->pin_offset + pin;
-
-	if (!check_perm(dev, raw_pin)) {
-		return -EINVAL;
-	}
-
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
-	val = sys_read32(reg);
-
-	*value = (val & PAD_CFG0_RXSTATE) >> PAD_CFG0_RXSTATE_POS;
-
-	return 0;
-}
-
 static int gpio_intel_apl_manage_callback(struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
@@ -598,8 +538,6 @@ static int gpio_intel_apl_port_get_raw(struct device *dev, u32_t *value)
 
 static const struct gpio_driver_api gpio_intel_apl_api = {
 	.config = gpio_intel_apl_config,
-	.write = gpio_intel_apl_write,
-	.read = gpio_intel_apl_read,
 	.manage_callback = gpio_intel_apl_manage_callback,
 	.enable_callback = gpio_intel_apl_enable_callback,
 	.disable_callback = gpio_intel_apl_disable_callback,

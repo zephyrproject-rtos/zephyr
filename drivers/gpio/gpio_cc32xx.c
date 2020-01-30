@@ -107,50 +107,6 @@ static inline int gpio_cc32xx_config(struct device *port,
 	return 0;
 }
 
-static inline int gpio_cc32xx_write(struct device *port,
-				    int access_op, u32_t pin, u32_t value)
-{
-	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
-	unsigned long port_base = gpio_config->port_base;
-
-	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		value = value << pin;
-		/* Bitpack external GPIO pin number for GPIOPinWrite API: */
-		pin = 1 << pin;
-
-		MAP_GPIOPinWrite(port_base, (unsigned char)pin,
-			(unsigned char)value);
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-static inline int gpio_cc32xx_read(struct device *port,
-				   int access_op, u32_t pin, u32_t *value)
-{
-	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
-	unsigned long port_base = gpio_config->port_base;
-	long status;
-	unsigned char pin_packed;
-
-	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		/* Bitpack external GPIO pin number for GPIOPinRead API: */
-		pin_packed = 1 << pin;
-		status =  MAP_GPIOPinRead(port_base, pin_packed);
-		*value = status >> pin;
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 static int gpio_cc32xx_port_get_raw(struct device *port, u32_t *value)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
@@ -307,8 +263,6 @@ static void gpio_cc32xx_port_isr(void *arg)
 
 static const struct gpio_driver_api api_funcs = {
 	.config = gpio_cc32xx_config,
-	.write = gpio_cc32xx_write,
-	.read = gpio_cc32xx_read,
 	.port_get_raw = gpio_cc32xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc32xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cc32xx_port_set_bits_raw,

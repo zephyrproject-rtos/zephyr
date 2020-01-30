@@ -62,54 +62,6 @@ static int gpio_mmio32_config(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_mmio32_write(struct device *dev, int access_op,
-					u32_t pin, u32_t value)
-{
-	struct gpio_mmio32_context *context = dev->driver_data;
-	const struct gpio_mmio32_config *config = context->config;
-	volatile u32_t *reg = config->reg;
-	u32_t mask = config->mask;
-	u32_t invert = context->common.invert;
-	unsigned int key;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		mask &= 1 << pin;
-		if (!mask) {
-			return -EINVAL; /* Pin not in our validity mask */
-		}
-		value = value ? mask : 0;
-	}
-
-	value = (value ^ invert) & mask;
-
-	/* Update pin state atomically */
-	key = irq_lock();
-	*reg = (*reg & ~mask) | value;
-	irq_unlock(key);
-
-	return 0;
-}
-
-static int gpio_mmio32_read(struct device *dev, int access_op,
-					u32_t pin, u32_t *value)
-{
-	struct gpio_mmio32_context *context = dev->driver_data;
-	const struct gpio_mmio32_config *config = context->config;
-	u32_t bits;
-
-	bits = (*config->reg ^ context->common.invert) & config->mask;
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (bits >> pin) & 1;
-		if ((config->mask & (1 << pin)) == 0) {
-			return -EINVAL; /* Pin not in our validity mask */
-		}
-	} else {
-		*value = bits;
-	}
-
-	return 0;
-}
-
 static int gpio_mmio32_port_get_raw(struct device *dev, u32_t *value)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
@@ -203,8 +155,6 @@ static int gpio_mmio32_pin_interrupt_configure(struct device *dev,
 
 static const struct gpio_driver_api gpio_mmio32_api = {
 	.config = gpio_mmio32_config,
-	.write = gpio_mmio32_write,
-	.read = gpio_mmio32_read,
 	.port_get_raw = gpio_mmio32_port_get_raw,
 	.port_set_masked_raw = gpio_mmio32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_mmio32_port_set_bits_raw,

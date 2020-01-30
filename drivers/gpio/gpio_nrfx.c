@@ -212,45 +212,6 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 	return 0;
 }
 
-static int gpio_nrfx_write(struct device *port, int access_op,
-			   u32_t pin, u32_t value)
-{
-	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	struct gpio_nrfx_data *data = get_port_data(port);
-
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		nrf_gpio_port_out_write(reg, value ^ data->common.invert);
-	} else {
-		if ((value > 0) ^ ((BIT(pin) & data->common.invert) != 0)) {
-			nrf_gpio_port_out_set(reg, BIT(pin));
-		} else {
-			nrf_gpio_port_out_clear(reg, BIT(pin));
-		}
-	}
-
-	return 0;
-}
-
-static int gpio_nrfx_read(struct device *port, int access_op,
-			  u32_t pin, u32_t *value)
-{
-	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	struct gpio_nrfx_data *data = get_port_data(port);
-
-	u32_t dir = nrf_gpio_port_dir_read(reg);
-	u32_t port_in = nrf_gpio_port_in_read(reg) & ~dir;
-	u32_t port_out = nrf_gpio_port_out_read(reg) & dir;
-	u32_t port_val = (port_in | port_out) ^ data->common.invert;
-
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		*value = port_val;
-	} else {
-		*value = (port_val & BIT(pin)) ? 1 : 0;
-	}
-
-	return 0;
-}
-
 static int gpio_nrfx_port_get_raw(struct device *port, u32_t *value)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
@@ -361,8 +322,6 @@ static inline int gpio_nrfx_pin_disable_callback(struct device *port,
 
 static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.config = gpio_nrfx_config,
-	.write = gpio_nrfx_write,
-	.read = gpio_nrfx_read,
 	.port_get_raw = gpio_nrfx_port_get_raw,
 	.port_set_masked_raw = gpio_nrfx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_nrfx_port_set_bits_raw,

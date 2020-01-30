@@ -552,10 +552,6 @@ enum gpio_int_trig {
 
 struct gpio_driver_api {
 	int (*config)(struct device *port, int access_op, u32_t pin, int flags);
-	int (*write)(struct device *port, int access_op, u32_t pin,
-		     u32_t value);
-	int (*read)(struct device *port, int access_op, u32_t pin,
-		    u32_t *value);
 	int (*port_get_raw)(struct device *port, gpio_port_value_t *value);
 	int (*port_set_masked_raw)(struct device *port, gpio_port_pins_t mask,
 				   gpio_port_value_t value);

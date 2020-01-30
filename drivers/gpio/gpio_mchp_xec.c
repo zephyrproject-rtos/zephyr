@@ -209,36 +209,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_write(struct device *dev,
-			  int access_op, u32_t pin, u32_t value)
-{
-	const struct gpio_xec_config *config = dev->config->config_info;
-
-	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if (value) {
-			/* Set the data output for the corresponding pin.
-			 * Writing zeros to the other bits leaves the data
-			 * output unchanged for the other pins
-			 */
-			*gpio_base |= BIT(pin);
-		} else {
-			/* Clear the data output for the corresponding pin.
-			 * Writing zeros to the other bits leaves the data
-			 * output unchanged for the other pins
-			 */
-			*gpio_base &= ~BIT(pin);
-		}
-	} else { /* GPIO_ACCESS_BY_PORT not supported */
-		return -EINVAL;
-	}
-
-	return 0;
-
-}
-
 static int gpio_xec_port_set_masked_raw(struct device *dev, u32_t mask,
 					u32_t value)
 {
@@ -300,18 +270,6 @@ static int gpio_xec_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int gpio_xec_read(struct device *dev,
-			 int access_op, u32_t pin, u32_t *value)
-{
-	gpio_xec_port_get_raw(dev, value);
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (*value & BIT(pin)) >> pin;
-	}
-
-	return 0;
-}
-
 static int gpio_xec_manage_callback(struct device *dev,
 				    struct gpio_callback *callback, bool set)
 {
@@ -364,8 +322,6 @@ static void gpio_gpio_xec_port_isr(void *arg)
 
 static const struct gpio_driver_api gpio_xec_driver_api = {
 	.config = gpio_xec_configure,
-	.write = gpio_xec_write,
-	.read = gpio_xec_read,
 	.port_get_raw = gpio_xec_port_get_raw,
 	.port_set_masked_raw = gpio_xec_port_set_masked_raw,
 	.port_set_bits_raw = gpio_xec_port_set_bits_raw,

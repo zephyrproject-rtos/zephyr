@@ -145,51 +145,6 @@ static int gpio_gecko_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_gecko_write(struct device *dev,
-			    int access_op, u32_t pin, u32_t value)
-{
-	const struct gpio_gecko_config *config = dev->config->config_info;
-	GPIO_P_TypeDef *gpio_base = config->gpio_base;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if (value) {
-			/* Set the data output for the corresponding pin.
-			 * Writing zeros to the other bits leaves the data
-			 * output unchanged for the other pins.
-			 */
-			GPIO_PinOutSet(config->gpio_index, pin);
-		} else {
-			/* Clear the data output for the corresponding pin.
-			 * Writing zeros to the other bits leaves the data
-			 * output unchanged for the other pins.
-			 */
-			GPIO_PinOutClear(config->gpio_index, pin);
-		}
-	} else { /* GPIO_ACCESS_BY_PORT */
-		/* Write the data output for all the pins */
-		gpio_base->DOUT = value;
-	}
-
-	return 0;
-}
-
-static int gpio_gecko_read(struct device *dev,
-			   int access_op, u32_t pin, u32_t *value)
-{
-	const struct gpio_gecko_config *config = dev->config->config_info;
-	GPIO_P_TypeDef *gpio_base = config->gpio_base;
-
-	*value = gpio_base->DIN;
-
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (*value & BIT(pin)) >> pin;
-	}
-
-	/* nothing more to do for GPIO_ACCESS_BY_PORT */
-
-	return 0;
-}
-
 static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
 {
 	const struct gpio_gecko_config *config = dev->config->config_info;
@@ -351,8 +306,6 @@ static void gpio_gecko_common_isr(void *arg)
 
 static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.config = gpio_gecko_configure,
-	.write = gpio_gecko_write,
-	.read = gpio_gecko_read,
 	.port_get_raw = gpio_gecko_port_get_raw,
 	.port_set_masked_raw = gpio_gecko_port_set_masked_raw,
 	.port_set_bits_raw = gpio_gecko_port_set_bits_raw,
