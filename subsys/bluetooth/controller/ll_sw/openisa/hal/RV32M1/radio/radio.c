@@ -55,13 +55,20 @@ static void *isr_cb_param;
 				 * buffer
 				 */
 
-
 #define RADIO_ACTIVE_MASK 0x1fff
 #define RADIO_DISABLE_TMR 4		/* us */
 
-/* Delay needed in order to exit and enter Manual DSM.
- * Should happen after radio_tmr_start() */
-#define DSM_ENTER_DELAY_TICKS 8
+/* Delay needed in order to enter Manual DSM.
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_ENTER_DELAY_TICKS 6
+
+/* Delay needed in order to exit Manual DSM.
+ * Should be after radio_tmr_start() (2 ticks after lll_clk_on()).
+ * But less that 1.5ms (EVENT_OVERHEAD_XTAL_US) (ULL to LLL time offset).
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_EXIT_DELAY_TICKS 30
 
 /* Mask to determine the state of DSM machine */
 #define MAN_DSM_ON (RSIM_DSM_CONTROL_MAN_DEEP_SLEEP_STATUS_MASK \
@@ -69,6 +76,13 @@ static void *isr_cb_param;
 		| RSIM_DSM_CONTROL_MAN_SLEEP_REQUEST_MASK) \
 
 static u32_t dsm_ref; /* DSM reference counter */
+
+static u8_t delayed_radio_start;
+static u8_t delayed_trx;
+static u32_t delayed_ticks_start;
+static u32_t delayed_remainder;
+static u8_t delayed_radio_stop;
+static u32_t delayed_hcto;
 
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
@@ -147,6 +161,27 @@ static void get_isr_latency(void)
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
 }
 
+static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder);
+static void radio_tmr_hcto_configure_hlp(u32_t hcto);
+static void radio_config_after_wake(void)
+{
+	if (!delayed_radio_start) {
+		delayed_radio_stop = 0;
+		return;
+	}
+
+	delayed_radio_start = 0;
+	radio_tmr_start_hlp(delayed_trx, delayed_ticks_start,
+				delayed_remainder);
+
+	if (delayed_radio_stop) {
+		delayed_radio_stop = 0;
+
+		/* Adjust time out as remainder was in radio_tmr_start_hlp() */
+		delayed_hcto += rtc_diff_start_us;
+		radio_tmr_hcto_configure_hlp(delayed_hcto);
+	}
+}
 
 static void pkt_rx(void)
 {
@@ -219,7 +254,8 @@ static void pkt_rx(void)
 
 #define IRQ_MASK ~(GENFSK_IRQ_CTRL_T2_IRQ_MASK | \
 		   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK | \
-		   GENFSK_IRQ_CTRL_TX_IRQ_MASK)
+		   GENFSK_IRQ_CTRL_TX_IRQ_MASK | \
+		   GENFSK_IRQ_CTRL_WAKE_IRQ_MASK)
 void isr_radio(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -234,6 +270,17 @@ void isr_radio(void *arg)
 	 * GENFSK -> INTMUX(does not latch pending source interrupts)
 	 * INTMUX -> EVENT_UNIT
 	 */
+
+	if (irq & GENFSK_IRQ_CTRL_WAKE_IRQ_MASK) {
+		/* Clear pending interrupts */
+		GENFSK->IRQ_CTRL &= 0xffffffff;
+
+		/* Disable DSM_TIMER */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		radio_config_after_wake();
+		return;
+	}
 
 	if (irq & GENFSK_IRQ_CTRL_TX_IRQ_MASK) {
 		valid = 1;
@@ -433,21 +480,27 @@ void radio_setup(void)
 	GENFSK->IRQ_CTRL = GENFSK_IRQ_CTRL_GENERIC_FSK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_TX_IRQ_EN(1) |
-			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1);
+			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1) |
+			   GENFSK_IRQ_CTRL_WAKE_IRQ_EN(1);
 
 	/* Disable Rx recycle */
 	GENFSK->IRQ_CTRL |= GENFSK_IRQ_CTRL_CRC_IGNORE(1);
 	GENFSK->WHITEN_SZ_THR |= GENFSK_WHITEN_SZ_THR_REC_BAD_PKT(1);
 
+	/* Turn radio on to measure ISR latency */
+	if (radio_is_off()) {
+		dsm_ref = 0;
+		radio_wake();
+		while (radio_is_off()) {
+		}
+	} else {
+		dsm_ref = 1;
+	}
+
 	get_isr_latency();
 
 	/* Turn radio off */
-	if (is_radio_off()) {
-		dsm_ref = 0;
-	} else {
-		dsm_ref = 1;
-		radio_sleep();
-	}
+	radio_sleep();
 }
 
 void radio_reset(void)
@@ -998,6 +1051,15 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	}
 	remainder /= 1000000UL;
 
+	if (radio_is_off()) {
+		delayed_radio_start = 1;
+		delayed_trx = trx;
+		delayed_ticks_start = ticks_start;
+		delayed_remainder = remainder;
+		return remainder;
+	}
+
+	delayed_radio_start = 0;
 	return radio_tmr_start_hlp(trx, ticks_start, remainder);
 }
 
@@ -1027,10 +1089,9 @@ u32_t radio_tmr_start_get(void)
 
 void radio_tmr_stop(void)
 {
-	/* Deep Sleep Mode (DSM)? */
 }
 
-void radio_tmr_hcto_configure(u32_t hcto)
+static void radio_tmr_hcto_configure_hlp(u32_t hcto)
 {
 	if (skip_hcto) {
 		skip_hcto = 0;
@@ -1042,6 +1103,19 @@ void radio_tmr_hcto_configure(u32_t hcto)
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(hcto) |
 			 GENFSK_T2_CMP_T2_CMP_EN(1);
 
+}
+
+/* Header completion time out */
+void radio_tmr_hcto_configure(u32_t hcto)
+{
+	if (delayed_radio_start) {
+		delayed_radio_stop = 1;
+		delayed_hcto = hcto;
+		return;
+	}
+
+	delayed_radio_stop = 0;
+	radio_tmr_hcto_configure_hlp(hcto);
 }
 
 void radio_tmr_aa_capture(void)
@@ -1373,20 +1447,27 @@ u32_t radio_sleep(void)
 	}
 
 	u32_t localref = --dsm_ref;
-	/* These opertions (decrement, check) should be atomic/critical section
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (decrement, check) should be atomic/critical section
 	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
 	 * It's fine for now as all the contexts have the same priority and
-	 * don't preempt each other. */
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_sleep()"
+#endif
 	if (localref == 0) {
 
 		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
 
 		if (status) {
-			/* Allready in sleep mode */
+			/* Already in sleep mode */
 			return 0;
 		}
 
-		/* Disable timer */
+		/* Disable DSM_TIMER */
 		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
 
 		/* Get current DSM_TIMER value */
@@ -1405,19 +1486,27 @@ u32_t radio_sleep(void)
 		/* Enable DSM, sending a sleep request */
 		GENFSK->DSM_CTRL |= GENFSK_DSM_CTRL_GEN_SLEEP_REQUEST(1);
 
-		/* Enable timer */
+		/* Enable DSM_TIMER */
 		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
 	}
+
 	return 0;
 }
 
 u32_t radio_wake(void)
 {
 	u32_t localref = ++dsm_ref;
-	/* These opertions (increment, check) should be atomic/critical section
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (increment, check) should be atomic/critical section
 	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
 	 * It's fine for now as all the contexts have the same priority and
-	 * don't preempt each other. */
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_wake()"
+#endif
 	if (localref == 1) {
 
 		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
@@ -1432,12 +1521,13 @@ u32_t radio_wake(void)
 
 		/* Set Wake time after DSM_ENTER_DELAY */
 		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer +
-				DSM_ENTER_DELAY_TICKS);
+				DSM_EXIT_DELAY_TICKS);
 	}
+
 	return 0;
 }
 
-u32_t is_radio_off(void)
+u32_t radio_is_off(void)
 {
 	u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
 
