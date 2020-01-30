@@ -31,6 +31,36 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+* GPIO
+
+  * The gpio_pin_write() and gpio_pin_read() functions have been
+    deprecated, and should be replaced with gpio_pin_set_raw() and
+    gpio_pin_get_raw(), or if the active level flags were present and
+    supported by gpio_pin_set() and gpio_pin_get().  The functions have
+    been re-implemented with these substitutes.
+  * The gpio_pin_enable_callback() function has been deprecated, and
+    should be replaced by gpio_pin_interrupt_configure(), passing the
+    appropriate interrupt configuration.
+  * The gpio_pin_disable_callback() function has been deprecated, and
+    should be replaced by gpio_pin_interrupt_configure() passed
+    GPIO_INT_DISABLE.
+  * Many GPIO configuration flags have been deprecated and replaced by
+    more carefully selected flags.  These include:
+    * GPIO_DIR_OUT becomes GPIO_OUTPUT
+    * GPIO_DIR_IN becomes GPIO_INPUT
+    * GPIO_DS_DISCONNECT_LOW becomes GPIO_OPEN_SOURCE
+    * GPIO_DS_DISCONNECT_HIGH becomes GPIO_OPEN_DRAIN
+    * GPIO_PUD_NORMAL becomes 0
+    * GPIO_PUD_PULL_UP becomes GPIO_PULL_UP
+    * GPIO_PUD_PULL_DOWN becomes GPIO_PULL_DOWN
+    * GPIO_INT becomes GPIO_INT_ENABLE
+    * GPIO_INT_LEVEL becomes not GPIO_INT_EDGE
+    * GPIO_INT_ACTIVE_LOW becomes GPIO_ACTIVE_LOW or GPIO_INT_LOW_0
+    * GPIO_INT_ACTIVE_HIGH becomes GPIO_ACTIVE_HIGH or GPIO_INT_HIGH_1
+    * GPIO_INT_DOUBLE_EDGE becomes GPIO_INT_EDGE_BOTH
+    * GPIO_POL_NORMAL becomes GPIO_ACTIVE_HIGH
+    * GPIO_POL_INV becomes GPIO_ACTIVE_LOW
+
 * PWM
 
   * The pwm_pin_set_cycles(), pwm_pin_set_usec(), and
