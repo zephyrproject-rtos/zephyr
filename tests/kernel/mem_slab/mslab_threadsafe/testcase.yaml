@@ -1,3 +1,6 @@
 tests:
   kernel.memory_slabs.threadsafe:
     tags: kernel
+    # FIXME: This test is getting stuck on this platform on 30% of PRs, disable
+    # for now while we investigate
+    platform_exclude: qemu_x86_coverage
