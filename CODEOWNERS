@@ -5,8 +5,8 @@
 # Order is important; for each modified file, the last matching
 # pattern takes the most precedence.
 # That is, with the last pattern being
-# *.rst                                     @dbkinder
-# if only .rst files are being modified, only dbkinder is
+# *.rst                                     @nashif
+# if only .rst files are being modified, only nashif is
 # automatically requested for review, but you can manually
 # add others as needed.
 
@@ -99,7 +99,7 @@
 # All cmake related files
 /cmake/                                   @SebastianBoe @nashif
 /CMakeLists.txt                           @SebastianBoe @nashif
-# /doc/                                     @dbkinder
+/doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
 /doc/scripts/                             @carlescufi
@@ -424,5 +424,5 @@
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
-# *.rst                                     @dbkinder
+*.rst                                     @nashif
 *posix*.rst                               @aescolar
