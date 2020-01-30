@@ -105,4 +105,4 @@ u32_t radio_ar_has_match(void);
 
 u32_t radio_sleep(void);
 u32_t radio_wake(void);
-u32_t is_radio_off(void);
+u32_t radio_is_off(void);
