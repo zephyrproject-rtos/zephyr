@@ -77,39 +77,24 @@ static void tcp_nbufs_unreserve(struct tcp *conn)
 	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
 }
 
-/* TODO: IPv4 options may enlarge the IPv4 header */
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
 	struct tcphdr *th = NULL;
-	ssize_t len;
+	struct net_pkt_cursor backup;
 
-	if (pkt == NULL) {
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ip_opts_len(pkt))) {
 		goto out;
 	}
 
-	len = net_pkt_get_len(pkt);
+	th = (struct tcphdr *)net_pkt_get_data(pkt, &tcp_access);
 
-	switch (pkt->family) {
-	case AF_INET:
-		if (len < (sizeof(struct net_ipv4_hdr) +
-				sizeof(struct tcphdr))) {
-			NET_WARN("Undersized IPv4 packet: %zd byte(s)", len);
-			goto out;
-		}
-		th = (struct tcphdr *)(ip_get(pkt) + 1);
-		break;
-	case AF_INET6:
-		if (len < (sizeof(struct net_ipv6_hdr) +
-				sizeof(struct tcphdr))) {
-			NET_WARN("Undersized IPv6 packet: %zd byte(s)", len);
-			goto out;
-		}
-		th = (struct tcphdr *)((u8_t *)ip6_get(pkt) + 1);
-		break;
-	default:
-		break;
-	}
-out:
+	net_pkt_cursor_restore(pkt, &backup);
+
+ out:
 	return th;
 }
 
