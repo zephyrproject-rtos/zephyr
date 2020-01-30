@@ -50,7 +50,7 @@ static void gpio_sam0_isr(u32_t pins, void *arg)
 }
 #endif
 
-static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
+static int gpio_sam0_config(struct device *dev, u32_t pin,
 			    int flags)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);

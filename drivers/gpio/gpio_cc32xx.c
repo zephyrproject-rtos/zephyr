@@ -70,7 +70,7 @@ static int gpio_cc32xx_port_set_bits_raw(struct device *port, u32_t mask);
 static int gpio_cc32xx_port_clear_bits_raw(struct device *port, u32_t mask);
 
 static inline int gpio_cc32xx_config(struct device *port,
-				   int access_op, u32_t pin, int flags)
+				   u32_t pin, int flags)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
@@ -84,10 +84,6 @@ static inline int gpio_cc32xx_config(struct device *port,
 	}
 
 	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
-		return -ENOTSUP;
-	}
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 

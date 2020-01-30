@@ -56,7 +56,7 @@ struct gpio_mcux_lpc_data {
 	u32_t isr_list_idx;
 };
 
-static int gpio_mcux_lpc_configure(struct device *dev, int access_op, u32_t pin,
+static int gpio_mcux_lpc_configure(struct device *dev, u32_t pin,
 				   int flags)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
@@ -84,20 +84,16 @@ static int gpio_mcux_lpc_configure(struct device *dev, int access_op, u32_t pin,
 	}
 
 	/* supports access by pin now,you can add access by port when needed */
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			gpio_base->SET[port] = BIT(pin);
-		}
-
-		if (flags & GPIO_OUTPUT_INIT_LOW) {
-			gpio_base->CLR[port] = BIT(pin);
-		}
-
-		/* input-0,output-1 */
-		WRITE_BIT(gpio_base->DIR[port], pin, flags & GPIO_OUTPUT);
-	} else {
-		return -EINVAL;
+	if (flags & GPIO_OUTPUT_INIT_HIGH) {
+		gpio_base->SET[port] = BIT(pin);
 	}
+
+	if (flags & GPIO_OUTPUT_INIT_LOW) {
+		gpio_base->CLR[port] = BIT(pin);
+	}
+
+	/* input-0,output-1 */
+	WRITE_BIT(gpio_base->DIR[port], pin, flags & GPIO_OUTPUT);
 
 	return 0;
 }

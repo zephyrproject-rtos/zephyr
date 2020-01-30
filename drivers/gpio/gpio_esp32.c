@@ -55,7 +55,7 @@ struct gpio_esp32_data {
 	sys_slist_t cb;
 };
 
-static int gpio_esp32_config(struct device *dev, int access_op,
+static int gpio_esp32_config(struct device *dev,
 			     u32_t pin, int flags)
 {
 	struct gpio_esp32_data *data = dev->driver_data;
@@ -63,10 +63,6 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 	u32_t *reg = GET_GPIO_PIN_REG(io_pin);
 	u32_t func;
 	int r;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	/* Query pinmux to validate pin number. */
 	r = pinmux_pin_get(data->pinmux, io_pin, &func);

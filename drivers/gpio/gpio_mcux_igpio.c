@@ -29,7 +29,7 @@ struct mcux_igpio_data {
 };
 
 static int mcux_igpio_configure(struct device *dev,
-			       int access_op, u32_t pin, int flags)
+			       u32_t pin, int flags)
 {
 	const struct mcux_igpio_config *config = dev->config->config_info;
 	GPIO_Type *base = config->base;
@@ -43,10 +43,6 @@ static int mcux_igpio_configure(struct device *dev,
 	}
 
 	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
-		return -ENOTSUP;
-	}
-
-	if (access_op == GPIO_ACCESS_BY_PORT) {
 		return -ENOTSUP;
 	}
 

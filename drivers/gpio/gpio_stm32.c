@@ -381,16 +381,12 @@ static int gpio_stm32_port_toggle_bits(struct device *dev,
 /**
  * @brief Configure pin or port
  */
-static int gpio_stm32_config(struct device *dev, int access_op,
+static int gpio_stm32_config(struct device *dev,
 			     u32_t pin, int flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	int err = 0;
 	int pincfg;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {

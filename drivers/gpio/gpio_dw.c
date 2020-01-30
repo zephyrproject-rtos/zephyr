@@ -301,17 +301,7 @@ static inline void dw_pin_config(struct device *port,
 	}
 }
 
-static inline void dw_port_config(struct device *port, int flags)
-{
-	const struct gpio_dw_config *config = port->config->config_info;
-	int i;
-
-	for (i = 0; i < config->bits; i++) {
-		dw_pin_config(port, i, flags);
-	}
-}
-
-static inline int gpio_dw_config(struct device *port, int access_op,
+static inline int gpio_dw_config(struct device *port,
 				 u32_t pin, int flags)
 {
 	const struct gpio_dw_config *config = port->config->config_info;
@@ -341,11 +331,7 @@ static inline int gpio_dw_config(struct device *port, int access_op,
 		return -ENOTSUP;
 	}
 
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_pin_config(port, pin, flags);
-	} else {
-		dw_port_config(port, flags);
-	}
+	dw_pin_config(port, pin, flags);
 
 	return 0;
 }

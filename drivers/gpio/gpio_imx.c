@@ -28,15 +28,11 @@ struct imx_gpio_data {
 	u32_t pin_callback_enables;
 };
 
-static int imx_gpio_configure(struct device *port, int access_op, u32_t pin,
+static int imx_gpio_configure(struct device *port, u32_t pin,
 			      int flags)
 {
 	const struct imx_gpio_config *config = port->config->config_info;
 	GPIO_Type *base = config->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (((flags & GPIO_INPUT) != 0U) && ((flags & GPIO_OUTPUT) != 0U)) {
 		return -ENOTSUP;
