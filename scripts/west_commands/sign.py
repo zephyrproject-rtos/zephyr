@@ -261,7 +261,7 @@ class ImgtoolSigner(Signer):
                                 format(args.tool_path))
             tool_path = args.tool_path
         else:
-            tool_path = shutil.which('imgtool')
+            tool_path = shutil.which('imgtool') or shutil.which('imgtool.py')
             if not tool_path:
                 log.die('imgtool not found; either install it',
                         '(e.g. "pip3 install imgtool") or provide --tool-path')
