@@ -22,6 +22,9 @@ static u64_t last_count;
 
 static void set_mtimecmp(u64_t time)
 {
+#ifdef CONFIG_64BIT
+	*(volatile u64_t *)RISCV_MTIMECMP_BASE = time;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIMECMP_BASE;
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
@@ -33,10 +36,14 @@ static void set_mtimecmp(u64_t time)
 	r[1] = 0xffffffff;
 	r[0] = (u32_t)time;
 	r[1] = (u32_t)(time >> 32);
+#endif
 }
 
 static u64_t mtime(void)
 {
+#ifdef CONFIG_64BIT
+	return *(volatile u64_t *)RISCV_MTIME_BASE;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIME_BASE;
 	u32_t lo, hi;
 
@@ -47,6 +54,7 @@ static u64_t mtime(void)
 	} while (r[1] != hi);
 
 	return (((u64_t)hi) << 32) | lo;
+#endif
 }
 
 static void timer_isr(void *arg)
