@@ -509,6 +509,13 @@ struct bt_le_scan_cb {
  *  Start LE scanning with given parameters and provide results through
  *  the specified callback.
  *
+ *  Note: The LE scanner by default does not use the Identity Address of the
+ *        local device when :option:`CONFIG_BT_PRIVACY` is disabled. This is to
+ *        prevent the active scanner from disclosing the identity information
+ *        when requesting additional information from advertisers.
+ *        In order to enable directed advertiser reports then
+ *        :option:`CONFIG_BT_SCAN_WITH_IDENTITY` must be enabled.
+ *
  *  @param param Scan parameters.
  *  @param cb Callback to notify scan results. May be NULL if callback
  *            registration through @ref bt_le_scan_cb_register is preferred.
