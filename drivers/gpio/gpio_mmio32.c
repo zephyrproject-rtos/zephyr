@@ -29,7 +29,7 @@
 #include <drivers/gpio/gpio_mmio32.h>
 #include <errno.h>
 
-static int gpio_mmio32_config(struct device *dev, int access_op,
+static int gpio_mmio32_config(struct device *dev,
 					u32_t pin, int flags)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;

@@ -32,15 +32,11 @@ struct gpio_lmp90xxx_data {
 	struct device *parent;
 };
 
-static int gpio_lmp90xxx_config(struct device *dev, int access_op,
+static int gpio_lmp90xxx_config(struct device *dev,
 				u32_t pin, int flags)
 {
 	struct gpio_lmp90xxx_data *data = dev->driver_data;
 	int err = 0;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (pin > LMP90XXX_GPIO_MAX) {
 		return -EINVAL;

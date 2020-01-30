@@ -78,7 +78,7 @@ static void gpio_stellaris_isr(void *arg)
 	sys_write32(int_stat, GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
 }
 
-static int gpio_stellaris_configure(struct device *dev, int access_op,
+static int gpio_stellaris_configure(struct device *dev,
 				    u32_t pin, int flags)
 {
 	const struct gpio_stellaris_config *cfg = DEV_CFG(dev);
@@ -91,11 +91,6 @@ static int gpio_stellaris_configure(struct device *dev, int access_op,
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;
-	}
-
-	/* Supports access by pin now,you can add access by port when needed */
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -EINVAL;
 	}
 
 	/* Check for pin availability */

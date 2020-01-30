@@ -41,14 +41,10 @@ static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
 static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
 	u32_t mask);
 
-static int gpio_cc13xx_cc26xx_config(struct device *port, int access_op,
+static int gpio_cc13xx_cc26xx_config(struct device *port,
 				     u32_t pin, int flags)
 {
 	u32_t config = 0;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
 

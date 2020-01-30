@@ -45,7 +45,7 @@ struct gpio_xec_config {
 };
 
 static int gpio_xec_configure(struct device *dev,
-			      int access_op, u32_t pin, int flags)
+			      u32_t pin, int flags)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
 	__IO u32_t *current_pcr1;
@@ -72,20 +72,16 @@ static int gpio_xec_configure(struct device *dev,
 	 */
 	mask |= MCHP_GPIO_CTRL_DIR_MASK;
 	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if ((flags & GPIO_OUTPUT) != 0U) {
-			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				*gpio_out_reg |= BIT(pin);
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-				*gpio_out_reg &= ~BIT(pin);
-			}
-			pcr1 |= MCHP_GPIO_CTRL_DIR_OUTPUT;
-		} else {
-			/* GPIO_INPUT */
-			pcr1 |= MCHP_GPIO_CTRL_DIR_INPUT;
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			*gpio_out_reg |= BIT(pin);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			*gpio_out_reg &= ~BIT(pin);
 		}
-	} else { /* GPIO_ACCESS_BY_PORT is not supported */
-		return -ENOTSUP;
+		pcr1 |= MCHP_GPIO_CTRL_DIR_OUTPUT;
+	} else {
+		/* GPIO_INPUT */
+		pcr1 |= MCHP_GPIO_CTRL_DIR_INPUT;
 	}
 
 	/* Figure out the pullup/pulldown configuration and keep it in the

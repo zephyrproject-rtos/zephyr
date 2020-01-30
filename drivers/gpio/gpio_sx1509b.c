@@ -111,7 +111,6 @@ static inline int i2c_reg_write_word_be(struct device *dev, u16_t dev_addr,
 }
 
 static int sx1509b_config(struct device *dev,
-			  int access_op, /* unused */
 			  u32_t pin,
 			  int flags)
 {

@@ -89,14 +89,10 @@ static int gpio_litex_init(struct device *dev)
 	return 0;
 }
 
-static int gpio_litex_configure(struct device *dev, int access_op,
+static int gpio_litex_configure(struct device *dev,
 				u32_t pin, int flags)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (flags & ~SUPPORTED_FLAGS) {
 		return -ENOTSUP;

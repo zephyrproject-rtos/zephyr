@@ -71,18 +71,12 @@ static inline void gpio_gecko_add_port(struct gpio_gecko_common_data *data,
 }
 
 static int gpio_gecko_configure(struct device *dev,
-				int access_op, u32_t pin, int flags)
+				u32_t pin, int flags)
 {
 	const struct gpio_gecko_config *config = dev->config->config_info;
-	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 	GPIO_Port_TypeDef gpio_index = config->gpio_index;
 	GPIO_Mode_TypeDef mode;
 	unsigned int out = 0U;
-
-	/* Setting interrupt flags for a complete port is not implemented */
-	if ((flags & GPIO_INT_ENABLE) && (access_op == GPIO_ACCESS_BY_PORT)) {
-		return -ENOTSUP;
-	}
 
 	if (flags & GPIO_OUTPUT) {
 		/* Following modes enable both output and input */
@@ -123,24 +117,7 @@ static int gpio_gecko_configure(struct device *dev,
 	 * 0 - pin is input, 1 - pin is output
 	 */
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		GPIO_PinModeSet(gpio_index, pin, mode, out);
-	} else {	/* GPIO_ACCESS_BY_PORT */
-		gpio_base->MODEL = GECKO_GPIO_MODEL(7, mode)
-			| GECKO_GPIO_MODEL(6, mode) | GECKO_GPIO_MODEL(5, mode)
-			| GECKO_GPIO_MODEL(4, mode) | GECKO_GPIO_MODEL(3, mode)
-			| GECKO_GPIO_MODEL(2, mode) | GECKO_GPIO_MODEL(1, mode)
-			| GECKO_GPIO_MODEL(0, mode);
-		gpio_base->MODEH = GECKO_GPIO_MODEH(15, mode)
-			| GECKO_GPIO_MODEH(14, mode)
-			| GECKO_GPIO_MODEH(13, mode)
-			| GECKO_GPIO_MODEH(12, mode)
-			| GECKO_GPIO_MODEH(11, mode)
-			| GECKO_GPIO_MODEH(10, mode)
-			| GECKO_GPIO_MODEH(9, mode)
-			| GECKO_GPIO_MODEH(8, mode);
-		gpio_base->DOUT = (out ? 0xFFFF : 0x0000);
-	}
+	GPIO_PinModeSet(gpio_index, pin, mode, out);
 
 	return 0;
 }

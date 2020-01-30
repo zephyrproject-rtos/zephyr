@@ -132,23 +132,10 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 	return 0;
 }
 
-static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
+static int gpio_sam_config(struct device *dev, u32_t pin,
 			   int flags)
 {
-	int ret;
-
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		ret = gpio_sam_port_configure(dev, BIT(pin), flags);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		ret = gpio_sam_port_configure(dev, GPIO_SAM_ALL_PINS, flags);
-		break;
-	default:
-		ret = -ENOTSUP;
-	}
-
-	return ret;
+	return gpio_sam_port_configure(dev, BIT(pin), flags);
 }
 
 static int gpio_sam_port_get_raw(struct device *dev, u32_t *value)

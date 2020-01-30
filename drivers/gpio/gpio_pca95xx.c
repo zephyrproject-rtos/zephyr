@@ -299,13 +299,12 @@ static int setup_pin_pullupdown(struct device *dev, u32_t pin, int flags)
  * @brief Configure pin or port
  *
  * @param dev Device struct of the PCA95XX
- * @param access_op Access operation (pin or port)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
  * @return 0 if successful, failed otherwise
  */
-static int gpio_pca95xx_config(struct device *dev, int access_op,
+static int gpio_pca95xx_config(struct device *dev,
 				 u32_t pin, int flags)
 {
 	int ret;
@@ -317,11 +316,6 @@ static int gpio_pca95xx_config(struct device *dev, int access_op,
 		dev->config->config_info;
 	u16_t i2c_addr = config->i2c_slave_addr;
 #endif
-
-	/* only support config by pin */
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	/* Does not support disconnected pin */
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
