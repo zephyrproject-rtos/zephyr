@@ -21,11 +21,11 @@ properties:
     type: string
     required: false
     enum:
-      - "fastread"	# Single data line SPI, FAST_READ (0x08)
-      - "read2o"	# Dual data line SPI, READ2O (0x3B)
-      - "read2io"	# Dual data line SPI, READ2IO (0xBB)
-      - "read4o"	# Quad data line SPI, READ4O (0x6B)
-      - "read4io"	# Quad data line SPI, READ4IO (0xEB)
+      - "fastread"        # Single data line SPI, FAST_READ (0x08)
+      - "read2o"          # Dual data line SPI, READ2O (0x3B)
+      - "read2io"         # Dual data line SPI, READ2IO (0xBB)
+      - "read4o"          # Quad data line SPI, READ4O (0x6B)
+      - "read4io"         # Quad data line SPI, READ4IO (0xEB)
     description: |
       Specify the number of data lines and opcode used for reading.
       If not provided fastread will be selected.
@@ -34,10 +34,10 @@ properties:
     type: string
     required: false
     enum:
-      - "pp"		# Single data line SPI, PP (0x02)
-      - "pp2o"		# Dual data line SPI, PP2O (0xA2)
-      - "pp4o"		# Dual data line SPI, PP4O (0x32)
-      - "pp4io"		# Quad data line SPI, PP4IO (0x38)
+      - "pp"            # Single data line SPI, PP (0x02)
+      - "pp2o"          # Dual data line SPI, PP2O (0xA2)
+      - "pp4o"          # Dual data line SPI, PP4O (0x32)
+      - "pp4io"         # Quad data line SPI, PP4IO (0x38)
     description: |
       Specify the number of data lines and opcode used for reading.
       If not provided pp will be selected.
