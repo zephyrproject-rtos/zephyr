@@ -1,0 +1,4 @@
+sample:
+  description: SPI new vs legacy API comparison 
+    application
+  name: spi_async
