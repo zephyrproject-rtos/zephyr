@@ -57,6 +57,12 @@ config COVERAGE_GCOV
 	  can be read by gcov utility. For more details see gcovr.com .
 endif
 
+config COVERAGE_DUMP
+	bool "Dump coverage data on exit"
+	depends on COVERAGE_GCOV
+	help
+	  Dump collected coverage information to console on exit.
+
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
 	help
