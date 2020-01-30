@@ -1974,6 +1974,71 @@ int net_pkt_set_data(struct net_pkt *pkt,
 	return net_pkt_write(pkt, access->data, access->size);
 }
 
+int net_pkt_ip_payload_len(struct net_pkt *pkt)
+{
+	struct net_ipv4_hdr *ip4;
+	struct net_ipv6_hdr *ip6;
+	int hdr_size = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt);
+	int ret;
+
+	switch(net_pkt_family(pkt)) {
+	case AF_INET:
+		if (IS_ENABLED(CONFIG_NET_IPV4)) {
+			ip4 = NET_IPV4_HDR(pkt);
+			ret = ip4->len - hdr_size;
+		} else {
+			ret = -EPROTONOSUPPORT;
+		}
+		break;
+
+	case AF_INET6:
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			ip6 = NET_IPV6_HDR(pkt);
+			ret = ip6->len - hdr_size;
+		} else {
+			ret = -EPROTONOSUPPORT;
+		}
+		break;
+
+	default:
+		ret = -EPROTONOSUPPORT;
+	}
+
+	return ret;
+}
+
+int net_pkt_set_ip_payload_len(struct net_pkt *pkt, u16_t len)
+{
+	struct net_ipv4_hdr *ip4;
+	struct net_ipv6_hdr *ip6;
+	int ret;
+
+	switch(net_pkt_family(pkt)) {
+	case AF_INET:
+		if (IS_ENABLED(CONFIG_NET_IPV4)) {
+			ip4 = NET_IPV4_HDR(pkt);
+			ip4->len = len;
+		} else {
+			ret = -EPROTONOSUPPORT;
+		}
+		break;
+
+	case AF_INET6:
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			ip6 = NET_IPV6_HDR(pkt);
+			ip6->len = len;
+		} else {
+			ret = -EPROTONOSUPPORT;
+		}
+
+	default:
+		ret = -EPROTONOSUPPORT;
+		break;
+	}
+
+	return ret;
+}
+
 void net_pkt_init(void)
 {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG

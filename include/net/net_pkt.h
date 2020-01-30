@@ -334,6 +334,9 @@ static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, u8_t len)
 	pkt->ip_hdr_len = len;
 }
 
+int net_pkt_ip_payload_len(struct net_pkt *pkt);
+int net_pkt_set_ip_payload_len(struct net_pkt *pkt, u16_t len);
+
 static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
 	return pkt->sent_or_eof;
