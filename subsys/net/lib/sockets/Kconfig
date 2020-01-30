@@ -48,7 +48,8 @@ config NET_SOCKETS_DNS_TIMEOUT
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
-	select TLS_CREDENTIALS
+	select TLS_CREDENTIALS if NET_NATIVE
+	select MBEDTLS if NET_NATIVE
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
@@ -56,7 +57,7 @@ config NET_SOCKETS_SOCKOPT_TLS
 config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select MBEDTLS_DTLS
+	select MBEDTLS_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
