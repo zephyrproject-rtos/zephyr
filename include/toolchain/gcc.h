@@ -209,7 +209,9 @@ do {                                                                    \
 /* Be *very* careful with this, you cannot filter out with -wno-deprecated,
  * which has implications for -Werror
  */
+#ifndef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO _Pragma("GCC warning \"Macro is deprecated\"")
+#endif
 
 /* These macros allow having ARM asm functions callable from thumb */
 
