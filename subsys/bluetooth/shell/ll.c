@@ -119,7 +119,6 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#include "../controller/ll_sw/ull_adv_aux.h"
 #include "../controller/ll_sw/lll.h"
 
 #if defined(CONFIG_BT_BROADCASTER)
