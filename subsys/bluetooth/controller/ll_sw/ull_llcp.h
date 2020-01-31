@@ -17,6 +17,19 @@ struct ull_cp_conn {
 		sys_slist_t pend_proc_list;
 		u8_t state;
 	} local;
+
+	/* Remote Request */
+	struct {
+		sys_slist_t pend_proc_list;
+		u8_t state;
+	} remote;
+
+	/* Version Exchange Procedure State */
+	struct {
+		u8_t sent;
+		u8_t valid;
+		struct pdu_data_llctrl_version_ind cached;
+	} vex;
 };
 
 /**
@@ -33,6 +46,21 @@ void ull_cp_conn_init(struct ull_cp_conn *conn);
  * @breif Prepare pending LL Control Procedures.
  */
 void ull_cp_prepare(struct ull_cp_conn *conn);
+
+/**
+ * @brief Move to the connected state.
+ */
+void ull_cp_connect(struct ull_cp_conn *conn);
+
+/**
+ * @brief Move to the disconnected state.
+ */
+void ull_cp_disconnect(struct ull_cp_conn *conn);
+
+/**
+ * @brief Initiate a Version Exchange Procedure.
+ */
+u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
 
 /**
  * @brief Handle received LL Control PDU.
