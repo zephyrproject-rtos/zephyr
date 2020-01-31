@@ -68,6 +68,7 @@ static struct modem_pin modem_pins[] = {
 #endif
 
 #define MDM_CMD_TIMEOUT			K_SECONDS(10)
+#define MDM_DNS_TIMEOUT			K_SECONDS(70)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
 #define MDM_PROMPT_CMD_DELAY		K_MSEC(75)
 
@@ -149,6 +150,12 @@ struct modem_data {
 
 static struct modem_data mdata;
 static struct modem_context mctx;
+
+#if defined(CONFIG_DNS_RESOLVER)
+static struct addrinfo result;
+static struct sockaddr result_addr;
+static char result_canonname[DNS_MAX_NAME_SIZE + 1];
+#endif
 
 /* helper macro to keep readability */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
@@ -550,6 +557,21 @@ MODEM_CMD_DEFINE(on_cmd_sockread)
 	on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
 			       ATOI(argv[1], 0, "length"), len);
 }
+
+#if defined(CONFIG_DNS_RESOLVER)
+/* Handler: +UDNSRN: "<resolved_ip_address>"[0], "<resolved_ip_address>"[1] */
+MODEM_CMD_DEFINE(on_cmd_dns)
+{
+	/* chop off end quote */
+	argv[0][strlen(argv[0]) - 1] = '\0';
+
+	/* FIXME: Hard-code DNS on SARA-R4 to return IPv4 */
+	result_addr.sa_family = AF_INET;
+	/* skip beginning quote when parsing */
+	(void)net_addr_pton(result.ai_family, &argv[0][1],
+			    &((struct sockaddr_in *)&result_addr)->sin_addr);
+}
+#endif
 
 /*
  * MODEM UNSOLICITED NOTIFICATION HANDLERS
@@ -1197,6 +1219,88 @@ static bool offload_is_supported(int family, int type, int proto)
 NET_SOCKET_REGISTER(ublox_sara_r4, AF_UNSPEC, offload_is_supported,
 		    offload_socket);
 
+#if defined(CONFIG_DNS_RESOLVER)
+/* TODO: This is a bare-bones implementation of DNS handling
+ * We ignore most of the hints like ai_family, ai_protocol and ai_socktype.
+ * Later, we can add additional handling if it makes sense.
+ */
+static int offload_getaddrinfo(const char *node, const char *service,
+			       const struct addrinfo *hints,
+			       struct addrinfo **res)
+{
+	struct modem_cmd cmd = MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
+	u32_t port = 0U;
+	int ret;
+	/* DNS command + 128 bytes for domain name parameter */
+	char sendbuf[sizeof("AT+UDNSRN=#,'[]'\r") + 128];
+
+	/* init result */
+	(void)memset(&result, 0, sizeof(result));
+	(void)memset(&result_addr, 0, sizeof(result_addr));
+	/* FIXME: Hard-code DNS to return only IPv4 */
+	result.ai_family = AF_INET;
+	result_addr.sa_family = AF_INET;
+	result.ai_addr = &result_addr;
+	result.ai_addrlen = sizeof(result_addr);
+	result.ai_canonname = result_canonname;
+	result_canonname[0] = '\0';
+
+	/* check to see if node is an IP address */
+	if (net_addr_pton(result.ai_family, node,
+			  &((struct sockaddr_in *)&result_addr)->sin_addr)
+	    == 1) {
+		*res = &result;
+		return 0;
+	}
+
+	/* user flagged node as numeric host, but we failed net_addr_pton */
+	if (hints && hints->ai_flags & AI_NUMERICHOST) {
+		return EAI_NONAME;
+	}
+
+	if (service) {
+		port = ATOI(service, 0U, "port");
+		if (port < 1 || port > USHRT_MAX) {
+			return EAI_SERVICE;
+		}
+	}
+
+	snprintk(sendbuf, sizeof(sendbuf), "AT+UDNSRN=0,\"%s\"", node);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     &cmd, 1U, sendbuf, &mdata.sem_response,
+			     MDM_DNS_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (port > 0U) {
+		/* FIXME: DNS is hard-coded to return only IPv4 */
+		if (result.ai_family == AF_INET) {
+			net_sin(&result_addr)->sin_port = htons(port);
+		}
+	}
+
+	LOG_DBG("DNS RESULT: %s",
+		log_strdup(net_addr_ntop(result.ai_family,
+					 &net_sin(&result_addr)->sin_addr,
+					 sendbuf, NET_IPV4_ADDR_LEN)));
+
+	*res = (struct addrinfo *)&result;
+	return 0;
+}
+
+static void offload_freeaddrinfo(struct addrinfo *res)
+{
+	/* using static result from offload_getaddrinfo() -- no need to free */
+	res = NULL;
+}
+
+const struct socket_dns_offload offload_dns_ops = {
+	.getaddrinfo = offload_getaddrinfo,
+	.freeaddrinfo = offload_freeaddrinfo,
+};
+#endif
+
 static int net_offload_dummy_get(sa_family_t family,
 				 enum net_sock_type type,
 				 enum net_ip_protocol ip_proto,
@@ -1253,6 +1357,9 @@ static void modem_net_iface_init(struct net_if *iface)
 			     sizeof(data->mac_addr),
 			     NET_LINK_ETHERNET);
 	data->net_iface = iface;
+#ifdef CONFIG_DNS_RESOLVER
+	socket_offload_dns_register(&offload_dns_ops);
+#endif
 }
 
 static struct net_if_api api_funcs = {
