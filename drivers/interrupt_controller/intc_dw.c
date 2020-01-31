@@ -46,7 +46,7 @@ static int dw_ictl_initialize(struct device *dev)
 
 static void dw_ictl_isr(void *arg)
 {
-	struct device *devt = (struct device *)arg;
+	struct device *dev = (struct device *)arg;
 	const struct dw_ictl_config *config = dev->config->config_info;
 	volatile struct dw_ictl_registers * const regs =
 			(struct dw_ictl_registers *)config->base_addr;
@@ -62,7 +62,7 @@ static void dw_ictl_isr(void *arg)
 
 static inline void dw_ictl_intr_enable(struct device *dev, unsigned int irq)
 {
-	const struct dw_ictl_config *config = dev->config->config_info
+	const struct dw_ictl_config *config = dev->config->config_info;
 	volatile struct dw_ictl_registers * const regs =
 		(struct dw_ictl_registers *)config->base_addr;
 
@@ -75,7 +75,7 @@ static inline void dw_ictl_intr_enable(struct device *dev, unsigned int irq)
 
 static inline void dw_ictl_intr_disable(struct device *dev, unsigned int irq)
 {
-	const struct dw_ictl_config *config = dev->config->config_info
+	const struct dw_ictl_config *config = dev->config->config_info;
 	volatile struct dw_ictl_registers * const regs =
 		(struct dw_ictl_registers *)config->base_addr;
 
@@ -126,7 +126,6 @@ static int dw_ictl_intr_get_line_state(struct device *dev, unsigned int irq)
 static void dw_ictl_config_irq(struct device *dev);
 
 static const struct dw_ictl_config dw_config = {
-	.irq_num = DT_INTC_DW_0_BASE_ADDR,
 	.numirqs = DT_INTC_DW_0_NUM_IRQS,
 	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
 	.config_func = dw_ictl_config_irq,

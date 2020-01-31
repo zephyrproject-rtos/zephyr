@@ -16,6 +16,7 @@ extern "C" {
 typedef void (*dw_ictl_config_irq_t)(struct device *dev);
 
 struct dw_ictl_config {
+	u32_t base_addr;
 	u32_t numirqs;
 	u32_t isr_table_offset;
 	dw_ictl_config_irq_t config_func;
