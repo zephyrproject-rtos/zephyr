@@ -8274,13 +8274,20 @@ static inline int event_len_prep(struct connection *conn)
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 		      1)
 #else /* !CONFIG_BT_CTLR_PHY */
-		    0
+		    1
 #endif /* !CONFIG_BT_CTLR_PHY */
 		   ) {
 			lr->max_rx_time =
 				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, 0);
+#if defined(CONFIG_BT_CTLR_PHY)
+			lr->max_tx_time =
+				MIN(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, 0),
+				    conn->default_tx_time);
+#else /* !CONFIG_BT_CTLR_PHY */
 			lr->max_tx_time =
 				RADIO_PKT_TIME(conn->default_tx_octets, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 		} else if (conn->llcp_feature.features &
@@ -8294,7 +8301,9 @@ static inline int event_len_prep(struct connection *conn)
 		} else if (conn->llcp_feature.features &
 			   BIT(BT_LE_FEAT_BIT_PHY_2M)) {
 			lr->max_rx_time =
-				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, BIT(1));
+				MAX(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						   BIT(1)),
+				    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
 			if (conn->default_tx_time > lr->max_rx_time) {
 				lr->max_tx_time = lr->max_rx_time;
 			} else {
