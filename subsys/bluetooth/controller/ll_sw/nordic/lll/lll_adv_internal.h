@@ -43,3 +43,16 @@ static inline struct pdu_adv *lll_adv_scan_rsp_curr_get(struct lll_adv *lll)
 {
 	return (void *)lll->scan_rsp.pdu[lll->scan_rsp.first];
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static inline struct pdu_adv *lll_adv_aux_data_latest_get(struct lll_adv *lll,
+							  uint8_t *is_modified)
+{
+	return lll_adv_pdu_latest_get(&lll->aux_data, is_modified);
+}
+
+static inline struct pdu_adv *lll_adv_aux_data_curr_get(struct lll_adv *lll)
+{
+	return (void *)lll->aux_data.pdu[lll->aux_data.first];
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
