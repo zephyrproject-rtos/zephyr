@@ -408,14 +408,9 @@ static int gpio_sifive_manage_callback(struct device *dev,
 }
 
 static int gpio_sifive_enable_callback(struct device *dev,
-				      int access_op,
 				      u32_t pin)
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;
@@ -428,14 +423,9 @@ static int gpio_sifive_enable_callback(struct device *dev,
 }
 
 static int gpio_sifive_disable_callback(struct device *dev,
-				       int access_op,
 				       u32_t pin)
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;

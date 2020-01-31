@@ -197,29 +197,21 @@ static int mcux_igpio_manage_callback(struct device *dev,
 }
 
 static int mcux_igpio_enable_callback(struct device *dev,
-				     int access_op, u32_t pin)
+				     u32_t pin)
 {
 	struct mcux_igpio_data *data = dev->driver_data;
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables |= BIT(pin);
-	} else {
-		data->pin_callback_enables = 0xFFFFFFFF;
-	}
+	data->pin_callback_enables |= BIT(pin);
 
 	return 0;
 }
 
 static int mcux_igpio_disable_callback(struct device *dev,
-				      int access_op, u32_t pin)
+				      u32_t pin)
 {
 	struct mcux_igpio_data *data = dev->driver_data;
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables &= ~BIT(pin);
-	} else {
-		data->pin_callback_enables = 0U;
-	}
+	data->pin_callback_enables &= ~BIT(pin);
 
 	return 0;
 }
