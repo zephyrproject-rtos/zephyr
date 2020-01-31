@@ -6178,13 +6178,17 @@ int bt_le_adv_stop(void)
 		return err;
 	}
 
-	if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		/* If active scan is ongoing set NRPA */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-		    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+#if defined(CONFIG_BT_OBSERVER)
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+		/* If scan is ongoing set back NRPA */
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+			set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 			le_set_private_addr(bt_dev.adv_id);
+			set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
 		}
 	}
+#endif /* defined(CONFIG_BT_OBSERVER) */
 
 	return 0;
 }
