@@ -95,6 +95,7 @@
 			interrupts = <6 0 0>;
 			num-irqs = <9>;
 			interrupt-parent = <&cavs0>;
+			label = "DW_INTC";
 		};
 
 		gpio0: gpio@80c00 {
