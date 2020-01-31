@@ -74,10 +74,11 @@ def main():
 
     write_flash(edt)
 
-    print("Devicetree configuration written to " + args.conf_out)
-
     conf_file.close()
     header_file.close()
+
+    print(f"Devicetree header saved to '{args.header_out}'")
+
 
 def parse_args():
     # Returns parsed command-line arguments
