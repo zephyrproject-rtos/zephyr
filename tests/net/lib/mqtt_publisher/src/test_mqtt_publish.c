@@ -288,7 +288,6 @@ static int test_disconnect(void)
 	}
 
 	wait(APP_SLEEP_MSECS);
-	mqtt_input(&client_ctx);
 
 	return TC_PASS;
 }
