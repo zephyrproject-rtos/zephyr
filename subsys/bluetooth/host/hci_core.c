@@ -914,6 +914,7 @@ int bt_le_create_conn(const struct bt_conn *conn)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
 	cp->own_addr_type = own_addr_type;
 
 	if (use_filter) {
