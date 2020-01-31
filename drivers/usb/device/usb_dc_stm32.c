@@ -386,6 +386,20 @@ int usb_dc_attach(void)
 
 	LOG_DBG("");
 
+#ifdef SYSCFG_CFGR1_USB_IT_RMP
+	/*
+	 * STM32F302/F303: USB IRQ collides with CAN_1 IRQ (§14.1.3, RM0316)
+	 * Remap IRQ by default to enable use of both IPs simultaneoulsy
+	 * This should be done before calling any HAL function
+	 */
+	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
+		LL_SYSCFG_EnableRemapIT_USB();
+	} else {
+		LOG_ERR("System Configuration Controller clock is "
+			"disabled. Unable to enable IRQ remapping.");
+	}
+#endif
+
 	/*
 	 * For STM32F0 series SoCs on QFN28 and TSSOP20 packages enable PIN
 	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
@@ -395,7 +409,7 @@ int usb_dc_attach(void)
 		LL_SYSCFG_EnablePinRemap();
 	} else {
 		LOG_ERR("System Configuration Controller clock is "
-			"disable. Unable to enable pin remapping."
+			"disabled. Unable to enable pin remapping.");
 	}
 #endif
 
