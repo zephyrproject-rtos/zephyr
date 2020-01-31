@@ -89,8 +89,8 @@ void sys_trace_thread_info(struct k_thread *thread)
 #if defined(CONFIG_THREAD_STACK_INFO)
 	ctf_top_thread_info(
 		(u32_t)(uintptr_t)thread,
-		thread->stack_info.size,
-		thread->stack_info.start
+		thread->stack_info.start,
+		thread->stack_info.size
 		);
 #endif
 }
