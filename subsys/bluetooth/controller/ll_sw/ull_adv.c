@@ -90,6 +90,7 @@ u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 				     PDU_ADV_TYPE_NONCONN_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_EXT_IND};
+	u8_t is_pdu_type_changed = 0;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		       u8_t own_addr_type, u8_t direct_addr_type,
@@ -137,7 +138,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			 */
 			if (((evt_prop & 0x03) == 0x03) ||
 			    ((evt_prop & 0x0C) == 0x0C)) {
-				return 0x12; /* invalid HCI cmd param */
+				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
 			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND */
@@ -162,7 +163,15 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 	/* update the "current" primary adv data */
 	pdu = lll_adv_data_peek(&adv->lll);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (pdu->type != pdu_adv_type[adv_type]) {
+		pdu->type = pdu_adv_type[adv_type];
+
+		is_pdu_type_changed = 1;
+	}
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	pdu->type = pdu_adv_type[adv_type];
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2) &&
@@ -181,9 +190,9 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		memcpy(&adv->id_addr, direct_addr, BDADDR_SIZE);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	pdu->tx_addr = own_addr_type & 0x1;
-	pdu->rx_addr = 0;
+
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
+		pdu->tx_addr = own_addr_type & 0x1;
 		pdu->rx_addr = direct_addr_type;
 		memcpy(&pdu->direct_ind.tgt_addr[0], direct_addr, BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_direct_ind);
@@ -205,7 +214,11 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		p->adv_mode = evt_prop & 0x03;
 
 		/* Zero-init header flags */
-		*(u8_t *)&_h = *(u8_t *)h;
+		if (is_pdu_type_changed) {
+			*(u8_t *)&_h = 0;
+		} else {
+			*(u8_t *)&_h = *(u8_t *)h;
+		}
 		*(u8_t *)h = 0;
 
 		/* AdvA flag */
@@ -219,8 +232,12 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			h->adv_addr = 1;
 
 			/* NOTE: AdvA is filled at enable */
+			pdu->tx_addr = own_addr_type & 0x1;
 			ptr += BDADDR_SIZE;
+		} else {
+			pdu->tx_addr = 0;
 		}
+		pdu->rx_addr = 0;
 
 		/* TODO: TargetA flag in primary channel PDU only for directed
 		 */
@@ -283,8 +300,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 				}
 			}
 
-			ptr--;
-			*ptr = _tx_pwr;
+			*--ptr = _tx_pwr;
 		}
 
 		/* No SyncInfo in primary channel PDU */
@@ -299,7 +315,10 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			 * will be set in Advertiser Event.
 			 */
 			aux = (void *)ptr;
-			aux->phy = find_lsb_set(phy_s);
+			aux->chan_idx = 0; /* FIXME: implementation defined */
+			aux->ca = 0; /* FIXME: implementation defined */
+			aux->offs_units = 0; /* FIXME: implementation defined */
+			aux->phy = find_lsb_set(phy_s) - 1;
 		}
 		adv->phy_s = phy_s;
 
@@ -325,7 +344,12 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	} else if (pdu->len == 0) {
+		pdu->tx_addr = own_addr_type & 0x1;
+		pdu->rx_addr = 0;
 		pdu->len = BDADDR_SIZE;
+	} else {
+		pdu->tx_addr = own_addr_type & 0x1;
+		pdu->rx_addr = 0;
 	}
 
 	/* update the current scan data */

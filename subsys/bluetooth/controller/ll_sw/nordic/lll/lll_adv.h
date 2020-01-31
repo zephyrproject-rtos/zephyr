@@ -28,7 +28,7 @@ struct lll_adv {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u8_t phy_p:3;
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	u8_t is_mesh:1;
@@ -40,6 +40,10 @@ struct lll_adv {
 
 	struct lll_adv_pdu adv_data;
 	struct lll_adv_pdu scan_rsp;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct lll_adv_pdu aux_data;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	s8_t tx_pwr_lvl;
@@ -105,5 +109,23 @@ static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
 {
 	return (void *)lll->scan_rsp.pdu[lll->scan_rsp.last];
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv *lll,
+						     u8_t *idx)
+{
+	return lll_adv_pdu_alloc(&lll->aux_data, idx);
+}
+
+static inline void lll_adv_aux_data_enqueue(struct lll_adv *lll, u8_t idx)
+{
+	lll_adv_pdu_enqueue(&lll->aux_data, idx);
+}
+
+static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv *lll)
+{
+	return (void *)lll->aux_data.pdu[lll->aux_data.last];
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 extern u16_t ull_adv_lll_handle_get(struct lll_adv *lll);
