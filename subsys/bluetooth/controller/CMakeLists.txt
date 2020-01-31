@@ -71,6 +71,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources(
       ll_sw/ull_conn.c
       ll_sw/ull_tx_queue.c
+      ll_sw/ull_llcp.c
       )
     if(CONFIG_BT_PERIPHERAL)
       zephyr_library_sources(
