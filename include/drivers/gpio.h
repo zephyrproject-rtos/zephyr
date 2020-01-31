@@ -566,8 +566,8 @@ struct gpio_driver_api {
 				       enum gpio_int_mode, enum gpio_int_trig);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
-	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
-	int (*disable_callback)(struct device *port, int access_op, u32_t pin);
+	int (*enable_callback)(struct device *port, u32_t pin);
+	int (*disable_callback)(struct device *port, u32_t pin);
 	u32_t (*get_pending_int)(struct device *dev);
 };
 
@@ -583,11 +583,10 @@ static inline int z_impl_gpio_config(struct device *port, int access_op,
 	return api->config(port, access_op, pin, (int)flags);
 }
 
-__syscall int gpio_enable_callback(struct device *port, int access_op,
-				   u32_t pin);
+__syscall int gpio_enable_callback(struct device *port, u32_t pin);
 
 static inline int z_impl_gpio_enable_callback(struct device *port,
-					     int access_op, u32_t pin)
+					     u32_t pin)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -602,14 +601,14 @@ static inline int z_impl_gpio_enable_callback(struct device *port,
 		return -ENOTSUP;
 	}
 
-	return api->enable_callback(port, access_op, pin);
+	return api->enable_callback(port, pin);
 }
 
-__syscall int gpio_disable_callback(struct device *port, int access_op,
+__syscall int gpio_disable_callback(struct device *port,
 				    u32_t pin);
 
 static inline int z_impl_gpio_disable_callback(struct device *port,
-					      int access_op, u32_t pin)
+					      u32_t pin)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
@@ -624,7 +623,7 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
 		return -ENOTSUP;
 	}
 
-	return api->disable_callback(port, access_op, pin);
+	return api->disable_callback(port, pin);
 }
 /**
  * @endcond
@@ -1331,9 +1330,11 @@ static inline int gpio_remove_callback(struct device *port,
  * @deprecated Replace with ``gpio_pin_interrupt_configure()`` passing
  * interrupt configuration flags such as ``GPIO_INT_EDGE_TO_ACTIVE``.
  */
-static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
+/* Deprecated in 2.2 release */
+__deprecated static inline int gpio_pin_enable_callback(struct device *port,
+							u32_t pin)
 {
-	return gpio_enable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	return gpio_enable_callback(port, pin);
 }
 
 /**
@@ -1345,9 +1346,11 @@ static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
  * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
  * ``GPIO_INT_DISABLE``.
  */
-static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
+/* Deprecated in 2.2 release */
+__deprecated static inline int gpio_pin_disable_callback(struct device *port,
+							 u32_t pin)
 {
-	return gpio_disable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	return gpio_disable_callback(port, pin);
 }
 
 /**

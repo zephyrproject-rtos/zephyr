@@ -234,41 +234,23 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 }
 
 static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
-					      int access_op, u32_t pin)
+					      u32_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-		data->pin_callback_enables |= (1 << pin);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		data->pin_callback_enables = 0xFFFFFFFF;
-		break;
-	default:
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
+	data->pin_callback_enables |= (1 << pin);
 
 	return 0;
 }
 
 static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
-					       int access_op, u32_t pin)
+					       u32_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-		data->pin_callback_enables &= ~(1 << pin);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		data->pin_callback_enables = 0U;
-		break;
-	default:
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
+	data->pin_callback_enables &= ~(1 << pin);
 
 	return 0;
 }

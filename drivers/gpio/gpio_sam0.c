@@ -282,14 +282,14 @@ static int gpio_sam0_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-int gpio_sam0_enable_callback(struct device *dev, int access_op, u32_t pin)
+int gpio_sam0_enable_callback(struct device *dev, u32_t pin)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 
 	return sam0_eic_enable_interrupt(config->id, pin);
 }
 
-int gpio_sam0_disable_callback(struct device *dev, int access_op, u32_t pin)
+int gpio_sam0_disable_callback(struct device *dev, u32_t pin)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 
