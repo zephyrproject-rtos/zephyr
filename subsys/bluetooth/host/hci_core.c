@@ -6052,8 +6052,26 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 
 			set_param.own_addr_type = id_addr->type;
 		} else {
+#if defined(CONFIG_BT_OBSERVER)
+			bool scan_enabled = false;
+
+			/* If active scan with NRPA is ongoing refresh NRPA */
+			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
+			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+			    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+				scan_enabled = true;
+				set_le_scan_enable(false);
+			}
+#endif /* defined(CONFIG_BT_OBSERVER) */
 			err = le_set_private_addr(param->id);
 			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
+
+#if defined(CONFIG_BT_OBSERVER)
+			if (scan_enabled) {
+				set_le_scan_enable(true);
+			}
+#endif /* defined(CONFIG_BT_OBSERVER) */
 		}
 
 		if (err) {
