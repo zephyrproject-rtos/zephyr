@@ -81,6 +81,8 @@ source "drivers/sensor/hts221/Kconfig"
 
 source "drivers/sensor/iis2dlpc/Kconfig"
 
+source "drivers/sensor/iis2mdc/Kconfig"
+
 source "drivers/sensor/iis3dhhc/Kconfig"
 
 source "drivers/sensor/isl29035/Kconfig"
