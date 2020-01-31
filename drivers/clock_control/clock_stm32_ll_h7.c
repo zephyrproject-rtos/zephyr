@@ -220,11 +220,11 @@ static int stm32_clock_control_init(struct device *dev)
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSE
 
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-	LL_RCC_HSE_EnableBypass();
-#else
-	LL_RCC_HSE_DisableBypass();
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+		LL_RCC_HSE_EnableBypass();
+	} else {
+		LL_RCC_HSE_DisableBypass();
+	}
 
 	/* Enable HSE oscillator */
 	LL_RCC_HSE_Enable();
