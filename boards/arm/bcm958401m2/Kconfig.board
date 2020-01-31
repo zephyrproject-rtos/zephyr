@@ -4,5 +4,5 @@
 #
 
 config BOARD_VALKYRIE_BCM958401M2
-	bool "Broadcom Valkyrie BCM958401M2"
+	def_bool "$(BOARD)" = "bcm958401m2"
 	depends on SOC_BCM58400

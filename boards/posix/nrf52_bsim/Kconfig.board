@@ -1,7 +1,9 @@
+# NRF52 simulation model
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52_BSIM
-	bool "NRF52 simulation model"
+	def_bool "$(BOARD)" = "nrf52_bsim"
 	select SOC_SERIES_BSIM_NRFXX
 	select SOC_SERIES_BSIM_NRF52X
 	select SOC_COMPATIBLE_NRF

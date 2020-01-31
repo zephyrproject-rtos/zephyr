@@ -1,7 +1,9 @@
+# NXP MIMXRT1064-EVK
+
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MIMXRT1064_EVK
-	bool "NXP MIMXRT1064-EVK"
+	def_bool "$(BOARD)" = "mimxrt1064_evk"
 	depends on SOC_SERIES_IMX_RT
 	select SOC_PART_NUMBER_MIMXRT1064DVL6A

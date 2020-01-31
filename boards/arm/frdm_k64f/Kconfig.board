@@ -1,6 +1,8 @@
+# Freescale FRDM-K64F
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FRDM_K64F
-	bool "Freescale FRDM-K64F"
+	def_bool "$(BOARD)" = "frdm_k64f"
 	depends on SOC_SERIES_KINETIS_K6X
 	select SOC_PART_NUMBER_MK64FN1M0VLL12

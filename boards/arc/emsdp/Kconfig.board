@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EMSDP
-	bool "EM Software Development Platform"
+	def_bool "$(BOARD)" = "emsdp"
 	depends on SOC_ARC_EMSDP
 	help
 	  The ARC EM Software Development Platform (emsdp) is an FPGA based

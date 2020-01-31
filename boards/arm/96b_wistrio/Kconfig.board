@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_WISTRIO
-	bool "96boards WisTrio Development Board"
+	def_bool "$(BOARD)" = "96b_wistrio"
 	depends on SOC_STM32L151XBA

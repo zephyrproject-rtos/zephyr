@@ -3,5 +3,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MSP_EXP432P401R_LAUNCHXL
-	bool "TI MSP-EXP432P401R LAUNCHXL"
+	def_bool "$(BOARD)" = "msp_exp432p401r_launchxl"
 	depends on SOC_MSP432P401R

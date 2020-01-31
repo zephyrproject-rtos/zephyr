@@ -1,12 +1,14 @@
+# NXP MIMXRT1050-EVK
+
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MIMXRT1050_EVK
-	bool "NXP MIMXRT1050-EVK"
+	def_bool "$(BOARD)" = "mimxrt1050_evk"
 	depends on SOC_SERIES_IMX_RT
 	select SOC_PART_NUMBER_MIMXRT1052DVL6A
 
 config BOARD_MIMXRT1050_EVK_QSPI
-	bool "NXP MIMXRT1050-EVK-QSPI"
+	def_bool "$(BOARD)" = "mimxrt1050_evk_qspi"
 	depends on SOC_SERIES_IMX_RT
 	select SOC_PART_NUMBER_MIMXRT1052DVL6A

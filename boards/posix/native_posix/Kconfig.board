@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NATIVE_POSIX_32BIT
-	bool "Native POSIX for 32-bit host"
+	def_bool "$(BOARD)" = "native_posix"
 	depends on SOC_POSIX
 	select BOARD_NATIVE_POSIX
 	help
@@ -12,7 +12,7 @@ config BOARD_NATIVE_POSIX_32BIT
 	  stdout.
 
 config BOARD_NATIVE_POSIX_64BIT
-	bool "Native POSIX for 64-bit host"
+	def_bool "$(BOARD)" = "native_posix_64"
 	depends on SOC_POSIX
 	select BOARD_NATIVE_POSIX
 	select 64BIT

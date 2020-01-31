@@ -1,8 +1,8 @@
-# STM32F769I Discovery board configuration
+# STM32F769I Discovery development board
 
 # Copyright (c) 2018 Yong Jin
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32F769I_DISCO
-	bool "STM32F769I Discovery Development Board"
+	def_bool "$(BOARD)" = "stm32f769i_disco"
 	depends on SOC_STM32F769XX

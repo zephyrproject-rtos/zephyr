@@ -1,8 +1,8 @@
-# STM32373C-EVAL evaluation board configuration
+# STM32373C_EVAL evaluation board
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32373C_EVAL
-	bool "STM32373C_EVAL Evaluation Board"
+	def_bool "$(BOARD)" = "stm32373c_eval"
 	depends on SOC_STM32F373XC

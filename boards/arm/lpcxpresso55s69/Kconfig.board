@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_LPCXPRESSO55S69_CPU0
-	bool "NXP LPCXPRESSO-55S69 [CPU0]"
+	def_bool "$(BOARD)" = "lpcxpresso55s69_cpu0"
 	depends on SOC_SERIES_LPC55XXX
 	select SOC_PART_NUMBER_LPC55S69JBD100
 
 config BOARD_LPCXPRESSO55S69_CPU1
-	bool "NXP LPCXPRESSO-55S69 [CPU1]"
+	def_bool "$(BOARD)" = "lpcxpresso55s69_cpu1"
 	depends on SOC_SERIES_LPC55XXX
 	select SOC_PART_NUMBER_LPC55S69JBD100

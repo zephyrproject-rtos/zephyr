@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_CARBON_NRF51
-	bool "96Boards Carbon (nRF51)"
+	def_bool "$(BOARD)" = "96b_carbon_nrf51"
 	depends on SOC_NRF51822_QFAC

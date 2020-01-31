@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_STM32_SENSOR_MEZ
-	bool "96Boards STM32 Sensor Mezzanine Board"
+	def_bool "$(BOARD)" = "96b_stm32_sensor_mez"
 	depends on SOC_STM32F446XX

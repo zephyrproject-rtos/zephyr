@@ -1,5 +1,7 @@
+# HiFive1 target
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HIFIVE1
-	bool "HiFive1 target"
+	def_bool "$(BOARD)" = "hifive1"
 	depends on SOC_RISCV_SIFIVE_FREEDOM

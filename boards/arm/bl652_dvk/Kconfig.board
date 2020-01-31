@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BL652_DVK
-	bool "BL652 DVK"
+	def_bool "$(BOARD)" = "bl652_dvk"
 	depends on SOC_NRF52832_QFAA

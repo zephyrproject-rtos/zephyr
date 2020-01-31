@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52_VBLUNO52
-	bool "nRF52 VBLUno52"
+	def_bool "$(BOARD)" = "nrf52_vbluno52"
 	depends on SOC_NRF52832_QFAA

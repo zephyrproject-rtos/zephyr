@@ -6,9 +6,9 @@
 if SOC_NRF9160_SICA
 
 config BOARD_ACTINIUS_ICARUS
-	bool "Actinius Icarus"
+	def_bool "$(BOARD)" = "actinius_icarus"
 
 config BOARD_ACTINIUS_ICARUS_NS
-	bool "Actinius Icarus Non-Secure"
+	def_bool "$(BOARD)" = "actinius_icarus_ns"
 
 endif # SOC_NRF9160_SICA

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO
-	bool "Adafruit Feather M0 Basic Proto"
+	def_bool "$(BOARD)" = "adafruit_feather_m0_basic_proto"
 	depends on SOC_PART_NUMBER_SAMD21G18A

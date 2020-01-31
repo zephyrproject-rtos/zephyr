@@ -1,9 +1,9 @@
-# NUCLEO-64 F401RE board configuration
+# NUCLEO-64 F401RE Development Board
 
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F401RE
-	bool "NUCLEO-64 F401RE Development Board"
+	def_bool "$(BOARD)" = "nucleo_f401re"
 	select I2C_1 if I2C
 	depends on SOC_STM32F401XE

@@ -1,8 +1,8 @@
-# STM32F723E Discovery board configuration
+# STM32F723E Discovery development board
 
 # Copyright (c) 2018 Aurelien Jarno
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32F723E_DISCO
-	bool "STM32F723E Discovery Development Board"
+	def_bool "$(BOARD)" = "stm32f723e_disco"
 	depends on SOC_STM32F723XX

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ARDUINO_DUE
-	bool "Arduino Due Board"
+	def_bool "$(BOARD)" = "arduino_due"
 	depends on SOC_PART_NUMBER_SAM3X8E

@@ -1,6 +1,8 @@
+# Microchip MEC1501 Modular ASSY 6885 Development board
+
 # Copyright (c) 2019, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MEC1501MODULAR_ASSY6885
-	bool "Microchip MEC1501 Modular ASSY 6885 Development board"
+	def_bool "$(BOARD)" = "mec1501modular_assy6885"
 	depends on SOC_MEC1501_HSZ

@@ -1,7 +1,7 @@
-# STM32F412G-DISCO board configuration
+# STM32F412G-DISCO development board
 
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32F412G_DISCO
-	bool "STM32F412G-DISCO Development Board"
+	def_bool "$(BOARD)" = "stm32f412g_disco"
 	depends on SOC_STM32F412ZG

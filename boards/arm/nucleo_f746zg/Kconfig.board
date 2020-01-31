@@ -1,8 +1,8 @@
-# STM32F746ZG Nucleo board configuration
+# Nucleo F746ZG development board
 
 # Copyright (c) 2018 AJ Palmer
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F746ZG
-	bool "Nucleo F746ZG Development Board"
+	def_bool "$(BOARD)" = "nucleo_f746zg"
 	depends on SOC_STM32F746XX

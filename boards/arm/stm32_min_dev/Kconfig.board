@@ -1,12 +1,12 @@
-# STM32 Minimum Development Board Configuration
+# STM32 Minimum Development Board
 
 # Copyright (c) 2017, embedjournal.com
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32_MIN_DEV_BLUE
-	bool "STM32 Minimum Development Board (Blue)"
+	def_bool "$(BOARD)" = "stm32_min_dev_blue"
 	depends on SOC_STM32F103X8
 
 config BOARD_STM32_MIN_DEV_BLACK
-	bool "STM32 Minimum Development Board (Black)"
+	def_bool "$(BOARD)" = "stm32_min_dev_black"
 	depends on SOC_STM32F103X8

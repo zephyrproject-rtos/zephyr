@@ -1,8 +1,8 @@
-# STM32F4DISCOVERY board configuration
+# STM32F4DISCOVERY development board
 
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32F4_DISCO
-	bool "STM32F4DISCOVERY Development Board"
+	def_bool "$(BOARD)" = "stm32f4_disco"
 	depends on SOC_STM32F407XG

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ADAFRUIT_TRINKET_M0
-	bool "Adafruit Trinket M0"
+	def_bool "$(BOARD)" = "adafruit_trinket_m0"
 	depends on SOC_PART_NUMBER_SAMD21E18A

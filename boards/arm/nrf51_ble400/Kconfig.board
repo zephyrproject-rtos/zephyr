@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51_BLE400
-	bool "nRF51 BLE400"
+	def_bool "$(BOARD)" = "nrf51_ble400"
 	depends on SOC_NRF51822_QFAA

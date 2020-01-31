@@ -5,11 +5,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFM32PG_STK3402A
-	bool "SiLabs EFM32PG-STK3402A (Pearl Gecko)"
+	def_bool "$(BOARD)" = "efm32pg_stk3402a" # Pearl Gecko
 	depends on SOC_SERIES_EFM32PG12B
 	select SOC_PART_NUMBER_EFM32PG12B500F1024GL125
 
 config BOARD_EFM32PG_STK3402A_JG
-	bool "SiLabs EFM32PG-STK3402A (Jade Gecko)"
+	def_bool "$(BOARD)" = "efm32pg_stk3402a_jg" # Jade Gecko
 	depends on SOC_SERIES_EFM32JG12B
 	select SOC_PART_NUMBER_EFM32JG12B500F1024GL125

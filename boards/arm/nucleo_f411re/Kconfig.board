@@ -1,8 +1,8 @@
-# NUCLEO-64 F411RE board configuration
+# NUCLEO-64 F411RE Development Board
 
 # Copyright (c) 2016 Matthias Boesl
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F411RE
-	bool "NUCLEO-64 F411RE Development Board"
+	def_bool "$(BOARD)" = "nucleo_f411re"
 	depends on SOC_STM32F411XE

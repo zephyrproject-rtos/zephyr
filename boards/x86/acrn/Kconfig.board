@@ -1,8 +1,10 @@
+# ACRN User OS
+
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ACRN
-	bool "ACRN User OS"
+	def_bool "$(BOARD)" = "acrn"
 	depends on SOC_IA32
 	select CPU_HAS_FPU
 	select SET_GDT

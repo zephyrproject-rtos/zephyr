@@ -1,8 +1,8 @@
-# NUCLEO-144 F429ZI  board configuration
+# NUCLEO-144 F429ZI development board
 
 # Copyright (c) 2017 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F429ZI
-	bool "NUCLEO-144 F429ZI Development Board"
+	def_bool "$(BOARD)" = "nucleo_f429zi"
 	depends on SOC_STM32F429XX

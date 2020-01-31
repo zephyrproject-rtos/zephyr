@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HSDK
-	bool "ARC HS Development Kit"
+	def_bool "$(BOARD)" = "hsdk"
 	depends on SOC_ARC_HSDK
 	help
 	  The DesignWare ARC HS Development Kit is a ready-to-use platform for

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52840_BLIP
-	bool "Electronut Labs Blip"
+	def_bool "$(BOARD)" = "nrf52840_blip"
 	depends on SOC_NRF52840_QIAA

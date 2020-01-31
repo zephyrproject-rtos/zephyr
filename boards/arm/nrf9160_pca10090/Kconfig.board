@@ -6,9 +6,10 @@
 if SOC_NRF9160_SICA
 
 config BOARD_NRF9160_PCA10090
-	bool "nRF9160 PCA10090"
+	def_bool "$(BOARD)" = "nrf9160_pca10090"
 
+# Non-secure
 config BOARD_NRF9160_PCA10090NS
-	bool "nRF9160 PCA10090 non-secure"
+	def_bool "$(BOARD)" = "nrf9160_pca10090ns"
 
 endif # SOC_NRF9160_SICA

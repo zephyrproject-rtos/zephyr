@@ -1,6 +1,8 @@
+# HiFive1 Rev B target
+
 # Copyright (c) 2019 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HIFIVE1_REVB
-	bool "HiFive1 Rev B target"
+	def_bool "$(BOARD)" = "hifive1_revb"
 	depends on SOC_RISCV_SIFIVE_FREEDOM

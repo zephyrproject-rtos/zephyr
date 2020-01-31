@@ -1,9 +1,9 @@
-# STM32L432KC Nucleo board configuration
+# Nucleo L432KC Development Board
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_L432KC
-	bool "Nucleo L432KC Development Board"
+	def_bool "$(BOARD)" = "nucleo_l432kc"
 	depends on SOC_STM32L432XX

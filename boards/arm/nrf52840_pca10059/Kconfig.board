@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52840_PCA10059
-	bool "NRF52840 PCA10059"
+	def_bool "$(BOARD)" = "nrf52840_pca10059"
 	depends on SOC_NRF52840_QIAA

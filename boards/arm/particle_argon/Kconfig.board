@@ -1,8 +1,8 @@
-# Particle Argon configuration
+# Particle Argon board
 
 # Copyright (c) 2018 Matthias Boesl
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_PARTICLE_ARGON
-	bool "Particle Argon Board"
+	def_bool "$(BOARD)" = "particle_argon"
 	depends on SOC_NRF52840_QIAA

@@ -1,5 +1,7 @@
+# MinnowBoard Max
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MINNOWBOARD
-	bool "MinnowBoard Max"
+	def_bool "$(BOARD)" = "minnowboard"
 	depends on SOC_ATOM

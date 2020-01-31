@@ -1,8 +1,8 @@
-# STM32WB55RG Nucleo board configuration
+# Nucleo WB55RG development board
 
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_WB55RG
-	bool "Nucleo WB55RG Development Board"
+	def_bool "$(BOARD)" = "nucleo_wb55rg"
 	depends on SOC_STM32WB55XX

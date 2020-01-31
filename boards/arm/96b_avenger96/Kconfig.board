@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_AVENGER96
-	bool "96Boards Avenger96 Board"
+	def_bool "$(BOARD)" = "96b_avenger96"
 	depends on SOC_STM32MP15_M4

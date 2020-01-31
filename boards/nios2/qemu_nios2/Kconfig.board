@@ -1,6 +1,8 @@
+# QEMU NIOS II target
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_NIOS2
-	bool "QEMU NIOS II target"
+	def_bool "$(BOARD)" = "qemu_nios2"
 	depends on SOC_NIOS2_QEMU
 	select QEMU_TARGET

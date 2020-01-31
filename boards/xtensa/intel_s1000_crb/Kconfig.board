@@ -1,8 +1,8 @@
-# XTENSA board configuration
+# Xtensa on Intel_S1000
 
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_INTEL_S1000_CRB
-	bool "Xtensa on Intel_S1000"
+	def_bool "$(BOARD)" = "intel_s1000_crb"
 	depends on SOC_INTEL_S1000

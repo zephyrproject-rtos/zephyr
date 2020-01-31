@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_ARGONKEY
-	bool "96Boards Argonkey"
+	def_bool "$(BOARD)" = "96b_argonkey"
 	depends on SOC_STM32F412CG

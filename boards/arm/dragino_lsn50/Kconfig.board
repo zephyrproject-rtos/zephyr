@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_DRAGINO_LSN50
-	bool "Dragino LSN50 Sensor Node"
+	def_bool "$(BOARD)" = "dragino_lsn50"
 	depends on SOC_STM32L072XX

@@ -1,8 +1,8 @@
-# SensorTile.box board configuration
+# SensorTile.box development board
 
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_SENSORTILE_BOX
-	bool "SensorTile.box Development Board"
+	def_bool "$(BOARD)" = "sensortile_box"
 	depends on SOC_STM32L4R9XX

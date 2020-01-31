@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ATSAME54_XPRO
-	bool "SAM E54 Xplained Pro"
+	def_bool "$(BOARD)" = "atsame54_xpro"
 	depends on SOC_PART_NUMBER_SAME54P20A

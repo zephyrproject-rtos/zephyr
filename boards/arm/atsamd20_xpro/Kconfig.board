@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ATSAMD20_XPRO
-	bool "SAM D20 Xplained Pro"
+	def_bool "$(BOARD)" = "atsamd20_xpro"
 	depends on SOC_PART_NUMBER_SAMD20J18

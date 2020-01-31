@@ -1,8 +1,8 @@
-# NUCLEO-144 F412ZG board configuration
+# NUCLEO-144 F412ZG Development Board
 
 # Copyright (c) 2017 Florian Vaussard, HEIG-VD
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F412ZG
-	bool "NUCLEO-144 F412ZG Development Board"
+	def_bool "$(BOARD)" = "nucleo_f412zg"
 	depends on SOC_STM32F412ZG

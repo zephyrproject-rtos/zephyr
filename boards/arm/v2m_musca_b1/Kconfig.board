@@ -1,6 +1,8 @@
+# ARM Cortex-M33 SMM on V2M-MUSCA
+
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MUSCA_B1
-	bool "ARM Cortex-M33 SMM on V2M-MUSCA"
+	def_bool "$(BOARD)" = "v2m_musca_b1"
 	depends on SOC_SERIES_MUSCA_B1

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52_ADAFRUIT_FEATHER
-	bool "nRF52 ADAFRUIT FEATHER"
+	def_bool "$(BOARD)" = "nrf52_adafruit_feather"
 	depends on SOC_NRF52832_QFAA

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CY8CKIT_062_WIFI_BT_M0
-	bool "PSoC6 WiFi-BT Pioneer Kit M0"
+	def_bool "$(BOARD)" = "cy8ckit_062_wifi_bt_m0"
 	depends on SOC_PART_NUMBER_CY8C6247BZI_D54

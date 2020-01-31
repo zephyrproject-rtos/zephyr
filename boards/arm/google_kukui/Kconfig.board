@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_GOOGLE_KUKUI
-	bool "Google Kukui EC"
+	def_bool "$(BOARD)" = "google_kukui"
 	depends on SOC_STM32F098XX

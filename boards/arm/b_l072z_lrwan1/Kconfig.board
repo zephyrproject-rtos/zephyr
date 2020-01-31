@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_B_L072Z_LRWAN1
-	bool "STMicroelectronics B-L072Z-LRWAN1 Discovery kit"
+	def_bool "$(BOARD)" = "b_l072z_lrwan1"
 	depends on SOC_STM32L072XX

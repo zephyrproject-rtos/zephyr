@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ATSAMR21_XPRO
-	bool "SAM R21 Xplained Pro"
+	def_bool "$(BOARD)" = "atsamr21_xpro"
 	depends on SOC_PART_NUMBER_SAMR21G18A

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_F091RC
-	bool "NUCLEO-64 F091RC Development Board"
+	def_bool "$(BOARD)" = "nucleo_f091rc"
 	depends on SOC_STM32F091XC

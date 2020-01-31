@@ -1,5 +1,7 @@
+# Microsemi M2GL025 IGLOO2 dev board with Mi-V CPU
+
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_M2GL025_MIV
-	bool "Microsemi M2GL025 IGLOO2 dev board with Mi-V CPU"
+	def_bool "$(BOARD)" = "m2gl025_miv"
 	depends on SOC_RISCV32_MIV

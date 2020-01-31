@@ -1,6 +1,8 @@
+# Cortex-R5 emulation (QEMU)
+
 # Copyright (c) 2019 Lexmark International, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_CORTEX_R5
-	bool "Cortex-R5 Emulation (QEMU)"
+	def_bool "$(BOARD)" = "qemu_cortex_r5"
 	depends on SOC_XILINX_ZYNQMP_RPU

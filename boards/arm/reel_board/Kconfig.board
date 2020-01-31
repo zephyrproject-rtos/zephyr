@@ -3,10 +3,12 @@
 # Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
+# reel board equipped with GDEH0213B1 display
 config BOARD_REEL_BOARD
-	bool "reel board equipped with GDEH0213B1 display"
+	def_bool "$(BOARD)" = "reel_board"
 	depends on SOC_NRF52840_QIAA
 
+# reel board equipped with GDEH0213B72 display
 config BOARD_REEL_BOARD_V2
-	bool "reel board equipped with GDEH0213B72 display"
+	def_bool "$(BOARD)" = "reel_board_v2"
 	depends on SOC_NRF52840_QIAA

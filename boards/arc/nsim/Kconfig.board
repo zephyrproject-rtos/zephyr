@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NSIM
-	bool "ARC nSIM simulator"
+	def_bool "$(BOARD)" = "nsim"
 	depends on SOC_NSIM
 	help
 	  The DesignWare ARC nSIM board is a virtual board based on

@@ -1,4 +1,4 @@
-# STM32L496G Discovery board configuration
+# STM32L496G Discovery development board
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
@@ -6,5 +6,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32L496G_DISCO
-	bool "STM32L496G Discovery Development Board"
+	def_bool "$(BOARD)" = "stm32l496g_disco"
 	depends on SOC_STM32L496XX

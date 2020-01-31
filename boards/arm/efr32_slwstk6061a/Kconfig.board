@@ -1,9 +1,9 @@
-# EFR32 SLWSTK6061A board
+# SiLabs EFR32-SLWSTK6061A (Flex Gecko) board
 
 # Copyright (c) 2018, Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFR32_SLWSTK6061A
-	bool "SiLabs EFR32-SLWSTK6061A (Flex Gecko)"
+	def_bool "$(BOARD)" = "efr32_slwstk6061a"
 	depends on SOC_SERIES_EFR32FG1P
 	select SOC_PART_NUMBER_EFR32FG1P133F256GM48

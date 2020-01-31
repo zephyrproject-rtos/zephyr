@@ -5,18 +5,21 @@
 
 if SOC_NRF5340_CPUAPP_QKAA
 
+# nRF5340 DK nRF5340 Application MCU
 config BOARD_NRF5340_DK_NRF5340_CPUAPP
-	bool "nRF5340 DK nRF5340 Application MCU"
+	def_bool "$(BOARD)" = "nrf5340_dk_nrf5340_cpuapp"
 
+# nRF5340 DK nRF5340 Application MCU non-secure
 config BOARD_NRF5340_DK_NRF5340_CPUAPPNS
-	bool "nRF5340 DK nRF5340 Application MCU non-secure"
+	def_bool "$(BOARD)" = "nrf5340_dk_nrf5340_cpuappns"
 
 endif # SOC_NRF5340_CPUAPP_QKAA
 
 
 if SOC_NRF5340_CPUNET_QKAA
 
+# nRF5340 DK NRF5340 Network MCU
 config BOARD_NRF5340_DK_NRF5340_CPUNET
-	bool "nRF5340 DK NRF5340 Network MCU"
+	def_bool "$(BOARD)" = "nrf5340_dk_nrf5340_cpunet"
 
 endif # SOC_NRF5340_CPUNET_QKAA

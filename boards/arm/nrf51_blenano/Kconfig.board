@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51_BLENANO
-	bool "nRF51 BLENANO"
+	def_bool "$(BOARD)" = "nrf51_blenano"
 	depends on SOC_NRF51822_QFAA

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_NEONKEY
-	bool "96Boards Neonkey"
+	def_bool "$(BOARD)" = "96b_neonkey"
 	depends on SOC_STM32F411XE

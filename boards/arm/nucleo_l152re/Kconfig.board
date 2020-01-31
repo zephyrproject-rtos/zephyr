@@ -1,9 +1,8 @@
-#
+# NUCLEO-64 L152RE development board
+
 # Copyright (c) 2019 Antony Pavlov <antonynpavlov@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_NUCLEO_L152RE
-	bool "NUCLEO-64 L152RE Development Board"
+	def_bool "$(BOARD)" = "nucleo_l152re"
 	depends on SOC_STM32L152XE

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HOLYIOT_YJ16019
-	bool "Holyiot YJ-16019"
+	def_bool "$(BOARD)" = "holyiot_yj16019"
 	depends on SOC_NRF52832_QFAA

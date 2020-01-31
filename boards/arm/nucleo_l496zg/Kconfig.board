@@ -1,8 +1,8 @@
-# STM32L496ZG Nucleo board configuration
+# Nucleo L496ZG development board
 
 # Copyright (c) 2018-2019 Centaur Analytics, Inc
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_L496ZG
-	bool "Nucleo L496ZG Development Board"
+	def_bool "$(BOARD)" = "nucleo_l496zg"
 	depends on SOC_STM32L496XX

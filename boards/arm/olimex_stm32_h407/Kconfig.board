@@ -1,8 +1,8 @@
-# OLIMEX-STM32-H407 board configuration
+# OLIMEX-STM32-H407 development board
 
 # Copyright (c) 2018, Reto Schneider <code@reto-schneider.ch>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_OLIMEX_STM32_H407
-	bool "OLIMEX-STM32-H407 Development Board"
+	def_bool "$(BOARD)" = "olimex_stm32_h407"
 	depends on SOC_STM32F407XG

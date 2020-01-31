@@ -1,9 +1,9 @@
-# EFM32HG SLSTK3400A board
+# SiLabs EFM32HG-SLSTK3400A (Happy Gecko)
 
 # Copyright (c) 2018, Marcio Montenegro
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFM32HG_SLSTK3400A
-	bool "SiLabs EFM32HG-SLSTK3400A (Happy Gecko)"
+	def_bool "$(BOARD)" = "efm32hg_slstk3400a"
 	depends on SOC_SERIES_EFM32HG
 	select SOC_PART_NUMBER_EFM32HG322F64

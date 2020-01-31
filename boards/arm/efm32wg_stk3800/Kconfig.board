@@ -1,9 +1,9 @@
-# EFM32WG STK3800 board
+# SiLabs EFM32WG STK3800 (Wonder Gecko) board
 
 # Copyright (c) 2017, Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFM32WG_STK3800
-	bool "SiLabs EFM32WG-STK3800 (Wonder Gecko)"
+	def_bool "$(BOARD)" = "efm32wg_stk3800"
 	depends on SOC_SERIES_EFM32WG
 	select SOC_PART_NUMBER_EFM32WG990F256

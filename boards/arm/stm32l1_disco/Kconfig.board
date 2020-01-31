@@ -1,8 +1,8 @@
-# Board configuration
+# STM32L1DISCOVERY development board
 
 # Copyright (c) 2019 eTactica ehf
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_STM32L1_DISCO
-	bool "STM32L1DISCOVERY Development Board"
+	def_bool "$(BOARD)" = "stm32l1_disco"
 	depends on SOC_STM32L151XB

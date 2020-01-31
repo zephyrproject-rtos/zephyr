@@ -1,9 +1,9 @@
-# QEMU Cortex-M0 board configuration
+# Cortex-M0 emulation (QEMU)
 
 # Copyright (c) 2019 Nordic Semiconductor ASA.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_CORTEX_M0
-	bool "Cortex-M0 Emulation (QEMU)"
+	def_bool "$(BOARD)" = "qemu_cortex_m0"
 	depends on SOC_NRF51822_QFAA
 	select QEMU_TARGET

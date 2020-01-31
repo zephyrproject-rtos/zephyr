@@ -1,8 +1,8 @@
-# STM32G474RE Nucleo board configuration
+# Nucleo G474RE development board
 
 # Copyright (c) 2019 STMicroelectronics.
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_G474RE
-	bool "Nucleo G474RE Development Board"
+	def_bool "$(BOARD)" = "nucleo_g474re"
 	depends on SOC_STM32G474XX

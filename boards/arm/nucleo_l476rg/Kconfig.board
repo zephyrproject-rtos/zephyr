@@ -1,9 +1,9 @@
-# STM32L476RG Nucleo board configuration
+# Nucleo L476RG Development Board
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_L476RG
-	bool "Nucleo L476RG Development Board"
+	def_bool "$(BOARD)" = "nucleo_l476rg"
 	depends on SOC_STM32L476XX

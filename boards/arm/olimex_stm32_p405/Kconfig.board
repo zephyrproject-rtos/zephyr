@@ -1,8 +1,8 @@
-# OLIMEX-STM32-P405 board configuration
+# OLIMEX-STM32-P405 development board
 
 # Copyright (c) 2017, Erwin Rol <erwin@erwinrol.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_OLIMEX_STM32_P405
-	bool "OLIMEX-STM32-P405 Development Board"
+	def_bool "$(BOARD)" = "olimex_stm32_p405"
 	depends on SOC_STM32F405XG

@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52840_MDK
-	bool "NRF52840-MDK"
+	def_bool "$(BOARD)" = "nrf52840_mdk"
 	depends on SOC_NRF52840_QIAA
