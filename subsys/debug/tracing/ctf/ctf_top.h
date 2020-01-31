@@ -9,37 +9,51 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <ctf_bottom.h>
+#include <ctf_map.h>
+#include <debug/tracing_format.h>
 
 /* Limit strings to 20 bytes to optimize bandwidth */
 #define CTF_MAX_STRING_LEN 20
 
-/* Optionally enter into a critical region, decided by bottom layer */
-#define CTF_CRITICAL_REGION(x)	     \
-	{			     \
-		CTF_BOTTOM_LOCK();   \
-		x;		     \
-		CTF_BOTTOM_UNLOCK(); \
+/*
+ * Obtain a field's size at compile-time.
+ */
+#define CTF_INTERNAL_FIELD_SIZE(x)      + sizeof(x)
+
+/*
+ * Append a field to current event-packet.
+ */
+#define CTF_INTERNAL_FIELD_APPEND(x)			 \
+	{						 \
+		memcpy(epacket_cursor, &(x), sizeof(x)); \
+		epacket_cursor += sizeof(x);		 \
 	}
 
+/*
+ * Gather fields to a contiguous event-packet, then atomically emit.
+ */
+#define CTF_GATHER_FIELDS(...)						    \
+{									    \
+	u8_t epacket[0 MAP(CTF_INTERNAL_FIELD_SIZE, ##__VA_ARGS__)];	    \
+	u8_t *epacket_cursor = &epacket[0];				    \
+									    \
+	MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)			    \
+	tracing_format_raw_data(epacket, sizeof(epacket));		    \
+}
 
-#ifdef CTF_BOTTOM_TIMESTAMPED_EXTERNALLY
-/* Emit CTF event using the bottom-level IO mechanics */
-#define CTF_EVENT(...)						    \
-	{							    \
-		CTF_CRITICAL_REGION(CTF_BOTTOM_FIELDS(__VA_ARGS__)) \
-	}
-#endif /* CTF_BOTTOM_TIMESTAMPED_EXTERNALLY */
-
-#ifdef CTF_BOTTOM_TIMESTAMPED_INTERNALLY
-/* Emit CTF event using the bottom-level IO mechanics. Prefix by sample time */
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #define CTF_EVENT(...)							    \
 	{								    \
 		const u32_t tstamp = k_cycle_get_32();			    \
-		CTF_CRITICAL_REGION(CTF_BOTTOM_FIELDS(tstamp, __VA_ARGS__)) \
+									    \
+		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)			    \
 	}
-#endif /* CTF_BOTTOM_TIMESTAMPED_INTERNALLY */
-
+#else
+#define CTF_EVENT(...)							    \
+	{								    \
+		CTF_GATHER_FIELDS(__VA_ARGS__)				    \
+	}
+#endif
 
 /* Anonymous compound literal with 1 member. Legal since C99.
  * This permits us to take the address of literals, like so:
@@ -51,7 +65,6 @@
  * so string literals should not be wrapped with CTF_LITERAL.
  */
 #define CTF_LITERAL(type, value)  ((type) { (type)(value) })
-
 
 typedef enum {
 	CTF_EVENT_THREAD_SWITCHED_OUT   =  0x10,
