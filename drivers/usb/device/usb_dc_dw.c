@@ -549,6 +549,7 @@ static inline void usb_dw_int_rx_flvl_handler(void)
 	u32_t grxstsp = USB_DW->grxstsp;
 	u32_t status, xfer_size;
 	u8_t ep_idx;
+	usb_dc_ep_callback ep_cb;
 
 	/* Packet in RX FIFO */
 
@@ -592,6 +593,7 @@ static inline void usb_dw_int_iep_handler(void)
 {
 	u32_t ep_int_status;
 	u8_t ep_idx;
+	usb_dc_ep_callback ep_cb;
 
 	for (ep_idx = 0U; ep_idx < USB_DW_IN_EP_NUM; ep_idx++) {
 		if (USB_DW->daint & USB_DW_DAINT_IN_EP_INT(ep_idx)) {
