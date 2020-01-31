@@ -433,14 +433,10 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 }
 
 static int gpio_intel_apl_enable_callback(struct device *dev,
-					  int access_op, u32_t pin)
+					  u32_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	u32_t raw_pin, reg;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
@@ -462,14 +458,10 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 }
 
 static int gpio_intel_apl_disable_callback(struct device *dev,
-					   int access_op, u32_t pin)
+					   u32_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	u32_t raw_pin, reg;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 

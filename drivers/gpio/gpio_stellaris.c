@@ -261,14 +261,10 @@ static int gpio_stellaris_init(struct device *dev)
 }
 
 static int gpio_stellaris_enable_callback(struct device *dev,
-					  int access_op, u32_t pin)
+					  u32_t pin)
 {
 	const struct gpio_stellaris_config * const cfg = DEV_CFG(dev);
 	u32_t base = cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -EINVAL;
-	}
 
 	sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 
@@ -276,14 +272,10 @@ static int gpio_stellaris_enable_callback(struct device *dev,
 }
 
 static int gpio_stellaris_disable_callback(struct device *dev,
-					   int access_op, u32_t pin)
+					   u32_t pin)
 {
 	const struct gpio_stellaris_config * const cfg = DEV_CFG(dev);
 	u32_t base = cfg->base;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -EINVAL;
-	}
 
 	sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 

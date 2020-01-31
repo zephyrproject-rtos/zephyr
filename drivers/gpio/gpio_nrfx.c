@@ -337,47 +337,26 @@ static int gpio_nrfx_manage_callback(struct device *port,
 }
 
 static int gpio_nrfx_pin_manage_callback(struct device *port,
-					 int access_op,
 					 u32_t pin,
 					 bool enable)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
-	int res = 0;
-	u8_t from_pin;
-	u8_t to_pin;
 
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0U;
-		to_pin   = 31U;
-	} else {
-		from_pin = pin;
-		to_pin   = pin;
-	}
+	WRITE_BIT(data->int_en, pin, enable);
 
-	for (u8_t curr_pin = from_pin; curr_pin <= to_pin; ++curr_pin) {
-		WRITE_BIT(data->int_en, curr_pin, enable);
-
-		res = gpiote_pin_int_cfg(port, curr_pin);
-		if (res != 0) {
-			return res;
-		}
-	}
-
-	return res;
+	return gpiote_pin_int_cfg(port, pin);
 }
 
 static inline int gpio_nrfx_pin_enable_callback(struct device *port,
-						int access_op,
 						u32_t pin)
 {
-	return gpio_nrfx_pin_manage_callback(port, access_op, pin, true);
+	return gpio_nrfx_pin_manage_callback(port, pin, true);
 }
 
 static inline int gpio_nrfx_pin_disable_callback(struct device *port,
-						 int access_op,
 						 u32_t pin)
 {
-	return gpio_nrfx_pin_manage_callback(port, access_op, pin, false);
+	return gpio_nrfx_pin_manage_callback(port, pin, false);
 }
 
 static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
