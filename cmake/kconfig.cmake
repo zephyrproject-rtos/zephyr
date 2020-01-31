@@ -40,6 +40,7 @@ set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
 set(ENV{ARCH}      ${ARCH})
+set(ENV{BOARD}     ${BOARD})
 set(ENV{BOARD_DIR} ${BOARD_DIR})
 set(ENV{SOC_DIR}   ${SOC_DIR})
 set(ENV{SHIELD_AS_LIST} "${SHIELD_AS_LIST}")
@@ -86,6 +87,7 @@ foreach(kconfig_target
     ZEPHYR_BASE=${ZEPHYR_BASE}
     KCONFIG_CONFIG=${DOTCONFIG}
     ARCH=$ENV{ARCH}
+    BOARD=$ENV{BOARD}
     BOARD_DIR=$ENV{BOARD_DIR}
     SOC_DIR=$ENV{SOC_DIR}
     SHIELD_AS_LIST=$ENV{SHIELD_AS_LIST}
