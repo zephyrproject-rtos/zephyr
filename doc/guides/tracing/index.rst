@@ -133,8 +133,7 @@ internally and statically at compile-time in the bottom-layer.
 How to Activate?
 ================
 
-Make sure :option:`CONFIG_TRACING_CTF` is set to ``y`` (:option:`CONFIG_TRACING_CTF_BOTTOM_POSIX`
-is selected by default when using ``BOARD_NATIVE_POSIX``).
+Make sure :option:`CONFIG_TRACING_CTF` is set to ``y``
 
 
 How to Use?

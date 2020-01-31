@@ -433,16 +433,14 @@ config TRACING_CTF
 	select THREAD_MONITOR
 	select TRACING
 	help
-	  Enable tracing to a Common Trace Format stream. In order to use it a
-	  CTF bottom layer should be selected, such as TRACING_CTF_BOTTOM_POSIX.
+	  Enable tracing to a Common Trace Format stream.
 
-config TRACING_CTF_BOTTOM_POSIX
-	bool "CTF backend for the native_posix port, using a file in the host filesystem"
-	depends on TRACING_CTF
-	depends on ARCH_POSIX
+config TRACING_CTF_TIMESTAMP
+	bool "Enable CTF internal timestamp"
+	default y
 	help
-	  Enable POSIX backend for CTF tracing. It will output the CTF stream to a
-	  file using fwrite.
+	  Timestamp prefix will be added to the beginning of CTF
+	  event internally.
 
 
 source "subsys/debug/Kconfig.segger"
