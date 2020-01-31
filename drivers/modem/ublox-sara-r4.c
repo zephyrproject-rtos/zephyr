@@ -982,9 +982,12 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		modem_socket_put(&mdata.socket_config, sock->sock_fd);
+		errno = -ret;
+		return -1;
 	}
 
-	return ret;
+	errno = 0;
+	return 0;
 }
 
 /*
@@ -995,8 +998,17 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable;
 
 static int offload_socket(int family, int type, int proto)
 {
+	int ret;
+
 	/* defer modem's socket create call to bind() */
-	return modem_socket_get(&mdata.socket_config, family, type, proto);
+	ret = modem_socket_get(&mdata.socket_config, family, type, proto);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	errno = 0;
+	return ret;
 }
 
 static int offload_close(struct modem_socket *sock)
@@ -1034,7 +1046,9 @@ static int offload_bind(void *obj, const struct sockaddr *addr,
 
 	/* make sure we've created the socket */
 	if (sock->id == mdata.socket_config.sockets_len + 1) {
-		return create_socket(sock, addr);
+		if (create_socket(sock, addr) < 0) {
+			return -1;
+		}
 	}
 
 	return 0;
@@ -1049,20 +1063,21 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	u16_t dst_port = 0U;
 
 	if (!addr) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	if (sock->id < mdata.socket_config.base_socket_num - 1) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
 			sock->id, sock->sock_fd);
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	/* make sure we've created the socket */
 	if (sock->id == mdata.socket_config.sockets_len + 1) {
-		ret = create_socket(sock, NULL);
-		if (ret < 0) {
-			return ret;
+		if (create_socket(sock, NULL) < 0) {
+			return -1;
 		}
 	}
 
@@ -1072,11 +1087,13 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	} else if (addr->sa_family == AF_INET) {
 		dst_port = ntohs(net_sin(addr)->sin_port);
 	} else {
-		return -EPFNOSUPPORT;
+		errno = EAFNOSUPPORT;
+		return -1;
 	}
 
 	/* skip socket connect if UDP */
 	if (sock->ip_proto == IPPROTO_UDP) {
+		errno = 0;
 		return 0;
 	}
 
@@ -1087,17 +1104,19 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
-	} else {
-		sock->is_connected = true;
+		errno = -ret;
+		return -1;
 	}
 
-	return ret;
+	sock->is_connected = true;
+	errno = 0;
+	return 0;
 }
 
 /* support for POLLIN only for now. */
 static int offload_poll(struct pollfd *fds, int nfds, int msecs)
 {
-	int ret, i;
+	int i;
 	void *obj;
 
 	/* Only accept modem sockets. */
@@ -1116,12 +1135,7 @@ static int offload_poll(struct pollfd *fds, int nfds, int msecs)
 		}
 	}
 
-	ret = modem_socket_poll(&mdata.socket_config, fds, nfds, msecs);
-	if (ret < 0) {
-		LOG_ERR("ret:%d errno:%d", ret, errno);
-	}
-
-	return ret;
+	return modem_socket_poll(&mdata.socket_config, fds, nfds, msecs);
 }
 
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
@@ -1138,22 +1152,26 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	struct socket_read_data sock_data;
 
 	if (!buf || len == 0) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	if (flags & MSG_PEEK) {
-		return -ENOTSUP;
+		errno = ENOTSUP;
+		return -1;
 	}
 
 	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config,
 							 sock);
 	if (!next_packet_size) {
 		if (flags & MSG_DONTWAIT) {
-			return 0;
+			errno = EAGAIN;
+			return -1;
 		}
 
 		if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-			return -ENOTCONN;
+			errno = 0;
+			return 0;
 		}
 
 		modem_socket_wait_data(&mdata.socket_config, sock);
@@ -1191,6 +1209,8 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 			     cmd, ARRAY_SIZE(cmd), sendbuf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
 		goto exit;
 	}
 
@@ -1201,6 +1221,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	}
 
 	/* return length of received data */
+	errno = 0;
 	ret = sock_data.recv_read_len;
 
 exit:
@@ -1213,6 +1234,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 			      int flags, const struct sockaddr *to,
 			      socklen_t tolen)
 {
+	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct modem_cmd cmd[] = {
 		MODEM_CMD("+USOST: ", on_cmd_sockwrite, 2U, ","),
@@ -1220,19 +1242,28 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	};
 
 	if (!buf || len == 0) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-		return -ENOTCONN;
+		errno = ENOTCONN;
+		return -1;
 	}
 
 	if (!to && sock->ip_proto == IPPROTO_UDP) {
 		to = &sock->dst;
 	}
 
-	return send_socket_data(sock, to, cmd, ARRAY_SIZE(cmd),
-				buf, len, MDM_CMD_TIMEOUT);
+	ret = send_socket_data(sock, to, cmd, ARRAY_SIZE(cmd), buf, len,
+			       MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	errno = 0;
+	return ret;
 }
 
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
