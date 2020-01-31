@@ -105,6 +105,7 @@ struct uarte_nrfx_data {
 #ifdef CONFIG_UART_ASYNC_API
 	struct uarte_async_cb *async;
 #endif
+	atomic_val_t poll_out_lock;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	u32_t pm_state;
 #endif
@@ -456,8 +457,6 @@ static int uarte_nrfx_init(struct device *dev)
 			     NRF_UARTE_INT_ENDRX_MASK |
 			     NRF_UARTE_INT_RXSTARTED_MASK |
 			     NRF_UARTE_INT_ERROR_MASK |
-			     NRF_UARTE_INT_ENDTX_MASK |
-			     NRF_UARTE_INT_TXSTOPPED_MASK |
 			     NRF_UARTE_INT_RXTO_MASK);
 	nrf_uarte_enable(uarte);
 
@@ -479,12 +478,20 @@ static int uarte_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 		return -ENOTSUP;
 	}
 
-	if (data->async->tx_buf || data->async->tx_size) {
+	if (atomic_cas((atomic_t *) &data->async->tx_size,
+		       (atomic_val_t) 0,
+		       (atomic_val_t) len) == false) {
 		return -EBUSY;
 	}
+
 	data->async->tx_buf = buf;
-	data->async->tx_size = len;
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
+
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
+	nrf_uarte_int_enable(uarte,
+			     NRF_UARTE_INT_ENDTX_MASK |
+			     NRF_UARTE_INT_TXSTOPPED_MASK);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS
 	    && timeout != K_FOREVER) {
@@ -802,6 +809,9 @@ static void txstopped_isr(struct device *dev)
 	}
 	data->async->tx_buf = NULL;
 	data->async->tx_size = 0;
+
+	nrf_uarte_int_disable(get_uarte_instance(dev),
+			      NRF_UARTE_INT_TXSTOPPED_MASK);
 	user_callback(dev, &evt);
 }
 
@@ -810,6 +820,8 @@ static void endtx_isr(struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
+	nrf_uarte_int_disable(uarte,
+			      NRF_UARTE_INT_ENDTX_MASK);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 	k_timer_stop(&data->async->tx_timeout_timer);
 }
@@ -846,12 +858,15 @@ static void uarte_nrfx_isr_async(struct device *dev)
 		rxto_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)
+	    && nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 		endtx_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)
+	    && nrf_uarte_int_enable_check(uarte,
+					  NRF_UARTE_INT_TXSTOPPED_MASK)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
 		txstopped_isr(dev);
 	}
@@ -901,9 +916,10 @@ static int uarte_nrfx_poll_in(struct device *dev, unsigned char *c)
 static void uarte_nrfx_poll_out(struct device *dev, unsigned char c)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_nrfx_data *data = get_dev_data(dev);
+	atomic_t *lock;
 
 #ifdef CONFIG_UART_ASYNC_API
-	const struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (data->async) {
 		while (data->async->tx_buf) {
@@ -915,33 +931,31 @@ static void uarte_nrfx_poll_out(struct device *dev, unsigned char c)
 				uarte_nrfx_isr_async(dev);
 			}
 		}
-		/* Set tx_size but don't set tx_buf to differentiate this
-		 * transmission from the one started with uarte_nrfx_tx,
-		 * this way uarte_nrfx_tx will return -EBUSY and poll out will
-		 * work when interrupted.
+		/* Use tx_size as lock, this way uarte_nrfx_tx will
+		 * return -EBUSY during poll_out.
 		 */
-		data->async->tx_size = 1;
-		nrf_uarte_int_disable(uarte,
-				      NRF_UARTE_INT_ENDTX_MASK |
-				      NRF_UARTE_INT_TXSTOPPED_MASK);
-	}
+		lock = &data->async->tx_size;
+	} else
 #endif
-	/* The UART API dictates that poll_out should wait for the transmitter
-	 * to be empty before sending a character. However, the only way of
-	 * telling if the transmitter became empty in the UARTE peripheral is
-	 * to check if the ENDTX event for the previous transmission was set.
-	 * Since this event is not cleared automatically when a new transmission
-	 * is started, it must be cleared in software, and this leads to a rare
-	 * yet possible race condition if the thread is preempted right after
-	 * clearing the event but before sending a new character. The preempting
-	 * thread, if it also called poll_out, would then wait for the ENDTX
-	 * event that had no chance to become set.
+		lock = &data->poll_out_lock;
 
-	 * Because of this race condition, the while loop has to be placed
-	 * after the write to TXD, and we can't wait for an empty transmitter
-	 * before writing. This is a trade-off between losing a byte once in a
-	 * blue moon against hanging up the whole thread permanently
-	 */
+	if (!k_is_in_isr()) {
+		u8_t safety_cnt = 100;
+
+		while (atomic_cas((atomic_t *) lock,
+				(atomic_val_t) 0,
+				(atomic_val_t) 1) == false) {
+			/* k_sleep allows other threads to execute and finish
+			 * their transactions.
+			 */
+			k_sleep(1);
+			if (--safety_cnt == 0) {
+				return;
+			}
+		}
+	} else {
+		*lock = 1;
+	}
 
 	/* reset transmitter ready state */
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
@@ -951,23 +965,18 @@ static void uarte_nrfx_poll_out(struct device *dev, unsigned char c)
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 
 	/* Wait for transmitter to be ready */
-	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
-	}
+	int res;
 
-	/* If there is nothing to send, driver will save an energy
-	 * when TX is stopped.
+	NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX),
+		      1000, 1, res);
+
+	/* Deactivate the transmitter so that it does not needlessly
+	 * consume power.
 	 */
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 
-#ifdef CONFIG_UART_ASYNC_API
-	if (data->async) {
-		data->async->tx_size = 0;
-		nrf_uarte_int_enable(uarte,
-				     NRF_UARTE_INT_ENDTX_MASK |
-				     NRF_UARTE_INT_TXSTOPPED_MASK);
-
-	}
-#endif
+	/* Release the lock. */
+	*lock = 0;
 }
 #ifdef UARTE_INTERRUPT_DRIVEN
 /** Interrupt driven FIFO fill function */
