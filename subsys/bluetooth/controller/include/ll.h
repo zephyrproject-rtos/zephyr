@@ -21,6 +21,16 @@ uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t phy_p, uint8_t skip, uint8_t phy_s, uint8_t sid, uint8_t sreq);
 uint8_t ll_adv_data_set(uint16_t handle, uint8_t len, uint8_t const *const p_data);
 uint8_t ll_adv_scan_rsp_set(uint16_t handle, uint8_t len, uint8_t const *const p_data);
+uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t *addr);
+uint8_t *ll_adv_aux_random_addr_get(uint8_t handle, uint8_t *addr);
+uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
+			       uint8_t len, uint8_t *data);
+uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
+			       uint8_t len, uint8_t *data);
+uint16_t ll_adv_aux_max_data_length_get(void);
+uint8_t ll_adv_aux_set_count_get(void);
+uint8_t ll_adv_aux_set_remove(uint8_t handle);
+uint8_t ll_adv_aux_set_clear(void);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		       uint8_t own_addr_type, uint8_t direct_addr_type,
