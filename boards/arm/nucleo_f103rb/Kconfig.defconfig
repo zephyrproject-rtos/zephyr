@@ -32,4 +32,11 @@ config SPI_2
 
 endif
 
+if ADC
+
+config ADC_1
+	default y
+
+endif # ADC
+
 endif # BOARD_NUCLEO_F103RB

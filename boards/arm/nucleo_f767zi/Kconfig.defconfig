@@ -60,4 +60,11 @@ config CAN_1
 
 endif # CAN
 
+if ADC
+
+config ADC_1
+	default y
+
+endif # ADC
+
 endif # BOARD_NUCLEO_F767ZI

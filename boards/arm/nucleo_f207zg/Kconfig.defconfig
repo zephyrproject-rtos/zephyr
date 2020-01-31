@@ -32,4 +32,11 @@ config UART_6
 
 endif # SERIAL
 
+if ADC
+
+config ADC_1
+	default y
+
+endif # ADC
+
 endif # BOARD_NUCLEO_F207ZG
