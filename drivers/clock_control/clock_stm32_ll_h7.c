@@ -217,11 +217,6 @@ static int stm32_clock_control_init(struct device *dev)
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
-	/* Power Configuration */
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-	}
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSE
 
