@@ -186,10 +186,10 @@ arduino_i2c: &i2c0 {
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
-	sck-pin = <42>;
-	mosi-pin = <43>;
-	miso-pin = <44>;
+	status = "disabled";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
 };
 
 &qspi {

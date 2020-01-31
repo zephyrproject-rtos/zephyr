@@ -34,9 +34,6 @@ if SPI
 config SPI_1
 	default y
 
-config SPI_2
-	default y
-
 config SPI_3
 	default y
 
