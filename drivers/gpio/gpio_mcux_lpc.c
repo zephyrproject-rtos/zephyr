@@ -341,30 +341,22 @@ static int gpio_mcux_lpc_manage_cb(struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_mcux_lpc_enable_cb(struct device *port, int access_op,
+static int gpio_mcux_lpc_enable_cb(struct device *port,
 				   u32_t pin)
 {
 	struct gpio_mcux_lpc_data *data = port->driver_data;
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables |= BIT(pin);
-	} else {
-		data->pin_callback_enables = 0xFFFFFFFF;
-	}
+	data->pin_callback_enables |= BIT(pin);
 
 	return 0;
 }
 
-static int gpio_mcux_lpc_disable_cb(struct device *port, int access_op,
+static int gpio_mcux_lpc_disable_cb(struct device *port,
 				    u32_t pin)
 {
 	struct gpio_mcux_lpc_data *data = port->driver_data;
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables &= ~BIT(pin);
-	} else {
-		data->pin_callback_enables = 0U;
-	}
+	data->pin_callback_enables &= ~BIT(pin);
 
 	return 0;
 }

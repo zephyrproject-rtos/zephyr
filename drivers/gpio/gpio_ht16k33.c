@@ -161,7 +161,6 @@ static int gpio_ht16k33_manage_callback(struct device *dev,
 }
 
 static int gpio_ht16k33_enable_callback(struct device *dev,
-					int access_op,
 					u32_t pin)
 {
 	/* All callbacks are always enabled */
@@ -169,7 +168,6 @@ static int gpio_ht16k33_enable_callback(struct device *dev,
 }
 
 static int gpio_ht16k33_disable_callback(struct device *dev,
-					int access_op,
 					u32_t pin)
 {
 	/* Individual callbacks can not be disabled */

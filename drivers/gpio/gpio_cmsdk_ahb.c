@@ -305,45 +305,21 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 }
 
 static int gpio_cmsdk_ahb_enable_callback(struct device *dev,
-					  int access_op, u32_t pin)
+					  u32_t pin)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	u32_t mask;
 
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		mask = BIT(pin);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		mask = 0xFFFF;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	cfg->port->intenset |= mask;
+	cfg->port->intenset |= BIT(pin);
 
 	return 0;
 }
 
 static int gpio_cmsdk_ahb_disable_callback(struct device *dev,
-					   int access_op, u32_t pin)
+					   u32_t pin)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	u32_t mask;
 
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		mask = BIT(pin);
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		mask = 0xFFFF;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	cfg->port->intenclr |= mask;
+	cfg->port->intenclr |= BIT(pin);
 
 	return 0;
 }

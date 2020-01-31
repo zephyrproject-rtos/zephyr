@@ -257,34 +257,26 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 
 
 static int gpio_cc32xx_enable_callback(struct device *dev,
-				    int access_op, u32_t pin)
+				    u32_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
 	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables |= (1 << pin);
-	} else {
-		data->pin_callback_enables = 0xFFFFFFFF;
-	}
+	data->pin_callback_enables |= (1 << pin);
 
 	return 0;
 }
 
 
 static int gpio_cc32xx_disable_callback(struct device *dev,
-				     int access_op, u32_t pin)
+				     u32_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
 	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables &= ~(1 << pin);
-	} else {
-		data->pin_callback_enables = 0U;
-	}
+	data->pin_callback_enables &= ~(1 << pin);
 
 	return 0;
 }

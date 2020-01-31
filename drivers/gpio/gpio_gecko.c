@@ -301,13 +301,9 @@ static int gpio_gecko_manage_callback(struct device *dev,
 }
 
 static int gpio_gecko_enable_callback(struct device *dev,
-				      int access_op, u32_t pin)
+				      u32_t pin)
 {
 	struct gpio_gecko_data *data = dev->driver_data;
-
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		return -ENOTSUP;
-	}
 
 	data->pin_callback_enables |= BIT(pin);
 	GPIO->IEN |= BIT(pin);
@@ -316,13 +312,9 @@ static int gpio_gecko_enable_callback(struct device *dev,
 }
 
 static int gpio_gecko_disable_callback(struct device *dev,
-				       int access_op, u32_t pin)
+				       u32_t pin)
 {
 	struct gpio_gecko_data *data = dev->driver_data;
-
-	if (access_op == GPIO_ACCESS_BY_PORT) {
-		return -ENOTSUP;
-	}
 
 	data->pin_callback_enables &= ~BIT(pin);
 	GPIO->IEN &= ~BIT(pin);
