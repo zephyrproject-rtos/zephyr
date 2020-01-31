@@ -27,6 +27,9 @@
 #elif defined CONFIG_TRACING_CTF
 #include "tracing_ctf.h"
 
+#elif defined CONFIG_TRACING_TEST
+#include "tracing_test.h"
+
 #else
 
 /**

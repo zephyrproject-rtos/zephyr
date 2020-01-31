@@ -448,6 +448,13 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
+config TRACING_TEST
+	bool "Tracing for test usage"
+	depends on TRACING
+	help
+	  Enable tracing for testing kinds of format purpose. It must
+	  implement the tracing hooks defined in tracing_test.h
+
 
 source "subsys/debug/Kconfig.segger"
 
