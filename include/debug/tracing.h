@@ -18,15 +18,6 @@
 #define SYS_TRACE_ID_SEMA_GIVE               (5u + SYS_TRACE_ID_OFFSET)
 #define SYS_TRACE_ID_SEMA_TAKE               (6u + SYS_TRACE_ID_OFFSET)
 
-#ifdef CONFIG_TRACING
-void sys_trace_idle(void);
-void sys_trace_isr_enter(void);
-void sys_trace_isr_exit(void);
-void sys_trace_isr_exit_to_scheduler(void);
-void sys_trace_thread_switched_in(void);
-void sys_trace_thread_switched_out(void);
-#endif
-
 #ifdef CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 
