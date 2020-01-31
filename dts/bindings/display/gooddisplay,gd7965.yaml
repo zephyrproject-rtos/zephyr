@@ -21,14 +21,29 @@ properties:
     reset-gpios:
       type: phandle-array
       required: true
+      description: RESET pin.
+
+        The RESET pin of GD7965 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
 
     dc-gpios:
       type: phandle-array
       required: true
+      description: DC pin.
+
+        The DC pin of GD7965 is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
 
     busy-gpios:
       type: phandle-array
       required: true
+      description: BUSY pin.
+
+        The BUSY pin of GD7965 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
 
     pwr:
       type: uint8-array
