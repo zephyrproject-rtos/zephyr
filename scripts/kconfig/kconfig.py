@@ -82,7 +82,7 @@ def main():
 
     # Write the merged configuration and the C header
     print(kconf.write_config(args.config_out))
-    kconf.write_autoconf(args.header_out)
+    print(kconf.write_autoconf(args.header_out))
 
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
