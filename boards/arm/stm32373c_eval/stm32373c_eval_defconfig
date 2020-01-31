@@ -6,7 +6,6 @@ CONFIG_SOC_SERIES_STM32F3X=y
 
 # Platform Configuration
 CONFIG_SOC_STM32F373XC=y
-CONFIG_BOARD_STM32373C_EVAL=y
 
 # Floating Point Options
 CONFIG_FLOAT=y
