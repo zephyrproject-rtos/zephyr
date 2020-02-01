@@ -338,14 +338,17 @@ static bool pong_uuid_match(const u8_t *data, u8_t len)
 
 static void create_conn(const bt_addr_le_t *addr)
 {
+	int err;
+
 	if (default_conn) {
 		return;
 	}
 
 	printk("Found matching device, initiating connection...\n");
 
-	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
-	if (!default_conn) {
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	if (err) {
 		printk("Failed to initiate connection");
 		return;
 	}

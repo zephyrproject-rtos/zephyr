@@ -25,6 +25,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
+	int err;
 
 	if (default_conn) {
 		return;
@@ -47,7 +48,11 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 		return;
 	}
 
-	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	if (err) {
+		printk("Create conn to %s failed (%u)\n", addr_str, err);
+	}
 }
 
 static void start_scan(void)

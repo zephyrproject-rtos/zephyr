@@ -506,11 +506,12 @@ static void connect(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
 	u8_t status;
+	int err;
 
-	conn = bt_conn_create_le((bt_addr_le_t *) data,
-				 BT_LE_CONN_PARAM_DEFAULT);
-	if (!conn) {
-		LOG_ERR("Failed to create connection");
+	err = bt_conn_le_create((bt_addr_le_t *) data, BT_CONN_LE_CREATE_CONN,
+				 BT_LE_CONN_PARAM_DEFAULT, &conn);
+	if (err) {
+		LOG_ERR("Failed to create connection (%d)", err);
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}

@@ -738,10 +738,10 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	conn = bt_conn_create_le(&addr, BT_LE_CONN_PARAM_DEFAULT);
-
-	if (!conn) {
-		shell_error(shell, "Connection failed");
+	err = bt_conn_le_create(&addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM_DEFAULT, &conn);
+	if (err) {
+		shell_error(shell, "Connection failed (%d)", err);
 		return -ENOEXEC;
 	} else {
 
@@ -1649,7 +1649,8 @@ static int cmd_wl_connect(const struct shell *shell, size_t argc, char *argv[])
 	const char *action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		err = bt_conn_create_auto_le(BT_LE_CONN_PARAM_DEFAULT);
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN_AUTO,
+					     BT_LE_CONN_PARAM_DEFAULT);
 
 		if (err) {
 			shell_error(shell, "Auto connect failed (err %d)", err);

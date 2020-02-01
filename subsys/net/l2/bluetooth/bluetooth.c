@@ -392,9 +392,8 @@ static int bt_connect(u32_t mgmt_request, struct net_if *iface, void *data,
 					     L2CAP_IPSP_PSM);
 	}
 
-	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
-
-	return 0;
+	return bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				 BT_LE_CONN_PARAM_DEFAULT, &default_conn);
 }
 
 static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
