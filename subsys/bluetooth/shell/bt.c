@@ -149,7 +149,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (err) {
-		shell_error(ctx_shell, "Failed to connect to %s (%u)", addr,
+		shell_error(ctx_shell, "Failed to connect to %s (0x%02x)", addr,
 			     err);
 		goto done;
 	}
