@@ -1193,15 +1193,16 @@ static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
  * @param value Value set on the pin.
  * @return 0 if successful, negative errno code on failure.
  *
- * @deprecated Replace with gpio_pin_set_raw(), or gpio_pin_set() if
- * active level is handled correctly.
+ * @deprecated Replace with gpio_pin_set assuming active level is
+ * handled correctly.  gpio_pin_set_raw() may be more correct for some
+ * drivers.
  */
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_write(struct device *port,
 					      gpio_pin_t pin,
 					      u32_t value)
 {
-	return gpio_pin_set_raw(port, pin, value != 0);
+	return gpio_pin_set(port, pin, value != 0);
 }
 
 /**
@@ -1214,15 +1215,16 @@ __deprecated static inline int gpio_pin_write(struct device *port,
  * @param value Integer pointer to receive the data values from the pin.
  * @return 0 if successful, negative errno code on failure.
  *
- * @deprecated Replace with gpio_pin_get_raw(), or gpio_pin_get() if
- * active level is handled correctly.
+ * @deprecated Replace with gpio_pin_get() assuming active level is
+ * handled correctly.  gpio_pin_get_raw() may be more correct for some
+ * drivers.
  */
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_read(struct device *port,
 					     gpio_pin_t pin,
 					     u32_t *value)
 {
-	int rv = gpio_pin_get_raw(port, pin);
+	int rv = gpio_pin_get(port, pin);
 
 	if (rv >= 0) {
 		*value = rv;
