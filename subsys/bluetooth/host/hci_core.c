@@ -1312,40 +1312,55 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (evt->status) {
 		/*
-		 * If there was an error we are only interested in pending
-		 * connection. There is no need to check ID address as
-		 * only one connection can be in that state.
-		 *
-		 * Depending on error code address might not be valid anyway.
+		 * Here we are only interested in pending connection.
 		 */
-		conn = find_pending_connect(evt->role, NULL);
-		if (!conn) {
-			return;
-		}
-
-		conn->err = evt->status;
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
+		    evt->status == BT_HCI_ERR_ADV_TIMEOUT) {
 			/*
-			 * Handle advertising timeout after high duty directed
-			 * advertising.
+			 * Handle advertising timeout after high duty cycle
+			 * directed advertising.
 			 */
 
 			atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+
+			/*
+			 * There is no need to check ID address as only one
+			 * connection in slave role can be in pending state.
+			 */
+			conn = find_pending_connect(BT_HCI_ROLE_SLAVE, NULL);
+			if (!conn) {
+				BT_ERR("No pending slave connection");
+				return;
+			}
+
+			conn->err = evt->status;
+
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			goto done;
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+		    evt->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			/*
+			 * Handle create connection cancel.
+			 *
+			 * There is no need to check ID address as only one
+			 * connection in master role can be in pending state.
+			 */
+			conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL);
+			if (!conn) {
+				BT_ERR("No pending master connection");
+				return;
+			}
+
+			conn->err = evt->status;
+
 			le_conn_cancel_complete(conn);
 			goto done;
 		}
 
 		BT_WARN("Unexpected status 0x%02x", evt->status);
-
-		bt_conn_unref(conn);
 
 		return;
 	}
