@@ -8,6 +8,9 @@ toolchain:
   - xtools
 supported:
   - netif:eth
+  - adc
   - gpio
+  - spi
   - watchdog
+  - usb_device
   - pwm
