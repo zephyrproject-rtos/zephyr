@@ -100,8 +100,10 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask,
 		/* Enable pull-up. */
 		pio->PIO_PUER = mask;
 #if defined(CONFIG_SOC_SERIES_SAM4S) || \
+	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
+
 	/* Setup Pull-down resistor. */
 	} else if (flags & GPIO_PULL_DOWN) {
 		/* Enable pull-down. */
@@ -117,8 +119,10 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask,
 		pio->PIO_SCIFSR = mask;
 	}
 #elif defined(CONFIG_SOC_SERIES_SAM4S) || \
+	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
+
 	/* Setup debounce. */
 	if (flags & GPIO_INT_DEBOUNCE) {
 		pio->PIO_IFSCER = mask;
