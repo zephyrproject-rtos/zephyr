@@ -511,7 +511,7 @@ static int cmd_active_scan_on(const struct shell *shell, u32_t options)
 {
 	int err;
 	struct bt_le_scan_param param = {
-			.type       = BT_HCI_LE_SCAN_ACTIVE,
+			.type       = BT_LE_SCAN_TYPE_ACTIVE,
 			.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW };
@@ -533,7 +533,7 @@ static int cmd_active_scan_on(const struct shell *shell, u32_t options)
 static int cmd_passive_scan_on(const struct shell *shell, u32_t options)
 {
 	struct bt_le_scan_param param = {
-			.type       = BT_HCI_LE_SCAN_PASSIVE,
+			.type       = BT_LE_SCAN_TYPE_PASSIVE,
 			.options    = BT_LE_SCAN_OPT_NONE,
 			.interval   = 0x10,
 			.window     = 0x10 };
