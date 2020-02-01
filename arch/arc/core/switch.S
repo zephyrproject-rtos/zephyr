@@ -162,6 +162,16 @@ return_loc:
 _switch_return_from_rirq:
 _switch_return_from_firq:
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/* here need to recover SEC_STAT.IRM bit */
 	pop_s r3

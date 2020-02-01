@@ -303,6 +303,15 @@ _rirq_reschedule:
 	lr r3, [_ARC_V2_SEC_STAT]
 	push_s r3
 #endif
+
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to remember the user/kernel status of interrupted thread
+ */
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r3, 0x80000000
+	push_s r3
+#endif
 	/* _save_callee_saved_regs expects outgoing thread in r2 */
 	_save_callee_saved_regs
 
@@ -400,6 +409,15 @@ _rirq_return_from_coop:
 .balign 4
 _rirq_return_from_firq:
 _rirq_return_from_rirq:
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/* here need to recover SEC_STAT.IRM bit */
 	pop_s r3
