@@ -11,9 +11,9 @@
 
 / {
 	in-dir-1 {
-		compatible = "in-dir-1";
+		compatible = "in-dir";
 	};
 	in-dir-2 {
-		compatible = "in-dir-2";
+		compatible = "in-dir";
 	};
 };

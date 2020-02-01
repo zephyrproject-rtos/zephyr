@@ -1,0 +1,8 @@
+# Copyright (c) 2018..2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    Pinctrl state. A node that bundles a set of pin configuration
+    nodes that shall be applied in a single pin control operation.
+
+compatible: "pinctrl-state"

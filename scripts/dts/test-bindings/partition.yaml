@@ -1,0 +1,25 @@
+# Copyright (c) 2018,2019 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: Flash partition definition for fixed partitions
+
+compatible: "fixed-partitions"
+
+properties:
+    "#address-cells":
+      type: int
+      required: true
+      description: >
+        <1>: for partitions that require a single 32-bit cell to represent their
+            size/address (aka the value is below 4 GiB)
+        <2>: for partitions that require two 32-bit cells to represent their
+            size/address (aka the value is 4 GiB or greater).
+
+    "#size-cells":
+      type: int
+      required: false
+      description: >
+        <1>: for partitions that require a single 32-bit cell to represent their
+            size/address (aka the value is below 4 GiB)
+        <2>: for partitions that require two 32-bit cells to represent their
+            size/address (aka the value is 4 GiB or greater).

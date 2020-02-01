@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Nordic Semiconductor
- *
+ * Copyright (c) 2020, Bobby Noelte
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -9,6 +9,62 @@
 /dts-v1/;
 
 / {
+	//
+	// Chosen
+	//
+
+	chosen {
+		stdout-path = "/a/b";
+	};
+
+	//
+	// Clocks
+	//
+
+	clock-test {
+		clock-provider {
+			compatible = "clock-provider";
+			#clock-cells = <1>;
+			clock-output-names = "clkout-0", "clkout-1", "clkout-2";
+		};
+		clock-consumer {
+			compatible = "clock-consumer";
+			clocks = <&{/clock-test/clock-provider} 2
+				  &{/clock-test/clock-provider} 1>;
+			clock-names = "clkin-0", "clkin-1";
+		};
+	};
+
+	//
+	// Gpio leds
+	//
+
+	gpio-leds-test {
+		leds-controller {
+			compatible = "gpio-leds";
+
+			led0 {
+				gpios = <&{/gpio-leds-test/gpio-0} 0 1>;
+				default-state = <1>;
+				color = <99>;
+				function = <1>;
+				led-pattern = <255 1000 0 1000>;
+			};
+			led1 {
+				gpios = <&{/gpio-leds-test/gpio-0} 1 0>;
+				default-state = <1>;
+				color = <77>;
+				function = <2>;
+				led-pattern = <255 2000 0 2000>;
+			};
+		};
+		gpio-0 {
+			compatible = "gpio-two-cell";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
 	//
 	// Interrupts
 	//
@@ -186,6 +242,51 @@
 	};
 
 	//
+	// For testing partitions
+	//
+
+	partition {
+		flash-controller {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash-0 {
+				compatible = "soc-nv-flash";
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition-0-0 {
+						label = "flash-0 partition-0";
+						reg = <0 100>;
+					};
+					partition-0-1 {
+						label = "flash-0 partition-1";
+						reg = <100 100>;
+					};
+				};
+			};
+		};
+		flash-1 {
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition-1-0 {
+					label = "flash-1 partition-0";
+					reg = <0 1000>;
+				};
+				partition-replace-label {
+					reg = <1000 1000>;
+					status = "okay";
+				};
+			};
+		};
+	};
+
+	//
 	// 'pinctrl-<index>'
 	//
 
@@ -198,9 +299,31 @@
 			pinctrl-names = "zero", "one", "two";
 		};
 		pincontroller {
+			pin-controller;
+			gpio-0 {
+				compatible = "pinctrl-gpio";
+				gpio-controller;
+				gpio-ranges = <&{/pinctrl/pincontroller} 0 0 16>;
+				gpio-ranges-group-names = "gpio-0";
+			};
+			gpio-1 {
+				compatible = "pinctrl-gpio";
+				gpio-controller;
+				gpio-ranges = <&{/pinctrl/pincontroller} 0 16 16>;
+				gpio-ranges-group-names = "gpio-1";
+			};
 			state-1 {
+				pincfg-1-1 {
+					pinmux = <0 1>;
+				};
+				pincfg-1-2 {
+					pinmux = <1 2>;
+				};
 			};
 			state-2 {
+				pincfg-2-1 {
+					groups = "group";
+				};
 			};
 		};
 	};

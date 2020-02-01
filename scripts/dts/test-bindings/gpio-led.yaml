@@ -1,0 +1,47 @@
+# Copyright (c) 2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO LED
+
+compatible: "gpio-led"
+
+properties:
+    gpios:
+      type: phandle-array
+      required: true
+    function:
+      required: false
+      type: int
+      description: Numerical LED functon identifier.
+    color:
+      required: false
+      type: int
+      description: Numerical LED color identifier
+    default-state:
+      required: false
+      type: int
+      default: 0
+      description: >
+        The initial state of the LED. Valid values are LED_STATE_OFF (0),
+        LED_STATE_ON (1), and LED_STATE_KEEP (2). If the LED is already on or
+        off and the default-state property is set the to same value, then no
+        glitch should be produced where the LED momentarily turns off (or on).
+        The LED_STATE_KEEP setting will keep the LED at whatever its current
+        state is, without producing a glitch. The default is LED_STATE_OFF (0)
+        if this property is not present.
+    led-pattern:
+      required: false
+      type: array
+      description: Array of integers with default pattern for certain triggers.
+    retain-state-suspended:
+      required: false
+      type: boolean
+      description: Retain the state of the LED in suspend state.
+    retain-state-shutdown:
+      required: false
+      type: boolean
+      description: Retain the state of the LED on shutdown.
+    panic-indicator:
+      required: false
+      type: boolean
+      description: The LED should be used as a panic indicator.

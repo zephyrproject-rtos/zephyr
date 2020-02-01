@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: GPIO for pinctrl test
+
+compatible: "pinctrl-gpio"
+
+properties:
+    "gpio-controller":
+      type: boolean
+      required: true
+      description: Convey's this node is a GPIO controller
+
+    gpio-ranges:
+      type: phandle-array
+      required: false
+      description: gpio range in pin controller
+
+    gpio-ranges-group-names:
+      type: string-array
+      required: false
+      description: gpio range names

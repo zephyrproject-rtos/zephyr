@@ -1,0 +1,159 @@
+# Copyright (c) 2018..2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: Pin configuration
+
+compatible: "pincfg"
+
+properties:
+
+    groups:
+        description: >
+            The list of names of the groups that properties in the node apply to
+            (either this, "pins", "pinmux" or "pinctrl-pin-array" have to be
+            specified).
+        required: false
+        type: string-array
+
+    pins:
+        description: >
+            The list of numeric pin ids that properties in the node apply to
+            (either this, "groups", "pinmux" or "pinctrl-pin-array" have to be
+            specified).
+        required: false
+        type: array
+
+    function:
+        required: false
+        type: string
+
+    pinmux:
+        description: >
+            The list of numeric pin ids and their mux settings that properties
+            in the node apply to (either this, "pins", "groups" or
+            "pinctrl-pin-array" have to be specified).
+        required: false
+        type: array
+
+    pinctrl-pin-array:
+        description: >
+            The list of pin controller register index and values (either this,
+            "pins", "pinmux" or "groups" have to be specified). pinctrl-cells
+            specifies the number of value cells in addition to the index of the
+            registers. No other properties shall be in the node.
+        required: false
+        type: array
+
+    bias-disable:
+        description: Disable any pin bias.
+        required: false
+        type: boolean
+
+    bias-high-impedance:
+        required: false
+        type: boolean
+
+    bias-bus-hold:
+        required: false
+        type: boolean
+
+    bias-pull-up:
+        description: Pull up strength in Ohm. 0 to disable pull up.
+        required: false
+        type: int
+
+    bias-pull-down:
+        description: Pull down strength in Ohm. 0 to disable pull down.
+        required: false
+        type: int
+
+    bias-pull-pin-default:
+        required: false
+        type: int
+
+    drive-push-pull:
+        required: false
+        type: boolean
+
+    drive-open-drain:
+        required: false
+        type: boolean
+
+    drive-open-source:
+        required: false
+        type: boolean
+
+    drive-strength:
+        description: >
+            Sink or source at most X mA. 0 to disable drive strength control.
+        required: false
+        type: int
+
+    input-enable:
+        required: false
+        type: boolean
+
+    input-debounce:
+        description: Debounce time in usec. 0 to disable debouncing.
+        required: false
+        type: int
+
+    input-disable:
+        required: false
+        type: boolean
+
+    input-schmitt-enable:
+        required: false
+        type: boolean
+
+    input-schmitt-disable:
+        required: false
+        type: boolean
+
+    low-power-enable:
+        description: Enable low power mode.
+        required: false
+        type: boolean
+
+    low-power-disable:
+        description: Disable low power mode.
+        required: false
+        type: boolean
+
+    output-disable:
+        required: false
+        type: boolean
+
+    output-enable:
+        required: false
+        type: boolean
+
+    output-low:
+        required: false
+        type: boolean
+
+    output-high:
+        required: false
+        type: boolean
+
+    power-source:
+        description: Numerical ID of power source to select.
+        required: false
+        type: int
+        default: 0
+
+    slew-rate:
+        description: Slew rate
+        required: false
+        type: int
+        default: 0
+
+    skew-delay:
+        description: >
+            Expected clock skew on input pins and the delay before latching
+            a value to an output pin.
+            Typically indicated by the number of double-inverters used to
+            delay the signal.
+        required: false
+        type: int
+        default: 0

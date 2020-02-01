@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: GPIO controller with two cells
+
+compatible: "gpio-two-cell"
+
+properties:
+    "#gpio-cells":
+     type: int
+     required: true
+
+gpio-cells:
+    - gpio_cell_one
+    - gpio_cell_two

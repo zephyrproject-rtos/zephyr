@@ -1,0 +1,70 @@
+# Copyright (c) 2019..2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: Chosen properties
+
+compatible: "chosen"
+
+properties:
+    stdout-path:
+        type: string
+        required: false
+        description: >
+          Device to be used for boot console output
+          If the character ":" is present in the value, this terminates the path.
+          The meaning of any characters following the ":" is device-specific, and
+          must be specified in the relevant binding documentation.
+          For UART devices, the preferred binding is a string in the form:
+            path:<baud>{<parity>{<bits>{<flow>}}}
+          where
+            path    - path of uart device
+            baud	- baud rate in decimal
+            parity	- 'n' (none), 'o', (odd) or 'e' (even)
+            bits	- number of data bits
+            flow	- 'r' (rts)
+          For example: 115200n8r
+
+    zephyr,flash:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,sram:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,ccm:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,console:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,shell-uart:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,bt-uart:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,uart-pipe:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,bt-mon-uart:
+        type: path
+        required: false
+        description: TBD
+
+    zephyr,uart-mcumgr:
+        type: path
+        required: false
+        description: TBD

@@ -1,0 +1,40 @@
+# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2019..2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for clock controllers
+
+description: Clock provider
+
+compatible: "clock-provider"
+
+properties:
+    "#clock-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a Clock specifier
+
+    clock-output-names:
+        type: string-array
+        required: false
+        description: >
+          A list of strings of clock output signal names indexed by the first
+          cell in the clock specifier.
+
+    clock-indices:
+        type: array
+        required: false
+        description: >
+          The identifying number for the clocks in the node. If it is not linear
+          from zero, then this allows the mapping of identifiers into the
+          clock-output-names array.
+
+    protected-clocks:
+        type: phandles
+        required: false
+        description: >
+          Clocks that are not fully exposed, such as in situations where those
+          clocks are used by drivers running in ARM secure execution levels.
+
+clock-cells:
+    - clock-id

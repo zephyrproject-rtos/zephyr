@@ -1,0 +1,6 @@
+# Copyright (c) 2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO LEDs controller
+
+compatible: "gpio-leds"

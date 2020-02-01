@@ -1,0 +1,24 @@
+# Copyright (c) 2018..2020 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fixed partition (one of the partions of a 'fixed-partitions' node).
+
+compatible: "fixed-partition"
+
+properties:
+    label:
+        type: string
+        required: false
+        description: The label / name for this partition.  If omitted, the label is taken
+                     from the node name (excluding the unit address).
+
+    read-only:
+        type: boolean
+        required: false
+        description: This parameter, if present, is a hint that this
+                     partition should/ can only be used read-only.
+
+    reg:
+        type: array
+        required: false
+        description: partition offset (address) and size within flash

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2020 Bobby Noelte
 # SPDX-License-Identifier: BSD-3-Clause
 
 import io
@@ -40,6 +41,26 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
 """)
 
     #
+    # Test clocks
+    #
+
+    verify_streq(edt.get_node("/clock-test/clock-consumer").clocks,
+                 "[<ControllerAndData, name: clkin-0, controller: <Node /clock-test/clock-provider in 'test.dts', binding test-bindings/clock-controller.yaml>, data: OrderedDict([('clock-id', 2)])>, <ControllerAndData, name: clkin-1, controller: <Node /clock-test/clock-provider in 'test.dts', binding test-bindings/clock-controller.yaml>, data: OrderedDict([('clock-id', 1)])>]")
+
+    verify_streq(edt.get_node("/clock-test/clock-provider").clock_outputs,
+                 "[<ControllerAndData, name: clkout-0, controller: <Node /clock-test/clock-provider in 'test.dts', binding test-bindings/clock-controller.yaml>, data: {}>, <ControllerAndData, name: clkout-1, controller: <Node /clock-test/clock-provider in 'test.dts', binding test-bindings/clock-controller.yaml>, data: {}>, <ControllerAndData, name: clkout-2, controller: <Node /clock-test/clock-provider in 'test.dts', binding test-bindings/clock-controller.yaml>, data: {}>]")
+
+    #
+    # Test gio leds
+    #
+
+    verify_streq(edt.get_node("/gpio-leds-test/leds-controller").gpio_leds,
+                 "[<ControllerAndData, name: led0, controller: <Node /gpio-leds-test/leds-controller in 'test.dts', binding test-bindings/gpio-leds.yaml>, data: {'gpios': [<ControllerAndData, controller: <Node /gpio-leds-test/gpio-0 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, data: OrderedDict([('gpio_cell_one', 0), ('gpio_cell_two', 1)])>], 'function': 1, 'color': 99, 'default-state': 1, 'led-pattern': [255, 1000, 0, 1000], 'retain-state-suspended': False, 'retain-state-shutdown': False, 'panic-indicator': False}>, <ControllerAndData, name: led1, controller: <Node /gpio-leds-test/leds-controller in 'test.dts', binding test-bindings/gpio-leds.yaml>, data: {'gpios': [<ControllerAndData, controller: <Node /gpio-leds-test/gpio-0 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, data: OrderedDict([('gpio_cell_one', 1), ('gpio_cell_two', 0)])>], 'function': 2, 'color': 77, 'default-state': 1, 'led-pattern': [255, 2000, 0, 2000], 'retain-state-suspended': False, 'retain-state-shutdown': False, 'panic-indicator': False}>]")
+
+    verify_streq(edt.get_node("/gpio-leds-test/gpio-0").gpio_leds,
+                 "[]")
+
+    #
     # Test interrupts
     #
 
@@ -75,11 +96,73 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "[<Register, addr: 0x30000000200000001, size: 0x1>]")
 
     #
+    # Test partitions
+    #
+
+    verify_streq(edt.get_node("/partition/flash-controller/flash-0").partitions,
+                 "[<Partition, name: flash-0 partition-0, flash: <Node /partition/flash-controller/flash-0 in 'test.dts', binding test-bindings/soc-nv-flash.yaml>, controller: <Node /partition/flash-controller in 'test.dts', no binding>, partitions: [], addr: 0, size: 100, attributes: {'read-only': False}>, <Partition, name: flash-0 partition-1, flash: <Node /partition/flash-controller/flash-0 in 'test.dts', binding test-bindings/soc-nv-flash.yaml>, controller: <Node /partition/flash-controller in 'test.dts', no binding>, partitions: [], addr: 100, size: 100, attributes: {'read-only': False}>]")
+
+    verify_streq(edt.get_node("/partition/flash-controller/flash-0/partitions/partition-0-0").flash_controller,
+                 "<Node /partition/flash-controller in 'test.dts', no binding>")
+
+    verify_streq(edt.get_node("/partition/flash-controller").flash_controller,
+                 "None")
+
+    verify_streq(edt.get_node("/partition/flash-1").partitions,
+                 "[<Partition, name: flash-1 partition-0, flash: <Node /partition/flash-1 in 'test.dts', no binding>, controller: <Node /partition/flash-1 in 'test.dts', no binding>, partitions: [], addr: 0, size: 1000, attributes: {'read-only': False}>, <Partition, name: partition-replace-label, flash: <Node /partition/flash-1 in 'test.dts', no binding>, controller: <Node /partition/flash-1 in 'test.dts', no binding>, partitions: [], addr: 1000, size: 1000, attributes: {'read-only': False}>]")
+
+    verify_streq(edt.get_node("/partition/flash-1/partitions/partition-1-0").flash_controller,
+                 "<Node /partition/flash-1 in 'test.dts', no binding>")
+
+    #
     # Test 'pinctrl-<index>'
     #
 
     verify_streq(edt.get_node("/pinctrl/dev").pinctrls,
-                 "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', no binding>]>]")
+                 "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', binding test-bindings/pinctrl-state.yaml>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', binding test-bindings/pinctrl-state.yaml>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', binding test-bindings/pinctrl-state.yaml>]>]")
+
+    #
+    # Test pinctrl states of pin controller node (and other)
+    #
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller").pinctrl_states,
+                 "[<Node /pinctrl/pincontroller/state-1 in 'test.dts', binding test-bindings/pinctrl-state.yaml>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', binding test-bindings/pinctrl-state.yaml>]")
+
+    verify_streq(edt.get_node("/pinctrl/dev").pinctrl_states,
+                 "[]")
+
+    #
+    # Test pinctrl states of pin control gpio ranges node (and other)
+    #
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller").pinctrl_gpio_ranges,
+                 "[<ControllerAndData, controller: <Node /pinctrl/pincontroller/gpio-0 in 'test.dts', binding test-bindings/pinctrl-gpio.yaml>, data: OrderedDict([('gpio-base', 0), ('pinctrl-base', 0), ('count', 16)])>, <ControllerAndData, controller: <Node /pinctrl/pincontroller/gpio-1 in 'test.dts', binding test-bindings/pinctrl-gpio.yaml>, data: OrderedDict([('gpio-base', 0), ('pinctrl-base', 16), ('count', 16)])>]")
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller/gpio-0").pinctrl_gpio_ranges,
+                 "[]")
+
+    verify_streq(edt.get_node("/pinctrl/dev").pinctrl_gpio_ranges,
+                 "[]")
+
+    #
+    # Test pin controller of pin control state node
+    #
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller/state-1").pin_controller,
+                 "<Node /pinctrl/pincontroller in 'test.dts', no binding>")
+
+    #
+    # Test pincfgs of pinctrl state node (and other)
+    #
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller/state-1").pincfgs,
+                 "[<PinCfg, name: pincfg-1-1, groups: [], pins: [0], muxes: [1], function: None, configs: {'bias-disable': False, 'bias-high-impedance': False, 'bias-bus-hold': False, 'drive-push-pull': False, 'drive-open-drain': False, 'drive-open-source': False, 'input-enable': False, 'input-disable': False, 'input-schmitt-enable': False, 'input-schmitt-disable': False, 'low-power-enable': False, 'low-power-disable': False, 'output-disable': False, 'output-enable': False, 'output-low': False, 'output-high': False, 'power-source': 0, 'slew-rate': 0, 'skew-delay': 0}>, <PinCfg, name: pincfg-1-2, groups: [], pins: [1], muxes: [2], function: None, configs: {'bias-disable': False, 'bias-high-impedance': False, 'bias-bus-hold': False, 'drive-push-pull': False, 'drive-open-drain': False, 'drive-open-source': False, 'input-enable': False, 'input-disable': False, 'input-schmitt-enable': False, 'input-schmitt-disable': False, 'low-power-enable': False, 'low-power-disable': False, 'output-disable': False, 'output-enable': False, 'output-low': False, 'output-high': False, 'power-source': 0, 'slew-rate': 0, 'skew-delay': 0}>]")
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller/state-2").pincfgs,
+                 "[<PinCfg, name: pincfg-2-1, groups: ['group'], pins: [], muxes: [], function: None, configs: {'bias-disable': False, 'bias-high-impedance': False, 'bias-bus-hold': False, 'drive-push-pull': False, 'drive-open-drain': False, 'drive-open-source': False, 'input-enable': False, 'input-disable': False, 'input-schmitt-enable': False, 'input-schmitt-disable': False, 'low-power-enable': False, 'low-power-disable': False, 'output-disable': False, 'output-enable': False, 'output-low': False, 'output-high': False, 'power-source': 0, 'slew-rate': 0, 'skew-delay': 0}>]")
+
+    verify_streq(edt.get_node("/pinctrl/pincontroller").pincfgs,
+                 "[]")
 
     #
     # Test Node.parent and Node.children
@@ -230,11 +313,28 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     #
     # Test having multiple directories with bindings, with a different .dts file
     #
+    warnings = io.StringIO()
+    edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"], warnings)
 
-    edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
+    verify_eq(warnings.getvalue(), """\
+warning: multiple candidates for binding file 'multidir.yaml': skipping 'test-bindings-2/multidir.yaml' and using 'test-bindings/multidir.yaml'
+""")
 
     verify_streq(edt.get_node("/in-dir-1").binding_path,
                  "test-bindings/multidir.yaml")
+
+    verify_streq(edt.get_node("/in-dir-2").binding_path,
+                 "test-bindings/multidir.yaml")
+
+    warnings = io.StringIO()
+    edt = edtlib.EDT("test-multidir.dts", ["test-bindings-2", "test-bindings"], warnings)
+
+    verify_eq(warnings.getvalue(), """\
+warning: multiple candidates for binding file 'multidir.yaml': skipping 'test-bindings/multidir.yaml' and using 'test-bindings-2/multidir.yaml'
+""")
+
+    verify_streq(edt.get_node("/in-dir-1").binding_path,
+                 "test-bindings-2/multidir.yaml")
 
     verify_streq(edt.get_node("/in-dir-2").binding_path,
                  "test-bindings-2/multidir.yaml")
@@ -249,6 +349,21 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
         fail("/ should be a direct dependency of /in-dir-1")
     if edt.get_node("/in-dir-1") not in edt.get_node("/").required_by:
         fail("/in-dir-1 should directly depend on /")
+
+    #
+    # Test error messages from chosen binding
+    #
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	chosen {
+		error = "error out";
+	};
+};
+""", "'error' appears in /chosen in error.dts, but is not declared in 'properties:' in test-bindings/chosen.yaml",
+    ["test-bindings"])
 
     #
     # Test error messages from _slice()
@@ -303,7 +418,7 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     print("all tests passed")
 
 
-def verify_error(dts, error):
+def verify_error(dts, error, bindings = []):
     # Verifies that parsing a file with the contents 'dts' (a string) raises an
     # EDTError with the message 'error'
 
@@ -315,7 +430,7 @@ def verify_error(dts, error):
         f.write(dts)
         f.flush()  # Can't have unbuffered text IO, so flush() instead
         try:
-            edtlib.EDT("error.dts", [])
+            edtlib.EDT("error.dts", bindings)
         except edtlib.EDTError as e:
             if str(e) != error:
                 fail(f"expected the EDTError '{error}', got the EDTError '{e}'")
