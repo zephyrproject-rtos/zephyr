@@ -1771,7 +1771,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	/* Return if event is not connectable */
-	if (evtype != BT_LE_ADV_IND && evtype != BT_LE_ADV_DIRECT_IND) {
+	if (evtype != BT_HCI_ADV_IND && evtype != BT_HCI_ADV_DIRECT_IND) {
 		return;
 	}
 
@@ -3844,7 +3844,7 @@ static void le_adv_report(struct net_buf *buf)
 		if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 		    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN) &&
-		    info->evt_type == BT_LE_ADV_DIRECT_IND) {
+		    info->evt_type == BT_HCI_ADV_DIRECT_IND) {
 			BT_DBG("Dropped direct adv report");
 			continue;
 		}
@@ -6064,9 +6064,9 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 
 		if (dir_adv) {
 			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
-				set_param.type = BT_LE_ADV_DIRECT_IND_LOW_DUTY;
+				set_param.type = BT_HCI_ADV_DIRECT_IND_LOW_DUTY;
 			} else {
-				set_param.type = BT_LE_ADV_DIRECT_IND;
+				set_param.type = BT_HCI_ADV_DIRECT_IND;
 			}
 
 			bt_addr_le_copy(&set_param.direct_addr, peer);
@@ -6082,7 +6082,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 					BT_HCI_OWN_ADDR_RPA_MASK;
 			}
 		} else {
-			set_param.type = BT_LE_ADV_IND;
+			set_param.type = BT_HCI_ADV_IND;
 		}
 	} else {
 		if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
@@ -6119,9 +6119,9 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		}
 
 		if (sd || (param->options & BT_LE_ADV_OPT_USE_NAME)) {
-			set_param.type = BT_LE_ADV_SCAN_IND;
+			set_param.type = BT_HCI_ADV_SCAN_IND;
 		} else {
-			set_param.type = BT_LE_ADV_NONCONN_IND;
+			set_param.type = BT_HCI_ADV_NONCONN_IND;
 		}
 	}
 

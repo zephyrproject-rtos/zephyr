@@ -609,14 +609,20 @@ struct bt_hci_cp_le_set_random_address {
 	bt_addr_t bdaddr;
 } __packed;
 
-/* Advertising types */
-#define BT_LE_ADV_IND                           0x00
-#define BT_LE_ADV_DIRECT_IND                    0x01
-#define BT_LE_ADV_SCAN_IND                      0x02
-#define BT_LE_ADV_NONCONN_IND                   0x03
-#define BT_LE_ADV_DIRECT_IND_LOW_DUTY           0x04
-/* Needed in advertising reports when getting info about */
-#define BT_LE_ADV_SCAN_RSP                      0x04
+/* LE Advertising Types (LE Advertising Parameters Set)*/
+#define BT_LE_ADV_IND                  (__DEPRECATED_MACRO 0x00)
+#define BT_LE_ADV_DIRECT_IND           (__DEPRECATED_MACRO 0x01)
+#define BT_LE_ADV_SCAN_IND             (__DEPRECATED_MACRO 0x02)
+#define BT_LE_ADV_NONCONN_IND          (__DEPRECATED_MACRO 0x03)
+#define BT_LE_ADV_DIRECT_IND_LOW_DUTY  (__DEPRECATED_MACRO 0x04)
+/* LE Advertising PDU Types. */
+#define BT_LE_ADV_SCAN_RSP             (__DEPRECATED_MACRO 0x04)
+
+#define BT_HCI_ADV_IND                          0x00
+#define BT_HCI_ADV_DIRECT_IND                   0x01
+#define BT_HCI_ADV_SCAN_IND                     0x02
+#define BT_HCI_ADV_NONCONN_IND                  0x03
+#define BT_HCI_ADV_DIRECT_IND_LOW_DUTY          0x04
 
 #define BT_LE_ADV_FP_NO_WHITELIST               0x00
 #define BT_LE_ADV_FP_WHITELIST_SCAN_REQ         0x01
