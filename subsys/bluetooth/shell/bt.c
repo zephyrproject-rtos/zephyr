@@ -71,8 +71,19 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
-			 struct net_buf_simple *buf)
+static const char *phy2str(u8_t phy)
+{
+	switch (phy) {
+	case 0: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
+
+static void scan_recv(const struct bt_le_scan_recv_info *info,
+		      struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
@@ -81,9 +92,21 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s",
-	      le_addr, evtype, rssi, name);
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
+		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s",
+		    le_addr, info->adv_type, info->rssi, name,
+		    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+		    phy2str(info->primary_phy), phy2str(info->secondary_phy));
+}
+
+static void scan_timeout(void)
+{
+	shell_print(ctx_shell, "Scan timeout");
 }
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -290,6 +313,13 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_OBSERVER)
+static struct bt_le_scan_cb scan_callbacks = {
+	.recv = scan_recv,
+	.timeout = scan_timeout,
+};
+#endif /* defined(CONFIG_BT_OBSERVER) */
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -306,6 +336,10 @@ static void bt_ready(int err)
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
 		bt_set_oob_data_flag(true);
 	}
+
+#if defined(CONFIG_BT_OBSERVER)
+	bt_le_scan_cb_register(&scan_callbacks);
+#endif
 
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
@@ -518,7 +552,7 @@ static int cmd_active_scan_on(const struct shell *shell, u32_t options)
 
 	param.options |= options;
 
-	err = bt_le_scan_start(&param, device_found);
+	err = bt_le_scan_start(&param, NULL);
 	if (err) {
 		shell_error(shell, "Bluetooth set active scan failed "
 		      "(err %d)", err);
@@ -541,7 +575,7 @@ static int cmd_passive_scan_on(const struct shell *shell, u32_t options)
 
 	param.options |= options;
 
-	err = bt_le_scan_start(&param, device_found);
+	err = bt_le_scan_start(&param, NULL);
 	if (err) {
 		shell_error(shell, "Bluetooth set passive scan failed "
 			    "(err %d)", err);
