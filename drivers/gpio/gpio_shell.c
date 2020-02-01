@@ -100,7 +100,7 @@ static int cmd_gpio_get(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Reading %s pin %d",
 			     argv[args_indx.port], index);
-		rc = gpio_pin_get_raw(dev, index);
+		rc = gpio_pin_get(dev, index);
 		if (rc >= 0) {
 			shell_print(shell, "Value %d", rc);
 		} else {
@@ -134,7 +134,7 @@ static int cmd_gpio_set(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
-		gpio_pin_set_raw(dev, index, value);
+		gpio_pin_set(dev, index, value);
 	}
 
 	return 0;

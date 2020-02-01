@@ -227,7 +227,7 @@ static bool irq_pin_high(void)
 {
 	int pin_state;
 
-	pin_state = gpio_pin_get_raw(irq_dev, GPIO_IRQ_PIN);
+	pin_state = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
 
 	BT_DBG("IRQ Pin: %d", pin_state);
 
@@ -407,7 +407,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Allow time for the read thread to handle interrupt */
 	while (true) {
-		pending = gpio_pin_get_raw(irq_dev, GPIO_IRQ_PIN);
+		pending = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
 		if (pending <= 0) {
 			break;
 		}

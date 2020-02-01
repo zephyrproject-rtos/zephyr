@@ -35,7 +35,7 @@ static struct eswifi_spi_data eswifi_spi0; /* Static instance */
 
 static bool eswifi_spi_cmddata_ready(struct eswifi_spi_data *spi)
 {
-	return gpio_pin_get_raw(spi->dr.dev, spi->dr.pin) > 0;
+	return gpio_pin_get(spi->dr.dev, spi->dr.pin) > 0;
 }
 
 static int eswifi_spi_wait_cmddata_ready(struct eswifi_spi_data *spi)
