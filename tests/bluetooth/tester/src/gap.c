@@ -386,7 +386,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 {
 	/* if General/Limited Discovery - parse Advertising data to get flags */
 	if (!(discovery_flags & GAP_DISCOVERY_FLAG_LE_OBSERVE) &&
-	    (evtype != BT_LE_ADV_SCAN_RSP)) {
+	    (evtype != BT_GAP_ADV_TYPE_SCAN_RSP)) {
 		u8_t flags = get_ad_flags(ad);
 
 		/* ignore non-discoverable devices */
@@ -404,7 +404,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	}
 
 	/* attach Scan Response data */
-	if (evtype == BT_LE_ADV_SCAN_RSP) {
+	if (evtype == BT_GAP_ADV_TYPE_SCAN_RSP) {
 		struct gap_device_found_ev *ev;
 		bt_addr_le_t a;
 
@@ -449,7 +449,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 	/* if Active Scan and scannable event - wait for Scan Response */
 	if ((discovery_flags & GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) &&
-	    (evtype == BT_LE_ADV_IND || evtype == BT_LE_ADV_SCAN_IND)) {
+	    (evtype == BT_GAP_ADV_TYPE_ADV_IND ||
+	     evtype == BT_GAP_ADV_TYPE_ADV_SCAN_IND)) {
 		LOG_DBG("Waiting for scan response");
 		return;
 	}

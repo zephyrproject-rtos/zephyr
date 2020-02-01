@@ -360,7 +360,7 @@ static void create_conn(const bt_addr_le_t *addr)
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
-	if (type != BT_LE_ADV_IND) {
+	if (type != BT_GAP_ADV_TYPE_ADV_IND) {
 		return;
 	}
 
