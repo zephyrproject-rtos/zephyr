@@ -69,6 +69,51 @@ extern "C" {
 #define BT_GAP_INIT_CONN_INT_MIN                0x0018  /* 30 ms    */
 #define BT_GAP_INIT_CONN_INT_MAX                0x0028  /* 50 ms    */
 
+/** LE PHY types */
+enum {
+	/** LE 1M PHY */
+	BT_GAP_LE_PHY_1M                      = BIT(0),
+	 /** LE 2M PHY */
+	BT_GAP_LE_PHY_2M                      = BIT(1),
+	/** LE Coded PHY */
+	BT_GAP_LE_PHY_CODED                   = BIT(2),
+};
+
+/* Advertising PDU types */
+enum {
+	/** Scannable and connectable advertising. */
+	BT_GAP_ADV_TYPE_ADV_IND               = 0x00,
+	/** Directed connectable advertising. */
+	BT_GAP_ADV_TYPE_ADV_DIRECT_IND        = 0x01,
+	/** Non-connectable and scannable advertising. */
+	BT_GAP_ADV_TYPE_ADV_SCAN_IND          = 0x02,
+	/** Non-connectable and non-scannable advertising. */
+	BT_GAP_ADV_TYPE_ADV_NONCONN_IND       = 0x03,
+	/** Additional advertising data requested by an active scanner. */
+	BT_GAP_ADV_TYPE_SCAN_RSP              = 0x04,
+	/** Extended advertising, see advertising properties. */
+	BT_GAP_ADV_TYPE_EXT_ADV               = 0x05,
+};
+
+/* Advertising PDU properties */
+enum {
+	/** Connectable advertising. */
+	BT_GAP_ADV_PROP_CONNECTABLE           = BIT(0),
+	/** Scannable advertising. */
+	BT_GAP_ADV_PROP_SCANNABLE             = BIT(1),
+	/** Directed advertising. */
+	BT_GAP_ADV_PROP_DIRECTED              = BIT(2),
+	/** Additional advertising data requested by an active scanner. */
+	BT_GAP_ADV_PROP_SCAN_RESPONSE         = BIT(3),
+	/** Extended advertising. */
+	BT_GAP_ADV_PROP_EXT_ADV               = BIT(4),
+};
+
+#define BT_GAP_TX_POWER_INVALID                 0x7f
+#define BT_GAP_RSSI_INVALID                     0x7f
+#define BT_GAP_SID_INVALID                      0xff
+#define BT_GAP_NO_TIMEOUT                       0x0000
+
 #ifdef __cplusplus
 }
 #endif
