@@ -6293,8 +6293,8 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
-	if (param->filter_dup &
-	    ~(BT_LE_SCAN_FILTER_DUPLICATE | BT_LE_SCAN_FILTER_WHITELIST)) {
+	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE |
+			       BT_LE_SCAN_OPT_FILTER_WHITELIST)) {
 		return false;
 	}
 
@@ -6343,11 +6343,11 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	}
 
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP,
-			  param->filter_dup & BT_LE_SCAN_FILTER_DUPLICATE);
+			  param->options & BT_LE_SCAN_OPT_FILTER_DUPLICATE);
 
 #if defined(CONFIG_BT_WHITELIST)
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_WL,
-			  param->filter_dup & BT_LE_SCAN_FILTER_WHITELIST);
+			  param->options & BT_LE_SCAN_OPT_FILTER_WHITELIST);
 #endif /* defined(CONFIG_BT_WHITELIST) */
 
 	err = start_le_scan(param->type, param->interval, param->window);

@@ -708,14 +708,19 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
 
 enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_SCAN_OPT_NONE = 0,
+
 	/** Filter duplicates. */
-	BT_LE_SCAN_FILTER_DUPLICATE = BIT(0),
+	BT_LE_SCAN_OPT_FILTER_DUPLICATE = BIT(0),
 
 	/** Filter using whitelist. */
-	BT_LE_SCAN_FILTER_WHITELIST = BIT(1),
+	BT_LE_SCAN_OPT_FILTER_WHITELIST = BIT(1),
 
-	/** Filter using extended filter policies. */
-	BT_LE_SCAN_FILTER_EXTENDED = BIT(2),
+	BT_LE_SCAN_FILTER_DUPLICATE __deprecated =
+		BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+	BT_LE_SCAN_FILTER_WHITELIST __deprecated =
+		BT_LE_SCAN_OPT_FILTER_WHITELIST,
 };
 
 enum {
@@ -731,8 +736,13 @@ struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	u8_t  type;
 
-	/** Bit-field of scanning filter options. */
-	u8_t  filter_dup;
+	union {
+		/** Bit-field of scanning filter options. */
+		u8_t  filter_dup __deprecated;
+
+		/** Bit-field of scanning options. */
+		u32_t options;
+	};
 
 	/** Scan interval (N * 0.625 ms) */
 	u16_t interval;
@@ -771,21 +781,21 @@ struct bt_le_scan_cb {
  *
  *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
  *                   BT_LE_SCAN_TYPE_PASSIVE.
- *  @param _filter   Filter options
+ *  @param _options  Scan options
  *  @param _interval Scan Interval (N * 0.625 ms)
  *  @param _window   Scan Window (N * 0.625 ms)
  */
-#define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
+#define BT_LE_SCAN_PARAM(_type, _options, _interval, _window) \
 		((struct bt_le_scan_param[]) { { \
 			.type = (_type), \
-			.filter_dup = (_filter), \
+			.options = (_options), \
 			.interval = (_interval), \
 			.window = (_window), \
 		 } })
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
-					   BT_LE_SCAN_FILTER_DUPLICATE, \
+					   BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
@@ -795,7 +805,7 @@ struct bt_le_scan_cb {
  *  (e.g., UUID) are known to be placed in Advertising Data.
  */
 #define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
-					    BT_LE_SCAN_FILTER_DUPLICATE, \
+					    BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
 

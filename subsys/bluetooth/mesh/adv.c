@@ -316,7 +316,7 @@ int bt_mesh_scan_enable(void)
 {
 	struct bt_le_scan_param scan_param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
-			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+			.filter_dup = BT_LE_SCAN_OPT_NONE,
 			.interval   = MESH_SCAN_INTERVAL,
 			.window     = MESH_SCAN_WINDOW };
 	int err;

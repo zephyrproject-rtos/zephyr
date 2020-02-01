@@ -164,7 +164,7 @@ static void start_scan(void)
 	 * devices that might update their advertising data at runtime. */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_HCI_LE_SCAN_ACTIVE,
-		.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
