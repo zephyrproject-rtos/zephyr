@@ -8,4 +8,5 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - spi
   - watchdog
