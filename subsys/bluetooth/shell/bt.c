@@ -507,16 +507,16 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_OBSERVER)
-static int cmd_active_scan_on(const struct shell *shell, u8_t filter)
+static int cmd_active_scan_on(const struct shell *shell, u32_t options)
 {
 	int err;
 	struct bt_le_scan_param param = {
 			.type       = BT_HCI_LE_SCAN_ACTIVE,
-			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
+			.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW };
 
-	param.filter_dup = filter;
+	param.options |= options;
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
@@ -530,16 +530,16 @@ static int cmd_active_scan_on(const struct shell *shell, u8_t filter)
 	return 0;
 }
 
-static int cmd_passive_scan_on(const struct shell *shell, u8_t filter)
+static int cmd_passive_scan_on(const struct shell *shell, u32_t options)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
-			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+			.options    = BT_LE_SCAN_OPT_NONE,
 			.interval   = 0x10,
 			.window     = 0x10 };
 	int err;
 
-	param.filter_dup = filter;
+	param.options |= options;
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
@@ -571,18 +571,18 @@ static int cmd_scan_off(const struct shell *shell)
 static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
-	u8_t filter = 0;
+	u32_t options = 0;
 
 	/* Parse duplicate filtering data */
 	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "dups")) {
-			filter |= BT_LE_SCAN_FILTER_DUPLICATE;
+			options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
 		} else if (!strcmp(arg, "nodups")) {
-			filter &= ~BT_LE_SCAN_FILTER_DUPLICATE;
+			options &= ~BT_LE_SCAN_OPT_FILTER_DUPLICATE;
 		} else if (!strcmp(arg, "wl")) {
-			filter |= BT_LE_SCAN_FILTER_WHITELIST;
+			options |= BT_LE_SCAN_OPT_FILTER_WHITELIST;
 		} else {
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
@@ -591,11 +591,11 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
-		return cmd_active_scan_on(shell, filter);
+		return cmd_active_scan_on(shell, options);
 	} else if (!strcmp(action, "off")) {
 		return cmd_scan_off(shell);
 	} else if (!strcmp(action, "passive")) {
-		return cmd_passive_scan_on(shell, filter);
+		return cmd_passive_scan_on(shell, options);
 	} else {
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
