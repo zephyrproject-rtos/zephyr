@@ -22,6 +22,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci_err.h>
 #include <bluetooth/addr.h>
+#include <bluetooth/gap.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -278,6 +279,89 @@ int bt_conn_le_param_update(struct bt_conn *conn,
  */
 int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_CONN_OPT_NONE = 0,
+
+	/** Enable LE Coded PHY.
+	 *
+	 *  Enable scanning on the LE Coded PHY.
+	 *  Enable connection initiation on the LE Coded PHY.
+	 */
+	BT_LE_CONN_OPT_CODED = BIT(0),
+
+	/** Enable LE 2M PHY.
+	 *
+	 *  Enable connection initiaton on the LE 2M PHY.
+	 */
+	BT_LE_CONN_OPT_2M = BIT(1),
+
+	/** Disable LE 1M PHY.
+	 *
+	 *  Disable scanning on the LE 1M PHY.
+	 *  Disable connection initiation on the LE 1M PHY.
+	 *
+	 *  @note Requires @ref BT_LE_CONN_OPT_CODED.
+	 */
+	BT_LE_CONN_OPT_NO_1M = BIT(2),
+};
+
+struct bt_conn_le_create_param {
+
+	/** Bit-field of create connection options. */
+	u32_t options;
+
+	/** Scan interval (N * 0.625 ms) */
+	u16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	u16_t window;
+
+	/** Scan interval LE Coded PHY (N * 0.625 MS)
+	 *
+	 *  Set zero to use same as LE 1M PHY scan interval
+	 */
+	u16_t interval_coded;
+
+	/** Scan window LE Coded PHY (N * 0.625 MS)
+	 *
+	 *  Set zero to use same as LE 1M PHY scan window.
+	 */
+	u16_t window_coded;
+};
+
+/** Helper to declare create connection parameters inline
+ *
+ *  @param _options  Create connection options.
+ *  @param _interval Create connection scan interval (N * 0.625 ms).
+ *  @param _window   Create connection scan window (N * 0.625 ms).
+ */
+#define BT_CONN_LE_CREATE_PARAM(_options, _interval, _window) \
+	((struct bt_conn_le_create_param[]) { { \
+		.options = (_options), \
+		.interval = (_interval), \
+		.window = (_window), \
+		.interval_coded = 0, \
+		.window_coded = 0, \
+	 } })
+
+/** Default LE create connection parameters.
+ *  Scan continuously by setting scan interval equal to scan window.
+ */
+#define BT_CONN_LE_CREATE_CONN \
+	BT_CONN_LE_CREATE_PARAM(BT_LE_CONN_OPT_NONE, \
+				BT_GAP_SCAN_FAST_INTERVAL, \
+				BT_GAP_SCAN_FAST_INTERVAL)
+
+/** Default LE create connection using whitelist parameters.
+ *  Scan window:   30 ms.
+ *  Scan interval: 60 ms.
+ */
+#define BT_CONN_LE_CREATE_CONN_AUTO \
+	BT_CONN_LE_CREATE_PARAM(BT_LE_CONN_OPT_NONE, \
+				BT_GAP_SCAN_FAST_INTERVAL, \
+				BT_GAP_SCAN_FAST_WINDOW)
+
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
@@ -287,13 +371,31 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
  *
  *  This uses the General Connection Establishment procedure.
  *
- *  @param peer  Remote address.
- *  @param param Initial connection parameters.
+ *  @param[in]  peer         Remote address.
+ *  @param[in]  create_param Create connection parameters.
+ *  @param[in]  conn_param   Initial connection parameters.
+ *  @param[out] conn         Valid connection object on success.
  *
- *  @return Valid connection object on success or NULL otherwise.
+ *  @return Zero on success or (negative) error code on failure.
  */
+int bt_conn_le_create(const bt_addr_le_t *peer,
+		      const struct bt_conn_le_create_param *create_param,
+		      const struct bt_le_conn_param *conn_param,
+		      struct bt_conn **conn);
+
+__deprecated static inline
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
-				  const struct bt_le_conn_param *param);
+				  const struct bt_le_conn_param *conn_param)
+{
+	struct bt_conn *conn;
+
+	if (bt_conn_le_create(peer, BT_CONN_LE_CREATE_CONN, conn_param,
+			      &conn)) {
+		return NULL;
+	}
+
+	return conn;
+}
 
 /** @brief Automatically connect to remote devices in whitelist.
  *
@@ -304,12 +406,20 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  *  should be started again in the connected callback after a new connection has
  *  been established.
  *
- *  @param param Initial connection parameters.
+ *  @param create_param Create connection parameters
+ *  @param conn_param   Initial connection parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
  *  @return -ENOMEM No free connection object available.
  */
-int bt_conn_create_auto_le(const struct bt_le_conn_param *param);
+int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
+			   const struct bt_le_conn_param *conn_param);
+
+__deprecated static inline
+int bt_conn_create_auto_le(const struct bt_le_conn_param *conn_param)
+{
+	return bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN_AUTO, conn_param);
+}
 
 /** @brief Stop automatic connect creation.
  *

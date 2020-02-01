@@ -291,6 +291,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 
 		for (i = 0; i < data->data_len; i += sizeof(u16_t)) {
 			struct bt_uuid *uuid;
+			struct bt_le_conn_param *param;
 			u16_t u16;
 			int err;
 
@@ -306,8 +307,13 @@ static bool eir_found(struct bt_data *data, void *user_data)
 				continue;
 			}
 
-			default_conn = bt_conn_create_le(addr,
-							 BT_LE_CONN_PARAM_DEFAULT);
+			param = BT_LE_CONN_PARAM_DEFAULT;
+			err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+						param, &default_conn);
+			if (err) {
+				printk("Create conn failed (err %d)\n", err);
+			}
+
 			return false;
 		}
 	}
