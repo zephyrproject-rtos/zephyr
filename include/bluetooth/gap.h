@@ -109,6 +109,15 @@ enum {
 	BT_GAP_ADV_PROP_EXT_ADV               = BIT(4),
 };
 
+/** Maximum advertising data length. */
+#define BT_GAP_ADV_MAX_ADV_DATA_LEN             31
+/** Maximum extendend advertising data length.
+ *
+ *  @note The maximum advertising data length that can be sent by an extended
+ *        advertiser is defined by the controller.
+ */
+#define BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN         1650
+
 #define BT_GAP_TX_POWER_INVALID                 0x7f
 #define BT_GAP_RSSI_INVALID                     0x7f
 #define BT_GAP_SID_INVALID                      0xff
