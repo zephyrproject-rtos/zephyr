@@ -1586,7 +1586,7 @@ struct bt_hci_evt_le_phy_update_complete {
 
 #define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
 struct bt_hci_evt_le_ext_advertising_info {
-	u8_t         evt_type;
+	u16_t        evt_type;
 	bt_addr_le_t addr;
 	u8_t         prim_phy;
 	u8_t         sec_phy;
