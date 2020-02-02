@@ -115,6 +115,37 @@ static void scan_timeout(void)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV)
+static void adv_sent(struct bt_le_ext_adv *adv,
+		     struct bt_le_ext_adv_sent_info *info)
+{
+	shell_print(ctx_shell, "Advertiser[%d] %p sent %d",
+		    bt_le_ext_adv_get_index(adv), adv, info->num_sent);
+}
+
+static void adv_connected(struct bt_le_ext_adv *adv,
+			  struct bt_le_ext_adv_connected_info *info)
+{
+	char str[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
+
+	shell_print(ctx_shell, "Advertiser[%d] %p connected by %s",
+		    bt_le_ext_adv_get_index(adv), adv, str);
+}
+
+static void adv_scanned(struct bt_le_ext_adv *adv,
+			struct bt_le_ext_adv_scanned_info *info)
+{
+	char str[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, str, sizeof(str));
+
+	shell_print(ctx_shell, "Advertiser[%d] %p scanned by %s",
+		    bt_le_ext_adv_get_index(adv), adv, str);
+}
+#endif /* defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV) */
+
 #if !defined(CONFIG_BT_CONN)
 #if 0 /* FIXME: Add support for changing prompt */
 static const char *current_prompt(void)
@@ -324,6 +355,14 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.timeout = scan_timeout,
 };
 #endif /* defined(CONFIG_BT_OBSERVER) */
+
+#if defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV)
+static struct bt_le_ext_adv_cb adv_callbacks = {
+	.sent = adv_sent,
+	.connected = adv_connected,
+	.scanned = adv_scanned,
+};
+#endif /* defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV) */
 
 static void bt_ready(int err)
 {
@@ -834,7 +873,7 @@ static int cmd_adv_create(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = bt_le_ext_adv_create(&param, NULL, &adv);
+	err = bt_le_ext_adv_create(&param, &adv_callbacks, &adv);
 	if (err) {
 		shell_error(shell, "Failed to create advertiser set (%d)", err);
 		return -ENOEXEC;
