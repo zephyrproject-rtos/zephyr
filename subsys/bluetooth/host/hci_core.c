@@ -5974,6 +5974,22 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 	return le_adv_update(ad, ad_len, sd, sd_len, connectable, use_name);
 }
 
+static u8_t get_filter_policy(u8_t options)
+{
+	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
+		return BT_LE_ADV_FP_NO_WHITELIST;
+	} else if ((options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) &&
+		   (options & BT_LE_ADV_OPT_FILTER_CONN)) {
+		return BT_LE_ADV_FP_WHITELIST_BOTH;
+	} else if (options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) {
+		return BT_LE_ADV_FP_WHITELIST_SCAN_REQ;
+	} else if (options & BT_LE_ADV_OPT_FILTER_CONN) {
+		return BT_LE_ADV_FP_WHITELIST_CONN_IND;
+	} else {
+		return BT_LE_ADV_FP_NO_WHITELIST;
+	}
+}
+
 int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const struct bt_data *ad, size_t ad_len,
 			     const struct bt_data *sd, size_t sd_len,
@@ -6007,24 +6023,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
 	set_param.channel_map  = 0x07;
+	set_param.filter_policy = get_filter_policy(param->options);
 
 	if (bt_dev.adv_id != param->id) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
-	}
-
-#if defined(CONFIG_BT_WHITELIST)
-	if ((param->options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) &&
-	    (param->options & BT_LE_ADV_OPT_FILTER_CONN)) {
-		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_BOTH;
-	} else if (param->options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) {
-		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_SCAN_REQ;
-	} else if (param->options & BT_LE_ADV_OPT_FILTER_CONN) {
-		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_CONN_IND;
-	} else {
-#else
-	{
-#endif /* defined(CONFIG_BT_WHITELIST) */
-		set_param.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
 	}
 
 	/* Set which local identity address we're advertising with */
