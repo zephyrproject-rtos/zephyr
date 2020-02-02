@@ -1917,18 +1917,20 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
-	atomic_inc(&conn->ref);
+	atomic_val_t old = atomic_inc(&conn->ref);
 
-	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
+	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
+	       atomic_get(&conn->ref));
 
 	return conn;
 }
 
 void bt_conn_unref(struct bt_conn *conn)
 {
-	atomic_dec(&conn->ref);
+	atomic_val_t old = atomic_dec(&conn->ref);
 
-	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
+	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
+	       atomic_get(&conn->ref));
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
