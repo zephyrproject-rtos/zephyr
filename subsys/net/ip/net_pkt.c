@@ -1848,7 +1848,7 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 	net_pkt_cursor_backup(pkt, &backup);
 
 	while (length) {
-		u8_t left, rem;
+		size_t left, rem;
 
 		pkt_cursor_advance(pkt, false);
 
