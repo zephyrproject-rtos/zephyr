@@ -3837,7 +3837,7 @@ static void le_adv_report(struct net_buf *buf)
 			id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
 		} else {
 			bt_addr_le_copy(&id_addr,
-					bt_lookup_id_addr(bt_dev.adv_id,
+					bt_lookup_id_addr(BT_ID_DEFAULT,
 							  &info->addr));
 		}
 
