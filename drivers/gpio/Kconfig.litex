@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_LITEX
+config GPIO_LITEX
 	bool "Litex GPIO driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	select HAS_DTS_GPIO
