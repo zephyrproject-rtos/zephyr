@@ -18,6 +18,7 @@ tests:
         - ".*: CBC Mode"
         - ".*: CTR Mode"
         - ".*: CCM Mode"
+        - ".*: GCM Mode"
   sample.drivers.crypto.mbedtls.micro:
     tags: crypto
     harness_config:
@@ -27,6 +28,7 @@ tests:
         - ".*: CBC Mode"
         - ".*: CTR Mode"
         - ".*: CCM Mode"
+        - ".*: GCM Mode"
   sample.drivers.crypto.stm32:
     tags: crypto
     platform_whitelist: mikroe_mini_m4_for_stm32
