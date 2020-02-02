@@ -21,6 +21,9 @@
 #endif /* CONFIG_MBEDTLS_CFG_FILE */
 
 #include <mbedtls/ccm.h>
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#include <mbedtls/gcm.h>
+#endif
 #include <mbedtls/aes.h>
 
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
@@ -33,6 +36,9 @@ LOG_MODULE_REGISTER(mbedtls);
 struct mtls_shim_session {
 	union {
 		mbedtls_ccm_context mtls_ccm;
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+		mbedtls_gcm_context mtls_gcm;
+#endif
 		mbedtls_aes_context mtls_aes;
 	};
 	bool in_use;
@@ -203,7 +209,12 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 				       apkt->pkt->out_buf, apkt->tag,
 				       ctx->mode_params.ccm_info.tag_len);
 	if (ret) {
-		LOG_ERR("Could non decrypt/auth (%d)", ret);
+		if (ret == MBEDTLS_ERR_CCM_AUTH_FAILED) {
+			LOG_ERR("Message authentication failed");
+			return -EFAULT;
+		}
+
+		LOG_ERR("Could not decrypt/auth (%d)", ret);
 
 		/*ToDo: try to return relevant code depending on ret? */
 		return -EINVAL;
@@ -214,6 +225,66 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	return 0;
 }
+
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
+				 struct cipher_aead_pkt *apkt,
+				 u8_t *nonce)
+{
+	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
+	int ret;
+
+	ret = mbedtls_gcm_crypt_and_tag(mtls_ctx, MBEDTLS_GCM_ENCRYPT,
+					  apkt->pkt->in_len, nonce,
+					  ctx->mode_params.gcm_info.nonce_len,
+					  apkt->ad, apkt->ad_len,
+					  apkt->pkt->in_buf,
+					  apkt->pkt->out_buf,
+					  ctx->mode_params.gcm_info.tag_len,
+					  apkt->tag);
+	if (ret) {
+		LOG_ERR("Could not encrypt/auth (%d)", ret);
+
+		return -EINVAL;
+	}
+
+	/* This is equivalent to what is done in mtls_ccm_encrypt_auth(). */
+	apkt->pkt->out_len = apkt->pkt->in_len;
+	apkt->pkt->out_len += ctx->mode_params.gcm_info.tag_len;
+
+	return 0;
+}
+
+static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
+				 struct cipher_aead_pkt *apkt,
+				 u8_t *nonce)
+{
+	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
+	int ret;
+
+	ret = mbedtls_gcm_auth_decrypt(mtls_ctx, apkt->pkt->in_len, nonce,
+				       ctx->mode_params.gcm_info.nonce_len,
+				       apkt->ad, apkt->ad_len,
+				       apkt->tag,
+				       ctx->mode_params.gcm_info.tag_len,
+				       apkt->pkt->in_buf,
+				       apkt->pkt->out_buf);
+	if (ret) {
+		if (ret == MBEDTLS_ERR_GCM_AUTH_FAILED) {
+			LOG_ERR("Message authentication failed");
+			return -EFAULT;
+		}
+
+		LOG_ERR("Could not decrypt/auth (%d)", ret);
+		return -EINVAL;
+	}
+
+	apkt->pkt->out_len = apkt->pkt->in_len;
+	apkt->pkt->out_len += ctx->mode_params.gcm_info.tag_len;
+
+	return 0;
+}
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
 
 static int mtls_get_unused_session_index(void)
 {
@@ -233,8 +304,11 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		       enum cipher_algo algo, enum cipher_mode mode,
 		       enum cipher_op op_type)
 {
-	mbedtls_ccm_context *ccm_ctx;
 	mbedtls_aes_context *aes_ctx;
+	mbedtls_ccm_context *ccm_ctx;
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+	mbedtls_gcm_context *gcm_ctx;
+#endif
 	int ctx_idx;
 	int ret;
 
@@ -250,6 +324,9 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	if (mode != CRYPTO_CIPHER_MODE_CCM &&
 	    mode != CRYPTO_CIPHER_MODE_CBC &&
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+	    mode != CRYPTO_CIPHER_MODE_GCM &&
+#endif
 	    mode != CRYPTO_CIPHER_MODE_ECB) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
@@ -314,7 +391,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		ret = mbedtls_ccm_setkey(ccm_ctx, MBEDTLS_CIPHER_ID_AES,
 					 ctx->key.bit_stream, ctx->keylen * 8U);
 		if (ret) {
-			LOG_ERR("Could not setup the key (%d)", ret);
+			LOG_ERR("AES_CCM: failed at setkey (%d)", ret);
 			mtls_sessions[ctx_idx].in_use = false;
 
 			return -EINVAL;
@@ -325,6 +402,29 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = mtls_ccm_decrypt_auth;
 		}
 		break;
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+	case CRYPTO_CIPHER_MODE_GCM:
+		gcm_ctx = &mtls_sessions[ctx_idx].mtls_gcm;
+		mbedtls_gcm_init(gcm_ctx);
+		ret = mbedtls_gcm_setkey(gcm_ctx, MBEDTLS_CIPHER_ID_AES,
+					 ctx->key.bit_stream, ctx->keylen * 8U);
+		if (ret) {
+			LOG_ERR("AES_GCM: failed at setkey (%d)", ret);
+			mtls_sessions[ctx_idx].in_use = false;
+
+			return -EINVAL;
+		}
+		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+			ctx->ops.gcm_crypt_hndlr = mtls_gcm_encrypt_auth;
+		} else {
+			ctx->ops.gcm_crypt_hndlr = mtls_gcm_decrypt_auth;
+		}
+		break;
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
+	default:
+		LOG_ERR("Unhandled mode");
+		mtls_sessions[ctx_idx].in_use = false;
+		return -EINVAL;
 	}
 
 	mtls_sessions[ctx_idx].mode = mode;
@@ -340,6 +440,10 @@ static int mtls_session_free(struct device *dev, struct cipher_ctx *ctx)
 
 	if (mtls_session->mode == CRYPTO_CIPHER_MODE_CCM) {
 		mbedtls_ccm_free(&mtls_session->mtls_ccm);
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+	} else if (mtls_session->mode == CRYPTO_CIPHER_MODE_GCM) {
+		mbedtls_gcm_free(&mtls_session->mtls_gcm);
+#endif
 	} else {
 		mbedtls_aes_free(&mtls_session->mtls_aes);
 	}
