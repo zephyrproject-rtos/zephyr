@@ -268,4 +268,26 @@ static inline int cipher_ccm_op(struct cipher_ctx *ctx,
 	return ctx->ops.ccm_crypt_hndlr(ctx, pkt, nonce);
 }
 
+/*
+ * @brief Perform Galois/Counter Mode (GCM) crypto operation
+ *
+ * @param[in]  ctx       Pointer to the crypto context of this op.
+ * @param[in/out]  pkt   Structure holding the input/output, Associated
+ *			 Data (AD) and auth tag buffer pointers.
+ * @param[in]  nonce     Nonce for the operation. Same nonce value should not
+ *			 be reused across multiple operations (within a
+ *			 session context) for security.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int cipher_gcm_op(struct cipher_ctx *ctx,
+				struct cipher_aead_pkt *pkt, u8_t *nonce)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_GCM, "GCM mode "
+		 "session invoking a different mode handler");
+
+	pkt->pkt->ctx = ctx;
+	return ctx->ops.gcm_crypt_hndlr(ctx, pkt, nonce);
+}
+
 #endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */

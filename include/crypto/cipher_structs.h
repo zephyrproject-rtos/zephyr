@@ -38,6 +38,7 @@ enum cipher_mode {
 	CRYPTO_CIPHER_MODE_CBC = 2,
 	CRYPTO_CIPHER_MODE_CTR = 3,
 	CRYPTO_CIPHER_MODE_CCM = 4,
+	CRYPTO_CIPHER_MODE_GCM = 5,
 };
 
 /* Forward declarations */
@@ -59,6 +60,9 @@ typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 u8_t *nonce);
 
+typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 u8_t *nonce);
+
 struct cipher_ops {
 
 	enum cipher_mode cipher_mode;
@@ -68,6 +72,7 @@ struct cipher_ops {
 		cbc_op_t	cbc_crypt_hndlr;
 		ctr_op_t	ctr_crypt_hndlr;
 		ccm_op_t	ccm_crypt_hndlr;
+		gcm_op_t	gcm_crypt_hndlr;
 	};
 };
 
@@ -81,6 +86,11 @@ struct ctr_params {
 	 * such that ivlen + ctr_len = keylen
 	 */
 	u32_t ctr_len;
+};
+
+struct gcm_params {
+	u16_t tag_len;
+	u16_t nonce_len;
 };
 
 /* Structure encoding session parameters. Refer to comments for individual
@@ -132,6 +142,7 @@ struct cipher_ctx {
 	union {
 		struct ccm_params ccm_info;
 		struct ctr_params ctr_info;
+		struct gcm_params gcm_info;
 	} mode_params;
 
 	/* Cryptographic keylength in bytes. To be populated by the app
