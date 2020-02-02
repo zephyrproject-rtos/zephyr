@@ -4,3 +4,9 @@ tests:
   net.packet:
     min_ram: 20
     tags: net
+  net.packet.large_buffer:
+    min_ram: 20
+    tags: net
+    extra_configs:
+     - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+     - CONFIG_NET_BUF_DATA_SIZE=512
