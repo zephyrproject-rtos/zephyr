@@ -4,15 +4,25 @@ compiler: gcc
 
 env:
     global:
-        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.11.0
+        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.11.1
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        - MATRIX_BUILDS="5"
+        - MATRIX_BUILDS="15"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
         - MATRIX_BUILD="5"
+        - MATRIX_BUILD="6"
+        - MATRIX_BUILD="7"
+        - MATRIX_BUILD="8"
+        - MATRIX_BUILD="9"
+        - MATRIX_BUILD="10"
+        - MATRIX_BUILD="11"
+        - MATRIX_BUILD="12"
+        - MATRIX_BUILD="13"
+        - MATRIX_BUILD="14"
+        - MATRIX_BUILD="15"
 
 build:
     cache: false
@@ -20,7 +30,7 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: v0.11.1
+        image_tag: v0.11.2
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
