@@ -181,7 +181,7 @@ struct adxl362_config {
 #if defined(CONFIG_ADXL362_TRIGGER)
 	const char *gpio_port;
 	gpio_pin_t int_gpio;
-	gpio_devicetree_flags_t int_flags;
+	gpio_dt_flags_t int_flags;
 	u8_t int1_config;
 	u8_t int2_config;
 #endif

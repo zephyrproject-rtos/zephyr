@@ -216,7 +216,7 @@ struct lsm9ds0_gyro_config {
 #if CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY
 	char *gpio_drdy_dev_name;
 	gpio_pin_t gpio_drdy_int_pin;
-	gpio_devicetree_flags_t gpio_drdy_int_flags;
+	gpio_dt_flags_t gpio_drdy_int_flags;
 #endif
 };
 

@@ -87,7 +87,7 @@ struct lis2ds12_config {
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	const char *irq_port;
 	gpio_pin_t irq_pin;
-	gpio_devicetree_flags_t irq_flags;
+	gpio_dt_flags_t irq_flags;
 #endif
 };
 

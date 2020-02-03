@@ -28,7 +28,7 @@ struct sdhc_spi_data {
 	struct spi_config cfg;
 	struct device *cs;
 	u32_t pin;
-	gpio_devicetree_flags_t flags;
+	gpio_dt_flags_t flags;
 
 	bool high_capacity;
 	u32_t sector_count;

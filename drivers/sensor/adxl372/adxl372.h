@@ -326,7 +326,7 @@ struct adxl372_dev_config {
 #ifdef CONFIG_ADXL372_TRIGGER
 	const char *gpio_port;
 	gpio_pin_t int_gpio;
-	gpio_devicetree_flags_t int_flags;
+	gpio_dt_flags_t int_flags;
 #endif
 	bool max_peak_detect_mode;
 

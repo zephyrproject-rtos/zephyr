@@ -439,11 +439,11 @@ struct usdhc_client_info {
 struct usdhc_board_config {
 	struct device *pwr_gpio;
 	u32_t pwr_pin;
-	gpio_devicetree_flags_t pwr_flags;
+	gpio_dt_flags_t pwr_flags;
 
 	struct device *detect_gpio;
 	u32_t detect_pin;
-	gpio_devicetree_flags_t detect_flags;
+	gpio_dt_flags_t detect_flags;
 	struct gpio_callback detect_cb;
 };
 
@@ -2230,7 +2230,7 @@ static void usdhc_cd_gpio_cb(struct device *dev,
 }
 
 static int usdhc_cd_gpio_init(struct device *detect_gpio,
-	u32_t pin, gpio_devicetree_flags_t flags,
+	u32_t pin, gpio_dt_flags_t flags,
 	struct gpio_callback *callback)
 {
 	int ret;
