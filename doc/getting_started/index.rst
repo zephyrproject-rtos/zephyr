@@ -286,7 +286,7 @@ A toolchain includes necessary tools used to build Zephyr applications
 including: compiler, assembler, linker, and their dependencies.
 
 
-.. _Zephyr Downloads: https://www.zephyrproject.org/developers/#downloads
+.. _Zephyr SDK Downloads: https://github.com/zephyrproject-rtos/sdk-ng/releases
 
 .. tabs::
 

@@ -38,7 +38,7 @@ If you got this error by following a link, please let us know by sending
 us a message using this `contact us form`_, or send an email message to
 info@zephyrproject.org
 
-.. _contact us form: https://www.zephyrproject.org/about/#contact-us
+.. _contact us form: https://www.zephyrproject.org/contact-us/
 
 .. raw:: html
 
