@@ -803,7 +803,7 @@ static int set_le_scan_enable_legacy(u8_t enable)
 static int set_le_scan_enable(u8_t enable)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return set_le_ext_scan_enable(enable, 0);
 	}
 
@@ -1010,8 +1010,6 @@ int bt_le_create_conn(const struct bt_conn *conn)
 		/* User Initiated procedure use fast scan parameters. */
 		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
-		cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
-		cp->scan_window = sys_cpu_to_le16(BT_GAP_SCAN_FAST_WINDOW);
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
@@ -1024,10 +1022,10 @@ int bt_le_create_conn(const struct bt_conn *conn)
 #endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_DIRECT;
-		/* Interval == window for continuous scanning */
-		cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
-		cp->scan_window = cp->scan_interval;
 	}
+
+	cp->scan_interval = sys_cpu_to_le16(bt_dev.create_param.interval);
+	cp->scan_window = sys_cpu_to_le16(bt_dev.create_param.window);
 
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
@@ -3887,7 +3885,7 @@ static int start_passive_scan(bool fast_scan)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_hci_ext_scan_phy scan;
 
 		scan.type = BT_HCI_LE_SCAN_PASSIVE;
@@ -4692,7 +4690,7 @@ static int le_set_event_mask(void)
 	mask |= BT_EVT_MASK_LE_ADVERTISING_REPORT;
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT;
 		mask |= BT_EVT_MASK_LE_SCAN_TIMEOUT;
 	}
@@ -6664,7 +6662,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 #endif /* defined(CONFIG_BT_WHITELIST) */
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_hci_ext_scan_phy param_1m;
 		struct bt_hci_ext_scan_phy param_coded;
 
