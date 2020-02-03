@@ -27,7 +27,9 @@ static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 	} while (err == 0);
 }
 
-static void lfclk_started_cb(struct device *dev, void *user_data)
+static void lfclk_started_cb(struct device *dev,
+			     clock_control_subsys_t subsys,
+			     void *user_data)
 {
 	*(bool *)user_data = true;
 }

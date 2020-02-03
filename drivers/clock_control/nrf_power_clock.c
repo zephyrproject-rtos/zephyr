@@ -281,7 +281,7 @@ static int clock_async_start(struct device *dev,
 		clock_irqs_enable();
 
 		if (already_started) {
-			data->cb(dev, data->user_data);
+			data->cb(dev, subsys, data->user_data);
 		}
 	}
 
@@ -403,7 +403,8 @@ static void clkstarted_handle(struct device *dev,
 	sub_data->started = true;
 
 	while ((async_data = list_get(&sub_data->list)) != NULL) {
-		async_data->cb(dev, async_data->user_data);
+		async_data->cb(dev, (clock_control_subsys_t)type,
+				async_data->user_data);
 	}
 }
 

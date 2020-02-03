@@ -26,7 +26,8 @@ struct temp_nrf5_data {
 	struct device *clk_dev;
 };
 
-static void hfclk_on_callback(struct device *dev, void *user_data)
+static void hfclk_on_callback(struct device *dev, clock_control_subsys_t subsys,
+			      void *user_data)
 {
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 }
