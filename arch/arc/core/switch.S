@@ -67,15 +67,12 @@ SECTION_FUNC(TEXT, arch_switch)
 #endif
 	/*
 	 * r0 = new_thread->switch_handle = switch_to thread,
-	 * r1 = &old_thread->switch_handle = &switch_from thread
+	 * r1 = &old_thread->switch_handle
+	 * get old_thread from r1
 	 */
 
-	ld_s r2, [r1]
-	/*
-	 * r2 may be dummy_thread in z_cstart, dummy_thread->switch_handle
-	 * must be 0
-	 */
-	breq r2, 0, _switch_to_target_thread
+	sub r2, r1, ___thread_t_switch_handle_OFFSET
+
 
 	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
 
@@ -99,6 +96,13 @@ SECTION_FUNC(TEXT, arch_switch)
 
 	_save_callee_saved_regs
 
+#ifdef CONFIG_SMP
+	/* save old thread into switch handle which is required by
+	 * wait_for_switch
+	 */
+	st r2, [r2, ___thread_t_switch_handle_OFFSET]
+#endif
+
 #ifdef CONFIG_ARC_STACK_CHECKING
 /* disable stack checking here, as sp will be changed to target
  * thread'sp
@@ -111,8 +115,6 @@ SECTION_FUNC(TEXT, arch_switch)
 	kflag r3
 #endif
 #endif
-
-_switch_to_target_thread:
 
 	mov_s r2, r0
 
