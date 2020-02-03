@@ -13,6 +13,10 @@
 #include <xtensa/config/system.h>  /* for XSHAL_USE_ABSOLUTE_LITERALS only */
 #include <xtensa/xtruntime-core-state.h>
 
+#if defined(BOOTLOADER)
+#include <platform/memory.h>
+#endif
+
 /*
  * The following reset vector avoids initializing certain registers already
  * initialized by processor reset.  But it does initialize some of them
@@ -24,8 +28,13 @@
 	.section		.ResetVector.text, "ax"
 
 	.align	4
+#if defined(BOOTLOADER)
+	.global _ResetVector
+_ResetVector:
+#else
 	.global	__start
 __start:
+#endif
 
 #if (!XCHAL_HAVE_HALT || defined(XTOS_UNPACK)) && XCHAL_HAVE_IMEM_LOADSTORE
 	/*
@@ -36,16 +45,55 @@ __start:
 	 *  the reset vector's 'j' instruction, the _ResetHandler symbol
 	 *  and a more elaborate j/movi/jx sequence are needed in
 	 *  .ResetVector.text to dispatch to the new location.
+	 *
+	 * If we have dynamic cache way support, init the caches as soon
+	 * as we can, which is now. Except, if we are waking up from a
+	 * PSO event, then we need to do this slightly later.
 	 */
+
+#if defined(BOOTLOADER)
+#if XCHAL_USE_MEMCTL
+#if XCHAL_HAVE_PSO_CDM && !XCHAL_HAVE_PSO_FULL_RETENTION
+	/* Do this later on in the code -- see below */
+#else
+	movi	a0, ~MEMCTL_SNOOP_EN
+	wsr	a0, MEMCTL
+#endif
+#endif
+#endif /* BOOTLOADER */
+
+#if defined(BOOTLOADER)
+	/* This is our VM bxt ROM. It simply jumps to the reset handler. */
+	j .sram_jump		/* jump over the literals */
+
+	.align	4
+	.literal_position	/* tells the assembler/linker to place
+				 * literals here
+				 */
+_reset_sram:
+	.word _ResetHandler
+	.align 4
+.sram_jump:
+	l32r	a0, _reset_sram	/* load SRAM reset handler address */
+	jx	a0		/* jump to the hanlder */
+
+	.size	_ResetVector, . - _ResetVector
+#endif /* BOOTLOADER */
+
 	j	_ResetHandler
 
+#if defined(BOOTLOADER)
+	.size	_ResetVector, . - _ResetVector
+#else
 	.size	__start, . - __start
+#endif
+
 
 #if XCHAL_HAVE_HALT
 	/*
-	 *  Xtensa TX: reset vector segment is only 4 bytes, so must place the
-	 *  unpacker code elsewhere in the memory that contains the reset
-	 *  vector.
+	 * Xtensa TX: reset vector segment is only 4 bytes, so must place the
+	 * unpacker code elsewhere in the memory that contains the reset
+	 * vector.
 	 */
 #if XCHAL_RESET_VECTOR_VADDR == XCHAL_INSTRAM0_VADDR
 	.section .iram0.text, "ax"
@@ -67,6 +115,7 @@ __start:
 	.literal_position
 	.align	4
 	.global	_ResetHandler
+
 _ResetHandler:
 #endif
 
@@ -278,6 +327,7 @@ _ResetHandler:
 	s32i	a0, a2, 0	 /* clear sync variable */
 .Ldonesync:
 #endif
+
 #if XCHAL_HAVE_EXTERN_REGS && XCHAL_HAVE_MP_RUNSTALL
 	/* On core 0, this releases other cores.  On other cores this has no
 	 * effect, because runstall control is unconnected
@@ -588,7 +638,6 @@ unpackdone:
 # endif
 #endif /* pre-LX2 */
 
-
 	/*
 	 *  Initialize memory error handler address.
 	 *  Putting this address in a register allows multiple instances of
@@ -597,7 +646,7 @@ unpackdone:
 	 *  it is not VECBASE relative) to have the same memory error vector,
 	 *  yet each have their own handler and associated data save area.
 	 */
-#if XCHAL_HAVE_MEM_ECC_PARITY
+#if XCHAL_HAVE_MEM_ECC_PARITY_IGNORE
 	movi	a4, _MemErrorHandler
 	wsr	a4, MESAVE
 #endif
@@ -660,7 +709,13 @@ unpackdone:
 	 *  -mlongcalls) which it doesn't with j or jx.  Note:  This needs to
 	 *  be call0 regardless of the selected ABI.
 	 */
+#if defined(BOOTLOADER)
+	/*ToDo refine the _start*/
+	movi a0, SOF_TEXT_BASE
+	callx0 a0
+#else
 	call0	_start		 /* jump to _start (in crt1-*.S) */
+#endif
 	/* does not return */
 
 #else /* XCHAL_HAVE_HALT */
@@ -686,7 +741,11 @@ unpackdone:
 #if (!XCHAL_HAVE_HALT || defined(XTOS_UNPACK)) && XCHAL_HAVE_IMEM_LOADSTORE
 	.size	_ResetHandler, . - _ResetHandler
 #else
+#if defined(BOOTLOADER)
+	.size	_ResetVector, . - _ResetVector
+#else
 	.size	__start, . - __start
+#endif
 #endif
 
 	.text
