@@ -112,7 +112,7 @@ struct lmp90xxx_config {
 	struct spi_config spi_cfg;
 	const char *drdyb_dev_name;
 	gpio_pin_t drdyb_pin;
-	gpio_devicetree_flags_t drdyb_flags;
+	gpio_dt_flags_t drdyb_flags;
 	u8_t rtd_current;
 	u8_t resolution;
 	u8_t channels;

@@ -41,7 +41,7 @@ struct eeprom_at2x_config {
 	const char *spi_cs_dev_name;
 	u8_t spi_cs_pin;
 	gpio_pin_t wp_gpio_pin;
-	gpio_devicetree_flags_t wp_gpio_flags;
+	gpio_dt_flags_t wp_gpio_flags;
 	const char *wp_gpio_name;
 	size_t size;
 	size_t pagesize;

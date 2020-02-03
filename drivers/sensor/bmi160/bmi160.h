@@ -387,7 +387,7 @@ struct bmi160_device_config {
 #if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	gpio_pin_t int_pin;
-	gpio_devicetree_flags_t int_flags;
+	gpio_dt_flags_t int_flags;
 #endif
 };
 
