@@ -377,6 +377,107 @@
 	sr \reg, [\aux]
 .endm
 
+
+/* macro to store old thread call regs */
+.macro _store_old_thread_callee_regs
+
+	_save_callee_saved_regs
+#ifdef CONFIG_SMP
+	/* save old thread into switch handle which is required by
+	 * wait_for_switch
+	 */
+	st r2, [r2, ___thread_t_switch_handle_OFFSET]
+#endif
+.endm
+
+/* macro to store old thread call regs  in interrupt*/
+.macro _irq_store_old_thread_callee_regs
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to remember the user/kernel status of interrupted thread, will be
+ * restored when thread switched back
+ */
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r3, 0x80000000
+	push_s r3
+#endif
+	_store_old_thread_callee_regs
+.endm
+
+/* macro to load new thread callee regs */
+.macro _load_new_thread_callee_regs
+#ifdef CONFIG_ARC_STACK_CHECKING
+	_load_stack_check_regs
+#endif
+	/*
+	 * _load_callee_saved_regs expects incoming thread in r2.
+	 * _load_callee_saved_regs restores the stack pointer.
+	 */
+	_load_callee_saved_regs
+
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+	push_s r2
+	bl configure_mpu_thread
+	pop_s r2
+#endif
+
+	ld r3, [r2, _thread_offset_to_relinquish_cause]
+.endm
+
+
+/* when switch to thread caused by coop, some status regs need to set */
+.macro _set_misc_regs_irq_switch_from_coop
+#if defined(CONFIG_USERSPACE)
+/*
+ * when USERSPACE is enabled, according to ARCv2 ISA, SP will be switched
+ * if interrupt comes out in user mode, and will be recorded in bit 31
+ * (U bit) of IRQ_ACT. when interrupt exits, SP will be switched back
+ * according to U bit.
+ *
+ * For the case that context switches in interrupt, the target sp must be
+ * thread's kernel stack, no need to do hardware sp switch. so, U bit should
+ * be cleared.
+ */
+	lr r0, [_ARC_V2_AUX_IRQ_ACT]
+	bclr r0, r0, 31
+	sr r0, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* must return to secure mode, so set IRM bit to 1 */
+	lr r0, [_ARC_V2_SEC_STAT]
+	bset r0, r0, _ARC_V2_SEC_STAT_IRM_BIT
+	sflag r0
+#endif
+.endm
+
+/* when switch to thread caused by irq, some status regs need to set */
+.macro _set_misc_regs_irq_switch_from_irq
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* here need to recover SEC_STAT.IRM bit */
+	pop_s r3
+	sflag r3
+#endif
+.endm
+
+/* macro to get next switch handle in assembly */
+.macro _get_next_switch_handle
+	push_s r2
+	mov r0, sp
+	bl z_arch_get_next_switch_handle
+	pop_s  r2
+.endm
+
 #endif /* _ASMLANGUAGE */
 
 #endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */
