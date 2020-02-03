@@ -57,6 +57,13 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
+config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
+	bool "LF clock is always on"
+	default y if NRF_RTC_TIMER
+	help
+	  If RTC is used as system timer then LF clock is always on and handling
+	  can be simplified.
+
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
 	int "Calibration opportunity period in milliseconds"
 	default 4000

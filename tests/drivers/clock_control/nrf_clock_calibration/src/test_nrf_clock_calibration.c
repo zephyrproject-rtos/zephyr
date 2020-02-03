@@ -21,20 +21,32 @@ extern void mock_temp_nrf5_value_set(struct sensor_value *val);
 
 static void turn_on_clock(struct device *dev, clock_control_subsys_t subsys)
 {
-	clock_control_on(dev, subsys);
-	while (clock_control_get_status(dev, subsys) !=
-		CLOCK_CONTROL_STATUS_ON) {
+	int err;
+	int res;
+	struct onoff_client cli;
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);
 
+	sys_notify_init_spinwait(&cli.notify);
+	err = onoff_request(mgr, &cli);
+	if (err < 0) {
+		zassert_false(true, "Failed to start clock");
+	}
+	while (sys_notify_fetch_result(&cli.notify, &res) != 0) {
 	}
 }
 
 static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 {
 	int err;
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);
 
 	do {
-		err = clock_control_off(dev, subsys);
-	} while (err == 0);
+		err = onoff_release(mgr);
+	} while (err >= 0);
+
+	while (clock_control_get_status(dev, subsys) !=
+		CLOCK_CONTROL_STATUS_OFF) {
+	}
 }
 
 #define TEST_CALIBRATION(exp_cal, exp_skip, sleep_ms) \
