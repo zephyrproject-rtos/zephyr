@@ -423,6 +423,52 @@ static inline void onoff_client_init_callback(struct onoff_client *cli,
 	};
 }
 
+/** @brief Get onoff service from the device.
+ *
+ * @param dev Device.
+ * @param srv Location where service handler is stored.
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP is API is not supported by the device.
+ */
+static inline int device_get_onoff_service(struct device *dev,
+						struct onoff_service **srv)
+{
+	if (!z_device_ext_api_supported(dev, DEVICE_EXT_API_ONOFF)) {
+		return -ENOTSUP;
+	}
+
+	*srv = (struct ononff_service *) z_device_ext_api_get_data(dev,
+							DEVICE_EXT_API_ONOFF);
+	return 0;
+}
+
+/** @brief Get onoff service from the device subsystem.
+ *
+ * Used when device has more than one onoff service.
+ *
+ * @param dev Device.
+ * @param subsys Subsys id.
+ * @param srv Location where service handler is stored.
+ *
+ * @retval 0 on success.
+ * @retval -ENOTSUP is API is not supported by the device.
+ */
+static inline int device_subsys_get_onoff_service(struct device *dev,
+						u32_t subsys,
+						struct onoff_service **srv)
+{
+	void **data;
+	if (!z_device_ext_api_supported(dev, DEVICE_EXT_API_ONOFF)) {
+		return -ENOTSUP;
+	}
+
+	data = (void **)z_device_ext_api_get_data(dev, DEVICE_EXT_API_ONOFF);
+	*srv = (struct ononff_service *)data[subsys];
+
+	return 0;
+}
+
 /**
  * @brief Request a reservation to use an on-off service.
  *

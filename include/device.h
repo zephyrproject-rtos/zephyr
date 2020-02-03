@@ -29,6 +29,18 @@ extern "C" {
 
 #define Z_DEVICE_MAX_NAME_LEN	48
 
+/**@defgroup DEVICE_EXT_API_FLAGS Flags identifying extension APIs.
+ * @{
+ */
+
+/** @brief onoff service supported by the device. */
+#define DEVICE_EXT_API_ONOFF	BIT(0)
+
+/** @brief foo API supported by the device. */
+#define DEVICE_EXT_API_FOO	BIT(1)
+
+/**@} */
+
 /**
  * @def DEVICE_INIT
  *
@@ -264,6 +276,18 @@ struct device_config {
 	const void *config_info;
 };
 
+/** @brief Extension API's structure/
+ *
+ * @param capabilities Mask of supported APIs, see DEVICE_EXT_API_FLAGS.
+ * @param data		If driver has only one capability then it is a pointer
+ *			to data associated with API. Otherwise it is an array
+ *			of pointer.
+ */
+struct device_ext_api {
+	u32_t capabilities;
+	void *data;
+}
+
 /**
  * @brief Runtime device structure (In memory) Per driver instance
  * @param device_config Build time config information
@@ -275,6 +299,7 @@ struct device {
 	const struct device_config *config;
 	const void *driver_api;
 	void *driver_data;
+	struct device_ext_api *ext_api;
 };
 
 void z_sys_device_do_config_level(s32_t level);
@@ -292,6 +317,51 @@ void z_sys_device_do_config_level(s32_t level);
  * @return pointer to device structure; NULL if not found or cannot be used.
  */
 __syscall struct device *device_get_binding(const char *name);
+
+/** @brief Check if given extension is supported.
+ *
+ * @param dev		Device.
+ * @param api_mask	Bit mask identifiing an extension.
+ *
+ * @return True if supported, false otherwise.
+ */
+static inline bool z_device_ext_api_supported(struct device *dev, u32_t api_mask)
+{
+	if (dev->ext_api == NULL) {
+		return false;
+	}
+
+	return dev->ext_api->capabilities & api_mask ? true : false;
+}
+
+/** @brief Get extension specific data.
+ *
+ * If device supports multiple extensions then assosiated data is stored in
+ * array. Data is ordered starting from LSB extension bit. If only one extension
+ * is supported then pointer to associated data instead of array of pointers is
+ * used.
+ *
+ * @param dev		Device.
+ * @param api_mask	Bit mask identifiing an extension.
+ *
+ * @return Extension data
+ */
+static inline void *z_device_ext_api_get_data(struct device *dev,
+						u32_t api_mask)
+{
+	u32_t mask;
+	u32_t idx;
+
+	if (!(dev->ext_api->capabilities & (dev->ext_api->capabilities - 1))) {
+		return dev->ext_api->data;
+	}
+
+	/* clean all higher bits to get numer of bits set up to current bit. */
+	mask = (api_mask - 1) & dev->ext_api->capabilities;
+	idx = __builtin_popcount(mask);
+
+	return dev->ext_api->data[idx];
+}
 
 /**
  * @}
