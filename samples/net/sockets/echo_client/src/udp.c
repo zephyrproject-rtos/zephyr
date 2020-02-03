@@ -32,7 +32,8 @@ static int send_udp_data(struct data *data)
 
 	do {
 		data->udp.expecting = sys_rand32_get() % ipsum_len;
-	} while (data->udp.expecting == 0U);
+	} while (data->udp.expecting == 0U ||
+		 data->udp.expecting > data->udp.mtu);
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 

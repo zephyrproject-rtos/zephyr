@@ -198,6 +198,8 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		LOG_INF("Network connected");
 
 		connected = true;
+		conf.ipv4.udp.mtu = net_if_get_mtu(iface);
+		conf.ipv6.udp.mtu = conf.ipv4.udp.mtu;
 		k_sem_give(&run_app);
 
 		return;
