@@ -71,7 +71,7 @@ struct amg88xx_config {
 #ifdef CONFIG_AMG88XX_TRIGGER
 	char *gpio_name;
 	u8_t gpio_pin;
-	gpio_devicetree_flags_t gpio_flags;
+	gpio_dt_flags_t gpio_flags;
 #endif
 	u8_t i2c_address;
 };

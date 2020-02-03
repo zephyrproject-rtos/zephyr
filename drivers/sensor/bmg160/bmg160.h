@@ -183,7 +183,7 @@ struct bmg160_device_config {
 	u8_t i2c_speed;
 #ifdef CONFIG_BMG160_TRIGGER
 	gpio_pin_t int_pin;
-	gpio_devicetree_flags_t int_flags;
+	gpio_dt_flags_t int_flags;
 	const char *gpio_port;
 #endif
 };

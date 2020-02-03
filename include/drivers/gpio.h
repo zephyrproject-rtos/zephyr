@@ -428,7 +428,7 @@ typedef u8_t gpio_pin_t;
  * bits of the full flags field, so use a reduced-size type to record
  * that part of a GPIOS property.
  */
-typedef u8_t gpio_devicetree_flags_t;
+typedef u8_t gpio_dt_flags_t;
 
 /**
  * @brief Provides a type to hold GPIO configuration flags.

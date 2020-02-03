@@ -29,7 +29,7 @@ extern DioIrqHandler *DioIrq[];
 struct sx1276_dio {
 	const char *port;
 	gpio_pin_t pin;
-	gpio_devicetree_flags_t flags;
+	gpio_dt_flags_t flags;
 };
 
 static struct sx1276_dio sx1276_dios[] =
