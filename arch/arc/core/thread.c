@@ -224,6 +224,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* initial values in all other regs/k_thread entries are irrelevant */
 }
 
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	*old_thread =  _current;
+
+	return z_get_next_switch_handle(*old_thread);
+}
 
 #ifdef CONFIG_USERSPACE
 

@@ -114,21 +114,11 @@ _exc_return:
  * exception comes out,  thread context?irq_context?nest irq context?
  */
 
-#ifdef CONFIG_SMP
-	bl z_arc_smp_switch_in_isr
-	breq r0, 0, _exc_return_from_exc
-	mov_s r2, r0
-#else
-	mov_s r1, _kernel
-	ld_s r2, [r1, _kernel_offset_to_current]
+	_get_next_switch_handle
 
-	/* check if the current thread needs to be rescheduled */
-	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
 	breq r0, r2, _exc_return_from_exc
 
-	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
-	st_s r2, [r1, _kernel_offset_to_current]
-#endif
+	mov_s r2, r0
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/*
@@ -184,8 +174,8 @@ _exc_return:
 	mov r2, ilink
 #endif
 
-	/* Assumption: r2 has current thread */
-	b _rirq_common_interrupt_swap
+	/* Assumption: r2 has  next thread */
+	b _rirq_newthread_switch
 
 _exc_return_from_exc:
 	ld_s r0, [sp, ___isf_t_pc_OFFSET]
