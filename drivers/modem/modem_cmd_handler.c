@@ -20,9 +20,6 @@ LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_context.h"
 #include "modem_cmd_handler.h"
 
-/*
- * Verbose Debugging Function
- */
 
 /*
  * Parsing Functions
