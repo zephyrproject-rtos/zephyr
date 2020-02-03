@@ -112,6 +112,8 @@ struct bt_dev {
 	/* ID Address used for advertising */
 	u8_t                    adv_id;
 
+	struct bt_conn_le_create_param create_param;
+
 	/* Current local Random Address */
 	bt_addr_le_t		random_addr;
 
