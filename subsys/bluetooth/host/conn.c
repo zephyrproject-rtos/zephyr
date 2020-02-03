@@ -2253,7 +2253,12 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
-		bt_le_scan_update(true);
+		if (bt_le_scan_update(true)) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+
+			return NULL;
+		}
 
 		return conn;
 	}
