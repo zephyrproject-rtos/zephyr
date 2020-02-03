@@ -979,7 +979,117 @@ static int le_create_conn_set_random_addr(bool use_filter, u8_t *own_addr_type)
 	return 0;
 }
 
-int bt_le_create_conn(const struct bt_conn *conn)
+static void set_phy_conn_param(const struct bt_conn *conn,
+			       struct bt_hci_ext_conn_phy *phy)
+{
+	phy->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
+	phy->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
+	phy->conn_latency = sys_cpu_to_le16(conn->le.latency);
+	phy->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
+
+	phy->min_ce_len = 0;
+	phy->max_ce_len = 0;
+}
+
+int bt_le_create_conn_ext(const struct bt_conn *conn)
+{
+	struct bt_hci_cp_le_ext_create_conn *cp;
+	struct bt_hci_ext_conn_phy *phy;
+	struct cmd_state_set state;
+	bool use_filter = false;
+	struct net_buf *buf;
+	u8_t own_addr_type;
+	u8_t num_phys;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	}
+
+	err = le_create_conn_set_random_addr(use_filter, &own_addr_type);
+	if (err) {
+		return err;
+	}
+
+	num_phys = (!(bt_dev.create_param.options &
+		      BT_LE_CONN_OPT_NO_1M) ? 1 : 0) +
+		   ((bt_dev.create_param.options &
+		      BT_LE_CONN_OPT_2M) ? 1 : 0) +
+		   ((bt_dev.create_param.options &
+		      BT_LE_CONN_OPT_CODED) ? 1 : 0);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN, sizeof(*cp) +
+				num_phys * sizeof(*phy));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	if (use_filter) {
+		/* User Initiated procedure use fast scan parameters. */
+		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
+	} else {
+		const bt_addr_le_t *peer_addr = &conn->le.dst;
+
+#if defined(CONFIG_BT_SMP)
+		if (!bt_dev.le.rl_size ||
+		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+			/* Host resolving is used, use the RPA directly. */
+			peer_addr = &conn->le.resp_addr;
+		}
+#endif
+		bt_addr_le_copy(&cp->peer_addr, peer_addr);
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_DIRECT;
+	}
+
+	cp->own_addr_type = own_addr_type;
+	cp->phys = 0;
+
+	if (!(bt_dev.create_param.options & BT_LE_CONN_OPT_NO_1M)) {
+		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_1M;
+		phy = net_buf_add(buf, sizeof(*phy));
+		phy->scan_interval = sys_cpu_to_le16(
+			bt_dev.create_param.interval);
+		phy->scan_window = sys_cpu_to_le16(
+			bt_dev.create_param.window);
+		set_phy_conn_param(conn, phy);
+	}
+
+	if (bt_dev.create_param.options & BT_LE_CONN_OPT_2M) {
+		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_2M;
+		phy = net_buf_add(buf, sizeof(*phy));
+		phy->scan_interval = sys_cpu_to_le16(
+			bt_dev.create_param.interval);
+		phy->scan_window = sys_cpu_to_le16(
+			bt_dev.create_param.window);
+		set_phy_conn_param(conn, phy);
+	}
+
+	if (bt_dev.create_param.options & BT_LE_CONN_OPT_CODED) {
+		u16_t interval = bt_dev.create_param.interval_coded ?
+			bt_dev.create_param.interval_coded :
+			bt_dev.create_param.interval;
+		u16_t window = bt_dev.create_param.window_coded ?
+			bt_dev.create_param.window_coded :
+			bt_dev.create_param.window;
+
+		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
+		phy = net_buf_add(buf, sizeof(*phy));
+		phy->scan_interval = sys_cpu_to_le16(interval);
+		phy->scan_window = sys_cpu_to_le16(window);
+		set_phy_conn_param(conn, phy);
+	}
+
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, true);
+	cmd(buf)->state = &state;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
+}
+
+int bt_le_create_conn_legacy(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_create_conn *cp;
 	struct cmd_state_set state;
@@ -1036,6 +1146,16 @@ int bt_le_create_conn(const struct bt_conn *conn)
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+}
+
+int bt_le_create_conn(const struct bt_conn *conn)
+{
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		return bt_le_create_conn_ext(conn);
+	}
+
+	return bt_le_create_conn_legacy(conn);
 }
 
 int bt_le_create_conn_cancel(void)

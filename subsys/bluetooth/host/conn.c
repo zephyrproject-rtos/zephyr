@@ -2165,11 +2165,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 	}
 
 	bt_conn_set_param_le(conn, param);
-	if (create_param) {
-		bt_dev.create_param = *create_param;
-	} else {
-		bt_dev.create_param = *BT_CONN_LE_CREATE_CONN;
-	}
+	bt_dev.create_param = *create_param;
 
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	bt_conn_set_state(conn, BT_CONN_CONNECT_AUTO);
@@ -2282,11 +2278,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	}
 
 	bt_conn_set_param_le(conn, conn_param);
-	if (create_param) {
-		bt_dev.create_param = *create_param;
-	} else {
-		bt_dev.create_param = *BT_CONN_LE_CREATE_CONN;
-	}
+	bt_dev.create_param = *create_param;
 
 #if defined(CONFIG_BT_SMP)
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
