@@ -805,6 +805,8 @@ static void test_async(void)
 	cli[0].result = 1 + start_state.retval;
 	zassert_equal(cli_result(&cli[0]), -EAGAIN,
 		      "fetch failed");
+	zassert_false(start_state.notify == NULL,
+		      "start invoked");
 	notify(&start_state);
 	zassert_equal(cli_result(&cli[0]), start_state.retval,
 		      "start notified");
