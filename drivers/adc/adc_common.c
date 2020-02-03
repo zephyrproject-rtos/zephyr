@@ -28,6 +28,7 @@ int adc_gain_invert(enum adc_gain gain,
 		[ADC_GAIN_16] = {.mul = 1, .div = 16},
 		[ADC_GAIN_32] = {.mul = 1, .div = 32},
 		[ADC_GAIN_64] = {.mul = 1, .div = 64},
+		[ADC_GAIN_128] = {.mul = 1, .div = 128},
 	};
 	int rv = -EINVAL;
 
