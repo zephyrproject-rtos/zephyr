@@ -343,7 +343,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 		u8_t work[_MAX_SS];
 
 		res = f_mkfs(&mountp->mnt_point[1],
-				(FM_FAT | FM_SFD), 0, work, sizeof(work));
+				(FM_ANY | FM_SFD), 0, work, sizeof(work));
 		if (res == FR_OK) {
 			res = f_mount((FATFS *)mountp->fs_data,
 					&mountp->mnt_point[1], 1);
