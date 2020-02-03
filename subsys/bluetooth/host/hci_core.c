@@ -889,18 +889,9 @@ static inline bool rpa_timeout_valid_check(void)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-int bt_le_create_conn(const struct bt_conn *conn)
+static int le_create_conn_set_random_addr(bool use_filter, u8_t *own_addr_type)
 {
-	struct bt_hci_cp_le_create_conn *cp;
-	struct cmd_state_set state;
-	bool use_filter = false;
-	struct net_buf *buf;
-	u8_t own_addr_type;
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
-		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
-	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		if (use_filter || rpa_timeout_valid_check()) {
@@ -917,9 +908,9 @@ int bt_le_create_conn(const struct bt_conn *conn)
 		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-			own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
 		} else {
-			own_addr_type = BT_ADDR_LE_RANDOM;
+			*own_addr_type = BT_ADDR_LE_RANDOM;
 		}
 	} else {
 		const bt_addr_le_t *addr = &bt_dev.id_addr[BT_ID_DEFAULT];
@@ -935,7 +926,28 @@ int bt_le_create_conn(const struct bt_conn *conn)
 			}
 		}
 
-		own_addr_type = addr->type;
+		*own_addr_type = addr->type;
+	}
+
+	return 0;
+}
+
+int bt_le_create_conn(const struct bt_conn *conn)
+{
+	struct bt_hci_cp_le_create_conn *cp;
+	struct cmd_state_set state;
+	bool use_filter = false;
+	struct net_buf *buf;
+	u8_t own_addr_type;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	}
+
+	err = le_create_conn_set_random_addr(use_filter, &own_addr_type);
+	if (err) {
+		return err;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
@@ -3655,10 +3667,57 @@ static void hci_cmd_status(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_OBSERVER)
+static int le_scan_set_random_addr(bool active_scan, u8_t *own_addr_type)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		err = le_set_private_addr(BT_ID_DEFAULT);
+		if (err) {
+			return err;
+		}
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			*own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+	} else {
+		*own_addr_type = bt_dev.id_addr[0].type;
+
+		/* Use NRPA unless identity has been explicitly requested
+		 * (through Kconfig), or if there is no advertising ongoing.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+			err = le_set_private_addr(BT_ID_DEFAULT);
+			if (err) {
+				return err;
+			}
+
+			*own_addr_type = BT_ADDR_LE_RANDOM;
+		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+			   *own_addr_type == BT_ADDR_LE_RANDOM) {
+			/* If scanning with Identity Address we must set the
+			 * random identity address for both active and passive
+			 * scanner in order to receive adv reports that are
+			 * directed towards this identity.
+			 */
+			err = set_random_address(&bt_dev.id_addr[0].a);
+			if (err) {
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 {
 	struct bt_hci_cp_le_set_scan_param set_param;
 	struct net_buf *buf;
+	bool active_scan;
 	int err;
 
 	(void)memset(&set_param, 0, sizeof(set_param));
@@ -3676,6 +3735,12 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 		set_param.filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
 	} else {
 		set_param.filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+	}
+
+	active_scan = scan_type == BT_HCI_LE_SCAN_ACTIVE;
+	err = le_scan_set_random_addr(active_scan, &set_param.addr_type);
+	if (err) {
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -3731,8 +3796,7 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 		return err;
 	}
 
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_ACTIVE_SCAN,
-			  scan_type == BT_HCI_LE_SCAN_ACTIVE);
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ACTIVE_SCAN, active_scan);
 
 	return 0;
 }
