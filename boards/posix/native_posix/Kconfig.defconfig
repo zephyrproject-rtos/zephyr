@@ -69,6 +69,10 @@ config SDL_DISPLAY
 	default y
 	depends on DISPLAY
 
+config KSCAN_SDL
+	default y
+	depends on KSCAN
+
 config FLASH_SIMULATOR
 	default y
 	depends on FLASH
