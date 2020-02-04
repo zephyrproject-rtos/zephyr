@@ -517,6 +517,35 @@ uint8_t ll_adv_enable(uint8_t enable)
 			}
 
 			memcpy(ptr, tx_addr, BDADDR_SIZE);
+		} else if (h->aux_ptr) {
+			struct pdu_adv_com_ext_adv *s;
+			struct pdu_adv *pdu_aux;
+			struct ext_adv_hdr *hs;
+			uint8_t *ps;
+
+			pdu_aux = lll_adv_aux_data_peek(lll);
+
+			s = (void *)&pdu_aux->adv_ext_ind;
+			hs = (void *)s->ext_hdr_adi_adv_data;
+			ps = (uint8_t *)hs + sizeof(*hs);
+
+			if (hs->adv_addr) {
+				uint8_t *tx_addr = ll_addr_get(pdu_aux->tx_addr,
+							    NULL);
+
+				/* TODO: Privacy check */
+				if (pdu_aux->tx_addr &&
+				    !mem_nz(tx_addr, BDADDR_SIZE)) {
+					return BT_HCI_ERR_INVALID_PARAM;
+				}
+
+				memcpy(ps, tx_addr, BDADDR_SIZE);
+			}
+
+			if (h->sync_info) {
+				/* TODO: allocate periodic advertising context
+				 */
+			}
 		}
 
 		/* TODO: TargetA, fill here at enable */
