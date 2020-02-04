@@ -324,6 +324,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+		peci0: peci@40006400 {
+			compatible = "microchip,xec-peci";
+			reg = <0x40006400 0x80>;
+			interrupts = <70 4>;
+			label = "PECI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 		spi0: spi@40070000 {
 			compatible = "microchip,xec-qmspi";
 			reg = <0x40070000 0x400>;
