@@ -35,6 +35,7 @@ static bool battery_ok;
 static int adc_setup(void)
 {
 	battery_data.adc = device_get_binding("ADC_0");
+
 	if (battery_data.adc == NULL) {
 		LOG_ERR("Failed to get ADC_0");
 		return -ENOENT;
@@ -53,17 +54,18 @@ static int adc_setup(void)
 		.channel_id = 0,
 		.differential = 0,
 		.input_positive =
-			NRF_SAADC_INPUT_VDD, /* select VDD as ADC source */
+			NRF_SAADC_INPUT_VDD,    /* select VDD as ADC source */
 		.input_negative = 0,
-		.reference = ADC_REF_INTERNAL, /* vRef=0.6v */
-		.gain = ADC_GAIN_1_6, /* set 1/6 because of vRef */
+		.reference = ADC_REF_INTERNAL,  /* vRef=0.6v */
+		.gain = ADC_GAIN_1_6,           /* set 1/6 because of vRef */
 		.acquisition_time = ADC_ACQ_TIME_DEFAULT
 	};
-#else /* CONFIG_ADC_var */
+#else   /* CONFIG_ADC_var */
 #error Unsupported ADC
 #endif /* CONFIG_ADC_var */
 
 	int rc = adc_channel_setup(battery_data.adc, &battery_data.adc_cfg);
+
 	LOG_INF("Setup ADC_0 got %d", rc);
 
 	return rc;
