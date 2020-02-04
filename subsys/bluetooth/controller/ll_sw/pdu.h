@@ -214,13 +214,13 @@ enum ext_adv_aux_phy {
 
 struct ext_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	u16_t sync_pkt_offs:13;
+	u16_t offs:13;
 	u16_t offs_units:1;
 	u16_t rfu:2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	u16_t rfu:2;
 	u16_t offs_units:1;
-	u16_t sync_pkt_offs:13;
+	u16_t offs:13;
 #else
 #error "Unsupported endianness"
 #endif
