@@ -91,6 +91,11 @@ Stable API changes in this release
     Usage of 8-bit write block size emulation is only recommended for
     compatibility with older storage contents.
 
+* Clock control
+
+  * The callback prototype (clock_control_cb_t) has now additional argument
+    (clock_control_subsys_t) indicating which clock subsystem got started.
+
 Removed APIs in this release
 ============================
 
