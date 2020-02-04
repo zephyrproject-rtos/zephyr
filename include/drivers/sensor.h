@@ -134,6 +134,9 @@ enum sensor_channel {
 	/** Position change on the Z axis, in points. */
 	SENSOR_CHAN_POS_DZ,
 
+	/** Revolutions per minute, in RPM. */
+	SENSOR_CHAN_RPM,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
