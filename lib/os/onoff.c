@@ -11,6 +11,7 @@
 #define CLIENT_NOTIFY_METHOD_MASK 0x03
 #define CLIENT_VALID_FLAGS_MASK 0x07
 
+
 #define SERVICE_CONFIG_FLAGS	     \
 	(ONOFF_SERVICE_START_SLEEPS  \
 	 | ONOFF_SERVICE_STOP_SLEEPS \
@@ -76,21 +77,17 @@ static int validate_args(const struct onoff_service *srv,
 }
 
 int onoff_service_init(struct onoff_service *srv,
-		       onoff_service_transition_fn start,
-		       onoff_service_transition_fn stop,
-		       onoff_service_transition_fn reset,
-		       u32_t flags)
+		       const struct onoff_service_transitions *transitions)
 {
-	if ((flags & SERVICE_CONFIG_FLAGS) != flags) {
+	if (transitions->flags & ~SERVICE_CONFIG_FLAGS) {
 		return -EINVAL;
 	}
 
-	if ((start == NULL) || (stop == NULL)) {
+	if ((transitions->start == NULL) || (transitions->stop == NULL)) {
 		return -EINVAL;
 	}
 
-	*srv = (struct onoff_service)ONOFF_SERVICE_INITIALIZER(start, stop,
-							       reset, flags);
+	*srv = (struct onoff_service)ONOFF_SERVICE_INITIALIZER(transitions);
 
 	return 0;
 }
@@ -261,8 +258,8 @@ out:
 	k_spin_unlock(&srv->lock, key);
 
 	if (start) {
-		__ASSERT_NO_MSG(srv->start != NULL);
-		srv->start(srv, onoff_start_notify);
+		__ASSERT_NO_MSG(srv->transitions->start != NULL);
+		srv->transitions->start(srv, onoff_start_notify);
 	} else if (notify) {
 		notify_one(srv, cli, 0);
 	}
@@ -328,7 +325,7 @@ static void onoff_stop_notify(struct onoff_service *srv,
 	if (notify_clients) {
 		notify_all(srv, &clients, client_res);
 	} else if (start) {
-		srv->start(srv, onoff_start_notify);
+		srv->transitions->start(srv, onoff_start_notify);
 	}
 }
 
@@ -396,8 +393,8 @@ out:
 	k_spin_unlock(&srv->lock, key);
 
 	if (stop) {
-		__ASSERT_NO_MSG(srv->stop != NULL);
-		srv->stop(srv, onoff_stop_notify);
+		__ASSERT_NO_MSG(srv->transitions->stop != NULL);
+		srv->transitions->stop(srv, onoff_stop_notify);
 	} else if (notify) {
 		notify_one(srv, cli, 0);
 	}
@@ -435,7 +432,7 @@ static void onoff_reset_notify(struct onoff_service *srv,
 int onoff_service_reset(struct onoff_service *srv,
 			struct onoff_client *cli)
 {
-	if (srv->reset == NULL) {
+	if (srv->transitions->reset == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -472,7 +469,7 @@ out:
 	k_spin_unlock(&srv->lock, key);
 
 	if (reset) {
-		srv->reset(srv, onoff_reset_notify);
+		srv->transitions->reset(srv, onoff_reset_notify);
 	}
 
 	return rv;
