@@ -249,7 +249,7 @@ void main(void)
 		CO_CANsetNormalMode(CO->CANmodule[0]);
 
 		while (true) {
-			timeout = 50U; /* default timeout in milliseconds */
+			timeout = 1U; /* default timeout in milliseconds */
 			timestamp = k_uptime_get();
 			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
 
