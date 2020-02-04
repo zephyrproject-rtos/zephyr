@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CONFIG_BATT_MODE_DIRECT
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +14,9 @@
 #include <init.h>
 #include <drivers/adc.h>
 #include <drivers/sensor.h>
+#ifdef CONFIG_ADC_NRFX_SAADC
+#include <hal/nrf_saadc.h>
+#endif
 #include <logging/log.h>
 
 #include "battery.h"
@@ -35,23 +40,23 @@ static int adc_setup(void)
 		return -ENOENT;
 	}
 
-	battery_data.adc_seq = (struct adc_sequence){
-		.channels = BIT(0),
-		.buffer = &battery_data.raw,
-		.buffer_size = sizeof(battery_data.raw),
-		.oversampling = 8,
-		.calibrate = true,
-        .resolution = 12
-	};
+	battery_data.adc_seq =
+		(struct adc_sequence){ .channels = BIT(0),
+				       .buffer = &battery_data.raw,
+				       .buffer_size = sizeof(battery_data.raw),
+				       .oversampling = 8,
+				       .calibrate = true,
+				       .resolution = 12 };
 
 #ifdef CONFIG_ADC_NRFX_SAADC
 	battery_data.adc_cfg = (struct adc_channel_cfg){
 		.channel_id = 0,
 		.differential = 0,
-		.input_positive = NRF_SAADC_INPUT_VDD,    /* select VDD as ADC source */
+		.input_positive =
+			NRF_SAADC_INPUT_VDD, /* select VDD as ADC source */
 		.input_negative = 0,
-		.reference = ADC_REF_INTERNAL,  /* vRef=0.6v */
-		.gain = ADC_GAIN_1_6,           /* set 1/6 because of vRef */
+		.reference = ADC_REF_INTERNAL, /* vRef=0.6v */
+		.gain = ADC_GAIN_1_6, /* set 1/6 because of vRef */
 		.acquisition_time = ADC_ACQ_TIME_DEFAULT
 	};
 #else /* CONFIG_ADC_var */
@@ -77,7 +82,7 @@ SYS_INIT(battery_setup, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 int battery_measure_enable(bool enable)
 {
-    /* Nothing to do in this implementation */
+	/* Nothing to do in this implementation */
 	return battery_ok ? 0 : -ENOENT;
 }
 
@@ -91,13 +96,17 @@ int battery_sample(void)
 		if (rc == 0) {
 			s32_t val = battery_data.raw;
 
-			rc = adc_raw_to_millivolts(adc_ref_internal(battery_data.adc),
-					      battery_data.adc_cfg.gain,
-					      battery_data.adc_seq.resolution,
-					      &val);
-			LOG_INF("raw %u ~ %u mV => %d mV\n", battery_data.raw, val, rc);
+			rc = adc_raw_to_millivolts(
+				adc_ref_internal(battery_data.adc),
+				battery_data.adc_cfg.gain,
+				battery_data.adc_seq.resolution, &val);
+			LOG_INF("raw %u ~ %u mV => %d mV\n", battery_data.raw,
+				val, rc);
+			rc = rc >= 0 ? val : rc;
 		}
 	}
 
 	return rc;
 }
+
+#endif /* CONFIG_BATT_MODE_DIRECT */

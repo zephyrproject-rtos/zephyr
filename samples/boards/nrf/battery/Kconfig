@@ -1,0 +1,19 @@
+# Copyright(c) 2020 Intive
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Mode of battery measurement"
+	default BATT_MODE_VOLT_DIV
+	help
+	  Specify method in which battery voltage should be mesaured
+
+config BATT_MODE_VOLT_DIV
+	bool "Use voltage divider"
+	depends on BOARD_NRF52_PCA20020
+
+config BATT_MODE_DIRECT
+	bool "Direct on MCU"
+
+endchoice
+
+source "Kconfig.zephyr"

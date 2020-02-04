@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CONFIG_BATT_MODE_VOLT_DIV
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -184,3 +186,4 @@ int battery_sample(void)
 
 	return rc;
 }
+#endif /* CONFIG_BATT_MODE_VOLT_DIV */
