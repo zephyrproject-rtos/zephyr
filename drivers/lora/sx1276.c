@@ -491,9 +491,11 @@ static int sx1276_lora_init(struct device *dev)
 		return -EIO;
 	}
 
-	dev_data.counter = device_get_binding(DT_RTC_0_NAME);
+	dev_data.counter =
+	      device_get_binding(DT_INST_0_SEMTECH_SX1276_LORA_RTCS_CONTROLLER);
 	if (!dev_data.counter) {
-		LOG_ERR("Cannot get pointer to %s device", DT_RTC_0_NAME);
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_INST_0_SEMTECH_SX1276_LORA_RTCS_CONTROLLER);
 		return -EIO;
 	}
 

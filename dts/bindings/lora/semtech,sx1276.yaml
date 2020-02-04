@@ -24,3 +24,8 @@ properties:
         Up to six pins that produce service interrupts from the modem.
 
         These signals are normally active-high.
+
+    lora-rtcs:
+      type: phandle-array
+      required: true
+      description: RTC to be used for the LoRa driver
