@@ -25,7 +25,7 @@ extern "C" {
  */
 enum onoff_service_flags {
 	/**
-	 * @brief Flag passed to onoff_service_init().
+	 * @brief Flag used in struct onoff_service_transitions.
 	 *
 	 * When provided this indicates the start transition function
 	 * may cause the calling thread to wait.  This blocks attempts
@@ -34,7 +34,7 @@ enum onoff_service_flags {
 	ONOFF_SERVICE_START_SLEEPS      = BIT(0),
 
 	/**
-	 * @brief Flag passed to onoff_service_init().
+	 * @brief Flag used in struct onoff_service_transitions.
 	 *
 	 * As with @ref ONOFF_SERVICE_START_SLEEPS but describing the
 	 * stop transition function.
@@ -42,7 +42,7 @@ enum onoff_service_flags {
 	ONOFF_SERVICE_STOP_SLEEPS       = BIT(1),
 
 	/**
-	 * @brief Flag passed to onoff_service_init().
+	 * @brief Flag used in struct onoff_service_transitions.
 	 *
 	 * As with @ref ONOFF_SERVICE_START_SLEEPS but describing the
 	 * reset transition function.
@@ -102,6 +102,21 @@ typedef void (*onoff_service_notify_fn)(struct onoff_service *srv,
 typedef void (*onoff_service_transition_fn)(struct onoff_service *srv,
 					    onoff_service_notify_fn notify);
 
+/** @brief On-off service transition functions. */
+struct onoff_service_transitions {
+	/* Function to invoke to transition the service to on. */
+	onoff_service_transition_fn start;
+
+	/* Function to invoke to transition the service to off. */
+	onoff_service_transition_fn stop;
+
+	/* Function to force the service state to reset, where supported. */
+	onoff_service_transition_fn reset;
+
+	/* Flags identifying transition function capabilities. */
+	u8_t flags;
+};
+
 /**
  * @brief State associated with an on-off service.
  *
@@ -117,16 +132,8 @@ struct onoff_service {
 	 */
 	sys_slist_t clients;
 
-	/* Function to invoke to transition the service to on. */
-	onoff_service_transition_fn start;
-
-	/* Function to invoke to transition the service to off. */
-	onoff_service_transition_fn stop;
-
-	/* Function to force the service state to reset, where
-	 * supported.
-	 */
-	onoff_service_transition_fn reset;
+	/* Transition functions. */
+	const struct onoff_service_transitions *transitions;
 
 	/* Mutex protection for flags, clients, releaser, and refs. */
 	struct k_spinlock lock;
@@ -141,12 +148,28 @@ struct onoff_service {
 	u16_t refs;
 };
 
+/** @brief Initializer of transitions structure.
+ *
+ * @param _start a function used to transition from off to on state.
+ *
+ * @param _stop a function used to transition from on to off state.
+ *
+ * @param _reset a function used to clear errors and force the service to an off
+ * state. Can be null.
+ *
+ * @param _flags any or all of the flags from enum onoff_service_flags.
+ */
+#define ONOFF_SERVICE_TRANSITIONS_INITIALIZER(_start, _stop, _reset, _flags) { \
+		.start = _start,					       \
+		.stop = _stop,						       \
+		.reset = _reset,					       \
+		.flags = _flags,					       \
+}
+
 /** @internal */
-#define ONOFF_SERVICE_INITIALIZER(_start, _stop, _reset, _flags) { \
-		.start = _start,				   \
-		.stop = _stop,					   \
-		.reset = _reset,				   \
-		.flags = _flags,				   \
+#define ONOFF_SERVICE_INITIALIZER(_transitions) { \
+		.transitions = _transitions,	  \
+		.flags = (_transitions)->flags,	  \
 }
 
 /**
@@ -160,32 +183,14 @@ struct onoff_service {
  *
  * @param srv the service definition object to be initialized.
  *
- * @param start the function used to (initiate a) transition from off
- * to on.  This must not be null.  Include @ref ONOFF_SERVICE_START_SLEEPS as
- * appropriate in flags.
- *
- * @param stop the function used to (initiate a) transition from on to
- * off.  This must not be null.  Include @ref ONOFF_SERVICE_STOP_SLEEPS
- * as appropriate in flags.
- *
- * @param reset the function used to clear errors and force the
- * service to an off state.  Pass null if the service cannot or need
- * not be reset.  (Services where a transition operation can complete
- * with an error notification should support the reset operation.)
- * Include @ref ONOFF_SERVICE_RESET_SLEEPS as appropriate in flags.
- *
- * @param flags any or all of the flags mentioned above,
- * e.g. @ref ONOFF_SERVICE_START_SLEEPS.  Use of other flags produces an
- * error.
+ * @param transitions A structure with transition functions. Structure must be
+ * persistent as it is used by the service.
  *
  * @retval 0 on success
  * @retval -EINVAL if start, stop, or flags are invalid
  */
 int onoff_service_init(struct onoff_service *srv,
-		       onoff_service_transition_fn start,
-		       onoff_service_transition_fn stop,
-		       onoff_service_transition_fn reset,
-		       u32_t flags);
+		       const struct onoff_service_transitions *transitions);
 
 /** @internal
  *
