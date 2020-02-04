@@ -168,4 +168,9 @@ config HAS_MCUX_CSI
 	help
 	  Set if the CMOS Sensor Interface module is present in the SoC.
 
+config HAS_MCUX_LPTMR
+	bool
+	help
+	  Set if the Low Power Timer (LPTMR) module is present in the SoC.
+
 endif # HAS_MCUX
