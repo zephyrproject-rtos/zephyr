@@ -783,6 +783,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	set_current(z_get_next_ready_thread());
 #endif
 
+	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
