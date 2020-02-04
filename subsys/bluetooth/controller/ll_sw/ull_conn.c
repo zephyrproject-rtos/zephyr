@@ -3136,8 +3136,8 @@ static inline void event_len_prep(struct ll_conn *conn)
 		struct pdu_data_llctrl_length_req *lr;
 		struct pdu_data *pdu_ctrl_tx;
 		struct node_tx *tx;
-		u16_t rx_time;
-		u16_t tx_time;
+		u16_t rx_time = 0;
+		u16_t tx_time = 0;
 		/*
 		 * Using bool instead of u8_t increases code size
 		 * in this case.
