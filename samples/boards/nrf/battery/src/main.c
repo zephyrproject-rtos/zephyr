@@ -11,6 +11,7 @@
 
 #include <zephyr.h>
 #include "battery.h"
+#include "battery_level.h"
 
 /** A discharge curve calibrated from LiPo batteries.
  *
