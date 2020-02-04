@@ -279,7 +279,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 					config->head_block->dest_address;
 	}
 
-	u16_t memory_addr_adj, periph_addr_adj;
+	u16_t memory_addr_adj = 0, periph_addr_adj = 0;
 
 	ret = dma_stm32_get_priority(config->channel_priority,
 				     &DMA_InitStruct.Priority);
