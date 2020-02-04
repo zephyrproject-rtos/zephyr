@@ -16,6 +16,24 @@ config USB_NRFX
 config USB_DEVICE_STACK
 	default y
 
+config USB_DEVICE_PRODUCT
+	default "Degu Evaluation Kit"
+
+config USB_UART_CONSOLE
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_LINE_CTRL
+	default y
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "CDC_ACM_0"
+
+config UART_SHELL_ON_DEV_NAME
+	default "CDC_ACM_0"
+
 endif # USB
 
 if IEEE802154
