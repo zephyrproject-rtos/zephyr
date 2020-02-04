@@ -25,5 +25,6 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_SCG
 	select HAS_MCUX_WDOG32
 	select HAS_MCUX_FTM
+	select HAS_MCUX_LPTMR
 	help
 	  Enable support for Kinetis KE1xF MCU series

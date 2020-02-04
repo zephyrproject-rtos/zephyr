@@ -36,9 +36,15 @@ config WDT_MCUX_WDOG32
 	default y
 	depends on WATCHDOG
 
+if COUNTER
+
 config COUNTER_MCUX_RTC
 	default y
-	depends on COUNTER
+
+config COUNTER_MCUX_LPTMR
+	default y
+
+endif # COUNTER
 
 config PWM_MCUX_FTM
 	default y
