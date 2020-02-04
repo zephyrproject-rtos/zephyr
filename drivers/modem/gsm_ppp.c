@@ -5,7 +5,7 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(gsm_ppp, CONFIG_NET_PPP_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #include <kernel.h>
 #include <device.h>
@@ -173,7 +173,7 @@ int gsm_init(struct device *device)
 {
 	int r;
 
-	LOG_DBG("");
+	LOG_DBG("Generic GSM modem");
 
 	k_sem_init(&gsm.ppp_send_sem, 0, 1);
 
