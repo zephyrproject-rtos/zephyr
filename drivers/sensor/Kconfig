@@ -113,6 +113,8 @@ source "drivers/sensor/max30101/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
 
+source "drivers/sensor/mchp_tach_xec/Kconfig"
+
 source "drivers/sensor/mcp9808/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
