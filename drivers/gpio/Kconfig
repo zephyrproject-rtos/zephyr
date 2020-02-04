@@ -87,4 +87,6 @@ source "drivers/gpio/Kconfig.psoc6"
 
 source "drivers/gpio/Kconfig.pcal6408a"
 
+source "drivers/gpio/Kconfig.eos_s3"
+
 endif # GPIO
