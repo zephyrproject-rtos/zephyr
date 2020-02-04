@@ -253,7 +253,11 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
 	struct zcan_filter filter;
 	CO_CANrx_t *buffer;
 
-	if (!CANmodule || !pFunct || (index >= CANmodule->rx_size)) {
+	if (CANmodule == NULL) {
+		return CO_ERROR_ILLEGAL_ARGUMENT;
+	}
+
+	if (!pFunct || (index >= CANmodule->rx_size)) {
 		LOG_ERR("failed to initialize CAN rx buffer, illegal argument");
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 			       CO_EMC_SOFTWARE_INTERNAL, 0);
@@ -293,7 +297,11 @@ CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
 {
 	CO_CANtx_t *buffer;
 
-	if (!CANmodule || (index >= CANmodule->tx_size)) {
+	if (CANmodule == NULL) {
+		return NULL;
+	}
+
+	if (index >= CANmodule->tx_size) {
 		LOG_ERR("failed to initialize CAN rx buffer, illegal argument");
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 			       CO_EMC_SOFTWARE_INTERNAL, 0);
@@ -447,7 +455,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 			}
 		}
 
-		if (rx_overflows != 0U) {
+		/* This code can be activated if we can read the overflows*/
+		if (false && rx_overflows != 0U) {
 			CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW,
 				       CO_EMC_CAN_OVERRUN, errors);
 		}
