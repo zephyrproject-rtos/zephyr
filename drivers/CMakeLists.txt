@@ -38,6 +38,7 @@ add_subdirectory_if_kconfig(kscan)
 add_subdirectory_if_kconfig(video)
 add_subdirectory_if_kconfig(eeprom)
 add_subdirectory_if_kconfig(lora)
+add_subdirectory_if_kconfig(peci)
 
 add_subdirectory_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED flash)
 add_subdirectory_ifdef(CONFIG_SERIAL_HAS_DRIVER serial)
