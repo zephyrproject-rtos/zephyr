@@ -4283,12 +4283,21 @@ def main():
                             key=lambda x: x[0][x[0].find("/") + 1:]))
 
         subset, sets = options.subset.split("/")
+        subset = int(subset)
+        sets = int(sets)
         total = len(suite.instances)
-        per_set = round(total / int(sets))
-        start = (int(subset) - 1) * per_set
-        if subset == sets:
-            end = total
+        per_set = int(total / sets)
+        num_extra_sets = total - (per_set * sets)
+
+        # Try and be more fair for rounding error with integer division
+        # so the last subset doesn't get overloaded, we add 1 extra to
+        # subsets 1..num_extra_sets.
+        if subset <= num_extra_sets:
+            start = (subset - 1) * (per_set + 1)
+            end = start + per_set + 1
         else:
+            base = num_extra_sets * (per_set + 1)
+            start = ((subset - num_extra_sets - 1) * per_set) + base
             end = start + per_set
 
         sliced_instances = islice(suite.instances.items(), start, end)
