@@ -1,7 +1,0 @@
-sample:
-  name: Settings subsystem sample
-tests:
-  sample.board.nrf.adc:
-    build_only: true
-    platform_whitelist: nrf52840_pca10056
-    tags: nrf52 adc battery
