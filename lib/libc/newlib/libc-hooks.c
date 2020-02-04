@@ -272,10 +272,14 @@ __weak int *__errno(void)
 }
 
 #if CONFIG_XTENSA
+extern int _read(int fd, char *buf, int nbytes);
+extern int _open(const char *name, int mode);
+extern int _close(int file);
+extern int _lseek(int file, int ptr, int dir);
+
 /* The Newlib in xtensa toolchain has a few missing functions for the
  * reentrant versions of the syscalls.
  */
-#ifndef CONFIG_POSIX_API
 _ssize_t _read_r(struct _reent *r, int fd, void *buf, size_t nbytes)
 {
 	ARG_UNUSED(r);
@@ -311,7 +315,6 @@ _off_t _lseek_r(struct _reent *r, int file, _off_t ptr, int dir)
 
 	return _lseek(file, ptr, dir);
 }
-#endif
 
 int _isatty_r(struct _reent *r, int file)
 {
