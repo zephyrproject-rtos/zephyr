@@ -342,6 +342,42 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		tach0: tach@40006000 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006000 0x10>;
+			interrupts = <71 4>;
+			label = "TACH_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach1: tach@40006010 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006010 0x10>;
+			interrupts = <72 4>;
+			label = "TACH_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach2: tach@40006020 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006020 0x10>;
+			interrupts = <73 4>;
+			label = "TACH_2";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach3: tach@40006030 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006030 0x10>;
+			interrupts = <159 4>;
+			label = "TACH_3";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 
