@@ -90,11 +90,8 @@ static int divider_setup(void)
 			LOG_ERR("Failed to get GPIO %s", gcp->label);
 			return -ENOENT;
 		}
-		rc = gpio_pin_write(ddp->gpio, gcp->pin, 0);
-		if (rc == 0) {
-			rc = gpio_pin_configure(ddp->gpio, gcp->pin,
-						gcp->flags | GPIO_DIR_OUT);
-		}
+		rc = gpio_pin_configure(ddp->gpio, gcp->pin,
+					GPIO_OUTPUT_INACTIVE | gcp->flags);
 		if (rc != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
 				gcp->label, gcp->pin, rc);
@@ -152,7 +149,7 @@ int battery_measure_enable(bool enable)
 
 		rc = 0;
 		if (ddp->gpio) {
-			rc = gpio_pin_write(ddp->gpio, gcp->pin, enable);
+			rc = gpio_pin_set(ddp->gpio, gcp->pin, enable);
 		}
 	}
 	return rc;
