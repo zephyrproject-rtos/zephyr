@@ -135,6 +135,16 @@
 			label = "RTC_0";
 		};
 
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,kinetis-lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <58 0>;
+			clock-frequency = <128000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			label = "LPTMR_0";
+		};
+
 		wdog0: watchdog@40052000 {
 			compatible = "nxp,kinetis-wdog32";
 			reg = <0x40052000 0x1000>;
