@@ -133,7 +133,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 
 	/* missing arguments */
 	if (*argc < cmd->arg_count) {
-		return -EINVAL;
+		return -EAGAIN;
 	}
 
 	/*
@@ -144,10 +144,10 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 }
 
 /* process a "matched" command */
-static void process_cmd(struct modem_cmd *cmd, size_t match_len,
+static int process_cmd(struct modem_cmd *cmd, size_t match_len,
 			struct modem_cmd_handler_data *data)
 {
-	int parsed_len = 0;
+	int parsed_len = 0, ret = 0;
 	u8_t *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
 	u16_t argc = 0U;
 
@@ -160,8 +160,7 @@ static void process_cmd(struct modem_cmd *cmd, size_t match_len,
 		parsed_len = parse_params(data, match_len, cmd,
 					  argv, ARRAY_SIZE(argv), &argc);
 		if (parsed_len < 0) {
-			LOG_ERR("param parse error: %d", parsed_len);
-			return;
+			return parsed_len;
 		}
 	}
 
@@ -170,9 +169,15 @@ static void process_cmd(struct modem_cmd *cmd, size_t match_len,
 
 	/* call handler */
 	if (cmd->func) {
-		cmd->func(data, match_len - cmd->cmd_len - parsed_len,
-			  argv, argc);
+		ret = cmd->func(data, match_len - cmd->cmd_len - parsed_len,
+				argv, argc);
+		if (ret == -EAGAIN) {
+			/* wait for more data */
+			net_buf_push(data->rx_buf, cmd->cmd_len + parsed_len);
+		}
 	}
+
+	return ret;
 }
 
 /*
@@ -291,7 +296,10 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 			LOG_DBG("match cmd [%s] (len:%u)",
 				log_strdup(cmd->cmd), match_len);
 
-			process_cmd(cmd, match_len, data);
+			if (process_cmd(cmd, match_len, data) == -EAGAIN) {
+				k_sem_give(&data->sem_parse_lock);
+				break;
+			}
 
 			/*
 			 * make sure we didn't run out of data during
