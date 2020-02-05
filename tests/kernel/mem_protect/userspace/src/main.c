@@ -931,10 +931,11 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
-	size_t stack_size;
+	size_t stack_size, unused;
 	u8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
+	int ret, expected;
 
 	expect_fault = false;
 
@@ -1016,6 +1017,18 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 			      stack_size);
 	}
 
+	ret = k_thread_stack_space_get(k_current_get(), &unused);
+	if (!arch_is_user_context() &&
+	    IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
+		expected = -ENOTSUP;
+	} else {
+		expected = 0;
+	}
+
+	zassert_equal(ret, expected, "unexpected return value %d", ret);
+	if (ret == 0) {
+		printk("self-reported unused stack space: %zu\n", unused);
+	}
 
 	k_sem_give(&uthread_end_sem);
 }
@@ -1035,14 +1048,18 @@ void stest_thread_entry(void *p1, void *p2, void *p3)
 void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
 			 bool drop)
 {
+	int ret;
+	size_t unused;
+
 	k_thread_create(&uthread_thread, stack_obj, STEST_STACKSIZE,
 			stest_thread_entry, stack_obj, (void *)obj_size,
 			(void *)drop,
 			-1, flags, K_NO_WAIT);
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 
-	stack_analyze("test_thread", (char *)uthread_thread.stack_info.start,
-		      uthread_thread.stack_info.size);
+	ret = k_thread_stack_space_get(&uthread_thread, &unused);
+	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+	printk("target thread unused stack space: %zu\n", unused);
 }
 
 void scenario_entry(void *stack_obj, size_t obj_size)

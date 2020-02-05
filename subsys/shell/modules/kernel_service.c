@@ -50,20 +50,17 @@ static int cmd_kernel_cycles(const struct shell *shell,
 	return 0;
 }
 
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
-				&& defined(CONFIG_THREAD_STACK_INFO)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
+	defined(CONFIG_THREAD_MONITOR)
 static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 {
 	struct k_thread *thread = (struct k_thread *)cthread;
 	const struct shell *shell = (const struct shell *)user_data;
-	unsigned int pcnt, unused = 0U;
-	unsigned int size = thread->stack_info.size;
+	unsigned int pcnt;
+	size_t unused;
+	size_t size = thread->stack_info.size;
 	const char *tname;
-
-	unused = stack_unused_space_get((char *)thread->stack_info.start, size);
-
-	/* Calculate the real size reserved for the stack */
-	pcnt = ((size - unused) * 100U) / size;
+	int ret;
 
 	tname = k_thread_name_get(thread);
 
@@ -76,8 +73,20 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		      thread->base.prio,
 		      thread->base.timeout.dticks);
 	shell_print(shell, "\tstate: %s", k_thread_state_str(thread));
-	shell_print(shell, "\tstack size %u, unused %u, usage %u / %u (%u %%)\n",
-		      size, unused, size - unused, size, pcnt);
+
+	ret = k_thread_stack_space_get(thread, &unused);
+	if (ret) {
+		shell_print(shell,
+			    "Unable to determine unused stack size (%d)\n",
+			    ret);
+	} else {
+		/* Calculate the real size reserved for the stack */
+		pcnt = ((size - unused) * 100U) / size;
+
+		shell_print(shell,
+			    "\tstack size %zu, unused %zu, usage %zu / %zu (%u %%)\n",
+			    size, unused, size - unused, size, pcnt);
+	}
 
 }
 
@@ -95,12 +104,22 @@ static int cmd_kernel_threads(const struct shell *shell,
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
-	unsigned int pcnt, unused = 0U;
-	unsigned int size = thread->stack_info.size;
+	const struct shell *shell = (const struct shell *)user_data;
+	unsigned int pcnt;
+	size_t unused;
+	size_t size = thread->stack_info.size;
 	const char *tname;
+	int ret;
+
+	ret = k_thread_stack_space_get(thread, &unused);
+	if (ret) {
+		shell_print(shell,
+			    "Unable to determine unused stack size (%d)\n",
+			    ret);
+		return;
+	}
 
 	tname = k_thread_name_get((struct k_thread *)thread);
-	unused = stack_unused_space_get((char *)thread->stack_info.start, size);
 
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
@@ -153,8 +172,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 #if defined(CONFIG_REBOOT)
 	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", NULL),
 #endif
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
-				&& defined(CONFIG_THREAD_STACK_INFO)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
+		defined(CONFIG_THREAD_MONITOR)
 	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
 	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
 #endif

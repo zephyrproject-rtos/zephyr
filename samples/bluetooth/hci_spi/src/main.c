@@ -259,7 +259,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			net_buf_unref(buf);
 		}
 
-		STACK_ANALYZE("tx_stack", bt_tx_thread_stack);
+		log_stack_usage(&bt_tx_thread_data);
 
 		/* Make sure other threads get a chance to run */
 		k_yield();
@@ -312,6 +312,7 @@ void main(void)
 				K_THREAD_STACK_SIZEOF(bt_tx_thread_stack),
 				bt_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7),
 				0, K_NO_WAIT);
+	k_thread_name_set(&bt_tx_thread_data, "bt_tx_thread");
 
 	/* Send a vendor event to announce that the slave is initialized */
 	buf = net_buf_alloc(&cmd_tx_pool, K_FOREVER);

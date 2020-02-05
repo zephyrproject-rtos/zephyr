@@ -1022,9 +1022,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	/* Check stacks usage */
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-	STACK_ANALYZE("rx stack", rx_thread_stack);
+	log_stack_usage(&rx_thread_data);
 #endif
-	STACK_ANALYZE("tx stack", tx_thread_stack);
+	log_stack_usage(&tx_thread_data);
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0U;

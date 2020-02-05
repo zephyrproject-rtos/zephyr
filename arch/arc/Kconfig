@@ -145,6 +145,7 @@ config ARC_CONNECT
 
 config ARC_STACK_CHECKING
 	bool
+	select NO_UNUSED_STACK_INSPECTION
 	help
 	  Use ARC STACK_CHECKING to do stack protection
 
