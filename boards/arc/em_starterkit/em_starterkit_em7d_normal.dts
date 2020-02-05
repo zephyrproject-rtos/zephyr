@@ -27,11 +27,13 @@
 		zephyr,shell-uart = &uart1;
 	};
 
-	iccm@0 {
+	iccm0: iccm@20000 {
+		compatible = "arc,iccm";
 		reg = <0x20000 DT_SIZE_K(128)>;
 	};
 
-	dccm@80000000 {
+	dccm0: dccm@80010000 {
+		compatible = "arc,dccm";
 		reg = <0x80010000 DT_SIZE_K(64)>;
 	};
 };
