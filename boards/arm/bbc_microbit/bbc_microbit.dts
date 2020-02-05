@@ -31,12 +31,12 @@
 		compatible = "gpio-keys";
 		buttonA: button_0 {
 			label = "BTN_A";
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		};
 
 		buttonB: button_1 {
 			label = "BTN_B";
-			gpios = <&gpio0 26 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -71,8 +71,8 @@
 		status = "okay";
 		reg = <0x1d>;
 		label = "MMA8653FC";
-		int1-gpios = <&gpio0 28 0>;
-		int2-gpios = <&gpio0 27 0>;
+		int1-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 	};
 
 	/* v1.5 variant 1 LSM303AGR */
@@ -81,7 +81,7 @@
 		status = "disabled";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";
-		irq-gpios = <&gpio0 27 0>;	/* A3 */
+		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
 	lsm303agr-accel@19 {
@@ -89,7 +89,7 @@
 		status = "disabled";
 		reg = <0x19>;
 		label = "LSM303AGR-ACCEL";
-		irq-gpios = <&gpio0 28 0>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };
 

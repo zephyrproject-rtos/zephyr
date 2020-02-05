@@ -176,11 +176,12 @@ struct adxl362_config {
 	u16_t spi_slave;
 #if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	gpio_pin_t cs_gpio;
 #endif
 #if defined(CONFIG_ADXL362_TRIGGER)
 	const char *gpio_port;
-	u8_t int_gpio;
+	gpio_pin_t int_gpio;
+	gpio_dt_flags_t int_flags;
 	u8_t int1_config;
 	u8_t int2_config;
 #endif

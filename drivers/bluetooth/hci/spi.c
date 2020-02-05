@@ -46,9 +46,12 @@
 #define CMD_OCF			2
 
 #define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_PIN
+#define GPIO_IRQ_FLAGS		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_FLAGS
 #define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_PIN
+#define GPIO_RESET_FLAGS	DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_FLAGS
 #ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
 #define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
+#define GPIO_CS_FLAGS		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_FLAGS
 #endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN */
 
 /* Max SPI buffer length for transceive operations.
@@ -201,33 +204,34 @@ static int configure_cs(void)
 		return -EIO;
 	}
 
+	/* Configure pin as output and set to active */
 	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+			   GPIO_OUTPUT_ACTIVE | GPIO_CS_FLAGS);
+
 
 	return 0;
 }
 
 static void kick_cs(void)
 {
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
+	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
+	gpio_pin_set(cs_dev, GPIO_CS_PIN, 0);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
 }
 
 static bool irq_pin_high(void)
 {
-	u32_t pin_state;
+	int pin_state;
 
-	gpio_pin_read(irq_dev, GPIO_IRQ_PIN, &pin_state);
+	pin_state = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
 
 	BT_DBG("IRQ Pin: %d", pin_state);
 
-	return pin_state;
+	return pin_state > 0;
 }
 
 static void init_irq_high_loop(void)
@@ -311,7 +315,9 @@ static void bt_spi_rx_thread(void)
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);
 		/* Disable IRQ pin callback to avoid spurious IRQs */
-		gpio_pin_disable_callback(irq_dev, GPIO_IRQ_PIN);
+
+		gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
+					     GPIO_INT_DISABLE);
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		BT_DBG("");
@@ -335,7 +341,9 @@ static void bt_spi_rx_thread(void)
 			}
 
 			release_cs();
-			gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
+			gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
+						     GPIO_INT_EDGE_TO_ACTIVE);
+
 			k_sem_give(&sem_busy);
 
 			if (ret || size == 0) {
@@ -390,7 +398,7 @@ static void bt_spi_rx_thread(void)
 static int bt_spi_send(struct net_buf *buf)
 {
 	u8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	u32_t pending;
+	int pending;
 	int ret;
 
 	BT_DBG("");
@@ -403,8 +411,8 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Allow time for the read thread to handle interrupt */
 	while (true) {
-		gpio_pin_read(irq_dev, GPIO_IRQ_PIN, &pending);
-		if (!pending) {
+		pending = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+		if (pending <= 0) {
 			break;
 		}
 		k_sleep(K_MSEC(1));
@@ -480,16 +488,11 @@ static int bt_spi_open(void)
 {
 	/* Configure RST pin and hold BLE in Reset */
 	gpio_pin_configure(rst_dev, GPIO_RESET_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 0);
+			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
-#if defined(CONFIG_BT_SPI_BLUENRG)
-			   GPIO_PUD_PULL_DOWN |
-#endif
-			   GPIO_DIR_IN | GPIO_INT |
-			   GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH);
+			   GPIO_INPUT | GPIO_IRQ_FLAGS);
 
 	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(GPIO_IRQ_PIN));
 
@@ -497,9 +500,8 @@ static int bt_spi_open(void)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
@@ -509,7 +511,7 @@ static int bt_spi_open(void)
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
-	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 1);
+	gpio_pin_set(rst_dev, GPIO_RESET_PIN, 0);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);

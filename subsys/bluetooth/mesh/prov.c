@@ -34,7 +34,6 @@
 #include "proxy.h"
 #include "prov.h"
 #include "settings.h"
-#include "nodes.h"
 
 /* 3 transmissions, 20ms interval */
 #define PROV_XMIT              BT_MESH_TRANSMIT(2, 20)
@@ -131,10 +130,11 @@ enum {
 #endif
 
 struct provisioner_link {
-	struct bt_mesh_node *node;
+	struct bt_mesh_cdb_node *node;
 	u16_t addr;
 	u16_t net_idx;
 	u8_t  attention_duration;
+	u8_t  uuid[16];
 };
 
 struct prov_link {
@@ -234,7 +234,7 @@ static int reset_state(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER) &&
 	    link.provisioner->node != NULL) {
-		bt_mesh_node_del(link.provisioner->node, false);
+		bt_mesh_cdb_node_del(link.provisioner->node, false);
 	}
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
@@ -690,9 +690,10 @@ static void prov_capabilities(const u8_t *data)
 		return;
 	}
 
-	link.provisioner->node = bt_mesh_node_alloc(link.provisioner->addr,
-						    data[0],
-						    link.provisioner->net_idx);
+	link.provisioner->node =
+		bt_mesh_cdb_node_alloc(link.provisioner->uuid,
+				       link.provisioner->addr, data[0],
+				       link.provisioner->net_idx);
 	if (link.provisioner->node == NULL) {
 		prov_send_fail_msg(PROV_ERR_RESOURCES);
 		return;
@@ -1122,7 +1123,7 @@ static void prov_input_complete(const u8_t *data)
 static void send_prov_data(void)
 {
 	PROV_BUF(pdu, 34);
-	struct bt_mesh_subnet *sub;
+	struct bt_mesh_cdb_subnet *sub;
 	u8_t session_key[16];
 	u8_t nonce[13];
 	int err;
@@ -1155,7 +1156,7 @@ static void send_prov_data(void)
 
 	BT_DBG("DevKey: %s", bt_hex(link.provisioner->node->dev_key, 16));
 
-	sub = bt_mesh_subnet_get(link.provisioner->node->net_idx);
+	sub = bt_mesh_cdb_subnet_get(link.provisioner->node->net_idx);
 	if (sub == NULL) {
 		BT_ERR("No subnet with net_idx %u",
 		       link.provisioner->node->net_idx);
@@ -1164,10 +1165,10 @@ static void send_prov_data(void)
 	}
 
 	prov_buf_init(&pdu, PROV_DATA);
-	net_buf_simple_add_mem(&pdu, sub->keys[sub->kr_flag].net, 16);
+	net_buf_simple_add_mem(&pdu, sub->keys[sub->kr_flag].net_key, 16);
 	net_buf_simple_add_be16(&pdu, link.provisioner->node->net_idx);
-	net_buf_simple_add_u8(&pdu, bt_mesh_net_flags(sub));
-	net_buf_simple_add_be32(&pdu, bt_mesh.iv_index);
+	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
+	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
 	net_buf_simple_add_be16(&pdu, link.provisioner->node->addr);
 	net_buf_simple_add(&pdu, 8); /* For MIC */
 
@@ -1197,7 +1198,7 @@ static void prov_complete(const u8_t *data)
 		return;
 	}
 
-	struct bt_mesh_node *node = link.provisioner->node;
+	struct bt_mesh_cdb_node *node = link.provisioner->node;
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	u8_t reason = CLOSE_REASON_SUCCESS;
 #endif
@@ -1207,7 +1208,7 @@ static void prov_complete(const u8_t *data)
 	       node->addr);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_node(node);
+		bt_mesh_store_cdb_node(node);
 	}
 
 	link.provisioner->node = NULL;
@@ -1218,7 +1219,10 @@ static void prov_complete(const u8_t *data)
 	bearer_ctl_send(LINK_CLOSE, &reason, sizeof(reason));
 #endif
 
-	bt_mesh_prov_node_added(node->net_idx, node->addr, node->num_elem);
+	if (prov->node_added) {
+		prov->node_added(node->net_idx, node->uuid, node->addr,
+				 node->num_elem);
+	}
 
 	/*
 	 * According to mesh profile spec (5.3.1.4.3), the close message should
@@ -1808,6 +1812,7 @@ int bt_mesh_pb_adv_open(const u8_t uuid[16], u16_t net_idx, u16_t addr,
 
 	bt_rand(&link.id, sizeof(link.id));
 	link.tx.id = 0x7F;
+	memcpy(link.provisioner->uuid, uuid, 16);
 	link.provisioner->addr = addr;
 	link.provisioner->net_idx = net_idx;
 	link.provisioner->attention_duration = attention_duration;
@@ -1948,13 +1953,6 @@ void bt_mesh_prov_complete(u16_t net_idx, u16_t addr)
 {
 	if (prov->complete) {
 		prov->complete(net_idx, addr);
-	}
-}
-
-void bt_mesh_prov_node_added(u16_t net_idx, u16_t addr, u8_t num_elem)
-{
-	if (prov->node_added) {
-		prov->node_added(net_idx, addr, num_elem);
 	}
 }
 

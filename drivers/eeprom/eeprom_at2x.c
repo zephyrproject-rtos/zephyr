@@ -40,9 +40,9 @@ struct eeprom_at2x_config {
 	u32_t max_freq;
 	const char *spi_cs_dev_name;
 	u8_t spi_cs_pin;
+	gpio_pin_t wp_gpio_pin;
+	gpio_dt_flags_t wp_gpio_flags;
 	const char *wp_gpio_name;
-	u32_t wp_gpio_pin;
-	int wp_gpio_flags;
 	size_t size;
 	size_t pagesize;
 	u8_t addr_width;
@@ -66,34 +66,24 @@ static inline int eeprom_at2x_write_protect(struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config->config_info;
 	struct eeprom_at2x_data *data = dev->driver_data;
-	u32_t value = 0;
 
 	if (!data->wp_gpio_dev) {
 		return 0;
 	}
 
-	if (config->wp_gpio_flags & GPIO_INT_ACTIVE_HIGH) {
-		value = 1;
-	}
-
-	return gpio_pin_write(data->wp_gpio_dev, config->wp_gpio_pin, value);
+	return gpio_pin_set(data->wp_gpio_dev, config->wp_gpio_pin, 1);
 }
 
 static inline int eeprom_at2x_write_enable(struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config->config_info;
 	struct eeprom_at2x_data *data = dev->driver_data;
-	u32_t value = 1;
 
 	if (!data->wp_gpio_dev) {
 		return 0;
 	}
 
-	if (config->wp_gpio_flags & GPIO_INT_ACTIVE_HIGH) {
-		value = 0;
-	}
-
-	return gpio_pin_write(data->wp_gpio_dev, config->wp_gpio_pin, value);
+	return gpio_pin_set(data->wp_gpio_dev, config->wp_gpio_pin, 0);
 }
 
 static int eeprom_at2x_read(struct device *dev, off_t offset, void *buf,
@@ -527,16 +517,10 @@ static int eeprom_at2x_init(struct device *dev)
 		}
 
 		err = gpio_pin_configure(data->wp_gpio_dev, config->wp_gpio_pin,
-					 GPIO_DIR_OUT | config->wp_gpio_flags);
+					 GPIO_OUTPUT_ACTIVE | config->wp_gpio_flags);
 		if (err) {
 			LOG_ERR("failed to configure WP GPIO pin (err %d)",
 				err);
-			return err;
-		}
-
-		err = eeprom_at2x_write_protect(dev);
-		if (err) {
-			LOG_ERR("failed to write-protect EEPROM (err %d)", err);
 			return err;
 		}
 	}
@@ -578,10 +562,10 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 		.spi_cs_dev_name = \
 			DT_INST_##n##_ATMEL_AT##t##_CS_GPIOS_CONTROLLER, \
 		.spi_cs_pin = DT_INST_##n##_ATMEL_AT##t##_CS_GPIOS_PIN, \
-		.wp_gpio_name = \
-			DT_INST_##n##_ATMEL_AT##t##_WP_GPIOS_CONTROLLER, \
 		.wp_gpio_pin = DT_INST_##n##_ATMEL_AT##t##_WP_GPIOS_PIN, \
 		.wp_gpio_flags = DT_INST_##n##_ATMEL_AT##t##_WP_GPIOS_FLAGS, \
+		.wp_gpio_name = \
+			DT_INST_##n##_ATMEL_AT##t##_WP_GPIOS_CONTROLLER, \
 		.size = DT_INST_##n##_ATMEL_AT##t##_SIZE, \
 		.pagesize = DT_INST_##n##_ATMEL_AT##t##_PAGESIZE, \
 		.addr_width = DT_INST_##n##_ATMEL_AT##t##_ADDRESS_WIDTH, \
@@ -606,7 +590,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 #ifndef DT_INST_0_ATMEL_AT24_WP_GPIOS_CONTROLLER
 #define DT_INST_0_ATMEL_AT24_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_0_ATMEL_AT24_WP_GPIOS_PIN 0
-#define DT_INST_0_ATMEL_AT24_WP_GPIOS_FLAGS 0
+#define DT_INST_0_ATMEL_AT24_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(24, 0);
 #endif
@@ -618,7 +602,7 @@ EEPROM_AT2X_DEVICE(24, 0);
 #ifndef DT_INST_1_ATMEL_AT24_WP_GPIOS_CONTROLLER
 #define DT_INST_1_ATMEL_AT24_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_1_ATMEL_AT24_WP_GPIOS_PIN 0
-#define DT_INST_1_ATMEL_AT24_WP_GPIOS_FLAGS 0
+#define DT_INST_1_ATMEL_AT24_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(24, 1);
 #endif
@@ -630,7 +614,7 @@ EEPROM_AT2X_DEVICE(24, 1);
 #ifndef DT_INST_2_ATMEL_AT24_WP_GPIOS_CONTROLLER
 #define DT_INST_2_ATMEL_AT24_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_2_ATMEL_AT24_WP_GPIOS_PIN 0
-#define DT_INST_2_ATMEL_AT24_WP_GPIOS_FLAGS 0
+#define DT_INST_2_ATMEL_AT24_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(24, 2);
 #endif
@@ -642,7 +626,7 @@ EEPROM_AT2X_DEVICE(24, 2);
 #ifndef DT_INST_3_ATMEL_AT24_WP_GPIOS_CONTROLLER
 #define DT_INST_3_ATMEL_AT24_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_3_ATMEL_AT24_WP_GPIOS_PIN 0
-#define DT_INST_3_ATMEL_AT24_WP_GPIOS_FLAGS 0
+#define DT_INST_3_ATMEL_AT24_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(24, 3);
 #endif
@@ -657,7 +641,7 @@ EEPROM_AT2X_DEVICE(24, 3);
 #ifndef DT_INST_0_ATMEL_AT25_WP_GPIOS_CONTROLLER
 #define DT_INST_0_ATMEL_AT25_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_0_ATMEL_AT25_WP_GPIOS_PIN 0
-#define DT_INST_0_ATMEL_AT25_WP_GPIOS_FLAGS 0
+#define DT_INST_0_ATMEL_AT25_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(25, 0);
 #endif
@@ -670,7 +654,7 @@ EEPROM_AT2X_DEVICE(25, 0);
 #ifndef DT_INST_1_ATMEL_AT25_WP_GPIOS_CONTROLLER
 #define DT_INST_1_ATMEL_AT25_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_1_ATMEL_AT25_WP_GPIOS_PIN 0
-#define DT_INST_1_ATMEL_AT25_WP_GPIOS_FLAGS 0
+#define DT_INST_1_ATMEL_AT25_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(25, 1);
 #endif
@@ -683,7 +667,7 @@ EEPROM_AT2X_DEVICE(25, 1);
 #ifndef DT_INST_2_ATMEL_AT25_WP_GPIOS_CONTROLLER
 #define DT_INST_2_ATMEL_AT25_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_2_ATMEL_AT25_WP_GPIOS_PIN 0
-#define DT_INST_2_ATMEL_AT25_WP_GPIOS_FLAGS 0
+#define DT_INST_2_ATMEL_AT25_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(25, 2);
 #endif
@@ -696,7 +680,7 @@ EEPROM_AT2X_DEVICE(25, 2);
 #ifndef DT_INST_3_ATMEL_AT25_WP_GPIOS_CONTROLLER
 #define DT_INST_3_ATMEL_AT25_WP_GPIOS_CONTROLLER NULL
 #define DT_INST_3_ATMEL_AT25_WP_GPIOS_PIN 0
-#define DT_INST_3_ATMEL_AT25_WP_GPIOS_FLAGS 0
+#define DT_INST_3_ATMEL_AT25_WP_GPIOS_FLAGS GPIO_ACTIVE_LOW
 #endif
 EEPROM_AT2X_DEVICE(25, 3);
 #endif

@@ -44,12 +44,12 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpiod 14 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 		};
 		button1: button_1 {
 			/* gpio flags need validation */
-			gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
 		};
 	};

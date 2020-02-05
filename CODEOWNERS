@@ -147,7 +147,9 @@
 /drivers/gpio/                            @mnkp @pabigot
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
-/drivers/gpio/*stm32*                     @rsalveti @idlethread
+/drivers/gpio/*stm32*                     @erwango
+/drivers/gpio/*sx1509b*                   @pabigot
+/drivers/gpio/*litex*                     @mateusz-holenko @kgugala @pgielda
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2c/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
@@ -239,6 +241,7 @@
 /dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
+/dts/xtensa/intel/                        @dcpleung
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
@@ -429,6 +432,7 @@
 /tests/crypto/mbedtls/                    @nashif @ceolin
 /tests/drivers/can/                       @alexanderwachter
 /tests/drivers/flash_simulator/           @nvlsianpu
+/tests/drivers/gpio/                      @mnkp @pabigot
 /tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/spi/                       @tbursztyka
 /tests/drivers/uart/uart_async_api/       @Mierunski

@@ -86,13 +86,13 @@
 #endif
 
 struct bmc150_magn_config {
-	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
-
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	char *gpio_drdy_dev_name;
-	u8_t gpio_drdy_int_pin;
+	gpio_pin_t gpio_drdy_int_pin;
+	gpio_dt_flags_t gpio_drdy_int_flags;
 #endif
+	u16_t i2c_slave_addr;
+	char *i2c_master_dev_name;
 };
 
 struct bmc150_magn_trim_regs {

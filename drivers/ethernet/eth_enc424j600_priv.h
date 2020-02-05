@@ -275,6 +275,7 @@
 struct enc424j600_config {
 	const char *gpio_port;
 	u8_t gpio_pin;
+	gpio_dt_flags_t gpio_flags;
 	const char *spi_port;
 	u8_t spi_cs_pin;
 	const char *spi_cs_port;

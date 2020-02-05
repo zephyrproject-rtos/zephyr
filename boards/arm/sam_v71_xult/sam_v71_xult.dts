@@ -35,11 +35,11 @@
 	leds {
 		compatible = "gpio-leds";
 		yellow_led0: led_0 {
-			gpios = <&porta 23 0>;
+			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
 			label = "User LED 0";
 		};
 		yellow_led1: led_1 {
-			gpios = <&portc 9 0>;
+			gpios = <&portc 9 GPIO_ACTIVE_LOW>;
 			label = "User LED 1";
 		};
 	};
@@ -53,13 +53,11 @@
 		 */
 		sw0_user_button: button_1 {
 			label = "User Button 0";
-			gpios = <&porta 9 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&porta 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		sw1_user_button: button_2 {
 			label = "User Button 1";
-			gpios = <&portb 12 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&portb 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };

@@ -24,8 +24,8 @@ static int efm32gg_stk3701a_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cur_dev, BC_ENABLE_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(cur_dev, BC_ENABLE_GPIO_PIN, 1);
+	gpio_pin_configure(cur_dev, BC_ENABLE_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, BC_ENABLE_GPIO_PIN, 1);
 
 #ifdef CONFIG_ETH_GECKO
 	/* Enable the ethernet PHY power */
@@ -35,8 +35,8 @@ static int efm32gg_stk3701a_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cur_dev, ETH_PWR_ENABLE_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(cur_dev, ETH_PWR_ENABLE_GPIO_PIN, 1);
+	gpio_pin_configure(cur_dev, ETH_PWR_ENABLE_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, ETH_PWR_ENABLE_GPIO_PIN, 1);
 
 	/* Configure ethernet reference clock */
 	cur_dev = device_get_binding(ETH_REF_CLK_GPIO_NAME);
@@ -45,8 +45,8 @@ static int efm32gg_stk3701a_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cur_dev, ETH_REF_CLK_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(cur_dev, ETH_REF_CLK_GPIO_PIN, 0);
+	gpio_pin_configure(cur_dev, ETH_REF_CLK_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, ETH_REF_CLK_GPIO_PIN, 0);
 
 	/* enable CMU_CLK2 as RMII reference clock */
 	CMU->CTRL      |= CMU_CTRL_CLKOUTSEL2_HFXO;
@@ -61,8 +61,8 @@ static int efm32gg_stk3701a_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cur_dev, ETH_RESET_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(cur_dev, ETH_RESET_GPIO_PIN, 1);
+	gpio_pin_configure(cur_dev, ETH_RESET_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, ETH_RESET_GPIO_PIN, 1);
 #endif /* CONFIG_ETH_GECKO */
 
 	return 0;

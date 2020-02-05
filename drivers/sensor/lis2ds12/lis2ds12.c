@@ -32,6 +32,11 @@ static struct lis2ds12_config lis2ds12_config = {
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
+#ifdef CONFIG_LIS2DS12_TRIGGER
+	.irq_port	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_CONTROLLER,
+	.irq_pin	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN,
+	.irq_flags	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_FLAGS,
+#endif
 };
 
 #if defined(LIS2DS12_ODR_RUNTIME)

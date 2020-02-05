@@ -35,11 +35,7 @@ static struct eswifi_spi_data eswifi_spi0; /* Static instance */
 
 static bool eswifi_spi_cmddata_ready(struct eswifi_spi_data *spi)
 {
-	int value;
-
-	gpio_pin_read(spi->dr.dev, spi->dr.pin, &value);
-
-	return value ? true : false;
+	return gpio_pin_get(spi->dr.dev, spi->dr.pin) > 0;
 }
 
 static int eswifi_spi_wait_cmddata_ready(struct eswifi_spi_data *spi)
@@ -245,8 +241,9 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 		return -ENODEV;
 	}
 	spi->dr.pin = DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_PIN;
-	gpio_pin_configure(spi->dr.dev, spi->dr.pin, GPIO_DIR_IN);
-
+	gpio_pin_configure(spi->dr.dev, spi->dr.pin,
+			   DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_FLAGS |
+			   GPIO_INPUT);
 
 	/* SPI CONFIG/CS */
 	spi->spi_cfg.frequency = DT_INVENTEK_ESWIFI_ESWIFI0_SPI_MAX_FREQUENCY;

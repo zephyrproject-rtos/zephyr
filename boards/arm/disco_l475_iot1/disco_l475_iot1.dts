@@ -23,11 +23,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		green_led_2: led_2 {
-			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -36,7 +36,7 @@
 		compatible = "gpio-keys";
 		user_button: button_0 {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -93,7 +93,7 @@
 	lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
-		irq-gpios = <&gpiod 11 0>;
+		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSL";
 	};
 
@@ -101,7 +101,7 @@
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
 		label = "VL53L0X";
-		xshut-gpios = <&gpioc 6 0>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -117,13 +117,14 @@
 &spi3 {
 	status = "okay";
 
-	cs-gpios = <&gpiod 13 0>, <&gpioe 0 0>;
+	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+		   <&gpioe 0 GPIO_ACTIVE_HIGH>;
 
 	spbtle-rf@0 {
 		compatible = "zephyr,bt-hci-spi";
 		reg = <0>;
-		reset-gpios = <&gpioa 8 0>;
-		irq-gpios = <&gpioe 6 0>;
+		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <2000000>;
 		label = "SPBTLE-RF";
 	};
@@ -132,10 +133,10 @@
 		compatible = "inventek,eswifi";
 		spi-max-frequency = <2000000>;
 		reg = <1>;
-		resetn-gpios = <&gpioe 8 0>;
-		boot0-gpios = <&gpiob 12 0>;
-		wakeup-gpios = <&gpiob 13 0>;
-		data-gpios = <&gpioe 1 0>;
+		resetn-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 		label = "ESWIFI0";
 	};
 };

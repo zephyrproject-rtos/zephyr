@@ -26,11 +26,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led1: led_1 {
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 19 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
 	};
@@ -38,11 +38,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button1: button_1 {
-			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1";
 		};
 		button2: button_2 {
-			gpios = <&gpio0 15 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 15 GPIO_PULL_UP>;
 			label = "Push button switch 2";
 		};
 	};

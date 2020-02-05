@@ -110,15 +110,13 @@ static ssize_t recv(struct bt_conn *conn,
 		    u16_t len, u16_t offset, u8_t flags)
 {
 	if (led_dev) {
-		if (led_state == true) {
-			led_on_off(0);
+		if (led_state) {
 			LOG_INF("Turn off LED");
 		} else {
-			led_on_off(1);
 			LOG_INF("Turn on LED");
 		}
-
 		led_state = !led_state;
+		led_on_off(led_state);
 	}
 
 	return 0;
@@ -174,19 +172,18 @@ void main(void)
 
 	err = button_init();
 	if (err) {
-		LOG_ERR("Button init error: (err %d)", err);
+		return;
 	}
 
-	led_init();
+	err = led_init();
+	if (err) {
+		return;
+	}
 	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
-	}
-
-	while (1) {
-		k_sleep(K_SECONDS(1));
 	}
 }

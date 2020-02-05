@@ -88,6 +88,7 @@ LOG_MODULE_REGISTER(adc_lmp90xxx);
 #define LMP90XXX_ODR_SEL(x)          ((x & BIT_MASK(3)) << 4)
 #define LMP90XXX_GAIN_SEL(x)         ((x & BIT_MASK(3)) << 1)
 #define LMP90XXX_BUF_EN(x)           (x & BIT(0))
+#define LMP90XXX_GPIO_DAT_MASK       BIT_MASK(LMP90XXX_GPIO_MAX)
 
 /* Invalid (never used) Upper Register Address */
 #define LMP90XXX_INVALID_URA UINT8_MAX
@@ -110,8 +111,8 @@ struct lmp90xxx_config {
 	u8_t spi_cs_pin;
 	struct spi_config spi_cfg;
 	const char *drdyb_dev_name;
-	u32_t drdyb_pin;
-	int drdyb_flags;
+	gpio_pin_t drdyb_pin;
+	gpio_dt_flags_t drdyb_flags;
 	u8_t rtd_current;
 	u8_t resolution;
 	u8_t channels;
@@ -807,6 +808,108 @@ int lmp90xxx_gpio_get_pin_value(struct device *dev, u8_t pin, bool *value)
 
 	return err;
 }
+
+int lmp90xxx_gpio_port_get_raw(struct device *dev, gpio_port_value_t *value)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	u8_t tmp;
+	int err;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+	err = lmp90xxx_read_reg8(dev, LMP90XXX_REG_GPIO_DAT, &tmp);
+	tmp &= ~(data->gpio_dircn);
+	k_mutex_unlock(&data->gpio_lock);
+
+	*value = tmp;
+
+	return err;
+}
+
+int lmp90xxx_gpio_port_set_masked_raw(struct device *dev,
+				      gpio_port_pins_t mask,
+				      gpio_port_value_t value)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	int err = 0;
+	u8_t tmp;
+
+	mask &= LMP90XXX_GPIO_DAT_MASK;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+	tmp = (data->gpio_dat & ~mask) | (value & mask);
+	if (tmp != data->gpio_dat) {
+		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_GPIO_DAT, tmp);
+		if (!err) {
+			data->gpio_dat = tmp;
+		}
+	}
+	k_mutex_unlock(&data->gpio_lock);
+
+	return err;
+}
+
+int lmp90xxx_gpio_port_set_bits_raw(struct device *dev, gpio_port_pins_t pins)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	int err = 0;
+	u8_t tmp;
+
+	tmp = pins & LMP90XXX_GPIO_DAT_MASK;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+	if (tmp != data->gpio_dat) {
+		tmp |= data->gpio_dat;
+		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_GPIO_DAT, tmp);
+		if (!err) {
+			data->gpio_dat = tmp;
+		}
+	}
+	k_mutex_unlock(&data->gpio_lock);
+
+	return err;
+}
+
+int lmp90xxx_gpio_port_clear_bits_raw(struct device *dev,
+				      gpio_port_pins_t pins)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	int err = 0;
+	u8_t tmp;
+
+	tmp = pins & LMP90XXX_GPIO_DAT_MASK;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+	if ((tmp & data->gpio_dat) != 0) {
+		tmp = data->gpio_dat & ~tmp;
+		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_GPIO_DAT, tmp);
+		if (!err) {
+			data->gpio_dat = tmp;
+		}
+	}
+	k_mutex_unlock(&data->gpio_lock);
+
+	return err;
+}
+
+int lmp90xxx_gpio_port_toggle_bits(struct device *dev, gpio_port_pins_t pins)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	u8_t tmp;
+	int err;
+
+	tmp = pins & LMP90XXX_GPIO_DAT_MASK;
+
+	k_mutex_lock(&data->gpio_lock, K_FOREVER);
+	tmp ^= data->gpio_dat;
+	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_GPIO_DAT, tmp);
+	if (!err) {
+		data->gpio_dat = tmp;
+	}
+	k_mutex_unlock(&data->gpio_lock);
+
+	return err;
+}
+
 #endif /* CONFIG_ADC_LMP90XXX_GPIO */
 
 static int lmp90xxx_init(struct device *dev)
@@ -887,8 +990,7 @@ static int lmp90xxx_init(struct device *dev)
 		}
 
 		err = gpio_pin_configure(drdyb_dev, config->drdyb_pin,
-					 (GPIO_DIR_IN | GPIO_INT |
-					 GPIO_INT_EDGE | config->drdyb_flags));
+					 GPIO_INPUT | config->drdyb_flags);
 		if (err) {
 			LOG_ERR("failed to configure DRDYB GPIO pin (err %d)",
 				err);
@@ -912,10 +1014,10 @@ static int lmp90xxx_init(struct device *dev)
 			return err;
 		}
 
-		err = gpio_pin_enable_callback(drdyb_dev,
-					       config->drdyb_pin);
+		err = gpio_pin_interrupt_configure(drdyb_dev, config->drdyb_pin,
+						   GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to enable DRDBY callback (err %d)",
+			LOG_ERR("failed to configure DRDBY interrupt (err %d)",
 				err);
 			return -EINVAL;
 		}

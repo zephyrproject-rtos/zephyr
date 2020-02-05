@@ -28,7 +28,7 @@
 	leds {
 		compatible = "gpio-leds";
 		back_led: led_3 {
-			gpios = <&gpio0 13 0>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "User D13 green";
 		};
 	};
@@ -67,9 +67,9 @@
 		height = <120>;
 		pp-width-bits = <8>;
 		pp-height-bits = <8>;
-		reset-gpios = <&gpio0 15 0>;
-		dc-gpios = <&gpio0 16 0>;
-		busy-gpios = <&gpio0 14 0>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		gdv = [10 0a];
 		sdv = [19];
 		vcom = <0xa8>;

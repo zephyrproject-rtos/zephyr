@@ -190,10 +190,12 @@ struct bt_mesh_prov {
 	 *  the specified NetKeyIndex and primary element address.
 	 *
 	 *  @param net_idx  NetKeyIndex given during provisioning.
+	 *  @param uuid     UUID of the added node
 	 *  @param addr     Primary element address.
 	 *  @param num_elem Number of elements that this node has.
 	 */
-	void        (*node_added)(u16_t net_idx, u16_t addr, u8_t num_elem);
+	void        (*node_added)(u16_t net_idx, u8_t uuid[16], u16_t addr,
+				  u8_t num_elem);
 
 	/** @brief Node has been reset.
 	 *

@@ -10,24 +10,24 @@ include: spi-device.yaml
 properties:
     vreg-en-gpios:
       type: phandle-array
-      required: false
+      required: true
 
     reset-gpios:
       type: phandle-array
-      required: false
+      required: true
 
     fifo-gpios:
       type: phandle-array
-      required: false
+      required: true
 
     cca-gpios:
       type: phandle-array
-      required: false
+      required: true
 
     sfd-gpios:
       type: phandle-array
-      required: false
+      required: true
 
     fifop-gpios:
       type: phandle-array
-      required: false
+      required: true
