@@ -6,10 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-
-LOG_MODULE_REGISTER(net_google_iot_mqtt, LOG_LEVEL_INF);
-
 #include <zephyr.h>
 
 #include "dhcp.h"
@@ -18,6 +14,11 @@ LOG_MODULE_REGISTER(net_google_iot_mqtt, LOG_LEVEL_INF);
 #include <net/sntp.h>
 #include <net/net_config.h>
 #include <net/net_event.h>
+
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(net_google_iot_mqtt, LOG_LEVEL_INF);
 
 /* This comes from newlib. */
 #include <time.h>
@@ -80,8 +81,8 @@ top:
 	LOG_DBG("  addrlen : %d", (int)addr->ai_addrlen);
 
 	/* Assume two words. */
-	LOG_DBG("   addr[0]: 0x%lx", ((uint32_t *)addr->ai_addr)[0]);
-	LOG_DBG("   addr[1]: 0x%lx", ((uint32_t *)addr->ai_addr)[1]);
+	LOG_DBG("   addr[0]: 0x%x", ((uint32_t *)addr->ai_addr)[0]);
+	LOG_DBG("   addr[1]: 0x%x", ((uint32_t *)addr->ai_addr)[1]);
 
 	if (addr->ai_next != 0) {
 		addr = addr->ai_next;
