@@ -14,11 +14,38 @@
 #include <drivers/flash.h>
 #include <soc.h>
 
-#define FLASH_SHELL_MODULE "flash"
 #define BUF_ARRAY_CNT 16
 #define TEST_ARR_SIZE 0x1000
 
+extern struct device __device_init_start[];
+extern struct device __device_init_end[];
+
 static u8_t test_arr[TEST_ARR_SIZE];
+
+static int parse_helper(const struct shell *shell, size_t *argc,
+		char **argv[], struct device **flash_dev, u32_t *addr)
+{
+	char *endptr;
+
+	*addr = strtoul((*argv)[1], &endptr, 16);
+	*flash_dev = device_get_binding((*endptr != '\0') ? (*argv)[1] :
+			DT_FLASH_DEV_NAME);
+	if (!*flash_dev) {
+		shell_error(shell, "Flash driver was not found!");
+		return -ENODEV;
+	}
+	if (*endptr == '\0') {
+		return 0;
+	}
+	if (*argc < 3) {
+		shell_error(shell, "Missing address.");
+		return -EINVAL;
+	}
+	*addr = strtoul((*argv)[2], &endptr, 16);
+	(*argc)--;
+	(*argv)++;
+	return 0;
+}
 
 static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -27,19 +54,10 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	int result;
 	u32_t size;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		shell_error(shell, "Flash driver was not found!");
-		return -ENODEV;
+	result = parse_helper(shell, &argc, &argv, &flash_dev, &page_addr);
+	if (result) {
+		return result;
 	}
-
-	if (argc < 2) {
-		shell_error(shell, "Missing page address.");
-		return -EINVAL;
-	}
-
-	page_addr = strtoul(argv[1], NULL, 16);
-
 	if (argc > 2) {
 		size = strtoul(argv[2], NULL, 16);
 	} else {
@@ -76,21 +94,16 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	u32_t buf_array[BUF_ARRAY_CNT];
 	struct device *flash_dev;
 	u32_t w_addr;
+	int ret;
 	int j = 0;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		shell_error(shell, "Flash driver was not found!");
-		return -ENODEV;
-	}
-
-	if (argc < 2) {
-		shell_error(shell, "Missing address.");
-		return -EINVAL;
+	ret = parse_helper(shell, &argc, &argv, &flash_dev, &w_addr);
+	if (ret) {
+		return ret;
 	}
 
 	if (argc <= 2) {
-		shell_error(shell, "Type data to be written.");
+		shell_error(shell, "Missing data to be written.");
 		return -EINVAL;
 	}
 
@@ -101,8 +114,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	flash_write_protection_set(flash_dev, 0);
-
-	w_addr = strtoul(argv[1], NULL, 16);
 
 	if (flash_write(flash_dev, w_addr, buf_array,
 			sizeof(buf_array[0]) * j) != 0) {
@@ -129,19 +140,12 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	struct device *flash_dev;
 	u32_t addr;
 	int cnt;
+	int ret;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		shell_error(shell, "Flash driver was not found!");
-		return -ENODEV;
+	ret = parse_helper(shell, &argc, &argv, &flash_dev, &addr);
+	if (ret) {
+		return ret;
 	}
-
-	if (argc < 2) {
-		shell_error(shell, "Missing address.");
-		return -EINVAL;
-	}
-
-	addr = strtoul(argv[1], NULL, 16);
 
 	if (argc > 2) {
 		cnt = strtoul(argv[2], NULL, 16);
@@ -170,21 +174,13 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	u32_t addr;
 	u32_t size;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		shell_error(shell, "Flash driver was not found!");
-		return -ENODEV;
+	result = parse_helper(shell, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
 	}
 
-	if (argc != 4) {
-		shell_error(shell, "3 parameters reqired.");
-		return -EINVAL;
-	}
-
-	addr = strtoul(argv[1], NULL, 16);
 	size = strtoul(argv[2], NULL, 16);
 	repeat = strtoul(argv[3], NULL, 16);
-
 	if (size > TEST_ARR_SIZE) {
 		shell_error(shell, "<size> must be at most 0x%x.",
 			    TEST_ARR_SIZE);
@@ -219,11 +215,45 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static void device_name_get(size_t idx, struct shell_static_entry *entry);
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	int device_idx = 0;
+	struct device *dev;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help  = NULL;
+	entry->subcmd = &dsub_device_name;
+
+	for (dev = __device_init_start; dev != __device_init_end; dev++) {
+		if ((dev->driver_api != NULL) &&
+		strcmp(dev->config->name, "") && (dev->config->name != NULL)) {
+			if (idx == device_idx) {
+				entry->syntax = dev->config->name;
+				break;
+			}
+			device_idx++;
+		}
+	}
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
-	SHELL_CMD(erase, NULL, "<page address> <size>", cmd_erase),
-	SHELL_CMD(read, NULL, "<address> <Dword count>", cmd_read),
-	SHELL_CMD(test, NULL, "<address> <size> <repeat count>", cmd_test),
-	SHELL_CMD(write, NULL, "<address> <dword> <dword>...", cmd_write),
+	SHELL_CMD_ARG(erase, &dsub_device_name,
+		"[<device>] <page address> [<size>]",
+		cmd_erase, 2, 2),
+	SHELL_CMD_ARG(read, &dsub_device_name,
+		"[<device>] <address> [<Dword count>]",
+		cmd_read, 2, 2),
+	SHELL_CMD_ARG(test, &dsub_device_name,
+		"[<device>] <address> <size> <repeat count>",
+		cmd_test, 4, 1),
+	SHELL_CMD_ARG(write, &dsub_device_name,
+		"[<device>] <address> <dword> [<dword>...]",
+		cmd_write, 3, BUF_ARRAY_CNT),
 	SHELL_SUBCMD_SET_END
 );
 
