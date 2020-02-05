@@ -4,10 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import platform
 from unittest.mock import patch, call
+
+import pytest
 
 from runners.bossac import BossacBinaryRunner
 from conftest import RC_KERNEL_BIN
+
+if platform.system() != 'Linux':
+    pytest.skip("skipping Linux-only bossac tests", allow_module_level=True)
 
 TEST_BOSSAC_PORT = 'test-bossac-serial'
 TEST_OFFSET = 1234
