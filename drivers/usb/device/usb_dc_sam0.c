@@ -494,7 +494,7 @@ int usb_dc_ep_enable(const u8_t ep)
 
 	if (ep_num >= USB_NUM_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
-		return -1;
+		return -EINVAL;
 	}
 
 	if (for_in) {
@@ -519,7 +519,7 @@ int usb_dc_ep_disable(u8_t ep)
 
 	if (ep_num >= USB_NUM_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
-		return -1;
+		return -EINVAL;
 	}
 
 	endpoint->EPINTENCLR.reg = USB_DEVICE_EPINTENCLR_TRCPT0
