@@ -61,6 +61,7 @@ library included with Zephyr:
    - strchr()
    - strcmp()
    - strcpy()
+   - strdup()
    - strlen()
    - trncat()
    - strncmp()

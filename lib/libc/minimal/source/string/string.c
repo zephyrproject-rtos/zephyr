@@ -61,6 +61,24 @@ char *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s, size_t n)
 
 /**
  *
+ * @brief Duplicate a string
+ *
+ * @return pointer to new string, or NULL if insufficient memory available
+ */
+
+char *strdup(const char *s)
+{
+	char *dest = malloc(strlen(s)+1);
+
+	if (dest) {
+		strcpy(dest, s);
+	}
+
+	return dest;
+}
+
+/**
+ *
  * @brief String scanning operation
  *
  * @return pointer to 1st instance of found byte, or NULL if not found

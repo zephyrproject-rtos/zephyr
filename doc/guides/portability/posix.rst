@@ -289,6 +289,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     strcmp(),+
     strcoll(),
     strcpy(),+
+    strdup(),+
     trcspn(),
     strerror(),
     strerror_r(),

@@ -19,6 +19,7 @@ extern "C" {
 extern char  *strcpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s);
 extern char  *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s,
 		      size_t n);
+extern char  *strdup(const char *s);
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
 extern size_t strlen(const char *s);
