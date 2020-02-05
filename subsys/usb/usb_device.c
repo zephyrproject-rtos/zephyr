@@ -1018,44 +1018,6 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
-/**
- * @brief turn on/off USB VBUS voltage
- *
- * @param on Set to false to turn off and to true to turn on VBUS
- *
- * @return 0 on success, negative errno code on fail
- */
-static int usb_vbus_set(bool on)
-{
-#ifdef DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER
-	int ret = 0;
-	struct device *gpio_dev;
-
-	gpio_dev = device_get_binding(DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
-	if (!gpio_dev) {
-		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
-		return -ENODEV;
-	}
-
-	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
-				 GPIO_OUTPUT |
-				 DT_ALIAS_USBD_0_VBUS_GPIOS_FLAGS);
-	if (ret) {
-		return ret;
-	}
-
-	ret = gpio_pin_set(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
-			   on == true ? 1 : 0);
-	if (ret) {
-		return ret;
-	}
-#endif
-
-	return 0;
-}
-
 int usb_deconfig(void)
 {
 	/* unregister descriptors */
@@ -1095,9 +1057,6 @@ int usb_disable(void)
 	if (ret < 0) {
 		return ret;
 	}
-
-	/* Disable VBUS if needed */
-	usb_vbus_set(false);
 
 	usb_dev.enabled = false;
 
@@ -1312,12 +1271,6 @@ int usb_enable(usb_dc_status_callback status_cb)
 
 	if (usb_dev.enabled == true) {
 		ret = 0;
-		goto out;
-	}
-
-	/* Enable VBUS if needed */
-	ret = usb_vbus_set(true);
-	if (ret < 0) {
 		goto out;
 	}
 
