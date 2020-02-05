@@ -23,12 +23,17 @@
 #define SLEEP_US 2000U
 #define SLEEP_S     3U
 
+extern void CC1352R1_LAUNCHXL_shutDownExtFlash(void);
+
 void main(void)
 {
 	u32_t config, status;
 	struct device *gpiob;
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
+
+	/* Shut off external flash to save power */
+	CC1352R1_LAUNCHXL_shutDownExtFlash();
 
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
 	gpiob = device_get_binding(PORT);
