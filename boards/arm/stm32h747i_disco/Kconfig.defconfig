@@ -50,6 +50,7 @@ endif # STM32H7_DUAL_CORE
 
 if UART_CONSOLE
 
+# Change this to assign UART_1 (console) to M4 core
 config UART_1
 	default y if BOARD_STM32H747I_DISCO_M7
 
@@ -57,6 +58,7 @@ endif # UART_CONSOLE
 
 if SERIAL
 
+# Change this to assign UART_8 to M4 core
 config UART_8
 	default y if BOARD_STM32H747I_DISCO_M7
 
