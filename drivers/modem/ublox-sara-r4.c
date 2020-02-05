@@ -352,6 +352,7 @@ MODEM_CMD_DEFINE(on_cmd_ok)
 {
 	modem_cmd_handler_set_error(data, 0);
 	k_sem_give(&mdata.sem_response);
+	return 0;
 }
 
 /* Handler: ERROR */
@@ -359,6 +360,7 @@ MODEM_CMD_DEFINE(on_cmd_error)
 {
 	modem_cmd_handler_set_error(data, -EIO);
 	k_sem_give(&mdata.sem_response);
+	return 0;
 }
 
 /* Handler: +CME Error: <err>[0] */
@@ -367,6 +369,7 @@ MODEM_CMD_DEFINE(on_cmd_exterror)
 	/* TODO: map extended error codes to values */
 	modem_cmd_handler_set_error(data, -EIO);
 	k_sem_give(&mdata.sem_response);
+	return 0;
 }
 
 /*
@@ -383,6 +386,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 				    data->rx_buf, 0, len);
 	mdata.mdm_manufacturer[out_len] = '\0';
 	LOG_INF("Manufacturer: %s", log_strdup(mdata.mdm_manufacturer));
+	return 0;
 }
 
 /* Handler: <model> */
@@ -395,6 +399,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    data->rx_buf, 0, len);
 	mdata.mdm_model[out_len] = '\0';
 	LOG_INF("Model: %s", log_strdup(mdata.mdm_model));
+	return 0;
 }
 
 /* Handler: <rev> */
@@ -407,6 +412,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    data->rx_buf, 0, len);
 	mdata.mdm_revision[out_len] = '\0';
 	LOG_INF("Revision: %s", log_strdup(mdata.mdm_revision));
+	return 0;
 }
 
 /* Handler: <IMEI> */
@@ -418,6 +424,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 				    data->rx_buf, 0, len);
 	mdata.mdm_imei[out_len] = '\0';
 	LOG_INF("IMEI: %s", log_strdup(mdata.mdm_imei));
+	return 0;
 }
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_U2)
@@ -440,6 +447,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 		mctx.data_rssi = -1000;
 		LOG_INF("RSRP/RSSI not known");
 	}
+
+	return 0;
 }
 #endif
 
@@ -460,6 +469,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 	}
 
 	LOG_INF("QUAL: %d", mctx.data_rssi);
+	return 0;
 }
 #endif
 
@@ -485,6 +495,7 @@ MODEM_CMD_DEFINE(on_cmd_sockcreate)
 	}
 
 	/* don't give back semaphore -- OK to follow */
+	return 0;
 }
 
 /* Handler: +USO[WR|ST]: <socket_id>[0],<length>[1] */
@@ -492,12 +503,13 @@ MODEM_CMD_DEFINE(on_cmd_sockwrite)
 {
 	mdata.sock_written = ATOI(argv[1], 0, "length");
 	LOG_DBG("bytes written: %d", mdata.sock_written);
+	return 0;
 }
 
 /* Common code for +USOR[D|F]: "<hex_data>" */
-static void on_cmd_sockread_common(int socket_id,
-				   struct modem_cmd_handler_data *data,
-				   int socket_data_length, u16_t len)
+static int on_cmd_sockread_common(int socket_id,
+				  struct modem_cmd_handler_data *data,
+				  int socket_data_length, u16_t len)
 {
 	struct modem_socket *sock = NULL;
 	struct socket_read_data *sock_data;
@@ -505,7 +517,7 @@ static void on_cmd_sockread_common(int socket_id,
 
 	if (!len) {
 		LOG_ERR("Short +USOR[D|F] value.  Aborting!");
-		return;
+		return -EAGAIN;
 	}
 
 	/*
@@ -514,13 +526,19 @@ static void on_cmd_sockread_common(int socket_id,
 	 */
 	if (!data->rx_buf || *data->rx_buf->data != '\"') {
 		LOG_ERR("Incorrect format! Ignoring data!");
-		return;
+		return -EINVAL;
 	}
 
 	/* zero length */
 	if (socket_data_length <= 0) {
 		LOG_ERR("Length problem (%d).  Aborting!", socket_data_length);
-		return;
+		return -EAGAIN;
+	}
+
+	/* check to make sure we have all of the data (minus quotes) */
+	if ((net_buf_frags_len(data->rx_buf) - 2) < socket_data_length) {
+		LOG_DBG("Not enough data -- wait!");
+		return -EAGAIN;
 	}
 
 	/* skip quote */
@@ -530,22 +548,18 @@ static void on_cmd_sockread_common(int socket_id,
 		data->rx_buf = net_buf_frag_del(NULL, data->rx_buf);
 	}
 
-	/* check that we have enough data */
-	if (!data->rx_buf || len > (socket_data_length * 2) + 1) {
-		LOG_ERR("Incorrect format! Ignoring data!");
-		return;
-	}
-
 	sock = modem_socket_from_id(&mdata.socket_config, socket_id);
 	if (!sock) {
 		LOG_ERR("Socket not found! (%d)", socket_id);
-		return;
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	sock_data = (struct socket_read_data *)sock->data;
 	if (!sock_data) {
 		LOG_ERR("Socket data not found! Skip handling (%d)", socket_id);
-		return;
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	ret = hex_to_binary(data, socket_data_length,
@@ -557,11 +571,13 @@ static void on_cmd_sockread_common(int socket_id,
 		sock_data->recv_read_len = (u16_t)socket_data_length;
 	}
 
+exit:
 	/* remove packet from list (ignore errors) */
-	ret = modem_socket_packet_size_update(&mdata.socket_config, sock,
+	(void)modem_socket_packet_size_update(&mdata.socket_config, sock,
 					      -socket_data_length);
 
 	/* don't give back semaphore -- OK to follow */
+	return ret;
 }
 
 /*
@@ -572,15 +588,15 @@ MODEM_CMD_DEFINE(on_cmd_sockreadfrom)
 {
 	/* TODO: handle remote_ip_addr */
 
-	on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
-			       ATOI(argv[3], 0, "length"), len);
+	return on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
+				      ATOI(argv[3], 0, "length"), len);
 }
 
 /* Handler: +USORD: <socket_id>[0],<length>[1],"<hex_data>" */
 MODEM_CMD_DEFINE(on_cmd_sockread)
 {
-	on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
-			       ATOI(argv[1], 0, "length"), len);
+	return on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
+				      ATOI(argv[1], 0, "length"), len);
 }
 
 #if defined(CONFIG_DNS_RESOLVER)
@@ -595,6 +611,7 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 	/* skip beginning quote when parsing */
 	(void)net_addr_pton(result.ai_family, &argv[0][1],
 			    &((struct sockaddr_in *)&result_addr)->sin_addr);
+	return 0;
 }
 #endif
 
@@ -609,11 +626,11 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 
 	sock = modem_socket_from_id(&mdata.socket_config,
 				    ATOI(argv[0], 0, "socket_id"));
-	if (!sock) {
-		return;
+	if (sock) {
+		sock->is_connected = false;
 	}
 
-	sock->is_connected = false;
+	return 0;
 }
 
 /* Handler: +UUSOR[D|F]: <socket_id>[0],<length>[1] */
@@ -626,7 +643,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 	new_total = ATOI(argv[1], 0, "length");
 	sock = modem_socket_from_id(&mdata.socket_config, socket_id);
 	if (!sock) {
-		return;
+		return 0;
 	}
 
 	ret = modem_socket_packet_size_update(&mdata.socket_config, sock,
@@ -639,6 +656,8 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 	if (new_total > 0) {
 		modem_socket_data_ready(&mdata.socket_config, sock);
 	}
+
+	return 0;
 }
 
 /* Handler: +CREG: <stat>[0] */
@@ -646,6 +665,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 {
 	mdata.ev_creg = ATOI(argv[0], 0, "stat");
 	LOG_DBG("CREG:%d", mdata.ev_creg);
+	return 0;
 }
 
 /* RX thread */
