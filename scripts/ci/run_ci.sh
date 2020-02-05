@@ -110,11 +110,6 @@ function on_complete() {
 		cp ${bsim_bt_test_results_file} shippable/testresults/
 	fi
 
-	if [ -e ${west_commands_results_file} ]; then
-		echo "Copy ${west_commands_results_file}"
-		cp ${west_commands_results_file} shippable/testresults
-	fi
-
 	if [ "$matrix" = "1" ]; then
 		echo "Skip handling coverage data..."
 		#handle_coverage
@@ -243,20 +238,6 @@ if [ -n "$main_ci" ]; then
 		fi
 	else
 		echo "Skipping BT simulator tests"
-	fi
-
-	if [ "$matrix" = "1" ]; then
-		# Run pytest-based testing for Python in matrix
-		# builder 1.  For now, this is just done for the west
-		# extension commands, but additional directories which
-		# run pytest could go here too.
-		pytest=$(type -p pytest-3 || echo "pytest")
-		mkdir -p $(dirname ${west_commands_results_file})
-		PYTHONPATH=./scripts/west_commands "${pytest}" \
-			  --junitxml=${west_commands_results_file} \
-			  ./scripts/west_commands/tests
-	else
-		echo "Skipping west command tests"
 	fi
 
 	# cleanup
