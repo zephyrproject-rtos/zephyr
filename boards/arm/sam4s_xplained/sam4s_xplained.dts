@@ -55,6 +55,10 @@
 	status = "okay";
 };
 
+&spi0 {
+	status = "okay";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
