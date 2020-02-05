@@ -45,7 +45,7 @@ static void skipcrlf(struct modem_cmd_handler_data *data)
 }
 
 static u16_t findcrlf(struct modem_cmd_handler_data *data,
-			   struct net_buf **frag, u16_t *offset)
+		      struct net_buf **frag, u16_t *offset)
 {
 	struct net_buf *buf = data->rx_buf;
 	u16_t len = 0U, pos = 0U;
