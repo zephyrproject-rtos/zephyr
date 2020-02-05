@@ -71,7 +71,15 @@ The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
 only enables the first core.
 
-Other hardware features are not currently supported by the port.
+Other hardware features are not currently enabled such as dual core or secure/non-secure.
+
+Targets available for this board are:
+
+- *lpcxpresso55s69_cpu0* secure (S) address space for CPU0
+- *lpcxpresso55s69_ns* non-secure (NS) address space for CPU0
+- *lpcxpresso55s69_cpu1* CPU1 target, NS only
+
+CPU1 does not work without CPU0 enabling it.
 
 Connections and IOs
 ===================
