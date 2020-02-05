@@ -7,7 +7,6 @@
 
 /*
  * TODO:
- * - Implement UTC_OFFSET & TIMEZONE
  * - Configurable CURRENT_TIME notification delay
  */
 
@@ -330,6 +329,8 @@ static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
 			 current_time_read_cb,
 			 current_time_pre_write_cb,
 			 current_time_post_write_cb, NULL);
+	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_DATA(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
 			  res_inst, j, binding_mode, DEVICE_STRING_SHORT);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res, i, res_inst, j);
