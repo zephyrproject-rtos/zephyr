@@ -44,3 +44,7 @@ config USB_PID_WEBUSB_SAMPLE
 config USB_PID_BLE_HCI_SAMPLE
 	hex
 	default 0x000B
+
+config USB_PID_BLE_HCI_H4_SAMPLE
+	hex
+	default 0x000C

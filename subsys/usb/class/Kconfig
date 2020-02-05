@@ -107,6 +107,13 @@ config BLUETOOTH_BULK_EP_MPS
 	help
 	  Bluetooth device class bulk endpoint size
 
+config USB_DEVICE_BT_H4
+	bool "USB Bluetooth H4 Device Class Driver"
+	select BT
+	select BT_HCI_RAW
+	help
+	  USB Bluetooth H4 device class driver
+
 config USB_DEVICE_LOOPBACK
 	bool "USB Loopback Function Driver"
 	help

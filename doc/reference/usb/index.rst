@@ -38,6 +38,7 @@ The following Product IDs are currently used:
 * :option:`CONFIG_USB_PID_MASS_SAMPLE`
 * :option:`CONFIG_USB_PID_TESTUSB_SAMPLE`
 * :option:`CONFIG_USB_PID_WEBUSB_SAMPLE`
+* :option:`CONFIG_USB_PID_BLE_HCI_H4_SAMPLE`
 
 USB device controller drivers
 *****************************
