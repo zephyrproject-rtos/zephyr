@@ -52,6 +52,7 @@ config BT_HCI_RAW
 config BT_HCI_RAW_RESERVE
 	int "Buffer headroom needed for HCI transport"
 	depends on BT_HCI_RAW
+	default 1 if USB_DEVICE_BT_H4
 	default 0
 	help
 	  This option is used by the HCI raw transport implementation to
