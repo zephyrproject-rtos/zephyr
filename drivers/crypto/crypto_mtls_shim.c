@@ -21,7 +21,7 @@
 #endif /* CONFIG_MBEDTLS_CFG_FILE */
 
 #include <mbedtls/ccm.h>
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 #include <mbedtls/gcm.h>
 #endif
 #include <mbedtls/aes.h>
@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(mbedtls);
 struct mtls_shim_session {
 	union {
 		mbedtls_ccm_context mtls_ccm;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 		mbedtls_gcm_context mtls_gcm;
 #endif
 		mbedtls_aes_context mtls_aes;
@@ -226,7 +226,7 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
 				 u8_t *nonce)
@@ -284,7 +284,7 @@ static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 
 	return 0;
 }
-#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
+#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
 
 static int mtls_get_unused_session_index(void)
 {
@@ -306,7 +306,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 {
 	mbedtls_aes_context *aes_ctx;
 	mbedtls_ccm_context *ccm_ctx;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	mbedtls_gcm_context *gcm_ctx;
 #endif
 	int ctx_idx;
@@ -324,7 +324,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	if (mode != CRYPTO_CIPHER_MODE_CCM &&
 	    mode != CRYPTO_CIPHER_MODE_CBC &&
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	    mode != CRYPTO_CIPHER_MODE_GCM &&
 #endif
 	    mode != CRYPTO_CIPHER_MODE_ECB) {
@@ -400,7 +400,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = mtls_ccm_decrypt_auth;
 		}
 		break;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	case CRYPTO_CIPHER_MODE_GCM:
 		gcm_ctx = &mtls_sessions[ctx_idx].mtls_gcm;
 		mbedtls_gcm_init(gcm_ctx);
@@ -418,7 +418,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.gcm_crypt_hndlr = mtls_gcm_decrypt_auth;
 		}
 		break;
-#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
+#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
 	default:
 		LOG_ERR("Unhandled mode");
 		mtls_sessions[ctx_idx].in_use = false;
@@ -438,7 +438,7 @@ static int mtls_session_free(struct device *dev, struct cipher_ctx *ctx)
 
 	if (mtls_session->mode == CRYPTO_CIPHER_MODE_CCM) {
 		mbedtls_ccm_free(&mtls_session->mtls_ccm);
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	} else if (mtls_session->mode == CRYPTO_CIPHER_MODE_GCM) {
 		mbedtls_gcm_free(&mtls_session->mtls_gcm);
 #endif
