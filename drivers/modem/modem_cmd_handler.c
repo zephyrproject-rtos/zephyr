@@ -84,7 +84,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 			struct modem_cmd *cmd,
 			u8_t **argv, size_t argv_len, u16_t *argc)
 {
-	int i;
+	int i, count = 0;
 	size_t begin, end;
 
 	if (!data || !data->match_buf || !match_len || !cmd || !argv || !argc) {
@@ -102,9 +102,14 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 				data->match_buf[end] = '\0';
 				/* bump begin */
 				begin = end + 1;
+				count += 1;
 				(*argc)++;
 				break;
 			}
+		}
+
+		if (count >= cmd->arg_count) {
+			break;
 		}
 
 		if (*argc == argv_len) {
