@@ -190,55 +190,6 @@ static int modem_atoi(const char *s, const int err_value,
 	return ret;
 }
 
-/* convert a hex-encoded buffer back into a binary buffer */
-static int hex_to_binary(struct modem_cmd_handler_data *data,
-			 u16_t data_length,
-			 u8_t *bin_buf, u16_t bin_buf_len)
-{
-	int i;
-	u8_t c = 0U, c2;
-
-	/* make sure we have room */
-	if (data_length > bin_buf_len) {
-		return -ENOMEM;
-	}
-
-	for (i = 0; i < data_length * 2; i++) {
-		if (!data->rx_buf) {
-			return -ENOMEM;
-		}
-
-		c2 = *data->rx_buf->data;
-		if (isdigit(c2)) {
-			c += c2 - '0';
-		} else if (isalpha(c2)) {
-			c += c2 - (isupper(c2) ? 'A' - 10 : 'a' - 10);
-		} else {
-			return -EINVAL;
-		}
-
-		if (i % 2) {
-			bin_buf[i / 2] = c;
-			c = 0U;
-		} else {
-			c = c << 4;
-		}
-
-		/* pull data from buf and advance to the next frag if needed */
-		net_buf_pull_u8(data->rx_buf);
-		if (!data->rx_buf->len) {
-			data->rx_buf = net_buf_frag_del(NULL, data->rx_buf);
-		}
-	}
-
-	/* if we have room, add a NUL char at the end of bin_buf */
-	if (data_length <= bin_buf_len - 1) {
-		bin_buf[i / 2] = '\0';
-	}
-
-	return 0;
-}
-
 /* send binary data via the +USO[ST/WR] commands */
 static ssize_t send_socket_data(struct modem_socket *sock,
 				const struct sockaddr *dst_addr,
@@ -254,12 +205,6 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_R4)
-	/* Hex mode allows sending 512 bytes to the socket in one command */
-	if (buf_len > (MDM_MAX_DATA_LENGTH / 2)) {
-		buf_len = (MDM_MAX_DATA_LENGTH / 2);
-	}
-#else
 	/*
 	 * Binary and ASCII mode allows sending MDM_MAX_DATA_LENGTH bytes to
 	 * the socket in one command
@@ -267,7 +212,6 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	if (buf_len > MDM_MAX_DATA_LENGTH) {
 		buf_len = MDM_MAX_DATA_LENGTH;
 	}
-#endif
 
 	/* The number of bytes written will be reported by the modem */
 	mdata.sock_written = 0;
@@ -301,20 +245,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	/* slight pause per spec so that @ prompt is received */
 	k_sleep(MDM_PROMPT_CMD_DELAY);
-#if defined(CONFIG_MODEM_UBLOX_SARA_R4)
-	/*
-	 * HACK: Apparently, enabling HEX transmit mode also
-	 * affects the BINARY send method.  We need to encode
-	 * the "binary" data as HEX values here
-	 * TODO: Something faster
-	 */
-	for (int i = 0; i < buf_len; i++) {
-		snprintk(send_buf, sizeof(send_buf), "%02x", buf[i]);
-		mctx.iface.write(&mctx.iface, send_buf, 2U);
-	}
-#else
 	mctx.iface.write(&mctx.iface, buf, buf_len);
-#endif
 
 	if (timeout == K_NO_WAIT) {
 		ret = 0;
@@ -506,7 +437,7 @@ MODEM_CMD_DEFINE(on_cmd_sockwrite)
 	return 0;
 }
 
-/* Common code for +USOR[D|F]: "<hex_data>" */
+/* Common code for +USOR[D|F]: "<data>" */
 static int on_cmd_sockread_common(int socket_id,
 				  struct modem_cmd_handler_data *data,
 				  int socket_data_length, u16_t len)
@@ -562,13 +493,14 @@ static int on_cmd_sockread_common(int socket_id,
 		goto exit;
 	}
 
-	ret = hex_to_binary(data, socket_data_length,
-			    sock_data->recv_buf, sock_data->recv_buf_len);
-	if (ret < 0) {
-		LOG_ERR("Incorrect formatting for HEX data! %d", ret);
-		sock_data->recv_read_len = 0U;
-	} else {
-		sock_data->recv_read_len = (u16_t)socket_data_length;
+	ret = net_buf_linearize(sock_data->recv_buf, sock_data->recv_buf_len,
+				data->rx_buf, 0, (u16_t)socket_data_length);
+	data->rx_buf = net_buf_skip(data->rx_buf, ret);
+	sock_data->recv_read_len = ret;
+	if (ret != socket_data_length) {
+		LOG_ERR("Total copied data is different then received data!"
+			" copied:%d vs. received:%d", ret, socket_data_length);
+		ret = -EINVAL;
 	}
 
 exit:
@@ -582,7 +514,7 @@ exit:
 
 /*
  * Handler: +USORF: <socket_id>[0],<remote_ip_addr>[1],<remote_port>[2],
- *          <length>[3],"<hex_data>"
+ *          <length>[3],"<data>"
 */
 MODEM_CMD_DEFINE(on_cmd_sockreadfrom)
 {
@@ -592,7 +524,7 @@ MODEM_CMD_DEFINE(on_cmd_sockreadfrom)
 				      ATOI(argv[3], 0, "length"), len);
 }
 
-/* Handler: +USORD: <socket_id>[0],<length>[1],"<hex_data>" */
+/* Handler: +USORD: <socket_id>[0],<length>[1],"<data>" */
 MODEM_CMD_DEFINE(on_cmd_sockread)
 {
 	return on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
@@ -805,8 +737,6 @@ static void modem_reset(void)
 #endif
 		/* UNC messages for registration */
 		SETUP_CMD_NOHANDLE("AT+CREG=1"),
-		/* HEX receive data mode */
-		SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
 		/* query modem info */
 		SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 		SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
@@ -1199,12 +1129,6 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 			&mdata.socket_config, sock);
 	}
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_R4)
-	/* max length in hex mode is MDM_MAX_DATA_LENGTH / 2 */
-	if (next_packet_size > (MDM_MAX_DATA_LENGTH / 2)) {
-		next_packet_size = (MDM_MAX_DATA_LENGTH / 2);
-	}
-#else
 	/*
 	 * Binary and ASCII mode allows sending MDM_MAX_DATA_LENGTH bytes to
 	 * the socket in one command
@@ -1212,7 +1136,6 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	if (next_packet_size > MDM_MAX_DATA_LENGTH) {
 		next_packet_size = MDM_MAX_DATA_LENGTH;
 	}
-#endif
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%d",
 		 from ? "RF" : "RD", sock->id,
