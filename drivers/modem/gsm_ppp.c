@@ -110,6 +110,74 @@ static struct modem_cmd response_cmds[] = {
 	MODEM_CMD("CONNECT", gsm_cmd_ok, 0U, ""),
 };
 
+#if defined(CONFIG_MODEM_SHELL)
+#define MDM_MANUFACTURER_LENGTH  10
+#define MDM_MODEL_LENGTH         16
+#define MDM_REVISION_LENGTH      64
+#define MDM_IMEI_LENGTH          16
+
+struct modem_info {
+	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
+	char mdm_model[MDM_MODEL_LENGTH];
+	char mdm_revision[MDM_REVISION_LENGTH];
+	char mdm_imei[MDM_IMEI_LENGTH];
+};
+
+static struct modem_info minfo;
+
+/*
+ * Provide modem info if modem shell is enabled. This can be shown with
+ * "modem list" shell command.
+ */
+
+/* Handler: <manufacturer> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_manufacturer,
+				    sizeof(minfo.mdm_manufacturer) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_manufacturer[out_len] = '\0';
+	LOG_INF("Manufacturer: %s", log_strdup(minfo.mdm_manufacturer));
+}
+
+/* Handler: <model> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_model,
+				    sizeof(minfo.mdm_model) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_model[out_len] = '\0';
+	LOG_INF("Model: %s", log_strdup(minfo.mdm_model));
+}
+
+/* Handler: <rev> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_revision,
+				    sizeof(minfo.mdm_revision) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_revision[out_len] = '\0';
+	LOG_INF("Revision: %s", log_strdup(minfo.mdm_revision));
+}
+
+/* Handler: <IMEI> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_imei, sizeof(minfo.mdm_imei) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_imei[out_len] = '\0';
+	LOG_INF("IMEI: %s", log_strdup(minfo.mdm_imei));
+}
+#endif /* CONFIG_MODEM_SHELL */
+
 static struct setup_cmd setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
@@ -117,6 +185,15 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATH"),
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+
+#if defined(CONFIG_MODEM_SHELL)
+	/* query modem info */
+	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
+	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
+	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
+	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
+#endif
+
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
 	/* create PDP context */
@@ -193,6 +270,14 @@ int gsm_init(struct device *device)
 		LOG_DBG("cmd handler error %d", r);
 		return r;
 	}
+
+#if defined(CONFIG_MODEM_SHELL)
+	/* modem information storage */
+	gsm.context.data_manufacturer = minfo.mdm_manufacturer;
+	gsm.context.data_model = minfo.mdm_model;
+	gsm.context.data_revision = minfo.mdm_revision;
+	gsm.context.data_imei = minfo.mdm_imei;
+#endif
 
 	gsm.gsm_data.isr_buf = &gsm.gsm_isr_buf[0];
 	gsm.gsm_data.isr_buf_len = sizeof(gsm.gsm_isr_buf);
