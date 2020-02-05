@@ -834,6 +834,31 @@ static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 	thread->resource_pool = pool;
 }
 
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+/**
+ * @brief Obtain stack usage information for the specified thread
+ *
+ * User threads will need to have permission on the target thread object.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects CONFIG_NO_UNUSED_STACK_INSPECTION, an error
+ * will be generated.
+ *
+ * @param thread Thread to inspect stack information
+ * @param unused_ptr Output parameter, filled in with the unused stack space
+ *	of the target thread in bytes.
+ * @return 0 on success
+ * @return -EBADF Bad thread object (user mode only)
+ * @return -EPERM No permissions on thread object (user mode only)
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited (user mode only)
+ * @return -EFAULT Bad memory address for unused_ptr (user mode only)
+ */
+__syscall int k_thread_stack_space_get(const struct k_thread *thread,
+				       size_t *unused_ptr);
+#endif
+
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 /**
  * @brief Assign the system heap as a thread's resource pool

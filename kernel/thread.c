@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <irq_offload.h>
+#include <sys/check.h>
 
 static struct k_spinlock lock;
 
@@ -882,3 +883,90 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	k_sem_give(&offload_sem);
 }
 #endif
+
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+#ifdef CONFIG_STACK_GROWS_UP
+#error "Unsupported configuration for stack analysis"
+#endif
+
+int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
+				    size_t *unused_ptr)
+{
+	const u8_t *start = (u8_t *)thread->stack_info.start;
+	size_t size = thread->stack_info.size;
+	size_t unused = 0;
+	const u8_t *checked_stack = start;
+	/* Take the address of any local variable as a shallow bound for the
+	 * stack pointer.  Addresses above it are guaranteed to be
+	 * accessible.
+	 */
+	const u8_t *stack_pointer = (const u8_t *)&start;
+
+	/* If we are currently running on the stack being analyzed, some
+	 * memory management hardware will generate an exception if we
+	 * read unused stack memory.
+	 *
+	 * This never happens when invoked from user mode, as user mode
+	 * will always run this function on the privilege elevation stack.
+	 */
+	if ((stack_pointer > start) && (stack_pointer <= (start + size)) &&
+	    IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
+		/* TODO: We could add an arch_ API call to temporarily
+		 * disable the stack checking in the CPU, but this would
+		 * need to be properly managed wrt context switches/interrupts
+		 */
+		return -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
+		/* First 4 bytes of the stack buffer reserved for the
+		 * sentinel value, it won't be 0xAAAAAAAA for thread
+		 * stacks.
+		 *
+		 * FIXME: thread->stack_info.start ought to reflect
+		 * this!
+		 */
+		checked_stack += 4;
+		size -= 4;
+	}
+
+	for (size_t i = 0; i < size; i++) {
+		if ((checked_stack[i]) == 0xaaU) {
+			unused++;
+		} else {
+			break;
+		}
+	}
+
+	*unused_ptr = unused;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
+				    size_t *unused_ptr)
+{
+	size_t unused;
+	int ret;
+
+	ret = Z_SYSCALL_OBJ(thread, K_OBJ_THREAD);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	ret = z_impl_k_thread_stack_space_get(thread, &unused);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	ret = z_user_to_copy(unused_ptr, &unused, sizeof(size_t));
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#include <syscalls/k_thread_stack_space_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_INIT_STACKS && CONFIG_THREAD_STACK_INFO */

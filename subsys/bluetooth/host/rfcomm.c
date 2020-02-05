@@ -244,7 +244,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
-	STACK_ANALYZE("dlc stack", dlc->stack);
+	log_stack_usage(&dlc->tx_thread);
 
 	if (dlc->ops && dlc->ops->disconnected) {
 		dlc->ops->disconnected(dlc);
