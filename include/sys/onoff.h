@@ -270,9 +270,12 @@ typedef void (*onoff_client_callback)(struct onoff_service *srv,
  * * when operation completion is posted (signalled or callback
  *   invoked).
  *
- * Only the result field is intended for direct use by clients, and it
- * is available for inspection only after control reverts to the
- * client.
+ * After control has reverted to the client the state object must be
+ * reinitialized for the next operation.
+ *
+ * The content of this structure is not public API: all configuration
+ * and inspection should be done with functions like
+ * onoff_client_init_callback() and onoff_client_fetch_result().
  */
 struct onoff_client {
 	/* Links the client into the set of waiting service users. */
@@ -341,6 +344,9 @@ static inline int onoff_client_fetch_result(const struct onoff_client *op,
  * notification, and instead must periodically check for completion
  * using onoff_client_fetch_result().
  *
+ * On completion of the operation the client object must be
+ * reinitialized before it can be re-used.
+ *
  * @param cli pointer to the client state object.
  */
 static inline void onoff_client_init_spinwait(struct onoff_client *cli)
@@ -359,6 +365,9 @@ static inline void onoff_client_init_spinwait(struct onoff_client *cli)
  * Clients that use this initialization will be notified of the
  * completion of operations submitted through onoff_request() and
  * onoff_release() through the provided signal.
+ *
+ * On completion of the operation the client object must be
+ * reinitialized before it can be re-used.
  *
  * @note
  *   @rst
@@ -397,6 +406,9 @@ static inline void onoff_client_init_signal(struct onoff_client *cli,
  * through the provided callback.  Note that callbacks may be invoked
  * from various contexts depending on the specific service; see
  * @ref onoff_client_callback.
+ *
+ * On completion of the operation the client object must be
+ * reinitialized before it can be re-used.
  *
  * @param cli pointer to the client state object.
  *
