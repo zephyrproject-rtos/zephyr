@@ -1138,7 +1138,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	}
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%d",
-		 from ? "RF" : "RD", sock->id,
+		 sock->ip_proto == IPPROTO_UDP ? "RF" : "RD", sock->id,
 		 len < next_packet_size ? len : next_packet_size);
 
 	/* socket read settings */
