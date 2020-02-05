@@ -341,7 +341,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
 		LOG_WRN("endpoint already configured");
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
@@ -531,7 +531,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {

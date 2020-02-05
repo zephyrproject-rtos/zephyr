@@ -467,6 +467,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
+	int ret;
 
 	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
 	ep_cfg.ep_mps = sys_le16_to_cpu(ep_desc->wMaxPacketSize);
@@ -480,12 +481,20 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	LOG_DBG("Set endpoint 0x%x type %u MPS %u",
 		ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
-	if (usb_dc_ep_configure(&ep_cfg) < 0) {
-		LOG_WRN("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
+	ret = usb_dc_ep_configure(&ep_cfg);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already configured", ep_cfg.ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
 	}
 
-	if (usb_dc_ep_enable(ep_cfg.ep_addr) < 0) {
-		LOG_WRN("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
+	ret = usb_dc_ep_enable(ep_cfg.ep_addr);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already enabled", ep_cfg.ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
 	}
 
 	usb_dev.configured = true;
@@ -506,6 +515,7 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
+	int ret;
 
 	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
 	ep_cfg.ep_type = ep_desc->bmAttributes;
@@ -519,7 +529,10 @@ static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	usb_cancel_transfer(ep_cfg.ep_addr);
 
-	if (usb_dc_ep_disable(ep_cfg.ep_addr) < 0) {
+	ret = usb_dc_ep_disable(ep_cfg.ep_addr);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already disabled", ep_cfg.ep_addr);
+	} else if (ret) {
 		LOG_ERR("Failed to disable endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
 	}
