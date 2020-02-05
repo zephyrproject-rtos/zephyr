@@ -21,6 +21,7 @@
 
 	aliases {
 		pwm-0 = &pwm0;
+		peci-0 = &peci0;
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
@@ -68,5 +69,9 @@
 };
 
 &kscan0 {
+	status = "okay";
+};
+
+&peci0 {
 	status = "okay";
 };
