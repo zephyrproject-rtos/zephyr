@@ -18,18 +18,21 @@ source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
 config ARC
 	bool
+	select ARCH_IS_SET
 	select HAS_DTS
 	help
 	  ARC architecture
 
 config ARM
 	bool
+	select ARCH_IS_SET
 	select HAS_DTS
 	help
 	  ARM architecture
 
 config X86
 	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	help
@@ -37,6 +40,7 @@ config X86
 
 config NIOS2
 	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
 	help
@@ -44,12 +48,14 @@ config NIOS2
 
 config RISCV
 	bool
+	select ARCH_IS_SET
 	select HAS_DTS
 	help
 	  RISCV architecture
 
 config XTENSA
 	bool
+	select ARCH_IS_SET
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -59,6 +65,7 @@ config XTENSA
 
 config ARCH_POSIX
 	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -67,6 +74,12 @@ config ARCH_POSIX
 	select HAS_COVERAGE_SUPPORT
 	help
 	  POSIX (native) architecture
+
+config ARCH_IS_SET
+	bool
+	help
+	  Helper symbol to detect SoCs forgetting to select one of the arch
+	  symbols above. See the top-level CMakeLists.txt.
 
 menu "General Architecture Options"
 
