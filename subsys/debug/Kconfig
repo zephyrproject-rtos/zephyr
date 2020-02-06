@@ -3,6 +3,8 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
 menu "System Monitoring Options"
 
 config BOOT_TIME_MEASUREMENT
@@ -42,6 +44,121 @@ config TRACING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
+
+if TRACING
+
+choice
+	prompt "Tracing Method"
+	default TRACING_ASYNC
+
+config TRACING_SYNC
+	bool "Synchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable synchronous tracing. This requires the backend to be
+	  very low-latency.
+
+config TRACING_ASYNC
+	bool "Asynchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable asynchronous tracing. This will buffer all the tracing
+	  packets to the ring buffer first, tracing thread will try to
+	  output as much data in ring buffer as possible when tracing
+	  thread get scheduled.
+
+endchoice
+
+config TRACING_THREAD_STACK_SIZE
+	int "Stack size of tracing thread"
+	default 1024
+	depends on TRACING_ASYNC
+	help
+	  Stack size of tracing thread.
+
+config TRACING_THREAD_WAIT_THRESHOLD
+	int "Tracing thread waiting threshold"
+	default 100
+	depends on TRACING_ASYNC
+	help
+	  Tracing thread waiting period given in milliseconds after
+	  every first packet put to tracing buffer.
+
+config TRACING_BUFFER_SIZE
+	int "Size of tracing buffer"
+	default 2048 if TRACING_ASYNC
+	default TRACING_PACKET_MAX_SIZE if TRACING_SYNC
+	range 32 65536
+	help
+	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
+	  is used as ring_buffer to buffer data packet and string packet. If
+	  TRACING_SYNC is enabled, it's used to hold the formated data.
+
+config TRACING_PACKET_MAX_SIZE
+	int "Max size of one tracing packet"
+	default 32
+	help
+	  Max size of one tracing packet.
+
+choice
+	prompt "Tracing Backend"
+	default TRACING_BACKEND_UART
+
+config TRACING_BACKEND_UART
+	bool "Enable UART backend"
+	depends on UART_CONSOLE
+	depends on TRACING_ASYNC
+	help
+	  When enabled backend is using UART to output tracing data.
+
+config TRACING_BACKEND_USB
+	bool "Enable USB backend"
+	depends on TRACING_ASYNC
+	help
+	  When enabled backend is using USB to output tracing data.
+
+config TRACING_BACKEND_POSIX
+	bool "Enable POSIX backend"
+	depends on TRACING_SYNC
+	depends on ARCH_POSIX
+	help
+	  When enabled backend is using posix API to output tracing
+	  data to file system.
+
+endchoice
+
+config TRACING_BACKEND_UART_NAME
+	string "Device Name of UART Device for UART backend"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
+	default "UART_0"
+	depends on TRACING_BACKEND_UART
+	help
+	  This option specifies the name of UART device to be used for
+	  tracing backend.
+
+config TRACING_USB_MPS
+	int "USB backend max packet size"
+	default 64
+	depends on TRACING_BACKEND_USB
+	help
+	  USB tracing backend max packet size(endpoint MPS).
+
+config TRACING_HANDLE_HOST_CMD
+	bool "Enable host cmd handle"
+	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
+	help
+	  When enabled tracing will handle cmd from host to dynamically
+	  enable and disable tracing to have host capture tracing stream
+	  data conveniently.
+
+config TRACING_CMD_BUFFER_SIZE
+	int "Size of tracing cmd buffer"
+	default 32
+	range 32 128
+	help
+	  Size of tracing command buffer.
+
+endif
 
 config ASAN
 	bool "Build with address sanitizer"
