@@ -15,6 +15,35 @@ config TRACING
 
 if TRACING
 
+
+choice
+	prompt "Tracing Format"
+	default TRACING_CTF
+
+config TRACING_CTF
+	bool "Tracing via Common Trace Format support"
+	select THREAD_MONITOR
+	help
+	  Enable tracing to a Common Trace Format stream.
+
+config TRACING_TEST
+	bool "Tracing for test usage"
+	help
+	  Enable tracing for testing kinds of format purpose. It must
+	  implement the tracing hooks defined in tracing_test.h
+
+endchoice
+
+
+config TRACING_CTF_TIMESTAMP
+	bool "Enable CTF internal timestamp"
+	default y
+	depends on TRACING_CTF
+	help
+	  Timestamp prefix will be added to the beginning of CTF
+	  event internally.
+
+
 choice
 	prompt "Tracing Method"
 	default TRACING_ASYNC
@@ -32,7 +61,7 @@ config TRACING_ASYNC
 	help
 	  Enable asynchronous tracing. This will buffer all the tracing
 	  packets to the ring buffer first, tracing thread will try to
-	  output as much data in ring buffer as possible when tracing
+	  output as much data as possible from the buffer when tracing
 	  thread get scheduled.
 
 endchoice
@@ -59,8 +88,8 @@ config TRACING_BUFFER_SIZE
 	range 32 65536
 	help
 	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
-	  is used as ring_buffer to buffer data packet and string packet. If
-	  TRACING_SYNC is enabled, it's used to hold the formated data.
+	  is used as a ring buffer to buffer data packet and string packet. If
+	  TRACING_SYNC is enabled, the buffer is used to hold the formated data.
 
 config TRACING_PACKET_MAX_SIZE
 	int "Max size of one tracing packet"
@@ -77,21 +106,20 @@ config TRACING_BACKEND_UART
 	depends on UART_CONSOLE
 	depends on TRACING_ASYNC
 	help
-	  When enabled backend is using UART to output tracing data.
+	  Use UART to output tracing data.
 
 config TRACING_BACKEND_USB
 	bool "Enable USB backend"
 	depends on TRACING_ASYNC
 	help
-	  When enabled backend is using USB to output tracing data.
+	  Use USB to output tracing data.
 
 config TRACING_BACKEND_POSIX
-	bool "Enable POSIX backend"
+	bool "Enable posix architecture (native) backend"
 	depends on TRACING_SYNC
 	depends on ARCH_POSIX
 	help
-	  When enabled backend is using posix API to output tracing
-	  data to file system.
+	  Use posix architecture to output tracing data to file system.
 
 endchoice
 
@@ -112,7 +140,7 @@ config TRACING_USB_MPS
 	  USB tracing backend max packet size(endpoint MPS).
 
 config TRACING_HANDLE_HOST_CMD
-	bool "Enable host cmd handle"
+	bool "Enable host command handle"
 	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
 	help
 	  When enabled tracing will handle cmd from host to dynamically
@@ -120,17 +148,17 @@ config TRACING_HANDLE_HOST_CMD
 	  data conveniently.
 
 config TRACING_CMD_BUFFER_SIZE
-	int "Size of tracing cmd buffer"
+	int "Size of tracing command buffer"
 	default 32
 	range 32 128
 	help
 	  Size of tracing command buffer.
 
 config TRACING_ISR
-	bool "Enabling Tracing ISR"
+	bool "Enable tracing ISRs"
 	default y
 	help
-	  Enable tracing ISR. This requires the backend to be
+	  Enable tracing ISRs. This requires the backend to be
 	  very low-latency.
 
 endif
@@ -159,27 +187,6 @@ config TRACING_CPU_STATS_INTERVAL
 	depends on TRACING_CPU_STATS_LOG
 	help
 	  Time period of displaying information about CPU usage.
-
-config TRACING_CTF
-	bool "Tracing via Common Trace Format support"
-	select THREAD_MONITOR
-	select TRACING
-	help
-	  Enable tracing to a Common Trace Format stream.
-
-config TRACING_CTF_TIMESTAMP
-	bool "Enable CTF internal timestamp"
-	default y
-	help
-	  Timestamp prefix will be added to the beginning of CTF
-	  event internally.
-
-config TRACING_TEST
-	bool "Tracing for test usage"
-	depends on TRACING
-	help
-	  Enable tracing for testing kinds of format purpose. It must
-	  implement the tracing hooks defined in tracing_test.h
 
 
 source "subsys/tracing/Kconfig.segger"
