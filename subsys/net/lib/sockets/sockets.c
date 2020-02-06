@@ -425,6 +425,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	ctx = k_fifo_get(&parent->accept_q, timeout);
 	if (ctx == NULL) {
+		z_free_fd(fd);
 		errno = EAGAIN;
 		return -1;
 	}
@@ -434,6 +435,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	if (last_pkt) {
 		if (net_pkt_eof(last_pkt)) {
 			sock_set_eof(ctx);
+			z_free_fd(fd);
 			errno = ECONNABORTED;
 			return -1;
 		}
@@ -441,6 +443,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	if (net_context_is_closing(ctx)) {
 		errno = ECONNABORTED;
+		z_free_fd(fd);
 		return -1;
 	}
 
@@ -462,6 +465,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		} else if (ctx->remote.sa_family == AF_INET6) {
 			*addrlen = sizeof(struct sockaddr_in6);
 		} else {
+			z_free_fd(fd);
 			errno = ENOTSUP;
 			return -1;
 		}
