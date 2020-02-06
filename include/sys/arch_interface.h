@@ -641,6 +641,27 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 
 /** @} */
 
+/**
+ * @defgroup arch-benchmarking Architecture-specific benchmarking globals
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+extern u64_t arch_timing_swap_start;
+extern u64_t arch_timing_swap_end;
+extern u64_t arch_timing_irq_start;
+extern u64_t arch_timing_irq_end;
+extern u64_t arch_timing_tick_start;
+extern u64_t arch_timing_tick_end;
+extern u64_t arch_timing_user_mode_end;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_common;
+extern u64_t arch_timing_value_swap_temp;
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
