@@ -3,7 +3,6 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_CHOSEN_Z_CONSOLE := zephyr,console
 
 menu "System Monitoring Options"
 
@@ -281,6 +280,5 @@ config OPENOCD_SUPPORT
 	  This option exports an array of offsets to kernel structs, used by
 	  OpenOCD to determine the state of running threads.  (This option
 	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
-
 
 endmenu
