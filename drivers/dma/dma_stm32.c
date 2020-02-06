@@ -24,8 +24,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
-#include <drivers/clock_control/stm32_clock_control.h>
-
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
 	const struct dma_stm32_config *config = dev->config->config_info;
