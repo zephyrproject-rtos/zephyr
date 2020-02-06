@@ -142,6 +142,13 @@ else()
   assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
 
+if(NOT CONFIG_ARCH_IS_SET)
+  message(WARNING "\
+None of the CONFIG_<arch> (e.g. CONFIG_X86) symbols are set. \
+Select one of them from the SOC_SERIES_* symbol or, lacking that, from the \
+SOC_* symbol.")
+endif()
+
 # Apply the final optimization flag(s)
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
