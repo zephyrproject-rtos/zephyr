@@ -122,7 +122,7 @@ def add_parser_common(parser_adder, command):
     # This is how we detect if the user provided them or not when
     # overriding values from the cached configuration.
 
-    command_verb = "flash" if command == "flash" else "debug"
+    command_verb = "flash" if command.name == "flash" else "debug"
 
     group.add_argument('--board-dir',
                        help='Zephyr board directory')
