@@ -21,6 +21,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_adv.h"
+#include "lll_adv_sync.h"
 
 #include "ull_adv_types.h"
 
@@ -160,6 +161,11 @@ int ull_adv_sync_reset(void)
 	}
 
 	return 0;
+}
+
+uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
+{
+	return sync_handle_get((void *)lll->hdr.parent);
 }
 
 uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
