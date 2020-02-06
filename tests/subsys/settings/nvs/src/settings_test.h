@@ -14,7 +14,7 @@
 #include "settings/settings.h"
 
 #ifdef __cplusplus
-#extern "C" {
+extern "C" {
 #endif
 
 #define SETTINGS_TEST_NVS_VAL_STR_CNT   64
