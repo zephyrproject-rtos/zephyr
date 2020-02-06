@@ -2038,8 +2038,11 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	/* Queue if there pending segments left from previous packets */
-	if (ch->tx_buf || !k_fifo_is_empty(&ch->tx_queue)) {
+	/* Queue if there are pending segments left from previous packet or
+	 * there are no credits available.
+	 */
+	if (ch->tx_buf || !k_fifo_is_empty(&ch->tx_queue) ||
+	    !atomic_get(&ch->tx.credits)) {
 		data_sent(buf)->len = 0;
 		net_buf_put(&ch->tx_queue, buf);
 		k_work_submit(&ch->tx_work);
