@@ -146,7 +146,7 @@ The resulting CTF output can be visualized using babeltrace or TraceCompass:
 
 - Create a new empty directory and copy into it:
 
-  - The TSDL file (``subsys/debug/tracing/ctf/tsdl/metadata``)
+  - The TSDL file (``subsys/tracing/ctf/tsdl/metadata``)
 
   - The CTF output file renaming it to ``channel0_0``
 
