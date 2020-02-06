@@ -16,23 +16,6 @@ config USE_SEGGER_RTT
 
 if USE_SEGGER_RTT
 
-config SEGGER_SYSTEMVIEW
-	bool "Segger SystemView support"
-	select CONSOLE
-	select RTT_CONSOLE
-	select THREAD_MONITOR
-	select THREAD_STACK_INFO
-	select TRACING
-
-config SEGGER_SYSTEMVIEW_BOOT_ENABLE
-	bool "Start logging SystemView events on system start"
-	depends on SEGGER_SYSTEMVIEW
-
-config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
-	int "Buffer size for SystemView RTT"
-	depends on SEGGER_SYSTEMVIEW
-	default 4096
-
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	int "Maximum number of up-buffers"
 	default 3
@@ -69,7 +52,7 @@ config SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
 endchoice
 
 config SEGGER_RTT_MODE
-	int 
+	int
 	default 2 if SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
 	default 1 if SEGGER_RTT_MODE_NO_BLOCK_TRIM
 	default 0
