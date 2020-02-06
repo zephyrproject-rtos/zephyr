@@ -707,7 +707,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	adv->rl_idx = rl_idx;
+	lll->rl_idx = rl_idx;
 #else
 	ARG_UNUSED(rl_idx);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
