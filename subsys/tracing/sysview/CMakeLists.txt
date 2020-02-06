@@ -6,4 +6,4 @@ zephyr_sources_ifdef(
   sysview.c
   )
 
-zephyr_include_directories_ifdef(CONFIG_TRACING include)
+zephyr_include_directories(.)
