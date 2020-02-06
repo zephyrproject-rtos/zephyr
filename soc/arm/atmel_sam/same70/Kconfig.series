@@ -5,6 +5,7 @@
 
 config SOC_SERIES_SAME70
 	bool "Atmel SAME70 MCU"
+	select ARM
 	select CPU_CORTEX_M7
 	select SOC_FAMILY_SAM
 	select CPU_HAS_FPU_DOUBLE_PRECISION

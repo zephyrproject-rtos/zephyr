@@ -3,7 +3,7 @@
 
 config SOC_OPENISA_RV32M1_RISCV32
 	bool "OpenISA RV32M1 RISC-V cores"
-	depends on RISCV
+	select RISCV
 	# The following select is due to limitations in the linker script.
 	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP

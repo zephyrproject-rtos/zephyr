@@ -11,50 +11,62 @@
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
-choice ARCH_CHOICE
-	prompt "Architecture"
-	default X86
+# Architecture symbols
+#
+# Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
+# by SOC_*.
 
 config ARC
-	bool "ARC architecture"
+	bool
 	select HAS_DTS
+	help
+	  ARC architecture
 
 config ARM
-	bool "ARM architecture"
+	bool
 	select HAS_DTS
+	help
+	  ARM architecture
 
 config X86
-	bool "x86 architecture"
+	bool
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
+	help
+	  x86 architecture
 
 config NIOS2
-	bool "Nios II Gen 2 architecture"
+	bool
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
+	help
+	  Nios II Gen 2 architecture
 
 config RISCV
-	bool "RISCV architecture"
+	bool
 	select HAS_DTS
+	help
+	  RISCV architecture
 
 config XTENSA
-	bool "Xtensa architecture"
+	bool
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	help
+	  Xtensa architecture
 
 config ARCH_POSIX
-	bool "POSIX (native) architecture"
+	bool
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
 	select NATIVE_APPLICATION
 	select HAS_COVERAGE_SUPPORT
-
-endchoice
-
+	help
+	  POSIX (native) architecture
 
 menu "General Architecture Options"
 

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32F1X=y
 CONFIG_SOC_STM32F103XB=y
 # 72MHz system clock

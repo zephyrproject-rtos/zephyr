@@ -5,6 +5,7 @@
 
 config SOC_SERIES_STM32F1X
 	bool "STM32F1x Series MCU"
+	select ARM
 	select CPU_CORTEX_M3
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_STM32

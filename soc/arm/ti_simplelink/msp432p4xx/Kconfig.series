@@ -5,6 +5,7 @@
 
 config SOC_SERIES_MSP432P4XX
 	bool "TI SimpleLink Family MSP432P4XX"
+	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_TISIMPLELINK

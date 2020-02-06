@@ -1,7 +1,6 @@
 # Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_SAMR21=y
 CONFIG_SOC_PART_NUMBER_SAMR21G18A=y
 CONFIG_BOARD_ATSAMR21_XPRO=y

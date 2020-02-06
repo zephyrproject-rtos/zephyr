@@ -6,6 +6,7 @@
 
 config SOC_SERIES_SAM4S
 	bool "Atmel SAM4S MCU"
+	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_SAM

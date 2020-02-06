@@ -3,5 +3,6 @@
 
 config SOC_INTEL_APL_ADSP
 	bool "intel_apl_adsp"
+	select XTENSA
 	select XTENSA_RESET_VECTOR
 	select XTENSA_USE_CORE_CRT1

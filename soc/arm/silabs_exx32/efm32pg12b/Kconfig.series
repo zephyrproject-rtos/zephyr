@@ -5,6 +5,7 @@
 
 config SOC_SERIES_EFM32PG12B
 	bool "EFM32PG12B Series MCU"
+	select ARM
 	select HAS_SILABS_GECKO
 	select HAS_SWO
 	select CPU_CORTEX_M4

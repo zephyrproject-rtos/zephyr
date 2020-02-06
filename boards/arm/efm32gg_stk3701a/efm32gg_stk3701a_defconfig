@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Oane Kingma
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_EFM32GG11B=y
 CONFIG_BOARD_EFM32GG_STK3701A=y
 CONFIG_CONSOLE=y
