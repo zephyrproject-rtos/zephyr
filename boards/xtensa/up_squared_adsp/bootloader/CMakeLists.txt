@@ -18,6 +18,7 @@ add_executable(bootloader
   ${ARCH_DIR}/${ARCH}/core/startup/memerror-vector.S
   ${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S
   boot_loader.c
+  start_address.S
   )
 
 add_dependencies(bootloader ${SYSCALL_LIST_H_TARGET})
