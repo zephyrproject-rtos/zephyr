@@ -113,11 +113,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
-		_current = new_thread;
+		_current_cpu->current = new_thread;
 		wait_for_switch(new_thread);
 		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
-
 		sys_trace_thread_switched_in();
 	}
 

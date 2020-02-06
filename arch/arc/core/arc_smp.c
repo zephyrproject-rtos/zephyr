@@ -119,7 +119,7 @@ u64_t z_arc_smp_switch_in_isr(void)
 		_current_cpu->swap_ok = 0;
 		((struct k_thread *)new_thread)->base.cpu =
 				arch_curr_cpu()->id;
-		_current = (struct k_thread *) new_thread;
+		_current_cpu->current = (struct k_thread *) new_thread;
 		ret = new_thread | ((u64_t)(old_thread) << 32);
 	}
 

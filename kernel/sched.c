@@ -720,10 +720,10 @@ void k_sched_lock(void)
 void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(_current->base.sched_locked != 0, "");
-	__ASSERT(!arch_is_in_isr(), "");
-
 	LOCKED(&sched_spinlock) {
+		__ASSERT(_current->base.sched_locked != 0, "");
+		__ASSERT(!arch_is_in_isr(), "");
+
 		++_current->base.sched_locked;
 		update_cache(0);
 	}
@@ -751,7 +751,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-	_current = new_thread;
+	_current_cpu->current = new_thread;
 }
 
 #ifdef CONFIG_USE_SWITCH
@@ -1270,7 +1270,20 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 
 k_tid_t z_impl_k_current_get(void)
 {
-	return _current;
+#ifdef CONFIG_SMP
+	/* In SMP, _current is a field read from _current_cpu, which
+	 * can race with preemption before it is read.  We must lock
+	 * local interrupts when reading it.
+	 */
+	unsigned int k = arch_irq_lock();
+#endif
+
+	k_tid_t ret = _current_cpu->current;
+
+#ifdef CONFIG_SMP
+	arch_irq_unlock(k);
+#endif
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
