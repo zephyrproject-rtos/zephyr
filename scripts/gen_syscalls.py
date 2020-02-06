@@ -255,7 +255,7 @@ def marshall_defs(func_name, func_type, args):
     else:
         mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
     mrsh += "{\n"
-    mrsh += "\t" + "_current_cpu->syscall_frame = ssf;\n"
+    mrsh += "\t" + "_current->syscall_frame = ssf;\n"
 
     for unused_arg in range(nmrsh, 6):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg

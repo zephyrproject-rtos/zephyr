@@ -597,7 +597,10 @@ struct k_thread {
 	struct _mem_domain_info mem_domain_info;
 	/** Base address of thread stack */
 	k_thread_stack_t *stack_obj;
+	/** current syscall frame pointer */
+	void *syscall_frame;
 #endif /* CONFIG_USERSPACE */
+
 
 #if defined(CONFIG_USE_SWITCH)
 	/* When using __switch() a few previously arch-specific items
