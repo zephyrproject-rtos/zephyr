@@ -29,8 +29,9 @@ application for the qemu_x86.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/settings
+   :host-os: unix
    :board: qemu_x86
-   :goals: build flash
+   :goals: run
    :compact:
 
 After running the image to the board the output on the console shows the
