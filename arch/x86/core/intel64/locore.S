@@ -206,6 +206,9 @@ z_x86_switch:
 
 	popq %rax
 	movq %rax, _thread_offset_to_rip(%rsi)
+	pushfq
+	popq %rax
+	movq %rax, _thread_offset_to_rflags(%rsi)
 	movq %rsp, _thread_offset_to_rsp(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)
