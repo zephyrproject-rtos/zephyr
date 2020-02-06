@@ -5,6 +5,7 @@
 
 config SOC_SERIES_IMX_RT
 	bool "i.MX RT Series"
+	select ARM
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_IMX

@@ -5,6 +5,7 @@
 
 config SOC_SERIES_STM32WBX
 	bool "STM32WBx Series MCU"
+	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU

@@ -1,6 +1,5 @@
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_SAME54=y
 CONFIG_SOC_PART_NUMBER_SAME54P20A=y
 CONFIG_BOARD_ATSAME54_XPRO=y

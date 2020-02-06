@@ -3,7 +3,7 @@
 
 config SOC_SERIES_MPS2
 	bool "ARM MPS2 MCU Series"
-	depends on ARM
+	select ARM
 	select SOC_FAMILY_ARM
 	select GPIO_MMIO32 if GPIO
 	help

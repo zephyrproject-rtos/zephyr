@@ -5,6 +5,7 @@
 
 config SOC_SERIES_PSOC62
 	bool "Cypress PSoC6 series MCU"
+	select ARM
 	select SOC_FAMILY_PSOC6
 	select HAS_CYPRESS_DRIVERS
 	help

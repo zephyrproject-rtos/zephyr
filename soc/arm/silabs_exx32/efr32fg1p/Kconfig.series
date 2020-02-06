@@ -5,6 +5,7 @@
 
 config SOC_SERIES_EFR32FG1P
 	bool "EFR32FG1P Series MCU"
+	select ARM
 	select HAS_SILABS_GECKO
 	select HAS_SWO
 	select CPU_CORTEX_M4

@@ -5,6 +5,7 @@
 
 config SOC_SERIES_EFM32WG
 	bool "EFM32WG Series MCU"
+	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU

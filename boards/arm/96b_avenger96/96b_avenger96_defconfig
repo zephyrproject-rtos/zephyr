@@ -1,4 +1,3 @@
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32MP1X=y
 CONFIG_SOC_STM32MP15_M4=y
 # 209 MHz system clock (mlhclk_ck)

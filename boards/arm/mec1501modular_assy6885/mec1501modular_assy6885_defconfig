@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-CONFIG_ARM=y
 CONFIG_SOC_MEC1501_HSZ=y
 CONFIG_SOC_SERIES_MEC1501X=y
 # Make sure external power management setup is as indicated in documentation

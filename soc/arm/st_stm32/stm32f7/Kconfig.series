@@ -5,6 +5,7 @@
 
 config SOC_SERIES_STM32F7X
 	bool "STM32F7x Series MCU"
+	select ARM
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
