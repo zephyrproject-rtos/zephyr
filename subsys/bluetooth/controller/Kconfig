@@ -146,6 +146,7 @@ config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on BT_LL_SW_SPLIT && SOC_OPENISA_RV32M1_RISCV32
 	select BT_HAS_HCI_VS
+	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR
 	default y
 	help
 	  Use OpenISA Lower Link Layer implementation.
