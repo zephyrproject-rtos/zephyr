@@ -335,7 +335,7 @@ def node_ident(node):
 def node_aliases(node):
     # Returns a list of aliases for 'node', used e.g. when building macro names
 
-    return node_path_aliases(node) + node_instance_aliases(node)
+    return node_path_aliases(node) + node_instance_aliases(node) + [node_ident(node)]
 
 
 def node_path_aliases(node):
@@ -707,7 +707,7 @@ def out_node(node, ident, val, name_alias=None):
     # Returns the identifier used for the macro that provides the value
     # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
-    node_prefix = node_ident(node)
+    node_prefix = "PATH_" + str2ident(node.path[1:])
 
     aliases = [f"{alias}_{ident}" for alias in node_aliases(node)]
     if name_alias is not None:
