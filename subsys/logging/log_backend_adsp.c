@@ -9,10 +9,6 @@
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
 #include <sys/ring_buffer.h>
-#include <zephyr.h>
-#include <device.h>
-#include <assert.h>
-#include <soc.h>
 
 #define BUF_SIZE 64
 
@@ -21,9 +17,10 @@ BUILD_ASSERT(CONFIG_LOG_BACKEND_ADSP_RINGBUF_SIZE % BUF_SIZE == 0);
 static struct ring_buf ringbuf;
 
 /*
- * Log message format
- * logging started with magic number 0x55aa followed by lo message id.
- * Log message ended with null terminator and takes BUF_SIZE slot
+ * Log message format:
+ * Logging started with magic number 0x55aa followed by log message id.
+ * Log message ended with null terminator and takes BUF_SIZE slot. The
+ * long log message can occupy several logging slots.
  */
 
 static void init(void)
