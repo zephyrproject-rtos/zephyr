@@ -18,6 +18,7 @@
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <sys/ring_buffer.h>
+#include <drivers/gpio.h>
 
 #ifdef __cplusplus
 extern "C" {
