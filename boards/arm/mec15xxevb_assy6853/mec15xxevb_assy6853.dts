@@ -132,3 +132,7 @@
 	chip_select = <0>;
 	lines = <1>;
 };
+
+&tach0 {
+	status = "okay";
+};
