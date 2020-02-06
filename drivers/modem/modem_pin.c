@@ -44,7 +44,8 @@ int modem_pin_config(struct modem_context *ctx, u32_t pin, bool enable)
 
 	return gpio_pin_configure(ctx->pins[pin].gpio_port_dev,
 				  ctx->pins[pin].pin,
-				  enable ? cts->pins[pin].flags : GPIO_INPUT);
+				  enable ? ctx->pins[pin].init_flags :
+					   GPIO_INPUT);
 }
 
 int modem_pin_init(struct modem_context *ctx)
