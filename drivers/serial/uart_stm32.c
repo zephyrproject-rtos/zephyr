@@ -261,7 +261,7 @@ static inline u32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
  *         LL hardware flow control define.
  * @note   Supports only LL_USART_HWCONTROL_RTS_CTS.
  * @param  fc: LL hardware frlow control definition.
- * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_PARITY_NONE.
+ * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_FLOW_CTRL_NONE.
  */
 static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(u32_t fc)
 {
@@ -269,7 +269,7 @@ static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(u32_t fc)
 		return UART_CFG_FLOW_CTRL_RTS_CTS;
 	}
 
-	return UART_CFG_PARITY_NONE;
+	return UART_CFG_FLOW_CTRL_NONE;
 }
 
 static int uart_stm32_configure(struct device *dev,
