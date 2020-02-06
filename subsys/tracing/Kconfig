@@ -126,6 +126,7 @@ config TRACING_CMD_BUFFER_SIZE
 
 config TRACING_ISR
 	bool "Enabling Tracing ISR"
+	default y
 	help
 	  Enable tracing ISR. This requires the backend to be
 	  very low-latency.
