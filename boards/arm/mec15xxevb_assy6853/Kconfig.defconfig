@@ -115,6 +115,10 @@ endif # SPI_XEC_QMSPI
 
 endif # SPI
 
+config TACH_XEC
+	default y
+	depends on SENSOR
+
 # power management stuff
 if SYS_POWER_MANAGEMENT
 

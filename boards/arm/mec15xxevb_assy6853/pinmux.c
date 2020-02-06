@@ -413,6 +413,14 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, MCHP_GPIO_060, MCHP_GPIO_CTRL_MUX_F2);
 #endif
 
+#ifdef CONFIG_TACH_XEC
+
+#if defined(DT_INST_0_MICROCHIP_XEC_TACH)
+	pinmux_pin_set(portb, MCHP_GPIO_050, MCHP_GPIO_CTRL_MUX_F1);
+#endif /* CONFIG_TACH_XEC */
+
+#endif
+
 	return 0;
 }
 
