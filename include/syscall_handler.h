@@ -259,7 +259,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_OOPS(expr) \
 	do { \
 		if (expr) { \
-			arch_syscall_oops(_current_cpu->syscall_frame); \
+			arch_syscall_oops(_current->syscall_frame); \
 		} \
 	} while (false)
 
