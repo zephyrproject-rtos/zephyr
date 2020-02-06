@@ -3371,9 +3371,6 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->phy_pref_rx = conn->llcp_phy.rx;
 		conn->phy_pref_flags = conn->llcp_phy.flags;
 
-		/* pause data packet tx */
-		conn->llcp_phy.pause_tx = 1U;
-
 		/* place the phy req packet as next in tx queue */
 		pdu_ctrl_tx = (void *)tx->pdu;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -4724,9 +4721,6 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp_phy.tx &= p->rx_phys;
 	conn->llcp_phy.rx &= p->tx_phys;
 
-	/* pause data packet tx */
-	conn->llcp_phy.pause_tx = 1U;
-
 	pdu_ctrl_tx = (void *)tx->pdu;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, phy_rsp) +
@@ -4856,7 +4850,7 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 		if (!conn->lll.role) {
 			break;
 		}
-		/* Pass Through */
+		/* fallthrough */
 
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
@@ -4864,8 +4858,15 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 		/* pause data packet tx */
 		conn->llcp_enc.pause_tx = 1U;
 		break;
-
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		/* pause data packet tx */
+		conn->llcp_phy.pause_tx = 1U;
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	default:
 		/* Do nothing for other ctrl packet ack */
