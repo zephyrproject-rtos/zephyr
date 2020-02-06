@@ -22,6 +22,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
   include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
   if("${ARCH}" STREQUAL "arm")
+    set(LIBC_INCLUDE_DIR "${ZEPHYR_SDK_INSTALL_DIR}/${triple}/${triple}/include/")
+
     list(APPEND TOOLCHAIN_C_FLAGS
       -fshort-enums
       )
@@ -60,7 +62,13 @@ if(NOT "${ARCH}" STREQUAL "posix")
 
   assert_exists(LIBGCC_DIR)
 
-  list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+  if ("${ARCH}" STREQUAL "x86")
+    get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+
+    assert_exists(LIBGCC_DIR)
+
+    list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+  endif()
   list(APPEND TOOLCHAIN_LIBS gcc)
 
   set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)

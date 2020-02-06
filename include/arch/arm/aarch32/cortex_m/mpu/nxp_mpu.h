@@ -259,6 +259,13 @@ extern const struct nxp_mpu_config mpu_config;
 
 #endif /* _ASMLANGUAGE */
 
+#if defined(__clang__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG((size > 0) && \
+		((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0), \
+		" the size of the partition must align " \
+		"with the minimum MPU region size.")
+#else /* __clang__ */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG((size) % \
 		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 && \
@@ -269,5 +276,6 @@ extern const struct nxp_mpu_config mpu_config;
 		" and greater than or equal to minimum MPU region size." \
 		"start address of the partition must align with minimum MPU \
 		 region size.")
+#endif /* __clang__ */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_NXP_MPU_H_ */

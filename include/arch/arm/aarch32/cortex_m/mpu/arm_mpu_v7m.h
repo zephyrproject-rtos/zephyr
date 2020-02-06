@@ -264,6 +264,13 @@ typedef struct {
 
 #endif /* _ASMLANGUAGE */
 
+#if defined(__clang__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG((size > 0) && \
+		((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0), \
+		" the size of the partition must align " \
+		"with the minimum MPU region size.")
+#else /* __clang */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && \
 		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
@@ -271,3 +278,4 @@ typedef struct {
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to the minimum MPU region size." \
 		"start address of the partition must align with size.")
+#endif /* __clang */
