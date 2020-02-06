@@ -92,6 +92,11 @@ static inline int get_cpu(void)
 
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
+	/* We can't allow this code to be preempted, but don't need to
+	 * synchronize between CPUs, so an arch-layer lock is
+	 * appropriate.
+	 */
+	unsigned int key = arch_irq_lock();
 	struct k_thread *thread = k_current_get();
 
 	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
@@ -160,5 +165,6 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 #endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 	}
 
+	arch_irq_unlock(key);
 	k_thread_abort(thread);
 }
