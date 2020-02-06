@@ -13,7 +13,7 @@
 
 #define MANIFEST_BASE	IMR_BOOT_LDR_MANIFEST_BASE
 
-extern void _ResetVector(void);
+extern void __start(void);
 
 static inline void idelay(int n)
 {
@@ -162,5 +162,5 @@ void boot_master_core(void)
 
 	/* now call SOF entry */
 	/* platform_trace_point(TRACE_BOOT_LDR_JUMP); */
-	_ResetVector();
+	__start();
 }
