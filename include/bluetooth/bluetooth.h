@@ -204,6 +204,28 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  */
 int bt_id_delete(u8_t id);
 
+/** @typedef bt_le_rpa_cb_t
+ *  @brief Callback type for reporting RPA changes.
+ *
+ *  A function of this type can be registered using the
+ *  bt_le_rpa_cb_register() function and will be called any time the
+ *  local random private address is updated.
+ *
+ *  @param addr Updated random private address.
+ */
+typedef void bt_le_rpa_cb_t(const bt_addr_t *addr);
+
+/** @brief Register RPA update callback.
+ *
+ *  Adds a callback to monitor RPA changes.
+ *
+ *  This callback will be called when the random private address is
+ *  modified.
+ *
+ *  @param cb Callback struct. Must point to static memory.
+ */
+void bt_le_rpa_cb_register(bt_le_rpa_cb_t *cb);
+
 /* Advertising API */
 
 /** Description of different data types that can be encoded into

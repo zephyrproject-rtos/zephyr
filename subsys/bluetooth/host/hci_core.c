@@ -81,6 +81,8 @@ struct bt_dev bt_dev = {
 
 static bt_ready_cb_t ready_cb;
 
+static bt_le_rpa_cb_t *rpa_change_cb;
+
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -511,6 +513,11 @@ int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr)
 	return 0;
 }
 
+void bt_le_rpa_cb_register(bt_le_rpa_cb_t *cb)
+{
+	rpa_change_cb = cb;
+}
+
 #if defined(CONFIG_BT_PRIVACY)
 /* this function sets new RPA only if current one is no longer valid */
 static int le_set_private_addr(u8_t id)
@@ -529,6 +536,11 @@ static int le_set_private_addr(u8_t id)
 		if (!err) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 		}
+	}
+
+	/* run callback to notify of rpa change */
+	if (rpa_change_cb) {
+		rpa_change_cb(&rpa);
 	}
 
 	/* restart timer even if failed to set new RPA */
