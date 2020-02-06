@@ -16,6 +16,11 @@ config TRACING
 
 if TRACING
 
+config TRACING_CORE
+	bool
+	help
+	  Automatically selected by formats that require the core
+	  tracing infrastructure.
 
 choice
 	prompt "Tracing Format"
@@ -32,18 +37,15 @@ config SEGGER_SYSTEMVIEW
 	select RTT_CONSOLE
 	select USE_SEGGER_RTT
 
-config TRACING_SYSTEMVIEW
-	bool "Tracing via SEGGER Systemview support"
-	help
-	  Enable tracing using SEGGER Systemview.
-
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"
+	select TRACING_CORE
 	help
 	  Enable tracing to a Common Trace Format stream.
 
 config TRACING_CPU_STATS
 	bool "Enable CPU usage tracing"
+	select TRACING_CORE
 	help
 	  Module provides information about percent of CPU usage based on
 	  tracing hooks for threads switching in and out, interrupts enters
@@ -53,6 +55,7 @@ config TRACING_CPU_STATS
 
 config TRACING_TEST
 	bool "Tracing for test usage"
+	select TRACING_CORE
 	help
 	  Enable tracing for testing kinds of format purpose. It must
 	  implement the tracing hooks defined in tracing_test.h
