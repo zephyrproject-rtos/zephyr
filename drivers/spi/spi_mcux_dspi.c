@@ -29,7 +29,7 @@ struct spi_mcux_data {
 	size_t transfer_len;
 };
 
-static void spi_mcux_transfer_next_packet(struct device *dev)
+static int spi_mcux_transfer_next_packet(struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
@@ -42,7 +42,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, 0);
-		return;
+		return 0;
 	}
 
 	transfer.configFlags = kDSPI_MasterCtar0 | kDSPI_MasterPcsContinuous |
@@ -93,6 +93,9 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start");
 	}
+
+	return status == kStatus_Success ? 0 :
+	       status == kDSPI_Busy ? -EBUSY : -EINVAL;
 }
 
 static void spi_mcux_isr(void *arg)
@@ -209,7 +212,10 @@ static int transceive(struct device *dev,
 
 	spi_context_cs_control(&data->ctx, true);
 
-	spi_mcux_transfer_next_packet(dev);
+	ret = spi_mcux_transfer_next_packet(dev);
+	if (ret) {
+		goto out;
+	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 out:
