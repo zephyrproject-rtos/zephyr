@@ -257,10 +257,10 @@ static inline u32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 }
 
 /**
- * @brief  Get Zephyr hardware frlow control option from
+ * @brief  Get Zephyr hardware flow control option from
  *         LL hardware flow control define.
  * @note   Supports only LL_USART_HWCONTROL_RTS_CTS.
- * @param  fc: LL hardware frlow control definition.
+ * @param  fc: LL hardware flow control definition.
  * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_FLOW_CTRL_NONE.
  */
 static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(u32_t fc)
