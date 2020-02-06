@@ -438,7 +438,7 @@ endif # BT_CONN
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_EXT) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
@@ -448,7 +448,6 @@ config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions"
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
-	select BT_CTLR_CHAN_SEL_2
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
@@ -463,6 +462,7 @@ config BT_CTLR_ADV_SET
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising"
 	depends on BT_CTLR_ADV_EXT
+	select BT_CTLR_CHAN_SEL_2
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.

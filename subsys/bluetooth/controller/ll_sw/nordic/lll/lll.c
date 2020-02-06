@@ -56,6 +56,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
 		   struct lll_prepare_param *prepare_param, u8_t is_resume);
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
+static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void ticker_start_op_cb(u32_t status, void *param);
@@ -305,6 +306,12 @@ bool lll_is_done(void *param)
 	return !event.curr.abort_cb;
 }
 
+int lll_is_abort_cb(void *next, int prio, void *curr,
+			 lll_prepare_cb_t *resume_cb, int *resume_prio)
+{
+	return -ECANCELED;
+}
+
 u32_t lll_evt_offset_get(struct evt_hdr *evt)
 {
 	if (0) {
@@ -389,6 +396,71 @@ s8_t lll_radio_tx_pwr_max_get(void)
 s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl)
 {
 	return radio_tx_power_floor(tx_pwr_lvl);
+}
+
+void lll_isr_tx_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
+void lll_isr_rx_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
+void lll_isr_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
+inline void lll_isr_abort(void *param)
+{
+	lll_isr_status_reset();
+	lll_isr_cleanup(param);
+}
+
+void lll_isr_done(void *param)
+{
+	lll_isr_abort(param);
+}
+
+void lll_isr_cleanup(void *param)
+{
+	int err;
+
+	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
+	radio_tmr_stop();
+
+	err = lll_hfclock_off();
+	LL_ASSERT(!err || err == -EBUSY);
+
+	lll_done(NULL);
 }
 
 static int init_reset(void)
@@ -492,6 +564,12 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
 
 	return ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
 				   &prepare_param, resume_cb, resume_prio, 1);
+}
+
+static void isr_race(void *param)
+{
+	/* NOTE: lll_disable could have a race with ... */
+	radio_status_reset();
 }
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)

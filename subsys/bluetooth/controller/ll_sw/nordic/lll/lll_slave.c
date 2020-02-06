@@ -243,7 +243,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* check if preempt to start has changed */
 	if (lll_preempt_calc(evt, (TICKER_ID_CONN_BASE + lll->handle),
 			     ticks_at_event)) {
-		radio_isr_set(lll_conn_isr_abort, lll);
+		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */

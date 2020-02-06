@@ -15,12 +15,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CONN)
 static u8_t chan_sel_remap(u8_t *chan_map, u8_t chan_index);
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 static u16_t chan_prn(u16_t counter, u16_t chan_id);
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
-#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN)
 u8_t lll_chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
@@ -43,6 +41,7 @@ u8_t lll_chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
 
 	return chan_next;
 }
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 u8_t lll_chan_sel_2(u16_t counter, u16_t chan_id, u8_t *chan_map,
@@ -168,4 +167,3 @@ static u16_t chan_prn(u16_t counter, u16_t chan_id)
 	return prn_e;
 }
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
-#endif /* CONFIG_BT_CONN */
