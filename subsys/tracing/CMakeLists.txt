@@ -1,12 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources_ifdef(
-  CONFIG_SEGGER_SYSTEMVIEW
-  sysview_config.c
-  sysview.c
-  )
-
-zephyr_sources_ifdef(
   CONFIG_TRACING_CPU_STATS
   cpu_stats.c
   )
@@ -52,3 +46,5 @@ zephyr_include_directories_ifdef(
 zephyr_include_directories_ifdef(CONFIG_TRACING include)
 
 add_subdirectory_ifdef(CONFIG_TRACING_CTF ctf)
+
+add_subdirectory_ifdef(CONFIG_SEGGER_SYSTEMVIEW sysview)
