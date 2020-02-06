@@ -4,7 +4,7 @@
  */
 
 #include <zephyr.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <arch/cpu.h>
 
 void arch_cpu_idle(void)

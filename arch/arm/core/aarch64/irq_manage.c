@@ -12,7 +12,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <device.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <irq.h>
 #include <irq_nextlevel.h>
 #include <toolchain.h>

@@ -11,7 +11,7 @@ your application and allows enabled backends to visualize the inner-working of
 the kernel and various subsystems.
 
 Applications and tracing tools can create a backend that redefines the
-macros declared in :zephyr_file:`include/debug/tracing.h` that are called
+macros declared in :zephyr_file:`include/tracing/tracing.h` that are called
 across the kernel in key spots.
 
 .. doxygengroup:: tracing_apis

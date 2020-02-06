@@ -9,7 +9,7 @@
 #include <irq.h>
 #include <arch/cpu.h>
 
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 
 static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {

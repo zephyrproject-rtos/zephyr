@@ -18,7 +18,7 @@
 #include <sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
