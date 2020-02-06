@@ -54,39 +54,41 @@ K_THREAD_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 
 struct k_thread gsm_rx_thread;
 
-static void gsm_rx(void)
+static void gsm_rx(struct gsm_modem *gsm)
 {
 	int bytes, r;
 
 	LOG_DBG("starting");
 
 	while (true) {
-		k_sem_take(&gsm.gsm_data.rx_sem, K_FOREVER);
+		k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
 
-		if (gsm.setup_done == false) {
-			gsm.context.cmd_handler.process(&gsm.context.cmd_handler,
-							&gsm.context.iface);
+		if (gsm->setup_done == false) {
+			gsm->context.cmd_handler.process(
+						&gsm->context.cmd_handler,
+						&gsm->context.iface);
 			continue;
 		}
 
-		if (gsm.ppp_recv_cb == NULL || gsm.ppp_recv_buf == NULL ||
-		    gsm.ppp_recv_buf_len == 0) {
+		if (gsm->ppp_recv_cb == NULL || gsm->ppp_recv_buf == NULL ||
+		    gsm->ppp_recv_buf_len == 0) {
 			return;
 		}
 
-		r = gsm.context.iface.read(&gsm.context.iface,
-					   &gsm.ppp_recv_buf[recv_buf_offset],
-					   gsm.ppp_recv_buf_len -
-					   recv_buf_offset,
-					   &bytes);
+		r = gsm->context.iface.read(
+					&gsm->context.iface,
+					&gsm->ppp_recv_buf[recv_buf_offset],
+					gsm->ppp_recv_buf_len -
+					recv_buf_offset,
+					&bytes);
 		if (r < 0 || bytes == 0) {
 			continue;
 		}
 
 		recv_buf_offset += bytes;
 
-		gsm.ppp_recv_buf = gsm.ppp_recv_cb(gsm.ppp_recv_buf,
-						   &recv_buf_offset);
+		gsm->ppp_recv_buf = gsm->ppp_recv_cb(gsm->ppp_recv_buf,
+						     &recv_buf_offset);
 	}
 }
 
@@ -248,24 +250,25 @@ static void gsm_configure(struct k_work *work)
 
 int gsm_init(struct device *device)
 {
+	struct gsm_modem *gsm = device->driver_data;
 	int r;
 
 	LOG_DBG("Generic GSM modem");
 
-	k_sem_init(&gsm.ppp_send_sem, 0, 1);
+	k_sem_init(&gsm->ppp_send_sem, 0, 1);
 
-	gsm.cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	gsm.cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	gsm.cmd_handler_data.read_buf = &gsm.cmd_read_buf[0];
-	gsm.cmd_handler_data.read_buf_len = sizeof(gsm.cmd_read_buf);
-	gsm.cmd_handler_data.match_buf = &gsm.cmd_match_buf[0];
-	gsm.cmd_handler_data.match_buf_len = sizeof(gsm.cmd_match_buf);
-	gsm.cmd_handler_data.buf_pool = &gsm_recv_pool;
+	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
+	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
+	gsm->cmd_handler_data.read_buf = &gsm->cmd_read_buf[0];
+	gsm->cmd_handler_data.read_buf_len = sizeof(gsm->cmd_read_buf);
+	gsm->cmd_handler_data.match_buf = &gsm->cmd_match_buf[0];
+	gsm->cmd_handler_data.match_buf_len = sizeof(gsm->cmd_match_buf);
+	gsm->cmd_handler_data.buf_pool = &gsm_recv_pool;
 
-	k_sem_init(&gsm.sem_response, 0, 1);
+	k_sem_init(&gsm->sem_response, 0, 1);
 
-	r = modem_cmd_handler_init(&gsm.context.cmd_handler,
-				   &gsm.cmd_handler_data);
+	r = modem_cmd_handler_init(&gsm->context.cmd_handler,
+				   &gsm->cmd_handler_data);
 	if (r < 0) {
 		LOG_DBG("cmd handler error %d", r);
 		return r;
@@ -273,25 +276,25 @@ int gsm_init(struct device *device)
 
 #if defined(CONFIG_MODEM_SHELL)
 	/* modem information storage */
-	gsm.context.data_manufacturer = minfo.mdm_manufacturer;
-	gsm.context.data_model = minfo.mdm_model;
-	gsm.context.data_revision = minfo.mdm_revision;
-	gsm.context.data_imei = minfo.mdm_imei;
+	gsm->context.data_manufacturer = minfo.mdm_manufacturer;
+	gsm->context.data_model = minfo.mdm_model;
+	gsm->context.data_revision = minfo.mdm_revision;
+	gsm->context.data_imei = minfo.mdm_imei;
 #endif
 
-	gsm.gsm_data.isr_buf = &gsm.gsm_isr_buf[0];
-	gsm.gsm_data.isr_buf_len = sizeof(gsm.gsm_isr_buf);
-	gsm.gsm_data.rx_rb_buf = &gsm.gsm_rx_rb_buf[0];
-	gsm.gsm_data.rx_rb_buf_len = sizeof(gsm.gsm_rx_rb_buf);
+	gsm->gsm_data.isr_buf = &gsm->gsm_isr_buf[0];
+	gsm->gsm_data.isr_buf_len = sizeof(gsm->gsm_isr_buf);
+	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
+	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
 
-	r = modem_iface_uart_init(&gsm.context.iface,
-				  &gsm.gsm_data, CONFIG_MODEM_GSM_UART_NAME);
+	r = modem_iface_uart_init(&gsm->context.iface,
+				  &gsm->gsm_data, CONFIG_MODEM_GSM_UART_NAME);
 	if (r < 0) {
 		LOG_DBG("iface uart error %d", r);
 		return r;
 	}
 
-	r = modem_context_register(&gsm.context);
+	r = modem_context_register(&gsm->context);
 	if (r < 0) {
 		LOG_DBG("context error %d", r);
 		return r;
@@ -300,14 +303,14 @@ int gsm_init(struct device *device)
 	k_thread_create(&gsm_rx_thread, gsm_rx_stack,
 			K_THREAD_STACK_SIZEOF(gsm_rx_stack),
 			(k_thread_entry_t) gsm_rx,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	k_delayed_work_init(&gsm.gsm_configure_work, gsm_configure);
+	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 
-	(void)k_delayed_work_submit(&gsm.gsm_configure_work, 0);
+	(void)k_delayed_work_submit(&gsm->gsm_configure_work, 0);
 
 	LOG_DBG("iface->read %p iface->write %p",
-		gsm.context.iface.read, gsm.context.iface.write);
+		gsm->context.iface.read, gsm->context.iface.write);
 	return 0;
 }
 
@@ -329,5 +332,5 @@ void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb)
 	gsm.ppp_recv_cb = cb;
 }
 
-DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, NULL, NULL, POST_KERNEL,
+DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, &gsm, NULL, POST_KERNEL,
 	    CONFIG_MODEM_GSM_INIT_PRIORITY);
