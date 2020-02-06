@@ -202,14 +202,7 @@ void timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	__asm__ __volatile__ (
-		"pushl %eax\n\t"
-		"pushl %edx\n\t"
-		"rdtsc\n\t"
-		"mov %eax, arch_timing_tick_start\n\t"
-		"mov %edx, arch_timing_tick_start+4\n\t"
-		"pop %edx\n\t"
-		"pop %eax\n\t");
+	arch_timing_tick_start = z_tsc_read();
 #endif
 	ARG_UNUSED(unused);
 
@@ -289,14 +282,7 @@ void timer_int_handler(void *unused /* parameter is not used */
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	__asm__ __volatile__ (
-		"pushl %eax\n\t"
-		"pushl %edx\n\t"
-		"rdtsc\n\t"
-		"mov %eax, arch_timing_tick_end\n\t"
-		"mov %edx, arch_timing_tick_end+4\n\t"
-		"pop %edx\n\t"
-		"pop %eax\n\t");
+	arch_timing_tick_end = z_tsc_read();
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 }
 
