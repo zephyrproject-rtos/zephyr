@@ -1,4 +1,6 @@
 OUTPUT_ARCH(xtensa)
+PROVIDE(__memctl_default = 0x00000000);
+PROVIDE(_MemErrorHandler = 0x00000000);
 MEMORY
 {
   boot_entry_text :
