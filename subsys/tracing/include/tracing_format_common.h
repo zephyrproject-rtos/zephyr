@@ -9,7 +9,7 @@
 
 #include <stdarg.h>
 #include <sys/printk.h>
-#include <debug/tracing_format.h>
+#include <tracing/tracing_format.h>
 
 #ifdef __cplusplus
 extern "C" {

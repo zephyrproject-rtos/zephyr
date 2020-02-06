@@ -27,7 +27,7 @@
 #include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 
 extern void z_arm_reserved(void);
 

@@ -31,7 +31,7 @@
 #include <kswap.h>
 #include <drivers/entropy.h>
 #include <logging/log_ctrl.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <stdbool.h>
 #include <debug/gcov.h>
 

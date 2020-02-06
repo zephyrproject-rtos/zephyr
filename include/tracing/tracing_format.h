@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_TRACE_FORMAT_H
-#define ZEPHYR_INCLUDE_TRACE_FORMAT_H
+#ifndef ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
+#define ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
 
 #include <toolchain/common.h>
 

@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <tracing_test.h>
-#include <debug/tracing_format.h>
+#include <tracing/tracing_format.h>
 
 void sys_trace_thread_switched_out(void)
 {

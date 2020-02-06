@@ -23,7 +23,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <init.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <string.h>
 #include <stdbool.h>
 #include <irq_offload.h>

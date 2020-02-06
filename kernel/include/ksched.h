@@ -10,7 +10,7 @@
 #include <kernel_structs.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <stdbool.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO

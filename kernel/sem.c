@@ -27,7 +27,7 @@
 #include <ksched.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <sys/check.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
