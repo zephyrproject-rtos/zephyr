@@ -14,6 +14,7 @@
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
+#include "util/util.h"
 #include "util/memq.h"
 
 #include "pdu.h"
@@ -22,19 +23,22 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_adv.h"
 #include "lll_adv_sync.h"
 
 #include "lll_internal.h"
+#include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_master
+#define LOG_MODULE_NAME bt_ctlr_lll_adv_sync
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 
 int lll_adv_sync_init(void)
 {
@@ -68,8 +72,7 @@ void lll_adv_sync_prepare(void *param)
 	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
-	err = lll_prepare(lll_conn_is_abort_cb, lll_conn_abort_cb, prepare_cb,
-			  0, p);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -82,12 +85,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv_sync *lll = prepare_param->param;
 	uint32_t ticks_at_event, ticks_at_start;
+	struct pdu_adv *pdu;
 	struct evt_hdr *evt;
 	uint16_t event_counter;
 	uint32_t remainder_us;
 	uint8_t data_chan_use;
 	uint32_t remainder;
 	uint16_t lazy;
+	uint8_t upd;
 
 	DEBUG_RADIO_START_A(1);
 
@@ -102,11 +107,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	/* store the next event counter value */
 	lll->event_counter = event_counter + 1;
-
 	/* TODO: Do the above in ULL ?  */
-
-	/* Reset connection event global variables */
-	lll_conn_prepare_reset();
 
 	/* TODO: can we do something in ULL? */
 	lll->latency_event = lll->latency_prepare;
@@ -132,18 +133,12 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 			     ((uint32_t)lll->crc_init[0])));
 	lll_chan_set(data_chan_use);
 
-	/* setup the radio tx packet buffer */
-	lll_conn_tx_pkt_set(lll, pdu_data_tx);
+	pdu = lll_adv_sync_data_latest_get(lll, &upd);
+	radio_pkt_tx_set(pdu);
 
-	radio_isr_set(lll_conn_isr_tx, lll);
-
-	radio_tmr_tifs_set(EVENT_IFS_US);
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_rx(lll->phy_rx);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_rx(0);
-#endif /* !CONFIG_BT_CTLR_PHY */
+	/* TODO: chaining */
+	radio_isr_set(lll_isr_done, lll);
+	radio_switch_complete_and_disable();
 
 	ticks_at_event = prepare_param->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
@@ -154,9 +149,6 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	remainder = prepare_param->remainder;
 	remainder_us = radio_tmr_start(1, ticks_at_start, remainder);
-
-	/* capture end of Tx-ed PDU, used to calculate HCTO. */
-	radio_tmr_end_capture();
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	radio_gpio_pa_setup();
@@ -178,9 +170,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_CONN_BASE + lll->handle),
+	if (lll_preempt_calc(evt, (TICKER_ID_ADV_SYNC_BASE +
+				   ull_adv_sync_lll_handle_get(lll)),
 			     ticks_at_event)) {
-		radio_isr_set(lll_conn_isr_abort, lll);
+		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -191,7 +184,31 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		LL_ASSERT(!ret);
 	}
 
-	DEBUG_RADIO_START_M(1);
+	DEBUG_RADIO_START_A(1);
 
 	return 0;
+}
+
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
+{
+	int err;
+
+	/* NOTE: This is not a prepare being cancelled */
+	if (!prepare_param) {
+		/* Perform event abort here.
+		 * After event has been cleanly aborted, clean up resources
+		 * and dispatch event done.
+		 */
+		radio_isr_set(lll_isr_done, param);
+		radio_disable();
+		return;
+	}
+
+	/* NOTE: Else clean the top half preparations of the aborted event
+	 * currently in preparation pipeline.
+	 */
+	err = lll_hfclock_off();
+	LL_ASSERT(!err || err == -EBUSY);
+
+	lll_done(param);
 }

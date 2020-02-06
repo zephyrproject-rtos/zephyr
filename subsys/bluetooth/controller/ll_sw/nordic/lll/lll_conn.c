@@ -37,8 +37,6 @@
 
 static int init_reset(void);
 static void isr_done(void *param);
-static void isr_cleanup(void *param);
-static void isr_race(void *param);
 static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		      struct node_tx **tx_release, uint8_t *is_rx_enqueue);
 static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll);
@@ -102,12 +100,6 @@ void lll_conn_prepare_reset(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 }
 
-int lll_conn_is_abort_cb(void *next, int prio, void *curr,
-			 lll_prepare_cb_t *resume_cb, int *resume_prio)
-{
-	return -ECANCELED;
-}
-
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
 	int err;
@@ -161,16 +153,10 @@ void lll_conn_isr_rx(void *param)
 		crc_ok = rssi_ready = 0U;
 	}
 
-	/* Clear radio status and events */
-	radio_status_reset();
-	radio_tmr_status_reset();
-	radio_rssi_status_reset();
+	/* Clear radio rx status and events */
+	lll_isr_rx_status_reset();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
-
+	/* No Rx */
 	if (!trx_done) {
 		radio_isr_set(isr_done, param);
 		radio_disable();
@@ -367,16 +353,8 @@ void lll_conn_isr_tx(void *param)
 	struct lll_conn *lll = (void *)param;
 	uint32_t hcto;
 
-	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
-	/* Clear radio status and events */
-	radio_status_reset();
-	radio_tmr_status_reset();
-
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
-	/* TODO: MOVE ^^ */
+	/* Clear radio tx status and events */
+	lll_isr_tx_status_reset();
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -434,23 +412,6 @@ void lll_conn_isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	radio_isr_set(lll_conn_isr_rx, param);
-}
-
-void lll_conn_isr_abort(void *param)
-{
-	/* Clear radio status and events */
-	radio_status_reset();
-	radio_tmr_status_reset();
-	radio_filter_status_reset();
-	radio_ar_status_reset();
-	radio_rssi_status_reset();
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
-		radio_gpio_pa_lna_disable();
-	}
-
-	isr_cleanup(param);
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
@@ -595,19 +556,7 @@ static void isr_done(void *param)
 {
 	struct event_done_extra *e;
 
-	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
-	/* Clear radio status and events */
-	radio_status_reset();
-	radio_tmr_status_reset();
-	radio_filter_status_reset();
-	radio_ar_status_reset();
-	radio_rssi_status_reset();
-
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
-	/* TODO: MOVE ^^ */
+	lll_isr_status_reset();
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
@@ -648,30 +597,7 @@ static void isr_done(void *param)
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-	isr_cleanup(param);
-}
-
-static void isr_cleanup(void *param)
-{
-	int err;
-
-	radio_isr_set(isr_race, param);
-	if (!radio_is_idle()) {
-		radio_disable();
-	}
-
-	radio_tmr_stop();
-
-	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
-
-	lll_done(NULL);
-}
-
-static void isr_race(void *param)
-{
-	/* NOTE: lll_disable could have a race with ... */
-	radio_status_reset();
+	lll_isr_cleanup(param);
 }
 
 static inline bool ctrl_pdu_len_check(uint8_t len)

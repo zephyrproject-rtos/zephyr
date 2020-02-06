@@ -1049,9 +1049,11 @@ int ull_adv_init(void)
 {
 	int err;
 
-	err = ull_adv_sync_init();
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+		err = ull_adv_sync_init();
+		if (err) {
+			return err;
+		}
 	}
 
 	err = init_reset();
@@ -1067,9 +1069,11 @@ int ull_adv_reset(void)
 	uint8_t handle;
 	int err;
 
-	err = ull_adv_sync_reset();
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+		err = ull_adv_sync_reset();
+		if (err) {
+			return err;
+		}
 	}
 
 	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {

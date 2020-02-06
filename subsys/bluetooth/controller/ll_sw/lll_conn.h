@@ -127,12 +127,9 @@ uint8_t lll_conn_sca_local_get(void);
 uint32_t lll_conn_ppm_local_get(void);
 uint32_t lll_conn_ppm_get(uint8_t sca);
 void lll_conn_prepare_reset(void);
-int lll_conn_is_abort_cb(void *next, int prio, void *curr,
-			 lll_prepare_cb_t *resume_cb, int *resume_prio);
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 void lll_conn_isr_rx(void *param);
 void lll_conn_isr_tx(void *param);
-void lll_conn_isr_abort(void *param);
 void lll_conn_rx_pkt_set(struct lll_conn *lll);
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);

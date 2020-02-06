@@ -19,6 +19,14 @@ struct lll_adv_sync {
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
 
+	uint16_t latency_prepare;
+	uint16_t latency_event;
+	uint16_t event_counter;
+
+	uint8_t data_chan_map[5];
+	uint8_t data_chan_count:6;
+	uint16_t data_chan_id;
+
 	struct lll_adv_pdu data;
 };
 
