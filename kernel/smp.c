@@ -111,4 +111,13 @@ void z_smp_init(void)
 	(void)atomic_set(&start_flag, 1);
 }
 
+bool z_smp_cpu_mobile(void)
+{
+	unsigned int k = arch_irq_lock();
+	bool pinned = arch_is_in_isr() || !arch_irq_unlocked(k);
+
+	arch_irq_unlock(k);
+	return !pinned;
+}
+
 #endif /* CONFIG_SMP */

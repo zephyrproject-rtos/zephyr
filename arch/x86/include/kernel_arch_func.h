@@ -19,7 +19,17 @@
 static inline bool arch_is_in_isr(void)
 {
 #ifdef CONFIG_SMP
-	return arch_curr_cpu()->nested != 0;
+	/* On SMP, there is a race vs. the current CPU changing if we
+	 * are preempted.  Need to mask interrupts while inspecting
+	 * (note deliberate lack of gcc size suffix on the
+	 * instructions, we need to work with both architectures here)
+	 */
+	bool ret;
+
+	__asm__ volatile ("pushf; cli");
+	ret = arch_curr_cpu()->nested != 0;
+	__asm__ volatile ("popf");
+	return ret;
 #else
 	return _kernel.nested != 0U;
 #endif

@@ -512,7 +512,7 @@ FUNC_NORETURN void z_cstart(void)
 # endif
 	};
 
-	_current = &dummy_thread;
+	_current_cpu->current = &dummy_thread;
 #endif
 
 #ifdef CONFIG_USERSPACE
