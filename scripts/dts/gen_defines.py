@@ -253,23 +253,69 @@ def relativize(path):
 def write_regs(node):
     # Writes address/size output for the registers in the node's 'reg' property
 
-    def write_reg(reg, base_ident, val):
-        # Drop '_0' from the identifier if there's a single register, for
-        # backwards compatibility
-        if len(reg.node.regs) > 1:
-            ident = f"{base_ident}_{reg.node.regs.index(reg)}"
+    if not node.regs:
+        return
+
+    primary_addrs = {}
+    primary_sizes = {}
+
+    def write_regs_for_ident(ident):
+        # Write BASE_ADDRESS and SIZE macros for a given identifier
+        # 'ident'. If we have already generated primary address and
+        # size macros and saved in them in primary_addrs and
+        # primary_sizes, we just reuse those. Otherwise (i.e. the
+        # first time this is called), they are generated from the
+        # actual reg.addr and reg.size attributes, and the names of
+        # the primary macros are saved.
+
+        for reg_i, reg in enumerate(node.regs):
+            idx = f"_{reg_i}"
+            name = f"{str2ident(reg.name)}_" if reg.name else ""
+            addr = primary_addrs.get(reg_i)
+            size = primary_sizes.get(reg_i)
+
+            # Emit BASE_ADDRESS_<INDEX> and SIZE_<INDEX> macros.
+            prim_addr, prim_size = write_reg(ident, reg, addr, size, "", idx)
+            # Save the primary macro names for these if they are newly created.
+            if addr is None:
+                primary_addrs[reg_i] = addr = prim_addr
+                primary_sizes[reg_i] = size = prim_size
+            # For backwards compatibility, we also emit macros without
+            # trailing indexes if there's only one reg.
+            if len(node.regs) == 1:
+                write_reg(ident, reg, addr, size, "", "")
+            # If the reg has a name, also emit <NAME>_BASE_ADDRESS
+            # and <NAME>_SIZE macros.
+            if reg.name:
+                write_reg(ident, reg, addr, size, name, "")
+
+    def write_reg(ident, reg, addr_val, size_val, prefix, suffix):
+        if addr_val is None:
+            addr = hex(reg.addr)
         else:
-            ident = base_ident
+            addr = addr_val
+        if size_val is None:
+            size = reg.size
+        else:
+            size = size_val
 
-        out_node(node, ident, val,
-                 # Name alias from 'reg-names = ...'
-                 f"{str2ident(reg.name)}_{base_ident}" if reg.name else None)
+        addr_ret = out(f"{ident}_{prefix}BASE_ADDRESS{suffix}", addr)
+        if size:
+            size_ret = out(f"{ident}_{prefix}SIZE{suffix}", size)
+        else:
+            size_ret = None
 
-    for reg in node.regs:
-        write_reg(reg, "BASE_ADDRESS", hex(reg.addr))
-        if reg.size:
-            write_reg(reg, "SIZE", reg.size)
+        return (addr_ret, size_ret)
 
+    # The z_legacy_id macros are used to form the primary identifiers.
+    # Instance and alias macros are secondary.
+    out_comment('BASE_ADDRESS and SIZE macros from the "reg" property',
+                blank_before=False)
+    write_regs_for_ident(node.z_legacy_ident)
+    for ident in node.z_inst_idents:
+        write_regs_for_ident(ident)
+    for ident in node.z_alias_idents:
+        write_regs_for_ident(ident)
 
 def write_props(node):
     # Writes any properties defined in the "properties" section of the binding
