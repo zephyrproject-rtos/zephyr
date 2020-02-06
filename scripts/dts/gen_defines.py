@@ -60,6 +60,7 @@ def main():
             flash_area_num += 1
 
         if node.enabled and node.matching_compat:
+            augment_node(node)
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -103,6 +104,63 @@ def parse_args():
                              "as a debugging aid)")
 
     return parser.parse_args()
+
+
+def augment_node(node):
+    # Augment an EDT node with these zephyr-specific attributes, which
+    # are used to generate macros from it:
+    #
+    # - z_path_ident: a node identifer based on node.path, e.g.
+    #   a node with path /soc/foo@123 would get "PATH_SOC_FOO_123".
+    #
+    # - z_inst_idents: node identifiers based on the index of the node
+    #   within the EDT list of nodes for each compatible, e.g.:
+    #   ["INST_3_<NODE's_COMPAT>",
+    #    "INST_2_<NODE's_OTHER_COMPAT>"]
+    #
+    # - z_alias_idents: node identifiers based on any /aliases pointing to
+    #   the node in the devicetree source, e.g.:
+    #   ["DT_ALIAS_<NODE's_ALIAS_NAME>"]
+    #
+    # - z_legacy_ident: a legacy node identifier based on the node's
+    #   compatible, plus information from its unit address (or its
+    #   parent's unit address) or its name, and/or its bus. No example
+    #   given since this is a complex and questionably useful form of
+    #   generating an identifier.
+
+    # PATH_<PATH> is the primary identifier for each node, which is
+    # used to generate macros based on the node.
+    #
+    # Nodes can have other identifiers, e.g. those based on /aliases
+    # in the devicetree source, which are also used to generate
+    # macros.
+    node.z_path_ident = f"PATH_{str2ident(node.path)}"
+
+    # Add z_instances, which are used to create these macros:
+    #
+    # #define DT_INST_<N>_<COMPAT>_<DEFINE> <VAL>
+    inst_idents = []
+    for compat in node.compats:
+        instance_no = node.edt.compat2enabled[compat].index(node)
+        inst_idents.append(f"INST_{instance_no}_{str2ident(compat)}")
+    node.z_inst_idents = inst_idents
+
+    # Add z_aliases, which are used to create these macros:
+    #
+    # #define DT_ALIAS_<ALIAS>_<DEFINE> <VAL>
+    # #define DT_<COMPAT>_<ALIAS>_<DEFINE> <VAL>
+    #
+    # TODO: See if we can remove or deprecate the second form.
+    compat_s = str2ident(node.matching_compat)
+    alias_idents = []
+    for alias in node.aliases:
+        alias_ident = str2ident(alias)
+        alias_idents.append(f"ALIAS_{alias_ident}")
+        alias_idents.append(f"{compat_s}_{alias_ident}")
+    node.z_alias_idents = alias_idents
+
+    # Add the <COMPAT>_<UNIT_ADDRESS> style legacy identifier.
+    node.z_legacy_ident = node_legacy_ident(node)
 
 
 def write_top_comment(edt):
@@ -307,7 +365,7 @@ def write_existence_flags(node):
         out(f"INST_{instance_no}_{str2ident(compat)}", 1)
 
 
-def node_ident(node):
+def node_legacy_ident(node):
     # Returns an identifier for 'node'. Used e.g. when building macro names.
 
     # TODO: Handle PWM on STM
@@ -710,7 +768,7 @@ def out_node(node, ident, val, name_alias=None, deprecation_msg=None):
     # Returns the identifier used for the macro that provides the value
     # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
-    node_prefix = node_ident(node)
+    node_prefix = node_legacy_ident(node)
 
     aliases = [f"{alias}_{ident}" for alias in node_aliases(node)]
     if name_alias is not None:
