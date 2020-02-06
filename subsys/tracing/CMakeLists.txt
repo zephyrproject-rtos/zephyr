@@ -6,12 +6,12 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
-  CONFIG_TRACING
+  CONFIG_TRACING_CORE
   tracing_buffer.c
   tracing_core.c
   tracing_format_common.c
   )
-
+if(CONFIG_TRACING_CORE)
 zephyr_sources_ifdef(
   CONFIG_TRACING_SYNC
   tracing_format_sync.c
@@ -36,6 +36,7 @@ zephyr_sources_ifdef(
   CONFIG_TRACING_BACKEND_POSIX
   tracing_backend_posix.c
   )
+endif()
 
 zephyr_include_directories_ifdef(
   CONFIG_TRACING
