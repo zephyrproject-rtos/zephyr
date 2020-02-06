@@ -54,8 +54,13 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
 #elif defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.rsp),
+#else
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.esp),
+#endif
 #elif defined(CONFIG_NIOS2)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
@@ -78,8 +83,12 @@ size_t _kernel_openocd_offsets[] = {
 						    preempt_float),
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch, sse),
+#else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempFloatReg),
+#endif
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,
