@@ -123,7 +123,7 @@
 	mx25l: mx25l@0 {
 		compatible = "macronix,cmos-mx25l";
 		reg = <0>;
-		spi-max-frequency = <80000000>; /* 80MHz */
+		spi-max-frequency = <8000000>; /* 8MHz */
 		label = "CMOS MX25L";
 	};
 
@@ -131,12 +131,29 @@
 	st7789v: st7789v@1 {
 		compatible = "sitronix,st7789v";
 		reg = <1>;
-		spi-max-frequency = <28000000>; /* 28MHz */
+		spi-max-frequency = <8000000>; /* 8MHz */
 		label = "ST7789V";
-		width = <240>;
-		height = <240>;
 		cmd-data-gpios = <&gpio0 18 0>;	/* DET */
 		reset-gpios = <&gpio0 26 0>;	/* RESX reset */
+		width = <240>;
+		height = <240>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x19>;
+		gctrl = <0x35>;
+		vrhs = <0x12>;
+		vdvs = <0x20>;
+		mdac = <0x00>;
+		gamma = <0x01>;
+		colmod = <0x05>;
+		lcm = <0x2c>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+		nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
 	};
 };
 
