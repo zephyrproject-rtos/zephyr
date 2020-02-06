@@ -142,6 +142,7 @@ with this board:
 - peripheral_esp (Environmental Sensing Service)
 - peripheral_hr (Heart Rate)
 - peripheral_ht (Health Thermometer)
+- peripheral
 - scan_adv
 
 .. note::
@@ -150,8 +151,7 @@ with this board:
 
    - **no 2 Mbps PHY**
    - no 512/256 Kbps PHY
-   - **no controller-based cryptographic services (neither RPA nor LL encryption
-     or decryption)**
+   - **no LL Privacy**
    - no mesh support
    - **no power-save**
    - no TX power adjustment
