@@ -5,6 +5,7 @@
 '''Runner for openocd.'''
 
 from os import path
+from elftools.elf.elffile import ELFFile
 
 from runners.core import ZephyrBinaryRunner
 
@@ -18,7 +19,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, pre_init=None, pre_load=None,
                  load_cmd=None, verify_cmd=None, post_verify=None,
-                 tui=None, config=None, serial=None,
+                 tui=None, config=None, serial=None, use_elf=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
@@ -51,6 +52,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
         self.serial = ['-c set _ZEPHYR_BOARD_SERIAL ' + serial] if serial else []
+        self.use_elf = use_elf
 
     @classmethod
     def name(cls):
@@ -62,6 +64,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='if given, override default config file')
         parser.add_argument('--serial', default="",
                             help='if given, selects FTDI instance by its serial number, defaults to empty')
+        parser.add_argument('--use-elf', default=False, action='store_true',
+                            help='if given, Elf file will be used for loading instead of HEX image')
         # Options for flashing:
         parser.add_argument('--cmd-pre-init', action='append',
                             help='''Command to run before calling init;
@@ -96,7 +100,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init=args.cmd_pre_init,
             pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
-            tui=args.tui, config=args.config, serial=args.serial,
+            tui=args.tui, config=args.config, serial=args.serial, use_elf=args.use_elf,
             tcl_port=args.tcl_port, telnet_port=args.telnet_port,
             gdb_port=args.gdb_port)
 
@@ -107,10 +111,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.openocd_config is not None:
             self.cfg_cmd = ['-f', self.openocd_config]
 
-        if command == 'flash':
+        if command == 'flash' and self.use_elf:
+            self.do_flash_elf(**kwargs)
+        elif command == 'flash':
             self.do_flash(**kwargs)
         elif command == 'debug':
             self.do_debug(**kwargs)
+        elif command == 'load':
+            self.do_load(**kwargs)
         else:
             self.do_debugserver(**kwargs)
 
@@ -151,6 +159,29 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
+        self.check_call(cmd)
+
+    def do_flash_elf(self, **kwargs):
+        if self.elf_name is None:
+            raise ValueError('Cannot debug; no .elf specified')
+
+        # Extract entry point address from Elf to use it later with
+        # "resume" command of OpenOCD.
+        with open(self.elf_name, 'rb') as f:
+            ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
+
+        pre_init_cmd = []
+        for i in self.pre_init:
+            pre_init_cmd.append("-c")
+            pre_init_cmd.append(i)
+
+        cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
+                      pre_init_cmd + ['-c', 'init',
+                                       '-c', 'targets',
+                                       '-c', 'halt',
+                                       '-c', 'load_image ' + self.elf_name,
+                                       '-c', 'resume ' + ep_addr,
+                                       '-c', 'shutdown'])
         self.check_call(cmd)
 
     def do_debug(self, **kwargs):

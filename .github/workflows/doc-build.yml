@@ -33,6 +33,7 @@ jobs:
         pip3 install 'breathe>=4.9.1' 'docutils>=0.14' \
                      'sphinx>=1.7.5' sphinx_rtd_theme sphinx-tabs \
                      sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
+        pip3 install pyelftools
 
     - name: cache-zephyr-modules
       uses: actions/cache@v1
