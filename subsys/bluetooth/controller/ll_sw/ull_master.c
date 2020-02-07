@@ -51,7 +51,6 @@
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *params);
 static void ticker_op_cb(uint32_t status, void *params);
-static inline void access_addr_get(uint8_t access_addr[]);
 static inline void conn_release(struct ll_scan_set *scan);
 
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
@@ -65,7 +64,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
-	uint8_t access_addr[4];
 	uint8_t hop;
 	int err;
 
@@ -100,10 +98,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn_lll = &conn->lll;
 
-	access_addr_get(access_addr);
-	memcpy(conn_lll->access_addr, &access_addr,
-	       sizeof(conn_lll->access_addr));
-	util_rand(&conn_lll->crc_init[0], 3);
+	err = util_aa_to_le32(conn_lll->access_addr);
+	LL_ASSERT(!err);
+
+	util_rand(conn_lll->crc_init, sizeof(conn_lll->crc_init));
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -689,174 +687,6 @@ static void ticker_op_cb(uint32_t status, void *params)
 	ARG_UNUSED(params);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-}
-
-/** @brief Prepare access address as per BT Spec.
- *
- * - It shall have no more than six consecutive zeros or ones.
- * - It shall not be the advertising channel packets' Access Address.
- * - It shall not be a sequence that differs from the advertising channel
- *   packets Access Address by only one bit.
- * - It shall not have all four octets equal.
- * - It shall have no more than 24 transitions.
- * - It shall have a minimum of two transitions in the most significant six
- *   bits.
- *
- * LE Coded PHY requirements:
- * - It shall have at least three ones in the least significant 8 bits.
- * - It shall have no more than eleven transitions in the least significant 16
- *   bits.
- */
-static inline void access_addr_get(uint8_t access_addr[])
-{
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	uint8_t transitions_lsb16;
-	uint8_t ones_count_lsb8;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-	uint8_t consecutive_cnt;
-	uint8_t consecutive_bit;
-	uint32_t adv_aa_check;
-	uint32_t aa;
-	uint8_t transitions;
-	uint8_t bit_idx;
-	uint8_t retry;
-
-	retry = 3U;
-again:
-	LL_ASSERT(retry);
-	retry--;
-
-	util_rand(access_addr, 4);
-	aa = sys_get_le32(access_addr);
-
-	bit_idx = 31U;
-	transitions = 0U;
-	consecutive_cnt = 1U;
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	ones_count_lsb8 = 0U;
-	transitions_lsb16 = 0U;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-	consecutive_bit = (aa >> bit_idx) & 0x01;
-	while (bit_idx--) {
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		uint8_t transitions_lsb16_prev = transitions_lsb16;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		uint8_t consecutive_cnt_prev = consecutive_cnt;
-		uint8_t transitions_prev = transitions;
-		uint8_t bit;
-
-		bit = (aa >> bit_idx) & 0x01;
-		if (bit == consecutive_bit) {
-			consecutive_cnt++;
-		} else {
-			consecutive_cnt = 1U;
-			consecutive_bit = bit;
-			transitions++;
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-			if (bit_idx < 15) {
-				transitions_lsb16++;
-			}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		}
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		if ((bit_idx < 8) && consecutive_bit) {
-			ones_count_lsb8++;
-		}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
-		/* It shall have no more than six consecutive zeros or ones. */
-		/* It shall have a minimum of two transitions in the most
-		 * significant six bits.
-		 */
-		if ((consecutive_cnt > 6) ||
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		    (!consecutive_bit && (((bit_idx < 6) &&
-					   (ones_count_lsb8 < 1)) ||
-					  ((bit_idx < 5) &&
-					   (ones_count_lsb8 < 2)) ||
-					  ((bit_idx < 4) &&
-					   (ones_count_lsb8 < 3)))) ||
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		    ((consecutive_cnt < 6) &&
-		     (((bit_idx < 29) && (transitions < 1)) ||
-		      ((bit_idx < 28) && (transitions < 2))))) {
-			if (consecutive_bit) {
-				consecutive_bit = 0U;
-				aa &= ~BIT(bit_idx);
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-				if (bit_idx < 8) {
-					ones_count_lsb8--;
-				}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-			} else {
-				consecutive_bit = 1U;
-				aa |= BIT(bit_idx);
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-				if (bit_idx < 8) {
-					ones_count_lsb8++;
-				}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-			}
-
-			if (transitions != transitions_prev) {
-				consecutive_cnt = consecutive_cnt_prev;
-				transitions = transitions_prev;
-			} else {
-				consecutive_cnt = 1U;
-				transitions++;
-			}
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-			if (bit_idx < 15) {
-				if (transitions_lsb16 !=
-				    transitions_lsb16_prev) {
-					transitions_lsb16 =
-						transitions_lsb16_prev;
-				} else {
-					transitions_lsb16++;
-				}
-			}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		}
-
-		/* It shall have no more than 24 transitions
-		 * It shall have no more than eleven transitions in the least
-		 * significant 16 bits.
-		 */
-		if ((transitions > 24) ||
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		    (transitions_lsb16 > 11) ||
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		    0) {
-			if (consecutive_bit) {
-				aa &= ~(BIT(bit_idx + 1) - 1);
-			} else {
-				aa |= (BIT(bit_idx + 1) - 1);
-			}
-
-			break;
-		}
-	}
-
-	/* It shall not be the advertising channel packets Access Address.
-	 * It shall not be a sequence that differs from the advertising channel
-	 * packets Access Address by only one bit.
-	 */
-	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
-	if (util_ones_count_get((uint8_t *)&adv_aa_check,
-				sizeof(adv_aa_check)) <= 1) {
-		goto again;
-	}
-
-	/* It shall not have all four octets equal. */
-	if (!((aa & 0xFFFF) ^ (aa >> 16)) &&
-	    !((aa & 0xFF) ^ (aa >> 24))) {
-		goto again;
-	}
-
-	sys_put_le32(aa, access_addr);
 }
 
 static inline void conn_release(struct ll_scan_set *scan)
