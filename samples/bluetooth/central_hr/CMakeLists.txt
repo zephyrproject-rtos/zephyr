@@ -8,3 +8,6 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
+if (TRACK_VND)
+  add_compile_definitions(TRACK_VND)
+endif()

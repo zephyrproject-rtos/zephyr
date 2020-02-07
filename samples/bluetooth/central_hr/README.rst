@@ -9,6 +9,9 @@ Overview
 Similar to the :ref:`Central <bluetooth_central>` sample, except that this
 application specifically looks for heart-rate monitors and reports the
 heart-rate readings once connected.
+If TRACK_VND=1 is passed to cmake build system, the application looks for
+devices advertising a Vendor specific UUID128 and pair with them, if required
+by the permissions, reading the value.
 
 Requirements
 ************

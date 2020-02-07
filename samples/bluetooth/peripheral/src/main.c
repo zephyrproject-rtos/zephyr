@@ -329,6 +329,9 @@ void main(void)
 	bt_ready();
 
 	bt_conn_cb_register(&conn_callbacks);
+#if defined(CONFIG_BT_FIXED_PASSKEY)
+	bt_passkey_set(111111);
+#endif /* CONFIG_BT_FIXED_PASSKEY */
 	bt_conn_auth_cb_register(&auth_cb_display);
 
 	/* Implement notification. At the moment there is no suitable way
