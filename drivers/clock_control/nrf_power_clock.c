@@ -30,11 +30,6 @@ LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define INF(dev, subsys, ...) CLOCK_LOG(INF, dev, subsys, __VA_ARGS__)
 #define DBG(dev, subsys, ...) CLOCK_LOG(DBG, dev, subsys, __VA_ARGS__)
 
-/* returns true if clock stopping or starting can be performed. If false then
- * start/stop will be deferred and performed later on by handler owner.
- */
-typedef bool (*nrf_clock_handler_t)(struct device *dev);
-
 /* Clock subsys structure */
 struct nrf_clock_control_sub_data {
 	sys_slist_t list;	/* List of users requesting callback */
@@ -44,8 +39,6 @@ struct nrf_clock_control_sub_data {
 
 /* Clock subsys static configuration */
 struct nrf_clock_control_sub_config {
-	nrf_clock_handler_t start_handler; /* Called before start */
-	nrf_clock_handler_t stop_handler; /* Called before stop */
 	nrf_clock_event_t started_evt;	/* Clock started event */
 	nrf_clock_task_t start_tsk;	/* Clock start task */
 	nrf_clock_task_t stop_tsk;	/* Clock stop task */
@@ -161,24 +154,15 @@ static int clock_stop(struct device *dev, clock_control_subsys_t subsys)
 	}
 	data->ref--;
 	if (data->ref == 0) {
-		bool do_stop;
-
 		DBG(dev, subsys, "Stopping");
 		sys_slist_init(&data->list);
 
-		do_stop =  (config->stop_handler) ?
-				config->stop_handler(dev) : true;
-
-		if (do_stop) {
-			nrf_clock_task_trigger(NRF_CLOCK, config->stop_tsk);
-			/* It may happen that clock is being stopped when it
-			 * has just been started and start is not yet handled
-			 * (due to irq_lock). In that case after stopping the
-			 * clock, started event is cleared to prevent false
-			 * interrupt being triggered.
-			 */
-			nrf_clock_event_clear(NRF_CLOCK, config->started_evt);
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)
+			&& (subsys == CLOCK_CONTROL_NRF_SUBSYS_LF)) {
+			z_nrf_clock_calibration_lfclk_stopped();
 		}
+
+		nrf_clock_task_trigger(NRF_CLOCK, config->stop_tsk);
 
 		data->started = false;
 	}
@@ -286,31 +270,14 @@ static int clock_async_start(struct device *dev,
 	}
 
 	if (ref == 1) {
-		bool do_start;
+		DBG(dev, subsys, "Triggering start task");
 
-		do_start =  (config->start_handler) ?
-				config->start_handler(dev) : true;
-		if (do_start) {
-			DBG(dev, subsys, "Triggering start task");
-
-			if (IS_ENABLED(CONFIG_NRF52_ANOMALY_132_WORKAROUND) &&
-			    (subsys == CLOCK_CONTROL_NRF_SUBSYS_LF)) {
-				anomaly_132_workaround();
-			}
-
-			nrf_clock_task_trigger(NRF_CLOCK,
-					       config->start_tsk);
-		} else {
-			/* If external start_handler indicated that clcok is
-			 * still running (it may happen in case of LF RC clock
-			 * which was requested to be stopped during ongoing
-			 * calibration (clock will not be stopped in that case)
-			 * and requested to be started before calibration is
-			 * completed. In that case clock is still running and
-			 * we can notify enlisted requests.
-			 */
-			clkstarted_handle(dev, type);
+		if (IS_ENABLED(CONFIG_NRF52_ANOMALY_132_WORKAROUND) &&
+			(subsys == CLOCK_CONTROL_NRF_SUBSYS_LF)) {
+			anomaly_132_workaround();
 		}
+
+		nrf_clock_task_trigger(NRF_CLOCK, config->start_tsk);
 	}
 
 	return 0;
@@ -376,13 +343,6 @@ static const struct nrf_clock_control_config config = {
 			.started_evt = NRF_CLOCK_EVENT_LFCLKSTARTED,
 			.stop_tsk = NRF_CLOCK_TASK_LFCLKSTOP,
 			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
-			IF_ENABLED(
-				CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION,
-				(
-				.start_handler = z_nrf_clock_calibration_start,
-				.stop_handler = z_nrf_clock_calibration_stop,
-				)
-			)
 		}
 	}
 };
@@ -466,7 +426,7 @@ void nrf_power_clock_isr(void *arg)
 					NRF_CLOCK_INT_LF_STARTED_MASK)) {
 		if (IS_ENABLED(
 			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
-			z_nrf_clock_calibration_lfclk_started(dev);
+			z_nrf_clock_calibration_lfclk_started();
 		}
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 	}

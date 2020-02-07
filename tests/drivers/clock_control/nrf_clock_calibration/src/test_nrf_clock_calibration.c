@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019-2020, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_clock.h>
+#include <drivers/sensor.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
 
@@ -14,9 +15,18 @@ LOG_MODULE_REGISTER(test);
 #error "LFCLK must use RC source"
 #endif
 
-#if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD != 1
-#error "Expected 250ms calibration period"
-#endif
+#define CALIBRATION_PROCESS_TIME_MS 35
+
+extern void mock_temp_nrf5_value_set(struct sensor_value *val);
+
+static void turn_on_clock(struct device *dev, clock_control_subsys_t subsys)
+{
+	clock_control_on(dev, subsys);
+	while (clock_control_get_status(dev, subsys) !=
+		CLOCK_CONTROL_STATUS_ON) {
+
+	}
+}
 
 static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 {
@@ -27,255 +37,141 @@ static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 	} while (err == 0);
 }
 
-static void lfclk_started_cb(struct device *dev,
-			     clock_control_subsys_t subsys,
-			     void *user_data)
-{
-	*(bool *)user_data = true;
-}
+#define TEST_CALIBRATION(exp_cal, exp_skip, sleep_ms) \
+	test_calibration(exp_cal, exp_skip, sleep_ms, __LINE__)
 
-/* Test checks if calibration clock is running and generates interrupt as
- * expected  and starts calibration. Validates that HF clock is turned on
- * for calibration and turned off once calibration is done.
+/* Function tests if during given time expected number of calibrations and
+ * skips occurs.
  */
-static void test_clock_calibration(void)
+static void test_calibration(u32_t exp_cal, u32_t exp_skip,
+				u32_t sleep_ms, u32_t line)
 {
-	struct device *clk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
-	volatile bool started = false;
-	struct clock_control_async_data lfclk_data = {
-		.cb = lfclk_started_cb,
-		.user_data = (void *)&started
-	};
-	int key;
-	u32_t cnt = 0;
-	u32_t max_cnt = 1000;
+	int cal_cnt;
+	int skip_cnt;
 
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
+	cal_cnt = z_nrf_clock_calibration_count();
+	skip_cnt = z_nrf_clock_calibration_skips_count();
 
-	/* In case calibration needs to be completed. */
-	k_busy_wait(100000);
+	k_sleep(K_MSEC(sleep_ms));
 
-	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
-				&lfclk_data);
+	cal_cnt = z_nrf_clock_calibration_count() - cal_cnt;
+	skip_cnt = z_nrf_clock_calibration_skips_count() - skip_cnt;
 
-	while (started == false) {
-	}
-
-	k_busy_wait(35000);
-
-	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
-		k_busy_wait(1000);
-		cnt++;
-		if (cnt == max_cnt) {
-			irq_unlock(key);
-			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-			zassert_true(false, "");
-		}
-	}
-
-	zassert_within(cnt, 250, 10, "Expected 250ms period");
-
-	irq_unlock(key);
-
-	while (clock_control_get_status(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF)
-			!= CLOCK_CONTROL_STATUS_ON) {
-	}
-
-	key = irq_lock();
-	cnt = 0;
-	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
-		k_busy_wait(1000);
-		cnt++;
-		if (cnt == max_cnt) {
-			irq_unlock(key);
-			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-			zassert_true(false, "");
-		}
-	}
-
-	irq_unlock(key);
-
-	zassert_equal(clock_control_get_status(
-			clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF),
-			CLOCK_CONTROL_STATUS_OFF,
-			"Expected hfclk off after calibration.");
-
-	key = irq_lock();
-	cnt = 0;
-
-	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
-		k_busy_wait(1000);
-		cnt++;
-		if (cnt == max_cnt) {
-			irq_unlock(key);
-			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-			zassert_true(false, "");
-		}
-	}
-
-	zassert_within(cnt, 250, 10, "Expected 250ms period (got %d)", cnt);
-
-	irq_unlock(key);
-
-	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	zassert_equal(cal_cnt, exp_cal,
+			"%d: Unexpected number of calibrations (%d, exp:%d)",
+			line, cal_cnt, exp_cal);
+	zassert_equal(skip_cnt, exp_skip,
+			"%d: Unexpected number of skips (%d, exp:%d)",
+			line, skip_cnt, exp_skip);
 }
 
-/* Test checks that when calibration is active then LF clock is not stopped.
- * Stopping is deferred until calibration is done. Test validates that after
- * completing calibration LF clock is shut down.
+/* Function pends until calibration counter is performed. When function leaves,
+ * it is just after calibration.
  */
-static void test_stopping_when_calibration(void)
+static void sync_just_after_calibration(void)
+{
+	u32_t cal_cnt = z_nrf_clock_calibration_count();
+
+	/* wait until calibration is performed. */
+	while (z_nrf_clock_calibration_count() == cal_cnt) {
+		k_sleep(K_MSEC(1));
+	}
+}
+
+/* Test checks if calibration and calibration skips are performed according
+ * to timing configuration.
+ */
+static void test_basic_clock_calibration(void)
+{
+	int wait_ms = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
+		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
+		CALIBRATION_PROCESS_TIME_MS;
+	struct sensor_value value = { .val1 = 0, .val2 = 0 };
+
+	mock_temp_nrf5_value_set(&value);
+	sync_just_after_calibration();
+
+	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
+			 wait_ms);
+}
+
+/* Test checks if calibration happens just after clock is enabled. */
+static void test_calibration_after_enabling_lfclk(void)
 {
 	struct device *clk_dev =
 		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
-	volatile bool started = false;
-	struct clock_control_async_data lfclk_data = {
-		.cb = lfclk_started_cb,
-		.user_data = (void *)&started
-	};
-	int key;
-	u32_t cnt = 0;
-	u32_t max_cnt = 1000;
+	struct sensor_value value = { .val1 = 0, .val2 = 0 };
+
+	mock_temp_nrf5_value_set(&value);
 
 	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
-	/* In case calibration needs to be completed. */
-	k_busy_wait(100000);
+	k_busy_wait(10000);
 
-	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
-				&lfclk_data);
+	turn_on_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
-	while (started == false) {
-	}
-
-	/* when lfclk is started first calibration is performed. Wait until it
-	 * is done.
-	 */
-	k_busy_wait(35000);
-
-	key = irq_lock();
-	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_CTTO) == 0) {
-		k_busy_wait(1000);
-		cnt++;
-		if (cnt == max_cnt) {
-			irq_unlock(key);
-			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-			zassert_true(false, "");
-		}
-	}
-
-	zassert_within(cnt, 250, 10, "Expected 250ms period");
-
-	irq_unlock(key);
-
-	while (clock_control_get_status(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF)
-			!= CLOCK_CONTROL_STATUS_ON) {
-	}
-
-	/* calibration started */
-	key = irq_lock();
-	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-
-	zassert_true(nrf_clock_lf_is_running(NRF_CLOCK),
-		"Expected LF still on");
-
-	while (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE) == 0) {
-		k_busy_wait(1000);
-		cnt++;
-		if (cnt == max_cnt) {
-			irq_unlock(key);
-			clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-			zassert_true(false, "");
-		}
-	}
-
-	irq_unlock(key);
-
-	/* wait some time after which clock should be off. */
-	k_busy_wait(300);
-
-	zassert_false(nrf_clock_lf_is_running(NRF_CLOCK), "Expected LF off");
-
-	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	TEST_CALIBRATION(1, 0,
+			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD);
 }
 
-static u32_t pend_on_next_calibration(void)
+/* Test checks if temperature change triggers calibration. */
+static void test_temp_change_triggers_calibration(void)
 {
-	u32_t stamp = k_uptime_get_32();
-	int cnt = z_nrf_clock_calibration_count();
+	struct sensor_value value = { .val1 = 0, .val2 = 0 };
 
-	while (cnt == z_nrf_clock_calibration_count()) {
-		if ((k_uptime_get_32() - stamp) > 300) {
-			zassert_true(false, "Expected calibration");
-			return UINT32_MAX;
-		}
-	}
+	mock_temp_nrf5_value_set(&value);
+	sync_just_after_calibration();
 
-	return k_uptime_get_32() - stamp;
+	/* change temperature by 0.25'C which should not trigger calibration */
+	value.val2 += ((CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF - 1) *
+			250000);
+	mock_temp_nrf5_value_set(&value);
+
+	/* expected one skip */
+	TEST_CALIBRATION(0, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
+				CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP *
+				CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD +
+				CALIBRATION_PROCESS_TIME_MS);
+
+	TEST_CALIBRATION(1, 0,
+			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD + 40);
+
+	value.val2 += (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF * 250000);
+	mock_temp_nrf5_value_set(&value);
+
+	/* expect calibration due to temp change. */
+	TEST_CALIBRATION(1, 0,
+			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD + 40);
 }
 
-static void test_clock_calibration_force(void)
+/* Test checks if z_nrf_clock_calibration_force_start() results in immediate
+ * calibration.
+ */
+static void test_force_calibration(void)
 {
-	struct device *clk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
-	volatile bool started = false;
-	struct clock_control_async_data lfclk_data = {
-		.cb = lfclk_started_cb,
-		.user_data = (void *)&started
-	};
-	u32_t cnt = 0;
-	u32_t period;
+	sync_just_after_calibration();
 
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
-
-	/* In case calibration needs to be completed. */
-	k_busy_wait(100000);
-
-	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
-				&lfclk_data);
-
-	while (started == false) {
-	}
-
-	cnt = z_nrf_clock_calibration_count();
-
-	pend_on_next_calibration();
-
-	zassert_equal(cnt + 1, z_nrf_clock_calibration_count(),
-			"Unexpected number of calibrations %d (expected: %d)",
-			z_nrf_clock_calibration_count(), cnt + 1);
-
-	/* Next calibration should happen in 250ms, after forcing it should be
-	 * done sooner.
-	 */
 	z_nrf_clock_calibration_force_start();
-	period = pend_on_next_calibration();
-	zassert_equal(cnt + 2, z_nrf_clock_calibration_count(),
-			"Unexpected number of calibrations");
-	zassert_true(period < 100, "Unexpected calibration period.");
 
-	k_busy_wait(80000);
+	/*expect immediate calibration */
+	TEST_CALIBRATION(1, 0,
+		CALIBRATION_PROCESS_TIME_MS + 5);
 
-	/* Next calibration should happen as scheduled. */
-	period = pend_on_next_calibration();
-	zassert_equal(cnt + 3, z_nrf_clock_calibration_count(),
-				"Unexpected number of calibrations");
-	zassert_true(period < 200,
-			"Unexpected calibration period %d ms.", period);
+	/* and back to scheduled operation. */
+	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
+		CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
+		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
+		CALIBRATION_PROCESS_TIME_MS);
 
 }
 
 void test_main(void)
 {
 	ztest_test_suite(test_nrf_clock_calibration,
-		ztest_unit_test(test_clock_calibration),
-		ztest_unit_test(test_stopping_when_calibration),
-		ztest_unit_test(test_clock_calibration_force)
+		ztest_unit_test(test_basic_clock_calibration),
+		ztest_unit_test(test_calibration_after_enabling_lfclk),
+		ztest_unit_test(test_temp_change_triggers_calibration),
+		ztest_unit_test(test_force_calibration)
 			 );
 	ztest_run_test_suite(test_nrf_clock_calibration);
 }
