@@ -10,7 +10,6 @@
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
-#include <usb_descriptor.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
