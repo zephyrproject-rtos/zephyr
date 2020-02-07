@@ -192,7 +192,8 @@ Drivers and Sensors
 
 * CAN
 
-  * <TBD>
+  * Support for CAN_2 on STM32, but no simultaneous use of CAN_1 and CAN_2.
+  * Support for STM32F3 and STM32F4 series
 
 * Clock Control
 
@@ -319,7 +320,11 @@ Drivers and Sensors
 Networking
 **********
 
-* <TBD>
+* CAN bus
+  * CANopen protocol support through 3rd party CANopenNode stack.
+  * Added native ISO-TP subsystem.
+  * Introduced CAN-PRIMARY alias.
+  * SocketCAN for MCUX flexcan.
 
 Bluetooth
 *********
