@@ -39,6 +39,7 @@
 #include "ull_filter.h"
 
 #include "ull_internal.h"
+#include "ull_chan_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_master_internal.h"
@@ -156,8 +157,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->latency_event = 0;
 	conn_lll->event_counter = 0;
 
-	conn_lll->data_chan_count =
-		ull_conn_chan_map_cpy(conn_lll->data_chan_map);
+	conn_lll->data_chan_count = ull_chan_map_get(conn_lll->data_chan_map);
 	util_rand(&hop, sizeof(uint8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
@@ -332,7 +332,7 @@ uint8_t ll_chm_update(uint8_t *chm)
 	uint16_t handle;
 	uint8_t ret;
 
-	ull_conn_chan_map_set(chm);
+	ull_chan_map_set(chm);
 
 	handle = CONFIG_BT_MAX_CONN;
 	while (handle--) {
