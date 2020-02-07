@@ -2126,7 +2126,7 @@ class ProjectBuilder(FilterBuilder):
             with report_lock:
                 self.report_out()
 
-            if self.cleanup and self.instance.status == "passed":
+            if self.cleanup and not self.coverage and self.instance.status == "passed":
                 pipeline.put({
                     "op": "cleanup",
                     "test": self.instance
@@ -4361,7 +4361,7 @@ def main():
                 options.gcov_tool = "gcov"
             else:
                 options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                                                 "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
+                                                 "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
 
         logger.info("Generating coverage files...")
         coverage_tool = CoverageTool.factory(options.coverage_tool)
