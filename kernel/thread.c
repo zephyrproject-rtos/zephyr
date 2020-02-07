@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <irq_offload.h>
+#include <sys/check.h>
 
 static struct k_spinlock lock;
 
@@ -587,7 +588,10 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
+	CHECKIF(arch_is_in_isr()) {
+		/* TODO propagate EPERM */
+		return NULL;
+	}
 
 	/* Special case, only for unit tests */
 #if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
@@ -616,43 +620,63 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 {
 	size_t total_size;
 	struct _k_object *stack_object;
+	int ret;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
+	ret = k_syscall_obj_never_init(new_thread, K_OBJ_THREAD);
+	if (ret != 0) {
+		/* TODO propagate ret. Because this API returns a pointer,
+		 * some API revision will be needed, or an ERR_PTR mechanism
+		 */
+		return NULL;
+	}
+
 	stack_object = z_object_find(stack);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(stack_object, stack,
-						K_OBJ__THREAD_STACK_ELEMENT,
-						_OBJ_INIT_FALSE) == 0,
-				    "bad stack object"));
+	ret = z_obj_validation_check(stack_object, stack,
+				     K_OBJ__THREAD_STACK_ELEMENT,
+				     _OBJ_INIT_FALSE);
+	if (ret != 0) {
+		/* TODO propagate ret */
+		return NULL;
+	}
 
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!size_add_overflow(K_THREAD_STACK_RESERVED,
-						       stack_size, &total_size),
-				    "stack size overflow (%zu+%zu)",
-				    stack_size,
-				    K_THREAD_STACK_RESERVED));
+	ret = K_SYSCALL_VERIFY_MSG(!size_add_overflow(K_THREAD_STACK_RESERVED,
+						      stack_size, &total_size),
+				   "stack size overflow (%zu+%zu)",
+				   stack_size,
+				   K_THREAD_STACK_RESERVED);
+
+	if (ret) {
+		/* TODO propagate EINVAL */
+		return NULL;
+	}
 
 	/* Testing less-than-or-equal since additional room may have been
 	 * allocated for alignment constraints
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-				    "stack size %zu is too big, max is %lu",
-				    total_size, stack_object->data));
+	ret |= K_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
+				   "stack size %zu is too big, max is %lu",
+				   total_size, stack_object->data);
 
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(options & K_USER));
-	Z_OOPS(Z_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
+	ret |= K_SYSCALL_VERIFY(options & K_USER);
+	ret |= K_SYSCALL_VERIFY(!(options & K_ESSENTIAL));
 
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
-	Z_OOPS(Z_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
-							_current->base.prio)));
+	ret |= K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL));
+	ret |= K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
+							 _current->base.prio));
+	if (ret) {
+		/* TODO propagate EINVAL */
+		return NULL;
+	}
 
 	z_setup_new_thread(new_thread, stack, stack_size,
 			   entry, p1, p2, p3, prio, options, NULL);

@@ -761,6 +761,25 @@ extern void k_thread_foreach_unlocked(
  * stack overflows this region and stack protection features may not detect this
  * situation.
  *
+ * Threads may not be created from interrupt service routines.
+ *
+ * When created from user mode, additional checks are performed:
+ *
+ * 1. The caller must have permission on both the target thread and stack
+ *    objects.
+ * 2. The target thread and stack objects must not be in use, the thread object
+ *    must either never have been run, or is currently in an aborted state. The
+ *    stack object must not be associated with any thread that doesn't meet the
+ *    previous criteria.
+ * 3. The provided stack size should be equal to or less than the amount of
+ *    stack space available in the provided stack object.
+ * 4. The options must contain K_USER, user threads may not create supervisor
+ *    threads.
+ * 5. The options must not contain K_ESSENTIAL, user threads are not allowed
+ *    to create essential threads.
+ * 6. The priority value provided must be valid and must be the same or worse
+ *    priority than the caller.
+ *
  * @param new_thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack space.
  * @param stack_size Stack size in bytes.
@@ -772,7 +791,8 @@ extern void k_thread_foreach_unlocked(
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
  *
- * @return ID of new thread.
+ * @return ID of new thread, or NULL if an error occurred or bad parameters
+ *         were supplied.
  *
  * @req K-THREAD-001
  */

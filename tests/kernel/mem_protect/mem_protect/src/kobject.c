@@ -524,18 +524,18 @@ void kobject_test_user_2_14(void *p1, void *p2, void *p3)
 
 void kobject_test_user_1_14(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	k_tid_t ret;
 
-	k_thread_create(&kobject_test_14_tid,
-			kobject_stack_1,
-			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_14,
-			NULL, NULL, NULL,
-			0, K_USER, K_NO_WAIT);
+	valid_fault = false;
 
-	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
+	ret = k_thread_create(&kobject_test_14_tid,
+			      kobject_stack_1,
+			      KOBJECT_STACK_SIZE,
+			      kobject_test_user_2_14,
+			      NULL, NULL, NULL,
+			      0, K_USER, K_NO_WAIT);
 
+	zassert_equal(ret, NULL, "Z_SYSCALL_OBJ implementation failure.");
 }
 /**
  * @brief Test to reinitialize the k_thread object

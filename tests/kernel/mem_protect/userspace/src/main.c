@@ -400,8 +400,10 @@ static void pass_noperms_object(void)
 }
 
 struct k_thread kthread_thread;
+struct k_thread other_thread_noperm;
 
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
+K_THREAD_STACK_DEFINE(other_stack_noperm, STACKSIZE);
 
 void thread_body(void)
 {
@@ -410,19 +412,69 @@ void thread_body(void)
 /**
  * @brief Test to start kernel thread from usermode
  *
+ * TODO: Consider moving to the test suite for k_thread objects
+ *
  * @ingroup kernel_memprotect_tests
  */
-static void start_kernel_thread(void)
+static void bad_thread_params(void)
 {
-	/* Try to start a kernel thread from a usermode thread */
-	expect_fault = true;
-	expected_reason = K_ERR_KERNEL_OOPS;
-	BARRIER();
-	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
-			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
-			K_NO_WAIT);
-	zassert_unreachable("Create a kernel thread did not fault");
+	k_tid_t ret;
+
+	expect_fault = false;
+
+	ret = k_thread_create(&other_thread_noperm, kthread_stack, STACKSIZE,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should have gotten NULL from bad thread object");
+
+	ret = k_thread_create(&kthread_thread, other_stack_noperm, STACKSIZE,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should have gotten NULL from bad stack object");
+
+	ret = k_thread_create(&kthread_thread, kthread_stack, 0xFFFFFFFF,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should have gotten NULL from insane stack size");
+
+	/* 8192 selected as no amount of page rounding or MMU power-of-two
+	 * sizing should ever pad this far
+	 */
+	ret = k_thread_create(&kthread_thread, kthread_stack,
+			      STACKSIZE + (8192 + CONFIG_TEST_EXTRA_STACKSIZE),
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should have gotten NULL from bad stack size");
+
+	ret = k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should not have been able to create non-user thread");
+
+	ret = k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_PRIO_PREEMPT(1),
+			      K_USER | K_ESSENTIAL | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should not have been able to create essential thread");
+
+	ret = k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+			      (k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			      K_HIGHEST_THREAD_PRIO, K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+	zassert_equal(ret, NULL,
+		      "should not have been able to create higher prio thread");
 }
 
 struct k_thread uthread_thread;
@@ -1214,7 +1266,7 @@ void test_main(void)
 			 ztest_user_unit_test(write_priv_stack),
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
-			 ztest_user_unit_test(start_kernel_thread),
+			 ztest_user_unit_test(bad_thread_params),
 			 ztest_1cpu_user_unit_test(read_other_stack),
 			 ztest_1cpu_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
