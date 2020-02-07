@@ -26,6 +26,7 @@
 #include "ull_adv_types.h"
 
 #include "ull_internal.h"
+#include "ull_chan_internal.h"
 #include "ull_adv_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -68,6 +69,18 @@ u8_t ll_adv_sync_param_set(u8_t handle, u16_t interval, u16_t flags)
 
 		ull_hdr_init(&sync->ull);
 		lll_hdr_init(lll, sync);
+
+		util_aa_to_le32(lll->access_addr);
+		util_rand(lll->crc_init, sizeof(lll->crc_init));
+
+		lll->latency_prepare = 0;
+		lll->latency_event = 0;
+		lll->event_counter = 0;
+
+		lll->data_chan_count = ull_chan_map_get(lll->data_chan_map);
+		lll->data_chan_id = 0;
+
+		lll->adv = &adv->lll;
 	} else {
 		sync = (void *)HDR_LLL2EVT(lll);
 	}
@@ -171,26 +184,25 @@ u16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 u32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, u32_t ticks_anchor,
 			 u32_t volatile *ret_cb)
 {
-	u32_t slot_us, ticks_slot_offset, ticks_slot_overhead;
+	u32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	u32_t ticks_slot_overhead;
 	u8_t sync_handle;
 	u32_t ret;
 
 	/* TODO: Calc AUX_SYNC_IND slot_us */
-	slot_us = 0;
+	slot_us = 1000;
 
 	/* TODO: active_to_start feature port */
 	sync->evt.ticks_active_to_start = 0;
 	sync->evt.ticks_xtal_to_start =
-	HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->evt.ticks_preempt_to_start =
-	HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
-	ticks_slot_offset = MAX(sync->evt.ticks_active_to_start,
-	sync->evt.ticks_xtal_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = ticks_slot_offset;
+		ticks_slot_overhead = MAX(sync->evt.ticks_active_to_start,
+					  sync->evt.ticks_xtal_to_start);
 	} else {
 		ticks_slot_overhead = 0;
 	}
@@ -201,7 +213,7 @@ u32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, u32_t ticks_anchor,
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
 			   ticks_anchor, 0,
-			   (sync->evt.ticks_slot + ticks_slot_overhead),
+			   HAL_TICKER_US_TO_TICKS((u64_t)sync->interval * 1250),
 			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 			   (sync->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,

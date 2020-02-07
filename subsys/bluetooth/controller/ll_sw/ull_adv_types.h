@@ -17,7 +17,6 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u32_t interval;
 	u8_t  sid:4;
-	u8_t  phy_s:3;
 	u8_t  is_created:1;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	u16_t interval;

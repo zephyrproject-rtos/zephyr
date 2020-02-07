@@ -92,6 +92,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	u8_t data_chan_use;
 	u32_t remainder;
 	u16_t lazy;
+	u8_t phy_s;
 	u8_t upd;
 
 	DEBUG_RADIO_START_A(1);
@@ -126,6 +127,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
+	phy_s = lll->adv->phy_s;
+
+	/* TODO: if coded we use S8? */
+	radio_phy_set(phy_s, 1);
+	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((u32_t)lll->crc_init[2] << 16) |

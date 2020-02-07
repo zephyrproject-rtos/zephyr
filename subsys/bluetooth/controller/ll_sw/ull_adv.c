@@ -320,7 +320,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			aux->offs_units = 0; /* FIXME: implementation defined */
 			aux->phy = find_lsb_set(phy_s) - 1;
 		}
-		adv->phy_s = phy_s;
+		adv->lll.phy_s = phy_s;
 
 		/* ADI */
 		if (h->adi) {
@@ -798,7 +798,7 @@ u8_t ll_adv_enable(u8_t enable)
 	/* For now we adv on all channels enabled in channel map */
 	u8_t ch_map = lll->chan_map;
 	const u8_t adv_chn_cnt = util_ones_count_get(&ch_map, sizeof(ch_map));
-	u32_t slot_us	= EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	u32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	if (adv_chn_cnt == 0) {
 		/* ADV needs at least one channel */
@@ -808,6 +808,7 @@ u8_t ll_adv_enable(u8_t enable)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 		/* TBD */
+		slot_us += 1500;
 	} else
 #endif
 	{
