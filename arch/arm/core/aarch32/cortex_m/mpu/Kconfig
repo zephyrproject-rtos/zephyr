@@ -84,7 +84,6 @@ config MPU_ALLOW_FLASH_WRITE
 
 config CUSTOM_SECTION_ALIGN
 	bool "Custom Section Align"
-	depends on ARM_MPU
 	help
 	  MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT(ARMv7-M) sometimes cause memory
 	  wasting in linker scripts defined memory sections. Use this symbol
