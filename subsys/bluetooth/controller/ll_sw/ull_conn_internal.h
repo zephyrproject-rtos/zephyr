@@ -63,7 +63,6 @@ struct ll_conn *ll_connected_get(u16_t handle);
 void ll_tx_ack_put(u16_t handle, struct node_tx *node_tx);
 int ull_conn_init(void);
 int ull_conn_reset(void);
-u8_t ull_conn_chan_map_cpy(u8_t *chan_map);
 void ull_conn_chan_map_set(u8_t *chan_map);
 u16_t ull_conn_default_tx_octets_get(void);
 u16_t ull_conn_default_tx_time_get(void);
