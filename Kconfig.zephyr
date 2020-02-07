@@ -341,7 +341,6 @@ config BUILD_OUTPUT_S19
 
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
-	depends on BUILD_OUTPUT_HEX || BUILD_OUTPUT_BIN || BUILD_OUTPUT_S19
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
