@@ -30,6 +30,7 @@
 #include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
+#include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
@@ -153,9 +154,6 @@ static struct {
 	uint8_t pool[sizeof(memq_link_t) *
 		  (CONFIG_BT_CTLR_TX_BUFFERS + CONN_TX_CTRL_BUFFERS)];
 } mem_link_tx;
-
-static uint8_t data_chan_map[5] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
-static uint8_t data_chan_count = 37U;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t default_tx_octets;
@@ -631,14 +629,6 @@ int ull_conn_reset(void)
 		disable(handle);
 	}
 
-	/* initialise connection channel map */
-	data_chan_map[0] = 0xFF;
-	data_chan_map[1] = 0xFF;
-	data_chan_map[2] = 0xFF;
-	data_chan_map[3] = 0xFF;
-	data_chan_map[4] = 0x1F;
-	data_chan_count = 37U;
-
 	/* Re-initialize the Tx mfifo */
 	MFIFO_INIT(conn_tx);
 
@@ -654,20 +644,6 @@ int ull_conn_reset(void)
 	}
 
 	return 0;
-}
-
-uint8_t ull_conn_chan_map_cpy(uint8_t *chan_map)
-{
-	memcpy(chan_map, data_chan_map, sizeof(data_chan_map));
-
-	return data_chan_count;
-}
-
-void ull_conn_chan_map_set(uint8_t *chan_map)
-{
-	memcpy(data_chan_map, chan_map, sizeof(data_chan_map));
-	data_chan_count = util_ones_count_get(data_chan_map,
-					      sizeof(data_chan_map));
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -6194,8 +6170,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				break;
 			}
 
-			memcpy(&conn->llcp.chan_map.chm[0], data_chan_map,
-			       sizeof(conn->llcp.chan_map.chm));
+			ull_chan_map_get(conn->llcp.chan_map.chm);
 			/* conn->llcp.chan_map.instant     = 0; */
 			conn->llcp.chan_map.initiate = 1U;
 
