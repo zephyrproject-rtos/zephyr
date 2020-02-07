@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RX_STACK_SIZE      1024
 #define GSM_RECV_MAX_BUF       30
 #define GSM_RECV_BUF_SIZE      128
+#define GSM_BUF_ALLOC_TIMEOUT  K_SECONDS(1)
 
 static struct gsm_modem {
 	struct modem_context context;
@@ -248,12 +249,12 @@ static void gsm_configure(struct k_work *work)
 	k_sem_give(&gsm->ppp_send_sem);
 }
 
-int gsm_init(struct device *device)
+static int gsm_init(struct device *device)
 {
 	struct gsm_modem *gsm = device->driver_data;
 	int r;
 
-	LOG_DBG("Generic GSM modem");
+	LOG_DBG("Generic GSM modem (%p)", gsm);
 
 	k_sem_init(&gsm->ppp_send_sem, 0, 1);
 
@@ -264,6 +265,8 @@ int gsm_init(struct device *device)
 	gsm->cmd_handler_data.match_buf = &gsm->cmd_match_buf[0];
 	gsm->cmd_handler_data.match_buf_len = sizeof(gsm->cmd_match_buf);
 	gsm->cmd_handler_data.buf_pool = &gsm_recv_pool;
+	gsm->cmd_handler_data.alloc_timeout = GSM_BUF_ALLOC_TIMEOUT;
+	gsm->cmd_handler_data.eol = "\r";
 
 	k_sem_init(&gsm->sem_response, 0, 1);
 
