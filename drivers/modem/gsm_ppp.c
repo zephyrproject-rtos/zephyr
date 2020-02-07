@@ -205,6 +205,36 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATD*99#")
 };
 
+static int gsm_setup_mccmno(struct gsm_modem *gsm)
+{
+	int ret;
+
+	if (CONFIG_MODEM_GSM_MANUAL_MCCMNO[0]) {
+		/* use manual MCC/MNO entry */
+		ret = modem_cmd_send(&gsm->context.iface,
+				     &gsm->context.cmd_handler,
+				     NULL, 0,
+				     "AT+COPS=1,2,\""
+				     CONFIG_MODEM_GSM_MANUAL_MCCMNO
+				     "\"",
+				     &gsm->sem_response,
+				     GSM_CMD_AT_TIMEOUT);
+	} else {
+		/* register operator automatically */
+		ret = modem_cmd_send(&gsm->context.iface,
+				     &gsm->context.cmd_handler,
+				     NULL, 0, "AT+COPS=0,0",
+				     &gsm->sem_response,
+				     GSM_CMD_AT_TIMEOUT);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("AT+COPS ret:%d", ret);
+	}
+
+	return ret;
+}
+
 static void gsm_configure(struct k_work *work)
 {
 	int r = -1;
@@ -225,6 +255,7 @@ static void gsm_configure(struct k_work *work)
 				LOG_DBG("modem not ready %d", r);
 			} else {
 				LOG_DBG("connect with modem %d", r);
+				(void)gsm_setup_mccmno(gsm);
 				break;
 			}
 		}
