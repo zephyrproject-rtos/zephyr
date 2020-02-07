@@ -117,6 +117,7 @@
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
 /doc/reference/kernel/other/resource_mgmt.rst @pabigot
 /doc/reference/networking/can*            @alexanderwachter
+/drivers/debug/                           @nashif
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*stm32*                        @erwango
@@ -296,6 +297,8 @@
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
 /include/canbus/                          @alexanderwachter
+/include/tracing/                         @wentongwu @nashif
+/include/debug/                           @nashif
 /include/device.h                         @wentongwu @nashif
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
@@ -390,6 +393,7 @@
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
+/subsys/tracing/                          @nashif @wentongwu
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
