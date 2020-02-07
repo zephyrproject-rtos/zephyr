@@ -295,7 +295,7 @@ def write_regs(node):
         else:
             addr = addr_val
         if size_val is None:
-            size = reg.size
+            size = hex(reg.size)
         else:
             size = size_val
 
