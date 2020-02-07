@@ -248,6 +248,11 @@ Drivers and Sensors
 
   * <TBD>
 
+* LoRa
+
+  * Added APIs and drivers needed to support LoRa technology by reusing the
+    LoRaMac-node library.
+
 * Modem
 
   * <TBD>
@@ -334,9 +339,10 @@ Build and Infrastructure
 Libraries / Subsystems
 ***********************
 
-* Random
+* LoRa
 
-  * <TBD>
+  * LoRa support was added through official LoRaMac-node reference
+    implementation.
 
 HALs
 ****
