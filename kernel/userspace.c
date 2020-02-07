@@ -490,7 +490,7 @@ void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
 	case -EBADF:
 		LOG_ERR("%p is not a valid %s", obj, otype_to_str(otype));
 		break;
-	case -EPERM:
+	case -EACCES:
 		dump_permission_error(ko);
 		break;
 	case -EINVAL:
@@ -549,7 +549,7 @@ int z_object_validate(struct _k_object *ko, enum k_objects otype,
 	 * thread be granted access first, even for uninitialized objects
 	 */
 	if (unlikely(thread_perms_test(ko) == 0)) {
-		return -EPERM;
+		return -EACCES;
 	}
 
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
@@ -644,7 +644,7 @@ out_err:
 
 static int user_copy(void *dst, const void *src, size_t size, bool to_user)
 {
-	int ret = EFAULT;
+	int ret = -EFAULT;
 
 	/* Does the caller in user mode have access to this memory? */
 	if (to_user ? Z_SYSCALL_MEMORY_WRITE(dst, size) :
@@ -708,18 +708,18 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 
 	actual_len = z_user_string_nlen(src, maxlen, &err);
 	if (err != 0) {
-		ret = EFAULT;
+		ret = -EFAULT;
 		goto out;
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
 		LOG_ERR("string too long %p (%zu)", src, actual_len);
-		ret = EINVAL;
+		ret = -EINVAL;
 		goto out;
 	}
 	if (size_add_overflow(actual_len, 1, &actual_len)) {
 		LOG_ERR("overflow");
-		ret = EINVAL;
+		ret = -EINVAL;
 		goto out;
 	}
 

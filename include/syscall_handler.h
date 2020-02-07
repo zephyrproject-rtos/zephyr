@@ -43,7 +43,7 @@ enum _obj_init_check {
  *             or uninitialized state, or that we don't care
  * @return 0 If the object is valid
  *         -EBADF if not a valid object of the specified type
- *         -EPERM If the caller does not have permissions
+ *         -EACCES If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
 int z_object_validate(struct _k_object *ko, enum k_objects otype,
@@ -203,7 +203,7 @@ extern void *z_user_alloc_from_copy(const void *src, size_t size);
  * @param src Source memory buffer, in userspace
  * @param size Number of bytes to copy
  * @retval 0 On success
- * @retval EFAULT On memory access error
+ * @retval -EFAULT On memory access error
  */
 extern int z_user_from_copy(void *dst, const void *src, size_t size);
 
@@ -218,7 +218,7 @@ extern int z_user_from_copy(void *dst, const void *src, size_t size);
  * @param src Source memory buffer
  * @param size Number of bytes to copy
  * @retval 0 On success
- * @retval EFAULT On memory access error
+ * @retval -EFAULT On memory access error
  */
 extern int z_user_to_copy(void *dst, const void *src, size_t size);
 
@@ -250,9 +250,9 @@ extern char *z_user_string_alloc_copy(const char *src, size_t maxlen);
  * @param src Source string pointer, in userspace
  * @param maxlen Maximum size of the string including trailing NULL
  * @retval 0 on success
- * @retval EINVAL if the source string is too long with respect
+ * @retval -EINVAL if the source string is too long with respect
  *	to maxlen
- * @retval EFAULT On memory access error
+ * @retval -EFAULT On memory access error
  */
 extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
