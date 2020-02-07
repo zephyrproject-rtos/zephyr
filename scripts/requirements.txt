@@ -1,25 +1,5 @@
-Pillow
-PyYAML>=5.1
-anytree
-breathe>=4.9.1
-colorama
-docutils>=0.14
-gcovr>=4.2
-gitlint
-intelhex
-junit2html
-packaging
-ply>=3.10
-pyelftools>=0.24
-pykwalify
-pyocd>=0.24.0
-pyserial
-pytest
-sphinx>=1.7.5
-sphinx_rtd_theme
-sphinx-tabs
-sphinxcontrib-svg2pdfconverter
-tabulate
-west>=0.6.2
-# "win32" is used for 64-bit Windows as well
-windows-curses; sys_platform == "win32"
+-r requirements-base.txt
+-r requirements-build-test.txt
+-r requirements-doc.txt
+-r requirements-run-test.txt
+-r requirements-extras.txt

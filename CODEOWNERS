@@ -386,6 +386,7 @@
 /scripts/net/                             @jukkar @pfl
 /scripts/process_gperf.py                 @andrewboie
 /scripts/gen_relocate_app.py              @wentongwu
+/scripts/requirements*.txt                @mbolivar @galak @nashif
 /scripts/tracing/                         @wentongwu
 /scripts/sanity_chk/                      @nashif
 /scripts/sanitycheck                      @nashif
