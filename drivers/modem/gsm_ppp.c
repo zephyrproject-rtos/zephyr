@@ -186,6 +186,10 @@ static struct setup_cmd setup_cmds[] = {
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
+#if defined(CONFIG_BOARD_PARTICLE_BORON)
+	/* use external SIM */
+	SETUP_CMD_NOHANDLE("AT+UGPIOC=23,0,0"),
+#endif
 #if defined(CONFIG_MODEM_SHELL)
 	/* query modem info */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
