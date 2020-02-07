@@ -29,4 +29,12 @@ config MODEM_GSM_APN
 	  Specify Access Point Name, i.e. the name to identify Internet IP
 	  GPRS cellular data context.
 
+config MODEM_GSM_MANUAL_MCCMNO
+	string "MCC/MNO for establishing network connection"
+	help
+	  This setting is used in the AT+COPS command to set the MCC/MNO
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed if auto is not
+	  selected.
+
 endif
