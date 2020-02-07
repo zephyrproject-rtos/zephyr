@@ -13,9 +13,7 @@ This board acts as a mezzanine platform for all 96Boards CE compliant
 boards. It can also be used as a standalone board.
 
 .. figure:: img/96b_stm32_sensor_mez.png
-     :width: 998px
      :align: center
-     :height: 642px
      :alt: 96Boards STM32 Sensor Mezzanine
 
      96Boards STM32 Sensor Mezzanine

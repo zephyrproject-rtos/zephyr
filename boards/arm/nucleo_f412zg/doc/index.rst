@@ -29,9 +29,7 @@ some highlights of the Nucleo F412ZG board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f412zg.png
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F412ZG
 
 More information about the board can be found at the `Nucleo F412ZG website`_.
