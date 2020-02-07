@@ -204,6 +204,8 @@ extern unsigned char _irq_to_interrupt_vector[];
 
 #endif /* _ASMLANGUAGE */
 
+#include <drivers/interrupt_controller/sysapic.h>
+
 #ifdef CONFIG_X86_64
 #include <arch/x86/intel64/arch.h>
 #else

@@ -15,7 +15,6 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
 #include "sys_io.h"
-#include <drivers/interrupt_controller/sysapic.h>
 #include <stdbool.h>
 #include <kernel_structs.h>
 #include <arch/common/ffs.h>
