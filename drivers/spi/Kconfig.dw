@@ -34,7 +34,6 @@ config SPI_DW_FIFO_DEPTH
 
 config SPI_DW_ACCESS_WORD_ONLY
 	bool "DesignWare SPI only allows word access"
-	depends on SPI_DW
 	help
 	  In some case, e.g. ARC HS Development kit, the peripheral space of
 	  DesignWare SPI only allows word access, byte access will raise
