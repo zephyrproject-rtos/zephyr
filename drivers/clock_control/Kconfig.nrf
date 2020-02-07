@@ -53,9 +53,8 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
-	int "Calibration opportunity period (in 250ms units)"
-	default 16
-	range 1 127
+	int "Calibration opportunity period in milliseconds"
+	default 4000
 	help
 	  Periodically, calibration action is performed. Action includes
 	  temperature measurement followed by clock calibration. Calibration may
