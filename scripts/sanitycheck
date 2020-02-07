@@ -185,7 +185,6 @@ import time
 import csv
 import yaml
 import glob
-import serial
 import concurrent
 import xml.etree.ElementTree as ET
 import logging
@@ -194,6 +193,11 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
+
+try:
+    import serial
+except ImportError:
+    print("Install pyserial python module with pip to use --device-testing option.")
 
 try:
     from anytree import Node, RenderTree, find
