@@ -4,7 +4,7 @@ anytree
 breathe>=4.9.1
 colorama
 docutils>=0.14
-gcovr
+gcovr>=4.2
 git-spindle>=2.0
 gitlint
 intelhex
