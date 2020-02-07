@@ -21,6 +21,7 @@ Peripherals
    pinmux.rst
    pwm.rst
    ps2.rst
+   peci.rst
    sensor.rst
    spi.rst
    uart.rst
