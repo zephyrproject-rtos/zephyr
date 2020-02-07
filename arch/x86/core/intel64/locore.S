@@ -344,7 +344,7 @@ except: /*
 	 * already there from hardware trap and EXCEPT_*() stub.
 	 */
 
-	pushq %r15
+	pushq %r11
 
 #ifdef CONFIG_USERSPACE
 	/* Swap GS register values and page tables if we came from user mode */
@@ -353,8 +353,8 @@ except: /*
 	swapgs
 #ifdef CONFIG_X86_KPTI
 	/* Load kernel's page table */
-	movq $z_x86_kernel_ptables, %r15
-	movq %r15, %cr3
+	movq $z_x86_kernel_ptables, %r11
+	movq %r11, %cr3
 #endif /* CONFIG_X86_KPTI */
 1:
 #ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
@@ -362,72 +362,77 @@ except: /*
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
 #ifdef CONFIG_X86_KPTI
-	/* Save old trampoline stack pointer in R15 */
-	movq %rsp, %r15
+	/* Save old trampoline stack pointer in R11 */
+	movq %rsp, %r11
 
 	/* Switch to the exception stack */
 	movq %gs:__x86_tss64_t_ist7_OFFSET, %rsp
 
 	/* Transplant trampoline stack contents */
-	pushq 56(%r15)	/* SS */
-	pushq 48(%r15)	/* RSP */
-	pushq 40(%r15)	/* RFLAGS */
-	pushq 32(%r15)	/* CS */
-	pushq 24(%r15)	/* RIP */
-	pushq 16(%r15)	/* Error code */
-	pushq 8(%r15)	/* Vector */
-	pushq (%r15)	/* Stashed R15 */
-	movq $0, (%r15) /* Cover our tracks */
+	pushq 56(%r11)	/* SS */
+	pushq 48(%r11)	/* RSP */
+	pushq 40(%r11)	/* RFLAGS */
+	pushq 32(%r11)	/* CS */
+	pushq 24(%r11)	/* RIP */
+	pushq 16(%r11)	/* Error code */
+	pushq 8(%r11)	/* Vector */
+	pushq (%r11)	/* Stashed R15 */
+	movq $0, (%r11) /* Cover our tracks */
 
 	/* We're done, it's safe to re-enable interrupts. */
 	sti
 #endif /* CONFIG_X86_KPTI */
 #endif /* CONFIG_USERSPACE */
 
+	/* In addition to r11, push the rest of the caller-saved regs */
+	/* Positioning of this fxsave is important, RSP must be 16-byte
+	 * aligned
+	 */
 	subq $X86_FXSAVE_SIZE, %rsp
 	fxsave (%rsp)
-	pushq %r14
-	pushq %r13
-	pushq %r12
-	pushq %r11
 	pushq %r10
 	pushq %r9
 	pushq %r8
 	pushq %rdi
 	pushq %rsi
-	pushq %rbp
 	pushq %rdx
 	pushq %rcx
-	pushq %rbx
 	pushq %rax
-
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* Callee saved regs */
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %rbp
+	pushq %rbx
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	movq %rsp, %rdi
 
-	/* TODO we don't need to push so many registers if we are not
-	 * dumping out exception info since RBX, RBP, R12-R15 are callee-saved
-	 */
 	call z_x86_exception
 
 	/* If we returned, the exception was handled successfully and the
 	 * thread may resume (the pushed RIP may have been modified)
 	 */
-	popq %rax
+#ifdef CONFIG_EXCEPTION_DEBUG
 	popq %rbx
+	popq %rbp
+	popq %r12
+	popq %r13
+	popq %r14
+	popq %r15
+#endif /* CONFIG_EXCEPTION_DEBUG */
+	popq %rax
 	popq %rcx
 	popq %rdx
-	popq %rbp
 	popq %rsi
 	popq %rdi
 	popq %r8
 	popq %r9
 	popq %r10
-	popq %r11
-	popq %r12
-	popq %r13
-	popq %r14
 	fxrstor (%rsp)
 	addq $X86_FXSAVE_SIZE, %rsp
-	popq %r15
+	popq %r11
 
 	/* Drop the vector/err code pushed by the HW or EXCEPT_*() stub */
 	add $16, %rsp
