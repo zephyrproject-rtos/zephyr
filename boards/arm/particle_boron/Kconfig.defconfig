@@ -58,7 +58,7 @@ config UART_1_NRF_FLOW_CONTROL
 	default y
 
 config MODEM_UBLOX_SARA
-	default y
+	default y if !MODEM_GSM_PPP
 
 choice MODEM_UBLOX_SARA_VARIANT
 	default MODEM_UBLOX_SARA_R4

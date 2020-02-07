@@ -36,7 +36,7 @@ static int board_particle_boron_init(struct device *dev)
 
 	external_antenna(false);
 
-#if defined(CONFIG_MODEM_UBLOX_SARA)
+#if defined(CONFIG_MODEM_UBLOX_SARA) || defined(CONFIG_MODEM_GSM_PPP)
 	struct device *gpio_dev;
 
 	/* Enable the serial buffer for SARA-R4 modem */
