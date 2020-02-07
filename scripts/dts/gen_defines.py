@@ -625,14 +625,39 @@ def write_irqs(node):
     # Writes IRQ num and data for the interrupts in the node's 'interrupt'
     # property
 
-    def irq_name_alias(irq, cell_name):
-        if not irq.name:
-            return None
+    if not node.interrupts:
+        return
 
-        alias = f"IRQ_{str2ident(irq.name)}"
-        if cell_name != "irq":
-            alias += f"_{str2ident(cell_name)}"
-        return alias
+    # maps (irq_i, cell_name) to the primary macro for that pair,
+    # if there is one.
+    irq_cell2primary_macro = {}
+
+    def write_irqs_for_ident(node, ident):
+        # Like write_regs_for_ident(), but for interrupts.
+
+        for irq_i, irq in enumerate(node.interrupts):
+            for cell_name, cell_value in irq.data.items():
+                if cell_name == "irq":
+                    if "arm,gic" in irq.controller.compats:
+                        cell_value = map_arm_gic_irq_type(irq, cell_value)
+                    cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
+                    name_suffix = ""
+                else:
+                    name_suffix = f"_{str2ident(cell_name)}"
+
+                # DT_<IDENT>_IRQ_<irq_i>[_<CELL_NAME>]
+                idx_macro = f"{ident}_IRQ_{irq_i}{name_suffix}"
+                primary_macro = irq_cell2primary_macro.get((irq_i, cell_name))
+                if primary_macro is not None:
+                    out(idx_macro, primary_macro)
+                else:
+                    primary_macro = out(idx_macro, cell_value)
+                    irq_cell2primary_macro[(irq_i, cell_name)] = primary_macro
+
+                # DT_<IDENT>_IRQ_<IRQ_NAME>[_<CELL_NAME>]
+                if irq.name:
+                    out(f"{ident}_IRQ_{str2ident(irq.name)}{name_suffix}",
+                        primary_macro)
 
     def map_arm_gic_irq_type(irq, irq_num):
         # Maps ARM GIC IRQ (type)+(index) combo to linear IRQ number
@@ -662,18 +687,9 @@ def write_irqs(node):
             irq_ctrl = irq_ctrl.interrupts[0].controller
         return irq_num
 
-    for irq_i, irq in enumerate(node.interrupts):
-        for cell_name, cell_value in irq.data.items():
-            ident = f"IRQ_{irq_i}"
-            if cell_name == "irq":
-                if "arm,gic" in irq.controller.compats:
-                    cell_value = map_arm_gic_irq_type(irq, cell_value)
-                cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
-            else:
-                ident += f"_{str2ident(cell_name)}"
-
-            out_node(node, ident, cell_value,
-                     name_alias=irq_name_alias(irq, cell_name))
+    out_comment("IRQ macros from the 'interrupts' property",
+                blank_before=False)
+    for_each_ident(node, write_irqs_for_ident)
 
 
 def write_spi_dev(node):
