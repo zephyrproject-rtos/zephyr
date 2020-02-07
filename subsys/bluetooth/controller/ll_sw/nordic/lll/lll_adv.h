@@ -15,6 +15,7 @@ struct lll_adv_pdu {
 
 struct lll_adv_sync {
 	struct lll_hdr hdr;
+	struct lll_adv *adv;
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
@@ -45,6 +46,7 @@ struct lll_adv {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	uint8_t phy_p:3;
+	uint8_t phy_s:3;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)

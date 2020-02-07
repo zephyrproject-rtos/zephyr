@@ -252,7 +252,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		aux->chan_idx = 0; /* FIXME: implementation defined */
 		aux->ca = 0; /* FIXME: implementation defined */
 		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(adv->phy_s) - 1;
+		aux->phy = find_lsb_set(adv->lll.phy_s) - 1;
 	}
 
 	/* TODO: reduce duplicate code if below remains similar to primary PDU
@@ -268,7 +268,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		aux->chan_idx = 0; /* FIXME: implementation defined */
 		aux->ca = 0; /* FIXME: implementation defined */
 		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(adv->phy_s) - 1;
+		aux->phy = find_lsb_set(adv->lll.phy_s) - 1;
 	}
 
 	/* ADI */
