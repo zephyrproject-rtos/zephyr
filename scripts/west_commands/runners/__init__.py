@@ -11,7 +11,6 @@ from runners.core import ZephyrBinaryRunner, MissingProgram
 # Explicitly silence the unused import warning.
 # flake8: noqa: F401
 # Keep this list sorted by runner name.
-from runners import arc
 from runners import blackmagicprobe
 from runners import bossac
 from runners import dediprog

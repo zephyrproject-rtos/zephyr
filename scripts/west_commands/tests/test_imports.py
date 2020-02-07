@@ -19,7 +19,6 @@ def test_runner_imports():
                     'bossac',
                     'dediprog',
                     'dfu-util',
-                    'em-starterkit',
                     'esp32',
                     'hifive1',
                     'intel_s1000',
