@@ -401,7 +401,6 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 	int ret;
 
 	ret = z_object_validate(ko, otype, init);
-
 #ifdef CONFIG_LOG
 	if (ret != 0) {
 		z_dump_object_error(ret, obj, ko, otype);
@@ -507,6 +506,109 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 
 #define Z_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
 	Z_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
+
+/*
+ * Kernel object validation routines
+ */
+
+static inline int z_syscall_check_obj_full(void *ptr, enum k_objects type,
+					   enum _obj_init_check init_state)
+{
+	return z_obj_validation_check(z_object_find(ptr), ptr, type,
+				      init_state);
+}
+
+static inline int k_syscall_obj(void *ptr, enum k_objects type)
+{
+	return z_syscall_check_obj_full(ptr, type, _OBJ_INIT_TRUE);
+}
+
+static inline int k_syscall_obj_init(void *ptr, enum k_objects type)
+{
+	return z_syscall_check_obj_full(ptr, type, _OBJ_INIT_ANY);
+}
+
+static inline int k_syscall_obj_never_init(void *ptr, enum k_objects type)
+{
+	return z_syscall_check_obj_full(ptr, type, _OBJ_INIT_FALSE);
+}
+
+/*
+ * Memory region validation routines
+ */
+
+static inline int z_syscall_memory_full(void *ptr, size_t size, bool write)
+{
+	return arch_buffer_validate(ptr, size, write) ? -EFAULT : 0;
+}
+
+static inline int k_syscall_memory_read(void *ptr, size_t size)
+{
+	return z_syscall_memory_full(ptr, size, false);
+}
+
+static inline int k_syscall_memory_write(void *ptr, size_t size)
+{
+	return z_syscall_memory_full(ptr, size, true);
+}
+
+static inline int z_syscall_memory_array_full(void *ptr, size_t nmemb,
+					      size_t size, bool write)
+{
+	size_t product;
+
+	if (size_mul_overflow(nmemb, size, &product)) {
+		return -EINVAL;
+	}
+
+	return z_syscall_memory_full(ptr, product, write);
+}
+
+static inline int k_syscall_memory_array_read(void *ptr, size_t nmemb,
+					      size_t size)
+{
+	return z_syscall_memory_array_full(ptr, nmemb, size, false);
+}
+
+static inline int k_syscall_memory_array_write(void *ptr, size_t nmemb,
+					       size_t size)
+{
+	return z_syscall_memory_array_full(ptr, nmemb, size, true);
+}
+
+/**
+ * @brief Runtime expression check for system call arguments
+ *
+ * Used in handler functions to perform various runtime checks on arguments,
+ * and generate a kernel oops if anything is not expected, printing a custom
+ * message.
+ *
+ * @param expr Boolean expression to verify, a false result will trigger an
+ *             oops
+ * @param fmt Printf-style format string (followed by appropriate variadic
+ *            arguments) to print on verification failure
+ * @return False on success, True on failure
+ */
+#define K_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
+	bool expr_copy = !(expr); \
+	if (expr_copy) { \
+		LOG_MODULE_DECLARE(os); \
+		LOG_ERR("syscall %s failed check: " fmt, \
+			__func__, ##__VA_ARGS__); \
+	} \
+	expr_copy; })
+
+/**
+ * @brief Runtime expression check for system call arguments
+ *
+ * Used in handler functions to perform various runtime checks on arguments,
+ * and generate a kernel oops if anything is not expected.
+ *
+ * @param expr Boolean expression to verify, a false result will trigger an
+ *             oops. A stringified version of this expression will be printed.
+ * @return False on success, True on failure
+ */
+#define K_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
 #include <driver-validation.h>
 
