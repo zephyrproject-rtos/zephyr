@@ -1,3 +1,5 @@
+# DOC: used to generate docs
+
 breathe>=4.9.1
 docutils>=0.14
 sphinx>=1.7.5

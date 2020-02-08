@@ -1,0 +1,12 @@
+# RUN-TEST: required to do run time tests of zephyr
+#
+# things used by sanitycheck or related in run time testing
+
+# used to connect to boards for console IO
+pyserial
+
+# used to flash & debug various boards
+pyocd>=0.24.0
+
+# used by sanitycheck for board/hardware map
+tabulate

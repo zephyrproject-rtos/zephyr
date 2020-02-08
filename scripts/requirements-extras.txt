@@ -1,0 +1,14 @@
+# EXTRAS: required to build or create images with zephyr
+
+# used by sanitycheck for --test-tree option
+anytree
+
+# helper for developers - check git commit messages
+gitlint
+
+# helper for developers
+junit2html
+
+# used by scripts/gen_cfb_font_header.py - helper script for user
+Pillow
+
