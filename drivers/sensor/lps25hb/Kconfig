@@ -8,13 +8,10 @@ menuconfig LPS25HB
 	  Enable driver for LPS25HB I2C-based pressure and temperature
 	  sensor.
 
-if LPS25HB
-
 config LPS25HB_SAMPLING_RATE
 	int "Output data rate"
 	default 25
+	depends on LPS25HB
 	help
 	  Sensor output data rate expressed in samples per second.
 	  Data rates supported by the chip are 1, 7, 13, 25.
-
-endif # LPS25HB

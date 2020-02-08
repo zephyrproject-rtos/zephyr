@@ -119,15 +119,12 @@ config ISOTP_ENABLE_CONTEXT_BUFFERS
 	  This option enables buffered sending contexts. This makes send and
 	  forget possible. A memory slab is used to buffer the context.
 
-if ISOTP_ENABLE_CONTEXT_BUFFERS
-
 config ISOTP_TX_CONTEXT_BUF_COUNT
 	int "Amount of context buffers for sending data"
 	default 4
+	depends on ISOTP_ENABLE_CONTEXT_BUFFERS
 	help
 	  This defines the size of the memory slab where the buffers are
 	  allocated from.
-
-endif # ISOTP_ENABLE_CONTEXT_BUFFERS
 
 endif # ISOTP

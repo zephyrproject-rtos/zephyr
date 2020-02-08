@@ -57,10 +57,9 @@ config EEPROM_SIMULATOR
 	help
 	  Enable Simulated EEPROM driver.
 
-if EEPROM_SIMULATOR
-
 config EEPROM_SIMULATOR_SIMULATE_TIMING
 	bool "Enable hardware timing simulation"
+	depends on EEPROM_SIMULATOR
 	help
 	  Enable Simulated hardware timing.
 
@@ -79,7 +78,5 @@ config EEPROM_SIMULATOR_MIN_WRITE_TIME_US
 	range 1 1000000
 
 endif # EEPROM_SIMULATOR_SIMULATE_TIMING
-
-endif # EEPROM_SIMULATOR
 
 endif # EEPROM

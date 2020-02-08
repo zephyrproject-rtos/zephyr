@@ -33,16 +33,14 @@ config MCUMGR_SMP_SHELL
 	  Enables handling of SMP commands received over shell.  This allows
 	  the shell to be use for both mcumgr commands and shell commands.
 
-if MCUMGR_SMP_SHELL
 config MCUMGR_SMP_SHELL_MTU
 	int "Shell SMP MTU"
 	default 256
+	depends on MCUMGR_SMP_SHELL
 	help
 	  Maximum size of SMP frames sent and received over shell.  This value
 	  must satisfy the following relation:
 	  MCUMGR_SMP_SHELL_MTU <= MCUMGR_BUF_SIZE + 2
-endif
-
 
 config MCUMGR_SMP_UART
 	bool "UART mcumgr SMP transport"
@@ -55,16 +53,14 @@ config MCUMGR_SMP_UART
 	  commands to be received over UART without requiring an additional
 	  thread.
 
-if MCUMGR_SMP_UART
 config MCUMGR_SMP_UART_MTU
 	int "UART SMP MTU"
 	default 256
+	depends on MCUMGR_SMP_UART
 	help
 	  Maximum size of SMP frames sent and received over UART, in bytes.
 	  This value must satisfy the following relation:
 	  MCUMGR_SMP_UART_MTU <= MCUMGR_BUF_SIZE + 2
-
-endif
 
 source "subsys/mgmt/Kconfig.mcumgr"
 

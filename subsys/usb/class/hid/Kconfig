@@ -59,12 +59,11 @@ config USB_HID_BOOT_PROTOCOL
 	  See Chapter 4.2 of Device Class Definition for Human Interface Devices 1.11
 	  for more information.
 
-if USB_HID_BOOT_PROTOCOL
-
 config USB_HID_PROTOCOL_CODE
 	int "HID protocol code"
 	default 0
 	range 0 2
+	depends on USB_HID_BOOT_PROTOCOL
 	help
 	  Sets bIntefaceProtocol in HID instance.
 	  0 = None
@@ -72,7 +71,5 @@ config USB_HID_PROTOCOL_CODE
 	  2 = Mouse
 	  See Chapter 4.3 of Device Class Definition for Human Interface Devices 1.11
 	  for more information.
-
-endif # USB_HID_BOOT_PROTOCOL
 
 endif # USB_DEVICE_HID

@@ -41,17 +41,15 @@ config OPENTHREAD_PLAT
 	help
 	  This option enables OpenThread platform
 
-if OPENTHREAD_PLAT
-
 menuconfig OPENTHREAD_DEBUG
 	bool "OpenThread stack log support"
+	depends on OPENTHREAD_PLAT
 	help
 	  This option enables log support for OpenThread
 
-if OPENTHREAD_DEBUG
-
 choice
 	prompt "OpenThread stack log level"
+	depends on OPENTHREAD_DEBUG
 	help
 	  This option selects log level for OpenThread stack.
 
@@ -64,10 +62,6 @@ config OPENTHREAD_LOG_LEVEL_INFO
 config OPENTHREAD_LOG_LEVEL_DEBUG
 	bool "Debug"
 endchoice
-
-endif
-
-endif
 
 config OPENTHREAD_LOG_LEVEL
 	int
@@ -83,6 +77,7 @@ menuconfig OPENTHREAD_L2_DEBUG
 	  This option enables log support for OpenThread
 
 if OPENTHREAD_L2_DEBUG
+
 config OPENTHREAD_L2_DEBUG_DUMP_15_4
 	bool "Dump 802.15.4 packets"
 	help

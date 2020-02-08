@@ -44,10 +44,9 @@ config STD_CPP2A
 
 endchoice
 
-if ! MINIMAL_LIBC
-
 config LIB_CPLUSPLUS
 	bool "Link with STD C++ library"
+	depends on !MINIMAL_LIBC
 	help
 	  Link with STD C++ Library.
 
@@ -64,7 +63,5 @@ config RTTI
 	  This option enables support of C++ RTTI.
 
 endif # LIB_CPLUSPLUS
-
-endif # ! MINIMAL_LIBC
 
 endif # CPLUSPLUS

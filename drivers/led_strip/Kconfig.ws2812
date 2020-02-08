@@ -14,11 +14,10 @@ menuconfig WS2812_STRIP
 	  Enable LED strip driver for daisy chains of WS2812-ish
 	  (or WS2812B, WS2813, SK6812, or compatible) devices.
 
-if WS2812_STRIP
-
 choice WS2812_STRIP_DRIVER
-prompt "Driver backend"
-default WS2812_STRIP_SPI
+	prompt "Driver backend"
+	default WS2812_STRIP_SPI
+	depends on WS2812_STRIP
 
 config WS2812_STRIP_SPI
 	bool "Enable the SPI driver"
@@ -37,5 +36,3 @@ config WS2812_STRIP_GPIO
 	  and is not available on all SoCs.
 
 endchoice
-
-endif
