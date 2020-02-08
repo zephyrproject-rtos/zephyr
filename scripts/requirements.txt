@@ -5,7 +5,6 @@ breathe>=4.9.1
 colorama
 docutils>=0.14
 gcovr>=4.2
-git-spindle>=2.0
 gitlint
 intelhex
 junit2html
@@ -22,6 +21,5 @@ sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 tabulate
 west>=0.6.2
-wheel>=0.30.0
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
