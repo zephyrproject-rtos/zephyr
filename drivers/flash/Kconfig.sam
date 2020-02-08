@@ -9,6 +9,7 @@ config SOC_FLASH_SAM
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	depends on SOC_FAMILY_SAM
-	depends on SOC_SERIES_SAME70
+	depends on SOC_SERIES_SAME70 || \
+		   SOC_SERIES_SAMV71
 	help
 	  Enable the Atmel SAM series internal flash driver.
