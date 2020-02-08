@@ -89,17 +89,14 @@ config MINIMAL_LIBC_MALLOC
 	  Enable the minimal libc's implementation of malloc, free, and realloc.
 	  Disable if you wish to provide your own implementations of these functions.
 
-if MINIMAL_LIBC_MALLOC
-
 config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the minimal libc malloc arena"
 	default 0
+	depends on MINIMAL_LIBC_MALLOC
 	help
 	  Indicate the size of the memory arena used for minimal libc's
 	  malloc() implementation. This size value must be compatible with
 	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
-
-endif
 
 config MINIMAL_LIBC_CALLOC
 	bool "Enable minimal libc trivial calloc implementation"

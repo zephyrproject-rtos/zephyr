@@ -103,18 +103,15 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-if BT_MESH_PROXY
-
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
 	default 3 if BT_MESH_GATT_PROXY
 	default 1
 	range 1 32767
+	depends on BT_MESH_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
-
-endif # BT_MESH_PROXY
 
 endif # BT_CONN
 

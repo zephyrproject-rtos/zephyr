@@ -52,10 +52,10 @@ config ASAN
 	  This behavior can be changes by adding leak_check_at_exit=1 to the
 	  environment variable ASAN_OPTIONS.
 
-if ASAN
 config ASAN_NOP_DLCLOSE
 	bool "Override host OS dlclose() with a NOP"
 	default y if HAS_SDL
+	depends on ASAN
 	help
 	  Override host OS dlclose() with a NOP.
 
@@ -64,7 +64,6 @@ config ASAN_NOP_DLCLOSE
 	  check, "<unknown module>" is reported in the stack traces during the leak
 	  check and these can not be suppressed, see
 	  https://github.com/google/sanitizers/issues/89 for more info.
-endif # ASAN
 
 config UBSAN
 	bool "Build with undefined behavior sanitizer"

@@ -101,15 +101,12 @@ config SHELL_HISTORY
 	  Enable commands history. History can be accessed using up and down
 	  arrows.
 
-if SHELL_HISTORY
-
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
 	default 512
+	depends on SHELL_HISTORY
 	help
 	  Number of bytes dedicated for storing executed commands.
-
-endif # SHELL_HISTORY
 
 config SHELL_STATS
 	bool "Enable shell statistics"

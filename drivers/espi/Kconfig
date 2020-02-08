@@ -40,18 +40,15 @@ config ESPI_VWIRE_CHANNEL
 	help
 	  eSPI Controller supports virtual wires channel.
 
-if ESPI_VWIRE_CHANNEL
-
 config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	bool "Automatic acknowledge for eSPI HOST warnings"
 	default y
+	depends on ESPI_VWIRE_CHANNEL
 	help
 	  Enable automatic acknowledge from eSPI slave towards eSPI host
 	  whenever it receives suspend or reset warning.
 	  If this is disabled, it means the app wants to be give the opportunity
 	  to prepare for either HOST suspend or reset.
-
-endif # ESPI_VWIRE_CHANNEL
 
 config ESPI_OOB_CHANNEL
 	bool "eSPI Out-of-band channel"

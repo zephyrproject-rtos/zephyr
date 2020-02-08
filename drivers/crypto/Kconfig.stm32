@@ -11,13 +11,10 @@ menuconfig CRYPTO_STM32
 	help
 	  Enable STM32 HAL-based Cryptographic Accelerator driver.
 
-if CRYPTO_STM32
-
 config CRYPTO_STM32_MAX_SESSION
 	int "Maximum of sessions STM32 crypto driver can handle"
 	default 2
+	depends on CRYPTO_STM32
 	help
 	  This can be used to tweak the amount of sessions the driver
 	  can handle in parallel.
-
-endif # CRYPTO_STM32

@@ -10,11 +10,10 @@ config CLOCK_CONTROL_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the clock control driver.
 
-if !CLOCK_CONTROL_NRF_FORCE_ALT
-
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	depends on SOC_COMPATIBLE_NRF
+	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
@@ -130,5 +129,3 @@ config CLOCK_CONTROL_NRF_K32SRC_20PPM
 endchoice
 
 endif # CLOCK_CONTROL_NRF
-
-endif #!CLOCK_CONTROL_NRF_FORCE_ALT
