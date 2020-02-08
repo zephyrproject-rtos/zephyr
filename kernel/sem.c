@@ -90,7 +90,12 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
+	int ret = k_syscall_obj_init(sem, K_OBJ_SEM);
+
+	if (ret) {
+		return ret;
+	}
+
 	return z_impl_k_sem_init(sem, initial_count, limit);
 }
 #include <syscalls/k_sem_init_mrsh.c>
@@ -105,7 +110,7 @@ static inline void handle_poll_events(struct k_sem *sem)
 #endif
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
+int z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *thread = z_unpend_first_thread(&sem->wait_q);
@@ -122,13 +127,20 @@ void z_impl_k_sem_give(struct k_sem *sem)
 
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 	z_reschedule(&lock, key);
+
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_sem_give(struct k_sem *sem)
+static inline int z_vrfy_k_sem_give(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
-	z_impl_k_sem_give(sem);
+	int ret = k_syscall_obj(sem, K_OBJ_SEM);
+
+	if (ret) {
+		return ret;
+	}
+
+	return z_impl_k_sem_give(sem);
 }
 #include <syscalls/k_sem_give_mrsh.c>
 #endif
@@ -165,21 +177,36 @@ out:
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	int ret = k_syscall_obj(sem, K_OBJ_SEM);
+
+	if (ret) {
+		return ret;
+	}
+
 	return z_impl_k_sem_take((struct k_sem *)sem, timeout);
 }
 #include <syscalls/k_sem_take_mrsh.c>
 
-static inline void z_vrfy_k_sem_reset(struct k_sem *sem)
+static inline int z_vrfy_k_sem_reset(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
-	z_impl_k_sem_reset(sem);
+	int ret = k_syscall_obj(sem, K_OBJ_SEM);
+
+	if (ret) {
+		return ret;
+	}
+
+	return z_impl_k_sem_reset(sem);
 }
 #include <syscalls/k_sem_reset_mrsh.c>
 
-static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
+static inline int z_vrfy_k_sem_count_get(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	int ret = k_syscall_obj(sem, K_OBJ_SEM);
+
+	if (ret) {
+		return ret;
+	}
+
 	return z_impl_k_sem_count_get(sem);
 }
 #include <syscalls/k_sem_count_get_mrsh.c>

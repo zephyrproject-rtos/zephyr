@@ -3470,7 +3470,10 @@ struct k_sem {
  * @param limit Maximum permitted semaphore count.
  *
  * @retval 0 Semaphore created successfully
- * @retval -EINVAL Invalid values
+ * @retval -EINVAL limit is 0
+ * @retval -EINVAL intial_count is greater than limit
+ * @retval -EBADF Not a semaphore object (user mode only)
+ * @retval -EACCES No permission on target semaphore (user mode only)
  *
  * @req K-SEM-001
  */
@@ -3492,6 +3495,9 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval 0 Semaphore taken.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -EBADF Not a semaphore object (user mode only)
+ * @retval -EACCES No permission on target semaphore (user mode only)
+ * @retval -EINVAL Semaphore is uninitialized (user mode only)
  * @req K-SEM-001
  */
 __syscall int k_sem_take(struct k_sem *sem, s32_t timeout);
@@ -3505,11 +3511,14 @@ __syscall int k_sem_take(struct k_sem *sem, s32_t timeout);
  * @note Can be called by ISRs.
  *
  * @param sem Address of the semaphore.
+ * @retval -EBADF Not a semaphore object (user mode only)
+ * @retval -EACCES No permission on target semaphore (user mode only)
+ * @retval -EINVAL Semaphore is uninitialized (user mode only)
+ * @retval 0 Success
  *
- * @return N/A
  * @req K-SEM-001
  */
-__syscall void k_sem_give(struct k_sem *sem);
+__syscall int k_sem_give(struct k_sem *sem);
 
 /**
  * @brief Reset a semaphore's count to zero.
@@ -3517,18 +3526,23 @@ __syscall void k_sem_give(struct k_sem *sem);
  * This routine sets the count of @a sem to zero.
  *
  * @param sem Address of the semaphore.
+ * @retval -EBADF Not a semaphore object (user mode only)
+ * @retval -EACCES No permission on target semaphore (user mode only)
+ * @retval -EINVAL Semaphore is uninitialized (user mode only)
+ * @retval 0 Success
  *
- * @return N/A
  * @req K-SEM-001
  */
-__syscall void k_sem_reset(struct k_sem *sem);
+__syscall int k_sem_reset(struct k_sem *sem);
 
 /**
  * @internal
  */
-static inline void z_impl_k_sem_reset(struct k_sem *sem)
+static inline int z_impl_k_sem_reset(struct k_sem *sem)
 {
 	sem->count = 0U;
+
+	return 0;
 }
 
 /**
@@ -3538,15 +3552,19 @@ static inline void z_impl_k_sem_reset(struct k_sem *sem)
  *
  * @param sem Address of the semaphore.
  *
+ * @retval -EBADF Not a semaphore object (user mode only)
+ * @retval -EACCES No permission on target semaphore (user mode only)
+ * @retval -EINVAL Semaphore is uninitialized (user mode only)
  * @return Current semaphore count.
+ *
  * @req K-SEM-001
  */
-__syscall unsigned int k_sem_count_get(struct k_sem *sem);
+__syscall int k_sem_count_get(struct k_sem *sem);
 
 /**
  * @internal
  */
-static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
+static inline int z_impl_k_sem_count_get(struct k_sem *sem)
 {
 	return sem->count;
 }
