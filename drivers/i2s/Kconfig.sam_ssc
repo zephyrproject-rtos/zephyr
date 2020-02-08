@@ -47,7 +47,8 @@ config I2S_SAM_SSC_0_DMA_TX_CHANNEL
 
 choice I2S_SAM_SSC_0_PIN_TD_SELECT
 	prompt "TD pin"
-	depends on SOC_SERIES_SAME70
+	depends on SOC_SERIES_SAME70 || \
+		   SOC_SERIES_SAMV71
 
 	config I2S_SAM_SSC_0_PIN_TD_PB5
 		bool "PB5"
