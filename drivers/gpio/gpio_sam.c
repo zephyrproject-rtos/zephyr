@@ -54,7 +54,10 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask,
 		pio->PIO_IDR = mask;
 		/* Disable pull-up. */
 		pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
+#if defined(CONFIG_SOC_SERIES_SAM4S) || \
+	defined(CONFIG_SOC_SERIES_SAM4E) || \
+	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMV71)
 		/* Disable pull-down. */
 		pio->PIO_PPDDR = mask;
 #endif
@@ -93,7 +96,10 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask,
 	 * Clear both pulls, then enable the one we need.
 	 */
 	pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
+#if defined(CONFIG_SOC_SERIES_SAM4S) || \
+	defined(CONFIG_SOC_SERIES_SAM4E) || \
+	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMV71)
 	pio->PIO_PPDDR = mask;
 #endif
 	if (flags & GPIO_PULL_UP) {
