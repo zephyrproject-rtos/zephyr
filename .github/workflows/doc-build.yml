@@ -68,6 +68,10 @@ jobs:
 
     - name: check-warns
       run: |
+        ls -ls doc/_build/
+        echo "====== DOC.WARN ======"
+        cat doc/_build/doc.warnings
+        echo "======================"
         if [ -s doc/_build/doc.warnings ]; then
            docwarn=$(cat doc/_build/doc.warnings)
            docwarn="${docwarn//'%'/'%25'}"
