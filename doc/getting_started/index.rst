@@ -246,6 +246,8 @@ directory using west:
          cd zephyrproject
          west update
 
+.. _install_py_requirements:
+
 .. rst-class:: numbered-step
 
 Install needed Python packages
