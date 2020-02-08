@@ -68,19 +68,15 @@ void test_kobject_access_grant(void *p1, void *p2, void *p3)
 /****************************************************************************/
 void kobject_user_tc2(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
+	int ret;
 
-	k_sem_give(&kobject_sem);
+	ret = k_sem_give(&kobject_sem);
+	zassert_false(ret, "k_sem_give() failed");
 
-	/* should cause a fault */
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	ret = k_sem_take((struct k_sem *)&kobject_mutex, K_FOREVER);
+	zassert_equal(ret, -EBADF, "bad object should have returned an error");
 
-	/* typecasting to override compiler warning */
-	k_sem_take((struct k_sem *)&kobject_mutex, K_FOREVER);
-
-
+	ztest_test_pass();
 }
 
 /**
@@ -103,10 +99,11 @@ void test_syscall_invalid_kobject(void *p1, void *p2, void *p3)
 /****************************************************************************/
 void kobject_user_tc3(void *p1, void *p2, void *p3)
 {
-	/* should cause a fault */
-	valid_fault = true;
-	USERSPACE_BARRIER;
-	k_sem_give(&kobject_sem);
+	int ret;
+
+	ret = k_sem_give(&kobject_sem);
+	zassert_equal(ret, -EACCES, "access should have been denied");
+	ztest_test_pass();
 }
 
 /**
@@ -128,14 +125,16 @@ void test_thread_without_kobject_permission(void *p1, void *p2, void *p3)
 /****************************************************************************/
 void kobject_user_test4(void *p1, void *p2, void *p3)
 {
-	/* should cause a fault */
+	int ret = k_sem_give(&kobject_sem);
+	int expected;
+
 	if ((uintptr_t)p1 == 1U) {
-		valid_fault = false;
+		expected = 0;
 	} else {
-		valid_fault = true;
+		expected = -EACCES;
 	}
-	USERSPACE_BARRIER;
-	k_sem_give(&kobject_sem);
+
+	zassert_equal(ret, expected, "bad return value for access check");
 }
 
 /**
@@ -167,9 +166,6 @@ void test_kobject_revoke_access(void *p1, void *p2, void *p3)
 			kobject_user_test4,
 			(void *)2, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
-
-	k_thread_abort(k_current_get());
-
 }
 
 /****************************************************************************/
@@ -232,9 +228,10 @@ void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 void kobject_user_test6(void *p1, void *p2, void *p3)
 {
 	valid_fault = false;
-	USERSPACE_BARRIER;
 
-	k_sem_give(&kobject_sem);
+	int ret = k_sem_give(&kobject_sem);
+
+	zassert_false(ret, "k_sem_give() failed");
 
 	valid_fault = true;
 	USERSPACE_BARRIER;

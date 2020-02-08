@@ -49,7 +49,7 @@ static int test_object(struct k_sem *sem, int retval)
 void object_permission_checks(struct k_sem *sem, bool skip_init)
 {
 	/* Should fail because we don't have perms on this object */
-	zassert_false(test_object(sem, -EPERM),
+	zassert_false(test_object(sem, -EACCES),
 		      "object should not have had permission granted");
 
 	k_object_access_grant(sem, k_current_get());

@@ -67,7 +67,7 @@ int z_impl_string_copy(char *src)
 	if (!strcmp(src, kernel_string)) {
 		return 0;
 	} else {
-		return ESRCH;
+		return -ESRCH;
 	}
 }
 
@@ -211,13 +211,13 @@ void test_user_string_copy(void)
 	int ret;
 
 	ret = string_copy("asdkajshdazskjdh");
-	zassert_equal(ret, ESRCH, "got %d", ret);
+	zassert_equal(ret, -ESRCH, "got %d", ret);
 
 	ret = string_copy("asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, EINVAL, "got %d", ret);
+	zassert_equal(ret, -EINVAL, "got %d", ret);
 
 	ret = string_copy(kernel_string);
-	zassert_equal(ret, EFAULT, "got %d", ret);
+	zassert_equal(ret, -EFAULT, "got %d", ret);
 
 	ret = string_copy("this is a kernel string");
 	zassert_equal(ret, 0, "string should have matched");
@@ -236,7 +236,7 @@ void test_to_copy(void)
 	int ret;
 
 	ret = to_copy(kernel_buf);
-	zassert_equal(ret, EFAULT, "should have faulted");
+	zassert_equal(ret, -EFAULT, "should have faulted");
 
 	ret = to_copy(buf);
 	zassert_equal(ret, 0, "copy should have been a success");

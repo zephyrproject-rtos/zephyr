@@ -374,11 +374,10 @@ K_APP_BMEM(part0) static struct k_sem sem;
 static void pass_user_object(void)
 {
 	/* Try to pass a user object to a system call. */
-	expect_fault = true;
-	expected_reason = K_ERR_KERNEL_OOPS;
-	BARRIER();
-	k_sem_init(&sem, 0, 1);
-	zassert_unreachable("Pass a user object to a syscall did not fault");
+	int ret = k_sem_init(&sem, 0, 1);
+
+	zassert_equal(ret, -EBADF,
+		       "Pass a user object to a syscall did not fail");
 }
 
 static struct k_sem ksem;
@@ -391,12 +390,10 @@ static struct k_sem ksem;
 static void pass_noperms_object(void)
 {
 	/* Try to pass a object to a system call w/o permissions. */
-	expect_fault = true;
-	expected_reason = K_ERR_KERNEL_OOPS;
-	BARRIER();
-	k_sem_init(&ksem, 0, 1);
-	zassert_unreachable("Pass an unauthorized object to a "
-			    "syscall did not fault");
+	int ret = k_sem_init(&ksem, 0, 1);
+
+	zassert_equal(ret, -EACCES,
+		      "Pass an unauthorized object to a syscall did not fault");
 }
 
 struct k_thread kthread_thread;
@@ -580,15 +577,15 @@ static void revoke_noperms_object(void)
  */
 static void access_after_revoke(void)
 {
+	int ret;
+
 	k_object_release(&test_revoke_sem);
 
 	/* Try to access an object after revoking access to it */
-	expect_fault = true;
-	expected_reason = K_ERR_KERNEL_OOPS;
-	BARRIER();
-	k_sem_take(&test_revoke_sem, K_NO_WAIT);
-
-	zassert_unreachable("Using revoked object did not fault");
+	expect_fault = false;
+	ret = k_sem_take(&test_revoke_sem, K_NO_WAIT);
+	printk("ret=%d\n", ret);
+	zassert_equal(ret, -EACCES, "should have produced permission error");
 }
 
 static void umode_enter_func(void)
