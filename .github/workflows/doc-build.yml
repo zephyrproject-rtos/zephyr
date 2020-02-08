@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Documentation
+name: Documentation GitHub Workflow
 
 on: [pull_request, push]
 
