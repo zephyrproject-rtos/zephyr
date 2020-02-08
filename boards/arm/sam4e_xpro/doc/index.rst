@@ -157,4 +157,4 @@ References
     http://openocd.org/
 
 .. _SAM-BA:
-    http://www.atmel.com/tools/ATMELSAM-BAIN-SYSTEMPROGRAMMER.aspx
+    https://www.microchip.com/developmenttools/ProductDetails/PartNO/SAM-BA%20In-system%20Programmer
