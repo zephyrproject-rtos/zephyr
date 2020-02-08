@@ -98,9 +98,6 @@ Programming and Debugging
 *************************
 
 Flashing the Zephyr project onto SAM V71 MCU requires the `OpenOCD tool`_.
-Support for Atmel SAM E microcontroller series was added in OpenOCD release
-0.10.0, which was added in Zephyr SDK 0.9.2.
-
 By default a factory new SAM V71 chip will boot the `SAM-BA`_ boot loader
 located in the ROM, not the flashed image. This is determined by the value
 of GPNVM1 (General-Purpose NVM bit 1). The flash procedure will ensure that
@@ -177,4 +174,4 @@ SAM V71 Product Page:
     http://openocd.org/
 
 .. _SAM-BA:
-    http://www.atmel.com/tools/ATMELSAM-BAIN-SYSTEMPROGRAMMER.aspx
+    https://www.microchip.com/developmenttools/ProductDetails/PartNO/SAM-BA%20In-system%20Programmer
