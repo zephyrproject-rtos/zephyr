@@ -179,8 +179,10 @@ static int sx1509b_config(struct device *dev,
 		pins->dir &= ~BIT(pin);
 		if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 			pins->data &= ~BIT(pin);
+			data_first = true;
 		} else if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			pins->data |= BIT(pin);
+			data_first = true;
 		}
 	} else {
 		pins->dir |= BIT(pin);
