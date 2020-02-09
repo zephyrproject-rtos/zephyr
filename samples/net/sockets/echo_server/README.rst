@@ -73,6 +73,22 @@ Example building for the nRF52840_pca10056 with OpenThread support:
    :goals: run
    :compact:
 
+Example building for the atsamr21_xpro with RF2XX driver support:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :host-os: unix
+   :board: [atsamr21_xpro | sam4e_xpro | sam_v71_xult]
+   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :goals: build flash
+   :compact:
+
+In a terminal window you can check if communication is happen:
+
+.. code-block:: console
+
+    $ minicom -D /dev/ttyACM0
+
 Enabling TLS support
 ====================
 
