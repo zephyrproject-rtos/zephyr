@@ -153,7 +153,9 @@ externally connected SPI devices.
 
 Zephyr provide several samples that can use this technology. You can check
 :ref:`wpanusb-sample` and :ref:`wpan_serial-sample` examples as starting
-points.
+points. Another good test can be done with IPv6 by using the server/client
+echo demo. More information at :ref:`sockets-echo-server-sample` and
+:ref:`sockets-echo-client-sample`.
 
 Programming and Debugging
 *************************
