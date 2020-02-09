@@ -191,7 +191,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		memset(data_buf, 0, sizeof(data_buf));
 		ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf),
 				 K_MSEC(1000));
-		zassert_true(data_buf >= 0, "recv error: %d", ret);
+		zassert_true(ret >= 0, "recv error: %d", ret);
 
 		zassert_true(remaining_len >= ret, "More data then expected");
 		check_data(data_buf, data_ptr, ret);
