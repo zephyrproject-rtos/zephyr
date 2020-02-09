@@ -9,11 +9,10 @@ menuconfig GPIO_INTEL_APL
 	help
 	  Enable driver for Intel Apollo Lake SoC GPIO
 
-if GPIO_INTEL_APL
-
 config GPIO_INTEL_APL_CHECK_PERMS
 	bool "Check permissions before manipulating GPIO"
 	default y
+	depends on GPIO_INTEL_APL
 	help
 	  This option enables the checks to make sure the GPIO
 	  pin can be manipulated. Only if the pin is owned by
@@ -21,5 +20,3 @@ config GPIO_INTEL_APL_CHECK_PERMS
 	  the driver allows manipulating the pin.
 
 	  Say y if unsure.
-
-endif # GPIO_INTEL_APL
