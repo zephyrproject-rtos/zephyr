@@ -60,10 +60,9 @@ config MPU_STACK_GUARD
 	help
 	  Enable Thread Stack Guards via MPU
 
-if MPU_STACK_GUARD
-
 config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	int
+	depends on MPU_STACK_GUARD
 	depends on FP_SHARING
 	default 128
 	help
@@ -74,8 +73,6 @@ config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	  frame when the floating point context is active. The FP context
 	  is only stacked in sharing FP registers mode, therefore, the
 	  option is applicable only when FP_SHARING is selected.
-
-endif # MPU_STACK_GUARD
 
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"

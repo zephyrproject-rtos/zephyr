@@ -11,12 +11,9 @@ menuconfig PWM_LITEX
 	help
 	  Enable support for LiteX PWM driver
 
-if PWM_LITEX
-
 config PWM_LITEX_INIT_PRIORITY
 	int "Init priority"
 	default 70
+	depends on PWM_LITEX
 	help
 	  PWM device driver initialization priority.
-
-endif # PWM_LITEX

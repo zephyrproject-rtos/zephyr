@@ -198,10 +198,9 @@ config BOARD_PCA10090_NRF52840_RESET
 	  The GPIO line may only be one of the first 6 MCU interface pins.
 	  The line is active high.
 
-if BOARD_PCA10090_NRF52840_RESET
-
 choice
 	prompt "Pin used for reset"
+	depends on BOARD_PCA10090_NRF52840_RESET
 
 comment "nRF52840 pins"
 
@@ -248,8 +247,6 @@ config BOARD_PCA10090_NRF52840_RESET_P1_02
 	  connected to P0.23 on the nRF9160.
 
 endchoice
-
-endif # BOARD_PCA10090_NRF52840_RESET
 
 module = BOARD_PCA10090
 module-str = Board Control

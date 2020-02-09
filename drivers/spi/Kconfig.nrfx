@@ -260,11 +260,10 @@ config SPI_4_NRF_RX_DELAY
 
 endif # SPI_4
 
-if NRFX_SPIM
-
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
 	default 0
+	depends on NRFX_SPIM
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,
 	  a buffer in RAM needs to be provided for each instance of SPI driver
@@ -274,7 +273,5 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  should be disabled, and the application must then take care of not
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
-
-endif # NRFX_SPIM
 
 endif # SPI_NRFX
