@@ -432,6 +432,7 @@ static inline void receive_add_mem(struct isotp_recv_ctx *ctx, u8_t *data,
 	if (!ctx->act_frag) {
 		LOG_ERR("No fragmet left to append data");
 		receive_report_error(ctx, ISOTP_N_BUFFER_OVERFLW);
+		return;
 	}
 
 	net_buf_add_mem(ctx->act_frag, data + tailroom, len - tailroom);
