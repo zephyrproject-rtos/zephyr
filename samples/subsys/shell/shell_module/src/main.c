@@ -12,7 +12,33 @@
 #include <logging/log.h>
 #include <stdlib.h>
 
+#include <device.h>
+
 LOG_MODULE_REGISTER(app);
+
+static int test_dev_init(struct device *dev)
+{
+	LOG_INF("initializing %s\n", dev->config->name);
+	return 0;
+}
+
+struct test_api {
+};
+
+static struct test_api api;
+
+DEVICE_AND_API_INIT_DT(node_0, DT_INST_0_TEST_DEPS_LABEL, test_dev_init,
+		       NULL, NULL, PRE_KERNEL_2, DT_INST_0_TEST_DEPS_DEP_ORDINAL,
+		       &api);
+DEVICE_AND_API_INIT_DT(node_1, DT_INST_1_TEST_DEPS_LABEL, test_dev_init,
+		       NULL, NULL, PRE_KERNEL_2, DT_INST_1_TEST_DEPS_DEP_ORDINAL,
+		       &api);
+DEVICE_AND_API_INIT_DT(node_2, DT_INST_2_TEST_DEPS_LABEL, test_dev_init,
+		       NULL, NULL, PRE_KERNEL_2, DT_INST_2_TEST_DEPS_DEP_ORDINAL,
+		       &api);
+DEVICE_AND_API_INIT_DT(node_3, DT_INST_3_TEST_DEPS_LABEL, test_dev_init,
+		       NULL, NULL, PRE_KERNEL_2, DT_INST_3_TEST_DEPS_DEP_ORDINAL,
+		       &api);
 
 extern void foo(void);
 
