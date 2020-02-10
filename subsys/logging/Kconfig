@@ -513,7 +513,15 @@ config LOG_BACKEND_RB_MEM_BASE
 config LOG_BACKEND_RB_MEM_SIZE
 	hex "Size of the ring buffer"
 	help
-	  Size of the ring buffer.
+	  Size of the ring buffer. Must be multiply of the message slot
+	  size.
+
+config LOG_BACKEND_RB_SLOT_SIZE
+	int "Size of the message slot"
+	default 64
+	help
+	  Size of the message slot inside ring buffer. All log messages
+	  are split to similar sized logging slots.
 
 endif # LOG_BACKEND_RB
 
