@@ -12,7 +12,7 @@
 
 #define BUF_SIZE 64
 
-BUILD_ASSERT(CONFIG_LOG_BACKEND_ADSP_RINGBUF_SIZE % BUF_SIZE == 0);
+BUILD_ASSERT(CONFIG_LOG_BACKEND_RB_MEM_SIZE % BUF_SIZE == 0);
 
 static struct ring_buf ringbuf;
 
@@ -25,8 +25,8 @@ static struct ring_buf ringbuf;
 
 static void init(void)
 {
-	ring_buf_init(&ringbuf, CONFIG_LOG_BACKEND_ADSP_RINGBUF_SIZE,
-		      (void *)CONFIG_LOG_BACKEND_ADSP_RINGBUF_BASE);
+	ring_buf_init(&ringbuf, CONFIG_LOG_BACKEND_RB_MEM_SIZE,
+		      (void *)CONFIG_LOG_BACKEND_RB_MEM_BASE);
 }
 
 static void trace(const u8_t *data, size_t length)
