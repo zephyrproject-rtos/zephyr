@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
 
+#include <devicetree.h>
+
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
 
@@ -32,6 +34,8 @@
  * Regular HW IRQs are always assigned priority levels lower than the priority
  * levels for SVCalls, Zero-Latency IRQs and processor faults.
  *
+ * PendSV IRQ (which is used in Cortex-M variants to implement thread
+ * context-switching) is assigned the lowest IRQ priority level.
  */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS)
 #define _EXCEPTION_RESERVED_PRIO 1
@@ -50,6 +54,10 @@
 #endif
 
 #define _EXC_IRQ_DEFAULT_PRIO Z_EXC_PRIO(_IRQ_PRIO_OFFSET)
+
+/* Use lowest possible priority level for PendSV */
+#define _EXC_PENDSV_PRIO 0xff
+#define _EXC_PENDSV_PRIO_MASK Z_EXC_PRIO(_EXC_PENDSV_PRIO)
 
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_exc_exit);
