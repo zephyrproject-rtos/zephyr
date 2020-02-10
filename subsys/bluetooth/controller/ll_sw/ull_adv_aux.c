@@ -45,8 +45,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	struct ll_adv_set *adv;
 	uint8_t ip, is;
 
-	/* TODO: */
-
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
 	 * 0x01 - First fragment of fragmented extended advertising data
@@ -174,6 +172,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	}
 
 	/* No SyncInfo flag in primary channel PDU */
+	/* SyncInfo flag in secondary channel PDU */
+	if (_hs.sync_info) {
+		_ps += sizeof(struct ext_adv_sync_info);
+
+		hs->sync_info = 1;
+		ps += sizeof(struct ext_adv_sync_info);
+	}
 
 	/* Tx Power flag */
 	if (_hp.tx_pwr) {
@@ -198,7 +203,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		ps++;
 	}
 
-	/* TODO: ACAD place holder */
+	/* No ACAD in Primary channel PDU */
+	/* TODO: ACAD in Secondary channel PDU */
 
 	/* Calc primary PDU len */
 	_pri_len = _pp - (uint8_t *)_p;
@@ -217,13 +223,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	/* TODO: Check AdvData overflow */
 
-	/* set the secondary PDU len */
-	sec->len = sec_len + len;
-
 	/* Fill AdvData in secondary PDU */
 	memcpy(ps, data, len);
 
-	/* Start filling primary PDU payload based on flags */
+	/* set the secondary PDU len */
+	sec->len = sec_len + len;
+
+	/* Start filling primary PDU extended header  based on flags */
 
 	/* No AdvData in primary channel PDU */
 
@@ -237,6 +243,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	}
 
 	/* No SyncInfo in primary channel PDU */
+	/* SyncInfo in secondary channel PDU */
+	if (hs->sync_info) {
+		_ps -= sizeof(struct ext_adv_sync_info);
+		ps -= sizeof(struct ext_adv_sync_info);
+
+		memcpy(ps, _ps, sizeof(struct ext_adv_sync_info));
+	}
 
 	/* AuxPtr */
 	if (_hp.aux_ptr) {
@@ -254,9 +267,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		aux->offs_units = 0; /* FIXME: implementation defined */
 		aux->phy = find_lsb_set(adv->lll.phy_s) - 1;
 	}
-
-	/* TODO: reduce duplicate code if below remains similar to primary PDU
-	 */
 	if (_hs.aux_ptr) {
 		struct ext_adv_aux_ptr *aux;
 
