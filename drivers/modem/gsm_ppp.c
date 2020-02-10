@@ -98,6 +98,7 @@ MODEM_CMD_DEFINE(gsm_cmd_ok)
 	modem_cmd_handler_set_error(data, 0);
 	LOG_DBG("ok");
 	k_sem_give(&gsm.sem_response);
+	return 0;
 }
 
 MODEM_CMD_DEFINE(gsm_cmd_error)
@@ -105,6 +106,7 @@ MODEM_CMD_DEFINE(gsm_cmd_error)
 	modem_cmd_handler_set_error(data, -EINVAL);
 	LOG_DBG("error");
 	k_sem_give(&gsm.sem_response);
+	return 0;
 }
 
 static struct modem_cmd response_cmds[] = {
@@ -143,6 +145,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 				    data->rx_buf, 0, len);
 	minfo.mdm_manufacturer[out_len] = '\0';
 	LOG_INF("Manufacturer: %s", log_strdup(minfo.mdm_manufacturer));
+
+	return 0;
 }
 
 /* Handler: <model> */
@@ -155,6 +159,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    data->rx_buf, 0, len);
 	minfo.mdm_model[out_len] = '\0';
 	LOG_INF("Model: %s", log_strdup(minfo.mdm_model));
+
+	return 0;
 }
 
 /* Handler: <rev> */
@@ -167,6 +173,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    data->rx_buf, 0, len);
 	minfo.mdm_revision[out_len] = '\0';
 	LOG_INF("Revision: %s", log_strdup(minfo.mdm_revision));
+
+	return 0;
 }
 
 /* Handler: <IMEI> */
@@ -178,6 +186,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 				    data->rx_buf, 0, len);
 	minfo.mdm_imei[out_len] = '\0';
 	LOG_INF("IMEI: %s", log_strdup(minfo.mdm_imei));
+
+	return 0;
 }
 #endif /* CONFIG_MODEM_SHELL */
 
