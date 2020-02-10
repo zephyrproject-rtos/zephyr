@@ -1075,7 +1075,6 @@ class SizeCalculator:
         'log_const_sections',
         "font_entry_sections",
         "priv_stacks_noinit",
-        "_TEXT_SECTION_NAME_2",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
         "nocache"
@@ -1083,6 +1082,7 @@ class SizeCalculator:
 
     # These get copied into RAM only on non-XIP
     ro_sections = [
+        "rom_start",
         "text",
         "ctors",
         "init_array",
