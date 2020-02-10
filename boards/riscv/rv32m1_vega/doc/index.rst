@@ -151,7 +151,6 @@ with this board:
 
    - no 512/256 Kbps PHY
    - **no LL Privacy**
-   - **no power-save**
    - no TX power adjustment
 
    Limitations marked **bold** above are planned to be addressed on this
