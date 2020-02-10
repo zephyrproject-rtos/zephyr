@@ -71,7 +71,7 @@ python-can backend as follows:
 
 .. code-block:: console
 
-   pip3 install --user canopen can
+   pip3 install --user canopen python-can
 
 Next, bring up the CAN interface on the test PC. On GNU/Linux, this
 can be done as follows:
