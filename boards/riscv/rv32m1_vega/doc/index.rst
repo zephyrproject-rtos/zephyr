@@ -152,7 +152,6 @@ with this board:
    - **no 2 Mbps PHY**
    - no 512/256 Kbps PHY
    - **no LL Privacy**
-   - no mesh support
    - **no power-save**
    - no TX power adjustment
 
