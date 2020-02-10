@@ -213,8 +213,7 @@ foreach(target flash debug debugserver attach)
   else()
     add_custom_target(${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
-          '${CMAKE_MAKE_PROGRAM} ${target}', please install west bootstrapper with:
-          'pip install west --user', and thereafter 'west init'.\"
+          '${CMAKE_MAKE_PROGRAM} ${target}', please create a west workspace.\"
       USES_TERMINAL
       )
   endif(WEST)
