@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief ARM specific kernel interface header
+ * @brief ARM AArch32 specific kernel interface header
  *
- * This header contains the ARM specific kernel interface.  It is
+ * This header contains the ARM AArch32 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
  * (include/arm/cpu.h)
  */
