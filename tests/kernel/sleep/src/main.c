@@ -24,7 +24,16 @@
 #define ONE_SECOND_ALIGNED	\
 	(u32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+/*
+ * The Xilinx QEMU, used to emulate the Xilinx ZynqMP platform, is particularly
+ * unstable in terms of timing. The tick margin of at least 5 is necessary to
+ * allow this test to pass with a reasonable repeatability.
+ */
+#define TICK_MARGIN		5
+#else
 #define TICK_MARGIN		1
+#endif
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
