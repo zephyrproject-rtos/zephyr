@@ -17,6 +17,22 @@
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
 
+/*
+ * In architecture variants with non-programmable fault exceptions
+ * (e.g. Cortex-M Baseline variants), hardware ensures processor faults
+ * are given the highest interrupt priority level. SVCalls are assigned
+ * the highest configurable priority level (level 0); note, however, that
+ * this interrupt level may be shared with HW interrupts.
+ *
+ * In Cortex variants with programmable fault exception priorities we
+ * assign the highest interrupt priority level (level 0) to processor faults
+ * with configurable priority.
+ * The highest priority level may be shared with either Zero-Latency IRQs (if
+ * support for the feature is enabled) or with SVCall priority level.
+ * Regular HW IRQs are always assigned priority levels lower than the priority
+ * levels for SVCalls, Zero-Latency IRQs and processor faults.
+ *
+ */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS)
 #define _EXCEPTION_RESERVED_PRIO 1
 #else
