@@ -42,13 +42,13 @@ if LOG
 config LOG_PRINTK
 	default y
 
-config LOG_BACKEND_ADSP
+config LOG_BACKEND_RB
 	default y
 
-config LOG_BACKEND_ADSP_RINGBUF_BASE
+config LOG_BACKEND_RB_MEM_BASE
 	default "0xBE008000"
 
-config LOG_BACKEND_ADSP_RINGBUF_SIZE
+config LOG_BACKEND_RB_MEM_SIZE
 	default "0x2000"
 
 endif # LOG
