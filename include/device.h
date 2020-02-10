@@ -125,6 +125,32 @@ extern "C" {
 		      prio, api)
 #endif
 
+#ifdef CONFIG_DEVICE_DT_INIT
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
+/*
+ * TODO:
+ *
+ * - clean up to get rid of copy/paste
+ * - support CONFIG_DEVICE_POWER_MANAGEMENT
+ */
+#define DEVICE_AND_API_INIT_DT(dev_name, drv_name, init_fn, data, cfg_info, \
+			       level, dep_ordinal, api)			\
+	static const struct device_config _CONCAT(__config_, dev_name) __used \
+	__attribute__((__section__(".devconfig.init"))) = {		  \
+		.name = drv_name, .init = (init_fn),			  \
+		.config_info = (cfg_info)				  \
+	};								  \
+	static Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
+	__attribute__((__section__(".dt_init_" #level STRINGIFY(dep_ordinal)))) = { \
+		.config = &_CONCAT(__config_, dev_name),		  \
+		.driver_api = api,					  \
+		.driver_data = data					  \
+	}
+#else
+#error "unsupported configuration: CONFIG_DEVICE_DT_INIT && !CONFIG_DEVICE_POWER_MANAGEMENT"
+#endif
+#endif
+
 /**
  * @def DEVICE_DEFINE
  *

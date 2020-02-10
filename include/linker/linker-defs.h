@@ -45,6 +45,16 @@
 #define DEVICE_BUSY_BITFIELD()
 #endif
 
+#ifdef CONFIG_DEVICE_DT_INIT
+/* TODO: add an error check in DEVICE_INIT_UNDEFINED_SECTION */
+#define DEVICE_DT_INIT_LEVEL(level) \
+		KEEP(*(SORT(.dt_init_##level[0-9])));			\
+		KEEP(*(SORT(.dt_init_##level[1-9][0-9])));		\
+		KEEP(*(SORT(.dt_init_##level[1-9][0-9][0-9])));
+#else
+#define DEVICE_DT_INIT_LEVEL(level)
+#endif
+
 /*
  * generate a symbol to mark the start of the device initialization objects for
  * the specified level, then link all of those objects (sorted by priority);
@@ -54,7 +64,11 @@
 #define DEVICE_INIT_LEVEL(level)				\
 		__device_##level##_start = .;			\
 		KEEP(*(SORT(.init_##level[0-9])));		\
-		KEEP(*(SORT(.init_##level[1-9][0-9])));	\
+		KEEP(*(SORT(.init_##level[1-4][0-9])));	\
+		KEEP(*(SORT(.init_##level##50)));		\
+		DEVICE_DT_INIT_LEVEL(level);			\
+		KEEP(*(SORT(.init_##level##5[1-9])));		\
+		KEEP(*(SORT(.init_##level[6-9][0-9])));	\
 
 /*
  * link in device initialization objects for all devices that are automatically

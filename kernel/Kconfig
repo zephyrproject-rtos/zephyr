@@ -581,6 +581,13 @@ config XIP
 
 menu "Initialization Priorities"
 
+config DEVICE_DT_INIT
+	bool "Determine initialization priority using devicetree"
+	help
+	  If enabled, a range of initialization priority values will be reserved
+	  for devicetree-based ordinals. If this is set, you must leave the
+	  following initialization priorities at their default values.
+
 config KERNEL_INIT_PRIORITY_OBJECTS
 	int "Kernel objects initialization priority"
 	default 30
