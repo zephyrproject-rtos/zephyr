@@ -8,4 +8,20 @@ if BOARD_QUICK_FEATHER
 config BOARD
 	default "quick_feather"
 
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y
+
+config FLASH_HAS_PAGE_LAYOUT
+	default y
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 32768
+
+endif # FLASH
+
 endif # BOARD_QUICK_FEATHER
