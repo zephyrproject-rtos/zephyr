@@ -13,8 +13,6 @@ testing:
   default: true
   ignore_tags:
     - benchmark
-    - cmsis_rtos
     - interrupt
-    - kernel
     - memory_protection
     - userspace
