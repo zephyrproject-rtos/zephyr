@@ -7,12 +7,9 @@ config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
 	default "rv32m1_vega_zero_riscy" if SOC_OPENISA_RV32M1_ZERO_RISCY
 
-if UART_RV32M1_LPUART
-
 config UART_RV32M1_LPUART_0
 	default y if UART_CONSOLE
-
-endif # UART_RV32M1
+	depends on UART_RV32M1_LPUART
 
 if PINMUX_RV32M1
 
@@ -52,12 +49,9 @@ config GPIO_RV32M1_PORTE
 
 endif # GPIO_RV32M1
 
-if SERIAL
-
 config UART_RV32M1_LPUART
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if I2C
 
@@ -79,12 +73,9 @@ config SPI_1
 
 endif # SPI
 
-if PWM
-
 config PWM_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 if BT
 

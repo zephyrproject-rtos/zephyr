@@ -8,26 +8,17 @@ if BOARD_NUCLEO_G431RB
 config BOARD
 	default "nucleo_g431rb"
 
-if UART_CONSOLE
-
 config LPUART_1
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_1
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_STM32_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 

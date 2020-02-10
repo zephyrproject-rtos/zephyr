@@ -88,12 +88,9 @@ config BATTERY_SENSE
 
 endif # ADC
 
-if PWM_MCUX_FTM
-
 config PWM_3
 	default y
-
-endif # PWM_MCUX_FTM
+	depends on PWM_MCUX_FTM
 
 if SPI
 
@@ -108,11 +105,8 @@ config SPI_2
 
 endif # SPI
 
-if NET_L2_ETHERNET
-
 config ETH_MCUX_0
 	default y
-
-endif # NET_L2_ETHERNET
+	depends on NET_L2_ETHERNET
 
 endif # BOARD_HEXIWEAR_K64

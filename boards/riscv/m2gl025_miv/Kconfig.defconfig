@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_M2GL025_MIV
-
 config BOARD
 	default "m2gl025_miv"
-
-endif
+	depends on BOARD_M2GL025_MIV

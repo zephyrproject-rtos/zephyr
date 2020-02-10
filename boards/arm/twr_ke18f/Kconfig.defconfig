@@ -8,12 +8,9 @@ if BOARD_TWR_KE18F
 config BOARD
 	default "twr_ke18f"
 
-if UART_MCUX_LPUART
-
 config UART_MCUX_LPUART_0
 	default y if UART_CONSOLE
-
-endif # UART_MCUX_LPUART
+	depends on UART_MCUX_LPUART
 
 if I2C
 
@@ -35,12 +32,9 @@ config SPI_1
 
 endif # SPI_MCUX_LPSPI
 
-if CAN
-
 config CAN_0
 	default y
-
-endif # CAN
+	depends on CAN
 
 if PINMUX_MCUX
 
@@ -80,19 +74,13 @@ config GPIO_MCUX_PORTE
 
 endif # GPIO_MCUX
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if SENSOR
+	depends on ADC
 
 config TEMP_KINETIS
 	default y
-
-endif # SENSOR
+	depends on SENSOR
 
 if PWM
 

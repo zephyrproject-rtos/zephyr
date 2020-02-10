@@ -8,12 +8,9 @@ if BOARD_ARDUINO_DUE
 config BOARD
 	default "arduino_due"
 
-if GPIO
-
 config GPIO_SAM
 	default y
-
-endif # GPIO
+	depends on GPIO
 
 if I2C
 

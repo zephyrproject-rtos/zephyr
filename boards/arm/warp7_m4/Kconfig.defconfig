@@ -8,12 +8,9 @@ if BOARD_WARP7_M4
 config BOARD
 	default "warp7_m4"
 
-if GPIO_IMX
-
 config GPIO_IMX_PORT_7
 	default y
-
-endif # GPIO_IMX
+	depends on GPIO_IMX
 
 if UART_IMX
 
@@ -25,26 +22,17 @@ config UART_IMX_UART_6
 
 endif # UART_IMX
 
-if I2C_IMX
-
 config I2C_4
 	default y
-
-endif # I2C_IMX
-
-if FXOS8700
+	depends on I2C_IMX
 
 config FXOS8700_DRDY_INT1
 	default y
-
-endif # FXOS8700
-
-if FXAS21002
+	depends on FXOS8700
 
 config FXAS21002_DRDY_INT1
 	default y
-
-endif # FXAS21002
+	depends on FXAS21002
 
 if !XIP
 config FLASH_SIZE

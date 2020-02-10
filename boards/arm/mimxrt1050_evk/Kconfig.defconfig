@@ -16,12 +16,9 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
-if DISK_ACCESS_USDHC
-
 config DISK_ACCESS_USDHC1
 	default y
-
-endif # DISK_ACCESS_USDHC
+	depends on DISK_ACCESS_USDHC
 
 if GPIO_MCUX_IGPIO
 
@@ -45,19 +42,13 @@ endif # GPIO_MCUX_IGPIO
 config I2C
 	default y if LVGL
 
-if I2C_MCUX_LPI2C
-
 config I2C_1
 	default y
-
-endif # I2C_MCUX_LPI2C
-
-if SPI_MCUX_LPSPI
+	depends on I2C_MCUX_LPI2C
 
 config SPI_3
 	default y
-
-endif # SPI_MCUX_LPSPI
+	depends on SPI_MCUX_LPSPI
 
 if UART_MCUX_LPUART
 

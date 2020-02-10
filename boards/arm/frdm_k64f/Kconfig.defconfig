@@ -68,40 +68,25 @@ config GPIO_MCUX_PORTE
 
 endif # GPIO_MCUX
 
-if I2C
-
 config I2C_0
 	default y
-
-endif # I2C
-
-if ADC
+	depends on I2C
 
 config ADC_1
 	default y
-
-endif # ADC
-
-if SENSOR
+	depends on ADC
 
 config TEMP_KINETIS
 	default y
-
-endif # SENSOR
-
-if PWM_MCUX_FTM
+	depends on SENSOR
 
 config PWM_3
 	default y
-
-endif # PWM_MCUX_FTM
-
-if SPI
+	depends on PWM_MCUX_FTM
 
 config SPI_0
 	default y
-
-endif # SPI
+	depends on SPI
 
 if NETWORKING
 
@@ -113,11 +98,8 @@ config ETH_MCUX_0
 
 endif # NETWORKING
 
-if CAN
-
 config CAN_0
 	default y
-
-endif # CAN
+	depends on CAN
 
 endif # BOARD_FRDM_K64F

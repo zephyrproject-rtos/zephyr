@@ -30,12 +30,9 @@ endif # GPIO_MCUX_IGPIO
 config I2C
 	default y if LVGL
 
-if I2C_MCUX_LPI2C
-
 config I2C_1
 	default y
-
-endif # I2C_MCUX_LPI2C
+	depends on I2C_MCUX_LPI2C
 
 if UART_MCUX_LPUART
 

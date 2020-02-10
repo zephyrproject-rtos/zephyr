@@ -4,9 +4,6 @@
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF51822_QFAC
-
 config SOC
 	default "nRF51822_QFAC"
-
-endif # SOC_NRF51822_QFAC
+	depends on SOC_NRF51822_QFAC

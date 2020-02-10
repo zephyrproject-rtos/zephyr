@@ -8,11 +8,8 @@ if SOC_PSOC6_M0
 config SOC
 	default "psoc6_m0"
 
-if SERIAL
-
 config UART_PSOC6
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 endif # SOC_PSOC6_M0

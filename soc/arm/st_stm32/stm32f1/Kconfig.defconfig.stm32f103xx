@@ -11,12 +11,9 @@ config SOC
 config NUM_IRQS
 	default 43
 
-if GPIO_STM32
-
 config GPIO_STM32_PORTE
 	default y
-
-endif # GPIO_STM32
+	depends on GPIO_STM32
 
 endif # SOC_STM32F103XB || SOC_STM32F103X8
 

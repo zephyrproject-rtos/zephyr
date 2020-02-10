@@ -128,40 +128,25 @@ endif # MULTI_LEVEL_INTERRUPTS
 config PINMUX_RV32M1
 	default y
 
-if GPIO
-
 config GPIO_RV32M1
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_RV32M1_LPUART
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_RV32M1_LPI2C
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_RV32M1_LPSPI
 	default y
-
-endif # SPI
-
-if PWM
+	depends on SPI
 
 config PWM_RV32M1_TPM
 	default y
-
-endif # PWM
+	depends on PWM
 
 if FLASH
 
@@ -176,11 +161,8 @@ config FLASH_BASE_ADDRESS
 
 endif # FLASH
 
-if ENTROPY_GENERATOR
-
 config ENTROPY_RV32M1_TRNG
 	default y
-
-endif # ENTROPY_GENERATOR
+	depends on ENTROPY_GENERATOR
 
 endif # SOC_OPENISA_RV32M1_RISCV32

@@ -8,25 +8,16 @@ if BOARD_SAM4E_XPRO
 config BOARD
 	default "sam4e_xpro"
 
-if GPIO
-
 config GPIO_SAM
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_SAM_TWI
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_SAM
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_SAM4E_XPRO

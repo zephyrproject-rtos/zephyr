@@ -24,18 +24,12 @@ config GPIO_STM32_PORTI
 
 endif # GPIO_STM32
 
-if ENTROPY_GENERATOR
-
 config ENTROPY_STM32_RNG
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if CRYPTO
+	depends on ENTROPY_GENERATOR
 
 config CRYPTO_STM32
 	default y
-
-endif # CRYPTO
+	depends on CRYPTO
 
 endif # SOC_STM32F417XX

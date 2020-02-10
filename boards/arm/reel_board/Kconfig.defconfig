@@ -20,32 +20,21 @@ config I2C_0
 config I2C_1
 	default n
 
-if I2C_0
-
 choice I2C_0_NRF_TYPE
 	default I2C_0_NRF_TWIM
-
+	depends on I2C_0
 endchoice
-
-endif # I2C_0
-
-if I2C_1
 
 choice I2C_1_NRF_TYPE
 	default I2C_1_NRF_TWIM
-
+	depends on I2C_1
 endchoice
-
-endif # I2C_1
 
 endif # I2C
 
-if PWM
-
 config PWM_0
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 
@@ -70,25 +59,16 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
-
-if BT
+	depends on IEEE802154
 
 config BT_CTLR
 	default y
-
-endif # BT
-
-if DISPLAY
+	depends on BT
 
 config SSD16XX
 	default y
-
-endif #DISPLAY
+	depends on DISPLAY
 
 endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2

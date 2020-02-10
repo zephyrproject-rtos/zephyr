@@ -24,12 +24,9 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 2
 
-if UART_MCUX
-
 config UART_MCUX_0
 	default y
-
-endif # UART_MCUX
+	depends on UART_MCUX
 
 if PINMUX_MCUX
 
@@ -76,33 +73,20 @@ config I2C_1
 
 endif # I2C
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if PWM_MCUX_FTM
+	depends on ADC
 
 config PWM_1
 	default y
-
-endif # PWM_MCUX_FTM
-
-if SPI
+	depends on PWM_MCUX_FTM
 
 config SPI_1
 	default y
-
-endif # SPI
-
-if IEEE802154_MCR20A
+	depends on SPI
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	default y
-
-endif # IEEE802154_MCR20A
-
+	depends on IEEE802154_MCR20A
 
 endif # BOARD_USB_KW24D512
