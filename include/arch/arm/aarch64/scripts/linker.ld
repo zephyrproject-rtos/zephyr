@@ -132,10 +132,10 @@ SECTIONS
 
         KEEP(*(.vectors))
 
+        _vector_end = .;
+
         KEEP(*(.openocd_dbg))
         KEEP(*(".openocd_dbg.*"))
-
-        _vector_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
