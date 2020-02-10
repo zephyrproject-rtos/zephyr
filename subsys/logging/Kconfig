@@ -497,26 +497,25 @@ config LOG_BACKEND_NET_SYST_ENABLE
 
 endif # LOG_BACKEND_NET
 
-config LOG_BACKEND_ADSP
-	bool "Enable Intel ADSP backend"
-	depends on SOC_INTEL_APL_ADSP
+config LOG_BACKEND_RB
+	bool "Enable memory ring buffer backend"
 	select RING_BUFFER
 	help
-	  Enable backend in APL ADSP using memory mailbox
+	  Enable backend in memory using ring buffer to keep messages.
 
-if LOG_BACKEND_ADSP
+if LOG_BACKEND_RB
 
-config LOG_BACKEND_ADSP_RINGBUF_BASE
-	hex "Ringbuf base address"
+config LOG_BACKEND_RB_MEM_BASE
+	hex "Ring buffer memory base address"
 	help
 	  Address of the ring buffer in the memory.
 
-config LOG_BACKEND_ADSP_RINGBUF_SIZE
+config LOG_BACKEND_RB_MEM_SIZE
 	hex "Size of the ring buffer"
 	help
 	  Size of the ring buffer.
 
-endif # LOG_BACKEND_ADSP
+endif # LOG_BACKEND_RB
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
