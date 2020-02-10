@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Cortex-M public exception handling
+ * @brief ARM AArch32 public exception handling
  *
  * ARM-specific kernel exception handling interface. Included by arm/arch.h.
  */
