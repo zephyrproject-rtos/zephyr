@@ -36,7 +36,7 @@
 #define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)))
 
-#define VECTOR_BASE (ROM_BASE + CONFIG_TEXT_SECTION_OFFSET)
+#define VECTOR_BASE (ROM_BASE + CONFIG_ROM_START_OFFSET)
 
 #else
 

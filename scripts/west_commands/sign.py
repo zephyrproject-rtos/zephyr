@@ -205,7 +205,7 @@ class ImgtoolSigner(Signer):
 
         tool_path = self.find_imgtool(command, args)
         # The vector table offset is set in Kconfig:
-        vtoff = self.get_cfg(command, bcfg, 'CONFIG_TEXT_SECTION_OFFSET')
+        vtoff = self.get_cfg(command, bcfg, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         flash = self.edt_flash_node(b, cache)
@@ -228,7 +228,7 @@ class ImgtoolSigner(Signer):
         log.banner('image configuration:')
         log.inf('partition offset: {0} (0x{0:x})'.format(addr))
         log.inf('partition size: {0} (0x{0:x})'.format(size))
-        log.inf('text section offset: {0} (0x{0:x})'.format(vtoff))
+        log.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
 
         # Base sign command.
         #

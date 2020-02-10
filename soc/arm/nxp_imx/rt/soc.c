@@ -85,7 +85,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 
 const __imx_boot_ivt_section ivt image_vector_table = {
 	.hdr = IVT_HEADER,
-	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET,
+	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_ROM_START_OFFSET,
 	.reserved1 = IVT_RSVD,
 #ifdef CONFIG_DEVICE_CONFIGURATION_DATA
 	.dcd = (uint32_t) dcd_data,

@@ -446,7 +446,7 @@ static int boot_read_v1_header(uint8_t area_id,
 	 *
 	 * Larger values in header_size than BOOT_HEADER_SIZE_V1 are
 	 * possible, e.g. if Zephyr was linked with
-	 * CONFIG_TEXT_SECTION_OFFSET > BOOT_HEADER_SIZE_V1.
+	 * CONFIG_ROM_START_OFFSET > BOOT_HEADER_SIZE_V1.
 	 */
 	if ((v1_raw->header_magic != BOOT_HEADER_MAGIC_V1) ||
 	    (v1_raw->header_size < BOOT_HEADER_SIZE_V1)) {

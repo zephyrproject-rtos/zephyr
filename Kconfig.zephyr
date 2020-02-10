@@ -118,15 +118,15 @@ config FLASH_LOAD_SIZE
 
 endif # HAS_FLASH_LOAD_OFFSET
 
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
 	hex
-	prompt "TEXT section offset" if !BOOTLOADER_MCUBOOT
+	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
 	default 0x200 if BOOTLOADER_MCUBOOT
 	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this
 	  variable is required to be set to value that leaves sufficient
-	  space between the beginning of the image and the start of the .text
+	  space between the beginning of the image and the start of the first
 	  section to store an image header or any other metadata.
 	  In the particular case of the MCUboot bootloader this reserves enough
 	  space to store the image header, which should also meet vector table
@@ -385,7 +385,7 @@ config BOOTLOADER_MCUBOOT
 	  order for the image generated to be bootable using the MCUboot open
 	  source bootloader. Currently this includes:
 
-	    * Setting TEXT_SECTION_OFFSET to a default value that allows space
+	    * Setting ROM_START_OFFSET to a default value that allows space
 	      for the MCUboot image header
 	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
 	      (or Armv8-M baseline) targets with no built-in vector relocation
