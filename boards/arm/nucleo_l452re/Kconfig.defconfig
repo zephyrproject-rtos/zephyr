@@ -9,19 +9,13 @@ if BOARD_NUCLEO_L452RE
 config BOARD
 	default "nucleo_l452re"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
-
-if PWM
+	depends on UART_CONSOLE
 
 config PWM_STM32_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 
@@ -33,11 +27,8 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
-if CAN
-
 config CAN_1
 	default y
-
-endif # CAN
+	depends on CAN
 
 endif # BOARD_NUCLEO_L452RE

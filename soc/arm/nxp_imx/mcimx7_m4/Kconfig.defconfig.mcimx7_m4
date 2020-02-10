@@ -14,39 +14,24 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_IMX
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_IMX
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_IMX
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_IMX
 	default y
-
-endif # PWM
-
-if IPM
+	depends on PWM
 
 config IPM_IMX
 	default y
-
-endif # IPM
+	depends on IPM
 
 endif # SOC_MCIMX7_M4

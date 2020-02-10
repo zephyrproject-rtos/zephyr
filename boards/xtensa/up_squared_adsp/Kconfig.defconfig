@@ -35,23 +35,16 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
 
-if DMA_DW
-
 config HEAP_MEM_POOL_SIZE
 	default 1024
-
-endif # DMA_DW
-
-if DMA
+	depends on DMA_DW
 
 config DMA_DW
 	default y
+	depends on DMA
 
-endif
-
-if I2S
 config I2S_CAVS
 	default y
-endif
+	depends on I2S
 
 endif # BOARD_UP_SQUARED_ADSP

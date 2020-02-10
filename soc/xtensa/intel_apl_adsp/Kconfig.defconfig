@@ -32,13 +32,10 @@ config DYNAMIC_INTERRUPTS
 config LOG
 	default y
 
-if TEST
-
 # To prevent test uses TEST_LOGGING_MINIMAL
 config TEST_LOGGING_DEFAULTS
 	default n
-
-endif # TEST
+	depends on TEST
 
 if LOG
 

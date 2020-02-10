@@ -9,18 +9,12 @@ if BOARD_NUCLEO_L152RE
 config BOARD
 	default "nucleo_l152re"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 endif # BOARD_NUCLEO_L152RE

@@ -38,11 +38,8 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if COUNTER
-
 config COUNTER_GECKO_RTCC
 	default y
-
-endif # COUNTER
+	depends on COUNTER
 
 endif # BOARD_EFM32PG_STK3402A || BOARD_EFM32PG_STK3402A_JG

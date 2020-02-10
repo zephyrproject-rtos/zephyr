@@ -8,33 +8,21 @@ if BOARD_DECAWAVE_DWM1001_DEV
 config BOARD
 	default "decawave_dwm1001_dev"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_0
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_0
 	default y
-
-endif # PWM
-
-if SPI
+	depends on PWM
 
 config SPI_1
 	default y
-
-endif # SPI
+	depends on SPI
 
 config BT_CTLR
 	default BT

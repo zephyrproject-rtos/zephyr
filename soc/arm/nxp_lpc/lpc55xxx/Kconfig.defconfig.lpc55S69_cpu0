@@ -8,32 +8,20 @@ if SOC_LPC55S69_CPU0
 config SOC
 	default "lpc55S69_cpu0"
 
-if PINMUX
-
 config PINMUX_MCUX_LPC
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX_LPC
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_MCUX_FLEXCOMM
 	default y
-
-endif # SERIAL
-
-if FLASH
+	depends on SERIAL
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
+	depends on FLASH
 
 endif # SOC_LPC55S69_CPU0

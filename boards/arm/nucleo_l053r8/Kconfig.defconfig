@@ -8,12 +8,9 @@ if BOARD_NUCLEO_L053R8
 config BOARD
 	default "nucleo_l053r8"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 # Disable ports D and H to allow kernel test cases common and
 # contex to run on nucleo_l053r8.
@@ -28,12 +25,9 @@ config GPIO_STM32_PORTH
 
 endif # GPIO
 
-if I2C
-
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 if SPI
 

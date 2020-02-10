@@ -8,12 +8,9 @@ if BOARD_96B_CARBON
 config BOARD
 	default "96b_carbon"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if SERIAL
 

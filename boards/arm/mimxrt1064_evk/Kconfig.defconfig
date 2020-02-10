@@ -29,19 +29,13 @@ endif # GPIO_MCUX_IGPIO
 config I2C
 	default y if LVGL
 
-if I2C_MCUX_LPI2C
-
 config I2C_1
 	default y
-
-endif # I2C_MCUX_LPI2C
-
-if UART_MCUX_LPUART
+	depends on I2C_MCUX_LPI2C
 
 config UART_MCUX_LPUART_1
 	default y
-
-endif # UART_MCUX_LPUART
+	depends on UART_MCUX_LPUART
 
 config KSCAN
 	default y if LVGL
@@ -95,11 +89,8 @@ endchoice
 
 endif # LVGL
 
-if PWM_MCUX
-
 config FLEXPWM2_PWM3
 	default y
-
-endif
+	depends on PWM_MCUX
 
 endif # BOARD_MIMXRT1064_EVK

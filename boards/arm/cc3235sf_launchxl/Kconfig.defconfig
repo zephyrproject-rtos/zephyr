@@ -8,11 +8,8 @@ if BOARD_CC3235SF_LAUNCHXL
 config BOARD
 	default "cc3235sf_launchxl"
 
-if I2C
-
 config I2C_CC32XX
 	default y
-
-endif # I2C
+	depends on I2C
 
 endif # BOARD_CC3235SF_LAUNCHXL

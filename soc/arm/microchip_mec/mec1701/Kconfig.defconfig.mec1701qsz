@@ -11,11 +11,8 @@ config SOC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
 
-if SERIAL
-
 config UART_NS16550
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 endif # SOC_MEC1701_QSZ

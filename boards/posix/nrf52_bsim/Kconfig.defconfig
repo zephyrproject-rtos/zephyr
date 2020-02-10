@@ -14,12 +14,9 @@ config OUTPUT_PRINT_MEMORY_USAGE
 config BOARD
 	default "nrf52_bsim"
 
-if BT
-
 config BT_CTLR
 	default y
-
-endif # BT
+	depends on BT
 
 if LOG
 

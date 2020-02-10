@@ -36,18 +36,12 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if WATCHDOG
-
 config WDOG_CMSDK_APB
 	default y
-
-endif # WATCHDOG
-
-if I2C
+	depends on WATCHDOG
 
 config I2C_SBCON
 	default y
-
-endif # I2C
+	depends on I2C
 
 endif

@@ -43,25 +43,16 @@ config GPIO_MCUX_PORTC
 
 endif # GPIO_MCUX
 
-if UART_MCUX_LPUART
-
 config UART_MCUX_LPUART_0
 	default y
-
-endif # UART_MCUX
-
-if I2C
+	depends on UART_MCUX_LPUART
 
 config I2C_1
 	default y
-
-endif # I2C
-
-if ADC
+	depends on I2C
 
 config ADC_0
 	default y
-
-endif # ADC
+	depends on ADC
 
 endif # BOARD_HEXIWEAR_KW40Z
