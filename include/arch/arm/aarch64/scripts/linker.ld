@@ -117,8 +117,6 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 
-	. = CONFIG_TEXT_SECTION_OFFSET;
-
 #if defined(CONFIG_SW_VECTOR_RELAY)
 	KEEP(*(.vector_relay_table))
 	KEEP(*(".vector_relay_table.*"))
