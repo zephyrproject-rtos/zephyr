@@ -400,6 +400,20 @@ static int _modem_cmd_send(struct modem_iface *iface,
 		goto exit;
 	}
 
+#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+	LOG_HEXDUMP_DBG(buf, strlen(buf), "SENT DATA");
+
+	if (data->eol_len > 0) {
+		if (data->eol[0] != '\r') {
+			/* Print the EOL only if it is not \r, otherwise there
+			 * is just too much printing.
+			 */
+			LOG_HEXDUMP_DBG(data->eol, data->eol_len, "SENT EOL");
+		}
+	} else {
+		LOG_DBG("EOL not set!!!");
+	}
+#endif
 	iface->write(iface, buf, strlen(buf));
 	iface->write(iface, data->eol, data->eol_len);
 
