@@ -8,7 +8,8 @@
  * @file
  * @brief ARM AArch32 public exception handling
  *
- * ARM-specific kernel exception handling interface. Included by arm/arch.h.
+ * ARM AArch32-specific kernel exception handling interface. Included by
+ * arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
