@@ -33,33 +33,54 @@ Stable API changes in this release
 
 * GPIO
 
-  * The gpio_pin_write() and gpio_pin_read() functions have been
-    deprecated, and should be replaced with gpio_pin_set_raw() and
-    gpio_pin_get_raw(), or if the active level flags were present and
-    supported by gpio_pin_set() and gpio_pin_get().  The functions have
-    been re-implemented with these substitutes.
-  * The gpio_pin_enable_callback() function has been deprecated, and
-    should be replaced by gpio_pin_interrupt_configure(), passing the
-    appropriate interrupt configuration.
-  * The gpio_pin_disable_callback() function has been deprecated, and
-    should be replaced by gpio_pin_interrupt_configure() passed
-    GPIO_INT_DISABLE.
-  * Many GPIO configuration flags have been deprecated and replaced by
-    more carefully selected flags.  These include:
-    * GPIO_DIR_OUT becomes GPIO_OUTPUT
-    * GPIO_DIR_IN becomes GPIO_INPUT
-    * GPIO_DS_DISCONNECT_LOW becomes GPIO_OPEN_SOURCE
-    * GPIO_DS_DISCONNECT_HIGH becomes GPIO_OPEN_DRAIN
-    * GPIO_PUD_NORMAL becomes 0
-    * GPIO_PUD_PULL_UP becomes GPIO_PULL_UP
-    * GPIO_PUD_PULL_DOWN becomes GPIO_PULL_DOWN
-    * GPIO_INT becomes GPIO_INT_ENABLE
-    * GPIO_INT_LEVEL becomes not GPIO_INT_EDGE
-    * GPIO_INT_ACTIVE_LOW becomes GPIO_ACTIVE_LOW or GPIO_INT_LOW_0
-    * GPIO_INT_ACTIVE_HIGH becomes GPIO_ACTIVE_HIGH or GPIO_INT_HIGH_1
-    * GPIO_INT_DOUBLE_EDGE becomes GPIO_INT_EDGE_BOTH
-    * GPIO_POL_NORMAL becomes GPIO_ACTIVE_HIGH
-    * GPIO_POL_INV becomes GPIO_ACTIVE_LOW
+  * GPIO API has been reworked to support flags known from Linux DTS GPIO
+    bindings. They will typically be defined in the board DTS file
+
+    - GPIO_ACTIVE_LOW, GPIO_ACTIVE_HIGH used to set pin active level
+    - GPIO_OPEN_DRAIN, GPIO_OPEN_SOURCE used to configure pin as open drain or
+      open source
+    - GPIO_PULL_UP, GPIO_PULL_DOWN used to configure pin bias
+
+  * Reading / writing of pin logical level is supported by gpio_pin_get,
+    gpio_pin_set functions.
+  * Reading / writing of pin physical level is supported by gpio_pin_get_raw,
+    gpio_pin_set_raw functions.
+  * New set of port functions that operate simultaneously on multiple pins
+    that belong to the same controller.
+  * Interrupts should be configured by a dedicated
+    gpio_pin_interrupt_configure() function. Configuring interrupts via
+    gpio_pin_configure() is still supported but this feature will be removed
+    in future releases.
+  * New set of flags allows to set arbitrary interrupt configuration (if
+    supported by the driver) based on pin physical or logical levels.
+  * New set of flags to configure pin as input, output or in/out as well as set
+    output initial state.
+  * Majority of the old GPIO API has been deprecated. While the care was taken
+    to preserve backward compatibility due to the scope of the work it was not
+    possible to fully achieve this goal. We recommend to switch to the new GPIO
+    API as soon as possible.
+  * Areas where the deprecated API may behave differently to the original old
+    implementation are:
+
+    - Configuration of pin interrupts, especially involving GPIO_INT_ACTIVE_LOW
+      and GPIO_POL_INV flags.
+    - Behavior of gpio_pin_configure() when invoked without interrupt related
+      flags. In the new implementation of this deprecated functionality the
+      interrupts remain unmodified. In the original implementation some of the
+      GPIO drivers would disable the interrupts.
+
+  * Several drivers that rely on the functionality provided by the GPIO API
+    were reworked to honor pin active level. Any external users of these
+    drivers will have to update their DTS board files.
+
+    - bluetooth/hci/spi.c
+    - display/display_ili9340.c
+    - display/ssd1306.c
+    - ieee802154/ieee802154_mcr20a.c
+    - ieee802154/ieee802154_rf2xx.c
+    - lora/sx1276.c
+    - wifi/eswifi/eswifi_core.c
+    - majority of the sensor drivers
 
 * PWM
 
