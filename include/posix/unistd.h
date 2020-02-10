@@ -15,11 +15,13 @@
 
 #ifdef CONFIG_POSIX_API
 #include <fs/fs.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifdef CONFIG_POSIX_API
 /* File related operations */
 extern int close(int file);
 extern ssize_t write(int file, const void *buffer, size_t count);
@@ -37,9 +39,9 @@ static inline int gethostname(char *buf, size_t len)
 {
 	return zsock_gethostname(buf, len);
 }
-#endif
+#endif /* CONFIG_NETWORKING */
 
-#endif
+#endif /* CONFIG_POSIX_API */
 
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
