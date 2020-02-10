@@ -10,18 +10,23 @@
 #include <logging/log_output.h>
 #include <sys/ring_buffer.h>
 
-#define BUF_SIZE 64
-
-BUILD_ASSERT(CONFIG_LOG_BACKEND_RB_MEM_SIZE % BUF_SIZE == 0);
-
 static struct ring_buf ringbuf;
 
 /*
  * Log message format:
  * Logging started with magic number 0x55aa followed by log message id.
- * Log message ended with null terminator and takes BUF_SIZE slot. The
- * long log message can occupy several logging slots.
+ * Log message ended with null terminator and takes
+ * CONFIG_LOG_BACKEND_RB_SLOT_SIZE slot. The long log message can occupy
+ * several logging slots.
  */
+
+/*
+ * All log messages are split to similar sized logging slots. Since ring
+ * buffer slots get rewritten we need to check that all slots are fit to
+ * the ring buffer
+ */
+BUILD_ASSERT(CONFIG_LOG_BACKEND_RB_MEM_SIZE %
+	     CONFIG_LOG_BACKEND_RB_SLOT_SIZE == 0);
 
 static void init(void)
 {
@@ -38,15 +43,17 @@ static void trace(const u8_t *data, size_t length)
 	int i;
 
 	space = ring_buf_space_get(&ringbuf);
-	if (space < BUF_SIZE) {
+	if (space < CONFIG_LOG_BACKEND_RB_SLOT_SIZE) {
 		u8_t *dummy;
 
 		/* Remove oldest entry */
-		ring_buf_get_claim(&ringbuf, &dummy, BUF_SIZE);
-		ring_buf_get_finish(&ringbuf, BUF_SIZE);
+		ring_buf_get_claim(&ringbuf, &dummy,
+				   CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
+		ring_buf_get_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 	}
 
-	ring_buf_put_claim(&ringbuf, (u8_t **)&t, BUF_SIZE);
+	ring_buf_put_claim(&ringbuf, (u8_t **)&t,
+			   CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 	region = t;
 
 	/* Add magic number at the beginning of the slot */
@@ -57,13 +64,13 @@ static void trace(const u8_t *data, size_t length)
 	*(u16_t *)t = log_id++;
 	t += 2;
 
-	for (i = 0; i < MIN(length, BUF_SIZE - 4); i++) {
+	for (i = 0; i < MIN(length, CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4); i++) {
 		*t++ = data[i];
 	}
 
-	SOC_DCACHE_FLUSH((void *)region, BUF_SIZE);
+	SOC_DCACHE_FLUSH((void *)region, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 
-	ring_buf_put_finish(&ringbuf, BUF_SIZE);
+	ring_buf_put_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 }
 
 static int char_out(u8_t *data, size_t length, void *ctx)
@@ -74,7 +81,7 @@ static int char_out(u8_t *data, size_t length, void *ctx)
 }
 
 /* magic and log id takes space */
-static u8_t buf[BUF_SIZE - 4];
+static u8_t buf[CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4];
 
 LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 
