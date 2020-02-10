@@ -753,7 +753,7 @@ static void modem_reset(void)
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		/* set the APN */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
-				CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO "\""),
+				CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
 		/* set dynamic IP */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,7,\"0.0.0.0\""),
 		/* activate the GPRS connection */
