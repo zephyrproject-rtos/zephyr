@@ -351,7 +351,7 @@ def node_path_aliases(node):
     for alias in node.aliases:
         aliases.append(f"ALIAS_{str2ident(alias)}")
         # TODO: See if we can remove or deprecate this form
-        aliases.append(f"{compat_s}_{str2ident(alias)}")
+        aliases.append(f"x{compat_s}x_{str2ident(alias)}")
 
     return aliases
 
