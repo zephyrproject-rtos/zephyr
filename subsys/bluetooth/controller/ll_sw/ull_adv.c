@@ -210,7 +210,6 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		_ptr = ptr;
 
 		/* No ACAD and no AdvData */
-		p->ext_hdr_len = 0;
 		p->adv_mode = evt_prop & 0x03;
 
 		/* Zero-init header flags */
@@ -277,6 +276,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 					 ext_hdr_adi_adv_data);
 			pdu->len = len;
 		} else {
+			p->ext_hdr_len = 0;
 			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
 					    ext_hdr_adi_adv_data);
 		}
