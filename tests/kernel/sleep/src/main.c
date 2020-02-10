@@ -24,6 +24,8 @@
 #define ONE_SECOND_ALIGNED	\
 	(u32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
+#define TICK_MARGIN		1
+
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
 static struct k_sem task_sem;
@@ -88,7 +90,7 @@ static int sleep_time_valid(u32_t start, u32_t end, u32_t dur)
 {
 	u32_t dt = end - start;
 
-	return dt >= dur && dt <= (dur + 1);
+	return dt >= dur && dt <= (dur + TICK_MARGIN);
 }
 
 static void test_thread(int arg1, int arg2)
@@ -120,7 +122,7 @@ static void test_thread(int arg1, int arg2)
 	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
-	if (end_tick - start_tick > 1) {
+	if (end_tick - start_tick > TICK_MARGIN) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
 			 end_tick - start_tick);
 		return;
@@ -134,7 +136,7 @@ static void test_thread(int arg1, int arg2)
 	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
-	if (end_tick - start_tick > 1) {
+	if (end_tick - start_tick > TICK_MARGIN) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
 			 end_tick - start_tick);
 		return;
@@ -148,7 +150,7 @@ static void test_thread(int arg1, int arg2)
 	k_sleep(ONE_SECOND);	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
-	if (end_tick - start_tick > 1) {
+	if (end_tick - start_tick > TICK_MARGIN) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks) at LAST\n",
 			 end_tick - start_tick);
 		return;
