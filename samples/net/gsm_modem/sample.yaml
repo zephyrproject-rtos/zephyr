@@ -1,0 +1,11 @@
+common:
+  harness: net
+  depends_on: serial-net
+  tags: net ppp modem gsm
+sample:
+  description: Sample for generic GSM modem
+  name: Generic GSM modem using PPP
+tests:
+  sample.net.ppp.gsm.modem:
+    extra_configs:
+      - CONFIG_TEST_RANDOM_GENERATOR=y
