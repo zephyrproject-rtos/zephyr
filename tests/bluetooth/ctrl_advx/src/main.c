@@ -192,6 +192,26 @@ void main(void)
 
 	k_sleep(K_MSEC(400));
 
+	printk("Update advertising data 1...");
+	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(adv_data1), (void *)adv_data1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update advertising data 2...");
+	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(adv_data2), (void *)adv_data2);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
 	printk("Disabling...");
 	err = ll_adv_enable(handle, 0);
 	if (err) {
