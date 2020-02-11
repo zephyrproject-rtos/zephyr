@@ -8,7 +8,7 @@ if DISPLAY
 config SPI
 	default y
 
-config ILI9340
+config ILI9XXX
 	default y
 
 if LVGL

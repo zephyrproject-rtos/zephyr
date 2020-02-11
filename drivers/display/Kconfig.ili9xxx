@@ -1,15 +1,15 @@
-# ILI9340 display driver configuration options
+# ILI9XXX display driver configuration options
 
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ILI9340
-	bool "ILI9340 display driver"
+menuconfig ILI9XXX
+	bool "ILI9xxx display driver"
 	depends on SPI
 	help
-	  Enable driver for ILI9340 display driver.
+	  Enable driver for ILI9xxx display driver ili9163, ili9140, ili9141.
 
-if ILI9340
+if ILI9XXX
 
 choice
 	prompt "LCD"
@@ -30,12 +30,12 @@ choice
 	help
 	  Specify the color pixel format of the ILI9340 display controller.
 
-config ILI9340_RGB888
+config ILI9XXX_RGB888
 	bool "RGB888"
 
-config ILI9340_RGB565
+config ILI9XXX_RGB565
 	bool "RGB565"
 
 endchoice
 
-endif # ILI9340
+endif # ILI9XXX

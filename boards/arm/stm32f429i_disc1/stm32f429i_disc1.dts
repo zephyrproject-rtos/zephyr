@@ -68,7 +68,7 @@
 	status = "okay";
 	cs-gpios = <&gpioc 2 0>;
 	ili9340@0 {
-		compatible = "ilitek,ili9340";
+		compatible = "ilitek,ili9xxx";
 		label = "DISPLAY";
 		spi-max-frequency = <15151515>;
 		reg = <0>;

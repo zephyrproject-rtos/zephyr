@@ -10,7 +10,7 @@
 
 
 	ili9340@0 {
-		compatible = "ilitek,ili9340";
+		compatible = "ilitek,ili9xxx";
 		label = "ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
