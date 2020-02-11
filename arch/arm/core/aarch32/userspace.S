@@ -43,12 +43,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    mov r0, #0
-    msr PSPLIM, r0
-#endif
-
     /* prepare to set stack to privileged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
@@ -73,10 +67,23 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      */
     mov ip, sp
 
-    /* set stack to privileged stack */
+    /* set stack to privileged stack
+     *
+     * Note [applies only when CONFIG_BUILTIN_STACK_GUARD is enabled]:
+     * modifying PSP via MSR instruction is not subject to stack limit
+     * checking, so we do not need to clear PSPLIM before setting PSP.
+     * The operation is safe since, by design, the privileged stack is
+     * located in memory higher than the default (user) thread stack.
+     */
     msr PSP, r0
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* At this point the privileged stack is not yet protected by PSPLIM.
+     * Since we have just switched to the top of the privileged stack, we
+     * are safe, as long as the stack can accommodate the maximum exception
+     * stack frame.
+     */
+
     /* set stack pointer limit to the start of the priv stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
