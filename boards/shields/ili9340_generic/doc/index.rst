@@ -45,6 +45,9 @@ Current supported displays
 | adafruit_2_8_tft_touch_v2  | ili9340_adafruit_2_8_tft_touch_v2 |
 |                            |                                   |
 +----------------------------+-----------------------------------+
+| ili9340_seeed_tft_v2       | ili9340_ili9340_seeed_tft_v2      |
+|                            |                                   |
++----------------------------+-----------------------------------+
 
 .. _ili9340_adafruit_2_8_tft_touch_v2:
 
@@ -56,6 +59,16 @@ Zephyr RTOS supports display output to these screens,
 it currently does not support touchscreen input.
 More information about the shield can be found
 at the `Adafruit 2.8" TFT Touch Shield v2 website`_.
+
+.. _ili9340_ili9340_seeed_tft_v2:
+
+The Seeed 2.8" TFT Touch Shield v2 with a
+resolution of 320x240 pixels, is based on the ILI9341 controller.
+This shield comes with a raw resistive touchscreen (no controller)
+While the Zephyr RTOS supports display output to these screens,
+it currently does not support touchscreen input.
+More information about the shield can be found
+at the `Seeed 2.8" TFT Touch Shield v2 website`_.
 
 Requirements
 ************
@@ -82,6 +95,9 @@ References
 
 .. _Adafruit 2.8" TFT Touch Shield v2 website:
    https://learn.adafruit.com/adafruit-2-8-tft-touch-shield-v2
+
+.. _Seeed 2.8" TFT Touch Shield v2 website:
+   https://github.com/Seeed-Studio/TFT_Touch_Shield_V2
 
 .. _ILI9340 Datasheet:
    https://cdn-shop.adafruit.com/datasheets/ILI9340.pdf

@@ -3,26 +3,8 @@
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ILI9XXX
+config ILI9XXX
 	bool "ILI9xxx display driver"
 	depends on SPI
 	help
 	  Enable driver for ILI9xxx display driver ili9163, ili9140, ili9141.
-
-if ILI9XXX
-
-choice
-	prompt "LCD"
-	default ILI9340_LCD_ADAFRUIT_1480
-	help
-	  Specify the type of LCD connected to the ILI9340 display controller.
-
-config ILI9340_LCD_ADAFRUIT_1480
-	bool "Adafruit 2.2\" TFT 1480"
-
-config ILI9340_LCD_SEEED_TFTV2
-	bool "Seeed 2.8\" TFT v2.0"
-
-endchoice
-
-endif # ILI9XXX

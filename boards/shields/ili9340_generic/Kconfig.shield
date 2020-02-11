@@ -3,3 +3,6 @@
 
 config SHIELD_ILI9140_ADAFRUIT_2_8_TFT_TOUCH_V2
 	def_bool $(shields_list_contains,ili9340_adafruit_2_8_tft_touch_v2)
+
+config SHIELD_ILI9140_SEEED_TFT_V2
+	def_bool $(shields_list_contains,ili9340_seeed_tft_v2)
