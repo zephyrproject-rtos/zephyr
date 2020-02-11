@@ -280,10 +280,10 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 static void spi_mcux_config_func_0(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_0 = {
-	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_0_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_0_CLOCK_CONTROLLER,
+	.base = (LPSPI_Type *) DT_ALIAS_SPI_0_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_SPI_0_CLOCK_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_OPENISA_RV32M1_LPSPI_SPI_0_CLOCK_NAME,
+		DT_ALIAS_SPI_0_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_0,
 	.clock_ip_name = kCLOCK_Lpspi0,
 	.clock_ip_src  = kCLOCK_IpSrcFircAsync,
@@ -294,18 +294,18 @@ static struct spi_mcux_data spi_mcux_data_0 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_0, DT_OPENISA_RV32M1_LPSPI_SPI_0_LABEL,
+DEVICE_AND_API_INIT(spi_mcux_0, DT_ALIAS_SPI_0_LABEL,
 		    &spi_mcux_init, &spi_mcux_data_0, &spi_mcux_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
 static void spi_mcux_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_OPENISA_RV32M1_LPSPI_SPI_0_IRQ_0,
-		    DT_OPENISA_RV32M1_LPSPI_SPI_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_SPI_0_IRQ_0,
+		    DT_ALIAS_SPI_0_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_0), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_LPSPI_SPI_0_IRQ_0);
+	irq_enable(DT_ALIAS_SPI_0_IRQ_0);
 }
 #endif /* SPI_0 */
 
@@ -313,10 +313,10 @@ static void spi_mcux_config_func_0(struct device *dev)
 static void spi_mcux_config_func_1(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_1 = {
-	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_1_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_1_CLOCK_CONTROLLER,
+	.base = (LPSPI_Type *) DT_ALIAS_SPI_1_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_SPI_1_CLOCK_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_OPENISA_RV32M1_LPSPI_SPI_1_CLOCK_NAME,
+		DT_ALIAS_SPI_1_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_1,
 	.clock_ip_name = kCLOCK_Lpspi1,
 	.clock_ip_src  = kCLOCK_IpSrcFircAsync,
@@ -327,18 +327,18 @@ static struct spi_mcux_data spi_mcux_data_1 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_1, DT_OPENISA_RV32M1_LPSPI_SPI_1_LABEL,
+DEVICE_AND_API_INIT(spi_mcux_1, DT_ALIAS_SPI_1_LABEL,
 		    &spi_mcux_init, &spi_mcux_data_1, &spi_mcux_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
 static void spi_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_OPENISA_RV32M1_LPSPI_SPI_1_IRQ_0,
-		    DT_OPENISA_RV32M1_LPSPI_SPI_1_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_SPI_1_IRQ_0,
+		    DT_ALIAS_SPI_1_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_1), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_LPSPI_SPI_1_IRQ_0);
+	irq_enable(DT_ALIAS_SPI_1_IRQ_0);
 }
 #endif /* SPI_1 */
 
@@ -346,10 +346,10 @@ static void spi_mcux_config_func_1(struct device *dev)
 static void spi_mcux_config_func_2(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_2 = {
-	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_2_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_2_CLOCK_CONTROLLER,
+	.base = (LPSPI_Type *) DT_ALIAS_SPI_2_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_SPI_2_CLOCK_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_OPENISA_RV32M1_LPSPI_SPI_2_CLOCK_NAME,
+		DT_ALIAS_SPI_2_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_2,
 	.clock_ip_name = kCLOCK_Lpspi2,
 	.clock_ip_src  = kCLOCK_IpSrcFircAsync,
@@ -360,18 +360,18 @@ static struct spi_mcux_data spi_mcux_data_2 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_2, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_2, DT_OPENISA_RV32M1_LPSPI_SPI_2_LABEL,
+DEVICE_AND_API_INIT(spi_mcux_2, DT_ALIAS_SPI_2_LABEL,
 		    &spi_mcux_init, &spi_mcux_data_2, &spi_mcux_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
 static void spi_mcux_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_OPENISA_RV32M1_LPSPI_SPI_2_IRQ_0,
-		    DT_OPENISA_RV32M1_LPSPI_SPI_2_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_SPI_2_IRQ_0,
+		    DT_ALIAS_SPI_2_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_2), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_LPSPI_SPI_2_IRQ_0);
+	irq_enable(DT_ALIAS_SPI_2_IRQ_0);
 }
 #endif /* SPI_2 */
 
@@ -379,10 +379,10 @@ static void spi_mcux_config_func_2(struct device *dev)
 static void spi_mcux_config_func_3(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_3 = {
-	.base = (LPSPI_Type *) DT_OPENISA_RV32M1_LPSPI_SPI_3_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_LPSPI_SPI_3_CLOCK_CONTROLLER,
+	.base = (LPSPI_Type *) DT_ALIAS_SPI_3_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_SPI_3_CLOCK_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_OPENISA_RV32M1_LPSPI_SPI_3_CLOCK_NAME,
+		DT_ALIAS_SPI_3_CLOCK_NAME,
 	.irq_config_func = spi_mcux_config_func_3,
 	.clock_ip_name = kCLOCK_Lpspi3,
 	.clock_ip_src  = kCLOCK_IpSrcFircAsync,
@@ -393,17 +393,17 @@ static struct spi_mcux_data spi_mcux_data_3 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_3, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_3, DT_OPENISA_RV32M1_LPSPI_SPI_3_LABEL,
+DEVICE_AND_API_INIT(spi_mcux_3, DT_ALIAS_SPI_3_LABEL,
 		    &spi_mcux_init, &spi_mcux_data_3, &spi_mcux_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
 static void spi_mcux_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_OPENISA_RV32M1_LPSPI_SPI_3_IRQ_0,
-		    DT_OPENISA_RV32M1_LPSPI_SPI_3_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_SPI_3_IRQ_0,
+		    DT_ALIAS_SPI_3_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_3), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_LPSPI_SPI_3_IRQ_0);
+	irq_enable(DT_ALIAS_SPI_3_IRQ_0);
 }
 #endif /* CONFIG_SPI_3 */

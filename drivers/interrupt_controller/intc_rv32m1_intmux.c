@@ -143,10 +143,10 @@ static const struct irq_next_level_api rv32m1_intmux_apis = {
 };
 
 static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
-	.regs = (INTMUX_Type *)DT_OPENISA_RV32M1_INTMUX_INTMUX_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_CONTROLLER,
+	.regs = (INTMUX_Type *)DT_ALIAS_INTMUX_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_INTMUX_CLOCK_CONTROLLER,
 	.clock_subsys =
-		UINT_TO_POINTER(DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_NAME),
+		UINT_TO_POINTER(DT_ALIAS_INTMUX_CLOCK_NAME),
 	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
 };
 
@@ -218,7 +218,7 @@ static int rv32m1_intmux_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(intmux, DT_OPENISA_RV32M1_INTMUX_INTMUX_LABEL,
+DEVICE_AND_API_INIT(intmux, DT_ALIAS_INTMUX_LABEL,
 		    &rv32m1_intmux_init, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);

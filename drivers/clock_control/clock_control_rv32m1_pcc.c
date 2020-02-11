@@ -58,24 +58,24 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 	.get_rate = rv32m1_pcc_get_rate,
 };
 
-#if defined(DT_OPENISA_RV32M1_PCC_PCC_0_BASE_ADDRESS)
+#if defined(DT_ALIAS_PCC_0_BASE_ADDRESS)
 static struct rv32m1_pcc_config rv32m1_pcc0_config = {
-	.base_address = DT_OPENISA_RV32M1_PCC_PCC_0_BASE_ADDRESS
+	.base_address = DT_ALIAS_PCC_0_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc0, DT_OPENISA_RV32M1_PCC_PCC_0_LABEL,
+DEVICE_AND_API_INIT(rv32m1_pcc0, DT_ALIAS_PCC_0_LABEL,
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &rv32m1_pcc_api);
 #endif
 
-#if defined(DT_OPENISA_RV32M1_PCC_PCC_1_BASE_ADDRESS)
+#if defined(DT_ALIAS_PCC_1_BASE_ADDRESS)
 static struct rv32m1_pcc_config rv32m1_pcc1_config = {
-	.base_address = DT_OPENISA_RV32M1_PCC_PCC_1_BASE_ADDRESS
+	.base_address = DT_ALIAS_PCC_1_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc1, DT_OPENISA_RV32M1_PCC_PCC_1_LABEL,
+DEVICE_AND_API_INIT(rv32m1_pcc1, DT_ALIAS_PCC_1_LABEL,
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,

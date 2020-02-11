@@ -65,7 +65,7 @@ static const struct pinmux_driver_api pinmux_rv32m1_driver_api = {
 
 #ifdef CONFIG_PINMUX_RV32M1_PORTA
 static const struct pinmux_rv32m1_config pinmux_rv32m1_porta_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_A_BASE_ADDRESS,
+	.base = (PORT_Type *)DT_ALIAS_PINMUX_A_BASE_ADDRESS,
 	.clock_ip_name = kCLOCK_PortA,
 };
 
@@ -78,7 +78,7 @@ DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_RV32M1_PORTA_NAME,
 
 #ifdef CONFIG_PINMUX_RV32M1_PORTB
 static const struct pinmux_rv32m1_config pinmux_rv32m1_portb_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_B_BASE_ADDRESS,
+	.base = (PORT_Type *)DT_ALIAS_PINMUX_B_BASE_ADDRESS,
 	.clock_ip_name = kCLOCK_PortB,
 };
 
@@ -91,7 +91,7 @@ DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_RV32M1_PORTB_NAME,
 
 #ifdef CONFIG_PINMUX_RV32M1_PORTC
 static const struct pinmux_rv32m1_config pinmux_rv32m1_portc_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_C_BASE_ADDRESS,
+	.base = (PORT_Type *)DT_ALIAS_PINMUX_C_BASE_ADDRESS,
 	.clock_ip_name = kCLOCK_PortC,
 };
 
@@ -104,7 +104,7 @@ DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_RV32M1_PORTC_NAME,
 
 #ifdef CONFIG_PINMUX_RV32M1_PORTD
 static const struct pinmux_rv32m1_config pinmux_rv32m1_portd_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_D_BASE_ADDRESS,
+	.base = (PORT_Type *)DT_ALIAS_PINMUX_D_BASE_ADDRESS,
 	.clock_ip_name = kCLOCK_PortD,
 };
 
@@ -117,7 +117,7 @@ DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_RV32M1_PORTD_NAME,
 
 #ifdef CONFIG_PINMUX_RV32M1_PORTE
 static const struct pinmux_rv32m1_config pinmux_rv32m1_porte_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_E_BASE_ADDRESS,
+	.base = (PORT_Type *)DT_ALIAS_PINMUX_E_BASE_ADDRESS,
 	.clock_ip_name = kCLOCK_PortE,
 };
 
