@@ -18,9 +18,8 @@
 #include <arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_R)
-#include <device.h>
-#include <irq_nextlevel.h>
+#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+#include <drivers/interrupt_controller/gic.h>
 #endif
 #include <sys/__assert.h>
 #include <toolchain.h>
@@ -96,26 +95,32 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+/*
+ * For Cortex-A and Cortex-R cores, the default interrupt controller is the ARM
+ * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
+ * control functions are mapped to the GIC driver interface.
+ *
+ * When a custom interrupt controller is used (i.e.
+ * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
+ * interrupt control functions are mapped to the SoC layer in
+ * `include/arch/arm/aarch32/irq.h`.
+ */
+
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 void arch_irq_enable(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_enable_next_level(dev, (irq >> 8) - 1);
+	arm_gic_irq_enable(irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_disable_next_level(dev, (irq >> 8) - 1);
+	arm_gic_irq_disable(irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	return irq_is_enabled_next_level(dev);
+	return arm_gic_irq_is_enabled(irq);
 }
 
 /**
@@ -132,15 +137,11 @@ int arch_irq_is_enabled(unsigned int irq)
  */
 void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	if (irq == 0)
-		return;
-
-	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
+	arm_gic_irq_set_priority(irq, prio, flags);
 }
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
-#endif
+#endif /* CONFIG_CPU_CORTEX_M */
 
 void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
