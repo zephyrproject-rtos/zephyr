@@ -50,19 +50,4 @@
 #define ILI9XXX_DATA_PIXEL_FORMAT_MCU_18_BIT 0x06
 #define ILI9XXX_DATA_PIXEL_FORMAT_MCU_16_BIT 0x05
 
-struct ili9xxx_data;
-
-/**
- * Send data to ILI9XXX display controller
- *
- * @param data Device data structure
- * @param cmd Command to send to display controller
- * @param tx_data Data to transmit to the display controller
- * In case no data should be transmitted pass a NULL pointer
- * @param tx_len Number of bytes in tx_data buffer
- *
- */
-void ili9xxx_transmit(struct ili9xxx_data *data, u8_t cmd, void *tx_data,
-		      size_t tx_len);
-
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_ */

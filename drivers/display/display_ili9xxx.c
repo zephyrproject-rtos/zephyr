@@ -85,7 +85,7 @@ struct ili9xxx_data {
 	u16_t y_offset;
 };
 
-void ili9xxx_transmit(struct ili9xxx_data *data, u8_t cmd, void *tx_data,
+static void ili9xxx_transmit(struct ili9xxx_data *data, u8_t cmd, void *tx_data,
 		      size_t tx_len)
 {
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
@@ -290,7 +290,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
-static int ili9xxx_lcd_config(struct ili9xxx_data *data)
+static int ili9xxx_lcd_init(struct ili9xxx_data *data)
 {
 	WRITE_CMD(POWER_CTRL_A);
 	WRITE_CMD(POWER_CTRL_B);
@@ -378,7 +378,7 @@ static int ili9xxx_init(struct device *dev)
 
 	ili9xxx_blanking_on(dev);
 
-	ili9xxx_lcd_config(data);
+	ili9xxx_lcd_init(data);
 
 	if (ili9xxx_set_pixel_format(dev, DT_PIX_FORMAT)) {
 		LOG_ERR("Pixel format '%s' is unsupported", DT_PIX_FORMAT_STR);
