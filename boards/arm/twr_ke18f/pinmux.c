@@ -134,7 +134,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef DT_NXP_KINETIS_ADC12_ADC_0_BASE_ADDRESS
+#ifdef DT_ALIAS_ADC_0_BASE_ADDRESS
 	/* Thermistor A, B */
 	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));

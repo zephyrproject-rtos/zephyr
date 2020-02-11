@@ -165,10 +165,10 @@ static const struct wdt_driver_api mcux_wdog_api = {
 static void mcux_wdog_config_func_0(struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
-	.base = (WDOG_Type *) DT_NXP_KINETIS_WDOG_WATCHDOG0_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCK_CONTROLLER,
+	.base = (WDOG_Type *) DT_ALIAS_WATCHDOG0_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_WATCHDOG0_CLOCK_CONTROLLER,
 	.clock_subsys = (clock_control_subsys_t)
-		DT_NXP_KINETIS_WDOG_WATCHDOG0_CLOCK_NAME,
+		DT_ALIAS_WATCHDOG0_CLOCK_NAME,
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 
@@ -182,9 +182,9 @@ DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_0_NXP_KINETIS_WDOG_LABEL,
 
 static void mcux_wdog_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_WDOG_WATCHDOG0_IRQ_0,
-		    DT_NXP_KINETIS_WDOG_WATCHDOG0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_WATCHDOG0_IRQ_0,
+		    DT_ALIAS_WATCHDOG0_IRQ_0_PRIORITY,
 		    mcux_wdog_isr, DEVICE_GET(mcux_wdog_0), 0);
 
-	irq_enable(DT_NXP_KINETIS_WDOG_WATCHDOG0_IRQ_0);
+	irq_enable(DT_ALIAS_WATCHDOG0_IRQ_0);
 }
