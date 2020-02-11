@@ -14,10 +14,26 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
-#define DEST_SLV_ADDR  0x02
-#define SRC_SLV_ADDR   0x21
-#define OOB_CMDCODE    0x01
-#define MAX_RESP_SIZE  20
+/* eSPI host entity address  */
+#define DEST_SLV_ADDR         0x02u
+#define SRC_SLV_ADDR          0x21u
+/* Temperature command opcode */
+#define OOB_CMDCODE           0x01u
+
+/* Maximum bytes for OOB transactions */
+#define MAX_RESP_SIZE         20u
+
+/* 20 MHz */
+#define MIN_ESPI_FREQ         20u
+
+#define K_WAIT_DELAY          100u
+
+/* eSPI event */
+#define EVENT_MASK            0x0000FFFFu
+#define EVENT_DETAILS_MASK    0xFFFF0000u
+#define EVENT_DETAILS_POS     16u
+#define EVENT_TYPE(x)         (x & EVENT_MASK)
+#define EVENT_DETAILS(x)      ((x & EVENT_DETAILS_MASK) >> EVENT_DETAILS_POS)
 
 struct oob_header {
 	u8_t dest_slave_addr;
@@ -31,11 +47,10 @@ struct oob_response {
 	u8_t buf[MAX_RESP_SIZE];
 };
 
-
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 static struct device *gpio_dev0;
 static struct device *gpio_dev1;
-#define PWR_SEQ_TIMEOUT    3000
+#define PWR_SEQ_TIMEOUT    3000u
 #endif
 
 static struct device *espi_dev;
@@ -44,13 +59,40 @@ static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
 static struct espi_callback p80_cb;
 
+static u8_t espi_rst_sts;
+static void host_warn_handler(u32_t signal, u32_t status)
+{
+	switch (signal) {
+	case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
+		LOG_INF("Host reset warning %d", status);
+		if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
+			LOG_INF("HOST RST ACK %d", status);
+			espi_send_vwire(espi_dev,
+					ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
+					status);
+		}
+		break;
+	case ESPI_VWIRE_SIGNAL_SUS_WARN:
+		LOG_INF("Host suspend warning %d", status);
+		if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
+			LOG_INF("SUS ACK %d", status);
+			espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
+					status);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /* eSPI bus event handler */
 static void espi_reset_handler(struct device *dev,
 			       struct espi_callback *cb,
 			       struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_RESET) {
-		LOG_INF("\neSPI BUS reset %d", event.evt_data);
+		espi_rst_sts = event.evt_data;
+		LOG_INF("eSPI BUS reset %d", event.evt_data);
 	}
 }
 
@@ -60,7 +102,7 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
 		if (event.evt_details == ESPI_CHANNEL_VWIRE) {
-			LOG_INF("\nVW channel is ready");
+			LOG_INF("VW channel is ready");
 		}
 	}
 }
@@ -70,8 +112,20 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 			  struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_VWIRE_RECEIVED) {
-		if (event.evt_details == ESPI_VWIRE_SIGNAL_PLTRST) {
-			LOG_INF("\nPLT_RST changed %d\n", event.evt_data);
+		switch (event.evt_details) {
+		case ESPI_VWIRE_SIGNAL_PLTRST:
+			LOG_INF("PLT_RST changed %d", event.evt_data);
+			break;
+		case ESPI_VWIRE_SIGNAL_SLP_S3:
+		case ESPI_VWIRE_SIGNAL_SLP_S4:
+		case ESPI_VWIRE_SIGNAL_SLP_S5:
+			LOG_INF("SLP signal changed %d", event.evt_data);
+			break;
+		case ESPI_VWIRE_SIGNAL_SUS_WARN:
+		case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
+			host_warn_handler(event.evt_details,
+					      event.evt_data);
+			break;
 		}
 	}
 }
@@ -80,23 +134,23 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 static void periph_handler(struct device *dev, struct espi_callback *cb,
 			   struct espi_event event)
 {
-	u8_t peripheral;
+	u8_t periph_type;
+	u8_t periph_index;
 
-	if (event.evt_type == ESPI_BUS_PERIPHERAL_NOTIFICATION) {
-		peripheral = event.evt_details & 0x00FF;
+	periph_type = EVENT_TYPE(event.evt_details);
+	periph_index = EVENT_DETAILS(event.evt_details);
 
-		switch (peripheral) {
-		case ESPI_PERIPHERAL_DEBUG_PORT80:
-			LOG_INF("Postcode %x\n", event.evt_data);
-			break;
-		case ESPI_PERIPHERAL_HOST_IO:
-			LOG_INF("ACPI %x\n", event.evt_data);
-			espi_remove_callback(espi_dev, &p80_cb);
-			break;
-		default:
-			LOG_INF("\n%s periph 0x%x [%x]\n", __func__, peripheral,
-				event.evt_data);
-		}
+	switch (periph_type) {
+	case ESPI_PERIPHERAL_DEBUG_PORT80:
+		LOG_INF("Postcode %x", event.evt_data);
+		break;
+	case ESPI_PERIPHERAL_HOST_IO:
+		LOG_INF("ACPI %x", event.evt_data);
+		espi_remove_callback(espi_dev, &p80_cb);
+		break;
+	default:
+		LOG_INF("%s periph 0x%x [%x]", __func__, periph_type,
+			event.evt_data);
 	}
 }
 
@@ -109,12 +163,12 @@ int espi_init(void)
 	struct espi_cfg cfg = {
 		ESPI_IO_MODE_SINGLE_LINE,
 		ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
-		20,
+		MIN_ESPI_FREQ,
 	};
 
 	ret = espi_config(espi_dev, &cfg);
 	if (ret) {
-		LOG_INF("Failed to configure eSPI slave! error (%d)\n", ret);
+		LOG_WRN("Failed to configure eSPI slave! error (%d)", ret);
 	} else {
 		LOG_INF("eSPI slave configured successfully!");
 	}
@@ -142,35 +196,36 @@ int espi_init(void)
 static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
 			u32_t exp_level)
 {
-	int level;
 	u16_t loop_cnt = timeout;
+	u32_t level;
 
 	do {
 		level = gpio_pin_get(dev, pin);
 		if (level < 0) {
-			printk("Failed to read %x %d\n", pin, level);
+			LOG_ERR("Failed to read %x %d", pin, level);
 			return -EIO;
 		}
 
 		if (exp_level == level) {
-			printk("PIN %x = %x\n", pin, exp_level);
+			LOG_DBG("PIN %x = %x", pin, exp_level);
 			break;
 		}
 
-		k_busy_wait(100);
+		k_usleep(K_WAIT_DELAY);
 		loop_cnt--;
 	} while (loop_cnt > 0);
 
 	if (loop_cnt == 0) {
-		printk("PWRT! for %x %x\n", pin, level);
+		LOG_ERR("Timeout for %x %x", pin, level);
 		return -ETIMEDOUT;
 	}
 
 	return 0;
 }
 
-int wait_for_vwire(struct device *espi_dev, enum espi_vwire_signal signal,
-		   u16_t timeout, u8_t exp_level)
+static int wait_for_vwire(struct device *espi_dev,
+			  enum espi_vwire_signal signal,
+			  u16_t timeout, u8_t exp_level)
 {
 	int ret;
 	u8_t level;
@@ -187,12 +242,31 @@ int wait_for_vwire(struct device *espi_dev, enum espi_vwire_signal signal,
 			break;
 		}
 
-		k_busy_wait(50);
+		k_usleep(K_WAIT_DELAY);
 		loop_cnt--;
 	} while (loop_cnt > 0);
 
 	if (loop_cnt == 0) {
-		LOG_WRN("VWIRE %d! is %x\n", signal, level);
+		LOG_WRN("VWIRE %d is %x", signal, level);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static int wait_for_espi_reset(u8_t exp_sts)
+{
+	u16_t loop_cnt = CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT;
+
+	do {
+		if (exp_sts == espi_rst_sts) {
+			break;
+		}
+		k_usleep(K_WAIT_DELAY);
+		loop_cnt--;
+	} while (loop_cnt > 0);
+
+	if (loop_cnt == 0) {
 		return -ETIMEDOUT;
 	}
 
@@ -211,7 +285,7 @@ int espi_handshake(void)
 		return ret;
 	}
 
-	LOG_INF("\t1st phase completed");
+	LOG_INF("1st phase completed");
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S5,
 			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
 	if (ret) {
@@ -233,7 +307,7 @@ int espi_handshake(void)
 		return ret;
 	}
 
-	LOG_INF("\t2nd phase completed");
+	LOG_INF("2nd phase completed");
 	return 0;
 }
 
@@ -284,43 +358,43 @@ int espi_test(void)
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
 	if (!gpio_dev0) {
-		LOG_WRN("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV0);
+		LOG_WRN("Fail to find: %s", CONFIG_ESPI_GPIO_DEV0);
 		return -1;
 	}
 
 	gpio_dev1 = device_get_binding(CONFIG_ESPI_GPIO_DEV1);
 	if (!gpio_dev1) {
-		LOG_WRN("Fail to find: %s!\n", CONFIG_ESPI_GPIO_DEV1);
+		LOG_WRN("Fail to find: %s", CONFIG_ESPI_GPIO_DEV1);
 		return -1;
 	}
 
 #endif
 	espi_dev = device_get_binding(CONFIG_ESPI_DEV);
 	if (!espi_dev) {
-		LOG_WRN("Fail to find %s\n", CONFIG_ESPI_DEV);
-		return 1;
+		LOG_WRN("Fail to find %s", CONFIG_ESPI_DEV);
+		return -1;
 	}
 
-	LOG_INF("Hello eSPI test! %s\n", CONFIG_BOARD);
+	LOG_INF("Hello eSPI test %s", CONFIG_BOARD);
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN,
 				 GPIO_INPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
-		printk("Unable to configure %d:%d\n", CONFIG_PWRGD_PIN, ret);
+		LOG_ERR("Unable to configure %d:%d", CONFIG_PWRGD_PIN, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN,
 				 GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
-		LOG_WRN("Unable to config %d: %d\n", CONFIG_ESPI_INIT_PIN, ret);
+		LOG_ERR("Unable to config %d: %d", CONFIG_ESPI_INIT_PIN, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
 	if (ret) {
-		LOG_WRN("Unable to initialize %d\n", CONFIG_ESPI_INIT_PIN);
+		LOG_ERR("Unable to initialize %d", CONFIG_ESPI_INIT_PIN);
 		return -1;
 	}
 #endif
@@ -330,25 +404,36 @@ int espi_test(void)
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	ret = wait_for_pin(gpio_dev0, CONFIG_PWRGD_PIN, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
-		printk("RSMRST_PWRGD timeout!");
+		LOG_ERR("RSMRST_PWRGD timeout");
 		return ret;
 	}
 
 	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
 	if (ret) {
-		printk("Failed to write %x %d\n", CONFIG_ESPI_INIT_PIN, ret);
+		LOG_ERR("Failed to write %x %d", CONFIG_ESPI_INIT_PIN, ret);
 		return ret;
 	}
 #endif
-
-	ret = espi_handshake();
+	ret = wait_for_espi_reset(1);
 	if (ret) {
-		LOG_PANIC();
+		LOG_ERR("ESPI_RESET timeout");
 		return ret;
 	}
 
-	/* Attempt anyways to test failure case */
+	ret = espi_handshake();
+	if (ret) {
+		LOG_ERR("eSPI handshake failed %d", ret);
+		return ret;
+	}
+
+	/*  Attempt anyways to test failure case */
 	get_pch_temp(espi_dev);
+
+	/* Cleanup */
+	k_sleep(K_SECONDS(1));
+	espi_remove_callback(espi_dev, &espi_bus_cb);
+	espi_remove_callback(espi_dev, &vw_rdy_cb);
+	espi_remove_callback(espi_dev, &vw_cb);
 
 	return 0;
 }
