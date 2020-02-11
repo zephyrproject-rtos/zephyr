@@ -1862,9 +1862,7 @@ static void unpair(u8_t id, const bt_addr_le_t *addr)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_gatt_clear(id, addr);
-	}
+	bt_gatt_clear(id, addr);
 }
 
 static void unpair_remote(const struct bt_bond_info *info, void *data)
