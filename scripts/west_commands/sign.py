@@ -17,11 +17,11 @@ from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
-from zephyr_ext_common import Forceable, cached_runner_config
+from zephyr_ext_common import Forceable, cached_runner_config, \
+    zephyr_scripts_path
 
-# FIXME we should think of a nicer way to manage sys.path
-# for shared Zephyr code.
-sys.path.append(os.path.join(os.environ['ZEPHYR_BASE'], 'scripts', 'dts'))
+sys.path.append(os.path.join(zephyr_scripts_path(), 'dts'))
+
 import edtlib
 
 SIGN_DESCRIPTION = '''\
@@ -387,7 +387,6 @@ class RimageSigner(Signer):
         sign_base = ([tool_path] + args.tool_args +
                      ['-o', out_bin, '-m', 'apl', '-i', '3'] +
                      [bootloader, kernel])
-
 
         log.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
