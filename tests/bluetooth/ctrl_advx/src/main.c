@@ -29,6 +29,7 @@
 #define ADV_TX_PWR      NULL
 #define ADV_SEC_SKIP    0
 #define ADV_PHY_1M      BIT(0)
+#define ADV_PHY_2M      BIT(1)
 #define ADV_PHY_CODED   BIT(2)
 #define ADV_SID         0
 #define SCAN_REQ_NOT    0
@@ -97,7 +98,7 @@ void main(void)
 	evt_prop = EVT_PROP_TXP;
 	adv_type = 0x05; /* Adv. Ext. */
 	phy_p = ADV_PHY_1M;
-	phy_s = ADV_PHY_1M;
+	phy_s = ADV_PHY_2M;
 	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
 				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
