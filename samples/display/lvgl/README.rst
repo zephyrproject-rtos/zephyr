@@ -18,7 +18,7 @@ Requirements
 Display shield and a board which provides a configuration
 for Arduino connectors, for example:
 
-- :ref:`adafruit_2_8_tft_touch_v2` and :ref:`nrf52840_pca10056`
+- :ref:`ili9340_generic` and :ref:`nrf52840_pca10056`
 - :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
 
 or a simulated display environment in a native Posix application:
@@ -44,7 +44,7 @@ Example building for :ref:`nrf52840_pca10056`:
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
    :board: nrf52840_pca10056
-   :shield: adafruit_2_8_tft_touch_v2
+   :shield: ili9340_adafruit_2_8_tft_touch_v2
    :goals: build flash
 
 Example building for :ref:`native_posix`:

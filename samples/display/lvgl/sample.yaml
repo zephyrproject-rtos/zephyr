@@ -6,9 +6,9 @@ tests:
     harness: display
     platform_whitelist: reel_board mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
     tags: samples display gui
-  sample.display.adafruit_2_8_tft_touch_v2:
+  sample.display.ili9340_adafruit_2_8_tft_touch_v2:
     platform_whitelist: nrf52840_pca10056
-    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
+    extra_args: SHIELD=ili9340_adafruit_2_8_tft_touch_v2
     tags: shield
   sample.display.waveshare_epaper_gdeh0213b1:
     platform_whitelist: nrf52840_pca10056

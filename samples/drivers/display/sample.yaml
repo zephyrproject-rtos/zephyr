@@ -2,9 +2,9 @@ sample:
   description: Sample application for displays
   name: display_sample
 tests:
-  sample.display.shield.adafruit_2_8_tft_touch_v2:
+  sample.display.shield.ili9340_adafruit_2_8_tft_touch_v2:
     platform_whitelist: nrf52840_pca10056
-    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
+    extra_args: SHIELD=ili9340_adafruit_2_8_tft_touch_v2
     tags: display shield
   sample.display.shield.ssd1306_128x32:
     platform_whitelist: nrf52840_pca10056
