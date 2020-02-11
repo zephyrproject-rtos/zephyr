@@ -41,6 +41,10 @@ void lll_adv_aux_prepare(struct lll_adv *lll)
 	uint8_t *ptr;
 	uint8_t upd = 0U;
 
+	/* TODO: if coded we use S8? */
+	radio_phy_set(lll->phy_s, 1);
+	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy_s << 1));
+
 	/* AUX_ADV_IND PDU buffer get */
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	sec = lll_adv_aux_data_latest_get(lll, &upd);
