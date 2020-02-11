@@ -25,17 +25,4 @@ config ILI9340_LCD_SEEED_TFTV2
 
 endchoice
 
-choice
-	prompt "Color pixel format"
-	help
-	  Specify the color pixel format of the ILI9340 display controller.
-
-config ILI9XXX_RGB888
-	bool "RGB888"
-
-config ILI9XXX_RGB565
-	bool "RGB565"
-
-endchoice
-
 endif # ILI9XXX

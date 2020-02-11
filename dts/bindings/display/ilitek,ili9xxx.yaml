@@ -25,3 +25,38 @@ properties:
         The D/CX pin of ILI9xxx is active low (transmission command byte).
         If connected directly the MCU pin should be configured
         as active low.
+
+    pixel-format:
+      type: string
+      required: false
+      description: pixel data format. Enum corresponds to `enum display_pixel_format`
+      enum:
+        - "RGB_888"
+        - "MONO01"
+        - "MONO10"
+        - "ARGB_8888"
+        - "RGB_565"
+        - "BGR_565"
+      default: "RGB_888"
+
+    height:
+      type: int
+      required: true
+      description: Height in pixels of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixels of the panel driven by the controller
+
+    x-offset:
+      type: int
+      required: false
+      description: The column offset in pixels of the LCD to the controller memory
+      default: 0
+
+    y-offset:
+      type: int
+      required: false
+      description: The row offset in pixels of the LCD to the controller memory
+      default: 0

@@ -15,5 +15,8 @@
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		pixel-format = "RGB_888";
+		height = <320>;
+		width = <240>;
 	};
 };

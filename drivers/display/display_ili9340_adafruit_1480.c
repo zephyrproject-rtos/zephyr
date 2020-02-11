@@ -27,15 +27,6 @@ void ili9xxx_lcd_init(struct ili9xxx_data *data)
 	    ILI9XXX_DATA_MEM_ACCESS_CTRL_MV | ILI9XXX_DATA_MEM_ACCESS_CTRL_BGR;
 	ili9xxx_transmit(data, ILI9XXX_CMD_MEM_ACCESS_CTRL, tx_data, 1);
 
-#ifdef CONFIG_ILI9XXX_RGB565
-	tx_data[0] = ILI9XXX_DATA_PIXEL_FORMAT_MCU_16_BIT |
-		     ILI9XXX_DATA_PIXEL_FORMAT_RGB_16_BIT;
-#else
-	tx_data[0] = ILI9XXX_DATA_PIXEL_FORMAT_MCU_18_BIT |
-		     ILI9XXX_DATA_PIXEL_FORMAT_RGB_18_BIT;
-#endif
-	ili9xxx_transmit(data, ILI9XXX_CMD_PIXEL_FORMAT_SET, tx_data, 1);
-
 	tx_data[0] = 0x00;
 	tx_data[1] = 0x18;
 	ili9xxx_transmit(data, ILI9XXX_CMD_FRAME_CTRL_NORMAL_MODE, tx_data, 2);
