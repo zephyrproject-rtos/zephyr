@@ -120,7 +120,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int fsl_frdm_k64f_init(struct device *arg)
+static int k6x_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -167,4 +167,4 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(fsl_frdm_k64f_init, PRE_KERNEL_1, 0);
+SYS_INIT(k6x_init, PRE_KERNEL_1, 0);
