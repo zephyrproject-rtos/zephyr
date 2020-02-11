@@ -290,9 +290,9 @@ static void mcux_flexcomm_config_func_0(struct device *dev);
 #endif
 
 static const struct mcux_flexcomm_config mcux_flexcomm_0_config = {
-	.base = (USART_Type *)DT_NXP_LPC_USART_USART_0_BASE_ADDRESS,
+	.base = (USART_Type *)DT_ALIAS_USART_0_BASE_ADDRESS,
 	.clock_source = 0,
-	.baud_rate = DT_NXP_LPC_USART_USART_0_CURRENT_SPEED,
+	.baud_rate = DT_ALIAS_USART_0_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_flexcomm_config_func_0,
 #endif
@@ -300,7 +300,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_0_config = {
 
 static struct mcux_flexcomm_data mcux_flexcomm_0_data;
 
-DEVICE_AND_API_INIT(usart_0, DT_NXP_LPC_USART_USART_0_LABEL,
+DEVICE_AND_API_INIT(usart_0, DT_ALIAS_USART_0_LABEL,
 		    &mcux_flexcomm_init,
 		    &mcux_flexcomm_0_data, &mcux_flexcomm_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -309,11 +309,11 @@ DEVICE_AND_API_INIT(usart_0, DT_NXP_LPC_USART_USART_0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_flexcomm_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_LPC_USART_USART_0_IRQ_0,
-		    DT_NXP_LPC_USART_USART_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_USART_0_IRQ_0,
+		    DT_ALIAS_USART_0_IRQ_0_PRIORITY,
 		    mcux_flexcomm_isr, DEVICE_GET(usart_0), 0);
 
-	irq_enable(DT_NXP_LPC_USART_USART_0_IRQ_0);
+	irq_enable(DT_ALIAS_USART_0_IRQ_0);
 }
 #endif
 
