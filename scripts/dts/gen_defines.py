@@ -62,7 +62,10 @@ def main():
         if node.enabled and node.matching_compat:
             write_regs(node)
             write_irqs(node)
+            print("struct %s {" % node.name)
             write_props(node)
+            print("};")
+            print("")
             write_clocks(node)
             write_spi_dev(node)
             write_bus(node)
@@ -228,18 +231,24 @@ def write_props(node):
 
         if prop.type == "boolean":
             out_node(node, ident, 1 if prop.val else 0)
+            print("\tbool %s;" % prop.name)
         elif prop.type == "string":
+            print("\tchar * %s;" % prop.name)
             out_node_s(node, ident, prop.val)
         elif prop.type == "int":
+            print("\tint %s;" % prop.name)
             out_node(node, ident, prop.val)
         elif prop.type == "array":
+            print("\tint %s[];" % prop.name)
             for i, val in enumerate(prop.val):
                 out_node(node, f"{ident}_{i}", val)
             out_node_init(node, ident, prop.val)
         elif prop.type == "string-array":
+            print("\tchar * %s[];" % prop.name)
             for i, val in enumerate(prop.val):
                 out_node_s(node, f"{ident}_{i}", val)
         elif prop.type == "uint8-array":
+            print("\tuint8_t %s[];" % prop.name)
             out_node_init(node, ident,
                           [f"0x{b:02x}" for b in prop.val])
         else:  # prop.type == "phandle-array"
@@ -580,6 +589,8 @@ def write_phandle_val_list(prop):
     # foo-gpios -> FOO_GPIOS
     ident = str2ident(prop.name)
 
+    print("\tstruct %s[] {" % prop.name)
+
     initializer_vals = []
     for i, entry in enumerate(prop.val):
         initializer_vals.append(write_phandle_val_list_entry(
@@ -589,6 +600,7 @@ def write_phandle_val_list(prop):
         out_node(prop.node, ident + "_COUNT", len(initializer_vals))
         out_node_init(prop.node, ident, initializer_vals)
 
+    print("\t};")
 
 def write_phandle_val_list_entry(node, entry, i, ident):
     # write_phandle_val_list() helper. We could get rid of it if it wasn't for
@@ -601,6 +613,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 
     initializer_vals = []
     if entry.controller.label is not None:
+        print("\t\tchar * label;")
         ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
             name_alias = f"{str2ident(entry.name)}_{ctrl_ident}"
@@ -614,6 +627,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         out_node_s(node, ctrl_ident, entry.controller.label, name_alias)
 
     for cell, val in entry.data.items():
+        print("\t\tint %s;" % cell)
         cell_ident = f"{ident}_{str2ident(cell)}"  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
