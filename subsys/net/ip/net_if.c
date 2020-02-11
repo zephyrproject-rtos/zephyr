@@ -1266,7 +1266,7 @@ static void address_lifetime_timeout(struct k_work *work)
 		is_timeout = address_manage_timeout(current, current_time,
 						    &next_timeout);
 		if (!is_timeout) {
-			if (next_timeout < timeout_update) {
+			if ((s32_t)(next_timeout - timeout_update) < 0) {
 				timeout_update = next_timeout;
 				found = true;
 			}
@@ -1826,7 +1826,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 		is_timeout = prefix_manage_timeout(current, current_time,
 						   &next_timeout);
 		if (!is_timeout) {
-			if (next_timeout < timeout_update) {
+			if ((s32_t)(next_timeout - timeout_update) < 0) {
 				timeout_update = next_timeout;
 				found = true;
 			}
