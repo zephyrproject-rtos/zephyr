@@ -16,7 +16,9 @@ file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 if(DEFINED WEST)
-  message(STATUS "West: ${WEST}")
+  execute_process(COMMAND west --version
+    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE WEST_VERSION)
+  message(STATUS "West: ${WEST} (west --version: \"${WEST_VERSION}\")")
 else()
   message(STATUS "West: not found")
 endif()
