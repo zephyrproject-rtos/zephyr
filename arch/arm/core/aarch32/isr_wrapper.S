@@ -126,7 +126,6 @@ _idle_state_cleared:
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, IPSR	/* get exception number */
-#endif
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	ldr r1, =16
 	subs r0, r1	/* get IRQ number */
@@ -134,15 +133,19 @@ _idle_state_cleared:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
-#elif defined(CONFIG_ARMV7_R)
-	/*
-	 * Cortex-R only has one IRQ line so the main handler will be at
-	 * offset 0 of the table.
-	 */
-	mov r0, #0
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#elif defined(CONFIG_CPU_CORTEX_R)
+	/* Get active IRQ number from the interrupt controller */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_get_active
+#else
+	bl z_soc_irq_get_active
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+	push {r0, r1}
+	lsl r0, r0, #3	/* table is 8-byte wide */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_CPU_CORTEX_M */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 * in thumb mode */
@@ -161,6 +164,16 @@ _idle_state_cleared:
 	ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
+
+#if defined(CONFIG_CPU_CORTEX_R)
+	/* Signal end-of-interrupt */
+	pop {r0, r1}
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_eoi
+#else
+	bl z_soc_irq_eoi
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* CONFIG_CPU_CORTEX_R */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
