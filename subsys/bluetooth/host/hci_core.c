@@ -3807,7 +3807,7 @@ static void le_adv_report(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_le_scan_cb *cb;
 		struct net_buf_simple_state state;
-		struct bt_le_adv_info adv_info;
+		struct bt_le_scan_recv_info adv_info;
 		bt_addr_le_t id_addr;
 		s8_t rssi;
 

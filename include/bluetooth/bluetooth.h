@@ -447,7 +447,7 @@ struct bt_le_scan_param {
 };
 
 /** LE advertisement packet information */
-struct bt_le_adv_info {
+struct bt_le_scan_recv_info {
 	/** Advertiser LE address and type */
 	const bt_addr_le_t *addr;
 
@@ -466,7 +466,7 @@ struct bt_le_scan_cb {
 	 *  @param info Advertiser packet information.
 	 *  @param buf  Buffer containing advertiser data.
 	 */
-	void (*recv)(const struct bt_le_adv_info *info,
+	void (*recv)(const struct bt_le_scan_recv_info *info,
 		     struct net_buf_simple *buf);
 
 	sys_snode_t node;
