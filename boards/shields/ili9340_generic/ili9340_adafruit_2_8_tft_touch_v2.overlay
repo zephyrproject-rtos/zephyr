@@ -18,5 +18,16 @@
 		pixel-format = "RGB_888";
 		height = <320>;
 		width = <240>;
+
+		power-ctrl-1 = [23];
+		power-ctrl-2 = [10];
+		vcom-ctrl-1 = [3E 28];
+		vcom-ctrl-2 = [86];
+		mem-access-ctrl = [28];
+		frame-ctrl-normal-mode = [00 18];
+		display-function-ctrl = [08 82 27];
+		gamma-set = [01];
+		positive-gamma-correction = [0F 31 2B 0C 0E 08 4E F1 37 07 10 03 0E 09 00];
+		negative-gamma-correction = [00 0E 14 03 11 07 31 C1 48 08 0F 0C 31 36 0F];
 	};
 };

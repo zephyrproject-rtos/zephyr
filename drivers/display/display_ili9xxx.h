@@ -65,11 +65,4 @@ struct ili9xxx_data;
 void ili9xxx_transmit(struct ili9xxx_data *data, u8_t cmd, void *tx_data,
 		      size_t tx_len);
 
-/**
- * Perform LCD specific initialization
- *
- * @param data Device data structure
- */
-void ili9xxx_lcd_init(struct ili9xxx_data *data);
-
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_ */

@@ -76,5 +76,25 @@
 		pixel-format = "RGB_565";
 		height = <320>;
 		width = <240>;
+
+		power-ctrl-a = [39 2C 00 34 02];
+		power-ctrl-b = [00 8B 30];
+		power-on-seq-ctrl = [67 03 12 81];
+		drvr-timing-ctrl-a-i = [85 20 7A];
+		drvr-timing-ctrl-b = [00 00];
+		pump-ratio-ctrl = [20];
+		power-ctrl-1 = [1B];
+		power-ctrl-2 = [10];
+		vcom-ctrl-1 = [3F 3C];
+		vcom-ctrl-2 = [B7];
+		mem-access-ctrl = [B8];
+		frame-ctrl-normal-mode = [00 1B];
+		display-function-ctrl = [0A A2];
+		enable-3g = [00];
+		gamma-set = [01];
+		positive-gamma-correction =
+		    [0F 2A 28 08 0E 08 54 A9 43 0A 0F 00 00 00 00];
+		negative-gamma-correction =
+		    [00 15 17 07 11 06 2B 56 3C 05 10 0F 3F 3F 0F];
 	};
 };

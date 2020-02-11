@@ -60,3 +60,105 @@ properties:
       required: false
       description: The row offset in pixels of the LCD to the controller memory
       default: 0
+
+    power-ctrl-1:
+      type: uint8-array
+      required: false
+      description: power control 1
+      default: []
+
+    power-ctrl-2:
+      type: uint8-array
+      required: false
+      description: power control 2
+      default: []
+
+    power-ctrl-a:
+      type: uint8-array
+      required: false
+      description: Power control A
+      default: []
+
+    power-ctrl-b:
+      type: uint8-array
+      required: false
+      description: Power control B
+      default: []
+
+    vcom-ctrl-1:
+      type: uint8-array
+      required: false
+      description: vcom control 1
+      default: []
+
+    vcom-ctrl-2:
+      type: uint8-array
+      required: false
+      description: vcom control 2
+      default: []
+
+    power-on-seq-ctrl:
+      type: uint8-array
+      required: false
+      description: PowerOn sequence control
+      default: []
+
+    drvr-timing-ctrl-a-i:
+      type: uint8-array
+      required: false
+      description: Driver timing
+      default: []
+
+    drvr-timing-ctrl-b:
+      type: uint8-array
+      required: false
+      description: Driver timing
+      default: []
+
+    pump-ratio-ctrl:
+      type: uint8-array
+      required: false
+      description: Pump ratio control
+      default: []
+
+    mem-access-ctrl:
+      type: uint8-array
+      required: false
+      description: Memory Access Data Control
+      default: []
+
+    frame-ctrl-normal-mode:
+      type: uint8-array
+      required: false
+      description: Frame Rate
+      default: []
+
+    display-function-ctrl:
+      type: uint8-array
+      required: false
+      description: Display Function Control
+      default: []
+
+    enable-3g:
+      type: uint8-array
+      required: false
+      description: 3Gamma Function
+      default: []
+
+    gamma-set:
+      type: uint8-array
+      required: false
+      description: Gamma curve selected
+      default: []
+
+    positive-gamma-correction:
+      type: uint8-array
+      required: false
+      description: Positive Gamma Correction
+      default: []
+
+    negative-gamma-correction:
+      type: uint8-array
+      required: false
+      description: Negative Gamma Correction
+      default: []

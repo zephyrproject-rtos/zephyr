@@ -60,6 +60,13 @@ LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 #error "Please check pixel-format of \"ilitek,ili9xxx\" device"
 #endif
 
+#define WRITE_CMD(cmd) ({ \
+	u8_t _cmd = ILI9XXX_CMD_##cmd; \
+	u8_t _arr[] = DT_INST_0_ILITEK_ILI9XXX_##cmd; \
+	if (sizeof(_arr)) \
+		ili9xxx_transmit(data, _cmd, _arr, sizeof(_arr)); \
+})
+
 struct ili9xxx_data {
 #ifdef DT_INST_0_ILITEK_ILI9XXX_RESET_GPIOS_CONTROLLER
 	struct device *rst;
@@ -283,6 +290,28 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
+static int ili9xxx_lcd_config(struct ili9xxx_data *data)
+{
+	WRITE_CMD(POWER_CTRL_A);
+	WRITE_CMD(POWER_CTRL_B);
+	WRITE_CMD(POWER_ON_SEQ_CTRL);
+	WRITE_CMD(DRVR_TIMING_CTRL_A_I);
+	WRITE_CMD(PUMP_RATIO_CTRL);
+	WRITE_CMD(DRVR_TIMING_CTRL_B);
+	WRITE_CMD(POWER_CTRL_1);
+	WRITE_CMD(POWER_CTRL_2);
+	WRITE_CMD(VCOM_CTRL_1);
+	WRITE_CMD(VCOM_CTRL_2);
+	WRITE_CMD(MEM_ACCESS_CTRL);
+	WRITE_CMD(FRAME_CTRL_NORMAL_MODE);
+	WRITE_CMD(DISPLAY_FUNCTION_CTRL);
+	WRITE_CMD(ENABLE_3G);
+	WRITE_CMD(GAMMA_SET);
+	WRITE_CMD(POSITIVE_GAMMA_CORRECTION);
+	WRITE_CMD(NEGATIVE_GAMMA_CORRECTION);
+	return 0;
+}
+
 static int ili9xxx_init(struct device *dev)
 {
 	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->driver_data;
@@ -349,7 +378,7 @@ static int ili9xxx_init(struct device *dev)
 
 	ili9xxx_blanking_on(dev);
 
-	ili9xxx_lcd_init(data);
+	ili9xxx_lcd_config(data);
 
 	if (ili9xxx_set_pixel_format(dev, DT_PIX_FORMAT)) {
 		LOG_ERR("Pixel format '%s' is unsupported", DT_PIX_FORMAT_STR);
