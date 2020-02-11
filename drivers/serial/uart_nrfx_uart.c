@@ -14,7 +14,7 @@
 
 
 static NRF_UART_Type *const uart0_addr =
-		(NRF_UART_Type *)DT_NORDIC_NRF_UART_UART_0_BASE_ADDRESS;
+		(NRF_UART_Type *)DT_ALIAS_UART_0_BASE_ADDRESS;
 
 /* Device data structure */
 struct uart_nrfx_data {
@@ -57,8 +57,8 @@ static struct {
 	const u8_t *tx_buffer;
 	size_t tx_buffer_length;
 	volatile size_t tx_counter;
-#if defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if defined(DT_ALIAS_UART_0_RTS_PIN) && \
+		defined(DT_ALIAS_UART_0_CTS_PIN)
 	s32_t tx_timeout;
 	struct k_delayed_work tx_timeout_work;
 #endif
@@ -361,8 +361,8 @@ static int uart_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 
 	uart0_cb.tx_buffer = buf;
 	uart0_cb.tx_buffer_length = len;
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 	uart0_cb.tx_timeout = timeout;
 #endif
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
@@ -382,8 +382,8 @@ static int uart_nrfx_tx_abort(struct device *dev)
 	if (uart0_cb.tx_buffer_length == 0) {
 		return -EINVAL;
 	}
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 	if (uart0_cb.tx_timeout != K_FOREVER) {
 		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
 	}
@@ -556,8 +556,8 @@ static void tx_isr(void)
 	uart0_cb.tx_counter++;
 	if (uart0_cb.tx_counter < uart0_cb.tx_buffer_length &&
 	    !uart0_cb.tx_abort) {
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+		defined(DT_ALIAS_UART_0_CTS_PIN)
 		if (uart0_cb.tx_timeout != K_FOREVER) {
 			k_delayed_work_submit(&uart0_cb.tx_timeout_work,
 					      uart0_cb.tx_timeout);
@@ -569,8 +569,8 @@ static void tx_isr(void)
 
 		nrf_uart_txd_set(uart0_addr, txd);
 	} else {
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+		defined(DT_ALIAS_UART_0_CTS_PIN)
 
 		if (uart0_cb.tx_timeout != K_FOREVER) {
 			k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
@@ -667,8 +667,8 @@ static void rx_timeout(struct k_work *work)
 	rx_rdy_evt();
 }
 
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 static void tx_timeout(struct k_work *work)
 {
 	struct uart_event evt;
@@ -755,7 +755,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
+		NVIC_SetPendingIRQ(DT_ALIAS_UART_0_IRQ_0);
 	}
 	irq_unlock(key);
 }
@@ -882,29 +882,28 @@ static int uart_nrfx_init(struct device *dev)
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(DT_NORDIC_NRF_UART_UART_0_TX_PIN, 1);
-	nrf_gpio_cfg_output(DT_NORDIC_NRF_UART_UART_0_TX_PIN);
+	nrf_gpio_pin_write(DT_ALIAS_UART_0_TX_PIN, 1);
+	nrf_gpio_cfg_output(DT_ALIAS_UART_0_TX_PIN);
 
-	nrf_gpio_cfg_input(DT_NORDIC_NRF_UART_UART_0_RX_PIN,
-			   NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(DT_ALIAS_UART_0_RX_PIN, NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_txrx_pins_set(uart0_addr,
-			       DT_NORDIC_NRF_UART_UART_0_TX_PIN,
-			       DT_NORDIC_NRF_UART_UART_0_RX_PIN);
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+			       DT_ALIAS_UART_0_TX_PIN,
+			       DT_ALIAS_UART_0_RX_PIN);
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 	/* Setting default height state of the RTS PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(DT_NORDIC_NRF_UART_UART_0_RTS_PIN, 1);
-	nrf_gpio_cfg_output(DT_NORDIC_NRF_UART_UART_0_RTS_PIN);
+	nrf_gpio_pin_write(DT_ALIAS_UART_0_RTS_PIN, 1);
+	nrf_gpio_cfg_output(DT_ALIAS_UART_0_RTS_PIN);
 
-	nrf_gpio_cfg_input(DT_NORDIC_NRF_UART_UART_0_CTS_PIN,
+	nrf_gpio_cfg_input(DT_ALIAS_UART_0_CTS_PIN,
 			   NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_hwfc_pins_set(uart0_addr,
-			       DT_NORDIC_NRF_UART_UART_0_RTS_PIN,
-			       DT_NORDIC_NRF_UART_UART_0_CTS_PIN);
+			       DT_ALIAS_UART_0_RTS_PIN,
+			       DT_ALIAS_UART_0_CTS_PIN);
 #endif
 
 	/* Set initial configuration */
@@ -932,18 +931,18 @@ static int uart_nrfx_init(struct device *dev)
 
 #if defined(CONFIG_UART_0_ASYNC) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 
-	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ_0,
-		    DT_NORDIC_NRF_UART_UART_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_0_IRQ_0,
+		    DT_ALIAS_UART_0_IRQ_0_PRIORITY,
 		    uart_nrfx_isr,
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
-	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
+	irq_enable(DT_ALIAS_UART_0_IRQ_0);
 #endif
 
 #ifdef CONFIG_UART_0_ASYNC
 	k_delayed_work_init(&uart0_cb.rx_timeout_work, rx_timeout);
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 	k_delayed_work_init(&uart0_cb.tx_timeout_work, tx_timeout);
 #endif
 #endif
@@ -1063,7 +1062,7 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	.uart_config = {
 		.stop_bits = UART_CFG_STOP_BITS_1,
 		.data_bits = UART_CFG_DATA_BITS_8,
-		.baudrate  = DT_NORDIC_NRF_UART_UART_0_CURRENT_SPEED,
+		.baudrate  = DT_ALIAS_UART_0_CURRENT_SPEED,
 #ifdef CONFIG_UART_0_NRF_PARITY_BIT
 		.parity    = UART_CFG_PARITY_EVEN,
 #else
@@ -1078,8 +1077,8 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 };
 
 static const struct uart_nrfx_config uart_nrfx_uart0_config = {
-#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
-	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+#if	defined(DT_ALIAS_UART_0_RTS_PIN) && \
+	defined(DT_ALIAS_UART_0_CTS_PIN)
 	.rts_cts_pins_set = true,
 #else
 	.rts_cts_pins_set = false,
@@ -1087,7 +1086,7 @@ static const struct uart_nrfx_config uart_nrfx_uart0_config = {
 };
 
 DEVICE_DEFINE(uart_nrfx_uart0,
-	      DT_NORDIC_NRF_UART_UART_0_LABEL,
+	      DT_ALIAS_UART_0_LABEL,
 	      uart_nrfx_init,
 	      uart_nrfx_pm_control,
 	      &uart_nrfx_uart0_data,

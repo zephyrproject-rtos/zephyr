@@ -324,10 +324,10 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #define SPI_NRFX_MISO_PULL_DOWN(idx) \
-	IS_ENABLED(DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PULL_DOWN)
+	IS_ENABLED(DT_ALIAS_SPI_##idx##_MISO_PULL_DOWN)
 
 #define SPI_NRFX_MISO_PULL_UP(idx) \
-	IS_ENABLED(DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PULL_UP)
+	IS_ENABLED(DT_ALIAS_SPI_##idx##_MISO_PULL_UP)
 
 #define SPI_NRFX_MISO_PULL(idx)				\
 	(SPI_NRFX_MISO_PULL_UP(idx)			\
@@ -346,7 +346,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPI##idx),		       \
-			    DT_NORDIC_NRF_SPI_SPI_##idx##_IRQ_0_PRIORITY,      \
+			    DT_ALIAS_SPI_##idx##_IRQ_0_PRIORITY,	       \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
 		return init_spi(dev);					       \
 	}								       \
@@ -358,9 +358,9 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spi = NRFX_SPI_INSTANCE(idx),				       \
 		.config = {						       \
-			.sck_pin   = DT_NORDIC_NRF_SPI_SPI_##idx##_SCK_PIN,    \
-			.mosi_pin  = DT_NORDIC_NRF_SPI_SPI_##idx##_MOSI_PIN,   \
-			.miso_pin  = DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PIN,   \
+			.sck_pin   = DT_ALIAS_SPI_##idx##_SCK_PIN,	       \
+			.mosi_pin  = DT_ALIAS_SPI_##idx##_MOSI_PIN,	       \
+			.miso_pin  = DT_ALIAS_SPI_##idx##_MISO_PIN,	       \
 			.ss_pin    = NRFX_SPI_PIN_NOT_USED,		       \
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
 			.frequency = NRF_SPI_FREQ_4M,			       \
@@ -369,7 +369,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
 		}							       \
 	};								       \
-	DEVICE_DEFINE(spi_##idx, DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \
+	DEVICE_DEFINE(spi_##idx, DT_ALIAS_SPI_##idx##_LABEL,		       \
 		      spi_##idx##_init,					       \
 		      spi_nrfx_pm_control,				       \
 		      &spi_##idx##_data,				       \

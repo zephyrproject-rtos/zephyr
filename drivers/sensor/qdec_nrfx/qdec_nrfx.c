@@ -90,17 +90,17 @@ static int qdec_nrfx_channel_get(struct device       *dev,
 	data->acc = 0;
 	irq_unlock(key);
 
-	BUILD_ASSERT_MSG(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS > 0,
+	BUILD_ASSERT_MSG(DT_ALIAS_QDEC_0_STEPS > 0,
 			 "only positive number valid");
-	BUILD_ASSERT_MSG(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS <= 2148,
+	BUILD_ASSERT_MSG(DT_ALIAS_QDEC_0_STEPS <= 2148,
 			 "overflow possible");
 
-	val->val1 = (acc * FULL_ANGLE) / DT_NORDIC_NRF_QDEC_QDEC_0_STEPS;
+	val->val1 = (acc * FULL_ANGLE) / DT_ALIAS_QDEC_0_STEPS;
 	val->val2 = (acc * FULL_ANGLE)
-		    - (val->val1 * DT_NORDIC_NRF_QDEC_QDEC_0_STEPS);
+		    - (val->val1 * DT_ALIAS_QDEC_0_STEPS);
 	if (val->val2 != 0) {
 		val->val2 *= 1000000;
-		val->val2 /= DT_NORDIC_NRF_QDEC_QDEC_0_STEPS;
+		val->val2 /= DT_ALIAS_QDEC_0_STEPS;
 	}
 
 	return 0;
@@ -163,11 +163,11 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event)
 
 static void qdec_nrfx_gpio_ctrl(bool enable)
 {
-#if defined(DT_NORDIC_NRF_QDEC_QDEC_0_ENABLE_PIN)
+#if defined(DT_ALIAS_QDEC_0_ENABLE_PIN)
 	uint32_t val = (enable)?(0):(1);
 
-	nrf_gpio_pin_write(DT_NORDIC_NRF_QDEC_QDEC_0_ENABLE_PIN, val);
-	nrf_gpio_cfg_output(DT_NORDIC_NRF_QDEC_QDEC_0_ENABLE_PIN);
+	nrf_gpio_pin_write(DT_ALIAS_QDEC_0_ENABLE_PIN, val);
+	nrf_gpio_cfg_output(DT_ALIAS_QDEC_0_ENABLE_PIN);
 #endif
 }
 
@@ -176,14 +176,14 @@ static int qdec_nrfx_init(struct device *dev)
 	static const nrfx_qdec_config_t config = {
 		.reportper          = NRF_QDEC_REPORTPER_40,
 		.sampleper          = NRF_QDEC_SAMPLEPER_2048us,
-		.psela              = DT_NORDIC_NRF_QDEC_QDEC_0_A_PIN,
-		.pselb              = DT_NORDIC_NRF_QDEC_QDEC_0_B_PIN,
-#if defined(DT_NORDIC_NRF_QDEC_QDEC_0_LED_PIN)
-		.pselled            = DT_NORDIC_NRF_QDEC_QDEC_0_LED_PIN,
+		.psela              = DT_ALIAS_QDEC_0_A_PIN,
+		.pselb              = DT_ALIAS_QDEC_0_B_PIN,
+#if defined(DT_ALIAS_QDEC_0_LED_PIN)
+		.pselled            = DT_ALIAS_QDEC_0_LED_PIN,
 #else
 		.pselled            = 0xFFFFFFFF, /* disabled */
 #endif
-		.ledpre             = DT_NORDIC_NRF_QDEC_QDEC_0_LED_PRE,
+		.ledpre             = DT_ALIAS_QDEC_0_LED_PRE,
 		.ledpol             = NRF_QDEC_LEPOL_ACTIVE_HIGH,
 		.interrupt_priority = NRFX_QDEC_DEFAULT_CONFIG_IRQ_PRIORITY,
 		.dbfen              = 0, /* disabled */
@@ -194,8 +194,8 @@ static int qdec_nrfx_init(struct device *dev)
 
 	LOG_DBG("");
 
-	IRQ_CONNECT(DT_NORDIC_NRF_QDEC_QDEC_0_IRQ_0,
-		    DT_NORDIC_NRF_QDEC_QDEC_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_QDEC_0_IRQ_0,
+		    DT_ALIAS_QDEC_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_qdec_irq_handler, 0);
 
 	nerr = nrfx_qdec_init(&config, qdec_nrfx_event_handler);
@@ -308,6 +308,6 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 	.trigger_set  = qdec_nrfx_trigger_set,
 };
 
-DEVICE_DEFINE(qdec_nrfx, DT_NORDIC_NRF_QDEC_QDEC_0_LABEL, qdec_nrfx_init,
+DEVICE_DEFINE(qdec_nrfx, DT_ALIAS_QDEC_0_LABEL, qdec_nrfx_init,
 		qdec_nrfx_pm_control, NULL, NULL, POST_KERNEL,
 		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);
