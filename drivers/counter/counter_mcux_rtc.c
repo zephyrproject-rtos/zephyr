@@ -265,26 +265,26 @@ static struct mcux_rtc_data mcux_rtc_data_0;
 static void mcux_rtc_irq_config_0(struct device *dev);
 
 static struct mcux_rtc_config mcux_rtc_config_0 = {
-	.base = (RTC_Type *)DT_NXP_KINETIS_RTC_RTC_0_BASE_ADDRESS,
+	.base = (RTC_Type *)DT_ALIAS_RTC_0_BASE_ADDRESS,
 	.irq_config_func = mcux_rtc_irq_config_0,
 	.info = {
 		.max_top_value = UINT32_MAX,
-		.freq = DT_NXP_KINETIS_RTC_RTC_0_CLOCK_FREQUENCY /
-				DT_NXP_KINETIS_RTC_RTC_0_PRESCALER,
+		.freq = DT_ALIAS_RTC_0_CLOCK_FREQUENCY /
+				DT_ALIAS_RTC_0_PRESCALER,
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
 };
 
-DEVICE_AND_API_INIT(rtc, DT_NXP_KINETIS_RTC_RTC_0_LABEL, &mcux_rtc_init,
+DEVICE_AND_API_INIT(rtc, DT_ALIAS_RTC_0_LABEL, &mcux_rtc_init,
 		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_rtc_driver_api);
 
 static void mcux_rtc_irq_config_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_RTC_RTC_0_IRQ_0,
-		    DT_NXP_KINETIS_RTC_RTC_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_RTC_0_IRQ_0,
+		    DT_ALIAS_RTC_0_IRQ_0_PRIORITY,
 		    mcux_rtc_isr, DEVICE_GET(rtc), 0);
-	irq_enable(DT_NXP_KINETIS_RTC_RTC_0_IRQ_0);
+	irq_enable(DT_ALIAS_RTC_0_IRQ_0);
 }
