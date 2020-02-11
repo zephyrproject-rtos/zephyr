@@ -289,11 +289,11 @@ static void mcux_lpuart_config_func_0(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_0_config = {
-	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_0_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_0_CLOCK_CONTROLLER,
+	.base = (LPUART_Type *) DT_ALIAS_UART_0_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_UART_0_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_0_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPUART_UART_0_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_ALIAS_UART_0_CLOCK_NAME,
+	.baud_rate = DT_ALIAS_UART_0_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_0,
 #endif
@@ -301,7 +301,7 @@ static const struct mcux_lpuart_config mcux_lpuart_0_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_0_data;
 
-DEVICE_AND_API_INIT(uart_0, DT_NXP_KINETIS_LPUART_UART_0_LABEL,
+DEVICE_AND_API_INIT(uart_0, DT_ALIAS_UART_0_LABEL,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_0_data, &mcux_lpuart_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -310,19 +310,19 @@ DEVICE_AND_API_INIT(uart_0, DT_NXP_KINETIS_LPUART_UART_0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_0_IRQ_0,
-		    DT_NXP_KINETIS_LPUART_UART_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_0_IRQ_0,
+		    DT_ALIAS_UART_0_IRQ_0_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_0), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_0_IRQ_0);
+	irq_enable(DT_ALIAS_UART_0_IRQ_0);
 
-#ifdef DT_NXP_KINETIS_LPUART_UART_0_IRQ_1
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_0_IRQ_1,
-		    DT_NXP_KINETIS_LPUART_UART_0_IRQ_1_PRIORITY,
+#ifdef DT_ALIAS_UART_0_IRQ_1
+	IRQ_CONNECT(DT_ALIAS_UART_0_IRQ_1,
+		    DT_ALIAS_UART_0_IRQ_1_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_0), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_0_IRQ_1);
-#endif /* DT_NXP_KINETIS_LPUART_UART_0_IRQ_1 */
+	irq_enable(DT_ALIAS_UART_0_IRQ_1);
+#endif /* DT_ALIAS_UART_0_IRQ_1 */
 }
 #endif
 
@@ -335,11 +335,11 @@ static void mcux_lpuart_config_func_1(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_1_config = {
-	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_1_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_1_CLOCK_CONTROLLER,
+	.base = (LPUART_Type *) DT_ALIAS_UART_1_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_UART_1_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_1_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPUART_UART_1_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_ALIAS_UART_1_CLOCK_NAME,
+	.baud_rate = DT_ALIAS_UART_1_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_1,
 #endif
@@ -347,7 +347,7 @@ static const struct mcux_lpuart_config mcux_lpuart_1_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_1_data;
 
-DEVICE_AND_API_INIT(uart_1, DT_NXP_KINETIS_LPUART_UART_1_LABEL,
+DEVICE_AND_API_INIT(uart_1, DT_ALIAS_UART_1_LABEL,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_1_data, &mcux_lpuart_1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -356,19 +356,19 @@ DEVICE_AND_API_INIT(uart_1, DT_NXP_KINETIS_LPUART_UART_1_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_1_IRQ_0,
-		    DT_NXP_KINETIS_LPUART_UART_1_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_1_IRQ_0,
+		    DT_ALIAS_UART_1_IRQ_0_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_1), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_1_IRQ_0);
+	irq_enable(DT_ALIAS_UART_1_IRQ_0);
 
-#ifdef DT_NXP_KINETIS_LPUART_UART_1_IRQ_1
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_1_IRQ_1,
-		    DT_NXP_KINETIS_LPUART_UART_1_IRQ_1_PRIORITY,
+#ifdef DT_ALIAS_UART_1_IRQ_1
+	IRQ_CONNECT(DT_ALIAS_UART_1_IRQ_1,
+		    DT_ALIAS_UART_1_IRQ_1_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_1), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_1_IRQ_1);
-#endif /* DT_NXP_KINETIS_LPUART_UART_1_IRQ_1 */
+	irq_enable(DT_ALIAS_UART_1_IRQ_1);
+#endif /* DT_ALIAS_UART_1_IRQ_1 */
 }
 #endif
 
@@ -381,11 +381,11 @@ static void mcux_lpuart_config_func_2(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_2_config = {
-	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_2_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_2_CLOCK_CONTROLLER,
+	.base = (LPUART_Type *) DT_ALIAS_UART_2_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_UART_2_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_2_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPUART_UART_2_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_ALIAS_UART_2_CLOCK_NAME,
+	.baud_rate = DT_ALIAS_UART_2_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_2,
 #endif
@@ -393,7 +393,7 @@ static const struct mcux_lpuart_config mcux_lpuart_2_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_2_data;
 
-DEVICE_AND_API_INIT(uart_2, DT_NXP_KINETIS_LPUART_UART_2_LABEL,
+DEVICE_AND_API_INIT(uart_2, DT_ALIAS_UART_2_LABEL,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_2_data, &mcux_lpuart_2_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -402,19 +402,19 @@ DEVICE_AND_API_INIT(uart_2, DT_NXP_KINETIS_LPUART_UART_2_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_2_IRQ_0,
-		    DT_NXP_KINETIS_LPUART_UART_2_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_2_IRQ_0,
+		    DT_ALIAS_UART_2_IRQ_0_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_2), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_2_IRQ_0);
+	irq_enable(DT_ALIAS_UART_2_IRQ_0);
 
-#ifdef DT_NXP_KINETIS_LPUART_UART_2_IRQ_1
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_2_IRQ_1,
-		    DT_NXP_KINETIS_LPUART_UART_2_IRQ_1_PRIORITY,
+#ifdef DT_ALIAS_UART_2_IRQ_1
+	IRQ_CONNECT(DT_ALIAS_UART_2_IRQ_1,
+		    DT_ALIAS_UART_2_IRQ_1_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_2), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_2_IRQ_1);
-#endif /* DT_NXP_KINETIS_LPUART_UART_2_IRQ_1 */
+	irq_enable(DT_ALIAS_UART_2_IRQ_1);
+#endif /* DT_ALIAS_UART_2_IRQ_1 */
 }
 #endif
 
@@ -427,11 +427,11 @@ static void mcux_lpuart_config_func_3(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_3_config = {
-	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_3_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_3_CLOCK_CONTROLLER,
+	.base = (LPUART_Type *) DT_ALIAS_UART_3_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_UART_3_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_3_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPUART_UART_3_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_ALIAS_UART_3_CLOCK_NAME,
+	.baud_rate = DT_ALIAS_UART_3_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_3,
 #endif
@@ -439,7 +439,7 @@ static const struct mcux_lpuart_config mcux_lpuart_3_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_3_data;
 
-DEVICE_AND_API_INIT(uart_3, DT_NXP_KINETIS_LPUART_UART_3_LABEL,
+DEVICE_AND_API_INIT(uart_3, DT_ALIAS_UART_3_LABEL,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_3_data, &mcux_lpuart_3_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -448,19 +448,19 @@ DEVICE_AND_API_INIT(uart_3, DT_NXP_KINETIS_LPUART_UART_3_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_3_IRQ_0,
-		    DT_NXP_KINETIS_LPUART_UART_3_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_3_IRQ_0,
+		    DT_ALIAS_UART_3_IRQ_0_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_3), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_3_IRQ_0);
+	irq_enable(DT_ALIAS_UART_3_IRQ_0);
 
-#ifdef DT_NXP_KINETIS_LPUART_UART_3_IRQ_1
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_3_IRQ_1,
-		    DT_NXP_KINETIS_LPUART_UART_3_IRQ_1_PRIORITY,
+#ifdef DT_ALIAS_UART_3_IRQ_1
+	IRQ_CONNECT(DT_ALIAS_UART_3_IRQ_1,
+		    DT_ALIAS_UART_3_IRQ_1_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_3), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_3_IRQ_1);
-#endif /* DT_NXP_KINETIS_LPUART_UART_3_IRQ_1 */
+	irq_enable(DT_ALIAS_UART_3_IRQ_1);
+#endif /* DT_ALIAS_UART_3_IRQ_1 */
 }
 #endif
 
@@ -473,11 +473,11 @@ static void mcux_lpuart_config_func_4(struct device *dev);
 #endif
 
 static const struct mcux_lpuart_config mcux_lpuart_4_config = {
-	.base = (LPUART_Type *) DT_NXP_KINETIS_LPUART_UART_4_BASE_ADDRESS,
-	.clock_name = DT_NXP_KINETIS_LPUART_UART_4_CLOCK_CONTROLLER,
+	.base = (LPUART_Type *) DT_ALIAS_UART_4_BASE_ADDRESS,
+	.clock_name = DT_ALIAS_UART_4_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPUART_UART_4_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPUART_UART_4_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_ALIAS_UART_4_CLOCK_NAME,
+	.baud_rate = DT_ALIAS_UART_4_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_4,
 #endif
@@ -485,7 +485,7 @@ static const struct mcux_lpuart_config mcux_lpuart_4_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_4_data;
 
-DEVICE_AND_API_INIT(uart_4, DT_NXP_KINETIS_LPUART_UART_4_LABEL,
+DEVICE_AND_API_INIT(uart_4, DT_ALIAS_UART_4_LABEL,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_4_data, &mcux_lpuart_4_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -494,19 +494,19 @@ DEVICE_AND_API_INIT(uart_4, DT_NXP_KINETIS_LPUART_UART_4_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_4_IRQ_0,
-		    DT_NXP_KINETIS_LPUART_UART_4_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_UART_4_IRQ_0,
+		    DT_ALIAS_UART_4_IRQ_0_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_4), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_4_IRQ_0);
+	irq_enable(DT_ALIAS_UART_4_IRQ_0);
 
-#ifdef DT_NXP_KINETIS_LPUART_UART_4_IRQ_1
-	IRQ_CONNECT(DT_NXP_KINETIS_LPUART_UART_4_IRQ_1,
-		    DT_NXP_KINETIS_LPUART_UART_4_IRQ_1_PRIORITY,
+#ifdef DT_ALIAS_UART_4_IRQ_1
+	IRQ_CONNECT(DT_ALIAS_UART_4_IRQ_1,
+		    DT_ALIAS_UART_4_IRQ_1_PRIORITY,
 		    mcux_lpuart_isr, DEVICE_GET(uart_4), 0);
 
-	irq_enable(DT_NXP_KINETIS_LPUART_UART_4_IRQ_1);
-#endif /* DT_NXP_KINETIS_LPUART_UART_4_IRQ_1 */
+	irq_enable(DT_ALIAS_UART_4_IRQ_1);
+#endif /* DT_ALIAS_UART_4_IRQ_1 */
 }
 #endif
 

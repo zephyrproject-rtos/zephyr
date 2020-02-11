@@ -57,7 +57,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 	struct device *gpiob =
-	       device_get_binding(DT_NXP_KINETIS_GPIO_GPIO_B_LABEL);
+	       device_get_binding(DT_ALIAS_GPIO_B_LABEL);
 
 	gpio_pin_configure(gpiob, 12, GPIO_OUTPUT_LOW);
 #endif
@@ -92,7 +92,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 	struct device *gpioa =
-	       device_get_binding(DT_NXP_KINETIS_GPIO_GPIO_A_LABEL);
+	       device_get_binding(DT_ALIAS_GPIO_A_LABEL);
 
 	gpio_pin_configure(gpioa, 29, GPIO_OUTPUT_HIGH);
 #endif
@@ -101,7 +101,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 	struct device *gpioc =
-	       device_get_binding(DT_NXP_KINETIS_GPIO_GPIO_C_LABEL);
+	       device_get_binding(DT_ALIAS_GPIO_C_LABEL);
 
 	gpio_pin_configure(gpioc, 14, GPIO_OUTPUT_LOW);
 #endif

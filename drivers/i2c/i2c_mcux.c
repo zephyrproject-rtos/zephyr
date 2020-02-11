@@ -202,16 +202,16 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 	static void i2c_mcux_config_func_ ## n(struct device *dev);	\
 									\
 	static const struct i2c_mcux_config i2c_mcux_config_ ## n = {	\
-		.base = (I2C_Type *)DT_NXP_KINETIS_I2C_I2C_ ## n ## _BASE_ADDRESS,\
+		.base = (I2C_Type *)DT_ALIAS_I2C_ ## n ## _BASE_ADDRESS,\
 		.clock_source = I2C ## n ## _CLK_SRC,			\
 		.irq_config_func = i2c_mcux_config_func_ ## n,		\
-		.bitrate = DT_NXP_KINETIS_I2C_I2C_ ## n ## _CLOCK_FREQUENCY,\
+		.bitrate = DT_ALIAS_I2C_ ## n ## _CLOCK_FREQUENCY,	\
 	};								\
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
 	DEVICE_AND_API_INIT(i2c_mcux_ ## n,				\
-			DT_NXP_KINETIS_I2C_I2C_ ## n ## _LABEL,		\
+			DT_ALIAS_I2C_ ## n ## _LABEL,			\
 			&i2c_mcux_init, &i2c_mcux_data_ ## n,		\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -219,12 +219,12 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static void i2c_mcux_config_func_ ## n(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0,	\
-			DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0_PRIORITY,\
+		IRQ_CONNECT(DT_ALIAS_I2C_ ## n ## _IRQ_0,		\
+			DT_ALIAS_I2C_ ## n ## _IRQ_0_PRIORITY,		\
 			i2c_mcux_isr,					\
 			DEVICE_GET(i2c_mcux_ ## n), 0);			\
 									\
-		irq_enable(DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0);	\
+		irq_enable(DT_ALIAS_I2C_ ## n ## _IRQ_0);		\
 	}
 
 #ifdef CONFIG_I2C_0
