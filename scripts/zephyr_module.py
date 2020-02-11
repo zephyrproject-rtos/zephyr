@@ -188,10 +188,14 @@ def main():
         if p.returncode == 0:
             projects = out.decode(sys.getdefaultencoding()).splitlines()
         elif re.match((r'Error: .* is not in a west installation\.'
-                       '|FATAL ERROR: no west installation found from .*'),
+                       '|FATAL ERROR: no west installation found from .*'
+                       '|FATAL ERROR: no west workspace.*'),
                       err.decode(sys.getdefaultencoding())):
-            # Only accept the error from bootstrapper in the event we are
-            # outside a west managed project.
+            # Only accept the error the event we are outside a west
+            # workspace.
+            #
+            # TODO: we can just use "west topdir" instead if we can
+            # depend on west 0.7.0 or later.
             projects = []
         else:
             print(err.decode(sys.getdefaultencoding()))
