@@ -23,69 +23,69 @@ static void SOC_RdcInit(void)
 
 #ifdef CONFIG_UART_IMX_UART_1
 	/* Set access to UART_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart1, DT_NXP_IMX_UART_UART_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart1, DT_ALIAS_UART_1_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_1 */
 #ifdef CONFIG_UART_IMX_UART_2
 	/* Set access to UART_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart2, DT_NXP_IMX_UART_UART_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart2, DT_ALIAS_UART_2_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_2 */
 #ifdef CONFIG_UART_IMX_UART_3
 	/* Set access to UART_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart3, DT_NXP_IMX_UART_UART_3_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart3, DT_ALIAS_UART_3_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_3 */
 #ifdef CONFIG_UART_IMX_UART_4
 	/* Set access to UART_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart4, DT_NXP_IMX_UART_UART_4_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart4, DT_ALIAS_UART_4_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_4 */
 #ifdef CONFIG_UART_IMX_UART_5
 	/* Set access to UART_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart5, DT_NXP_IMX_UART_UART_5_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart5, DT_ALIAS_UART_5_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_5 */
 #ifdef CONFIG_UART_IMX_UART_6
 	/* Set access to UART_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart6, DT_NXP_IMX_UART_UART_6_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart6, DT_ALIAS_UART_6_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_6 */
 #ifdef CONFIG_GPIO_IMX_PORT_1
 	/* Set access to GPIO_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio1, DT_NXP_IMX_GPIO_GPIO_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio1, DT_ALIAS_GPIO_1_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_1 */
 #ifdef CONFIG_GPIO_IMX_PORT_2
 	/* Set access to GPIO_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio2, DT_NXP_IMX_GPIO_GPIO_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio2, DT_ALIAS_GPIO_2_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_2 */
 #ifdef CONFIG_GPIO_IMX_PORT_3
 	/* Set access to GPIO_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio3, DT_NXP_IMX_GPIO_GPIO_3_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio3, DT_ALIAS_GPIO_3_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_3 */
 #ifdef CONFIG_GPIO_IMX_PORT_4
 	/* Set access to GPIO_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio4, DT_NXP_IMX_GPIO_GPIO_4_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio4, DT_ALIAS_GPIO_4_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_4 */
 #ifdef CONFIG_GPIO_IMX_PORT_5
 	/* Set access to GPIO_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio5, DT_NXP_IMX_GPIO_GPIO_5_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio5, DT_ALIAS_GPIO_5_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_5 */
 #ifdef CONFIG_GPIO_IMX_PORT_6
 	/* Set access to GPIO_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio6, DT_NXP_IMX_GPIO_GPIO_6_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio6, DT_ALIAS_GPIO_6_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_6 */
 #ifdef CONFIG_GPIO_IMX_PORT_7
 	/* Set access to GPIO_7 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio7, DT_NXP_IMX_GPIO_GPIO_7_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio7, DT_ALIAS_GPIO_7_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_7 */
 
 #ifdef CONFIG_IPM_IMX
 	/* Set access to MU B for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapMuB, DT_NXP_IMX_MU_MU_B_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapMuB, DT_ALIAS_MU_B_RDC, false, false);
 #endif /* CONFIG_IPM_IMX */
 
 #ifdef CONFIG_COUNTER_IMX_EPIT_1
 	/* Set access to EPIT_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapEpit1, DT_NXP_IMX_EPIT_EPIT_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapEpit1, DT_ALIAS_EPIT_1_RDC, false, false);
 #endif /* CONFIG_COUNTER_IMX_EPIT_1 */
 #ifdef CONFIG_COUNTER_IMX_EPIT_2
 	/* Set access to EPIT_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapEpit2, DT_NXP_IMX_EPIT_EPIT_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapEpit2, DT_ALIAS_EPIT_2_RDC, false, false);
 #endif /* CONFIG_COUNTER_IMX_EPIT_2 */
 }
 
