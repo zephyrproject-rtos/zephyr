@@ -146,7 +146,7 @@ void soc_interrupt_init(void)
 	(void)(EVENT_UNIT->EVTPENDCLEAR); /* Ensures write has finished. */
 
 	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
-		dev_intmux = device_get_binding(DT_OPENISA_RV32M1_INTMUX_INTMUX_LABEL);
+		dev_intmux = device_get_binding(DT_ALIAS_INTMUX_LABEL);
 		__ASSERT(dev_intmux, "no INTMUX device found");
 	}
 }
@@ -196,16 +196,16 @@ static void rv32m1_switch_to_sirc(void)
  */
 static void rv32m1_setup_peripheral_clocks(void)
 {
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_0_BASE_ADDRESS
+#ifdef DT_ALIAS_PWM_0_BASE_ADDRESS
 	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_1_BASE_ADDRESS
+#ifdef DT_ALIAS_PWM_1_BASE_ADDRESS
 	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_2_BASE_ADDRESS
+#ifdef DT_ALIAS_PWM_2_BASE_ADDRESS
 	CLOCK_SetIpSrc(kCLOCK_Tpm2, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_3_BASE_ADDRESS
+#ifdef DT_ALIAS_PWM_3_BASE_ADDRESS
 	CLOCK_SetIpSrc(kCLOCK_Tpm3, kCLOCK_IpSrcFircAsync);
 #endif
 }

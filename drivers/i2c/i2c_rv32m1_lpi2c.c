@@ -263,15 +263,15 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev);     \
 	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = { \
 		.base =                                                        \
-		(LPI2C_Type *)DT_OPENISA_RV32M1_LPI2C_I2C_##id##_BASE_ADDRESS, \
+		(LPI2C_Type *)DT_ALIAS_I2C_##id##_BASE_ADDRESS,		       \
 		.clock_controller =                                            \
-			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_CONTROLLER,   \
+			DT_ALIAS_I2C_##id##_CLOCK_CONTROLLER,		       \
 		.clock_subsys =                                                \
 			(clock_control_subsys_t)                               \
-			DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_NAME,         \
+			DT_ALIAS_I2C_##id##_CLOCK_NAME,			       \
 		.clock_ip_name = kCLOCK_Lpi2c##id,                             \
 		.clock_ip_src  = kCLOCK_IpSrcFircAsync,                        \
-		.bitrate = DT_OPENISA_RV32M1_LPI2C_I2C_##id##_CLOCK_FREQUENCY, \
+		.bitrate = DT_ALIAS_I2C_##id##_CLOCK_FREQUENCY,		       \
 		.irq_config_func = rv32m1_lpi2c_irq_config_func_##id,          \
 	};                                                                     \
 	static struct rv32m1_lpi2c_data rv32m1_lpi2c_##id##_data = {           \
@@ -281,7 +281,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 			rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),       \
 	};                                                                     \
 	DEVICE_AND_API_INIT(rv32m1_lpi2c_##id,                                 \
-			    DT_OPENISA_RV32M1_LPI2C_I2C_##id##_LABEL,          \
+			    DT_ALIAS_I2C_##id##_LABEL,			       \
 			    &rv32m1_lpi2c_init,                                \
 			    &rv32m1_lpi2c_##id##_data,                         \
 			    &rv32m1_lpi2c_##id##_config,                       \
@@ -289,11 +289,11 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 			    &rv32m1_lpi2c_driver_api);	                       \
 	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev)      \
 	{                                                                      \
-		IRQ_CONNECT(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_0,          \
+		IRQ_CONNECT(DT_ALIAS_I2C_##id##_IRQ_0,			       \
 			    0,						       \
 			    rv32m1_lpi2c_isr, DEVICE_GET(rv32m1_lpi2c_##id),   \
 			    0);                                                \
-		irq_enable(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_0);          \
+		irq_enable(DT_ALIAS_I2C_##id##_IRQ_0);			       \
 	}                                                                      \
 
 #ifdef CONFIG_I2C_0
