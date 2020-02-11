@@ -157,12 +157,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* r0 contains user stack start, ip contains user stack size */
     add r0, r0, ip   /* calculate top of stack */
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack limit (stack protection not required in user mode) */
-    mov r3, #0
-    msr PSPLIM, r3
-#endif
-
     /* pop remaining arguments from stack before switching stacks */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* Use r4 to pop lr, then restore r4 */
@@ -174,8 +168,50 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     pop {r1,r2,r3,lr}
 #endif
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /*
+     * Guard the default (user) stack until thread drops privileges.
+     *
+     * Notes:
+     * PSPLIM is configured *before* PSP switches to the default (user) stack.
+     * This is safe, since the user stack is located, by design, in a lower
+     * memory area compared to the privileged stack.
+     *
+     * However, we need to prevent a context-switch to occur, because that
+     * would re-configure PSPLIM to guard the privileged stack; we enforce
+     * a PendSV locking for this purporse.
+     *
+     * Between PSPLIM update and PSP switch, the privileged stack will be
+     * left un-guarded; this is safe, as long as the privileged stack is
+     * large enough to accommodate a maximum exception stack frame.
+     */
+
+    /* Temporarily store current IRQ locking status in ip */
+    mrs ip, BASEPRI
+    push {r0, ip}
+
+    /* Lock PendSV while reprogramming PSP and PSPLIM */
+    mov r0, #_EXC_PENDSV_PRIO_MASK
+    msr BASEPRI, r0
+    isb
+
+    /* Set PSPLIM to guard the thread's user stack. */
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r0, [r0, #_thread_offset_to_stack_info_start]
+    msr PSPLIM, r0
+
+    pop {r0, ip}
+#endif
+
     /* set stack to user stack */
     msr PSP, r0
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Restore interrupt lock status */
+    msr BASEPRI, ip
+    isb
+#endif
 
     /* restore r0 */
     mov r0, lr
