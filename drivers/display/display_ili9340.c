@@ -8,36 +8,30 @@
 #include "display_ili9340.h"
 #include <drivers/display.h>
 
-#define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(display_ili9340);
+LOG_MODULE_REGISTER(display_ili9340, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
 #include <drivers/spi.h>
 #include <string.h>
 
+#define RES_X_MAX 320U
+#define RES_Y_MAX 240U
+
 struct ili9340_data {
 #ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
-	struct device *reset_gpio;
+	struct device *rst;
 #endif
-	struct device *command_data_gpio;
+	struct device *cmd;
 	struct device *spi_dev;
 	struct spi_config spi_config;
 #ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER
-	struct spi_cs_control cs_ctrl;
+	struct spi_cs_control cs;
 #endif
+	enum display_pixel_format pixel_format;
+	enum display_orientation orientation;
 };
-
-#define ILI9340_CMD_DATA_PIN_COMMAND 1
-#define ILI9340_CMD_DATA_PIN_DATA 0
-
-/* The number of bytes taken by a RGB pixel */
-#ifdef CONFIG_ILI9340_RGB565
-#define ILI9340_RGB_SIZE 2U
-#else
-#define ILI9340_RGB_SIZE 3U
-#endif
 
 static void ili9340_exit_sleep(struct ili9340_data *data)
 {
@@ -51,6 +45,15 @@ static int ili9340_init(struct device *dev)
 
 	LOG_DBG("Initializing display driver");
 
+	data->orientation = DISPLAY_ORIENTATION_NORMAL;
+	if (IS_ENABLED(CONFIG_ILI9340_RGB565)) {
+		data->pixel_format = PIXEL_FORMAT_RGB_565;
+	} else if (IS_ENABLED(CONFIG_ILI9340_RGB888)) {
+		data->pixel_format = PIXEL_FORMAT_RGB_888;
+	} else {
+		LOG_ERR("Unsupported pixel format");
+	}
+
 	data->spi_dev = device_get_binding(DT_INST_0_ILITEK_ILI9340_BUS_NAME);
 	if (data->spi_dev == NULL) {
 		LOG_ERR("Could not get SPI device for ILI9340");
@@ -62,46 +65,46 @@ static int ili9340_init(struct device *dev)
 	data->spi_config.slave = DT_INST_0_ILITEK_ILI9340_BASE_ADDRESS;
 
 #ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER
-	data->cs_ctrl.gpio_dev =
+	data->cs.gpio_dev =
 		device_get_binding(DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER);
-	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIOS_PIN;
-	data->cs_ctrl.delay = 0U;
-	data->spi_config.cs = &(data->cs_ctrl);
+	data->cs.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIOS_PIN;
+	data->cs.delay = 0U;
+	data->spi_config.cs = &(data->cs);
 #else
 	data->spi_config.cs = NULL;
 #endif
 
 #ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
-	data->reset_gpio =
+	data->rst =
 		device_get_binding(DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER);
-	if (data->reset_gpio == NULL) {
+	if (data->rst == NULL) {
 		LOG_ERR("Could not get GPIO port for ILI9340 reset");
 		return -EPERM;
 	}
 
-	gpio_pin_configure(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN,
+	gpio_pin_configure(data->rst, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN,
 			   GPIO_OUTPUT_INACTIVE |
 			   DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_FLAGS);
 #endif
 
-	data->command_data_gpio =
+	data->cmd =
 		device_get_binding(DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_CONTROLLER);
-	if (data->command_data_gpio == NULL) {
+	if (data->cmd == NULL) {
 		LOG_ERR("Could not get GPIO port for ILI9340 command/data");
 		return -EPERM;
 	}
 
-	gpio_pin_configure(data->command_data_gpio, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-			   GPIO_OUTPUT |
+	gpio_pin_configure(data->cmd, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE |
 			   DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_FLAGS);
 
 #ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	LOG_DBG("Resetting display driver");
 	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio,
+	gpio_pin_set(cmd->rst,
 		     DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
 	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio,
+	gpio_pin_set(cmd->rst,
 		     DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 0);
 	k_sleep(K_MSEC(5));
 #endif
@@ -141,9 +144,10 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	u16_t write_cnt;
 	u16_t nbr_of_writes;
 	u16_t write_h;
+	const u8_t pix_size = 2 + (data->pixel_format == PIXEL_FORMAT_RGB_888);
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((desc->pitch * ILI9340_RGB_SIZE * desc->height) <= desc->bu_size,
+	__ASSERT((desc->pitch * pix_size * desc->height) <= desc->bu_size,
 			"Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -160,17 +164,17 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
 			 (void *) write_data_start,
-			 desc->width * ILI9340_RGB_SIZE * write_h);
+			 desc->width * pix_size * write_h);
 
 	tx_bufs.buffers = &tx_buf;
 	tx_bufs.count = 1;
 
-	write_data_start += (desc->pitch * ILI9340_RGB_SIZE);
+	write_data_start += (desc->pitch * pix_size);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * ILI9340_RGB_SIZE * write_h;
+		tx_buf.len = desc->width * pix_size * write_h;
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-		write_data_start += (desc->pitch * ILI9340_RGB_SIZE);
+		write_data_start += (desc->pitch * pix_size);
 	}
 
 	return 0;
@@ -226,11 +230,10 @@ static int ili9340_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format
 				    pixel_format)
 {
-#ifdef CONFIG_ILI9340_RGB565
-	if (pixel_format == PIXEL_FORMAT_RGB_565) {
-#else
-	if (pixel_format == PIXEL_FORMAT_RGB_888) {
-#endif
+	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+
+	LOG_DBG("change request %d -> %d", data->pixel_format, pixel_format);
+	if (data->pixel_format == pixel_format) {
 		return 0;
 	}
 	LOG_ERR("Pixel format change not implemented");
@@ -240,7 +243,10 @@ static int ili9340_set_pixel_format(const struct device *dev,
 static int ili9340_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+
+	LOG_DBG("change request %d -> %d", data->orientation, orientation);
+	if (data->orientation == orientation) {
 		return 0;
 	}
 	LOG_ERR("Changing display orientation not implemented");
@@ -250,17 +256,21 @@ static int ili9340_set_orientation(const struct device *dev,
 static void ili9340_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
+	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = 320U;
-	capabilities->y_resolution = 240U;
-#ifdef CONFIG_ILI9340_RGB565
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-#else
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
-#endif
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->x_resolution = RES_X_MAX;
+	capabilities->y_resolution = RES_Y_MAX;
+	if (IS_ENABLED(CONFIG_ILI9340_RGB565)) {
+		capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
+	} else if (IS_ENABLED(CONFIG_ILI9340_RGB888)) {
+		capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
+		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
+	} else {
+		LOG_ERR("Unsupported pixel format");
+	}
+	capabilities->current_orientation = data->orientation;
 }
 
 void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
@@ -269,17 +279,15 @@ void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	gpio_pin_set(data->command_data_gpio,
-		     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-		     ILI9340_CMD_DATA_PIN_COMMAND);
+	gpio_pin_set(data->cmd,
+		     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN, 1);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_len;
-		gpio_pin_set(data->command_data_gpio,
-			     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-			     ILI9340_CMD_DATA_PIN_DATA);
+		gpio_pin_set(data->cmd,
+			     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN, 0);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
 }
