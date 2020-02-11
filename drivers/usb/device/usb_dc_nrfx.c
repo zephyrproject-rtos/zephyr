@@ -184,18 +184,18 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
  */
 
 /** Number of IN Endpoints configured (including control) */
-#define CFG_EPIN_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_IN_ENDPOINTS + \
-		      DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
+#define CFG_EPIN_CNT (DT_ALIAS_USBD_0_NUM_IN_ENDPOINTS + \
+		      DT_ALIAS_USBD_0_NUM_BIDIR_ENDPOINTS)
 
 /** Number of OUT Endpoints configured (including control) */
-#define CFG_EPOUT_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_OUT_ENDPOINTS + \
-		       DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
+#define CFG_EPOUT_CNT (DT_ALIAS_USBD_0_NUM_OUT_ENDPOINTS + \
+		       DT_ALIAS_USBD_0_NUM_BIDIR_ENDPOINTS)
 
 /** Number of ISO IN Endpoints */
-#define CFG_EP_ISOIN_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOIN_ENDPOINTS
+#define CFG_EP_ISOIN_CNT DT_ALIAS_USBD_0_NUM_ISOIN_ENDPOINTS
 
 /** Number of ISO OUT Endpoints */
-#define CFG_EP_ISOOUT_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOOUT_ENDPOINTS
+#define CFG_EP_ISOOUT_CNT DT_ALIAS_USBD_0_NUM_ISOOUT_ENDPOINTS
 
 /** ISO endpoint index */
 #define EP_ISOIN_INDEX CFG_EPIN_CNT
@@ -1309,8 +1309,8 @@ int usb_dc_attach(void)
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
 
-	IRQ_CONNECT(DT_NORDIC_NRF_USBD_USBD_0_IRQ_0,
-		    DT_NORDIC_NRF_USBD_USBD_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_USBD_0_IRQ_0,
+		    DT_ALIAS_USBD_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
 
 	err = nrfx_usbd_init(usbd_event_handler);

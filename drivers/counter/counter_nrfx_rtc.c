@@ -655,17 +655,17 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 };
 
 #define COUNTER_NRF_RTC_DEVICE(idx)					       \
-	BUILD_ASSERT_MSG((DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1) <=      \
+	BUILD_ASSERT_MSG((DT_ALIAS_RTC_##idx##_PRESCALER - 1) <=	       \
 			RTC_PRESCALER_PRESCALER_Msk,			       \
 			"RTC prescaler out of range");			       \
 	DEVICE_DECLARE(rtc_##idx);					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0_PRIORITY,      \
+		IRQ_CONNECT(DT_ALIAS_RTC_##idx##_IRQ_0,			       \
+			    DT_ALIAS_RTC_##idx##_IRQ_0_PRIORITY,	       \
 			    irq_handler, DEVICE_GET(rtc_##idx), 0);	       \
 		return init_rtc(dev,					       \
-				DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1);  \
+				DT_ALIAS_RTC_##idx##_PRESCALER - 1);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
 	static struct counter_nrfx_ch_data				       \
@@ -674,22 +674,22 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
 			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
-			.freq = DT_NORDIC_NRF_RTC_RTC_##idx##_CLOCK_FREQUENCY /\
-				(DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER),     \
+			.freq = DT_ALIAS_RTC_##idx##_CLOCK_FREQUENCY /	       \
+				(DT_ALIAS_RTC_##idx##_PRESCALER),	       \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
-			.channels = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP ?  \
+			.channels = DT_ALIAS_RTC_##idx##_FIXED_TOP ?	       \
 				RTC##idx##_CC_NUM : RTC##idx##_CC_NUM - 1      \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
 		.rtc = NRF_RTC##idx,					       \
-		IF_ENABLED(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
+		IF_ENABLED(DT_ALIAS_RTC_##idx##_PPI_WRAP,		       \
 			    (.use_ppi = true,))				       \
 		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,))     \
+		  (.fixed_top = DT_ALIAS_RTC_##idx##_FIXED_TOP,))	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(rtc_##idx,					       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_LABEL,	       \
+			    DT_ALIAS_RTC_##idx##_LABEL,			       \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \

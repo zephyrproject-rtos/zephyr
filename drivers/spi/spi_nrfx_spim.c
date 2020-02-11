@@ -363,10 +363,10 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #define SPIM_NRFX_MISO_PULL_DOWN(idx) \
-	IS_ENABLED(DT_NORDIC_NRF_SPIM_SPI_##idx##_MISO_PULL_DOWN)
+	IS_ENABLED(DT_ALIAS_SPI_##idx##_MISO_PULL_DOWN)
 
 #define SPIM_NRFX_MISO_PULL_UP(idx) \
-	IS_ENABLED(DT_NORDIC_NRF_SPIM_SPI_##idx##_MISO_PULL_UP)
+	IS_ENABLED(DT_ALIAS_SPI_##idx##_MISO_PULL_UP)
 
 #define SPIM_NRFX_MISO_PULL(idx)			\
 	(SPIM_NRFX_MISO_PULL_UP(idx)			\
@@ -392,7 +392,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
-			    DT_NORDIC_NRF_SPIM_SPI_##idx##_IRQ_0_PRIORITY,     \
+			    DT_ALIAS_SPI_##idx##_IRQ_0_PRIORITY,	       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
 		return init_spim(dev);					       \
 	}								       \
@@ -405,9 +405,9 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 		.config = {						       \
-			.sck_pin   = DT_NORDIC_NRF_SPIM_SPI_##idx##_SCK_PIN,   \
-			.mosi_pin  = DT_NORDIC_NRF_SPIM_SPI_##idx##_MOSI_PIN,  \
-			.miso_pin  = DT_NORDIC_NRF_SPIM_SPI_##idx##_MISO_PIN,  \
+			.sck_pin   = DT_ALIAS_SPI_##idx##_SCK_PIN,	       \
+			.mosi_pin  = DT_ALIAS_SPI_##idx##_MOSI_PIN,	       \
+			.miso_pin  = DT_ALIAS_SPI_##idx##_MISO_PIN,	       \
 			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		       \
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
 			.frequency = NRF_SPIM_FREQ_4M,			       \
@@ -418,7 +418,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}							       \
 	};								       \
 	DEVICE_DEFINE(spi_##idx,					       \
-		      DT_NORDIC_NRF_SPIM_SPI_##idx##_LABEL,		       \
+		      DT_ALIAS_SPI_##idx##_LABEL,			       \
 		      spi_##idx##_init,					       \
 		      spim_nrfx_pm_control,				       \
 		      &spi_##idx##_data,				       \

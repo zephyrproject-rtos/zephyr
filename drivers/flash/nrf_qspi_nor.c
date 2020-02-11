@@ -361,12 +361,12 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->xip_offset = 0;
 
 	/* Configure pins */
-	initstruct->pins.sck_pin = DT_NORDIC_NRF_QSPI_QSPI_0_SCK_PIN;
-	initstruct->pins.csn_pin = DT_NORDIC_NRF_QSPI_QSPI_0_CSN_PINS_0;
-	initstruct->pins.io0_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_0;
-	initstruct->pins.io1_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_1;
-	initstruct->pins.io2_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_2;
-	initstruct->pins.io3_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_3;
+	initstruct->pins.sck_pin = DT_ALIAS_QSPI_0_SCK_PIN;
+	initstruct->pins.csn_pin = DT_ALIAS_QSPI_0_CSN_PINS_0;
+	initstruct->pins.io0_pin = DT_ALIAS_QSPI_0_IO_PINS_0;
+	initstruct->pins.io1_pin = DT_ALIAS_QSPI_0_IO_PINS_1;
+	initstruct->pins.io2_pin = DT_ALIAS_QSPI_0_IO_PINS_2;
+	initstruct->pins.io3_pin = DT_ALIAS_QSPI_0_IO_PINS_3;
 
 	/* Configure Protocol interface */
 #ifdef DT_INST_0_NORDIC_QSPI_NOR_READOC_ENUM
@@ -626,8 +626,8 @@ static int qspi_nor_configure(struct device *dev)
  */
 static int qspi_nor_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0,
-		    DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_QSPI_0_IRQ_0,
+		    DT_ALIAS_QSPI_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 	return qspi_nor_configure(dev);
 }
