@@ -219,12 +219,12 @@ static const struct mcux_igpio_config mcux_igpio_1_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_NXP_IMX_GPIO_NGPIOS),
 	},
-	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_1_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_ALIAS_GPIO_1_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_1_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_1, DT_NXP_IMX_GPIO_GPIO_1_LABEL,
+DEVICE_AND_API_INIT(mcux_igpio_1, DT_ALIAS_GPIO_1_LABEL,
 		    mcux_igpio_1_init,
 		    &mcux_igpio_1_data, &mcux_igpio_1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -232,18 +232,18 @@ DEVICE_AND_API_INIT(mcux_igpio_1, DT_NXP_IMX_GPIO_GPIO_1_LABEL,
 
 static int mcux_igpio_1_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_1_IRQ_0,
-		    DT_NXP_IMX_GPIO_GPIO_1_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_GPIO_1_IRQ_0,
+		    DT_ALIAS_GPIO_1_IRQ_0_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_1), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_1_IRQ_0);
+	irq_enable(DT_ALIAS_GPIO_1_IRQ_0);
 
-#if defined(DT_NXP_IMX_GPIO_GPIO_1_IRQ_1) && defined(DT_NXP_IMX_GPIO_GPIO_1_IRQ_1_PRIORITY)
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_1_IRQ_1,
-		    DT_NXP_IMX_GPIO_GPIO_1_IRQ_1_PRIORITY,
+#if defined(DT_ALIAS_GPIO_1_IRQ_1) && defined(DT_ALIAS_GPIO_1_IRQ_1_PRIORITY)
+	IRQ_CONNECT(DT_ALIAS_GPIO_1_IRQ_1,
+		    DT_ALIAS_GPIO_1_IRQ_1_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_1), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_1_IRQ_1);
+	irq_enable(DT_ALIAS_GPIO_1_IRQ_1);
 #endif
 
 	return 0;
@@ -257,12 +257,12 @@ static const struct mcux_igpio_config mcux_igpio_2_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_NXP_IMX_GPIO_NGPIOS),
 	},
-	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_2_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_ALIAS_GPIO_2_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_2_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_2, DT_NXP_IMX_GPIO_GPIO_2_LABEL,
+DEVICE_AND_API_INIT(mcux_igpio_2, DT_ALIAS_GPIO_2_LABEL,
 		    mcux_igpio_2_init,
 		    &mcux_igpio_2_data, &mcux_igpio_2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -270,18 +270,18 @@ DEVICE_AND_API_INIT(mcux_igpio_2, DT_NXP_IMX_GPIO_GPIO_2_LABEL,
 
 static int mcux_igpio_2_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_2_IRQ_0,
-		    DT_NXP_IMX_GPIO_GPIO_2_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_GPIO_2_IRQ_0,
+		    DT_ALIAS_GPIO_2_IRQ_0_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_2), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_2_IRQ_0);
+	irq_enable(DT_ALIAS_GPIO_2_IRQ_0);
 
-#if defined(DT_NXP_IMX_GPIO_GPIO_2_IRQ_1) && defined(DT_NXP_IMX_GPIO_GPIO_2_IRQ_1_PRIORITY)
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_2_IRQ_1,
-		    DT_NXP_IMX_GPIO_GPIO_2_IRQ_1_PRIORITY,
+#if defined(DT_ALIAS_GPIO_2_IRQ_1) && defined(DT_ALIAS_GPIO_2_IRQ_1_PRIORITY)
+	IRQ_CONNECT(DT_ALIAS_GPIO_2_IRQ_1,
+		    DT_ALIAS_GPIO_2_IRQ_1_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_2), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_2_IRQ_1);
+	irq_enable(DT_ALIAS_GPIO_2_IRQ_1);
 #endif
 
 	return 0;
@@ -295,12 +295,12 @@ static const struct mcux_igpio_config mcux_igpio_3_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_NXP_IMX_GPIO_NGPIOS),
 	},
-	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_3_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_ALIAS_GPIO_3_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_3_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_3, DT_NXP_IMX_GPIO_GPIO_3_LABEL,
+DEVICE_AND_API_INIT(mcux_igpio_3, DT_ALIAS_GPIO_3_LABEL,
 		    mcux_igpio_3_init,
 		    &mcux_igpio_3_data, &mcux_igpio_3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -308,18 +308,18 @@ DEVICE_AND_API_INIT(mcux_igpio_3, DT_NXP_IMX_GPIO_GPIO_3_LABEL,
 
 static int mcux_igpio_3_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_3_IRQ_0,
-		    DT_NXP_IMX_GPIO_GPIO_3_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_GPIO_3_IRQ_0,
+		    DT_ALIAS_GPIO_3_IRQ_0_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_3), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_3_IRQ_0);
+	irq_enable(DT_ALIAS_GPIO_3_IRQ_0);
 
-#if defined(DT_NXP_IMX_GPIO_GPIO_3_IRQ_1) && defined(DT_NXP_IMX_GPIO_GPIO_3_IRQ_1_PRIORITY)
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_3_IRQ_1,
-		    DT_NXP_IMX_GPIO_GPIO_3_IRQ_1_PRIORITY,
+#if defined(DT_ALIAS_GPIO_3_IRQ_1) && defined(DT_ALIAS_GPIO_3_IRQ_1_PRIORITY)
+	IRQ_CONNECT(DT_ALIAS_GPIO_3_IRQ_1,
+		    DT_ALIAS_GPIO_3_IRQ_1_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_3), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_3_IRQ_1);
+	irq_enable(DT_ALIAS_GPIO_3_IRQ_1);
 #endif
 
 	return 0;
@@ -333,12 +333,12 @@ static const struct mcux_igpio_config mcux_igpio_4_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_NXP_IMX_GPIO_NGPIOS),
 	},
-	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_4_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_ALIAS_GPIO_4_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_4_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_4, DT_NXP_IMX_GPIO_GPIO_4_LABEL,
+DEVICE_AND_API_INIT(mcux_igpio_4, DT_ALIAS_GPIO_4_LABEL,
 		    mcux_igpio_4_init,
 		    &mcux_igpio_4_data, &mcux_igpio_4_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -346,18 +346,18 @@ DEVICE_AND_API_INIT(mcux_igpio_4, DT_NXP_IMX_GPIO_GPIO_4_LABEL,
 
 static int mcux_igpio_4_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_4_IRQ_0,
-		    DT_NXP_IMX_GPIO_GPIO_4_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_GPIO_4_IRQ_0,
+		    DT_ALIAS_GPIO_4_IRQ_0_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_4), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_4_IRQ_0);
+	irq_enable(DT_ALIAS_GPIO_4_IRQ_0);
 
-#if defined(DT_NXP_IMX_GPIO_GPIO_4_IRQ_1) && defined(DT_NXP_IMX_GPIO_GPIO_4_IRQ_1_PRIORITY)
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_4_IRQ_1,
-		    DT_NXP_IMX_GPIO_GPIO_4_IRQ_1_PRIORITY,
+#if defined(DT_ALIAS_GPIO_4_IRQ_1) && defined(DT_ALIAS_GPIO_4_IRQ_1_PRIORITY)
+	IRQ_CONNECT(DT_ALIAS_GPIO_4_IRQ_1,
+		    DT_ALIAS_GPIO_4_IRQ_1_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_4), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_4_IRQ_1);
+	irq_enable(DT_ALIAS_GPIO_4_IRQ_1);
 #endif
 
 	return 0;
@@ -371,12 +371,12 @@ static const struct mcux_igpio_config mcux_igpio_5_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_NXP_IMX_GPIO_NGPIOS),
 	},
-	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_5_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_ALIAS_GPIO_5_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_5_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_5, DT_NXP_IMX_GPIO_GPIO_5_LABEL,
+DEVICE_AND_API_INIT(mcux_igpio_5, DT_ALIAS_GPIO_5_LABEL,
 		    mcux_igpio_5_init,
 		    &mcux_igpio_5_data, &mcux_igpio_5_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -384,18 +384,18 @@ DEVICE_AND_API_INIT(mcux_igpio_5, DT_NXP_IMX_GPIO_GPIO_5_LABEL,
 
 static int mcux_igpio_5_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_5_IRQ_0,
-		    DT_NXP_IMX_GPIO_GPIO_5_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_ALIAS_GPIO_5_IRQ_0,
+		    DT_ALIAS_GPIO_5_IRQ_0_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_5), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_5_IRQ_0);
+	irq_enable(DT_ALIAS_GPIO_5_IRQ_0);
 
-#if defined(DT_NXP_IMX_GPIO_GPIO_5_IRQ_1) && defined(DT_NXP_IMX_GPIO_GPIO_5_IRQ_1_PRIORITY)
-	IRQ_CONNECT(DT_NXP_IMX_GPIO_GPIO_5_IRQ_1,
-		    DT_NXP_IMX_GPIO_GPIO_5_IRQ_1_PRIORITY,
+#if defined(DT_ALIAS_GPIO_5_IRQ_1) && defined(DT_ALIAS_GPIO_5_IRQ_1_PRIORITY)
+	IRQ_CONNECT(DT_ALIAS_GPIO_5_IRQ_1,
+		    DT_ALIAS_GPIO_5_IRQ_1_PRIORITY,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_5), 0);
 
-	irq_enable(DT_NXP_IMX_GPIO_GPIO_5_IRQ_1);
+	irq_enable(DT_ALIAS_GPIO_5_IRQ_1);
 #endif
 
 	return 0;
