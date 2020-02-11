@@ -27,6 +27,9 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 #define STM32_I2C_TIMEOUT_USEC	1000
 
+#define STM32_I2C_SYSCALL_TIMEOUT_MSEC	10
+
+
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
@@ -239,9 +242,18 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	}
 	LL_I2C_EnableIT_BUF(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	ret = k_sem_take(&data->device_sync_sem,
+		STM32_I2C_SYSCALL_TIMEOUT_MSEC);
 
 	LL_I2C_DisableIT_BUF(i2c);
+	LL_I2C_DisableIT_EVT(i2c);
+	LL_I2C_DisableIT_ERR(i2c);
+
+	if (ret < 0) {
+		LOG_DBG("%s: TIMEOUT", __func__);
+		return ret;
+	}
+
 	if (data->current.is_nack || data->current.is_err) {
 
 		if (data->current.is_nack)
@@ -255,9 +267,6 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 		data->current.is_err = 0U;
 		ret = -EIO;
 	}
-
-	LL_I2C_DisableIT_EVT(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
 
 	return ret;
 }
@@ -286,17 +295,23 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_GenerateStartCondition(i2c);
 	LL_I2C_EnableIT_BUF(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	ret = k_sem_take(&data->device_sync_sem,
+		STM32_I2C_SYSCALL_TIMEOUT_MSEC);
 
 	LL_I2C_DisableIT_BUF(i2c);
+	LL_I2C_DisableIT_EVT(i2c);
+	LL_I2C_DisableIT_ERR(i2c);
+
+	if (ret < 0) {
+		LOG_DBG("%s: TIMEOUT", __func__);
+		return ret;
+	}
+
 	if (data->current.is_err) {
 		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 		data->current.is_err = 0U;
 		ret = -EIO;
 	}
-
-	LL_I2C_DisableIT_EVT(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
 
 	return ret;
 }
@@ -385,6 +400,9 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 				LOG_DBG("%s: NACK", __func__);
 
 				return -EIO;
+			}
+			if (LL_I2C_IsActiveFlag_TXE(i2c)) {
+				break;
 			}
 		}
 		LL_I2C_TransmitData8(i2c, *buf);
