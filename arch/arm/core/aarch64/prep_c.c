@@ -28,6 +28,7 @@ extern FUNC_NORETURN void z_cstart(void);
 void z_arm64_prep_c(void)
 {
 	z_bss_zero();
+	z_arm64_interrupt_init();
 	z_cstart();
 
 	CODE_UNREACHABLE;

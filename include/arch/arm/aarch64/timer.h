@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define ARM_ARCH_TIMER_IRQ	((ARM_TIMER_VIRTUAL_IRQ + 1) << 8)
+#define ARM_ARCH_TIMER_IRQ	ARM_TIMER_VIRTUAL_IRQ
 #define CNTV_CTL_ENABLE		((1) << 0)
 
 

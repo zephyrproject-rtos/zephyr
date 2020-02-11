@@ -64,10 +64,28 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl	sys_trace_isr_enter
 #endif
 
-	/* Cortex-A has one IRQ line so the main handler will be at offset 0 */
+	/* Get active IRQ number from the interrupt controller */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_get_active
+#else
+	bl z_soc_irq_get_active
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+	stp x0, x1, [sp, #-16]!
+	lsl x0, x0, #4 /* table is 16-byte wide */
+
+	/* Call interrupt service routine */
 	ldr	x1, =_sw_isr_table
+	add	x1, x1, x0
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
 	blr	x3
+
+	/* Signal end-of-interrupt */
+	ldp x0, x1, [sp], #16
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_eoi
+#else
+	bl z_soc_irq_eoi
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_exit
