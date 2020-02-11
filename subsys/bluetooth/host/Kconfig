@@ -113,6 +113,7 @@ config BT_HCI_RESERVE
 	int
 	default 0 if BT_H4
 	default 1 if BT_H5
+	default 1 if BT_RPMSG
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
 	default 1 if BT_USERCHAN
