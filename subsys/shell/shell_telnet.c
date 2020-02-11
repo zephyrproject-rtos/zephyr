@@ -43,7 +43,7 @@ static void telnet_end_client_connection(void)
 	sh_telnet->client_ctx = NULL;
 	sh_telnet->output_lock = false;
 
-	k_timer_stop(&sh_telnet->send_timer);
+	k_delayed_work_cancel(&sh_telnet->send_work);
 
 	/* Flush the RX FIFO */
 	while ((pkt = k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT)) != NULL) {
@@ -109,7 +109,7 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 		/* OK, no output then */
 		sh_telnet->output_lock = true;
 		sh_telnet->line_out.len = 0;
-		k_timer_stop(&sh_telnet->send_timer);
+		k_delayed_work_cancel(&sh_telnet->send_work);
 		break;
 	case NVT_CMD_AYT:
 		telnet_reply_ay_command();
@@ -150,7 +150,7 @@ static int telnet_send(void)
 	return 0;
 }
 
-static void telnet_send_prematurely(struct k_timer *timer)
+static void telnet_send_prematurely(struct k_work *work)
 {
 	(void)telnet_send();
 }
@@ -343,7 +343,7 @@ static int init(const struct shell_transport *transport,
 	sh_telnet->shell_context = context;
 
 	k_fifo_init(&sh_telnet->rx_fifo);
-	k_timer_init(&sh_telnet->send_timer, telnet_send_prematurely, NULL);
+	k_delayed_work_init(&sh_telnet->send_work, telnet_send_prematurely);
 
 	return 0;
 }
@@ -389,8 +389,8 @@ static int write(const struct shell_transport *transport,
 
 	/* Stop the transmission timer, so it does not interrupt the operation.
 	 */
-	timeout = k_timer_remaining_get(&sh_telnet->send_timer);
-	k_timer_stop(&sh_telnet->send_timer);
+	timeout = k_delayed_work_remaining_get(&sh_telnet->send_work);
+	k_delayed_work_cancel(&sh_telnet->send_work);
 
 	do {
 		if (lb->len + length - *cnt > TELNET_LINE_SIZE) {
@@ -422,7 +422,7 @@ static int write(const struct shell_transport *transport,
 		 */
 		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
 
-		k_timer_start(&sh_telnet->send_timer, timeout, K_NO_WAIT);
+		k_delayed_work_submit(&sh_telnet->send_work, timeout);
 	}
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,
