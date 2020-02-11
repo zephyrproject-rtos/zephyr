@@ -208,9 +208,17 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 		__set_PSPLIM(0);
 		return;
 	}
-	u32_t guard_start = thread->arch.priv_stack_start ?
-			    (u32_t)thread->arch.priv_stack_start :
-			    (u32_t)thread->stack_obj;
+	/* Only configure PSPLIM to guard the privileged stack area, if
+	 * the thread is currently using it, otherwise guard the default
+	 * thread stack. Note that the conditional check relies on the
+	 * thread privileged stack being allocated in higher memory area
+	 * than the default thread stack (ensured by design).
+	 */
+	u32_t guard_start =
+		((thread->arch.priv_stack_start) &&
+			(__get_PSP() >= thread->arch.priv_stack_start)) ?
+		(u32_t)thread->arch.priv_stack_start :
+		(u32_t)thread->stack_obj;
 
 	__ASSERT(thread->stack_info.start == ((u32_t)thread->stack_obj),
 		"stack_info.start does not point to the start of the"
