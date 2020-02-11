@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2020 DENX Software Engineering GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_k66.dtsi>
+
+/ {
+	model = "SEGGER MK66F IP Switch board";
+	compatible = "nxp,mk66f18", "nxp,k66f", "nxp,k6x";
+
+	aliases {
+		led0 = &red0_led;
+		led2 = &red2_led;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red0_led: led_0 {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		red2_led: led_2 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x00010000 and ending at
+		 * 0x0001ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		storage_partition: partition@1e000 {
+			label = "storage";
+			reg = <0x0001e000 0x00002000>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00060000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x00060000>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
+};

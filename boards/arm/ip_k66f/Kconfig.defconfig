@@ -1,0 +1,43 @@
+# IP-K66F board
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IP_K66F
+
+config BOARD
+	default "ip_k66f"
+
+config OSC_XTAL0_FREQ
+	default 50000000
+
+config MCG_PRDIV0
+	default 0x0
+
+config MCG_VDIV0
+	default 0x4
+
+config MCG_FCRDIV
+	default 1
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	default y
+
+config PINMUX_MCUX_PORTB
+	default y if SPI_1
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	default y
+
+config GPIO_MCUX_PORTB
+	default y
+
+endif # GPIO_MCUX
+
+endif # BOARD_IP_K66F

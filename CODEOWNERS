@@ -74,6 +74,7 @@
 /boards/arm/google_*/                     @jackrosenthal
 /boards/arm/hexiwear*/                    @MaureenHelm
 /boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
+/boards/arm/ip_k66f/                      @parthitce
 /boards/arm/lpcxpresso*/                  @MaureenHelm
 /boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
 /boards/arm/mimxrt*/                      @MaureenHelm
