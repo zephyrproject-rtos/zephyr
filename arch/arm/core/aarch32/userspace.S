@@ -263,13 +263,6 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
      * At this point PSPLIM is already configured to guard the default (user)
      * stack, so pushing to the default thread's stack is safe.
      */
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    mov ip, #0
-    msr PSPLIM, ip
-#endif
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* save current stack pointer (user stack) */
     mov ip, sp
@@ -551,4 +544,3 @@ z_arm_user_string_nlen_fixup:
 
     add	sp, #12
     pop	{r4, r5, pc}
-
