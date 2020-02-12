@@ -34,6 +34,8 @@
  * SP-52  Saved LEND special register (if loops enabled)
  * SP-56  Saved LCOUNT special register (if loops enabled)
  *
+ * SP-60  Saved SCOMPARE special register (if S32C1I enabled)
+ *
  *       (The above fixed-size region is known as the "base save area" in the
  *        code below)
  *
@@ -62,11 +64,24 @@
  * original/interrupted stack pointer.
  */
 
+#define BASE_SAVE_AREA_SIZE_COMMON	44
+
 #if XCHAL_HAVE_LOOPS
-#define BASE_SAVE_AREA_SIZE 56
+#define BASE_SAVE_AREA_SIZE_LOOPS	12
 #else
-#define BASE_SAVE_AREA_SIZE 44
+#define BASE_SAVE_AREA_SIZE_LOOPS	0
 #endif
+
+#if XCHAL_HAVE_S32C1I
+#define BASE_SAVE_AREA_SIZE_SCOMPARE	4
+#else
+#define BASE_SAVE_AREA_SIZE_SCOMPARE	0
+#endif
+
+#define BASE_SAVE_AREA_SIZE \
+	(BASE_SAVE_AREA_SIZE_COMMON + \
+	 BASE_SAVE_AREA_SIZE_LOOPS + \
+	 BASE_SAVE_AREA_SIZE_SCOMPARE)
 
 #define BSA_A3_OFF	(BASE_SAVE_AREA_SIZE - 20)
 #define BSA_A2_OFF	(BASE_SAVE_AREA_SIZE - 24)
@@ -78,5 +93,10 @@
 #define BSA_LBEG_OFF	(BASE_SAVE_AREA_SIZE - 48)
 #define BSA_LEND_OFF	(BASE_SAVE_AREA_SIZE - 52)
 #define BSA_LCOUNT_OFF	(BASE_SAVE_AREA_SIZE - 56)
+
+#define BSA_SCOMPARE1_OFF \
+			(BASE_SAVE_AREA_SIZE - \
+			 (BASE_SAVE_AREA_SIZE_COMMON + \
+			  BASE_SAVE_AREA_SIZE_LOOPS + 4))
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_ */
