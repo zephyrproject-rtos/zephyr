@@ -46,10 +46,10 @@ config LOG_BACKEND_RB
 	default y
 
 config LOG_BACKEND_RB_MEM_BASE
-	default "0xBE008000"
+	default 0xBE008000
 
 config LOG_BACKEND_RB_MEM_SIZE
-	default "0x2000"
+	default 8192
 
 endif # LOG
 
