@@ -504,7 +504,33 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static u8_t db_hash[16];
-struct k_delayed_work db_hash_work;
+static struct k_delayed_work db_hash_work;
+static bool volatile db_hash_pending;
+
+/* Cancel any pending hash update, and return true when an update had
+ * not completed.
+ */
+static inline bool cancel_db_hash(void)
+{
+	bool rv = db_hash_pending;
+
+	if (rv) {
+		k_delayed_work_cancel(&db_hash_work);
+		db_hash_pending = false;
+	}
+	return rv;
+}
+
+/* Mark that a hash update is pending and schedule it to be done after
+ * the standard timeout.
+ */
+static inline void schedule_db_hash(void)
+{
+	if (!db_hash_pending) {
+		db_hash_pending = true;
+		k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+	}
+}
 
 struct gen_hash_state {
 	struct tc_cmac_struct state;
@@ -634,6 +660,7 @@ static void db_hash_gen(bool store)
 static void db_hash_process(struct k_work *work)
 {
 	db_hash_gen(true);
+	db_hash_pending = false;
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
@@ -643,8 +670,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	/* Check if db_hash is already pending in which case it shall be
 	 * generated immediately instead of waiting the work to complete.
 	 */
-	if (k_delayed_work_remaining_get(&db_hash_work)) {
-		k_delayed_work_cancel(&db_hash_work);
+	if (cancel_db_hash()) {
 		db_hash_gen(true);
 	}
 
@@ -947,7 +973,7 @@ void bt_gatt_init(void)
 	/* Submit work to Generate initial hash as there could be static
 	 * services already in the database.
 	 */
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+	schedule_db_hash();
 #endif /* CONFIG_BT_GATT_CACHING */
 
 	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
@@ -998,7 +1024,7 @@ static void db_changed(void)
 #if defined(CONFIG_BT_GATT_CACHING)
 	int i;
 
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+	schedule_db_hash();
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
@@ -4440,8 +4466,7 @@ static int db_hash_set(const char *name, size_t len_rd,
 static int db_hash_commit(void)
 {
 	/* Stop work and generate the hash */
-	if (k_delayed_work_remaining_get(&db_hash_work)) {
-		k_delayed_work_cancel(&db_hash_work);
+	if (cancel_db_hash()) {
 		db_hash_gen(false);
 	}
 
