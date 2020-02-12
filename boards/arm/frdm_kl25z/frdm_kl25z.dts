@@ -105,6 +105,18 @@
 	current-speed = <115200>;
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
 &usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";

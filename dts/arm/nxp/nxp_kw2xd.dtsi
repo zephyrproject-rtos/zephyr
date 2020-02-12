@@ -9,11 +9,6 @@
 / {
 	aliases {
 		adc-0 = &adc0;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		pinmux-a = &pinmux_a;
@@ -191,6 +186,7 @@
 
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
 			label = "GPIO_0";
@@ -201,6 +197,7 @@
 
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
 			label = "GPIO_1";
@@ -211,6 +208,7 @@
 
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
 			label = "GPIO_2";
@@ -221,6 +219,7 @@
 
 		gpiod: gpio@400ff0c0 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
 			label = "GPIO_3";
@@ -231,6 +230,7 @@
 
 		gpioe: gpio@400ff100 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
 			label = "GPIO_4";

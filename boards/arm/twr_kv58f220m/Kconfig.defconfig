@@ -20,25 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
 config I2C_1
 	default y
 	depends on I2C

@@ -42,25 +42,6 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default n
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default n
-
-endif # GPIO_MCUX
-
 config UART_MCUX_LPSCI_0
 	default y if UART_CONSOLE
 	depends on UART_MCUX_LPSCI

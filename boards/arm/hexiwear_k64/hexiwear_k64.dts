@@ -79,6 +79,7 @@
 	status = "okay";
 
 	max30101@57 {
+		status = "disabled";
 		compatible = "max,max30101";
 		reg = <0x57>;
 		label = "MAX30101";
@@ -113,6 +114,22 @@
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
 };
 
 &flash0 {

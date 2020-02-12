@@ -51,25 +51,6 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
 config ADC_0
 	default y
 	depends on ADC
