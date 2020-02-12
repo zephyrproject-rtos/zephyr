@@ -846,8 +846,9 @@ int usb_dc_ep_mps(const u8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
-
+	HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
+	HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, EP0_IN);
+	HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, EP0_OUT);
 	return 0;
 }
 
