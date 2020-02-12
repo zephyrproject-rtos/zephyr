@@ -16,6 +16,7 @@
 
 #include <zephyr/types.h>
 #include <sys/sys_io.h>
+#include <arch/arm/aarch32/cortex_r/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {
