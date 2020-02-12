@@ -9,7 +9,7 @@ set(SHIELD x_nucleo_iks01a3)
 
 set(CONF_FILE prj.conf)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(x_nucleo_iks01a3)
 
 FILE(GLOB app_sources src/*.c)

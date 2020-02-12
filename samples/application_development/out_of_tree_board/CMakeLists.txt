@@ -10,7 +10,7 @@ set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 # this board.
 set(BOARD nrf52840dk_nrf52840)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(out_of_tree_board)
 
 target_sources(app PRIVATE src/main.c)
