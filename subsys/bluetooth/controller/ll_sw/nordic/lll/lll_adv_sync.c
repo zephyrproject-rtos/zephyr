@@ -76,6 +76,37 @@ void lll_adv_sync_prepare(void *param)
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
+void lll_adv_sync_offset_fill(u32_t ticks_offset, u32_t start_us,
+			     struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *p;
+	struct ext_adv_sync_info *si;
+	struct ext_adv_hdr *h;
+	u8_t *ptr;
+
+	p = (void *)&pdu->adv_ext_ind;
+	h = (void *)p->ext_hdr_adi_adv_data;
+	ptr = (u8_t *)h + sizeof(*h);
+
+	if (h->adv_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->adi) {
+		ptr += sizeof(struct ext_adv_adi);
+	}
+
+	if (h->aux_ptr) {
+		ptr += sizeof(struct ext_adv_aux_ptr);
+	}
+
+	si = (void *)ptr;
+	si->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
+	if (si->offs_units) {
+		si->offs /= 10;
+	}
+}
+
 static int init_reset(void)
 {
 	return 0;
@@ -88,9 +119,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	struct pdu_adv *pdu;
 	struct evt_hdr *evt;
 	u16_t event_counter;
-	u32_t remainder_us;
 	u8_t data_chan_use;
 	u32_t remainder;
+	u32_t start_us;
 	u16_t lazy;
 	u8_t phy_s;
 	u8_t upd;
@@ -154,23 +185,15 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	remainder = prepare_param->remainder;
-	remainder_us = radio_tmr_start(1, ticks_at_start, remainder);
+	start_us = radio_tmr_start(1, ticks_at_start, remainder);
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	radio_gpio_pa_setup();
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_tx_ready_delay_get(lll->phy_tx,
-							  lll->phy_flags) -
+	radio_gpio_pa_lna_enable(start_us + radio_tx_ready_delay_get(phy_s, 1) -
 				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_tx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
-#endif /* !CONFIG_BT_CTLR_PHY */
 #else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
-	ARG_UNUSED(remainder_us);
+	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \

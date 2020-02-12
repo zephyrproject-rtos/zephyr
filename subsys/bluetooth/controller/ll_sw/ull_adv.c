@@ -50,8 +50,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-#define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
-
 inline struct ll_adv_set *ull_adv_set_get(u8_t handle);
 inline u16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
@@ -468,6 +466,8 @@ u8_t ll_adv_enable(u8_t handle, u8_t enable)
 	struct ll_adv_sync_set *sync;
 	u8_t sync_is_started = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+	struct ll_adv_aux_set *aux;
+	u8_t aux_is_started = 0U;
 	u32_t ticks_anchor;
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
@@ -530,7 +530,7 @@ u8_t ll_adv_enable(u8_t enable)
 			struct ext_adv_hdr *hs;
 			u8_t *ps;
 
-			pdu_aux = lll_adv_aux_data_peek(lll);
+			pdu_aux = lll_adv_aux_data_peek(lll->aux);
 
 			s = (void *)&pdu_aux->adv_ext_ind;
 			hs = (void *)s->ext_hdr_adi_adv_data;
@@ -984,24 +984,48 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_TICKER_EXT */
 				   );
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-		if (lll->sync) {
-			struct lll_adv_sync *lll_sync = lll->sync;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (lll->aux) {
+			struct lll_adv_aux *lll_aux = lll->aux;
 
-			sync = (void *)HDR_LLL2EVT(lll_sync);
-			if (sync->is_enabled && !sync->is_started) {
-				ret = ull_ticker_status_take(ret, &ret_cb);
-				if (ret != TICKER_STATUS_SUCCESS) {
-					goto failure_cleanup;
-				}
-
-				ret = ull_adv_sync_start(sync, ticks_anchor,
-							 &ret_cb);
-
-				sync_is_started = 1U;
+			ret = ull_ticker_status_take(ret, &ret_cb);
+			if (ret != TICKER_STATUS_SUCCESS) {
+				goto failure_cleanup;
 			}
-		}
+
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+			ull_hdr_init(&aux->ull);
+			aux->interval =
+				adv->interval +
+				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
+				 625U);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor, &ret_cb);
+
+			aux_is_started = 1U;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (lll->sync) {
+				struct lll_adv_sync *lll_sync = lll->sync;
+
+				sync = (void *)HDR_LLL2EVT(lll_sync);
+				if (sync->is_enabled && !sync->is_started) {
+					ret = ull_ticker_status_take(ret,
+								     &ret_cb);
+					if (ret != TICKER_STATUS_SUCCESS) {
+						goto failure_cleanup;
+					}
+
+					ret = ull_adv_sync_start(sync,
+								 ticks_anchor,
+								 &ret_cb);
+
+					sync_is_started = 1U;
+				}
+			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1009,11 +1033,17 @@ u8_t ll_adv_enable(u8_t enable)
 		goto failure_cleanup;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (aux_is_started) {
+		aux->is_started = aux_is_started;
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	if (sync_is_started) {
-		sync->is_started = sync_is_started;
-	}
+		if (sync_is_started) {
+			sync->is_started = sync_is_started;
+		}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	adv->is_enabled = 1;
 
@@ -1048,10 +1078,21 @@ int ull_adv_init(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
-		err = ull_adv_sync_init();
-		if (err) {
-			return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
+		if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+			err = ull_adv_aux_init();
+			if (err) {
+				return err;
+			}
+		}
+#endif
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+			err = ull_adv_sync_init();
+			if (err) {
+				return err;
+			}
 		}
 	}
 
@@ -1068,10 +1109,21 @@ int ull_adv_reset(void)
 	u8_t handle;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
-		err = ull_adv_sync_reset();
-		if (err) {
-			return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
+		if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+			err = ull_adv_aux_reset();
+			if (err) {
+				return err;
+			}
+		}
+#endif
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+			err = ull_adv_sync_reset();
+			if (err) {
+				return err;
+			}
 		}
 	}
 
@@ -1230,6 +1282,12 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			  (ret == TICKER_STATUS_BUSY));
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	if (adv->lll.aux) {
+		ull_adv_aux_offset_get(adv);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
@@ -1377,6 +1435,22 @@ static inline u8_t disable(u8_t handle)
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	struct lll_adv_aux *lll_aux = adv->lll.aux;
+
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+		u8_t err;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+
+		err = ull_adv_aux_stop(aux);
+		if (err) {
+			return err;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 	mark = ull_disable_mark(adv);
 	LL_ASSERT(mark == adv);

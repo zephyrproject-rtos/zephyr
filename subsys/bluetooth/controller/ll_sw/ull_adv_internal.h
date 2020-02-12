@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
+
 int ull_adv_init(void);
 int ull_adv_reset(void);
 
@@ -25,9 +27,25 @@ u32_t ull_adv_filter_pol_get(u8_t handle);
 /* Return ll_adv_set context if created */
 struct ll_adv_set *ull_adv_is_created_get(u8_t handle);
 
+int ull_adv_aux_init(void);
+int ull_adv_aux_reset(void);
+
+/* helper function to start auxiliary advertising */
+u32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, u32_t ticks_anchor,
+			u32_t volatile *ret_cb);
+
+/* helper function to stop auxiliary advertising */
+u8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
+
+/* helper function to schedule a mayfly to get aux offset */
+void ull_adv_aux_offset_get(struct ll_adv_set *adv);
+
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
 /* helper function to start periodic advertising */
 u32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, u32_t ticks_anchor,
 			 u32_t volatile *ret_cb);
+
+/* helper function to schedule a mayfly to get sync offset */
+void ull_adv_sync_offset_get(struct ll_adv_set *adv);

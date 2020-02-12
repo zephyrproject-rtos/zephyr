@@ -13,6 +13,19 @@ struct lll_adv_pdu {
 	u8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
 };
 
+struct lll_adv_aux {
+	struct lll_hdr hdr;
+	struct lll_adv *adv;
+
+	u32_t ticks_offset;
+
+	struct lll_adv_pdu data;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+};
+
 struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
@@ -28,7 +41,13 @@ struct lll_adv_sync {
 	u8_t data_chan_count:6;
 	u16_t data_chan_id;
 
+	u32_t ticks_offset;
+
 	struct lll_adv_pdu data;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 struct lll_adv {
@@ -61,7 +80,7 @@ struct lll_adv {
 	struct lll_adv_pdu scan_rsp;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct lll_adv_pdu aux_data;
+	struct lll_adv_aux *aux;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	struct lll_adv_sync *sync;
@@ -134,20 +153,20 @@ static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv *lll,
+static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv_aux *lll,
 						     u8_t *idx)
 {
-	return lll_adv_pdu_alloc(&lll->aux_data, idx);
+	return lll_adv_pdu_alloc(&lll->data, idx);
 }
 
-static inline void lll_adv_aux_data_enqueue(struct lll_adv *lll, u8_t idx)
+static inline void lll_adv_aux_data_enqueue(struct lll_adv_aux *lll, u8_t idx)
 {
-	lll_adv_pdu_enqueue(&lll->aux_data, idx);
+	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv *lll)
+static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv_aux *lll)
 {
-	return (void *)lll->aux_data.pdu[lll->aux_data.last];
+	return (void *)lll->data.pdu[lll->data.last];
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)

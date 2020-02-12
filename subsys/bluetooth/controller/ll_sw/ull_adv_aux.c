@@ -4,23 +4,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-
 #include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
-#include "hal/ccm.h"
+#include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
+
+#include "ticker/ticker.h"
 
 #include "pdu.h"
+#include "ll.h"
 #include "lll.h"
+#include "lll_vendor.h"
 #include "lll_adv.h"
-#include "lll_conn.h"
-#include "ull_internal.h"
+#include "lll_adv_aux.h"
+#include "lll_adv_internal.h"
+
 #include "ull_adv_types.h"
+
+#include "ull_internal.h"
 #include "ull_adv_internal.h"
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_adv_aux
+#include "common/log.h"
+#include <soc.h>
+#include "hal/debug.h"
+
+static int init_reset(void);
+static inline struct ll_adv_aux_set *aux_acquire(void);
+static inline void aux_release(struct ll_adv_aux_set *aux);
+static inline u16_t aux_handle_get(struct ll_adv_aux_set *aux);
+static void mfy_aux_offset_get(void *param);
+static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *param);
+static void ticker_op_cb(u32_t status, void *param);
+
+static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
+static void *adv_aux_free;
 
 u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr)
 {
@@ -41,8 +67,11 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	u8_t pri_len, _pri_len, sec_len, _sec_len;
 	struct pdu_adv *_pri, *pri, *_sec, *sec;
 	struct ext_adv_hdr *hp, _hp, *hs, _hs;
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
 	u8_t *_pp, *pp, *ps, *_ps;
 	struct ll_adv_set *adv;
+	struct lll_adv *lll;
 	u8_t ip, is;
 
 	/* op param definitions:
@@ -66,8 +95,29 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	lll = &adv->lll;
+
+	lll_aux = lll->aux;
+	if (!lll_aux) {
+		aux = aux_acquire();
+		if (!aux) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		lll_aux = &aux->lll;
+		lll->aux = lll_aux;
+		lll_aux->adv = lll;
+
+		/* NOTE: ull_hdr_init(&aux->ull); is done on start */
+		lll_hdr_init(lll_aux, aux);
+
+		aux->is_started = 0;
+	} else {
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+	}
+
 	/* Do not update data if not extended advertising. */
-	_pri = lll_adv_data_peek(&adv->lll);
+	_pri = lll_adv_data_peek(lll);
 	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
 		/* Advertising Handle has not been created using
 		 * Set Extended Advertising Parameter command
@@ -82,7 +132,7 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	_pp = (u8_t *)hp + sizeof(*hp);
 
 	/* Get reference to new primary PDU data buffer */
-	pri = lll_adv_data_alloc(&adv->lll, &ip);
+	pri = lll_adv_data_alloc(lll, &ip);
 	pri->type = _pri->type;
 	pri->rfu = 0U;
 	pri->chan_sel = 0U;
@@ -93,14 +143,14 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	*(u8_t *)hp = 0U;
 
 	/* Get reference to previous secondary PDU data */
-	_sec = lll_adv_aux_data_peek(&adv->lll);
+	_sec = lll_adv_aux_data_peek(lll_aux);
 	_s = (void *)&_sec->adv_ext_ind;
 	hs = (void *)_s->ext_hdr_adi_adv_data;
 	*(u8_t *)&_hs = *(u8_t *)hs;
 	_ps = (u8_t *)hs + sizeof(*hs);
 
 	/* Get reference to new secondary PDU data buffer */
-	sec = lll_adv_aux_data_alloc(&adv->lll, &is);
+	sec = lll_adv_aux_data_alloc(lll_aux, &is);
 	sec->type = pri->type;
 	sec->rfu = 0U;
 
@@ -187,7 +237,7 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
 		 * for future use on the LE Coded PHY.
 		 */
-		if (adv->lll.phy_p != BIT(2)) {
+		if (lll->phy_p != BIT(2)) {
 			hp->tx_pwr = 1;
 			pp++;
 		} else {
@@ -265,7 +315,7 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		aux->chan_idx = 0; /* FIXME: implementation defined */
 		aux->ca = 0; /* FIXME: implementation defined */
 		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(adv->lll.phy_s) - 1;
+		aux->phy = find_lsb_set(lll->phy_s) - 1;
 	}
 	if (_hs.aux_ptr) {
 		struct ext_adv_aux_ptr *aux;
@@ -278,7 +328,7 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		aux->chan_idx = 0; /* FIXME: implementation defined */
 		aux->ca = 0; /* FIXME: implementation defined */
 		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(adv->lll.phy_s) - 1;
+		aux->phy = find_lsb_set(lll->phy_s) - 1;
 	}
 
 	/* ADI */
@@ -340,8 +390,31 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		memcpy(ps, bdaddr, BDADDR_SIZE);
 	}
 
-	lll_adv_aux_data_enqueue(&adv->lll, is);
-	lll_adv_data_enqueue(&adv->lll, ip);
+	lll_adv_aux_data_enqueue(lll_aux, is);
+	lll_adv_data_enqueue(lll, ip);
+
+	if (adv->is_enabled && !aux->is_started) {
+		volatile u32_t ret_cb;
+		u32_t ticks_anchor;
+		u32_t ret;
+
+		ull_hdr_init(&aux->ull);
+		aux->interval =	adv->interval +
+				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
+				 625U);
+
+		ticks_anchor = ticker_ticks_now_get();
+
+		ret = ull_adv_aux_start(aux, ticks_anchor, &ret_cb);
+
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret != TICKER_STATUS_SUCCESS) {
+			/* FIXME: Use a better error code */
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		aux->is_started = 1;
+	}
 
 	return 0;
 }
@@ -377,4 +450,252 @@ u8_t ll_adv_aux_set_clear(void)
 	 * PDUs
 	 */
 	return 0;
+}
+
+int ull_adv_aux_init(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int ull_adv_aux_reset(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+u16_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
+{
+	return aux_handle_get((void *)lll->hdr.parent);
+}
+
+u32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, u32_t ticks_anchor,
+			u32_t volatile *ret_cb)
+{
+	u32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	u32_t ticks_slot_overhead;
+	u8_t aux_handle;
+	u32_t ret;
+
+	/* TODO: Calc AUX_ADV_IND slot_us */
+	slot_us += 1000;
+
+	/* TODO: active_to_start feature port */
+	aux->evt.ticks_active_to_start = 0;
+	aux->evt.ticks_xtal_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	aux->evt.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	aux->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(aux->evt.ticks_active_to_start,
+					  aux->evt.ticks_xtal_to_start);
+	} else {
+		ticks_slot_overhead = 0;
+	}
+
+	aux_handle = aux_handle_get(aux);
+
+	*ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
+			   ticks_anchor, 0,
+			   HAL_TICKER_US_TO_TICKS((u64_t)aux->interval * 625),
+			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+			   (aux->evt.ticks_slot + ticks_slot_overhead),
+			   ticker_cb, aux,
+			   ull_ticker_status_give, (void *)ret_cb);
+
+	return ret;
+}
+
+u8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
+{
+	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
+	u8_t aux_handle;
+	void *mark;
+	u32_t ret;
+
+	mark = ull_disable_mark(aux);
+	LL_ASSERT(mark == aux);
+
+	aux_handle = aux_handle_get(aux);
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  TICKER_ID_ADV_AUX_BASE + aux_handle,
+			  ull_ticker_status_give, (void *)&ret_cb);
+
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret) {
+		mark = ull_disable_mark(aux);
+		LL_ASSERT(mark == aux);
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ret = ull_disable(&aux->lll);
+	LL_ASSERT(!ret);
+
+	mark = ull_disable_unmark(aux);
+	LL_ASSERT(mark == aux);
+
+	aux->is_started = 0U;
+
+	return 0;
+}
+
+void ull_adv_aux_offset_get(struct ll_adv_set *adv)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
+	u32_t ret;
+
+	mfy.param = adv;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+static int init_reset(void)
+{
+	/* Initialize adv aux pool. */
+	mem_init(ll_adv_aux_pool, sizeof(struct ll_adv_aux_set),
+		 sizeof(ll_adv_aux_pool) / sizeof(struct ll_adv_aux_set),
+		 &adv_aux_free);
+
+	return 0;
+}
+
+static inline struct ll_adv_aux_set *aux_acquire(void)
+{
+	return mem_acquire(&adv_aux_free);
+}
+
+static inline void aux_release(struct ll_adv_aux_set *aux)
+{
+	mem_release(aux, &adv_aux_free);
+}
+
+static inline u16_t aux_handle_get(struct ll_adv_aux_set *aux)
+{
+	return mem_index_get(aux, ll_adv_aux_pool,
+			     sizeof(struct ll_adv_aux_set));
+}
+
+static void mfy_aux_offset_get(void *param)
+{
+	struct ll_adv_set *adv = param;
+	struct ll_adv_aux_set *aux;
+	u32_t ticks_to_expire;
+	u32_t ticks_current;
+	struct pdu_adv *pdu;
+	u8_t ticker_id;
+	u8_t retry;
+	u8_t id;
+
+	aux = (void *)HDR_LLL2EVT(adv->lll.aux);
+	ticker_id = TICKER_ID_ADV_AUX_BASE + aux_handle_get(aux);
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+	retry = 4U;
+	do {
+		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		u32_t ticks_previous;
+		u32_t ret;
+
+		ticks_previous = ticks_current;
+
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_ULL_LOW,
+					   &id,
+					   &ticks_current, &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	/* NOTE: as remainder not used in scheduling primary PDU
+	 * packet timer starts transmission after 1 tick hence the +1.
+	 */
+	aux->lll.ticks_offset = ticks_to_expire + 1;
+
+	pdu = lll_adv_data_curr_get(&adv->lll);
+	lll_adv_aux_offset_fill(ticks_to_expire, 0, pdu);
+}
+
+static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
+	static struct lll_prepare_param p;
+	struct ll_adv_aux_set *aux = param;
+	struct lll_adv_aux *lll;
+	u32_t ret;
+	u8_t ref;
+
+	DEBUG_RADIO_PREPARE_A(1);
+
+	lll = &aux->lll;
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&aux->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = lll;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct ll_adv_set *adv;
+
+	adv = (void *)HDR_LLL2EVT(lll->adv);
+	if (adv->lll.sync) {
+		struct ll_adv_sync_set *sync;
+
+		sync  = (void *)HDR_LLL2EVT(adv->lll.sync);
+		if (sync->is_started) {
+			ull_adv_sync_offset_get(adv);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+	DEBUG_RADIO_PREPARE_A(1);
+}
+
+static void ticker_op_cb(u32_t status, void *param)
+{
+	*((u32_t volatile *)param) = status;
 }
