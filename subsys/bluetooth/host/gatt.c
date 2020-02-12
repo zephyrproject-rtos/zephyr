@@ -362,6 +362,16 @@ done:
 	}
 }
 
+static void sc_clear_by_conn(struct bt_conn *conn)
+{
+	struct gatt_sc_cfg *cfg;
+
+	cfg = find_sc_cfg(conn->id, &conn->le.dst);
+	if (cfg) {
+		sc_clear(cfg);
+	}
+}
+
 static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, u16_t value)
 {
@@ -371,13 +381,8 @@ static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 		/* Create a new SC configuration entry if subscribed */
 		sc_save(conn->id, &conn->le.dst, 0, 0);
 	} else {
-		struct gatt_sc_cfg *cfg;
-
 		/* Clear SC configuration if unsubscribed */
-		cfg = find_sc_cfg(conn->id, &conn->le.dst);
-		if (cfg) {
-			sc_clear(cfg);
-		}
+		sc_clear_by_conn(conn);
 	}
 
 	return sizeof(value);
@@ -2131,6 +2136,10 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 		} else {
 			/* Clear value if not paired */
 			if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+				if (ccc == &sc_ccc) {
+					sc_clear_by_conn(conn);
+				}
+
 				clear_ccc_cfg(cfg);
 			} else {
 				/* Update address in case it has changed */
