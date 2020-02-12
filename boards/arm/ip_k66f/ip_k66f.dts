@@ -41,6 +41,14 @@
 	clock-frequency = <120000000>;
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

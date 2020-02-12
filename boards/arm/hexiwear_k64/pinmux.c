@@ -13,10 +13,6 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_PORTA
-	struct device *porta =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
-#endif
 #ifdef CONFIG_PINMUX_MCUX_PORTB
 	struct device *portb =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
@@ -87,7 +83,10 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_MAX30101
+#if defined(CONFIG_MAX30101) && DT_HAS_NODE(DT_NODELABEL(gpioa))
+	struct device *porta =
+		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
+
 	/* LDO - MAX30101 power supply */
 	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
 

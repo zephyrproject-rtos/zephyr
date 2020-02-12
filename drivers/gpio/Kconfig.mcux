@@ -4,42 +4,8 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_MCUX
+config GPIO_MCUX
 	bool "MCUX GPIO driver"
 	select HAS_DTS_GPIO
 	help
 	  Enable the MCUX pinmux driver.
-
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	bool "Port A"
-	depends on PINMUX_MCUX_PORTA
-	help
-	  Enable Port A.
-
-config GPIO_MCUX_PORTB
-	bool "Port B"
-	depends on PINMUX_MCUX_PORTB
-	help
-	  Enable Port B.
-
-config GPIO_MCUX_PORTC
-	bool "Port C"
-	depends on PINMUX_MCUX_PORTC
-	help
-	  Enable Port C.
-
-config GPIO_MCUX_PORTD
-	bool "Port D"
-	depends on PINMUX_MCUX_PORTD
-	help
-	  Enable Port D.
-
-config GPIO_MCUX_PORTE
-	bool "Port E"
-	depends on PINMUX_MCUX_PORTE
-	help
-	  Enable Port E.
-
-endif # GPIO_MCUX

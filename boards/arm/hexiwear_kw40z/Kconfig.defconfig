@@ -30,19 +30,6 @@ config PINMUX_MCUX_PORTC
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default n
-
-config GPIO_MCUX_PORTC
-	default y if "$(dt_nodelabel_enabled,lpuart0)" || "$(dt_nodelabel_enabled,i2c1)"
-
-endif # GPIO_MCUX
-
 config I2C_1
 	default y
 	depends on I2C

@@ -8,9 +8,6 @@
 / {
 	aliases {
 		adc-0 = &adc0;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		pinmux-a = &porta;
@@ -142,6 +139,7 @@
 
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
 			label = "GPIO_0";
@@ -152,6 +150,7 @@
 
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			label = "GPIO_2";
 			gpio-controller;
@@ -161,6 +160,7 @@
 
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <31 2>;
 			label = "GPIO_3";

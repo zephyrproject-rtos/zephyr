@@ -277,182 +277,45 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.disable_callback = gpio_mcux_disable_callback,
 };
 
-#ifdef CONFIG_GPIO_MCUX_PORTA
-static int gpio_mcux_porta_init(struct device *dev);
+#define GPIO_MCUX_IRQ_INIT(n)						\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    gpio_mcux_port_isr,				\
+			    DEVICE_GET(gpio_mcux_port##n), 0);		\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	} while (0)
 
-static const struct gpio_mcux_config gpio_mcux_porta_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
-	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_A_BASE_ADDRESS,
-	.port_base = PORTA,
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
+#define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 
-static struct gpio_mcux_data gpio_mcux_porta_data;
+#define GPIO_DEVICE_INIT_MCUX(n)					\
+	static int gpio_mcux_port## n ## _init(struct device *dev);	\
+									\
+	static const struct gpio_mcux_config gpio_mcux_port## n ## _config = {\
+		.common = {						\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
+		},							\
+		.gpio_base = (GPIO_Type *) DT_INST_REG_ADDR(n),		\
+		.port_base = (PORT_Type *) GPIO_PORT_BASE_ADDR(n),	\
+		.flags = UTIL_AND(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_INT_ENABLE),\
+	};								\
+									\
+	static struct gpio_mcux_data gpio_mcux_port## n ##_data;	\
+									\
+	DEVICE_AND_API_INIT(gpio_mcux_port## n, DT_INST_LABEL(n),	\
+			    gpio_mcux_port## n ##_init,			\
+			    &gpio_mcux_port## n ##_data,		\
+			    &gpio_mcux_port## n##_config,		\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &gpio_mcux_driver_api);			\
+									\
+	static int gpio_mcux_port## n ##_init(struct device *dev)	\
+	{								\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
+			(GPIO_MCUX_IRQ_INIT(n);))			\
+		return 0;						\
+	}
 
-DEVICE_AND_API_INIT(gpio_mcux_porta, DT_NXP_KINETIS_GPIO_GPIO_A_LABEL,
-		    gpio_mcux_porta_init,
-		    &gpio_mcux_porta_data, &gpio_mcux_porta_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_driver_api);
-
-static int gpio_mcux_porta_init(struct device *dev)
-{
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0
-	IRQ_CONNECT(DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0, DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0_PRIORITY,
-		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_porta), 0);
-
-	irq_enable(DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0);
-#endif
-	return 0;
-}
-#endif /* CONFIG_GPIO_MCUX_PORTA */
-
-#ifdef CONFIG_GPIO_MCUX_PORTB
-static int gpio_mcux_portb_init(struct device *dev);
-
-static const struct gpio_mcux_config gpio_mcux_portb_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
-	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_B_BASE_ADDRESS,
-	.port_base = PORTB,
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_mcux_data gpio_mcux_portb_data;
-
-DEVICE_AND_API_INIT(gpio_mcux_portb, DT_NXP_KINETIS_GPIO_GPIO_B_LABEL,
-		    gpio_mcux_portb_init,
-		    &gpio_mcux_portb_data, &gpio_mcux_portb_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_driver_api);
-
-static int gpio_mcux_portb_init(struct device *dev)
-{
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0
-	IRQ_CONNECT(DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0, DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0_PRIORITY,
-		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portb), 0);
-
-	irq_enable(DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0);
-#endif
-	return 0;
-}
-#endif /* CONFIG_GPIO_MCUX_PORTB */
-
-#ifdef CONFIG_GPIO_MCUX_PORTC
-static int gpio_mcux_portc_init(struct device *dev);
-
-static const struct gpio_mcux_config gpio_mcux_portc_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
-	},
-	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_C_BASE_ADDRESS,
-	.port_base = PORTC,
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_mcux_data gpio_mcux_portc_data;
-
-DEVICE_AND_API_INIT(gpio_mcux_portc, DT_NXP_KINETIS_GPIO_GPIO_C_LABEL,
-		    gpio_mcux_portc_init,
-		    &gpio_mcux_portc_data, &gpio_mcux_portc_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_driver_api);
-
-static int gpio_mcux_portc_init(struct device *dev)
-{
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0
-	IRQ_CONNECT(DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0, DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0_PRIORITY,
-		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portc), 0);
-
-	irq_enable(DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0);
-#endif
-	return 0;
-}
-#endif /* CONFIG_GPIO_MCUX_PORTC */
-
-#ifdef CONFIG_GPIO_MCUX_PORTD
-static int gpio_mcux_portd_init(struct device *dev);
-
-static const struct gpio_mcux_config gpio_mcux_portd_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
-	},
-	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_D_BASE_ADDRESS,
-	.port_base = PORTD,
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_mcux_data gpio_mcux_portd_data;
-
-DEVICE_AND_API_INIT(gpio_mcux_portd, DT_NXP_KINETIS_GPIO_GPIO_D_LABEL,
-		    gpio_mcux_portd_init,
-		    &gpio_mcux_portd_data, &gpio_mcux_portd_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_driver_api);
-
-static int gpio_mcux_portd_init(struct device *dev)
-{
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0
-	IRQ_CONNECT(DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0, DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0_PRIORITY,
-		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portd), 0);
-
-	irq_enable(DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0);
-#endif
-	return 0;
-}
-#endif /* CONFIG_GPIO_MCUX_PORTD */
-
-#ifdef CONFIG_GPIO_MCUX_PORTE
-static int gpio_mcux_porte_init(struct device *dev);
-
-static const struct gpio_mcux_config gpio_mcux_porte_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(4),
-	},
-	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_E_BASE_ADDRESS,
-	.port_base = PORTE,
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_mcux_data gpio_mcux_porte_data;
-
-DEVICE_AND_API_INIT(gpio_mcux_porte, DT_NXP_KINETIS_GPIO_GPIO_E_LABEL,
-		    gpio_mcux_porte_init,
-		    &gpio_mcux_porte_data, &gpio_mcux_porte_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_driver_api);
-
-static int gpio_mcux_porte_init(struct device *dev)
-{
-#ifdef DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0
-	IRQ_CONNECT(DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0, DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0_PRIORITY,
-		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_porte), 0);
-
-	irq_enable(DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0);
-#endif
-	return 0;
-}
-#endif /* CONFIG_GPIO_MCUX_PORTE */
+DT_INST_FOREACH(GPIO_DEVICE_INIT_MCUX)
