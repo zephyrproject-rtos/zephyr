@@ -324,34 +324,38 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
+	struct spi_nrfx_data *data = get_dev_data(dev);
+	const struct spi_nrfx_config *config = get_dev_config(dev);
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		u32_t new_state = *((const u32_t *)context);
 
-		if (new_state != get_dev_data(dev)->pm_state) {
+		if (new_state != data->pm_state) {
 			switch (new_state) {
 			case DEVICE_PM_ACTIVE_STATE:
-				init_spim(dev);
+				ret = init_spim(dev);
 				/* Force reconfiguration before next transfer */
-				get_dev_data(dev)->ctx.config = NULL;
+				data->ctx.config = NULL;
 				break;
 
 			case DEVICE_PM_LOW_POWER_STATE:
 			case DEVICE_PM_SUSPEND_STATE:
 			case DEVICE_PM_OFF_STATE:
-				nrfx_spim_uninit(&get_dev_config(dev)->spim);
+				if (data->pm_state == DEVICE_PM_ACTIVE_STATE) {
+					nrfx_spim_uninit(&config->spim);
+				}
 				break;
 
 			default:
 				ret = -ENOTSUP;
 			}
 			if (!ret) {
-				get_dev_data(dev)->pm_state = new_state;
+				data->pm_state = new_state;
 			}
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+		*((u32_t *)context) = data->pm_state;
 	}
 
 	if (cb) {
