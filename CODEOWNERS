@@ -241,7 +241,7 @@
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
-/dts/arm/armv7-r.dtsi                     @bbolen
+/dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
@@ -285,6 +285,7 @@
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
+/include/arch/arm/aarch32/cortex_r/       @stephanosio
 /include/arch/arm/aarch64/                @carlocaione
 /include/arch/arm/aarch32/irq.h           @andrewboie
 /include/arch/nios2/                      @andrewboie
