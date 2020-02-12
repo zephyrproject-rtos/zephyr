@@ -152,7 +152,12 @@ Architectures
 
 * RISC-V:
 
-  * <TBD>
+  * Added GPIO driver for LiteX VexRiscv
+  * Fixed Ethernet networking for LiteX VexRiscv
+  * Added Programmable Interrupt Controller support for SweRV
+  * Fixed invalid channel bug for RV32M1 interrupt controller
+  * Added PWM support for RV32M1
+  * Optimized reads of MTIME/MTIMECMP on 64-bit RISC-V
 
 * x86:
 
