@@ -85,7 +85,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				u16_t length,
 				struct net_buf **ret_buf)
 {
-	int nack_idx = 0, count_rej = 0, address_option_idx = -1;
+	int nack_idx = 0, address_option_idx = -1;
 	struct net_buf *buf = NULL;
 	struct ppp_option_pkt options[MAX_IPCP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
@@ -120,7 +120,6 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 			break;
 
 		default:
-			count_rej++;
 			nack_options[nack_idx].type.ipcp =
 				options[i].type.ipcp;
 			nack_options[nack_idx].len = options[i].len;
@@ -139,11 +138,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 	if (nack_idx > 0) {
 		struct net_buf *nack_buf;
 
-		if (count_rej > 0) {
-			code = PPP_CONFIGURE_REJ;
-		} else {
-			code = PPP_CONFIGURE_NACK;
-		}
+		code = PPP_CONFIGURE_REJ;
 
 		/* Create net_buf containing options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
