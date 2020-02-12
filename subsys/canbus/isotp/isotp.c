@@ -992,10 +992,10 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 
 	case ISOTP_TX_SEND_FF:
 		LOG_DBG("SM send FF");
+		ctx->state = ISOTP_TX_WAIT_FC;
 		send_ff(ctx);
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      k_ms_to_ticks_ceil32(ISOTP_BS));
-		ctx->state = ISOTP_TX_WAIT_FC;
 		break;
 
 	case ISOTP_TX_SEND_CF:
