@@ -1889,13 +1889,13 @@ int bt_gatt_indicate(struct bt_conn *conn,
 
 	/* Check if attribute is a characteristic then adjust the handle */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = params->attr->user_data;
+		struct bt_gatt_chrc *chrc = attr->user_data;
 
 		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
 			return -EINVAL;
 		}
 
-		handle = bt_gatt_attr_value_handle(params->attr);
+		handle = bt_gatt_attr_value_handle(attr);
 	}
 
 	if (conn) {
