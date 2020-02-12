@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.13.1)
 if(BOARD STREQUAL unit_testing)
   list(APPEND SOURCES src/main.c)
 
-  include($ENV{ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+  find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
   project(mock)
 else()
-  include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+  find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
   project(mock)
 
   FILE(GLOB app_sources src/*.c)

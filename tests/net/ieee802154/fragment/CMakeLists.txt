@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.13.1)
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(fragment)
 
 target_include_directories(
   app
   PRIVATE
-  $ENV{ZEPHYR_BASE}/subsys/net/ip
-  $ENV{ZEPHYR_BASE}/subsys/net/l2/ieee802154
+  ${ZEPHYR_BASE}/subsys/net/ip
+  ${ZEPHYR_BASE}/subsys/net/l2/ieee802154
   )
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})

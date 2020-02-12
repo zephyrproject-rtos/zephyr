@@ -2,8 +2,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(gpio_counter)
 
 target_sources(app PRIVATE src/main.c)
-zephyr_include_directories($ENV{ZEPHYR_BASE}/boards/x86/up_squared)
+zephyr_include_directories(${ZEPHYR_BASE}/boards/x86/up_squared)

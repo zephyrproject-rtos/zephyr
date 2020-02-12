@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(ncp)
 
 target_sources( app
@@ -10,6 +10,6 @@ target_sources( app
         src/main.c
 )
 
-include($ENV{ZEPHYR_BASE}/samples/net/common/common.cmake)
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)

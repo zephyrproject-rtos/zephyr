@@ -22,7 +22,7 @@ endif()
 
 message(INFO " ${BOARD} compile as Master in this sample")
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(openamp)
 
 enable_language(C ASM)

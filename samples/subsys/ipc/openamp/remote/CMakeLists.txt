@@ -14,7 +14,7 @@ else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(openamp_remote)
 
 target_sources(app PRIVATE src/main.c)

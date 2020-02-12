@@ -10,7 +10,7 @@ set(SHIELD x_nucleo_iks01a3_shub)
 # IKS01A3 board configured in sensorhub mode
 set(CONF_FILE shub.conf)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(x_nucleo_iks01a3)
 
 FILE(GLOB app_sources src/*.c)
