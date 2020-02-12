@@ -242,6 +242,19 @@ def write_props(node):
         elif prop.type == "uint8-array":
             out_node_init(node, ident,
                           [f"0x{b:02x}" for b in prop.val])
+        elif prop.type == "phandle":
+            # Generates a define that gives the canonical prefix of
+            # the node pointed to by the phandle.  This can be used with
+            # some preprocessor magic to access all the properties of the
+            # node pointed to by the phandle:
+            #
+            # #define DT_...<PROP> DT_<IDENT of phandle node>
+            out_node(node, ident, "DT_" + node_ident(prop.val))
+        elif prop.type == "phandles":
+            # similar to 'phandle' except for it being an array so we
+            # postfix the property name with the index number
+            for i, val in enumerate(prop.val):
+                out_node(node, f"{ident}_{i}", "DT_" + node_ident(val))
         else:  # prop.type == "phandle-array"
             write_phandle_val_list(prop)
 
@@ -265,7 +278,7 @@ def should_write(prop):
 
     # For these, Property.val becomes an edtlib.Node, a list of edtlib.Nodes,
     # or None. Nothing is generated for them at the moment.
-    if prop.type in {"phandle", "phandles", "path", "compound"}:
+    if prop.type in {"path", "compound"}:
         return False
 
     # Skip properties that we handle elsewhere
