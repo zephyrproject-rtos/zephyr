@@ -44,6 +44,19 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 8>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 41>;
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 12>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -63,6 +76,12 @@
 		led1-red   = &led1_red;
 		led1-green = &led1_green;
 		led1-blue  = &led1_blue;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 	};
 };
 
@@ -105,6 +124,16 @@
 	/* status = "okay"; */
 	sda-pin = <30>;
 	scl-pin = <31>;
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <8>;
+	ch0-inverted;
+	ch1-pin = <41>;
+	ch1-inverted;
+	ch2-pin = <12>;
+	ch2-inverted;
 };
 
 /*
