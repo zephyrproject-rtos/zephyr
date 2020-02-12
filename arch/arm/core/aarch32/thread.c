@@ -205,6 +205,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 		 * User threads executing in user mode do not require a stack
 		 * limit protection.
 		 */
+		__set_PSPLIM(0);
 		return;
 	}
 	u32_t guard_start = thread->arch.priv_stack_start ?

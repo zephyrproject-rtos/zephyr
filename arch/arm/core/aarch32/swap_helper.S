@@ -322,12 +322,6 @@ _thread_irq_disabled:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-#ifdef CONFIG_BUILTIN_STACK_GUARD
-    /* clear stack pointer limit before setting the PSP */
-    mov r0, #0
-    msr PSPLIM, r0
-#endif /* CONFIG_BUILTIN_STACK_GUARD */
-
 #if defined(CONFIG_CPU_CORTEX_M)
     msr PSP, ip
 #endif
