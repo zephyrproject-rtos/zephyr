@@ -782,7 +782,7 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 		now = EVENT_TIMER->CC[1];
 	} while (now > start);
 
-	return start;
+	return start + 1;
 }
 
 uint32_t radio_tmr_start_get(void)
