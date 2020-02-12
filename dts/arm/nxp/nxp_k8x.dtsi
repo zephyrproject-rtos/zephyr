@@ -107,6 +107,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_a>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -116,6 +117,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_b>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -125,6 +127,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_c>;
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -134,6 +137,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_d>;
 		};
 
 		gpioe: gpio@400ff100 {
@@ -143,6 +147,7 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_e>;
 		};
 
 		i2c0: i2c@40066000 {
