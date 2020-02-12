@@ -511,7 +511,7 @@ config LOG_BACKEND_RB_MEM_BASE
 	  Address of the ring buffer in the memory.
 
 config LOG_BACKEND_RB_MEM_SIZE
-	hex "Size of the ring buffer"
+	int "Size of the ring buffer"
 	help
 	  Size of the ring buffer. Must be multiply of the message slot
 	  size.
