@@ -8,6 +8,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
+#include <arch/arm/aarch32/cortex_r/cmsis.h>
 
 /**
  *
@@ -34,9 +35,8 @@ void z_platform_init(void)
 	/*
 	 * Use normal exception vectors address range (0x0-0x1C).
 	 */
-	__asm__ volatile(
-		"mrc p15, 0, r0, c1, c0, 0;"		/* SCTLR */
-		"bic r0, r0, #" TOSTR(HIVECS) ";"	/* Clear HIVECS */
-		"mcr p15, 0, r0, c1, c0, 0;"
-		: : : "memory");
+	unsigned int sctlr = __get_SCTLR();
+
+	sctlr &= ~SCTLR_V_Msk;
+	__set_SCTLR(sctlr);
 }
