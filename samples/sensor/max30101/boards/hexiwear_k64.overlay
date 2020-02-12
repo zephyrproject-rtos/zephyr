@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	max30101@57 {
+		status = "okay";
+	};
+};
+
+&gpioa {
+	status = "okay";
+};

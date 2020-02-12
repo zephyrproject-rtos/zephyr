@@ -30,14 +30,4 @@ config PINMUX_MCUX_PORTB
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-endif # GPIO_MCUX
-
 endif # BOARD_IP_K66F

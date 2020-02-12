@@ -26,3 +26,11 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
