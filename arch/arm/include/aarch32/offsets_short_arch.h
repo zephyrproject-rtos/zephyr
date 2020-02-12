@@ -36,6 +36,10 @@
 #endif
 #endif
 
+#if defined(CONFIG_THREAD_STACK_INFO)
+#define _thread_offset_to_stack_info_start \
+	(___thread_stack_info_t_start_OFFSET + ___thread_t_stack_info_OFFSET)
+#endif
 /* end - threads */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_OFFSETS_SHORT_ARCH_H_ */

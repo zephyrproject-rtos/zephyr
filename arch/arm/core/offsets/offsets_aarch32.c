@@ -74,6 +74,13 @@ GEN_OFFSET_SYM(_callee_saved_t, lr);
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 
+#if defined(CONFIG_THREAD_STACK_INFO)
+GEN_OFFSET_SYM(_thread_stack_info_t, start);
+
+GEN_ABSOLUTE_SYM(___thread_stack_info_t_SIZEOF,
+	 sizeof(struct _thread_stack_info));
+#endif
+
 /*
  * size of the struct k_thread structure sans save area for floating
  * point registers.
