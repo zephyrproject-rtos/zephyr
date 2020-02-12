@@ -55,10 +55,13 @@ const struct isotp_msg_id tx_addr = {
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 u8_t data_buf[128];
+struct k_sem compl_sem;
 
 void send_complette_cb(int error_nr, void *arg)
 {
 	zassert_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
+
+	k_sem_give(&compl_sem);
 }
 
 static void send_sf(struct device *can_dev)
@@ -249,9 +252,12 @@ static void test_send_receive_net_blocks(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, random_data_len);
 		receive_test_data_net(&recv_ctx, random_data,
 				      random_data_len, 0);
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -267,8 +273,11 @@ static void test_send_receive_blocks(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, data_size);
 		receive_test_data(&recv_ctx, random_data, data_size, 0);
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -288,6 +297,7 @@ static void test_send_receive_net_single_blocks(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, send_len);
 		data_ptr = random_data;
 
@@ -303,6 +313,8 @@ static void test_send_receive_net_single_blocks(void)
 		} while ((frag = frag->frags));
 
 		net_buf_unref(buf);
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -319,6 +331,7 @@ static void test_send_receive_single_block(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, send_len);
 
 		memset(data_buf, 0, sizeof(data_buf));
@@ -328,6 +341,8 @@ static void test_send_receive_single_block(void)
 			      "data should be received at once (ret: %d)", ret);
 		ret = memcmp(random_data, data_buf, send_len);
 		zassert_equal(ret, 0, "Data differ");
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -366,18 +381,24 @@ static void test_bind_unbind(void)
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, 60);
 		receive_test_data_net(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		k_sem_reset(&compl_sem);
 		send_test_data(can_dev, random_data, 60);
 		receive_test_data(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
+		ret = k_sem_take(&compl_sem, K_MSEC(100));
+		zassert_equal(ret, 0, "TX complete callback missing");
 	}
 }
 
@@ -391,10 +412,13 @@ static void test_buffer_allocation(void)
 			 K_NO_WAIT);
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
+	k_sem_reset(&compl_sem);
 	send_test_data(can_dev, random_data, send_data_length);
 	k_sleep(K_MSEC(100));
 	receive_test_data_net(&recv_ctx, random_data, send_data_length, 200);
 	isotp_unbind(&recv_ctx);
+	ret = k_sem_take(&compl_sem, K_MSEC(100));
+	zassert_equal(ret, 0, "TX complete callback missing");
 }
 
 static void test_buffer_allocation_wait(void)
@@ -407,10 +431,13 @@ static void test_buffer_allocation_wait(void)
 			 K_NO_WAIT);
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
+	k_sem_reset(&compl_sem);
 	send_test_data(can_dev, random_data, send_data_length);
 	k_sleep(K_MSEC(100));
 	receive_test_data_net(&recv_ctx, random_data, send_data_length, 2000);
 	isotp_unbind(&recv_ctx);
+	ret = k_sem_take(&compl_sem, K_MSEC(100));
+	zassert_equal(ret, 0, "TX complete callback missing");
 }
 
 void test_main(void)
@@ -424,6 +451,7 @@ void test_main(void)
 	zassert_not_null(can_dev, "CAN device not not found");
 	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
+	k_sem_init(&compl_sem, 0, 1);
 
 	ztest_test_suite(isotp,
 			 ztest_unit_test(test_bind_unbind),
