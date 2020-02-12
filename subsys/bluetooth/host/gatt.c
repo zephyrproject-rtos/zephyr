@@ -617,6 +617,13 @@ static void db_hash_store(void)
 	BT_DBG("Database Hash stored");
 }
 
+/* Once the db_hash work has started we cannot cancel it anymore, so the
+ * assumption is made that the in-progress work cannot be pre-empted.
+ * This assumption should hold as long as calculation does not make any calls
+ * that would make it unready.
+ * If this assumption is no longer true we will have to solve the case where
+ * k_delayed_work_cancel failed because the work was in-progress but pre-empted.
+ */
 static void db_hash_gen(bool store)
 {
 	u8_t key[16] = {};
@@ -660,11 +667,13 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr,
 			    void *buf, u16_t len, u16_t offset)
 {
+	int err;
+
 	/* Check if db_hash is already pending in which case it shall be
-	 * generated immediately instead of waiting the work to complete.
+	 * generated immediately instead of waiting for the work to complete.
 	 */
-	if (k_delayed_work_remaining_get(&db_hash_work)) {
-		k_delayed_work_cancel(&db_hash_work);
+	err = k_delayed_work_cancel(&db_hash_work);
+	if (!err) {
 		db_hash_gen(true);
 	}
 
@@ -4314,9 +4323,11 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
+	int err;
+
 	/* Stop work and generate the hash */
-	if (k_delayed_work_remaining_get(&db_hash_work)) {
-		k_delayed_work_cancel(&db_hash_work);
+	err = k_delayed_work_cancel(&db_hash_work);
+	if (!err) {
 		db_hash_gen(false);
 	}
 
