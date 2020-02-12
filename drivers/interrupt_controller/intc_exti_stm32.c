@@ -181,6 +181,7 @@ void stm32_exti_trigger(int line, int trigger)
 	case STM32_EXTI_TRIG_BOTH:
 		LL_EXTI_EnableRisingTrig_0_31(1 << line);
 		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		break;
 	default:
 		__ASSERT_NO_MSG(trigger);
 	}
