@@ -107,6 +107,36 @@ int mqtt_client_websocket_write(struct mqtt_client *client, const u8_t *data,
 	return 0;
 }
 
+int mqtt_client_websocket_write_msg(struct mqtt_client *client,
+				    const struct msghdr *message)
+{
+	enum websocket_opcode opcode = WEBSOCKET_OPCODE_DATA_BINARY;
+	bool final = false;
+	ssize_t len;
+	ssize_t ret;
+	int i;
+
+	len = 0;
+	for (i = 0; i < message->msg_iovlen; i++) {
+		if (i == message->msg_iovlen - 1) {
+			final = true;
+		}
+
+		ret = websocket_send_msg(client->transport.websocket.sock,
+					 message->msg_iov[i].iov_base,
+					 message->msg_iov[i].iov_len, opcode,
+					 true, final, K_FOREVER);
+		if (ret < 0) {
+			return ret;
+		}
+
+		opcode = WEBSOCKET_OPCODE_CONTINUE;
+		len += ret;
+	}
+
+	return len;
+}
+
 int mqtt_client_websocket_read(struct mqtt_client *client, u8_t *data,
 			       u32_t buflen, bool shall_block)
 {
