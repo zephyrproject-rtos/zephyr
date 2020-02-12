@@ -637,7 +637,7 @@ add_custom_command(
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 
-include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
+include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
 # Add a pseudo-target that is up-to-date when all generated headers

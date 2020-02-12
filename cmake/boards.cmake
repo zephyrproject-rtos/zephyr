@@ -3,13 +3,13 @@
 # List all architectures, export the list in list_var
 function(list_archs list_var)
 
-  FILE(GLOB arch_contents RELATIVE $ENV{ZEPHYR_BASE}/arch $ENV{ZEPHYR_BASE}/arch/*)
+  FILE(GLOB arch_contents RELATIVE ${ZEPHYR_BASE}/arch ${ZEPHYR_BASE}/arch/*)
   set(_arch_list)
   foreach(f ${arch_contents})
     if ("${f}" STREQUAL "common")
       continue()
     endif()
-    if (IS_DIRECTORY "$ENV{ZEPHYR_BASE}/arch/${f}")
+    if (IS_DIRECTORY "${ZEPHYR_BASE}/arch/${f}")
       list(APPEND _arch_list "${f}")
     endif()
   endforeach()
@@ -98,7 +98,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND NOT CMAKE_PARENT_LIST_FILE)
 # BOARD_ROOT_SPACE_SEPARATED: Space-separated board roots
 # FILE_OUT: Set to a file path to save the boards to a file. If not defined the
 #           the contents will be printed to stdout
-if(NOT DEFINED ENV{ZEPHYR_BASE})
+if(NOT DEFINED ZEPHYR_BASE)
   message(FATAL_ERROR "ZEPHYR_BASE not set")
 endif()
 
