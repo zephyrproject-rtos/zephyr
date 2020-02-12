@@ -455,9 +455,19 @@ config BT_CTLR_ADV_EXT
 config BT_CTLR_ADV_SET
 	int "LE Advertising Extensions Sets"
 	depends on BT_CTLR_ADV_EXT
-	default 1
+	range 1 64
 	help
 	  Maximum supported advertising sets.
+
+config BT_CTLR_ADV_AUX_SET
+	int "LE Advertising Extensions Auxiliary Sets"
+	depends on BT_CTLR_ADV_EXT
+	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
+	range 0 BT_CTLR_ADV_SET
+	default 1 if BT_CTLR_ADV_PERIODIC
+	default 0
+	help
+	  Maximum supported advertising auxiliary channel sets.
 
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising"
@@ -470,7 +480,7 @@ config BT_CTLR_ADV_PERIODIC
 config BT_CTLR_ADV_SYNC_SET
 	int "LE Periodic Advertising Sets"
 	depends on BT_CTLR_ADV_PERIODIC
-	default 1
+	range 1 BT_CTLR_ADV_AUX_SET
 	help
 	  Maximum supported periodic advertising sets.
 

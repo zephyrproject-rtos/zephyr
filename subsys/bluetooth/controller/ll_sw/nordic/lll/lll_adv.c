@@ -55,10 +55,6 @@ static void isr_done(void *param);
 static void isr_abort(void *param);
 static struct pdu_adv *chan_prepare(struct lll_adv *lll);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void aux_ptr_populate(struct pdu_adv *pdu, uint32_t start_us);
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-
 static inline int isr_rx_pdu(struct lll_adv *lll,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
@@ -213,14 +209,6 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (pdu->type ==  PDU_ADV_TYPE_EXT_IND) {
-		aux_ptr_populate(pdu, start_us);
-	}
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-	ARG_UNUSED(pdu);
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	radio_gpio_pa_setup();
@@ -488,8 +476,9 @@ static void isr_done(void *param)
 		start_us = radio_tmr_start_now(1);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if (pdu->type ==  PDU_ADV_TYPE_EXT_IND) {
-			aux_ptr_populate(pdu, start_us);
+		if (lll->aux) {
+			lll_adv_aux_offset_fill(lll->aux->ticks_offset,
+						start_us + 1, pdu);
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		ARG_UNUSED(pdu);
@@ -512,7 +501,7 @@ static void isr_done(void *param)
 
 		return;
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_ADV_EXT_PBACK)
 	} else {
 		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
@@ -525,7 +514,7 @@ static void isr_done(void *param)
 		if ((pdu->type == PDU_ADV_TYPE_EXT_IND) && h->aux_ptr) {
 			radio_filter_disable();
 
-			lll_adv_aux_prepare(lll);
+			lll_adv_aux_pback_prepare(lll);
 
 			return;
 		}
@@ -626,39 +615,6 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 
 	return pdu;
 }
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void aux_ptr_populate(struct pdu_adv *pdu, uint32_t start_us)
-{
-	struct pdu_adv_com_ext_adv *p;
-	struct ext_adv_aux_ptr *aux;
-	struct ext_adv_hdr *h;
-	uint8_t *ptr;
-
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
-
-	if (!h->aux_ptr) {
-		return;
-	}
-
-	ptr = (uint8_t *)h + sizeof(*h);
-
-	if (h->adv_addr) {
-		ptr += BDADDR_SIZE;
-	}
-
-	if (h->adi) {
-		ptr += sizeof(struct ext_adv_adi);
-	}
-
-	aux = (void *)ptr;
-	aux->offs = (1000 - start_us) / 30;
-	if (aux->offs_units) {
-		aux->offs /= 10;
-	}
-}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static inline int isr_rx_pdu(struct lll_adv *lll,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
