@@ -351,37 +351,308 @@ def write_props(node):
     # Writes any properties defined in the "properties" section of the binding
     # for the node
 
-    for prop in node.props.values():
-        if not should_write(prop):
-            continue
+    name2primary_macros = {}
+    def write_props_for_ident(node, ident):
+        for prop in node.props.values():
+            if not should_write(prop):
+                continue
 
+            primary_macros = name2primary_macros.get(prop.name)
+            if primary_macros is None:
+                name2primary_macros[prop.name] = primary_macros = \
+                    write_prop_primary(ident, prop)
+            else:
+                write_prop_other(ident, prop, primary_macros)
+
+    def write_prop_primary(ident, prop):
+        # "Generic" property macro generation done here is a bit
+        # inconsistent depending on the property type for historical
+        # reasons.
+        #
+        # Different types of arrays are handled in inconsistent ways:
+        #
+        # - whether or not to generate an array initializer for "simple"
+        #   (non-phandle) arrays depends on the DTS array type
+        # - phandle-arrays special cases depending on the length of the array
+        #   (adding a trailing _0 or not) which can't be fixed within the same
+        #   namespace
+        #
+        # This should be fixed up "once and for all" in a new macro namespace.
+
+        name = f"{ident}_{str2ident(prop.name)}"
+
+        comment = f"Macros from property '{prop.name}'"
         if prop.description is not None:
-            out_comment(prop.description, blank_before=False)
-
-        ident = str2ident(prop.name)
-
-        if prop.type == "boolean":
-            out_node(node, ident, 1 if prop.val else 0)
-        elif prop.type == "string":
-            out_node_s(node, ident, prop.val)
-        elif prop.type == "int":
-            out_node(node, ident, prop.val)
-        elif prop.type == "array":
-            for i, val in enumerate(prop.val):
-                out_node(node, f"{ident}_{i}", val)
-            out_node_init(node, ident, prop.val)
-        elif prop.type == "string-array":
-            for i, val in enumerate(prop.val):
-                out_node_s(node, f"{ident}_{i}", val)
-        elif prop.type == "uint8-array":
-            out_node_init(node, ident,
-                          [f"0x{b:02x}" for b in prop.val])
-        else:  # prop.type == "phandle-array"
-            write_phandle_val_list(prop)
+            comment += f": {prop.description}"
+        out_comment(comment, blank_before=False)
+        if prop.type in ["boolean", "string", "int"]:
+            # Single values are converted to macros as:
+            # DT_<IDENT>_<PROP_NAME> <PROP_VALUE>
+            ret = {"value": out(name, prop2value(prop))}
+        elif prop.type in ["array", "string-array", "uint8-array"]:
+            # Non-phandle-array array types are handled by
+            # generating one or both of these types of macros:
+            #
+            # 1. Individual macros for each array element:
+            #
+            #    DT_<IDENT>_<PROP_NAME>_0 <PROP_VALUE[0]>
+            #    ...
+            #    DT_<IDENT>_<PROP_NAME>_<N-1> <PROP_VALUE[N-1]>
+            #
+            # 2. A macro expanding to a C array initializer for all of them:
+            #
+            #    DT_<IDENT>_<PROP_NAME> {prop.val[0], ..., prop.val[n-1]}
+            #
+            # Only the "array" type gets both. The other array types
+            # get one of the two.
+            ret = {}
+            if prop.type in ["array", "string-array"]:
+                values = []
+                for val_i, val in enumerate(prop2values(prop)):
+                    values.append(out(f"{name}_{val_i}", val))
+                ret["values"] = values
+            if prop.type in ["array", "uint8-array"]:
+                ret['initializer'] = out(name, prop2init(prop))
+        elif prop.type == "phandle-array":
+            # The return value maps:
+            #
+            # - 'count' to the number of entries, if greater than one
+            # - each entry's index to a tuple:
+            #   (controller_macro, cell_macros, initializer_macro)
+            # - 'initializer' to the C initializer for the entire property
+            ret = write_phandle_array_primary(ident, prop)
+        else:
+            err(f"write_prop_primary: unhandled property type {prop.type} "
+                f"for property {prop}")
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
-            out_node(node, ident + "_ENUM", prop.enum_index)
+            ret["enum"] = out(f"{name}_ENUM", prop.enum_index)
+
+        return ret
+
+    def write_prop_other(ident, prop, primary_macros):
+        # Write macros for another node identifier 'ident'.
+
+        name = f"{ident}_{str2ident(prop.name)}"
+        if prop.type in ["boolean", "string", "int"]:
+            out(name, primary_macros['value'])
+        elif prop.type in ["array", "string-array", "uint8-array"]:
+            if prop.type in ["array", "string-array"]:
+                for val_i in range(len(prop2values(prop))):
+                    out(f"{name}_{val_i}", primary_macros["values"][val_i])
+            if prop.type in ["array", "uint8-array"]:
+                out(name, primary_macros['initializer'])
+        elif prop.type == "phandle-array":
+            write_phandle_array_other(ident, prop, primary_macros)
+        else:
+            err(f"write_prop_primary: unhandled property type {prop.type} "
+                f"for property {prop}")
+
+        # Generate DT_..._ENUM if there's an 'enum:' key in the binding
+        if prop.enum_index is not None:
+            out(f"{name}_ENUM", primary_macros['enum'])
+
+    for_each_ident(node, write_props_for_ident)
+
+
+def write_phandle_array_primary(ident, prop):
+    # Generate macros for a phandle-array property for a primary
+    # identifier.
+    #
+    # ident: a node identifier
+    # prop: a Property with type "phandle-array"
+    #
+    # Results depend on:
+    #
+    # - how many edtlib.ControllerAndData items there are in prop.val
+    # - whether or not the property 'foos' has a parallel 'foo-names'
+    #   property in the same node
+    #
+    # If there's just one ControllerAndData item, like this example:
+    #
+    #    gpios = <&gpioc 0xd 0>;
+    #
+    # Then the macros look like this:
+    #
+    #    #define DT_<IDENT>_GPIOS_CONTROLLER     "GPIOC"
+    #    #define DT_<IDENT>_GPIOS_PIN            13
+    #    #define DT_<IDENT>_GPIOS_FLAGS          0
+    #    #define DT_<IDENT>_GPIOS                {"GPIOC", 13, 0}
+    #
+    # Where:
+    #
+    # - The "GPIOS" part of the macros comes from the property name.
+    # - The "CONTROLLER" name is hard-coded, and its value comes from
+    #   the "label" property of the node pointed to by the &gpioc phandle.
+    #   If it has no label, the "CONTROLLER" macro is not generated.
+    # - The "PIN" and "FLAGS" names come from the devicetree YAML binding,
+    #   which in this case contains this:
+    #
+    #       gpio-cells:
+    #         - pin
+    #         - flags
+    #
+    # If there are multiple ControllerAndData items, like this:
+    #
+    #    cs-gpios = < &gpiod 0xd 0x10 >, < &gpioe 0x0 0x0 >;
+    #
+    # Then the macros have trailing indexes (_0 and _1 below),
+    # and there's a _COUNT macro:
+    #
+    #    #define DT_<IDENT>_CS_GPIOS_CONTROLLER_0    "GPIOD"
+    #    #define DT_<IDENT>_CS_GPIOS_PIN_0           13
+    #    #define DT_<IDENT>_CS_GPIOS_FLAGS_0         16
+    #    #define DT_<IDENT>_CS_GPIOS_0               {"GPIOD", 13, 16}
+    #    #define DT_<IDENT>_CS_GPIOS_CONTROLLER_1    "GPIOE"
+    #    #define DT_<IDENT>_CS_GPIOS_PIN_1           0
+    #    #define DT_<IDENT>_CS_GPIOS_FLAGS_1         0
+    #    #define DT_<IDENT>_CS_GPIOS_1               {"GPIOE", 0, 0}
+    #    #define DT_<IDENT>_CS_GPIOS_COUNT           2
+    #    #define DT_<IDENT>_CS_GPIOS                 {DT_<IDENT>_CS_GPIOS_0, DT_<IDENT>_CS_GPIOS_1}
+    #
+    # Additionally, if the node also has a property that names the
+    # individual controllers, like this:
+    #
+    #    foo {
+    #        io-channels = < &adc1 0x1a >, < &adc1 0x1b >;
+    #        io-channel-names = "SENSOR", "BANDGAP";
+    #    }
+    #
+    # Then the -names property will be used to generate additional
+    # macros, like this:
+    #
+    #   #define DT_<IDENT>_IO_CHANNELS_CONTROLLER_0       "ADC_1"
+    #   #define DT_<IDENT>_SENSOR_IO_CHANNELS_CONTROLLER  DT_<IDENT>_IO_CHANNELS_CONTROLLER_0
+    #   #define DT_<IDENT>_IO_CHANNELS_CONTROLLER_1       "ADC_1"
+    #   #define DT_<IDENT>_BANDGAP_IO_CHANNELS_CONTROLLER DT_<IDENT>_IO_CHANNELS_CONTROLLER_1
+    #   #define DT_<IDENT>_IO_CHANNELS_0                  {"ADC_1", 26}
+    #   #define DT_<IDENT>_IO_CHANNELS_SENSOR             DT_<IDENT>_IO_CHANNELS_0
+    #   #define DT_<IDENT>_IO_CHANNELS_1                  {"ADC_1", 27}
+    #   #define DT_<IDENT>_IO_CHANNELS_BANDGAP            DT_<IDENT>_IO_CHANNELS_1
+    #
+    # The numerical special-casing of whether there are trailing
+    # indexes can't be easily made consistent. If we always
+    # generate versions with trailing _0 *and* keep backwards
+    # compatibility by generating non-indexed versions if there's
+    # only one specifier in the array, there will be in duplicated
+    # macros. For example, DT_<IDENT>_GPIOS would be defined twice
+    # in the first example.
+    ret = {}
+    prop_ident = str2ident(prop.name)
+    nvals = len(prop.val)
+
+    for entry_i, entry in enumerate(prop.val):
+        suffix = f"_{entry_i}" if nvals > 1 else ""
+        ret[entry_i] = write_controller_and_data_primary(ident, prop_ident, entry, suffix)
+
+    if nvals > 1:
+        ret["count"] = out(f"{ident}_{prop_ident}_COUNT", nvals)
+
+    # Due to the issues discussed above, we have to
+    # special-case this logic depending on nvals.
+    if nvals > 1:
+        initializer = out(f"{ident}_{prop_ident}",
+                          "{" +
+                          ", ".join(ret[i][2] for i in range(nvals)) +
+                          "}")
+    else:
+        initializer = ret[0][2]
+    ret["initializer"] = initializer
+
+    return ret
+
+
+def write_phandle_array_other(ident, prop, primary_macros):
+    # Like write_phandle_array_primary, but using the primary macros
+    # in its return value.
+
+    prop_ident = str2ident(prop.name)
+    nvals = len(prop.val)
+
+    for entry_i, entry in enumerate(prop.val):
+        suffix = f"_{entry_i}" if nvals > 1 else ""
+        write_controller_and_data_other(ident, prop_ident, entry, suffix,
+                                        primary_macros[entry_i])
+
+    if nvals > 1:
+        out(f"{ident}_{prop_ident}_COUNT", primary_macros["count"])
+
+    if primary_macros["initializer"] and nvals > 1:
+        out(f"{ident}_{prop_ident}", primary_macros["initializer"])
+
+
+def write_controller_and_data_primary(ident, prop_ident, entry, suffix):
+    # Helper routine for writing a phandle array entry.
+    #
+    # entry:
+    #    A ControllerAndData to write the primary macros for.
+    #
+    # Returns a tuple:
+    #
+    #    (primary_controller_macro, primary_cell_macros,
+    #     primary_initializer_macro)
+    #
+    # See the detailed comment in write_phandle_array_primary() for
+    # examples.
+
+    entry_ident = str2ident(entry.name) if entry.name else None
+
+    if entry.controller.label is not None:
+        ctlr_macro = out_s(f"{ident}_{prop_ident}_CONTROLLER{suffix}",
+                           entry.controller.label)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_CONTROLLER", ctlr_macro)
+    else:
+        ctlr_macro = None
+
+    cell_macros = []
+    for cell, val in entry.data.items():
+        cell_ident = str2ident(cell)
+        cell_macro = out(f"{ident}_{prop_ident}_{cell_ident}{suffix}", val)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_{cell_ident}", cell_macro)
+        cell_macros.append(cell_macro)
+
+    if ctlr_macro:
+        initializer = out(f"{ident}_{prop_ident}{suffix}",
+                          "{" +
+                          ", ".join([quote_str(entry.controller.label)] +
+                                    list(map(str, entry.data.values()))) +
+                          "}")
+        if entry_ident:
+            out(f"{ident}_{prop_ident}_{entry_ident}", initializer)
+    else:
+        initializer = None
+
+    return (ctlr_macro, cell_macros, initializer)
+
+
+def write_controller_and_data_other(ident, prop_ident, entry, suffix,
+                                    primary_macros):
+    # Like write_controller_and_data_primary, but using the primary
+    # macros in its return value to generate defines.
+
+    entry_ident = str2ident(entry.name) if entry.name else None
+    ctlr_macro, cell_macros, init_macro = primary_macros
+
+    if ctlr_macro is not None:
+        out(f"{ident}_{prop_ident}_CONTROLLER{suffix}", ctlr_macro)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_CONTROLLER",
+                ctlr_macro)
+
+    for cell_i, cell in enumerate(entry.data.keys()):
+        cell_ident = str2ident(cell)
+        out(f"{ident}_{prop_ident}_{cell_ident}{suffix}", cell_macros[cell_i])
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_{cell_ident}",
+                cell_macros[cell_i])
+
+    if init_macro is not None:
+        out(f"{ident}_{prop_ident}{suffix}", init_macro)
+        if entry_ident:
+            out(f"{ident}_{prop_ident}_{entry_ident}", init_macro)
 
 
 def should_write(prop):
@@ -410,6 +681,44 @@ def should_write(prop):
         return False
 
     return True
+
+
+def prop2value(prop):
+    # Get the single macro expansion for prop.value.
+
+    if prop.type == "boolean":
+        return 1 if prop.val else 0
+
+    if prop.type == "string":
+        return quote_str(prop.val)
+
+    if prop.type == "int":
+        return prop.val
+
+    err(f"prop2value: unsupported type {prop.type}")
+
+
+def prop2values(prop):
+    # For array properties, get a list containing the individual
+    # elements converted to C scalar constants.
+
+    if prop.type == "array":
+        return prop.val
+
+    if prop.type == "string-array":
+        return [quote_str(elm) for elm in prop.val]
+
+    if prop.type == "uint8-array":
+        return [f"0x{elm:02x}" for elm in prop.val]
+
+    err(f"prop2values: unsupported type {prop.type}")
+
+
+def prop2init(prop):
+    # For array properties, get a C array initializer for the
+    # property value.
+
+    return "{" + ", ".join(str(val) for val in prop2values(prop)) + "}"
 
 
 def write_bus(node):
@@ -700,49 +1009,10 @@ def write_spi_dev(node):
         write_phandle_val_list_entry(node, cs_gpio, None, "CS_GPIOS")
 
 
-def write_phandle_val_list(prop):
-    # Writes output for a phandle/value list, e.g.
-    #
-    #    pwms = <&pwm-ctrl-1 10 20
-    #            &pwm-ctrl-2 30 40>;
-    #
-    # prop:
-    #   phandle/value Property instance.
-    #
-    #   If only one entry appears in 'prop' (the example above has two), the
-    #   generated identifier won't get a '_0' suffix, and the '_COUNT' and
-    #   group initializer are skipped too.
-    #
-    # The base identifier is derived from the property name. For example, 'pwms = ...'
-    # generates output like this:
-    #
-    #   #define <node prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
-    #   #define <node prefix>_PWMS_CHANNEL_0 123         (name taken from *-cells in binding)
-    #   #define <node prefix>_PWMS_0 {"PWM_0", 123}
-    #   #define <node prefix>_PWMS_CONTROLLER_1 "PWM_1"
-    #   #define <node prefix>_PWMS_CHANNEL_1 456
-    #   #define <node prefix>_PWMS_1 {"PWM_1", 456}
-    #   #define <node prefix>_PWMS_COUNT 2
-    #   #define <node prefix>_PWMS {<node prefix>_PWMS_0, <node prefix>_PWMS_1}
-    #   ...
-
-    # pwms -> PWMS
-    # foo-gpios -> FOO_GPIOS
-    ident = str2ident(prop.name)
-
-    initializer_vals = []
-    for i, entry in enumerate(prop.val):
-        initializer_vals.append(write_phandle_val_list_entry(
-            prop.node, entry, i if len(prop.val) > 1 else None, ident))
-
-    if len(prop.val) > 1:
-        out_node(prop.node, ident + "_COUNT", len(initializer_vals))
-        out_node_init(prop.node, ident, initializer_vals)
-
-
 def write_phandle_val_list_entry(node, entry, i, ident):
-    # write_phandle_val_list() helper. We could get rid of it if it wasn't for
-    # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
+    # write_spi_dev() helper.
+    #
+    # Adds 'i' as an index to identifiers unless it's None.
     #
     # 'entry' is an edtlib.ControllerAndData instance.
     #
