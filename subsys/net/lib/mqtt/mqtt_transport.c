@@ -16,6 +16,7 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
 		mqtt_client_tcp_connect,
 		mqtt_client_tcp_write,
+		mqtt_client_tcp_write_msg,
 		mqtt_client_tcp_read,
 		mqtt_client_tcp_disconnect,
 	},
@@ -23,6 +24,7 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
 		mqtt_client_tls_connect,
 		mqtt_client_tls_write,
+		mqtt_client_tls_write_msg,
 		mqtt_client_tls_read,
 		mqtt_client_tls_disconnect,
 	},
@@ -31,6 +33,7 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
 		mqtt_client_websocket_connect,
 		mqtt_client_websocket_write,
+		mqtt_client_websocket_write_msg,
 		mqtt_client_websocket_read,
 		mqtt_client_websocket_disconnect,
 	},
@@ -38,6 +41,7 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
 		mqtt_client_websocket_connect,
 		mqtt_client_websocket_write,
+		mqtt_client_websocket_write_msg,
 		mqtt_client_websocket_read,
 		mqtt_client_websocket_disconnect,
 	},
@@ -55,6 +59,12 @@ int mqtt_transport_write(struct mqtt_client *client, const u8_t *data,
 {
 	return transport_fn[client->transport.type].write(client, data,
 							  datalen);
+}
+
+int mqtt_transport_write_msg(struct mqtt_client *client,
+			     const struct msghdr *message)
+{
+	return transport_fn[client->transport.type].write_msg(client, message);
 }
 
 int mqtt_transport_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
