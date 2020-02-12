@@ -13,10 +13,32 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
+K_THREAD_STACK_DEFINE(tx_thread_stack,
+		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
+struct k_thread tx_thread_data;
+
+struct can_looppback_frame {
+	struct zcan_frame frame;
+	can_tx_callback_t cb;
+	void *cb_arg;
+	struct k_sem *tx_compl;
+};
+
+K_MSGQ_DEFINE(tx_msgq, sizeof(struct can_looppback_frame),
+	      CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE, 4);
+
 static void dispatch_frame(const struct zcan_frame *frame,
 			   struct can_loopback_filter *filter)
 {
 	struct zcan_frame frame_tmp = *frame;
+
+	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s",
+		frame->dlc,
+		frame->id_type == CAN_STANDARD_IDENTIFIER ?
+				  frame->std_id : frame->ext_id,
+		frame->id_type == CAN_STANDARD_IDENTIFIER ?
+				  "standard" : "extended",
+		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
 	filter->rx_cb(&frame_tmp, filter->cb_arg);
 }
@@ -36,25 +58,52 @@ static inline int check_filter_match(const struct zcan_frame *frame,
 	return ((id & mask) == (frame_id & mask));
 }
 
+void tx_thread(void *data_arg, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	struct can_looppback_frame frame;
+	struct can_loopback_filter *filter;
+	struct can_loopback_data *data = (struct can_loopback_data *)data_arg;
 
+	while (1) {
+		k_msgq_get(&tx_msgq, &frame, K_FOREVER);
+		k_mutex_lock(&data->mtx, K_FOREVER);
+
+		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
+			filter = &data->filters[i];
+			if (filter->rx_cb &&
+			    check_filter_match(&frame.frame, &filter->filter)) {
+				dispatch_frame(&frame.frame, filter);
+			}
+		}
+
+		k_mutex_unlock(&data->mtx);
+
+		if (!frame.cb) {
+			k_sem_give(frame.tx_compl);
+		} else {
+			frame.cb(CAN_TX_OK, frame.cb_arg);
+		}
+	}
+}
 
 int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 		      s32_t timeout, can_tx_callback_t callback,
 		      void *callback_arg)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
-	struct can_loopback_filter *filter;
+	int ret;
+	struct can_looppback_frame loopback_frame;
+	struct k_sem tx_sem;
 
-	LOG_DBG("Sending %d bytes on %s. "
-		    "Id: 0x%x, "
-		    "ID type: %s, "
-		    "Remote Frame: %s"
-		    , frame->dlc, dev->config->name
-		    , frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				frame->std_id : frame->ext_id
-		    , frame->id_type == CAN_STANDARD_IDENTIFIER ?
-		    "standard" : "extended"
-		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
+	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
+		frame->dlc, dev->config->name,
+		frame->id_type == CAN_STANDARD_IDENTIFIER ?
+				  frame->std_id : frame->ext_id,
+		frame->id_type == CAN_STANDARD_IDENTIFIER ?
+				  "standard" : "extended",
+		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
@@ -62,27 +111,25 @@ int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 	}
 
 	if (!data->loopback) {
-
 		return 0;
 	}
 
-	k_mutex_lock(&data->mtx, timeout);
-	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
-		filter = &data->filters[i];
-		if (filter->rx_cb) {
-			if (check_filter_match(frame, &filter->filter)) {
-				dispatch_frame(frame, filter);
-			}
-		}
+	loopback_frame.frame = *frame;
+	loopback_frame.cb = callback;
+	loopback_frame.cb_arg = callback_arg;
+	loopback_frame.tx_compl = &tx_sem;
+
+	if (!callback) {
+		k_sem_init(&tx_sem, 0, 1);
 	}
 
-	k_mutex_unlock(&data->mtx);
+	ret = k_msgq_put(&tx_msgq, &loopback_frame, timeout);
 
-	if (callback) {
-		callback(CAN_TX_OK, callback_arg);
+	if (!callback) {
+		k_sem_take(&tx_sem, K_FOREVER);
 	}
 
-	return 0;
+	return  ret ? CAN_TIMEOUT : CAN_TX_OK;
 }
 
 
@@ -202,11 +249,22 @@ static const struct can_driver_api can_api_funcs = {
 static int can_loopback_init(struct device *dev)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
+	k_tid_t tx_tid;
 
 	k_mutex_init(&data->mtx);
 
 	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 		data->filters[i].rx_cb = NULL;
+	}
+
+	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 tx_thread, data, NULL, NULL,
+				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
+				 0, K_NO_WAIT);
+	if (!tx_tid) {
+		LOG_ERR("ERROR spawning tx thread");
+		return -1;
 	}
 
 	LOG_INF("Init of %s done", dev->config->name);
