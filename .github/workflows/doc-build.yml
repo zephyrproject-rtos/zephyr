@@ -3,7 +3,7 @@
 
 name: Documentation GitHub Workflow
 
-on: [pull_request, push]
+on: [pull_request]
 
 jobs:
   build:
@@ -34,24 +34,9 @@ jobs:
                      'sphinx>=1.7.5' sphinx_rtd_theme sphinx-tabs \
                      sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
 
-    - name: cache-zephyr-modules
-      uses: actions/cache@v1
-      with:
-        path: ../modules
-        key: ${{ runner.os }}-zephyr-modules-${{ hashFiles('west.yml') }}
-
-    - name: cache-zephyr-tools
-      uses: actions/cache@v1
-      with:
-        path: ../tools
-        key: ${{ runner.os }}-zephyr-tools-${{ hashFiles('west.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-doc-zephyr-tools
-
     - name: west setup
       run: |
         west init -l . || true
-        west update
 
     - name: build-docs
       run: |
