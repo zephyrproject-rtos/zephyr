@@ -147,8 +147,8 @@ static int client_write(struct mqtt_client *client, const u8_t *data,
 
 	err_code = mqtt_transport_write(client, data, datalen);
 	if (err_code < 0) {
-		MQTT_TRC("TCP write failed, errno = %d, "
-			 "closing connection", errno);
+		MQTT_TRC("Transport write failed, err_code = %d, "
+			 "closing connection", err_code);
 		client_disconnect(client, err_code);
 		return err_code;
 	}
