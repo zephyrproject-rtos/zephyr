@@ -1,0 +1,3 @@
+tests:
+  libraries.queued_operation:
+    tags: queued_operation timer
