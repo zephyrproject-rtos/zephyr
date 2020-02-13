@@ -361,11 +361,13 @@ Networking
 * Various fixes to new TCP stack implementation
 * Remove NATS sample application
 
-* CAN bus
-  * CANopen protocol support through 3rd party CANopenNode stack.
-  * Added native ISO-TP subsystem.
-  * Introduced CAN-PRIMARY alias.
-  * SocketCAN for MCUX flexcan.
+CAN Bus
+*******
+
+* CANopen protocol support through 3rd party CANopenNode stack.
+* Added native ISO-TP subsystem.
+* Introduced CAN-PRIMARY alias.
+* SocketCAN for MCUX flexcan.
 
 Bluetooth
 *********
