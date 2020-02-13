@@ -287,8 +287,8 @@ However, some "special" properties get individual treatment:
 - :ref:`clk_macros`
 - :ref:`spi_cs_macros`
 
-No macros are currently generated for properties with type ``phandle``,
-``phandles``, ``path``, or ``compound``.
+No macros are currently generated for properties with type ``path``, or
+``compound``.
 
 .. _generic-macros:
 
@@ -320,6 +320,11 @@ compound initializer (``{ ... }``).
 | ``array``        | ``foo = <1 2>``        | | ``#define DT_<node>_FOO_0 1``        |
 |                  |                        | | ``#define DT_<node>_FOO_1 2``        |
 |                  |                        | | ``#define DT_<node>_FOO {1, 2}``     |
++------------------+------------------------+----------------------------------------+
+| ``phandle``      | ``foo = <&bar>``       | ``#define DT_<node>_FOO <node-bar>``   |
++------------------+------------------------+----------------------------------------+
+| ``phandles``     | ``foo = <&bar &bz>``   | | ``#define DT_<node>_0 <node-bar>``   |
+|                  |                        | | ``#define DT_<node>_1 <node-baz>``   |
 +------------------+------------------------+----------------------------------------+
 | ``string``       | ``foo = "bar"``        | ``#define DT_<node>_FOO "bar"``        |
 +------------------+------------------------+----------------------------------------+

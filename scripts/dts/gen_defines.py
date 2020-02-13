@@ -385,11 +385,11 @@ def write_props(node):
         if prop.description is not None:
             comment += f": {prop.description}"
         out_comment(comment, blank_before=False)
-        if prop.type in ["boolean", "string", "int"]:
+        if prop.type in ["boolean", "string", "int", "phandle"]:
             # Single values are converted to macros as:
             # DT_<IDENT>_<PROP_NAME> <PROP_VALUE>
             ret = {"value": out(name, prop2value(prop))}
-        elif prop.type in ["array", "string-array", "uint8-array"]:
+        elif prop.type in ["array", "string-array", "uint8-array", "phandles"]:
             # Non-phandle-array array types are handled by
             # generating one or both of these types of macros:
             #
@@ -406,7 +406,7 @@ def write_props(node):
             # Only the "array" type gets both. The other array types
             # get one of the two.
             ret = {}
-            if prop.type in ["array", "string-array"]:
+            if prop.type in ["array", "string-array", "phandles"]:
                 values = []
                 for val_i, val in enumerate(prop2values(prop)):
                     values.append(out(f"{name}_{val_i}", val))
@@ -435,10 +435,10 @@ def write_props(node):
         # Write macros for another node identifier 'ident'.
 
         name = f"{ident}_{str2ident(prop.name)}"
-        if prop.type in ["boolean", "string", "int"]:
+        if prop.type in ["boolean", "string", "int", "phandle"]:
             out(name, primary_macros['value'])
-        elif prop.type in ["array", "string-array", "uint8-array"]:
-            if prop.type in ["array", "string-array"]:
+        elif prop.type in ["array", "string-array", "uint8-array", "phandles"]:
+            if prop.type in ["array", "string-array", "phandles"]:
                 for val_i in range(len(prop2values(prop))):
                     out(f"{name}_{val_i}", primary_macros["values"][val_i])
             if prop.type in ["array", "uint8-array"]:
@@ -670,7 +670,7 @@ def should_write(prop):
 
     # For these, Property.val becomes an edtlib.Node, a list of edtlib.Nodes,
     # or None. Nothing is generated for them at the moment.
-    if prop.type in {"phandle", "phandles", "path", "compound"}:
+    if prop.type in {"path", "compound"}:
         return False
 
     # Skip properties that we handle elsewhere
@@ -695,6 +695,12 @@ def prop2value(prop):
     if prop.type == "int":
         return prop.val
 
+    if prop.type == "phandle":
+        # Returns the primary prefix of the node pointed to by the phandle.
+        # This can be used with some preprocessor magic to access all the
+        # properties of the node pointed to by the phandle
+        return prop.val.z_primary_ident
+
     err(f"prop2value: unsupported type {prop.type}")
 
 
@@ -704,6 +710,9 @@ def prop2values(prop):
 
     if prop.type == "array":
         return prop.val
+
+    if prop.type == "phandles":
+        return [elm.z_primary_ident for elm in prop.val]
 
     if prop.type == "string-array":
         return [quote_str(elm) for elm in prop.val]
