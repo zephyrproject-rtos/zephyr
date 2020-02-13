@@ -169,9 +169,15 @@ void test_string_nlen(void)
 	zassert_equal(err, 0, "user string faulted");
 	zassert_equal(ret, strlen(user_string), "incorrect length returned");
 
+	/* Skip this scenario for nsim_sem emulated board, unfortunately
+	 * the emulator doesn't set up memory as specified in DTS and poking
+	 * this address doesn't fault
+	 */
+#if !(defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM))
 	/* Try to blow up the kernel */
 	ret = string_nlen((char *)0xFFFFFFF0, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
+#endif
 }
 
 /**
