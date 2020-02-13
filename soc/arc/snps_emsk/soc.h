@@ -62,9 +62,6 @@
 #define DT_I2C_1_BASE_ADDR			0xF0005000
 #define DT_I2C_1_IRQ_FLAGS			0
 
-/* SPI */
-#define DT_SPI_DW_IRQ_FLAGS			0
-
 /*
  * SPI Chip Select Assignments on EM Starter Kit
  *
