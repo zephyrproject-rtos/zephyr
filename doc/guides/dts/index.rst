@@ -398,6 +398,91 @@ usually take a ``struct device*`` as their first argument. This allows the
 driver API to use information from devicetree to interact with the device
 hardware.
 
+Generated macro rules
+=====================
+.. code-block:: none
+
+      aliases {
+           i2c-0 = &i2c0;
+      };
+
+      soc {
+           i2c0: i2c@40066000 {
+                compatible = "nxp,kinetis-i2c";
+                reg = <0x40066000 0x1000>;
+                fxos8700@1d {
+                     compatible = "nxp,fxos8700";
+                     reg = <0x1d>;
+                };
+           };
+      };
+
+.. list-table::
+   :header-rows: 1
+
+   * - type
+     - prefix
+     - description
+     - example
+
+   * - node
+     - ``DT_<IDENT>_...``
+     -
+     - ``DT_NXP_KINETIS_I2C_40066000_...``
+   * - node
+     - ``DT_INST_<n>_<COMPAT>_...``
+     -
+     - ``DT_INST_0_NXP_KINETIS_I2C_...``
+   * - node
+     - ``DT_ALIAS_<ALIAS>_...``
+     -
+     - ``DT_ALIAS_I2C_0_...``
+   * - node
+     - ``DT_<COMPAT>_<ALIAS>_...``
+     -
+     - ``DT_NXP_KINETIS_I2C_I2C_0_...``
+   * - existence
+     - ``#define DT_COMPAT_<COMPAT> 1``
+     -
+     - ``#define DT_COMPAT_NXP_KINETIS_I2C 1``
+   * - existence
+     - ``#define DT_<COMPAT>_BUS_<BUS-TYPE> 1``
+     -
+     - ``#define DT_NXP_FXOS8700_BUS_I2C 1``
+   * - existence
+     - ``#define DT_INST_<n>_<COMPAT> 1``
+     -
+     - ``#define DT_INST_0_NXP_KINETIS_I2C 1``
+   * - flash partition
+     - ``#define DT_FLASH_AREA_<NAME>_...``
+     -
+     - ``#define DT_FLASH_AREA_MCUBOOT_...``
+   * - flash partition
+     - ``#define DT_FLASH_AREA_<n>_...``
+     -
+     - ``#define DT_FLASH_AREA_0_...``
+   * - flash device
+     - ``#define DT_FLASH_...``
+     -
+     - ``#define DT_FLASH_...``
+   * - code partition
+     - ``#define DT_CODE_PARTITION_...``
+     -
+     - ``#define DT_CODE_PARTITION_...``
+   * - memory device
+     - ``#define DT_CCM_...``
+     -
+     - ``#define DT_CCM_...``
+   * - memory device
+     - ``#define DT_DTCM_...``
+     -
+     - ``#define DT_DTCM_...``
+   * - memory device
+     - ``#define DT_IPC_SHM_...``
+     -
+     - ``#define DT_IPC_SHM_...``
+
+
 .. _dt_k6x_example:
 
 Example: FRDM-K64F and Hexiwear K64
