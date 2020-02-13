@@ -712,6 +712,14 @@ class Node:
       The text from the 'label' property on the node, or None if the node has
       no 'label'
 
+    labels:
+      A list of all of the devicetree labels for the node, in the same order
+      as the labels appear, but with duplicates removed.
+
+      This corresponds to the actual devicetree source labels, unlike the
+      "label" attribute, which is the value of a devicetree property named
+      "label".
+
     parent:
       The Node instance for the devicetree parent of the Node, or None if the
       node is the root node
@@ -843,6 +851,11 @@ class Node:
         if "label" in self._node.props:
             return self._node.props["label"].to_string()
         return None
+
+    @property
+    def labels(self):
+        "See the class docstring"
+        return self._node.labels
 
     @property
     def parent(self):
