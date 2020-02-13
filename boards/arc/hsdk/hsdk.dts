@@ -46,4 +46,13 @@
 &spi2 {
 	status = "okay";
 	clock-frequency = <33333333>;
+
+	cs-gpios = <&gpio0 9 0>;
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		cmd-data-gpios = <&gpio0 21 0>;
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		label = "DISPLAY";
+	};
 };
