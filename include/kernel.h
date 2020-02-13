@@ -3114,7 +3114,8 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @param work Address of delayed work item.
  *
  * @retval 0 Work item countdown canceled.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EINVAL Work item is being processed.
+ * @retval -EALREADY Work item has already been completed.
  * @req K-DWORK-001
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
