@@ -14,6 +14,7 @@ zephyr_sources(
   notify.c
   printk.c
   onoff.c
+  queued_operation.c
   rb.c
   sem.c
   thread_entry.c

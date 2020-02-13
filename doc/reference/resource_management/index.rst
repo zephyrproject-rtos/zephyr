@@ -76,3 +76,61 @@ state.
 
 .. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr
+
+.. _resource_mgmt_queued_operation:
+
+Queued Operation Manager
+************************
+
+While :ref:`resource_mgmt_onoff` supports a shared resource that must be
+available as long as any user still depends on it, the queued operation
+manager provides serialized exclusive access to a resource that executes
+operations asynchronously.  This can be used to support (for example)
+ADC sampling for different sensors, or groups of bus transactions.
+Clients submit a operation request that is processed when the device
+becomes available, with clients being notified of the completion of the
+operation though the standard :ref:`async_notification`.
+
+As with the on-off manager, the queued resource manager is a generic
+infrastructure tool that should be used by a extending service, such as
+an I2C bus controller or an ADC.  The manager has the following
+characteristics:
+
+* The stable states are idle and processing.  The manager always begins
+  in the idle state.
+* The core client operations are submit (add an operation) and cancel
+  (remove an operation before it starts).
+* Ownership of the operation object transitions from the client to the
+  manager when a queue request is accepted, and is returned to the
+  client when the manager notifies the client of operation completion.
+* The core client event is completion.  Manager state changes only as a
+  side effect from submitting or completing an operation.
+* The service transitions from idle to processing when an operation is
+  submitted.
+* The service transitions from processing to idle when notification of
+  the last operation has completed and there are no queued operations.
+* The manager selects the next operation to process when notification of
+  completion has itself completed.  In particular, changes to the set of
+  pending operations that are made during a completion callback affect
+  the next operation to execute.
+* Each submitted operation includes a priority that orders execution by
+  first-come-first-served within priority.
+* Operations are asynchronous, with completion notification through the
+  :ref:`async_notification`.  The operations and notifications are run
+  in a context that is service-specific.  This may be one or more
+  dedicated threads, or work queues.  Notifications may come from
+  interrupt handlers.  Note that operations may complete before the
+  submit request has returned to its caller.
+
+The generic infrastructure holds the active operation and a queue of
+pending operations.  A service extension shall provide functions that:
+
+* check that a request is well-formed, i.e. can be added to the queue;
+* receive notification that a new operation is to be processed, or that
+  no operations are available (allowing the service to enter a
+  power-down mode);
+* translate a generic completion callback into a service-specific
+  callback.
+
+.. doxygengroup:: resource_mgmt_queued_operation_apis
+   :project: Zephyr
