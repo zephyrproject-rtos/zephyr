@@ -103,7 +103,7 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.get_rate = mcux_ccm_get_subsys_rate,
 };
 
-DEVICE_AND_API_INIT(mcux_ccm, DT_MCUX_CCM_NAME,
+DEVICE_AND_API_INIT(mcux_ccm, DT_INST_0_NXP_IMX_CCM_LABEL,
 		    &mcux_ccm_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
