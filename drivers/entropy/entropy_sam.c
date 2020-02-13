@@ -162,7 +162,7 @@ static int entropy_sam_init(struct device *dev)
 	trng->CTRLA.bit.ENABLE = 1;
 #else
 	/* Enable the user interface clock */
-	soc_pmc_peripheral_enable(DT_ENTROPY_SAM_TRNG_PERIPHERAL_ID);
+	soc_pmc_peripheral_enable(DT_INST_0_ATMEL_SAM_TRNG_PERIPHERAL_ID);
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;
