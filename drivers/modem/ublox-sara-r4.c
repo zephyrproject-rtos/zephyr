@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 enum mdm_control_pins {
 	MDM_POWER = 0,
 	MDM_RESET,
-#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER)
 	MDM_VINT,
 #endif
 };
@@ -48,7 +48,7 @@ static struct modem_pin modem_pins[] = {
 		  DT_INST_0_UBLOX_SARA_R4_MDM_RESET_GPIOS_PIN,
 		  DT_INST_0_UBLOX_SARA_R4_MDM_RESET_GPIOS_FLAGS | GPIO_OUTPUT),
 
-#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER)
 	/* MDM_VINT */
 	MODEM_PIN(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER,
 		  DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_PIN,
@@ -62,7 +62,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_POWER_DISABLE		0
 #define MDM_RESET_NOT_ASSERTED		1
 #define MDM_RESET_ASSERTED		0
-#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER)
 #define MDM_VINT_ENABLE			1
 #define MDM_VINT_DISABLE		0
 #endif
@@ -637,7 +637,7 @@ static int pin_init(void)
 	k_sleep(K_SECONDS(1));
 
 	/* make sure module is powered off */
-#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
 	while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_DISABLE) {
@@ -671,7 +671,7 @@ static int pin_init(void)
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 
-#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_UBLOX_SARA_R4_MDM_VINT_GPIOS_CONTROLLER)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
 	do {
 		k_sleep(K_MSEC(100));
