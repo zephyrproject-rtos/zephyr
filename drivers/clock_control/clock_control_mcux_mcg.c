@@ -57,7 +57,7 @@ static const struct clock_control_driver_api mcux_mcg_driver_api = {
 	.get_rate = mcux_mcg_get_rate,
 };
 
-DEVICE_AND_API_INIT(mcux_mcg, DT_MCG_NAME,
+DEVICE_AND_API_INIT(mcux_mcg, DT_INST_0_NXP_KINETIS_MCG_LABEL,
 		    &mcux_mcg_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
