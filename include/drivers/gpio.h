@@ -267,6 +267,7 @@ extern "C" {
  * @deprecated Replace with `GPIO_INPUT`.
  */
 /* Deprecated in 2.2 release */
+#undef GPIO_DIR_IN
 #define GPIO_DIR_IN __DEPRECATED_MACRO			GPIO_INPUT
 
 /** Legacy flag indicating pin is configured as output.
