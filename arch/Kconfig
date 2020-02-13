@@ -353,8 +353,6 @@ config IRQ_OFFLOAD
 
 endmenu # Interrupt configuration
 
-endmenu
-
 #
 # Architecture Capabilities
 #
@@ -558,3 +556,8 @@ config BOARD
 	  The Board is the first location where we search for a linker.ld file,
 	  if not found we look for the linker file in
 	  soc/<arch>/<family>/<series>
+
+endmenu # General Architecture Options
+
+# NB: Options added below will be placed in the top level menu, which
+# might take up more space in the menu than desired.
