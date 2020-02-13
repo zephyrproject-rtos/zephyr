@@ -19,106 +19,97 @@
 #define LFCLOCK_TIMEOUT_MS 500
 #define HFCLOCK_TIMEOUT_MS 2
 
-static void clock_ready(struct device *dev, clock_control_subsys_t subsys,
-			void *user_data);
+struct lll_clock_state {
+	struct onoff_client cli;
+	struct k_sem sem;
+};
 
-static struct device *dev;
+static struct onoff_client lf_cli;
+static atomic_val_t hf_refcnt;
+
+static void clock_ready(struct onoff_manager *mgr, struct onoff_client *cli,
+			uint32_t state, int res)
+{
+	struct lll_clock_state *clk_state =
+		CONTAINER_OF(cli, struct lll_clock_state, cli);
+
+	k_sem_give(&clk_state->sem);
+}
+
+static int blocking_on(struct onoff_manager *mgr, uint32_t timeout)
+{
+
+	struct lll_clock_state state;
+	int err;
+
+	k_sem_init(&state.sem, 0, 1);
+	sys_notify_init_callback(&state.cli.notify, clock_ready);
+	err = onoff_request(mgr, &state.cli);
+	if (err < 0) {
+		return err;
+	}
+
+	return k_sem_take(&state.sem, K_MSEC(timeout));
+}
 
 int lll_clock_init(void)
 {
-	int err;
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	if (!dev) {
-		return -ENODEV;
-	}
+	sys_notify_init_spinwait(&lf_cli.notify);
 
-	err = clock_control_on(dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
-
-	return err;
+	return onoff_request(mgr, &lf_cli);
 }
 
 int lll_clock_wait(void)
 {
-	static bool done;
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 
-	if (done) {
-		return 0;
-	}
-	done = true;
-
-	struct k_sem sem_clock_wait;
-	struct clock_control_async_data async_data = {
-		.cb = clock_ready,
-		.user_data = &sem_clock_wait,
-	};
-	int err;
-
-	k_sem_init(&sem_clock_wait, 0, 1);
-
-	err = clock_control_async_on(dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
-				     &async_data);
-	if (err) {
-		return err;
-	}
-
-	err = k_sem_take(&sem_clock_wait, K_MSEC(LFCLOCK_TIMEOUT_MS));
-
-	return err;
+	return blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
 }
 
 int lll_hfclock_on(void)
 {
-	int err;
-
-	/* turn on radio clock in non-blocking mode. */
-	err = clock_control_on(dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	if (!err || err == -EINPROGRESS) {
-		DEBUG_RADIO_XTAL(1);
+	if (atomic_inc(&hf_refcnt) > 0) {
+		return 0;
 	}
 
-	return err;
+	z_nrf_clock_bt_ctlr_hf_request();
+	DEBUG_RADIO_XTAL(1);
+
+	return 0;
 }
 
 int lll_hfclock_on_wait(void)
 {
-	struct k_sem sem_clock_wait;
-	struct clock_control_async_data async_data = {
-		.cb = clock_ready,
-		.user_data = &sem_clock_wait,
-	};
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	int err;
 
-	k_sem_init(&sem_clock_wait, 0, 1);
+	atomic_inc(&hf_refcnt);
 
-	err = clock_control_async_on(dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
-				     &async_data);
-	LL_ASSERT(!err);
-
-	err = k_sem_take(&sem_clock_wait, K_MSEC(HFCLOCK_TIMEOUT_MS));
-
-	DEBUG_RADIO_XTAL(1);
+	err = blocking_on(mgr, HFCLOCK_TIMEOUT_MS);
+	if (err >= 0) {
+		DEBUG_RADIO_XTAL(1);
+	}
 
 	return err;
 }
 
 int lll_hfclock_off(void)
 {
-	int err;
-
-	/* turn off radio clock in non-blocking mode. */
-	err = clock_control_off(dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	if (!err) {
-		DEBUG_RADIO_XTAL(0);
-	} else if (err == -EBUSY) {
-		DEBUG_RADIO_XTAL(1);
+	if (hf_refcnt < 1) {
+		return -EALREADY;
 	}
 
-	return err;
-}
+	if (atomic_dec(&hf_refcnt) > 1) {
+		return 0;
+	}
 
-static void clock_ready(struct device *dev, clock_control_subsys_t subsys,
-			void *user_data)
-{
-	k_sem_give(user_data);
+	z_nrf_clock_bt_ctlr_hf_release();
+	DEBUG_RADIO_XTAL(0);
+
+	return 0;
 }

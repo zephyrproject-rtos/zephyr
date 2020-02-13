@@ -109,7 +109,7 @@ void lll_adv_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT(err >= 0);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
@@ -139,7 +139,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		int err;
 
 		err = lll_hfclock_off();
-		LL_ASSERT(!err || err == -EBUSY);
+		LL_ASSERT(err >= 0);
 
 		lll_done(NULL);
 
@@ -274,7 +274,7 @@ static int is_abort_cb(void *next, int prio, void *curr,
 
 			/* Retain HF clk */
 			err = lll_hfclock_on();
-			LL_ASSERT(!err || err == -EINPROGRESS);
+			LL_ASSERT(err >= 0);
 
 			return -EAGAIN;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -312,7 +312,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	LL_ASSERT(err >= 0);
 
 	lll_done(param);
 }

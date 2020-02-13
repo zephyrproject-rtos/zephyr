@@ -141,7 +141,7 @@ int lll_init(void)
 
 	/* Initialize Clocks */
 	err = lll_clock_init();
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
@@ -486,7 +486,7 @@ void lll_isr_cleanup(void *param)
 	radio_tmr_stop();
 
 	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	LL_ASSERT(err >= 0);
 
 	lll_done(NULL);
 }

@@ -336,7 +336,7 @@ uint32_t ll_test_end(uint16_t *num_rx)
 
 	/* Release resources acquired for Radio */
 	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	LL_ASSERT(err >= 0);
 
 	/* Stop coarse timer */
 	cntr_stop();
