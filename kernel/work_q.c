@@ -56,7 +56,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 static int work_cancel(struct k_delayed_work *work)
 {
 	CHECKIF(work->work_q == NULL) {
-		return -EAGAIN;
+		return -EALREADY;
 	}
 
 	if (k_work_pending(&work->work)) {
@@ -65,7 +65,11 @@ static int work_cancel(struct k_delayed_work *work)
 			return -EINVAL;
 		}
 	} else {
-		(void)z_abort_timeout(&work->timeout);
+		int err = z_abort_timeout(&work->timeout);
+
+		if (err) {
+			return -EALREADY;
+		}
 	}
 
 	/* Detach from workqueue */
@@ -92,7 +96,10 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Cancel if work has been submitted */
 	if (work->work_q == work_q) {
 		err = work_cancel(work);
-		if (err < 0) {
+		/* -EALREADY indicates the work has already completed so this
+		 * is likely a recurring work.
+		 */
+		if (err < 0 && err != -EALREADY) {
 			goto done;
 		}
 	}

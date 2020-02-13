@@ -205,7 +205,7 @@ static void tdelayed_work_cancel(void *data)
 				      (struct k_work *)&delayed_work_sleepy), NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_equal(ret, 0, NULL);
+		zassert_not_equal(ret, 0, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
