@@ -219,7 +219,8 @@ Drivers and Sensors
 
 * EEPROM
 
-  * <TBD>
+  * Added EEPROM driver for STM32L0 and STM32L1 SoC series
+  * Added EEPROM simulator (replacing native_posix EEPROM driver)
 
 * Entropy
 
