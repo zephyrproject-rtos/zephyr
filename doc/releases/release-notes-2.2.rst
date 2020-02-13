@@ -227,7 +227,7 @@ Drivers and Sensors
 
 * Ethernet
 
-  * <TBD>
+  * Support for SiLabs Giant Gecko GG11 Ethernet driver
 
 * Flash
 
@@ -251,7 +251,7 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
-  * <TBD>
+  * Add support for IEEE 802.15.4 rf2xxx driver
 
 * Interrupt Controller
 
@@ -324,6 +324,42 @@ Drivers and Sensors
 
 Networking
 **********
+
+* Add support to configure OpenThread Sleepy End Device (SED)
+* Add 64-bit support to net_buf APIs
+* Add support for IEEE 802.15.4 rf2xxx driver
+* Add TLS secure renegotiation support
+* Add support for Timestamp and Record Route IPv4 options.
+  They are only used for ICMPv4 Echo-Request packets.
+* Add sample cloud application that shows how to connect to Azure cloud
+* Add optional timestamp resource to some of the LWM2M IPSO objects
+* Add support to poll() which can now return immediately when POLLOUT is set
+* Add support to PPP for enabling connection setup to Windows
+* Add signed certificate support to echo-server sample application
+* Add support for handling multiple simultaneous mDNS requests
+* Add support for SiLabs Giant Gecko GG11 Ethernet driver
+* Add support for generic GSM modem which uses PPP to connect to data network
+* Add UTC offset and timezone support to LWM2M
+* Add RX time statistics support to packet socket
+* Update ACK handling in IEEE 802.154 nrf5 driver and OpenThread
+* Update MQTT PINGREQ count handling
+* Update wpan_serial sample to support more boards
+* Update Ethernet e1000 driver debugging prints
+* Update OpenThread to use settings subsystem
+* Update IPv6 to use interface prefix in routing
+* Update socket offloading support to support multiple registered interfaces
+* Fix checks when waiting network interface to come up in configuration
+* Fix zperf sample issue when running out of network buffers
+* Fix PPP IPv4 Control Protocol (IPCP) handling
+* Fix native_posix Ethernet driver to read data faster
+* Fix PPP option handling
+* Fix MQTT to close connection faster
+* Fix 6lo memory corruption during uncompression
+* Fix echo-server sample application accept handling
+* Fix Websocket to receive data in small chunks
+* Fix Virtual LAN (VLAN) support to add link local address to network interface
+* Various fixes to new TCP stack implementation
+* Remove NATS sample application
 
 * CAN bus
   * CANopen protocol support through 3rd party CANopenNode stack.
