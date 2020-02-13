@@ -730,8 +730,18 @@ def write_bus(node):
     if node.bus_node.label is None:
         err(f"missing 'label' property on bus node {node.bus_node!r}")
 
-    # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_node_s(node, "BUS_NAME", str2ident(node.bus_node.label))
+    primary_macro = None
+    def write_bus_node_for_ident(node, ident):
+        # #define DT_<IDENT>_BUS_NAME <BUS-LABEL>
+
+        nonlocal primary_macro
+        if primary_macro is None:
+            primary_macro = out(f"{ident}_BUS_NAME",
+                                quote_str(str2ident(node.bus_node.label)))
+        else:
+            out(f"{ident}_BUS_NAME", primary_macro)
+
+    for_each_ident(node, write_bus_node_for_ident)
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
@@ -773,45 +783,6 @@ def node_ident(node):
         ident += str2ident(node.name)
 
     return ident
-
-
-def node_aliases(node):
-    # Returns a list of aliases for 'node', used e.g. when building macro names
-
-    return node_path_aliases(node) + node_instance_aliases(node)
-
-
-def node_path_aliases(node):
-    # Returns a list of aliases for 'node', based on the aliases registered for
-    # it in the /aliases node. Used e.g. when building macro names.
-
-    if node.matching_compat is None:
-        return []
-
-    compat_s = str2ident(node.matching_compat)
-
-    aliases = []
-    for alias in node.aliases:
-        aliases.append(f"ALIAS_{str2ident(alias)}")
-        # TODO: See if we can remove or deprecate this form
-        aliases.append(f"{compat_s}_{str2ident(alias)}")
-
-    return aliases
-
-
-def node_instance_aliases(node):
-    # Returns a list of aliases for 'node', based on the compatible string and
-    # the instance number (each node with a particular compatible gets its own
-    # instance number, starting from zero).
-    #
-    # This is a list since a node can have multiple 'compatible' strings, each
-    # with their own instance number.
-
-    res = []
-    for compat in node.compats:
-        instance_no = node.edt.compat2enabled[compat].index(node)
-        res.append(f"INST_{instance_no}_{str2ident(compat)}")
-    return res
 
 
 def write_addr_size(edt, prop_name, prefix):
@@ -1130,47 +1101,6 @@ def str2ident(s):
             .upper()
 
 
-def out_node(node, ident, val, name_alias=None, deprecation_msg=None):
-    # Writes a
-    #
-    #   <node prefix>_<ident> = <val>
-    #
-    # assignment, along with a set of
-    #
-    #   <node alias>_<ident>
-    #
-    # aliases, for each path/instance alias for the node. If 'name_alias' (a
-    # string) is passed, then these additional aliases are generated:
-    #
-    #   <node prefix>_<name alias>
-    #   <node alias>_<name alias> (for each node alias)
-    #
-    # 'name_alias' is used for reg-names and the like.
-    #
-    # If a 'deprecation_msg' string is passed, the generated identifiers will
-    # generate a warning if used, via __WARN(<deprecation_msg>)).
-    #
-    # Returns the identifier used for the macro that provides the value
-    # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
-
-    node_prefix = node_ident(node)
-
-    aliases = [f"{alias}_{ident}" for alias in node_aliases(node)]
-    if name_alias is not None:
-        aliases.append(f"{node_prefix}_{name_alias}")
-        aliases += [f"{alias}_{name_alias}" for alias in node_aliases(node)]
-
-    return out(f"{node_prefix}_{ident}", val, aliases, deprecation_msg)
-
-
-def out_node_s(node, ident, s, name_alias=None, deprecation_msg=None):
-    # Like out_node(), but emits 's' as a string literal
-    #
-    # Returns the generated macro name for 'ident'.
-
-    return out_node(node, ident, quote_str(s), name_alias, deprecation_msg)
-
-
 def out_s(ident, val):
     # Like out(), but puts quotes around 'val' and escapes any double
     # quotes and backslashes within it
@@ -1188,7 +1118,8 @@ def out(ident, val, aliases=(), deprecation_msg=None):
     # header, these look like '#define <alias> <ident>'. For the configuration
     # file, the value is just repeated as '<alias>=<val>' for each alias.
     #
-    # See out_node() for the meaning of 'deprecation_msg'.
+    # If a 'deprecation_msg' string is passed, the generated identifiers will
+    # generate a warning if used, via __WARN(<deprecation_msg>)).
     #
     # Returns the generated macro name for 'ident'.
 
@@ -1215,7 +1146,7 @@ def out(ident, val, aliases=(), deprecation_msg=None):
 
 
 def out_define(ident, val, deprecation_msg, out_file):
-    # out() helper for writing a #define. See out_node() for the meaning of
+    # out() helper for writing a #define. See out() for the meaning of
     # 'deprecation_msg'.
 
     s = f"#define DT_{ident:40}"
