@@ -126,8 +126,8 @@ static int dw_ictl_intr_get_line_state(struct device *dev, unsigned int irq)
 static void dw_ictl_config_irq(struct device *dev);
 
 static const struct dw_ictl_config dw_config = {
-	.base_addr = DT_INTC_DW_0_BASE_ADDR,
-	.numirqs = DT_INTC_DW_0_NUM_IRQS,
+	.base_addr = DT_INST_0_SNPS_DESIGNWARE_INTC_BASE_ADDRESS,
+	.numirqs = DT_INST_0_SNPS_DESIGNWARE_INTC_NUM_IRQS,
 	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
 	.config_func = dw_ictl_config_irq,
 };
@@ -139,12 +139,15 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
-DEVICE_AND_API_INIT(dw_ictl, DT_INTC_DW_0_NAME, dw_ictl_initialize,
-		    NULL, &dw_config,
+DEVICE_AND_API_INIT(dw_ictl, DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL,
+		    dw_ictl_initialize, NULL, &dw_config,
 		    POST_KERNEL, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 
 static void dw_ictl_config_irq(struct device *port)
 {
-	IRQ_CONNECT(DT_INTC_DW_0_IRQ, DT_INTC_DW_0_IRQ_PRI, dw_ictl_isr,
-		    DEVICE_GET(dw_ictl), DT_INTC_DW_0_IRQ_FLAGS);
+	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_INTC_IRQ_0,
+		    DT_INST_0_SNPS_DESIGNWARE_INTC_IRQ_0_PRIORITY,
+		    dw_ictl_isr,
+		    DEVICE_GET(dw_ictl),
+		    DT_INST_0_SNPS_DESIGNWARE_INTC_IRQ_0_SENSE);
 }
