@@ -60,7 +60,11 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 	.device_descriptor = {
 		.bLength = sizeof(struct usb_device_descriptor),
 		.bDescriptorType = USB_DEVICE_DESC,
+#ifdef CONFIG_USB_DEVICE_BOS
+		.bcdUSB = sys_cpu_to_le16(USB_2_1),
+#else
 		.bcdUSB = sys_cpu_to_le16(USB_2_0),
+#endif
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 		.bDeviceClass = MISC_CLASS,
 		.bDeviceSubClass = 0x02,
