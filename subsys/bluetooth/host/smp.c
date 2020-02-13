@@ -1761,6 +1761,9 @@ static void smp_reset(struct bt_smp *smp)
 	}
 }
 
+/* Note: This function not only does set the status but also calls smp_reset
+ * at the end which clears any flags previously set.
+ */
 static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 {
 	BT_DBG("status 0x%x", status);
@@ -1816,9 +1819,12 @@ static void smp_timeout(struct k_work *work)
 
 	BT_ERR("SMP Timeout");
 
-	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
-
 	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
+
+	/* smp_pairing_complete clears flags so setting timeout flag must come
+	 * after it.
+	 */
+	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
 
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
