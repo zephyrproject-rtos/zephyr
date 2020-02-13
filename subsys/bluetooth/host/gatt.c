@@ -4137,11 +4137,9 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 		char id_str[4];
 
 		u8_to_dec(id_str, sizeof(id_str), id);
-		bt_settings_encode_key(key, sizeof(key), "ccc",
-				       (bt_addr_le_t *)addr, id_str);
+		bt_settings_encode_key(key, sizeof(key), "ccc", addr, id_str);
 	} else {
-		bt_settings_encode_key(key, sizeof(key), "ccc",
-				       (bt_addr_le_t *)addr, NULL);
+		bt_settings_encode_key(key, sizeof(key), "ccc", addr, NULL);
 	}
 
 	if (save.count) {
@@ -4392,10 +4390,10 @@ static int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 
 			u8_to_dec(id_str, sizeof(id_str), id);
 			bt_settings_encode_key(key, sizeof(key), "ccc",
-					       (bt_addr_le_t *)addr, id_str);
+					       addr, id_str);
 		} else {
 			bt_settings_encode_key(key, sizeof(key), "ccc",
-				       (bt_addr_le_t *)addr, NULL);
+					       addr, NULL);
 		}
 
 		return settings_delete(key);
@@ -4421,10 +4419,10 @@ static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
 
 			u8_to_dec(id_str, sizeof(id_str), id);
 			bt_settings_encode_key(key, sizeof(key), "cf",
-					       (bt_addr_le_t *)addr, id_str);
+					       addr, id_str);
 		} else {
 			bt_settings_encode_key(key, sizeof(key), "cf",
-					       (bt_addr_le_t *)addr, NULL);
+					       addr, NULL);
 		}
 
 		return settings_delete(key);
