@@ -203,7 +203,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	static struct mcux_gpt_data mcux_gpt_data_ ## n;			\
 										\
 	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {    	\
-		.base = (void *)DT_NXP_IMX_GPT_COUNTER_ ## n ## _BASE_ADDRESS,	\
+		.base = (void *)DT_INST_## n ##_NXP_IMX_GPT_BASE_ADDRESS,	\
 		.clock_source = kCLOCK_PerClk,					\
 		.info = {							\
 			.max_top_value = UINT32_MAX,				\
@@ -215,7 +215,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 										\
 	static int mcux_gpt_## n ##_init(struct device *dev);			\
 	DEVICE_AND_API_INIT(mcux_gpt ## n,					\
-			    DT_NXP_IMX_GPT_COUNTER_ ## n ## _LABEL,		\
+			    DT_INST_## n ##_NXP_IMX_GPT_LABEL,			\
 			    mcux_gpt_## n ##_init,				\
 			    &mcux_gpt_data_ ## n,				\
 			    &mcux_gpt_config_ ## n,				\
@@ -224,17 +224,17 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 										\
 	static int mcux_gpt_## n ##_init(struct device *dev)			\
 	{	 								\
-		IRQ_CONNECT(DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0,		\
-			    DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0_PRIORITY,	\
+		IRQ_CONNECT(DT_INST_## n ##_NXP_IMX_GPT_IRQ_0,			\
+			    DT_INST_## n ##_NXP_IMX_GPT_IRQ_0_PRIORITY,		\
 			    mcux_gpt_isr, DEVICE_GET(mcux_gpt ## n), 0);	\
-		irq_enable(DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0);		\
+		irq_enable(DT_INST_## n ##_NXP_IMX_GPT_IRQ_0);			\
 		return mcux_gpt_init(dev);					\
 	}									\
 
-#ifdef CONFIG_COUNTER_MCUX_GPT1
-GPT_DEVICE_INIT_MCUX(1)
+#ifdef DT_INST_0_NXP_IMX_GPT
+GPT_DEVICE_INIT_MCUX(0)
 #endif
 
-#ifdef CONFIG_COUNTER_MCUX_GPT2
-GPT_DEVICE_INIT_MCUX(2)
+#ifdef DT_INST_1_NXP_IMX_GPT
+GPT_DEVICE_INIT_MCUX(1)
 #endif

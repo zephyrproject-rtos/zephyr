@@ -11,8 +11,6 @@
 
 / {
 	aliases {
-		counter-1 = &gpt1;
-		counter-2 = &gpt2;
 		eth = &eth;
 		gpio-1 = &gpio1;
 		gpio-2 = &gpio2;
