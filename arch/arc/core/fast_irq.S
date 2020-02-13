@@ -155,8 +155,6 @@ SECTION_FUNC(TEXT, _firq_exit)
 	bl z_check_stack_sentinel
 #endif
 
-#ifdef CONFIG_PREEMPT_ENABLED
-
 #ifdef CONFIG_SMP
 	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
@@ -171,8 +169,6 @@ SECTION_FUNC(TEXT, _firq_exit)
 #endif
 	/* fall to no rescheduling */
 
-#endif /* CONFIG_PREEMPT_ENABLED */
-
 .balign 4
 _firq_no_reschedule:
 	pop sp
@@ -185,8 +181,6 @@ _firq_no_reschedule:
 	_pop_irq_stack_frame
 #endif
 	rtie
-
-#ifdef CONFIG_PREEMPT_ENABLED
 
 .balign 4
 _firq_reschedule:
@@ -353,5 +347,3 @@ _firq_return_from_firq:
 
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
-
-#endif /* CONFIG_PREEMPT_ENABLED */
