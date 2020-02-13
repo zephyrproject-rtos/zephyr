@@ -57,6 +57,8 @@ nesting support is enabled.
     alter its behavior depending on whether it is executing as part of
     a thread or as part of an ISR.
 
+.. _multi_level_interrupts:
+
 Multi-level Interrupt handling
 ==============================
 
