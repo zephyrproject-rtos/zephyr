@@ -12,7 +12,6 @@
 
 / {
 	aliases {
-		rtc-0 = &rtc0;
 		watchdog0 = &wdog0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
