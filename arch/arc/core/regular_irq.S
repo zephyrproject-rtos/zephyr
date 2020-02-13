@@ -266,8 +266,6 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	bl z_check_stack_sentinel
 #endif
 
-#ifdef CONFIG_PREEMPT_ENABLED
-
 #ifdef CONFIG_SMP
 	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
@@ -403,8 +401,6 @@ _rirq_return_from_coop:
 	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
 	rtie
-
-#endif /* CONFIG_PREEMPT_ENABLED */
 
 .balign 4
 _rirq_return_from_firq:

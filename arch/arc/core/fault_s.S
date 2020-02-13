@@ -114,7 +114,6 @@ _exc_return:
  * exception comes out,  thread context?irq_context?nest irq context?
  */
 
-#ifdef CONFIG_PREEMPT_ENABLED
 #ifdef CONFIG_SMP
 	bl z_arc_smp_switch_in_isr
 	breq r0, 0, _exc_return_from_exc
@@ -187,7 +186,6 @@ _exc_return:
 
 	/* Assumption: r2 has current thread */
 	b _rirq_common_interrupt_swap
-#endif
 
 _exc_return_from_exc:
 	ld_s r0, [sp, ___isf_t_pc_OFFSET]
