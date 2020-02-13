@@ -52,12 +52,6 @@ if COUNTER
 config COUNTER_MCUX_GPT
 	default y if HAS_MCUX_GPT
 
-config COUNTER_MCUX_GPT1
-	default y if HAS_MCUX_GPT
-
-config COUNTER_MCUX_GPT2
-	default y if HAS_MCUX_GPT
-
 endif # COUNTER
 
 config SPI_MCUX_LPSPI
