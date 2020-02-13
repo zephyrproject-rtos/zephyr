@@ -75,12 +75,16 @@ config NUM_PREEMPT_PRIORITIES
 	  priority, and be the only thread at that priority.
 
 config MAIN_THREAD_PRIORITY
-	int "Priority of initialization/main thread"
+	int
+	prompt "Priority of initialization/main thread" if MAIN_THREAD_PRIORITY_WITH_PROMPT
 	default -2 if !PREEMPT_ENABLED
 	default 0
 	help
 	  Priority at which the initialization thread runs, including the start
 	  of the main() function. main() can then change its priority if desired.
+
+config MAIN_THREAD_PRIORITY_WITH_PROMPT
+	bool "Override priority of initialization/main thread"
 
 config COOP_ENABLED
 	def_bool (NUM_COOP_PRIORITIES != 0)
@@ -365,7 +369,8 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 1024
 
 config SYSTEM_WORKQUEUE_PRIORITY
-	int "System workqueue priority"
+	int
+	prompt "System workqueue priority" if SYSTEM_WORKQUEUE_PRIORITY_WITH_PROMPT
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
 	default  0 if !COOP_ENABLED
 	default -1
@@ -373,6 +378,9 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	  By default, system work queue priority is the lowest cooperative
 	  priority. This means that any work handler, once started, won't
 	  be preempted by any other thread until finished.
+
+config SYSTEM_WORKQUEUE_PRIORITY_WITH_PROMPT
+	bool "Override System workqueue priority"
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"
