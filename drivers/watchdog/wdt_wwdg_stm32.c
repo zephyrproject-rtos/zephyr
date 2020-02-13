@@ -259,13 +259,13 @@ static struct wwdg_stm32_data wwdg_stm32_dev_data = {
 
 static struct wwdg_stm32_config wwdg_stm32_dev_config = {
 	.pclken = {
-		.enr = DT_WWDT_0_CLOCK_BITS,
-		.bus = DT_WWDT_0_CLOCK_BUS
+		.enr = DT_INST_0_ST_STM32_WINDOW_WATCHDOG_CLOCK_BITS,
+		.bus = DT_INST_0_ST_STM32_WINDOW_WATCHDOG_CLOCK_BUS
 	},
-	.Instance = (WWDG_TypeDef *)DT_WWDT_0_BASE_ADDRESS,
+	.Instance = (WWDG_TypeDef *)DT_INST_0_ST_STM32_WINDOW_WATCHDOG_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(wwdg_stm32, DT_WWDT_0_NAME,
+DEVICE_AND_API_INIT(wwdg_stm32, DT_INST_0_ST_STM32_WINDOW_WATCHDOG_LABEL,
 		    wwdg_stm32_init, &wwdg_stm32_dev_data, &wwdg_stm32_dev_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wwdg_stm32_api);
@@ -274,8 +274,9 @@ static void wwdg_stm32_irq_config(struct device *dev)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 
-	IRQ_CONNECT(DT_WWDT_0_IRQ, DT_WWDT_0_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_0_ST_STM32_WINDOW_WATCHDOG_IRQ_0,
+		    DT_INST_0_ST_STM32_WINDOW_WATCHDOG_IRQ_0_PRIORITY,
 		    wwdg_stm32_isr, DEVICE_GET(wwdg_stm32), 0);
-	irq_enable(DT_WWDT_0_IRQ);
+	irq_enable(DT_INST_0_ST_STM32_WINDOW_WATCHDOG_IRQ_0);
 	LL_WWDG_EnableIT_EWKUP(wwdg);
 }
