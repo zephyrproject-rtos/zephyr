@@ -233,7 +233,7 @@ static int beetle_clock_control_init(struct device *dev)
 
 static const struct beetle_clock_control_cfg_t beetle_cc_cfg = {
 	.clock_control_id = 0,
-	.freq = DT_ARM_CORTEX_M3_0_CLOCK_FREQUENCY,
+	.freq = DT_INST_0_ARM_CORTEX_M3_CLOCK_FREQUENCY,
 };
 
 /**
