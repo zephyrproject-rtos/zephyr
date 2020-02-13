@@ -36,6 +36,7 @@ supports only these protocols:
 
 See also the :zephyr_file:`samples/net/sockets/echo_server/overlay-ppp.conf`
 file for configuration option examples.
+For using PPP with GSM modem, see :ref:`gsm_modem` for additional information.
 
 Testing
 *******
