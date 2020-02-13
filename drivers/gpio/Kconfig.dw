@@ -34,12 +34,6 @@ config GPIO_DW_0
 	help
 	  Include Designware GPIO driver
 
-config GPIO_DW_0_NAME
-	string "Driver name"
-	depends on GPIO_DW_0
-	depends on !HAS_DTS
-	default "GPIO_0"
-
 config GPIO_DW_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_0
@@ -64,23 +58,10 @@ config GPIO_DW_0_IRQ_SHARED
 
 endchoice
 
-config GPIO_DW_0_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-	depends on !HAS_DTS
-	help
-	  IRQ priority
-
 config GPIO_DW_1
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
-
-config GPIO_DW_1_NAME
-	string "Driver name"
-	depends on GPIO_DW_1
-	depends on !HAS_DTS
-	default "GPIO_1"
 
 config GPIO_DW_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -106,23 +87,10 @@ config GPIO_DW_1_IRQ_SHARED
 
 endchoice
 
-config GPIO_DW_1_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-	depends on !HAS_DTS
-	help
-	  IRQ priority
-
 config GPIO_DW_2
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
-
-config GPIO_DW_2_NAME
-	string "Driver name"
-	depends on GPIO_DW_2
-	depends on !HAS_DTS
-	default "GPIO_2"
 
 config GPIO_DW_2_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -148,23 +116,10 @@ config GPIO_DW_2_IRQ_SHARED
 
 endchoice
 
-config GPIO_DW_2_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_DW_2 && GPIO_DW_2_IRQ_DIRECT
-	depends on !HAS_DTS
-	help
-	  IRQ priority
-
 config GPIO_DW_3
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
-
-config GPIO_DW_3_NAME
-	string "Driver name"
-	depends on GPIO_DW_3
-	depends on !HAS_DTS
-	default "GPIO_3"
 
 config GPIO_DW_3_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -189,12 +144,5 @@ config GPIO_DW_3_IRQ_SHARED
 	  driver dispatches the interrupt to other drivers.
 
 endchoice
-
-config GPIO_DW_3_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_DW_3 && GPIO_DW_3_IRQ_DIRECT
-	depends on !HAS_DTS
-	help
-	  IRQ priority
 
 endif # GPIO_DW
