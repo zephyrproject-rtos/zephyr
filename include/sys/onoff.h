@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup resource_mgmt_apis Resource Management APIs
+ * @defgroup resource_mgmt_onoff_apis On-Off Service APIs
  * @ingroup kernel_apis
  * @{
  */
