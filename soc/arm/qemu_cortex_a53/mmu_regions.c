@@ -18,8 +18,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
 
 	MMU_REGION_FLAT_ENTRY("UART",
-			      DT_PL011_PORT0_BASE_ADDRESS,
-			      DT_PL011_PORT0_SIZE,
+			      DT_INST_0_ARM_PL011_BASE_ADDRESS,
+			      DT_INST_0_ARM_PL011_SIZE,
 			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
 
 	MMU_REGION_FLAT_ENTRY("SRAM",
