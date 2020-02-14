@@ -10,7 +10,6 @@
 #include <shell/shell.h>
 #include <init.h>
 #include <fs/fs.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>

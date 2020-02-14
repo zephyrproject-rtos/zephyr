@@ -28,7 +28,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
-#include <bluetooth/hci.h>
 
 #include <shell/shell.h>
 

@@ -44,7 +44,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/times.h>
 
 extern int     ALT_CLOSE (int __fd);
 extern int     ALT_EXECVE (const char *__path, 

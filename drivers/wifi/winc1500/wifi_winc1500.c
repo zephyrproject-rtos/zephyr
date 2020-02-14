@@ -106,9 +106,6 @@ typedef struct {
 	struct sockaddr_in	strRemoteAddr;
 } tstrSocketRecvMsg;
 
-#include <driver/include/m2m_wifi.h>
-#include <socket/include/m2m_socket_host_if.h>
-
 #if defined(CONFIG_WIFI_WINC1500_REGION_NORTH_AMERICA)
 #define WINC1500_REGION		NORTH_AMERICA
 #elif defined(CONFIG_WIFI_WINC1500_REGION_EUROPE)

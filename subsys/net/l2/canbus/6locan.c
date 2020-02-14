@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 #include <sys/byteorder.h>
 #include <net/ethernet.h>
 #include <net/net_ip.h>
-#include <string.h>
 
 #define NET_CAN_WFTMAX 2
 #define NET_CAN_ALLOC_TIMEOUT K_MSEC(100)

@@ -13,7 +13,6 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 #include <drivers/i2c.h>
-#include <logging/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "si7006.h"

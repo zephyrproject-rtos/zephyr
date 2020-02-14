@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(wifi_eswifi_core);
 #include <net/ethernet.h>
 #include <net_private.h>
 #include <net/net_core.h>
-#include <net/net_pkt.h>
 
 #include <stdio.h>
 #include <stdlib.h>

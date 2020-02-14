@@ -59,7 +59,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-#include <net/ppp.h>
 #include "ppp/ppp_internal.h"
 #endif
 

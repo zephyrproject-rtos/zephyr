@@ -52,8 +52,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <sys/util.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
