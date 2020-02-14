@@ -53,4 +53,7 @@ config I2C_SBCON
 	default y
 	depends on I2C
 
+config ZTEST_STACKSIZE
+	default 4096 if ZTEST
+
 endif
