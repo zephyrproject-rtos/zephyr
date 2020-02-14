@@ -3234,6 +3234,25 @@ static inline bool k_work_pending(struct k_work *work)
 }
 
 /**
+ * @brief  Check if a delayed work item is pending.
+ *
+ * This routine indicates if the work item @a work is pending in a workqueue's
+ * queue or waiting for the delay timeout.
+ *
+ * @note Checking if the delayed work is pending gives no guarantee that the
+ *       work will still be pending when this information is used. It is up to
+ *       the caller to make sure that this information is used in a safe manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ *
+ * @return true if work item is waiting for the delay to expire or pending on a
+ *         work queue, or false if it is not pending.
+ */
+bool k_delayed_work_pending(struct k_delayed_work *work);
+
+/**
  * @brief Start a workqueue.
  *
  * This routine starts workqueue @a work_q. The workqueue spawns its work
