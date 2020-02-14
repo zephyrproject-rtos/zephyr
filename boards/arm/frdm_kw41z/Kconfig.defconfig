@@ -63,4 +63,8 @@ config SPI_0
 	default y
 	depends on SPI
 
+choice ADC_MCUX_ADC16_VREF
+	default ADC_MCUX_ADC16_VREF_ALTERNATE
+endchoice
+
 endif # BOARD_FRDM_KW41Z
