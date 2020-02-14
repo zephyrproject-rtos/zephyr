@@ -114,39 +114,18 @@ SECTIONS
 
     _image_rom_start = ROM_ADDR;
 
-    SECTION_PROLOGUE(rom_start,,)
+    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
-
-#if defined(CONFIG_SW_VECTOR_RELAY)
-        KEEP(*(.vector_relay_table))
-        KEEP(*(".vector_relay_table.*"))
-        KEEP(*(.vector_relay_handler))
-        KEEP(*(".vector_relay_handler.*"))
-#endif
+        _image_text_start = .;
 
         _vector_start = .;
         KEEP(*(.exc_vector_table))
         KEEP(*(".exc_vector_table.*"))
 
-        KEEP(*(IRQ_VECTOR_TABLE))
-
         KEEP(*(.vectors))
 
         _vector_end = .;
 
-        KEEP(*(.openocd_dbg))
-        KEEP(*(".openocd_dbg.*"))
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-
-#include <linker_relocate.ld>
-
-#endif /* CONFIG_CODE_DATA_RELOCATION */
-
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
-    {
-        _image_text_start = .;
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
@@ -195,6 +174,11 @@ SECTIONS
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
     {
+        KEEP(*(IRQ_VECTOR_TABLE))
+
+        KEEP(*(.openocd_dbg))
+        KEEP(*(".openocd_dbg.*"))
+
         *(.rodata)
         *(".rodata.*")
         *(.gnu.linkonce.r.*)
