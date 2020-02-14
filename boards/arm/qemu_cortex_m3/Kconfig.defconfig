@@ -8,4 +8,8 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_cortex_m3"
 
+config GPIO_STELLARIS
+	default y
+	depends on GPIO
+
 endif # BOARD_QEMU_CORTEX_M3
