@@ -20,9 +20,6 @@
  * @{
  */
 
-#include <kernel.h>
-#include <device.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -7,10 +7,10 @@
  */
 
 #include <zephyr.h>
-#include <drivers/ipm.h>
 #include <errno.h>
 #include <device.h>
 #include <init.h>
+#include <drivers/ipm.h>
 #include <sys/printk.h>
 #include <irq_offload.h>
 

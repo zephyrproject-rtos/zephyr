@@ -5,11 +5,11 @@
  */
 
 #include <zephyr.h>
-#include <drivers/ipm.h>
-#include <drivers/console/ipm_console.h>
 #include <device.h>
 #include <init.h>
 #include <stdio.h>
+#include <drivers/ipm.h>
+#include <drivers/console/ipm_console.h>
 
 #include <tc_util.h>
 #include "ipm_dummy.h"

@@ -7,12 +7,12 @@
  */
 
 #include <zephyr.h>
-#include <drivers/ipm.h>
-#include <sys/printk.h>
 #include <device.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <drivers/ipm.h>
+#include <sys/printk.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>

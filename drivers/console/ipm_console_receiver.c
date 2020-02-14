@@ -6,12 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-
 #include <kernel.h>
+#include <device.h>
+#include <stdio.h>
+#include <errno.h>
 #include <sys/ring_buffer.h>
 #include <sys/printk.h>
-#include <stdio.h>
 #include <drivers/ipm.h>
 #include <drivers/console/ipm_console.h>
 #include <sys/__assert.h>
