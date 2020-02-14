@@ -30,8 +30,12 @@
 #include <sys/check.h>
 
 #ifdef CONFIG_THREAD_MONITOR
-static struct k_spinlock lock;
-#endif
+/* This lock protects the linked list of active threads; i.e. the
+ * initial _kernel.threads pointer and the linked list made up of
+ * thread->next_thread (until NULL)
+ */
+static struct k_spinlock z_thread_monitor_lock;
+#endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
@@ -50,11 +54,11 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 	 * The indirect ways are through calling k_thread_create and
 	 * k_thread_abort from user_cb.
 	 */
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_thread_monitor_lock);
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		user_cb(thread, user_data);
 	}
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 }
 
@@ -66,13 +70,13 @@ void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
 
 	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_thread_monitor_lock);
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&z_thread_monitor_lock, key);
 		user_cb(thread, user_data);
-		key = k_spin_lock(&lock);
+		key = k_spin_lock(&z_thread_monitor_lock);
 	}
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 }
 
@@ -179,7 +183,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
  */
 void z_thread_monitor_exit(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
 
 	if (thread == _kernel.threads) {
 		_kernel.threads = _kernel.threads->next_thread;
@@ -196,7 +200,7 @@ void z_thread_monitor_exit(struct k_thread *thread)
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 }
 #endif
 
@@ -545,11 +549,11 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->entry.parameter2 = p2;
 	new_thread->entry.parameter3 = p3;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
 
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 #ifdef CONFIG_THREAD_NAME
 	if (name != NULL) {
