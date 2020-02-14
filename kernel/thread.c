@@ -29,7 +29,9 @@
 #include <irq_offload.h>
 #include <sys/check.h>
 
+#ifdef CONFIG_THREAD_MONITOR
 static struct k_spinlock lock;
+#endif
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
@@ -671,54 +673,6 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #include <syscalls/k_thread_create_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
-
-extern void z_thread_single_suspend(struct k_thread *thread);
-
-void z_impl_k_thread_suspend(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	z_thread_single_suspend(thread);
-
-	if (thread == _current) {
-		z_reschedule(&lock, key);
-	} else {
-		k_spin_unlock(&lock, key);
-	}
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_suspend(thread);
-}
-#include <syscalls/k_thread_suspend_mrsh.c>
-#endif
-
-void z_thread_single_resume(struct k_thread *thread)
-{
-	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
-}
-
-void z_impl_k_thread_resume(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	z_thread_single_resume(thread);
-
-	z_reschedule(&lock, key);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_resume(thread);
-}
-#include <syscalls/k_thread_resume_mrsh.c>
-#endif
 
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_USERSPACE
