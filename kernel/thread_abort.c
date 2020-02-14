@@ -38,9 +38,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 		 * for "is _current dead" and we don't want one for
 		 * performance reasons.
 		 */
-		struct k_spinlock lock = {};
-
-		z_swap(&lock, k_spin_lock(&lock));
+		z_swap_unlocked();
 	} else {
 		z_reschedule_unlocked();
 	}
