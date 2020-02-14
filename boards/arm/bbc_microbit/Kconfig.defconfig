@@ -15,4 +15,7 @@ config I2C_0
 config BT_CTLR
 	default BT
 
+config LOG_BUFFER_SIZE
+	default 128 if LOG
+
 endif # BOARD_BBC_MICROBIT
