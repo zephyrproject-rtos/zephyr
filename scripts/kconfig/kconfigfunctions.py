@@ -355,6 +355,22 @@ def dt_compat_enabled(kconf, _, compat):
     return "n"
 
 
+def dt_nodelabel_has_compat(kconf, _, label, compat):
+    """
+    This function takes a 'label' and returns "y" if an "enabled" node with
+    such label can be found in the EDT and that node is compatible with the
+    provided 'compat', otherwise it returns "n".
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.compat2enabled[compat]:
+        if label in node.labels:
+            return "y"
+
+    return "n"
+
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -386,5 +402,6 @@ functions = {
         "dt_node_reg_size_int": (dt_node_reg, 1, 3),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_node_has_bool_prop": (dt_node_has_bool_prop, 2, 2),
+        "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
