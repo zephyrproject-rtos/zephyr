@@ -422,7 +422,7 @@ void z_sched_start(struct k_thread *thread)
 	z_reschedule(&sched_spinlock, key);
 }
 
-void z_thread_single_suspend(struct k_thread *thread)
+void z_impl_k_thread_suspend(struct k_thread *thread)
 {
 	(void)z_abort_thread_timeout(thread);
 
@@ -439,6 +439,34 @@ void z_thread_single_suspend(struct k_thread *thread)
 		z_reschedule_unlocked();
 	}
 }
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_thread_suspend(thread);
+}
+#include <syscalls/k_thread_suspend_mrsh.c>
+#endif
+
+void z_impl_k_thread_resume(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+	z_mark_thread_as_not_suspended(thread);
+	ready_thread(thread);
+
+	z_reschedule(&sched_spinlock, key);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_thread_resume(thread);
+}
+#include <syscalls/k_thread_resume_mrsh.c>
+#endif
 
 static _wait_q_t *pended_on(struct k_thread *thread)
 {
