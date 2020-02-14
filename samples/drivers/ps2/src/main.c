@@ -175,8 +175,8 @@ void main(void)
 	/* The ps2 blocks are generic, therefore, it is allowed to swap
 	 * keybaord and mouse as deired
 	 */
-#ifdef CONFIG_PS2_XEC_0
-	ps2_0_dev = device_get_binding(DT_PS2_XEC_0_LABEL);
+#ifdef DT_INST_0_MICROCHIP_XEC_PS2
+	ps2_0_dev = device_get_binding(DT_INST_0_MICROCHIP_XEC_PS2_LABEL);
 	ps2_config(ps2_0_dev, mb_callback);
 	/*Make sure there is a PS/2 device connected */
 	initialize_mouse();

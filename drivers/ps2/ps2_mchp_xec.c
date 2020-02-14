@@ -188,15 +188,15 @@ static const struct ps2_driver_api ps2_xec_driver_api = {
 static int ps2_xec_init_0(struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_0 = {
-	.base = (PS2_Type *) DT_PS2_XEC_0_BASE_ADDR,
-	.girq_id = MCHP_GIRQ18_ID,
-	.girq_bit = MCHP_PS2_0_GIRQ_POS,
-	.isr_nvic = DT_PS2_XEC_0_IRQ,
+	.base = (PS2_Type *) DT_INST_0_MICROCHIP_XEC_PS2_BASE_ADDRESS,
+	.girq_id = DT_INST_0_MICROCHIP_XEC_PS2_GIRQ,
+	.girq_bit = DT_INST_0_MICROCHIP_XEC_PS2_GIRQ_BIT,
+	.isr_nvic = DT_INST_0_MICROCHIP_XEC_PS2_IRQ_0,
 };
 
 static struct ps2_xec_data ps2_xec_port_data_0;
 
-DEVICE_AND_API_INIT(ps2_xec_0, DT_PS2_XEC_0_LABEL,
+DEVICE_AND_API_INIT(ps2_xec_0, DT_INST_0_MICROCHIP_XEC_PS2_LABEL,
 		    &ps2_xec_init_0,
 		    &ps2_xec_port_data_0, &ps2_xec_config_0,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
@@ -211,11 +211,11 @@ static int ps2_xec_init_0(struct device *dev)
 
 	k_sem_init(&data->tx_lock, 0, 1);
 
-	IRQ_CONNECT(DT_PS2_XEC_0_IRQ,
-		    DT_PS2_XEC_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_PS2_IRQ_0,
+		    DT_INST_0_MICROCHIP_XEC_PS2_IRQ_0_PRIORITY,
 		    ps2_xec_isr, DEVICE_GET(ps2_xec_0), 0);
 
-	irq_enable(DT_PS2_XEC_0_IRQ);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_PS2_IRQ_0);
 
 	return 0;
 }
@@ -225,16 +225,16 @@ static int ps2_xec_init_0(struct device *dev)
 static int ps2_xec_init_1(struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_1 = {
-	.base = (PS2_Type *) DT_PS2_XEC_1_BASE_ADDR,
-	.girq_id = MCHP_GIRQ18_ID,
-	.girq_bit = MCHP_PS2_1_GIRQ_POS,
-	.isr_nvic = DT_PS2_XEC_1_IRQ,
+	.base = (PS2_Type *) DT_INST_1_MICROCHIP_XEC_PS2_BASE_ADDRESS,
+	.girq_id = DT_INST_1_MICROCHIP_XEC_PS2_GIRQ,
+	.girq_bit = DT_INST_1_MICROCHIP_XEC_PS2_GIRQ_BIT,
+	.isr_nvic = DT_INST_1_MICROCHIP_XEC_PS2_IRQ_0,
 
 };
 
 static struct ps2_xec_data ps2_xec_port_data_1;
 
-DEVICE_AND_API_INIT(ps2_xec_1, DT_PS2_XEC_1_LABEL,
+DEVICE_AND_API_INIT(ps2_xec_1, DT_INST_1_MICROCHIP_XEC_PS2_LABEL,
 		    &ps2_xec_init_1,
 		    &ps2_xec_port_data_1, &ps2_xec_config_1,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
@@ -248,11 +248,11 @@ static int ps2_xec_init_1(struct device *dev)
 
 	k_sem_init(&data->tx_lock, 0, 1);
 
-	IRQ_CONNECT(DT_PS2_XEC_1_IRQ,
-		    DT_PS2_XEC_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_1_MICROCHIP_XEC_PS2_IRQ_0,
+		    DT_INST_1_MICROCHIP_XEC_PS2_IRQ_0_PRIORITY,
 		    ps2_xec_isr, DEVICE_GET(ps2_xec_1), 0);
 
-	irq_enable(DT_PS2_XEC_1_IRQ);
+	irq_enable(DT_INST_1_MICROCHIP_XEC_PS2_IRQ_0);
 
 	return 0;
 }
