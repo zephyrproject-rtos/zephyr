@@ -72,6 +72,23 @@
 #define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
 #define SUSPEND_BITS_REQD (ROUND_UP((CONFIG_IOAPIC_NUM_RTES * BITS_PER_IRQ), 32))
 
+/*
+ * Destination field (bits[56:63]) defines a set of processors, which is
+ * used to be compared with local LDR to determine which local APICs accept
+ * the interrupt.
+ *
+ * XAPIC: in logical destination mode and flat model (determined by DFR).
+ * LDR bits[24:31] can accommodate up to 8 logical APIC IDs.
+ *
+ * X2APIC: in logical destination mode and cluster model.
+ * In this case, LDR is read-only to system software and supports up to 16
+ * logical IDs. (Cluster ID: don't care to IO APIC).
+ *
+ * In either case, regardless how many CPUs in the system, 0xff implies that
+ * it's intended to deliver to all possible 8 local APICs.
+ */
+#define DEFAULT_RTE_DEST	(0xFF << 24)
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power/power.h>
 u32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
@@ -117,10 +134,10 @@ int ioapic_init(struct device *unused)
 	 * ((__IoApicGet(IOAPIC_VERS) & IOAPIC_MRE_MASK) >> 16) + 1
 	 */
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
-		   IOAPIC_PHYSICAL | 0 /* dummy vector */;
+		   IOAPIC_LOGICAL | 0 /* dummy vector */;
 
 	for (ix = 0; ix < CONFIG_IOAPIC_NUM_RTES; ix++) {
-		ioApicRedSetHi(ix, 0xFF000000);
+		ioApicRedSetHi(ix, DEFAULT_RTE_DEST);
 		ioApicRedSetLo(ix, rteValue);
 	}
 #endif
@@ -235,7 +252,7 @@ int ioapic_resume_from_suspend(struct device *port)
 			/* Get the saved flags */
 			flags = restore_flags(irq);
 			/* Appending the flags that are never modified */
-			flags = flags | IOAPIC_FIXED | IOAPIC_PHYSICAL;
+			flags = flags | IOAPIC_FIXED | IOAPIC_LOGICAL;
 
 			rteValue = (_irq_to_interrupt_vector[irq] &
 					IOAPIC_VEC_MASK) | flags;
@@ -243,9 +260,9 @@ int ioapic_resume_from_suspend(struct device *port)
 			/* Initialize the other RTEs to sane values */
 			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
 				IOAPIC_FIXED | IOAPIC_INT_MASK |
-				IOAPIC_PHYSICAL | 0 ; /* dummy vector*/
+				IOAPIC_LOGICAL | 0 ; /* dummy vector*/
 		}
-		ioApicRedSetHi(irq, 0xFF000000);
+		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
 		ioApicRedSetLo(irq, rteValue);
 	}
 	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -296,9 +313,9 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
 {
 	u32_t rteValue;   /* value to copy into redirection table entry */
 
-	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_PHYSICAL |
+	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_LOGICAL |
 		   (vector & IOAPIC_VEC_MASK) | flags;
-	ioApicRedSetHi(irq, 0xFF000000);
+	ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
 	ioApicRedSetLo(irq, rteValue);
 }
 
