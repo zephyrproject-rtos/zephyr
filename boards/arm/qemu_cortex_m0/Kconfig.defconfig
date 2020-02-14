@@ -35,4 +35,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 config ENTROPY_NRF_FORCE_ALT
 	default y
 
+config LOG_BUFFER_SIZE
+	default 128 if LOG
+
 endif # BOARD_QEMU_CORTEX_M0
