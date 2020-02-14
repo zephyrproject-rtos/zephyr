@@ -143,4 +143,10 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 	return ret;
 }
 
+bool k_delayed_work_pending(struct k_delayed_work *work)
+{
+	return !z_is_inactive_timeout(&work->timeout) ||
+	       k_work_pending(&work->work);
+}
+
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
