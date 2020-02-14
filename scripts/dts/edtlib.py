@@ -34,6 +34,11 @@ a .dts file to parse and a list of paths to directories containing bindings.
 # Please do not access private things. Instead, think of what API you need, and
 # add it.
 #
+# This module is not meant to have any global state. It should be possible to
+# create several EDT objects with independent binding paths and flags. If you
+# need to add a configuration parameter or the like, store it in the EDT
+# instance, and initialize it e.g. with a constructor argument.
+#
 # This library is layered on top of dtlib, and is not meant to expose it to
 # clients. This keeps the header generation script simple.
 #
@@ -83,8 +88,6 @@ from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
 from grutils import Graph
 
 
-dtc_flags = ""
-
 #
 # Public classes
 #
@@ -128,7 +131,8 @@ class EDT:
     bindings_dirs:
       The bindings directory paths passed to __init__()
     """
-    def __init__(self, dts, bindings_dirs, warn_file=None):
+    def __init__(self, dts, bindings_dirs, warn_file=None,
+                 warn_reg_unit_address_mismatch=True):
         """
         EDT constructor. This is the top-level entry point to the library.
 
@@ -139,12 +143,19 @@ class EDT:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
 
-        warn_file:
+        warn_file (default: None):
           'file' object to write warnings to. If None, sys.stderr is used.
+
+        warn_reg_unit_address_mismatch (default: True):
+          If True, a warning is printed if a node has a 'reg' property where
+          the address of the first entry does not match the unit address of the
+          node
         """
         # Do this indirection with None in case sys.stderr is deliberately
         # overridden
         self._warn_file = sys.stderr if warn_file is None else warn_file
+
+        self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -779,8 +790,6 @@ class Node:
       The flash controller for the node. Only meaningful for nodes representing
       flash partitions.
     """
-    global dtc_flags
-
     @property
     def name(self):
         "See the class docstring"
@@ -802,12 +811,12 @@ class Node:
 
         addr = _translate(addr, self._node)
 
-        # This code is redundant, it checks the same thing as simple_bus_reg in
-        # dtc, we disable it in python if it's suppressed in dtc.
-        if "-Wno-simple_bus_reg" not in dtc_flags:
-            if self.regs and self.regs[0].addr != addr:
-                self.edt._warn("unit-address and first reg (0x{:x}) don't match "
-                               "for {}".format(self.regs[0].addr, self.name))
+        # Matches the simple_bus_reg warning in dtc
+        if self.edt._warn_reg_unit_address_mismatch and \
+           self.regs and self.regs[0].addr != addr:
+            self.edt._warn("unit address and first address in 'reg' "
+                           f"(0x{self.regs[0].addr:x}) don't match for "
+                           f"{self.path}")
 
         return addr
 
