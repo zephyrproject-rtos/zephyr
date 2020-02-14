@@ -228,6 +228,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <18>;
+			girq-bit = <10>;
 		};
 		ps2_1: ps2@40009040 {
 			compatible = "microchip,xec-ps2";
@@ -237,6 +239,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <18>;
+			girq-bit = <11>;
 		};
 		pwm0: pwm@40005800 {
 			compatible = "microchip,xec-pwm";
