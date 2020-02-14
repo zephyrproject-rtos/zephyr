@@ -23,6 +23,6 @@ properties:
       description: Timer frequency equals clock-frequency divided by the prescaler value
 
     max-value:
-      type: array
+      type: int
       required: true
       description: Maximum counter value the instance can handle
