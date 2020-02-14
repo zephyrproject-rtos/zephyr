@@ -1100,21 +1100,24 @@ static int espi_xec_init(struct device *dev)
 	/* Enable aggregated interrupt block for eSPI bus events */
 	MCHP_GIRQ_BLK_SETEN(config->bus_girq_id);
 	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0,
-		    DT_ESPI_MCHP_XEC_0_IRQ_PRIORITY, espi_xec_bus_isr,
+		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0_PRIORITY,
+		    espi_xec_bus_isr,
 		    DEVICE_GET(espi_xec_0), 0);
 	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0);
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
 	MCHP_GIRQ_BLK_SETEN(config->vw_girq_id);
 	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1,
-		    DT_ESPI_MCHP_XEC_1_IRQ_PRIORITY, espi_xec_vw_isr,
+		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1_PRIORITY,
+		    espi_xec_vw_isr,
 		    DEVICE_GET(espi_xec_0), 0);
 	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1);
 
 	/* Enable aggregated interrupt block for eSPI peripheral channel */
 	MCHP_GIRQ_BLK_SETEN(config->pc_girq_id);
 	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2,
-		    DT_ESPI_MCHP_XEC_2_IRQ_PRIORITY, espi_xec_periph_isr,
+		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2_PRIORITY,
+		    espi_xec_periph_isr,
 		    DEVICE_GET(espi_xec_0), 0);
 	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2);
 
