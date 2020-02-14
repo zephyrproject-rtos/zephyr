@@ -349,6 +349,12 @@ int settings_commit_subtree(const char *subtree);
  */
 
 
+/**
+ * @defgroup settings_backend Settings backend interface
+ * @ingroup file_system_storage
+ * @{
+ */
+
 /*
  * API for config storage
  */
@@ -488,8 +494,15 @@ int settings_call_set_handler(const char *name,
 			      settings_read_cb read_cb,
 			      void *read_cb_arg,
 			      const struct settings_load_arg *load_arg);
-/*
- * API for const name processing
+/**
+ * @}
+ */
+
+/**
+ * @defgroup settings_name_proc Settings name processing
+ * @brief API for const name processing
+ * @ingroup settings
+ * @{
  */
 
 /**
@@ -525,12 +538,18 @@ int settings_name_steq(const char *name, const char *key, const char **next);
  *
  */
 int settings_name_next(const char *name, const char **next);
-
-/*
- * API for runtime settings
+/**
+ * @}
  */
 
 #ifdef CONFIG_SETTINGS_RUNTIME
+
+/**
+ * @defgroup settings_rt Settings subsystem runtime
+ * @brief API for runtime settings
+ * @ingroup settings
+ * @{
+ */
 
 /**
  * Set a value with a specific key to a module handler.
@@ -562,6 +581,9 @@ int settings_runtime_get(const char *name, void *data, size_t len);
  * @return 0 on success, non-zero on failure.
  */
 int settings_runtime_commit(const char *name);
+/**
+ * @}
+ */
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 
