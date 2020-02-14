@@ -228,6 +228,7 @@ config NET_ROUTE
 config NET_ROUTING
 	bool
 	depends on NET_ROUTE
+	default y if NET_VLAN
 	help
 	  Allow IPv6 routing between different network interfaces and
 	  technologies. Currently this has limited use as some entity
