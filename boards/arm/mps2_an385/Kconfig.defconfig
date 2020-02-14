@@ -11,18 +11,6 @@ if GPIO
 config GPIO_CMSDK_AHB
 	default y
 
-config GPIO_CMSDK_AHB_PORT0
-	default y
-
-config GPIO_CMSDK_AHB_PORT1
-	default y
-
-config GPIO_CMSDK_AHB_PORT2
-	default y
-
-config GPIO_CMSDK_AHB_PORT3
-	default y
-
 endif # GPIO
 
 if SERIAL
