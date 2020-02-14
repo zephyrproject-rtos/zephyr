@@ -156,9 +156,11 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 				/* Abort the thread only on STACK Sentinel check fail. */
 #if defined(CONFIG_STACK_SENTINEL)
 				if (reason != K_ERR_STACK_CHK_FAIL) {
+					arch_irq_unlock(key);
 					return;
 				}
 #else
+				arch_irq_unlock(key);
 				return;
 #endif /* CONFIG_STACK_SENTINEL */
 			}
