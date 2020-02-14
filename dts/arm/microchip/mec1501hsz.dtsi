@@ -194,6 +194,8 @@
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
+			girq = <23>;
+			girq-bit = <0>;
 		};
 		timer1: timer@40000c20 {
 			compatible = "microchip,xec-timer";
@@ -204,6 +206,8 @@
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
+			girq = <23>;
+			girq-bit = <1>;
 		};
 		timer3: timer@40000ca0 {
 			compatible = "microchip,xec-timer";
@@ -213,6 +217,8 @@
 			label = "TIMER_3";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
+			girq = <23>;
+			girq-bit = <5>;
 		};
 		ps2_0: ps2@40009000 {
 			compatible = "microchip,xec-ps2";
