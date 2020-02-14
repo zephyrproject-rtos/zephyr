@@ -306,7 +306,7 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
 	struct fcb_entry_ctx loc;
 	int len;
-	int rc;
+	int rc = 0;
 	int i;
 	u8_t wbs;
 
