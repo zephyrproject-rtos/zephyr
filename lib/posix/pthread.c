@@ -597,3 +597,47 @@ int pthread_attr_destroy(pthread_attr_t *attr)
 
 	return EINVAL;
 }
+
+int pthread_setname_np(pthread_t thread, const char *name)
+{
+#ifdef CONFIG_THREAD_NAME
+	k_tid_t kthread = (k_tid_t)thread;
+
+	if (kthread == NULL) {
+		return ESRCH;
+	}
+
+	if (name == NULL) {
+		return EINVAL;
+	}
+
+	return k_thread_name_set(kthread, name);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(name);
+	return 0;
+#endif
+}
+
+int pthread_getname_np(pthread_t thread, char *name, size_t len)
+{
+#ifdef CONFIG_THREAD_NAME
+	k_tid_t kthread = (k_tid_t)thread;
+
+	if (kthread == NULL) {
+		return ESRCH;
+	}
+
+	if (name == NULL) {
+		return EINVAL;
+	}
+
+	memset(name, '\0', len);
+	return k_thread_name_copy(kthread, name, len-1);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(name);
+	ARG_UNUSED(len);
+	return 0;
+#endif
+}
