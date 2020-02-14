@@ -29,6 +29,10 @@ endif()
 
 # Temporary set local Zephyr base to allow using version.cmake to find this Zephyr tree current version
 set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../../..)
+
+# Tell version.cmake to not print as printing version for all Zephyr installations being tested
+# will lead to confusion on which is being used.
+set(NO_PRINT_VERSION True)
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 set(ZEPHYR_BASE)
 
