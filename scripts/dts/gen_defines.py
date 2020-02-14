@@ -34,7 +34,10 @@ def main():
     args = parse_args()
 
     try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs)
+        edt = edtlib.EDT(args.dts, args.bindings_dirs,
+                         # Suppress this warning if it's suppressed in dtc
+                         warn_reg_unit_address_mismatch=
+                             "-Wno-simple_bus_reg" not in args.dtc_flags)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -45,7 +48,6 @@ def main():
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
     flash_area_num = 0
-    edtlib.dtc_flags = args.dtc_flags
 
     write_top_comment(edt)
 
@@ -90,7 +92,9 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags", help="extra device tree parameters")
+    parser.add_argument("--dtc-flags",
+                        help="'dtc' devicetree compiler flags, some of which "
+                             "might be respected here")
     parser.add_argument("--bindings-dirs", nargs='+', required=True,
                         help="directory with bindings in YAML format, "
                         "we allow multiple")
