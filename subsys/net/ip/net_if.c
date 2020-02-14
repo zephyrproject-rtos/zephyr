@@ -115,8 +115,11 @@ static sys_slist_t timestamp_callbacks;
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
 #define debug_check_packet(pkt)						\
 	do {								\
-		NET_DBG("Processing (pkt %p, prio %d) network packet",	\
-			pkt, net_pkt_priority(pkt));			\
+		NET_DBG("Processing (pkt %p, prio %d) network packet "	\
+			"iface %p/%d",					\
+			pkt, net_pkt_priority(pkt),			\
+			net_pkt_iface(pkt),				\
+			net_if_get_by_iface(net_pkt_iface(pkt)));	\
 									\
 		NET_ASSERT(pkt->frags);					\
 	} while (0)
