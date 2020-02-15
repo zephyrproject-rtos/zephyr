@@ -424,6 +424,7 @@ static FUNC_NORETURN void switch_to_main_thread(void)
 }
 #endif /* CONFIG_MULTITHREADING */
 
+#if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
 void z_early_boot_rand_get(u8_t *buf, size_t length)
 {
 	int n = sizeof(u32_t);
@@ -479,6 +480,8 @@ sys_rand_fallback:
 		length -= n;
 	}
 }
+/* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
+#endif
 
 /**
  *
