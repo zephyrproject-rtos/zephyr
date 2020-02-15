@@ -171,6 +171,13 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 
 	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
 
+	/*
+	 * disable interrupt prior to changing int type helps
+	 * prevent spurious interrupts observed when switching
+	 * to level-based
+	 */
+	MAP_GPIOIntDisable(port_base, (1 << pin));
+
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		if (mode == GPIO_INT_MODE_EDGE) {
 			if (trig == GPIO_INT_TRIG_BOTH) {
@@ -187,14 +194,13 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 				int_type = GPIO_LOW_LEVEL;
 			}
 		}
+
 		MAP_GPIOIntTypeSet(port_base, (1 << pin), int_type);
 		MAP_GPIOIntClear(port_base, (1 << pin));
 		MAP_GPIOIntEnable(port_base, (1 << pin));
 
 		WRITE_BIT(data->pin_callback_enables, pin,
 			mode != GPIO_INT_MODE_DISABLED);
-	} else {
-		MAP_GPIOIntDisable(port_base, (1 << pin));
 	}
 
 	return 0;
