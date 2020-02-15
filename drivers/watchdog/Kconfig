@@ -14,13 +14,8 @@ if WATCHDOG
 
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
-	default y
 	help
-	  Disable watchdog at Zephyr system startup for the SoCs that enable
-	  the watchdog by default after reset.
-
-	  Note that disabling this configuration option does not enable the
-	  watchdog for the SoCs that boot with the watchdog disabled.
+	  Disable watchdog at Zephyr system startup.
 
 module = WDT
 module-str = watchdog
