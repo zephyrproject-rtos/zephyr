@@ -1,0 +1,8 @@
+sample:
+  name: HTU21D Sensor Sample
+tests:
+  sample.sensor.htu21d:
+    build_only: true
+    tags: sensors
+    platform_whitelist: hexiwear_k64
+    depends_on: i2c
