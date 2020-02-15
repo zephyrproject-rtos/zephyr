@@ -246,16 +246,12 @@ static void gpio_cc32xx_port_isr(void *arg)
 
 	enabled_int = int_status & data->pin_callback_enables;
 
-	/* Clear and Disable GPIO Interrupt */
-	MAP_GPIOIntDisable(config->port_base, int_status);
+	/* Clear GPIO Interrupt */
 	MAP_GPIOIntClear(config->port_base, int_status);
 
 	/* Call the registered callbacks */
 	gpio_fire_callbacks(&data->callbacks, (struct device *)dev,
 			     enabled_int);
-
-	/* Re-enable the interrupts */
-	MAP_GPIOIntEnable(config->port_base, int_status);
 }
 
 static const struct gpio_driver_api api_funcs = {
