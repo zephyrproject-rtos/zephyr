@@ -1,0 +1,41 @@
+# Copyright (c) 2020 Philémon Jaermann
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SHT21
+	bool "SHT21 Humidity sensor"
+	depends on I2C && HAS_DTS_I2C
+	help
+	  Enable driver for SHT21 I2C-based Humidity sensor.
+	  This driver also support the HTU21D and the SI7021
+	  clones.
+
+if SHT21
+
+choice SHT21_MEAS_RES
+	prompt "Measurement resolution"
+	default SHT21_MEAS_RES_RH_12_BITS
+	help
+	  Specify the desired measurement resolution.
+
+config SHT21_MEAS_RES_RH_8_BITS
+	bool "8 bits RH, 12 bits temperature"
+
+config SHT21_MEAS_RES_RH_10_BITS
+	bool "10 bits RH, 13 bits temperature"
+
+config SHT21_MEAS_RES_RH_11_BITS
+	bool "11 bits RH, 11 bits temperature"
+
+config SHT21_MEAS_RES_RH_12_BITS
+	bool "12 bits RH, 14 bits temperature"
+
+endchoice # SHT21_MEASUREMENT_RESOLUTION
+
+config SHT21_ENABLE_HEATER
+	bool "Enable on chip heater"
+
+config SHT21_ENABLE_OTP_RELOAD
+	bool "Enable OTP reload"
+
+endif # SHT21

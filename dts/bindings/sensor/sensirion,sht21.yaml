@@ -1,0 +1,22 @@
+# Copyright (c) 2020, Philémon Jaermann
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        This binding gives a base representation of humidity and temperature
+        sensor compatible with the Sensirion SHT21, including the
+        Measurement Specialties HTU21D and Silicon Labs Si7021.
+
+compatible: "sensirion,sht21"
+
+include: i2c-device.yaml
+
+properties:
+        variant-htu21d:
+                type: boolean
+                description: |
+                        Identifies device as Measurement Specialties HTU21D
+
+        variant-si7021:
+                type: boolean
+                description: Identifies device as Silicon Labs Si7021
