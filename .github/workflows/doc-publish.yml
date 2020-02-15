@@ -8,8 +8,6 @@ on:
   schedule:
     - cron:  '50 22 * * *'
   push:
-    branches:
-    - master
     tags:
     - '*'
 
