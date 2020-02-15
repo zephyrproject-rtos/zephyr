@@ -8,8 +8,6 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 
-#define MAX30101_I2C_ADDRESS		0x57
-
 #define MAX30101_REG_INT_STS1		0x00
 #define MAX30101_REG_INT_STS2		0x01
 #define MAX30101_REG_INT_EN1		0x02
@@ -88,6 +86,8 @@ enum max30101_pw {
 };
 
 struct max30101_config {
+	const char *i2c_label;
+	u16_t i2c_addr;
 	u8_t fifo;
 	u8_t spo2;
 	u8_t led_pa[MAX30101_MAX_NUM_CHANNELS];
