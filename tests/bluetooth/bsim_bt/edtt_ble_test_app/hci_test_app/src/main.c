@@ -64,10 +64,10 @@ static void error_response(int error)
 #else
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(60)
 #endif
-NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
-		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
-NET_BUF_POOL_DEFINE(hci_data_pool, CONFIG_BT_CTLR_TX_BUFFERS+4,
-		    BT_BUF_ACL_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
+			  BT_BUF_RX_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_data_pool, CONFIG_BT_CTLR_TX_BUFFERS + 4,
+			  BT_BUF_ACL_SIZE, NULL);
 
 /**
  * @brief Allocate buffer for HCI command and fill in opCode for the command
@@ -159,12 +159,11 @@ static void echo(u16_t size)
 	}
 }
 
-NET_BUF_POOL_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4,
-		    BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4, NULL);
 static K_FIFO_DEFINE(event_queue);
 static K_FIFO_DEFINE(rx_queue);
-NET_BUF_POOL_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
-		    BT_BUF_ACL_SIZE + 4, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
+			  BT_BUF_ACL_SIZE + 4, NULL);
 static K_FIFO_DEFINE(data_queue);
 
 /**
