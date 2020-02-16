@@ -789,6 +789,11 @@ class Node:
     flash_controller:
       The flash controller for the node. Only meaningful for nodes representing
       flash partitions.
+
+    spi_cs_gpio:
+      The device's SPI GPIO chip select as a ControllerAndData instance, if it
+      exists, and None otherwise. See
+      Documentation/devicetree/bindings/spi/spi-controller.yaml in the Linux kernel.
     """
     @property
     def name(self):
@@ -926,6 +931,28 @@ class Node:
         if controller.matching_compat == "soc-nv-flash":
             return controller.parent
         return controller
+
+    @property
+    def spi_cs_gpio(self):
+        "See the class docstring"
+
+        if not (self.on_bus == "spi" and "cs-gpios" in self.bus_node.props):
+            return None
+
+        if not self.regs:
+            _err("{!r} needs a 'reg' property, to look up the chip select index "
+                 "for SPI".format(self))
+
+        parent_cs_lst = self.bus_node.props["cs-gpios"].val
+
+        # cs-gpios is indexed by the unit address
+        cs_index = self.regs[0].addr
+        if cs_index >= len(parent_cs_lst):
+            _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
+                 "in {!r} ({})".format(
+                     self, cs_index, self.bus_node, len(parent_cs_lst)))
+
+        return parent_cs_lst[cs_index]
 
     def __repr__(self):
         return "<Node {} in '{}', {}>".format(
@@ -1502,35 +1529,6 @@ class Property:
 
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
-
-
-#
-# Public global functions
-#
-
-
-def spi_dev_cs_gpio(node):
-    # Returns an SPI device's GPIO chip select if it exists, as a
-    # ControllerAndData instance, and None otherwise. See
-    # Documentation/devicetree/bindings/spi/spi-bus.txt in the Linux kernel.
-
-    if not (node.on_bus == "spi" and "cs-gpios" in node.bus_node.props):
-        return None
-
-    if not node.regs:
-        _err("{!r} needs a 'reg' property, to look up the chip select index "
-             "for SPI".format(node))
-
-    parent_cs_lst = node.bus_node.props["cs-gpios"].val
-
-    # cs-gpios is indexed by the unit address
-    cs_index = node.regs[0].addr
-    if cs_index >= len(parent_cs_lst):
-        _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
-             "in {!r} ({})".format(
-                 node, cs_index, node.bus_node, len(parent_cs_lst)))
-
-    return parent_cs_lst[cs_index]
 
 
 #
