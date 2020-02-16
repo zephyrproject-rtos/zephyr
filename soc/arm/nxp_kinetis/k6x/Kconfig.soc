@@ -21,6 +21,7 @@ config SOC_MK64F12
 	select HAS_MCG
 	select CPU_HAS_FPU
 	select HAS_MCUX_RTC
+	select HAS_MCUX_DAC
 
 config SOC_MK66F18
 	bool "SOC_MK66F18"
