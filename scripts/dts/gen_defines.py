@@ -549,7 +549,7 @@ def write_irqs(node):
 def write_spi_dev(node):
     # Writes SPI device GPIO chip select data if there is any
 
-    cs_gpio = edtlib.spi_dev_cs_gpio(node)
+    cs_gpio = node.spi_cs_gpio
     if cs_gpio is not None:
         write_phandle_val_list_entry(node, cs_gpio, None, "CS_GPIOS")
 
