@@ -306,6 +306,16 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
+	/*
+	 * Transfer less data to avoid zero-length packet. The application
+	 * running on the host may conclude that there is no more data to be
+	 * received (i.e. the transaction has completed), hence not triggering
+	 * another I/O Request Packet (IRP).
+	 */
+	if (!(len % CONFIG_CDC_ACM_BULK_EP_MPS)) {
+		len -= 1;
+	}
+
 	LOG_DBG("Got %d bytes from ringbuffer send to ep %x", len, ep);
 
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
