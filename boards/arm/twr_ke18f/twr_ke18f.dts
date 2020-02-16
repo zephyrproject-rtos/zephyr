@@ -195,6 +195,10 @@
 	status = "okay";
 };
 
+&dac0 {
+	status = "okay";
+};
+
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
