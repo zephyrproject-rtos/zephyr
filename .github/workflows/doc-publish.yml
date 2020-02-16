@@ -97,16 +97,16 @@ jobs:
         if [ "$RELEASE" == "latest" ]; then
            export
            echo "publish latest docs"
-           aws --debug s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
+           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
            echo "success sync of latest docs"
         else
            DOC_RELEASE=${RELEASE}.0
            echo "publish release docs: ${DOC_RELEASE}"
-           aws --debug s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
+           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
            echo "success sync of rel docs"
         fi
         if [ -d doc/_build/doxygen/html ]; then
            echo "publish doxygen"
-           aws --debug s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
+           aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
            echo "success publish of doxygen"
         fi
