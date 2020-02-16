@@ -184,9 +184,13 @@ static void command_complete(struct net_buf *buf)
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	u16_t opcode = sys_le16_to_cpu(evt->opcode);
 	u16_t response = sys_cpu_to_le16(waiting_response);
+	struct net_buf_simple_state state;
+	u16_t size;
+
+	net_buf_simple_save(&buf->b, &state);
 
 	net_buf_pull(buf, sizeof(*evt));
-	u16_t size = sys_cpu_to_le16(buf->len);
+	size = sys_cpu_to_le16(buf->len);
 
 	if (opcode == waiting_opcode) {
 		LOG_DBG("Command complete for 0x%04x", waiting_opcode);
@@ -199,6 +203,8 @@ static void command_complete(struct net_buf *buf)
 		LOG_WRN("Not waiting for 0x(%04x) command status,"
 			" expected 0x(%04x)", opcode, waiting_opcode);
 	}
+
+	net_buf_simple_restore(&buf->b, &state);
 }
 
 /**
@@ -209,19 +215,29 @@ static void command_status(struct net_buf *buf)
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	u16_t opcode = sys_le16_to_cpu(evt->opcode);
 	u16_t response = sys_cpu_to_le16(waiting_response);
-	u16_t size = sys_cpu_to_le16(buf->len);
+	struct net_buf_simple_state state;
+	u8_t status = evt->status;
+	u16_t size;
+
+	net_buf_simple_save(&buf->b, &state);
+
+	net_buf_pull(buf, sizeof(*evt));
+	size = sys_cpu_to_le16(buf->len) + 1;
 
 	if (opcode == waiting_opcode) {
 		LOG_DBG("Command status for 0x%04x", waiting_opcode);
 
 		edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
 		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((u8_t *)&status, sizeof(status), EDTTT_BLOCK);
 		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		waiting_opcode = 0;
 	} else {
 		LOG_WRN("Not waiting for 0x(%04x) command status,"
 			" expected 0x(%04x)", opcode, waiting_opcode);
 	}
+
+	net_buf_simple_restore(&buf->b, &state);
 }
 
 /**
@@ -611,7 +627,7 @@ void main(void)
 				edtt_read((u8_t *)&opcode, sizeof(opcode),
 					  EDTTT_BLOCK);
 				send_hci_command(sys_le16_to_cpu(opcode),
-						 size-2, command+1);
+						 size - 2, command + 1);
 			}
 		}
 	}
