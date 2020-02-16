@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Kinetis MCUX DAC
+
+compatible: "nxp,kinetis-dac"
+
+include: dac-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    voltage-reference:
+      type: int
+      required: true
+      description: DAC voltage reference select
+
+    low-power-mode:
+      type: boolean
+      required: false
+      description: Enable low-power mode
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - output
