@@ -375,6 +375,9 @@ choice CODE_LOCATION
 	prompt "Code location selection"
 	default CODE_ITCM
 
+config CODE_SEMC
+	bool "Link code into external SEMC-controlled memory"
+
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
 
