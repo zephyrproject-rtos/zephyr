@@ -12,6 +12,7 @@ supported:
   - arduino_i2c
   - can
   - counter
+  - dac
   - gpio
   - i2c
   - netif:eth
