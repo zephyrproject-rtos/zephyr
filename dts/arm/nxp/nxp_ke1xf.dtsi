@@ -135,6 +135,18 @@
 			label = "RTC_0";
 		};
 
+		dac0: dac@4003f000 {
+			compatible = "nxp,kinetis-dac32";
+			reg = <0x4003f000 0x1000>;
+			interrupts = <56 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			voltage-reference = <1>;
+			buffered;
+			label = "DAC_0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		lptmr0: lptmr@40040000 {
 			compatible = "nxp,kinetis-lptmr";
 			reg = <0x40040000 0x1000>;
