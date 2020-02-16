@@ -12,6 +12,7 @@ supported:
   - adc
   - can
   - counter
+  - dac
   - i2c
   - pwm
   - spi

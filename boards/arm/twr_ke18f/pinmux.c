@@ -144,6 +144,10 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
+#if DT_HAS_NODE(DT_NODELABEL(dac0))
+	pinmux_pin_set(porte, 9, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+#endif
+
 	return 0;
 }
 
