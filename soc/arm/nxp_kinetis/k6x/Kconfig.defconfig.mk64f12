@@ -12,6 +12,10 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
+config DAC_MCUX_DAC
+	default y
+	depends on DAC
+
 config CAN_MCUX_FLEXCAN
 	default y
 	depends on CAN
