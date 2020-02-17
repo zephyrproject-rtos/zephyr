@@ -301,6 +301,11 @@ static void tx_work_handler(struct k_work *work)
 	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
 				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
 
+	if (!len) {
+		LOG_DBG("Nothing to send");
+		return;
+	}
+
 	LOG_DBG("Got %d bytes from ringbuffer send to ep %x", len, ep);
 
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
