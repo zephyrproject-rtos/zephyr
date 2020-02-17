@@ -117,9 +117,9 @@ struct uart_esp32_data {
 #define UART_GET_RX_FLOW(conf1_reg)     ((conf1_reg >> 23) & 0x1)
 
 /* FIXME: This should be removed when interrupt support added to ESP32 dts */
-#define DT_UART_ESP32_PORT_0_IRQ_0      12
-#define DT_UART_ESP32_PORT_1_IRQ_0      17
-#define DT_UART_ESP32_PORT_2_IRQ_0      18
+#define DT_INST_0_ESPRESSIF_ESP32_UART_IRQ_0	12
+#define DT_INST_1_ESPRESSIF_ESP32_UART_IRQ_0	17
+#define DT_INST_2_ESPRESSIF_ESP32_UART_IRQ_0	18
 
 /* ESP-IDF Naming is not consistent for UART0 with UART1/2 */
 #define DPORT_UART0_CLK_EN DPORT_UART_CLK_EN
@@ -461,13 +461,13 @@ static const struct uart_driver_api uart_esp32_api = {
 	static void uart_esp32_irq_config_func_##idx(struct device *dev)     \
 	{								     \
 		esp32_rom_intr_matrix_set(0, ETS_UART##idx##_INTR_SOURCE,    \
-					  DT_UART_ESP32_PORT_##idx##_IRQ_0); \
-		IRQ_CONNECT(DT_UART_ESP32_PORT_##idx##_IRQ_0,		     \
+					  DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \
+		IRQ_CONNECT(DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	     \
 			    1,						     \
 			    uart_esp32_isr,				     \
 			    DEVICE_GET(uart_esp32_##idx),		     \
 			    0);						     \
-		irq_enable(DT_UART_ESP32_PORT_##idx##_IRQ_0);		     \
+		irq_enable(DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0);	     \
 	}
 #else
 #define ESP32_UART_IRQ_HANDLER_DECL(idx)
@@ -510,7 +510,7 @@ static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 									       \
 	.irq = {							       \
 		.source = ETS_UART##idx##_INTR_SOURCE,			       \
-		.line = DT_UART_ESP32_PORT_##idx##_IRQ_0,		       \
+		.line = DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
 	}								       \
 };									       \
 									       \
