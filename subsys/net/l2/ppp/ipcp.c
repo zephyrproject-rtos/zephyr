@@ -183,8 +183,11 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 		ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
 
 		if (address_option_idx < 0) {
-			/* Address option was not present */
-			return -EINVAL;
+			/* The address option was not present, but we
+			 * can continue without it. */
+			NET_DBG("[%s/%p] No %saddress provided",
+				fsm->name, fsm, "peer ");
+			return PPP_CONFIGURE_ACK;
 		}
 
 		code = PPP_CONFIGURE_ACK;
