@@ -264,6 +264,18 @@ static int usb_dc_stm32_clock_enable(void)
 	return 0;
 }
 
+static void usb_dc_stm32_clock_disable(void)
+{
+	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	struct stm32_pclken pclken = {
+		.bus = DT_USB_CLOCK_BUS,
+		.enr = DT_USB_CLOCK_BITS,
+	};
+	
+	clock_control_off(clk, (clock_control_subsys_t *)&pclken);
+}
+
+
 #if defined(USB_OTG_FS) || defined(USB_OTG_HS)
 static u32_t usb_dc_stm32_get_maximum_speed(void)
 {
@@ -849,6 +861,8 @@ int usb_dc_detach(void)
 	HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
 	HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, EP0_IN);
 	HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, EP0_OUT);
+	irq_disable(DT_USB_IRQ);
+	usb_dc_stm32_clock_disable();
 
 	return 0;
 }
