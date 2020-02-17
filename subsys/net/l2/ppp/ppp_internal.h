@@ -39,7 +39,7 @@ struct ppp_packet {
 #define MAX_LCP_OPTIONS CONFIG_NET_L2_PPP_MAX_OPTIONS
 
 /** Max number of IPCP options */
-#define MAX_IPCP_OPTIONS 3
+#define MAX_IPCP_OPTIONS 4
 
 /** Max number of IPV6CP options */
 #define MAX_IPV6CP_OPTIONS 1
