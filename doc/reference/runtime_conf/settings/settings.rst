@@ -193,9 +193,15 @@ up from where it was before restart.
 
 .. code-block:: c
 
+    #include <zephyr.h>
+    #include <power/reboot.h>
+    #include <settings/settings.h>
+    #include <sys/printk.h>
+    #include <inttypes.h>
+
     #define DEFAULT_FOO_VAL_VALUE 0
 
-    static int8 foo_val = DEFAULT_FOO_VAL_VALUE;
+    static uint8_t foo_val = DEFAULT_FOO_VAL_VALUE;
 
     static int foo_settings_set(const char *name, size_t len,
                                 settings_read_cb read_cb, void *cb_arg)
@@ -220,21 +226,25 @@ up from where it was before restart.
         return -ENOENT;
     }
 
-    void main(void)
-    {
-        settings_subsys_init();
-
-        foo_val++;
-        settings_save_one("foo/bar", &foo_val, sizeof(foo_val));
-
-        k_sleep(1000);
-        sys_reboot(SYS_REBOOT_COLD);
-    }
-
     struct settings_handler my_conf = {
         .name = "foo",
         .h_set = foo_settings_set
     };
+
+    void main(void)
+    {
+        settings_subsys_init();
+        settings_register(&my_conf);
+        settings_load();
+
+        foo_val++;
+        settings_save_one("foo/bar", &foo_val, sizeof(foo_val));
+
+        printk("foo: %d\n", foo_val);
+
+        k_sleep(1000);
+        sys_reboot(SYS_REBOOT_COLD);
+    }
 
 Example: Custom Backend Implementation
 **************************************
