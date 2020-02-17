@@ -168,6 +168,26 @@ static int sht21_init(struct device *dev)
 		return -EIO;
 	}
 
+#if DT_INST_0_SENSIRION_SHT21_VARIANT_SI7021
+	u8_t heater_cfg;
+
+	if (i2c_reg_read_byte(drv_data->i2c, cfg->i2c_addr,
+			      SI7021_READ_HEATER_CTRL_REG, &heater_cfg) < 0) {
+		LOG_ERR("Failed to read heater config.");
+		return -EIO;
+	}
+
+	heater_cfg &= 0xF0;
+
+	heater_cfg |= CONFIG_SI7021_HEATER_CURRENT;
+
+	if (i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
+			      SI7021_WRITE_HEATER_CTRL_REG, heater_cfg) < 0) {
+		LOG_ERR("Failed to write heater config.");
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 

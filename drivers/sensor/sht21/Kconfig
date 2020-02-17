@@ -38,4 +38,18 @@ config SHT21_ENABLE_HEATER
 config SHT21_ENABLE_OTP_RELOAD
 	bool "Enable OTP reload"
 
+if SHT21_ENABLE_HEATER
+
+config SI7021_HEATER_CURRENT
+	int "Heater current settings"
+	range 0 15
+	default 0
+	help
+	  Set the current consumption of the on chip heater, influencing
+	  the heating power.
+	  This setting is only available on the Si7021 sensor. Refer to
+	  the Si7021 datasheet for actual current consumption.
+
+endif # SHT21_ENABLE_HEATER
+
 endif # SHT21
