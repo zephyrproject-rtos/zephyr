@@ -18,6 +18,8 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 
+#include "gpio_utils.h"
+
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca95xx);
