@@ -175,6 +175,20 @@ enum ipcp_option_type {
 
 	/** IP Address */
 	IPCP_OPTION_IP_ADDRESS = 3,
+
+	/* RFC 1877 */
+
+	/** Primary DNS Server Address */
+	IPCP_OPTION_DNS1 = 129,
+
+	/** Primary NBNS Server Address */
+	IPCP_OPTION_NBNS1 = 130,
+
+	/** Secondary DNS Server Address */
+	IPCP_OPTION_DNS2 = 131,
+
+	/** Secondary NBNS Server Address */
+	IPCP_OPTION_NBNS2 = 132,
 } __packed;
 
 /**
@@ -358,6 +372,8 @@ struct lcp_options {
 struct ipcp_options {
 	/** IPv4 address */
 	struct in_addr address;
+	struct in_addr dns1_address;
+	struct in_addr dns2_address;
 };
 
 struct ipv6cp_options {
