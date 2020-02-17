@@ -1370,23 +1370,23 @@ static inline int configure_spi(struct device *dev)
 		return -ENODEV;
 	}
 
-#if defined(DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER)
 	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
-		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER);
+		DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER);
 	if (!mcr20a->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	mcr20a->cs_ctrl.gpio_pin = DT_NXP_MCR20A_0_CS_GPIOS_PIN;
+	mcr20a->cs_ctrl.gpio_pin = DT_INST_0_NXP_MCR20A_CS_GPIOS_PIN;
 	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER,
-		DT_NXP_MCR20A_0_CS_GPIOS_PIN);
-#endif /* DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER */
+		DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER,
+		DT_INST_0_NXP_MCR20A_CS_GPIOS_PIN);
+#endif /* DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER */
 
 	mcr20a->spi_cfg.frequency = DT_INST_0_NXP_MCR20A_SPI_MAX_FREQUENCY;
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
