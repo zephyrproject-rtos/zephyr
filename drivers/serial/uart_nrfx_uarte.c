@@ -1285,9 +1285,9 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 #endif
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 	} else {
-		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
-		       new_state == DEVICE_PM_SUSPEND_STATE ||
-		       new_state == DEVICE_PM_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+				new_state == DEVICE_PM_SUSPEND_STATE ||
+				new_state == DEVICE_PM_OFF_STATE);
 
 		/* if pm is already not active, driver will stay indefinitely
 		 * in while loop waiting for event NRF_UARTE_EVENT_RXTO
@@ -1332,7 +1332,7 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			data->pm_state = new_state;
 		}
 	} else {
-		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = data->pm_state;
 	}
 
