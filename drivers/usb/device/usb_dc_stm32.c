@@ -271,10 +271,8 @@ static void usb_dc_stm32_clock_disable(void)
 		.bus = DT_USB_CLOCK_BUS,
 		.enr = DT_USB_CLOCK_BITS,
 	};
-	
 	clock_control_off(clk, (clock_control_subsys_t *)&pclken);
 }
-
 
 #if defined(USB_OTG_FS) || defined(USB_OTG_HS)
 static u32_t usb_dc_stm32_get_maximum_speed(void)
