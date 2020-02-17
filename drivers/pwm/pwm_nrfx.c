@@ -295,7 +295,7 @@ static int pwm_nrfx_set_power_state(u32_t new_state,
 		}
 		break;
 	default:
-		assert(false);
+		__ASSERT_NO_MSG(false);
 		break;
 	}
 	return err;
@@ -320,7 +320,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 			}
 		}
 	} else {
-		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = (*current_state);
 	}
 
