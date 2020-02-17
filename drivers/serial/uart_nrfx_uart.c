@@ -1026,9 +1026,9 @@ static void uart_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		nrf_uart_enable(uart0_addr);
 		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
 	} else {
-		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
-		       new_state == DEVICE_PM_SUSPEND_STATE ||
-		       new_state == DEVICE_PM_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+				new_state == DEVICE_PM_SUSPEND_STATE ||
+				new_state == DEVICE_PM_OFF_STATE);
 		nrf_uart_disable(uart0_addr);
 		uart_nrfx_pins_enable(dev, false);
 	}
@@ -1047,7 +1047,7 @@ static int uart_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			current_state = new_state;
 		}
 	} else {
-		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = current_state;
 	}
 
