@@ -275,6 +275,7 @@
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw
 /dts/arm/atmel/sam4e*                     @nandojve
+/dts/arm/atmel/sam4l*                     @nandojve
 /dts/arm/atmel/samr21.dtsi                @benpicco
 /dts/arm/atmel/sam*5*.dtsi                @benpicco
 /dts/arm/atmel/same70*                    @nandojve

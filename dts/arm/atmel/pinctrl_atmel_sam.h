@@ -13,6 +13,7 @@
 #define PERIPH_e	4
 #define PERIPH_f	5
 #define PERIPH_g	6
+#define PERIPH_h	7
 
 /* Create a pincfg device tree node:
  *
@@ -39,5 +40,10 @@
 	p##port##pin##periph##_##inst##_##signal: \
 	p##port##pin##periph##_##inst##_##signal { \
 	atmel,pins = < &pio##port pin PERIPH_##periph >; }
+
+#define DT_ATMEL_GPIO(inst, signal, port, pin, periph) \
+	p##port##pin##periph##_##inst##_##signal: \
+	p##port##pin##periph##_##inst##_##signal { \
+	atmel,pins = < &gpio##port pin PERIPH_##periph >; }
 
 #endif /* PINCTRL_ATMEL_SAM_H_ */
