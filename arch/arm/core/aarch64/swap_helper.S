@@ -25,22 +25,14 @@ GDATA(_kernel)
 GDATA(_k_neg_eagain)
 
 /**
- * @brief PendSV exception handler, handling context switches
+ * @brief Routine to handle context switches
  *
- * The PendSV exception is the only execution context in the system that can
- * perform context switching. When an execution context finds out it has to
- * switch contexts, it pends the PendSV exception.
- *
- * When PendSV is pended, the decision that a context switch must happen has
- * already been taken. In other words, when z_arm64_pendsv() runs, we *know* we
- * have to swap *something*.
- *
- * For Cortex-A, PendSV exception is not supported by the architecture and this
- * function is directly called either by _isr_wrapper() in case of preemption,
- * or z_arm64_svc() in case of cooperative switching.
+ * This function is directly called either by _isr_wrapper() in case of
+ * preemption, or z_arm64_svc() in case of cooperative switching.
  */
-GTEXT(z_arm64_pendsv)
-SECTION_FUNC(TEXT, z_arm64_pendsv)
+
+GTEXT(z_arm64_context_switch)
+SECTION_FUNC(TEXT, z_arm64_context_switch)
 #ifdef CONFIG_TRACING
 	stp	xzr, x30, [sp, #-16]!
 	bl	sys_trace_thread_switched_in
@@ -124,14 +116,14 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 	/* We restored x30 from the process stack. There are three possible
 	 * cases:
 	 *
-	 * - We return to z_arm64_svc() when swappin in a thread that was
+	 * - We return to z_arm64_svc() when swapping in a thread that was
 	 *   swapped out by z_arm64_svc() before jumping into
 	 *   z_arm64_exit_exc()
-	 * - We return to _isr_wrapper() when swappin in a thread that was
+	 * - We return to _isr_wrapper() when swapping in a thread that was
 	 *   swapped out by _isr_wrapper() before jumping into
 	 *   z_arm64_exit_exc()
 	 * - We return (jump) into z_thread_entry_wrapper() for new threads
-	 * (see thread.c)
+	 *   (see thread.c)
 	 */
 	ret
 
@@ -169,6 +161,7 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
  *
  * @return N/A
  */
+
 GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
 	z_arm64_enter_exc
@@ -216,7 +209,7 @@ offload:
 	b	inv
 
 context_switch:
-	bl	z_arm64_pendsv
+	bl	z_arm64_context_switch
 
 exit:
 	z_arm64_exit_exc

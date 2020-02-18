@@ -86,14 +86,14 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	beq	exit
 
 	/* Switch thread */
-	bl	z_arm64_pendsv
+	bl	z_arm64_context_switch
 
 	/* We return here in two cases:
 	 *
 	 * - The ISR was taken and no context switch was performed.
 	 * - A context-switch was performed during the ISR in the past and now
 	 *   the thread has been switched in again and we return here from the
-	 *   ret in z_arm64_pendsv() because x30 was saved and restored.
+	 *   ret in z_arm64_context_switch() because x30 was saved and restored.
 	 */
 exit:
 #ifdef CONFIG_STACK_SENTINEL
