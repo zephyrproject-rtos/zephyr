@@ -20,8 +20,13 @@ int lis3mdl_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
+	s16_t buf[3];
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
+
+	/* dummy read: re-trigger interrupt */
+	i2c_burst_read(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
+			   LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 6);
 
 	gpio_pin_interrupt_configure(drv_data->gpio,
 			DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
@@ -130,13 +135,6 @@ int lis3mdl_init_interrupt(struct device *dev)
 	/* clear data ready interrupt line by reading sample data */
 	if (lis3mdl_sample_fetch(dev, SENSOR_CHAN_ALL) < 0) {
 		LOG_DBG("Could not clear data ready interrupt line.");
-		return -EIO;
-	}
-
-	/* enable interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
-			       LIS3MDL_REG_INT_CFG, LIS3MDL_INT_XYZ_EN) < 0) {
-		LOG_DBG("Could not enable interrupt.");
 		return -EIO;
 	}
 
