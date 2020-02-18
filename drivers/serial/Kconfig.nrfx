@@ -19,7 +19,7 @@ if UART_NRFX
 
 
 # ----------------- port 0 -----------------
-choice
+choice UART_0_NRF_TYPE
 	prompt "UART Port 0 Driver type"
 	optional
 

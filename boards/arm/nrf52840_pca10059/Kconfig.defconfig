@@ -24,6 +24,17 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
 
+if SERIAL
+
+choice UART_0_NRF_TYPE
+	default UART_0_NRF_UARTE
+endchoice
+
+endif # SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default SERIAL
+
 config ADC_0
 	default y
 	depends on ADC
@@ -52,5 +63,6 @@ config IEEE802154_NRF5
 
 config BT_CTLR
 	default BT
+
 
 endif # BOARD_NRF52840_PCA10059
