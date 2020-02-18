@@ -513,7 +513,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	}
 
 	if (!iface->config.ip.ipv4) {
-		return -EINVAL;
+		return -ENETUNREACH;
 	}
 
 	/* Take the first address of the network interface */
