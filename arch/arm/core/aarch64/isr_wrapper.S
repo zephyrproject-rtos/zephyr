@@ -14,6 +14,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <sw_isr_table.h>
+#include "macro.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -32,27 +33,7 @@ GDATA(_sw_isr_table)
 
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
-	/*
-	 * Save x0-x18 (and x30) on the process stack because they can be
-	 * clobbered by the ISR and/or context switch.
-	 *
-	 * Two things can happen:
-	 *
-	 * - No context-switch: in this case x19-x28 are callee-saved register
-	 *   so we can be sure they are not going to be clobbered by ISR.
-	 * - Context-switch: the callee-saved registers are saved by
-	 *   z_arm64_pendsv() in the kernel structure.
-	 */
-	stp	x0, x1, [sp, #-16]!
-	stp	x2, x3, [sp, #-16]!
-	stp	x4, x5, [sp, #-16]!
-	stp	x6, x7, [sp, #-16]!
-	stp	x8, x9, [sp, #-16]!
-	stp	x10, x11, [sp, #-16]!
-	stp	x12, x13, [sp, #-16]!
-	stp	x14, x15, [sp, #-16]!
-	stp	x16, x17, [sp, #-16]!
-	stp	x18, x30, [sp, #-16]!
+	z_arm64_enter_exc
 
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
 	ldr	x1, =_kernel
@@ -77,6 +58,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	ldr	x1, =_sw_isr_table
 	add	x1, x1, x0
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
+
 	blr	x3
 
 	/* Signal end-of-interrupt */
@@ -117,5 +99,5 @@ exit:
 #ifdef CONFIG_STACK_SENTINEL
 	bl	z_check_stack_sentinel
 #endif
-	b	z_arm64_exit_exc
+	z_arm64_exit_exc
 
