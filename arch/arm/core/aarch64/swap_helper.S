@@ -85,10 +85,6 @@ SECTION_FUNC(TEXT, z_arm64_pendsv)
 	ldr	x2, [x1, #_kernel_offset_to_ready_q_cache]
 	str	x2, [x1, #_kernel_offset_to_current]
 
-	/* load _kernel into x1 and current k_thread into x2 */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_current]
-
 	/* addr of callee-saved regs in thread in x0 */
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
