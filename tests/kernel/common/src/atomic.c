@@ -34,9 +34,9 @@ void test_atomic(void)
 	oldvalue = 6;
 
 	/* atomic_cas() */
-	zassert_true((atomic_cas(&target, oldvalue, value) == 0), "atomic_cas");
+	zassert_false(atomic_cas(&target, oldvalue, value), "atomic_cas");
 	target = 6;
-	zassert_true((atomic_cas(&target, oldvalue, value) == 1), "atomic_cas");
+	zassert_true(atomic_cas(&target, oldvalue, value), "atomic_cas");
 	zassert_true((target == value), "atomic_cas");
 
 	/* atomic_add() */

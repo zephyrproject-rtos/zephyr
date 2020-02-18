@@ -49,11 +49,11 @@ static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 					   __ATOMIC_SEQ_CST);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall int atomic_cas(atomic_t *target, atomic_val_t old_value,
+__syscall bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			 atomic_val_t new_value);
 
 #else
-extern int atomic_cas(atomic_t *target, atomic_val_t old_value,
+extern bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 		      atomic_val_t new_value);
 #endif
 
