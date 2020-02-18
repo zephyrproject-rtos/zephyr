@@ -17,6 +17,11 @@
 
 #include <sw_isr_table.h>
 
+#define PLIC_MAX_PRIO	DT_INST_0_SIFIVE_PLIC_1_0_0_RISCV_MAX_PRIORITY
+#define PLIC_PRIO	DT_INST_0_SIFIVE_PLIC_1_0_0_PRIO_BASE_ADDRESS
+#define PLIC_IRQ_EN	DT_INST_0_SIFIVE_PLIC_1_0_0_IRQ_EN_BASE_ADDRESS
+#define PLIC_REG	DT_INST_0_SIFIVE_PLIC_1_0_0_REG_BASE_ADDRESS
+
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
@@ -42,7 +47,7 @@ static int save_irq;
 void riscv_plic_irq_enable(u32_t irq)
 {
 	u32_t key;
-	volatile u32_t *en = (volatile u32_t *)DT_PLIC_IRQ_EN;
+	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -65,7 +70,7 @@ void riscv_plic_irq_enable(u32_t irq)
 void riscv_plic_irq_disable(u32_t irq)
 {
 	u32_t key;
-	volatile u32_t *en = (volatile u32_t *)DT_PLIC_IRQ_EN;
+	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -84,7 +89,7 @@ void riscv_plic_irq_disable(u32_t irq)
  */
 int riscv_plic_irq_is_enabled(u32_t irq)
 {
-	volatile u32_t *en = (volatile u32_t *)DT_PLIC_IRQ_EN;
+	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
 
 	en += (irq >> 5);
 	return !!(*en & (1 << (irq & 31)));
@@ -103,10 +108,10 @@ int riscv_plic_irq_is_enabled(u32_t irq)
  */
 void riscv_plic_set_priority(u32_t irq, u32_t priority)
 {
-	volatile u32_t *prio = (volatile u32_t *)DT_PLIC_PRIO;
+	volatile u32_t *prio = (volatile u32_t *)PLIC_PRIO;
 
-	if (priority > DT_PLIC_MAX_PRIO)
-		priority = DT_PLIC_MAX_PRIO;
+	if (priority > PLIC_MAX_PRIO)
+		priority = PLIC_MAX_PRIO;
 
 	prio += irq;
 	*prio = priority;
@@ -130,7 +135,7 @@ int riscv_plic_get_irq(void)
 static void plic_irq_handler(void *arg)
 {
 	volatile struct plic_regs_t *regs =
-	    (volatile struct plic_regs_t *) DT_PLIC_REG;
+	    (volatile struct plic_regs_t *) PLIC_REG;
 
 	u32_t irq;
 	struct _isr_table_entry *ite;
@@ -175,10 +180,10 @@ static int plic_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	volatile u32_t *en = (volatile u32_t *)DT_PLIC_IRQ_EN;
-	volatile u32_t *prio = (volatile u32_t *)DT_PLIC_PRIO;
+	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
+	volatile u32_t *prio = (volatile u32_t *)PLIC_PRIO;
 	volatile struct plic_regs_t *regs =
-	    (volatile struct plic_regs_t *)DT_PLIC_REG;
+	    (volatile struct plic_regs_t *)PLIC_REG;
 	int i;
 
 	/* Ensure that all interrupts are disabled initially */
