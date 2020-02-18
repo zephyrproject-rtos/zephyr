@@ -1,0 +1,11 @@
+# Atmel SAM4L-EK Board configuration
+
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SAM4L_EK
+
+config BOARD
+	default "sam4l_ek"
+
+endif # BOARD_SAM4L_EK

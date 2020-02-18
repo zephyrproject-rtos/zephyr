@@ -103,6 +103,7 @@
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
 /boards/arm/xmc45_relax_kit/              @parthitce
 /boards/arm/sam4e_xpro/                   @nandojve
+/boards/arm/sam4l_ek/                     @nandojve
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/sam_e70_xplained/             @nandojve
 /boards/arm/sam_v71_xult/                 @nandojve
