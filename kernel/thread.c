@@ -517,9 +517,13 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
 
-#ifdef CONFIG_SMP
-	/* switch handle must be non-null except when inside z_swap() */
-	new_thread->switch_handle = new_thread;
+#ifdef CONFIG_USE_SWITCH
+	/* switch_handle must be non-null except when inside z_swap()
+	 * for synchronization reasons.  Historically some notional
+	 * USE_SWITCH architectures have actually ignored the field
+	 */
+	__ASSERT(new_thread->switch_handle != NULL,
+		 "arch layer failed to initialize switch_handle");
 #endif
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
