@@ -62,6 +62,7 @@
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "intc_ioapic_priv.h"
 
+#define IOAPIC_REG DT_INST_0_INTEL_IOAPIC_BASE_ADDRESS
 #define BITS_PER_IRQ  3
 #define IOAPIC_BITFIELD_HI_LO	0
 #define IOAPIC_BITFIELD_LVL_EDGE 1
@@ -333,9 +334,8 @@ static u32_t __IoApicGet(s32_t offset)
 
 	key = irq_lock();
 
-	*((volatile u32_t *)
-		(DT_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
-	value = *((volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
+	*((volatile u32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
+	value = *((volatile u32_t *)(IOAPIC_REG + IOAPIC_DATA));
 
 	irq_unlock(key);
 
@@ -360,8 +360,8 @@ static void __IoApicSet(s32_t offset, u32_t value)
 
 	key = irq_lock();
 
-	*(volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
-	*((volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
+	*(volatile u32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
+	*((volatile u32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
 }
