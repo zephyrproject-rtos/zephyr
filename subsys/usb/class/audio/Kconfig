@@ -1,0 +1,13 @@
+# USB AUDIO configuration options
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_DEVICE_AUDIO
+	bool "USB Audio Device Class Driver"
+	help
+	  USB audio device class driver
+
+if USB_DEVICE_AUDIO
+
+endif #USB_DEVICE_AUDIO
