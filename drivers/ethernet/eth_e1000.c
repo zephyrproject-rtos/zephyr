@@ -225,11 +225,12 @@ static void e1000_init(struct net_if *iface)
 	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
 				NET_LINK_ETHERNET);
 
-	IRQ_CONNECT(DT_ETH_E1000_IRQ, DT_ETH_E1000_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_INTEL_E1000_IRQ_0,
+			DT_INST_0_INTEL_E1000_IRQ_0_PRIORITY,
 			e1000_isr, DEVICE_GET(eth_e1000),
-			DT_ETH_E1000_IRQ_FLAGS);
+			DT_INST_0_INTEL_E1000_IRQ_0_SENSE);
 
-	irq_enable(DT_ETH_E1000_IRQ);
+	irq_enable(DT_INST_0_INTEL_E1000_IRQ_0);
 
 	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
 
