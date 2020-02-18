@@ -21,8 +21,9 @@
  * @brief Initialize a new thread from its stack space
  *
  * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by z_arm64_pendsv(), is put at the other
- * end of the stack, and thus reusable by the stack when not needed anymore.
+ * initial context, to be "restored" by z_arm64_context_switch(), is put at the
+ * other end of the stack, and thus reusable by the stack when not needed
+ * anymore.
  *
  * <options> is currently unused.
  *
@@ -66,8 +67,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *
 	 * - SP: to pop out pEntry and parameters when going through
 	 *   z_thread_entry_wrapper().
-	 * - x30: to be used by ret in z_arm64_pendsv() when the new task is
-	 *   first scheduled.
+	 * - x30: to be used by ret in z_arm64_context_switch() when the new
+	 *   task is first scheduled.
 	 * - ELR_EL1: to be used by eret in z_thread_entry_wrapper() to return
 	 *   to z_thread_entry() with pEntry in x0 and the parameters already
 	 *   in place in x1, x2, x3.
