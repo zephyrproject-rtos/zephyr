@@ -140,10 +140,7 @@ partition, add this to a device tree overlay:
 		};
 	};
 
-If the ``chosen`` node has no ``zephyr,code-partition`` property, the
-application image link uses the entire flash device. If a
-``zephyr,code-partition`` property is defined, the application link
-will be restricted to that partition.
+Then, enable the :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig option.
 
 Flash Partition Macros
 ======================
