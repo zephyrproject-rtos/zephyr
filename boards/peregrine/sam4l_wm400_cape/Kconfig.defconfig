@@ -1,0 +1,22 @@
+# Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SAM4L_WM400_CAPE
+
+if NETWORKING
+
+config IEEE802154_RF2XX
+	default y
+	depends on IEEE802154
+
+endif # NETWORKING
+
+# By default the board uses BOSSA bootloader and require that to zephyr relocate
+# the code_partition. This should be disabled when using the whole flash without
+# bootloader.
+config USE_DT_CODE_PARTITION
+	default y
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_SAM4L_WM400_CAPE
