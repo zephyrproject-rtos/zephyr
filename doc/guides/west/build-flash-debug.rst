@@ -203,7 +203,7 @@ are given. All command-line arguments to ``west build`` after a ``--`` are
 passed to CMake.
 
 To set :ref:`DTC_OVERLAY_FILE <application_dt>` to :file:`enable-modem.overlay`,
-using that file as a :ref:`devicetree overlay <device-tree>`::
+using that file as a :ref:`devicetree overlay <devicetree>`::
 
   west build -b reel_board -- -DDTC_OVERLAY_FILE=enable-modem.overlay
 
