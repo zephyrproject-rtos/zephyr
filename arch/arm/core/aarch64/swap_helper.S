@@ -17,7 +17,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
-#include "macro.h"
+#include "macro.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -175,20 +175,7 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
  */
 GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
-	/*
-	 * Save the volatile registers and x30 on the process stack. This is
-	 * needed if the thread is switched out.
-	 */
-	stp	x0, x1, [sp, #-16]!
-	stp	x2, x3, [sp, #-16]!
-	stp	x4, x5, [sp, #-16]!
-	stp	x6, x7, [sp, #-16]!
-	stp	x8, x9, [sp, #-16]!
-	stp	x10, x11, [sp, #-16]!
-	stp	x12, x13, [sp, #-16]!
-	stp	x14, x15, [sp, #-16]!
-	stp	x16, x17, [sp, #-16]!
-	stp	x18, x30, [sp, #-16]!
+	z_arm64_enter_exc
 
 	switch_el x3, 3f, 2f, 1f
 3:
@@ -236,58 +223,12 @@ context_switch:
 	bl	z_arm64_pendsv
 
 exit:
-	b	z_arm64_exit_exc
+	z_arm64_exit_exc
 
 inv:
 	mov	x1, sp
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 	b	z_arm64_fatal_error
-
-
-/**
- * @brief Restore volatile registers and x30
- *
- * This is the common exit point for z_arm64_pendsv() and _isr_wrapper(). We
- * restore the registers saved on the process stack including X30. The return
- * address used by eret (in ELR_ELn) is either restored by z_arm64_pendsv() if
- * a context-switch happened or not touched at all by the ISR if there was no
- * context-switch.
- *
- * @return N/A
- */
-
-GTEXT(z_arm64_exit_exc)
-SECTION_FUNC(TEXT, z_arm64_exit_exc)
-	/*
-	 * In x30 we can have:
-	 *
-	 * - The address of irq_unlock() in swap.c when swapping in a thread
-	 *   that was cooperatively swapped out (used by ret in
-	 *   z_arm64_call_svc())
-	 * - A previos generic value if the thread that we are swapping in was
-	 *   swapped out preemptively by the ISR.
-	 */
-	ldp	x18, x30, [sp], #16
-	ldp	x16, x17, [sp], #16
-	ldp	x14, x15, [sp], #16
-	ldp	x12, x13, [sp], #16
-	ldp	x10, x11, [sp], #16
-	ldp	x8, x9, [sp], #16
-	ldp	x6, x7, [sp], #16
-	ldp	x4, x5, [sp], #16
-	ldp	x2, x3, [sp], #16
-	ldp	x0, x1, [sp], #16
-
-	/*
-	 * In general in the  ELR_ELn register we can find:
-	 *
-	 * - The address of ret in z_arm64_call_svc() in case of arch_swap()
-	 *   (see swap.c)
-	 * - The address of the next instruction at the time of the IRQ when the
-	 *   thread was switched out.
-	 * - The address of z_thread_entry() for new threads (see thread.c).
-	 */
-	eret
 
 GTEXT(z_arm64_call_svc)
 SECTION_FUNC(TEXT, z_arm64_call_svc)
