@@ -63,10 +63,10 @@ static struct k_spinlock lock;
  *
  * This routine provides the compare-and-set operator. If the original value at
  * <target> equals <oldValue>, then <newValue> is stored at <target> and the
- * function returns 1.
+ * function returns true.
  *
  * If the original value at <target> does not equal <oldValue>, then the store
- * is not done and the function returns 0.
+ * is not done and the function returns false.
  *
  * The reading of the original value at <target>, the comparison,
  * and the write of the new value (if it occurs) all happen atomically with
@@ -75,19 +75,19 @@ static struct k_spinlock lock;
  * @param target address to be tested
  * @param old_value value to compare against
  * @param new_value value to compare against
- * @return Returns 1 if <new_value> is written, 0 otherwise.
+ * @return Returns true if <new_value> is written, false otherwise.
  */
-int z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
-		      atomic_val_t new_value)
+bool z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
+		       atomic_val_t new_value)
 {
 	k_spinlock_key_t key;
-	int ret = 0;
+	int ret = false;
 
 	key = k_spin_lock(&lock);
 
 	if (*target == old_value) {
 		*target = new_value;
-		ret = 1;
+		ret = true;
 	}
 
 	k_spin_unlock(&lock, key);
@@ -96,8 +96,8 @@ int z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
-		      atomic_val_t new_value)
+bool z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
+		       atomic_val_t new_value)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t)));
 
