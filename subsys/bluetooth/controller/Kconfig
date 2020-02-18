@@ -62,6 +62,7 @@ config BT_CTLR_TIFS_HW_SUPPORT
 
 config BT_CTLR
 	bool "Bluetooth Controller"
+	select BT_CTLR_CONN_RSSI if BT_CONN && BT_HCI_RAW
 	help
 	  Enables support for SoC native controller implementations.
 
@@ -801,7 +802,6 @@ config BT_CTLR_TX_RETRY_DISABLE
 
 config BT_CTLR_CONN_RSSI
 	bool "Connection RSSI"
-	default y if BT_HCI_RAW
 	help
 	  Enable connection RSSI measurement.
 
