@@ -570,6 +570,8 @@ will get generated for ``spi-slave@0``:
    #define DT_<node>_CS_GPIOS_CONTROLLER    "GPIOA"
    #define DT_<node>_CS_GPIOS_PIN           1
 
+.. _dt-existence-macros:
+
 Compatible-string and node existence macros
 *******************************************
 
