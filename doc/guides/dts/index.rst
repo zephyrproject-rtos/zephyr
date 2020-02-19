@@ -15,6 +15,7 @@ configuration.
    :maxdepth: 2
 
    intro.rst
+   design.rst
    bindings.rst
    macros.rst
    howtos.rst

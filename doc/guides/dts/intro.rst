@@ -268,6 +268,8 @@ build/zephyr/zephyr.dts
    The final merged devicetree. This file is specifically output as a
    debugging aid, and is unused otherwise.
 
+.. _dt-scripts:
+
 The following libraries and scripts, located in :zephyr_file:`scripts/dts/`,
 are used to generate C headers from the devicetree and its bindings. Note that
 the source code has extensive comments and documentation.
