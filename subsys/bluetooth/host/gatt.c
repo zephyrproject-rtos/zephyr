@@ -59,6 +59,7 @@ struct ccc_store {
 };
 
 struct gatt_sub {
+	u8_t id;
 	bt_addr_le_t peer;
 	sys_slist_t list;
 };
@@ -430,12 +431,14 @@ static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		struct gatt_cf_cfg *cfg = &cf_cfg[i];
+
 		if (!conn) {
-			if (!bt_addr_le_cmp(&cf_cfg[i].peer, BT_ADDR_LE_ANY)) {
-				return &cf_cfg[i];
+			if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+				return cfg;
 			}
-		} else if (!bt_conn_addr_le_cmp(conn, &cf_cfg[i].peer)) {
-			return &cf_cfg[i];
+		} else if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
+			return cfg;
 		}
 	}
 
@@ -518,6 +521,7 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	bt_addr_le_copy(&cfg->peer, &conn->le.dst);
+	cfg->id = conn->id;
 	atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
 
 	return len;
@@ -1406,13 +1410,15 @@ static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 					    struct _bt_gatt_ccc *ccc)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
 		if (conn) {
-			if (conn->id == ccc->cfg[i].id &&
-			    !bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
-				return &ccc->cfg[i];
+			if (bt_conn_is_peer_addr_le(conn, cfg->id,
+						    &cfg->peer)) {
+				return cfg;
 			}
-		} else if (!bt_addr_le_cmp(&ccc->cfg[i].peer, BT_ADDR_LE_ANY)) {
-			return &ccc->cfg[i];
+		} else if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			return cfg;
 		}
 	}
 
@@ -1729,7 +1735,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 				continue;
 			}
 
-			conn = bt_conn_lookup_state_le(&cfg->peer,
+			conn = bt_conn_lookup_state_le(cfg->id, &cfg->peer,
 						       BT_CONN_CONNECTED);
 			if (!conn) {
 				struct sc_data *sc;
@@ -1740,6 +1746,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 					sys_le16_to_cpu(sc->end));
 				continue;
 			}
+
 			bt_conn_unref(conn);
 		}
 	}
@@ -2054,9 +2061,11 @@ static u8_t update_ccc(const struct bt_gatt_attr *attr, void *user_data)
 	ccc = attr->user_data;
 
 	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
 		/* Ignore configuration for different peer or not active */
-		if (!ccc->cfg[i].value ||
-		    bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
+		if (!cfg->value ||
+		    !bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
 			continue;
 		}
 
@@ -2129,8 +2138,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		if (conn->id != cfg->id ||
-		    bt_conn_addr_le_cmp(conn, &cfg->peer)) {
+		if (!bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
 			struct bt_conn *tmp;
 
 			/* Skip if there is another peer connected */
@@ -2209,8 +2217,9 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 
 	/* Check if the connection is subscribed */
 	for (size_t i = 0; i < BT_GATT_CCC_MAX; i++) {
-		if (conn->id == ccc->cfg[i].id &&
-		    !bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer) &&
+		const struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer) &&
 		    (ccc_value & ccc->cfg[i].value)) {
 			return true;
 		}
@@ -2249,7 +2258,7 @@ static struct gatt_sub *gatt_sub_find_free(struct bt_conn *conn,
 	for (i = 0; i < ARRAY_SIZE(subscriptions); i++) {
 		struct gatt_sub *sub = &subscriptions[i];
 
-		if (!bt_conn_addr_le_cmp(conn, &sub->peer)) {
+		if (bt_conn_is_peer_addr_le(conn, sub->id, &sub->peer)) {
 			return sub;
 		} else if (free_sub &&
 			   !bt_addr_le_cmp(BT_ADDR_LE_ANY, &sub->peer)) {
@@ -2274,6 +2283,7 @@ static struct gatt_sub *gatt_sub_add(struct bt_conn *conn)
 
 	if (free_sub) {
 		bt_addr_le_copy(&free_sub->peer, &conn->le.dst);
+		free_sub->id = conn->id;
 		return free_sub;
 	}
 
@@ -4076,13 +4086,15 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #endif
 }
 
-static struct gatt_cf_cfg *find_cf_cfg_by_addr(const bt_addr_le_t *addr)
+static struct gatt_cf_cfg *find_cf_cfg_by_addr(u8_t id,
+					       const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_GATT_CACHING)) {
 		int i;
 
 		for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
-			if (!bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
+			if (id == cf_cfg[i].id &&
+			    !bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
 				return &cf_cfg[i];
 			}
 		}
@@ -4262,7 +4274,9 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 {
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
+	const char *next;
 	int len, err;
+	u8_t id;
 
 	if (!name) {
 		BT_ERR("Insufficient number of arguments");
@@ -4275,7 +4289,15 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -EINVAL;
 	}
 
-	cfg = find_cf_cfg_by_addr(&addr);
+	settings_name_next(name, &next);
+
+	if (!next) {
+		id = BT_ID_DEFAULT;
+	} else {
+		id = strtol(next, NULL, 10);
+	}
+
+	cfg = find_cf_cfg_by_addr(id, &addr);
 	if (!cfg) {
 		cfg = find_cf_cfg(NULL);
 		if (!cfg) {
@@ -4417,7 +4439,7 @@ static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
 {
 	struct gatt_cf_cfg *cfg;
 
-	cfg = find_cf_cfg_by_addr(addr);
+	cfg = find_cf_cfg_by_addr(id, addr);
 	if (cfg) {
 		clear_cf_cfg(cfg);
 	}
@@ -4456,20 +4478,28 @@ static int sc_clear_by_addr(u8_t id, const bt_addr_le_t *addr)
 	return 0;
 }
 
-static void bt_gatt_clear_subscriptions(const bt_addr_le_t *addr)
-{
-	struct gatt_sub *sub = NULL;
-	struct bt_gatt_subscribe_params *params, *tmp;
-	sys_snode_t *prev = NULL;
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(subscriptions); i++) {
-		if (!bt_addr_le_cmp(addr, &subscriptions[i].peer)) {
-			sub = &subscriptions[i];
-			break;
+static struct gatt_sub *find_gatt_sub(u8_t id, const bt_addr_le_t *addr)
+{
+	for (int i = 0; i < ARRAY_SIZE(subscriptions); i++) {
+		struct gatt_sub *sub = &subscriptions[i];
+
+		if (id == sub->id &&
+		    !bt_addr_le_cmp(addr, &sub->peer)) {
+			return sub;
 		}
 	}
 
+	return NULL;
+}
+
+static void bt_gatt_clear_subscriptions(u8_t id, const bt_addr_le_t *addr)
+{
+	struct gatt_sub *sub;
+	struct bt_gatt_subscribe_params *params, *tmp;
+	sys_snode_t *prev = NULL;
+
+	sub = find_gatt_sub(id, addr);
 	if (!sub) {
 		return;
 	}
@@ -4505,7 +4535,7 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_GATT_CLIENT)) {
-		bt_gatt_clear_subscriptions(addr);
+		bt_gatt_clear_subscriptions(id, addr);
 	}
 
 	return 0;

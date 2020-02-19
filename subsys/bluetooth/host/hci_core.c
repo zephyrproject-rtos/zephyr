@@ -596,7 +596,8 @@ static void rpa_timeout(struct k_work *work)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		struct bt_conn *conn =
-			bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
+			bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+						BT_CONN_CONNECT_SCAN);
 
 		if (conn) {
 			bt_conn_unref(conn);
@@ -1215,9 +1216,11 @@ static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 	 * CONNECT or DIR_ADV state associated with passed peer LE address.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_MASTER) {
-		conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT);
+		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, peer_addr,
+					       BT_CONN_CONNECT);
 		if (IS_ENABLED(CONFIG_BT_WHITELIST) && !conn) {
-			conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE,
+			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT,
+						       BT_ADDR_LE_NONE,
 						       BT_CONN_CONNECT_AUTO);
 		}
 
@@ -1225,10 +1228,11 @@ static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_SLAVE) {
-		conn = bt_conn_lookup_state_le(peer_addr,
+		conn = bt_conn_lookup_state_le(bt_dev.adv_id, peer_addr,
 					       BT_CONN_CONNECT_DIR_ADV);
 		if (!conn) {
-			conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE,
+			conn = bt_conn_lookup_state_le(bt_dev.adv_id,
+						       BT_ADDR_LE_NONE,
 						       BT_CONN_CONNECT_ADV);
 		}
 
@@ -1761,7 +1765,8 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
+				       BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -3083,7 +3088,7 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
 	if (conn) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 		keys->flags |= BT_KEYS_ID_PENDING_ADD;
@@ -3190,7 +3195,7 @@ void bt_id_del(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
 	if (conn) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 		keys->flags |= BT_KEYS_ID_PENDING_DEL;
@@ -3736,13 +3741,15 @@ int bt_le_scan_update(bool fast_scan)
 		struct bt_conn *conn;
 
 		/* don't restart scan if we have pending connection */
-		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+					       BT_CONN_CONNECT);
 		if (conn) {
 			bt_conn_unref(conn);
 			return 0;
 		}
 
-		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
+		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+					       BT_CONN_CONNECT_SCAN);
 		if (!conn) {
 			return 0;
 		}
@@ -6192,14 +6199,15 @@ int bt_le_adv_stop(void)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		struct bt_conn *conn;
 
-		conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE,
+		conn = bt_conn_lookup_state_le(bt_dev.adv_id, BT_ADDR_LE_NONE,
 					       BT_CONN_CONNECT_ADV);
 		if (conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
 		}
 
-		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_DIR_ADV);
+		conn = bt_conn_lookup_state_le(bt_dev.adv_id, NULL,
+					       BT_CONN_CONNECT_DIR_ADV);
 		if (conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
