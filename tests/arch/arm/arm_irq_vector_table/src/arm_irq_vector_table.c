@@ -17,14 +17,14 @@
 #define _ISR_OFFSET 0
 
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
-/* The customized solution for nRF5X-based platforms
- * requires that the POWER_CLOCK_IRQn line equals 0.
+/* The customized solution for nRF51X-based and nRF52X-based
+ * platforms requires that the POWER_CLOCK_IRQn line equals 0.
  */
 BUILD_ASSERT_MSG(POWER_CLOCK_IRQn == 0,
 	"POWER_CLOCK_IRQn != 0. Consider rework manual vector table.");
 
-/* The customized solution for nRF5X-based platforms
- * requires that the RTC1 IRQ line equals 17.
+/* The customized solution for nRF51X-based and nRF52X-based
+ * platforms requires that the RTC1 IRQ line equals 17.
  */
 BUILD_ASSERT_MSG(RTC1_IRQn == 17,
 	 "RTC1_IRQn != 17. Consider rework manual vector table.");
