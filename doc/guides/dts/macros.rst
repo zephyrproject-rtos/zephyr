@@ -561,9 +561,9 @@ devicetree had looked like this:
 See the ``phandle-array`` section in :ref:`dt-property-macros` for more
 information.
 
-For example, since the node prefered by ``&gpioa`` node the property
-``label = "GPIOA"`` and 1 and 2 are pin numbers, then macros like the following
-will get generated for ``spi-slave@0``:
+For example, since the node labeled ``gpioa`` has property
+``label = "GPIOA"`` and 1 and 2 are pin numbers, macros like the following
+will be generated for ``spi-slave@0``:
 
 .. code-block:: none
 
