@@ -1,0 +1,3 @@
+tests:
+  libraries.sys_notify:
+    tags: sys_notify
