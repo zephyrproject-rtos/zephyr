@@ -6,6 +6,7 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
+   stability.rst
    terminology.rst
    audio/index.rst
    bluetooth/index.rst
