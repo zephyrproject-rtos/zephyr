@@ -1,0 +1,3 @@
+tests:
+  libraries.async_notify:
+    tags: async_notify

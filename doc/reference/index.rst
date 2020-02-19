@@ -6,6 +6,7 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
+   misc/async_notify.rst
    bluetooth/index.rst
    kconfig/index.rst
    drivers/index.rst
@@ -18,6 +19,7 @@ API Reference
    peripherals/index.rst
    power_management/index.rst
    random/index.rst
+   resource_management/index.rst
    shell/index.rst
    storage/index.rst
    usb/index.rst

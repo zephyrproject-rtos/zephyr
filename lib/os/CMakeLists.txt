@@ -3,6 +3,7 @@
 zephyr_sources_if_kconfig(base64.c)
 
 zephyr_sources(
+  async_notify.c
   crc32_sw.c
   crc16_sw.c
   crc8_sw.c
