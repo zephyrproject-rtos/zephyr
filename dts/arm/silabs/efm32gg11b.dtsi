@@ -40,7 +40,7 @@
 				compatible = "soc-nv-flash";
 				label = "FLASH_0";
 				write-block-size = <4>;
-				erase-block-size = <2048>;
+				erase-block-size = <4096>;
 			};
 		};
 
