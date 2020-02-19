@@ -129,27 +129,3 @@ void test_nested_isr(void)
 	ztest_test_skip();
 }
 #endif /* NO_TRIGGER_FROM_SW */
-
-static void timer_handler(struct k_timer *timer)
-{
-	ARG_UNUSED(timer);
-	check_lock_new = 0xBEEF;
-}
-
-static void offload_function(void *param)
-{
-	ARG_UNUSED(param);
-
-	zassert_true(k_is_in_isr(), "Not in IRQ context!");
-	k_timer_init(&timer, timer_handler, NULL);
-	k_busy_wait(MS_TO_US(1));
-	k_timer_start(&timer, DURATION, K_NO_WAIT);
-	zassert_not_equal(check_lock_new, check_lock_old,
-		"Interrupt locking didn't work properly");
-}
-
-void test_prevent_interruption(void)
-{
-	irq_offload(offload_function, NULL);
-	k_timer_stop(&timer);
-}
