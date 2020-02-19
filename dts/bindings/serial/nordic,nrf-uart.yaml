@@ -19,7 +19,7 @@ properties:
     rx-pin:
       type: int
       description: RX pin
-      required: true
+      required: false
 
     rts-pin:
       type: int
