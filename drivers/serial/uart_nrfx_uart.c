@@ -12,6 +12,13 @@
 #include <hal/nrf_uart.h>
 #include <hal/nrf_gpio.h>
 
+#ifdef DT_NORDIC_NRF_UART_UART_0_RX_PIN
+#define RX_PIN DT_NORDIC_NRF_UART_UART_0_RX_PIN
+#else
+#define RX_PIN NRF_UART_PSEL_DISCONNECTED
+#endif
+#define RX_PIN_USED() (RX_PIN != NRF_UART_PSEL_DISCONNECTED)
+
 
 static NRF_UART_Type *const uart0_addr =
 		(NRF_UART_Type *)DT_NORDIC_NRF_UART_UART_0_BASE_ADDRESS;
@@ -441,9 +448,15 @@ static int uart_nrfx_tx_abort(struct device *dev)
 static int uart_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
 			       s32_t timeout)
 {
+	if (!RX_PIN_USED()) {
+		__ASSERT(false, "TX only UART instance");
+		return -ENOTSUP;
+	}
+
 	if (uart0_cb.rx_buffer_length != 0) {
 		return -EBUSY;
 	}
+
 	uart0_cb.rx_enabled = 1;
 	uart0_cb.rx_buffer = buf;
 	uart0_cb.rx_buffer_length = len;
@@ -925,12 +938,12 @@ static int uart_nrfx_init(struct device *dev)
 	nrf_gpio_pin_write(DT_NORDIC_NRF_UART_UART_0_TX_PIN, 1);
 	nrf_gpio_cfg_output(DT_NORDIC_NRF_UART_UART_0_TX_PIN);
 
-	nrf_gpio_cfg_input(DT_NORDIC_NRF_UART_UART_0_RX_PIN,
-			   NRF_GPIO_PIN_NOPULL);
+	if (RX_PIN_USED()) {
+		nrf_gpio_cfg_input(RX_PIN, NRF_GPIO_PIN_NOPULL);
+	}
 
 	nrf_uart_txrx_pins_set(uart0_addr,
-			       DT_NORDIC_NRF_UART_UART_0_TX_PIN,
-			       DT_NORDIC_NRF_UART_UART_0_RX_PIN);
+			       DT_NORDIC_NRF_UART_UART_0_TX_PIN, RX_PIN);
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
 	/* Setting default height state of the RTS PIN to avoid glitches
@@ -959,9 +972,11 @@ static int uart_nrfx_init(struct device *dev)
 	 */
 	nrf_uart_enable(uart0_addr);
 
-	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
+	if (RX_PIN_USED()) {
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
 
-	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
+		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
+	}
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 	/* Simulate that the TXDRDY event is set, so that the transmitter status
@@ -1041,7 +1056,9 @@ static void uart_nrfx_pins_enable(struct device *dev, bool enable)
 	if (enable) {
 		nrf_gpio_pin_write(tx_pin, 1);
 		nrf_gpio_cfg_output(tx_pin);
-		nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+		if (RX_PIN_USED()) {
+			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+		}
 
 		if (get_dev_config(dev)->rts_cts_pins_set) {
 			nrf_gpio_pin_write(rts_pin, 1);
@@ -1051,7 +1068,9 @@ static void uart_nrfx_pins_enable(struct device *dev, bool enable)
 		}
 	} else {
 		nrf_gpio_cfg_default(tx_pin);
-		nrf_gpio_cfg_default(rx_pin);
+		if (RX_PIN_USED()) {
+			nrf_gpio_cfg_default(rx_pin);
+		}
 		if (get_dev_config(dev)->rts_cts_pins_set) {
 			nrf_gpio_cfg_default(cts_pin);
 			nrf_gpio_cfg_default(rts_pin);
@@ -1064,7 +1083,10 @@ static void uart_nrfx_set_power_state(struct device *dev, u32_t new_state)
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
 		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
-		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
+		if (RX_PIN_USED()) {
+			nrf_uart_task_trigger(uart0_addr,
+					      NRF_UART_TASK_STARTRX);
+		}
 	} else {
 		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
 				new_state == DEVICE_PM_SUSPEND_STATE ||
