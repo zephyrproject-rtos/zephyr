@@ -7,6 +7,7 @@
 
 #define DURATION 5
 struct k_timer timer;
+struct k_timer irqlock_timer;
 
 /* This tests uses two IRQ lines, selected within the range of IRQ lines
  * available on the target SOC the test executes on (and starting from
@@ -134,22 +135,36 @@ static void timer_handler(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
 	check_lock_new = 0xBEEF;
-}
-
-static void offload_function(void *param)
-{
-	ARG_UNUSED(param);
-
-	zassert_true(k_is_in_isr(), "Not in IRQ context!");
-	k_timer_init(&timer, timer_handler, NULL);
-	k_busy_wait(MS_TO_US(1));
-	k_timer_start(&timer, DURATION, K_NO_WAIT);
-	zassert_not_equal(check_lock_new, check_lock_old,
-		"Interrupt locking didn't work properly");
+	printk("timer fired\n");
 }
 
 void test_prevent_interruption(void)
 {
-	irq_offload(offload_function, NULL);
-	k_timer_stop(&timer);
+	int key;
+
+	printk("locking interrupts\n");
+	key = irq_lock();
+
+	check_lock_new = 0;
+
+	k_timer_init(&irqlock_timer, timer_handler, NULL);
+
+	/* Start the timer and busy-wait for a bit with IRQs locked. The
+	 * timer ought to have fired during this time if interrupts weren't
+	 * locked -- but since they are, check_lock_new isn't updated.
+	 */
+	k_timer_start(&irqlock_timer, DURATION, K_NO_WAIT);
+	k_busy_wait(MS_TO_US(1000));
+	zassert_not_equal(check_lock_new, check_lock_old,
+		"Interrupt locking didn't work properly");
+
+	printk("unlocking interrupts\n");
+	irq_unlock(key);
+
+	k_busy_wait(MS_TO_US(1000));
+
+	zassert_equal(check_lock_new, check_lock_old,
+		"timer should have fired");
+
+	k_timer_stop(&irqlock_timer);
 }
