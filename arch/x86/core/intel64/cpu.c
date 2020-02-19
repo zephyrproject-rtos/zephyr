@@ -144,8 +144,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 {
 	x86_sse_init(NULL);
 
-	/* The internal cpu_number is the index to x86_cpuboot[] */
-	z_loapic_enable((unsigned char)(cpuboot - x86_cpuboot));
+	z_loapic_enable();
 
 #ifdef CONFIG_USERSPACE
 	/* Set landing site for 'syscall' instruction */
