@@ -11,6 +11,7 @@ zephyr_sources(
   fdtable.c
   hex.c
   mempool.c
+  notify.c
   printk.c
   onoff.c
   rb.c

@@ -125,7 +125,7 @@
 /doc/guides/dts/                          @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
-/doc/reference/kernel/other/resource_mgmt.rst @pabigot
+/doc/reference/resource_management/       @pabigot
 /doc/reference/networking/can*            @alexanderwachter
 /drivers/debug/                           @nashif
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon

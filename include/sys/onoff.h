@@ -9,6 +9,7 @@
 
 #include <kernel.h>
 #include <zephyr/types.h>
+#include <sys/notify.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -192,44 +193,6 @@ struct onoff_service {
 int onoff_service_init(struct onoff_service *srv,
 		       const struct onoff_service_transitions *transitions);
 
-/** @internal
- *
- * Flag fields used to specify on-off client behavior.
- *
- * These flags control whether calls to onoff_service_request() and
- * onoff_service_release() are synchronous or asynchronous, and for
- * asynchronous operations how the operation result is communicated to
- * the client.
- */
-enum onoff_client_flags {
-	/* Known-invalid field, used in validation */
-	ONOFF_CLIENT_NOTIFY_INVALID     = 0,
-
-	/*
-	 * Indicates that no notification will be provided.
-	 *
-	 * Callers must check for completions using
-	 * onoff_client_fetch_result().
-	 *
-	 * See onoff_client_init_spinwait().
-	 */
-	ONOFF_CLIENT_NOTIFY_SPINWAIT    = 1,
-
-	/*
-	 * Select notification through @ref k_poll signal
-	 *
-	 * See onoff_client_init_signal().
-	 */
-	ONOFF_CLIENT_NOTIFY_SIGNAL      = 2,
-
-	/**
-	 * Select notification through a user-provided callback.
-	 *
-	 * See onoff_client_init_callback().
-	 */
-	ONOFF_CLIENT_NOTIFY_CALLBACK    = 3,
-};
-
 /* Forward declaration */
 struct onoff_client;
 
@@ -286,32 +249,11 @@ struct onoff_client {
 	/* Links the client into the set of waiting service users. */
 	sys_snode_t node;
 
-	union async {
-		/* Pointer to signal used to notify client.
-		 *
-		 * The signal value corresponds to the res parameter
-		 * of onoff_client_callback.
-		 */
-		struct k_poll_signal *signal;
+	/* Notification configuration. */
+	struct sys_notify notify;
 
-		/* Handler and argument for callback notification. */
-		struct callback {
-			onoff_client_callback handler;
-			void *user_data;
-		} callback;
-	} async;
-
-	/*
-	 * The result of the operation.
-	 *
-	 * This is the value that was (or would be) passed to the
-	 * async infrastructure.  This field is the sole record of
-	 * success or failure for no-wait synchronous operations.
-	 */
-	int volatile result;
-
-	/* Flags recording client state. */
-	u32_t volatile flags;
+	/* User data for callback-based notification. */
+	void *user_data;
 };
 
 /**
@@ -330,15 +272,8 @@ static inline int onoff_client_fetch_result(const struct onoff_client *op,
 					    int *result)
 {
 	__ASSERT_NO_MSG(op != NULL);
-	__ASSERT_NO_MSG(result != NULL);
 
-	int rv = -EAGAIN;
-
-	if (op->flags == 0U) {
-		rv = 0;
-		*result = op->result;
-	}
-	return rv;
+	return sys_notify_fetch_result(&op->notify, result);
 }
 
 /**
@@ -358,9 +293,8 @@ static inline void onoff_client_init_spinwait(struct onoff_client *cli)
 {
 	__ASSERT_NO_MSG(cli != NULL);
 
-	*cli = (struct onoff_client){
-		.flags = ONOFF_CLIENT_NOTIFY_SPINWAIT,
-	};
+	*cli = (struct onoff_client){};
+	sys_notify_init_spinwait(&cli->notify);
 }
 
 /**
@@ -390,16 +324,9 @@ static inline void onoff_client_init_signal(struct onoff_client *cli,
 					    struct k_poll_signal *sigp)
 {
 	__ASSERT_NO_MSG(cli != NULL);
-	__ASSERT_NO_MSG(sigp != NULL);
 
-	*cli = (struct onoff_client){
-#ifdef CONFIG_POLL
-		.async = {
-			.signal = sigp,
-		},
-#endif /* CONFIG_POLL */
-		.flags = ONOFF_CLIENT_NOTIFY_SIGNAL,
-	};
+	*cli = (struct onoff_client){};
+	sys_notify_init_signal(&cli->notify, sigp);
 }
 
 /**
@@ -430,14 +357,9 @@ static inline void onoff_client_init_callback(struct onoff_client *cli,
 	__ASSERT_NO_MSG(handler != NULL);
 
 	*cli = (struct onoff_client){
-		.async = {
-			.callback = {
-				.handler = handler,
-				.user_data = user_data,
-			},
-		},
-		.flags = ONOFF_CLIENT_NOTIFY_CALLBACK,
+		.user_data = user_data,
 	};
+	sys_notify_init_callback(&cli->notify, handler);
 }
 
 /**
