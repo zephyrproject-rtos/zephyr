@@ -154,6 +154,7 @@
 /drivers/clock_control/*esp32*            @extremegtx
 /drivers/clock_control/*npcx*             @MulinChao
 /drivers/counter/                         @nordic-krch
+/drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/counter/counter_cmos.c           @andrewboie
 /drivers/counter/maxim_ds3231.c           @pabigot
