@@ -636,6 +636,10 @@ static void isr_cleanup(void *param)
 #endif /* !CONFIG_BT_CTLR_SCAN_INDICATION */
 
 	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
 	radio_tmr_stop();
 
 	err = lll_clk_off();
