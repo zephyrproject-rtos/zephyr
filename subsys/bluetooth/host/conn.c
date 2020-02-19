@@ -1803,19 +1803,24 @@ struct bt_conn *bt_conn_lookup_handle(u16_t handle)
 	return NULL;
 }
 
-int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer)
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
+			     const bt_addr_le_t *peer)
 {
+	if (id != conn->id) {
+		return false;
+	}
+
 	/* Check against conn dst address as it may be the identity address */
 	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
-		return 0;
+		return true;
 	}
 
 	/* Check against initial connection address */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		return bt_addr_le_cmp(peer, &conn->le.resp_addr);
+		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
 	}
 
-	return bt_addr_le_cmp(peer, &conn->le.init_addr);
+	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
@@ -1831,8 +1836,7 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (conns[i].id == id &&
-		    !bt_conn_addr_le_cmp(&conns[i], peer)) {
+		if (bt_conn_is_peer_addr_le(&conns[i], id, peer)) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -1840,7 +1844,7 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 	return NULL;
 }
 
-struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
+struct bt_conn *bt_conn_lookup_state_le(u8_t id, const bt_addr_le_t *peer,
 					const bt_conn_state_t state)
 {
 	int i;
@@ -1854,11 +1858,11 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 			continue;
 		}
 
-		if (peer && bt_conn_addr_le_cmp(&conns[i], peer)) {
+		if (peer && !bt_conn_is_peer_addr_le(&conns[i], id, peer)) {
 			continue;
 		}
 
-		if (conns[i].state == state) {
+		if (conns[i].state == state && conns[i].id == id) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -2114,7 +2118,8 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE,
+				       BT_CONN_CONNECT_AUTO);
 	if (conn) {
 		bt_conn_unref(conn);
 		return -EALREADY;
@@ -2169,7 +2174,8 @@ int bt_conn_create_auto_stop(void)
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ADDR_LE_NONE, BT_CONN_CONNECT_AUTO);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE,
+				       BT_CONN_CONNECT_AUTO);
 	if (!conn) {
 		return -EINVAL;
 	}
