@@ -32,7 +32,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-/* LLCP Local Procedure Common FSM states */
+/* LLCP Local Procedure Encryption FSM states */
 enum {
 	LP_COMMON_STATE_IDLE,
 	LP_COMMON_STATE_WAIT_TX,
@@ -58,6 +58,33 @@ enum {
 	LP_COMMON_EVT_COLLISION,
 };
 
+/* LLCP Local Procedure Encryption FSM states */
+enum {
+	LP_ENC_STATE_IDLE,
+	LP_ENC_STATE_WAIT_TX_Q_EMPTY,
+	LP_ENC_STATE_WAIT_TX_ENC_REQ,
+	LP_ENC_STATE_WAIT_RX_ENC_RSP,
+	LP_ENC_STATE_WAIT_RX_START_ENC_REQ,
+	LP_ENC_STATE_WAIT_TX_START_ENC_RSP,
+	LP_ENC_STATE_WAIT_RX_START_ENC_RSP,
+	LP_ENC_STATE_WAIT_NTF,
+};
+
+/* LLCP Local Procedure Encryption FSM events */
+enum {
+	/* Procedure prepared */
+	LP_ENC_EVT_RUN,
+
+	/* Response recieved */
+	LP_ENC_EVT_RESPONSE,
+
+	/* Reject response recieved */
+	LP_ENC_EVT_REJECT,
+
+	/* Unknown response recieved */
+	LP_ENC_EVT_UNKNOWN,
+};
+
 /* LLCP Remote Procedure Common FSM states */
 enum {
 	RP_COMMON_STATE_IDLE,
@@ -65,7 +92,6 @@ enum {
 	RP_COMMON_STATE_WAIT_TX,
 	RP_COMMON_STATE_WAIT_NTF,
 };
-
 /* LLCP Remote Procedure Common FSM events */
 enum {
 	/* Procedure run */
@@ -75,10 +101,49 @@ enum {
 	RP_COMMON_EVT_REQUEST,
 };
 
+/* LLCP Remote Procedure Encryption FSM states */
+enum {
+	RP_ENC_STATE_IDLE,
+	RP_ENC_STATE_WAIT_RX_ENC_REQ,
+	RP_ENC_STATE_WAIT_TX_Q_EMPTY,
+	RP_ENC_STATE_WAIT_TX_ENC_RSP,
+	RP_ENC_STATE_WAIT_NTF_LTK_REQ,
+	RP_ENC_STATE_WAIT_LTK_REPLY,
+	RP_ENC_STATE_WAIT_TX_START_ENC_REQ,
+	RP_ENC_STATE_WAIT_RX_START_ENC_RSP,
+	RP_ENC_STATE_WAIT_NTF,
+	RP_ENC_STATE_WAIT_TX_START_ENC_RSP,
+};
+
+/* LLCP Remote Procedure Encryption FSM events */
+enum {
+	/* Procedure prepared */
+	RP_ENC_EVT_RUN,
+
+	/* Request recieved */
+	RP_ENC_EVT_ENC_REQ,
+
+	/* Response recieved */
+	RP_ENC_EVT_START_ENC_RSP,
+
+	/* LTK request reply */
+	RP_ENC_EVT_LTK_REQ_REPLY,
+
+	/* LTK request negative reply */
+	RP_ENC_EVT_LTK_REQ_NEG_REPLY,
+
+	/* Reject response recieved */
+	RP_ENC_EVT_REJECT,
+
+	/* Unknown response recieved */
+	RP_ENC_EVT_UNKNOWN,
+};
+
 /* LLCP Procedure */
 enum {
 	PROC_UNKNOWN,
-	PROC_VERSION_EXCHANGE
+	PROC_VERSION_EXCHANGE,
+	PROC_ENCRYPTION_START,
 };
 
 /* LLCP Local Request FSM State */
@@ -244,6 +309,29 @@ static void ull_tx_enqueue(struct ull_cp_conn *conn, struct node_tx *tx)
 	ull_tx_q_enqueue_ctrl(conn->tx_q, tx);
 }
 
+static void ull_tx_pause_data(struct ull_cp_conn *conn)
+{
+	ull_tx_q_pause_data(conn->tx_q);
+}
+
+static void ull_tx_flush(struct ull_cp_conn *conn)
+{
+	/* TODO(thoh): do something here to flush the TX Q */
+}
+
+static bool ull_tx_q_is_empty(struct ull_cp_conn *conn)
+{
+#if !defined(ULL_LLCP_UNITTEST)
+	/* TODO:
+	 * Implement correct ULL->LLL Lpath
+	 * */
+#else
+	/* UNIT TEST SOLUTION TO AVOID INCLUDING THE WORLD */
+	extern bool lll_tx_q_empty;
+	return lll_tx_q_empty;
+#endif
+}
+
 /*
  * ULL -> LL Interface
  */
@@ -327,6 +415,50 @@ static void pdu_decode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pd
 	conn->vex.cached.version_number = pdu->llctrl.version_ind.version_number;
 	conn->vex.cached.company_id = sys_le16_to_cpu(pdu->llctrl.version_ind.company_id);
 	conn->vex.cached.sub_version_number = sys_le16_to_cpu(pdu->llctrl.version_ind.sub_version_number);
+}
+
+/*
+ * Encryption Start Procedure Helper
+ */
+
+static void pdu_encode_enc_req(struct pdu_data *pdu)
+{
+	//struct pdu_data_llctrl_enc_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
+static void pdu_encode_enc_rsp(struct pdu_data *pdu)
+{
+	//struct pdu_data_llctrl_enc_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, enc_rsp) + sizeof(struct pdu_data_llctrl_enc_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
+static void pdu_encode_start_enc_req(struct pdu_data *pdu)
+{
+	//struct pdu_data_llctrl_enc_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) + sizeof(struct pdu_data_llctrl_start_enc_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
+static void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
+{
+	//struct pdu_data_llctrl_enc_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_rsp) + sizeof(struct pdu_data_llctrl_start_enc_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+	/* TODO(thoh): Fill in PDU with correct data */
 }
 
 /*
@@ -498,6 +630,225 @@ static void lp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 }
 
 /*
+ * LLCP Local Procedure Encryption FSM
+ */
+
+static void lp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	pdu = (struct pdu_data *)tx->pdu;
+
+	/* Encode LL Control PDU */
+	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		pdu_encode_enc_req(pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		pdu_encode_start_enc_rsp(pdu);
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+
+	/* Enqueue LL Control PDU towards LLL */
+	ull_tx_enqueue(conn, tx);
+}
+
+static void lp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	pdu = (struct pdu_data *) ntf->pdu;
+
+	/* TODO(thoh): is this correct? */
+	pdu_encode_start_enc_rsp(pdu);
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
+static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!ntf_alloc_peek()) {
+		ctx->state = LP_ENC_STATE_WAIT_NTF;
+	} else {
+		lp_enc_ntf(conn, ctx);
+		lr_complete(conn);
+		ctx->state = LP_ENC_STATE_IDLE;
+	}
+}
+
+static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_peek()) {
+		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
+	} else {
+		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
+		ctx->opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+		ctx->state = LP_ENC_STATE_WAIT_RX_ENC_RSP;
+	}
+}
+
+static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_peek()) {
+		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
+	} else {
+		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
+		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_RSP;
+
+		/* Tx Encryption enabled */
+		conn->enc_tx = 1U;
+
+		/* Rx Decryption enabled */
+		conn->enc_rx = 1U;
+	}
+}
+
+static void lp_enc_act_check_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (ull_tx_q_is_empty(conn)) {
+		if (ctx->pause) {
+			ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
+		} else {
+			lp_enc_send_enc_req(conn, ctx, evt, param);
+		}
+	} else {
+		ctx->state = LP_ENC_STATE_WAIT_TX_Q_EMPTY;
+	}
+}
+
+static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		ull_tx_pause_data(conn);
+		ull_tx_flush(conn);
+		lp_enc_act_check_tx_q_empty(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_act_check_tx_q_empty(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_wait_tx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RESPONSE:
+		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
+		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RESPONSE:
+		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_COMMON_EVT_RESPONSE:
+		lp_enc_complete(conn, ctx, evt, param);
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (ctx->state) {
+	case LP_ENC_STATE_IDLE:
+		lp_enc_st_idle(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_TX_Q_EMPTY:
+		lp_enc_st_wait_tx_q_empty(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_TX_ENC_REQ:
+		lp_enc_st_wait_tx_enc_req(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_RX_ENC_RSP:
+		lp_enc_st_wait_rx_enc_rsp(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_RX_START_ENC_REQ:
+		lp_enc_st_wait_rx_start_enc_req(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_TX_START_ENC_RSP:
+		lp_enc_st_wait_tx_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_RX_START_ENC_RSP:
+		lp_enc_st_wait_rx_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	case LP_ENC_STATE_WAIT_NTF:
+		lp_enc_st_wait_ntf(conn, ctx, evt, param);
+		break;
+	default:
+		/* Unknown state */
+		LL_ASSERT(0);
+	}
+}
+
+/*
  * LLCP Local Request FSM
  */
 
@@ -524,7 +875,17 @@ static struct proc_ctx *lr_peek(struct ull_cp_conn *conn)
 
 static void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
+	switch (ctx->proc) {
+	case PROC_VERSION_EXCHANGE:
+		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
+		break;
+	case PROC_ENCRYPTION_START:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_RESPONSE, rx->pdu);
+		break;
+	default:
+		/* Unknown procedure */
+		LL_ASSERT(0);
+	}
 }
 
 static void lr_act_run(struct ull_cp_conn *conn)
@@ -535,14 +896,15 @@ static void lr_act_run(struct ull_cp_conn *conn)
 
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
-		/* TODO */
+		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, NULL);
+		break;
+	case PROC_ENCRYPTION_START:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_RUN, NULL);
 		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
-
-	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, NULL);
 }
 
 static void lr_act_complete(struct ull_cp_conn *conn)
@@ -788,6 +1150,284 @@ static void rp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 }
 
 /*
+ * LLCP Remote Procedure Encryption FSM
+ */
+
+static void rp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	pdu = (struct pdu_data *)tx->pdu;
+
+	/* Encode LL Control PDU */
+	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+		pdu_encode_enc_rsp(pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
+		pdu_encode_start_enc_req(pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		pdu_encode_start_enc_rsp(pdu);
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+
+	/* Enqueue LL Control PDU towards LLL */
+	ull_tx_enqueue(conn, tx);
+}
+
+static void rp_enc_ntf_ltk(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	pdu = (struct pdu_data *) ntf->pdu;
+
+	/* TODO(thoh): is this correct? */
+	pdu_encode_enc_req(pdu);
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
+static void rp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	pdu = (struct pdu_data *) ntf->pdu;
+
+	/* TODO(thoh): is this correct? */
+	pdu_encode_start_enc_rsp(pdu);
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
+static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param);
+
+static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!ntf_alloc_peek()) {
+		ctx->state = RP_ENC_STATE_WAIT_NTF;
+	} else {
+		rp_enc_ntf(conn, ctx);
+		rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
+	}
+}
+
+static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!ntf_alloc_peek()) {
+		ctx->state = RP_ENC_STATE_WAIT_NTF_LTK_REQ;
+	} else {
+		rp_enc_ntf_ltk(conn, ctx);
+		ctx->state = RP_ENC_STATE_WAIT_LTK_REPLY;
+	}
+}
+
+static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_peek()) {
+		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
+	} else {
+		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
+		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
+	}
+}
+
+static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_peek()) {
+		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_REQ;
+	} else {
+		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ);
+		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+		ctx->state = RP_ENC_STATE_WAIT_RX_START_ENC_RSP;
+
+		/* Rx Decryption enabled */
+		conn->enc_rx = 1U;
+	}
+}
+
+static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_peek()) {
+		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_RSP;
+	} else {
+		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
+		rr_complete(conn);
+		ctx->state = RP_ENC_STATE_IDLE;
+
+		/* Tx Encryption enabled */
+		conn->enc_tx = 1U;
+	}
+}
+
+static void rp_enc_state_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		ctx->state = RP_ENC_STATE_WAIT_RX_ENC_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_wait_rx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_ENC_REQ:
+		rp_enc_send_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void rp_enc_state_wait_ntf_ltk_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_LTK_REQ_REPLY:
+		rp_enc_send_start_enc_req(conn, ctx, evt, param);
+		break;
+	case RP_ENC_EVT_LTK_REQ_NEG_REPLY:
+		/* TODO */
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_START_ENC_RSP:
+		rp_enc_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+static void rp_enc_state_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
+}
+
+
+static void rp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (ctx->state) {
+	case RP_ENC_STATE_IDLE:
+		rp_enc_state_idle(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_RX_ENC_REQ:
+		rp_enc_state_wait_rx_enc_req(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_TX_Q_EMPTY:
+		rp_enc_state_wait_tx_q_empty(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_TX_ENC_RSP:
+		rp_enc_state_wait_tx_enc_rsp(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_NTF_LTK_REQ:
+		rp_enc_state_wait_ntf_ltk_req(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_LTK_REPLY:
+		rp_enc_state_wait_ltk_reply(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_TX_START_ENC_REQ:
+		rp_enc_state_wait_tx_start_enc_req(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_RX_START_ENC_RSP:
+		rp_enc_state_wait_rx_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_NTF:
+		rp_enc_state_wait_ntf(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_TX_START_ENC_RSP:
+		rp_enc_state_wait_tx_start_enc_rsp(conn, ctx, evt, param);
+		break;
+
+	default:
+		/* Unknown state */
+		LL_ASSERT(0);
+	}
+}
+
+static void rp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_ENC_REQ, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_START_ENC_RSP, pdu);
+		break;
+	default:
+		/* Unknown opcode */
+		LL_ASSERT(0);
+	}
+}
+
+/*
  * LLCP Remote Request FSM
  */
 
@@ -814,7 +1454,17 @@ static struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
 
 static void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
+	switch (ctx->proc) {
+	case PROC_VERSION_EXCHANGE:
+		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
+		break;
+	case PROC_ENCRYPTION_START:
+		rp_enc_rx(conn, ctx, rx);
+		break;
+	default:
+		/* Unknown procedure */
+		LL_ASSERT(0);
+	}
 }
 
 static void rr_act_run(struct ull_cp_conn *conn)
@@ -825,14 +1475,15 @@ static void rr_act_run(struct ull_cp_conn *conn)
 
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
-		/* TODO */
+		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, NULL);
+		break;
+	case PROC_ENCRYPTION_START:
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_RUN, NULL);
 		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
-
-	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, NULL);
 }
 
 static void rr_act_complete(struct ull_cp_conn *conn)
@@ -956,6 +1607,9 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		proc = PROC_VERSION_EXCHANGE;
 		break;
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		proc = PROC_ENCRYPTION_START;
+		break;
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -1037,6 +1691,44 @@ u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 	lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
+}
+
+u8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	/* TODO(thoh): Proper checks for role, parameters etc. */
+
+	ctx = create_procedure(PROC_ENCRYPTION_START);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+void ull_cp_ltk_req_reply(struct ull_cp_conn *conn)
+{
+	/* TODO */
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_LTK_REQ_REPLY, NULL);
+	}
+}
+
+void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn)
+{
+	/* TODO */
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_LTK_REQ_NEG_REPLY, NULL);
+	}
 }
 
 void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
