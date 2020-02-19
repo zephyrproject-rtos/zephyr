@@ -61,6 +61,13 @@ void arch_irq_disable(unsigned int irq)
 	irq_unlock(key);
 };
 
+int arch_irq_is_enabled(unsigned int irq)
+{
+	u32_t ienable;
+
+	ienable = z_nios2_creg_read(NIOS2_CR_IENABLE);
+	return ienable & BIT(irq);
+}
 
 /**
  * @brief Interrupt demux function
