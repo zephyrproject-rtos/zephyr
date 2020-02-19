@@ -138,7 +138,7 @@ struct acl_data {
 	u8_t  type;
 
 	/* Index into the bt_conn storage array */
-	u8_t  id;
+	u8_t  index;
 
 	/** ACL connection handle */
 	u16_t handle;
@@ -234,9 +234,10 @@ static void report_completed_packet(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_id(acl(buf)->id);
+	conn = bt_conn_lookup_index(acl(buf)->index);
 	if (!conn) {
-		BT_WARN("Unable to look up conn with id 0x%02x", acl(buf)->id);
+		BT_WARN("Unable to look up conn with index 0x%02x",
+			acl(buf)->index);
 		return;
 	}
 
@@ -778,7 +779,7 @@ static void hci_acl(struct net_buf *buf)
 	flags = bt_acl_flags(handle);
 
 	acl(buf)->handle = bt_acl_handle(handle);
-	acl(buf)->id = BT_CONN_ID_INVALID;
+	acl(buf)->index = BT_CONN_INDEX_INVALID;
 
 	BT_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
 
@@ -795,7 +796,7 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	acl(buf)->id = bt_conn_index(conn);
+	acl(buf)->index = bt_conn_index(conn);
 
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_unref(conn);
