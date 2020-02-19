@@ -38,11 +38,12 @@ else()
   # even after output is one line.
   message(STATUS "Found west: ${WEST} (found suitable version \"${west_version}\", minimum required is \"${MIN_WEST_VERSION}\")")
 
-  execute_process(
-    COMMAND ${WEST}  topdir
-    OUTPUT_VARIABLE  WEST_TOPDIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    execute_process(
+      COMMAND ${WEST}  topdir
+      OUTPUT_VARIABLE  WEST_TOPDIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      WORKING_DIRECTORY ${ZEPHYR_BASE}
+      )
 endif()
 
 # dtc is an optional dependency. Search for it on PATH and in
