@@ -15,6 +15,8 @@ suggests that a shared implementation is desirable.
     :depth: 2
 
 
+.. _resource_mgmt_onoff:
+
 On-Off Services
 ***************
 
