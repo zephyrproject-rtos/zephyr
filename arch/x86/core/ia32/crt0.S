@@ -236,9 +236,6 @@ __csSet:
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
 #ifdef CONFIG_LOAPIC
-	/* For BSP, cpu_number is 0 */
-	xorl	%eax, %eax
-	pushl	%eax
 	call	z_loapic_enable
 #endif
 
