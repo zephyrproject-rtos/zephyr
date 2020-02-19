@@ -1,0 +1,11 @@
+# QEMU_RV32_VIRT SOC implementation
+
+# Copyright (c) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QEMU_RV32_VIRT
+	bool "QEMU RV32 virt series SOC implementation"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for QEMU RV32 virt series SOC
