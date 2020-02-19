@@ -150,20 +150,15 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				struct wifi_connect_req_params *params)
 {
 	char *endptr;
-	int idx = 2;
+	int idx = 1;
 
-	if (argc < 2) {
+	if (argc < 1) {
 		return -EINVAL;
 	}
 
 	/* SSID */
 	params->ssid = argv[0];
-
-	/* SSID length */
-	params->ssid_length = strtol(argv[1], &endptr, 10);
-	if (*endptr != '\0' || params->ssid_length <= 2U) {
-		return -EINVAL;
-	}
+	params->ssid_length = strlen(params->ssid);
 
 	/* Channel (optional) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
@@ -318,7 +313,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
-		  "\"<SSID>\"\n<SSID length>\n<channel number (optional), "
+		  "\"<SSID>\"\n<channel number (optional), "
 		  "0 means all>\n"
 		  "<PSK (optional: valid only for secured SSIDs)>",
 		  cmd_wifi_connect),
