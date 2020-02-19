@@ -654,14 +654,17 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 		while (id_head != TICKER_NULL) {
 			struct ticker_node *ticker_next = &nodes[id_head];
 
+			/* Accumulate ticks_to_expire for each node */
+			acc_ticks_to_expire += ticker_next->ticks_to_expire;
+			if (acc_ticks_to_expire > ticker->ticks_slot) {
+				break;
+			}
+
 			/* We only care about nodes with slot reservation */
 			if (ticker_next->ticks_slot == 0) {
 				id_head = ticker_next->next;
 				continue;
 			}
-
-			/* Accumulate ticks_to_expire for each node */
-			acc_ticks_to_expire += ticker_next->ticks_to_expire;
 
 			s32_t lazy_next = ticker_next->lazy_current;
 			u8_t  lazy_next_periodic_skip =
@@ -708,7 +711,6 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 * and wins conflict resolution
 			 */
 			if (!lazy_next_periodic_skip &&
-			    (acc_ticks_to_expire < ticker->ticks_slot) &&
 			    (next_force ||
 			     next_is_critical ||
 			    (next_has_priority && !current_is_older) ||
@@ -1400,8 +1402,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				/* Reload ticks_to_expire with one period */
 				ticker->ticks_to_expire =
 					ticker->ticks_periodic;
+				ticker->ticks_to_expire +=
+					ticker_remainder_inc(ticker);
 			}
-			ticker->ticks_to_expire += ticker_remainder_inc(ticker);
 
 			ticks_to_expire_prep(ticker, instance->ticks_current,
 					     (ticks_previous + ticks_expired));
