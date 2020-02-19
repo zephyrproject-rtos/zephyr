@@ -6,10 +6,6 @@
 
 #include <kernel.h>
 #include <sys/onoff.h>
-#include <syscall_handler.h>
-
-#define CLIENT_NOTIFY_METHOD_MASK 0x03
-#define CLIENT_VALID_FLAGS_MASK 0x07
 
 
 #define SERVICE_CONFIG_FLAGS	     \
@@ -41,36 +37,11 @@ static int validate_args(const struct onoff_service *srv,
 		return -EINVAL;
 	}
 
-	int rv = 0;
-	u32_t mode = cli->flags;
+	int rv = sys_notify_validate(&cli->notify);
 
-	/* Reject unexpected flags. */
-	if (mode != (cli->flags & CLIENT_VALID_FLAGS_MASK)) {
-		return -EINVAL;
-	}
-
-	/* Validate configuration based on mode */
-	switch (mode & CLIENT_NOTIFY_METHOD_MASK) {
-	case ONOFF_CLIENT_NOTIFY_SPINWAIT:
-		break;
-	case ONOFF_CLIENT_NOTIFY_CALLBACK:
-		if (cli->async.callback.handler == NULL) {
-			rv = -EINVAL;
-		}
-		break;
-	case ONOFF_CLIENT_NOTIFY_SIGNAL:
-		if (cli->async.signal == NULL) {
-			rv = -EINVAL;
-		}
-		break;
-	default:
+	if ((rv == 0)
+	    && ((cli->notify.flags & SYS_NOTIFY_EXTENSION_MASK) != 0)) {
 		rv = -EINVAL;
-		break;
-	}
-
-	/* Clear the result here instead of in all callers. */
-	if (rv == 0) {
-		cli->result = 0;
 	}
 
 	return rv;
@@ -96,25 +67,11 @@ static void notify_one(struct onoff_service *srv,
 		       struct onoff_client *cli,
 		       int res)
 {
-	unsigned int flags = cli->flags;
+	onoff_client_callback cb =
+		(onoff_client_callback)sys_notify_finalize(&cli->notify, res);
 
-	/* Store the result, and notify if requested. */
-	cli->result = res;
-	cli->flags = 0;
-	switch (flags & CLIENT_NOTIFY_METHOD_MASK) {
-	case ONOFF_CLIENT_NOTIFY_SPINWAIT:
-		break;
-	case ONOFF_CLIENT_NOTIFY_CALLBACK:
-		cli->async.callback.handler(srv, cli,
-					    cli->async.callback.user_data, res);
-		break;
-#ifdef CONFIG_POLL
-	case ONOFF_CLIENT_NOTIFY_SIGNAL:
-		k_poll_signal_raise(cli->async.signal, res);
-		break;
-#endif /* CONFIG_POLL */
-	default:
-		__ASSERT_NO_MSG(false);
+	if (cb) {
+		cb(srv, cli, cli->user_data, res);
 	}
 }
 

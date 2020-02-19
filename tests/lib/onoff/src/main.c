@@ -233,7 +233,7 @@ static void test_client_init_validation(void)
 	onoff_client_init_spinwait(&cli);
 	zassert_equal(z_snode_next_peek(&cli.node), NULL,
 		      "cli node mismatch");
-	zassert_equal(cli.flags, ONOFF_CLIENT_NOTIFY_SPINWAIT,
+	zassert_equal(cli.notify.flags, SYS_NOTIFY_METHOD_SPINWAIT,
 		      "cli spinwait flags");
 
 	struct k_poll_signal sig;
@@ -242,20 +242,20 @@ static void test_client_init_validation(void)
 	onoff_client_init_signal(&cli, &sig);
 	zassert_equal(z_snode_next_peek(&cli.node), NULL,
 		      "cli signal node");
-	zassert_equal(cli.flags, ONOFF_CLIENT_NOTIFY_SIGNAL,
+	zassert_equal(cli.notify.flags, SYS_NOTIFY_METHOD_SIGNAL,
 		      "cli signal flags");
-	zassert_equal(cli.async.signal, &sig,
+	zassert_equal(cli.notify.method.signal, &sig,
 		      "cli signal async");
 
 	memset(&cli, 0xA5, sizeof(cli));
 	onoff_client_init_callback(&cli, callback, &sig);
 	zassert_equal(z_snode_next_peek(&cli.node), NULL,
 		      "cli callback node");
-	zassert_equal(cli.flags, ONOFF_CLIENT_NOTIFY_CALLBACK,
+	zassert_equal(cli.notify.flags, SYS_NOTIFY_METHOD_CALLBACK,
 		      "cli callback flags");
-	zassert_equal(cli.async.callback.handler, callback,
+	zassert_equal(cli.notify.method.callback, callback,
 		      "cli callback handler");
-	zassert_equal(cli.async.callback.user_data, &sig,
+	zassert_equal(cli.user_data, &sig,
 		      "cli callback user_data");
 }
 
@@ -305,7 +305,7 @@ static void test_validate_args(void)
 		      "validate req cli flags");
 
 	init_spinwait(&cli);
-	cli.flags = ONOFF_CLIENT_NOTIFY_INVALID;
+	cli.notify.flags = SYS_NOTIFY_METHOD_COMPLETED;
 	rc = onoff_request(&srv, &cli);
 	zassert_equal(rc, -EINVAL,
 		      "validate req cli mode");
@@ -315,7 +315,7 @@ static void test_validate_args(void)
 	zassert_equal(rc, 0,
 		      "validate req cli signal: %d", rc);
 	init_notify_sig(&cli, &sig);
-	cli.async.signal = NULL;
+	cli.notify.method.signal = NULL;
 	rc = onoff_request(&srv, &cli);
 	zassert_equal(rc, -EINVAL,
 		      "validate req cli signal null");
@@ -326,7 +326,7 @@ static void test_validate_args(void)
 		      "validate req cli callback");
 
 	init_notify_cb(&cli);
-	cli.async.callback.handler = NULL;
+	cli.notify.method.callback = NULL;
 	rc = onoff_request(&srv, &cli);
 	zassert_equal(rc, -EINVAL,
 		      "validate req cli callback null");
@@ -822,7 +822,7 @@ static void test_async(void)
 		      "rel to-off: %d", rc);
 
 	/* Finalize queued start, gets us to on */
-	cli[0].result = 1 + start_state.retval;
+	cli[0].notify.result = 1 + start_state.retval;
 	zassert_equal(cli_result(&cli[0]), -EAGAIN,
 		      "fetch failed");
 	zassert_false(start_state.notify == NULL,

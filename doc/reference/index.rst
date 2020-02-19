@@ -9,6 +9,7 @@ API Reference
    overview.rst
    terminology.rst
    audio/index.rst
+   misc/notify.rst
    bluetooth/index.rst
    kconfig/index.rst
    crypto/index.rst
@@ -23,6 +24,7 @@ API Reference
    peripherals/index.rst
    power_management/index.rst
    random/index.rst
+   resource_management/index.rst
    shell/index.rst
    storage/index.rst
    usb/index.rst
