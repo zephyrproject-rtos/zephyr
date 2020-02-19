@@ -33,6 +33,8 @@ drivers. Zephyr does not work this way because the size of the devicetree
 binary and associated handling code would be too large to fit comfortably on
 the relatively constrained devices Zephyr supports.
 
+.. _dt-syntax:
+
 Syntax and structure
 ********************
 
@@ -44,7 +46,7 @@ for this tree is called DTS (for devicetree source), and is defined in the
 
 Here is an example DTS file:
 
-.. code-block:: none
+.. code-block:: DTS
 
    /dts-v1/;
 
@@ -56,9 +58,12 @@ Here is an example DTS file:
            };
    };
 
-This example has three nodes:
+The ``/dts-v1/;`` line means the file's contents are in version 1 of the DTS
+syntax, which has replaced a now-obsolete "version 0".
 
-#. A root node
+The tree has three *nodes*:
+
+#. A root node: ``/``
 #. A node named ``a-node``, which is a child of the root node
 #. A node named ``a-sub-node``, which is a child of ``a-node``
 
@@ -82,25 +87,28 @@ for a complete list of ways to write a property value in a DTS file.
 
 In practice, devicetree nodes correspond to some hardware, and the node
 hierarchy reflects the hardware's physical layout. For example, let's consider
-a board with three I2C peripherals connected to an I2C bus master on an SoC,
+a board with three I2C peripherals connected to an I2C bus controller on an SoC,
 like this:
 
 .. figure:: zephyr_dt_i2c_high_level.png
    :alt: representation of a board with three I2C peripherals
    :figclass: align-center
 
-Nodes corresponding to the I2C bus master and each I2C peripheral would be
+Nodes corresponding to the I2C bus controller and each I2C peripheral would be
 present in this board's devicetree. Reflecting the hardware layout, the
-devicetree's peripheral nodes would be children of the bus master node. Similar
-conventions exist for representing other types of hardware in devicetree.
+devicetree's peripheral nodes would be children of the bus controller node.
+Similar conventions exist for representing other types of hardware in
+devicetree.
 
-The corresponding DTS would look something like this:
+The DTS would look something like this:
 
-.. code-block:: none
+.. code-block:: DTS
+
+   /dts-v1/;
 
    / {
            soc {
-                   i2c-bus-master {
+                   i2c-bus-controller {
                            i2c-peripheral-1 {
                            };
                            i2c-peripheral-2 {
@@ -121,20 +129,117 @@ names and properties you might see when working with I2C devices.
 .. figure:: zephyr_dt_i2c_example.png
    :figclass: align-center
 
-   I2C devicetree example with real-world names and properties
+   I2C devicetree example with real-world names and properties.
+   Node names are at the top of each node with a gray background.
+   Properties are shown as "name=value" lines.
 
-Above, node names -- like ``i2c@40003000`` -- are at the top of each node, with
-a gray background, except for the root node, which is shown using its path
-``/``. Properties are shown as ``name=value`` pairs below the node names.
+This is the corresponding DTS:
+
+.. code-block:: DTS
+
+   /dts-v1/;
+
+   / {
+           soc {
+                   i2c@40003000 {
+                           compatible = "nordic,nrf-twim";
+                           label = "I2C_0";
+                           reg = <0x40003000 0x1000>;
+
+                           apds9960@39 {
+                                   compatible = "avago,apds9960";
+                                   label = "APDS9960";
+                                   reg = <0x39>;
+                           };
+                           ti_hdc@43 {
+                                   compatible = "ti,hdc", "ti,hdc1010";
+                                   label = "HDC1010";
+                                   reg = <0x43>;
+                           };
+                           mma8652fc@1d {
+                                   compatible = "nxp,fxos8700", "nxp,mma8652fc";
+                                   label = "MMA8652FC";
+                                   reg = <0x1d>;
+                           };
+                   };
+           };
+   };
+
+In addition to showing more realistic names and properties, the above example
+introduces a new devicetree concept: unit addresses. Unit addresses are the
+parts of node names after an "at" sign (``@``), like ``40003000`` in
+``i2c@40003000``, or ``39`` in ``apds9960@39``. Unit addresses are optional:
+the ``soc`` node does not have one.
+
+Some more details about unit addresses and important properties follow.
+
+Unit address examples
+*********************
+
+In devicetree, unit addresses give a node's address in the
+address space of its parent node. Here are some example unit addresses for
+different types of hardware.
+
+Memory-mapped peripherals
+    The peripheral's register map base address.
+    For example, the node named ``i2c@40003000`` represents an I2C controller
+    whose register map base address is 0x40003000.
+
+I2C peripherals
+    The peripheral's address on the I2C bus.
+    For example, the child node ``apds9960@39`` of the I2C controller
+    in the previous section has I2C address 0x39.
+
+SPI peripherals
+    An index representing the peripheral's chip select line number.
+    (If there is no chip select line, 0 is used.)
+
+Memory
+    The physical start address.
+    For example, a node named ``memory@2000000`` represents RAM starting at
+    physical address 0x2000000.
+
+Memory-mapped flash
+    Like RAM, the physical start address.
+    For example, a node named ``flash@8000000`` represents a flash device
+    whose physical start address is 0x8000000.
+
+Flash partitions
+    The start offset of the partition within its flash device.
+    For example, take this flash device and its partitions:
+
+    .. code-block:: DTS
+
+        flash@8000000 {
+            /* ... */
+            partitions {
+                    partition@0 { /* ... */ };
+                    partition@20000 {  /* ... */ };
+                    /* ... */
+            };
+        };
+
+    The node named ``partition@0`` has offset 0 from the start of its flash
+    device, so its base address is 0x8000000. Similarly, the base address of
+    the node named ``partition@20000`` is 0x8020000.
+
+Important properties
+********************
 
 Some important properties are:
 
 compatible
-    Says what kind of device the node represents. The value is a
-    string in the format "vendor,device", like ``"avago,apds9960"``, or a
-    sequence of these, like ``"ti,hdc", "ti,hdc1010"``. The build system uses
-    the compatible property to find the right :ref:`bindings <dt-bindings>` for
-    the node.
+    Says what kind of device the node represents. The recommended format is
+    ``"manufacturer,device"``, like ``"avago,apds9960"``, or a sequence of
+    these, like ``"ti,hdc", "ti,hdc1010"``. The file
+    :zephyr_file:`dts/bindings/vendor-prefixes.txt` contains a list of accepted
+    ``manufacturer`` prefixes.
+
+    It is also sometimes a value like ``gpio-keys``, ``mmio-sram``, or
+    ``fixed-clock`` when the hardware's behavior is generic.
+
+    The build system uses the compatible property to find the right
+    :ref:`bindings <dt-bindings>` for the node.
 
 label
     The device's name according to Zephyr's :ref:`device_drivers`. The value
@@ -154,36 +259,11 @@ reg
     select line, or some other value depending on the kind of device the node
     represents.
 
-This tree has the following DTS.
-
-.. code-block:: none
-
-   / {
-           soc {
-                   i2c@40003000 {
-                           compatible = "nordic,nrf-twim";
-                           label = "I2C_0";
-                           reg = <0x40003000 0x1000>;
-
-                           apds9960@39 {
-                                   compatible = "avago,apds9960";
-                                   label = "APDS9960";
-                                   reg = <0x39>;
-                           };
-                           ti_hdc@43 {
-                                   compatible = "ti,hdc", "ti,hdc1010";
-                                   label = "HDC1010;
-                                   reg = <0x43>;
-                           };
-                           mma8652fc@1d {
-                                   compatible = "nxp,fxos8700", "nxp,mma8652fc";
-                                   label = "MMA8652FC";
-                                   reg = <0x1d>;
-                           };
-                   };
-           };
-   };
-
+    Unlike a node's unit address, which is a simple number, the reg property is
+    an array of 32-bit unsigned integers. This is often used to describe the
+    size of a register map. In the case of the ``i2c@40003000`` node above,
+    ``reg = <0x40003000 0x1000>;`` means the register map occupies 0x1000 bytes
+    in the memory map.
 
 Input and output files
 **********************
