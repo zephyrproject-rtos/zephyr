@@ -99,7 +99,9 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 		/* -EALREADY indicates the work has already completed so this
 		 * is likely a recurring work.
 		 */
-		if (err < 0 && err != -EALREADY) {
+		if (err == -EALREADY) {
+			err = 0;
+		} else if (err < 0) {
 			goto done;
 		}
 	}
