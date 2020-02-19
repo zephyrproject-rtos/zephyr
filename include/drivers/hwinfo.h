@@ -39,7 +39,9 @@ extern "C" {
  * @param buffer  Buffer to write the ID to.
  * @param length  Max length of the buffer.
  *
- * @retval size of the device ID copied or negative on error.
+ * @retval size of the device ID copied.
+ * @retval -ENOTSUP if there is no implementation for the particular device.
+ * @retval any negative value on driver specific errors.
  */
 __syscall ssize_t hwinfo_get_device_id(u8_t *buffer, size_t length);
 
