@@ -47,10 +47,6 @@ An override of the default value can be specified in the SOC or board
 
 The random number generators available include:
 
-:option:`CONFIG_X86_TSC_RANDOM_GENERATOR`
- enables number generator based on timestamp counter of x86 boards,
- obtained with rdtsc instruction.
-
 :option:`CONFIG_TIMER_RANDOM_GENERATOR`
  enables number generator based on system timer clock. This number
  generator is not random and used for testing only.
