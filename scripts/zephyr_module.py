@@ -178,10 +178,13 @@ def main():
                         help='List of extra modules to parse')
     parser.add_argument('-w', '--west-path', default='west',
                         help='Path to west executable')
+    parser.add_argument('-z', '--zephyr-base',
+                        help='Path to zephyr repository')
     args = parser.parse_args()
 
     if args.modules is None:
         p = subprocess.Popen([args.west_path, 'list', '--format={posixpath}'],
+                             cwd=args.zephyr_base,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
