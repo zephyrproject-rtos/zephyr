@@ -30,6 +30,10 @@ struct ull_cp_conn {
 		u8_t valid;
 		struct pdu_data_llctrl_version_ind cached;
 	} vex;
+
+	/* Encryption State (temporary) */
+	u8_t enc_tx;
+	u8_t enc_rx;
 };
 
 enum {
@@ -68,6 +72,15 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
 
 /**
- * @brief Handle received LL Control PDU.
+ * @brief Initiate a Encryption Start Procedure.
  */
-void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
+u8_t ull_cp_encryption_start(struct ull_cp_conn *conn);
+
+/**
+ */
+void ull_cp_ltk_req_reply(struct ull_cp_conn *conn);
+
+/**
+ */
+void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
+
