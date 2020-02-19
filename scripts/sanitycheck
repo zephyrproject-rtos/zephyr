@@ -2655,7 +2655,7 @@ class TestSuite:
             instance_list = []
             for row in cr:
                 total_tests += 1
-                if row["passed"] == "True":
+                if row["passed"] != "False":
                     continue
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
@@ -2687,6 +2687,8 @@ class TestSuite:
             instance_list = []
             for row in cr:
                 if row["arch"] == "arch":
+                    continue
+                if row["passed"] == "skipped":
                     continue
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
@@ -3187,7 +3189,10 @@ class TestSuite:
                     rowdict["passed"] = False
                     rowdict["status"] = instance.reason
                 else:
-                    rowdict["passed"] = True
+                    if instance.status == "skipped":
+                        rowdict["passed"] = "skipped"
+                    else:
+                        rowdict["passed"] = True
                     if instance.handler:
                         rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
                     ram_size = instance.metrics.get("ram_size", 0)
