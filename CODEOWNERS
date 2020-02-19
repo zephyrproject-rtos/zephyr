@@ -311,6 +311,7 @@
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
+/dts/riscv/riscv32-virt.dtsi              @katsuster
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen @stephanosio

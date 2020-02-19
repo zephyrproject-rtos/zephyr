@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2020 Katsuhiro Suzuki
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "rv32-virt-dev";
+	model = "rv32-virt";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			clock-frequency = <1000000>;
+			compatible = "sifive,rocket0", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+		};
+
+		cpu1: cpu@1 {
+			clock-frequency = <1000000>;
+			compatible = "sifive,rocket0", "riscv";
+			device_type = "cpu";
+			reg = <1>;
+			status = "okay";
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "rv32-virt-soc", "simple-bus";
+		ranges;
+
+		clint: clint@2000000 {
+			compatible = "riscv,clint0";
+			reg = <0x02000000 0x10000>;
+			reg-names = "control";
+		};
+
+		mem: mem@80000000 {
+			compatible = "riscv,mem";
+			reg = <0x80000000 0x40000>;
+			reg-names = "mem";
+		};
+
+		uart0: serial@10000000 {
+			compatible = "ns16550";
+			reg = <0x10000000 0x100>;
+			clock-frequency = <3686400>;
+			label = "uart_0";
+			current-speed = <115200>;
+			reg-shift = <0>;
+		};
+	};
+};

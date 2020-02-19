@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_QEMU_RV32_VIRT
+
+config SOC_SERIES
+	default "rv32-virt"
+
+config RISCV_HAS_PLIC
+	default n
+
+config NUM_IRQS
+	default 16
+
+config XIP
+	default n
+
+endif #SOC_SERIES_QEMU_RV32_VIRT

@@ -1,0 +1,14 @@
+# QEMU_RV32_VIRT SOC configuration options
+
+# Copyright (c) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "QEMU RV32 virt series SOC implementation"
+	depends on SOC_SERIES_QEMU_RV32_VIRT
+
+config SOC_QEMU_RV32_VIRT
+	bool "QEMU RV32 virt SOC implementation"
+	select ATOMIC_OPERATIONS_C
+
+endchoice

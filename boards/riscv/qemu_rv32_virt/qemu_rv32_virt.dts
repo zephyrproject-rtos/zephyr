@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2020 Katsuhiro Suzuki
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <riscv32-virt.dtsi>
+
+/ {
+	model = "QEMU RV32 virt";
+	compatible = "qemu,virt";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &mem;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

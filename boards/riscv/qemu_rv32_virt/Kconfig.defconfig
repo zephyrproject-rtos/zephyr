@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_RV32_VIRT
+
+config BOARD
+	default "QEMU RV32 virt board"
+
+endif
