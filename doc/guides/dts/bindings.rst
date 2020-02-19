@@ -4,59 +4,69 @@ Devicetree bindings
 ###################
 
 A :ref:`devicetree` on its own is only half the story for describing the
-available hardware devices. The tree itself doesn't tell the build system
-which pieces of information are useful to device drivers, or what
-:ref:`C macros <dt-macros>` to generate from the devicetree itself.
+available hardware devices. The tree itself doesn't tell the :ref:`build system
+<build_overview>` which pieces of information are useful to :ref:`device
+drivers <device_drivers>`, or what :ref:`C macros <dt-macros>` to generate from
+the devicetree itself.
 
 *Devicetree bindings* provide the other half of this information. Zephyr
-devicetree bindings are files in YAML format. The build system only generates
-macros for devicetree nodes which have bindings.
+devicetree bindings are files in YAML format. Each binding describes the
+contents of a devicetree node in a way that lets the build system decide which
+macros to generate for it.
 
-Nodes are mapped to bindings via their ``compatible`` string(s). Take
-the following node as an example:
+Mapping nodes to bindings
+*************************
 
-.. code-block:: none
+During the :ref:`build_configuration_phase`, the build system tries to map each
+node in the devicetree to a binding file. The build system only generates
+macros for devicetree nodes which have matching bindings. Nodes are mapped to
+bindings by their :ref:`compatible properties <dt-syntax>`. Take the following
+node as an example:
+
+.. code-block:: DTS
 
    bar-device {
    	compatible = "foo-company,bar-device";
-   	...
+   	/* ... */
    };
 
-This node would get mapped to a binding with this in it:
+The build system will try to map the ``bar-device`` node to a YAML binding with
+this ``compatible:`` line:
 
 .. code-block:: yaml
 
    compatible: "foo-company,bar-device"
 
-You might also run across this legacy syntax, which works the same way:
+Built-in bindings are stored in :zephyr_file:`dts/bindings/`. Binding file
+names usually match their ``compatible:`` lines, so the above binding would be
+named :file:`foo-company,bar-device.yaml`.
 
-.. code-block:: yaml
+If a node has more than one string in its ``compatible`` property, the build
+system looks for compatible bindings in the listed order and uses the first
+match. Take this node as an example:
 
-   ...
+.. code-block:: DTS
 
-   properties:
-       compatible:
-           constraint: "foo-company,bar-device"
+   baz-device {
+   	compatible = "foo-company,baz-device", "generic-baz-device";
+   };
 
-       ...
+The ``baz-device`` node would get mapped to the binding for compatible
+``"generic-baz-device"`` if the build system can't find a binding for
+``"foo-company,baz-device"``.
 
-Bindings are stored in :zephyr_file:`dts/bindings/`. The filename usually
-matches the ``compatible`` string.
+Nodes without compatible properties can be mapped to bindings associated with
+their parent nodes. For an example, see the ``pwmleds`` node in the bindings
+file format described below.
 
-If a node has more than one ``compatible`` string, then the first binding found
-is used, going from the first string to the last. For example, a node with
-``compatible = "foo-company,bar-device", "generic-bar-device"`` would get
-mapped to the binding for ``generic-bar-device`` if there is no binding for
-``foo-company,bar-device``.
+If a node describes hardware on a bus, like I2C or SPI, then the bus type is
+also taken into account when mapping nodes to bindings. See the comments near
+``on-bus:`` in the bindings syntax for details.
 
-If a node appears on a bus (e.g. I2C or SPI), then the bus type is also taken
-into account when mapping nodes to bindings. See the description of ``parent``
-and ``child`` in the template below.
+Bindings file syntax
+********************
 
-Bindings template
-*****************
-
-Below is a template that shows the format of binding files, stored in
+Below is a template that shows the Zephyr bindings file syntax. It is stored in
 :zephyr_file:`dts/binding-template.yaml`.
 
 .. literalinclude:: ../../../dts/binding-template.yaml
