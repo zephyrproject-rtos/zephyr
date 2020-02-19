@@ -2630,15 +2630,15 @@ u8_t bt_conn_index(struct bt_conn *conn)
 	return index;
 }
 
-struct bt_conn *bt_conn_lookup_id(u8_t id)
+struct bt_conn *bt_conn_lookup_index(u8_t index)
 {
 	struct bt_conn *conn;
 
-	if (id >= ARRAY_SIZE(conns)) {
+	if (index >= ARRAY_SIZE(conns)) {
 		return NULL;
 	}
 
-	conn = &conns[id];
+	conn = &conns[index];
 
 	if (!atomic_get(&conn->ref)) {
 		return NULL;

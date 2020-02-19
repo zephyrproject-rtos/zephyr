@@ -208,8 +208,8 @@ int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
  * the connection list. This is useful for O(1) lookups, but can't be used
  * e.g. as the handle since that's assigned to us by the controller.
  */
-#define BT_CONN_ID_INVALID 0xff
-struct bt_conn *bt_conn_lookup_id(u8_t id);
+#define BT_CONN_INDEX_INVALID 0xff
+struct bt_conn *bt_conn_lookup_index(u8_t index);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
