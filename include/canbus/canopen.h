@@ -94,6 +94,19 @@ int canopen_storage_save(enum canopen_storage storage);
 int canopen_storage_erase(enum canopen_storage storage);
 
 /**
+ * @brief Attach CANopen object dictionary program download handlers.
+ *
+ * Attach CANopen program download functions to object dictionary
+ * indexes 0x1F50, 0x1F51, 0x1F56, and 0x1F57. This function must be
+ * called after calling CANopenNode `CO_init()`.
+ *
+ * @param nmt CANopenNode NMT object
+ * @param sdo CANopenNode SDO server object
+ * @param em  CANopenNode Emergency object
+ */
+void canopen_program_download_attach(CO_NMT_t *nmt, CO_SDO_t *sdo, CO_EM_t *em);
+
+/**
  * @typedef canopen_led_callback_t
  * @brief CANopen LED indicator callback function signature.
  *
@@ -118,6 +131,15 @@ typedef void (*canopen_led_callback_t)(bool value, void *arg);
 void canopen_leds_init(CO_NMT_t *nmt,
 		       canopen_led_callback_t green_cb, void *green_arg,
 		       canopen_led_callback_t red_cb, void *red_arg);
+
+/**
+ * @brief Indicate CANopen program download in progress
+ *
+ * Indicate that a CANopen program download is in progress.
+ *
+ * @param in_progress true if program download is in progress, false otherwise
+ */
+void canopen_leds_program_download(bool in_progress);
 
 #ifdef __cplusplus
 }
