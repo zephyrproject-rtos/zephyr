@@ -437,7 +437,7 @@ serial port:
    http://srecord.sourceforge.net/man/man1/srec_cat.html
 
 .. _IDAU:
-   https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 
 .. _AMBA®:
    https://developer.arm.com/products/architecture/system-architectures/amba
