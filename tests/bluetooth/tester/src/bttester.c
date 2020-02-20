@@ -260,6 +260,8 @@ void tester_init(void)
 	int i;
 	struct btp_buf *buf;
 
+	LOG_DBG("Initializing tester");
+
 	for (i = 0; i < CMD_QUEUED; i++) {
 		k_fifo_put(&avail_queue, &cmd_buf[i]);
 	}
