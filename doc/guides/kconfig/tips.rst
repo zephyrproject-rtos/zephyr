@@ -807,6 +807,10 @@ A few formatting nits, to help keep things consistent:
 
 - Put a blank line before/after each top-level ``if`` and ``endif``
 
+- Use a single tab for each indentation
+
+- Indent help text with two extra spaces
+
 
 Lesser-known/used Kconfig features
 **********************************
