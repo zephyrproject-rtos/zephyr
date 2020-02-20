@@ -6,7 +6,7 @@
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
 	depends on SOC_FAMILY_SAM
-	select NOCACHE_MEMORY
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
