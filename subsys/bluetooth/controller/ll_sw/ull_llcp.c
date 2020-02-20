@@ -596,6 +596,12 @@ static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
 	switch (evt) {
+	case LR_EVT_RUN:
+		if (lr_peek(conn)) {
+			lr_act_run(conn);
+			conn->local.state = LR_STATE_ACTIVE;
+		}
+		break;
 	case LR_EVT_COMPLETE:
 		lr_act_complete(conn);
 		conn->local.state = LR_STATE_IDLE;
@@ -880,6 +886,12 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
 	switch (evt) {
+	case RR_EVT_RUN:
+		if (rr_peek(conn)) {
+			rr_act_run(conn);
+			conn->remote.state = RR_STATE_ACTIVE;
+		}
+		break;
 	case RR_EVT_COMPLETE:
 		rr_act_complete(conn);
 		conn->remote.state = RR_STATE_IDLE;
