@@ -246,6 +246,11 @@ void main(void)
 		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
 				odf_2102, NULL, 0U, 0U);
 
+		if (IS_ENABLED(CONFIG_CANOPEN_PROGRAM_DOWNLOAD)) {
+			canopen_program_download_attach(CO->NMT, CO->SDO[0],
+							CO->em);
+		}
+
 		CO_CANsetNormalMode(CO->CANmodule[0]);
 
 		while (true) {

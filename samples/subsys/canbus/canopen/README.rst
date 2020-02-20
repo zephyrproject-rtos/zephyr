@@ -15,7 +15,7 @@ CANopen protocol stack.
 
 Apart from the CANopen protocol stack integration, this sample also
 demonstrates the use of non-volatile storage for the CANopen object
-dictionary.
+dictionary and optionally program download over CANopen.
 
 Requirements
 ************
@@ -326,6 +326,57 @@ Running the above Python code should produce the following output:
    Button press counter: 8
    Button press counter: 9
    Button press counter: 10
+
+Testing CANopen Program Download
+********************************
+
+Building and Running for FRDM-K64F
+==================================
+The sample can be rebuilt with MCUboot and program download support
+for the FRDM-K64F as follows:
+
+#. Build and flash MCUboot by following the instructions in the
+   :ref:`mcuboot` documentation page.
+
+#. Rebuild the CANopen sample with MCUboot support:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/subsys/canbus/canopen
+      :board: frdm_k64f
+      :goals: build
+      :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
+      :compact:
+
+#. Sign the newly rebuilt CANopen sample binary (using either the
+   demonstration-only RSA key from MCUboot or any other key used when
+   building MCUboot itself):
+
+   .. code-block:: console
+
+      west sign -t imgtool --bin --no-hex -- --key mcuboot/root-rsa-2048.pem \
+              --version 1.0.0
+
+#. Flash the newly signed CANopen sample binary using west:
+
+   .. code-block:: console
+
+      west flash --skip-rebuild --bin-file zephyr/zephyr.signed.bin
+
+#. Confirm the newly flashed firmware image using west:
+
+   .. code-block:: console
+
+      west flash --skip-rebuild --runner canopen --confirm-only
+
+#. Finally, resign the CANopen sample binary with a new version number
+   and perform a program download over CANopen:
+
+   .. code-block:: console
+
+      west sign -t imgtool --bin --no-hex  -- --key mcuboot/root-rsa-2048.pem \
+              --version 1.0.1
+      west flash --skip-rebuild --bin-file zephyr/zephyr.signed.bin \
+              --runner canopen
 
 Modifying the Object Dictionary
 *******************************
