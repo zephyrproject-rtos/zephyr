@@ -2,6 +2,10 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
+macro(app_set_runner_args)
+  board_runner_args(canopen "--node-id=${CONFIG_CANOPEN_NODE_ID}")
+endmacro()
+
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(CANopen)
 
