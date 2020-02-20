@@ -166,11 +166,11 @@ static int pms7003_init(struct device *dev)
 {
 	struct pms7003_data *drv_data = dev->driver_data;
 
-	drv_data->uart_dev = device_get_binding(CONFIG_PMS7003_UART_DEVICE);
+	drv_data->uart_dev = device_get_binding(DT_INST_0_PLANTOWER_PMS7003_BUS_NAME);
 
 	if (!drv_data->uart_dev) {
 		LOG_DBG("uart device is not found: %s",
-			    CONFIG_PMS7003_UART_DEVICE);
+			    DT_INST_0_PLANTOWER_PMS7003_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -179,6 +179,6 @@ static int pms7003_init(struct device *dev)
 
 static struct pms7003_data pms7003_data;
 
-DEVICE_AND_API_INIT(gts_dev, CONFIG_PMS7003_DRIVER_NAME, &pms7003_init,
+DEVICE_AND_API_INIT(gts_dev, DT_INST_0_PLANTOWER_PMS7003_LABEL, &pms7003_init,
 		    &pms7003_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);
