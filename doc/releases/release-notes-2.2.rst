@@ -9,6 +9,7 @@ We are pleased to announce the release of Zephyr RTOS version 2.2.0.
 
 Major enhancements with this release include:
 
+* We added initial support for 64-bit ARMv8-A architecture (Experimental).
 * CANopen protocol support through 3rd party CANopenNode stack
 
 The following sections provide detailed lists of changes by component.
@@ -144,6 +145,12 @@ Architectures
 
 * ARM:
 
+  * Added initial support for ARMv8-A 64-bit architecture (Experimental)
+  * Added support for Direct Dynamic Interrupts in ARM Cortex-M
+  * Significant enhancements for ARM Cortex-R architecture port
+  * Fixed several critical bugs in Stack Limit checking for ARMv8-M
+  * Added QEMU emulation support for ARM Cortex-A53
+  * Enhanced test coverage for ARM-specific kernel features
   * Removed support for CC2650
 
 * POSIX:
