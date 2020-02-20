@@ -663,6 +663,9 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 {
 	/* Ack for tx-ed data */
 	if (pdu_data_rx->nesn != lll->sn) {
+		struct node_tx *tx;
+		memq_link_t *link;
+
 		/* Increment serial number */
 		lll->sn++;
 
@@ -676,14 +679,16 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 #endif /* CONFIG_BT_PERIPHERAL */
 
 		if (!lll->empty) {
-			struct pdu_data *pdu_data_tx;
-			u8_t pdu_data_tx_len;
-			struct node_tx *tx;
-			memq_link_t *link;
-
 			link = memq_peek(lll->memq_tx.head, lll->memq_tx.tail,
 					 (void **)&tx);
-			LL_ASSERT(link);
+		} else {
+			lll->empty = 0;
+			link = NULL;
+		}
+
+		if (link) {
+			struct pdu_data *pdu_data_tx;
+			u8_t pdu_data_tx_len;
 
 			pdu_data_tx = (void *)(tx->pdu +
 					       lll->packet_tx_head_offset);
@@ -715,8 +720,6 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 				*tx_release = tx;
 			}
-		} else {
-			lll->empty = 0;
 		}
 	}
 
