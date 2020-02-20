@@ -78,6 +78,10 @@
 #include <stm32g4xx_ll_pwr.h>
 #endif
 
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32g4xx_ll_utils.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */

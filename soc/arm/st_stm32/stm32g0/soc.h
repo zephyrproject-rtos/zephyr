@@ -52,6 +52,10 @@
 #include <stm32g0xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32g0xx_ll_utils.h>
+#endif
+
 /* Add include for DTS generated information */
 #include <devicetree.h>
 
