@@ -147,7 +147,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
-		*dst = *src;
+		*dst = UNALIGNED_GET((u32_t *)src);
 	}
 
 #ifdef NVMCTRL_CTRLA_CMD_WP
