@@ -46,6 +46,44 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/gptp.h>
 #endif
 
+#ifdef __DCACHE_PRESENT
+static bool dcache_enabled;
+
+static inline void dcache_is_enabled(void)
+{
+	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
+}
+static inline void dcache_invalidate(u32_t addr, u32_t size)
+{
+	if (!dcache_enabled) {
+		return;
+	}
+
+	/* Make sure it is aligned to 32B */
+	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	u32_t size_full = size + addr - start_addr;
+
+	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
+}
+
+static inline void dcache_clean(u32_t addr, u32_t size)
+{
+	if (!dcache_enabled) {
+		return;
+	}
+
+	/* Make sure it is aligned to 32B */
+	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	u32_t size_full = size + addr - start_addr;
+
+	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
+}
+#else
+#define dcache_is_enabled()
+#define dcache_invalidate(addr, size)
+#define dcache_clean(addr, size)
+#endif
+
 /*
  * Verify Kconfig configuration
  */
@@ -339,38 +377,6 @@ static inline void eth_sam_gmac_init_qav(Gmac *gmac)
 #define eth_sam_gmac_init_qav(gmac)
 
 #endif
-
-/*
- * Cache helpers
- */
-
-static bool dcache_enabled;
-
-static inline void dcache_invalidate(u32_t addr, u32_t size)
-{
-	if (!dcache_enabled) {
-		return;
-	}
-
-	/* Make sure it is aligned to 32B */
-	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	u32_t size_full = size + addr - start_addr;
-
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
-}
-
-static inline void dcache_clean(u32_t addr, u32_t size)
-{
-	if (!dcache_enabled) {
-		return;
-	}
-
-	/* Make sure it is aligned to 32B */
-	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	u32_t size_full = size + addr - start_addr;
-
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
-}
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 /*
@@ -1871,7 +1877,7 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 	/* Check the status of data caches */
-	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
+	dcache_is_enabled();
 
 	/* Initialize GMAC driver, maximum frame length is 1518 bytes */
 	gmac_ncfgr_val =
