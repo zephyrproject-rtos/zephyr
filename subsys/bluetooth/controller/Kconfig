@@ -842,7 +842,8 @@ config BT_TICKER_COMPATIBILITY_MODE
 
 config BT_TICKER_EXT
 	bool "Ticker extensions"
-	default y if !BT_TICKER_COMPATIBILITY_MODE
+	depends on !BT_TICKER_COMPATIBILITY_MODE
+	default y
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions
