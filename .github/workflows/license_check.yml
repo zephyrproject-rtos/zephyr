@@ -9,6 +9,9 @@ jobs:
     steps:
     - name: Checkout the code
       uses: actions/checkout@v1
+    - name: export
+      run: |
+        export
     - name: Scan the code
       id: scancode
       uses: zephyrproject-rtos/action_scancode@v2
