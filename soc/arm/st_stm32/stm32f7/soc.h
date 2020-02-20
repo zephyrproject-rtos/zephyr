@@ -79,6 +79,10 @@
 #include <stm32f7xx_ll_dma.h>
 #endif
 
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32f7xx_ll_utils.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H_ */
