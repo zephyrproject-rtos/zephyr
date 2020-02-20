@@ -32,6 +32,11 @@ struct ull_cp_conn {
 	} vex;
 };
 
+enum {
+	ULL_CP_CONNECTED,
+	ULL_CP_DISCONNECTED
+};
+
 /**
  * @brief Initialize the LL Control Procedure system.
  */
@@ -43,19 +48,19 @@ void ull_cp_init(void);
 void ull_cp_conn_init(struct ull_cp_conn *conn);
 
 /**
+ * @brief XXX
+ */
+void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state);
+
+/**
  * @breif Run pending LL Control Procedures.
  */
 void ull_cp_run(struct ull_cp_conn *conn);
 
 /**
- * @brief Move to the connected state.
+ * @brief Handle received LL Control PDU.
  */
-void ull_cp_connect(struct ull_cp_conn *conn);
-
-/**
- * @brief Move to the disconnected state.
- */
-void ull_cp_disconnect(struct ull_cp_conn *conn);
+void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
 
 /**
  * @brief Initiate a Version Exchange Procedure.

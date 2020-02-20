@@ -997,16 +997,20 @@ void ull_cp_run(struct ull_cp_conn *conn)
 	lr_run(conn);
 }
 
-void ull_cp_connect(struct ull_cp_conn *conn)
+void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 {
-	rr_connect(conn);
-	lr_connect(conn);
-}
-
-void ull_cp_disconnect(struct ull_cp_conn *conn)
-{
-	rr_disconnect(conn);
-	lr_disconnect(conn);
+	switch (state) {
+	case ULL_CP_CONNECTED:
+		rr_connect(conn);
+		lr_connect(conn);
+		break;
+	case ULL_CP_DISCONNECTED:
+		rr_disconnect(conn);
+		lr_disconnect(conn);
+		break;
+	default:
+		break;
+	}
 }
 
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
