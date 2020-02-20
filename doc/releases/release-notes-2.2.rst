@@ -151,7 +151,6 @@ Architectures
   * Fixed several critical bugs in Stack Limit checking for ARMv8-M
   * Added QEMU emulation support for ARM Cortex-A53
   * Enhanced test coverage for ARM-specific kernel features
-  * Removed support for CC2650
 
 * POSIX:
 
@@ -184,6 +183,13 @@ Boards & SoC Support
   .. rst-class:: rst-columns
 
      * <TBD>
+
+* Removed support for these ARM boards:
+
+  .. rst-class:: rst-columns
+
+     * TI CC2650
+
 
 * Added support for these following shields:
 
