@@ -100,6 +100,8 @@
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)
 
+#define BME280_STARTUP_TIME_USEC        2000
+
 struct bme280_data {
 #ifdef DT_BOSCH_BME280_BUS_I2C
 	struct device *i2c_master;

@@ -290,6 +290,12 @@ static int bme280_chip_init(struct device *dev)
 {
 	struct bme280_data *data = (struct bme280_data *) dev->driver_data;
 	int err;
+	s64_t now;
+
+	now = k_uptime_get() * 1000;
+	if (now < BME280_STARTUP_TIME_USEC) {
+		k_busy_wait(BME280_STARTUP_TIME_USEC - now);
+	}
 
 	err = bm280_reg_read(data, BME280_REG_ID, &data->chip_id, 1);
 	if (err < 0) {
