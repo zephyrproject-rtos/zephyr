@@ -138,6 +138,10 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
 
+	# Until ticker resolve collision is fixed for skipped ticker catch-up
+	# issue, use the old compatibility mode
+	select BT_TICKER_COMPATIBILITY_MODE
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
