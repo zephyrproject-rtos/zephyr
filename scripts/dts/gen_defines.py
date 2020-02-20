@@ -69,7 +69,6 @@ def main():
             write_clocks(node)
             write_spi_dev(node)
             write_bus(node)
-            write_existence_flags(node)
             write_nodelabels(node)
 
     out_comment("Compatibles appearing on enabled nodes")
@@ -774,24 +773,17 @@ def write_bus(node):
         out(f"{str2ident(compat)}_BUS_{str2ident(node.on_bus)}", 1)
 
 
-def write_existence_flags(node):
-    # Generate #defines of the form
-    #
-    #   #define DT_INST_<instance no.>_<compatible string> 1
-    #
-    # for enabled nodes. These are flags for which devices exist.
-
-    for compat in node.compats:
-        instance_no = node.edt.compat2enabled[compat].index(node)
-        out(f"INST_{instance_no}_{str2ident(compat)}", 1)
-
-
 def write_nodelabels(node):
     # Generate #defines of the form
     #
     #   #define DT_NODELABEL_<nodelabel> <IDENT>
+    #   #define DT_INST_<instance no.>_<compatible string> <IDENT>
     #
     # for enabled nodes.
+
+    for compat in node.compats:
+        instance_no = node.edt.compat2enabled[compat].index(node)
+        out(f"INST_{instance_no}_{str2ident(compat)}", node.z_primary_ident)
 
     for label in node.z_label_idents:
         out(label, node.z_primary_ident)
