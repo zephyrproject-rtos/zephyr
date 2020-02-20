@@ -14,6 +14,8 @@ devicetree bindings are files in YAML format. Each binding describes the
 contents of a devicetree node in a way that lets the build system decide which
 macros to generate for it.
 
+.. _dt-binding-compat:
+
 Mapping nodes to bindings
 *************************
 

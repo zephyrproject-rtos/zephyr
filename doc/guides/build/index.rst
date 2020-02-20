@@ -6,6 +6,7 @@ Build Overview
 The Zephyr build process can be divided into two main phases: a configuration
 phase (driven by CMake) and a build phase (driven by Make or Ninja).
 
+.. _build_configuration_phase:
 
 Configuration Phase
 *******************
