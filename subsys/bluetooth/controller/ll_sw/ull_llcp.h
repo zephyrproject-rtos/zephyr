@@ -43,9 +43,9 @@ void ull_cp_init(void);
 void ull_cp_conn_init(struct ull_cp_conn *conn);
 
 /**
- * @breif Prepare pending LL Control Procedures.
+ * @breif Run pending LL Control Procedures.
  */
-void ull_cp_prepare(struct ull_cp_conn *conn);
+void ull_cp_run(struct ull_cp_conn *conn);
 
 /**
  * @brief Move to the connected state.
