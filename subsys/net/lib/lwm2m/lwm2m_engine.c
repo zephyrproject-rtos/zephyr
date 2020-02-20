@@ -1851,6 +1851,16 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res **res)
 	return path_to_objs(&path, NULL, NULL, res, NULL);
 }
 
+void lwm2m_engine_get_binding(char *binding)
+{
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		strcpy(binding, "UQ");
+	} else {
+		/* Defaults to UDP. */
+		strcpy(binding, "U");
+	}
+}
+
 int lwm2m_engine_create_res_inst(char *pathstr)
 {
 	int ret, i;
