@@ -475,7 +475,7 @@ struct shell_transport {
  * @brief Shell statistics structure.
  */
 struct shell_stats {
-	u32_t log_lost_cnt; /*!< Lost log counter.*/
+	atomic_t log_lost_cnt; /*!< Lost log counter.*/
 };
 
 #ifdef CONFIG_SHELL_STATS
