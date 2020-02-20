@@ -222,7 +222,7 @@ void test_api_connect(void)
 	ull_cp_conn_init(&conn);
 	conn.tx_q = &tx_q;
 
-	ull_cp_connect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	zassert_equal(conn.local.state, LR_STATE_IDLE, NULL);
 	zassert_equal(conn.remote.state, RR_STATE_IDLE, NULL);
 }
@@ -234,15 +234,15 @@ void test_api_disconnect(void)
 	ull_cp_conn_init(&conn);
 	conn.tx_q = &tx_q;
 
-	ull_cp_disconnect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 	zassert_equal(conn.local.state, LR_STATE_DISCONNECT, NULL);
 	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
 
-	ull_cp_connect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	zassert_equal(conn.local.state, LR_STATE_IDLE, NULL);
 	zassert_equal(conn.remote.state, RR_STATE_IDLE, NULL);
 
-	ull_cp_disconnect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 	zassert_equal(conn.local.state, LR_STATE_DISCONNECT, NULL);
 	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
 }
@@ -305,7 +305,7 @@ void test_api_local_version_exchange(void)
 	conn.tx_q = &tx_q;
 
 	/* Connect */
-	ull_cp_connect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
@@ -398,7 +398,7 @@ void test_api_remote_version_exchange(void)
 	conn.tx_q = &tx_q;
 
 	/* Connect */
-	ull_cp_connect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Encode RX PDU */
 	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
@@ -469,7 +469,7 @@ void test_api_both_version_exchange(void)
 	conn.tx_q = &tx_q;
 
 	/* Connect */
-	ull_cp_connect(&conn);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Encode RX PDU */
 	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
