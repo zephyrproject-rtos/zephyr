@@ -67,6 +67,8 @@ The tree has three *nodes*:
 #. A node named ``a-node``, which is a child of the root node
 #. A node named ``a-sub-node``, which is a child of ``a-node``
 
+.. _dt-node-labels:
+
 Nodes can be given *labels*, which are unique shorthands that can be used to
 refer to the labeled node elsewhere in the devicetree. Above, ``a-sub-node``
 has label ``subnode_label``.
@@ -165,6 +167,8 @@ This is the corresponding DTS:
            };
    };
 
+.. _dt-unit-address:
+
 In addition to showing more realistic names and properties, the above example
 introduces a new devicetree concept: unit addresses. Unit addresses are the
 parts of node names after an "at" sign (``@``), like ``40003000`` in
@@ -222,6 +226,8 @@ Flash partitions
     The node named ``partition@0`` has offset 0 from the start of its flash
     device, so its base address is 0x8000000. Similarly, the base address of
     the node named ``partition@20000`` is 0x8020000.
+
+.. _dt-important-props:
 
 Important properties
 ********************
