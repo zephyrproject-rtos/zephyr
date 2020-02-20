@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Scan code for licenses
     steps:
+    - name: export
+      run: |
+        export
     - name: Checkout the code
       uses: actions/checkout@v1
     - name: Scan the code
