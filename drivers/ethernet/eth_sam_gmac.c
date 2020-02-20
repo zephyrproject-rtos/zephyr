@@ -1091,10 +1091,7 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-#ifdef CONFIG_ETH_SAM_GMAC_MII
-	/* Setup MII Interface to the Physical Layer, RMII is the default */
-	gmac->GMAC_UR = GMAC_UR_RMII; /* setting RMII to 1 selects MII mode */
-#endif
+	gmac->GMAC_UR = DT_ENUM_IDX(DT_NODELABEL(gmac), phy_connection_type);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
