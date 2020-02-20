@@ -311,8 +311,8 @@ void test_api_local_version_exchange(void)
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Prepare */
-	ull_cp_prepare(&conn);
+	/* Run */
+	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	tx = ull_tx_q_dequeue(&tx_q);
@@ -408,8 +408,8 @@ void test_api_remote_version_exchange(void)
 	/* Handle RX */
 	ull_cp_rx(&conn, rx);
 
-	/* Prepare */
-	ull_cp_prepare(&conn);
+	/* Run */
+	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	tx = ull_tx_q_dequeue(&tx_q);
@@ -483,8 +483,8 @@ void test_api_both_version_exchange(void)
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Prepare */
-	ull_cp_prepare(&conn);
+	/* Run */
+	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	tx = ull_tx_q_dequeue(&tx_q);
