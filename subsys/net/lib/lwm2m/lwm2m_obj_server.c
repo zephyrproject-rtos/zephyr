@@ -166,7 +166,7 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
 	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
-	strcpy(transport_binding[index], "U");
+	lwm2m_engine_get_binding(transport_binding[index]);
 
 	(void)memset(res[index], 0,
 		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
