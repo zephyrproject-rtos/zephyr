@@ -22,8 +22,11 @@
  */
 	.global atomic_clear
 	.type   atomic_clear,@function
+	.global atomic_ptr_clear
+	.type   atomic_ptr_clear,@function
 	.align  4
 atomic_clear:
+atomic_ptr_clear:
 	ENTRY(48)
 	movi a4, 0
 .L_LoopClear:
@@ -54,8 +57,11 @@ atomic_clear:
  */
 	.global atomic_set
 	.type   atomic_set,@function
+	.global atomic_ptr_set
+	.type   atomic_ptr_set,@function
 	.align  4
 atomic_set:
+atomic_ptr_set:
 	ENTRY(48)
 .L_LoopSet:
 	l32ai a4, a2, 0
@@ -81,8 +87,11 @@ atomic_set:
  */
 	.global atomic_get
 	.type   atomic_get,@function
+	.global atomic_ptr_get
+	.type   atomic_ptr_get,@function
 	.align  4
 atomic_get:
+atomic_ptr_get:
 	ENTRY(48)
 	l32ai a2, a2, 0
 	RET(48)
@@ -388,8 +397,11 @@ atomic_xor:
  */
 	.global atomic_cas
 	.type   atomic_cas,@function
+	.global atomic_ptr_cas
+	.type   atomic_ptr_cas,@function
 	.align  4
 atomic_cas:
+atomic_ptr_cas:
 	ENTRY(48)
 	l32ai a5, a2, 0
 	beq a5, a3, 2f
