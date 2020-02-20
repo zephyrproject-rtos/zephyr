@@ -42,8 +42,8 @@ enum {
 
 /* LLCP Local Procedure Common FSM events */
 enum {
-	/* Procedure prepared */
-	LP_COMMON_EVT_PREPARE,
+	/* Procedure run */
+	LP_COMMON_EVT_RUN,
 
 	/* Response recieved */
 	LP_COMMON_EVT_RESPONSE,
@@ -68,8 +68,8 @@ enum {
 
 /* LLCP Remote Procedure Common FSM events */
 enum {
-	/* Procedure prepared */
-	RP_COMMON_EVT_PREPARE,
+	/* Procedure run */
+	RP_COMMON_EVT_RUN,
 
 	/* Request recieved */
 	RP_COMMON_EVT_REQUEST,
@@ -90,8 +90,8 @@ enum {
 
 /* LLCP Local Request FSM Event */
 enum {
-	/* Procedure prepared */
-	LR_EVT_PREPARE,
+	/* Procedure run */
+	LR_EVT_RUN,
 
 	/* Procedure completed */
 	LR_EVT_COMPLETE,
@@ -112,8 +112,8 @@ enum {
 
 /* LLCP Remote Request FSM Event */
 enum {
-	/* Procedure prepared */
-	RR_EVT_PREPARE,
+	/* Procedure run */
+	RR_EVT_RUN,
 
 	/* Procedure completed */
 	RR_EVT_COMPLETE,
@@ -429,7 +429,7 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 static void lp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (evt) {
-	case LP_COMMON_EVT_PREPARE:
+	case LP_COMMON_EVT_RUN:
 		if (ctx->pause) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
@@ -527,7 +527,7 @@ static void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 }
 
-static void lr_act_prepare(struct ull_cp_conn *conn)
+static void lr_act_run(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -542,7 +542,7 @@ static void lr_act_prepare(struct ull_cp_conn *conn)
 		LL_ASSERT(0);
 	}
 
-	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_PREPARE, NULL);
+	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, NULL);
 }
 
 static void lr_act_complete(struct ull_cp_conn *conn)
@@ -577,9 +577,9 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
 	switch (evt) {
-	case LR_EVT_PREPARE:
+	case LR_EVT_RUN:
 		if (lr_peek(conn)) {
-			lr_act_prepare(conn);
+			lr_act_run(conn);
 			conn->local.state = LR_STATE_ACTIVE;
 		}
 		break;
@@ -628,9 +628,9 @@ static void lr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void lr_prepare(struct ull_cp_conn *conn)
+static void lr_run(struct ull_cp_conn *conn)
 {
-	lr_execute_fsm(conn, LR_EVT_PREPARE, NULL);
+	lr_execute_fsm(conn, LR_EVT_RUN, NULL);
 }
 
 static void lr_complete(struct ull_cp_conn *conn)
@@ -695,7 +695,7 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (evt) {
-	case RP_COMMON_EVT_PREPARE:
+	case RP_COMMON_EVT_RUN:
 		ctx->state = RP_COMMON_STATE_WAIT_RX;
 		break;
 	default:
@@ -811,7 +811,7 @@ static void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
 }
 
-static void rr_act_prepare(struct ull_cp_conn *conn)
+static void rr_act_run(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -826,7 +826,7 @@ static void rr_act_prepare(struct ull_cp_conn *conn)
 		LL_ASSERT(0);
 	}
 
-	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_PREPARE, NULL);
+	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, NULL);
 }
 
 static void rr_act_complete(struct ull_cp_conn *conn)
@@ -861,9 +861,9 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
 	switch (evt) {
-	case RR_EVT_PREPARE:
+	case RR_EVT_RUN:
 		if (rr_peek(conn)) {
-			rr_act_prepare(conn);
+			rr_act_run(conn);
 			conn->remote.state = RR_STATE_ACTIVE;
 		}
 		break;
@@ -912,9 +912,9 @@ static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void rr_prepare(struct ull_cp_conn *conn)
+static void rr_run(struct ull_cp_conn *conn)
 {
-	rr_execute_fsm(conn, RR_EVT_PREPARE, NULL);
+	rr_execute_fsm(conn, RR_EVT_RUN, NULL);
 }
 
 static void rr_complete(struct ull_cp_conn *conn)
@@ -958,7 +958,7 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 	rr_enqueue(conn, ctx);
 
 	/* Prepare procedure */
-	rr_prepare(conn);
+	rr_run(conn);
 
 	/* Handle PDU */
 	ctx = rr_peek(conn);
@@ -991,10 +991,10 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	memset(&conn->vex, 0, sizeof(conn->vex));
 }
 
-void ull_cp_prepare(struct ull_cp_conn *conn)
+void ull_cp_run(struct ull_cp_conn *conn)
 {
-	rr_prepare(conn);
-	lr_prepare(conn);
+	rr_run(conn);
+	lr_run(conn);
 }
 
 void ull_cp_connect(struct ull_cp_conn *conn)
