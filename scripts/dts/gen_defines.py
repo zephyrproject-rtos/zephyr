@@ -70,6 +70,7 @@ def main():
             write_spi_dev(node)
             write_bus(node)
             write_existence_flags(node)
+            write_nodelabels(node)
 
     out_comment("Compatibles appearing on enabled nodes")
     for compat in sorted(edt.compat2enabled):
@@ -135,6 +136,16 @@ def augment_node(node):
     # - z_alias_idents: node identifiers based on any /aliases pointing to
     #   the node in the devicetree source, e.g.:
     #   ["DT_ALIAS_<NODE's_ALIAS_NAME>"]
+    #
+    # - z_label_idents: node identifiers based on labels for the node
+    #   These are DTS labels, not the somewhat zephyr-specific
+    #   "label" properties, so for example this node:
+    #
+    #   label1: label2: node {
+    #       label = "foo"
+    #   }
+    #
+    #   has z_label_idents = ["DT_NODELABEL_LABEL1", "DT_NODELABEL_LABEL2"].
 
     # Add the <COMPAT>_<UNIT_ADDRESS> style legacy identifier.
     node.z_primary_ident = node_ident(node)
@@ -164,6 +175,12 @@ def augment_node(node):
         # making the all_idents checking below necessary.
         alias_idents.append(f"{compat_s}_{alias_ident}")
     node.z_alias_idents = alias_idents
+
+    # Add z_label_idents, which are formed from devicetree labels
+    # for the node. This is distinct from the label property
+    # used by zephyr as an argument for device_get_binding().
+    node.z_label_idents = [f'NODELABEL_{str2ident(label)}'
+                           for label in node.labels]
 
     # z_other_idents are all the other identifiers for the node. We
     # use the term "other" instead of "alias" here because that
@@ -767,6 +784,17 @@ def write_existence_flags(node):
     for compat in node.compats:
         instance_no = node.edt.compat2enabled[compat].index(node)
         out(f"INST_{instance_no}_{str2ident(compat)}", 1)
+
+
+def write_nodelabels(node):
+    # Generate #defines of the form
+    #
+    #   #define DT_NODELABEL_<nodelabel> <IDENT>
+    #
+    # for enabled nodes.
+
+    for label in node.z_label_idents:
+        out(label, node.z_primary_ident)
 
 
 def node_ident(node):
