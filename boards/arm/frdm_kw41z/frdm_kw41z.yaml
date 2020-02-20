@@ -11,7 +11,6 @@ supported:
   - arduino_gpio
   - counter
   - gpio
-  - hwinfo
   - i2c
   - ieee802154
   - spi

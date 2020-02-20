@@ -15,5 +15,4 @@ toolchain:
 ram: 32768
 flash: 8192
 supported:
-  - hwinfo
   - counter
