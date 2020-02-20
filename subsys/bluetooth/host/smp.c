@@ -4356,6 +4356,14 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		/* Avoid the HCI-USB race condition where HCI data and
+		 * HCI events can be re-ordered, and pairing information appears
+		 * to be sent unencrypted.
+		 */
+		k_sleep(K_MSEC(100));
+	}
+
 	if (bt_smp_distribute_keys(smp)) {
 		return;
 	}
