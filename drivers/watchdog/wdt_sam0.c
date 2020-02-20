@@ -26,6 +26,13 @@ LOG_MODULE_REGISTER(wdt_sam0);
 #define WDT_CONFIG_PER_16K_Val WDT_CONFIG_PER_CYC16384_Val
 #endif
 
+/* syncbusy check is different for SAM D/E */
+#ifdef WDT_STATUS_SYNCBUSY
+#define WDT_SYNCBUSY WDT_REGS->STATUS.bit.SYNCBUSY
+#else
+#define WDT_SYNCBUSY WDT_REGS->SYNCBUSY.reg
+#endif
+
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
 	bool timeout_valid;
@@ -37,13 +44,9 @@ static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)
 {
-#ifdef WDT_STATUS_SYNCBUSY
-	while (WDT_REGS->STATUS.bit.SYNCBUSY) {
+	while (WDT_SYNCBUSY) {
+		/* wait for SYNCBUSY */
 	}
-#else
-	while (WDT_REGS->SYNCBUSY.reg) {
-	}
-#endif
 }
 
 static inline void wdt_sam0_set_enable(bool on)
@@ -229,6 +232,10 @@ static int wdt_sam0_feed(struct device *dev, int channel_id)
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeout installed");
 		return -EINVAL;
+	}
+
+	if (WDT_SYNCBUSY) {
+		return -EAGAIN;
 	}
 
 	WDT_REGS->CLEAR.reg = WDT_CLEAR_CLEAR_KEY_Val;
