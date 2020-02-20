@@ -120,16 +120,6 @@ config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
 
-choice
-	prompt "MII/RMII Interface to the Physical Layer"
-
-	config ETH_SAM_GMAC_RMII
-		bool "RMII"
-
-	config ETH_SAM_GMAC_MII
-		bool "MII"
-endchoice
-
 config ETH_SAM_GMAC_PHY_ADDR
 	int "GMAC PHY Address"
 	default 0
