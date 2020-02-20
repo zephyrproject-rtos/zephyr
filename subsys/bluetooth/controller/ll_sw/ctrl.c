@@ -3663,6 +3663,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 	/* Ack for transmitted data */
 	pdu_data_rx = (void *)node_rx->pdu_data;
 	if (pdu_data_rx->nesn != _radio.conn_curr->sn) {
+		struct radio_pdu_node_tx *node_tx;
 
 		/* Increment serial number */
 		_radio.conn_curr->sn++;
@@ -3674,11 +3675,16 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 			_radio.conn_curr->slave.latency_enabled = 1U;
 		}
 
-		if (_radio.conn_curr->empty == 0) {
-			struct radio_pdu_node_tx *node_tx;
+		if (!_radio.conn_curr->empty) {
+			node_tx = _radio.conn_curr->pkt_tx_head;
+		} else {
+			_radio.conn_curr->empty = 0U;
+			node_tx = NULL;
+		}
+
+		if (node_tx) {
 			u8_t pdu_data_tx_len;
 
-			node_tx = _radio.conn_curr->pkt_tx_head;
 			pdu_data_tx = (void *)(node_tx->pdu_data +
 				_radio.conn_curr->packet_tx_head_offset);
 
@@ -3696,13 +3702,12 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 				}
 			}
 
-			_radio.conn_curr->packet_tx_head_offset += pdu_data_tx_len;
+			_radio.conn_curr->packet_tx_head_offset +=
+				pdu_data_tx_len;
 			if (_radio.conn_curr->packet_tx_head_offset ==
 			    _radio.conn_curr->packet_tx_head_len) {
 				*tx_release = isr_rx_conn_pkt_release(node_tx);
 			}
-		} else {
-			_radio.conn_curr->empty = 0U;
 		}
 #if defined(CONFIG_BT_CTLR_TX_RETRY_DISABLE)
 	} else if (_radio.packet_counter != 1) {
