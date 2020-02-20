@@ -103,7 +103,63 @@ static int opt3001_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int opt3001_attr_set(struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	struct opt3001_data *drv_data = dev->driver_data;
+	u16_t value;
+	u32_t cr;
+
+	if (chan != SENSOR_CHAN_LIGHT) {
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_LOWER_THRESH: {
+		return -ENOTSUP;
+	}
+
+	case SENSOR_ATTR_UPPER_THRESH: {
+		return -ENOTSUP;
+	}
+
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		/* convert rate to mHz */
+		cr = val->val1 * 1000 + val->val2 / 1000;
+
+		/* The sensor supports 1.25Hz (= 1250mHz = 800ms period) */
+		/* or 10Hz (= 10000mHz = 100ms period) sample periods */
+		switch (cr) {
+		case 1250:
+			value = OPT3001_CONVERSION_TIME;
+			break;
+		case 10000:
+			value = 0;
+			break;
+		default:
+			LOG_DBG("Invalid sample rate");
+			value = 0;
+		}
+
+		if (opt3001_reg_update(drv_data, OPT3001_REG_CONFIG,
+				       OPT3001_CONVERSION_TIME,
+				       value) != 0) {
+			LOG_DBG("Failed to set attribute!");
+			return -EIO;
+		}
+
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static const struct sensor_driver_api opt3001_driver_api = {
+	.attr_set = opt3001_attr_set,
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
 };
@@ -112,6 +168,12 @@ static int opt3001_chip_init(struct device *dev)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
 	u16_t value;
+	s64_t now;
+
+	now = k_uptime_get() * 1000;
+	if (now < OPT3001_STARTUP_TIME_USEC) {
+		k_busy_wait(OPT3001_STARTUP_TIME_USEC - now);
+	}
 
 	drv_data->i2c = device_get_binding(DT_INST_0_TI_OPT3001_BUS_NAME);
 	if (drv_data->i2c == NULL) {
@@ -140,9 +202,13 @@ static int opt3001_chip_init(struct device *dev)
 		return -ENOTSUP;
 	}
 
+	LOG_DBG("OPT300x chip detected");
+
 	if (opt3001_reg_update(drv_data, OPT3001_REG_CONFIG,
 			       OPT3001_CONVERSION_MODE_MASK,
-			       OPT3001_CONVERSION_MODE_CONTINUOUS) != 0) {
+			       OPT3001_CONVERSION_MODE_CONTINUOUS |
+			       OPT3001_CONVERSION_TIME)
+			!= 0) {
 		LOG_ERR("Failed to set mode to continuous conversion");
 		return -EIO;
 	}
