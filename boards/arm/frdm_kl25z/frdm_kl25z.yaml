@@ -16,6 +16,5 @@ supported:
   - adc
   - arduino_gpio
   - gpio
-  - hwinfo
   - i2c
   - usb_device

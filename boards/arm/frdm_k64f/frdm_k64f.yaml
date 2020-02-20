@@ -13,7 +13,6 @@ supported:
   - can
   - counter
   - gpio
-  - hwinfo
   - i2c
   - netif:eth
   - nvs
