@@ -5,7 +5,7 @@
 Zephyr 2.2.0 (Working Draft)
 ############################
 
-We are pleased to announce the release of Zephyr kernel version 2.2.0.
+We are pleased to announce the release of Zephyr RTOS version 2.2.0.
 
 Major enhancements with this release include:
 
