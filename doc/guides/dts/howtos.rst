@@ -1,8 +1,11 @@
 Devicetree HOWTOs
 #################
 
-This page has instructions for getting things done with :ref:`devicetree` in
+This page has advice for getting things done with :ref:`devicetree` in
 Zephyr.
+
+.. This page could use some more love, especially giving advice to
+   driver writers about how to allocate their struct devices.
 
 Adding support for a board
 **************************
@@ -241,6 +244,10 @@ it to driver APIs in :zephyr_file:`include/drivers/`. These API functions
 usually take a ``struct device*`` as their first argument. This allows the
 driver API to use information from devicetree to interact with the device
 hardware.
+
+Driver writers should allocate a struct device for each enabled instance of a
+particular compatible using ``DT_INST_<instance-number>_<compatible>``
+:ref:`dt-existence-macros`.
 
 .. _flash_partitions:
 
