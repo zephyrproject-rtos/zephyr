@@ -83,6 +83,21 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
 
+config LWM2M_QUEUE_MODE_ENABLED
+	bool "Enable Queue Mode UDP binding"
+	help
+	  Set the transport binding to UDP with Queue Mode (UQ).
+
+config LWM2M_QUEUE_MODE_UPTIME
+	int "Specify time the LWM2M client should stay online in queue mode."
+	default 93
+	help
+	  This config specifies time (in seconds) the device should stay online
+	  after sending a message to the server. Note, that LWM2M specification
+	  recommends this to be CoAP MAX_TRANSMIT_WAIT parameter (which
+	  defaults to 93 seconds, see RFC 7252), it does not forbid other
+	  values though.
+
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
 	default y

@@ -67,6 +67,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
 #define CLIENT_EP_LEN		33
 
+/* Up to 3 characters + NULL */
+#define CLIENT_BINDING_LEN sizeof("UQS")
+
 /* The states for the RD client state machine */
 /*
  * When node is unregistered it ends up in UNREGISTERED
@@ -579,6 +582,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	struct lwm2m_message *msg;
 	u16_t client_data_len;
 	int ret;
+	char binding[CLIENT_BINDING_LEN];
 
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
@@ -633,7 +637,15 @@ static int sm_send_registration(bool send_obj_support_data,
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
 				  query_buffer, strlen(query_buffer));
 
-	/* TODO: add supported binding query string */
+	lwm2m_engine_get_binding(binding);
+	/* UDP is a default binding, no need to add option if UDP is used. */
+	if (strcmp(binding, "U") != 0) {
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			 "b=%s", binding);
+		/* TODO: handle return error */
+		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+					  query_buffer, strlen(query_buffer));
+	}
 
 	if (send_obj_support_data) {
 		ret = coap_packet_append_payload_marker(&msg->cpkt);
