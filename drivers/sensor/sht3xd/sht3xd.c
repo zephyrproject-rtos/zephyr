@@ -182,6 +182,7 @@ static int sht3xd_init(struct device *dev)
 	struct sht3xd_data *data = dev->driver_data;
 	const struct sht3xd_config *cfg = dev->config_info;
 	struct device *i2c = device_get_binding(cfg->bus_name);
+	s64_t now;
 
 	if (i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
@@ -196,6 +197,19 @@ static int sht3xd_init(struct device *dev)
 	}
 	data->dev = dev;
 
+	now = k_uptime_get() * 1000;
+	if (now < SHT3XD_STARTUP_TIME_USEC) {
+		k_busy_wait(SHT3XD_STARTUP_TIME_USEC - now);
+	}
+
+	/* reset the device */
+	if (sht3xd_write_command(dev, SHT3XD_CMD_RESET) < 0) {
+		LOG_DBG("Failed to reset device");
+		return -EIO;
+	}
+
+	k_busy_wait(SHT3XD_RESET_WAIT_USEC);
+
 	/* clear status register */
 	if (sht3xd_write_command(dev, SHT3XD_CMD_CLEAR_STATUS) < 0) {
 		LOG_DBG("Failed to clear status register!");
@@ -203,6 +217,8 @@ static int sht3xd_init(struct device *dev)
 	}
 
 	k_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
+
+	LOG_DBG("SHT3x chip detected");
 
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
 	/* set periodic measurement mode */

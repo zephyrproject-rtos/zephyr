@@ -13,6 +13,7 @@
 
 #define SHT3XD_CMD_FETCH                0xE000
 #define SHT3XD_CMD_ART                  0x2B32
+#define SHT3XD_CMD_RESET                0x30A2
 #define SHT3XD_CMD_READ_STATUS          0xF32D
 #define SHT3XD_CMD_CLEAR_STATUS         0x3041
 
@@ -42,6 +43,8 @@
 #endif
 
 #define SHT3XD_CLEAR_STATUS_WAIT_USEC   1000
+#define SHT3XD_RESET_WAIT_USEC          1500
+#define SHT3XD_STARTUP_TIME_USEC        1000
 
 struct sht3xd_config {
 	char *bus_name;
