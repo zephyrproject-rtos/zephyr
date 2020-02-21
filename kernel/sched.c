@@ -488,6 +488,8 @@ void z_thread_single_abort(struct k_thread *thread)
 	}
 
 	LOCKED(&sched_spinlock) {
+		struct k_thread *waiter;
+
 		if (z_is_thread_ready(thread)) {
 			if (z_is_thread_queued(thread)) {
 				_priq_run_remove(&_kernel.ready_q.runq,
@@ -517,20 +519,38 @@ void z_thread_single_abort(struct k_thread *thread)
 		}
 
 		thread->base.thread_state |= mask;
+
+#ifdef CONFIG_USERSPACE
+		/* Clear initialized state so that this thread object may be
+		 * re-used and triggers errors if API calls are made on it from
+		 * user threads
+		 *
+		 * For a whole host of reasons this is not ideal and should be
+		 * iterated on.
+		 */
+		z_object_uninit(thread->stack_obj);
+		z_object_uninit(thread);
+
+		/* Revoke permissions on thread's ID so that it may be
+		 * recycled
+		 */
+		z_thread_perms_all_clear(thread);
+#endif
+
+		/* Wake everybody up who was trying to join with this thread.
+		 * A reschedule is invoked later by k_thread_abort().
+		 */
+		while ((waiter = z_waitq_head(&thread->base.join_waiters)) !=
+		       NULL) {
+			_priq_wait_remove(&pended_on(waiter)->waitq, waiter);
+			z_mark_thread_as_not_pending(waiter);
+			waiter->base.pended_on = NULL;
+			arch_thread_return_value_set(waiter, 0);
+			ready_thread(waiter);
+		}
 	}
 
 	sys_trace_thread_abort(thread);
-
-#ifdef CONFIG_USERSPACE
-	/* Clear initialized state so that this thread object may be re-used
-	 * and triggers errors if API calls are made on it from user threads
-	 */
-	z_object_uninit(thread->stack_obj);
-	z_object_uninit(thread);
-
-	/* Revoke permissions on thread's ID so that it may be recycled */
-	z_thread_perms_all_clear(thread);
-#endif
 }
 
 static void unready_thread(struct k_thread *thread)
@@ -549,19 +569,21 @@ void z_remove_thread_from_ready_q(struct k_thread *thread)
 	}
 }
 
-static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+/* sched_spinlock must be held */
+static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
-	LOCKED(&sched_spinlock) {
-		unready_thread(thread);
-		z_mark_thread_as_pending(thread);
-		sys_trace_thread_pend(thread);
+	unready_thread(thread);
+	z_mark_thread_as_pending(thread);
+	sys_trace_thread_pend(thread);
 
-		if (wait_q != NULL) {
-			thread->base.pended_on = wait_q;
-			z_priq_wait_add(&wait_q->waitq, thread);
-		}
+	if (wait_q != NULL) {
+		thread->base.pended_on = wait_q;
+		z_priq_wait_add(&wait_q->waitq, thread);
 	}
+}
 
+static void add_thread_timeout_ms(struct k_thread *thread, s32_t timeout)
+{
 	if (timeout != K_FOREVER) {
 		s32_t ticks;
 
@@ -573,6 +595,15 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 		z_add_thread_timeout(thread, ticks);
 	}
+}
+
+static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+{
+	LOCKED(&sched_spinlock) {
+		add_to_waitq_locked(thread, wait_q);
+	}
+
+	add_thread_timeout_ms(thread, timeout);
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
@@ -1375,3 +1406,79 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 }
 
 #endif /* CONFIG_SCHED_CPU_MASK */
+
+int z_impl_k_thread_join(struct k_thread *thread, s32_t timeout)
+{
+	k_spinlock_key_t key;
+	int ret;
+
+	__ASSERT(((arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+
+	key = k_spin_lock(&sched_spinlock);
+
+	if ((thread->base.pended_on == &_current->base.join_waiters) ||
+	    (thread == _current)) {
+		ret = -EDEADLK;
+		goto out;
+	}
+
+	if ((thread->base.thread_state & _THREAD_DEAD) != 0) {
+		ret = 0;
+		goto out;
+	}
+
+	if (timeout == K_NO_WAIT) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+	pending_current = _current;
+#endif
+	add_to_waitq_locked(_current, &thread->base.join_waiters);
+	add_thread_timeout_ms(_current, timeout);
+
+	return z_swap(&sched_spinlock, key);
+out:
+	k_spin_unlock(&sched_spinlock, key);
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+/* Special case: don't oops if the thread is uninitialized.  This is because
+ * the initialization bit does double-duty for thread objects; if false, means
+ * the thread object is truly uninitialized, or the thread ran and exited for
+ * some reason.
+ *
+ * Return true in this case indicating we should just do nothing and return
+ * success to the caller.
+ */
+static bool thread_obj_validate(struct k_thread *thread)
+{
+	struct _k_object *ko = z_object_find(thread);
+	int ret = z_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
+
+	switch (ret) {
+	case 0:
+		return false;
+	case -EINVAL:
+		return true;
+	default:
+#ifdef CONFIG_LOG
+		z_dump_object_error(ret, thread, ko, K_OBJ_THREAD);
+#endif
+		Z_OOPS(Z_SYSCALL_VERIFY_MSG(ret, "access denied"));
+	}
+	CODE_UNREACHABLE;
+}
+
+int z_vrfy_k_thread_join(struct k_thread *thread, s32_t timeout)
+{
+	if (thread_obj_validate(thread)) {
+		return 0;
+	}
+
+	return z_impl_k_thread_join(thread, timeout);
+}
+#include <syscalls/k_thread_join_mrsh.c>
+#endif /* CONFIG_USERSPACE */

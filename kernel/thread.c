@@ -526,6 +526,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	stack_size = adjust_stack_size(stack_size);
 
+	z_waitq_init(&new_thread->base.join_waiters);
+
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
 	/* reserve space on top of stack for local data */
