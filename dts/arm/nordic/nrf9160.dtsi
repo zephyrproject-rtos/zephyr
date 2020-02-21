@@ -109,6 +109,8 @@
 			compatible = "nordic,nrf-spu";
 			reg = <0x50003000 0x1000>;
 			interrupts = <3 1>;
+			ram-regions = <32 8>;
+			flash-regions = <32 32>;
 			status = "okay";
 		};
 

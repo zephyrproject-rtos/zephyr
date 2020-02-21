@@ -10,3 +10,13 @@ properties:
 
     interrupts:
       required: true
+
+    ram-regions:
+      type: array
+      description: number of lockable RAM regions and region size in KiB
+      required: true
+
+    flash-regions:
+      type: array
+      description: number of lockable flash regions and region size in KiB
+      required: true
