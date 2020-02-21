@@ -147,9 +147,10 @@ Architectures
 
   * Added initial support for ARMv8-A 64-bit architecture (Experimental)
   * Added support for Direct Dynamic Interrupts in ARM Cortex-M
-  * Significant enhancements for ARM Cortex-R architecture port
+  * Fixed several critical bugs in ARM Cortex-R architecture port
   * Fixed several critical bugs in Stack Limit checking for ARMv8-M
   * Added QEMU emulation support for ARM Cortex-A53
+  * Enhanced QEMU emulation support for ARM Cortex-R architecture
   * Enhanced test coverage for ARM-specific kernel features
   * Added support for GIC SGI and PPI interrupt types
   * Refactored GIC driver to support multiple GIC versions
