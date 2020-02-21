@@ -58,4 +58,13 @@
 #endif
 #endif /* !_LINKER */
 
+/** @brief Macro to specify function parameters that must not be NULL
+ *
+ * When -Wnonnull option is enabled, the compiler will raise a warning
+ * when a NULL pointer is given to an argument slot marked with it.
+ */
+#ifndef Z_NON_NULL
+#define Z_NON_NULL(...)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_H_ */

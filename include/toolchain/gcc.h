@@ -461,5 +461,9 @@ do {                                                                    \
 		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
 	})
 
+#if __GNUC__ > 4
+#define Z_NON_NULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#endif
+
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */
