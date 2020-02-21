@@ -10,6 +10,7 @@ macro(toolchain_cc_warning_base)
     -Wformat-security
     -Wno-format-zero-length
     -Wno-main
+    -Wno-nonnull-compare
   )
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
