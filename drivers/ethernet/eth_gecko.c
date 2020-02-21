@@ -60,6 +60,29 @@ static void link_configure(ETH_TypeDef *eth, u32_t flags)
 	eth->NETWORKCTRL |= (ETH_NETWORKCTRL_ENBTX | ETH_NETWORKCTRL_ENBRX);
 }
 
+static void eth_gecko_setup_mac(struct device *dev)
+{
+	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	ETH_TypeDef *eth = cfg->regs;
+	u32_t link_status;
+	int result;
+
+	/* PHY auto-negotiate link parameters */
+	result = phy_gecko_auto_negotiate(&cfg->phy, &link_status);
+	if (result < 0) {
+		LOG_ERR("ETH PHY auto-negotiate sequence failed");
+		return;
+	}
+
+	LOG_INF("Speed %s Mb",
+		link_status & ETH_NETWORKCFG_SPEED ? "100" : "10");
+	LOG_INF("%s duplex",
+		link_status & ETH_NETWORKCFG_FULLDUPLEX ? "Full" : "Half");
+
+	/* Set up link parameters and enable receiver/transmitter */
+	link_configure(eth, link_status);
+}
+
 static void eth_init_tx_buf_desc(void)
 {
 	u32_t address;
@@ -315,6 +338,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 		if (res == 0) {
 			if (dev_data->link_up != true) {
 				dev_data->link_up = true;
+				LOG_INF("Link up");
+				eth_gecko_setup_mac(dev);
 				net_eth_carrier_on(dev_data->iface);
 			}
 
@@ -324,11 +349,14 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			if (phy_gecko_is_linked(&cfg->phy)) {
 				if (dev_data->link_up != true) {
 					dev_data->link_up = true;
+					LOG_INF("Link up");
+					eth_gecko_setup_mac(dev);
 					net_eth_carrier_on(dev_data->iface);
 				}
 			} else   {
 				if (dev_data->link_up != false) {
 					dev_data->link_up = false;
+					LOG_INF("Link down");
 					net_eth_carrier_off(dev_data->iface);
 				}
 			}
@@ -491,7 +519,6 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
-	u32_t link_status;
 	int result;
 
 	__ASSERT_NO_MSG(iface != NULL);
@@ -596,13 +623,6 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	/* PHY auto-negotiate link parameters */
-	result = phy_gecko_auto_negotiate(&cfg->phy, &link_status);
-	if (result < 0) {
-		LOG_ERR("ETH PHY auto-negotiate sequence failed");
-		return;
-	}
-
 	/* Initialise TX/RX semaphores */
 	k_sem_init(&dev_data->tx_sem, 1, ETH_TX_BUF_COUNT);
 	k_sem_init(&dev_data->rx_sem, 0, UINT_MAX);
@@ -613,16 +633,14 @@ static void eth_iface_init(struct net_if *iface)
 			rx_thread, (void *) dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_GECKO_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
-
-	/* Set up link parameters and enable receiver/transmitter */
-	link_configure(eth, link_status);
 }
 
 static enum ethernet_hw_caps eth_gecko_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return (ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
+			ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET);
 }
 
 static const struct ethernet_api eth_api = {

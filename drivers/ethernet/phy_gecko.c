@@ -255,7 +255,7 @@ int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
 		*status = 0;
 	}
 
-	LOG_INF("common abilities: speed %s Mb, %s duplex",
+	LOG_DBG("common abilities: speed %s Mb, %s duplex",
 		*status & ETH_NETWORKCFG_SPEED ? "100" : "10",
 		*status & ETH_NETWORKCFG_FULLDUPLEX ? "full" : "half");
 
