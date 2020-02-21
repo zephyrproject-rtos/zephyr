@@ -1,0 +1,14 @@
+# gecko entropy generator driver configuration
+
+# Copyright (c) 2020 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GECKO_TRNG
+	bool "GECKO TRNG driver"
+	depends on SOC_GECKO_TRNG
+	select ENTROPY_HAS_DRIVER
+	select HAS_DTS_ENTROPY
+	default y
+	help
+	  This option enables the true random number generator
+	  driver based on the TRNG.
