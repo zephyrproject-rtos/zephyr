@@ -537,9 +537,6 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	if (timeout != K_FOREVER) {
 		s32_t ticks;
 
-		__ASSERT(timeout >= 0,
-			"Only non-negative values are accepted.");
-
 		if (timeout < 0) {
 			timeout = 0;
 		}
