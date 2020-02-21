@@ -151,6 +151,8 @@ Architectures
   * Fixed several critical bugs in Stack Limit checking for ARMv8-M
   * Added QEMU emulation support for ARM Cortex-A53
   * Enhanced test coverage for ARM-specific kernel features
+  * Added support for GIC SGI and PPI interrupt types
+  * Refactored GIC driver to support multiple GIC versions
 
 * POSIX:
 
