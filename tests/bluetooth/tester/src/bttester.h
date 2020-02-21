@@ -432,6 +432,8 @@ struct gatt_start_server_rp {
 	u8_t db_attr_cnt;
 } __packed;
 
+#define GATT_RESET_SERVER		0x08
+
 #define GATT_SET_ENC_KEY_SIZE		0x09
 struct gatt_set_enc_key_size_cmd {
 	u16_t attr_id;
@@ -466,11 +468,19 @@ struct gatt_descriptor {
 } __packed;
 
 #define GATT_EXCHANGE_MTU		0x0a
+struct gatt_exchange_mtu_cmd {
+	u8_t address_type;
+	u8_t address[6];
+} __packed;
 
 #define GATT_DISC_ALL_PRIM		0x0b
 struct gatt_disc_all_prim_cmd {
 	u8_t address_type;
 	u8_t address[6];
+} __packed;
+struct gatt_disc_all_prim_rp {
+	u8_t services_count;
+	struct gatt_service services[0];
 } __packed;
 
 #define GATT_DISC_PRIM_UUID		0x0c
@@ -552,6 +562,11 @@ struct gatt_read_uuid_cmd {
 	u8_t uuid_length;
 	u8_t uuid[0];
 } __packed;
+struct gatt_read_uuid_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
 
 #define GATT_READ_LONG			0x13
 struct gatt_read_long_cmd {
@@ -560,6 +575,11 @@ struct gatt_read_long_cmd {
 	u16_t handle;
 	u16_t offset;
 } __packed;
+struct gatt_read_long_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
 
 #define GATT_READ_MULTIPLE		0x14
 struct gatt_read_multiple_cmd {
@@ -567,6 +587,11 @@ struct gatt_read_multiple_cmd {
 	u8_t address[6];
 	u8_t handles_count;
 	u16_t handles[0];
+} __packed;
+struct gatt_read_multiple_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
 } __packed;
 
 #define GATT_WRITE_WITHOUT_RSP		0x15
@@ -595,6 +620,9 @@ struct gatt_write_cmd {
 	u16_t data_length;
 	u8_t data[0];
 } __packed;
+struct gatt_write_rp {
+	u8_t att_response;
+} __packed;
 
 #define GATT_WRITE_LONG			0x18
 struct gatt_write_long_cmd {
@@ -604,6 +632,22 @@ struct gatt_write_long_cmd {
 	u16_t offset;
 	u16_t data_length;
 	u8_t data[0];
+} __packed;
+struct gatt_write_long_rp {
+	u8_t att_response;
+} __packed;
+
+#define GATT_RELIABLE_WRITE		0x19
+struct gatt_reliable_write_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u16_t handle;
+	u16_t offset;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
+struct gatt_reliable_write_rp {
+	u8_t att_response;
 } __packed;
 
 #define GATT_CFG_NOTIFY			0x1a
@@ -643,6 +687,12 @@ struct gatt_get_attribute_value_rp {
 	u8_t att_response;
 	u16_t value_length;
 	u8_t value[0];
+} __packed;
+
+#define GATT_CHANGE_DB			0x1e
+struct gatt_change_db_cmd {
+	u16_t start_handle;
+	u8_t visibility;
 } __packed;
 
 /* GATT events */
