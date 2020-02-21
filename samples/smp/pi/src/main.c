@@ -17,7 +17,8 @@
 #define DIGITS_NUM	240
 
 #define LENGTH		((DIGITS_NUM / 4) * 14)
-#define STACK_SIZE	(LENGTH * sizeof(int) + 512)
+#define STACK_SIZE	((LENGTH * sizeof(int) + 512) + \
+			 CONFIG_TEST_EXTRA_STACKSIZE)
 
 #ifdef CONFIG_SMP
 #define CORES_NUM	CONFIG_MP_NUM_CPUS
