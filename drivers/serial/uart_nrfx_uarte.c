@@ -712,6 +712,15 @@ static void endrx_isr(struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (!data->async->rx_enabled) {
+		if (data->async->rx_buf == NULL) {
+			/* This condition can occur only after triggering
+			 * FLUSHRX task.
+			 */
+			struct uart_event evt = {
+				.type = UART_RX_DISABLED,
+			};
+			user_callback(dev, &evt);
+		}
 		return;
 	}
 
@@ -783,9 +792,15 @@ static void rxto_isr(struct device *dev)
 		user_callback(dev, &evt);
 		data->async->rx_next_buf = NULL;
 	}
-	evt.type = UART_RX_DISABLED;
 
-	user_callback(dev, &evt);
+	/* Flushing RX fifo requires buffer bigger than 4 bytes to empty fifo */
+	static u8_t flush_buf[5];
+
+	nrf_uarte_rx_buffer_set(get_uarte_instance(dev), flush_buf, 5);
+	/* Final part of handling RXTO event is in ENDRX interrupt handler.
+	 * ENDRX is generated as a result of FLUSHRX task.
+	 */
+	nrf_uarte_task_trigger(get_uarte_instance(dev), NRF_UARTE_TASK_FLUSHRX);
 }
 
 static void txstopped_isr(struct device *dev)
