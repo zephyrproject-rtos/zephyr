@@ -151,8 +151,16 @@ static inline u32_t mpu_region_get_size(u32_t index)
  */
 static inline int is_enabled_region(u32_t index)
 {
+	/* Lock IRQs to ensure RNR value is correct when reading RASR. */
+	unsigned int key;
+	u32_t rasr;
+
+	key = irq_lock();
 	MPU->RNR = index;
-	return (MPU->RASR & MPU_RASR_ENABLE_Msk) ? 1 : 0;
+	rasr = MPU->RASR;
+	irq_unlock(key);
+
+	return (rasr & MPU_RASR_ENABLE_Msk) ? 1 : 0;
 }
 
 /* Only a single bit is set for all user accessible permissions.
@@ -169,8 +177,16 @@ static inline int is_enabled_region(u32_t index)
  */
 static inline u32_t get_region_ap(u32_t r_index)
 {
+	/* Lock IRQs to ensure RNR value is correct when reading RASR. */
+	unsigned int key;
+	u32_t rasr;
+
+	key = irq_lock();
 	MPU->RNR = r_index;
-	return (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
+	rasr = MPU->RASR;
+	irq_unlock(key);
+
+	return (rasr & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
 }
 
 /**
@@ -185,9 +201,18 @@ static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_size_lshift;
 	u32_t r_addr_end;
 
+	/* Lock IRQs to ensure RNR value is correct when reading RBAR, RASR. */
+	unsigned int key;
+	u32_t rbar, rasr;
+
+	key = irq_lock();
 	MPU->RNR = r_index;
-	r_addr_start = MPU->RBAR & MPU_RBAR_ADDR_Msk;
-	r_size_lshift = ((MPU->RASR & MPU_RASR_SIZE_Msk) >>
+	rbar = MPU->RBAR;
+	rasr = MPU->RASR;
+	irq_unlock(key);
+
+	r_addr_start = rbar & MPU_RBAR_ADDR_Msk;
+	r_size_lshift = ((rasr & MPU_RASR_SIZE_Msk) >>
 			MPU_RASR_SIZE_Pos) + 1;
 	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1;
 
