@@ -85,6 +85,12 @@ prior to returning, since the kernel does *not* reclaim them automatically.
     The kernel does not currently make any claims regarding an application's
     ability to respawn a thread that terminates.
 
+In some cases a thread may want to sleep until another thread terminates.
+This can be accomplished with the :cpp:func:`k_thread_join()` API. This
+will block the calling thread until either the timeout expires, the target
+thread self-exits, or the target thread aborts (either due to a
+k_thread_abort() call or triggering a fatal error).
+
 Thread Aborting
 ===============
 
