@@ -28,11 +28,14 @@ config FS_MGMT_UL_CHUNK_SIZE
 
 config FS_MGMT_DL_CHUNK_SIZE
 	int "Maximum chunk size for file downloads"
-	default 512
+	default MCUMGR_BUF_SIZE
 	help
 	  Limits the maximum chunk size for file downloads, in bytes.  A buffer of
 	  this size gets allocated on the stack during handling of a file download
 	  command.
+	  NOTE: THere is no sense to set this parameter to value greater
+	  than MCUMGR_BUF_SIZE, as at this point MCUMGR is not able to
+	  fragment buffer to fit it to MCUMGR_BUF_SIZE.
 
 config FS_MGMT_PATH_SIZE
 	int "Maximum file path length"
