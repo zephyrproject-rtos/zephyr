@@ -225,6 +225,7 @@ static void set_discoverable(u8_t *data, u16_t len)
 		atomic_set_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
 		break;
 	default:
+		LOG_WRN("unknown mode: 0x%x", cmd->discoverable);
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -291,10 +292,13 @@ fail:
 static void stop_advertising(const u8_t *data, u16_t len)
 {
 	struct gap_stop_advertising_rp rp;
+	int err;
 
-	if (bt_le_adv_stop() < 0) {
+	err = bt_le_adv_stop();
+	if (err < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		LOG_ERR("Failed to stop advertising: %d", err);
 		return;
 	}
 
@@ -438,6 +442,7 @@ static void start_discovery(const u8_t *data, u16_t len)
 	/* only LE scan is supported */
 	if (cmd->flags & GAP_DISCOVERY_FLAG_BREDR) {
 		status = BTP_STATUS_FAILED;
+		LOG_WRN("BR/EDR not supported");
 		goto reply;
 	}
 
@@ -445,6 +450,7 @@ static void start_discovery(const u8_t *data, u16_t len)
 			     BT_LE_SCAN_ACTIVE : BT_LE_SCAN_PASSIVE,
 			     device_found) < 0) {
 		status = BTP_STATUS_FAILED;
+		LOG_ERR("Failed to start scanning");
 		goto reply;
 	}
 
@@ -460,8 +466,11 @@ reply:
 static void stop_discovery(const u8_t *data, u16_t len)
 {
 	u8_t status = BTP_STATUS_SUCCESS;
+	int err;
 
-	if (bt_le_scan_stop() < 0) {
+	err = bt_le_scan_stop();
+	if (err < 0) {
+		LOG_ERR("Failed to stop scanning: %d", err);
 		status = BTP_STATUS_FAILED;
 	}
 
@@ -477,6 +486,7 @@ static void connect(const u8_t *data, u16_t len)
 	conn = bt_conn_create_le((bt_addr_le_t *) data,
 				 BT_LE_CONN_PARAM_DEFAULT);
 	if (!conn) {
+		LOG_ERR("Failed to create connection");
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
@@ -496,10 +506,12 @@ static void disconnect(const u8_t *data, u16_t len)
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
+		LOG_ERR("Unknown connection");
 		goto rsp;
 	}
 
 	if (bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN)) {
+		LOG_ERR("Failed to disconnect");
 		status = BTP_STATUS_FAILED;
 	} else {
 		status = BTP_STATUS_SUCCESS;
@@ -570,6 +582,7 @@ static void set_io_cap(const u8_t *data, u16_t len)
 		break;
 	case GAP_IO_CAP_DISPLAY_YESNO:
 	default:
+		LOG_WRN("Unhandled io_cap: 0x%x", cmd->io_cap);
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
@@ -590,14 +603,18 @@ static void pair(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
 	u8_t status;
+	int err;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
+		LOG_ERR("Unknown connection");
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
 
-	if (bt_conn_set_security(conn, BT_SECURITY_L2)) {
+	err = bt_conn_set_security(conn, BT_SECURITY_L2);
+	if (err < 0) {
+		LOG_ERR("Failed to set security: %d", err);
 		status = BTP_STATUS_FAILED;
 		bt_conn_unref(conn);
 		goto rsp;
@@ -623,6 +640,7 @@ static void unpair(const u8_t *data, u16_t len)
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	if (!conn) {
+		LOG_ERR("Unknown connection");
 		goto keys;
 	}
 
@@ -631,6 +649,7 @@ static void unpair(const u8_t *data, u16_t len)
 	bt_conn_unref(conn);
 
 	if (err < 0) {
+		LOG_ERR("Failed to disconnect: %d", err);
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
@@ -647,17 +666,22 @@ static void passkey_entry(const u8_t *data, u16_t len)
 	const struct gap_passkey_entry_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 	u8_t status;
+	int err;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
+		LOG_ERR("Unknown connection");
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
 
-	bt_conn_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
+	err = bt_conn_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
+	if (err < 0) {
+		LOG_ERR("Failed to enter passeky: %d", err);
+	}
 
 	bt_conn_unref(conn);
-	status = BTP_STATUS_SUCCESS;
+	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
 
 rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
@@ -675,17 +699,21 @@ static void conn_param_update(const u8_t *data, u16_t len)
 	};
 	struct bt_conn *conn;
 	u8_t status = BTP_STATUS_FAILED;
+	int err;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
+		LOG_ERR("Unknown connection");
 		goto rsp;
 	}
 
-	if (!bt_conn_le_param_update(conn, &param)) {
-		status = BTP_STATUS_SUCCESS;
+	err = bt_conn_le_param_update(conn, &param);
+	if (err < 0) {
+		LOG_ERR("Failed to update params: %d", err);
 	}
 
 	bt_conn_unref(conn);
+	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
 
 rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
@@ -701,6 +729,8 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		if (index != BTP_INDEX_NONE){
 			tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
 				   BTP_STATUS_FAILED);
+			LOG_WRN("index != BTP_INDEX_NONE: opcode: 0x%x "
+				"index: 0x%x", opcode, index);
 			return;
 		}
 		break;
@@ -708,6 +738,8 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		if (index != CONTROLLER_INDEX){
 			tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
 				   BTP_STATUS_FAILED);
+			LOG_WRN("index != CONTROLLER_INDEX: opcode: 0x%x "
+				 "index: 0x%x", opcode, index);
 			return;
 		}
 		break;
@@ -763,6 +795,7 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		conn_param_update(data, len);
 		return;
 	default:
+		LOG_WRN("Unknown opcode: 0x%x", opcode);
 		tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);
 		return;
@@ -774,6 +807,7 @@ static void tester_init_gap_cb(int err)
 	if (err) {
 		tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE,
 			   BTP_INDEX_NONE, BTP_STATUS_FAILED);
+		LOG_WRN("Error: %d", err);
 		return;
 	}
 
@@ -794,7 +828,11 @@ static void tester_init_gap_cb(int err)
 
 u8_t tester_init_gap(void)
 {
-	if (bt_enable(tester_init_gap_cb) < 0) {
+	int err;
+
+	err = bt_enable(tester_init_gap_cb);
+	if (err < 0) {
+		LOG_ERR("Unable to enable Bluetooth: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
