@@ -27,7 +27,7 @@ flash-runner: ${BOARD_FLASH_RUNNER}
     string(APPEND yaml_contents "\
 
 # Default debug runner if --runner is not given.
-debug-runner: ${BOARD_FLASH_RUNNER}
+debug-runner: ${BOARD_DEBUG_RUNNER}
 ")
   endif()
 
@@ -69,14 +69,21 @@ args:
   foreach(runner ${runners})
     string(MAKE_C_IDENTIFIER ${runner} runner_id)
     string(APPEND yaml_contents "\
-  ${runner_id}:
-")
+  ${runner}:")
     get_property(args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_id}")
-    foreach(arg ${args})
-      string(APPEND yaml_contents "\
-  - ${arg}
+    if(args)
+      # Usually, the runner has arguments. Append them to runners.yaml,
+      # one per line.
+      string(APPEND yaml_contents "\n")
+      foreach(arg ${args})
+        string(APPEND yaml_contents "\
+    - ${arg}
 ")
-    endforeach()
+      endforeach()
+    else()
+      # If the runner doesn't need any arguments, just use an empty list.
+      string(APPEND yaml_contents " []\n")
+    endif()
   endforeach()
 
   # Write the final contents and set its location in the cache.
