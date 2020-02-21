@@ -171,6 +171,7 @@ struct gap_stop_advertising_rp {
 #define GAP_DISCOVERY_FLAG_LIMITED		0x04
 #define GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
 #define GAP_DISCOVERY_FLAG_LE_OBSERVE		0x10
+#define GAP_DISCOVERY_FLAG_OWN_ID_ADDR		0x20
 
 #define GAP_START_DISCOVERY		0x0c
 struct gap_start_discovery_cmd {
@@ -228,6 +229,17 @@ struct gap_passkey_confirm_cmd {
 	u8_t match;
 } __packed;
 
+#define GAP_START_DIRECTED_ADV		0x15
+struct gap_start_directed_adv_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t high_duty;
+	u8_t own_id_addr;
+} __packed;
+struct gap_start_directed_adv_rp {
+	u32_t current_settings;
+} __packed;
+
 #define GAP_CONN_PARAM_UPDATE		0x16
 struct gap_conn_param_update_cmd {
 	u8_t address_type;
@@ -236,6 +248,35 @@ struct gap_conn_param_update_cmd {
 	u16_t interval_max;
 	u16_t latency;
 	u16_t timeout;
+} __packed;
+
+#define GAP_PAIRING_CONSENT		0x17
+struct gap_pairing_consent_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t consent;
+} __packed;
+
+#define GAP_OOB_LEGACY_SET_DATA		0x18
+struct gap_oob_legacy_set_data_cmd {
+	u8_t oob_data[16];
+} __packed;
+
+#define GAP_OOB_SC_GET_LOCAL_DATA	0x19
+struct gap_oob_sc_get_local_data_rp {
+	u8_t rand[16];
+	u8_t conf[16];
+} __packed;
+
+#define GAP_OOB_SC_SET_REMOTE_DATA	0x1a
+struct gap_oob_sc_set_remote_data_cmd {
+	u8_t rand[16];
+	u8_t conf[16];
+} __packed;
+
+#define GAP_SET_MITM			0x1b
+struct gap_set_mitm {
+	u8_t mitm;
 } __packed;
 
 /* events */
@@ -308,6 +349,23 @@ struct gap_conn_param_update_ev {
 	u16_t interval;
 	u16_t latency;
 	u16_t timeout;
+} __packed;
+
+#define GAP_SEC_LEVEL_UNAUTH_ENC	0x01
+#define GAP_SEC_LEVEL_AUTH_ENC		0x02
+#define GAP_SEC_LEVEL_AUTH_SC		0x03
+
+#define GAP_EV_SEC_LEVEL_CHANGED	0x89
+struct gap_sec_level_changed_ev {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t sec_level;
+} __packed;
+
+#define GAP_EV_PAIRING_CONSENT_REQ	0x8a
+struct gap_pairing_consent_req_ev {
+	u8_t address_type;
+	u8_t address[6];
 } __packed;
 
 /* GATT Service */
