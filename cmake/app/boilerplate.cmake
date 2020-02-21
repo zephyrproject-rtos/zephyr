@@ -513,7 +513,7 @@ if(CONFIG_QEMU_TARGET)
   if(CONFIG_NET_QEMU_ETHERNET)
     if(CONFIG_ETH_NIC_MODEL)
       list(APPEND QEMU_FLAGS_${ARCH}
-        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
+        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}
       )
     else()
       message(FATAL_ERROR "
