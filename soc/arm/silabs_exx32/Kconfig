@@ -97,6 +97,11 @@ config SOC_GECKO_WDOG
 	help
 	  Set if the Watchdog Timer (WDOG) HAL module is used.
 
+config SOC_GECKO_TRNG
+	bool
+	help
+	  Set if the SoC has a True Random Number Generator (TRNG) module.
+
 config SOC_GECKO_EMU_DCDC
 	bool "Enable SoC DC/DC regulator"
 	select SOC_GECKO_EMU

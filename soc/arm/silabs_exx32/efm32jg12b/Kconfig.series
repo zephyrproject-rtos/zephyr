@@ -18,5 +18,6 @@ config SOC_SERIES_EFM32JG12B
 	select SOC_GECKO_CMU
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
+	select SOC_GECKO_TRNG
 	help
 	  Enable support for EFM32 JadeGecko MCU series
