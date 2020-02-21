@@ -24,6 +24,43 @@ menuconfig MCUMGR_CMD_FS_MGMT
 	  Enables mcumgr handlers for file management
 
 if MCUMGR_CMD_FS_MGMT
+
+choice FS_MGMT_MAX_FILE_SIZE
+	prompt "Maximum file size that could be uploaded/downloaded"
+	default FS_MGMT_MAX_FILE_SIZE_64KB
+	help
+	  Maximum file size that will be allowed to be downloaded from
+	  device.
+	  This option decides on number of bytes that are reserved in
+	  CBOR frame for storage of offset/size of file downloaded.
+
+config FS_MGMT_MAX_FILE_SIZE_64KB
+	bool "<= 64KB"
+	help
+	  Files that have size up to 64KB require 1 to 3 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+config FS_MGMT_MAX_FILE_SIZE_4GB
+	bool "<= 4GB"
+	help
+	  Files that have size up to 4GB require 1 to 5 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+endchoice
+
+config FS_MGMT_MAX_OFFSET_LEN
+	int
+	default	3 if FS_MGMT_MAX_FILE_SIZE_64KB
+	default 5 if FS_MGMT_MAX_FILE_SIZE_4GB
+	help
+	  Maximal byte length of encoded offset/size, within transferred
+	  CBOR frame containing chunk of downloaded file.
+	  This value affects how much of data will fit into download buffer,
+	  as it selects sizes of fields within headers.
+	  NOTE: This option is hidden intentionally as it is intended
+	  to be assigned from limited set of allowed values, depending on
+	  the selection made in FS_MGMT_MAX_FILE_SIZE menu.
+
 config FS_MGMT_UL_CHUNK_SIZE
 	int "Maximum chunk size for file uploads"
 	default 512
@@ -31,13 +68,32 @@ config FS_MGMT_UL_CHUNK_SIZE
 	  Limits the maximum chunk size for file uploads, in bytes.  A buffer of
 	  this size gets allocated on the stack during handling of a file upload command.
 
+config FS_MGMT_DL_CHUNK_SIZE_LIMIT
+	bool "Enable setting custom size of download file chunk"
+	help
+	  By default file chunk, that will be read off storage and fit into
+	  mcumgr frame, is automatically calculated to fit into buffer
+	  of size MCUGMR_BUF_SIZE with all headers.
+	  Enabling this option allows to set MAXIMUM value that will be
+	  allowed for such chunk.
+	  Look inside fs_mgmt_config.h for details.
+
+if FS_MGMT_DL_CHUNK_SIZE_LIMIT
+
 config FS_MGMT_DL_CHUNK_SIZE
 	int "Maximum chunk size for file downloads"
-	default 512
+	range 65 MCUMGR_BUF_SIZE
+	default MCUMGR_BUF_SIZE
 	help
-	  Limits the maximum chunk size for file downloads, in bytes.  A buffer of
-	  this size gets allocated on the stack during handling of a file download
-	  command.
+	  Sets the MAXIMUM size of chunk which will be rounded down to
+	  number of bytes that, with all the required headers, will fit
+	  into MCUMGR_BUF_SIZE. This means that actual value might be lower
+	  then selected, in which case compiler warning will be issued.
+	  Look inside fs_mgmt_config.h for details.
+	  Note that header sizes are affected by FS_MGMT_MAX_OFFSET_LEN.
+
+endif
+
 
 config FS_MGMT_PATH_SIZE
 	int "Maximum file path length"
