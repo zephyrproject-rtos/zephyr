@@ -185,7 +185,20 @@ Boards & SoC Support
 
   .. rst-class:: rst-columns
 
-     * <TBD>
+   * Atmel SAM 4E Xplained Pro
+   * Atmel SAM E54 Xplained Pro
+   * Atmel SAM V71 Xplained Ultra
+   * Broadcom BCM958401M2
+   * Cortex-A53 Emulation (QEMU)
+   * Google Kukui EC
+   * NXP i.MX RT1010 Evaluation Kit
+   * Silicon Labs EFM32 Giant Gecko GG11
+   * ST Nucleo F767ZI
+   * ST Nucleo G474RE
+   * ST Nucleo L152RE
+   * ST Nucleo L452RE
+   * ST STM32G0316-DISCO Discovery kit
+   * ST STM32VLDISCOVERY
 
 * Removed support for these ARM boards:
 
