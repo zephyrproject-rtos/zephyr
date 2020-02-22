@@ -8865,6 +8865,9 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		u16_t eff_tx_time = conn->max_tx_time;
 		u16_t eff_rx_time = conn->max_rx_time;
+		u16_t max_rx_time, max_tx_time;
+
+		dle_max_time_get(conn, &max_rx_time, &max_tx_time);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 		if (conn->llcp.phy_upd_ind.tx) {
@@ -8875,8 +8878,8 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 						       conn->phy_tx);
 			if (tx_time >=
 			    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-				eff_tx_time = MIN(tx_time,
-						  conn->default_tx_time);
+				eff_tx_time = MIN(tx_time, max_tx_time);
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 				eff_tx_time = MAX(eff_tx_time,
 					RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
@@ -8898,9 +8901,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 						       conn->phy_rx);
 			if (rx_time >=
 			    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-				eff_rx_time = MIN(rx_time,
-					RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
-						       BIT(2)));
+				eff_rx_time = MIN(rx_time, max_rx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 				eff_rx_time = MAX(eff_rx_time,
 					RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
