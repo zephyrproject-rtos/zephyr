@@ -2382,6 +2382,64 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static void dle_max_time_get(struct connection *conn, u16_t *max_rx_time,
+			     u16_t *max_tx_time)
+{
+	if (!conn->common.fex_valid ||
+#if defined(CONFIG_BT_CTLR_PHY)
+	     (
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	      !(conn->llcp_feature.features &
+		BIT(BT_LE_FEAT_BIT_PHY_CODED)) &&
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+	      !(conn->llcp_feature.features &
+		BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+#endif /* CONFIG_BT_CTLR_PHY_2M */
+	      1)
+#else /* !CONFIG_BT_CTLR_PHY */
+	    1
+#endif /* !CONFIG_BT_CTLR_PHY */
+	   ) {
+		*max_rx_time = RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, 0);
+#if defined(CONFIG_BT_CTLR_PHY)
+		*max_tx_time = MAX(MIN(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						      0),
+				       conn->default_tx_time),
+				   RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
+#else /* !CONFIG_BT_CTLR_PHY */
+		*max_tx_time = RADIO_PKT_TIME(conn->default_tx_octets, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	} else if (conn->llcp_feature.features &
+		   BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
+		*max_rx_time = MAX(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						  BIT(2)),
+				   RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
+		*max_tx_time = MAX(MIN(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						      BIT(2)),
+				       conn->default_tx_time),
+				   RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+	} else if (conn->llcp_feature.features &
+		   BIT(BT_LE_FEAT_BIT_PHY_2M)) {
+		*max_rx_time = MAX(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						  BIT(1)),
+				   RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
+		*max_tx_time = MAX(MIN(RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
+						      BIT(1)),
+				       conn->default_tx_time),
+				   RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0));
+#endif /* CONFIG_BT_CTLR_PHY_2M */
+#endif /* CONFIG_BT_CTLR_PHY */
+	}
+}
+
 static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 					    u8_t *rx_enqueue)
 {
@@ -2460,14 +2518,17 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* use the minimal of our default_tx_time and
+		u16_t max_rx_time, max_tx_time;
+
+		dle_max_time_get(_radio.conn_curr, &max_rx_time, &max_tx_time);
+
+		/* use the minimal of our max_tx_time and
 		 * peer max_rx_time
 		 */
 		if (lr->max_rx_time >=
 		    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-			eff_tx_time =
-				MIN(lr->max_rx_time,
-				    _radio.conn_curr->default_tx_time);
+			eff_tx_time = MIN(lr->max_rx_time, max_tx_time);
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_tx_time =
 				MAX(eff_tx_time,
@@ -2481,10 +2542,8 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		 */
 		if (lr->max_tx_time >=
 		    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-			eff_rx_time =
-				MIN(lr->max_tx_time,
-				    RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
-						   BIT(2)));
+			eff_rx_time = MIN(lr->max_tx_time, max_rx_time);
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_rx_time =
 				MAX(eff_rx_time,
@@ -8410,54 +8469,7 @@ static inline int event_len_prep(struct connection *conn)
 		lr->max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_tx_octets = conn->default_tx_octets;
 
-		if (!conn->common.fex_valid ||
-#if defined(CONFIG_BT_CTLR_PHY)
-		     (
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		      !(conn->llcp_feature.features &
-			BIT(BT_LE_FEAT_BIT_PHY_CODED)) &&
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-		      !(conn->llcp_feature.features &
-			BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
-#endif /* CONFIG_BT_CTLR_PHY_2M */
-		      1)
-#else /* !CONFIG_BT_CTLR_PHY */
-		    0
-#endif /* !CONFIG_BT_CTLR_PHY */
-		   ) {
-			lr->max_rx_time =
-				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, 0);
-#if defined(CONFIG_BT_CTLR_PHY)
-			lr->max_tx_time = conn->default_tx_time;
-#else /* !CONFIG_BT_CTLR_PHY */
-			lr->max_tx_time =
-				RADIO_PKT_TIME(conn->default_tx_octets, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		} else if (conn->llcp_feature.features &
-			   BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
-			lr->max_rx_time =
-				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, BIT(2));
-			lr->max_tx_time = conn->default_tx_time;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-		} else if (conn->llcp_feature.features &
-			   BIT(BT_LE_FEAT_BIT_PHY_2M)) {
-			lr->max_rx_time =
-				RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX, BIT(1));
-			if (conn->default_tx_time > lr->max_rx_time) {
-				lr->max_tx_time = lr->max_rx_time;
-			} else {
-				lr->max_tx_time = conn->default_tx_time;
-			}
-#endif /* CONFIG_BT_CTLR_PHY_2M */
-#endif /* CONFIG_BT_CTLR_PHY */
-		}
+		dle_max_time_get(conn, &lr->max_rx_time, &lr->max_tx_time);
 
 		ctrl_tx_enqueue(conn, node_tx);
 
