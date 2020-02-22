@@ -3099,6 +3099,41 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  s32_t delay);
 
 /**
+ * @brief Submit a delayed work item.
+ *
+ * This routine schedules work item @a work to be processed by workqueue
+ * @a work_q after a delay of @a delay ticks. The routine initiates an
+ * asynchronous countdown for the work item and then returns to the caller.
+ * Only when the countdown completes is the work item actually submitted to
+ * the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted delayed work item that is still
+ * counting down cancels the existing submission and restarts the
+ * countdown using the new delay.  Note that this behavior is
+ * inherently subject to race conditions with the pre-existing
+ * timeouts and work queue, so care must be taken to synchronize such
+ * resubmissions externally.
+ *
+ * @warning
+ * A delayed work item must not be modified until it has been processed
+ * by the workqueue.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of delayed work item.
+ * @param ticks Delay before submitting the work item.
+ *
+ * @retval 0 Work item countdown started.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @req K-DWORK-001
+ */
+extern int k_delayed_work_submit_to_queue_ticks(struct k_work_q *work_q,
+						struct k_delayed_work *work,
+						u32_t ticks);
+
+/**
  * @brief Cancel a delayed work item.
  *
  * This routine cancels the submission of delayed work item @a work.
@@ -3184,6 +3219,44 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					s32_t delay)
 {
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
+}
+
+/**
+ * @brief Submit a delayed work item to the system workqueue.
+ *
+ * This routine schedules work item @a work to be processed by the system
+ * workqueue after a delay of @a delay ticks. The routine initiates
+ * an asynchronous countdown for the work item and then returns to the caller.
+ * Only when the countdown completes is the work item actually submitted to
+ * the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted delayed work item that is still
+ * counting down cancels the existing submission and restarts the countdown
+ * using the new delay. If the work item is currently pending on the
+ * workqueue's queue because the countdown has completed it is too late to
+ * resubmit the item, and resubmission fails without impacting the work item.
+ * If the work item has already been processed, or is currently being processed,
+ * its work is considered complete and the work item can be resubmitted.
+ *
+ * @warning
+ * Work items submitted to the system workqueue should avoid using handlers
+ * that block or yield since this may prevent the system workqueue from
+ * processing other work items in a timely manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ * @param ticks Delay before submitting the work item.
+ *
+ * @retval 0 Work item countdown started.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @req K-DWORK-001
+ */
+static inline int k_delayed_work_submit_ticks(struct k_delayed_work *work,
+					u32_t ticks)
+{
+	return k_delayed_work_submit_to_queue_ticks(&k_sys_work_q, work, ticks);
 }
 
 /**
