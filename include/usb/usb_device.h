@@ -437,6 +437,26 @@ bool usb_transfer_is_busy(u8_t ep);
 int usb_wakeup_request(void);
 
 /**
+ * @brief Get the USB vendor id.
+ */
+u16_t usb_get_vendor_id(void);
+
+/**
+ * @brief Set the USB vendor id.
+ */
+void usb_set_vendor_id(u16_t vid);
+
+/**
+ * @brief Get the USB product id.
+ */
+u16_t usb_get_product_id(void);
+
+/**
+ * @brief Set the USB product id.
+ */
+void usb_set_product_id(u16_t pid);
+
+/**
  * @}
  */
 

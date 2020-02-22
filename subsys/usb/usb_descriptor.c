@@ -537,3 +537,23 @@ struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, u8_t ep)
 
 	return NULL;
 }
+
+u16_t usb_get_vendor_id(void)
+{
+	return sys_le16_to_cpu(common_desc.device_descriptor.idVendor);
+}
+
+void usb_set_vendor_id(u16_t vid)
+{
+	common_desc.device_descriptor.idVendor = sys_cpu_to_le16(vid);
+}
+
+u16_t usb_get_product_id(void)
+{
+	return sys_le16_to_cpu(common_desc.device_descriptor.idProduct);
+}
+
+void usb_set_product_id(u16_t pid)
+{
+	common_desc.device_descriptor.idProduct = sys_cpu_to_le16(pid);
+}
