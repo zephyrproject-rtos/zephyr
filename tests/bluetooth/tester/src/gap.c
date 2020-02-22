@@ -117,6 +117,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GAP_READ_CONTROLLER_INFO);
 	tester_set_bit(cmds, GAP_SET_CONNECTABLE);
 	tester_set_bit(cmds, GAP_SET_DISCOVERABLE);
+	tester_set_bit(cmds, GAP_SET_BONDABLE);
 	tester_set_bit(cmds, GAP_START_ADVERTISING);
 	tester_set_bit(cmds, GAP_STOP_ADVERTISING);
 	tester_set_bit(cmds, GAP_START_DISCOVERY);
@@ -234,6 +235,27 @@ static void set_discoverable(u8_t *data, u16_t len)
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE, CONTROLLER_INDEX,
+		    (u8_t *) &rp, sizeof(rp));
+}
+
+static void set_bondable(u8_t *data, u16_t len)
+{
+	const struct gap_set_bondable_cmd *cmd = (void *) data;
+	struct gap_set_bondable_rp rp;
+
+	LOG_DBG("cmd->bondable: %d", cmd->bondable);
+
+	if (cmd->bondable) {
+		atomic_set_bit(&current_settings, GAP_SETTINGS_BONDABLE);
+	} else {
+		atomic_clear_bit(&current_settings, GAP_SETTINGS_BONDABLE);
+	}
+
+	bt_set_bondable(cmd->bondable);
+
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_BONDABLE, CONTROLLER_INDEX,
 		    (u8_t *) &rp, sizeof(rp));
 }
 
@@ -723,6 +745,7 @@ rsp:
 void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		       u16_t len)
 {
+	LOG_DBG("opcode: 0x%02x", opcode);
 	switch (opcode) {
 	case GAP_READ_SUPPORTED_COMMANDS:
 	case GAP_READ_CONTROLLER_INDEX_LIST:
@@ -760,6 +783,9 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GAP_SET_DISCOVERABLE:
 		set_discoverable(data, len);
+		return;
+	case GAP_SET_BONDABLE:
+		set_bondable(data, len);
 		return;
 	case GAP_START_ADVERTISING:
 		start_advertising(data, len);
