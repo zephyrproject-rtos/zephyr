@@ -144,7 +144,7 @@ struct gap_set_discoverable_rp {
 
 #define GAP_SET_BONDABLE		0x09
 struct gap_set_bondable_cmd {
-	u8_t gap_set_bondable_cmd;
+	u8_t bondable;
 } __packed;
 struct gap_set_bondable_rp {
 	u32_t current_settings;
@@ -740,7 +740,6 @@ struct l2cap_connect_cmd {
 	u8_t address[6];
 	u16_t psm;
 } __packed;
-
 struct l2cap_connect_rp {
 	u8_t chan_id;
 } __packed;
