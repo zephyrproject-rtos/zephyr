@@ -461,13 +461,28 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  The caller gets a new reference to the connection object which must be
  *  released with bt_conn_unref() once done using the object.
  *
- *  @param peer  Remote address.
- *  @param param Directed advertising parameters.
+ *  @param[in]  peer  Remote address.
+ *  @param[in]  param Directed advertising parameters.
+ *  @param[out] conn  Valid connection object on success.
  *
- *  @return Valid connection object on success or NULL otherwise.
+ *  @return Zero on success or (negative) error code on failure.
  */
+int bt_conn_le_create_slave(const bt_addr_le_t *peer,
+			    const struct bt_le_adv_param *param,
+			    struct bt_conn **conn);
+
+__deprecated static inline
 struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
-					const struct bt_le_adv_param *param);
+					const struct bt_le_adv_param *param)
+{
+	struct bt_conn *conn;
+
+	if (bt_conn_le_create_slave(peer, param, &conn)) {
+		return NULL;
+	}
+
+	return conn;
+}
 
 /** Security level. */
 typedef enum __packed {

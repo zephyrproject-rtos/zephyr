@@ -2373,8 +2373,9 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
-					const struct bt_le_adv_param *param)
+int bt_conn_le_create_slave(const bt_addr_le_t *peer,
+			    const struct bt_le_adv_param *param,
+			    struct bt_conn **ret_conn)
 {
 	int err;
 	struct bt_conn *conn;
@@ -2397,25 +2398,24 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		BT_WARN("Found valid connection in %s state",
 			state2str(conn->state));
 		bt_conn_unref(conn);
-		return NULL;
+		return -EINVAL;
 	}
 
 	conn = bt_conn_add_le(param->id, peer);
 	if (!conn) {
-		return NULL;
+		return -ENOMEM;
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
 
 	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);
 	if (err) {
-		BT_WARN("Directed advertising could not be started: %d", err);
-
 		bt_conn_unref(conn);
-		return NULL;
+		return err;
 	}
 
-	return conn;
+	*ret_conn = conn;
+	return 0;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
