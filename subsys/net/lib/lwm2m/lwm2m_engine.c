@@ -4005,6 +4005,8 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	struct observe_node *obs, *tmp;
 	sys_snode_t *prev_node = NULL;
 	int sock_fd = client_ctx->sock_fd;
+	struct lwm2m_message *msg;
+	size_t i;
 
 	/* Cancel pending retransmit work */
 	k_delayed_work_cancel(&client_ctx->retransmit_work);
@@ -4020,6 +4022,16 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 			prev_node = &obs->node;
 		}
 	}
+
+	for (i = 0, msg = messages; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES;
+	     i++, msg++) {
+		memset(msg, 0, sizeof(struct lwm2m_message));
+	}
+
+	coap_pendings_clear(client_ctx->pendings,
+			    CONFIG_LWM2M_ENGINE_MAX_PENDING);
+	coap_replies_clear(client_ctx->replies,
+			   CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 
 	lwm2m_socket_del(client_ctx);
 	client_ctx->sock_fd = -1;
