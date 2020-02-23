@@ -107,7 +107,7 @@ static struct bt_conn_cb conn_callbacks = {
 
 static void supported_commands(u8_t *data, u16_t len)
 {
-	u8_t cmds[3];
+	u8_t cmds[4];
 	struct gap_read_supported_commands_rp *rp = (void *) &cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
@@ -129,6 +129,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GAP_PASSKEY_ENTRY);
 	tester_set_bit(cmds, GAP_PASSKEY_CONFIRM);
 	tester_set_bit(cmds, GAP_CONN_PARAM_UPDATE);
+	tester_set_bit(cmds, GAP_SET_MITM);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
@@ -794,6 +795,15 @@ rsp:
 		   status);
 }
 
+static void set_mitm(const u8_t *data, u16_t len)
+{
+	LOG_WRN("Use CONFIG_BT_SMP_ENFORCE_MITM instead");
+
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_MITM, CONTROLLER_INDEX,
+		   BTP_STATUS_SUCCESS);
+}
+
+
 void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		       u16_t len)
 {
@@ -874,6 +884,9 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GAP_CONN_PARAM_UPDATE:
 		conn_param_update(data, len);
+		return;
+	case GAP_SET_MITM:
+		set_mitm(data, len);
 		return;
 	default:
 		LOG_WRN("Unknown opcode: 0x%x", opcode);
