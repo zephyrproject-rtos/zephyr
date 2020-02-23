@@ -4368,8 +4368,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		return -errno;
 	}
 
-	lwm2m_socket_add(client_ctx);
-	return 0;
+	return lwm2m_socket_add(client_ctx);
 }
 
 int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
