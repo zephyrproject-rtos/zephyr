@@ -127,6 +127,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GAP_SET_IO_CAP);
 	tester_set_bit(cmds, GAP_PAIR);
 	tester_set_bit(cmds, GAP_PASSKEY_ENTRY);
+	tester_set_bit(cmds, GAP_PASSKEY_CONFIRM);
 	tester_set_bit(cmds, GAP_CONN_PARAM_UPDATE);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
@@ -571,6 +572,19 @@ static void auth_passkey_entry(struct bt_conn *conn)
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
+static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
+{
+	struct gap_passkey_confirm_req_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
+	ev.address_type = addr->type;
+	ev.passkey = sys_cpu_to_le32(passkey);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_CONFIRM_REQ,
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
+}
+
 static void auth_cancel(struct bt_conn *conn)
 {
 	/* TODO */
@@ -585,6 +599,8 @@ static void set_io_cap(const u8_t *data, u16_t len)
 	(void)memset(&cb, 0, sizeof(cb));
 	bt_conn_auth_cb_register(NULL);
 
+	LOG_DBG("io_cap: %d", cmd->io_cap);
+
 	switch (cmd->io_cap) {
 	case GAP_IO_CAP_DISPLAY_ONLY:
 		cb.cancel = auth_cancel;
@@ -594,6 +610,7 @@ static void set_io_cap(const u8_t *data, u16_t len)
 		cb.cancel = auth_cancel;
 		cb.passkey_display = auth_passkey_display;
 		cb.passkey_entry = auth_passkey_entry;
+		cb.passkey_confirm = auth_passkey_confirm;
 		break;
 	case GAP_IO_CAP_NO_INPUT_OUTPUT:
 		cb.cancel = auth_cancel;
@@ -699,7 +716,7 @@ static void passkey_entry(const u8_t *data, u16_t len)
 
 	err = bt_conn_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
 	if (err < 0) {
-		LOG_ERR("Failed to enter passeky: %d", err);
+		LOG_ERR("Failed to enter passkey: %d", err);
 	}
 
 	bt_conn_unref(conn);
@@ -709,6 +726,41 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
 		   status);
 }
+
+static void passkey_confirm(const u8_t *data, u16_t len)
+{
+	const struct gap_passkey_confirm_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+	u8_t status;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (cmd->match) {
+		err = bt_conn_auth_passkey_confirm(conn);
+		if (err < 0) {
+			LOG_ERR("Failed to confirm passkey: %d", err);
+		}
+	} else {
+		err = bt_conn_auth_cancel(conn);
+		if (err < 0) {
+			LOG_ERR("Failed to cancel auth: %d", err);
+		}
+	}
+
+	bt_conn_unref(conn);
+	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_CONFIRM, CONTROLLER_INDEX,
+		   status);
+}
+
 
 static void conn_param_update(const u8_t *data, u16_t len)
 {
@@ -816,6 +868,9 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GAP_PASSKEY_ENTRY:
 		passkey_entry(data, len);
+		return;
+	case GAP_PASSKEY_CONFIRM:
+		passkey_confirm(data, len);
 		return;
 	case GAP_CONN_PARAM_UPDATE:
 		conn_param_update(data, len);
