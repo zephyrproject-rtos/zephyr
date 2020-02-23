@@ -790,9 +790,10 @@ static int cmd_directed_adv(const struct shell *shell,
 		}
 	}
 
-	conn = bt_conn_create_slave_le(&addr, param);
-	if (!conn) {
-		shell_error(shell, "Failed to start directed advertising");
+	err = bt_conn_le_create_slave(&addr, param, &conn);
+	if (err) {
+		shell_error(shell, "Failed to start directed advertising (%d)",
+			    err);
 		return -ENOEXEC;
 	} else {
 		shell_print(shell, "Started directed advertising");
