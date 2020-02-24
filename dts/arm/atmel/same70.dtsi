@@ -305,6 +305,17 @@
 			label = "USBHS";
 		};
 
+		gmac: ethernet@40050088 {
+			compatible = "atmel,sam-gmac";
+			reg = <0x40050088 0x4000>;
+			interrupts = <39 0>, <66 0>, <67 0>;
+			interrupt-names = "gmac", "q1", "q2";
+			num-queues = <3>;
+			local-mac-address = [00 00 00 00 00 00];
+			label = "GMAC";
+			status = "disabled";
+		};
+
 		trng: random@40070000 {
 			compatible = "atmel,sam-trng";
 			reg = <0x40070000 0x4000>;
