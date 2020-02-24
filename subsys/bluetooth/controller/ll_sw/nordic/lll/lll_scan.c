@@ -589,7 +589,7 @@ static void isr_abort(void *param)
 	 * expired, hence ignore failure.
 	 */
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-		    TICKER_ID_SCAN_STOP, 0, NULL, NULL);
+		    TICKER_ID_SCAN_STOP, 0, 0, NULL, NULL);
 
 	/* Under race conditions, radio could get started while entering ISR */
 	radio_disable();

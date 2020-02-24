@@ -1136,7 +1136,7 @@ static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	LL_ASSERT(handle < BT_CTLR_ADV_MAX);
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  TICKER_ID_ADV_BASE + handle, 0,
+			  TICKER_ID_ADV_BASE + handle, 0, 0,
 			  ticker_op_stop_cb, adv);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -1255,7 +1255,8 @@ static inline u8_t disable(u16_t handle)
 	if (adv->lll.is_hdcd) {
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_THREAD, TICKER_ID_ADV_STOP,
-				  0, ull_ticker_status_give, (void *)&ret_cb);
+				  0, 0, ull_ticker_status_give,
+				  (void *)&ret_cb);
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret) {
 			mark = ull_disable_mark(adv);
@@ -1268,7 +1269,7 @@ static inline u8_t disable(u16_t handle)
 #endif
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_ADV_BASE + handle, 0,
+			  TICKER_ID_ADV_BASE + handle, 0, 0,
 			  ull_ticker_status_give, (void *)&ret_cb);
 
 	ret = ull_ticker_status_take(ret, &ret_cb);

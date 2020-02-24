@@ -555,7 +555,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	/* Stop running pre-empt timer, if any */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-			  TICKER_ID_LLL_PREEMPT, 0, NULL, NULL);
+			  TICKER_ID_LLL_PREEMPT, 0, 0, NULL, NULL);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_FAILURE) ||
 		  (ret == TICKER_STATUS_BUSY));
