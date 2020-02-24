@@ -1,0 +1,3 @@
+tests:
+  libraries.seq_mgr:
+    tags: seq_mgr
