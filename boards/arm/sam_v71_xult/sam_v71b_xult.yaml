@@ -1,0 +1,16 @@
+identifier: sam_v71b_xult
+name: SAM V71 Xplained Ultra (Revision B)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - netif:eth
+  - adc
+  - gpio
+  - spi
+  - watchdog
+  - usb_device
+  - pwm
