@@ -37,13 +37,13 @@ instead. See :ref:`west-troubleshooting` for advice on common issues.
    The name :file:`zephyrproject` is recommended, but you can choose any name
    with no spaces anywhere in the path.
 
-#. Create a :ref:`west installation <west-installation>` using the zephyr
+#. Create a :ref:`west workspace <west-workspace>` using the zephyr
    repository as a local manifest repository::
 
      west init -l zephyr
 
    This creates :file:`zephyrproject/.west`, marking the root of your
-   installation, and does some other setup. It will not change the contents of
+   workspace, and does some other setup. It will not change the contents of
    the zephyr repository in any way.
 
 #. Clone the rest of the repositories used by zephyr::
