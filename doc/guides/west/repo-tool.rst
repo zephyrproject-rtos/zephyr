@@ -244,12 +244,14 @@ as shown :ref:`above <west-t2>` for the T2 topology, with the same caveats.
 West Structure
 **************
 
-West's code is distributed via PyPI in a `namespace package`_ named ``west``.
-See :ref:`west-apis` for API documentation.
+West's code is distributed via PyPI in a Python package named ``west``. See
+:ref:`west-apis` for API documentation.
 
-This distribution also includes a launcher executable, also named ``west``. When
-west is installed, the launcher is placed by :file:`pip3` somewhere in the
-user's ``PATH``. This is the command-line entry point.
+This distribution also includes a launcher executable, also named ``west``.
+When west is installed, the launcher is placed by :file:`pip3` somewhere in the
+user's filesystem (exactly where depends on the operating system, but should be
+on the ``PATH`` :ref:`environment variable <env_vars>`). This launcher is the
+command-line entry point.
 
 .. _west-manifest-rev:
 
