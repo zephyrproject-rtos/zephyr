@@ -522,8 +522,10 @@ static int uarte_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
 	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	__ASSERT(nrf_uarte_rx_pin_get(uarte) != NRF_UARTE_PSEL_DISCONNECTED,
-			"TX only UARTE instance");
+	if (nrf_uarte_rx_pin_get(uarte) == NRF_UARTE_PSEL_DISCONNECTED) {
+		__ASSERT(false, "TX only UARTE instance");
+		return -ENOTSUP;
+	}
 
 	if (hw_rx_counting_enabled(data)) {
 		nrfx_timer_clear(&cfg->timer);
@@ -1307,7 +1309,10 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 			return;
 		}
 #endif
-		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+		if (nrf_uarte_rx_pin_get(uarte) !=
+			NRF_UARTE_PSEL_DISCONNECTED) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+		}
 	} else {
 		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
 				new_state == DEVICE_PM_SUSPEND_STATE ||
