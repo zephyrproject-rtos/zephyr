@@ -87,6 +87,7 @@ enum sm_engine_state {
 	ENGINE_DO_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
+	ENGINE_REGISTRATION_DONE_RX_OFF,
 	ENGINE_UPDATE_SENT,
 	ENGINE_DEREGISTER,
 	ENGINE_DEREGISTER_SENT,
@@ -102,6 +103,7 @@ struct lwm2m_rd_client_info {
 	u8_t trigger_update;
 
 	s64_t last_update;
+	s64_t last_tx;
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
@@ -112,6 +114,11 @@ struct lwm2m_rd_client_info {
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
 static u8_t client_data[256]; /* allocate some data for the RD */
+
+void engine_update_tx_time(void)
+{
+	client.last_tx = k_uptime_get();
+}
 
 static void set_sm_state(u8_t sm_state)
 {
@@ -130,6 +137,8 @@ static void set_sm_state(u8_t sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
+	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
+		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
@@ -754,6 +763,13 @@ static int sm_registration_done(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
+	    (client.engine_state != ENGINE_REGISTRATION_DONE_RX_OFF) &&
+	    (((k_uptime_get() - client.last_tx) / 1000) >=
+	     CONFIG_LWM2M_QUEUE_MODE_UPTIME)) {
+		set_sm_state(ENGINE_REGISTRATION_DONE_RX_OFF);
+	}
+
 	return ret;
 }
 
@@ -842,6 +858,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_REGISTRATION_DONE:
+		case ENGINE_REGISTRATION_DONE_RX_OFF:
 			sm_registration_done();
 			break;
 
