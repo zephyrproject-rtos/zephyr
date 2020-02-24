@@ -141,7 +141,12 @@ struct ticker_user_op_update {
  * requests to ticker_job
  */
 struct ticker_user_op_stop {
-	u32_t ticks_at_stop;		/* Anchor ticks (absolute) */
+	u32_t ticks_at_stop;            /* Anchor ticks (absolute) */
+	u8_t  flags;                    /* Flags:
+					 *  BIT(0) = 0: Use current tick
+					 *  BIT(0) = 1: Use supplied absolute
+					 *              tick
+					 */
 };
 
 /* User operation data structure for slot_get opcode. Used for passing request
@@ -1191,7 +1196,8 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 			u32_t ticks_used;
 
 			instance->ticker_id_slot_previous = TICKER_NULL;
-			if (user_op->params.stop.ticks_at_stop) {
+			if (user_op->params.stop.flags &
+			    TICKER_STOP_FLAG_ABSOLUTE) {
 				ticks_at_stop =
 					user_op->params.stop.ticks_at_stop;
 			} else {
@@ -2534,6 +2540,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
  * @param user_id	     Ticker user id. Used for indexing user operations
  *			     and mapping to mayfly caller id
  * @param ticks_at_stop      Absolute tick count at ticker stop request
+ * @param flags              Current ticks or Supplied absolute tick at stop
  * @param fp_op_func	     Function pointer of user operation completion
  *			     function
  * @param op_context	     Context passed in operation completion call
@@ -2544,7 +2551,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
  * before exiting ticker_stop
  */
 u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		  u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		  u32_t ticks_at_stop, u8_t flags, ticker_op_func fp_op_func,
 		  void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
@@ -2567,6 +2574,7 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	user_op->op = TICKER_USER_OP_TYPE_STOP;
 	user_op->id = ticker_id;
 	user_op->params.stop.ticks_at_stop = ticks_at_stop;
+	user_op->params.stop.flags = flags;
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
 	user_op->op_context = op_context;

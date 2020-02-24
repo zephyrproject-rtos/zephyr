@@ -34,6 +34,16 @@
  * @}
  */
 
+/** \defgroup Timer Stop API flags parameter values.
+ *
+ * @{
+ */
+#define TICKER_STOP_FLAG_CURRENT         0
+#define TICKER_STOP_FLAG_ABSOLUTE        BIT(0)
+/**
+ * @}
+ */
+
 /** \brief Timer node type size.
  */
 #if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
@@ -133,7 +143,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		    u32_t ticks_slot_plus, u32_t ticks_slot_minus, u16_t lazy,
 		    u8_t force, ticker_op_func fp_op_func, void *op_context);
 u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		  u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		  u32_t ticks_at_stop, u8_t flags, ticker_op_func fp_op_func,
 		  void *op_context);
 u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
 			   u8_t *ticker_id_head, u32_t *ticks_current,
