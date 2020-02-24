@@ -137,6 +137,13 @@ struct ticker_user_op_update {
 	u8_t  force;			/* Force update */
 };
 
+/* User operation data structure for stop opcode. Used for passing stop
+ * requests to ticker_job
+ */
+struct ticker_user_op_stop {
+	u32_t ticks_at_stop;		/* Anchor ticks (absolute) */
+};
+
 /* User operation data structure for slot_get opcode. Used for passing request
  * to get next ticker with slot ticks via ticker_job
  */
@@ -160,9 +167,10 @@ struct ticker_user_op {
 	u8_t op;		   /* User operation */
 	u8_t id;		   /* Ticker node id */
 	union {
-		struct ticker_user_op_start start;
-		struct ticker_user_op_update update;
-		struct ticker_user_op_slot_get slot_get;
+		struct ticker_user_op_start        start;
+		struct ticker_user_op_update       update;
+		struct ticker_user_op_stop         stop;
+		struct ticker_user_op_slot_get     slot_get;
 		struct ticker_user_op_priority_set priority_set;
 	} params;		   /* User operation parameters */
 	u32_t status;		   /* Operation result */
@@ -1179,12 +1187,18 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		ticker->req = ticker->ack;
 
 		if (instance->ticker_id_slot_previous == user_op->id) {
-			u32_t ticks_now = cntr_cnt_get();
+			u32_t ticks_at_stop;
 			u32_t ticks_used;
 
 			instance->ticker_id_slot_previous = TICKER_NULL;
+			if (user_op->params.stop.ticks_at_stop) {
+				ticks_at_stop =
+					user_op->params.stop.ticks_at_stop;
+			} else {
+				ticks_at_stop = cntr_cnt_get();
+			}
 			ticks_used = ticks_elapsed +
-				ticker_ticks_diff_get(ticks_now,
+				ticker_ticks_diff_get(ticks_at_stop,
 						      instance->ticks_current);
 			instance->ticks_slot_previous =	MIN(ticker->ticks_slot,
 							    ticks_used);
@@ -2519,6 +2533,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
  * @param instance_index     Index of ticker instance
  * @param user_id	     Ticker user id. Used for indexing user operations
  *			     and mapping to mayfly caller id
+ * @param ticks_at_stop      Absolute tick count at ticker stop request
  * @param fp_op_func	     Function pointer of user operation completion
  *			     function
  * @param op_context	     Context passed in operation completion call
@@ -2529,7 +2544,8 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
  * before exiting ticker_stop
  */
 u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		  ticker_op_func fp_op_func, void *op_context)
+		  u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		  void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user_op *user_op;
@@ -2550,6 +2566,7 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	user_op = &user->user_op[user->last];
 	user_op->op = TICKER_USER_OP_TYPE_STOP;
 	user_op->id = ticker_id;
+	user_op->params.stop.ticks_at_stop = ticks_at_stop;
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
 	user_op->op_context = op_context;
