@@ -295,6 +295,7 @@ static void time_slot_callback_work(u32_t ticks_at_expire, u32_t remainder,
 		result = ticker_stop(instance_index,
 				     0,
 				     ticker_id,
+				     0,
 				     NULL,
 				     NULL);
 
@@ -343,7 +344,7 @@ static void time_slot_callback_helper(u32_t ticks_at_expire, u32_t remainder,
 		((struct flash_op_desc *)context)->result = -ECANCELED;
 
 		/* abort flash timeslots */
-		err = ticker_stop(instance_index, 0, ticker_id, NULL, NULL);
+		err = ticker_stop(instance_index, 0, ticker_id, 0, NULL, NULL);
 		if (err != TICKER_STATUS_SUCCESS &&
 		    err != TICKER_STATUS_BUSY) {
 			__ASSERT(0, "Failed to stop ticker.\n");
