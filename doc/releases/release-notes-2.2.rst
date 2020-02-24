@@ -179,7 +179,19 @@ Boards & SoC Support
 
 .. rst-class:: rst-columns
 
-   * <TBD>
+   * Atmel SAM4E
+   * Atmel SAMV71
+   * Broadcom BCM58400
+   * NXP i.MX RT1011
+   * Silicon Labs EFM32GG11B
+   * Silicon Labs EFM32JG12B
+   * ST STM32F098xx
+   * ST STM32F100XX
+   * ST STM32F767ZI
+   * ST STM32L152RET6
+   * ST STM32L452XC
+   * ST STM32G031
+
 
 * Added support for these ARM boards:
 
