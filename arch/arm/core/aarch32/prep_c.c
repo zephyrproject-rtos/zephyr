@@ -76,9 +76,10 @@ void __weak relocate_vector_table(void)
 
 #endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 
-#ifdef CONFIG_FLOAT
-static inline void enable_floating_point(void)
+#if defined(CONFIG_CPU_HAS_FPU)
+static inline void z_arm_floating_point_init(void)
 {
+#if defined(CONFIG_FLOAT)
 	/*
 	 * Enable CP10 and CP11 Co-Processors to enable access to floating
 	 * point registers.
@@ -139,12 +140,10 @@ static inline void enable_floating_point(void)
 	 * will be activated (FPCA bit on the CONTROL register) in the presence
 	 * of floating point instructions.
 	 */
+
+#endif /* CONFIG_FLOAT */
 }
-#else
-static inline void enable_floating_point(void)
-{
-}
-#endif
+#endif /* CONFIG_CPU_HAS_FPU */
 
 extern FUNC_NORETURN void z_cstart(void);
 /**
@@ -158,7 +157,9 @@ extern FUNC_NORETURN void z_cstart(void);
 void z_arm_prep_c(void)
 {
 	relocate_vector_table();
-	enable_floating_point();
+#if defined(CONFIG_CPU_HAS_FPU)
+	z_arm_floating_point_init();
+#endif
 	z_bss_zero();
 	z_data_copy();
 #if defined(CONFIG_ARMV7_R) && defined(CONFIG_INIT_STACKS)
