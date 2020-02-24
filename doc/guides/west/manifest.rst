@@ -18,7 +18,7 @@ introduction and command overview, see :ref:`west-multi-repo`.
 Multiple Repository Model
 *************************
 
-West's view of the repositories in a :term:`west installation`, and their
+West's view of the repositories in a :term:`west workspace`, and their
 history, looks like the following figure (though some parts of this example are
 specific to upstream Zephyr's use of west):
 
@@ -32,7 +32,7 @@ specific to upstream Zephyr's use of west):
 The history of the manifest repository is the line of Git commits which is
 "floating" on top of the gray plane. Parent commits point to child commits
 using solid arrows. The plane below contains the Git commit history of the
-repositories in the installation, with each project repository boxed in by a
+repositories in the workspace, with each project repository boxed in by a
 rectangle. Parent/child commit relationships in each repository are also shown
 with solid arrows.
 
@@ -124,7 +124,7 @@ example, you might use ``git@example.com:base1`` if ``remote1`` supported Git
 over SSH as well. Anything acceptable to Git will work.
 
 The ``projects`` subsection contains a sequence describing the project
-repositories in the west installation. Every project has a unique name. You can
+repositories in the west workspace. Every project has a unique name. You can
 specify what Git remote URLs to use when cloning and fetching the projects,
 what revisions to track, and where the project should be stored on the local
 file system.
@@ -157,7 +157,7 @@ In this manifest:
   with a ``/`` and the project ``name`` to form the URL.
 
   Locally, this project will be cloned at path ``extra/project-1`` relative to
-  the west installation's root directory, since it has an explicit ``path``
+  the west workspace's root directory, since it has an explicit ``path``
   attribute with this value.
 
   Since the project has no ``revision`` specified, ``master`` is used by
@@ -208,7 +208,7 @@ The list of project keys and their usage follows. Sometimes we'll refer to the
   A project revision can be a branch, tag, or SHA. The default ``revision`` is
   ``master`` if not otherwise specified.
 - ``path``: Optional. Relative path specifying where to clone the repository
-  locally, relative to the top directory in the west installation. If missing,
+  locally, relative to the top directory in the west workspace. If missing,
   the project's ``name`` is used as a directory name.
 - ``clone-depth``: Optional. If given, a positive integer which creates a
   shallow history in the cloned repository limited to the given number of
@@ -254,7 +254,7 @@ The ``self`` subsection can be used to control the behavior of the
 manifest repository itself. Its value is a map with the following keys:
 
 - ``path``: Optional. The path to clone the manifest repository into, relative
-  to the west installation's root directory. If not given, the basename of the
+  to the west workspace's root directory. If not given, the basename of the
   path component in the manifest repository URL will be used by default.  For
   example, if the URL is ``https://git.example.com/project-repo``, the manifest
   repository would be cloned to the directory :file:`project-repo`.
@@ -411,7 +411,7 @@ You have a source code repository you want to use with Zephyr v1.14.1 LTS.  You
 want to maintain the whole thing using west. You don't want to modify any of
 the mainline repositories.
 
-In other words, the west installation you want looks like this:
+In other words, the west workspace you want looks like this:
 
 .. code-block:: none
 
@@ -441,7 +441,7 @@ You can do this with the following :file:`my-repo/west.yml`:
          revision: v1.14.1
          import: true
 
-You can then create the installation on your computer like this, assuming
+You can then create the workspace on your computer like this, assuming
 ``my-repo`` is hosted at ``https://git.example.com/my-repo``:
 
 .. code-block:: console
@@ -480,7 +480,7 @@ master`` for the zephyr repository:
          revision: master
          import: true
 
-You can create the installation in the same way:
+You can create the workspace in the same way:
 
 .. code-block:: console
 
@@ -711,7 +711,7 @@ Example 2.3: Continuous Integration overrides
 ---------------------------------------------
 
 Your continuous integration system needs to fetch and test multiple
-repositories in your west installation from a developer's forks instead of your
+repositories in your west workspace from a developer's forks instead of your
 mainline development trees, to see if the changes all work well together.
 
 Starting with :ref:`west-manifest-ex2.2`, the CI scripts add a
@@ -890,7 +890,7 @@ Example 3.3: Downstream with path blacklist
 -------------------------------------------
 
 Here's an example showing how to blacklist all vendor HALs from mainline by
-common path prefix in the installation, add your own version for the chip
+common path prefix in the workspace, add your own version for the chip
 you're targeting, and keep everything else.
 
 .. code-block:: yaml

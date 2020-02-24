@@ -16,8 +16,8 @@ If you see this error when running ``west init``:
    (choose from 'init', 'update', 'list', 'manifest', 'diff',
    'status', 'forall', 'config', 'selfupdate', 'help')
 
-Then you have an old version of west installed, and are trying to use it in an
-installation that requires a more recent version.
+Then you have an old version of west installed, and are trying to use it in a
+workspace that requires a more recent version.
 
 The easiest way to resolve this issue is to upgrade west and retry as follows:
 
@@ -29,23 +29,24 @@ The easiest way to resolve this issue is to upgrade west and retry as follows:
    this step.)
 
 #. Completely remove the :file:`zephyrproject/.west` directory (if you don't,
-   you will get the "already in an installation" error message discussed next).
+   you will get the "already in a workspace" error message discussed next).
 
 #. Run ``west init`` again.
 
 "already in an installation"
 ****************************
 
-You may see this error when running ``west init``:
+You may see this error when running ``west init`` with west 0.6:
 
 .. code-block:: none
 
    FATAL ERROR: already in an installation (<some directory>), aborting
 
-If this is unexpected and you're really trying to create a new installation,
+If this is unexpected and you're really trying to create a new west workspace,
 then it's likely that west is using the :envvar:`ZEPHYR_BASE` :ref:`environment
-variable <env_vars>` to locate a west installation elsewhere on your system.
-This is intentional behavior; it allows you to put your Zephyr applications in
-any directory and still use west.
+variable <env_vars>` to locate a workspace elsewhere on your system.
+
+This is intentional; it allows you to put your Zephyr applications in
+any directory and still use west to build, flash, and debug them, for example.
 
 To resolve this issue, unset :envvar:`ZEPHYR_BASE` and try again.
