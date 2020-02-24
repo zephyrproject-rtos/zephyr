@@ -3127,13 +3127,14 @@ static inline void event_ping_prep(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static inline void dle_max_time_get(const struct ll_conn *conn,
 				    u16_t *max_rx_time, u16_t *max_tx_time)
 {
-	u32_t feature_coded_phy;
-	u32_t feature_phy_2m;
-	u16_t rx_time;
-	u16_t tx_time;
+	u32_t feature_coded_phy = 0;
+	u32_t feature_phy_2m = 0;
+	u16_t rx_time = 0;
+	u16_t tx_time = 0;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -3197,7 +3198,6 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 	*max_tx_time = tx_time;
 }
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static inline void event_len_prep(struct ll_conn *conn)
 {
 	switch (conn->llcp_length.state) {
@@ -4513,17 +4513,19 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #if defined(CONFIG_BT_CTLR_PHY)
 		u16_t max_rx_time;
 		u16_t max_tx_time;
-		u16_t temp_rx, temp_tx;
+		u16_t lr_rx_time, lr_tx_time;
 
-		dle_max_time_get(conn, &temp_rx, &temp_tx);
-		max_rx_time = sys_le16_to_cpu(temp_rx);
-		max_tx_time = sys_le16_to_cpu(temp_tx);
+		dle_max_time_get(conn, &max_rx_time, &max_tx_time);
 
 		/* use the minimal of our default_tx_time and
 		 * peer max_rx_time
 		 */
-		if (lr->max_rx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-			eff_tx_time = MIN(lr->max_rx_time, max_tx_time);
+
+		lr_rx_time = sys_le16_to_cpu(lr->max_rx_time);
+		lr_tx_time = sys_le16_to_cpu(lr->max_tx_time);
+
+		if (lr_rx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
+			eff_tx_time = MIN(lr_rx_time, max_tx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_tx_time = MAX(eff_tx_time,
 					  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
@@ -4534,8 +4536,8 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		/* use the minimal of our max supported and
 		 * peer max_tx_time
 		 */
-		if (lr->max_tx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-			eff_rx_time = MIN(lr->max_tx_time, max_rx_time);
+		if (lr_tx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
+			eff_rx_time = MIN(lr_tx_time, max_rx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_rx_time = MAX(eff_rx_time,
 					  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
