@@ -1035,6 +1035,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t rx_ready_delay;
 		u32_t ticker_status;
+		u32_t ticks_at_stop;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			node_rx = packet_rx_reserve_get(4);
@@ -1232,11 +1233,16 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 #endif
 
 		/* Stop Advertiser */
-		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_ADV,
-					    ticker_stop_adv_assert,
-					    (void *)__LINE__);
+		ticks_at_stop = _radio.ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+					       radio_tmr_end_get()) -
+			ticks_slot_offset;
+		ticker_status = ticker_stop_abs(RADIO_TICKER_INSTANCE_ID_RADIO,
+						RADIO_TICKER_USER_ID_WORKER,
+						RADIO_TICKER_ID_ADV,
+						ticks_at_stop,
+						ticker_stop_adv_assert,
+						(void *)__LINE__);
 		ticker_stop_adv_assert(ticker_status, (void *)__LINE__);
 
 		/* Stop Direct Adv Stopper */
@@ -1477,6 +1483,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t ticker_status;
 		u32_t conn_space_us;
+		u32_t ticks_at_stop;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -1724,11 +1731,16 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 #endif
 
 		/* Stop Scanner */
-		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_SCAN,
-					    ticker_stop_scan_assert,
-					    (void *)__LINE__);
+		ticks_at_stop = _radio.ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+					       conn_offset_us - 1250) -
+			ticks_slot_offset;
+		ticker_status = ticker_stop_abs(RADIO_TICKER_INSTANCE_ID_RADIO,
+						RADIO_TICKER_USER_ID_WORKER,
+						RADIO_TICKER_ID_SCAN,
+						ticks_at_stop,
+						ticker_stop_scan_assert,
+						(void *)__LINE__);
 		ticker_stop_scan_assert(ticker_status, (void *)__LINE__);
 
 		/* Scanner stop can expire while here in this ISR.
