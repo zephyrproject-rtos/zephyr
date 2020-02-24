@@ -16,6 +16,7 @@ zephyr_sources(
   onoff.c
   rb.c
   sem.c
+  seq_mgr.c
   thread_entry.c
   timeutil.c
   work_q.c

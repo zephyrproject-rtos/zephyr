@@ -82,4 +82,8 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+module = SYS_SEQ_MGR
+module-str = Sequence Manager
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
