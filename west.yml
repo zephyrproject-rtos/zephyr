@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: hal_atmel
-      revision: 5a44c9d54dffd685fb6664a646922cfe41c5cf8e
+      revision: 917bfefa5188a473ff49087f1fa207cbb42bf592
       path: modules/hal/atmel
     - name: canopennode
       path: modules/lib/canopennode
