@@ -167,7 +167,7 @@ if(DEFINED ENV{WEST_DIR} AND NOT WEST_DIR)
 endif(DEFINED ENV{WEST_DIR} AND NOT WEST_DIR)
 
 if(WEST_DIR)
-  set(WEST "PYTHONPATH=${WEST_DIR}/src" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/main.py;--zephyr-base=$ENV{ZEPHYR_BASE} ")
+  set(WEST "PYTHONPATH=${WEST_DIR}/src" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/app/main.py;--zephyr-base=$ENV{ZEPHYR_BASE} ")
 endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
