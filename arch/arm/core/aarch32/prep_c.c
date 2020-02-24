@@ -79,6 +79,18 @@ void __weak relocate_vector_table(void)
 #if defined(CONFIG_CPU_HAS_FPU)
 static inline void z_arm_floating_point_init(void)
 {
+/* Upon reset, the CONTROL.FPCA bit is, normally, cleared. It might, however,
+ * be left un-cleared by firmware running before Zephyr boot. We must clear
+ * this bit to prevent errors in exception unstacking.
+ *
+ * Note:
+ * In Sharing FP Registers mode CONTROL.FPCA is cleared before switching to main,
+ * so it may be skipped here (saving few boot cycles).
+ */
+#if !defined(CONFIG_FLOAT) || !defined(CONFIG_FP_SHARING)
+	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
+#endif
+
 #if defined(CONFIG_FLOAT)
 	/*
 	 * Enable CP10 and CP11 Co-Processors to enable access to floating
