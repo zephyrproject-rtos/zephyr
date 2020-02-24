@@ -29,4 +29,8 @@
 #define FLASH_PAGE_MAX_CNT  128UL
 #endif
 
+#ifdef CONFIG_SOC_NRF5340_CPUAPP
+bool nrf53_has_erratum19(void);
+#endif
+
 #endif /* _NORDICSEMI_NRF53_SOC_H_ */
