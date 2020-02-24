@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM-family GMAC Ethernet
+
+compatible: "atmel,sam-gmac"
+
+include: ethernet.yaml
+
+properties:
+    reg:
+      required: true
+
+    num-queues:
+      type: int
+      required: true
+      description: Number of hardware TX and RX queues
