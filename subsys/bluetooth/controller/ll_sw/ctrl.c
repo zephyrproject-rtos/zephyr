@@ -1034,6 +1034,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t rx_ready_delay;
 		u32_t ticker_status;
+		u32_t ticks_at_stop;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			node_rx = packet_rx_reserve_get(4);
@@ -1231,9 +1232,13 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 #endif
 
 		/* Stop Advertiser */
+		ticks_at_stop = _radio.ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+					       radio_tmr_end_get()) -
+			ticks_slot_offset;
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_ADV,
+					    RADIO_TICKER_ID_ADV, ticks_at_stop,
 					    ticker_stop_adv_assert,
 					    (void *)__LINE__);
 		ticker_stop_adv_assert(ticker_status, (void *)__LINE__);
@@ -1246,7 +1251,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			 */
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_ADV_STOP, NULL, NULL);
+				    RADIO_TICKER_ID_ADV_STOP, 0, NULL, NULL);
 		}
 
 		/* Start Slave */
@@ -1476,6 +1481,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t ticker_status;
 		u32_t conn_space_us;
+		u32_t ticks_at_stop;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -1723,9 +1729,13 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 #endif
 
 		/* Stop Scanner */
+		ticks_at_stop = _radio.ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+					       conn_offset_us - 1250) -
+			ticks_slot_offset;
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_SCAN,
+					    RADIO_TICKER_ID_SCAN, ticks_at_stop,
 					    ticker_stop_scan_assert,
 					    (void *)__LINE__);
 		ticker_stop_scan_assert(ticker_status, (void *)__LINE__);
@@ -1736,7 +1746,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 */
 		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 			    RADIO_TICKER_USER_ID_WORKER,
-			    RADIO_TICKER_ID_SCAN_STOP, NULL, NULL);
+			    RADIO_TICKER_ID_SCAN_STOP, 0, NULL, NULL);
 
 		/* Start master */
 		ticker_status =
@@ -4304,7 +4314,7 @@ static inline u32_t isr_close_adv_mesh(void)
 	if (!_radio.advertiser.retry) {
 		ticker_status =	ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_ADV,
+					    RADIO_TICKER_ID_ADV, 0,
 					    ticker_stop_adv_stop,
 					    (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
@@ -4518,7 +4528,7 @@ static inline u32_t isr_close_scan(void)
 			 */
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_SCAN_STOP, NULL, NULL);
+				    RADIO_TICKER_ID_SCAN_STOP, 0, NULL, NULL);
 		}
 	}
 
@@ -6877,7 +6887,7 @@ static inline void ticker_stop_adv_stop_active(void)
 
 	/* Step 2: Is caller before Event? Stop Event */
 	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			  RADIO_TICKER_USER_ID_JOB, RADIO_TICKER_ID_EVENT,
+			  RADIO_TICKER_USER_ID_JOB, RADIO_TICKER_ID_EVENT, 0,
 			  ticker_if_done, (void *)&ret_cb_evt);
 
 	if (ret == TICKER_STATUS_BUSY) {
@@ -6908,7 +6918,7 @@ static inline void ticker_stop_adv_stop_active(void)
 		 */
 		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				  RADIO_TICKER_USER_ID_JOB,
-				  RADIO_TICKER_ID_MARKER_0,
+				  RADIO_TICKER_ID_MARKER_0, 0,
 				  ticker_if_done, (void *)&ret_cb_m0);
 
 		if (ret == TICKER_STATUS_BUSY) {
@@ -7085,7 +7095,7 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	/* Stop Direct Adv */
 	ticker_status =
 	    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_ADV,
+			RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_ADV, 0,
 			ticker_stop_adv_stop, NULL);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
@@ -7592,7 +7602,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		ticker_id = RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
 		ticker_status =
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_WORKER, ticker_id,
+				    RADIO_TICKER_USER_ID_WORKER, ticker_id, 0,
 				    ticker_stop_conn_assert,
 				    (void *)(u32_t)ticker_id);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
@@ -10319,7 +10329,7 @@ static void connection_release(struct connection *conn)
 		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 			    RADIO_TICKER_USER_ID_WORKER,
 			    (RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle),
-			    ticker_success_assert, (void *)__LINE__);
+			    0, ticker_success_assert, (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -10335,14 +10345,14 @@ static void connection_release(struct connection *conn)
 		ticker_status =
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_MARKER_0,
+				    RADIO_TICKER_ID_MARKER_0, 0,
 				    ticker_success_assert, (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 		ticker_status =
 		    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				RADIO_TICKER_USER_ID_WORKER,
-				RADIO_TICKER_ID_EVENT,
+				RADIO_TICKER_ID_EVENT, 0,
 				ticker_success_assert, (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
@@ -11104,7 +11114,7 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 
 	/* Step 2: Is caller before Event? Stop Event */
 	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			  RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_EVENT,
+			  RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_EVENT, 0,
 			  ticker_if_done, (void *)&ret_cb_evt);
 
 	if (ret == TICKER_STATUS_BUSY) {
@@ -11132,7 +11142,7 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 		 */
 		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				  RADIO_TICKER_USER_ID_APP,
-				  RADIO_TICKER_ID_MARKER_0,
+				  RADIO_TICKER_ID_MARKER_0, 0,
 				  ticker_if_done, (void *)&ret_cb_m0);
 
 		if (ret == TICKER_STATUS_BUSY) {
@@ -11229,7 +11239,7 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 
 			ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					  RADIO_TICKER_USER_ID_APP,
-					  ticker_id_stop, ticker_if_done,
+					  ticker_id_stop, 0, ticker_if_done,
 					  (void *)&ret_cb_stop);
 
 			if (ret == TICKER_STATUS_BUSY) {
@@ -11304,7 +11314,7 @@ static u8_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 		 * hence stop may fail if ticker not used.
 		 */
 		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				  RADIO_TICKER_USER_ID_APP, ticker_id_stop,
+				  RADIO_TICKER_USER_ID_APP, ticker_id_stop, 0,
 				  ticker_if_done, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			/* wait for ticker to be stopped */
@@ -11351,7 +11361,7 @@ static u8_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 	/* Step 1: Is Primary started? Stop the Primary ticker */
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			  RADIO_TICKER_USER_ID_APP, ticker_id_primary,
+			  RADIO_TICKER_USER_ID_APP, ticker_id_primary, 0,
 			  ticker_if_done, (void *)&ret_cb);
 
 	if (ret == TICKER_STATUS_BUSY) {
