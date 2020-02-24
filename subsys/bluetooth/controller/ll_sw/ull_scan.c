@@ -275,7 +275,7 @@ u8_t ull_scan_disable(u16_t handle, struct ll_scan_set *scan)
 	LL_ASSERT(mark == scan);
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_SCAN_BASE + handle,
+			  TICKER_ID_SCAN_BASE + handle, 0,
 			  ull_ticker_status_give, (void *)&ret_cb);
 
 	ret = ull_ticker_status_take(ret, &ret_cb);

@@ -576,7 +576,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ticker_id_scan = TICKER_ID_SCAN_BASE + ull_scan_handle_get(scan);
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_scan, ticker_op_stop_scan_cb,
+				    ticker_id_scan, 0,
+				    ticker_op_stop_scan_cb,
 				    (void *)(u32_t)ticker_id_scan);
 	ticker_op_stop_scan_cb(ticker_status, (void *)(u32_t)ticker_id_scan);
 
@@ -585,7 +586,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	 * expired, hence ignore failure.
 	 */
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-		    TICKER_ID_SCAN_STOP, NULL, NULL);
+		    TICKER_ID_SCAN_STOP, 0, NULL, NULL);
 
 	/* Start master */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);

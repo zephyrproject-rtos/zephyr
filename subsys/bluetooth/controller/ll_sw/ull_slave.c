@@ -252,7 +252,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ticker_id_adv = TICKER_ID_ADV_BASE + ull_adv_handle_get(adv);
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_adv, ticker_op_stop_adv_cb, adv);
+				    ticker_id_adv, 0,
+				    ticker_op_stop_adv_cb, adv);
 	ticker_op_stop_adv_cb(ticker_status, adv);
 
 	/* Stop Direct Adv Stop */
@@ -262,7 +263,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		 * expired, hence ignore failure.
 		 */
 		ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			    TICKER_ID_ADV_STOP, NULL, NULL);
+			    TICKER_ID_ADV_STOP, 0, NULL, NULL);
 	}
 
 	/* Start Slave */

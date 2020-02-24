@@ -1656,7 +1656,7 @@ static inline void disable(u16_t handle)
 	LL_ASSERT(mark == conn);
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_CONN_BASE + handle,
+			  TICKER_ID_CONN_BASE + handle, 0,
 			  ull_ticker_status_give, (void *)&ret_cb);
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1710,7 +1710,7 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 	/* Stop Master or Slave role ticker */
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
-				    TICKER_ID_CONN_BASE + lll->handle,
+				    TICKER_ID_CONN_BASE + lll->handle, 0,
 				    ticker_op_stop_cb, (void *)lll);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
@@ -2369,7 +2369,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 		ticker_status =	ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,
-					    ticker_id_conn,
+					    ticker_id_conn, 0,
 					    ticker_stop_conn_op_cb,
 					    (void *)conn);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
