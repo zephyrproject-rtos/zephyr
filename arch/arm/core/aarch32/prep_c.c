@@ -80,10 +80,14 @@ void __weak relocate_vector_table(void)
 static inline void enable_floating_point(void)
 {
 	/*
-	 * Upon reset, the Co-Processor Access Control Register is 0x00000000.
 	 * Enable CP10 and CP11 Co-Processors to enable access to floating
 	 * point registers.
+	 *
+	 * Note:
+	 * Upon reset, the Co-Processor Access Control Register is, normally, 0x00000000,
+	 * however, it might be left un-cleared by firmware running before Zephyr boot.
 	 */
+	SCB->CPACR &= (~(CPACR_CP10_Msk | CPACR_CP11_Msk));
 #if defined(CONFIG_USERSPACE)
 	/* Full access */
 	SCB->CPACR |= CPACR_CP10_FULL_ACCESS | CPACR_CP11_FULL_ACCESS;
