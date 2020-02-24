@@ -86,6 +86,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct ll_adv_set *adv;
 	uint32_t ticker_status;
 	uint8_t peer_addr_type;
+	uint32_t ticks_at_stop;
 	uint16_t win_delay_us;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
@@ -439,9 +440,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Stop Advertiser */
 	ticker_id_adv = TICKER_ID_ADV_BASE + ull_adv_handle_get(adv);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_adv, ticker_op_stop_adv_cb, adv);
+	ticks_at_stop = ftr->ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(conn_offset_us) -
+			ticks_slot_offset;
+	ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_adv, ticks_at_stop,
+					ticker_op_stop_adv_cb, adv);
 	ticker_op_stop_adv_cb(ticker_status, adv);
 
 	/* Stop Direct Adv Stop */

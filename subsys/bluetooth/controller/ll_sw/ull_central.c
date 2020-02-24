@@ -841,6 +841,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct pdu_adv *pdu_tx;
 	uint8_t peer_addr_type;
 	uint32_t ticker_status;
+	uint32_t ticks_at_stop;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -988,10 +989,13 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Stop Scanner */
 	ticker_id_scan = TICKER_ID_SCAN_BASE + ull_scan_handle_get(scan);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    scan);
+	ticks_at_stop = ftr->ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(conn_offset_us) -
+			ticks_slot_offset;
+	ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_scan, ticks_at_stop,
+					ticker_op_stop_scan_cb, scan);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
