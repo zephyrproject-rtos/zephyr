@@ -3,6 +3,7 @@
 zephyr_sources_if_kconfig(base64.c)
 
 zephyr_sources(
+  async_shif.c
   crc32_sw.c
   crc16_sw.c
   crc8_sw.c
@@ -17,6 +18,7 @@ zephyr_sources(
   queued_operation.c
   rb.c
   sem.c
+  seq_mgr.c
   thread_entry.c
   timeutil.c
   work_q.c

@@ -46,4 +46,8 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
+module = SYS_SEQ_MGR
+module-str = Sequence Manager
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
