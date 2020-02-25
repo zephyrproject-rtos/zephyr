@@ -184,6 +184,23 @@ struct bt_hci_rp_vs_read_tx_power_level {
 	s8_t  tx_power_level;
 } __packed;
 
+#define BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE    BT_OP(BT_OGF_VS, 0x0010)
+
+struct bt_hci_rp_vs_read_usb_transport_mode {
+	u8_t  status;
+	u8_t  num_supported_modes;
+	u8_t  supported_mode[0];
+} __packed;
+
+#define BT_HCI_VS_USB_H2_MODE                  0x00
+#define BT_HCI_VS_USB_H4_MODE                  0x01
+
+#define BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE    BT_OP(BT_OGF_VS, 0x0011)
+
+struct bt_hci_cp_vs_set_usb_transport_mode {
+	u8_t  mode;
+} __packed;
+
 /* Events */
 
 struct bt_hci_evt_vs {
