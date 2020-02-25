@@ -1192,6 +1192,7 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		ticker->req = ticker->ack;
 
 		if (instance->ticker_id_slot_previous == user_op->id) {
+			u32_t ticks_current;
 			u32_t ticks_at_stop;
 			u32_t ticks_used;
 
@@ -1203,9 +1204,23 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 			} else {
 				ticks_at_stop = cntr_cnt_get();
 			}
-			ticks_used = ticks_elapsed +
-				ticker_ticks_diff_get(ticks_at_stop,
-						      instance->ticks_current);
+
+			ticks_current = instance->ticks_current;
+			if (!((ticks_at_stop - ticks_current) &
+			      BIT(HAL_TICKER_CNTR_MSBIT))) {
+				ticks_used = ticks_elapsed +
+					ticker_ticks_diff_get(ticks_at_stop,
+							      ticks_current);
+			} else {
+				ticks_used =
+					ticker_ticks_diff_get(ticks_current,
+							      ticks_at_stop);
+				if (ticks_used > ticks_elapsed) {
+					ticks_used -= ticks_elapsed;
+				} else {
+					ticks_used = 0;
+				}
+			}
 			instance->ticks_slot_previous =	MIN(ticker->ticks_slot,
 							    ticks_used);
 		}
