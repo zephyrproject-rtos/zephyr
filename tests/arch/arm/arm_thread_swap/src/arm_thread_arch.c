@@ -240,6 +240,16 @@ static void alt_thread_entry(void)
 		0, sizeof(_callee_saved_t));
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+
+	/*  Verify that the _current_ (alt) thread is initialized with FPCA cleared. */
+	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
+		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
+		__get_CONTROL());
+
+	/* Verify that the _current_ (alt) thread is initialized with FPSCR cleared. */
+	zassert_true(__get_FPSCR() == 0,
+		"(Alt thread) FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
+
 	zassert_true((p_ztest_thread->arch.mode & CONTROL_FPCA_Msk) != 0,
 		"ztest thread mode FPCA flag not updated at swap-out: 0x%0x\n",
 		p_ztest_thread->arch.mode);
@@ -385,6 +395,14 @@ void test_arm_thread_swap(void)
 		"Thread FPCA flag not clear at initialization 0x%0x\n",
 		_current->arch.mode);
 
+	/* Verify that the main test thread is initialized with FPCA cleared. */
+	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
+		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
+		__get_CONTROL());
+	/* Verify that the main test thread is initialized with FPSCR cleared. */
+	zassert_true(__get_FPSCR() == 0,
+		"FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
+
 	/* Clear the thread's floating-point callee-saved registers' container.
 	 * The container will, later, be populated by the swap mechanism.
 	 */
@@ -393,6 +411,11 @@ void test_arm_thread_swap(void)
 
 	/* Randomize the FP callee-saved registers at test initialization */
 	load_fp_callee_saved_regs(&ztest_thread_fp_callee_saved_regs);
+
+	/* Modify bit-0 of the FPSCR - will be checked again upon swap-in. */
+	zassert_true((__get_FPSCR() & 0x1) == 0,
+		"FPSCR bit-0 has been set before testing it\n");
+	__set_FPSCR(__get_FPSCR() | 0x1);
 
 	/* The main test thread is using the FP registers, but the .mode
 	 * flag is not updated until the next context switch.
@@ -604,6 +627,11 @@ void test_arm_thread_swap(void)
 	verify_fp_callee_saved(
 		&ztest_thread_fp_callee_saved_regs,
 		&_current->arch.preempt_float);
+
+	/* Verify that the main test thread restored the FPSCR bit-0. */
+	zassert_true((__get_FPSCR() & 0x1) == 0x1,
+		"FPSCR bit-0 not restored at swap: 0x%x\n", __get_FPSCR());
+
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
 }
