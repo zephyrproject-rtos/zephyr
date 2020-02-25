@@ -50,6 +50,20 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
 }
 
+static void start_scan(void)
+{
+	int err;
+
+	/* This demo doesn't require active scan */
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	if (err) {
+		printk("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Scanning successfully started\n");
+}
+
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -58,6 +72,11 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 	if (err) {
 		printk("Failed to connect to %s (%u)\n", addr, err);
+
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+
+		start_scan();
 		return;
 	}
 
@@ -73,7 +92,6 @@ static void connected(struct bt_conn *conn, u8_t err)
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
-	int err;
 
 	if (conn != default_conn) {
 		return;
@@ -86,11 +104,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	/* This demo doesn't require active scan */
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
-	if (err) {
-		printk("Scanning failed to start (err %d)\n", err);
-	}
+	start_scan();
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -112,11 +126,5 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
-	if (err) {
-		printk("Scanning failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Scanning successfully started\n");
+	start_scan();
 }
