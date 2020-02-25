@@ -9056,13 +9056,40 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 		}
 	}
 
-	/* check if procedure is requested */
+	/* Check if procedures with instant or encryption setup is requested or
+	 * active.
+	 */
 	if (conn->llcp_ack != conn->llcp_req) {
 		/* Stop previous event, to avoid Radio DMA corrupting the
 		 * rx queue
 		 */
 		event_stop(0, 0, 0, (void *)STATE_ABORT);
 
+		/* Process parallel procedures that are active */
+		if (0) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		/* Check if DLE in progress */
+		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+			if ((conn->llcp_length.state ==
+			     LLCP_LENGTH_STATE_RESIZE) ||
+			    (conn->llcp_length.state ==
+			     LLCP_LENGTH_STATE_RESIZE_RSP)) {
+				/* handle DLU state machine */
+				if (event_len_prep(conn)) {
+					/* NOTE: rx pool could not be resized,
+					 * lets skip this event and try in the
+					 * next event.
+					 */
+					_radio.ticker_id_prepare = 0U;
+
+					goto event_connection_prepare_skip;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+		}
+
+		/* Process procedures with instants or encryption setup */
+		/* FIXME: Make LE Ping cacheable */
 		switch (conn->llcp_type) {
 		case LLCP_CONN_UPD:
 			if (!event_conn_upd_prep(conn, event_counter,
