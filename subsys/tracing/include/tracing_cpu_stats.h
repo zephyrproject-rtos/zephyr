@@ -10,6 +10,10 @@
 #include <kernel_structs.h>
 #include <init.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct cpu_stats {
 	u64_t idle;
 	u64_t non_idle;
@@ -40,5 +44,9 @@ void cpu_stats_reset_counters(void);
 
 #define sys_trace_void(id)
 #define sys_trace_end_call(id)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TRACE_CPU_STATS_H */
