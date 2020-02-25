@@ -20,6 +20,29 @@ LOG_MODULE_REGISTER(usb_dc_sam);
 #define USBHS_RAM_ADDR		(0xA0100000)
 #endif
 
+/*
+ * The new Atmel DFP headers provide mode-specific interrupt register field
+ * definitions.  Map the existing generic definitions to these.
+ */
+#ifndef USBHS_DEVEPTISR_CTRL_RXSTPI
+#define USBHS_DEVEPTISR_CTRL_RXSTPI	USBHS_DEVEPTISR_RXSTPI
+#endif
+#ifndef USBHS_DEVEPTICR_CTRL_RXSTPIC
+#define USBHS_DEVEPTICR_CTRL_RXSTPIC	USBHS_DEVEPTICR_RXSTPIC
+#endif
+#ifndef USBHS_DEVEPTIMR_CTRL_STALLRQ
+#define USBHS_DEVEPTIMR_CTRL_STALLRQ	USBHS_DEVEPTIMR_STALLRQ
+#endif
+#ifndef USBHS_DEVEPTIER_CTRL_RXSTPES
+#define USBHS_DEVEPTIER_CTRL_RXSTPES	USBHS_DEVEPTIER_RXSTPES
+#endif
+#ifndef USBHS_DEVEPTIER_CTRL_STALLRQS
+#define USBHS_DEVEPTIER_CTRL_STALLRQS	USBHS_DEVEPTIER_STALLRQS
+#endif
+#ifndef USBHS_DEVEPTIDR_CTRL_STALLRQC
+#define USBHS_DEVEPTIDR_CTRL_STALLRQC	USBHS_DEVEPTIDR_STALLRQC
+#endif
+
 /* Helper macros to make it easier to work with endpoint numbers */
 #define EP_ADDR2IDX(ep)		((ep) & ~USB_EP_DIR_MASK)
 #define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
@@ -103,7 +126,7 @@ static void usb_dc_ep_enable_interrupts(u8_t ep_idx)
 {
 	if (ep_idx == 0U) {
 		/* Control endpoint: enable SETUP and OUT */
-		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXSTPES;
+		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_CTRL_RXSTPES;
 		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXOUTES;
 	} else if ((USBHS->USBHS_DEVEPTCFG[ep_idx] & USBHS_DEVEPTCFG_EPDIR_Msk)
 		   == USBHS_DEVEPTCFG_EPDIR_IN) {
@@ -143,7 +166,7 @@ static void usb_dc_ep0_isr(void)
 	u32_t sr = USBHS->USBHS_DEVEPTISR[0] & USBHS->USBHS_DEVEPTIMR[0];
 	u32_t dev_ctrl = USBHS->USBHS_DEVCTRL;
 
-	if (sr & USBHS_DEVEPTISR_RXSTPI) {
+	if (sr & USBHS_DEVEPTISR_CTRL_RXSTPI) {
 		/* SETUP data received */
 		usb_dc_ep_fifo_reset(0);
 		dev_data.ep_data[0].cb_out(USB_EP_DIR_OUT, USB_DC_EP_SETUP);
@@ -536,7 +559,7 @@ int usb_dc_ep_set_stall(u8_t ep)
 		return -EINVAL;
 	}
 
-	USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_STALLRQS;
+	USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_CTRL_STALLRQS;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
@@ -552,7 +575,7 @@ int usb_dc_ep_clear_stall(u8_t ep)
 		return -EINVAL;
 	}
 
-	USBHS->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_STALLRQC;
+	USBHS->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_CTRL_STALLRQC;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
@@ -573,7 +596,7 @@ int usb_dc_ep_is_stalled(u8_t ep, u8_t *stalled)
 	}
 
 	*stalled = (USBHS->USBHS_DEVEPTIMR[ep_idx] &
-		    USBHS_DEVEPTIMR_STALLRQ) != 0;
+		    USBHS_DEVEPTIMR_CTRL_STALLRQ) != 0;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
@@ -692,7 +715,8 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 		return -EINVAL;
 	}
 
-	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_STALLRQ) != 0) {
+	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_CTRL_STALLRQ)
+		!= 0) {
 		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
@@ -799,7 +823,8 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		return -EINVAL;
 	}
 
-	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_STALLRQ) != 0) {
+	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_CTRL_STALLRQ)
+		!= 0) {
 		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
@@ -861,7 +886,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		 * the stage of the transfer.
 		 */
 		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_RXOUTIC;
-		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_RXSTPIC;
+		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_CTRL_RXSTPIC;
 	} else {
 		/*
 		 * Other endpoint types: clear the FIFO control flag to
