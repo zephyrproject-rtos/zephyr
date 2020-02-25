@@ -1239,8 +1239,8 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
 					    RADIO_TICKER_ID_ADV,
-					    TICKER_STOP_FLAG_ABSOLUTE,
 					    ticks_at_stop,
+					    TICKER_STOP_FLAG_ABSOLUTE,
 					    ticker_stop_adv_assert,
 					    (void *)__LINE__);
 		ticker_stop_adv_assert(ticker_status, (void *)__LINE__);
@@ -1738,8 +1738,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
 					    RADIO_TICKER_ID_SCAN,
-					    TICKER_STOP_FLAG_ABSOLUTE,
 					    ticks_at_stop,
+					    TICKER_STOP_FLAG_ABSOLUTE,
 					    ticker_stop_scan_assert,
 					    (void *)__LINE__);
 		ticker_stop_scan_assert(ticker_status, (void *)__LINE__);
