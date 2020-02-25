@@ -2402,21 +2402,16 @@ static int ptp_clock_sam_gmac_adjust(struct device *dev, int increment)
 	struct ptp_context *ptp_context = dev->driver_data;
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
 	Gmac *gmac = cfg->regs;
-	GMAC_TA_Type gmac_ta;
 
 	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
 		return -EINVAL;
 	}
 
 	if (increment < 0) {
-		gmac_ta.bit.ADJ = 1;
-		gmac_ta.bit.ITDT = -increment;
+		gmac->GMAC_TA = GMAC_TA_ADJ | GMAC_TA_ITDT(-increment);
 	} else {
-		gmac_ta.bit.ADJ = 0;
-		gmac_ta.bit.ITDT = increment;
+		gmac->GMAC_TA = GMAC_TA_ITDT(increment);
 	}
-
-	gmac->GMAC_TA = gmac_ta.reg;
 
 	return 0;
 }
