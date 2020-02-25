@@ -43,4 +43,8 @@ static int pinmux_stm32_init(struct device *port)
 }
 
 SYS_INIT(pinmux_stm32_init, PRE_KERNEL_1,
+<<<<<<< HEAD
 	CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
+=======
+		CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
+>>>>>>> 1bb1105345068bc8dbc66798a68ebb0fabb9986f
