@@ -347,7 +347,8 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	enum net_verdict verdict = NET_OK;
 	int status = -EIO;
 
-	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
+	if (!net_if_flag_is_set(iface, NET_IF_UP) ||
+	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
 		verdict = NET_DROP;
@@ -3622,6 +3623,34 @@ bool net_if_is_promisc(struct net_if *iface)
 
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
+
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+
+int net_if_suspend(struct net_if *iface)
+{
+	if (net_if_are_pending_tx_packets(iface)) {
+		return -EBUSY;
+	}
+
+	if (net_if_flag_test_and_set(iface, NET_IF_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	return 0;
+}
+
+int net_if_resume(struct net_if *iface)
+{
+	if (!net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	net_if_flag_clear(iface, NET_IF_SUSPENDED);
+
+	return 0;
+}
+
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 static void net_tx_ts_thread(void)

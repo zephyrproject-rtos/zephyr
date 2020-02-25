@@ -194,6 +194,9 @@ enum net_if_flag {
 	 */
 	NET_IF_NO_AUTO_START,
 
+	/** Power management specific: interface is being suspended */
+	NET_IF_SUSPENDED,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -2128,6 +2131,28 @@ static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
 	return false;
 #endif
 }
+
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+
+/**
+ * @brief Suspend a network interface from a power management perspective
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success, or -EALREADY/-EBUSY as possible errors.
+ */
+int net_if_suspend(struct net_if *iface);
+
+/**
+ * @brief Resume a network interface from a power management perspective
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success, or -EALREADY as a possible error.
+ */
+int net_if_resume(struct net_if *iface);
+
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
