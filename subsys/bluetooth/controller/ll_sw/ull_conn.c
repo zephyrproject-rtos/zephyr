@@ -830,8 +830,27 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 		}
 	}
 
-	/* check if procedure is requested */
+	/* Check if procedures with instant or encryption setup is requested or
+	 * active.
+	 */
 	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
+		/* Process parallel procedures that are active */
+		if (0) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		/* Check if DLE in progress */
+		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+			if ((conn->llcp_length.state ==
+			     LLCP_LENGTH_STATE_RESIZE) ||
+			    (conn->llcp_length.state ==
+			     LLCP_LENGTH_STATE_RESIZE_RSP)) {
+				/* handle DLU state machine */
+				event_len_prep(conn);
+			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+		}
+
+		/* Process procedures with instants or encryption setup */
+		/* FIXME: Make LE Ping cacheable */
 		switch (conn->llcp_type) {
 		case LLCP_CONN_UPD:
 		{
