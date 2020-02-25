@@ -648,6 +648,7 @@ config EXECUTE_XOR_WRITE
 config STACK_POINTER_RANDOM
 	int "Initial stack pointer randomization bounds"
 	depends on !STACK_GROWS_UP
+	depends on MULTITHREADING
 	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
 	default 0
 	help
