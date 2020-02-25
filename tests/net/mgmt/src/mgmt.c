@@ -90,7 +90,8 @@ static struct dummy_api fake_iface_api = {
 };
 
 NET_DEVICE_INIT(net_event_test, "net_event_test",
-		fake_dev_init, NULL, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		fake_dev_init, device_pm_control_nop,
+		NULL, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_iface_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 void test_requesting_nm(void)

@@ -871,6 +871,6 @@ error:
 }
 
 NET_DEVICE_OFFLOAD_INIT(wifi_esp, CONFIG_WIFI_ESP_NAME,
-			esp_init, &esp_driver_data, NULL,
+			esp_init, device_pm_control_nop, &esp_driver_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &esp_api,
 			ESP_MTU);

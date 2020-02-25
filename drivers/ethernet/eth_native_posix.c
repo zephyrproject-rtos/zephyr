@@ -584,7 +584,7 @@ static const struct ethernet_api eth_if_api = {
 };
 
 ETH_NET_DEVICE_INIT(eth_native_posix, ETH_NATIVE_POSIX_DRV_NAME,
-		    eth_init, &eth_context_data, NULL,
+		    eth_init, device_pm_control_nop, &eth_context_data, NULL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
 		    NET_ETH_MTU);
 

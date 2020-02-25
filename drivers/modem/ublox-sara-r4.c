@@ -1523,6 +1523,6 @@ error:
 }
 
 NET_DEVICE_OFFLOAD_INIT(modem_sara, CONFIG_MODEM_UBLOX_SARA_R4_NAME,
-			modem_init, &mdata, NULL,
+			modem_init, device_pm_control_nop, &mdata, NULL,
 			CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY, &api_funcs,
 			MDM_MAX_DATA_LENGTH);

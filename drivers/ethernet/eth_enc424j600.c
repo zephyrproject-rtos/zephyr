@@ -766,6 +766,6 @@ static const struct enc424j600_config enc424j600_0_config = {
 };
 
 ETH_NET_DEVICE_INIT(enc424j600_0, DT_INST_0_MICROCHIP_ENC424J600_LABEL,
-		    enc424j600_init, &enc424j600_0_runtime,
-		    &enc424j600_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		    NET_ETH_MTU);
+		    enc424j600_init, device_pm_control_nop,
+		    &enc424j600_0_runtime, &enc424j600_0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);

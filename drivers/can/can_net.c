@@ -398,7 +398,7 @@ static int net_can_init(struct device *dev)
 static struct net_can_context net_can_context_1;
 
 NET_DEVICE_INIT(net_can_1, CONFIG_CAN_NET_NAME, net_can_init,
-		&net_can_context_1, NULL,
+		device_pm_control_nop, &net_can_context_1, NULL,
 		CONFIG_CAN_NET_INIT_PRIORITY,
 		&net_can_api_inst,
 		CANBUS_L2, NET_L2_GET_CTX_TYPE(CANBUS_L2), NET_CAN_MTU);

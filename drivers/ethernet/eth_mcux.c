@@ -1127,8 +1127,8 @@ static struct eth_context eth_0_context = {
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_init,
-		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+		    device_pm_control_nop, &eth_0_context, NULL,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 static void eth_0_config_func(void)
 {
@@ -1185,8 +1185,8 @@ static struct eth_context eth_1_context = {
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_1, DT_ETH_MCUX_1_NAME, eth_init,
-		    &eth_1_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+		    device_pm_control_nop, &eth_1_context, NULL,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 static void eth_1_config_func(void)
 {

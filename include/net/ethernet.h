@@ -616,6 +616,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
  * @param data Pointer to the device's configuration data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
@@ -625,18 +627,18 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
 #if defined(CONFIG_NET_VLAN)
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
-			    data, cfg_info, prio, api, mtu)		 \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		 \
-			    cfg_info, POST_KERNEL, prio, api);		 \
+#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
+			    data, cfg_info, prio, api, mtu)		\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data,	\
+		      cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2)); \
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
+#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
 			    data, cfg_info, prio, api, mtu)		\
-	NET_DEVICE_INIT(dev_name, drv_name, init_fn,			\
+	NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
 			data, cfg_info, prio, api, ETHERNET_L2,		\
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 

@@ -142,13 +142,15 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", eth_fake_init, &eth_fake_data1,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1",
+		    eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data1, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", eth_fake_init, &eth_fake_data2,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2",
+		    eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data2, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)
