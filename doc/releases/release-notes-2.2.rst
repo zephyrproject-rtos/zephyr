@@ -205,6 +205,7 @@ Boards & SoC Support
    * Google Kukui EC
    * NXP i.MX RT1010 Evaluation Kit
    * Silicon Labs EFM32 Giant Gecko GG11
+   * Silicon Labs EFM32 Jade Gecko
    * ST Nucleo F767ZI
    * ST Nucleo G474RE
    * ST Nucleo L152RE
