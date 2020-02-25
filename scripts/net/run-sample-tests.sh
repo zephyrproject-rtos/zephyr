@@ -10,6 +10,7 @@ docker_pid=0
 configuration=""
 result=0
 sample=""
+zephyr_overlay=""
 
 check_dirs ()
 {
@@ -261,11 +262,17 @@ wait_docker ()
 docker_exec ()
 {
     local result=0
+    local overlay=""
+
+    if [ -n "$zephyr_overlay" ]
+    then
+       overlay="-DOVERLAY_CONFIG=$zephyr_overlay"
+    fi
 
     case "$1" in
 	echo_server)
 	    start_configuration
-	    start_zephyr
+	    start_zephyr "$overlay"
 
 	    start_docker \
 		"/net-tools/echo-client -i eth0 192.0.2.1" \
@@ -282,7 +289,8 @@ docker_exec ()
 	    start_docker \
 		"/net-tools/echo-server -i eth0"
 
-	    start_zephyr "-DCONFIG_NET_SAMPLE_SEND_ITERATIONS=10"
+	    start_zephyr "$overlay" \
+			 "-DCONFIG_NET_SAMPLE_SEND_ITERATIONS=10"
 
 	    wait_zephyr
 	    result=$?
@@ -343,6 +351,8 @@ usage ()
     echo "-N|--net-tools-dir <dir>\tset net-tools directory"
     echo "--start\t\t\t\tonly start Docker container and network and exit"
     echo "--stop\t\t\t\tonly stop Docker container and network"
+    echo -n "--overlay <config files>\tadditional configuration/overlay "
+    echo "files for the\n\t\t\t\tZephyr build process"
     echo "<test script>\t\t\tsample script to run instead of test based on"
     echo "\t\t\t\tcurrent directory"
     echo "The automatically detected directories are:"
@@ -394,6 +404,17 @@ do
 	    fi
 	    configuration=stop_only
 	    ;;
+
+	--overlay)
+	    shift
+	    if [ -n "$zephyr_overlay" ]
+	    then
+		zephyr_overlay="$zephyr_overlay $1"
+	    else
+		zephyr_overlay="$1"
+	    fi
+	    ;;
+
 	-*)
 	    echo "Argument '$1' not recognised" >&2
 	    usage
