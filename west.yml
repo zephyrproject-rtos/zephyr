@@ -116,8 +116,9 @@ manifest:
       revision: 382b309b481adc85dd517d50b8a458bcb86f15d4
       path: modules/hal/xtensa
     - name: edtt
+      url: https://github.com/EDTTool/EDTT.git
       path: tools/edtt
-      revision: d2d79a375082451adeedc01bcbbe5a7714d1556b
+      revision: pull/12/head
 
   self:
     path: zephyr
