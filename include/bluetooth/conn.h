@@ -93,12 +93,13 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
  *
  *  Look up an existing connection based on the remote address.
  *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
+ *
  *  @param id   Local identity (in most cases BT_ID_DEFAULT).
  *  @param peer Remote address.
  *
- *  @return Connection object or NULL if not found. The caller gets a
- *  new reference to the connection object which must be released with
- *  bt_conn_unref() once done using the object.
+ *  @return Connection object or NULL if not found.
  */
 struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
 
@@ -280,7 +281,9 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  This uses the General Connection Establishment procedure.
  *
@@ -345,7 +348,8 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *
  *  The advertising may be canceled with bt_conn_disconnect().
  *
- *  Returns a new reference that the the caller is responsible for managing.
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *  @param param Directed advertising parameters.
@@ -1023,7 +1027,9 @@ struct bt_br_conn_param {
 /** @brief Initiate an BR/EDR connection to a remote device.
  *
  *  Allows initiate new BR/EDR link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
@@ -1036,7 +1042,9 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 /** @brief Initiate an SCO connection to a remote device.
  *
  *  Allows initiate new SCO link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *
