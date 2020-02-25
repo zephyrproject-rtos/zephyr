@@ -1901,6 +1901,12 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	/* Write Tx Power, Read Tx Power */
 	rp->commands[1] |= BIT(5) | BIT(6);
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
+	/* Read Supported USB Transport Modes */
+	rp->commands[1] |= BIT(7);
+	/* Set USB Transport Mode */
+	rp->commands[2] |= BIT(0);
+#endif /* USB_DEVICE_BLUETOOTH_VS_H4 */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 }
 
@@ -2206,6 +2212,14 @@ int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES):
 		vs_read_supported_features(cmd, evt);
 		break;
+
+#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
+	case BT_OCF(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE):
+		break;
+	case BT_OCF(BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE):
+		reset(cmd, evt);
+		break;
+#endif /* CONFIG_USB_DEVICE_BLUETOOTH_VS_H4 */
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
 	case BT_OCF(BT_HCI_OP_VS_READ_BUILD_INFO):

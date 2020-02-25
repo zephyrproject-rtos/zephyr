@@ -107,6 +107,13 @@ config BLUETOOTH_BULK_EP_MPS
 	help
 	  Bluetooth device class bulk endpoint size
 
+config USB_DEVICE_BLUETOOTH_VS_H4
+	bool "Enable USB Bluetooth H4 vendor command"
+	depends on USB_DEVICE_BLUETOOTH
+	help
+	  Enables vendor command to switch to H:4 transport using the bulk
+	  endpoint.
+
 config USB_DEVICE_BT_H4
 	bool "USB Bluetooth H4 Device Class Driver"
 	select BT
