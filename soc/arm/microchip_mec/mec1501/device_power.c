@@ -146,10 +146,22 @@ static u8_t uart_activate[3];
 static void deep_sleep_save_uarts(void)
 {
 	uart_activate[0] = UART0_REGS->ACTV;
+	if (uart_activate[0]) {
+		while ((UART0_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		};
+	}
 	UART0_REGS->ACTV = 0;
 	uart_activate[1] = UART1_REGS->ACTV;
+	if (uart_activate[1]) {
+		while ((UART1_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		};
+	}
 	UART1_REGS->ACTV = 0;
 	uart_activate[2] = UART2_REGS->ACTV;
+	if (uart_activate[2]) {
+		while ((UART2_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		};
+	}
 	UART2_REGS->ACTV = 0;
 }
 
