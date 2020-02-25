@@ -818,8 +818,6 @@ static int eth_0_init(struct device *dev)
 	k_delayed_work_init(&context->delayed_phy_work,
 			    eth_mcux_delayed_phy_work);
 
-	eth_mcux_phy_setup();
-
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 
 	ENET_GetDefaultConfig(&enet_config);
@@ -880,6 +878,9 @@ static int eth_0_init(struct device *dev)
 #endif
 
 	ENET_SetSMI(ENET, sys_clock, false);
+
+	/* handle PHY setup after SMI initialization */
+	eth_mcux_phy_setup();
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		context->mac_addr[0], context->mac_addr[1],
