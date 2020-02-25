@@ -254,9 +254,9 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx
 };
 
-NET_DEVICE_INIT(eth0, LITEETH_LABEL, eth_initialize, &eth_data, &eth_config,
-		CONFIG_ETH_INIT_PRIORITY, &eth_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+NET_DEVICE_INIT(eth0, LITEETH_LABEL, eth_initialize, device_pm_control_nop,
+		&eth_data, &eth_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 static void eth_irq_config(void)
 {

@@ -1384,14 +1384,17 @@ static struct dummy_api net_tcp_if_api_peer = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT_INSTANCE(net_tcp_test, "net_tcp_test", host,
-		net_tcp_dev_init, &net_tcp_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_tcp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_tcp_dev_init, device_pm_control_nop,
+			 &net_tcp_context_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_tcp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
 NET_DEVICE_INIT_INSTANCE(net_tcp_test_peer, "net_tcp_test_peer", peer,
-		 net_tcp_dev_init, &net_tcp_context_data_peer, NULL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &net_tcp_if_api_peer, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_tcp_dev_init, device_pm_control_nop,
+			 &net_tcp_context_data_peer, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_tcp_if_api_peer,
+			 _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
 static bool test_init_tcp_context(void)
 {

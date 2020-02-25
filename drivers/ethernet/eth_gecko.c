@@ -692,5 +692,5 @@ static struct eth_gecko_dev_data eth0_data = {
 };
 
 ETH_NET_DEVICE_INIT(eth_gecko, CONFIG_ETH_GECKO_NAME, eth_init,
-		    &eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_api, ETH_GECKO_MTU);
+		    device_pm_control_nop, &eth0_data, &eth0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_GECKO_MTU);

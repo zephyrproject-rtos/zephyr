@@ -217,14 +217,18 @@ static struct dummy_api net_route_if_api_peer = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT_INSTANCE(net_route_test, "net_route_test", host,
-		 net_route_dev_init, &net_route_data, NULL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &net_route_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_route_dev_init, device_pm_control_nop,
+			 &net_route_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_route_if_api, _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE, 127);
 
 NET_DEVICE_INIT_INSTANCE(net_route_test_peer, "net_route_test_peer", peer,
-		 net_route_dev_init, &net_route_data_peer, NULL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &net_route_if_api_peer, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_route_dev_init, device_pm_control_nop,
+			 &net_route_data_peer, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_route_if_api_peer, _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE, 127);
 
 static void test_init(void)
 {

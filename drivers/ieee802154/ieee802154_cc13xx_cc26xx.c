@@ -715,7 +715,8 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 
 NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx,
 		CONFIG_IEEE802154_CC13XX_CC26XX_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_init, &ieee802154_cc13xx_cc26xx_data,
-		NULL, CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+		ieee802154_cc13xx_cc26xx_init, device_pm_control_nop,
+		&ieee802154_cc13xx_cc26xx_data, NULL,
+		CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);

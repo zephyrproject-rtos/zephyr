@@ -250,6 +250,7 @@ static const struct ethernet_api e1000_api = {
 NET_DEVICE_INIT(eth_e1000,
 		"ETH_0",
 		e1000_probe,
+		device_pm_control_nop,
 		&e1000_dev,
 		NULL,
 		CONFIG_ETH_INIT_PRIORITY,

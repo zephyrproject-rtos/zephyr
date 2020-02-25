@@ -2360,8 +2360,8 @@ static struct eth_sam_dev_data eth0_data = {
 };
 
 ETH_NET_DEVICE_INIT(eth0_sam_gmac, CONFIG_ETH_SAM_GMAC_NAME, eth_initialize,
-		    &eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_api, GMAC_MTU);
+		    device_pm_control_nop, &eth0_data, &eth0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &eth_api, GMAC_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 struct ptp_context {

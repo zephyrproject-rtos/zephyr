@@ -352,7 +352,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 };
 
 NET_DEVICE_INIT(eth_stellaris, DT_INST_LABEL(0),
-		eth_stellaris_dev_init, &eth_data, &eth_cfg,
-		CONFIG_ETH_INIT_PRIORITY,
+		eth_stellaris_dev_init, device_pm_control_nop,
+		&eth_data, &eth_cfg, CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

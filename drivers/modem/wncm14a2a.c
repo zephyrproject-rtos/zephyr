@@ -1836,6 +1836,6 @@ static struct net_if_api api_funcs = {
 };
 
 NET_DEVICE_OFFLOAD_INIT(modem_wncm14a2a, "MODEM_WNCM14A2A",
-			wncm14a2a_init, &ictx,
+			wncm14a2a_init, device_pm_control_nop, &ictx,
 			NULL, CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY, &api_funcs,
 			MDM_MAX_DATA_LENGTH);

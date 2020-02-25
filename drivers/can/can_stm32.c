@@ -1119,7 +1119,7 @@ static int socket_can_init_1(struct device *dev)
 }
 
 NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		&socket_can_context_1, NULL,
+		device_pm_control_nop, &socket_can_context_1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
@@ -1197,7 +1197,7 @@ static int socket_can_init_2(struct device *dev)
 }
 
 NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
-		&socket_can_context_2, NULL,
+		device_pm_control_nop, &socket_can_context_2, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);

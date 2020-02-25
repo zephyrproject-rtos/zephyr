@@ -182,7 +182,7 @@ static struct dummy_api net_fragment_if_api = {
 };
 
 NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
-		net_fragment_dev_init, NULL, NULL,
+		net_fragment_dev_init, device_pm_control_nop, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_fragment_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);

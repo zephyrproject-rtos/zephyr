@@ -830,8 +830,8 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 };
 
 ETH_NET_DEVICE_INIT(enc28j60_0, DT_INST_0_MICROCHIP_ENC28J60_LABEL,
-		    eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		    &eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+		    eth_enc28j60_init, device_pm_control_nop,
+		    &eth_enc28j60_0_runtime, &eth_enc28j60_0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

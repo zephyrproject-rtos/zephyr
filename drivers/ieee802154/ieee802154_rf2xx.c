@@ -895,6 +895,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		rf2xx_##n,			   \
 		DT_INST_##n##_ATMEL_RF2XX_LABEL,   \
 		&rf2xx_init,			   \
+		device_pm_control_nop,		   \
 		&rf2xx_ctx_data_##n,		   \
 		&rf2xx_ctx_config_##n,		   \
 		CONFIG_IEEE802154_RF2XX_INIT_PRIO, \

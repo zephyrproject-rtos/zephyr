@@ -1108,6 +1108,7 @@ NET_DEVICE_INIT(
 	kw41z,                              /* Device Name */
 	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
 	kw41z_init,                         /* Initialization Function */
+	device_pm_control_nop,              /* No PM API support */
 	&kw41z_context_data,                /* Context data */
 	NULL,                               /* Configuration info */
 	CONFIG_IEEE802154_KW41Z_INIT_PRIO,  /* Initial priority */
