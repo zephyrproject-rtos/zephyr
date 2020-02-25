@@ -240,7 +240,7 @@ start_docker ()
 
 stop_docker ()
 {
-    if [ "$docker_pid" -ne 0 ]
+    if [ "$docker_pid" -ne 0 -a "$configuration" != "keep" ]
     then
 	local dockers="$docker_pid $(list_children "$docker_pid")"
 
@@ -359,6 +359,7 @@ usage ()
     echo "-N|--net-tools-dir <dir>\tset net-tools directory"
     echo "--start\t\t\t\tonly start Docker container and network and exit"
     echo "--stop\t\t\t\tonly stop Docker container and network"
+    echo "--keep\t\t\t\tkeep Docker container and network after test"
     echo -n "--overlay <config files>\tadditional configuration/overlay "
     echo "files for the\n\t\t\t\tZephyr build process"
     echo "<test script>\t\t\tsample script to run instead of test based on"
@@ -412,6 +413,9 @@ do
 	    fi
 	    configuration=stop_only
 	    ;;
+	--keep)
+	    configuration=keep
+	    ;;
 
 	--overlay)
 	    shift
@@ -443,7 +447,8 @@ done
 
 check_dirs || exit $?
 
-if [ -z "$configuration" -o "$configuration" = "start_only" ]
+if [ -z "$configuration" -o "$configuration" = "start_only" -o \
+	"$configuration" = "keep" ]
 then
     if [ "$configuration" = start_only ]
     then
