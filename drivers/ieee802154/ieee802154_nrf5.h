@@ -65,6 +65,11 @@ struct nrf5_802154_data {
 	 * ACK was requested/received.
 	 */
 	struct nrf5_802154_rx_frame ack_frame;
+
+	/* Callback handler of the currently ongoing energy scan.
+	 * It shall be NULL if energy scan is not in progress.
+	 */
+	energy_scan_done_cb_t energy_scan_done;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
