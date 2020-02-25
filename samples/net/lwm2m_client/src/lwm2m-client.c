@@ -414,6 +414,9 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		LOG_DBG("Disconnected");
 		break;
 
+	case LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF:
+		LOG_DBG("Queue mode RX window closed");
+		break;
 	}
 }
 
