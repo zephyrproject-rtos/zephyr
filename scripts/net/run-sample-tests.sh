@@ -253,10 +253,16 @@ stop_docker ()
 
 wait_docker ()
 {
-    echo "Waiting for Docker $docker_pid..."
+    local result=""
+
+    echo "Waiting for Docker PID $docker_pid..."
     wait $docker_pid
+    result=$?
 
     docker_pid=0
+
+    echo "Docker returned '$result'"
+    return $result
 }
 
 docker_exec ()
@@ -276,7 +282,9 @@ docker_exec ()
 
 	    start_docker \
 		"/net-tools/echo-client -i eth0 192.0.2.1" \
-		"/net-tools/echo-client -i eth0 2001:db8::1"
+		"/net-tools/echo-client -i eth0 2001:db8::1" \
+		"/net-tools/echo-client -i eth0 192.0.2.1 -t" \
+		"/net-tools/echo-client -i eth0 2001:db8::1 -t"
 
 	    wait_docker
 	    result=$?
