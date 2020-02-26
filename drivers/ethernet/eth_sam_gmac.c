@@ -1193,16 +1193,12 @@ static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 
 	/* Configure GMAC DMA transfer */
 	gmac->GMAC_DCFGR =
-		  /* Receive Buffer Size (defined in multiples of 64 bytes) */
-		  GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6)
-		  /* 4 kB Receiver Packet Buffer Memory Size */
-		| GMAC_DCFGR_RXBMS_FULL
-		  /* 4 kB Transmitter Packet Buffer Memory Size */
-		| GMAC_DCFGR_TXPBMS
-		  /* Transmitter Checksum Generation Offload Enable */
-		| GMAC_DCFGR_TXCOEN
-		  /* Attempt to use INCR4 AHB bursts (Default) */
-		| GMAC_DCFGR_FBLDO_INCR4;
+		/* Receive Buffer Size (defined in multiples of 64 bytes) */
+		GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) |
+		/* Attempt to use INCR4 AHB bursts (Default) */
+		GMAC_DCFGR_FBLDO_INCR4 |
+		/* DMA Queue Flags */
+		GMAC_DMA_QUEUE_FLAGS;
 
 	/* Setup RX/TX completion and error interrupts */
 	gmac->GMAC_IER = GMAC_INT_EN_FLAGS;
