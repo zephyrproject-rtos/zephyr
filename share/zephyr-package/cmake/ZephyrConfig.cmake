@@ -13,10 +13,17 @@
 include(${CMAKE_CURRENT_LIST_DIR}/zephyr_package_search.cmake)
 
 macro(include_boilerplate location)
-  set(Zephyr_FOUND True)
+  if(ZEPHYR_UNITTEST)
+    set(ZephyrUnittest_FOUND True)
+    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+  else()
+    set(Zephyr_FOUND True)
+    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/cmake/app/boilerplate.cmake)
+  endif()
+
   if(NOT NO_BOILERPLATE)
-    message("Including boilerplate (${location}): ${ZEPHYR_BASE}/cmake/app/boilerplate.cmake")
-    include(${ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+    message("Including boilerplate (${location}): ${BOILERPLATE_FILE}")
+    include(${BOILERPLATE_FILE} NO_POLICY_SCOPE)
   endif()
 endmacro()
 
