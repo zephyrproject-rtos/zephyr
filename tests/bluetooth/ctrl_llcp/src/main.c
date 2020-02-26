@@ -15,7 +15,7 @@
 #define ULL_LLCP_UNITTEST
 
 #define PROC_CTX_BUF_NUM 2
-#define TX_CTRL_BUF_NUM 3
+#define TX_CTRL_BUF_NUM 2
 #define NTF_BUF_NUM 2
 
 /* Implementation Under Test Begin */
@@ -699,6 +699,9 @@ void test_api_local_encryption_start(void)
 	pdu = (struct pdu_data *)tx->pdu;
 	helper_pdu_verify_enc_req(pdu);
 
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
 	/* Encode RX PDU */
 	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
 	pdu = (struct pdu_data *) rx->pdu;
@@ -722,6 +725,9 @@ void test_api_local_encryption_start(void)
 	pdu = (struct pdu_data *)tx->pdu;
 	helper_pdu_verify_start_enc_rsp(pdu);
 
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
 	/* Encode RX PDU */
 	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
 	pdu = (struct pdu_data *) rx->pdu;
@@ -737,6 +743,181 @@ void test_api_local_encryption_start(void)
 	/* The PDU should be a LL_START_ENC_RSP */
 	pdu = (struct pdu_data *) ntf->pdu;
 	helper_pdu_verify_start_enc_rsp(pdu);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* There should be no more host notifications */
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(ntf, NULL);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.enc_rx, 1U, NULL);
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |         -----------------\ |                     |
+ *    |         | Reserver all   |-|                     |
+ *    |         | Tx/Ntf buffers | |                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_REQ |
+ *    |                            |<--------------------|
+ *    |          ----------------\ |                     |
+ *    |          | Tx Encryption |-|                     |
+ *    |          | Rx Decryption | |                     |
+ *    |          |---------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_START_ENC_RSP    |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_api_local_encryption_start_limited_memory(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+	struct node_tx *peek_tx;
+	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
+	struct node_rx_pdu *rx;
+	struct node_rx_pdu *ntf;
+	struct node_rx_pdu *peek_ntf;
+
+	/* Setup */
+	sys_slist_init(&ll_rx_q);
+	ull_cp_init();
+	ull_tx_q_init(&tx_q);
+	ull_cp_conn_init(&conn);
+	conn.tx_q = &tx_q;
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Steal all tx buffers */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc();
+		zassert_not_null(tx, NULL);
+	}
+
+	/* Steal all ntf buffers */
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		ntf = ntf_alloc();
+		zassert_not_null(ntf, NULL);
+	}
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have no LL Control PDU */
+	peek_tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(peek_tx, NULL);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify_enc_req(pdu);
+
+	/* Encode RX PDU */
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode_enc_rsp(pdu);
+
+	/* Handle RX */
+	ull_cp_rx(&conn, rx);
+
+	/* Encode RX PDU */
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode_start_enc_req(pdu);
+
+	/* Handle RX */
+	ull_cp_rx(&conn, rx);
+
+	/* Tx Queue should have no LL Control PDU */
+	peek_tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(peek_tx, NULL);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify_start_enc_rsp(pdu);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Encode RX PDU */
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode_start_enc_rsp(pdu);
+
+	/* Handle RX */
+	ull_cp_rx(&conn, rx);
+
+	/* There should be no more host notifications */
+	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(peek_ntf, NULL);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* There should be a host notification */
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_not_null(ntf, NULL);
+
+	/* The PDU should be a LL_START_ENC_RSP */
+	pdu = (struct pdu_data *) ntf->pdu;
+	helper_pdu_verify_start_enc_rsp(pdu);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* There should be no more host notifications */
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
@@ -820,6 +1001,9 @@ void test_api_remote_encryption_start(void)
 	pdu = (struct pdu_data *)tx->pdu;
 	helper_pdu_verify_enc_rsp(pdu);
 
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
 	/* There should be a host notification */
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
 	zassert_not_null(ntf, NULL);
@@ -827,6 +1011,9 @@ void test_api_remote_encryption_start(void)
 	/* The PDU should be a LL_START_ENC_RSP */
 	pdu = (struct pdu_data *) ntf->pdu;
 	helper_pdu_verify_enc_req(pdu);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* There should be no more host notifications */
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
@@ -842,6 +1029,9 @@ void test_api_remote_encryption_start(void)
 	/* The PDU should be a LL_START_ENC_REQ */
 	pdu = (struct pdu_data *)tx->pdu;
 	helper_pdu_verify_start_enc_req(pdu);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.enc_rx, 1U, NULL);
@@ -874,9 +1064,210 @@ void test_api_remote_encryption_start(void)
 	pdu = (struct pdu_data *)tx->pdu;
 	helper_pdu_verify_start_enc_rsp(pdu);
 
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.enc_tx, 1U, NULL);
 }
+
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |    -----------------\ |                     |
+ *    |    | Reserver all   |-|                     |
+ *    |    | Tx/Ntf buffers | |                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |           LTK Request |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    | LTK Request Reply     |                     |
+ *    |---------------------->|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_REQ    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Rx Decryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ *    |                       |    LL_START_ENC_RSP |
+ *    |                       |<--------------------|
+ *    |                       |                     |
+ *    |     Encryption Change |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_RSP    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Tx Encryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ */
+void test_api_remote_encryption_start_limited_memory(void)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+	struct node_tx *peek_tx;
+	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
+	struct node_rx_pdu *rx;
+	struct node_rx_pdu *ntf;
+	struct node_rx_pdu *peek_ntf;
+
+	/* Setup */
+	sys_slist_init(&ll_rx_q);
+	ull_cp_init();
+	ull_tx_q_init(&tx_q);
+	ull_cp_conn_init(&conn);
+	conn.tx_q = &tx_q;
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Steal all tx buffers */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc();
+		zassert_not_null(tx, NULL);
+	}
+
+	/* Steal all ntf buffers */
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		ntf = ntf_alloc();
+		zassert_not_null(ntf, NULL);
+	}
+
+	/* Encode RX PDU */
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode_enc_req(pdu);
+
+	/* Handle RX */
+	ull_cp_rx(&conn, rx);
+
+	/* Tx Queue should not have one LL Control PDU */
+	peek_tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(peek_tx, NULL);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify_enc_rsp(pdu);
+
+	/* There should not be a host notification */
+	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(peek_ntf, NULL);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* There should be a host notification */
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_not_null(ntf, NULL);
+
+	/* The PDU should be a LL_START_ENC_RSP */
+	pdu = (struct pdu_data *) ntf->pdu;
+	helper_pdu_verify_enc_req(pdu);
+
+	/* There should be no more host notifications */
+	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(peek_ntf, NULL);
+
+	/* LTK request reply */
+	ull_cp_ltk_req_reply(&conn);
+
+	/* Tx Queue should not have one LL Control PDU */
+	peek_tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(peek_tx, NULL);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	/* The PDU should be a LL_START_ENC_REQ */
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify_start_enc_req(pdu);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.enc_rx, 1U, NULL);
+
+	/* Encode RX PDU */
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode_start_enc_rsp(pdu);
+
+	/* Handle RX */
+	ull_cp_rx(&conn, rx);
+
+	/* There should not be a host notification */
+	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(peek_ntf, NULL);
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* There should be a host notification */
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_not_null(ntf, NULL);
+
+	/* The PDU should be a LL_START_ENC_RSP */
+	pdu = (struct pdu_data *) ntf->pdu;
+	helper_pdu_verify_start_enc_rsp(pdu);
+
+	/* There should be no more host notifications */
+	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(peek_ntf, NULL);
+
+	/* Tx Queue should not have one LL Control PDU */
+	peek_tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(peek_tx, NULL);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Run */
+	ull_cp_run(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	/* The PDU should be a LL_START_ENC_RSP */
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify_start_enc_rsp(pdu);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.enc_tx, 1U, NULL);
+}
+
 
 void test_main(void)
 {
@@ -894,7 +1285,9 @@ void test_main(void)
 			 ztest_unit_test(test_api_remote_version_exchange),
 			 ztest_unit_test(test_api_both_version_exchange),
 			 ztest_unit_test(test_api_local_encryption_start),
-			 ztest_unit_test(test_api_remote_encryption_start)
+			 ztest_unit_test(test_api_local_encryption_start_limited_memory),
+			 ztest_unit_test(test_api_remote_encryption_start),
+			 ztest_unit_test(test_api_remote_encryption_start_limited_memory)
 			 );
 	ztest_run_test_suite(test);
 }
