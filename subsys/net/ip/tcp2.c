@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Intel Corporation
+ * Copyright (c) 2018-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@ static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, CONFIG_NET_BUF_DATA_SIZE, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
+static size_t tcp_data_len(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
@@ -77,40 +78,19 @@ static void tcp_nbufs_unreserve(struct tcp *conn)
 	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
 }
 
-/* TODO: IPv4 options may enlarge the IPv4 header */
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
-	struct tcphdr *th = NULL;
-	ssize_t len;
+	NET_PKT_DATA_ACCESS_DEFINE(th_access, struct tcphdr);
 
-	if (pkt == NULL) {
-		goto out;
-	}
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
 
-	len = net_pkt_get_len(pkt);
+	/* net_pkt_ip_hdr_len(), net_pkt_ip_opts_len() account for IPv4/IPv6 */
 
-	switch (pkt->family) {
-	case AF_INET:
-		if (len < (sizeof(struct net_ipv4_hdr) +
-				sizeof(struct tcphdr))) {
-			NET_WARN("Undersized IPv4 packet: %zd byte(s)", len);
-			goto out;
-		}
-		th = (struct tcphdr *)(ip_get(pkt) + 1);
-		break;
-	case AF_INET6:
-		if (len < (sizeof(struct net_ipv6_hdr) +
-				sizeof(struct tcphdr))) {
-			NET_WARN("Undersized IPv6 packet: %zd byte(s)", len);
-			goto out;
-		}
-		th = (struct tcphdr *)((u8_t *)ip6_get(pkt) + 1);
-		break;
-	default:
-		break;
-	}
-out:
-	return th;
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+		     net_pkt_ip_opts_len(pkt));
+
+	return net_pkt_get_data(pkt, &th_access);
 }
 
 static size_t tcp_endpoint_len(sa_family_t af)
@@ -238,14 +218,8 @@ static const char *tcp_th(struct net_pkt *pkt)
 				" Ack=%u", th_ack(th));
 	}
 
-	{
-		struct net_ipv4_hdr *ip = ip_get(pkt);
-		ssize_t data_len = ntohs(ip->len) -
-					(sizeof(*ip) + th->th_off * 4);
-
-		len += snprintk(buf + len, BUF_SIZE - len,
-				" Len=%ld", (long int)data_len);
-	}
+	len += snprintk(buf + len, BUF_SIZE - len,
+			" Len=%ld", (long)tcp_data_len(pkt));
 end:
 #undef BUF_SIZE
 	return buf;
@@ -570,12 +544,13 @@ end:
 
 static size_t tcp_data_len(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
-	u8_t off = th->th_off;
-	ssize_t len = ntohs(ip->len) - sizeof(*ip) - off * 4;
+	size_t tcp_options_len = (th->th_off - 5) * 4;
+	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
-	if (off > 5 && false == tcp_options_check((th + 1), (off - 5) * 4)) {
+	if (tcp_options_len && tcp_options_check((th + 1), tcp_options_len)
+			== false) {
 		len = 0;
 	}
 
@@ -584,7 +559,6 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
 	ssize_t len = tcp_data_len(pkt);
 
@@ -598,7 +572,7 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		buf = tcp_malloc(len);
 
-		net_pkt_skip(pkt, sizeof(*ip) + th->th_off * 4);
+		net_pkt_skip(pkt, th->th_off * 4);
 
 		net_pkt_read(pkt, buf, len);
 
@@ -615,7 +589,8 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 			net_pkt_cursor_init(up);
 			net_pkt_set_overwrite(up, true);
-			net_pkt_skip(up, 40);
+
+			net_pkt_skip(up, net_pkt_get_len(up) - len);
 
 			net_context_packet_received(
 				(struct net_conn *)conn->context->conn_handler,
