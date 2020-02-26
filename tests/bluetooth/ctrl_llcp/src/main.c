@@ -75,6 +75,7 @@ void test_int_mem_tx(void)
 {
 	bool peek;
 	struct node_tx *tx;
+	struct node_tx *txl[TX_CTRL_BUF_NUM];
 
 	ull_cp_init();
 
@@ -84,10 +85,10 @@ void test_int_mem_tx(void)
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		tx = tx_alloc();
+		txl[i] = tx_alloc();
 
 		/* The previous alloc should be valid */
-		zassert_not_null(tx, NULL);
+		zassert_not_null(txl[i], NULL);
 	}
 
 	peek = tx_alloc_peek();
@@ -99,12 +100,45 @@ void test_int_mem_tx(void)
 
 	/* The last tx alloc should fail */
 	zassert_is_null(tx, NULL);
+
+	/* Release all */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx_release(txl[i]);
+	}
+
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		peek = tx_alloc_peek();
+
+		/* The previous tx alloc peek should be valid */
+		zassert_true(peek, NULL);
+
+		txl[i] = tx_alloc();
+
+		/* The previous alloc should be valid */
+		zassert_not_null(txl[i], NULL);
+	}
+
+	peek = tx_alloc_peek();
+
+	/* The last tx alloc peek should fail */
+	zassert_false(peek, NULL);
+
+	tx = tx_alloc();
+
+	/* The last tx alloc should fail */
+	zassert_is_null(tx, NULL);
+
+	/* Release all */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx_release(txl[i]);
+	}
 }
 
 void test_int_mem_ntf(void)
 {
 	bool peek;
 	struct node_rx_pdu *ntf;
+	struct node_rx_pdu *ntfl[NTF_BUF_NUM];
 
 	ull_cp_init();
 
@@ -114,10 +148,37 @@ void test_int_mem_ntf(void)
 		/* The previous ntf alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		ntf = ntf_alloc();
+		ntfl[i] = ntf_alloc();
 
 		/* The previous alloc should be valid */
-		zassert_not_null(ntf, NULL);
+		zassert_not_null(ntfl[i], NULL);
+	}
+
+	peek = ntf_alloc_peek();
+
+	/* The last ntf alloc peek should fail */
+	zassert_false(peek, NULL);
+
+	ntf = ntf_alloc();
+
+	/* The last ntf alloc should fail */
+	zassert_is_null(ntf, NULL);
+
+	/* Release all */
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		ntf_release(ntfl[i]);
+	}
+
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		peek = ntf_alloc_peek();
+
+		/* The previous ntf alloc peek should be valid */
+		zassert_true(peek, NULL);
+
+		ntfl[i] = ntf_alloc();
+
+		/* The previous alloc should be valid */
+		zassert_not_null(ntfl[i], NULL);
 	}
 
 	peek = ntf_alloc_peek();
