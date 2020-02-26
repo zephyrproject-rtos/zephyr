@@ -206,10 +206,12 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	int ret;
 
 	if (id >= data->max_streams) {
+		LOG_ERR("cannot configure the dma stream %d.", id);
 		return -EINVAL;
 	}
 
 	if (stream->busy) {
+		LOG_ERR("dma stream %d is busy.", id);
 		return -EBUSY;
 	}
 
@@ -302,6 +304,10 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		periph_addr_adj = config->head_block->dest_addr_adj;
 		break;
 	/* Direction has been asserted in dma_stm32_get_direction. */
+	default:
+		LOG_ERR("Channel direction error. %d",
+				config->channel_direction);
+		return -EINVAL;
 	}
 
 	ret = dma_stm32_get_memory_increment(memory_addr_adj,
