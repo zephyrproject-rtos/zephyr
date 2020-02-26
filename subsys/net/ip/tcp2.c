@@ -34,6 +34,7 @@ NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, CONFIG_NET_BUF_DATA_SIZE, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static size_t tcp_data_len(struct net_pkt *pkt);
+int net_tcp_finalize(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
@@ -687,56 +688,6 @@ static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
 	return pkt;
 }
 
-static u32_t sum(void *data, size_t len)
-{
-	u32_t s = 0;
-
-	for ( ; len > 1; len -= 2, data = (u8_t *)data + 2) {
-		s += *((u16_t *)data);
-	}
-
-	if (len) {
-		s += *((u8_t *)data);
-	}
-
-	return s;
-}
-
-static uint16_t cs(int32_t s)
-{
-	return ~((s & 0xFFFF) + (s >> 16));
-}
-
-static void tcp_csum(struct net_pkt *pkt)
-{
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct tcphdr *th = (void *)(ip + 1);
-	struct net_buf *buf = pkt->frags;
-	size_t hlen = sizeof(struct net_ipv4_hdr);
-	u16_t len = ntohs(ip->len) - hlen;
-	u32_t s;
-	int i, j = 0;
-
-	ip->chksum = cs(sum(ip, sizeof(*ip)));
-
-	s = sum(&ip->src, sizeof(struct in_addr) * 2);
-	s += ntohs(ip->proto + len);
-
-	th->th_sum = 0;
-
-	s += sum(th, buf->len - hlen);
-
-	SYS_SLIST_FOR_EACH_CONTAINER((sys_slist_t *)&buf->node, buf, node) {
-
-		for (i = 0; i < buf->len; i++, j++) {
-
-			s += (j % 2) ? buf->data[i] << 8 : buf->data[i];
-		}
-	}
-
-	th->th_sum = cs(s);
-}
-
 static void tcp_chain_free(struct net_buf *head)
 {
 	struct net_buf *next;
@@ -787,7 +738,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	ip_header_add(conn, pkt);
 
-	tcp_csum(pkt);
+	net_tcp_finalize(pkt);
 
 	NET_DBG("%s", tcp_th(pkt));
 
