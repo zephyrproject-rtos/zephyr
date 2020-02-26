@@ -57,6 +57,16 @@ void ull_cp_conn_init(struct ull_cp_conn *conn);
 void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state);
 
 /**
+ *
+ */
+void ull_cp_release_tx(struct node_tx *tx);
+
+/**
+ *
+ */
+void ull_cp_release_ntf(struct node_rx_pdu *ntf);
+
+/**
  * @breif Run pending LL Control Procedures.
  */
 void ull_cp_run(struct ull_cp_conn *conn);
