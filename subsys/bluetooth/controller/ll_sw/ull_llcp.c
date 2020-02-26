@@ -290,6 +290,11 @@ static struct node_tx *tx_alloc(void)
 	return tx;
 }
 
+static void tx_release(struct node_tx *tx)
+{
+	mem_release(tx, &mem_tx.free);
+}
+
 static bool ntf_alloc_peek(void)
 {
 	u16_t mem_free_count;
@@ -304,6 +309,11 @@ static struct node_rx_pdu *ntf_alloc(void)
 
 	ntf = (struct node_rx_pdu *) mem_acquire(&mem_ntf.free);
 	return ntf;
+}
+
+static void ntf_release(struct node_rx_pdu *ntf)
+{
+	mem_release(ntf, &mem_ntf.free);
 }
 
 /*
@@ -1728,6 +1738,16 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->vex, 0, sizeof(conn->vex));
+}
+
+void ull_cp_release_tx(struct node_tx *tx)
+{
+	tx_release(tx);
+}
+
+void ull_cp_release_ntf(struct node_rx_pdu *ntf)
+{
+	ntf_release(ntf);
 }
 
 void ull_cp_run(struct ull_cp_conn *conn)
