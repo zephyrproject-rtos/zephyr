@@ -713,6 +713,7 @@ static void remove_cf_cfg(struct bt_conn *conn)
 	} else {
 		/* Update address in case it has changed */
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
+		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
 	}
 }
 #endif /* CONFIG_BT_GATT_CACHING */
