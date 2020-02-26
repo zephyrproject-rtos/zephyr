@@ -674,6 +674,7 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
+		conn->llcp_length.disabled = 0U;
 		conn->llcp_length.cache.tx_octets = 0U;
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
@@ -684,6 +685,7 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
+		conn->llcp_phy.disabled = 0U;
 		conn->llcp_phy.pause_tx = 0U;
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
