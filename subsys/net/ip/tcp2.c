@@ -111,7 +111,8 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 
 	switch (af) {
 	case AF_INET: {
-		struct net_ipv4_hdr *ip = ip_get(pkt);
+		struct net_ipv4_hdr *ip = (struct net_ipv4_hdr *)
+			net_pkt_ip_data(pkt);
 		struct tcphdr *th = th_get(pkt);
 
 		ep->sin.sin_port = src ? th->th_sport : th->th_dport;
@@ -121,8 +122,9 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 		break;
 	}
 	case AF_INET6: {
-		struct net_ipv6_hdr *ip = (void *)ip_get(pkt);
-		struct tcphdr *th = (void *)(ip + 1);
+		struct net_ipv6_hdr *ip = (struct net_ipv6_hdr *)
+			net_pkt_ip_data(pkt);
+		struct tcphdr *th = th_get(pkt);
 
 		ep->sin6.sin6_port = src ? th->th_sport : th->th_dport;
 
