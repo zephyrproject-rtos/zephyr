@@ -1144,6 +1144,79 @@ static void test_cancel_release(void)
 		      "has error");
 }
 
+static void uncond_stop(struct onoff_service *srv,
+		 onoff_service_notify_fn notify)
+{
+	run_transit(srv, notify, &stop_state);
+}
+
+static void test_uncond_stop(void)
+{
+	int rc;
+	struct onoff_service srv;
+
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, uncond_stop,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0,
+		      "service init");
+
+	clear_transit();
+	start_state.async = true;
+
+	init_spinwait(&spinwait_cli);
+	rc = onoff_request(&srv, &spinwait_cli);
+	zassert_true(rc > 0,
+		     "request done");
+	zassert_true(onoff_client_fetch_result(&spinwait_cli, &rc) < 0,
+		      "not completed");
+
+	rc = onoff_cancel(&srv, &spinwait_cli);
+	zassert_true(rc >= 0,
+		     "cancel done");
+	zassert_equal(cli_result(&spinwait_cli), -ECANCELED,
+		      "request canceled");
+}
+
+static void uncond_start(struct onoff_service *srv,
+		 onoff_service_notify_fn notify)
+{
+	run_transit(srv, notify, &start_state);
+}
+
+static void test_uncond_start(void)
+{
+	int rc;
+	struct onoff_service srv;
+
+	rc = onoff_service_init(&srv, start, stop, NULL, uncond_start, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0,
+		      "service init");
+
+	clear_transit();
+	init_spinwait(&spinwait_cli);
+	rc = onoff_request(&srv, &spinwait_cli);
+	zassert_true(rc > 0,
+		     "request done");
+	zassert_true(onoff_client_fetch_result(&spinwait_cli, &rc) >= 0,
+		      "not completed");
+
+	stop_state.async = true;
+	init_spinwait(&spinwait_cli);
+	rc = onoff_release(&srv, &spinwait_cli);
+
+	zassert_true(rc > 0,
+		     "request done");
+	zassert_true(onoff_client_fetch_result(&spinwait_cli, &rc) < 0,
+		      "not completed");
+
+	rc = onoff_cancel(&srv, &spinwait_cli);
+	zassert_true(rc >= 0,
+		     "cancel done %d", rc);
+	zassert_equal(cli_result(&spinwait_cli), -ECANCELED,
+		      "request canceled");
+}
+
 void test_main(void)
 {
 	k_sem_init(&isr_sync, 0, 1);
@@ -1161,6 +1234,9 @@ void test_main(void)
 			 ztest_unit_test(test_cancel_request_waits),
 			 ztest_unit_test(test_cancel_request_ok),
 			 ztest_unit_test(test_blocked_restart),
-			 ztest_unit_test(test_cancel_release));
+			 ztest_unit_test(test_cancel_release),
+			 ztest_unit_test(test_uncond_stop),
+			 ztest_unit_test(test_uncond_start)
+	);
 	ztest_run_test_suite(onoff_api);
 }
