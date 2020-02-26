@@ -259,6 +259,38 @@ int irq_target_state_is_secure(unsigned int irq)
 	return NVIC_GetTargetState(irq) == 0;
 }
 
+/**
+ *
+ * @brief Disable and set all interrupt lines to target Non-Secure state.
+ *
+ * The function is used to set all HW NVIC interrupt lines to target the
+ * Non-Secure state. The function shall only be called fron Secure state.
+ *
+ * Notes:
+ * - All NVIC interrupts are disabled before being routed to Non-Secure.
+ * - Bits corresponding to un-implemented interrupts are RES0, so writes
+ *   will be ignored.
+ *
+ * @return N/A
+*/
+void irq_target_state_set_all_non_secure(void)
+{
+	int i;
+
+	/* Disable (Clear) all NVIC interrupt lines. */
+	for (i = 0; i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++) {
+		NVIC->ICER[i] = 0xFFFFFFFF;
+	}
+
+	__DSB();
+	__ISB();
+
+	/* Set all NVIC interrupt lines to target Non-Secure */
+	for (i = 0; i < sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0]); i++) {
+		NVIC->ITNS[i] = 0xFFFFFFFF;
+	}
+}
+
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
