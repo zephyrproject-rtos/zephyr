@@ -180,6 +180,34 @@ static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
+static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue);
+static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue);
+static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue);
+
+#if GMAC_PRIORITY_QUEUE_NUM >= 1
+static inline void set_receive_buf_queue_pointer(
+	Gmac *gmac,
+	struct gmac_queue *queue)
+{
+	/* Set Receive Buffer Queue Pointer Register */
+	if (queue->que_idx == GMAC_QUE_0) {
+		gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
+	} else {
+		gmac->GMAC_RBQBAPQ[queue->que_idx - 1] =
+			(u32_t)queue->rx_desc_list.buf;
+	}
+}
+
+static inline void disable_all_priority_queue_interrupt(Gmac *gmac)
+{
+	u32_t idx;
+
+	for (idx = 0; idx < GMAC_PRIORITY_QUEUE_NUM; idx++) {
+		gmac->GMAC_IDRPQ[idx] = UINT32_MAX;
+		(void)gmac->GMAC_ISRPQ[idx];
+	}
+}
+
 static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 {
 	int result;
@@ -273,6 +301,42 @@ static int queue_init(Gmac *gmac, struct gmac_queue *queue)
 		return priority_queue_init_as_idle(gmac, queue);
 	}
 }
+
+#else
+
+static inline void set_receive_buf_queue_pointer(
+	Gmac *gmac,
+	struct gmac_queue *queue)
+{
+	gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
+}
+
+static int queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	return nonpriority_queue_init(gmac, queue);
+}
+
+#define disable_all_queue_interrupt(gmac)
+
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
+static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable);
+
+static inline void eth_sam_gmac_init_qav(Gmac *gmac)
+{
+	u32_t idx;
+
+	for (idx = GMAC_QUE_1; idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM; idx++) {
+		eth_sam_gmac_setup_qav(gmac, idx, true);
+	}
+}
+
+#else
+
+#define eth_sam_gmac_init_qav(gmac)
+
+#endif
 
 /*
  * Cache helpers
@@ -767,13 +831,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
 	}
 
-	/* Set Receive Buffer Queue Pointer Register */
-	if (queue->que_idx == GMAC_QUE_0) {
-		gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
-	} else {
-		gmac->GMAC_RBQBAPQ[queue->que_idx - 1] =
-			(u32_t)queue->rx_desc_list.buf;
-	}
+	set_receive_buf_queue_pointer(gmac, queue);
 
 	/* Restart reception */
 	gmac->GMAC_NCR |=  GMAC_NCR_RXEN;
@@ -1002,7 +1060,6 @@ static void gmac_setup_ptp_clock_divisors(Gmac *gmac)
 static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 {
 	int mck_divisor;
-	u32_t idx;
 
 	mck_divisor = get_mck_clock_divisor(SOC_ATMEL_SAM_MCK_FREQ_HZ);
 	if (mck_divisor < 0) {
@@ -1016,11 +1073,8 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	gmac->GMAC_IDR = UINT32_MAX;
 	/* Clear all interrupts */
 	(void)gmac->GMAC_ISR;
+	disable_all_priority_queue_interrupt(gmac);
 
-	for (idx = GMAC_QUE_0; idx < GMAC_PRIORITY_QUEUE_NUM; idx++) {
-		gmac->GMAC_IDRPQ[idx] = UINT32_MAX;
-		(void)gmac->GMAC_ISRPQ[idx];
-	}
 	/* Setup Hash Registers - enable reception of all multicast frames when
 	 * GMAC_NCFGR_MTIHEN is set.
 	 */
@@ -1078,9 +1132,7 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 5, 15);
 #endif
 
-	for (idx = GMAC_QUE_1; idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM; idx++) {
-		eth_sam_gmac_setup_qav(gmac, idx, true);
-	}
+	eth_sam_gmac_init_qav(gmac);
 
 	return 0;
 }
