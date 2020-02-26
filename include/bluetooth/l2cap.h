@@ -335,6 +335,21 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
  */
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
 
+/** @brief Connect Enhanced Credit Based L2CAP channels
+ *
+ *  Connect up to 5 L2CAP channels by PSM, once the connection is completed
+ *  each channel connected() callback will be called. If the connection is
+ *  rejected disconnected() callback is called instead.
+ *
+ *  @param conn Connection object.
+ *  @param chans Array of channel objects.
+ *  @param psm Channel PSM to connect to.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
+				struct bt_l2cap_chan **chans, u16_t psm);
+
 /** @brief Connect L2CAP channel
  *
  *  Connect L2CAP channel by PSM, once the connection is completed channel
