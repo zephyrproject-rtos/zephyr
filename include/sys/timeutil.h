@@ -23,6 +23,8 @@
 
 #include <time.h>
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
