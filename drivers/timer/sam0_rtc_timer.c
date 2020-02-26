@@ -29,8 +29,13 @@
 #endif
 
 /* Number of sys timer cycles per on tick. */
+#ifdef SOC_ATMEL_SAM0_RTC_FREQ_HZ
+#define CYCLES_PER_TICK (SOC_ATMEL_SAM0_RTC_FREQ_HZ \
+			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#else
 #define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif /* SOC_ATMEL_SAM0_RTC_FREQ_HZ */
 
 /* Maximum number of ticks. */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
@@ -198,9 +203,11 @@ int z_clock_driver_init(struct device *device)
 
 	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
 #ifdef RTC_MODE0_CTRL_MODE
-	u16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
+	u16_t ctrl = RTC_MODE0_CTRL_MODE(0)
+		| RTC_MODE0_CTRL_PRESCALER(DT_INST_0_ATMEL_SAM0_RTC_PRESCALER);
 #else
-	u16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
+	u16_t ctrl = RTC_MODE0_CTRLA_MODE(0)
+		| RTC_MODE0_CTRLA_PRESCALER(DT_INST_0_ATMEL_SAM0_RTC_PRESCALER);
 #endif
 
 #ifndef CONFIG_TICKLESS_KERNEL

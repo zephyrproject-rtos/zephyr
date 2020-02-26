@@ -168,6 +168,7 @@
 			reg = <0x40001400 0x1C>;
 			interrupts = <3 0>;
 			clock-generator = <0>;
+			prescaler = <0>;
 			status = "disabled";
 			label = "RTC";
 		};
