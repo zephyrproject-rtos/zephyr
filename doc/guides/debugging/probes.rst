@@ -184,6 +184,8 @@ and debug tool. Flash and debug can be done as follows:
      :goals: debug
 
 
+.. _jlink-rtt-debug-probe:
+
 Using Segger J-Link
 -------------------
 

@@ -113,3 +113,15 @@ BlueZ loads and initializes the attached controller.
 
 Once the controller is attached follow the instructions in the
 :ref:`bluetooth_ctlr_bluez` section to use BlueZ with it.
+
+Debugging the controller
+========================
+
+The sample can be debugged using RTT since the UART is otherwise used by this
+application. To enable debug over RTT the debug configuration file can be used.
+
+.. code-block:: console
+
+   west build samples/bluetooth/hci_uart -- -DOVERLAY_CONFIG='debug.conf'
+
+Then attach RTT as described here: :ref:`jlink-rtt-debug-probe`
