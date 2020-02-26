@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr.h>
 #include <net/net_pkt.h>
 #include <net/net_context.h>
+#include <net/udp.h>
 #include "connection.h"
 #include "net_stats.h"
 #include "net_private.h"
@@ -864,9 +865,13 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	return found ? conn : NULL;
 }
 
-void tcp_input(struct net_pkt *pkt)
+static enum net_verdict tcp_input(struct net_conn *net_conn,
+				  struct net_pkt *pkt,
+				  union net_ip_header *ip,
+				  union net_proto_header *proto,
+				  void *user_data)
 {
-	struct tcphdr *th = /*tp_tap_input(pkt) ? NULL :*/ th_get(pkt);
+	struct tcphdr *th = th_get(pkt);
 
 	if (th) {
 		struct tcp *conn = tcp_conn_search(pkt);
@@ -875,6 +880,7 @@ void tcp_input(struct net_pkt *pkt)
 			struct net_context *context =
 				tcp_calloc(1, sizeof(struct net_context));
 			net_tcp_get(context);
+			net_context_set_family(context, pkt->family);
 			conn = context->tcp;
 			conn->dst = tcp_endpoint_new(pkt, SRC);
 			conn->src = tcp_endpoint_new(pkt, DST);
@@ -889,6 +895,8 @@ void tcp_input(struct net_pkt *pkt)
 			tcp_in(conn, pkt);
 		}
 	}
+
+	return NET_DROP;
 }
 
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
@@ -904,11 +912,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
-
-	if (ip->ipv4->vhl != 0x45) {
-		NET_ERR("Unsupported IP version: 0x%hx", (u16_t)ip->ipv4->vhl);
-		goto out;
-	}
 
 	conn = tcp_conn_search(pkt);
 	if (conn) {
@@ -933,7 +936,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	if (conn) {
 		tcp_in(conn, pkt);
 	}
-out:
+
 	return NET_DROP;
 }
 
@@ -955,6 +958,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	conn = context->tcp;
 	conn->iface = pkt->iface;
+
+	net_context_set_family(conn->context, pkt->family);
 
 	conn->dst = tcp_endpoint_new(pkt, SRC);
 	conn->src = tcp_endpoint_new(pkt, DST);
@@ -1387,9 +1392,35 @@ int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 	return 0;
 }
 
+void test_cb_register(sa_family_t family, u8_t proto, u16_t remote_port,
+		      u16_t local_port, net_conn_cb_t cb)
+{
+	struct net_conn_handle *conn_handle = NULL;
+	const struct sockaddr addr = { .sa_family = family, };
+
+	int ret = net_conn_register(proto,
+				    family,
+				    &addr,	/* remote address */
+				    &addr,	/* local address */
+				    local_port,
+				    remote_port,
+				    cb,
+				    NULL,	/* user_data */
+				    &conn_handle);
+	if (ret < 0) {
+		NET_ERR("net_conn_register(): %d", ret);
+	}
+}
+
 void net_tcp_init(void)
 {
-	/* nothing to do here */
+#if defined(CONFIG_NET_TEST_PROTOCOL)
+	/* Register inputs for TTCN-3 based TCP2 sanity check */
+	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET6, IPPROTO_UDP, 4242, 4242, tp_input);
+#endif
 }
 
 int net_tcp_finalize(struct net_pkt *pkt)
@@ -1525,10 +1556,13 @@ static void tcp_to_json(struct tcp *conn, void *data, size_t *data_len)
 	tp_encode(&tp, data, data_len);
 }
 
-bool tp_input(struct net_pkt *pkt)
+enum net_verdict tp_input(struct net_conn *net_conn,
+			  struct net_pkt *pkt,
+			  union net_ip_header *ip_hdr,
+			  union net_proto_header *proto,
+			  void *user_data)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct net_udp_hdr *uh = (void *) (ip + 1);
+	struct net_udp_hdr *uh = net_udp_get_hdr(pkt, NULL);
 	size_t data_len = ntohs(uh->len) - sizeof(*uh);
 	struct tcp *conn = tcp_conn_search(pkt);
 	size_t json_len = 0;
@@ -1538,11 +1572,10 @@ bool tp_input(struct net_pkt *pkt)
 	bool responded = false;
 	static char buf[512];
 
-	if (ip->proto != IPPROTO_UDP || 4242 != ntohs(uh->dst_port)) {
-		return false;
-	}
-
-	net_pkt_skip(pkt, sizeof(*ip) + sizeof(*uh));
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;
@@ -1550,8 +1583,11 @@ bool tp_input(struct net_pkt *pkt)
 	type = json_decode_msg(buf, data_len);
 
 	data_len = ntohs(uh->len) - sizeof(*uh);
+
 	net_pkt_cursor_init(pkt);
-	net_pkt_skip(pkt, sizeof(*ip) + sizeof(*uh));
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;
@@ -1578,6 +1614,7 @@ bool tp_input(struct net_pkt *pkt)
 				struct net_context *context = tcp_calloc(1,
 						sizeof(struct net_context));
 				net_tcp_get(context);
+				net_context_set_family(context, pkt->family);
 				conn = context->tcp;
 				conn->dst = tcp_endpoint_new(pkt, SRC);
 				conn->src = tcp_endpoint_new(pkt, DST);
@@ -1666,6 +1703,6 @@ bool tp_input(struct net_pkt *pkt)
 		tp_output(pkt->iface, buf, 1);
 	}
 
-	return true;
+	return NET_DROP;
 }
 #endif /* end of IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) */

@@ -17,10 +17,6 @@ static sys_slist_t tp_seq = SYS_SLIST_STATIC_INIT(&tp_seq);
 bool tp_trace;
 enum tp_type tp_state = TP_NONE;
 
-__weak bool tp_input(struct net_pkt *pkt)
-{
-	return false;
-}
 
 char *tp_basename(char *path)
 {
