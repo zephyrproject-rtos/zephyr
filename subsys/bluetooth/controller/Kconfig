@@ -442,6 +442,20 @@ config BT_CTLR_PHY
 	select BT_CTLR_EXT_REJ_IND
 	default y
 
+config BT_CTLR_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
+
+config BT_CTLR_PHY_CODED
+	bool "Coded PHY Support"
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
 	depends on BT_CTLR_MIN_USED_CHAN_SUPPORT
@@ -553,20 +567,6 @@ config BT_CTLR_PHY_2M_NRF
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
-
-config BT_CTLR_PHY_2M
-	bool "2Mbps PHY Support"
-	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
-	default y
-	help
-	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
-
-config BT_CTLR_PHY_CODED
-	bool "Coded PHY Support"
-	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
-	default y
-	help
-	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
