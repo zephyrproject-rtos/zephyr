@@ -425,6 +425,12 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+	if (conn->llcp_length.disabled ||
+	    (conn->common.fex_valid &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_DLE)))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
 	if (conn->llcp_length.req != conn->llcp_length.ack) {
 		switch (conn->llcp_length.state) {
 		case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
@@ -524,6 +530,13 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (conn->llcp_phy.disabled ||
+	    (conn->common.fex_valid &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
 	if ((conn->llcp_req != conn->llcp_ack) ||
@@ -5878,6 +5891,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		} else if (conn->llcp_length.req != conn->llcp_length.ack) {
+			/* Mark length update as unsupported */
+			conn->llcp_length.disabled = 1U;
+
 			/* Procedure complete */
 			conn->llcp_length.ack = conn->llcp_length.req;
 
@@ -5890,6 +5906,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		} else if (conn->llcp_phy.req !=
 			   conn->llcp_phy.ack) {
 			struct lll_conn *lll = &conn->lll;
+
+			/* Mark phy update as unsupported */
+			conn->llcp_phy.disabled = 1U;
 
 			/* Procedure complete */
 			conn->llcp_phy.ack = conn->llcp_phy.req;

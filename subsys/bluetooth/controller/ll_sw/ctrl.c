@@ -3454,6 +3454,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		} else if (_radio.conn_curr->llcp_length.req !=
 			   _radio.conn_curr->llcp_length.ack) {
+			/* Mark length update as unsupported */
+			_radio.conn_curr->llcp_length.disabled = 1U;
+
 			/* Procedure complete */
 			_radio.conn_curr->llcp_length.ack =
 				_radio.conn_curr->llcp_length.req;
@@ -3468,6 +3471,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		} else if (_radio.conn_curr->llcp_phy.req !=
 			   _radio.conn_curr->llcp_phy.ack) {
 			struct radio_le_phy_upd_cmplt *p;
+
+			/* Mark phy update as unsupported */
+			_radio.conn_curr->llcp_phy.disabled = 1U;
 
 			/* Procedure complete */
 			_radio.conn_curr->llcp_phy.ack =
@@ -12168,12 +12174,14 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	conn->llcp_length.disabled = 0U;
 	conn->llcp_length.req = 0U;
 	conn->llcp_length.ack = 0U;
 	conn->llcp_length.cache.tx_octets = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
+	conn->llcp_phy.disabled = 0U;
 	conn->llcp_phy.req = 0U;
 	conn->llcp_phy.ack = 0U;
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -12607,6 +12615,12 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+	if (conn->llcp_length.disabled ||
+	    (conn->common.fex_valid &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_DLE)))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
 	if (conn->llcp_length.req != conn->llcp_length.ack) {
 		switch (conn->llcp_length.state) {
 		case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
@@ -12700,6 +12714,13 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 	conn = connection_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (conn->llcp_phy.disabled ||
+	    (conn->common.fex_valid &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
 	if (conn->llcp_phy.req != conn->llcp_phy.ack) {
