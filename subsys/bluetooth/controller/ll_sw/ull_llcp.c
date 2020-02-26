@@ -822,8 +822,14 @@ static void lp_enc_st_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx 
 
 static void lp_enc_st_wait_tx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_send_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -855,8 +861,14 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct pro
 
 static void lp_enc_st_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -875,7 +887,14 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct pro
 static void lp_enc_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -1396,13 +1415,27 @@ static void rp_enc_state_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_c
 static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_ntf_ltk_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -1424,7 +1457,14 @@ static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ct
 static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_start_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -1443,13 +1483,27 @@ static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct 
 static void rp_enc_state_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
-	LL_ASSERT(0);
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 
