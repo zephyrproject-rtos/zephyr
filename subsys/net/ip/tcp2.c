@@ -1268,16 +1268,39 @@ int net_tcp_connect(struct net_context *context,
 		    u16_t remote_port, u16_t local_port,
 		    s32_t timeout, net_context_connect_cb_t cb, void *user_data)
 {
-	struct tcp *conn = context->tcp;
+	struct tcp *conn;
 	int ret;
 
+	net_tcp_get(context);
+	conn = context->tcp;
+	conn->iface = net_context_get_iface(context);
+
 	switch (net_context_get_family(context)) {
+		const struct in_addr *ip4;
+
 	case AF_INET:
-		net_sin(&conn->src->sa)->sin_port = local_port;
+		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET));
+		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET));
+
 		net_sin(&conn->dst->sa)->sin_port = remote_port;
+		net_sin(&conn->src->sa)->sin_port = local_port;
+
+		net_sin(&conn->dst->sa)->sin_addr =
+			net_sin(remote_addr)->sin_addr;
+
+		/* we have to select the source address here as
+		 * net_context_create_ipv4_new() is not called in the packet
+		 * output chain
+		 */
+		ip4 = net_if_ipv4_select_src_addr(net_context_get_iface(context),
+						  (struct in_addr *)remote_addr);
+		net_sin(&conn->src->sa)->sin_addr.s_addr = ip4->s_addr;
 		break;
 
 	case AF_INET6:
+		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
+		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
+
 		net_sin6(&conn->src->sa)->sin6_port = local_port;
 		net_sin6(&conn->dst->sa)->sin6_port = remote_port;
 		break;
@@ -1285,9 +1308,6 @@ int net_tcp_connect(struct net_context *context,
 	default:
 		return -EPROTONOSUPPORT;
 	}
-
-	conn->src->sa = *local_addr;
-	conn->dst->sa = *remote_addr;
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
