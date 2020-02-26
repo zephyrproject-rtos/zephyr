@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/udp.h>
+#include "ipv4.h"
 #include "connection.h"
 #include "net_stats.h"
 #include "net_private.h"
@@ -602,30 +603,11 @@ out:
 	return len;
 }
 
-static void tcp_adj(struct net_pkt *pkt, int req_len)
+static void tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	u16_t len = ntohs(ip->len) + req_len;
+	struct tcphdr *th = th_get(pkt);
 
-	ip->len = htons(len);
-}
-
-static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
-{
-	const size_t len = 40;
-	struct net_pkt *pkt = tcp_pkt_alloc(len);
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct tcphdr *th = (void *) (ip + 1);
-
-	memset(ip, 0, len);
-
-	ip->vhl = 0x45;
-	ip->ttl = 64;
-	ip->proto = IPPROTO_TCP;
-	ip->len = htons(len);
-
-	ip->src = conn->src->sin.sin_addr;
-	ip->dst = conn->dst->sin.sin_addr;
+	memset(th, 0, sizeof(*th));
 
 	th->th_sport = conn->src->sin.sin_port;
 	th->th_dport = conn->dst->sin.sin_port;
@@ -638,6 +620,67 @@ static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
 	if (ACK & flags) {
 		th->th_ack = htonl(conn->ack);
 	}
+}
+
+static void ip_header_add(struct tcp *conn, struct net_pkt *pkt)
+{
+	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+
+	pkt->family = net_context_get_family(conn->context);
+
+	switch (pkt->family) {
+	case AF_INET: {
+		struct net_ipv4_hdr ip;
+
+		memset(&ip, 0, sizeof(ip));
+
+		ip.vhl = 0x45;
+		ip.ttl = 64;
+		ip.proto = IPPROTO_TCP;
+		ip.len = htons(net_pkt_get_len(pkt) + sizeof(ip));
+
+		ip.src = conn->src->sin.sin_addr;
+		ip.dst = conn->dst->sin.sin_addr;
+
+		memcpy(net_buf_add(buf, sizeof(ip)), &ip, sizeof(ip));
+
+		net_pkt_frag_insert(pkt, buf);
+
+		net_pkt_set_ip_hdr_len(pkt, buf->len);
+
+		net_pkt_cursor_init(pkt);
+
+		net_ipv4_finalize(pkt, IPPROTO_TCP);
+		break;
+	}
+	case AF_INET6: {
+		struct net_ipv6_hdr ip6;
+
+		memset(&ip6, 0, sizeof(ip6));
+
+		ip6.vtc = 0x60;
+		ip6.nexthdr = IPPROTO_TCP;
+		ip6.len = htons(net_pkt_get_len(pkt));
+
+		ip6.src = conn->src->sin6.sin6_addr;
+		ip6.dst = conn->dst->sin6.sin6_addr;
+
+		memcpy(net_buf_add(buf, sizeof(ip6)), &ip6, sizeof(ip6));
+
+		net_pkt_frag_insert(pkt, buf);
+
+		net_pkt_set_ip_hdr_len(pkt, buf->len);
+
+		break;
+	}
+	}
+}
+
+static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
+{
+	struct net_pkt *pkt = tcp_pkt_alloc(sizeof(struct tcphdr));
+
+	tcp_header_add(conn, pkt, flags);
 
 	pkt->iface = conn->iface;
 
@@ -740,9 +783,9 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 		tcp_chain(pkt, buf);
 
 		tcp_chain_free(buf);
-
-		tcp_adj(pkt, len);
 	}
+
+	ip_header_add(conn, pkt);
 
 	tcp_csum(pkt);
 
