@@ -4583,8 +4583,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			conn->llcp_length.tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-			conn->llcp_length.ack = (conn->llcp_length.req -
-						 1);
+			conn->llcp_length.ack = conn->llcp_length.req - 1;
 
 			if (tx) {
 				conn->llcp_length.state =
