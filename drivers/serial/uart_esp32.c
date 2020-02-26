@@ -482,7 +482,7 @@ static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 		.base =							       \
 		    (u8_t *)DT_INST_##idx##_ESPRESSIF_ESP32_UART_BASE_ADDRESS, \
 		.sys_clk_freq =						       \
-			DT_INST_0_CADENCE_TENSILICA_XTENSA_LX6_CLOCK_FREQUENCY \
+			DT_INST_0_CADENCE_TENSILICA_XTENSA_LX6_CLOCK_FREQUENCY,\
 		ESP32_UART_IRQ_HANDLER_FUNC(idx)			       \
 	},								       \
 									       \
