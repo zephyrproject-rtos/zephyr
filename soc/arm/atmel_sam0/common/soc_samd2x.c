@@ -153,11 +153,14 @@ static void gclks_init(void)
 	wait_gclk_synchronization();
 
 	/* OSCULP32K/32 -> GCLK2 */
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(32 - 1);
+    /* Divider = 2 ^ (GENDIV.DIV + 1) = 32, see 15.8.4 */
+	GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) |
+			   GCLK_GENDIV_DIV(SOC_ATMEL_SAM0_GCLK2_PRESCALER);
 	wait_gclk_synchronization();
 
 	GCLK->GENCTRL.reg =
-	    GCLK_GENCTRL_ID(2) | GCLK_GENCTRL_SRC_OSC32K | GCLK_GENCTRL_GENEN;
+	    GCLK_GENCTRL_ID(2) | GCLK_GENCTRL_SRC_OSCULP32K |
+	    GCLK_GENCTRL_GENEN | GCLK_GENCTRL_DIVSEL;
 	wait_gclk_synchronization();
 }
 
