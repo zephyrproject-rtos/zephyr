@@ -12,22 +12,10 @@ menuconfig ETH_SAM_GMAC
 
 if ETH_SAM_GMAC
 
-config ETH_SAM_GMAC_NAME
-	string "Device name"
-	default "ETH_0"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
 config ETH_SAM_GMAC_QUEUES
 	int "Number of active hardware TX and RX queues"
 	default 1
-	range 1 1 if SOC_SERIES_SAM4E
-	range 1 3 if !SOC_SERIES_SAM4E && \
-		     !SOC_ATMEL_SAME70_REVB && \
-		     !SOC_ATMEL_SAMV71_REVB
-	range 1 6 if SOC_ATMEL_SAME70_REVB || \
-		     SOC_ATMEL_SAMV71_REVB
+	range 1 $(dt_int_val,DT_INST_0_ATMEL_SAM_GMAC_NUM_QUEUES)
 	help
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
@@ -71,12 +59,6 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  fit at least two Ethernet frames: one being received by the GMAC module
 	  and the other being processed by the higher layer networking stack.
 
-config ETH_SAM_GMAC_IRQ_PRI
-	int "Interrupt priority"
-	default 0
-	help
-	  IRQ priority of Ethernet device
-
 config ETH_SAM_GMAC_MONITOR_PERIOD
 	int "Monitor task execution period"
 	default 1000
@@ -93,7 +75,7 @@ choice ETH_SAM_GMAC_MAC_SELECT
 config ETH_SAM_GMAC_MAC_MANUAL
 	bool "Manual"
 	help
-	  Assign an arbitrary MAC address.
+	  Assign the MAC address specified in the device tree.
 
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
@@ -106,40 +88,6 @@ config ETH_SAM_GMAC_RANDOM_MAC
 	  Generate a random MAC address dynamically.
 
 endchoice
-
-if ETH_SAM_GMAC_MAC_MANUAL
-
-config ETH_SAM_GMAC_MAC0
-	hex "MAC Address Byte 0"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC1
-	hex "MAC Address Byte 1"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC2
-	hex "MAC Address Byte 2"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC3
-	hex "MAC Address Byte 3"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	range 0 0xff
-
-endif # ETH_SAM_GMAC_MAC_MANUAL
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
 

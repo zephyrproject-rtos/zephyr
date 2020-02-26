@@ -31,14 +31,7 @@
 /** Memory alignment of the RX/TX Buffer Descriptor List */
 #define GMAC_DESC_ALIGNMENT             4
 /** Total number of queues supported by GMAC hardware module */
-#if defined(CONFIG_SOC_ATMEL_SAME70_REVB) || \
-	defined(CONFIG_SOC_ATMEL_SAMV71_REVB)
-#define GMAC_QUEUE_NUM                  6
-#elif !defined(CONFIG_SOC_SERIES_SAM4E)
-#define GMAC_QUEUE_NUM                  3
-#else
-#define GMAC_QUEUE_NUM                  1
-#endif
+#define GMAC_QUEUE_NUM                  DT_INST_0_ATMEL_SAM_GMAC_QUEUE_NUM
 #define GMAC_PRIORITY_QUEUE_NUM         (GMAC_QUEUE_NUM - 1)
 #if (GMAC_PRIORITY_QUEUE_NUM >= 1)
 BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,

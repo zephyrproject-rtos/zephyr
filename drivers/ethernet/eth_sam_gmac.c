@@ -2139,38 +2139,44 @@ static struct device DEVICE_NAME_GET(eth0_sam_gmac);
 
 static void eth0_irq_config(void)
 {
-	IRQ_CONNECT(GMAC_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue0_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC_PRIORITY,
+		    queue0_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC);
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-	IRQ_CONNECT(GMAC_Q1_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue1_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_Q1_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1_PRIORITY,
+		    queue1_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1);
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-	IRQ_CONNECT(GMAC_Q2_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue2_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_Q2_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2_PRIORITY,
+		    queue2_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2);
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-	IRQ_CONNECT(GMAC_Q3_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue3_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_Q3_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3_PRIORITY,
+		    queue3_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3);
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-	IRQ_CONNECT(GMAC_Q4_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue4_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_Q4_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4_PRIORITY,
+		    queue4_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4);
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-	IRQ_CONNECT(GMAC_Q5_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue5_isr,
-		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMAC_Q5_IRQn);
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5,
+		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5_PRIORITY,
+		    queue5_isr, DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5);
 #endif
 }
 
@@ -2187,14 +2193,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 
 static struct eth_sam_dev_data eth0_data = {
 #ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
-	.mac_addr = {
-		CONFIG_ETH_SAM_GMAC_MAC0,
-		CONFIG_ETH_SAM_GMAC_MAC1,
-		CONFIG_ETH_SAM_GMAC_MAC2,
-		CONFIG_ETH_SAM_GMAC_MAC3,
-		CONFIG_ETH_SAM_GMAC_MAC4,
-		CONFIG_ETH_SAM_GMAC_MAC5,
-	},
+	.mac_addr = DT_INST_0_ATMEL_SAM_GMAC_LOCAL_MAC_ADDRESS,
 #endif
 	.queue_list = {
 		{
@@ -2359,9 +2358,10 @@ static struct eth_sam_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_INIT(eth0_sam_gmac, CONFIG_ETH_SAM_GMAC_NAME, eth_initialize,
-		    device_pm_control_nop, &eth0_data, &eth0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &eth_api, GMAC_MTU);
+ETH_NET_DEVICE_INIT(eth0_sam_gmac, DT_INST_0_ATMEL_SAM_GMAC_LABEL,
+		    eth_initialize, device_pm_control_nop, &eth0_data,
+		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
+		    GMAC_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 struct ptp_context {
