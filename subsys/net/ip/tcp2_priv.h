@@ -11,8 +11,6 @@
 
 #define th_seq(_x) ntohl((_x)->th_seq)
 #define th_ack(_x) ntohl((_x)->th_ack)
-#define ip_get(_x) ((struct net_ipv4_hdr *) net_pkt_ip_data((_x)))
-#define ip6_get(_x) ((struct net_ipv6_hdr *) net_pkt_ip_data((_x)))
 
 #define tcp_slist(_slist, _op, _type, _link)				\
 ({									\
