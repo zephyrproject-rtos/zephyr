@@ -65,8 +65,17 @@ BUILD_ASSERT(CONFIG_BT_MESH_ADV_BUF_COUNT >= (CONFIG_BT_MESH_TX_SEG_MAX + 3));
  * We use 400 since 300 is a common send duration for standard HCI, and we
  * need to have a timeout that's bigger than that.
  */
-#define SEG_RETRANSMIT_TIMEOUT(tx) (K_MSEC(400) + 50 * (tx)->ttl)
+#define SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) (K_MSEC(400) + 50 * (tx)->ttl)
+/* When sending to a group, the messages are not acknowledged, and there's no
+ * reason to delay the repetitions significantly. Delaying by more than 0 ms
+ * to avoid flooding the network.
+ */
+#define SEG_RETRANSMIT_TIMEOUT_GROUP K_MSEC(50)
 
+#define SEG_RETRANSMIT_TIMEOUT(tx)                                             \
+	(BT_MESH_ADDR_IS_UNICAST(tx->dst) ?                                    \
+		 SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) :                          \
+		 SEG_RETRANSMIT_TIMEOUT_GROUP)
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
 
@@ -79,6 +88,8 @@ static struct seg_tx {
 				 new_key:1;     /* New/old key */
 	u8_t                     nack_count;    /* Number of unacked segs */
 	u8_t                     ttl;
+	u8_t                     seg_pending:5, /* Number of segments pending */
+				 attempts:3;
 	const struct bt_mesh_send_cb *cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -182,6 +193,14 @@ bool bt_mesh_tx_in_progress(void)
 	return false;
 }
 
+static void seg_tx_done(struct seg_tx *tx, u8_t seg_idx)
+{
+	BT_MESH_ADV(tx->seg[seg_idx])->busy = 0U;
+	net_buf_unref(tx->seg[seg_idx]);
+	tx->seg[seg_idx] = NULL;
+	tx->nack_count--;
+}
+
 static void seg_tx_reset(struct seg_tx *tx)
 {
 	int i;
@@ -194,21 +213,13 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->sub = NULL;
 	tx->dst = BT_MESH_ADDR_UNASSIGNED;
 
-	if (!tx->nack_count) {
-		return;
-	}
-
-	for (i = 0; i <= tx->seg_n; i++) {
+	for (i = 0; i <= tx->seg_n && tx->nack_count; i++) {
 		if (!tx->seg[i]) {
 			continue;
 		}
 
-		BT_MESH_ADV(tx->seg[i])->busy = 0U;
-		net_buf_unref(tx->seg[i]);
-		tx->seg[i] = NULL;
+		seg_tx_done(tx, i);
 	}
-
-	tx->nack_count = 0U;
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IVU_PENDING)) {
 		BT_DBG("Proceeding with pending IV Update");
@@ -223,11 +234,29 @@ static void seg_tx_reset(struct seg_tx *tx)
 
 static inline void seg_tx_complete(struct seg_tx *tx, int err)
 {
-	if (tx->cb && tx->cb->end) {
-		tx->cb->end(err, tx->cb_data);
-	}
+	const struct bt_mesh_send_cb *cb = tx->cb;
+	void *cb_data = tx->cb_data;
 
 	seg_tx_reset(tx);
+
+	if (cb && cb->end) {
+		cb->end(err, cb_data);
+	}
+}
+
+static void schedule_retransmit(struct seg_tx *tx)
+{
+	if (--tx->seg_pending) {
+		return;
+	}
+
+	if (!BT_MESH_ADDR_IS_UNICAST(tx->dst) && !tx->attempts) {
+		BT_DBG("SDU TX complete");
+		seg_tx_complete(tx, 0);
+		return;
+	}
+
+	k_delayed_work_submit(&tx->retransmit, SEG_RETRANSMIT_TIMEOUT(tx));
 }
 
 static void seg_first_send_start(u16_t duration, int err, void *user_data)
@@ -248,8 +277,7 @@ static void seg_send_start(u16_t duration, int err, void *user_data)
 	 * case since otherwise we risk the transmission of becoming stale.
 	 */
 	if (err) {
-		k_delayed_work_submit(&tx->retransmit,
-				      SEG_RETRANSMIT_TIMEOUT(tx));
+		schedule_retransmit(tx);
 	}
 }
 
@@ -257,8 +285,7 @@ static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
 
-	k_delayed_work_submit(&tx->retransmit,
-			      SEG_RETRANSMIT_TIMEOUT(tx));
+	schedule_retransmit(tx);
 }
 
 static const struct bt_mesh_send_cb first_sent_cb = {
@@ -275,6 +302,14 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 {
 	int i, err;
 
+	if (!(tx->attempts--)) {
+		BT_ERR("Ran out of retransmit attempts");
+		seg_tx_complete(tx, -ETIMEDOUT);
+		return;
+	}
+
+	BT_DBG("Attempts: %u", tx->attempts);
+
 	for (i = 0; i <= tx->seg_n; i++) {
 		struct net_buf *seg = tx->seg[i];
 
@@ -287,11 +322,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			continue;
 		}
 
-		if (!(BT_MESH_ADV(seg)->seg.attempts--)) {
-			BT_ERR("Ran out of retransmit attempts");
-			seg_tx_complete(tx, -ETIMEDOUT);
-			return;
-		}
+		tx->seg_pending++;
 
 		BT_DBG("resending %u/%u", i, tx->seg_n);
 
@@ -361,6 +392,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->new_key = net_tx->sub->kr_flag;
 	tx->cb = cb;
 	tx->cb_data = cb_data;
+	tx->attempts = SEG_RETRANSMIT_ATTEMPTS;
+	tx->seg_pending = 0;
 
 	if (net_tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
 		tx->ttl = bt_mesh_default_ttl_get();
@@ -395,8 +428,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 			seg_tx_reset(tx);
 			return -ENOBUFS;
 		}
-
-		BT_MESH_ADV(seg)->seg.attempts = SEG_RETRANSMIT_ATTEMPTS;
 
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 
@@ -435,6 +466,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		tx->seg[seg_o] = net_buf_ref(seg);
 
 		BT_DBG("Sending %u/%u", seg_o, tx->seg_n);
+		tx->seg_pending++;
 
 		err = bt_mesh_net_send(net_tx, seg,
 				       seg_o ? &seg_sent_cb : &first_sent_cb,
@@ -793,6 +825,11 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 		return -EINVAL;
 	}
 
+	if (!BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
+		BT_ERR("Received ack for group seg");
+		return -EINVAL;
+	}
+
 	*seq_auth = tx->seq_auth;
 
 	if (!ack) {
@@ -811,9 +848,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 	while ((bit = find_lsb_set(ack))) {
 		if (tx->seg[bit - 1]) {
 			BT_DBG("seg %u/%u acked", bit - 1, tx->seg_n);
-			net_buf_unref(tx->seg[bit - 1]);
-			tx->seg[bit - 1] = NULL;
-			tx->nack_count--;
+			seg_tx_done(tx, bit - 1);
 		}
 
 		ack &= ~BIT(bit - 1);
@@ -1043,6 +1078,8 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op,
 	tx_seg->new_key = tx->sub->kr_flag;
 	tx_seg->cb = cb;
 	tx_seg->cb_data = cb_data;
+	tx_seg->attempts = SEG_RETRANSMIT_ATTEMPTS;
+	tx_seg->seg_pending = 0;
 
 	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
 		tx_seg->ttl = bt_mesh_default_ttl_get();
@@ -1065,8 +1102,6 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op,
 			return -ENOBUFS;
 		}
 
-		BT_MESH_ADV(seg)->seg.attempts = SEG_RETRANSMIT_ATTEMPTS;
-
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 		net_buf_add_u8(seg, TRANS_CTL_HDR(ctl_op, 1));
 		net_buf_add_u8(seg, (tx->aszmic << 7) | seq_zero >> 6);
@@ -1078,6 +1113,7 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op,
 		tx_seg->seg[seg_o] = net_buf_ref(seg);
 
 		BT_DBG("Sending %u/%u", seg_o, tx_seg->seg_n);
+		tx_seg->seg_pending++;
 
 		err = bt_mesh_net_send(tx, seg,
 				       seg_o ? &seg_sent_cb : &first_sent_cb,
@@ -1138,7 +1174,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 	 * or virtual address.
 	 */
 	if (!BT_MESH_ADDR_IS_UNICAST(src)) {
-		BT_WARN("Not sending ack for non-unicast address");
+		BT_DBG("Not sending ack for non-unicast address");
 		return 0;
 	}
 
@@ -1385,7 +1421,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		}
 
 		if (rx->block == BLOCK_COMPLETE(rx->seg_n)) {
-			BT_WARN("Got segment for already complete SDU");
+			BT_DBG("Got segment for already complete SDU");
 
 			send_ack(net_rx->sub, net_rx->ctx.recv_dst,
 				 net_rx->ctx.addr, net_rx->ctx.send_ttl,
