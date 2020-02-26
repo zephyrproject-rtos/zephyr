@@ -180,6 +180,100 @@ static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
+static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	int result;
+	int queue_index;
+
+	__ASSERT_NO_MSG(queue->rx_desc_list.len > 0);
+	__ASSERT_NO_MSG(queue->tx_desc_list.len > 0);
+	__ASSERT(!((u32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
+		 "RX descriptors have to be word aligned");
+	__ASSERT(!((u32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
+		 "TX descriptors have to be word aligned");
+
+	/* Extract queue index for easier referencing */
+	queue_index = queue->que_idx - 1;
+
+	/* Setup descriptor lists */
+	result = rx_descriptors_init(gmac, queue);
+	if (result < 0) {
+		return result;
+	}
+
+	tx_descriptors_init(gmac, queue);
+
+#if GMAC_MULTIPLE_TX_PACKETS == 0
+	k_sem_init(&queue->tx_sem, 0, 1);
+#else
+	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1,
+		   queue->tx_desc_list.len - 1);
+#endif
+
+	/* Setup RX buffer size for DMA */
+	gmac->GMAC_RBSRPQ[queue_index] =
+		GMAC_RBSRPQ_RBS(CONFIG_NET_BUF_DATA_SIZE >> 6);
+
+	/* Set Receive Buffer Queue Pointer Register */
+	gmac->GMAC_RBQBAPQ[queue_index] = (u32_t)queue->rx_desc_list.buf;
+	/* Set Transmit Buffer Queue Pointer Register */
+	gmac->GMAC_TBQBAPQ[queue_index] = (u32_t)queue->tx_desc_list.buf;
+
+	/* Enable RX/TX completion and error interrupts */
+	gmac->GMAC_IERPQ[queue_index] = GMAC_INTPQ_EN_FLAGS;
+
+	queue->err_rx_frames_dropped = 0U;
+	queue->err_rx_flushed_count = 0U;
+	queue->err_tx_flushed_count = 0U;
+
+	LOG_INF("Queue %d activated", queue->que_idx);
+
+	return 0;
+}
+
+static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
+{
+	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
+	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
+
+	__ASSERT(!((u32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
+		 "RX descriptors have to be word aligned");
+	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
+		 "TX descriptors have to be word aligned");
+	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
+		 "Priority queues are currently not supported, descriptor "
+		 "list has to have a single entry");
+
+	/* Setup RX descriptor lists */
+	/* Take ownership from GMAC and set the wrap bit */
+	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
+	rx_desc_list->buf[0].w1 = 0U;
+	/* Setup TX descriptor lists */
+	tx_desc_list->buf[0].w0 = 0U;
+	/* Take ownership from GMAC and set the wrap bit */
+	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
+
+	/* Set Receive Buffer Queue Pointer Register */
+	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
+	/* Set Transmit Buffer Queue Pointer Register */
+	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
+
+	LOG_INF("Queue %d set to idle", queue->que_idx);
+
+	return 0;
+}
+
+static int queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	if (queue->que_idx == GMAC_QUE_0) {
+		return nonpriority_queue_init(gmac, queue);
+	} else if (queue->que_idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
+		return priority_queue_init(gmac, queue);
+	} else {
+		return priority_queue_init_as_idle(gmac, queue);
+	}
+}
+
 /*
  * Cache helpers
  */
@@ -1069,100 +1163,6 @@ static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	LOG_INF("Queue %d activated", queue->que_idx);
 
 	return 0;
-}
-
-static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
-{
-	int result;
-	int queue_index;
-
-	__ASSERT_NO_MSG(queue->rx_desc_list.len > 0);
-	__ASSERT_NO_MSG(queue->tx_desc_list.len > 0);
-	__ASSERT(!((u32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
-		 "RX descriptors have to be word aligned");
-	__ASSERT(!((u32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
-		 "TX descriptors have to be word aligned");
-
-	/* Extract queue index for easier referencing */
-	queue_index = queue->que_idx - 1;
-
-	/* Setup descriptor lists */
-	result = rx_descriptors_init(gmac, queue);
-	if (result < 0) {
-		return result;
-	}
-
-	tx_descriptors_init(gmac, queue);
-
-#if GMAC_MULTIPLE_TX_PACKETS == 0
-	k_sem_init(&queue->tx_sem, 0, 1);
-#else
-	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1,
-		   queue->tx_desc_list.len - 1);
-#endif
-
-	/* Setup RX buffer size for DMA */
-	gmac->GMAC_RBSRPQ[queue_index] =
-		GMAC_RBSRPQ_RBS(CONFIG_NET_BUF_DATA_SIZE >> 6);
-
-	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQBAPQ[queue_index] = (u32_t)queue->rx_desc_list.buf;
-	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQBAPQ[queue_index] = (u32_t)queue->tx_desc_list.buf;
-
-	/* Enable RX/TX completion and error interrupts */
-	gmac->GMAC_IERPQ[queue_index] = GMAC_INTPQ_EN_FLAGS;
-
-	queue->err_rx_frames_dropped = 0U;
-	queue->err_rx_flushed_count = 0U;
-	queue->err_tx_flushed_count = 0U;
-
-	LOG_INF("Queue %d activated", queue->que_idx);
-
-	return 0;
-}
-
-static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
-{
-	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
-	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
-
-	__ASSERT(!((u32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
-		 "RX descriptors have to be word aligned");
-	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
-		 "TX descriptors have to be word aligned");
-	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
-		 "Priority queues are currently not supported, descriptor "
-		 "list has to have a single entry");
-
-	/* Setup RX descriptor lists */
-	/* Take ownership from GMAC and set the wrap bit */
-	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
-	rx_desc_list->buf[0].w1 = 0U;
-	/* Setup TX descriptor lists */
-	tx_desc_list->buf[0].w0 = 0U;
-	/* Take ownership from GMAC and set the wrap bit */
-	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
-
-	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
-	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
-
-	LOG_INF("Queue %d set to idle", queue->que_idx);
-
-	return 0;
-}
-
-static int queue_init(Gmac *gmac, struct gmac_queue *queue)
-{
-	if (queue->que_idx == GMAC_QUE_0) {
-		return nonpriority_queue_init(gmac, queue);
-	} else if (queue->que_idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
-		return priority_queue_init(gmac, queue);
-	} else {
-		return priority_queue_init_as_idle(gmac, queue);
-	}
 }
 
 static struct net_pkt *frame_get(struct gmac_queue *queue)
