@@ -50,7 +50,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 	const struct video_mcux_csi_config *config = dev->config->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	enum video_signal_result result = VIDEO_BUF_DONE;
-	struct video_buffer *vbuf;
+	struct video_buffer *vbuf, *vbuf_first = NULL;
 	u32_t buffer_addr;
 
 	/* IRQ context */
@@ -72,10 +72,19 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			break;
 		}
 
-		/* should never happen on ordered stream, requeue and break */
+		/* should never happen on ordered stream, except on capture
+		 * start/restart, requeue the frame and continue looking for
+		 * the right buffer.
+		 */
 		k_fifo_put(&data->fifo_in, vbuf);
-		vbuf = NULL;
-		break;
+
+		/* prevent infinite loop */
+		if (vbuf_first == NULL) {
+			vbuf_first = vbuf;
+		} else if (vbuf_first == vbuf) {
+			vbuf = NULL;
+			break;
+		}
 	}
 
 	if (vbuf == NULL) {
