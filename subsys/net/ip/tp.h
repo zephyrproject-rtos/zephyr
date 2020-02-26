@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Intel Corporation
+ * Copyright (c) 2018-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern "C" {
 #include <sys/types.h>
 #include <data/json.h>
 #include <net/net_pkt.h>
+#include "connection.h"
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 
@@ -105,7 +106,11 @@ static const struct json_obj_descr tp_new_dsc[] = {
 				 tp_entry_dsc, ARRAY_SIZE(tp_entry_dsc)),
 };
 
-bool tp_input(struct net_pkt *pkt);
+enum net_verdict tp_input(struct net_conn *net_conn,
+			  struct net_pkt *pkt,
+			  union net_ip_header *ip,
+			  union net_proto_header *proto,
+			  void *user_data);
 
 char *tp_basename(char *path);
 const char *tp_hex_to_str(void *data, size_t len);
