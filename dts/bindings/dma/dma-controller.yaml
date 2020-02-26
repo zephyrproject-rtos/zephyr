@@ -13,7 +13,7 @@ properties:
 
     "#dma-cells":
       type: int
-      required: true
+      required: false
       description: Number of items to expect in a DMA specifier
 
     dma-channel-mask:
@@ -24,12 +24,7 @@ properties:
         not reserved by firmware and are available to the
         kernel. i.e. first channel corresponds to LSB.
 
-    dma-channels:
-      type: int
-      required: false
-      description: Number of DMA channels supported by the controller
-
     dma-requests:
       type: int
       required: false
-      description: Number of DMA request signals supported by the controller.
+      description: Number of DMA channels supported by the controller.
