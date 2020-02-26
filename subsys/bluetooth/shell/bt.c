@@ -1713,7 +1713,7 @@ static int cmd_auth_passkey(const struct shell *shell,
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
-	SHELL_CMD_ARG(init, NULL, HELP_ADDR_LE, cmd_init, 1, 0),
+	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_init, 1, 0),
 #if defined(CONFIG_BT_HCI)
 	SHELL_CMD_ARG(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd, 3, 1),
 #endif
