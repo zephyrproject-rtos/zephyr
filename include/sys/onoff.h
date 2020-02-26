@@ -123,6 +123,16 @@ struct onoff_service {
 	/* Function to invoke to transition the service to off. */
 	onoff_service_transition_fn stop;
 
+	/* Function to invoke to transition the service to on at any point
+	 * (stopped or stopping).
+	 */
+	onoff_service_transition_fn uncond_start;
+
+	/* Function to invoke to transition the service to off at any point
+	 * (started or starting).
+	 */
+	onoff_service_transition_fn uncond_stop;
+
 	/* Function to force the service state to reset, where
 	 * supported.
 	 */
@@ -142,11 +152,14 @@ struct onoff_service {
 };
 
 /** @internal */
-#define ONOFF_SERVICE_INITIALIZER(_start, _stop, _reset, _flags) { \
-		.start = _start,				   \
-		.stop = _stop,					   \
-		.reset = _reset,				   \
-		.flags = _flags,				   \
+#define ONOFF_SERVICE_INITIALIZER(_start, _stop, _reset,		   \
+				  _uncond_start, _uncond_stop, _flags){	   \
+		.start = _start,					   \
+		.stop = _stop,						   \
+		.reset = _reset,					   \
+		.uncond_start = _uncond_start,				   \
+		.uncond_stop = _uncond_stop,				   \
+		.flags = _flags,					   \
 }
 
 /**
@@ -174,6 +187,14 @@ struct onoff_service {
  * with an error notification should support the reset operation.)
  * Include @ref ONOFF_SERVICE_RESET_SLEEPS as appropriate in flags.
  *
+ * @param uncond_start the function used to unconditionally start the service
+ * (also capable of interrupting transition to off state). Pass null if the
+ * service does not support cancellation in progress.
+ *
+ * @param uncond_stop the function used to unconditionally stop the service
+ * (also capable of interrupting transition to off state). Pass null if the
+ * service does not support start cancellation in progress.
+ *
  * @param flags any or all of the flags mentioned above,
  * e.g. @ref ONOFF_SERVICE_START_SLEEPS.  Use of other flags produces an
  * error.
@@ -185,6 +206,8 @@ int onoff_service_init(struct onoff_service *srv,
 		       onoff_service_transition_fn start,
 		       onoff_service_transition_fn stop,
 		       onoff_service_transition_fn reset,
+		       onoff_service_transition_fn uncond_start,
+		       onoff_service_transition_fn uncond_stop,
 		       u32_t flags);
 
 /** @internal

@@ -79,6 +79,8 @@ int onoff_service_init(struct onoff_service *srv,
 		       onoff_service_transition_fn start,
 		       onoff_service_transition_fn stop,
 		       onoff_service_transition_fn reset,
+		       onoff_service_transition_fn uncond_start,
+		       onoff_service_transition_fn uncond_stop,
 		       u32_t flags)
 {
 	if ((flags & SERVICE_CONFIG_FLAGS) != flags) {
@@ -90,7 +92,10 @@ int onoff_service_init(struct onoff_service *srv,
 	}
 
 	*srv = (struct onoff_service)ONOFF_SERVICE_INITIALIZER(start, stop,
-							       reset, flags);
+							       reset,
+							       uncond_start,
+							       uncond_stop,
+							       flags);
 
 	return 0;
 }
@@ -142,6 +147,15 @@ static void onoff_start_notify(struct onoff_service *srv,
 	k_spinlock_key_t key = k_spin_lock(&srv->lock);
 	sys_slist_t clients = srv->clients;
 
+	/* Cancellation occurred, start notification is irrelevant */
+	if ((srv->flags & SERVICE_STATE_MASK) == SERVICE_STATE_TO_OFF) {
+		/* Can occur only if service supports cancellation */
+		__ASSERT_NO_MSG(srv->uncond_stop != NULL);
+
+		k_spin_unlock(&srv->lock, key);
+		return;
+	}
+
 	/* Can't have a queued releaser during start */
 	__ASSERT_NO_MSG(srv->releaser == NULL);
 
@@ -155,7 +169,8 @@ static void onoff_start_notify(struct onoff_service *srv,
 	 * In either case reset the client queue and notify all
 	 * clients of operation completion.
 	 */
-	if (res < 0) {
+
+	if ((res < 0) && (res != -ECANCELED)) {
 		srv->flags &= ~SERVICE_STATE_TRANSITION;
 		srv->flags |= ONOFF_SERVICE_HAS_ERROR;
 	} else {
@@ -280,6 +295,15 @@ static void onoff_stop_notify(struct onoff_service *srv,
 	sys_slist_t clients = srv->clients;
 	struct onoff_client *releaser = srv->releaser;
 
+	/* Stop cancellation occurred, stop notification is irrelevant */
+	if ((srv->flags & SERVICE_STATE_MASK) == SERVICE_STATE_TO_ON) {
+		/* Can occur only if service supports cancellation */
+		__ASSERT_NO_MSG(srv->uncond_start != NULL);
+
+		k_spin_unlock(&srv->lock, key);
+		return;
+	}
+
 	/* If the stop operation failed log an error and leave the
 	 * rest of the state in place.
 	 *
@@ -289,7 +313,7 @@ static void onoff_stop_notify(struct onoff_service *srv,
 	 * In either case remove the last reference, and notify all
 	 * waiting clients of operation completion.
 	 */
-	if (res < 0) {
+	if ((res < 0) && (res != -ECANCELED)) {
 		srv->flags &= ~SERVICE_STATE_TRANSITION;
 		srv->flags |= ONOFF_SERVICE_HAS_ERROR;
 		notify_clients = true;
@@ -478,10 +502,22 @@ out:
 	return rv;
 }
 
+static void onoff_start_cancel_notify(struct onoff_service *srv,  int res)
+{
+	onoff_stop_notify(srv, res >= 0 ? -ECANCELED : res);
+}
+
+static void onoff_stop_cancel_notify(struct onoff_service *srv,  int res)
+{
+	onoff_start_notify(srv, res >= 0 ? -ECANCELED : res);
+}
+
 int onoff_cancel(struct onoff_service *srv,
 		 struct onoff_client *cli)
 {
 	int rv = validate_args(srv, cli);
+	bool uncond_stop = false;
+	bool uncond_start = false;
 
 	if (rv < 0) {
 		return rv;
@@ -494,23 +530,44 @@ int onoff_cancel(struct onoff_service *srv,
 	/* Can't remove the last client waiting for the in-progress
 	 * transition, as there would be nobody to receive the
 	 * completion notification, which might indicate a service
-	 * error.
+	 * error. Unless there is a stop function specified which
+	 * is capable to stop unconditionally.
 	 */
 	if (sys_slist_find_and_remove(&srv->clients, &cli->node)) {
 		rv = 0;
 		if (sys_slist_is_empty(&srv->clients)
 		    && (state != SERVICE_STATE_TO_OFF)) {
-			rv = -EWOULDBLOCK;
-			sys_slist_append(&srv->clients, &cli->node);
+			if (srv->uncond_stop &&
+			    (state == SERVICE_STATE_TO_ON)) {
+				set_service_state(srv, SERVICE_STATE_TO_OFF);
+				uncond_stop = true;
+				srv->releaser = cli;
+				srv->refs++;
+			} else {
+				rv = -EWOULDBLOCK;
+				sys_slist_append(&srv->clients, &cli->node);
+			}
 		}
 	} else if (srv->releaser == cli) {
-		/* must be waiting for TO_OFF to complete */
-		rv = -EWOULDBLOCK;
+		if (srv->uncond_start) {
+			rv = 0;
+			set_service_state(srv, SERVICE_STATE_TO_ON);
+			uncond_start = true;
+			srv->releaser = NULL;
+			sys_slist_append(&srv->clients, &cli->node);
+		} else {
+			/* must be waiting for TO_OFF to complete */
+			rv = -EWOULDBLOCK;
+		}
 	}
 
 	k_spin_unlock(&srv->lock, key);
 
-	if (rv == 0) {
+	if (uncond_stop) {
+		srv->uncond_stop(srv, onoff_start_cancel_notify);
+	} else if (uncond_start) {
+		srv->uncond_start(srv, onoff_stop_cancel_notify);
+	} else if (rv == 0) {
 		notify_one(srv, cli, -ECANCELED);
 	}
 
