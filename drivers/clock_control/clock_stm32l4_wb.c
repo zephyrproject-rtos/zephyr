@@ -30,6 +30,12 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	pllinit->PLLM = pllm(CONFIG_CLOCK_STM32_PLL_M_DIVISOR);
 	pllinit->PLLN = CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER;
 	pllinit->PLLR = pllr(CONFIG_CLOCK_STM32_PLL_R_DIVISOR);
+#ifdef PWR_CR5_R1MODE
+	/* set power boost mode for sys clock greater than 80MHz */
+	if (sys_clock_hw_cycles_per_sec() >= MHZ(80)) {
+		LL_PWR_EnableRange1BoostMode();
+	}
+#endif /* PWR_CR5_R1MODE */
 }
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
 
