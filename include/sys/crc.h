@@ -56,6 +56,24 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
 	    u16_t initial_value, bool pad);
 
 /**
+ * @brief Generic function for computing CRC 8
+ *
+ * Compute CRC 8 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value.
+ *
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ * @param polynomial The polynomial to use omitting the leading x^8
+ *        coefficient
+ * @param initial_value Initial value for the CRC computation
+ * @param reversed Should we use reflected/reversed values or not
+ *
+ * @return The computed CRC8 value
+ */
+u8_t crc8(const u8_t *src, size_t len, u8_t polynomial, u8_t initial_value,
+	  bool reversed);
+
+/**
  * @brief Compute the CRC-16/CCITT checksum of a buffer.
  *
  * See ITU-T Recommendation V.41 (November 1988).  Uses 0x1021 as the
