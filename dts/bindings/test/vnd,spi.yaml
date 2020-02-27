@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test SPI node
+
+compatible: "vnd,spi"
+
+include: [spi-controller.yaml, base.yaml]
