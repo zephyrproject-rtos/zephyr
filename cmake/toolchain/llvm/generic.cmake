@@ -8,8 +8,8 @@ if((NOT "${USER_CACHE_DIR}" STREQUAL "") AND (EXISTS "${USER_CACHE_DIR}"))
     ${CMAKE_COMMAND} -E remove_directory "${USER_CACHE_DIR}")
 endif()
 
-if(DEFINED $ENV{CLANG_ROOT_DIR})
-  set(TOOLCHAIN_HOME ${CLANG_ROOT}/bin/)
+if(DEFINED ENV{CLANG_ROOT_DIR})
+  set(TOOLCHAIN_HOME $ENV{CLANG_ROOT_DIR}/bin/)
 endif()
 
 set(COMPILER clang)
