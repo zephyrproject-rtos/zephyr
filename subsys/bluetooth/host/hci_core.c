@@ -5028,7 +5028,7 @@ static void hci_vs_init(void)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_COMMANDS,
 				   NULL, &rsp);
 	if (err) {
-		BT_WARN("Failed to read supported vendor features");
+		BT_WARN("Failed to read supported vendor commands");
 		return;
 	}
 
@@ -5046,7 +5046,7 @@ static void hci_vs_init(void)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
 				   NULL, &rsp);
 	if (err) {
-		BT_WARN("Failed to read supported vendor commands");
+		BT_WARN("Failed to read supported vendor features");
 		return;
 	}
 
