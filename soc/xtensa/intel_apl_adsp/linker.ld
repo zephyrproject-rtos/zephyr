@@ -171,7 +171,16 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
  * as cacheattr_set macro sets them both to the same set of
  * attributes.
  */
+#ifndef CONFIG_SMP
 _memmap_cacheattr_intel_apl_adsp = 0xFF42FFF2;
+#else
+/*
+ * FIXME: Make 0xA0000000 - 0xBFFFFFFF to bypass cache under SMP
+ * since there is no data cache manipulation for spinlock, kernel
+ * object, scheduler, etc...
+ */
+_memmap_cacheattr_intel_apl_adsp = 0xFF22FFF2;
+#endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_apl_adsp);
 SECTIONS
