@@ -3374,14 +3374,11 @@ static u16_t calc_eff_time(u8_t max_octets, u8_t phy, u16_t default_time)
 	u16_t time = PKT_US(max_octets, phy);
 	u16_t eff_time;
 
-	if (time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-		eff_time = MIN(time, default_time);
+	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, time);
+	eff_time = MIN(eff_time, default_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-		eff_time = MAX(eff_time, PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-	} else {
-		eff_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
-	}
+	eff_time = MAX(eff_time, PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
+#endif
 
 	return eff_time;
 }
@@ -3601,6 +3598,9 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		u16_t eff_tx_time = lll->max_tx_time;
 		u16_t eff_rx_time = lll->max_rx_time;
+		u16_t max_rx_time, max_tx_time;
+
+		dle_max_time_get(conn, &max_rx_time, &max_tx_time);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 		if (conn->llcp.phy_upd_ind.tx) {
@@ -3609,7 +3609,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_tx_time = calc_eff_time(lll->max_tx_octets,
 						    lll->phy_tx,
-						    conn->default_tx_time);
+						    max_tx_time);
+
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 		if (conn->llcp.phy_upd_ind.rx) {
@@ -3618,8 +3619,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_rx_time =
 				calc_eff_time(lll->max_rx_octets, lll->phy_rx,
-					      PKT_US(LL_LENGTH_OCTETS_RX_MAX,
-						     BIT(2)));
+					      max_rx_time);
+
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 		lll->phy_flags = conn->phy_pref_flags;
@@ -3675,7 +3676,9 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 
 		/* Update max tx and/or max rx if changed */
 		if ((eff_tx_time <= lll->max_tx_time) &&
-		    (eff_rx_time <= lll->max_rx_time)) {
+		    (lll->max_tx_time <= max_tx_time) &&
+		    (eff_rx_time <= lll->max_rx_time) &&
+		    (lll->max_rx_time <= max_rx_time)) {
 			/* Mark buffer for release */
 			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 
