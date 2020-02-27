@@ -635,11 +635,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 static void adc_stm32_cfg_func_##index(void);				\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_ADC_##index##_BASE_ADDRESS,		\
+	.base = (ADC_TypeDef *)DT_INST_##index##_ST_STM32_ADC_BASE_ADDRESS,\
 	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
 	.pclken = {							\
-		.enr = DT_ADC_##index##_CLOCK_BITS,			\
-		.bus = DT_ADC_##index##_CLOCK_BUS,			\
+		.enr = DT_INST_##index##_ST_STM32_ADC_CLOCK_BITS,	\
+		.bus = DT_INST_##index##_ST_STM32_ADC_CLOCK_BUS,	\
 	},								\
 };									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
@@ -648,18 +648,20 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 };									\
 									\
-DEVICE_AND_API_INIT(adc_##index, DT_ADC_##index##_NAME, &adc_stm32_init,\
+DEVICE_AND_API_INIT(adc_##index, DT_INST_##index##_ST_STM32_ADC_LABEL,	\
+		    &adc_stm32_init,					\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &api_stm32_driver_api);				\
 									\
 static void adc_stm32_cfg_func_##index(void)				\
 {									\
-	IRQ_CONNECT(DT_ADC_##index##_IRQ, DT_ADC_##index##_IRQ_PRI,	\
+	IRQ_CONNECT(DT_INST_##index##_ST_STM32_ADC_IRQ_0,		\
+		    DT_INST_##index##_ST_STM32_ADC_IRQ_0_PRIORITY,	\
 		    adc_stm32_isr, DEVICE_GET(adc_##index), 0);		\
-	irq_enable(DT_ADC_##index##_IRQ);				\
+	irq_enable(DT_INST_##index##_ST_STM32_ADC_IRQ_0);		\
 }
 
-#ifdef CONFIG_ADC_1
-STM32_ADC_INIT(1)
-#endif /* CONFIG_ADC_1 */
+#ifdef DT_INST_0_ST_STM32_ADC
+STM32_ADC_INIT(0);
+#endif /* DT_INST_0_ST_STM32_ADC */
