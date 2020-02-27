@@ -17,11 +17,19 @@ LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_sim_on(struct device *dev, clock_control_subsys_t sub_system)
 {
+	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
+
+	CLOCK_EnableClock(clock_ip_name);
+
 	return 0;
 }
 
 static int mcux_sim_off(struct device *dev, clock_control_subsys_t sub_system)
 {
+	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
+
+	CLOCK_DisableClock(clock_ip_name);
+
 	return 0;
 }
 
