@@ -19,6 +19,9 @@
  * Provide translation of symbols for peripherals that for some SoCs got names
  * without the index.
  */
+#ifndef NRF_I2S0
+#define NRF_I2S0 NRF_I2S
+#endif
 #ifndef NRF_PDM0
 #define NRF_PDM0 NRF_PDM
 #endif
@@ -79,7 +82,7 @@ CHECK_ADDRESS(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_BASE_ADDRESS, NRF_GPIOTE);
 #endif
 
 #if defined(DT_NORDIC_NRF_I2S_I2S_0_BASE_ADDRESS)
-CHECK_ADDRESS(DT_NORDIC_NRF_I2S_I2S_0_BASE_ADDRESS, NRF_I2S);
+CHECK_ADDRESS(DT_NORDIC_NRF_I2S_I2S_0_BASE_ADDRESS, NRF_I2S0);
 #endif
 
 #if defined(DT_INST_0_NORDIC_NRF_IPC_BASE_ADDRESS)
