@@ -56,6 +56,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 static int work_cancel(struct k_delayed_work *work)
 {
 	CHECKIF(work->work_q == NULL) {
+        printk("\nwork->work_q==NULL\n");
 		return -EALREADY;
 	}
 
@@ -68,7 +69,8 @@ static int work_cancel(struct k_delayed_work *work)
 		int err = z_abort_timeout(&work->timeout);
 
 		if (err) {
-			return -EALREADY;
+            printk("\nif(err)\n");
+            return -EALREADY;
 		}
 	}
 
