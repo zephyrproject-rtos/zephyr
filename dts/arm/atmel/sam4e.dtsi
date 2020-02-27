@@ -125,6 +125,16 @@
 			label = "USART_1";
 		};
 
+		gmac: ethernet@40034000 {
+			compatible = "atmel,sam-gmac";
+			reg = <0x40034000 0x4000>;
+			interrupts = <44 0>;
+			interrupt-names = "gmac";
+			num-queues = <1>;
+			label = "GMAC";
+			status = "disabled";
+		};
+
 		pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
