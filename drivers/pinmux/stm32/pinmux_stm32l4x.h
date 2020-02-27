@@ -72,11 +72,21 @@
 
 #define STM32L4X_PINMUX_FUNC_PA9_USART1_TX                                     \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)
+#if defined(CONFIG_SOC_STM32L432XX) || defined(CONFIG_SOC_STM32L433XX) ||      \
+	defined(CONFIG_SOC_STM32L452XX)
+#define STM32L4X_PINMUX_FUNC_PA9_I2C1_SCL                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#endif
 
 #define STM32L4X_PINMUX_FUNC_PA10_USART1_RX                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)
 #define STM32L4X_PINMUX_FUNC_PA10_OTG_FS_ID                                    \
 	(STM32_PINMUX_ALT_FUNC_10 | STM32_PUSHPULL_PULLUP)
+#if defined(CONFIG_SOC_STM32L432XX) || defined(CONFIG_SOC_STM32L433XX) ||      \
+	defined(CONFIG_SOC_STM32L452XX)
+#define STM32L4X_PINMUX_FUNC_PA10_I2C1_SDA                                     \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#endif
 
 #define STM32L4X_PINMUX_FUNC_PA11_USART1_CTS                                   \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
@@ -153,9 +163,17 @@
 
 #define STM32L4X_PINMUX_FUNC_PB8_I2C1_SCL                                      \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#ifndef CONFIG_SOC_STM32L432XX
+#define STM32L4X_PINMUX_FUNC_PB8_CAN_RX                                        \
+	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#endif
 
 #define STM32L4X_PINMUX_FUNC_PB9_I2C1_SDA                                      \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#ifndef CONFIG_SOC_STM32L432XX
+#define STM32L4X_PINMUX_FUNC_PB9_CAN_TX                                        \
+	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#endif
 
 #define STM32L4X_PINMUX_FUNC_PB10_SPI2_SCK                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL | \
@@ -251,6 +269,16 @@
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
 /* Port D */
+#ifndef CONFIG_SOC_STM32L432XX
+#define STM32L4X_PINMUX_FUNC_PD0_CAN_RX                                        \
+	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#endif
+
+#ifndef CONFIG_SOC_STM32L432XX
+#define STM32L4X_PINMUX_FUNC_PD1_CAN_TX                                        \
+	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#endif
+
 #define STM32L4X_PINMUX_FUNC_PD2_USART3_RTS                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
 
