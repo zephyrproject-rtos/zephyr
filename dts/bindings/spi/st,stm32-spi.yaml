@@ -13,3 +13,13 @@ properties:
 
     interrupts:
       required: true
+
+    dmas:
+      required: false
+      type: phandle-array
+      description: DMA instances information
+
+    dma-names:
+      required: false
+      type: string-array
+      description: name of each dma instance
