@@ -144,6 +144,19 @@ static inline void z_arm_floating_point_init(void)
 	 */
 
 #endif /* CONFIG_FLOAT */
+
+	/*
+	 * Upon reset, the CONTROL.FPCA bit is, normally, cleared. However,
+	 * it might be left un-cleared by firmware running before Zephyr boot.
+	 * We must clear this bit to prevent errors in exception unstacking.
+	 *
+	 * Note:
+	 * In Sharing FP Registers mode CONTROL.FPCA is cleared before switching
+	 * to main, so it may be skipped here (saving few boot cycles).
+	 */
+#if !defined(CONFIG_FLOAT) || !defined(CONFIG_FP_SHARING)
+	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
+#endif
 }
 #endif /* CONFIG_CPU_HAS_FPU */
 
