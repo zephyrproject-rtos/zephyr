@@ -8,6 +8,7 @@ menuconfig ETH_MCUX
 	depends on HAS_MCUX_ENET
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
+	select NET_POWER_MANAGEMENT if DEVICE_POWER_MANAGEMENT
 	help
 	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
 	  setup.  There is no support for PHY disconnect, reconnect or
