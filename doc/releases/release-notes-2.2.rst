@@ -224,7 +224,14 @@ Boards & SoC Support
 
   .. rst-class:: rst-columns
 
-     * <TBD>
+     * ST7789V Display generic shield
+     * TI LMP90100 Sensor Analog Frontend (AFE) Evaluation Board (EVB)
+
+* Removed support for these following shields:
+
+  .. rst-class:: rst-columns
+
+     * Link board CAN
 
 Drivers and Sensors
 *******************
