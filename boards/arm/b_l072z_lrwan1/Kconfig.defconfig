@@ -28,4 +28,9 @@ config SPI_2
 	default y
 endif # SPI
 
+choice COUNTER_RTC_STM32_CLOCK_SRC
+	default COUNTER_RTC_STM32_CLOCK_LSE
+	depends on COUNTER
+endchoice # COUNTER_RTC_STM32_CLOCK_SRC
+
 endif # BOARD_B_L072Z_LRWAN1
