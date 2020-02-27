@@ -33,6 +33,9 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
 
+/* connect MOSI pin and the MISO of the SPI */
+
+
 #define STACK_SIZE 512
 #define BUF_SIZE 17
 u8_t buffer_tx[] = "0123456789abcdef\0";
@@ -117,7 +120,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start complete loop");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -137,7 +140,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed complete loop");
 
 	return 0;
 }
@@ -145,7 +148,14 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 {
+#ifdef CONFIG_SPI_STM32_DMA
+/* if buffer address is null, the dma won't transfer */
+	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = {
+	  0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
+	  0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77 };
+#else
 	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+#endif /* CONFIG_SPI_STM32_DMA */
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
 
 	const struct spi_buf tx_bufs[] = {
@@ -175,7 +185,7 @@ static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start null tx");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -193,23 +203,93 @@ static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed null tx");
 
 	return 0;
 }
+
+#ifdef CONFIG_SPI_STM32_DMA
+static int spi_null_rx_buf(struct device *dev, struct spi_config *spi_conf)
+{
+#ifdef CONFIG_SPI_STM32_DMA
+/* if buffer address is null, the dma won't transfer */
+	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = {
+	  0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
+	  0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77 };
+#else
+	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+#endif /* CONFIG_SPI_STM32_DMA */
+	(void)memset(buffer_rx, 0x77, BUF_SIZE);
+
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		},
+	};
+	const struct spi_buf rx_bufs[] = {
+		{
+			.buf = NULL,
+			.len = BUF_SIZE,
+		},
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+
+	int ret;
+
+	LOG_INF("Start null rx");
+
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+
+	if (memcmp(buffer_rx, EXPECTED_NOP_RETURN_BUF, BUF_SIZE)) {
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Rx Buffer should contain NOP frames but got: %s",
+			buffer_print_rx);
+		zassert_false(1, "Buffer not as expected");
+		return -1;
+	}
+
+	LOG_INF("Passed null rx");
+
+	return 0;
+}
+#endif /* CONFIG_SPI_STM32_DMA */
 
 static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
 			.buf = buffer_tx,
+#ifdef CONFIG_SPI_STM32_DMA
+	/* transfer half buffer, has TH irq not enabled */
+			.len = 8,
+#else
 			.len = BUF_SIZE,
+#endif
 		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
+#ifdef CONFIG_SPI_STM32_DMA
+	/* transfer half buffer, has TH irq not enabled */
+			.len = BUF_SIZE,
+#else
 			.len = 8,
+#endif
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -222,7 +302,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start half start");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -244,11 +324,12 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed half start");
 
 	return 0;
 }
 
+#ifndef CONFIG_SPI_STM32_DMA
 static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
@@ -277,7 +358,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start half end");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -299,7 +380,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed half end");
 
 	return 0;
 }
@@ -340,7 +421,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start every 4");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -371,10 +452,11 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed every 4");
 
 	return 0;
 }
+#endif /* CONFIG_SPI_STM32_DMA */
 
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
@@ -431,7 +513,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start async");
 
 	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -453,7 +535,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 		return -1;
 	}
 
-	LOG_INF("Passed");
+	LOG_INF("Passed async ");
 
 	return 0;
 }
@@ -509,6 +591,8 @@ void test_spi_loopback(void)
 
 	spi_fast = spi_slow;
 
+	LOG_INF("SPI test slow config");
+
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
@@ -520,8 +604,12 @@ void test_spi_loopback(void)
 	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
+#ifdef CONFIG_SPI_STM32_DMA
+	    spi_null_rx_buf(spi_slow, &spi_cfg_slow)
+#else
 	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_every_4(spi_slow, &spi_cfg_slow)
+#endif /* CONFIG_SPI_STM32_DMA */
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(spi_slow, &spi_cfg_slow)
 #endif
@@ -529,11 +617,17 @@ void test_spi_loopback(void)
 		goto end;
 	}
 
+	LOG_INF("SPI test fast config");
+
 	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
 	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
+#ifdef CONFIG_SPI_STM32_DMA
+	    spi_null_rx_buf(spi_slow, &spi_cfg_fast)
+#else
 	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_every_4(spi_fast, &spi_cfg_fast)
+#endif /* CONFIG_SPI_STM32_DMA */
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(spi_fast, &spi_cfg_fast)
 #endif
