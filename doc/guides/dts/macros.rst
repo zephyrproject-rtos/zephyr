@@ -587,9 +587,9 @@ example ``DT_<node>_CLOCK_CONTROLLER_0`` instead of
 
    This inconsistency might be fixed in the future.
 
-In addition, if the clock controller node has a ``fixed-clock`` property, it is
-expected to also have a ``clock-frequency`` property giving the frequency, and
-an additional macro is generated:
+If a ``clocks`` controller node has a ``"fixed-clock"`` compatible, it
+must also have a ``clock-frequency`` property giving its frequency in Hertz.
+In this case, an additional macro is generated:
 
 .. code-block:: none
 
