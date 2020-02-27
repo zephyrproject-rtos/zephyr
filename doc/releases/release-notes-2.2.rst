@@ -157,7 +157,7 @@ Architectures
 
 * POSIX:
 
-  * <TBD>
+  * N/A
 
 * RISC-V:
 
