@@ -9,6 +9,6 @@ set *(0x71F90) = 0x71
 
 set pagination off
 set confirm off
-load zephyr/zephyr.elf
 file zephyr/zephyr.elf
+load zephyr/zephyr.elf
 c
