@@ -133,6 +133,8 @@ The Zephyr B-L072Z-LRWAN1 Discovery board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
