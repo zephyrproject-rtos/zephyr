@@ -102,6 +102,16 @@ config BT_GATT_CACHING
 	  characteristics which can be used by clients to detect if anything has
 	  changed on the GATT database.
 
+if BT_GATT_CACHING
+
+config BT_GATT_NOTIFY_MULTIPLE
+	bool "GATT Notify Multiple Characteristic Values support"
+	depends on BT_GATT_CACHING
+	default y
+	help
+	  This option enables support for the GATT Notify Multiple
+	  Characteristic Values procedure.
+
 config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	bool "GATT Enforce change-unaware state"
 	depends on BT_GATT_CACHING
@@ -113,6 +123,8 @@ config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	  a client until it becomes change-aware."
 	  In case the service cannot deal with sudden errors (-EAGAIN) then it
 	  shall not use this option.
+
+endif # BT_GATT_CACHING
 
 config BT_GATT_CLIENT
 	bool "GATT client support"

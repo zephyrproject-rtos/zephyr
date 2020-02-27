@@ -36,9 +36,17 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr);
 #if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 			  const void *data, u16_t length);
+
+void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
+			       u16_t length);
 #else
 static inline void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 					const void *data, u16_t length)
+{
+}
+
+static inline void bt_gatt_mult_notification(struct bt_conn *conn,
+					     const void *data, u16_t length)
 {
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
