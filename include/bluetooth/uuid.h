@@ -529,6 +529,10 @@ struct bt_uuid_128 {
  *  @brief Database Hash
  */
 #define BT_UUID_GATT_DB_HASH              BT_UUID_DECLARE_16(0x2b2a)
+/** @def BT_UUID_GATT_SERVER_FEATURES
+ *  @brief Server Supported Features
+ */
+#define BT_UUID_GATT_SERVER_FEATURES      BT_UUID_DECLARE_16(0x2b3a)
 
 /*
  * Protocol UUIDs
