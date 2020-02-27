@@ -47,6 +47,8 @@
 #define L2CAP_LE_PSM_FIXED_END   0x007f
 #define L2CAP_LE_PSM_DYN_START   0x0080
 #define L2CAP_LE_PSM_DYN_END     0x00ff
+#define L2CAP_LE_PSM_IS_DYN(_psm) \
+	(_psm >= L2CAP_LE_PSM_DYN_START && _psm <= L2CAP_LE_PSM_DYN_END)
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
@@ -2174,6 +2176,12 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 
 	if (atomic_test_bit(chan->chan.status, BT_L2CAP_STATUS_SHUTDOWN)) {
 		BT_WARN("Ignoring data received while channel has shutdown");
+		net_buf_unref(buf);
+		return;
+	}
+
+	if (!L2CAP_LE_PSM_IS_DYN(chan->chan.psm)) {
+		l2cap_chan_le_recv(chan, buf);
 		net_buf_unref(buf);
 		return;
 	}
