@@ -99,6 +99,13 @@ config IPM_STM32_IPCC_PROCID
 	help
 	  use to define the Processor ID for IPCC access
 
+config IPM_CAVS_IDC
+	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
+	depends on SMP && CAVS_ICTL
+	help
+	  Driver for the Intra-DSP Communication (IDC) channel for
+	  cross SoC communications.
+
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"
