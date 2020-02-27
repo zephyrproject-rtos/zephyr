@@ -22,6 +22,18 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
+static u32_t table_m_size[] = {
+	LL_DMA_MDATAALIGN_BYTE,
+	LL_DMA_MDATAALIGN_HALFWORD,
+	LL_DMA_MDATAALIGN_WORD,
+};
+
+static u32_t table_p_size[] = {
+	LL_DMA_PDATAALIGN_BYTE,
+	LL_DMA_PDATAALIGN_HALFWORD,
+	LL_DMA_PDATAALIGN_WORD,
+};
+
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
 	const struct dma_stm32_config *config = dev->config->config_info;
@@ -49,6 +61,22 @@ static void dma_stm32_irq_handler(void *arg)
 	struct dma_stm32_stream *stream;
 	int id;
 
+#ifdef CONFIG_DMA_STM32_V2
+	/* retrieve the dma mux interrupt from the global flag */
+	for (id = 0; id < data->max_streams; id++) {
+		if (func_ll_is_active_gi[id](dma)) {
+			break;
+		}
+	}
+	/* do not clear the global interrupt yet,
+	 * first handle the specific ones : te or tc
+	 */
+	if (func_ll_is_active_ht[id](dma)) {
+		/* half transfer was not enabled, just clear and ignore */
+		func_ll_clear_ht[id](dma);
+		return;
+	}
+#else
 	for (id = 0; id < data->max_streams; id++) {
 		if (func_ll_is_active_tc[id](dma)) {
 			break;
@@ -57,29 +85,56 @@ static void dma_stm32_irq_handler(void *arg)
 			break;
 		}
 	}
+#endif /* CONFIG_DMA_STM32_V2 */
 
 	if (id == data->max_streams) {
-		LOG_ERR("Unknown interrupt happened.");
+		LOG_ERR("Unknown DMA interrupt happened.");
 		return;
 	}
 
+	/* retrieve the dma mux request ID, this is the actual channel */
 	stream = &data->streams[id];
-	stream->busy = false;
 
 	if (func_ll_is_active_tc[id](dma)) {
 		func_ll_clear_tc[id](dma);
-
-		stream->dma_callback(stream->callback_arg, id, 0);
+		stream->busy = false;
+		stream->dma_callback(stream->callback_arg,
+#ifdef CONFIG_DMAMUX_STM32
+					stream->mux_channel, 0);
+		/* the callback function expects the dmamux channel nb */
+#else
+					id + 1, 0);
+		/*
+		 * the callback function expects the dma channel nb
+		 * which is stored in the id from 1
+		 */
+#endif /* CONFIG_DMAMUX_STM32 */
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
-		stream->dma_callback(stream->callback_arg, id, -EIO);
+
+#ifdef CONFIG_DMAMUX_STM32
+		stream->dma_callback(stream->callback_arg,
+					stream->mux_channel, -EIO);
+#else
+		stream->dma_callback(stream->callback_arg, id + 1, -EIO);
+#endif /* CONFIG_DMAMUX_STM32 */
 	} else {
 		LOG_ERR("Transfer Error.");
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
-
-		stream->dma_callback(stream->callback_arg, id, -EIO);
+#ifdef CONFIG_DMAMUX_STM32
+		stream->dma_callback(stream->callback_arg,
+					stream->mux_channel, -EIO);
+#else
+		stream->dma_callback(stream->callback_arg, id + 1, -EIO);
+#endif /* CONFIG_DMAMUX_STM32 */
 	}
+#ifdef CONFIG_DMA_STM32_V2
+	if (func_ll_is_active_gi[id](dma)) {
+		/* clear the global interrupt afterwards */
+		func_ll_clear_gi[id](dma);
+	}
+#endif /* CONFIG_DMA_STM32_V2 */
 }
 
 static int dma_stm32_width_config(struct dma_config *config,
@@ -193,9 +248,16 @@ static int dma_stm32_get_periph_increment(enum dma_addr_adj increment,
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_configure(struct device *dev, u32_t id,
+			       struct dma_config *config)
+#else
 static int dma_stm32_configure(struct device *dev, u32_t id,
 			       struct dma_config *config)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
+	/* from DTS the dma stream id is in range 1..<dma-requests> */
+	id--; /* so decrease to set range from 0 in case of dma or mux */
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id];
 	const struct dma_stm32_config *dev_config =
@@ -261,8 +323,11 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	}
 
 	stream->busy		= true;
-	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
+	stream->dma_callback	= config->dma_callback;
+#ifdef CONFIG_DMAMUX_STM32
+	/* the stream->mux_channel is fixed by the dma init */
+#endif /* CONFIG_DMAMUX_STM32 */
 	stream->callback_arg    = config->callback_arg;
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
@@ -371,9 +436,19 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 					config->dest_data_size;
 	}
 
+#if !defined(CONFIG_DMA_STM32_V1)
+	/*
+	 * the with dma V2 and dma mux,
+	 * the request ID is stored in the dma_slot
+	 */
+	 DMA_InitStruct.PeriphRequest = config->dma_slot;
+#endif
 	LL_DMA_Init(dma, table_ll_stream[id], &DMA_InitStruct);
 
+	/* enable irq for Transfer Complete on this dma stream */
 	LL_DMA_EnableIT_TC(dma, table_ll_stream[id]);
+	/* enable irq for Transfer Error on this dma stream */
+	LL_DMA_EnableIT_TE(dma, table_ll_stream[id]);
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
@@ -387,7 +462,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	return ret;
 }
 
-int dma_stm32_disable_stream(DMA_TypeDef *dma, u32_t id)
+static int dma_stm32_disable_stream(DMA_TypeDef *dma, u32_t id)
 {
 	int count = 0;
 
@@ -404,9 +479,16 @@ int dma_stm32_disable_stream(DMA_TypeDef *dma, u32_t id)
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_reload(struct device *dev, u32_t id,
+			    u32_t src, u32_t dst, size_t size)
+#else
 static int dma_stm32_reload(struct device *dev, u32_t id,
 			    u32_t src, u32_t dst, size_t size)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
+	/* from DTS the dma stream id is in range 1..<dma-requests> */
+	id--; /* so decrease to set range from 0 in case of dma or mux */
 	const struct dma_stm32_config *config = dev->config->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_data *data = dev->driver_data;
@@ -415,6 +497,8 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 	if (id >= data->max_streams) {
 		return -EINVAL;
 	}
+
+	stm32_dma_disable_stream(dma, id);
 
 	switch (stream->direction) {
 	case MEMORY_TO_PERIPHERAL:
@@ -437,11 +521,20 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 		LL_DMA_SetDataLength(dma, table_ll_stream[id],
 				     size / stream->dst_size);
 	}
+
+	stm32_dma_enable_stream(dma, id);
+
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_start(struct device *dev, u32_t id)
+#else
 static int dma_stm32_start(struct device *dev, u32_t id)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
+	/* from DTS the dma stream id is in range 1..<dma-requests> */
+	id--; /* so decrease to set range from 0 in case of dma or mux */
 	const struct dma_stm32_config *config = dev->config->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_data *data = dev->driver_data;
@@ -452,14 +545,19 @@ static int dma_stm32_start(struct device *dev, u32_t id)
 	}
 
 	dma_stm32_clear_stream_irq(dev, id);
-
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_stop(struct device *dev, u32_t id)
+#else
 static int dma_stm32_stop(struct device *dev, u32_t id)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
+	/* from DTS the dma stream id is in range 1..<dma-requests> */
+	id--; /* so decrease to set range from 0 in case of dma or mux */
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id];
 	const struct dma_stm32_config *config =
@@ -470,7 +568,7 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 		return -EINVAL;
 	}
 
-	LL_DMA_DisableIT_TC(dma, table_ll_stream[id]);
+	/* do not disable TC irq */
 #if defined(CONFIG_DMA_STM32_V1)
 	stm32_dma_disable_fifo_irq(dma, id);
 #endif
@@ -509,8 +607,16 @@ static int dma_stm32_init(struct device *dev)
 	}
 	memset(data->streams, 0, size_stream);
 
+#ifdef CONFIG_DMAMUX_STM32
+	int offset = ((dev == device_get_binding((const char *)"DMA_1"))
+			? 0 : config->channel_nb);
+#endif /* CONFIG_DMAMUX_STM32 */
+
 	for (int i = 0; i < data->max_streams; i++) {
 		data->streams[i].busy = false;
+#ifdef CONFIG_DMAMUX_STM32
+		data->streams[i].mux_channel = i + offset;
+#endif /* CONFIG_DMAMUX_STM32 */
 	}
 
 	return 0;
@@ -532,6 +638,7 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_##index##_ST_STM32_DMA_BASE_ADDRESS,		\
 	.support_m2m = DT_INST_##index##_ST_STM32_DMA_ST_MEM2MEM,	\
+	.channel_nb = DT_INST_0_ST_STM32_DMA_DMA_REQUESTS,		\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
