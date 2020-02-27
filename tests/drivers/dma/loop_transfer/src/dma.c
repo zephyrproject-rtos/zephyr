@@ -22,7 +22,28 @@
 static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
 static char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = {{ 0 } };
 
+#ifdef CONFIG_SOC_FAMILY_STM32
+#ifdef CONFIG_DMAMUX_STM32
+#define DMA_DEVICE_NAME CONFIG_DMAMUX_1_NAME
+/* DMAMUX channel count from 0 to 13 */
+#define FIRST_DMA_CHANNEL	0
+#define LAST_DMA_CHANNEL	13
+#else
+/* DMA channel count from 1 to 7 */
+#define FIRST_DMA_CHANNEL	1
+#define LAST_DMA_CHANNEL	7
+
+#ifdef CONFIG_DMA_STM32_V1
+#define DMA_DEVICE_NAME CONFIG_DMA_2_NAME
+#else
+#define DMA_DEVICE_NAME CONFIG_DMA_1_NAME
+#endif /* CONFIG_DMA_STM32_V1 */
+#endif /* CONFIG_DMAMUX_STM32 */
+#else
 #define DMA_DEVICE_NAME "DMA_0"
+#define FIRST_DMA_CHANNEL	1
+#define LAST_DMA_CHANNEL	1
+#endif /* CONFIG_SOC_FAMILY_STM32 */
 
 volatile u8_t transfer_count;
 static struct dma_config dma_cfg = {0};
@@ -30,15 +51,13 @@ static struct dma_block_config dma_block_cfg = {0};
 
 static void test_transfer(struct device *dev, u32_t id)
 {
-	int ret;
-
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
 		dma_block_cfg.source_address = (u32_t)tx_data;
 		dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
 
-		ret = dma_config(dev, id, &dma_cfg);
+		int ret = dma_config(dev, id, &dma_cfg);
 		if (ret == 0) {
 			dma_start(dev, id);
 		}
@@ -86,39 +105,44 @@ void main(void)
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
-	chan_id = 0U;
-
 	printk("Starting the transfer and waiting for 1 second\n");
 	dma_block_cfg.block_size = strlen(tx_data);
 	dma_block_cfg.source_address = (u32_t)tx_data;
 	dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
 
-	if (dma_config(dma, chan_id, &dma_cfg)) {
-		printk("ERROR: transfer config\n");
-		return;
-	}
+	for (chan_id = FIRST_DMA_CHANNEL;
+		chan_id <= LAST_DMA_CHANNEL;
+		chan_id++) {
 
-	if (dma_start(dma, chan_id)) {
-		printk("ERROR: transfer start\n");
-		return;
-	}
-
-	k_sleep(SLEEPTIME);
-
-	if (transfer_count < TRANSFER_LOOPS) {
-		transfer_count = TRANSFER_LOOPS;
-		printk("ERROR: unfinished transfer\n");
-		if (dma_stop(dma, chan_id)) {
-			printk("ERROR: transfer stop\n");
+		printk("transfer on channel %d\n", chan_id);
+		if (dma_config(dma, chan_id, &dma_cfg)) {
+			printk("ERROR: transfer config\n");
+			return;
 		}
+
+		if (dma_start(dma, chan_id)) {
+			printk("ERROR: transfer start\n");
+			return;
+		}
+
+		k_sleep(SLEEPTIME);
+
+		if (transfer_count < TRANSFER_LOOPS) {
+			transfer_count = TRANSFER_LOOPS;
+			printk("ERROR: unfinished transfer\n");
+			if (dma_stop(dma, chan_id)) {
+				printk("ERROR: transfer stop\n");
+			}
+		}
+
+		printk("Each RX buffer should contain the full TX buffer string.\n");
+		printk("TX data: %s\n", tx_data);
+
+		for (int i = 0; i < TRANSFER_LOOPS; i++) {
+			printk("RX data Loop %d: %s\n", i, rx_data[i]);
+		}
+
 	}
 
-	printk("Each RX buffer should contain the full TX buffer string.\n");
-	printk("TX data: %s\n", tx_data);
-
-	for (int i = 0; i < TRANSFER_LOOPS; i++) {
-		printk("RX data Loop %d: %s\n", i, rx_data[i]);
-	}
-
-	printk("Finished: DMA\n");
+	printk("Finished: %s\n", DMA_DEVICE_NAME);
 }

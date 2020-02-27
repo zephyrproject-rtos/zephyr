@@ -23,7 +23,19 @@
 #include <drivers/dma.h>
 #include <ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_0_NAME
+#ifdef CONFIG_SOC_FAMILY_STM32
+#ifdef CONFIG_DMAMUX_STM32
+#define DMA_DEVICE_NAME CONFIG_DMAMUX_1_NAME
+#else
+#ifdef CONFIG_DMA_STM32_V1
+#define DMA_DEVICE_NAME CONFIG_DMA_2_NAME
+#else
+#define DMA_DEVICE_NAME CONFIG_DMA_1_NAME
+#endif /* CONFIG_DMA_STM32_V1 */
+#endif /* CONFIG_DMAMUX_STM32 */
+#else
+#define DMA_DEVICE_NAME "DMA_0"
+#endif /* CONFIG_SOC_FAMILY_STM32 */
 #define RX_BUFF_SIZE (48)
 
 static const char tx_data[] = "It is harder to be kind than to be wise";
@@ -60,6 +72,15 @@ static int test_task(u32_t chan_id, u32_t blen)
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
+#ifdef CONFIG_DMAMUX_STM32
+	dma_cfg.dma_slot = 0U; /* this request line ID means MEM-to-MEM */
+#endif /* CONFIG_DMAMUX_STM32 */
+#ifdef CONFIG_DMAMUX_STM32
+	/* DMAMUX channel count from 0 */
+#else
+	chan_id += 1;
+#endif
+
 	TC_PRINT("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
 			chan_id, blen >> 3);
 
@@ -79,6 +100,7 @@ static int test_task(u32_t chan_id, u32_t blen)
 		return TC_FAIL;
 	}
 	k_sleep(K_MSEC(2000));
+
 	TC_PRINT("%s\n", rx_data);
 	if (strcmp(tx_data, rx_data) != 0)
 		return TC_FAIL;
@@ -93,7 +115,7 @@ void test_dma_m2m_chan0_burst8(void)
 
 void test_dma_m2m_chan1_burst8(void)
 {
-	zassert_true((test_task(1, 8) == TC_PASS), NULL);
+	zassert_true((test_task(6, 8) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan0_burst16(void)
@@ -103,5 +125,5 @@ void test_dma_m2m_chan0_burst16(void)
 
 void test_dma_m2m_chan1_burst16(void)
 {
-	zassert_true((test_task(1, 16) == TC_PASS), NULL);
+	zassert_true((test_task(6, 16) == TC_PASS), NULL);
 }
