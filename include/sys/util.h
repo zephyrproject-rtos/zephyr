@@ -830,6 +830,64 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
 #define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
 #define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+
+/**
+ * @brief Mapping macro that pastes results together
+ *
+ * Like @ref MACRO_MAP(), but pastes the results together into a
+ * single token by repeated application of @ref UTIL_CAT().
+ *
+ * For example, with this macro FOO:
+ *
+ *     #define FOO(x) item_##x##_
+ *
+ * MACRO_MAP_CAT(FOO, a, b, c) expands to the token:
+ *
+ *     item_a_item_b_item_c_
+ *
+ * @param ... Macro to expand on each argument, followed by its
+ *            arguments. (The macro should take exactly one argument.)
+ * @return The results of expanding the macro on each argument, all pasted
+ *         together
+ */
+#define MACRO_MAP_CAT(...) MACRO_MAP_CAT_(__VA_ARGS__)
+#define MACRO_MAP_CAT_(...)						\
+	/* To make sure it works also for 2 arguments in total */	\
+	MACRO_MAP_CAT_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
+
+/**
+ * @brief Mapping macro that pastes a fixed number of results together
+ *
+ * Similar to @ref MACRO_MAP_CAT(), but expects a fixed number of
+ * arguments. If more arguments are given than are expected, the rest
+ * are ignored.
+ *
+ * @param N   Number of arguments to map
+ * @param ... Macro to expand on each argument, followed by its
+ *            arguments. (The macro should take exactly one argument.)
+ * @return The results of expanding the macro on each argument, all pasted
+ *         together
+ */
+#define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
+#define MACRO_MAP_CAT_N_(N, ...) UTIL_CAT(MACRO_MC_, N)(__VA_ARGS__,)
+
+#define MACRO_MC_0(...)
+#define MACRO_MC_1(m, a, ...)  m(a)
+#define MACRO_MC_2(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_1(m, __VA_ARGS__,))
+#define MACRO_MC_3(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_2(m, __VA_ARGS__,))
+#define MACRO_MC_4(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_3(m, __VA_ARGS__,))
+#define MACRO_MC_5(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_4(m, __VA_ARGS__,))
+#define MACRO_MC_6(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_5(m, __VA_ARGS__,))
+#define MACRO_MC_7(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_6(m, __VA_ARGS__,))
+#define MACRO_MC_8(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_7(m, __VA_ARGS__,))
+#define MACRO_MC_9(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_8(m, __VA_ARGS__,))
+#define MACRO_MC_10(m, a, ...) UTIL_CAT(m(a), MACRO_MC_9(m, __VA_ARGS__,))
+#define MACRO_MC_11(m, a, ...) UTIL_CAT(m(a), MACRO_MC_10(m, __VA_ARGS__,))
+#define MACRO_MC_12(m, a, ...) UTIL_CAT(m(a), MACRO_MC_11(m, __VA_ARGS__,))
+#define MACRO_MC_13(m, a, ...) UTIL_CAT(m(a), MACRO_MC_12(m, __VA_ARGS__,))
+#define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
+#define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
+
 /*
  * The following provides variadic preprocessor macro support to
  * help eliminate multiple, repetitive function/macro calls.  This
