@@ -27,6 +27,16 @@
 	};
 
 	soc {
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
+
 		flash-controller@40022000 {
 			compatible = "st,stm32l0-flash-controller";
 			label = "FLASH_CTRL";
