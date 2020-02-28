@@ -92,6 +92,12 @@ enum ieee802154_config_type {
 	/** Current channel number. */
 	IEEE802154_CONFIG_CHANNEL,
 
+	/** Indicates whether the device is a PAN coordinator. */
+	IEEE802154_CONFIG_PAN_COORDINATOR,
+
+	/** Enable/disable promiscuous mode. */
+	IEEE802154_CONFIG_PROMISCUOUS,
+
 	/** TX power level, in dBM. */
 	IEEE802154_CONFIG_TX_POWER,
 };
@@ -114,6 +120,12 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_CHANNEL`` */
 		u16_t channel;
+
+		/** ``IEEE802154_CONFIG_PAN_COORDINATOR`` */
+		bool pan_coordinator;
+
+		/** ``IEEE802154_CONFIG_PROMISCUOUS`` */
+		bool promiscuous;
 
 		/** ``IEEE802154_CONFIG_TX_POWER`` */
 		s16_t tx_power;
