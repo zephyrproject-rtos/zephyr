@@ -26,8 +26,6 @@ extern "C" {
  * @{
  */
 
-typedef void (*energy_scan_done_cb_t)(struct device *dev, s16_t max_ed);
-
 enum ieee802154_hw_caps {
 	IEEE802154_HW_FCS	  = BIT(0), /* Frame Check-Sum supported */
 	IEEE802154_HW_PROMISC	  = BIT(1), /* Promiscuous mode supported */
@@ -47,6 +45,16 @@ enum ieee802154_filter_type {
 	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
 	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
 };
+
+enum ieee802154_event {
+	IEEE802154_EVENT_TX_STARTED /* Data transmission started */
+};
+
+typedef void (*energy_scan_done_cb_t)(struct device *dev, s16_t max_ed);
+
+typedef void (*ieee802154_event_cb_t)(struct device *dev,
+				      enum ieee802154_event evt,
+				      void *event_params);
 
 struct ieee802154_filter {
 /** @cond ignore */
@@ -98,6 +106,11 @@ enum ieee802154_config_type {
 
 	/** Enable/disable promiscuous mode. */
 	IEEE802154_CONFIG_PROMISCUOUS,
+
+	/** Specifies new radio event handler. Specifying NULL as a handler
+	 *  will disable radio events notification.
+	 */
+	IEEE802154_CONFIG_EVENT_HANDLER
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -121,6 +134,9 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_PROMISCUOUS`` */
 		bool promiscuous;
+
+		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
+		ieee802154_event_cb_t event_handler;
 	};
 };
 
