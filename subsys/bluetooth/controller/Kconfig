@@ -401,6 +401,12 @@ endif # BT_PHY_UPDATE
 
 if BT_LL_SW
 
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	default y if BT_CTLR_LE_ENC
+	help
+	  Optimize compilation of controller for execution speed.
+
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X

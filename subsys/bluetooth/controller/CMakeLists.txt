@@ -162,7 +162,7 @@ if(CONFIG_SOC_COMPATIBLE_NRF)
 endif()
 
 zephyr_library_compile_options_ifdef(
-  CONFIG_BT_CTLR_FAST_ENC
+  CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
 
