@@ -1,0 +1,14 @@
+sample:
+  description: Hello World sample, the simplest Zephyr
+    application
+  name: hello world
+common:
+    tags: introduction
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
+tests:
+  sample.basic.helloworld:
+    tags: introduction
