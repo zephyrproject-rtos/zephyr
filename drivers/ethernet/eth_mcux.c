@@ -198,6 +198,11 @@ static int eth_mcux_device_pm_control(struct device *dev, u32_t command,
 		if (*(u32_t *)context == DEVICE_PM_SUSPEND_STATE) {
 			LOG_DBG("Suspending");
 
+			ret = net_if_suspend(eth_ctx->iface);
+			if (ret == -EBUSY) {
+				goto out;
+			}
+
 			eth_mcux_phy_enter_reset(eth_ctx);
 			eth_mcux_phy_stop(eth_ctx);
 
