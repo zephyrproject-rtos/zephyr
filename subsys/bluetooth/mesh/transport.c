@@ -1717,7 +1717,9 @@ int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
 {
 	struct bt_mesh_app_key *app_key;
 
-	if (app_idx == BT_MESH_KEY_DEV_LOCAL) {
+	if (app_idx == BT_MESH_KEY_DEV_LOCAL ||
+	    (app_idx == BT_MESH_KEY_DEV_REMOTE &&
+	     bt_mesh_elem_find(addr) != NULL)) {
 		*aid = 0;
 		*key = bt_mesh.dev_key;
 		return 0;
