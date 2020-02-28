@@ -1876,12 +1876,13 @@ static void eth0_iface_init(struct net_if *iface)
 	/* Check the status of data caches */
 	dcache_is_enabled();
 
-	/* Initialize GMAC driver, maximum frame length is 1518 bytes */
+	/* Initialize GMAC driver */
 	gmac_ncfgr_val =
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
-		| GMAC_NCFGR_RXCOEN; /* Receive Checksum Offload Enable */
+		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
+		| GMAC_MAX_FRAME_SIZE;
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
 	if (result < 0) {
 		LOG_ERR("Unable to initialize ETH driver");
