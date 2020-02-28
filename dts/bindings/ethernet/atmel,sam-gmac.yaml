@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM-family GMAC Ethernet
@@ -15,3 +16,27 @@ properties:
       type: int
       required: true
       description: Number of hardware TX and RX queues
+
+    max-frame-size:
+        type: int
+        description:
+          Maximum transfer unit (IEEE defined MTU), rather than the
+          maximum frame size (there\'s contradiction in the Devicetree
+          Specification). The current supported values are 1518, 1536
+          and 10240 (jumbo frames).
+        default: 1518
+
+    max-speed:
+        type: int
+        description:
+          Specifies maximum speed in Mbit/s supported by the device.
+        default: 100
+
+    phy-connection-type:
+        type: string
+        description:
+          Operation mode of the PHY interface
+        enum:
+          - "rmii"
+          - "mii"
+        default: "rmii"
