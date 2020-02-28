@@ -260,7 +260,8 @@ static int tx(struct net_pkt *pkt)
 	LOG_DBG("len %d seq %u", buf->len, seq);
 
 	do {
-		ret = radio_api->tx(ieee802154_dev, pkt, buf);
+		ret = radio_api->tx(ieee802154_dev, IEEE802154_TX_MODE_DIRECT,
+				    pkt, buf);
 	} while (ret && retries--);
 
 	if (ret) {

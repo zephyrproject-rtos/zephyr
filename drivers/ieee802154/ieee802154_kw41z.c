@@ -612,14 +612,19 @@ out:
 	net_pkt_unref(ack_pkt);
 }
 
-static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
-		    struct net_buf *frag)
+static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
+		    struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
 	u8_t payload_len = frag->len;
 	u32_t tx_timeout;
 	u8_t xcvseq;
 	int key;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	/*
 	 * The transmit requests are preceded by the CCA request. On

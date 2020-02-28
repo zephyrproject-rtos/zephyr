@@ -190,11 +190,13 @@ void platformRadioProcess(otInstance *aInstance)
 
 		if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 			if (radio_api->cca(radio_dev) ||
-			    radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
+			    radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT,
+					  tx_pkt, tx_payload)) {
 				result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
 			}
 		} else {
-			if (radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
+			if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT,
+					  tx_pkt, tx_payload)) {
 				result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
 			}
 		}

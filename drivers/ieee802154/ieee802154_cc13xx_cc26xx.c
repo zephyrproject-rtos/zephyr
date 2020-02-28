@@ -188,13 +188,20 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, s16_t dbm)
 }
 
 /* See IEEE 802.15.4 section 6.2.5.1 and TRM section 25.5.4.3 */
-static int ieee802154_cc13xx_cc26xx_tx(struct device *dev, struct net_pkt *pkt,
+static int ieee802154_cc13xx_cc26xx_tx(struct device *dev,
+				       enum ieee802154_tx_mode mode,
+				       struct net_pkt *pkt,
 				       struct net_buf *frag)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool ack = ieee802154_is_ar_flag_set(frag);
 	int retry = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	u32_t status;
+
+	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	drv_data->cmd_ieee_csma.status = IDLE;
 	drv_data->cmd_ieee_csma.randomState = sys_rand32_get();

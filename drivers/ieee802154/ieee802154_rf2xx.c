@@ -473,6 +473,7 @@ static void rf2xx_handle_ack(struct rf2xx_context *ctx, struct net_buf *frag)
 #endif
 
 static int rf2xx_tx(struct device *dev,
+		    enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
@@ -480,6 +481,11 @@ static int rf2xx_tx(struct device *dev,
 
 	struct rf2xx_context *ctx = dev->driver_data;
 	int response = 0;
+
+	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	rf2xx_trx_set_tx_state(dev);
 	rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);

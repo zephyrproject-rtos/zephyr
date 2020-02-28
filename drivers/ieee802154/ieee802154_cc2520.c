@@ -793,6 +793,7 @@ error:
 }
 
 static int cc2520_tx(struct device *dev,
+		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
@@ -801,6 +802,11 @@ static int cc2520_tx(struct device *dev,
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t retry = 2U;
 	bool status;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", frag, len);
 

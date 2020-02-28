@@ -322,12 +322,18 @@ free_nrf_ack:
 }
 
 static int nrf5_tx(struct device *dev,
+		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 	u8_t payload_len = frag->len;
 	u8_t *payload = frag->data;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", payload, payload_len);
 

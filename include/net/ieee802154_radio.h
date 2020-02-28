@@ -36,7 +36,8 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_2_4_GHZ	  = BIT(4), /* 2.4Ghz radio supported */
 	IEEE802154_HW_TX_RX_ACK	  = BIT(5), /* Handles ACK request on TX */
 	IEEE802154_HW_SUB_GHZ	  = BIT(6), /* Sub-GHz radio supported */
-	IEEE802154_HW_ENERGY_SCAN = BIT(7)  /* Energy scan supported */
+	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
+	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
 };
 
 enum ieee802154_filter_type {
@@ -55,6 +56,24 @@ struct ieee802154_filter {
 		u16_t pan_id;
 	};
 /* @endcond */
+};
+
+/** IEEE802.15.4 Transmission mode. */
+enum ieee802154_tx_mode {
+	/** Transmit packet immediately, no CCA. */
+	IEEE802154_TX_MODE_DIRECT,
+
+	/** Perform CCA before packet transmission. */
+	IEEE802154_TX_MODE_CCA,
+
+	/** Perform full CSMA CA procedure before packet transmission. */
+	IEEE802154_TX_MODE_CSMA_CA,
+
+	/** Transmit packet in the future, at specified time, no CCA. */
+	IEEE802154_TX_MODE_TXTIME,
+
+	/** Transmit packet in the future, perform CCA before transmission. */
+	IEEE802154_TX_MODE_TXTIME_CCA,
 };
 
 /** IEEE802.15.4 driver configuration types. */
@@ -137,9 +156,8 @@ struct ieee802154_radio_api {
 	int (*set_txpower)(struct device *dev, s16_t dbm);
 
 	/** Transmit a packet fragment */
-	int (*tx)(struct device *dev,
-		  struct net_pkt *pkt,
-		  struct net_buf *frag);
+	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
+		  struct net_pkt *pkt, struct net_buf *frag);
 
 	/** Start the device */
 	int (*start)(struct device *dev);
