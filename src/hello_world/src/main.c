@@ -8,10 +8,10 @@
 #include <sys/printk.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(hello_world, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hello_world, LOG_LEVEL_INF);
 
 void main(void)
 {
 	LOG_INF("main()");
-	printk("Hello World! %s\n", CONFIG_BOARD);
+	printk("hello world! %s\n", CONFIG_BOARD);
 }
