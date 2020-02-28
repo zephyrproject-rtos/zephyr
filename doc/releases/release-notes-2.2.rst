@@ -331,7 +331,7 @@ Drivers and Sensors
 
 * Modem
 
-  * <TBD>
+  * Add support for generic GSM modem
 
 * Pinmux
 
