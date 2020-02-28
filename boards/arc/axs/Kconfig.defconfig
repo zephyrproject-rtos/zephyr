@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AXS
+
+config BOARD
+	default "axs"
+
+endif # BOARD_AXS

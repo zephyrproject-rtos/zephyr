@@ -1,0 +1,11 @@
+identifier: axs
+name: axs board
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

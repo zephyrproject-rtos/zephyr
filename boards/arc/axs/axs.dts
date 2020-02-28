@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arc_axs.dtsi>
+
+/ {
+	model = "axs";
+	compatible = "snps,axs";
+
+	aliases {
+		uart-2 = &uart2;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+};

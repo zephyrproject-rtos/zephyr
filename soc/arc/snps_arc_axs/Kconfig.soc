@@ -1,0 +1,7 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_AXS
+	bool "Synopsys ARC AXS SoC"
+	select ARC
+	select CPU_HAS_FPU

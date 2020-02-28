@@ -1,0 +1,53 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ARC_AXS
+
+config SOC
+	default "snps_arc_axs"
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 2 priority levels:
+	# 0 for Fast Interrupts (FIRQs) and 1 for Regular Interrupts (IRQs).
+	default 2
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 88
+
+config RGF_NUM_BANKS
+	default 2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+config ARC_FIRQ
+	default y
+
+config CODE_DENSITY
+	default y
+
+config ARCV2_TIMER_IRQ_PRIORITY
+	default 1
+
+config HARVARD
+	default n
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+endif # SERIAL
+
+if UART_CONSOLE
+
+config UART_NS16550_PORT_2
+	default y
+
+config UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # UART_CONSOLE
+
+endif # ARC_AXS

@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2020, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "snps,archs48";
+			reg = <0>;
+		};
+
+	};
+
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		ddr0: memory@80000000 {
+			device_type = "memory";
+			reg = <0x80000000 0x20000000>;
+		};
+
+		uart2: uart@E0022000 {
+			compatible = "ns16550";
+			clock-frequency = <33333333>;
+			reg = <0xE0022000 0x1000>;
+			label = "UART_2";
+			interrupts = <19 1>;
+			status = "okay";
+		};
+
+		gpio0: gpio@f0003000 {
+			compatible = "snps,designware-gpio";
+			reg = <0xf0003000 0xc>;
+			bits = <32>;
+			label = "GPIO_0";
+			interrupt-parent = <&intc>;
+			interrupts = <0 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@f000300c {
+			compatible = "snps,designware-gpio";
+			reg = <0xf000300c 0xc>;
+			bits = <32>;
+			label = "GPIO_1";
+			interrupt-parent = <&intc>;
+			interrupts = <0 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+	};
+};
