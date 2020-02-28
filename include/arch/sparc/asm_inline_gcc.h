@@ -81,6 +81,91 @@ static ALWAYS_INLINE void sys_write32(u32_t data, mm_reg_t addr)
 			 : "memory");
 }
 
+/* Memory bit manipulation functions */
+
+static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	sys_write32(sys_read32(addr) | (1 << bit), addr);
+}
+
+static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	sys_write32(sys_read32(addr) & ~(1 << bit), addr);
+}
+
+static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
+{
+	return sys_read32(addr) & (1 << bit);
+}
+
+static ALWAYS_INLINE
+void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	mem_addr_t pos = addr + (bit >> 3);
+
+	sys_write8(sys_read8(pos) | (1 << (bit & 7)), pos);
+}
+
+static ALWAYS_INLINE
+void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	mem_addr_t pos = addr + (bit >> 3);
+
+	sys_write8(sys_read8(pos) & ~(1 << (bit & 7)), pos);
+}
+
+static ALWAYS_INLINE
+int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
+{
+	mem_addr_t pos = addr + (bit >> 3);
+
+	return sys_read8(pos) & (1 << (bit & 7));
+}
+
+static ALWAYS_INLINE
+int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	int ret;
+
+	ret = sys_test_bit(addr, bit);
+	sys_set_bit(addr, bit);
+
+	return ret;
+}
+
+static ALWAYS_INLINE
+int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	int ret;
+
+	ret = sys_test_bit(addr, bit);
+	sys_clear_bit(addr, bit);
+
+	return ret;
+}
+
+static ALWAYS_INLINE
+int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	int ret;
+
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_set_bit(addr, bit);
+
+	return ret;
+}
+
+static ALWAYS_INLINE
+int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	int ret;
+
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_clear_bit(addr, bit);
+
+	return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif
