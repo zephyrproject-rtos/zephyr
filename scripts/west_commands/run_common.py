@@ -125,12 +125,12 @@ def desc_common(command_name):
       west {command_name} --context -d BUILD_DIR
     ''')
 
-def do_run_common(command, args, unknown_args):
+def do_run_common(command, args, user_runner_args):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
     if args.context:
-        dump_context(command, args, unknown_args)
+        dump_context(command, args, user_runner_args)
         return
 
     command_name = command.name
@@ -156,7 +156,7 @@ def do_run_common(command, args, unknown_args):
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
-    runner_args = [arg for arg in unknown_args if arg != '--']
+    runner_args = [arg for arg in user_runner_args if arg != '--']
 
     # Arguments are provided in this order to allow the specific to
     # override the general:
