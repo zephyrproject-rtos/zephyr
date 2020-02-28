@@ -266,6 +266,7 @@ static int upipe_set_txpower(struct device *dev, s16_t dbm)
 }
 
 static int upipe_tx(struct device *dev,
+		    enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
@@ -273,6 +274,11 @@ static int upipe_tx(struct device *dev,
 	u8_t *pkt_buf = frag->data;
 	u8_t len = frag->len;
 	u8_t i, data;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", frag, len);
 

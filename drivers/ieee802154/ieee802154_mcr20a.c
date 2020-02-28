@@ -1082,6 +1082,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 }
 
 static int mcr20a_tx(struct device *dev,
+		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
@@ -1089,6 +1090,11 @@ static int mcr20a_tx(struct device *dev,
 	u8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
 						     MCR20A_XCVSEQ_TX;
 	int retval;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 

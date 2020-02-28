@@ -60,6 +60,7 @@ static inline void insert_frag(struct net_pkt *pkt, struct net_buf *frag)
 }
 
 static int fake_tx(struct device *dev,
+		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
 		   struct net_buf *frag)
 {

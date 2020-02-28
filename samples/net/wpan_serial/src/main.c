@@ -248,7 +248,8 @@ static void process_data(struct net_pkt *pkt)
 	}
 
 	/* Transmit data through radio */
-	ret = radio_api->tx(ieee802154_dev, pkt, buf);
+	ret = radio_api->tx(ieee802154_dev, IEEE802154_TX_MODE_DIRECT,
+			    pkt, buf);
 	if (ret) {
 		LOG_ERR("Error transmit data");
 	}

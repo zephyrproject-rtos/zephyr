@@ -30,7 +30,8 @@ static inline int aloha_radio_send(struct net_if *iface,
 	while (retries) {
 		retries--;
 
-		ret = ieee802154_tx(iface, pkt, frag);
+		ret = ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT,
+				    pkt, frag);
 		if (ret) {
 			continue;
 		}
