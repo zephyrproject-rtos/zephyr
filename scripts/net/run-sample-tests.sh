@@ -219,14 +219,7 @@ docker_run ()
     for test in "$@"
     do
 	echo "Running '$test' in the container..."
-	docker container exec net-tools $test
-	result="$?"
-
-	if [ $result -ne 0 ]
-	then
-	    return $result
-	fi
-
+	docker container exec net-tools $test || return $?
     done
 }
 
@@ -277,8 +270,8 @@ docker_exec ()
 
     case "$1" in
 	echo_server)
-	    start_configuration
-	    start_zephyr "$overlay"
+	    start_configuration || return $?
+	    start_zephyr "$overlay" || return $?
 
 	    start_docker \
 		"/net-tools/echo-client -i eth0 192.0.2.1" \
@@ -293,9 +286,9 @@ docker_exec ()
 	    ;;
 
 	echo_client)
-	    start_configuration "--ip=192.0.2.1 --ip6=2001:db8::1"
+	    start_configuration "--ip=192.0.2.1 --ip6=2001:db8::1" || return $?
 	    start_docker \
-		"/net-tools/echo-server -i eth0"
+		"/net-tools/echo-server -i eth0" || return $?
 
 	    start_zephyr "$overlay" \
 			 "-DCONFIG_NET_SAMPLE_SEND_ITERATIONS=10"
@@ -307,9 +300,10 @@ docker_exec ()
 	    ;;
 
 	coap_server)
-	    start_configuration
+	    start_configuration || return $?
 	    start_zephyr
-	    start_docker "/net-tools/libcoap/examples/etsi_coaptest.sh -i eth0 192.0.2.1"
+	    start_docker "/net-tools/libcoap/examples/etsi_coaptest.sh \
+			-i eth0 192.0.2.1" || return $?
 	    wait $docker_pid
 	    result=$?
 
