@@ -260,7 +260,7 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 }
 
 static struct flash_stm32_priv flash_data = {
-	.regs = (FLASH_TypeDef *) DT_FLASH_DEV_BASE_ADDRESS,
+	.regs = (FLASH_TypeDef *) DT_INST_0_SOC_NV_FLASH_BASE_ADDRESS,
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -327,6 +327,6 @@ static int stm32_flash_init(struct device *dev)
 	return flash_stm32_write_protection(dev, false);
 }
 
-DEVICE_AND_API_INIT(stm32_flash, DT_FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(stm32_flash, DT_INST_0_SOC_NV_FLASH_LABEL,
 		    stm32_flash_init, &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);
