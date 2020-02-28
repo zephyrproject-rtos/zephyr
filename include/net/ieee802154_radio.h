@@ -54,6 +54,24 @@ struct ieee802154_filter {
 /* @endcond */
 };
 
+/** IEEE802.15.4 Transmission mode. */
+enum ieee802154_tx_mode {
+	/** Transmit packet immediately, no CCA. */
+	IEEE802154_TX_MODE_PLAIN,
+
+	/** Perform CCA before packet trasmission. */
+	IEEE802154_TX_MODE_CCA,
+
+	/** Perform full CSMA CA procedure before packet transmission. */
+	IEEE802154_TX_MODE_CSMA_CA,
+
+	/** Transmit packet in the future, at specified time, no CCA. */
+	IEEE802154_TX_MODE_TXTIME,
+
+	/** Transmit packet in the future, perform CCA before transmission. */
+	IEEE802154_TX_MODE_TXTIME_CCA,
+};
+
 /** IEEE802.15.4 driver configuration types. */
 enum ieee802154_config_type {
 	/** Indicates how radio driver should set Frame Pending bit in ACK
@@ -122,9 +140,8 @@ struct ieee802154_radio_api {
 	int (*set_txpower)(struct device *dev, s16_t dbm);
 
 	/** Transmit a packet fragment */
-	int (*tx)(struct device *dev,
-		  struct net_pkt *pkt,
-		  struct net_buf *frag);
+	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
+		  struct net_pkt *pkt, struct net_buf *frag);
 
 	/** Start the device */
 	int (*start)(struct device *dev);
