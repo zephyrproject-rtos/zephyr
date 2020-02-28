@@ -817,10 +817,11 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 #define BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)		\
 {									\
 	.uuid = _uuid,							\
-	.perm = _perm,							\
 	.read = _read,							\
 	.write = _write,						\
 	.user_data = _value,						\
+	.handle = 0,							\
+	.perm = _perm,							\
 }
 
 /** @brief Notification complete result callback.
