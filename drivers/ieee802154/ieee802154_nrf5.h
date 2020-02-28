@@ -70,6 +70,11 @@ struct nrf5_802154_data {
 	 * It shall be NULL if energy scan is not in progress.
 	 */
 	energy_scan_done_cb_t energy_scan_done;
+
+	/* Callback handler to notify of any important radio events.
+	 * Can be NULL if event notification is not needed.
+	 */
+	ieee802154_event_cb_t event_handler;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
