@@ -322,6 +322,7 @@ struct bt_le_adv_param {
   */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
 		((struct bt_le_adv_param[]) { { \
+			.id = BT_ID_DEFAULT, \
 			.options = (_options), \
 			.interval_min = (_int_min), \
 			.interval_max = (_int_max), \
