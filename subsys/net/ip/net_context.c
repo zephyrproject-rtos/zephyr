@@ -447,6 +447,10 @@ static int bind_default(struct net_context *context)
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == AF_PACKET) {
 		struct sockaddr_ll ll_addr;
 
+		if (net_sll_ptr(&context->local)->sll_addr) {
+			return 0;
+		}
+
 		ll_addr.sll_family = AF_PACKET;
 		ll_addr.sll_protocol = ETH_P_ALL;
 		ll_addr.sll_ifindex = net_if_get_by_iface(net_if_get_default());
@@ -1690,6 +1694,7 @@ static enum net_verdict net_context_raw_packet_received(
 static int recv_raw(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    s32_t timeout,
+		    struct sockaddr *addr,
 		    void *user_data)
 {
 	int ret;
@@ -1710,7 +1715,7 @@ static int recv_raw(struct net_context *context,
 
 	ret = net_conn_register(net_context_get_ip_proto(context),
 				net_context_get_family(context),
-				NULL, NULL, 0, 0,
+				NULL, addr, 0, 0,
 				net_context_raw_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -1755,13 +1760,25 @@ int net_context_recv(struct net_context *context,
 	default:
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    net_context_get_family(context) == AF_PACKET) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			struct sockaddr_ll addr;
+
+			addr.sll_family = AF_PACKET;
+			addr.sll_ifindex =
+				net_sll_ptr(&context->local)->sll_ifindex;
+			addr.sll_protocol =
+				net_sll_ptr(&context->local)->sll_protocol;
+			memcpy(addr.sll_addr,
+			       net_sll_ptr(&context->local)->sll_addr,
+			       sizeof(addr.sll_addr));
+
+			ret = recv_raw(context, cb, timeout,
+				       (struct sockaddr *)&addr, user_data);
 			break;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		    net_context_get_family(context) == AF_CAN) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			ret = recv_raw(context, cb, timeout, NULL, user_data);
 			break;
 		}
 
