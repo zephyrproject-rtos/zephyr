@@ -325,6 +325,18 @@ free_nrf_ack:
 	return err;
 }
 
+static void nrf5_tx_started(struct device *dev,
+			    struct net_pkt *pkt,
+			    struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+
+	if (nrf5_data.event_handler) {
+		nrf5_data.event_handler(dev, IEEE802154_EVENT_TX_STARTED,
+					(void *)frag);
+	}
+}
+
 static int nrf5_tx(struct device *dev,
 		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
@@ -364,6 +376,8 @@ static int nrf5_tx(struct device *dev,
 		LOG_ERR("Cannot send frame");
 		return -EIO;
 	}
+
+	nrf5_tx_started(dev, pkt, frag);
 
 	LOG_DBG("Sending frame (ch:%d, txpower:%d)",
 		nrf_802154_channel_get(), nrf_802154_tx_power_get());
@@ -519,6 +533,9 @@ int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 	case IEEE802154_CONFIG_PROMISCUOUS:
 		nrf_802154_promiscuous_set(config->promiscuous);
 		break;
+
+	case IEEE802154_CONFIG_EVENT_HANDLER:
+		nrf5_data.event_handler = config->event_handler;
 
 	default:
 		return -EINVAL;
