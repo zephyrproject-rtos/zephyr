@@ -704,128 +704,91 @@ static int uart_stm32_init(struct device *dev)
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define STM32_UART_IRQ_HANDLER_DECL(name)				\
-	static void uart_stm32_irq_config_func_##name(struct device *dev)
-#define STM32_UART_IRQ_HANDLER_FUNC(name)				\
-	.irq_config_func = uart_stm32_irq_config_func_##name,
-#define STM32_UART_IRQ_HANDLER(name)					\
-static void uart_stm32_irq_config_func_##name(struct device *dev)	\
+#define STM32_UART_IRQ_HANDLER_DECL(index)				\
+	static void uart_stm32_irq_config_func_##index(struct device *dev)
+#define STM32_UART_IRQ_HANDLER_FUNC(index)				\
+	.irq_config_func = uart_stm32_irq_config_func_##index,
+#define STM32_UART_IRQ_HANDLER(index)					\
+static void uart_stm32_irq_config_func_##index(struct device *dev)	\
 {									\
-	IRQ_CONNECT(DT_##name##_IRQ,					\
-		DT_UART_STM32_##name##_IRQ_PRI,			\
-		uart_stm32_isr, DEVICE_GET(uart_stm32_##name),	\
+	IRQ_CONNECT(DT_INST_##index##_ST_STM32_UART_IRQ_0,		\
+		DT_INST_##index##_ST_STM32_UART_IRQ_0_PRIORITY,		\
+		uart_stm32_isr, DEVICE_GET(uart_stm32_##index),		\
 		0);							\
-	irq_enable(DT_##name##_IRQ);					\
+	irq_enable(DT_INST_##index##_ST_STM32_UART_IRQ_0);		\
 }
 #else
-#define STM32_UART_IRQ_HANDLER_DECL(name)
-#define STM32_UART_IRQ_HANDLER_FUNC(name)
-#define STM32_UART_IRQ_HANDLER(name)
+#define STM32_UART_IRQ_HANDLER_DECL(index)
+#define STM32_UART_IRQ_HANDLER_FUNC(index)
+#define STM32_UART_IRQ_HANDLER(index)
 #endif
 
-#define STM32_UART_INIT(name)						\
-STM32_UART_IRQ_HANDLER_DECL(name);					\
+#define STM32_UART_INIT(index)						\
+STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
-static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
+static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
-		.base = (u8_t *)DT_UART_STM32_##name##_BASE_ADDRESS,\
-		STM32_UART_IRQ_HANDLER_FUNC(name)			\
+		.base = (u8_t *)DT_INST_##index##_ST_STM32_UART_BASE_ADDRESS,\
+		STM32_UART_IRQ_HANDLER_FUNC(index)			\
 	},								\
-	.pclken = { .bus = DT_UART_STM32_##name##_CLOCK_BUS,	\
-		    .enr = DT_UART_STM32_##name##_CLOCK_BITS	\
+	.pclken = { .bus = DT_INST_##index##_ST_STM32_UART_CLOCK_BUS,	\
+		    .enr = DT_INST_##index##_ST_STM32_UART_CLOCK_BITS	\
 	},								\
-	.hw_flow_control = DT_UART_STM32_##name##_HW_FLOW_CONTROL	\
+	.hw_flow_control = DT_INST_##index##_ST_STM32_UART_HW_FLOW_CONTROL\
 };									\
 									\
-static struct uart_stm32_data uart_stm32_data_##name = {		\
-	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE			\
+static struct uart_stm32_data uart_stm32_data_##index = {		\
+	.baud_rate = DT_INST_##index##_ST_STM32_UART_CURRENT_SPEED	\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##name, DT_UART_STM32_##name##_NAME,	\
+DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_##index##_ST_STM32_UART_LABEL,\
 		    &uart_stm32_init,					\
-		    &uart_stm32_data_##name, &uart_stm32_cfg_##name,	\
+		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &uart_stm32_driver_api);				\
 									\
-STM32_UART_IRQ_HANDLER(name)
+STM32_UART_IRQ_HANDLER(index)
 
+#ifdef DT_INST_0_ST_STM32_UART
+STM32_UART_INIT(0)
+#endif	/* DT_INST_0_ST_STM32_UART */
 
-#ifdef CONFIG_UART_1
-STM32_UART_INIT(USART_1)
-#endif	/* CONFIG_UART_1 */
+#ifdef DT_INST_1_ST_STM32_UART
+STM32_UART_INIT(1)
+#endif	/* DT_INST_1_ST_STM32_UART */
 
-#ifdef CONFIG_UART_2
-STM32_UART_INIT(USART_2)
-#endif	/* CONFIG_UART_2 */
+#ifdef DT_INST_2_ST_STM32_UART
+STM32_UART_INIT(2)
+#endif	/* DT_INST_2_ST_STM32_UART */
 
-#ifdef CONFIG_UART_3
-STM32_UART_INIT(USART_3)
-#endif	/* CONFIG_UART_3 */
+#ifdef DT_INST_3_ST_STM32_UART
+STM32_UART_INIT(3)
+#endif	/* DT_INST_3_ST_STM32_UART */
 
-#ifdef CONFIG_UART_6
-STM32_UART_INIT(USART_6)
-#endif /* CONFIG_UART_6 */
+#ifdef DT_INST_4_ST_STM32_UART
+STM32_UART_INIT(4)
+#endif /* DT_INST_4_ST_STM32_UART */
 
-/*
- * STM32F0 and STM32L0 series differ from other STM32 series by some
- * peripheral names (UART vs USART).
- */
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
+#ifdef DT_INST_5_ST_STM32_UART
+STM32_UART_INIT(5)
+#endif /* DT_INST_5_ST_STM32_UART */
 
-#ifdef CONFIG_UART_4
-STM32_UART_INIT(USART_4)
-#endif /* CONFIG_UART_4 */
+#ifdef DT_INST_6_ST_STM32_UART
+STM32_UART_INIT(6)
+#endif /* DT_INST_6_ST_STM32_UART */
 
-#ifdef CONFIG_UART_5
-STM32_UART_INIT(USART_5)
-#endif /* CONFIG_UART_5 */
+#ifdef DT_INST_7_ST_STM32_UART
+STM32_UART_INIT(7)
+#endif /* DT_INST_7_ST_STM32_UART */
 
-/* Following devices are not available in L0 series (for now)
- * But keeping them simplifies ifdefery and won't harm
- */
+#ifdef DT_INST_8_ST_STM32_UART
+STM32_UART_INIT(8)
+#endif /* DT_INST_8_ST_STM32_UART */
 
-#ifdef CONFIG_UART_7
-STM32_UART_INIT(USART_7)
-#endif /* CONFIG_UART_7 */
+#ifdef DT_INST_9_ST_STM32_UART
+STM32_UART_INIT(9)
+#endif /* DT_INST_9_ST_STM32_UART */
 
-#ifdef CONFIG_UART_8
-STM32_UART_INIT(USART_8)
-#endif /* CONFIG_UART_8 */
-
-#else
-
-#ifdef CONFIG_UART_4
-STM32_UART_INIT(UART_4)
-#endif /* CONFIG_UART_4 */
-
-#ifdef CONFIG_UART_5
-STM32_UART_INIT(UART_5)
-#endif /* CONFIG_UART_5 */
-
-#ifdef CONFIG_UART_7
-STM32_UART_INIT(UART_7)
-#endif /* CONFIG_UART_7 */
-
-#ifdef CONFIG_UART_8
-STM32_UART_INIT(UART_8)
-#endif /* CONFIG_UART_8 */
-
-#ifdef CONFIG_UART_9
-STM32_UART_INIT(UART_9)
-#endif /* CONFIG_UART_9 */
-
-#ifdef CONFIG_UART_10
-STM32_UART_INIT(UART_10)
-#endif /* CONFIG_UART_10 */
-
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-#ifdef CONFIG_LPUART_1
-STM32_UART_INIT(LPUART_1)
-#endif /* CONFIG_LPUART_1 */
-#endif
+#ifdef DT_INST_10_ST_STM32_UART
+STM32_UART_INIT(10)
+#endif /* DT_INST_10_ST_STM32_UART */
