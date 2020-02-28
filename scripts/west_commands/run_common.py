@@ -188,9 +188,16 @@ def do_run_common(command, user_args, user_runner_args):
     parser = argparse.ArgumentParser(prog=runner_name)
     add_parser_common(command, parser=parser)
     runner_cls.add_parser(parser)
-    final_args, unknown = parser.parse_known_args(args=final_argv)
+    args, unknown = parser.parse_known_args(args=final_argv)
     if unknown:
         log.die(f'runner {runner_name} received unknown arguments: {unknown}')
+
+    # Override args with any user_args. The latter must take
+    # precedence, or e.g. --hex-file on the command line would be
+    # ignored in favor of a board.cmake setting.
+    for a, v in vars(user_args).items():
+        if v is not None:
+            setattr(args, a, v)
 
     # Create the RunnerConfig from the values assigned to common
     # arguments. This is a hacky way to go about this; probably
@@ -200,9 +207,7 @@ def do_run_common(command, user_args, user_runner_args):
     #
     # Use that RunnerConfig to create the ZephyrBinaryRunner instance
     # and call its run().
-    runner = runner_cls.create(runner_cfg_from_args(final_args,
-                                                    build_dir),
-                               final_args)
+    runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
     try:
         runner.run(command_name)
     except ValueError as ve:
