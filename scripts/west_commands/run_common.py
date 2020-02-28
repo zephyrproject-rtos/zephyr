@@ -125,28 +125,28 @@ def desc_common(command_name):
       west {command_name} --context -d BUILD_DIR
     ''')
 
-def do_run_common(command, args, user_runner_args):
+def do_run_common(command, user_args, user_runner_args):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
-    if args.context:
-        dump_context(command, args, user_runner_args)
+    if user_args.context:
+        dump_context(command, user_args, user_runner_args)
         return
 
     command_name = command.name
-    build_dir = get_build_dir(args)
-    cache = load_cmake_cache(build_dir, args)
+    build_dir = get_build_dir(user_args)
+    cache = load_cmake_cache(build_dir, user_args)
     board = cache['CACHED_BOARD']
-    if not args.skip_rebuild:
-        rebuild(command, build_dir, args)
+    if not user_args.skip_rebuild:
+        rebuild(command, build_dir, user_args)
 
     # Load runners.yaml.
     runners_yaml = runners_yaml_path(cache)
-    runner_config = load_runners_yaml(runners_yaml, args)
+    runner_config = load_runners_yaml(runners_yaml, user_args)
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
     # runners.yaml and command line arguments.
-    runner_cls = use_runner_cls(command, board, args, runner_config)
+    runner_cls = use_runner_cls(command, board, user_args, runner_config)
     runner_name = runner_cls.name()
 
     # Set up runner logging to delegate to west.log commands.
@@ -168,16 +168,23 @@ def do_run_common(command, args, user_runner_args):
                   runner_config['args'][runner_name] +
                   runner_args)
 
-    # At this point, 'args' contains parsed arguments which are both:
+    # 'user_args' contains parsed arguments which are:
     #
-    # 1. provided on the command line
-    # 2. handled by add_parser_common()
+    # 1. provided on the command line, and
+    # 2. handled by add_parser_common(), and
+    # 3. *not* runner-specific
     #
-    # This doesn't include runner specific arguments on the command line or
-    # anything from runners.yaml.
+    # 'final_argv' contains unparsed arguments from either:
     #
-    # We therefore have to re-parse now that we know everything,
-    # including the final runner.
+    # 1. runners.yaml, or
+    # 2. the command line
+    #
+    # We next have to:
+    #
+    # - parse 'final_argv' now that we have all the command line
+    #   arguments
+    # - create a RunnerConfig using 'user_args' and the result
+    #   of parsing 'final_argv'
     parser = argparse.ArgumentParser(prog=runner_name)
     add_parser_common(command, parser=parser)
     runner_cls.add_parser(parser)
@@ -206,7 +213,7 @@ def do_run_common(command, args, user_runner_args):
         log.die('required program', e.filename,
                 'not found; install it or add its location to PATH')
     except RuntimeError as re:
-        if not args.verbose:
+        if not user_args.verbose:
             log.die(re)
         else:
             log.err('verbose mode enabled, dumping stack:', fatal=True)
