@@ -131,6 +131,7 @@
 			interrupts = <44 0>;
 			interrupt-names = "gmac";
 			num-queues = <1>;
+			phy-connection-type = "mii";
 			label = "GMAC";
 			status = "disabled";
 		};
