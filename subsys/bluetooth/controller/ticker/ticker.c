@@ -47,13 +47,17 @@ struct ticker_node {
 	u32_t remainder_current;
 };
 
-/* possible values for field "op" in struct ticker_user_op */
+/* Operations to be performed in ticker_job.
+ * Possible values for field "op" in struct ticker_user_op
+ */
 #define TICKER_USER_OP_TYPE_NONE     0
 #define TICKER_USER_OP_TYPE_IDLE_GET 1
 #define TICKER_USER_OP_TYPE_SLOT_GET 2
 #define TICKER_USER_OP_TYPE_START    3
 #define TICKER_USER_OP_TYPE_UPDATE   4
 #define TICKER_USER_OP_TYPE_STOP     5
+#define TICKER_USER_OP_TYPE_STOP_ABS 6
+
 
 struct ticker_user_op_start {
 	u32_t ticks_at_start;
@@ -75,6 +79,16 @@ struct ticker_user_op_update {
 	u8_t  force;
 };
 
+/* User operation data structure for stop opcode. Used for passing stop
+ * requests with absolute tick to ticker_job
+ */
+struct ticker_user_op_stop {
+	u32_t ticks_at_stop;            /* Anchor ticks (absolute) */
+};
+
+/* User operation data structure for slot_get opcode. Used for passing request
+ * to get next ticker with slot ticks via ticker_job
+ */
 struct ticker_user_op_slot_get {
 	u8_t  *ticker_id;
 	u32_t *ticks_current;
@@ -85,8 +99,9 @@ struct ticker_user_op {
 	u8_t op;
 	u8_t id;
 	union {
-		struct ticker_user_op_start start;
-		struct ticker_user_op_update update;
+		struct ticker_user_op_start    start;
+		struct ticker_user_op_update   update;
+		struct ticker_user_op_stop     stop;
 		struct ticker_user_op_slot_get slot_get;
 	} params;
 	u32_t status;
@@ -584,15 +599,40 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		ticker->req = ticker->ack;
 
 		if (instance->ticker_id_slot_previous == user_op->id) {
-			u32_t ticks_now = cntr_cnt_get();
+			u32_t ticks_current;
+			u32_t ticks_at_stop;
 			u32_t ticks_used;
 
 			instance->ticker_id_slot_previous = TICKER_NULL;
-			ticks_used = ticks_elapsed +
-				ticker_ticks_diff_get(ticks_now,
-						      instance->ticks_current);
-			instance->ticks_slot_previous =	MIN(ticker->ticks_slot,
-							    ticks_used);
+
+			if (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS) {
+				ticks_at_stop =
+					user_op->params.stop.ticks_at_stop;
+			} else {
+				ticks_at_stop = cntr_cnt_get();
+			}
+
+			ticks_current = instance->ticks_current;
+			if (!((ticks_at_stop - ticks_current) &
+			      BIT(HAL_TICKER_CNTR_MSBIT))) {
+				ticks_used = ticks_elapsed +
+					ticker_ticks_diff_get(ticks_at_stop,
+							      ticks_current);
+			} else {
+				ticks_used =
+					ticker_ticks_diff_get(ticks_current,
+							      ticks_at_stop);
+				if (ticks_elapsed > ticks_used) {
+					ticks_used = ticks_elapsed -
+						     ticks_used;
+				} else {
+					ticks_used = 0;
+				}
+			}
+
+			if (instance->ticks_slot_previous > ticks_used) {
+				instance->ticks_slot_previous = ticks_used;
+			}
 		}
 	}
 
@@ -651,7 +691,7 @@ static inline u8_t ticker_job_list_manage(struct ticker_instance *instance,
 			/* if not started or update not required,
 			 * set status and continue.
 			 */
-			if ((user_op->op > TICKER_USER_OP_TYPE_STOP) ||
+			if ((user_op->op > TICKER_USER_OP_TYPE_STOP_ABS) ||
 			    (state == 0U) ||
 			    ((user_op->op == TICKER_USER_OP_TYPE_UPDATE) &&
 			     (user_op->params.update.ticks_drift_plus == 0U) &&
@@ -1369,6 +1409,84 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	return user_op->status;
 }
 
+/**
+ * @brief Stop a ticker node with supplied absolute ticks reference
+ *
+ * @details Creates a new user operation of type TICKER_USER_OP_TYPE_STOP_ABS
+ * and schedules the ticker_job.
+ *
+ * @param instance_index     Index of ticker instance
+ * @param user_id	     Ticker user id. Used for indexing user operations
+ *			     and mapping to mayfly caller id
+ * @param ticks_at_stop      Absolute tick count at ticker stop request
+ * @param fp_op_func	     Function pointer of user operation completion
+ *			     function
+ * @param op_context	     Context passed in operation completion call
+ *
+ * @return TICKER_STATUS_BUSY if stop was successful but not yet completed.
+ * TICKER_STATUS_FAILURE is returned if there are no more user operations
+ * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
+ * before exiting ticker_stop
+ */
+u32_t ticker_stop_abs(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		  u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		  void *op_context)
+{
+	struct ticker_instance *instance = &_instance[instance_index];
+	struct ticker_user_op *user_op;
+	struct ticker_user *user;
+	u8_t last;
+
+	user = &instance->user[user_id];
+
+	last = user->last + 1;
+	if (last >= user->count_user_op) {
+		last = 0U;
+	}
+
+	if (last == user->first) {
+		return TICKER_STATUS_FAILURE;
+	}
+
+	user_op = &user->user_op[user->last];
+	user_op->op = TICKER_USER_OP_TYPE_STOP_ABS;
+	user_op->id = ticker_id;
+	user_op->params.stop.ticks_at_stop = ticks_at_stop;
+	user_op->status = TICKER_STATUS_BUSY;
+	user_op->fp_op_func = fp_op_func;
+	user_op->op_context = op_context;
+
+	user->last = last;
+
+	instance->sched_cb(instance->caller_id_get_cb(user_id),
+			   TICKER_CALL_ID_JOB, 0, instance);
+
+	return user_op->status;
+}
+
+/**
+ * @brief Get next ticker node slot
+ *
+ * @details Gets the next ticker which has slot ticks specified and
+ * return the ticker id and accumulated ticks until expiration. If no
+ * ticker nodes have slot ticks, the next ticker node is returned.
+ * If no head id is provided (TICKER_NULL) the first node is returned.
+ *
+ * @param instance_index     Index of ticker instance
+ * @param user_id	     Ticker user id. Used for indexing user operations
+ *			     and mapping to mayfly caller id
+ * @param ticker_id	     Pointer to id of ticker node
+ * @param ticks_current	     Pointer to current ticks count
+ * @param ticks_to_expire    Pointer to ticks to expire
+ * @param fp_op_func	     Function pointer of user operation completion
+ *			     function
+ * @param op_context	     Context passed in operation completion call
+ *
+ * @return TICKER_STATUS_BUSY if request was successful but not yet completed.
+ * TICKER_STATUS_FAILURE is returned if there are no more user operations
+ * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
+ * before exiting ticker_next_slot_get
+ */
 u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id, u8_t *ticker_id,
 			   u32_t *ticks_current, u32_t *ticks_to_expire,
 			   ticker_op_func fp_op_func, void *op_context)
