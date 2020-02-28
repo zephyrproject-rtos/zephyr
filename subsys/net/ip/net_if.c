@@ -3650,6 +3650,11 @@ int net_if_resume(struct net_if *iface)
 	return 0;
 }
 
+bool net_if_is_suspended(struct net_if *iface)
+{
+	return net_if_flag_is_set(iface, NET_IF_SUSPENDED);
+}
+
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)

@@ -306,6 +306,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+	if (net_if_is_suspended(iface)) {
+		PR_INFO("Interface is suspended, thus not able to tx/rx.\n");
+	}
+#endif
+
 	if (net_if_get_link_addr(iface) &&
 	    net_if_get_link_addr(iface)->addr) {
 		PR("Link addr : %s\n",
