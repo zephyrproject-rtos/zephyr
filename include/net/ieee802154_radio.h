@@ -88,6 +88,12 @@ enum ieee802154_config_type {
 	 *  (NULL pointer) should disable it for all enabled addresses.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
+
+	/** Current channel number. */
+	IEEE802154_CONFIG_CHANNEL,
+
+	/** TX power level, in dBM. */
+	IEEE802154_CONFIG_TX_POWER,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -105,6 +111,12 @@ struct ieee802154_config {
 			bool extended;
 			bool enabled;
 		} ack_fpb;
+
+		/** ``IEEE802154_CONFIG_CHANNEL`` */
+		u16_t channel;
+
+		/** ``IEEE802154_CONFIG_TX_POWER`` */
+		s16_t tx_power;
 	};
 };
 
@@ -121,14 +133,14 @@ struct ieee802154_radio_api {
 	 */
 	struct net_if_api iface_api;
 
+	/** Start the device */
+	int (*start)(struct device *dev);
+
+	/** Stop the device */
+	int (*stop)(struct device *dev);
+
 	/** Get the device capabilities */
 	enum ieee802154_hw_caps (*get_capabilities)(struct device *dev);
-
-	/** Clear Channel Assesment - Check channel's activity */
-	int (*cca)(struct device *dev);
-
-	/** Set current channel */
-	int (*set_channel)(struct device *dev, u16_t channel);
 
 	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
 	int (*filter)(struct device *dev,
@@ -136,23 +148,22 @@ struct ieee802154_radio_api {
 		      enum ieee802154_filter_type type,
 		      const struct ieee802154_filter *filter);
 
-	/** Set TX power level in dbm */
-	int (*set_txpower)(struct device *dev, s16_t dbm);
+	/** Set specific radio driver configuration. */
+	int (*set_config)(struct device *dev,
+			  enum ieee802154_config_type type,
+			  const struct ieee802154_config *config);
+
+	/** Get specific radio driver configuration. */
+	int (*get_config)(struct device *dev,
+			  enum ieee802154_config_type type,
+			  struct ieee802154_config *config);
+
+	/** Clear Channel Assesment - Check channel's activity */
+	int (*cca)(struct device *dev);
 
 	/** Transmit a packet fragment */
 	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
 		  struct net_pkt *pkt, struct net_buf *frag);
-
-	/** Start the device */
-	int (*start)(struct device *dev);
-
-	/** Stop the device */
-	int (*stop)(struct device *dev);
-
-	/** Set specific radio driver configuration. */
-	int (*configure)(struct device *dev,
-			 enum ieee802154_config_type type,
-			 const struct ieee802154_config *config);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
 	/** Get the available amount of Sub-GHz channels */
