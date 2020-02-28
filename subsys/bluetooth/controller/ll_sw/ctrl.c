@@ -338,15 +338,16 @@ static void ctrl_tx_enqueue(struct connection *conn,
 			    struct radio_pdu_node_tx *node_tx);
 static void connection_release(struct connection *conn);
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
-static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
-
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
     defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 static u32_t conn_update_req(struct connection *conn);
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
+#if defined(CONFIG_BT_PERIPHERAL)
+static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 static u8_t chan_map_update(struct connection *conn,
 			    struct pdu_data *pdu_data_rx);
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
@@ -1901,6 +1902,7 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
@@ -1921,7 +1923,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		/* Reset enc req queued state */
 		_radio.conn_curr->llcp_enc.ack = _radio.conn_curr->llcp_enc.req;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		/* pause data packet tx */
 		_radio.conn_curr->pause_tx = 1U;
@@ -1933,7 +1937,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		 * alongwith this tx ack at this point in time.
 		 */
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		/* pause data packet tx */
 		_radio.conn_curr->pause_tx = 1U;
@@ -1951,6 +1957,7 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		/* Reset enc req queued state */
 		_radio.conn_curr->llcp_enc.ack = _radio.conn_curr->llcp_enc.req;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
 		if (_radio.role == ROLE_MASTER) {
@@ -2049,16 +2056,20 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		_radio.conn_curr->llcp_phy.state = LLCP_PHY_STATE_RSP_WAIT;
 		/* fall through */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		if (_radio.role == ROLE_SLAVE) {
 			isr_rx_conn_phy_tx_time_set();
 		}
+#endif /* CONFIG_BT_PERIPHERAL */
 		break;
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		_radio.conn_curr->phy_tx_time =
 			_radio.conn_curr->llcp.phy_upd_ind.tx;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	default:
@@ -2309,7 +2320,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 
 	switch (rej_ext_ind->reject_opcode) {
-#if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req &&
 		    _radio.conn_curr->llcp_type == LLCP_ENCRYPTION) {
@@ -2321,7 +2332,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			isr_rx_conn_pkt_ctrl_rej_enc(node_rx, rx_enqueue);
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
@@ -2751,6 +2762,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 	pdu_data_rx = (void *)node_rx->pdu_data;
 
 	switch (pdu_data_rx->llctrl.opcode) {
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 	{
 		u8_t err;
@@ -2787,6 +2799,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		}
 	}
 	break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_TERMINATE_IND,
@@ -2800,6 +2813,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		if (!_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_REQ,
@@ -2866,7 +2880,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		if (_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_RSP,
@@ -2897,6 +2913,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		/* start enc rsp to be scheduled in master prepare */
 		_radio.conn_curr->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_RSP,
@@ -2948,6 +2965,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 		if (!_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
@@ -2957,7 +2975,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 		nack = feature_rsp_send(_radio.conn_curr, pdu_data_rx);
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		if (_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ,
@@ -2967,6 +2987,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 		nack = feature_rsp_send(_radio.conn_curr, pdu_data_rx);
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 	{
@@ -2997,6 +3018,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 	break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		if (!_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ,
@@ -3006,6 +3028,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 		nack = pause_enc_rsp_send(_radio.conn_curr, 1);
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP,
@@ -3563,6 +3586,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		}
 		break;
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		if (_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_RSP,
@@ -3593,7 +3617,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			_radio.conn_curr->procedure_expire = 0U;
 		}
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 	{
 		u8_t err;
@@ -3610,6 +3636,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		}
 	}
 	break;
+#endif /* CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
@@ -10444,6 +10471,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	packet_rx_callback();
 }
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
 	if (((pdu_data_rx->llctrl.conn_update_ind.instant -
@@ -10486,6 +10514,7 @@ static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 
 	return 0;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined (CONFIG_BT_CTLR_XTAL_ADVANCED) && \
     defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -10540,6 +10569,7 @@ static u32_t conn_update_req(struct connection *conn)
 }
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static u8_t chan_map_update(struct connection *conn,
 			    struct pdu_data *pdu_data_rx)
 {
@@ -10566,6 +10596,7 @@ static u8_t chan_map_update(struct connection *conn,
 
 	return 0;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
