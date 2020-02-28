@@ -9,6 +9,6 @@ properties:
     local-mac-address:
       type: uint8-array
       required: false
-      description: mac address
+      description: Specifies the MAC address that was assigned to the network device
     label:
       required: true
