@@ -2133,7 +2133,6 @@ static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
 }
 
 #ifdef CONFIG_NET_POWER_MANAGEMENT
-
 /**
  * @brief Suspend a network interface from a power management perspective
  *
@@ -2152,6 +2151,14 @@ int net_if_suspend(struct net_if *iface);
  */
 int net_if_resume(struct net_if *iface);
 
+/**
+ * @brief Check if the network interface is suspended or not.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is suspended, False otherwise.
+ */
+bool net_if_is_suspended(struct net_if *iface);
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 /** @cond INTERNAL_HIDDEN */
