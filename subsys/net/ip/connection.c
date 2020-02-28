@@ -625,12 +625,28 @@ int net_conn_register(u16_t proto, u8_t family,
 				}
 			} else
 #endif
+
+#if defined(CONFIG_NET_SOCKETS_PACKET)
+			if (local_addr->sa_family == AF_PACKET) {
+				const struct sockaddr_ll unspec_addr = { 0 };
+
+				memcpy(&conns[i].local_addr, local_addr,
+				       sizeof(struct sockaddr_ll));
+
+				if (!memcmp(unspec_addr.sll_addr,
+					   ((struct sockaddr_ll *)local_addr)->
+								sll_addr,
+					    sizeof(unspec_addr.sll_addr))) {
+					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
+				} else {
+					rank |= NET_RANK_LOCAL_SPEC_ADDR;
+				}
+			} else
+#endif
 			{
 				NET_ERR("Local address family not set");
 				return -EINVAL;
 			}
-
-			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
 		}
 
 		if (remote_addr && local_addr) {
