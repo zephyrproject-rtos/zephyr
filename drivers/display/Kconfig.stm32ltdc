@@ -1,0 +1,20 @@
+# Configuration options for STM32 LTDC display
+
+# Copyright (c) 2020 Mark Olsson <mark@markolsson.se>
+# SPDX-License-Identifier: Apache-2.0
+
+config LTDC_STM32
+	bool "STM32 LTDC driver"
+	select USE_STM32_HAL_LTDC
+	select USE_STM32_HAL_DMA2D
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_SDRAM
+	select USE_STM32_HAL_CORTEX
+	select USE_STM32_LL_FMC
+	help
+	  Enable STM32 LTDC display driver compliant with display driver API.
+
+config FMC_STM32
+	bool "STM32 FMC driver"
+	help
+	  Enable STM32 FMC driver.
