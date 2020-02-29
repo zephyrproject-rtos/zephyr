@@ -494,6 +494,7 @@ endif()
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
+set(subsys_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/subsystems.json)
 
 # The syscalls subdirs txt file is constructed by python containing a list of folders to use for
 # dependency handling, including empty folders.
@@ -585,12 +586,14 @@ endforeach()
 add_custom_command(
   OUTPUT
   ${syscalls_json}
+  ${subsys_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
   ${parse_syscalls_include_args}                    # Read files from these dirs also
-  --json-file        ${syscalls_json}              # Write this file
+  --json-file        ${syscalls_json}               # Write this file
+  --subsystem-file   ${subsys_json}                 # Write subsystem list to this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
@@ -617,6 +620,9 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   DEPENDS ${syscalls_json}
   )
 
+# This is passed into all calls to the gen_kobject_list.py script.
+set(gen_kobject_list_include_args --include ${subsys_json})
+
 set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
 add_custom_command(
   OUTPUT ${DRV_VALIDATION}
@@ -624,8 +630,11 @@ add_custom_command(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   --validation-output ${DRV_VALIDATION}
+  ${gen_kobject_list_include_args}
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-  DEPENDS ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  DEPENDS
+  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${subsys_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
@@ -941,8 +950,11 @@ if(CONFIG_USERSPACE)
     ${GEN_KOBJ_LIST}
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --gperf-output ${OBJ_LIST}
+    ${gen_kobject_list_include_args}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    DEPENDS
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
+    ${subsys_json}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(obj_list DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OBJ_LIST})

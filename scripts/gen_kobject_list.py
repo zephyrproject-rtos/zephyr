@@ -56,6 +56,7 @@ import argparse
 import math
 import os
 import struct
+import json
 from elf_helper import ElfHelper, kobject_to_enum
 
 from collections import OrderedDict
@@ -89,8 +90,6 @@ kobjects = OrderedDict([
     ("sys_mutex", (None, True)),
     ("k_futex", (None, True))
 ])
-
-
 
 subsystems = [
     "adc_driver_api",
@@ -331,6 +330,11 @@ def write_kobj_size_output(fp):
             fp.write("#endif\n")
 
 
+def parse_subsystems_list_file(path):
+    with open(path, "r") as fp:
+        subsys_list = json.load(fp)
+    subsystems.extend(subsys_list)
+
 def parse_args():
     global args
 
@@ -355,6 +359,11 @@ def parse_args():
     parser.add_argument(
         "-Z", "--kobj-size-output", required=False,
         help="Output case statements for obj_size_get()")
+    parser.add_argument("-i", "--include-subsystem-list", required=False, action='append',
+        help='''Specifies a file with a JSON encoded list of subsystem names to append to
+        the driver subsystems list. Can be specified multiple times:
+        -i file1 -i file2 ...''')
+
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -364,6 +373,10 @@ def parse_args():
 
 def main():
     parse_args()
+
+    if args.include_subsystem_list is not None:
+        for list_file in args.include_subsystem_list:
+            parse_subsystems_list_file(list_file)
 
     if args.gperf_output:
         assert args.kernel, "--kernel ELF required for --gperf-output"

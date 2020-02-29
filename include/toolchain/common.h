@@ -132,6 +132,11 @@
 #define __syscall
 #endif /* #ifndef ZTEST_UNITTEST */
 
+/* Used as a sentinel by parse_syscalls.py to identify what API structs
+ * define driver subsystems.
+ */
+#define __subsystem
+
 #ifndef BUILD_ASSERT
 /* compile-time assertion that makes the build fail */
 #define BUILD_ASSERT(EXPR) \
