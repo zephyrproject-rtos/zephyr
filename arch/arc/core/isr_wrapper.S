@@ -243,10 +243,6 @@ rirq_path:
 	j_s [r2]
 #endif
 
-#if defined(CONFIG_TRACING)
-GTEXT(sys_trace_isr_enter)
-#endif
-
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 .macro exit_tickless_idle
 	clri r0 /* do not interrupt exiting tickless idle operations */
@@ -283,6 +279,10 @@ SECTION_FUNC(TEXT, _isr_demux)
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	bl read_timer_start_of_isr
 #endif
+
+#if defined(CONFIG_TRACING)
+	bl sys_trace_isr_enter
+#endif
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
@@ -309,6 +309,10 @@ irq_hint_handled:
 #endif
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
+
+#ifdef CONFIG_TRACING_ISR
+	bl sys_trace_isr_exit
+#endif
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	pop r59
