@@ -93,22 +93,13 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	/*
 	 * In ARCv2, the U bit can only be set through exception return
 	 */
-#ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking as the stack should be initialized */
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr blink, [_ARC_V2_SEC_STAT]
-	bclr blink, blink, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag blink
-#else
-	lr blink, [_ARC_V2_STATUS32]
-	bclr blink, blink, _ARC_V2_STATUS32_SC_BIT
-	kflag blink
-#endif
-#endif
+	_disable_stack_checking blink
+
 	/* the end of user stack in r5 */
 	add r5, r4, r5
 	/* start of privilege stack */
-	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+STACK_GUARD_SIZE
+	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE + STACK_GUARD_SIZE
 	mov_s sp, r5
 
 	push_s r0
@@ -118,6 +109,9 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 
 	mov r5, sp /* skip r0, r1, r2, r3 */
 
+/* to avoid the leakage of kernel info, the thread stack needs to be
+ * re-initialized
+ */
 #ifdef CONFIG_INIT_STACKS
 	mov_s r0, 0xaaaaaaaa
 #else
@@ -128,23 +122,22 @@ _clear_user_stack:
 	cmp r4, r5
 	jlt _clear_user_stack
 
+/* reload the stack checking regs as the original kernel stack
+ * becomess user stack
+ */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	_load_stack_check_regs
 
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr r0, [_ARC_V2_SEC_STAT]
-	bset r0, r0, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag r0
-#else
-	lr r0, [_ARC_V2_STATUS32]
-	bset r0, r0, _ARC_V2_STATUS32_SC_BIT
-	kflag r0
-#endif
+	_enable_stack_checking r0
 #endif
 
+/* the following codes are used to switch from kernel mode
+ * to user mode by fake exception, because U bit can only be set
+ * by exception
+ */
 _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
@@ -185,9 +178,8 @@ _arc_go_to_user_space:
 	mov_s blink, 0
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	b _capture_value_for_benchmarking_userspace
-return_loc_userspace_enter:
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
+	bl read_timer_end_of_userspace_enter
+#endif
 
 	rtie
 
@@ -298,20 +290,3 @@ inc_len:
 	/* increment length measurement, loop again */
 	add_s r0, r0, 1
 	b_s strlen_loop
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	.balign 4
-_capture_value_for_benchmarking_userspace:
-	mov r1, _kernel
-	ld_s r2, [r1, _kernel_offset_to_current]
-	_save_callee_saved_regs
-	push_s blink
-
-	bl read_timer_end_of_userspace_enter
-
-	pop_s blink
-	mov r1, _kernel
-	ld_s r2, [r1, _kernel_offset_to_current]
-	_load_callee_saved_regs
-	b return_loc_userspace_enter
-#endif

@@ -16,7 +16,7 @@
 
 #ifdef _ASMLANGUAGE
 
-/* entering this macro, current is in r2 */
+/* save callee regs of current thread in r2 */
 .macro _save_callee_saved_regs
 
 	sub_s sp, sp, ___callee_saved_stack_t_SIZEOF
@@ -89,7 +89,7 @@
 	st sp, [r2, _thread_offset_to_sp]
 .endm
 
-/* entering this macro, current is in r2 */
+/* load the callee regs of thread (in r2)*/
 .macro _load_callee_saved_regs
 	/* restore stack pointer from struct k_thread */
 	ld sp, [r2, _thread_offset_to_sp]
@@ -162,6 +162,7 @@
 
 .endm
 
+/* discard callee regs */
 .macro _discard_callee_saved_regs
 	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
 .endm
@@ -265,7 +266,7 @@
 .endm
 
 /*
- * To use this macor, r2 should have the value of thread struct pointer to
+ * To use this macro, r2 should have the value of thread struct pointer to
  * _kernel.current. r3 is a scratch reg.
  */
 .macro _load_stack_check_regs
@@ -297,6 +298,7 @@
 /* check and increase the interrupt nest counter
  * after increase, check whether nest counter == 1
  * the result will be EQ bit of status32
+ * two temp regs are needed
  */
 .macro _check_and_inc_int_nest_counter reg1 reg2
 #ifdef CONFIG_SMP
@@ -316,7 +318,10 @@
 	cmp \reg2, 1
 .endm
 
-/* decrease interrupt nest counter */
+/* decrease interrupt stack nest counter
+ * the counter > 0, interrupt stack is used, or
+ * not used
+ */
 .macro _dec_int_nest_counter reg1 reg2
 #ifdef CONFIG_SMP
 	_get_cpu_id \reg1
@@ -336,6 +341,7 @@
 
 /* If multi bits in IRQ_ACT are set, i.e. last bit != fist bit, it's
  * in nest interrupt. The result will be EQ bit of status32
+ * need two temp reg to do this
  */
 .macro _check_nest_int_by_irq_act  reg1, reg2
 	lr \reg1, [_ARC_V2_AUX_IRQ_ACT]
@@ -349,11 +355,18 @@
 	cmp \reg1, \reg2
 .endm
 
+
+/* macro to get id of current cpu
+ * the result will be in reg (a reg)
+ */
 .macro _get_cpu_id reg
 	lr \reg, [_ARC_V2_IDENTITY]
 	xbfu \reg, \reg, 0xe8
 .endm
 
+/* macro to get the interrupt stack of current cpu
+ * the result will be in irq_sp (a reg)
+ */
 .macro _get_curr_cpu_irq_stack irq_sp
 #ifdef CONFIG_SMP
 	_get_cpu_id \irq_sp
@@ -476,6 +489,41 @@
 	mov r0, sp
 	bl z_arch_get_next_switch_handle
 	pop_s  r2
+.endm
+
+/* macro to disable stack checking in assembly, need a GPR
+ * to do this
+ */
+.macro _disable_stack_checking reg
+#ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	lr \reg, [_ARC_V2_SEC_STAT]
+	bclr \reg, \reg, _ARC_V2_SEC_STAT_SSC_BIT
+	sflag \reg
+
+#else
+	lr \reg, [_ARC_V2_STATUS32]
+	bclr \reg, \reg, _ARC_V2_STATUS32_SC_BIT
+	kflag \reg
+#endif
+#endif
+.endm
+
+/* macro to enable stack checking in assembly, need a GPR
+ * to do this
+ */
+.macro _enable_stack_checking reg
+#ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	lr \reg, [_ARC_V2_SEC_STAT]
+	bset \reg, \reg, _ARC_V2_SEC_STAT_SSC_BIT
+	sflag \reg
+#else
+	lr \reg, [_ARC_V2_STATUS32]
+	bset \reg, \reg, _ARC_V2_STATUS32_SC_BIT
+	kflag \reg
+#endif
+#endif
 .endm
 
 #endif /* _ASMLANGUAGE */

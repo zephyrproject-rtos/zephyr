@@ -19,7 +19,6 @@
 #include <syscall.h>
 
 GTEXT(_Fault)
-GTEXT(z_do_kernel_oops)
 GTEXT(__reset)
 GTEXT(__memory_error)
 GTEXT(__instruction_error)
@@ -38,6 +37,17 @@ GTEXT(__ev_maligned)
 GTEXT(z_irq_do_offload);
 #endif
 
+.macro _save_exc_regs_into_stack
+#ifdef CONFIG_ARC_HAS_SECURE
+	/* ERSEC_STAT is IOW/RAZ in normal mode */
+	lr r0,[_ARC_V2_ERSEC_STAT]
+	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
+#endif
+	lr r0,[_ARC_V2_ERET]
+	st_s r0, [sp, ___isf_t_pc_OFFSET]
+	lr r0,[_ARC_V2_ERSTATUS]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
+.endm
 
 /*
  * The exception handling will use top part of interrupt stack to
@@ -89,15 +99,7 @@ _exc_entry:
 	 */
 	_create_irq_stack_frame
 
-#ifdef CONFIG_ARC_HAS_SECURE
-	/* ERSEC_STAT is IOW/RAZ in normal mode */
-	lr r0,[_ARC_V2_ERSEC_STAT]
-	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
-#endif
-	lr r0,[_ARC_V2_ERSTATUS]
-	st_s r0, [sp, ___isf_t_status32_OFFSET]
-	lr r0,[_ARC_V2_ERET]
-	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
+	_save_exc_regs_into_stack
 
 	/* sp is parameter of _Fault */
 	mov_s r0, sp
@@ -174,10 +176,13 @@ _exc_return:
 	mov r2, ilink
 #endif
 
-	/* Assumption: r2 has  next thread */
+	/* Assumption: r2 has next thread */
 	b _rirq_newthread_switch
 
 _exc_return_from_exc:
+	/* exception handler may change return address.
+	 * reload it
+	 */
 	ld_s r0, [sp, ___isf_t_pc_OFFSET]
 	sr r0, [_ARC_V2_ERET]
 
@@ -185,7 +190,7 @@ _exc_return_from_exc:
 	mov_s sp, ilink
 	rtie
 
-
+/* separated entry for trap which may be used by irq_offload, USERPSACE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	/* get the id of trap_s */
 	lr ilink, [_ARC_V2_ECR]
@@ -208,15 +213,12 @@ valid_syscall_id:
 	 */
 	_create_irq_stack_frame
 
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	/* ERSEC_STAT is IOW/RAZ in normal mode */
-	lr r0, [_ARC_V2_ERSEC_STAT]
-	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
-#endif
-	lr r0,[_ARC_V2_ERET]
-	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
-	lr r0,[_ARC_V2_ERSTATUS]
-	st_s r0, [sp, ___isf_t_status32_OFFSET]
+	_save_exc_regs_into_stack
+
+	/* exc return and do sys call in kernel mode,
+	 * so need to clear U bit, r0 is already loaded
+	 * with ERSTATUS in _save_exc_regs_into_stack
+	 */
 
 	bclr r0, r0, _ARC_V2_STATUS32_U_BIT
 	sr r0, [_ARC_V2_ERSTATUS]
@@ -239,15 +241,7 @@ _do_non_syscall_trap:
 	/* save caller saved registers */
 	_create_irq_stack_frame
 
-#ifdef CONFIG_ARC_HAS_SECURE
-	lr r0,[_ARC_V2_ERSEC_STAT]
-	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
-#endif
-	lr r0,[_ARC_V2_ERSTATUS]
-	st_s r0, [sp, ___isf_t_status32_OFFSET]
-	lr r0,[_ARC_V2_ERET]
-	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
-
+	_save_exc_regs_into_stack
 
 	/* check whether irq stack is used */
 	_check_and_inc_int_nest_counter r0, r1
@@ -266,6 +260,8 @@ exc_nest_handle:
 	_dec_int_nest_counter r0, r1
 
 	_pop_irq_stack_frame
+
+	/* ERSTATUS, ERET are not changed, so ok to rtie */
 	rtie
 #endif /* CONFIG_IRQ_OFFLOAD */
 	b _exc_entry
