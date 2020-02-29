@@ -123,8 +123,9 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 /* Endpoint state */
 struct usb_dc_stm32_ep_state {
-	u16_t ep_mps;	/** Endpoint max packet size */
-	u8_t ep_type;	/** Endpoint type (STM32 HAL enum) */
+	u16_t ep_mps;		/** Endpoint max packet size */
+	u16_t ep_pma_buf_len;	/** Previously allocated buffer size */
+	u8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
 	usb_dc_ep_callback cb;	/** Endpoint callback function */
 	u8_t ep_stalled;	/** Endpoint stall flag */
 	u32_t read_count;	/** Number of bytes in read buffer  */
@@ -545,21 +546,25 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	u8_t ep = ep_cfg->ep_addr;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	LOG_DBG("ep 0x%02x, ep_mps %u, ep_type %u", ep_cfg->ep_addr,
-		ep_cfg->ep_mps, ep_cfg->ep_type);
+	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
+		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
+		ep_cfg->ep_type);
 
 	if (!ep_state) {
 		return -EINVAL;
 	}
 
 #ifdef USB
-	if (DT_USB_RAM_SIZE <=
-	    (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
-		return -EINVAL;
+	if (ep_cfg->ep_mps > ep_state->ep_pma_buf_len) {
+		if (DT_USB_RAM_SIZE <=
+		    (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
+			return -EINVAL;
+		}
+		HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
+				    usb_dc_stm32_state.pma_offset);
+		ep_state->ep_pma_buf_len = ep_cfg->ep_mps;
+		usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
 	}
-	HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
-			    usb_dc_stm32_state.pma_offset);
-	usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
 #endif
 	ep_state->ep_mps = ep_cfg->ep_mps;
 
