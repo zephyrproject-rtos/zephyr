@@ -25,17 +25,6 @@ GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 GTEXT(_rirq_newthread_switch)
 
-
-#if 0 /* TODO: when FIRQ is not present, all would be regular */
-#define NUM_REGULAR_IRQ_PRIO_LEVELS CONFIG_NUM_IRQ_PRIO_LEVELS
-#else
-#define NUM_REGULAR_IRQ_PRIO_LEVELS (CONFIG_NUM_IRQ_PRIO_LEVELS-1)
-#endif
-/* note: the above define assumes that prio 0 IRQ is for FIRQ, and
- * that all others are regular interrupts.
- * TODO: Revist this if FIRQ becomes configurable.
- */
-
 /*
 
 ===========================================================
@@ -214,23 +203,16 @@ will be corrupted.
 
 SECTION_FUNC(TEXT, _rirq_enter)
 
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr r2, [_ARC_V2_SEC_STAT]
-	bclr r2, r2, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag r2
-
-#else
-	/* disable stack checking */
-	lr r2, [_ARC_V2_STATUS32]
-	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
-	kflag r2
-#endif
-#endif
+/* the ISR will be handled in separate interrupt stack,
+ * so stack checking must be diabled, or exception will
+ * be caused
+ */
+	_disable_stack_checking r2
 	clri
 
-	/* check whether irq stack is used */
+	/* check whether irq stack is used, if
+	 * not switch to isr stack
+	 */
 	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d rirq_nest
@@ -302,6 +284,9 @@ _rirq_newthread_switch:
 .balign 4
 _rirq_switch_from_coop:
 
+	/* for a cooperative switch, it's not in irq, so
+	 * need to set some regs for irq return
+	 */
 	_set_misc_regs_irq_switch_from_coop
 
 	/*

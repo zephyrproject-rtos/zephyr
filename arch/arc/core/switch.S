@@ -96,18 +96,10 @@ SECTION_FUNC(TEXT, arch_switch)
 
 	_store_old_thread_callee_regs
 
-#ifdef CONFIG_ARC_STACK_CHECKING
 /* disable stack checking here, as sp will be changed to target
  * thread'sp
  */
-#if defined(CONFIG_ARC_HAS_SECURE) && defined(CONFIG_ARC_SECURE_FIRMWARE)
-	bclr r3, r3, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag r3
-#else
-	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
-	kflag r3
-#endif
-#endif
+	_disable_stack_checking r3
 
 	mov_s r2, r0
 
@@ -134,9 +126,12 @@ _switch_return_from_coop:
 	kflag r3    /* write status32 */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	b _capture_value_for_benchmarking
-#endif
-return_loc:
+	push_s blink
+
+	bl read_timer_end_of_swap
+
+	pop_s blink
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
 	j_s [blink]
 
 
@@ -167,14 +162,3 @@ _switch_return_from_firq:
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
 	rtie
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	.balign 4
-_capture_value_for_benchmarking:
-	push_s blink
-
-	bl read_timer_end_of_swap
-
-	pop_s blink
-	b return_loc
-#endif /* CONFIG_EXECUTION_BENCHMARKING */

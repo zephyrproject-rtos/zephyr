@@ -35,37 +35,35 @@ _rirq_enter/_firq_enter: they are jump points.
 The flow is the following:
 
 ISR -> _isr_wrapper -- + -> _rirq_enter -> _isr_demux -> ISR -> _rirq_exit
-                       |
-                       + -> _firq_enter -> _isr_demux -> ISR -> _firq_exit
+			 |
+			 + -> _firq_enter -> _isr_demux -> ISR -> _firq_exit
 
 Context switch explanation:
 
 The context switch code is spread in these files:
 
-  isr_wrapper.s, switch.s, swap_macros.s, fast_irq.s, regular_irq.s
+	isr_wrapper.s, switch.s, swap_macros.h, fast_irq.s, regular_irq.s
 
 IRQ stack frame layout:
 
-  high address
+	high address
 
-           status32
-              pc
-           lp_count
-           lp_start
-            lp_end
-            blink
-             r13
-             ...
-    sp ->    r0
+	status32
+		pc
+	lp_count
+	lp_start
+	lp_end
+	blink
+	 r13
+	 ...
+	sp ->    r0
 
-  low address
+	low address
 
 The context switch code adopts this standard so that it is easier to follow:
 
-  - r1 contains _kernel ASAP and is not overwritten over the lifespan of
-    the functions.
-  - r2 contains _kernel.current ASAP, and the incoming thread when we
-    transition from outgoing thread to incoming thread
+	- r2 contains _kernel.current ASAP, and the incoming thread when we
+		transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
 the parameter in r0 in arch_switch().
@@ -100,47 +98,49 @@ done upfront, and the rest is done when needed:
 
 o RIRQ
 
-  All needed registers to run C code in the ISR are saved automatically
-  on the outgoing thread's stack: loop, status32, pc, and the caller-
-  saved GPRs. That stack frame layout is pre-determined. If returning
-  to a thread, the stack is popped and no registers have to be saved by
-  the kernel. If a context switch is required, the callee-saved GPRs
-  are then saved in the thread control structure (TCS).
+	All needed registers to run C code in the ISR are saved automatically
+	on the outgoing thread's stack: loop, status32, pc, and the caller-
+	saved GPRs. That stack frame layout is pre-determined. If returning
+	to a thread, the stack is popped and no registers have to be saved by
+	the kernel. If a context switch is required, the callee-saved GPRs
+	are then saved in the thread's stack.
 
 o FIRQ
 
-  First, a FIRQ can be interrupting a lower-priority RIRQ: if this is the case,
-  the FIRQ does not take a scheduling decision and leaves it the RIRQ to
-  handle. This limits the amount of code that has to run at interrupt-level.
+	First, a FIRQ can be interrupting a lower-priority RIRQ: if this is
+	the case, the FIRQ does not take a scheduling decision and leaves it
+	the RIRQ to handle. This limits the amount of code that has to run at
+	interrupt-level.
 
-  CONFIG_RGF_NUM_BANKS==1 case:
-  Registers are saved on the stack frame just as they are for RIRQ.
-  Context switch can happen just as it does in the RIRQ case, however,
-  if the FIRQ interrupted a RIRQ, the FIRQ will return from interrupt and
-  let the RIRQ do the context switch.  At entry, one register is needed in order
-  to have code to save other registers. r0 is saved first in a global called
-  saved_r0.
+	CONFIG_RGF_NUM_BANKS==1 case:
+	Registers are saved on the stack frame just as they are for RIRQ.
+	Context switch can happen just as it does in the RIRQ case, however,
+	if the FIRQ interrupted a RIRQ, the FIRQ will return from interrupt
+	and let the RIRQ do the context switch. At entry, one register is
+	needed in order to have code to save other registers. r0 is saved
+	first in the stack and restored later
 
-  CONFIG_RGF_NUM_BANKS!=1 case:
-  During early initialization, the sp in the 2nd register bank is made to
-  refer to _firq_stack. This allows for the FIRQ handler to use its own stack.
-  GPRs are banked, loop registers are saved in unused callee saved regs upon
-  interrupt entry. If returning to a thread, loop registers are restored and the
-  CPU switches back to bank 0 for the GPRs. If a context switch is
-  needed, at this point only are all the registers saved. First, a
-  stack frame with the same layout as the automatic RIRQ one is created
-  and then the callee-saved GPRs are saved in the TCS. status32_p0 and
-  ilink are saved in this case, not status32 and pc.
-  To create the stack frame, the FIRQ handling code must first go back to using
-  bank0 of registers, since that is where the registers containing the exiting
-  thread are saved. Care must be taken not to touch any register before saving
-  them: the only one usable at that point is the stack pointer.
+	CONFIG_RGF_NUM_BANKS!=1 case:
+	During early initialization, the sp in the 2nd register bank is made to
+	refer to _firq_stack. This allows for the FIRQ handler to use its own
+	stack. GPRs are banked, loop registers are saved in unused callee saved
+	regs upon interrupt entry. If returning to a thread, loop registers are
+	restored and the CPU switches back to bank 0 for the GPRs. If a context
+	switch is needed, at this point only are all the registers saved.
+	First, a  stack frame with the same layout as the automatic RIRQ one is
+	created and then the callee-saved GPRs are saved in the stack.
+	status32_p0 and ilink are saved in this case, not status32 and pc.
+	To create the stack frame, the FIRQ handling code must first go back to
+	using bank0 of registers, since that is where the registers containing
+	the exiting thread are saved. Care must be taken not to touch any
+	register before saving them: the only one usable at that point is the
+	stack pointer.
 
 o coop
 
-  When a coop context switch is done, the callee-saved registers are
-  saved in the TCS. The other GPRs do not need to be saved, since the
-  compiler has already placed them on the stack.
+	When a coop context switch is done, the callee-saved registers are
+	saved in the stack. The other GPRs do not need to be saved, since the
+	compiler has already placed them on the stack.
 
 For restoring the contexts, there are six cases. In all cases, the
 callee-saved registers of the incoming thread have to be restored. Then, there
@@ -148,57 +148,56 @@ are specifics for each case:
 
 From coop:
 
-  o to coop
+	o to coop
 
-    Do a normal function call return.
+		Do a normal function call return.
 
-  o to any irq
+	o to any irq
 
-    The incoming interrupted thread has an IRQ stack frame containing the
-    caller-saved registers that has to be popped. status32 has to be restored,
-    then we jump to the interrupted instruction.
+	The incoming interrupted thread has an IRQ stack frame containing the
+	caller-saved registers that has to be popped. status32 has to be
+	restored, then we jump to the interrupted instruction.
 
 From FIRQ:
 
-  When CONFIG_RGF_NUM_BANKS==1, context switch is done as it is for RIRQ.
-  When CONFIG_RGF_NUM_BANKS!=1, the processor is put back to using bank0,
-  not bank1 anymore, because it had to save the outgoing context from bank0,
-  and now has to load the incoming one
-  into bank0.
+	When CONFIG_RGF_NUM_BANKS==1, context switch is done as it is for RIRQ.
+	When CONFIG_RGF_NUM_BANKS!=1, the processor is put back to using bank0,
+	not bank1 anymore, because it had to save the outgoing context from
+	bank0, and now has to load the incoming one into bank0.
 
-  o to coop
+	o to coop
 
-    The address of the returning instruction from arch_switch() is loaded
-    in ilink and the saved status32 in status32_p0.
+	The address of the returning instruction from arch_switch() is loaded
+	in ilink and the saved status32 in status32_p0.
 
-  o to any irq
+	o to any irq
 
-    The IRQ has saved the caller-saved registers in a stack frame, which must be
-    popped, and status32 and pc loaded in status32_p0 and ilink.
+	The IRQ has saved the caller-saved registers in a stack frame, which
+	must be popped, and status32 and pc loaded in status32_p0 and ilink.
 
 From RIRQ:
 
-  o to coop
+	o to coop
 
-    The interrupt return mechanism in the processor expects a stack frame, but
-    the outgoing context did not create one. A fake one is created here, with
-    only the relevant values filled in: pc, status32.
+	The interrupt return mechanism in the processor expects a stack frame,
+	but the outgoing context did not create one. A fake one is created
+	here, with only the relevant values filled in: pc, status32.
 
-    There is a discrepancy between the ABI from the ARCv2 docs, including the
-    way the processor pushes GPRs in pairs in the IRQ stack frame, and the ABI
-    GCC uses. r13 should be a callee-saved register, but GCC treats it as
-    caller-saved. This means that the processor pushes it in the stack frame
-    along with r12, but the compiler does not save it before entering a
-    function. So, it is saved as part of the callee-saved registers, and
-    restored there, but the processor restores it _a second time_ when popping
-    the IRQ stack frame. Thus, the correct value must also be put in the fake
-    stack frame when returning to a thread that context switched out
-    cooperatively.
+	There is a discrepancy between the ABI from the ARCv2 docs,
+	including the way the processor pushes GPRs in pairs in the IRQ stack
+	frame, and the ABI GCC uses. r13 should be a callee-saved register,
+	but GCC treats it as caller-saved. This means that the processor pushes
+	it in the stack frame along with r12, but the compiler does not save it
+	before entering a function. So, it is saved as part of the callee-saved
+	registers, and restored there, but the processor restores it _a second
+	time_ when popping the IRQ stack frame. Thus, the correct value must
+	also be put in the fake stack frame when returning to a thread that
+	context switched out cooperatively.
 
-  o to any irq
+	o to any irq
 
-    Both types of IRQs already have an IRQ stack frame: simply return from
-    interrupt.
+	Both types of IRQs already have an IRQ stack frame: simply return from
+	interrupt.
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
@@ -251,8 +250,6 @@ GTEXT(sys_trace_isr_enter)
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 .macro exit_tickless_idle
 	clri r0 /* do not interrupt exiting tickless idle operations */
-	push_s r1
-	push_s r0
 	mov_s r1, _kernel
 	ld_s r0, [r1, _kernel_offset_to_idle] /* requested idle duration */
 	breq r0, 0, _skip_sys_power_save_idle_exit
@@ -263,8 +260,6 @@ GTEXT(sys_trace_isr_enter)
 	pop_s blink
 
 _skip_sys_power_save_idle_exit:
-	pop_s r0
-	pop_s r1
 	seti r0
 .endm
 #else
