@@ -1,0 +1,13 @@
+identifier: qemu_cortex_m4f
+name: QEMU Emulation for Cortex-M4F
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 1024
+testing:
+  default: true

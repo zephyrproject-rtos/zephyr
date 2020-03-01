@@ -1,0 +1,7 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_M4F
+	bool "Cortex-M4F Emulation (QEMU)"
+	depends on SOC_STM32F405XG
+	select QEMU_TARGET

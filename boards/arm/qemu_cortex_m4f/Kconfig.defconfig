@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_M4F
+
+config BOARD
+	default "qemu_cortex_m4f"
+
+config BUILD_OUTPUT_BIN
+	default n
+
+endif # BOARD_QEMU_CORTEX_M4

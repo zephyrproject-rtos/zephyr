@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f405Xg.dtsi>
+
+/ {
+	model = "QEMU Cortex-M4F";
+	compatible = "wildlabs,netduinoplus2-qemu";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
