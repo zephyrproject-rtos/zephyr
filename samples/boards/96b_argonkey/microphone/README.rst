@@ -85,6 +85,10 @@ characters 'cooked' out.
    stty -F /dev/ttyUSB0 115200 raw
    cat /dev/ttyUSB0 > /tmp/sound.raw
 
+.. note:: The "cat /dev/ttyUSB0 > /tmp/sound.raw" command should be launched after the audio
+   acquisition starts (after green led glows) to avoid initial boot messages to enter in the file,
+   and before audio acquisition ends (before red led glows).
+
 .. note:: In case the character 0x0a is interpreted as NL and an 0x0d (CR) is added,
    you may need to remove it::
 

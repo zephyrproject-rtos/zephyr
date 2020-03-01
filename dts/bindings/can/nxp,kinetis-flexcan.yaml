@@ -1,31 +1,23 @@
-#
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP FlexCAN
+description: NXP FlexCAN controller
 
-description: >
-    This binding gives a base representation of the NXP FlexCAN controller
+compatible: "nxp,kinetis-flexcan"
 
-inherits:
-    !include can.yaml
+include: can-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-flexcan"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
     clk-source:
       type: int
-      category: required
+      required: true
       description: CAN engine clock source

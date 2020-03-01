@@ -10,13 +10,16 @@ enum llcp {
 	LLCP_CONN_UPD,
 	LLCP_CHAN_MAP,
 
+	/*
+	 * LLCP_TERMINATE,
+	 * LLCP_FEATURE_EXCHANGE,
+	 * LLCP_VERSION_EXCHANGE,
+	 */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	LLCP_ENCRYPTION,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	LLCP_FEATURE_EXCHANGE,
-	LLCP_VERSION_EXCHANGE,
-	/* LLCP_TERMINATE, */
 	LLCP_CONNECTION_PARAM_REQ,
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -133,23 +136,13 @@ struct connection {
 	enum  llcp llcp_type;
 	union {
 		struct {
-			enum {
-				LLCP_CUI_STATE_INPROG,
-				LLCP_CUI_STATE_USE,
-				LLCP_CUI_STATE_SELECT
-			} state:2 __packed;
-			u8_t  is_internal:1;
-			u16_t interval;
-			u16_t latency;
-			u16_t timeout;
 			u16_t instant;
-			u32_t win_offset_us;
-			u8_t  win_size;
 			u16_t *pdu_win_offset;
 			u32_t ticks_anchor;
 		} conn_upd;
+
 		struct {
-			u8_t  initiate;
+			u8_t  initiate:1;
 			u8_t  chm[5];
 			u16_t instant;
 		} chan_map;
@@ -166,16 +159,42 @@ struct connection {
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		struct {
-			u8_t  initiate;
+			enum {
+				LLCP_ENC_STATE_INPROG,
+				LLCP_ENC_STATE_INIT,
+				LLCP_ENC_STATE_LTK_WAIT,
+			} state:2 __packed;
 			u8_t  error_code;
 			u8_t  skd[16];
 		} encryption;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} llcp;
 
-	u32_t llcp_features;
+	struct {
+		u8_t  req;
+		u8_t  ack;
+		enum {
+			LLCP_CUI_STATE_INPROG,
+			LLCP_CUI_STATE_USE,
+			LLCP_CUI_STATE_SELECT
+		} state:2 __packed;
+		u8_t  cmd:1;
+		u16_t interval;
+		u16_t latency;
+		u16_t timeout;
+		u32_t win_offset_us;
+		u8_t  win_size;
+	} llcp_cu;
 
 	struct {
+		u8_t  req;
+		u8_t  ack;
+		u32_t features;
+	} llcp_feature;
+
+	struct {
+		u8_t  req;
+		u8_t  ack;
 		u8_t  tx:1;
 		u8_t  rx:1;
 		u8_t  version_number;
@@ -255,6 +274,12 @@ struct connection {
 		u16_t rx_time;
 		u16_t tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+		struct {
+			u16_t tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+			u16_t tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+		} cache;
 	} llcp_length;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -307,6 +332,10 @@ struct connection {
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 #define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 

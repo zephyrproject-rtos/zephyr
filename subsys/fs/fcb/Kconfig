@@ -1,9 +1,7 @@
-# Kconfig - Flash Circular Buffer module
-#
+# Flash Circular Buffer module
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # Flash Circular Buffer

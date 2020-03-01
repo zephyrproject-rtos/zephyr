@@ -1,20 +1,17 @@
-title: Intel I/O Advanced Programmable Interrupt Controller
+description: Intel I/O Advanced Programmable Interrupt Controller (APIC)
 
-description: >
-    This binding describes the Intel I/O Advanced Programmable Interrupt
-    controller
+compatible: "intel,ioapic"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "intel,ioapic"
-
   reg:
-      category: required
+      required: true
 
-"#cells":
+  "#interrupt-cells":
+      const: 3
+
+interrupt-cells:
   - irq
   - sense
   - priority

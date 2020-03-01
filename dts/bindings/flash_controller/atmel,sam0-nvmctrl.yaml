@@ -1,11 +1,11 @@
-title: Atmel SAM0 Non-Volatile Memory Controller
+description: Atmel SAM0 NVMC (Non-Volatile Memory Controller)
 
-description: >
-    This binding gives a base representation of the Atmel SAM0 NVMC
+compatible: "atmel,sam0-nvmctrl"
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-nvmctrl"
+    lock-regions:
+      type: int
+      required: true
+      description: Number of lock regions

@@ -49,6 +49,8 @@ by any project member or the community. You should contact an assigned owner if
 you'd like to discuss or contribute to that feature's implementation
 
 
+.. _rfcs:
+
 Proposals and RFCs
 *******************
 
@@ -67,6 +69,7 @@ examples that would benefit from an RFC are:
 
 - A new feature that creates new API surface area, and would require a feature
   flag if introduced.
+- The modification of an existing stable API
 - The removal of features that already shipped as part of Zephyr.
 - The introduction of new idiomatic usage or conventions, even if they do not
   include code changes to Zephyr itself.
@@ -87,6 +90,17 @@ Some changes do not require an RFC:
 - Addition or removal of warnings
 - Addition of new boards, SoCs or drivers to existing subsystems
 - ...
+
+The process in itself consists in creating a GitHub issue with the :ref:`RFC
+label <gh_labels>` that documents the proposal thoroughly. There is an `RFC
+template`_ included in the main Zephyr GitHub repository that serves as a
+guideline to write a new RFC.
+
+As with Pull Requests, RFCs might require discussion in the context of one of
+the `Zephyr meetings`_ in order to move it forward in cases where there is
+either disagreement or not enough voiced opinions in order to proceed. Make sure
+to either label it appropriately or include it in the corresponding GitHub
+project in order for it to be examined during the next meeting.
 
 Roadmap and Release Plans
 *************************
@@ -132,3 +146,6 @@ and main stakeholders of the project can make progress on.
 
 Items labeled as ``features`` are short or long term release items that shall
 have an assignee and a milestone set.
+
+.. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/master/.github/ISSUE_TEMPLATE/rfc---proposal.md
+.. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings

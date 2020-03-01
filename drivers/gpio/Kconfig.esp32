@@ -1,14 +1,12 @@
-# Kconfig.esp32 - ESP32 GPIO configuration options
-#
-#
+# ESP32 GPIO configuration options
+
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_ESP32
 	bool "ESP32 GPIO"
 	depends on SOC_ESP32
+	select HAS_DTS_GPIO
 	help
 	  Enables the ESP32 GPIO driver
 
@@ -17,6 +15,14 @@ if GPIO_ESP32
 config GPIO_ESP32_IRQ
 	int "IRQ line for ESP32 GPIO pins"
 	default 10
+	help
+	  Select the IRQ line to be used for GPIO interrupts.
+
+	  Edge-triggered interrupts are supported on lines: 10, 22,
+	  28, 30.
+
+	  Level-triggered interrupts are supported on lines: 0-5, 8,
+	  9, 12, 13, 17-21, 23-27, 31.
 
 config GPIO_ESP32_0
 	bool "ESP32 GPIO (pins 0-31)"
@@ -24,20 +30,10 @@ config GPIO_ESP32_0
 	help
 	  Include support for GPIO pins 0-31 on the ESP32.
 
-config GPIO_ESP32_0_NAME
-	string "Driver name"
-	depends on GPIO_ESP32_0
-	default "GPIO_0"
-
 config GPIO_ESP32_1
 	bool "ESP32 GPIO (pins 32-39)"
 	default y
 	help
 	  Include support for GPIO pins 32-39 on the ESP32.
-
-config GPIO_ESP32_1_NAME
-	string "Driver name"
-	depends on GPIO_ESP32_1
-	default "GPIO_1"
 
 endif # GPIO_ESP32

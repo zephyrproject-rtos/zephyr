@@ -41,6 +41,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +69,31 @@ unsigned int _copy(uint8_t *to, unsigned int to_len,
  * @param len IN -- number of times the value will be copied
  */
 void _set(void *to, uint8_t val, unsigned int len);
+
+/**
+ * @brief Set the value 'val' into the buffer 'to', 'len' times, in a way
+ *         which does not risk getting optimized out by the compiler
+ *        In cases where the compiler does not set __GNUC__ and where the
+ *         optimization level removes the memset, it may be necessary to
+ *         implement a _set_secure function and define the
+ *         TINYCRYPT_ARCH_HAS_SET_SECURE, which then can ensure that the
+ *         memset does not get optimized out.
+ *
+ * @param to OUT -- destination buffer
+ * @param val IN -- value to be set in 'to'
+ * @param len IN -- number of times the value will be copied
+ */
+#ifdef TINYCRYPT_ARCH_HAS_SET_SECURE
+extern void _set_secure(void *to, uint8_t val, unsigned int len);
+#else /* ! TINYCRYPT_ARCH_HAS_SET_SECURE */
+static inline void _set_secure(void *to, uint8_t val, unsigned int len)
+{
+  (void) memset(to, val, len);
+#ifdef __GNUC__
+  __asm__ __volatile__("" :: "g"(to) : "memory");
+#endif /* __GNUC__ */
+}
+#endif /* TINYCRYPT_ARCH_HAS_SET_SECURE */
 
 /*
  * @brief AES specific doubling function, which utilizes

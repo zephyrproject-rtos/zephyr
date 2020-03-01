@@ -1,10 +1,9 @@
-# Kconfig.mcux - mcux entropy generator driver configuration
-#
+# mcux entropy generator driver configuration
+
 # Copyright (c) 2016 ARM Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ENTROPY_MCUX_RNGA
+config ENTROPY_MCUX_RNGA
 	bool "MCUX RNGA driver"
 	depends on HAS_MCUX_RNGA
 	select ENTROPY_HAS_DRIVER
@@ -13,7 +12,7 @@ menuconfig ENTROPY_MCUX_RNGA
 	  This option enables the random number generator accelerator (RNGA)
 	  driver based on the MCUX RNGA driver.
 
-menuconfig ENTROPY_MCUX_TRNG
+config ENTROPY_MCUX_TRNG
 	bool "MCUX TRNG driver"
 	depends on HAS_MCUX_TRNG
 	select ENTROPY_HAS_DRIVER

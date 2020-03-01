@@ -7,7 +7,7 @@
 #ifndef __NET_STATS_H__
 #define __NET_STATS_H__
 
-#if defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 
 #include <stdlib.h>
 
@@ -67,7 +67,7 @@ static inline void net_stats_update_bytes_sent(struct net_if *iface,
 #define net_stats_update_bytes_sent(iface, bytes)
 #endif /* CONFIG_NET_STATISTICS */
 
-#if defined(CONFIG_NET_STATISTICS_IPV6)
+#if defined(CONFIG_NET_STATISTICS_IPV6) && defined(CONFIG_NET_NATIVE_IPV6)
 /* IPv6 stats */
 
 static inline void net_stats_update_ipv6_sent(struct net_if *iface)
@@ -90,7 +90,7 @@ static inline void net_stats_update_ipv6_drop(struct net_if *iface)
 #define net_stats_update_ipv6_recv(iface)
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
-#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 /* IPv6 Neighbor Discovery stats*/
 
 static inline void net_stats_update_ipv6_nd_sent(struct net_if *iface)
@@ -113,7 +113,7 @@ static inline void net_stats_update_ipv6_nd_drop(struct net_if *iface)
 #define net_stats_update_ipv6_nd_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
 
-#if defined(CONFIG_NET_STATISTICS_IPV4)
+#if defined(CONFIG_NET_STATISTICS_IPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 /* IPv4 stats */
 
 static inline void net_stats_update_ipv4_drop(struct net_if *iface)
@@ -136,7 +136,7 @@ static inline void net_stats_update_ipv4_recv(struct net_if *iface)
 #define net_stats_update_ipv4_recv(iface)
 #endif /* CONFIG_NET_STATISTICS_IPV4 */
 
-#if defined(CONFIG_NET_STATISTICS_ICMP)
+#if defined(CONFIG_NET_STATISTICS_ICMP) && defined(CONFIG_NET_NATIVE_IPV4)
 /* Common ICMPv4/ICMPv6 stats */
 static inline void net_stats_update_icmp_sent(struct net_if *iface)
 {
@@ -158,7 +158,7 @@ static inline void net_stats_update_icmp_drop(struct net_if *iface)
 #define net_stats_update_icmp_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_ICMP */
 
-#if defined(CONFIG_NET_STATISTICS_UDP)
+#if defined(CONFIG_NET_STATISTICS_UDP) && defined(CONFIG_NET_NATIVE_UDP)
 /* UDP stats */
 static inline void net_stats_update_udp_sent(struct net_if *iface)
 {
@@ -186,7 +186,7 @@ static inline void net_stats_update_udp_chkerr(struct net_if *iface)
 #define net_stats_update_udp_chkerr(iface)
 #endif /* CONFIG_NET_STATISTICS_UDP */
 
-#if defined(CONFIG_NET_STATISTICS_TCP)
+#if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 /* TCP stats */
 static inline void net_stats_update_tcp_sent(struct net_if *iface, u32_t bytes)
 {
@@ -272,6 +272,10 @@ static inline void net_stats_update_tcp_seg_rexmit(struct net_if *iface)
 static inline void net_stats_update_per_proto_recv(struct net_if *iface,
 						   enum net_ip_protocol proto)
 {
+	if (!IS_ENABLED(CONFIG_NET_NATIVE)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		net_stats_update_udp_recv(iface);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
@@ -282,6 +286,10 @@ static inline void net_stats_update_per_proto_recv(struct net_if *iface,
 static inline void net_stats_update_per_proto_drop(struct net_if *iface,
 						   enum net_ip_protocol proto)
 {
+	if (!IS_ENABLED(CONFIG_NET_NATIVE)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		net_stats_update_udp_drop(iface);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
@@ -289,7 +297,7 @@ static inline void net_stats_update_per_proto_drop(struct net_if *iface,
 	}
 }
 
-#if defined(CONFIG_NET_STATISTICS_MLD)
+#if defined(CONFIG_NET_STATISTICS_MLD) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_ipv6_mld_recv(struct net_if *iface)
 {
 	UPDATE_STAT(iface, stats.ipv6_mld.recv++);
@@ -310,29 +318,39 @@ static inline void net_stats_update_ipv6_mld_drop(struct net_if *iface)
 #define net_stats_update_ipv6_mld_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_MLD */
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_STATISTICS)
+#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
+	defined(CONFIG_NET_PKT_TXTIME_STATS)) && defined(CONFIG_NET_STATISTICS)
 static inline void net_stats_update_tx_time(struct net_if *iface,
 					    u32_t start_time,
 					    u32_t end_time)
 {
-	u32_t diff = abs(end_time - start_time);
+	u32_t diff = end_time - start_time;
 
-	UPDATE_STAT(iface, stats.tx_time.time_sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / 1000);
-	UPDATE_STAT(iface, stats.tx_time.time_count += 1);
+	UPDATE_STAT(iface, stats.tx_time.sum +=
+		    k_cyc_to_ns_floor64(diff) / 1000);
+	UPDATE_STAT(iface, stats.tx_time.count += 1);
 }
 #else
-static inline void net_stats_update_tx_time(struct net_if *iface,
+#define net_stats_update_tx_time(iface, start_time, end_time)
+#endif /* (TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS)
+static inline void net_stats_update_rx_time(struct net_if *iface,
 					    u32_t start_time,
 					    u32_t end_time)
 {
-	ARG_UNUSED(iface);
-	ARG_UNUSED(start_time);
-	ARG_UNUSED(end_time);
-}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP && STATISTICS */
+	u32_t diff = end_time - start_time;
 
-#if (NET_TC_COUNT > 1) && defined(CONFIG_NET_STATISTICS)
+	UPDATE_STAT(iface, stats.rx_time.sum +=
+		    k_cyc_to_ns_floor64(diff) / 1000);
+	UPDATE_STAT(iface, stats.rx_time.count += 1);
+}
+#else
+#define net_stats_update_rx_time(iface, start_time, end_time)
+#endif /* NET_CONTEXT_TIMESTAMP && STATISTICS */
+
+#if (NET_TC_COUNT > 1) && defined(CONFIG_NET_STATISTICS) \
+	&& defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_sent_pkt(struct net_if *iface, u8_t tc)
 {
 	UPDATE_STAT(iface, stats.tc.sent[tc].pkts++);
@@ -350,32 +368,44 @@ static inline void net_stats_update_tc_sent_priority(struct net_if *iface,
 	UPDATE_STAT(iface, stats.tc.sent[tc].priority = priority);
 }
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_STATISTICS)
+#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
+	defined(CONFIG_NET_PKT_TXTIME_STATS)) && \
+	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 					       u8_t tc,
 					       u32_t start_time,
 					       u32_t end_time)
 {
-	u32_t diff = abs(end_time - start_time);
+	u32_t diff = end_time - start_time;
 
-	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.time_sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / 1000);
-	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.time_count += 1);
+	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.sum +=
+		    k_cyc_to_ns_floor64(diff) / 1000);
+	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.count += 1);
 
 	net_stats_update_tx_time(iface, start_time, end_time);
 }
 #else
-static inline void net_stats_update_tc_tx_time(struct net_if *iface,
+#define net_stats_update_tc_tx_time(iface, tc, start_time, end_time)
+#endif /* (NET_CONTEXT_TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS) \
+	&& defined(CONFIG_NET_NATIVE)
+static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 					       u8_t tc,
 					       u32_t start_time,
 					       u32_t end_time)
 {
-	ARG_UNUSED(iface);
-	ARG_UNUSED(tc);
-	ARG_UNUSED(start_time);
-	ARG_UNUSED(end_time);
+	u32_t diff = end_time - start_time;
+
+	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.sum +=
+		    k_cyc_to_ns_floor64(diff) / 1000);
+	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.count += 1);
+
+	net_stats_update_rx_time(iface, start_time, end_time);
 }
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP && CONFIG_NET_STATISTICS */
+#else
+#define net_stats_update_tc_rx_time(iface, tc, start_time, end_time)
+#endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 
 static inline void net_stats_update_tc_recv_pkt(struct net_if *iface, u8_t tc)
 {
@@ -401,7 +431,9 @@ static inline void net_stats_update_tc_recv_priority(struct net_if *iface,
 #define net_stats_update_tc_recv_bytes(iface, tc, bytes)
 #define net_stats_update_tc_recv_priority(iface, tc, priority)
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_STATISTICS)
+#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
+	defined(CONFIG_NET_PKT_TXTIME_STATS)) && \
+	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 					       u8_t pkt_priority,
 					       u32_t start_time,
@@ -412,20 +444,27 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 	net_stats_update_tx_time(iface, start_time, end_time);
 }
 #else
-static inline void net_stats_update_tc_tx_time(struct net_if *iface,
+#define net_stats_update_tc_tx_time(iface, priority, start_time, end_time)
+#endif /* (NET_CONTEXT_TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS) \
+	&& defined(CONFIG_NET_NATIVE)
+static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 					       u8_t pkt_priority,
 					       u32_t start_time,
 					       u32_t end_time)
 {
-	ARG_UNUSED(iface);
 	ARG_UNUSED(pkt_priority);
-	ARG_UNUSED(start_time);
-	ARG_UNUSED(end_time);
+
+	net_stats_update_rx_time(iface, start_time, end_time);
 }
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP && CONFIG_NET_STATISTICS */
+#else
+#define net_stats_update_tc_rx_time(iface, priority, start_time, end_time)
+#endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 #endif /* NET_TC_COUNT > 1 */
 
-#if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
+#if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT) \
+	&& defined(CONFIG_NET_NATIVE)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics_all(void);
 void net_print_statistics_iface(struct net_if *iface);
@@ -436,4 +475,5 @@ void net_print_statistics(void);
 #define net_print_statistics()
 #endif
 
+void net_stats_reset(struct net_if *iface);
 #endif /* __NET_STATS_H__ */

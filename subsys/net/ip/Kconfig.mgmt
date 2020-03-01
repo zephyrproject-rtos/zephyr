@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_MGMT
 	bool "Network Management API"
@@ -11,10 +8,9 @@ menuconfig NET_MGMT
 	  of the network stack as well as receiving notification on network
 	  events (ip address change, iface up and running ...).
 
-if NET_MGMT
-
 config NET_MGMT_EVENT
 	bool "Add support for runtime network event notifications"
+	depends on NET_MGMT
 	help
 	  This adds support for the stack to notify events towards any
 	  relevant listener. This can be necessary when application
@@ -68,4 +64,3 @@ config NET_DEBUG_MGMT_EVENT_STACK
 	  Add debug messages output on how much Net MGMT event stack is used.
 
 endif # NET_MGMT_EVENT
-endif # NET_MGMT

@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
 #define ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
 
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define SDMMC_CLOCK_400KHZ (400000U)
 #define SD_CLOCK_25MHZ (25000000U)
@@ -80,10 +80,12 @@ enum sdhc_app_ext_cmd {
 /* Fields in various card registers */
 #define SDHC_HCS (1 << 30)
 #define SDHC_CCS (1 << 30)
+#define SDHC_BUSY (1 << 31)
 #define SDHC_VHS_MASK (0x0F << 8)
 #define SDHC_VHS_3V3 (1 << 8)
 #define SDHC_CHECK 0xAA
 #define SDHC_CSD_SIZE 16
+#define SDHC_CSD_V1 0
 #define SDHC_CSD_V2 1
 
 /* Data block tokens */

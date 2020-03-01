@@ -29,11 +29,16 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include "bt_settings.h"
 
 extern const struct log_backend *log_backend_net_get(void);
+extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_NATIVE)
+static struct net_mgmt_event_callback mgmt_iface_cb;
+#endif
+
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
@@ -95,12 +100,12 @@ static void setup_dhcpv4(struct net_if *iface)
 #define setup_dhcpv4(...)
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
-    !defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_NATIVE_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
+	!defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_NATIVE_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 
 static void setup_ipv4(struct net_if *iface)
 {
@@ -171,7 +176,7 @@ static void setup_ipv4(struct net_if *iface)
 #define setup_ipv4(...)
 #endif /* CONFIG_NET_IPV4 && !CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 #if !defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
 #error "You need to define an IPv6 address!"
 #endif
@@ -281,12 +286,50 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
+#if defined(CONFIG_NET_NATIVE)
+static void iface_up_handler(struct net_mgmt_event_callback *cb,
+			     u32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		NET_INFO("Interface %p coming up", iface);
+
+		k_sem_reset(&counter);
+		k_sem_give(&waiter);
+	}
+}
+
+static bool check_interface(struct net_if *iface)
+{
+	if (net_if_is_up(iface)) {
+		k_sem_reset(&counter);
+		k_sem_give(&waiter);
+		return true;
+	}
+
+	NET_INFO("Waiting interface %p to be up...", iface);
+
+	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mgmt_iface_cb);
+
+	return false;
+}
+#else
+static bool check_interface(struct net_if *iface)
+{
+	k_sem_reset(&counter);
+	k_sem_give(&waiter);
+
+	return true;
+}
+#endif
+
 int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 {
 #define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
 	int loop = timeout / LOOP_DIVIDER;
-	int count = 0;
+	int count, need = 0;
 
 	if (app_info) {
 		NET_INFO("%s", log_strdup(app_info));
@@ -297,22 +340,6 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 		return -ENODEV;
 	}
 
-	if (flags & NET_CONFIG_NEED_IPV6) {
-		count++;
-	}
-
-	if (flags & NET_CONFIG_NEED_IPV4) {
-		count++;
-	}
-
-	k_sem_init(&counter, count, UINT_MAX);
-
-	setup_ipv4(iface);
-
-	setup_dhcpv4(iface);
-
-	setup_ipv6(iface, flags);
-
 	if (timeout < 0) {
 		count = -1;
 	} else if (timeout == 0) {
@@ -320,6 +347,48 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	} else {
 		count = timeout / 1000 + 1;
 	}
+
+	/* First make sure that network interface is up */
+	if (check_interface(iface) == false) {
+		k_sem_init(&counter, 1, UINT_MAX);
+
+		while (count--) {
+			if (!k_sem_count_get(&counter)) {
+				break;
+			}
+
+			if (k_sem_take(&waiter, loop)) {
+				if (!k_sem_count_get(&counter)) {
+					break;
+				}
+			}
+		}
+
+		/* If the above while() loop timeouted, reset the count so that
+		 * the while() loop below will not wait more.
+		 */
+		if (timeout > 0 && count < 0) {
+			count = 0;
+		}
+
+#if defined(CONFIG_NET_NATIVE)
+		net_mgmt_del_event_callback(&mgmt_iface_cb);
+#endif
+	}
+
+	if (flags & NET_CONFIG_NEED_IPV6) {
+		need++;
+	}
+
+	if (flags & NET_CONFIG_NEED_IPV4) {
+		need++;
+	}
+
+	k_sem_init(&counter, need, UINT_MAX);
+
+	setup_ipv4(iface);
+	setup_dhcpv4(iface);
+	setup_ipv6(iface, flags);
 
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
@@ -378,6 +447,10 @@ static int init_app(struct device *device)
 			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+		net_init_clock_via_sntp();
 	}
 
 	/* This is activated late as it requires the network stack to be up

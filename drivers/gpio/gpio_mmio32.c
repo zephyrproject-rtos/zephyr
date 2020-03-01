@@ -26,60 +26,62 @@
  * gpio_port_write.
  */
 
-#include <gpio/gpio_mmio32.h>
+#include <drivers/gpio/gpio_mmio32.h>
 #include <errno.h>
 
-static int gpio_mmio32_config(struct device *dev, int access_op,
-					u32_t pin, int flags)
+static int gpio_mmio32_config(struct device *dev,
+			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
-
-	if (flags & GPIO_INT) {
-		return -ENOTSUP;
-	}
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
 
 	if ((config->mask & (1 << pin)) == 0) {
 		return -EINVAL; /* Pin not in our validity mask */
 	}
 
-	if (flags & ~(GPIO_DIR_MASK | GPIO_POL_MASK)) {
+	if (flags & ~(GPIO_INPUT | GPIO_OUTPUT |
+		      GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |
+		      GPIO_ACTIVE_LOW)) {
 		/* We ignore direction and fake polarity, rest is unsupported */
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-		context->invert |= (1 << pin);
-	} else {
-		context->invert &= ~(1 << pin);
+	if ((flags & GPIO_OUTPUT) != 0) {
+		unsigned int key;
+		volatile u32_t *reg = config->reg;
+
+		key = irq_lock();
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			*reg = (*reg | (1 << pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			*reg = (*reg & (config->mask & ~(1 << pin)));
+		}
+		irq_unlock(key);
 	}
 
 	return 0;
 }
 
-static int gpio_mmio32_write(struct device *dev, int access_op,
-					u32_t pin, u32_t value)
+static int gpio_mmio32_port_get_raw(struct device *dev, u32_t *value)
+{
+	struct gpio_mmio32_context *context = dev->driver_data;
+	const struct gpio_mmio32_config *config = context->config;
+
+	*value = *config->reg & config->mask;
+
+	return 0;
+}
+
+static int gpio_mmio32_port_set_masked_raw(struct device *dev, u32_t mask,
+					  u32_t value)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
 	volatile u32_t *reg = config->reg;
-	u32_t mask = config->mask;
-	u32_t invert = context->invert;
 	unsigned int key;
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		mask &= 1 << pin;
-		if (!mask) {
-			return -EINVAL; /* Pin not in our validity mask */
-		}
-		value = value ? mask : 0;
-	}
-
-	value = (value ^ invert) & mask;
+	mask &= config->mask;
+	value &= mask;
 
 	/* Update pin state atomically */
 	key = irq_lock();
@@ -89,30 +91,76 @@ static int gpio_mmio32_write(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_mmio32_read(struct device *dev, int access_op,
-					u32_t pin, u32_t *value)
+static int gpio_mmio32_port_set_bits_raw(struct device *dev, u32_t mask)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
-	u32_t bits;
+	volatile u32_t *reg = config->reg;
+	unsigned int key;
 
-	bits = (*config->reg ^ context->invert) & config->mask;
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (bits >> pin) & 1;
-		if ((config->mask & (1 << pin)) == 0) {
-			return -EINVAL; /* Pin not in our validity mask */
-		}
-	} else {
-		*value = bits;
+	mask &= config->mask;
+
+	/* Update pin state atomically */
+	key = irq_lock();
+	*reg = (*reg | mask);
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int gpio_mmio32_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	struct gpio_mmio32_context *context = dev->driver_data;
+	const struct gpio_mmio32_config *config = context->config;
+	volatile u32_t *reg = config->reg;
+	unsigned int key;
+
+	mask &= config->mask;
+
+	/* Update pin state atomically */
+	key = irq_lock();
+	*reg = (*reg & ~mask);
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int gpio_mmio32_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	struct gpio_mmio32_context *context = dev->driver_data;
+	const struct gpio_mmio32_config *config = context->config;
+	volatile u32_t *reg = config->reg;
+	unsigned int key;
+
+	mask &= config->mask;
+
+	/* Update pin state atomically */
+	key = irq_lock();
+	*reg = (*reg ^ mask);
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int gpio_mmio32_pin_interrupt_configure(struct device *dev,
+		gpio_pin_t pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		return -ENOTSUP;
 	}
 
 	return 0;
 }
 
 static const struct gpio_driver_api gpio_mmio32_api = {
-	.config = gpio_mmio32_config,
-	.write = gpio_mmio32_write,
-	.read = gpio_mmio32_read,
+	.pin_configure = gpio_mmio32_config,
+	.port_get_raw = gpio_mmio32_port_get_raw,
+	.port_set_masked_raw = gpio_mmio32_port_set_masked_raw,
+	.port_set_bits_raw = gpio_mmio32_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_mmio32_port_clear_bits_raw,
+	.port_toggle_bits = gpio_mmio32_port_toggle_bits,
+	.pin_interrupt_configure = gpio_mmio32_pin_interrupt_configure,
 };
 
 int gpio_mmio32_init(struct device *dev)

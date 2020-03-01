@@ -1,10 +1,7 @@
-# Kconfig - OpenThread driver configuration options
-#
-#
+# OpenThread driver configuration options
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # OpenThread options
@@ -15,26 +12,44 @@ menuconfig NET_L2_OPENTHREAD
 	depends on FLASH_PAGE_LAYOUT
 	depends on CPLUSPLUS
 	depends on REBOOT
+	depends on SETTINGS
 	select OPENTHREAD_PLAT
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_ENTROPY_ENABLED
 
 if NET_L2_OPENTHREAD
+
+config OPENTHREAD_DTLS
+	# Hidden option to enable DTLS support in OpenThread
+	bool
+	select MBEDTLS_TLS_VERSION_1_2
+	select MBEDTLS_DTLS
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+	select MBEDTLS_ECP_NIST_OPTIM
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_SSL_EXPORT_KEYS
+	select MBEDTLS_CTR_DRBG_ENABLED
+	select MBEDTLS_HMAC_DRBG_ENABLED
 
 config OPENTHREAD_PLAT
 	bool
 	help
 	  This option enables OpenThread platform
 
-if OPENTHREAD_PLAT
-
 menuconfig OPENTHREAD_DEBUG
 	bool "OpenThread stack log support"
+	depends on OPENTHREAD_PLAT
 	help
 	  This option enables log support for OpenThread
 
-if OPENTHREAD_DEBUG
-
 choice
 	prompt "OpenThread stack log level"
+	depends on OPENTHREAD_DEBUG
 	help
 	  This option selects log level for OpenThread stack.
 
@@ -47,10 +62,6 @@ config OPENTHREAD_LOG_LEVEL_INFO
 config OPENTHREAD_LOG_LEVEL_DEBUG
 	bool "Debug"
 endchoice
-
-endif
-
-endif
 
 config OPENTHREAD_LOG_LEVEL
 	int
@@ -66,6 +77,7 @@ menuconfig OPENTHREAD_L2_DEBUG
 	  This option enables log support for OpenThread
 
 if OPENTHREAD_L2_DEBUG
+
 config OPENTHREAD_L2_DEBUG_DUMP_15_4
 	bool "Dump 802.15.4 packets"
 	help
@@ -129,6 +141,15 @@ config OPENTHREAD_MTD
 	bool "MTD - Minimal Thread Device"
 endchoice
 
+config OPENTHREAD_MTD_SED
+	bool "SED - Sleepy End Device"
+	depends on OPENTHREAD_MTD
+
+config OPENTHREAD_POLL_PERIOD
+	int "Poll period for sleepy end devices [ms]"
+	default 236000
+	depends on OPENTHREAD_MTD_SED
+
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
 	select SHELL
@@ -141,13 +162,21 @@ config OPENTHREAD_DIAG
 
 config OPENTHREAD_COMMISSIONER
 	bool "Commissioner functions support"
+	select OPENTHREAD_DTLS
 	help
-	  Enable commissioner capability in OpenThread stack
+	  Enable commissioner capability in OpenThread stack. Note, that DTLS
+	  handshake used in the commissioning procedure requires a larger
+	  mbedTLS heap than the default value. A minimum recommended value of
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
 
 config OPENTHREAD_JOINER
 	bool "Joiner functions support"
+	select OPENTHREAD_DTLS
 	help
-	  Enable joiner capability in OpenThread stack
+	  Enable joiner capability in OpenThread stack. Note, that DTLS
+	  handshake used in the commissioning procedure requires a larger
+	  mbedTLS heap than the default value. A minimum recommended value of
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
 
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Support for automatic joiner start"
@@ -163,14 +192,14 @@ config OPENTHREAD_JOINER_PSKD
 	  Pre Shared Key for the Device to start joiner
 
 config OPENTHREAD_DHCP6_CLIENT
-       bool "DHCPv6 client support"
-       help
-         Enable DHCPv6 client capability in OpenThread stack
+	bool "DHCPv6 client support"
+	help
+	  Enable DHCPv6 client capability in OpenThread stack
 
 config OPENTHREAD_DHCP6_SERVER
-       bool "DHCPv6 server support"
-       help
-         Enable DHCPv6 server capability in OpenThread stack
+	bool "DHCPv6 server support"
+	help
+	  Enable DHCPv6 server capability in OpenThread stack
 
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"

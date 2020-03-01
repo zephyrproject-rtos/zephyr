@@ -1,38 +1,24 @@
-# Kconfig - Kinetis KW2xD SoC configuration options
-#
+# Kinetis KW2xD SoC configuration options
+
 # Copyright (c) 2017, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW22D5 || SOC_MKW24D5
 
-if SOC_MKW22D5
-
 config SOC
-	string
 	default "mkw22d5"
-
-endif # SOC_MKW22D5
-
-if SOC_MKW24D5
+	depends on SOC_MKW22D5
 
 config SOC
-	string
 	default "mkw24d5"
-
-endif # SOC_MKW24D5
+	depends on SOC_MKW24D5
 
 config NUM_IRQS
-	int
 	default 65
-
-if ADC
 
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
+	depends on ADC
 
 if CLOCK_CONTROL
 
@@ -44,77 +30,47 @@ config CLOCK_CONTROL_MCUX_MCG
 
 endif # CLOCK_CONTROL
 
-if PINMUX
-
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_MCUX
 	default y
-
-endif # I2C
+	depends on I2C
 
 config SPI
 	default y
 
-if PWM
-
 config PWM_MCUX_FTM
 	default y
-
-endif # PWM
-
-if SPI
+	depends on PWM
 
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
-
-if ENTROPY_GENERATOR
+	depends on SPI
 
 config ENTROPY_MCUX_RNGA
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if FLASH
+	depends on ENTROPY_GENERATOR
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
-
-if SERIAL
+	depends on FLASH
 
 config UART_MCUX
 	default y
-
-endif # SERIAL
-
-if USB
+	depends on SERIAL
 
 config USB_KINETIS
 	default y
-
-endif # USB
-
-if WATCHDOG
+	depends on USB
 
 config WDT_MCUX_WDOG
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 endif # SOC_MKW2xD512

@@ -1,13 +1,11 @@
-# Kconfig - Kinetis K6X MCU line
-#
+# Kinetis K6X MCU line
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Kinetis K6x MCU Selection"
-depends on SOC_SERIES_KINETIS_K6X
+	prompt "Kinetis K6x MCU Selection"
+	depends on SOC_SERIES_KINETIS_K6X
 
 config SOC_MK64F12
 	bool "SOC_MK64F12"
@@ -22,6 +20,7 @@ config SOC_MK64F12
 	select HAS_OSC
 	select HAS_MCG
 	select CPU_HAS_FPU
+	select HAS_MCUX_RTC
 
 endchoice
 
@@ -97,23 +96,5 @@ config K64_FLASH_CLOCK_DIVIDER
 	help
 	  This option specifies the divide value for the K64 flash clock from the
 	  system clock.
-
-config WDOG_INIT
-	def_bool y
-	# omit prompt to signify a "hidden" option
-	help
-	  This processor enables the watchdog timer with a short timeout
-	  upon reset. Therefore, this requires that the watchdog be configured
-	  during reset handling.
-
-config PRESERVE_JTAG_IO_PINS
-	bool "Kinetis K6x JTAG pin usage"
-	depends on PINMUX
-	default y
-	help
-	  The FRDM-K64F board routes the PTA0/1/2 pins as JTAG/SWD signals that
-	  are used for the OpenSDAv2 debug interface.  These pins are also routed to
-	  the Arduino header as D8, D3 and D5, respectively.
-	  Enable this option to preserve these pins for the debug interface.
 
 endif # SOC_SERIES_KINETIS_K6X

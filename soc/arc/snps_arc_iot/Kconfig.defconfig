@@ -1,18 +1,14 @@
-#
 # Copyright (c) 2014 Wind River Systems, Inc.
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_ARC_IOT
 
 config SOC
-	string
 	default "snps_arc_iot"
 
 config CPU_EM4_FPUS
-	def_bool y
+	default y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
@@ -38,18 +34,12 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-if SERIAL
-
 config UART_NS16550
 	default y
-
-endif # SERIAL
-
-if UART_CONSOLE
+	depends on SERIAL
 
 config UART_NS16550_PORT_0
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 endif # ARC_IOT

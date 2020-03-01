@@ -7,11 +7,10 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - ble
   - adc
+  - ble
   - gpio
-  - hwinfo
   - i2c
-  - spi
   - pwm
+  - spi
   - watchdog

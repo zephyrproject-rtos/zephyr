@@ -12,11 +12,16 @@ The Zephyr device model provides a consistent device model for configuring the
 drivers that are part of a system. The device model is responsible
 for initializing all the drivers configured into the system.
 
-Each type of driver (UART, SPI, I2C) is supported by a generic type API.
+Each type of driver (e.g. UART, SPI, I2C) is supported by a generic type API.
 
 In this model the driver fills in the pointer to the structure containing the
 function pointers to its API functions during driver initialization. These
 structures are placed into the RAM section in initialization level order.
+
+.. image:: device_driver_model.svg
+   :width: 40%
+   :align: center
+   :alt: Device Driver Model
 
 Standard Drivers
 ****************
@@ -33,13 +38,17 @@ are listed below.
 * **Serial communication**: This device driver is used by the kernel's
   system console subsystem.
 
-* **Random number generator**: This device driver provides a source of random
-  numbers.
+* **Entropy**: This device driver provides a source of entropy numbers
+  for the random number generator subsystem.
 
   .. important::
 
-    Certain implementations of this device driver do not generate sequences of
-    values that are truly random.
+    Use the :ref:`random API functions <random_api>` for random
+    values. :ref:`Entropy functions <entropy_interface>` should not be
+    directly used as a random number generator source as some hardware
+    implementations are designed to be an entropy seed source for random
+    number generators and will not provide cryptographically secure
+    random number streams.
 
 Synchronous Calls
 *****************
@@ -48,9 +57,9 @@ Zephyr provides a set of device drivers for multiple boards. Each driver
 should support an interrupt-based implementation, rather than polling, unless
 the specific hardware does not provide any interrupt.
 
-High-level calls accessed through device-specific APIs, such as i2c.h
-or spi.h, are usually intended as synchronous. Thus, these calls should be
-blocking.
+High-level calls accessed through device-specific APIs, such as
+:file:`i2c.h` or :file:`spi.h`, are usually intended as synchronous. Thus,
+these calls should be blocking.
 
 Driver APIs
 ***********
@@ -75,6 +84,8 @@ applications.
 
 :c:func:`DEVICE_DECLARE()`
    Declare a device object.
+
+.. _device_struct:
 
 Driver Data Structures
 **********************
@@ -180,6 +191,60 @@ in the driver init function.
         most cases requires that the optional feature be controlled by a
         Kconfig option.
 
+Device-Specific API Extensions
+******************************
+
+Some devices can be cast as an instance of a driver subsystem such as GPIO,
+but provide additional functionality that cannot be exposed through the
+standard API.  These devices combine subsystem operations with
+device-specific APIs, described in a device-specific header.
+
+A device-specific API definition typically looks like this:
+
+.. code-block:: C
+
+   #include <drivers/subsystem.h>
+
+   typedef int (*specific_do_this_t)(struct device *device, int foo);
+
+   struct specific_api {
+     subsystem_driver_api subsystem_api;    /* this must be first */
+     specific_do_this_t do_this;
+   };
+
+   static inline int specific_do_this(struct device *device, int foo)
+   {
+     struct specific_api *api = (struct specific_api*)device->driver_api;
+
+     return api->do_this(device, foo);
+   }
+
+A driver implementing extensions to the subsystem will define the real
+implementation of both the subsystem API and the specific APIs:
+
+.. code-block:: C
+
+   static int generic_do_whatever(struct device *device, void *arg)
+   {
+      ...
+   }
+
+   static int specific_do_this(struct device *device, int foo)
+   {
+      ...
+   }
+
+   static const struct specific_api driver_api = {
+     .subsystem_api = {
+       .do_whatever = generic_do_whatever,
+     },
+     .do_this = specific_do_this,
+   };
+
+Applications use the device through both the subsystem and specific
+APIs.  The subsystem APIs will directly access the subsystem part of the
+specific API structure.
+
 Single Driver, Multiple Instances
 *********************************
 
@@ -262,7 +327,7 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or
 require the use of kernel services. The DEVICE_INIT() APIs allow the user to
 specify at what time during the boot sequence the init function will be
-executed. Any driver will specify one of five initialization levels:
+executed. Any driver will specify one of four initialization levels:
 
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
@@ -296,6 +361,9 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
+Drivers and other system utilities can determine whether startup is
+still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+function.
 
 System Drivers
 **************
@@ -325,7 +393,7 @@ pathological/unrecoverable failures, etc., should be handled by
 assertions.
 
 When it is appropriate to return error conditions for the caller to
-check, 0 should be returned on success and a POSIX errno.h code
+check, 0 should be returned on success and a POSIX :file:`errno.h` code
 returned on failure.  See
 https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
 for details about this.

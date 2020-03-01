@@ -1,36 +1,28 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: IMX EPIT COUNTER
+description: i.MX Enhanced Periodic Interrupt Timer (EPIT)
 
-description: >
-    This binding gives a base representation of the i.MX Enhanced Periodic Interrupt Timer (EPIT)
+compatible: "nxp,imx-epit"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-  compatible:
-      constraint: "nxp,imx-epit"
-
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true
 
   prescaler:
      type: int
-     category: required
+     required: true
      description: Set the EPIT prescaler between 0 and 4095
 
   rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral

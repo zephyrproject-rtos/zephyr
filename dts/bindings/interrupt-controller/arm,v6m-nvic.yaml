@@ -1,23 +1,21 @@
-title: ARMv6-M NVIC Interrupt Controller
+description: ARMv6-M NVIC (Nested Vectored Interrupt Controller) controller
 
-description: >
-    This binding describes the ARMv6-M Nested Vectored Interrupt Controller.
+compatible: "arm,v6m-nvic"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "arm,v6m-nvic"
-
     reg:
-      category: required
+      required: true
 
     arm,num-irq-priority-bits:
-      category: required
+      required: true
       type: int
       description: number of bits of IRQ priorities
 
-"#cells":
+    "#interrupt-cells":
+      const: 2
+
+interrupt-cells:
   - irq
   - priority

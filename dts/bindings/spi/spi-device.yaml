@@ -1,26 +1,18 @@
-#
 # Copyright (c) 2018, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: SPI Device Base Structure
+# Common fields for SPI devices
 
-description: >
-    This binding gives the base structures for all spi devices
+include: base.yaml
 
-inherits:
-    !include base.yaml
-
-parent:
-    bus: spi
+on-bus: spi
 
 properties:
     reg:
-      category: required
+      required: true
     spi-max-frequency:
       type: int
-      category: required
+      required: true
       description: Maximum clock frequency of device's SPI interface in Hz
     label:
-      category: required
+      required: true

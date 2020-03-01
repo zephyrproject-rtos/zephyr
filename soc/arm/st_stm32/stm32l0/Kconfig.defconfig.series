@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32L0 MCU line
-#
+# ST Microelectronics STM32L0 MCU line
+
 # Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Kconfig symbols common to STM32L0 series
 
@@ -20,11 +18,12 @@ if GPIO_STM32
 
 endif # GPIO_STM32
 
-if I2C_STM32
-
-config  I2C_STM32_V2
+config I2C_STM32_V2
 	default y
+	depends on I2C_STM32
 
-endif # I2C_STM32
+config DMA_STM32_V2
+	default y
+	depends on DMA_STM32
 
 endif # SOC_SERIES_STM32L0X

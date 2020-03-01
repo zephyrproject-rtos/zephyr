@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_GPTP
 	bool "Enable IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"

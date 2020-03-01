@@ -14,7 +14,7 @@ void fcb_test_last_of_n(void)
 	int rc;
 	struct fcb_entry loc;
 	struct fcb_entry areas[ENTRIES];
-	u8_t test_data[128];
+	u8_t test_data[128] = {0};
 	u8_t i;
 
 	fcb = &test_fcb;
@@ -29,7 +29,7 @@ void fcb_test_last_of_n(void)
 	 */
 	for (i = 0U; i < ENTRIES; i++) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
-		if (rc == FCB_ERR_NOSPACE) {
+		if (rc == -ENOSPC) {
 			break;
 		}
 

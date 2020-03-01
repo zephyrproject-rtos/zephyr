@@ -1,7 +1,6 @@
-# Kconfig - nRF91 PCA10090 board configuration
-#
+# nRF91 PCA10090 board configuration
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF9160_PCA10090 || BOARD_NRF9160_PCA10090NS
@@ -9,33 +8,21 @@ if BOARD_NRF9160_PCA10090 || BOARD_NRF9160_PCA10090NS
 config BOARD
 	default "nrf9160_pca10090"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_2
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_0
 	default y
-
-endif # PWM
-
-if SPI
+	depends on PWM
 
 config SPI_3
 	default y
-
-endif # SPI
+	depends on SPI
 
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
@@ -47,20 +34,20 @@ endif # SPI
 # Apply this configuration below by setting the Kconfig symbols used by
 # the linker according to the information extracted from DT partitions.
 
-if BOARD_NRF9160_PCA10090 && TRUSTED_EXECUTION_SECURE
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_SIZE
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE)
-
-endif # BOARD_NRF9160_PCA10090 && TRUSTED_EXECUTION_SECURE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	depends on BOARD_NRF9160_PCA10090 && TRUSTED_EXECUTION_SECURE
 
 if BOARD_NRF9160_PCA10090NS
 
 config FLASH_LOAD_OFFSET
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE)
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_NRF9160_PCA10090NS
 

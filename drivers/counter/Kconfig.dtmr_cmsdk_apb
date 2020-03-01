@@ -1,17 +1,11 @@
-# Kconfig - counter and timer configuration options
-#
-#
-# Copyright (c) 2016 Linaro Limited
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Counter and timer configuration options
 
-if SOC_FAMILY_ARM
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
 
 config TIMER_DTMR_CMSDK_APB
 	bool "ARM CMSDK (Cortex-M System Design Kit) DTMR Timer driver"
+	depends on SOC_FAMILY_ARM
 	help
 	  The dualtimer (DTMR) present in the platform is used as a timer.
 	  This option enables the support for the timer.
-
-endif # SOC_FAMILY_ARM

@@ -1,20 +1,14 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP Kinetis Ethernet
+description: NXP Kinetis Ethernet
 
-description: >
-    This binding gives a base representation of the NXP Kinetis Ethernet
-inherits:
-  !include ethernet.yaml
+compatible: "nxp,kinetis-ethernet"
+
+include: ethernet.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-ethernet"
     reg:
-      category: required
+      required: true
     interrupts:
-      category: required
+      required: true

@@ -365,6 +365,7 @@ void test_config_commit(void);
 
 void test_config_empty_fcb(void);
 void test_config_save_1_fcb(void);
+void test_config_delete_fcb(void);
 void test_config_insert2(void);
 void test_config_save_2_fcb(void);
 void test_config_insert3(void);
@@ -378,12 +379,14 @@ void test_config_save_fcb_unaligned(void);
 
 void test_main(void)
 {
-	ztest_test_suite(test_config_fcb,
 #ifdef CONFIG_SETTINGS_USE_BASE64
+	ztest_test_suite(test_config_fcb_base64,
 			 ztest_unit_test(test_settings_encode),
 			 ztest_unit_test(test_setting_raw_read),
-			 ztest_unit_test(test_setting_val_read),
+			 ztest_unit_test(test_setting_val_read));
+	ztest_run_test_suite(test_config_fcb_base64);
 #endif
+	ztest_test_suite(test_config_fcb,
 			 /* Config tests */
 			 ztest_unit_test(config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
@@ -396,6 +399,7 @@ void test_main(void)
 			 ztest_unit_test(test_config_save_fcb_unaligned),
 			 ztest_unit_test(test_config_empty_fcb),
 			 ztest_unit_test(test_config_save_1_fcb),
+			 ztest_unit_test(test_config_delete_fcb),
 			 ztest_unit_test(test_config_insert2),
 			 ztest_unit_test(test_config_save_2_fcb),
 			 ztest_unit_test(test_config_insert3),

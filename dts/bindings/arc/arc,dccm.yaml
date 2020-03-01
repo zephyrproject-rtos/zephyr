@@ -1,20 +1,12 @@
-#
 # Copyright (c) 2017, synopsy
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARC DCCM
+description: ARC DCCM
 
-description: >
-    This binding gives a base representation of the ARC DCCM
+compatible: "arc,dccm"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arc,dccm"
-
     reg:
-      category: required
+      required: true

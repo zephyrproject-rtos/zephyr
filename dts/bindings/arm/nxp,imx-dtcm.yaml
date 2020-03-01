@@ -1,20 +1,12 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: i.MX DTCM (Data Tightly Coupled Memory)
+description: i.MX DTCM (Data Tightly Coupled Memory)
 
-description: >
-  This binding gives a base representation of the i.MX DTCM
+compatible: "nxp,imx-dtcm"
 
-inherits:
-  !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-dtcm"
-
     reg:
-      category: required
+      required: true

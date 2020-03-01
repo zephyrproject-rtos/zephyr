@@ -125,17 +125,24 @@ bool netusb_enabled(void)
 
 static void netusb_init(struct net_if *iface)
 {
+	int ret;
+
 	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
 	LOG_DBG("netusb device initialization");
 
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	netusb.iface = iface;
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
-
-	net_if_down(iface);
 
 	LOG_INF("netusb initialized");
 }

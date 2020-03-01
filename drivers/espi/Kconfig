@@ -1,14 +1,12 @@
-# Kconfig - eSPI configuration options
-#
+# eSPI configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ESPI
 	bool "ESPI Driver"
 	help
-	  Enable ESPI Driver
+	  Enable ESPI Driver.
 
 if ESPI
 
@@ -22,69 +20,72 @@ config ESPI_SLAVE
 	bool "ESPI slave driver"
 	default y
 	help
-	  Enables eSPI driver in slave mode
+	  Enables eSPI driver in slave mode.
 
 config ESPI_INIT_PRIORITY
-	int "IRQ Priority for ESPI Controller"
+	int "ESPI Controller driver initialization priority"
 	default 3
 	help
-	  IRQ Priority for ESPI Controller
+	  Driver initialization priority for eSPI driver.
 
 config ESPI_PERIPHERAL_CHANNEL
 	bool "eSPI peripheral channel"
 	default y
 	help
-	  eSPI Controller supports peripheral channel
+	  eSPI Controller supports peripheral channel.
 
 config ESPI_VWIRE_CHANNEL
 	bool "eSPI virtual wire channel"
 	default y
 	help
-	  eSPI Controller supports virtual wires channel
+	  eSPI Controller supports virtual wires channel.
+
+config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	bool "Automatic acknowledge for eSPI HOST warnings"
+	default y
+	depends on ESPI_VWIRE_CHANNEL
+	help
+	  Enable automatic acknowledge from eSPI slave towards eSPI host
+	  whenever it receives suspend or reset warning.
+	  If this is disabled, it means the app wants to be give the opportunity
+	  to prepare for either HOST suspend or reset.
 
 config ESPI_OOB_CHANNEL
 	bool "eSPI Out-of-band channel"
-	default n
 	help
-	  eSPI Controller supports OOB channel
+	  eSPI Controller supports OOB channel.
 
 config ESPI_FLASH_CHANNEL
 	bool "ESPI flash channel"
-	default n
 	help
-	  eSPI Controller supports flash channel
+	  eSPI Controller supports flash channel.
 
 if ESPI_PERIPHERAL_CHANNEL
 
 config ESPI_PERIPHERAL_UART
 	bool "UART peripheral"
-	default n
 	help
-	  Enables UART over eSPI peripheral channel
+	  Enables UART over eSPI peripheral channel.
 
-config ESPI_PERIPHERAL_8042_KEYBOARD
-	bool "8042 keyboard peripheral"
-	default n
+config ESPI_PERIPHERAL_8042_KBC
+	bool "8042 kbc peripheral"
 	help
-	  Enables 8042 keyboard over eSPI peripheral channel
+	  Enables 8042 keyboard controller over eSPI peripheral channel.
 
 config ESPI_PERIPHERAL_HOST_IO
 	bool "Host I/O peripheral"
-	default n
 	help
-	  Enables ACPI Host I/O over eSPI peripheral channel
+	  Enables ACPI Host I/O over eSPI peripheral channel.
 
 config ESPI_PERIPHERAL_PORT_92
 	bool "Legacy Port 92 peripheral"
-	default n
 	help
-	  Enables legacy Port 92 over eSPI peripheral channel
+	  Enables legacy Port 92 over eSPI peripheral channel.
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	bool "Debug Port 80 peripheral"
-	default n
 	help
-	  Enables debug Port 80 over eSPI peripheral channel
+	  Enables debug Port 80 over eSPI peripheral channel.
 
 endif # ESPI_PERIPHERAL_CHANNEL
 

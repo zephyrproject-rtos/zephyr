@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2019, synopsys
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARC-HS Interrupt Distribution Unit
+description: |
+    ARC-HS Interrupt Distribution Unit 2nd-level interrupt controller. Can be
+    used in SMP configurations for dynamic IRQ routing and load balancing of
+    common/external IRQs towards the core interrupt controller.
 
-description: >
-    This binding describes the 2nd level interrupt controller can be used in
-    SMP configurations for dynamic IRQ routing, load balancing of
-    common/external IRQs towards core intc
+compatible: "snps,archs-idu-intc"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
-properties:
-    compatible:
-      constraint: "snps,archs-idu-intc"
-
-"#cells":
+interrupt-cells:
   - irq
   - priority

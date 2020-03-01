@@ -32,7 +32,7 @@
  *
  * @return Does not return
  */
-void FUNC_NORETURN _StackCheckHandler(void)
+void _StackCheckHandler(void)
 {
 	/* Stack canary error is a software fatal condition; treat it as such.
 	 */

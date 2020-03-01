@@ -9,14 +9,13 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
-#include <gpio.h>
+#include <drivers/sensor.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "stts751.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(STTS751);
+LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * stts751_enable_int - enable selected int pin to generate interrupt
@@ -71,7 +70,8 @@ static void stts751_handle_interrupt(void *arg)
 		stts751->thsld_handler(dev, &thsld_trigger);
 	}
 
-	gpio_pin_enable_callback(stts751->gpio, cfg->event_pin);
+	gpio_pin_interrupt_configure(stts751->gpio, cfg->event_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void stts751_gpio_callback(struct device *dev,
@@ -83,7 +83,7 @@ static void stts751_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->event_pin);
+	gpio_pin_interrupt_configure(dev, cfg->event_pin, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
 	k_sem_give(&stts751->gpio_sem);
@@ -137,15 +137,14 @@ int stts751_init_interrupt(struct device *dev)
 		       CONFIG_STTS751_THREAD_STACK_SIZE,
 		       (k_thread_entry_t)stts751_thread, dev,
 		       0, NULL, K_PRIO_COOP(CONFIG_STTS751_THREAD_PRIORITY),
-		       0, 0);
+		       0, K_NO_WAIT);
 #elif defined(CONFIG_STTS751_TRIGGER_GLOBAL_THREAD)
 	stts751->work.handler = stts751_work_cb;
 	stts751->dev = dev;
 #endif /* CONFIG_STTS751_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(stts751->gpio, cfg->event_pin,
-				 GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				 GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->int_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -169,5 +168,6 @@ int stts751_init_interrupt(struct device *dev)
 	stts751_low_temperature_threshold_set(stts751->ctx,
 					stts751_from_celsius_to_lsb(temp_lo));
 
-	return gpio_pin_enable_callback(stts751->gpio, cfg->event_pin);
+	return gpio_pin_interrupt_configure(stts751->gpio, cfg->event_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

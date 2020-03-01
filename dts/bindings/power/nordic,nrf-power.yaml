@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Nordic nRF power control
+description: Nordic nRF power control node
 
-description: >
-    This is a representation of the Nordic nRF power control node
+compatible: "nordic,nrf-power"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-power"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

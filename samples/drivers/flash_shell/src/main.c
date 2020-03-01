@@ -612,4 +612,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 );
 
 SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", cmd_flash);
-

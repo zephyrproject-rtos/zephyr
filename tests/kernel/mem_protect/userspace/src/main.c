@@ -114,25 +114,31 @@ static void write_control(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
+#ifdef CONFIG_X86_64
+	__asm__ volatile (
+		"movq $0xFFFFFFFF, %rax;\n\t"
+		"movq %rax, %cr0;\n\t"
+		);
+#else
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0xfffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
+#endif
 	zassert_unreachable("Write to control register did not fault");
 #elif defined(CONFIG_ARM)
 	unsigned int msr_value;
 
 	expect_fault = false;
 	BARRIER();
-	__asm__ volatile (
-		"mrs %0, CONTROL;\n\t"
-		"bic %0, #1;\n\t"
-		"msr CONTROL, %0;\n\t"
-		"mrs %0, CONTROL;\n\t"
-		: "=r" (msr_value)::
-	);
-	zassert_true((msr_value & 1),
+	msr_value = __get_CONTROL();
+	msr_value &= ~(CONTROL_nPRIV_Msk);
+	__set_CONTROL(msr_value);
+	__DSB();
+	__ISB();
+	msr_value = __get_CONTROL();
+	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
@@ -163,11 +169,19 @@ static void disable_mmu_mpu(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
+#ifdef CONFIG_X86_64
+	__asm__ volatile (
+		"movq %cr0, %rax;\n\t"
+		"andq $0x7ffeffff, %rax;\n\t"
+		"movq %rax, %cr0;\n\t"
+		);
+#else
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0x7ffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
+#endif
 #elif defined(CONFIG_ARM)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
@@ -293,14 +307,8 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-K_APP_DMEM(part0) volatile int *priv_stack_ptr;
-#if defined(CONFIG_X86)
-/*
- * We can't inline this in the code or make it static
- * or local without triggering a warning on -Warray-bounds.
- */
-K_APP_DMEM(part0) size_t size = MMU_PAGE_SIZE;
-#elif defined(CONFIG_ARC)
+K_APP_DMEM(part0) volatile char *priv_stack_ptr;
+#if defined(CONFIG_ARC)
 K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 			       STACK_GUARD_SIZE);
 #endif
@@ -313,13 +321,12 @@ K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 static void read_priv_stack(void)
 {
 	/* Try to read from privileged stack. */
-#if defined(CONFIG_X86) || defined(CONFIG_ARC)
+#if defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	priv_stack_ptr = &s[0];
-	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
-#elif defined(CONFIG_ARM)
+	priv_stack_ptr = (char *)&s[0] - size;
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -327,7 +334,7 @@ static void read_priv_stack(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
-	printk("%d\n", *priv_stack_ptr);
+	printk("%c\n", *priv_stack_ptr);
 	zassert_unreachable("Read from privileged stack did not fault");
 }
 
@@ -339,13 +346,12 @@ static void read_priv_stack(void)
 static void write_priv_stack(void)
 {
 	/* Try to write to privileged stack. */
-#if defined(CONFIG_X86) || defined(CONFIG_ARC)
+#if defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	priv_stack_ptr = &s[0];
-	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
-#elif defined(CONFIG_ARM)
+	priv_stack_ptr = (char *)&s[0] - size;
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -648,15 +654,14 @@ static void access_other_memdomain(void)
 			(k_thread_entry_t)shared_mem_thread, NULL,
 			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_abort(k_current_get());
-
+	k_yield(); /* Let other thread run */
 }
 
 
 #if defined(CONFIG_ARM)
 extern u8_t *z_priv_stack_find(void *obj);
-extern k_thread_stack_t ztest_thread_stack[];
 #endif
+extern k_thread_stack_t ztest_thread_stack[];
 
 struct k_mem_domain add_thread_drop_dom;
 struct k_mem_domain add_part_drop_dom;
@@ -677,6 +682,8 @@ static void user_half(void *arg1, void *arg2, void *arg3)
 	if (!expect_fault) {
 		ztest_test_pass();
 	} else {
+		printk("Expecting a fatal error %d but succeeded instead\n",
+		       expected_reason);
 		ztest_test_fail();
 	}
 }
@@ -696,7 +703,7 @@ static void domain_add_thread_drop_to_user(void)
 	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -716,7 +723,7 @@ static void domain_add_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -738,7 +745,7 @@ static void domain_remove_thread_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -761,7 +768,7 @@ static void domain_remove_part_drop_to_user(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_drop_dom, &access_part);
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -780,11 +787,13 @@ static void spawn_user(void)
 
 	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
 			user_ctx_switch_half, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), K_INHERIT_PERMS | K_USER,
+			-1, K_INHERIT_PERMS | K_USER,
 			K_NO_WAIT);
 
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 	if (expect_fault) {
+		printk("Expecting a fatal error %d but succeeded instead\n",
+		       expected_reason);
 		ztest_test_fail();
 	}
 }
@@ -804,7 +813,7 @@ static void domain_add_thread_context_switch(void)
 	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
 	k_mem_domain_remove_thread(k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
 
 	spawn_user();
@@ -824,7 +833,7 @@ static void domain_add_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
 
 	spawn_user();
@@ -846,7 +855,7 @@ static void domain_remove_thread_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_thread_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_thread(k_current_get());
 
 	spawn_user();
@@ -870,7 +879,7 @@ static void domain_remove_part_context_switch(void)
 	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	k_mem_domain_remove_partition(&remove_part_ctx_dom, &access_part);
 
 	spawn_user();
@@ -893,45 +902,45 @@ struct foo {
 
 struct foo stest_member_stack;
 
-void z_impl_stack_info_get(u32_t *start_addr, u32_t *size)
+void z_impl_stack_info_get(char **start_addr, size_t *size)
 {
-	*start_addr = k_current_get()->stack_info.start;
+	*start_addr = (char *)k_current_get()->stack_info.start;
 	*size = k_current_get()->stack_info.size;
 }
 
-Z_SYSCALL_HANDLER(stack_info_get, start_addr, size)
+static inline void z_vrfy_stack_info_get(char **start_addr,
+					 size_t *size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(u32_t)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(u32_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
 
-	z_impl_stack_info_get((u32_t *)start_addr, (u32_t *)size);
-
-	return 0;
+	z_impl_stack_info_get(start_addr, size);
 }
+#include <syscalls/stack_info_get_mrsh.c>
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
-	return z_arch_buffer_validate(addr, size, write);
+	return arch_buffer_validate(addr, size, write);
 }
 
-Z_SYSCALL_HANDLER(check_perms, addr, size, write)
+static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 {
 	return z_impl_check_perms((void *)addr, size, write);
 }
+#include <syscalls/check_perms_mrsh.c>
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
-	size_t stack_size;
+	size_t stack_size, unused;
 	u8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
+	int ret, expected;
 
 	expect_fault = false;
 
-
 	/* Dump interesting information */
-
-	stack_info_get((u32_t *)&stack_start, (u32_t *)&stack_size);
+	stack_info_get(&stack_start, &stack_size);
 	printk("   - Thread reports buffer %p size %zu\n", stack_start,
 	       stack_size);
 
@@ -972,7 +981,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		*pos = val;
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		/* If we're in user mode, check every byte in the stack buffer
 		 * to ensure that the thread has permissions on it.
 		 */
@@ -988,9 +997,11 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		 * and not the buffer.
 		 */
 		zassert_true(check_perms(obj_start - 1, 1, 0),
-			     "user mode access to memory before start of stack object");
+			     "user mode access to memory %p before start of stack object",
+			     obj_start - 1);
 		zassert_true(check_perms(obj_end, 1, 0),
-			     "user mode access past end of stack object");
+			     "user mode access to memory %p past end of stack object",
+			     obj_end);
 	}
 
 
@@ -1000,11 +1011,24 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		       Z_THREAD_STACK_BUFFER(stack_obj));
 	}
 
-	if (z_arch_is_user_context()) {
+	if (arch_is_user_context()) {
 		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
-			      "bad stack size in thread struct");
+			      "bad stack size %zu in thread struct",
+			      stack_size);
 	}
 
+	ret = k_thread_stack_space_get(k_current_get(), &unused);
+	if (!arch_is_user_context() &&
+	    IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
+		expected = -ENOTSUP;
+	} else {
+		expected = 0;
+	}
+
+	zassert_equal(ret, expected, "unexpected return value %d", ret);
+	if (ret == 0) {
+		printk("self-reported unused stack space: %zu\n", unused);
+	}
 
 	k_sem_give(&uthread_end_sem);
 }
@@ -1024,14 +1048,18 @@ void stest_thread_entry(void *p1, void *p2, void *p3)
 void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
 			 bool drop)
 {
+	int ret;
+	size_t unused;
+
 	k_thread_create(&uthread_thread, stack_obj, STEST_STACKSIZE,
 			stest_thread_entry, stack_obj, (void *)obj_size,
 			(void *)drop,
 			-1, flags, K_NO_WAIT);
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 
-	stack_analyze("test_thread", (char *)uthread_thread.stack_info.start,
-		      uthread_thread.stack_info.size);
+	ret = k_thread_stack_space_get(&uthread_thread, &unused);
+	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+	printk("target thread unused stack space: %zu\n", unused);
 }
 
 void scenario_entry(void *stack_obj, size_t obj_size)
@@ -1049,7 +1077,7 @@ void scenario_entry(void *stack_obj, size_t obj_size)
 
 void test_stack_buffer(void)
 {
-	printk("Reserved space: %u\n", K_THREAD_STACK_RESERVED);
+	printk("Reserved space: %zu\n", K_THREAD_STACK_RESERVED);
 	printk("Provided stack size: %u\n", STEST_STACKSIZE);
 	scenario_entry(stest_stack, sizeof(stest_stack));
 
@@ -1082,7 +1110,7 @@ void test_bad_syscall(void)
 	expect_fault = true;
 	expected_reason = K_ERR_KERNEL_OOPS;
 
-	z_arch_syscall_invoke0(INT_MAX);
+	arch_syscall_invoke0(INT_MAX);
 
 }
 
@@ -1140,6 +1168,32 @@ void test_oops_stackcheck(void)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
 }
 
+void z_impl_check_syscall_context(void)
+{
+	int key = irq_lock();
+
+	irq_unlock(key);
+
+	/* Make sure that interrupts aren't locked when handling system calls;
+	 * key has the previous locking state before the above irq_lock() call.
+	 */
+	zassert_true(arch_irq_unlocked(key), "irqs locked during syscall");
+
+	/* The kernel should not think we are in ISR context either */
+	zassert_false(k_is_in_isr(), "kernel reports irq context");
+}
+
+static inline void z_vrfy_check_syscall_context(void)
+{
+	return z_impl_check_syscall_context();
+}
+#include <syscalls/check_syscall_context_mrsh.c>
+
+void test_syscall_context(void)
+{
+	check_syscall_context();
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1150,8 +1204,13 @@ void test_main(void)
 	k_mem_domain_add_thread(&dom0, k_current_get());
 
 #if defined(CONFIG_ARM)
-	priv_stack_ptr = (int *)z_priv_stack_find(ztest_thread_stack);
+	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
+#elif defined(CONFIG_X86)
+	struct z_x86_thread_stack_header *hdr;
 
+	hdr = ((struct z_x86_thread_stack_header *)ztest_thread_stack);
+	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
+			  (sizeof(hdr->privilege_stack) - 1));
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
@@ -1173,14 +1232,14 @@ void test_main(void)
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),
-			 ztest_user_unit_test(read_other_stack),
-			 ztest_user_unit_test(write_other_stack),
+			 ztest_1cpu_user_unit_test(read_other_stack),
+			 ztest_1cpu_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe),
-			 ztest_unit_test(access_other_memdomain),
+			 ztest_1cpu_unit_test(access_other_memdomain),
 			 ztest_unit_test(domain_add_thread_drop_to_user),
 			 ztest_unit_test(domain_add_part_drop_to_user),
 			 ztest_unit_test(domain_remove_part_drop_to_user),
@@ -1189,7 +1248,7 @@ void test_main(void)
 			 ztest_unit_test(domain_add_part_context_switch),
 			 ztest_unit_test(domain_remove_part_context_switch),
 			 ztest_unit_test(domain_remove_thread_context_switch),
-			 ztest_unit_test(test_stack_buffer),
+			 ztest_1cpu_unit_test(test_stack_buffer),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
 			 ztest_user_unit_test(test_oops_panic),
@@ -1197,7 +1256,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_exception),
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
-			 ztest_unit_test(test_object_recycle)
+			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_syscall_context)
 			 );
 	ztest_run_test_suite(userspace);
 }

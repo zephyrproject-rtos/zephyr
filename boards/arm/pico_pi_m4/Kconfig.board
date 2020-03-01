@@ -1,0 +1,8 @@
+# Pico-Pi iMX7D M4 board
+
+# Copyright (c) 2019, Joris Offouga
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PICO_PI_M4
+	bool "Pico-PI iMX7D Dual"
+	depends on SOC_SERIES_IMX7_M4

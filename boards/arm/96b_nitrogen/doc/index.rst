@@ -187,6 +187,9 @@ Low Speed Header
 | 40     | GND         | GND                  |
 +--------+-------------+----------------------+
 
+More detailed information about the connectors can be found in
+`96Boards IE Specification`_.
+
 System Clock
 ============
 
@@ -341,3 +344,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _pyOCD issue 259:
     https://github.com/mbedmicro/pyOCD/issues/259
+
+.. _96Boards IE Specification:
+    https://linaro.co/ie-specification

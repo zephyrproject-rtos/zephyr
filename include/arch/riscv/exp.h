@@ -15,16 +15,16 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <toolchain.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 #include <soc_context.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /*
@@ -75,10 +75,11 @@ typedef struct __esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 typedef struct soc_esf soc_esf_t;
 #endif
-#endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_ */

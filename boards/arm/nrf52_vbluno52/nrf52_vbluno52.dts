@@ -40,7 +40,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Button";
 		};
 	};
@@ -65,6 +65,7 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <26>;

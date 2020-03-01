@@ -33,6 +33,13 @@ struct bt_mesh_app_key {
 	} keys[2];
 };
 
+struct bt_mesh_node {
+	u16_t addr;
+	u16_t net_idx;
+	u8_t  dev_key[16];
+	u8_t  num_elem;
+};
+
 struct bt_mesh_subnet {
 	u32_t beacon_sent;        /* Timestamp of last sent beacon */
 	u8_t  beacons_last;       /* Number of beacons during last
@@ -90,7 +97,6 @@ struct bt_mesh_friend {
 	u8_t  fsn:1,
 	      send_last:1,
 	      pending_req:1,
-	      sec_update:1,
 	      pending_buf:1,
 	      valid:1,
 	      established:1;
@@ -107,6 +113,12 @@ struct bt_mesh_friend {
 
 	struct bt_mesh_friend_seg {
 		sys_slist_t queue;
+
+		/* The target number of segments, i.e. not necessarily
+		 * the current number of segments, in the queue. This is
+		 * used for Friend Queue free space calculations.
+		 */
+		u8_t        seg_count;
 	} seg[FRIEND_SEG_RX];
 
 	struct net_buf *last;
@@ -209,6 +221,7 @@ enum {
 	BT_MESH_HB_PUB_PENDING,
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
+	BT_MESH_VA_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -338,6 +351,8 @@ u32_t bt_mesh_next_seq(void);
 void bt_mesh_net_start(void);
 
 void bt_mesh_net_init(void);
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+			      struct bt_mesh_net_rx *rx);
 
 /* Friendship Credential Management */
 struct friend_cred {

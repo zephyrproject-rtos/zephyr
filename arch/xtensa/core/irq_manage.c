@@ -5,7 +5,7 @@
 
 #include <zephyr/types.h>
 #include <stdio.h>
-#include <xtensa_api.h>
+#include <arch/xtensa/xtensa_api.h>
 #include <kernel_arch_data.h>
 #include <sys/__assert.h>
 /*
@@ -38,9 +38,10 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
 int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+			       void (*routine)(void *parameter),
+			       void *parameter, u32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
@@ -48,4 +49,13 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	z_isr_install(irq, routine, parameter);
 	return irq;
 }
+#else /* !CONFIG_MULTI_LEVEL_INTERRUPTS */
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			       void (*routine)(void *parameter),
+			       void *parameter, u32_t flags)
+{
+	return z_soc_irq_connect_dynamic(irq, priority, routine, parameter,
+					 flags);
+}
+#endif /* !CONFIG_MULTI_LEVEL_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

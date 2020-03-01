@@ -9,7 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 #include "system_cmsdk_musca.h"
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <sys/util.h>
 #endif
 

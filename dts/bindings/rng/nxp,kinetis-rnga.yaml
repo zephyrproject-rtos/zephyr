@@ -1,26 +1,18 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Kinetis RNGA (Random Number Generator Accelerator)
+description: Kinetis RNGA (Random Number Generator Accelerator)
 
-description: >
-    This binding gives a base representation of the Kinetis RNGA
+compatible: "nxp,kinetis-rnga"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-rnga"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

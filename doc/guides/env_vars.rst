@@ -146,7 +146,7 @@ behavior.
   :ref:`important-build-vars`.
 - :envvar:`CONF_FILE`: allows adding Kconfig fragments to an application build;
   see :ref:`important-build-vars`.
-- :envvar:`DTC_OVERLAY_FILE`: allows adding device tree overlays to an
+- :envvar:`DTC_OVERLAY_FILE`: allows adding devicetree overlays to an
   application build; see :ref:`important-build-vars`.
 - :envvar:`ZEPHYR_BASE`: the absolute path to the main ``zephyr`` repository.
   This is set whenever you run the ``zephyr-env.sh`` or ``zephyr-env.cmd``

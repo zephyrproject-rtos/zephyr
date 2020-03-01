@@ -54,8 +54,7 @@ def debug(text):
     sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 def error(text):
-    sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
-    sys.exit(1)
+    sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 def set_magic_number(value):
     flash_content.append(value)

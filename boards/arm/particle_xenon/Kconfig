@@ -1,14 +1,10 @@
-# Kconfig - Particle Xenon configuration
-#
-# Copyright (c) 2018 Endre Karlson
-#
-# SPDX-License-Identifier: Apache-2.0
+# Particle Xenon configuration
 
-if BOARD_PARTICLE_XENON
+# Copyright (c) 2018 Endre Karlson
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ENABLE_DCDC
 	bool "Enable DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
-
-endif # BOARD_PARTICLE_XENON
+	depends on BOARD_PARTICLE_XENON

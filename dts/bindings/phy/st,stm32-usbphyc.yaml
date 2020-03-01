@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018, Yannis Damigos
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STM32 USB HS PHY
+description: STM32 USB HS PHY controller
 
-description: >
-    This binding gives a base representation of the STM32 USB HS PHY controller
+compatible: "st,stm32-usbphyc"
 
-inherits:
-    !include phy.yaml
+include: phy-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-usbphyc"
-
     reg:
-      category: required
+      required: true
 
     "#phy-cells":
-      description: should be 0
+      const: 0

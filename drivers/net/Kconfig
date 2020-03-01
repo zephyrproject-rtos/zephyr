@@ -1,4 +1,4 @@
-# Kconfig - Misc network drivers configuration options
+# Misc network drivers configuration options
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -7,7 +7,8 @@
 menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
-	select UART_PIPE
+	depends on NET_NATIVE
+	select UART_PIPE if ! MODEM_GSM_PPP
 	select UART_INTERRUPT_DRIVEN
 
 if NET_PPP
@@ -25,15 +26,6 @@ config NET_PPP_UART_PIPE_BUF_LEN
 	  This options sets the size of the UART pipe buffer where data
 	  is being read to.
 
-config NET_PPP_MTU
-	int "PPP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the PPP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's.
-
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"
 	default y
@@ -42,15 +34,7 @@ config NET_PPP_VERIFY_FCS
 	  to disable this as it takes some time to verify the received
 	  packet.
 
-config NET_PPP_CALC_FCS
-	bool "Calculate FCS for the sent packet"
-	default y
-	help
-	  If you have a reliable link, then it might make sense
-	  to disable this as it takes some time to calculate the FCS for
-	  the sent packet.
-
-config	PPP_MAC_ADDR
+config PPP_MAC_ADDR
 	string "MAC address for the interface"
 	help
 	  Specify a MAC address for the PPP interface in the form of
@@ -58,6 +42,12 @@ config	PPP_MAC_ADDR
 	  aa:33:cc:22:e2:c0).  The default is an empty string, which
 	  means the code will make 00:00:5E:00:53:XX, where XX will be
 	  random.
+
+config PPP_CLIENT_CLIENTSERVER
+	bool "Reply to the request CLIENT with CLIENTSERVER"
+	help
+	  This is only necessary if a ppp connection should be
+	  established with a Microsoft Windows PC.
 
 module = NET_PPP
 module-dep = LOG
@@ -73,26 +63,17 @@ endif # NET_PPP
 menuconfig SLIP
 	bool "SLIP driver"
 	depends on (!QEMU_TARGET || NET_QEMU_SLIP)
+	depends on NET_NATIVE
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 
 if SLIP
 
-config	SLIP_DRV_NAME
+config SLIP_DRV_NAME
 	string "SLIP Driver name"
 	default "slip"
 	help
 	  This option sets the driver name
-
-config	SLIP_MTU
-	int "SLIP MTU"
-	default 1500
-	range 80 1500
-	help
-	  This option sets the MTU for the SLIP connection.
-	  The value is only used when fragmenting the network
-	  data into net_buf's. The actual SLIP connection
-	  does not use this value.
 
 module = SLIP
 module-dep = LOG
@@ -100,20 +81,19 @@ module-str = Log level for slip driver
 module-help = Sets log level for slip driver.
 source "subsys/net/Kconfig.template.log_config.net"
 
-config	SLIP_STATISTICS
+config SLIP_STATISTICS
 	bool "SLIP network connection statistics"
 	help
 	  This option enables statistics support for SLIP driver.
 
-config  SLIP_TAP
+config SLIP_TAP
 	bool "Use TAP interface to host"
 	default y
 	select NET_L2_ETHERNET
 	help
 	  In TAP the Ethernet frames are transferred over SLIP.
 
-
-config	SLIP_MAC_ADDR
+config SLIP_MAC_ADDR
 	string "MAC address for the interface"
 	help
 	  Specify a MAC address for the SLIP interface in the form of

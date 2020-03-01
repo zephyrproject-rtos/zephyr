@@ -178,7 +178,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
  * @return 0 if ok, <0 if linking failed
  */
 int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
-		 struct net_linkaddr *lladdr);
+		 const struct net_linkaddr *lladdr);
 
 /**
  * @brief Unlink a neighbor from specific link layer address.
@@ -193,7 +193,16 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr);
  * @param idx Link layer address index in ll table.
  * @return Pointer to link layer address storage, NULL if not found
  */
+#if defined(CONFIG_NET_NATIVE)
 struct net_linkaddr_storage *net_nbr_get_lladdr(u8_t idx);
+#else
+static inline struct net_linkaddr_storage *net_nbr_get_lladdr(u8_t idx)
+{
+	ARG_UNUSED(idx);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Clear table from all neighbors. After this the linking between

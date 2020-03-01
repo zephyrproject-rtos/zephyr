@@ -1,17 +1,12 @@
-title: Atmel DMAC binding
+description: Atmel SAM0 DMA controller
 
-description: >
-    Binding for the Atmel SAM0 DMA controller.
+compatible: "atmel,sam0-dmac"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-dmac"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

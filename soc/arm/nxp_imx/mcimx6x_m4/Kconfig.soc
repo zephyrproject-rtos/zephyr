@@ -1,13 +1,11 @@
-# Kconfig - i.MX 6SoloX M4 core series
-#
+# i.MX 6SoloX M4 core series
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "i.MX 6SoloX Selection"
-depends on SOC_SERIES_IMX_6X_M4
+	prompt "i.MX 6SoloX Selection"
+	depends on SOC_SERIES_IMX_6X_M4
 
 config SOC_MCIMX6X_M4
 	bool "SOC_MCIMX6X_M4"

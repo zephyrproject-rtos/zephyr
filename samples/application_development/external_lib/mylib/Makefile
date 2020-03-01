@@ -10,7 +10,7 @@ LIB_DIR ?= $(PREFIX)/lib
 
 all:
 	mkdir -p $(OBJ_DIR) $(LIB_DIR)
-	$(CC) -c $(CFLAGS) -Iinclude src/mylib.c -o $(OBJ_DIR)/mylib.o
+	$(CC) -c $(CFLAGS) -MD -Iinclude src/mylib.c -o $(OBJ_DIR)/mylib.o
 	$(AR) -rcs $(LIB_DIR)/libmylib.a $(OBJ_DIR)/mylib.o
 
 clean:

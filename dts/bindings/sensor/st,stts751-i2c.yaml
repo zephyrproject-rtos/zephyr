@@ -1,23 +1,19 @@
-#
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STMicroelectronics MEMS sensors STTS751
+description: |
+    STMicroelectronics STTS751 temperature sensor connected to I2C bus
 
-description: >
-    This binding gives a base representation of STTS751
-    temperature sensor connected to I2C bus
+compatible: "st,stts751"
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,stts751"
-
     drdy-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
       description: DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.

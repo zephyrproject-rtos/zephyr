@@ -1,9 +1,7 @@
-# Kconfig - MCUXpresso SDK pinmux
-#
+# MCUXpresso SDK pinmux
+
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PINMUX_MCUX
 	bool "MCUX pinmux driver"

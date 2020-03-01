@@ -7,17 +7,25 @@
 
 #include <ztest.h>
 #include <kernel_version.h>
-#include <misc/speculation.h>
+#include <sys/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);
 extern void test_byteorder_mem_swap(void);
+extern void test_sys_get_be64(void);
+extern void test_sys_put_be64(void);
+extern void test_sys_get_be32(void);
+extern void test_sys_put_be32(void);
+extern void test_sys_get_be16(void);
+extern void test_sys_put_be16(void);
+extern void test_sys_get_le16(void);
+extern void test_sys_put_le16(void);
+extern void test_sys_get_le32(void);
+extern void test_sys_put_le32(void);
+extern void test_sys_get_le64(void);
+extern void test_sys_put_le64(void);
 extern void test_atomic(void);
-extern void test_intmath(void);
 extern void test_printk(void);
-extern void test_slist(void);
-extern void test_sflist(void);
-extern void test_dlist(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
@@ -95,15 +103,23 @@ void test_main(void)
 			 ztest_unit_test(test_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
+			 ztest_unit_test(test_sys_get_be64),
+			 ztest_unit_test(test_sys_put_be64),
+			 ztest_unit_test(test_sys_get_be32),
+			 ztest_unit_test(test_sys_put_be32),
+			 ztest_unit_test(test_sys_get_be16),
+			 ztest_unit_test(test_sys_put_be16),
+			 ztest_unit_test(test_sys_get_le16),
+			 ztest_unit_test(test_sys_put_le16),
+			 ztest_unit_test(test_sys_get_le32),
+			 ztest_unit_test(test_sys_put_le32),
+			 ztest_unit_test(test_sys_get_le64),
+			 ztest_unit_test(test_sys_put_le64),
 			 ztest_user_unit_test(test_atomic),
 			 ztest_unit_test(test_bitfield),
 			 ztest_unit_test(test_printk),
-			 ztest_unit_test(test_slist),
-			 ztest_unit_test(test_sflist),
-			 ztest_unit_test(test_dlist),
-			 ztest_unit_test(test_intmath),
 			 ztest_unit_test(test_timeout_order),
-			 ztest_user_unit_test(test_clock_uptime),
+			 ztest_1cpu_user_unit_test(test_clock_uptime),
 			 ztest_unit_test(test_clock_cycle),
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),

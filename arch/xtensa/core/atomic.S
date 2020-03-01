@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa_context.h>
+#include <arch/xtensa/xtensa_context.h>
 /**
  *
  * @brief Atomically clear a memory location
@@ -391,15 +391,15 @@ atomic_xor:
 	.align  4
 atomic_cas:
 	ENTRY(48)
-.L_LoopCas:
 	l32ai a5, a2, 0
-	beq a5, a3, 1f
-	movi a2, 0
-	j 2f
+	beq a5, a3, 2f
 1:
+	movi a2, 0
+	j 3f
+2:
 	wsr a5, scompare1
 	s32c1i a4, a2, 0
-	bne a3, a5, .L_LoopCas
+	bne a4, a5, 1b
 	movi a2, 1
-2:
+3:
 	RET(48)

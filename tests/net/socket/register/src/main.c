@@ -54,16 +54,14 @@ static const struct test_result {
 		.test_case.family = AF_INET,
 		.test_case.type = SOCK_DGRAM,
 		.test_case.proto = 0,
-		.result = -1,
-		.error = EPROTONOSUPPORT,
+		.result = 0,
 	},
 	{
 		/* 4 */
 		.test_case.family = AF_INET6,
 		.test_case.type = SOCK_DGRAM,
 		.test_case.proto = 0,
-		.result = -1,
-		.error = EPROTONOSUPPORT,
+		.result = 0,
 	},
 	{
 		/* 5 */
@@ -133,9 +131,17 @@ static const struct test_result {
 		/* 14 */
 		.test_case.family = AF_CAN,
 		.test_case.type = SOCK_RAW,
-		.test_case.proto = 255,
+		.test_case.proto = IPPROTO_RAW,
 		.result = -1,
 		.error = EPFNOSUPPORT,
+	},
+	{
+		/* 15 */
+		.test_case.family = AF_INET,
+		.test_case.type = SOCK_DGRAM,
+		.test_case.proto = 254,
+		.result = -1,
+		.error = EPROTONOSUPPORT,
 	},
 };
 
@@ -260,7 +266,7 @@ void test_create_sockets(void)
 void test_main(void)
 {
 	ztest_test_suite(socket_register,
-			 ztest_user_unit_test(test_create_sockets));
+			 ztest_unit_test(test_create_sockets));
 
 	ztest_run_test_suite(socket_register);
 }

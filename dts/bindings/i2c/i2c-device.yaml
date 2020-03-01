@@ -1,22 +1,14 @@
-#
 # Copyright (c) 2017, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: I2C Device Base Structure
+# Common fields for I2C devices
 
-description: >
-    This binding gives the base structures for all i2c devices
+include: base.yaml
 
-inherits:
-    !include base.yaml
-
-parent:
-    bus: i2c
+on-bus: i2c
 
 properties:
     reg:
-      category: required
+      required: true
     label:
-      category: required
+      required: true

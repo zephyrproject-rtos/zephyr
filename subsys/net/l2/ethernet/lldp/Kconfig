@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_LLDP
 	bool "Enable Link Layer Discovery Protocol (LLDP)"
@@ -116,11 +113,10 @@ config NET_LLDP_CHASSIS_ID_MAC5
 	  Byte 5 of the MAC address.
 endif
 
-if NET_LLDP_CHASSIS_ID_SUBTYPE != 4
 config NET_LLDP_CHASSIS_ID
 	string "Chassis ID value"
 	default "CHASSIS_ID_PLACEHOLDER"
-endif
+	depends on NET_LLDP_CHASSIS_ID_SUBTYPE != 4
 
 #
 # PORT ID TLV CONFIG
@@ -187,10 +183,9 @@ config NET_LLDP_PORT_ID_MAC5
 	  Byte 5 of the MAC address.
 endif
 
-if NET_LLDP_PORT_ID_SUBTYPE != 3
 config NET_LLDP_PORT_ID
 	string "Port ID value"
 	default "PORT_ID_PLACEHOLDER"
-endif
+	depends on NET_LLDP_PORT_ID_SUBTYPE != 3
 
 endif # NET_LLDP

@@ -27,6 +27,7 @@ adc: adc@e000 {
 	interrupts = <14 1>;
 	status = "disabled";
 	label = "ADC_0";
+	#io-channel-cells = <1>;
 };
 
 dppic: dppic@17000 {
@@ -34,6 +35,85 @@ dppic: dppic@17000 {
 	reg = <0x17000 0x1000>;
 	status = "okay";
 	label = "DPPIC";
+};
+
+egu0: egu@1b000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1b000 0x1000>;
+	interrupts = <27 1>;
+	status = "okay";
+};
+
+egu1: egu@1c000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1c000 0x1000>;
+	interrupts = <28 1>;
+	status = "okay";
+};
+
+egu2: egu@1d000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1d000 0x1000>;
+	interrupts = <29 1>;
+	status = "okay";
+};
+
+egu3: egu@1e000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1e000 0x1000>;
+	interrupts = <30 1>;
+	status = "okay";
+};
+
+egu4: egu@1f000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1f000 0x1000>;
+	interrupts = <31 1>;
+	status = "okay";
+};
+
+egu5: egu@20000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x20000 0x1000>;
+	interrupts = <32 1>;
+	status = "okay";
+};
+
+i2s0: i2s@28000 {
+	compatible = "nordic,nrf-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x28000 0x1000>;
+	interrupts = <40 1>;
+	status = "disabled";
+	label = "I2S_0";
+};
+
+kmu: kmu@39000 {
+	compatible = "nordic,nrf-kmu";
+	reg = <0x39000 0x1000>;
+	interrupts = <57 1>;
+	status = "okay";
+};
+
+pdm0: pdm@26000 {
+	compatible = "nordic,nrf-pdm";
+	reg = <0x26000 0x1000>;
+	interrupts = <38 1>;
+	status = "disabled";
+	label = "PDM_0";
+};
+
+regulators: regulator@4000 {
+	compatible = "nordic,nrf-regulators";
+	reg = <0x4000 0x1000>;
+	status = "okay";
+};
+
+vmc: vmc@3a000 {
+	compatible = "nordic,nrf-vmc";
+	reg = <0x3a000 0x1000>;
+	status = "okay";
 };
 
 uart0: uart@8000 {
@@ -69,7 +149,11 @@ uart3: uart@b000 {
 };
 
 i2c0: i2c@8000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
@@ -80,7 +164,11 @@ i2c0: i2c@8000 {
 };
 
 i2c1: i2c@9000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
@@ -91,7 +179,11 @@ i2c1: i2c@9000 {
 };
 
 i2c2: i2c@a000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
@@ -102,7 +194,11 @@ i2c2: i2c@a000 {
 };
 
 i2c3: i2c@b000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
@@ -113,7 +209,11 @@ i2c3: i2c@b000 {
 };
 
 spi0: spi@8000 {
-	compatible = "nordic,nrf-spi";
+	/*
+	 * This spi node can be either SPIM or SPIS, for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
@@ -123,7 +223,11 @@ spi0: spi@8000 {
 };
 
 spi1: spi@9000 {
-	compatible = "nordic,nrf-spi";
+	/*
+	 * This spi node can be either SPIM or SPIS, for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
@@ -133,7 +237,11 @@ spi1: spi@9000 {
 };
 
 spi2: spi@a000 {
-	compatible = "nordic,nrf-spi";
+	/*
+	 * This spi node can be either SPIM or SPIS, for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
@@ -143,7 +251,11 @@ spi2: spi@a000 {
 };
 
 spi3: spi@b000 {
-	compatible = "nordic,nrf-spi";
+	/*
+	 * This spi node can be either SPIM or SPIS, for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
@@ -158,6 +270,7 @@ pwm0: pwm@21000 {
 	interrupts = <33 1>;
 	status = "disabled";
 	label = "PWM_0";
+	#pwm-cells = <1>;
 };
 
 pwm1: pwm@22000 {
@@ -166,6 +279,7 @@ pwm1: pwm@22000 {
 	interrupts = <34 1>;
 	status = "disabled";
 	label = "PWM_1";
+	#pwm-cells = <1>;
 };
 
 pwm2: pwm@23000 {
@@ -174,6 +288,7 @@ pwm2: pwm@23000 {
 	interrupts = <35 1>;
 	status = "disabled";
 	label = "PWM_2";
+	#pwm-cells = <1>;
 };
 
 pwm3: pwm@24000 {
@@ -182,6 +297,7 @@ pwm3: pwm@24000 {
 	interrupts = <36 1>;
 	status = "disabled";
 	label = "PWM_3";
+	#pwm-cells = <1>;
 };
 
 gpio0: gpio@842500 {

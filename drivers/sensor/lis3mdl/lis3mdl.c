@@ -14,8 +14,7 @@
 
 #include "lis3mdl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LIS3MDL);
+LOG_MODULE_REGISTER(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
 static void lis3mdl_convert(struct sensor_value *val, s16_t raw_val,
 			    u16_t divider)

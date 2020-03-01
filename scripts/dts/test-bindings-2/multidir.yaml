@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Binding in test-bindings-2/
 description: Binding in test-bindings-2/
 
-properties:
-    compatible:
-        constraint: "in-dir-2"
-        type: string-array
+compatible: "in-dir-2"

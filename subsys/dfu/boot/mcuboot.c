@@ -75,12 +75,14 @@ struct mcuboot_v1_raw_header {
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
 #define FLASH_AREA_IMAGE_PRIMARY DT_FLASH_AREA_IMAGE_0_NONSECURE_ID
 #define FLASH_AREA_IMAGE_SECONDARY DT_FLASH_AREA_IMAGE_1_NONSECURE_ID
-#define FLASH_AREA_IMAGE_SCRATCH DT_FLASH_AREA_IMAGE_SCRATCH_ID
 #else
 #define FLASH_AREA_IMAGE_PRIMARY DT_FLASH_AREA_IMAGE_0_ID
 #define FLASH_AREA_IMAGE_SECONDARY DT_FLASH_AREA_IMAGE_1_ID
-#define FLASH_AREA_IMAGE_SCRATCH DT_FLASH_AREA_IMAGE_SCRATCH_ID
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
+
+#ifdef DT_FLASH_AREA_IMAGE_SCRATCH_ID
+#define FLASH_AREA_IMAGE_SCRATCH DT_FLASH_AREA_IMAGE_SCRATCH_ID
+#endif
 
 #ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 #define SWAP_TYPE_OFFS(bank_area) ((bank_area)->fa_size -\
@@ -535,7 +537,9 @@ static int boot_read_swap_state(const struct flash_area *fa,
 		state->copy_done = boot_flag_decode(state->copy_done);
 	}
 #else
+#ifdef FLASH_AREA_IMAGE_SCRATCH
 	if (fa->fa_id != FLASH_AREA_IMAGE_SCRATCH) {
+#endif
 		off = COPY_DONE_OFFS(fa);
 		rc = flash_area_read_is_empty(fa, off, &state->copy_done,
 					      sizeof(state->copy_done));
@@ -547,7 +551,9 @@ static int boot_read_swap_state(const struct flash_area *fa,
 		} else {
 			state->copy_done = boot_flag_decode(state->copy_done);
 		}
+#ifdef FLASH_AREA_IMAGE_SCRATCH
 	}
+#endif
 #endif
 
 	off = IMAGE_OK_OFFS(fa);
@@ -575,7 +581,9 @@ boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
 	int rc;
 
 	switch (flash_area_id) {
+#ifdef FLASH_AREA_IMAGE_SCRATCH
 	case FLASH_AREA_IMAGE_SCRATCH:
+#endif
 	case FLASH_AREA_IMAGE_PRIMARY:
 	case FLASH_AREA_IMAGE_SECONDARY:
 		rc = flash_area_open(flash_area_id, &fap);

@@ -1,0 +1,4 @@
+tests:
+  system.settings.functional.nvs:
+    platform_whitelist: qemu_x86 native_posix native_posix_64
+    tags: settings_nvs

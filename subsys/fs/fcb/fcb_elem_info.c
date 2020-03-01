@@ -27,11 +27,11 @@ fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, u8_t *c8p)
 	int rc;
 
 	if (loc->fe_elem_off + 2 > loc->fe_sector->fs_size) {
-		return FCB_ERR_NOVAR;
+		return -ENOTSUP;
 	}
 	rc = fcb_flash_read(fcb, loc->fe_sector, loc->fe_elem_off, tmp_str, 2);
 	if (rc) {
-		return FCB_ERR_FLASH;
+		return -EIO;
 	}
 
 	cnt = fcb_get_len(tmp_str, &len);
@@ -54,7 +54,7 @@ fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, u8_t *c8p)
 
 		rc = fcb_flash_read(fcb, loc->fe_sector, off, tmp_str, blk_sz);
 		if (rc) {
-			return FCB_ERR_FLASH;
+			return -EIO;
 		}
 		crc8 = crc8_ccitt(crc8, tmp_str, blk_sz);
 	}
@@ -78,11 +78,11 @@ int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc)
 
 	rc = fcb_flash_read(fcb, loc->fe_sector, off, &fl_crc8, sizeof(fl_crc8));
 	if (rc) {
-		return FCB_ERR_FLASH;
+		return -EIO;
 	}
 
 	if (fl_crc8 != crc8) {
-		return FCB_ERR_CRC;
+		return -EBADMSG;
 	}
 	return 0;
 }

@@ -1,18 +1,8 @@
-#
 # Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: TE Connectivity digital pressure sensor MS5837
+description: TE Connectivity MS5837 digital pressure sensor
 
-description: >
-    This binding gives a base representation of the MS5837 digital pressure
-    sensor
+compatible: "meas,ms5837"
 
-inherits:
-    !include i2c-device.yaml
-
-properties:
-    compatible:
-      constraint: "meas,ms5837"
+include: i2c-device.yaml

@@ -1,17 +1,12 @@
-title: ARM CMSDK UART
+description: ARM CMSDK UART
 
-description: >
-    This binding gives a base representation of the ARM CMSDK UART
+compatible: "arm,cmsdk-uart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

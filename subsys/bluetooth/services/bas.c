@@ -11,7 +11,7 @@
 
 #include <errno.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
 
@@ -24,8 +24,6 @@
 #define LOG_LEVEL CONFIG_BT_GATT_BAS_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bas);
-
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[BT_GATT_CCC_MAX] = {};
 
 static u8_t battery_level = 100U;
 
@@ -55,7 +53,8 @@ BT_GATT_SERVICE_DEFINE(bas,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ, read_blvl, NULL,
 			       &battery_level),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
+	BT_GATT_CCC(blvl_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 static int bas_init(struct device *dev)

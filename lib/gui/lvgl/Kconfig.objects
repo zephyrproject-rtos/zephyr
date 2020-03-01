@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Objects"
 
@@ -84,13 +81,12 @@ config LVGL_OBJ_PAGE
 	help
 	  Enable page object support
 
-if LVGL_OBJ_PAGE
 config LVGL_OBJ_PAGE_DEF_ANIM_TIME
 	int "Default page focus animation time"
 	default 400
+	depends on LVGL_OBJ_PAGE
 	help
 	  Default page focus animation time in milliseconds
-endif
 
 config LVGL_OBJ_WINDOW
 	bool "Window object"
@@ -104,15 +100,12 @@ config LVGL_OBJ_TAB_VIEW
 	help
 	  Enable tab view object support
 
-if LVGL_OBJ_TAB_VIEW
-
 config LVGL_OBJ_TAB_VIEW_ANIMATION_TIME
 	int "Tab view animation time"
 	default 300
+	depends on LVGL_OBJ_TAB_VIEW
 	help
 	  Tab view animation time in milliseconds
-
-endif
 
 config LVGL_OBJ_TILE_VIEW
 	bool "Tile view object"
@@ -120,14 +113,12 @@ config LVGL_OBJ_TILE_VIEW
 	help
 	  Enable tile view object support
 
-if LVGL_OBJ_TILE_VIEW
 config LVGL_OBJ_TILE_VIEW_ANIMATION_TIME
 	int "Tile view animation time"
 	default 300
+	depends on LVGL_OBJ_TILE_VIEW
 	help
 	  Tile view animation time in milliseconds
-
-endif
 
 config LVGL_OBJ_CALENDAR
 	bool "Calendar object"
@@ -197,13 +188,12 @@ config LVGL_OBJ_CHART
 	help
 	  Enable chart object support
 
-if LVGL_OBJ_CHART
 config LVGL_OBJ_CHART_AXIS_TICK_LABEL_MAX_LEN
 	int "Maximum length of axis label"
 	default 20
+	depends on LVGL_OBJ_CHART
 	help
 	  Maximum length of axis label
-endif
 
 config LVGL_OBJ_TABLE
 	bool "Table object"
@@ -211,13 +201,12 @@ config LVGL_OBJ_TABLE
 	help
 	  Enable table object support
 
-if LVGL_OBJ_TABLE
 config LVGL_OBJ_TABLE_COLUMN_MAX
 	int "Maximum number of table columns"
 	default 12
+	depends on LVGL_OBJ_TABLE
 	help
 	  Maximum number of columns to support in a table
-endif
 
 config LVGL_OBJ_LED
 	bool "LED object"
@@ -276,12 +265,11 @@ config LVGL_OBJ_IMG_BUTTON
 	help
 	  Enable image button object support
 
-if LVGL_OBJ_IMG_BUTTON
 config LVGL_OBJ_IMG_BUTTON_TILED
 	bool "Image button tile support"
+	depends on LVGL_OBJ_IMG_BUTTON
 	help
 	  Enable tile support for image button
-endif
 
 endif
 
@@ -308,15 +296,17 @@ config LVGL_OBJ_LIST
 	help
 	  Enable list object support
 
-if LVGL_OBJ_LIST
-
 config LVGL_OBJ_LIST_FOCUS_TIME
 	int "List focus time"
 	default 100
+	depends on LVGL_OBJ_LIST
 	help
-		List focus animation time in milliseconds
+	  List focus animation time in milliseconds
 
-endif
+config LVGL_OBJ_COLOR_PICKER
+	bool "Color picker object"
+	help
+	  Enable color picker object support
 
 config LVGL_OBJ_DROP_DOWN_LIST
 	bool "Drop Down List object"
@@ -324,15 +314,12 @@ config LVGL_OBJ_DROP_DOWN_LIST
 	help
 	  Enable drop down list object support
 
-if LVGL_OBJ_DROP_DOWN_LIST
-
 config LVGL_OBJ_DROP_DOWN_LIST_ANIM_TIME
 	int "Drop Down list animation time"
 	default 200
+	depends on LVGL_OBJ_DROP_DOWN_LIST
 	help
 	  Drop down list animation time in milliseconds
-
-endif
 
 config LVGL_OBJ_ROLLER
 	bool "Roller object"

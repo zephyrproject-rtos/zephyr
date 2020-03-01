@@ -1,20 +1,12 @@
-#
 # Copyright (c) 2018, blik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Kinetis RTC
+description: Kinetis RTC
 
-description: >
-    This binding gives a base representation of the Kinetis RTC
+compatible: "nxp,kinetis-rtc"
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-rtc"
-
     reg:
-      category: required
+      required: true

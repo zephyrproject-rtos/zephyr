@@ -13,7 +13,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
@@ -112,6 +112,14 @@
 			interrupts = <8 0>;
 			status = "disabled";
 			label = "SPI_1";
+		};
+
+		rtc: rtc@40092000 {
+			compatible = "ti,cc13xx-cc26xx-rtc";
+			reg = <0x40092000 0x1000>;
+			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
+			status = "disabled";
+			label = "RTC";
 		};
 	};
 };

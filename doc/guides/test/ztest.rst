@@ -341,3 +341,21 @@ expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
 
 .. doxygengroup:: ztest_mock
    :project: Zephyr
+
+Customizing Test Output
+***********************
+The way output is presented when running tests can be customized.
+An example can be found in :zephyr_file:`tests/ztest/custom_output`.
+
+Customization is enabled by setting :option:`CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE` to "y"
+and adding a file :file:`tc_util_user_override.h` with your overrides.
+
+Add the line ``zephyr_include_directories(my_folder)`` to
+your project's :file:`CMakeLists.txt` to let Zephyr find your header file during builds.
+
+See the file :zephyr_file:`subsys/testsuite/include/tc_util.h` to see which macros and/or defines can be overridden.
+These will be surrounded by blocks such as::
+
+        #ifndef SOMETHING
+        #define SOMETHING <default implementation>
+        #endif /* SOMETHING */

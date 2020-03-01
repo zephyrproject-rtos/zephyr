@@ -137,7 +137,8 @@ struct gna_driver_api {
  */
 static inline int gna_configure(struct device *dev, struct gna_config *cfg)
 {
-	const struct gna_driver_api *api = dev->driver_api;
+	const struct gna_driver_api *api =
+		(const struct gna_driver_api *)dev->driver_api;
 
 	return api->configure(dev, cfg);
 }
@@ -158,7 +159,8 @@ static inline int gna_configure(struct device *dev, struct gna_config *cfg)
 static inline int gna_register_model(struct device *dev,
 		struct gna_model_info *model, void **model_handle)
 {
-	const struct gna_driver_api *api = dev->driver_api;
+	const struct gna_driver_api *api =
+		(const struct gna_driver_api *)dev->driver_api;
 
 	return api->register_model(dev, model, model_handle);
 }
@@ -178,7 +180,8 @@ static inline int gna_register_model(struct device *dev,
  */
 static inline int gna_deregister_model(struct device *dev, void *model)
 {
-	const struct gna_driver_api *api = dev->driver_api;
+	const struct gna_driver_api *api =
+		(const struct gna_driver_api *)dev->driver_api;
 
 	return api->deregister_model(dev, model);
 }
@@ -200,7 +203,8 @@ static inline int gna_deregister_model(struct device *dev, void *model)
 static inline int gna_infer(struct device *dev, struct gna_inference_req *req,
 	gna_callback callback)
 {
-	const struct gna_driver_api *api = dev->driver_api;
+	const struct gna_driver_api *api =
+		(const struct gna_driver_api *)dev->driver_api;
 
 	return api->infer(dev, req, callback);
 }

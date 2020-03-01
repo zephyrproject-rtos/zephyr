@@ -139,7 +139,10 @@ void test_k_float_disable_syscall(void)
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-	zassert_true(ret == TC_PASS, "");
+	/* ret is volatile, static analysis says we can't use in assert */
+	bool ok = ret == TC_PASS;
+
+	zassert_true(ok, "");
 #else
 	/* Check skipped for x86 without support for Lazy FP Sharing */
 #endif
@@ -148,7 +151,7 @@ void test_k_float_disable_syscall(void)
 #if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);
@@ -194,7 +197,7 @@ static void sup_fp_thread_entry(void)
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
-	z_arch_irq_connect_dynamic(i,
+	arch_irq_connect_dynamic(i,
 		0,
 		arm_test_isr_handler,
 		NULL,
@@ -237,7 +240,10 @@ void test_k_float_disable_irq(void)
 	/* Yield will swap-in sup_fp_thread */
 	k_yield();
 
-	zassert_true(ret == TC_PASS, "");
+	/* ret is volatile, static analysis says we can't use in assert */
+	bool ok = ret == TC_PASS;
+
+	zassert_true(ok, "");
 }
 #else
 void test_k_float_disable_irq(void)
@@ -246,6 +252,3 @@ void test_k_float_disable_irq(void)
 	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
-/**
- * @}
- */

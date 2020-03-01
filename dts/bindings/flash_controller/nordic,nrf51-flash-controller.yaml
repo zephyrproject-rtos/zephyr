@@ -1,11 +1,5 @@
-title: Nordic NVMC
+description: Nordic NVMC (Non-Volatile Memory Controller)
 
-description: >
-    This binding gives a base representation of the Nordic NVMC
+compatible: "nordic,nrf51-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "nordic,nrf51-flash-controller"
+include: flash-controller.yaml

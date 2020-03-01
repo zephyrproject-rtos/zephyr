@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig CONSOLE_SUBSYS
 	bool "Console subsystem/support routines [EXPERIMENTAL]"
@@ -14,6 +11,7 @@ if CONSOLE_SUBSYS
 choice
 	prompt "Console 'get' function selection"
 	optional
+	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"

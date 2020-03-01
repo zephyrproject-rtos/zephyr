@@ -22,7 +22,7 @@ and put it on the black line track.
 Build this sample project using these commands:
 
 .. zephyr-app-commands::
-  :zephyr-app: samples/boards/microbit/line_follower_robot
+  :zephyr-app: samples/boards/bbc_microbit/line_follower_robot
   :board: bbc_microbit
   :goals: build
   :compact:

@@ -1,94 +1,94 @@
-#
 # Copyright (c) 2018, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: SSD16XX 250x150 EPD Display Controller
+description: SSD16XX 250x150 EPD display controller
 
-description: >
-    This is a representation of the SSD16XX 250x150 EPD Display Controller
+compatible: "solomon,ssd16xxfb"
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "solomon,ssd16xxfb"
-
     height:
       type: int
-      category: required
+      required: true
       description: Height in pixel of the panel driven by the controller
 
     width:
       type: int
-      category: required
+      required: true
       description: Width in pixel of the panel driven by the controller
 
     pp-height-bits:
       type: int
-      category: required
+      required: true
       description: Number of bits used for the height parameters
 
     pp-width-bits:
       type: int
-      category: required
+      required: true
       description: Number of bits used for the width parameters
 
-    gdv-a:
-      type: int
-      category: required
-      description: Gate driving voltage (A value)
-
-    gdv-b:
-      type: int
-      category: optional
-      description: Gate driving voltage (B value)
+    gdv:
+      type: uint8-array
+      required: true
+      description: Gate driving voltage values
 
     sdv:
-      type: int
-      category: required
-      description: Source driving voltage
+      type: uint8-array
+      required: true
+      description: Source driving voltage values
 
     vcom:
       type: int
-      category: required
+      required: true
       description: VCOM voltage
 
     border-waveform:
       type: int
-      category: required
+      required: true
       description: Border waveform
 
-    softstart-1:
-      type: int
-      category: optional
-      description: Booster soft start phase 1
-
-    softstart-2:
-      type: int
-      category: optional
-      description: Booster soft start phase 2
-
-    softstart-3:
-      type: int
-      category: optional
-      description: Booster soft start phase 3
+    softstart:
+      type: uint8-array
+      required: false
+      description: Booster soft start values
 
     orientation-flipped:
       type: boolean
-      category: optional
+      required: false
       description: Last column address is mapped to first segment
 
     reset-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
+      description: RESET pin.
+
+        The RESET pin of SSD16XX is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
 
     dc-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
+      description: DC pin.
+
+        The DC pin of SSD16XX is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
 
     busy-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
+      description: BUSY pin.
+
+        The BUSY pin of SSD16XX is active high.
+        If connected directly the MCU pin should be configured
+        as active high.
+
+    lut-initial:
+      type: uint8-array
+      required: true
+
+    lut-default:
+      type: uint8-array
+      required: true

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <init.h>
 #include "bs_tracing.h"
+#include "posix_board_if.h"
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];
@@ -75,9 +76,10 @@ void posix_print_error_and_exit(const char *format, ...)
 	va_list variable_argsp;
 
 	va_start(variable_argsp, format);
-	bs_trace_vprint(BS_TRACE_ERROR, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
 			format, variable_argsp);
 	va_end(variable_argsp);
+	posix_exit(1);
 }
 
 void posix_print_warning(const char *format, ...)

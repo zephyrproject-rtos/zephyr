@@ -7,10 +7,11 @@ A :dfn:`ring buffer` is a circular buffer, whose contents are stored in
 first-in-first-out order. Two content data modes are supported:
 
 * **Data item mode**: Multiple 32-bit word data items with metadata
-   can be enqueued and dequeued from the ring buffer in
-   chunks of up to 1020 bytes.  Each data item also has two
-   associated metadata values:  a type identifier and a 16-bit
-   integer value, both of which are application-specific.
+  can be enqueued and dequeued from the ring buffer in
+  chunks of up to 1020 bytes.  Each data item also has two
+  associated metadata values:  a type identifier and a 16-bit
+  integer value, both of which are application-specific.
+
 * **Byte mode**: raw bytes can be enqueued and dequeued.
 
 .. contents::

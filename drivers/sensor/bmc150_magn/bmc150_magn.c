@@ -21,8 +21,7 @@
 
 #include "bmc150_magn.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMC150_MAGN);
+LOG_MODULE_REGISTER(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 
 static const struct {
 	int freq;
@@ -595,16 +594,17 @@ static int bmc150_magn_init(struct device *dev)
 }
 
 static const struct bmc150_magn_config bmc150_magn_config = {
-	.i2c_master_dev_name = CONFIG_BMC150_MAGN_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = BMC150_MAGN_I2C_ADDR,
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	.gpio_drdy_dev_name = CONFIG_BMC150_MAGN_GPIO_DRDY_DEV_NAME,
-	.gpio_drdy_int_pin = CONFIG_BMC150_MAGN_GPIO_DRDY_INT_PIN,
+	.gpio_drdy_dev_name = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_CONTROLLER,
+	.gpio_drdy_int_pin = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_PIN,
+	.gpio_drdy_int_flags = DT_INST_0_BOSCH_BMC150_MAGN_DRDY_GPIOS_FLAGS,
 #endif
+	.i2c_master_dev_name = DT_INST_0_BOSCH_BMC150_MAGN_BUS_NAME,
+	.i2c_slave_addr = BMC150_MAGN_I2C_ADDR,
 };
 
 static struct bmc150_magn_data bmc150_magn_data;
 
-DEVICE_AND_API_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
+DEVICE_AND_API_INIT(bmc150_magn, DT_INST_0_BOSCH_BMC150_MAGN_LABEL, bmc150_magn_init,
 	    &bmc150_magn_data, &bmc150_magn_config, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);

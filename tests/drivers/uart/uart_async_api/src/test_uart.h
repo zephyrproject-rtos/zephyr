@@ -32,7 +32,21 @@ void test_chained_read(void);
 void test_double_buffer(void);
 void test_read_abort(void);
 void test_write_abort(void);
+void test_forever_timeout(void);
 void test_long_buffers(void);
 void test_chained_write(void);
+
+void test_single_read_setup(void);
+void test_chained_read_setup(void);
+void test_double_buffer_setup(void);
+void test_read_abort_setup(void);
+void test_write_abort_setup(void);
+void test_forever_timeout_setup(void);
+void test_long_buffers_setup(void);
+void test_chained_write_setup(void);
+
+#ifdef CONFIG_USERSPACE
+void set_permissions(void);
+#endif
 
 #endif /* __TEST_UART_H__ */

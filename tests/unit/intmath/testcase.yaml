@@ -1,0 +1,4 @@
+tests:
+  utilities.intmath:
+    tags: util intmath
+    type: unit

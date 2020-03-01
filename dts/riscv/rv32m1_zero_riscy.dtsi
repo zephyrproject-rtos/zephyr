@@ -51,20 +51,53 @@
  * disabling channels can add up.
  */
 
+/delete-node/ &intmux0;
+
 &intmux1 {
-	interrupt-parent = <&event1>;
-	interrupts = <INTMUX_CH0_IRQ>, <INTMUX_CH1_IRQ>, <INTMUX_CH2_IRQ>, <INTMUX_CH3_IRQ>, <INTMUX_CH4_IRQ>, <INTMUX_CH5_IRQ>, <INTMUX_CH6_IRQ>, <INTMUX_CH7_IRQ>;
 	status = "okay";
 };
 
+&intmux1_ch0 {
+	interrupt-parent = <&event1>;
+	status = "okay";
+};
+
+&intmux1_ch1 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch2 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch3 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch4 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch5 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch6 {
+	interrupt-parent = <&event1>;
+};
+
+&intmux1_ch7 {
+	interrupt-parent = <&event1>;
+};
+
 &lptmr0 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 6)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <6>;
 };
 
 &lptmr1 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 7)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <7>;
 };
 
 &lptmr2 {
@@ -73,23 +106,23 @@
 };
 
 &gpioa {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 25)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <25>;
 };
 
 &gpiob {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 26)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <26>;
 };
 
 &gpioc {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 27)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <27>;
 };
 
 &gpiod {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 28)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <28>;
 };
 
 &gpioe {
@@ -98,18 +131,18 @@
 };
 
 &uart0 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 21)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <21>;
 };
 
 &uart1 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 22)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <22>;
 };
 
 &uart2 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 23)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <23>;
 };
 
 &uart3 {
@@ -118,21 +151,66 @@
 };
 
 &i2c0 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 13)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <13>;
 };
 
 &i2c1 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 14)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <14>;
 };
 
 &i2c2 {
-	interrupt-parent = <&intmux1>;
-	interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 15)>;
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <15>;
 };
 
 &i2c3 {
 	interrupt-parent = <&event1>;
 	interrupts = <16>;
+};
+
+&spi0 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <18>;
+};
+
+&spi1 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <19>;
+};
+
+&spi2 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <20>;
+};
+
+&spi3 {
+	interrupt-parent = <&event1>;
+	interrupts = <19>;
+};
+
+&generic_fsk {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <17>;
+};
+
+&pwm0 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <8>;
+};
+
+&pwm1 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <9>;
+};
+
+&pwm2 {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <10>;
+};
+
+&pwm3 {
+	interrupt-parent = <&event1>;
+	interrupts = <15>;
 };

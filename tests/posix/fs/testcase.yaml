@@ -3,10 +3,10 @@ common:
   min_ram: 128
   tags: posix filesystem
 tests:
-  portability.posix:
+  portability.posix.fs:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
-  portability.posix.newlib:
+  portability.posix.fs.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y

@@ -14,7 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <linker/linker-defs.h>
 #include <string.h>
 

@@ -39,4 +39,3 @@ typedef enum {
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 
 #endif /* TI_SIMPLELINK_CC32XX_SOC_H_ */
-

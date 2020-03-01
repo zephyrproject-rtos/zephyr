@@ -1,10 +1,7 @@
-# Kconfig - frame buffer configuration options
+# Frame buffer configuration options
 
-#
 # Copyright (c) 2018 Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig CHARACTER_FRAMEBUFFER
 	bool "Character framebuffer for dot matrix displays"
@@ -26,15 +23,13 @@ config CHARACTER_FRAMEBUFFER_SHELL
 	  Activate shell module that provides Framebuffer commands to the
 	  console.
 
-if CHARACTER_FRAMEBUFFER_SHELL
-	config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
+config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 	string
 	default "SSD16XX" if SSD16XX
 	default "SSD1306" if SSD1306
+	depends on CHARACTER_FRAMEBUFFER_SHELL
 	help
 	  Character Framebuffer Display Driver Name
-
-endif
 
 module = CFB
 module-str = cfb

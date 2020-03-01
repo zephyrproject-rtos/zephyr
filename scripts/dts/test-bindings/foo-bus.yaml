@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Foo bus controller
+
+compatible: "foo-bus"
+
+bus: "foo"

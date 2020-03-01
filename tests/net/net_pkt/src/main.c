@@ -629,6 +629,88 @@ void test_net_pkt_copy(void)
 		     "Pkt not properly unreferenced");
 }
 
+#define PULL_TEST_PKT_DATA_SIZE 600
+
+void test_net_pkt_pull(void)
+{
+	const int PULL_AMOUNT = 8;
+	struct net_pkt *dummy_pkt;
+	static u8_t pkt_data[PULL_TEST_PKT_DATA_SIZE];
+	static u8_t pkt_data_readback[PULL_TEST_PKT_DATA_SIZE];
+	int i;
+
+	for (i = 0; i < PULL_TEST_PKT_DATA_SIZE; ++i) {
+		pkt_data[i] = i & 0xff;
+	}
+
+	dummy_pkt = net_pkt_alloc_with_buffer(eth_if,
+					      PULL_TEST_PKT_DATA_SIZE,
+					      AF_UNSPEC,
+					      0,
+					      K_NO_WAIT);
+	zassert_true(dummy_pkt != NULL, "Pkt not allocated");
+
+	zassert_true(net_pkt_write(dummy_pkt,
+				   pkt_data,
+				   PULL_TEST_PKT_DATA_SIZE) == 0,
+		     "Write packet failed");
+
+	net_pkt_cursor_init(dummy_pkt);
+	net_pkt_pull(dummy_pkt, PULL_AMOUNT);
+	zassert_equal(net_pkt_get_len(dummy_pkt),
+		      PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT,
+		      "Pull failed to set new size");
+	zassert_true(net_pkt_read(dummy_pkt,
+				  pkt_data_readback,
+				  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT) == 0,
+		     "Read packet failed");
+	zassert_mem_equal(pkt_data_readback,
+			  &pkt_data[PULL_AMOUNT],
+			  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT,
+			  "Packet data changed");
+
+	net_pkt_unref(dummy_pkt);
+}
+
+void test_net_pkt_clone(void)
+{
+	u8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
+	struct net_pkt *pkt;
+	struct net_pkt *cloned_pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(eth_if, 64,
+					AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	ret = net_pkt_write(pkt, buf, sizeof(buf));
+	zassert_true(ret == 0, "Pkt write failed");
+
+	zassert_true(net_pkt_get_len(pkt) == sizeof(buf),
+		     "Pkt length mismatch");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, 6);
+	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
+		     "Pkt remaining data mismatch");
+
+	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_true(cloned_pkt != NULL, "Pkt not cloned");
+
+	zassert_true(net_pkt_get_len(cloned_pkt) == sizeof(buf),
+		     "Cloned pkt length mismatch");
+
+	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
+		     "Pkt remaining data mismatch");
+
+	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(cloned_pkt),
+		     "Cloned pkt remaining data mismatch");
+
+	net_pkt_unref(pkt);
+	net_pkt_unref(cloned_pkt);
+}
+
 void test_main(void)
 {
 	eth_if = net_if_get_default();
@@ -639,7 +721,9 @@ void test_main(void)
 			 ztest_unit_test(test_net_pkt_basics_of_rw),
 			 ztest_unit_test(test_net_pkt_advanced_basics),
 			 ztest_unit_test(test_net_pkt_easier_rw_usage),
-			 ztest_unit_test(test_net_pkt_copy)
+			 ztest_unit_test(test_net_pkt_copy),
+			 ztest_unit_test(test_net_pkt_pull),
+			 ztest_unit_test(test_net_pkt_clone)
 		);
 
 	ztest_run_test_suite(net_pkt_tests);

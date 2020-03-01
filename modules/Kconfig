@@ -1,8 +1,25 @@
-
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 comment "Optional modules. Make sure they're installed, via the project manifest."
 
-osource "modules/Kconfig.*"
+source "modules/Kconfig.atmel"
+source "modules/Kconfig.canopennode"
+source "modules/Kconfig.civetweb"
+source "modules/Kconfig.cypress"
+source "modules/Kconfig.imx"
+source "modules/Kconfig.libmetal"
+source "modules/Kconfig.loramac-node"
+source "modules/Kconfig.mbedtls"
+source "modules/Kconfig.mcux"
+source "modules/Kconfig.microchip"
+source "modules/Kconfig.nordic"
+source "modules/Kconfig.open-amp"
+source "modules/Kconfig.silabs"
+source "modules/Kconfig.simplelink"
+source "modules/Kconfig.st"
+source "modules/Kconfig.stm32"
+source "modules/Kconfig.syst"
+source "modules/Kconfig.tinycbor"
+source "modules/Kconfig.vega"
+source "modules/Kconfig.xtensa"

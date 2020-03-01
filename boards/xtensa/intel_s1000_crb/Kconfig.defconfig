@@ -1,5 +1,4 @@
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_INTEL_S1000_CRB
@@ -46,39 +45,28 @@ config CAVS_ISR_TBL_OFFSET
 config DW_ISR_TBL_OFFSET
 	default 3RD_LVL_ISR_TBL_OFFSET
 
-config I2C_0_DEFAULT_CFG
-	default 0x12
-if DMA_CAVS
-
 config HEAP_MEM_POOL_SIZE
 	default 1024
+	depends on DMA_DW
 
-endif # DMA_CAVS
-
-if BOOTLOADER_MCUBOOT
 config TEXT_SECTION_OFFSET
 	default 0x100
-endif
+	depends on BOOTLOADER_MCUBOOT
 
 if USB
 config USB_DW
 	default y
 
-config USB_DW_IRQ_PRI
-	default 3
-
 config USB_DW_USB_2_0
 	default y
 
-if USB_DEVICE_HID
 config USB_REQUEST_BUFFER_SIZE
 	default 128
-endif
+	depends on USB_DEVICE_HID
 
-if USB_DFU_CLASS
 config USB_REQUEST_BUFFER_SIZE
 	default 4096
-endif
+	depends on USB_DFU_CLASS
 
 config USB_DEVICE_STACK
 	default y
@@ -122,17 +110,13 @@ config I2C_0
 
 endif
 
-if DMA
-
-config DMA_CAVS
+config DMA_DW
 	default y
+	depends on DMA
 
-endif
-
-if I2S
 config I2S_CAVS
 	default y
-endif
+	depends on I2S
 
 if AUDIO
 config AUDIO_CODEC
@@ -149,12 +133,9 @@ config AUDIO_INTEL_DMIC
 
 endif
 
-
-if NEURAL_NET_ACCEL
-
 config INTEL_GNA
 	default y
-endif
+	depends on NEURAL_NET_ACCEL
 
 if GPIO
 
@@ -192,11 +173,8 @@ config SPI_0
 
 endif
 
-if PINMUX
-
 config PINMUX_INTEL_S1000
 	default y
-
-endif
+	depends on PINMUX
 
 endif # BOARD_INTEL_S1000_CRB

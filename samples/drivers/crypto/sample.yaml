@@ -6,24 +6,31 @@ common:
   tags: crypto
   harness: console
   min_ram: 20
-  arch_exclude: xtensa x86_64
+  arch_exclude: xtensa
 tests:
-  sample.driver.crypto.mbedtls:
+  sample.drivers.crypto.mbedtls:
     min_flash: 34
     extra_args: CONF_FILE=prj_mtls_shim.conf
     harness_config:
       type: multi_line
       regex:
         - ".*: Cipher Sample"
-        - ".*main: CBC Mode"
-        - ".*main: CTR Mode"
-        - ".*main: CCM Mode"
-  sample.driver.crypto.mbedtls.micro:
+        - ".*: CBC Mode"
+        - ".*: CTR Mode"
+        - ".*: CCM Mode"
+        - ".*: GCM Mode"
+  sample.drivers.crypto.mbedtls.micro:
     tags: crypto
     harness_config:
       type: multi_line
       regex:
         - ".*: Cipher Sample"
-        - ".*main: CBC Mode"
-        - ".*main: CTR Mode"
-        - ".*main: CCM Mode"
+        - ".*: CBC Mode"
+        - ".*: CTR Mode"
+        - ".*: CCM Mode"
+        - ".*: GCM Mode"
+  sample.drivers.crypto.stm32:
+    tags: crypto
+    platform_whitelist: mikroe_mini_m4_for_stm32
+    build_only: true
+    extra_args: CONF_FILE=prj_stm32.conf

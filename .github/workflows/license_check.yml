@@ -1,0 +1,32 @@
+name: Scancode
+
+on: [pull_request]
+
+jobs:
+  scancode_job:
+    runs-on: ubuntu-latest
+    name: Scan code for licenses
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v1
+    - name: Scan the code
+      id: scancode
+      uses: zephyrproject-rtos/action_scancode@v3
+      with:
+        directory-to-scan: 'scan/'
+    - name: Artifact Upload
+      uses: actions/upload-artifact@v1
+      with:
+        name: scancode
+        path: ./artifacts
+
+    - name: Verify
+      run: |
+        if [ -s ./artifacts/report.txt ]; then
+          report=$(cat ./artifacts/report.txt)
+          report="${report//'%'/'%25'}"
+          report="${report//$'\n'/'%0A'}"
+          report="${report//$'\r'/'%0D'}"
+          echo "::error file=./artifacts/report.txt::$report"
+          exit 1
+        fi

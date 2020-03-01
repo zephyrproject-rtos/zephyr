@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config ZTEST
 	bool "Zephyr testing framework"
@@ -11,22 +8,21 @@ config ZTEST
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.
 
+if ZTEST
+
 config ZTEST_STACKSIZE
 	int "Test function thread stack size"
-	depends on ZTEST
 	default 2048 if COVERAGE_GCOV
 	default 1024
 
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"
-	depends on ZTEST
 	help
 	  Stop and abort on first failing test. Do not continue with other
 	  tests that might be in the queue.
 
 config ZTEST_ASSERT_VERBOSE
 	int "Assertion verbosity level"
-	depends on ZTEST
 	default 1
 	help
 	  Set verbosity level for assertions.
@@ -35,23 +31,40 @@ config ZTEST_ASSERT_VERBOSE
 	  1 Write file, line number, function and reason for failed assertions
 	  2 Log also successful assertions
 
+config ZTEST_THREAD_PRIORITY
+	int "Testing thread priority"
+	default -1
+	help
+	  Set priority of the testing thread. Default is -1 (cooperative).
+
+config ZTEST_TC_UTIL_USER_OVERRIDE
+	bool "Override tc_util.h"
+	help
+	  Enable overriding defines in tc_util.h.
+	  If True the user should provide tc_util_user_override.h in Zephyr's include path,
+	  e.g. by adding zephyr_include_directories(project PRIVATE my_folder) to a project's CMakeLists.txt.
+	  The override header may now #define the various macros and strings in tc_util.h which are
+	  surrounded by #ifndef ... #endif blocks.
+
+config ZTEST_RETEST_IF_PASSED
+	bool "Reset the board to test again if the test passed"
+	select REBOOT
+	help
+	  If the test passed reset the board so it is run again.  This
+	  may be used as an alternative to manual resets when
+	  attempting to reproduce an intermittent failure.
+
+endif # ZTEST
+
 config ZTEST_MOCKING
 	bool "Mocking support functions"
-	depends on ZTEST
 	help
 	  Enable mocking support for Ztest. This allows the test to set
 	  return values and expected parameters to functions.
 
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
-	depends on ZTEST_MOCKING
 	default 1
+	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.
-
-config ZTEST_THREAD_PRIORITY
-	int "Testing thread priority"
-	depends on ZTEST
-	default -1
-	help
-	  Set priority of the testing thread. Default is -1 (cooperative).

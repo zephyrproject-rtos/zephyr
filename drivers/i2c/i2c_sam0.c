@@ -17,12 +17,21 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 
+#ifndef SERCOM_I2CM_CTRLA_MODE_I2C_MASTER
+#define SERCOM_I2CM_CTRLA_MODE_I2C_MASTER SERCOM_I2CM_CTRLA_MODE(5)
+#endif
+
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
 	u32_t bitrate;
+#ifdef MCLK
+	volatile uint32_t *mclk;
+	u32_t mclk_mask;
+	u16_t gclk_core_id;
+#else
 	u32_t pm_apbcmask;
 	u16_t gclk_clkctrl_id;
-
+#endif
 	void (*irq_config_func)(struct device *dev);
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
@@ -660,13 +669,20 @@ static int i2c_sam0_initialize(struct device *dev)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
+#ifdef MCLK
+	/* Enable the GCLK */
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
+					       GCLK_PCHCTRL_CHEN;
+	/* Enable SERCOM clock in MCLK */
+	*cfg->mclk |= cfg->mclk_mask;
+#else
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
-
+#endif
 	/* Disable all I2C interrupts */
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 
@@ -748,30 +764,67 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 #define I2C_SAM0_DMA_CHANNELS(n)
 #endif
 
-#define I2C_SAM0_DEVICE(n)						    \
-	static void i2c_sam_irq_config_##n(struct device *dev);		    \
+#define DT_ATMEL_SAM0_I2C_SERCOM_IRQ(n, m) DT_ATMEL_SAM0_I2C_SERCOM_ ## n ## _IRQ_ ## m
+#define DT_ATMEL_SAM0_I2C_SERCOM_IRQ_PRIORITY(n, m) DT_ATMEL_SAM0_I2C_SERCOM_ ## n ## _IRQ_ ## m ## _PRIORITY
+
+#define SAM0_I2C_IRQ_CONNECT(n, m)					\
+	do {								\
+	IRQ_CONNECT(DT_ATMEL_SAM0_I2C_SERCOM_IRQ(n, m),			\
+		    DT_ATMEL_SAM0_I2C_SERCOM_IRQ_PRIORITY(n, m),	\
+		    i2c_sam0_isr, DEVICE_GET(i2c_sam0_##n), 0);		\
+	irq_enable(DT_ATMEL_SAM0_I2C_SERCOM_IRQ(n, m));			\
+	} while (0)
+
+#ifdef DT_ATMEL_SAM0_I2C_0_IRQ_3
+#define I2C_SAM0_IRQ_HANDLER(n)						\
+static void i2c_sam0_irq_config_##n(struct device *dev)			\
+{									\
+	SAM0_I2C_IRQ_CONNECT(n, 0);					\
+	SAM0_I2C_IRQ_CONNECT(n, 1);					\
+	SAM0_I2C_IRQ_CONNECT(n, 2);					\
+	SAM0_I2C_IRQ_CONNECT(n, 3);					\
+}
+#else
+#define I2C_SAM0_IRQ_HANDLER(n)						\
+static void i2c_sam0_irq_config_##n(struct device *dev)			\
+{									\
+	SAM0_I2C_IRQ_CONNECT(n, 0);					\
+}
+#endif
+
+#ifdef MCLK
+#define I2C_SAM0_CONFIG(n)                                                  \
+	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = { \
+		.regs = (SercomI2cm *)DT_ATMEL_SAM0_I2C_SERCOM_##n##_BASE_ADDRESS, \
+		.bitrate = DT_ATMEL_SAM0_I2C_SERCOM_##n##_CLOCK_FREQUENCY,  \
+		.mclk = MCLK_SERCOM##n,                                     \
+		.mclk_mask = MCLK_SERCOM##n##_MASK,                         \
+		.gclk_core_id = SERCOM##n##_GCLK_ID_CORE,                   \
+		.irq_config_func = &i2c_sam0_irq_config_##n                 \
+		I2C_SAM0_DMA_CHANNELS(n)				    \
+	}
+#else /* !MCLK */
+#define I2C_SAM0_CONFIG(n)                                                  \
 	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = { \
 		.regs = (SercomI2cm *)DT_ATMEL_SAM0_I2C_SERCOM_##n##_BASE_ADDRESS, \
 		.bitrate = DT_ATMEL_SAM0_I2C_SERCOM_##n##_CLOCK_FREQUENCY,  \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,			    \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,	    \
-		.irq_config_func = &i2c_sam_irq_config_##n,		    \
+		.irq_config_func = &i2c_sam0_irq_config_##n,		    \
 		I2C_SAM0_DMA_CHANNELS(n)				    \
-	};								    \
+	}
+#endif
+
+#define I2C_SAM0_DEVICE(n)						    \
+	static void i2c_sam0_irq_config_##n(struct device *dev);	    \
+	I2C_SAM0_CONFIG(n);						    \
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		    \
 	DEVICE_AND_API_INIT(i2c_sam0_##n,				    \
 			    DT_ATMEL_SAM0_I2C_SERCOM_##n##_LABEL,	    \
 			    &i2c_sam0_initialize, &i2c_sam0_dev_data_##n,   \
 			    &i2c_sam0_dev_config_##n, POST_KERNEL,	    \
 			    CONFIG_I2C_INIT_PRIORITY, &i2c_sam0_driver_api);\
-	static void i2c_sam_irq_config_##n(struct device *dev)		    \
-	{								    \
-		IRQ_CONNECT(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0,	    \
-			    DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0_PRIORITY,  \
-			    i2c_sam0_isr, DEVICE_GET(i2c_sam0_##n),	    \
-			    0);						    \
-		irq_enable(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0);	    \
-	}
+	I2C_SAM0_IRQ_HANDLER(n)
 
 #if DT_ATMEL_SAM0_I2C_SERCOM_0_BASE_ADDRESS
 I2C_SAM0_DEVICE(0);

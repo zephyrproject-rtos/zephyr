@@ -20,7 +20,7 @@ Building
 The sample can be built as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/microbit/sound
+   :zephyr-app: samples/boards/bbc_microbit/sound
    :board: bbc_microbit
    :goals: build
    :compact:

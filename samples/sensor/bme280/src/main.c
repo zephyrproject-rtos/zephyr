@@ -31,6 +31,6 @@ void main(void)
 		      temp.val1, temp.val2, press.val1, press.val2,
 		      humidity.val1, humidity.val2);
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

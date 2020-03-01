@@ -19,15 +19,26 @@
 /* get the defines from dt (based on alias 'pwm-led0') */
 #define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
 #define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
+#ifdef DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#define PWM_FLAGS	DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#else
+#define PWM_FLAGS	0
+#endif
 #else
 #error "Choose supported PWM driver"
 #endif
 
+/* in microseconds */
+#define MIN_PERIOD	(USEC_PER_SEC / 64U)
+
+/* in microseconds */
+#define MAX_PERIOD	USEC_PER_SEC
+
 void main(void)
 {
 	struct device *pwm_dev;
-	u32_t period, min_period, max_period;
-	u64_t cycles;
+	u32_t max_period;
+	u32_t period;
 	u8_t dir = 0U;
 
 	printk("PWM demo app-blink LED\n");
@@ -38,15 +49,26 @@ void main(void)
 		return;
 	}
 
-	/* Adjust max_period depending pwm capabilities */
-	pwm_get_cycles_per_sec(pwm_dev, PWM_CHANNEL, &cycles);
-	/* in very worst case, PWM has a 8 bit resolution and count up to 256 */
-	period = max_period = 256 * USEC_PER_SEC / cycles;
-	min_period = max_period / 64;
+	/* In case the default MAX_PERIOD value cannot be set for some PWM
+	 * hardware, try to decrease the value until it fits, but no further
+	 * than to the value of MIN_PERIOD muliplied by four (to allow the
+	 * sample to actually show some blinking with changing frequency).
+	 */
+	max_period = MAX_PERIOD;
+	while (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
+				max_period, max_period / 2U, PWM_FLAGS)) {
+		max_period /= 2U;
+		if (max_period < (4U * MIN_PERIOD)) {
+			printk("This sample needs to set a period that is "
+			       "not supported by the used PWM driver.");
+			return;
+		}
+	}
 
+	period = max_period;
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				     period, period / 2U)) {
+				     period, period / 2U, PWM_FLAGS)) {
 			printk("pwm pin set fails\n");
 			return;
 		}
@@ -61,9 +83,9 @@ void main(void)
 		} else {
 			period /= 2U;
 
-			if (period < min_period) {
+			if (period < MIN_PERIOD) {
 				dir = 1U;
-				period = min_period;
+				period = MIN_PERIOD;
 			}
 		}
 

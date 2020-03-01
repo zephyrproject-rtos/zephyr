@@ -1,9 +1,7 @@
-# Kconfig - STM32 UART configuration
-#
+# STM32 UART configuration
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_STM32
 	bool "STM32 MCU serial driver"
@@ -97,16 +95,13 @@ config UART_10
 	  Enable support for UART10 port in the driver.
 	  Say y here if you want to use UART10 device.
 
-if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX || SOC_SERIES_STM32H7X
-
 # --- low power port 1 ---
 
 config LPUART_1
 	bool "Enable STM32 LPUART1 Port"
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX || SOC_SERIES_STM32H7X || SOC_SERIES_STM32G4X
 	help
 	  Enable support for LPUART1 port in the driver.
 	  Say y here if you want to use LPUART1 device.
-
-endif # SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 
 endif # UART_STM32

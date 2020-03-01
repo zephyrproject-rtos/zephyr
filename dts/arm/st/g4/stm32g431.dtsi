@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g4/stm32g4.dtsi>

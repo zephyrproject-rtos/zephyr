@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_MSP432P4XX
+config UART_MSP432P4XX
 	depends on SOC_SERIES_MSP432P4XX
 	bool "MSP432P4XX UART driver"
 	select SERIAL_HAS_DRIVER

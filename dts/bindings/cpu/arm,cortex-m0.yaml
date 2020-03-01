@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARM Cortex-M0 CPU
+description: ARM Cortex-M0 CPU
 
-description: >
-    This binding gives a base representation for ARM Cortex-M0 CPU.
+compatible: "arm,cortex-m0"
 
-inherits:
-    !include cpu.yaml
-
-properties:
-    compatible:
-      constraint: "arm,cortex-m0"
+include: cpu.yaml

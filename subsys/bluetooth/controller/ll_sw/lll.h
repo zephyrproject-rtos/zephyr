@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+#include "lll_meta.h"
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
 
 #define TICKER_INSTANCE_ID_CTLR 0
 #define TICKER_USER_ID_LLL      MAYFLY_CALL_ID_0
@@ -208,9 +211,15 @@ struct node_rx_hdr {
 	};
 
 	enum node_rx_type   type;
+	u8_t                user_meta; /* User metadata */
 	u16_t               handle;
 
-	struct node_rx_ftr  rx_ftr;
+	union {
+#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+		lll_rx_pdu_meta_t  rx_pdu_meta;
+#endif /* CONFIG_BT_CTLR_RX_PDU_META */
+		struct node_rx_ftr rx_ftr;
+	};
 };
 
 struct node_rx_pdu {
@@ -284,12 +293,16 @@ static inline int lll_is_stop(void *lll)
 }
 
 int lll_init(void);
+int lll_reset(void);
 int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		lll_prepare_cb_t prepare_cb, int prio,
 		struct lll_prepare_param *prepare_param);
 void lll_resume(void *param);
 void lll_disable(void *param);
 u32_t lll_radio_is_idle(void);
+s8_t lll_radio_tx_pwr_min_get(void);
+s8_t lll_radio_tx_pwr_max_get(void);
+s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl);
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,

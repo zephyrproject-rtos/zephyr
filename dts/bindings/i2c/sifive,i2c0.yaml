@@ -1,25 +1,17 @@
-#
 # Copyright (c) 2018 SiFive Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: SiFive Freedom I2C
+description: SiFive Freedom I2C interface
 
-description: >
-    This is a binding for the SiFive Freedom I2C interface
+compatible: "sifive,i2c0"
 
-inherits:
-    !include i2c.yaml
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,i2c0"
-
     input-frequency:
       type: int
-      category: optional
+      required: false
       description: Frequency of the peripheral input clock.
 
     reg:
-      category: required
+      required: true

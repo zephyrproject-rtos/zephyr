@@ -43,8 +43,8 @@
  * to enable FP register sharing on its behalf.
  */
 
-#include <kernel_structs.h>
-#include <toolchain.h>
+#include <kernel.h>
+#include <kernel_internal.h>
 
 /* SSE control/status register default value (used by assembler code) */
 extern u32_t _sse_mxcsr_default_value;
@@ -208,7 +208,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 
 	fp_owner = _kernel.current_fp;
 	if (fp_owner != NULL) {
-		if ((fp_owner->base.thread_state & _INT_OR_EXC_MASK) != 0) {
+		if ((fp_owner->arch.flags & X86_THREAD_FLAG_ALL) != 0) {
 			FpCtxSave(fp_owner);
 		}
 	}

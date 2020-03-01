@@ -186,4 +186,3 @@ References
 
 .. _BL654 website: https://connectivity.lairdtech.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-

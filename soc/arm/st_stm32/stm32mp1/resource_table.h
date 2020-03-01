@@ -71,4 +71,3 @@ struct stm32_resource_table {
 void resource_table_init(volatile void **table_ptr, int *length);
 
 #endif
-

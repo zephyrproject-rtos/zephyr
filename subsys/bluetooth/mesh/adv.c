@@ -150,10 +150,9 @@ static inline void adv_send(struct net_buf *buf)
 
 static void adv_stack_dump(const struct k_thread *thread, void *user_data)
 {
-#if defined(CONFIG_THREAD_STACK_INFO)
-	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
-						thread->stack_info.size);
-#endif
+	ARG_UNUSED(user_data);
+
+	log_stack_usage(thread);
 }
 
 static void adv_thread(void *p1, void *p2, void *p3)
@@ -190,8 +189,8 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			net_buf_unref(buf);
 		}
 
-		STACK_ANALYZE("adv stack", adv_thread_stack);
-		k_thread_foreach(adv_stack_dump, "BT_MESH");
+		log_stack_usage(&adv_thread_data);
+		k_thread_foreach(adv_stack_dump, NULL);
 
 		/* Give other threads a chance to run */
 		k_yield();

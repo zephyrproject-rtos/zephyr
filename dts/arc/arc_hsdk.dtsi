@@ -61,10 +61,10 @@
 		interrupt-parent = <&idu_intc>;
 		ranges;
 
-		ddr0: memory@0 {
+		ddr0: memory@90000000 {
 			device_type = "memory";
 			compatible = "mmio-sram";
-			reg = <0x0 0x80000000>;
+			reg = <0x90000000 0x50000000>;
 		};
 
 		uart0: uart@f0005000 {
@@ -108,7 +108,7 @@
 		gpio0: gpio@f0003000 {
 			compatible = "snps,designware-gpio";
 			reg = <0xf0003000 0x1000>;
-			bits = <32>;
+			bits = <24>;
 			label = "GPIO_0";
 			interrupt-parent = <&idu_intc>;
 
@@ -181,7 +181,7 @@
 			#size-cells = <0>;
 			reg = <0xf0022000 0x1000>;
 			interrupts = <42 1>;
-			label = "SPI_1";
+			label = "SPI_2";
 			status = "disabled";
 		};
 

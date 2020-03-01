@@ -1,4 +1,4 @@
 tests:
-  filesystem.fat:
-    platform_whitelist: native_posix native_posix_64
+  filesystem.fat.api:
+    platform_whitelist: native_posix
     tags: filesystem

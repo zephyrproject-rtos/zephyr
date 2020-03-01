@@ -18,7 +18,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  * @brief Setup various clock on SoC at boot time.

@@ -1,0 +1,159 @@
+/* CTF 1.8 */
+typealias integer { size = 8; align = 8; signed = true; } := int8_t;
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
+typealias enum : uint32_t {
+	MUTEX_INIT = 33,
+	MUTEX_UNLOCK = 34,
+	MUTEX_LOCK = 35,
+	SEMA_INIT = 36,
+	SEMA_GIVE = 37,
+	SEMA_TAKE = 38
+} := call_id;
+
+struct event_header {
+	uint32_t timestamp;
+	uint8_t id;
+};
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+stream {
+	event.header := struct event_header;
+};
+
+event {
+	name = thread_switched_out;
+	id = 0x10;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+
+event {
+	name = thread_switched_in;
+	id = 0x11;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+
+event {
+	name = thread_priority_set;
+	id = 0x12;
+	fields := struct {
+		uint32_t thread_id;
+		int8_t prio;
+	};
+
+};
+
+event {
+	name = thread_create;
+	id = 0x13;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_abort;
+	id = 0x14;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+
+event {
+	name = thread_suspend;
+	id = 0x15;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+
+event {
+	name = thread_resume;
+	id = 0x16;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+event {
+        name = thread_ready;
+        id = 0x17;
+        fields := struct {
+                uint32_t thread_id;
+        };
+};
+
+event {
+	name = thread_pending;
+	id = 0x18;
+	fields := struct {
+		uint32_t thread_id;
+	};
+};
+
+event {
+	name = thread_info;
+	id = 0x19;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t stack_base;
+		uint32_t stack_size;
+	};
+};
+
+event {
+	name = thread_name_set;
+	id = 0x1a;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = isr_enter;
+	id = 0x20;
+};
+
+event {
+	name = isr_exit;
+	id = 0x21;
+};
+
+event {
+	name = isr_exit_to_scheduler;
+	id = 0x22;
+};
+
+event {
+	name = idle;
+	id = 0x30;
+};
+
+event {
+	name = start_call;
+	id = 0x41;
+	fields := struct {
+		call_id id;
+	};
+};
+
+event {
+	name = end_call;
+	id = 0x42;
+	fields := struct {
+		call_id id;
+	};
+};

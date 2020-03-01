@@ -1,12 +1,10 @@
-# Kconfig - Microchip MEC MCU line
-#
+# Microchip MEC MCU line
+
 # Copyright (c) 2018, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config SOC_FAMILY_MEC
 	bool
-	# omit prompt to signify a "hidden" option
 
 if SOC_FAMILY_MEC
 config SOC_FAMILY

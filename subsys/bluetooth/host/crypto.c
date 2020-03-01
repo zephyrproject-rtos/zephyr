@@ -14,6 +14,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/crypto.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>
@@ -119,7 +120,8 @@ int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
 	struct tc_aes_key_sched_struct s;
 	u8_t tmp[16];
 
-	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
+	BT_DBG("key %s", bt_hex(key, 16));
+	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	sys_memcpy_swap(tmp, key, 16);
 
@@ -145,7 +147,8 @@ int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
 {
 	struct tc_aes_key_sched_struct s;
 
-	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
+	BT_DBG("key %s", bt_hex(key, 16));
+	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	if (tc_aes128_set_encrypt_key(&s, key) == TC_CRYPTO_FAIL) {
 		return -EINVAL;

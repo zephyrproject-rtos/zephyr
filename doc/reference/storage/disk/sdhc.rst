@@ -3,16 +3,17 @@
 SDHC disks
 ##########
 
-Zephyr includes support for connecting an SDHC card via the SPI bus.
+Zephyr includes support for connecting an SD card via the SPI bus.
 This can be used with Zephyr's built-in filesystem support to read and
-write FAT formatted cards.
+write FAT formatted cards. Both standard and high-capacity SD cards are
+supported.
 
 The system has been tested with cards from Samsung, SanDisk, and 4V
 with sizes from 2 GiB to 32 GiB in single partition mode.  Higher
 capacity cards should also work but haven't been tested.  Please let
 us know if they work!
 
-MMC and SDSC (<= 2 GiB) cards are not supported and will be ignored.
+MMC cards are not supported and will be ignored.
 
 .. note:: The system does not support inserting or removing cards while the
    system is running. The cards must be present at boot and must not be
@@ -24,7 +25,7 @@ MMC and SDSC (<= 2 GiB) cards are not supported and will be ignored.
 Enabling
 ********
 
-For example, this device tree fragment adds an SDHC card slot on ``spi1``,
+For example, this devicetree fragment adds an SDHC card slot on ``spi1``,
 uses ``PA27`` for chip select, and runs the SPI bus at 24 MHz once the
 SDHC card has been initialized:
 

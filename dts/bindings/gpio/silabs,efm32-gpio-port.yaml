@@ -1,21 +1,19 @@
-title: EFM32 GPIO
+description: EFM32 GPIO port node
 
-description: >
-    This is a representation of the EFM32 GPIO Port nodes
+compatible: "silabs,efm32-gpio-port"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "silabs,efm32-gpio-port"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

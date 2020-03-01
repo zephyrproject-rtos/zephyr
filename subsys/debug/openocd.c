@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 
 #define OPENOCD_UNIMPLEMENTED	0xffffffff
 
@@ -44,15 +44,23 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_USER_OPTIONS] = offsetof(struct _thread_base,
 						   user_options),
 	[OPENOCD_OFFSET_T_PRIO] = offsetof(struct _thread_base, prio),
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.sp),
+#elif defined(CONFIG_ARM)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.psp),
 #elif defined(CONFIG_ARC)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
 #elif defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.rsp),
+#else
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.esp),
+#endif
 #elif defined(CONFIG_NIOS2)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
@@ -75,8 +83,12 @@ size_t _kernel_openocd_offsets[] = {
 						    preempt_float),
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch, sse),
+#else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempFloatReg),
+#endif
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,

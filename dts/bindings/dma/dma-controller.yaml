@@ -1,0 +1,35 @@
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for DMA controllers
+
+include: base.yaml
+
+bus: dma
+
+properties:
+    label:
+      required: true
+
+    "#dma-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a DMA specifier
+
+    dma-channel-mask:
+      type: int
+      required: false
+      description: >
+        Bitmask of available DMA channels in ascending order that are
+        not reserved by firmware and are available to the
+        kernel. i.e. first channel corresponds to LSB.
+
+    dma-channels:
+      type: int
+      required: false
+      description: Number of DMA channels supported by the controller
+
+    dma-requests:
+      type: int
+      required: false
+      description: Number of DMA request signals supported by the controller.

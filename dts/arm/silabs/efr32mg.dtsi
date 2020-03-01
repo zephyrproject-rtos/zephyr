@@ -43,6 +43,7 @@
 			reg = <0x40010000 0x400>;
 			interrupts = <12 0>, <13 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "USART_0";
 		};
@@ -52,6 +53,7 @@
 			reg = <0x40010400 0x400>;
 			interrupts = <20 0>, <21 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
 			status = "disabled";
 			label = "USART_1";
 		};
@@ -61,6 +63,7 @@
 			reg = <0x40010800 0x400>;
 			interrupts = <40 0>, <41 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <2>;
 			status = "disabled";
 			label = "USART_2";
 		};
@@ -70,6 +73,7 @@
 			reg = <0x40010c00 0x400>;
 			interrupts = <43 0>, <44 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <3>;
 			status = "disabled";
 			label = "USART_3";
 		};
@@ -78,6 +82,7 @@
 			compatible = "silabs,gecko-leuart";
 			reg = <0x4004a000 0x400>;
 			interrupts = <22 0>;
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "LEUART_0";
 		};
@@ -157,14 +162,6 @@
 				#gpio-cells = <2>;
 			};
 
-			gpioe: gpio@4000a0c0 {
-				compatible = "silabs,efr32mg-gpio-port";
-				reg = <0x4000a0c0 0x30>;
-				label = "GPIO_E";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
 			gpiof: gpio@4000a0f0 {
 				compatible = "silabs,efr32mg-gpio-port";
 				reg = <0x4000a0f0 0x30>;
@@ -172,6 +169,46 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+
+			gpioi: gpio@4000a180 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a180 0x30>;
+				label = "GPIO_I";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioj: gpio@4000a1b0 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a1b0 0x30>;
+				label = "GPIO_J";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiok: gpio@4000a1e0 {
+				compatible = "silabs,efr32mg-gpio-port";
+				reg = <0x4000a1e0 0x30>;
+				label = "GPIO_K";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x2C>;
+			label = "WDOG0";
+			interrupts = <2 0>;
+			status = "disabled";
+		};
+
+		wdog1: wdog@40052400 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052400 0x2C>;
+			label = "WDOG1";
+			interrupts = <3 0>;
+			status = "disabled";
 		};
 	};
 };

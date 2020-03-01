@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import shlex
 
 from west import log
 from west.configuration import config
@@ -93,7 +94,8 @@ class Build(Forceable):
                             " Otherwise the default build directory is " +
                             "created and used.")
         parser.add_argument('-t', '--target',
-                            help='''Build system target to run''')
+                            help='''Build system target ("usage"
+                            for more info; and "help" for a list)''')
         parser.add_argument('-p', '--pristine', choices=['auto', 'always',
                             'never'], action=AlwaysIfMissing, nargs='?',
                             help='''Control whether the build folder is made
@@ -198,7 +200,7 @@ class Build(Forceable):
             # passed on to CMake
             if remainder[0] == _ARG_SEPARATOR:
                 remainder = remainder[1:]
-            if len(remainder):
+            if remainder:
                 self.args.cmake_opts = remainder
         except IndexError:
             return
@@ -224,7 +226,7 @@ class Build(Forceable):
         # If we created the build directory, we must run CMake.
         log.dbg('setting up build directory', level=log.VERBOSE_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
-        board, origin = self._find_board()
+        board, _ = self._find_board()
         source_dir = self._find_source_dir()
         app = os.path.split(source_dir)[1]
         build_dir = find_build_dir(self.args.build_dir, board=board,
@@ -384,6 +386,10 @@ class Build(Forceable):
             cmake_opts = []
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
+
+        user_args = config_get('cmake-args', None)
+        if user_args:
+            cmake_opts.extend(shlex.split(user_args))
 
         # Invoke CMake from the current working directory using the
         # -S and -B options (officially introduced in CMake 3.13.0).

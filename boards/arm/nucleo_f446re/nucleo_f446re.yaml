@@ -7,8 +7,9 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
   - arduino_i2c
-  - rtc
+  - arduino_spi
   - counter
   - gpio
   - spi

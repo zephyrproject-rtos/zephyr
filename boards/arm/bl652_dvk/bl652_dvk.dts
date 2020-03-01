@@ -26,11 +26,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led1: led_1 {
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 19 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
 	};
@@ -38,11 +38,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button1: button_1 {
-			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1";
 		};
 		button2: button_2 {
-			gpios = <&gpio0 15 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 15 GPIO_PULL_UP>;
 			label = "Push button switch 2";
 		};
 	};
@@ -79,6 +79,7 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
@@ -90,19 +91,21 @@
 };
 
 &spi0 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <25>;
 	mosi-pin = <23>;
 	miso-pin = <24>;
-    cs-gpios = <&gpio0 22 0>;
+	cs-gpios = <&gpio0 22 0>;
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <16>;
 	mosi-pin = <20>;
 	miso-pin = <14>;
-    cs-gpios = <&gpio0 12 0>;
+	cs-gpios = <&gpio0 12 0>;
 };
 
 &flash0 {

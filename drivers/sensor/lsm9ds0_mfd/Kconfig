@@ -1,11 +1,7 @@
-# Kconfig - LSM9DS0 accelerometer, magnetometer and temperature
-# configuration options
+# LSM9DS0 accelerometer, magnetometer and temperature configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LSM9DS0_MFD
 	bool "LSM9DS0 I2C accelerometer, magnetometer and temperature sensor chip"

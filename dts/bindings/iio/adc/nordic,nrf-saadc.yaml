@@ -1,26 +1,21 @@
-#
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Nordic Semiconductor nRF Family SAADC
+description: Nordic Semiconductor nRF family SAADC node
 
-description: >
-    This is a representation of the nRF SAADC node
+compatible: "nordic,nrf-saadc"
 
-inherits:
-    !include adc.yaml
+include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-saadc"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
-"#cells":
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
     - input

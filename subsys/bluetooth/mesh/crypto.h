@@ -152,3 +152,6 @@ int bt_mesh_prov_conf(const u8_t conf_key[16], const u8_t rand[16],
 
 int bt_mesh_prov_decrypt(const u8_t key[16], u8_t nonce[13],
 			 const u8_t data[25 + 8], u8_t out[25]);
+
+int bt_mesh_prov_encrypt(const u8_t key[16], u8_t nonce[13],
+			 const u8_t data[25], u8_t out[25 + 8]);

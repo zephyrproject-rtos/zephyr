@@ -26,7 +26,7 @@ the Coccinelle files and ``coccicheck`` have been updated.
 Coccinelle is available through the package manager
 of many distributions, e.g. :
 
-.. hlist::
+.. rst-class:: rst-columns
 
    * Debian
    * Fedora

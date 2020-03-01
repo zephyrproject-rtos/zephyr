@@ -14,8 +14,7 @@
 
 #include "lsm6dsl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LSM6DSL);
+LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 #define LSM6DSL_EMBEDDED_SLV0_ADDR       0x02
 #define LSM6DSL_EMBEDDED_SLV0_SUBADDR    0x03
@@ -65,7 +64,7 @@ static int lsm6dsl_lis2mdl_init(struct lsm6dsl_data *data, u8_t i2c_addr)
 	lsm6dsl_shub_write_slave_reg(data, i2c_addr,
 				     LIS2MDL_CFG_REG_A, mag_cfg, 1);
 
-	k_sleep(10); /* turn-on time in ms */
+	k_sleep(K_MSEC(10)); /* turn-on time in ms */
 
 	/* configure mag */
 	mag_cfg[0] = LIS2MDL_ODR_10HZ;
@@ -99,7 +98,7 @@ static int lsm6dsl_lps22hb_init(struct lsm6dsl_data *data, u8_t i2c_addr)
 	lsm6dsl_shub_write_slave_reg(data, i2c_addr,
 				     LPS22HB_CTRL_REG2, baro_cfg, 1);
 
-	k_sleep(1); /* turn-on time in ms */
+	k_sleep(K_MSEC(1)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HB_ODR_10HZ | LPS22HB_LPF_EN | LPS22HB_BDU_EN;
@@ -162,7 +161,7 @@ static inline void lsm6dsl_shub_embedded_en(struct lsm6dsl_data *data, bool on)
 				LSM6DSL_MASK_FUNC_CFG_EN,
 				func_en << LSM6DSL_SHIFT_FUNC_CFG_EN);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 }
 
 #ifdef LSM6DSL_DEBUG

@@ -10,12 +10,11 @@
 #include <sys/byteorder.h>
 #include <drivers/sensor.h>
 #include <sys/__assert.h>
+#include <logging/log.h>
 
 #include "ms5837.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(MS5837);
+LOG_MODULE_REGISTER(MS5837, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ms5837_get_measurement(struct device *i2c_master,
 				  const u8_t i2c_address, u32_t *val,

@@ -18,18 +18,20 @@
 #include <sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	z_fatal_print("Spurious interrupt detected! ipending: %x",
-		      z_nios2_creg_read(NIOS2_CR_IPENDING));
+	LOG_ERR("Spurious interrupt detected! ipending: %x",
+		z_nios2_creg_read(NIOS2_CR_IPENDING));
 	z_nios2_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 
-void z_arch_irq_enable(unsigned int irq)
+void arch_irq_enable(unsigned int irq)
 {
 	u32_t ienable;
 	unsigned int key;
@@ -45,7 +47,7 @@ void z_arch_irq_enable(unsigned int irq)
 
 
 
-void z_arch_irq_disable(unsigned int irq)
+void arch_irq_disable(unsigned int irq)
 {
 	u32_t ienable;
 	unsigned int key;
@@ -85,7 +87,9 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
-		z_sys_trace_isr_enter();
+#ifdef CONFIG_TRACING_ISR
+		sys_trace_isr_enter();
+#endif
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
@@ -97,7 +101,9 @@ void _enter_irq(u32_t ipending)
 		read_timer_end_of_isr();
 #endif
 		ite->isr(ite->arg);
+#ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_exit();
+#endif
 	}
 
 	_kernel.nested--;
@@ -107,9 +113,9 @@ void _enter_irq(u32_t ipending)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);

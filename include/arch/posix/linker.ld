@@ -12,9 +12,6 @@
  * Linker script for the POSIX (native) platform
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <autoconf.h>
 #include <linker/sections.h>
 

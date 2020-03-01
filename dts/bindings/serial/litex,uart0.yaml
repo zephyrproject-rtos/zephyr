@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: LiteX UART
+description: LiteX UART
 
-description: >
-    This binding gives a base representation of the LiteX UART
+compatible: "litex,uart0"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "litex,uart0"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

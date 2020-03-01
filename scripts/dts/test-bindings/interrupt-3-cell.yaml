@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Interrupt controller with three cells
 description: Interrupt controller with three cells
 
-properties:
-    compatible:
-        constraint: "interrupt-three-cell"
-        type: string-array
+compatible: "interrupt-three-cell"
 
-"#cells":
-  - one
-  - two
-  - three
+interrupt-cells:
+    - one
+    - two
+    - three

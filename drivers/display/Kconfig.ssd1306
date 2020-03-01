@@ -1,10 +1,7 @@
-# Kconfig - SSD1306 display controller configuration options
+# SSD1306 display controller configuration options
 
-#
 # Copyright (c) 2018 Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SSD1306
 	bool "SSD1306 display driver"
@@ -21,7 +18,7 @@ config SSD1306_DEFAULT_CONTRAST
 	help
 	  SSD16XX default contrast.
 
-choice
+choice SSD1306_CONTROLLER_TYPE
 	prompt "Display controller type"
 	default SSD1306_DEFAULT
 	help
@@ -35,4 +32,9 @@ config SSD1306_SH1106_COMPATIBLE
 
 endchoice
 
-endif #SSD1306
+config SSD1306_REVERSE_MODE
+	bool "SSD1306 reverse mode"
+	help
+	  SSD16XX reverse video mode.
+
+endif # SSD1306

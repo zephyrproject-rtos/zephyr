@@ -1,9 +1,7 @@
-# Kconfig - MIMXRT1015-EVK board
-#
+# MIMXRT1015-EVK board
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MIMXRT1015_EVK
 
@@ -24,12 +22,9 @@ config GPIO_MCUX_IGPIO_3
 
 endif # GPIO_MCUX_IGPIO
 
-if I2C_MCUX_LPI2C
-
 config I2C_1
 	default y
-
-endif # I2C_MCUX_LPI2C
+	depends on I2C_MCUX_LPI2C
 
 if UART_MCUX_LPUART
 
@@ -37,7 +32,7 @@ config UART_MCUX_LPUART_1
 	default y
 
 config UART_MCUX_LPUART_4
-	default y
+	default y if BT_UART
 
 endif # UART_MCUX_LPUART
 

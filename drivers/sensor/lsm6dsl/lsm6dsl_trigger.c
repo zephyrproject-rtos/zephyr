@@ -10,12 +10,33 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "lsm6dsl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LSM6DSL);
+LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
+
+static inline void setup_irq(struct lsm6dsl_data *drv_data,
+			     bool enable)
+{
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN,
+				     flags);
+}
+
+static inline void handle_irq(struct lsm6dsl_data *drv_data)
+{
+	setup_irq(drv_data, false);
+
+#if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
+	k_sem_give(&drv_data->gpio_sem);
+#elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&drv_data->work);
+#endif
+}
 
 int lsm6dsl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
@@ -25,7 +46,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_disable_callback(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN);
+	setup_irq(drv_data, false);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -34,7 +55,10 @@ int lsm6dsl_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN);
+	setup_irq(drv_data, true);
+	if (gpio_pin_get(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN) > 0) {
+		handle_irq(drv_data);
+	}
 
 	return 0;
 }
@@ -47,13 +71,7 @@ static void lsm6dsl_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN);
-
-#if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
-	k_sem_give(&drv_data->gpio_sem);
-#elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&drv_data->work);
-#endif
+	handle_irq(drv_data);
 }
 
 static void lsm6dsl_thread_cb(void *arg)
@@ -66,7 +84,7 @@ static void lsm6dsl_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN);
+	setup_irq(drv_data, true);
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
@@ -107,8 +125,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	}
 
 	gpio_pin_configure(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_FLAGS);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lsm6dsl_gpio_callback,
@@ -122,10 +139,10 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	/* enable data-ready interrupt */
 	if (drv_data->hw_tf->update_reg(drv_data,
 			       LSM6DSL_REG_INT1_CTRL,
-			       LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL |
-			       LSM6DSL_SHIFT_INT1_CTRL_DRDY_G,
-			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
-			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
+			       LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
+			       LSM6DSL_MASK_INT1_CTRL_DRDY_G,
+			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
+			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
 		LOG_ERR("Could not enable data-ready interrupt.");
 		return -EIO;
 	}
@@ -137,13 +154,13 @@ int lsm6dsl_init_interrupt(struct device *dev)
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lsm6dsl_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lsm6dsl_work_cb;
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN);
+	setup_irq(drv_data, true);
 
 	return 0;
 }

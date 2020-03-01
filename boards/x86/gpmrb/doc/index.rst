@@ -20,7 +20,7 @@ such as heads-up displays and entertainment systems.
 Hardware
 ********
 
-.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.rst
+.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.txt
 
 Building and Running Zephyr
 ***************************
@@ -36,7 +36,6 @@ application for the GP MRB:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :tool: all
    :board: gpmrb
    :goals: build
 

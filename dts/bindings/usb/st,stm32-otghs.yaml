@@ -1,37 +1,29 @@
-#
 # Copyright (c) 2017, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STM32 OTGHS
+description: STM32 OTGHS controller
 
-description: >
-    This binding gives a base representation of the STM32 OTG HS controller
+compatible: "st,stm32-otghs"
 
-inherits:
-    !include usb-ep.yaml
+include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-otghs"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     ram-size:
       type: int
-      category: required
+      required: true
       description: Size of USB dedicated RAM. STM32 SOC's reference
                    manual defines a shared FIFO size.
 
     phys:
       type: phandle
-      category: optional
+      required: false
       description: PHY provider specifier
 
     clocks:
-      category: required
+      required: true

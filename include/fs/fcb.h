@@ -123,18 +123,6 @@ struct fcb {
 	 */
 };
 
-/*
- * Error codes.
- */
-#define FCB_OK		0
-#define FCB_ERR_ARGS	-1
-#define FCB_ERR_FLASH	-2
-#define FCB_ERR_NOVAR   -3
-#define FCB_ERR_NOSPACE	-4
-#define FCB_ERR_NOMEM	-5
-#define FCB_ERR_CRC	-6
-#define FCB_ERR_MAGIC   -7
-
 /**
  * @}
  */
@@ -203,7 +191,7 @@ typedef int (*fcb_walk_cb)(struct fcb_entry_ctx *loc_ctx, void *arg);
 /**
  * Walk over all entries in the FCB sector
  *
- * @param[in] sector     fcb sector to be wallked. If null, traverse entire
+ * @param[in] sector     fcb sector to be walked. If null, traverse entire
  *                       storage.
  * @param[in] fcb        FCB instance structure.
  * @param[in] cb         pointer to the function which gets called for every
@@ -302,7 +290,7 @@ int fcb_clear(struct fcb *fcb);
  */
 
 /**
- * @brief Flash Circular internall
+ * @brief Flash Circular internal
  * @defgroup fcb_internall fcb non-API prototypes
  * @ingroup fcb
  * @{

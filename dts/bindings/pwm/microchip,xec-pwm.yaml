@@ -1,0 +1,15 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC PWM
+
+include: [pwm-controller.yaml, base.yaml]
+
+compatible: "microchip,xec-pwm"
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

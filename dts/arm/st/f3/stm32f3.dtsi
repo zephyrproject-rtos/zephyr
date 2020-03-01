@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2017 I-SENSE group of ICCS
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/f3/stm32f3-pinctrl.dtsi>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
@@ -108,6 +108,15 @@
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
+			status = "disabled";
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
 			status = "disabled";
 		};
 
@@ -297,6 +306,23 @@
 			label = "RTC_0";
 		};
 
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			label = "CAN_1";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
 		adc1: adc@50000000 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000000 0x400>;
@@ -304,6 +330,17 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40020000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			status = "disabled";
+			label = "DMA_1";
 		};
 	};
 

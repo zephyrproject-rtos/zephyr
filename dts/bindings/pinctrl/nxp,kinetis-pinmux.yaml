@@ -1,21 +1,16 @@
-title: Kinetis Pinmux
+description: Kinetis pinmux node
 
-description: >
-    This is a representation of the Kinetis Pinmux node
+compatible: "nxp,kinetis-pinmux"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-pinmux"
-
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

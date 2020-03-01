@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <clock_control/arm_clock_control.h>
+#include <drivers/clock_control/arm_clock_control.h>
 #include <sys/__assert.h>
 #include <init.h>
 #include <drivers/uart.h>

@@ -21,19 +21,19 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_0: led_0 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1";
 		};
 		green_led_1: led_1 {
-			gpios = <&gpiob 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpiob 6 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 		};
 		red_led: led_3 {
-			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
 		};
 	};
@@ -42,7 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button_0 {
 			label = "Push button switch";
-			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,15 +62,11 @@ arduino_i2c: &i2c1 {};
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

@@ -1,5 +1,0 @@
-tests:
-  libraries.data_structures.rbtree:
-    tags: rbtree
-    filter: not CONFIG_MISRA_SANE
-    platform_exclude: qemu_riscv64

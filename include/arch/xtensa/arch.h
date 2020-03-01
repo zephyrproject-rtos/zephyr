@@ -15,16 +15,14 @@
 
 #include <irq.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
+#include <zephyr/types.h>
+#include <toolchain.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
-#include <zephyr/types.h>
 #include <sw_isr_table.h>
+#include <arch/xtensa/thread.h>
 #include <arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
@@ -36,40 +34,14 @@ extern "C" {
 
 #include <arch/xtensa/exc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 
-
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
- *
- * Internally this function does a few things:
- *
- * 1. The enum statement has no effect but forces the compiler to only
- * accept constant values for the irq_p parameter, very important as the
- * numerical IRQ line is used to create a named section.
- *
- * 2. An instance of _isr_table_entry is created containing the ISR and its
- * parameter. If you look at how _sw_isr_table is created, each entry in the
- * array is in its own section named by the IRQ line number. What we are doing
- * here is to override one of the default entries (which points to the
- * spurious IRQ handler) with what was supplied here.
- *
- * 3. The priority level for the interrupt is configured by a call to
- * z_irq_priority_set()
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
- */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 	irq_p; \
@@ -78,26 +50,24 @@ extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
 
-#ifdef CONFIG_XTENSA_ASM2
-#define XTENSA_ERR_NORET /**/
-#else
-#define XTENSA_ERR_NORET FUNC_NORETURN
-#endif
+#define XTENSA_ERR_NORET
 
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
-/**
- * @brief Explicitly nop operation.
- */
+static inline u32_t arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
+
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
-#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_ */

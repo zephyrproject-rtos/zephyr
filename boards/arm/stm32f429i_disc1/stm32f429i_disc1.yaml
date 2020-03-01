@@ -9,6 +9,6 @@ toolchain:
 ram: 192
 flash: 2048
 supported:
-  - rtc
   - counter
   - i2c
+  - spi

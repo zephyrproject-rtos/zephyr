@@ -21,6 +21,7 @@
  */
 
 #include <net/net_core.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,22 +1,17 @@
-title: SAM Family UART
+description: SAM family UART
 
-description: >
-    This binding gives a base representation of the SAM UART
+compatible: "atmel,sam-uart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true

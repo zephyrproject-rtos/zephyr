@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019 Centaur Analytics, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+
+	ti_tmp116: ti_tmp116@4b {
+		compatible = "ti,tmp116";
+		reg = <0x4B>;
+		label = "TMP116";
+	};
+
+};

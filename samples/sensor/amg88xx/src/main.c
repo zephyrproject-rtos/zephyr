@@ -50,7 +50,8 @@ void print_buffer(void *ptr, size_t l)
 void main(void)
 {
 	int ret;
-	struct device *dev = device_get_binding(CONFIG_AMG88XX_NAME);
+	struct device *dev = device_get_binding(
+				DT_INST_0_PANASONIC_AMG88XX_LABEL);
 
 	if (dev == NULL) {
 		printk("Could not get AMG88XX device\n");
@@ -104,6 +105,6 @@ void main(void)
 		printk("new sample:\n");
 		print_buffer(temp_value, ARRAY_SIZE(temp_value));
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

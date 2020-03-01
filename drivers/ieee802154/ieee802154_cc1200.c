@@ -200,15 +200,10 @@ static inline void gpio0_int_handler(struct device *port,
 
 static void enable_gpio0_interrupt(struct cc1200_context *cc1200, bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin);
-	} else {
-		gpio_pin_disable_callback(
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
-			cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin);
-	}
+	gpio_pin_interrupt_configure(
+		cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev,
+		cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
+		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 static void setup_gpio_callback(struct device *dev)
@@ -333,8 +328,8 @@ rf_install_settings(struct device *dev,
 				 (void *)rf_settings->registers,
 				 CC1200_RF_NON_EXT_SPACE_REGS, false, true) ||
 	    !z_cc1200_access_reg(cc1200, false, CC1200_REG_IF_MIX_CFG,
-				 (void *)rf_settings->registers +
-				 CC1200_RF_NON_EXT_SPACE_REGS,
+				 (u8_t *)rf_settings->registers
+				 + CC1200_RF_NON_EXT_SPACE_REGS,
 				 CC1200_RF_EXT_SPACE_REGS, true, true) ||
 	    !write_reg_pkt_len(cc1200, 0xFF)) {
 		LOG_ERR("Could not install RF settings");
@@ -635,10 +630,10 @@ static int cc1200_tx(struct device *dev,
 	}
 
 	/* Wait for SYNC to be sent */
-	k_sem_take(&cc1200->tx_sync, 100);
+	k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	if (atomic_get(&cc1200->tx_start) == 1) {
 		/* Now wait for the packet to be fully sent */
-		k_sem_take(&cc1200->tx_sync, 100);
+		k_sem_take(&cc1200->tx_sync, K_MSEC(100));
 	}
 
 out:
@@ -732,37 +727,54 @@ static int power_on_and_setup(struct device *dev)
 	return rf_calibrate(cc1200);
 }
 
+static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
+{
+	struct cc1200_context *cc1200 = dev->driver_data;
+	struct device *gpio = device_get_binding(DT_INST_0_TI_CC1200_INT_GPIOS_CONTROLLER);
+
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_INST_0_TI_CC1200_INT_GPIOS_PIN;
+	gpio_pin_configure(gpio, cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
+			   GPIO_INPUT | DT_INST_0_TI_CC1200_INT_GPIOS_FLAGS);
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev = gpio;
+
+	return cc1200->gpios;
+}
+
 static int configure_spi(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
 
-	cc1200->spi = device_get_binding(DT_IEEE802154_CC1200_SPI_DRV_NAME);
+	cc1200->spi = device_get_binding(DT_INST_0_TI_CC1200_BUS_NAME);
 	if (!cc1200->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_IEEE802154_CC1200_GPIO_SPI_CS)) {
-		cs_ctrl.gpio_dev = device_get_binding(
-			DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME);
-		if (!cs_ctrl.gpio_dev) {
-			LOG_ERR("Unable to get GPIO SPI CS device");
-			return -ENODEV;
-		}
-
-		cs_ctrl.gpio_pin = DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
-		cs_ctrl.delay = 0U;
-
-		cc1200->spi_cfg.cs = &cs_ctrl;
-
-		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			    DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME,
-			    DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN);
+#if defined(CONFIG_IEEE802154_CC1200_GPIO_SPI_CS)
+	cs_ctrl.gpio_dev = device_get_binding(
+		DT_INST_0_TI_CC1200_CS_GPIOS_CONTROLLER);
+	if (!cs_ctrl.gpio_dev) {
+		LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
 	}
 
+	cs_ctrl.gpio_pin = DT_INST_0_TI_CC1200_CS_GPIOS_PIN;
+	cs_ctrl.delay = 0U;
+
+	cc1200->spi_cfg.cs = &cs_ctrl;
+
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
+		DT_INST_0_TI_CC1200_CS_GPIOS_CONTROLLER,
+		DT_INST_0_TI_CC1200_CS_GPIOS_PIN);
+#endif /* CONFIG_IEEE802154_CC1200_GPIO_SPI_CS */
+
 	cc1200->spi_cfg.operation = SPI_WORD_SET(8);
-	cc1200->spi_cfg.frequency = DT_IEEE802154_CC1200_SPI_FREQ;
-	cc1200->spi_cfg.slave = DT_IEEE802154_CC1200_SPI_SLAVE;
+	cc1200->spi_cfg.frequency = DT_INST_0_TI_CC1200_SPI_MAX_FREQUENCY;
+	cc1200->spi_cfg.slave = DT_INST_0_TI_CC1200_BASE_ADDRESS;
 
 	return 0;
 }
@@ -777,8 +789,7 @@ static int cc1200_init(struct device *dev)
 	k_sem_init(&cc1200->rx_lock, 0, 1);
 	k_sem_init(&cc1200->tx_sync, 0, 1);
 
-	cc1200->gpios = cc1200_configure_gpios();
-	if (!cc1200->gpios) {
+	if (!configure_gpios(dev)) {
 		LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
@@ -798,7 +809,7 @@ static int cc1200_init(struct device *dev)
 	k_thread_create(&cc1200->rx_thread, cc1200->rx_stack,
 			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
 			(k_thread_entry_t)cc1200_rx,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	LOG_INF("CC1200 initialized");
 

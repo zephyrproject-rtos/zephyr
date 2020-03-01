@@ -20,7 +20,8 @@
 #include <stdbool.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <bluetooth/hci_err.h>
+#include <bluetooth/addr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,12 +46,12 @@ struct bt_le_conn_param {
   * @param to       Supervision Timeout (N * 10 ms)
   */
 #define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
-	(&(struct bt_le_conn_param) { \
+	((struct bt_le_conn_param[]) { { \
 		.interval_min = (int_min), \
 		.interval_max = (int_max), \
 		.latency = (lat), \
 		.timeout = (to), \
-	 })
+	 } })
 
 /** Default LE connection parameters:
   *   Connection Interval: 30-50 ms
@@ -79,16 +80,26 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  */
 void bt_conn_unref(struct bt_conn *conn);
 
+/** @brief Iterate through all existing connections.
+ *
+ * @param type  Connection Type
+ * @param func  Function to call for each connection.
+ * @param data  Data to pass to the callback function.
+ */
+void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
+		     void *data);
+
 /** @brief Look up an existing connection by address.
  *
  *  Look up an existing connection based on the remote address.
  *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
+ *
  *  @param id   Local identity (in most cases BT_ID_DEFAULT).
  *  @param peer Remote address.
  *
- *  @return Connection object or NULL if not found. The caller gets a
- *  new reference to the connection object which must be released with
- *  bt_conn_unref() once done using the object.
+ *  @return Connection object or NULL if not found.
  */
 struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
 
@@ -115,11 +126,13 @@ u8_t bt_conn_index(struct bt_conn *conn);
 /** Connection Type */
 enum {
 	/** LE Connection Type */
-	BT_CONN_TYPE_LE,
+	BT_CONN_TYPE_LE = BIT(0),
 	/** BR/EDR Connection Type */
-	BT_CONN_TYPE_BR,
+	BT_CONN_TYPE_BR = BIT(1),
 	/** SCO Connection Type */
-	BT_CONN_TYPE_SCO,
+	BT_CONN_TYPE_SCO = BIT(2),
+	/** All Connection Type */
+	BT_CONN_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR | BT_CONN_TYPE_SCO,
 };
 
 /** LE Connection Info Structure */
@@ -152,7 +165,6 @@ enum {
 
 /** @brief Connection Info Structure
  *
- *
  *  @param type Connection Type
  *  @param role Connection Role
  *  @param id Which local identity the connection was created with
@@ -173,6 +185,50 @@ struct bt_conn_info {
 	};
 };
 
+/** LE Connection Remote Info Structure */
+struct bt_conn_le_remote_info {
+
+	/** Remote LE feature set (bitmask). */
+	const u8_t *features;
+};
+
+/** BR/EDR Connection Remote Info structure */
+struct bt_conn_br_remote_info {
+
+	/** Remote feature set (pages of bitmasks). */
+	const u8_t *features;
+
+	/** Number of pages in the remote feature set. */
+	u8_t num_pages;
+};
+
+/** @brief Connection Remote Info Structure
+ *
+ *  @note The version, manufacturer and subversion fields will only contain
+ *        valid data if :option:`CONFIG_BT_REMOTE_VERSION` is enabled.
+ */
+struct bt_conn_remote_info {
+	/* Connection Type */
+	u8_t  type;
+
+	/* Remote Link Layer version */
+	u8_t  version;
+
+	/* Remote manufacturer identifier */
+	u16_t manufacturer;
+
+	/* Per-manufacturer unique revision */
+	u16_t subversion;
+
+	union {
+		/* LE connection remote info */
+		struct bt_conn_le_remote_info le;
+
+		/* BR/EDR connection remote info */
+		struct bt_conn_br_remote_info br;
+	};
+};
+
 /** @brief Get connection info
  *
  *  @param conn Connection object.
@@ -181,6 +237,24 @@ struct bt_conn_info {
  *  @return Zero on success or (negative) error code on failure.
  */
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
+
+/** @brief Get connection info for the remote device.
+ *
+ *  @param conn Connection object.
+ *  @param remote_info Connection remote info object.
+ *
+ *  @note In order to retrieve the remote version (version, manufacturer
+ *  and subversion) :option:`CONFIG_BT_REMOTE_VERSION` must be enabled
+ *
+ *  @note The remote information is exchanged directly after the connection has
+ *  been established. The application can be notified about when the remote
+ *  information is available through the remote_info_available callback.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EBUSY The remote information is not yet available.
+ */
+int bt_conn_get_remote_info(struct bt_conn *conn,
+			    struct bt_conn_remote_info *remote_info);
 
 /** @brief Update the connection parameters.
  *
@@ -207,7 +281,9 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  This uses the General Connection Establishment procedure.
  *
@@ -222,10 +298,16 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 /** @brief Automatically connect to remote devices in whitelist.
  *
  *  This uses the Auto Connection Establishment procedure.
+ *  The procedure will continue until a single connection is established or the
+ *  procedure is stopped through @ref bt_conn_create_auto_stop.
+ *  To establish connections to all devices in the whitelist the procedure
+ *  should be started again in the connected callback after a new connection has
+ *  been established.
  *
  *  @param param Initial connection parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOMEM No free connection object available.
  */
 int bt_conn_create_auto_le(const struct bt_le_conn_param *param);
 
@@ -266,7 +348,8 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *
  *  The advertising may be canceled with bt_conn_disconnect().
  *
- *  Returns a new reference that the the caller is responsible for managing.
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *  @param param Directed advertising parameters.
@@ -278,16 +361,27 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 /** Security level. */
 typedef enum __packed {
-	/** Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_NONE,
-	/** No encryption and no authentication. */
-	BT_SECURITY_LOW,
-	/** Encryption and no authentication (no MITM). */
-	BT_SECURITY_MEDIUM,
-	/** Encryption and authentication (MITM). */
-	BT_SECURITY_HIGH,
-	/** Authenticated Secure Connections */
-	BT_SECURITY_FIPS,
+	/** Level 0: Only for BR/EDR special cases, like SDP */
+	BT_SECURITY_L0,
+	/** Level 1: No encryption and no authentication. */
+	BT_SECURITY_L1,
+	/** Level 2: Encryption and no authentication (no MITM). */
+	BT_SECURITY_L2,
+	/** Level 3: Encryption and authentication (MITM). */
+	BT_SECURITY_L3,
+	/** Level 4: Authenticated Secure Connections and 128-bit key. */
+	BT_SECURITY_L4,
+
+	BT_SECURITY_NONE   __deprecated = BT_SECURITY_L0,
+	BT_SECURITY_LOW    __deprecated = BT_SECURITY_L1,
+	BT_SECURITY_MEDIUM __deprecated = BT_SECURITY_L2,
+	BT_SECURITY_HIGH   __deprecated = BT_SECURITY_L3,
+	BT_SECURITY_FIPS   __deprecated = BT_SECURITY_L4,
+
+	/** Bit to force new pairing procedure, bit-wise OR with requested
+	 *  security level.
+	 */
+	BT_SECURITY_FORCE_PAIR = BIT(7),
 } bt_security_t;
 
 /** @brief Set security level for a connection.
@@ -303,14 +397,29 @@ typedef enum __packed {
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
- *  capabilities).
+ *  capabilities), or if the maximum number of paired devices has been reached.
+ *
+ *  This function may return error if the pairing procedure has already been
+ *  initiated by the local device or the peer device.
  *
  *  @param conn Connection object.
  *  @param sec Requested security level.
  *
  *  @return 0 on success or negative error
  */
-int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
+int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
+
+/** @brief Get security level for a connection.
+ *
+ *  @return Connection security level
+ */
+bt_security_t bt_conn_get_security(struct bt_conn *conn);
+
+static inline int __deprecated bt_conn_security(struct bt_conn *conn,
+						bt_security_t sec)
+{
+	return bt_conn_set_security(conn, sec);
+}
 
 /** @brief Get encryption key size.
  *
@@ -322,6 +431,35 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  *  @return Encryption key size.
  */
 u8_t bt_conn_enc_key_size(struct bt_conn *conn);
+
+enum bt_security_err {
+	/** Security procedure successful. */
+	BT_SECURITY_ERR_SUCCESS,
+
+	/** Authentication failed. */
+	BT_SECURITY_ERR_AUTH_FAIL,
+
+	/** PIN or encryption key is missing. */
+	BT_SECURITY_ERR_PIN_OR_KEY_MISSING,
+
+	/** OOB data is not available.  */
+	BT_SECURITY_ERR_OOB_NOT_AVAILABLE,
+
+	/** The requested security level could not be reached. */
+	BT_SECURITY_ERR_AUTH_REQUIREMENT,
+
+	/** Pairing is not supported */
+	BT_SECURITY_ERR_PAIR_NOT_SUPPORTED,
+
+	/** Pairing is not allowed. */
+	BT_SECURITY_ERR_PAIR_NOT_ALLOWED,
+
+	/** Invalid parameters. */
+	BT_SECURITY_ERR_INVALID_PARAM,
+
+	/** Pairing failed but the exact reason could not be specified. */
+	BT_SECURITY_ERR_UNSPECIFIED,
+};
 
 /** @brief Connection callback structure.
  *
@@ -342,6 +480,15 @@ struct bt_conn_cb {
 	 *
 	 *  @param conn New connection object.
 	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 *
+	 *  @p err can mean either of the following:
+	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
+	 *    @ref bt_conn_create_le was canceled either by the user through
+	 *    @ref bt_conn_disconnect or by the timeout in the host through
+	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`.
+	 *  - @p BT_HCI_ERR_ADV_TIMEOUT Directed advertiser started by @ref
+	 *    bt_conn_create_slave_le with high duty cycle timed out after 1.28
+	 *    seconds.
 	 */
 	void (*connected)(struct bt_conn *conn, u8_t err);
 
@@ -349,6 +496,15 @@ struct bt_conn_cb {
 	 *
 	 *  This callback notifies the application that a connection
 	 *  has been disconnected.
+	 *
+	 *  When this callback is called the stack still has one reference to
+	 *  the connection object. If the application in this callback tries to
+	 *  start either a connectable advertiser or create a new connection
+	 *  this might fail because there are no free connection objects
+	 *  available.
+	 *  To avoid this issue it is recommended to either start connectable
+	 *  advertise or create a new connection using @ref k_work_submit or
+	 *  increase :option:`CONFIG_BT_MAX_CONN`.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason HCI reason for the disconnection.
@@ -413,9 +569,22 @@ struct bt_conn_cb {
 	 *
 	 *  @param conn Connection object.
 	 *  @param level New security level of the connection.
+	 *  @param err Security error. Zero for success, non-zero otherwise.
 	 */
-	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
+	void (*security_changed)(struct bt_conn *conn, bt_security_t level,
+				 enum bt_security_err err);
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
+
+#if defined(CONFIG_BT_REMOTE_INFO)
+	/** @brief Remote information procedures has completed.
+	 *
+	 *  This callback notifies the application that the remote information
+	 *  has been retrieved from the remote peer.
+	 */
+	void (*remote_info_available)(struct bt_conn *conn,
+				      struct bt_conn_remote_info *remote_info);
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
 	struct bt_conn_cb *_next;
 };
 
@@ -546,8 +715,72 @@ struct bt_conn_oob_info {
 	};
 };
 
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+/** @brief Pairing request and pairing response info structure.
+ *
+ *  This structure is the same for both smp_pairing_req and smp_pairing_rsp
+ *  and a subset of the packet data, except for the initial Code octet.
+ *  It is documented in Core Spec. Vol. 3, Part H, 3.5.1 and 3.5.2.
+ */
+struct bt_conn_pairing_feat {
+	/** IO Capability, Core Spec. Vol 3, Part H, 3.5.1, Table 3.4 */
+	u8_t io_capability;
+
+	/** OOB data flag, Core Spec. Vol 3, Part H, 3.5.1, Table 3.5 */
+	u8_t oob_data_flag;
+
+	/** AuthReq, Core Spec. Vol 3, Part H, 3.5.1, Fig. 3.3 */
+	u8_t auth_req;
+
+	/** Maximum Encryption Key Size, Core Spec. Vol 3, Part H, 3.5.1 */
+	u8_t max_enc_key_size;
+
+	/** Initiator Key Distribution/Generation, Core Spec. Vol 3, Part H,
+	 *  3.6.1, Fig. 3.11
+	 */
+	u8_t init_key_dist;
+
+	/** Responder Key Distribution/Generation, Core Spec. Vol 3, Part H
+	 *  3.6.1, Fig. 3.11
+	 */
+	u8_t resp_key_dist;
+};
+#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+	/** @brief Query to proceed incoming pairing or not.
+	 *
+	 *  On any incoming pairing req/rsp this callback will be called for
+	 *  the application to decide whether to allow for the pairing to
+	 *  continue.
+	 *
+	 *  The pairing info received from the peer is passed to assist
+	 *  making the decision.
+	 *
+	 *  As this callback is synchronous the application should return
+	 *  a response value immediately. Otherwise it may affect the
+	 *  timing during pairing. Hence, this information should not be
+	 *  conveyed to the user to take action.
+	 *
+	 *  The remaining callbacks are not affected by this, but do notice
+	 *  that other callbacks can be called during the pairing. Eg. if
+	 *  pairing_confirm is registered both will be called for Just-Works
+	 *  pairings.
+	 *
+	 *  This callback may be unregistered in which case pairing continues
+	 *  as if the Kconfig flag was not set.
+	 *
+	 *  This callback is not called for BR/EDR Secure Simple Pairing (SSP).
+	 *
+	 *  @param conn Connection where pairing is initiated.
+	 *  @param feat Pairing req/resp info.
+	 */
+	enum bt_security_err (*pairing_accept)(struct bt_conn *conn,
+			      const struct bt_conn_pairing_feat *const feat);
+#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
 	/** @brief Display a passkey to the user.
 	 *
 	 *  When called the application is expected to display the given
@@ -698,8 +931,10 @@ struct bt_conn_auth_cb {
 	/** @brief notify that pairing process has failed.
 	 *
 	 * @param conn Connection object.
+	 * @param reason Pairing failed reason
 	 */
-	void (*pairing_failed)(struct bt_conn *conn);
+	void (*pairing_failed)(struct bt_conn *conn,
+			       enum bt_security_err reason);
 };
 
 /** @brief Register authentication callbacks.
@@ -779,9 +1014,9 @@ struct bt_br_conn_param {
   * @param role_switch True if role switch is allowed
   */
 #define BT_BR_CONN_PARAM(role_switch) \
-	(&(struct bt_br_conn_param) { \
+	((struct bt_br_conn_param[]) { { \
 		.allow_role_switch = (role_switch), \
-	 })
+	 } })
 
 /** Default BR/EDR connection parameters:
   *   Role switch allowed
@@ -792,7 +1027,9 @@ struct bt_br_conn_param {
 /** @brief Initiate an BR/EDR connection to a remote device.
  *
  *  Allows initiate new BR/EDR link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
@@ -805,7 +1042,9 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 /** @brief Initiate an SCO connection to a remote device.
  *
  *  Allows initiate new SCO link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
  *
  *  @param peer  Remote address.
  *

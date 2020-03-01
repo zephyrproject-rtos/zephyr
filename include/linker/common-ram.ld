@@ -80,6 +80,7 @@
 	{
 		_k_sem_list_start = .;
 		KEEP(*("._k_sem.static.*"))
+		KEEP(*("._sys_sem.static.*"))
 		_k_sem_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 

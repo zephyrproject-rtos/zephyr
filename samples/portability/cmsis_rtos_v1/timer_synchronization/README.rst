@@ -64,3 +64,4 @@ Sample Output
 
     Sample execution successful
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

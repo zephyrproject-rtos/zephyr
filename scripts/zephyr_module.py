@@ -10,6 +10,11 @@ used as project list.
 
 Include file is generated for Kconfig using --kconfig-out.
 A <name>:<path> text file is generated for use with CMake using --cmake-out.
+
+Using --sanitycheck-out <filename> an argument file for sanitycheck script will
+be generated which would point to test and sample roots available in modules
+that can be included during a sanitycheck run. This allows testing code
+maintained in modules in addition to what is available in the main Zephyr tree.
 '''
 
 import argparse
@@ -19,7 +24,7 @@ import yaml
 import pykwalify.core
 import subprocess
 import re
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -30,7 +35,7 @@ METADATA_SCHEMA = '''
 type: map
 mapping:
   build:
-    required: true
+    required: false
     type: map
     mapping:
       cmake:
@@ -39,6 +44,21 @@ mapping:
       kconfig:
         required: false
         type: str
+  tests:
+    required: false
+    type: seq
+    sequence:
+      - type: str
+  samples:
+    required: false
+    type: seq
+    sequence:
+      - type: str
+  boards:
+    required: false
+    type: seq
+    sequence:
+      - type: str
 '''
 
 schema = yaml.safe_load(METADATA_SCHEMA)
@@ -55,69 +75,106 @@ def validate_setting(setting, module_path, filename=None):
     return True
 
 
-def process_module(module, cmake_out=None, kconfig_out=None):
-    cmake_setting = None
-    kconfig_setting = None
+def process_module(module):
+    module_path = PurePath(module)
+    module_yml = module_path.joinpath('zephyr/module.yml')
 
-    module_yml = os.path.join(module, 'zephyr/module.yml')
-    if os.path.isfile(module_yml):
-        with open(module_yml, 'r') as f:
+    # The input is a module if zephyr/module.yml is a valid yaml file
+    # or if both zephyr/CMakeLists.txt and zephyr/Kconfig are present.
+
+    if Path(module_yml).is_file():
+        with Path(module_yml).open('r') as f:
             meta = yaml.safe_load(f.read())
 
         try:
             pykwalify.core.Core(source_data=meta, schema_data=schema)\
                 .validate()
         except pykwalify.errors.SchemaError as e:
-            print('ERROR: Malformed "build" section in file: {}\n{}'
-                  .format(module_yml, e), file=sys.stderr)
-            sys.exit(1)
+            sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                     .format(module_yml.as_posix(), e))
 
-        section = meta.get('build', dict())
-        cmake_setting = section.get('cmake', None)
-        if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
-            print('ERROR: "cmake" key in {} has folder value "{}" which '
-                  'does not contain a CMakeLists.txt file.'
-                  .format(module_yml, cmake_setting), file=sys.stderr)
-            sys.exit(1)
+        return meta
 
-        kconfig_setting = section.get('kconfig', None)
-        if not validate_setting(kconfig_setting, module):
-            print('ERROR: "kconfig" key in {} has value "{}" which does not '
-                  'point to a valid Kconfig file.'
-                  .format(module_yml, kconfig_setting), file=sys.stderr)
-            sys.exit(1)
+    if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
+       Path(module_path.joinpath('zephyr/Kconfig')).is_file():
+        return {'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
+
+    return None
+
+
+def process_cmake(module, meta):
+    section = meta.get('build', dict())
+    module_path = PurePath(module)
+    module_yml = module_path.joinpath('zephyr/module.yml')
+    cmake_setting = section.get('cmake', None)
+    if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
+        sys.exit('ERROR: "cmake" key in {} has folder value "{}" which '
+                    'does not contain a CMakeLists.txt file.'
+                    .format(module_yml.as_posix(), cmake_setting))
 
     cmake_path = os.path.join(module, cmake_setting or 'zephyr')
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
-    if os.path.isfile(cmake_file) and cmake_out is not None:
-        cmake_out.write('\"{}\":\"{}\"\n'.format(os.path.basename(module),
-                                                 os.path.abspath(cmake_path)))
+    if os.path.isfile(cmake_file):
+        return('\"{}\":\"{}\"\n'
+                        .format(module_path.name, Path(cmake_path).resolve().as_posix()))
+    else:
+        return ""
+
+def process_kconfig(module, meta):
+    section = meta.get('build', dict())
+    module_path = PurePath(module)
+    module_yml = module_path.joinpath('zephyr/module.yml')
+
+    kconfig_setting = section.get('kconfig', None)
+    if not validate_setting(kconfig_setting, module):
+        sys.exit('ERROR: "kconfig" key in {} has value "{}" which does '
+                    'not point to a valid Kconfig file.'
+                    .format(module_yml, kconfig_setting))
+
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
-    if os.path.isfile(kconfig_file) and kconfig_out is not None:
-        kconfig_out.write('osource "{}"\n\n'
-                          .format(PurePath(
-                              os.path.abspath(kconfig_file)).as_posix()))
+    if os.path.isfile(kconfig_file):
+        return 'osource "{}"\n\n'.format(Path(kconfig_file).resolve().as_posix())
+    else:
+        return ""
+
+def process_sanitycheck(module, meta):
+
+    out = ""
+    tests = meta.get('tests', [])
+    samples = meta.get('samples', [])
+    boards = meta.get('boards', [])
+
+    for pth in tests + samples:
+        if pth:
+            dir = os.path.join(module, pth)
+            out += '-T\n{}\n'.format(PurePath(os.path.abspath(dir)).as_posix())
+
+    for pth in boards:
+        if pth:
+            dir = os.path.join(module, pth)
+            out += '--board-root\n{}\n'.format(PurePath(os.path.abspath(dir)).as_posix())
+
+    return out
 
 
 def main():
-    kconfig_out_file = None
-    cmake_out_file = None
-
     parser = argparse.ArgumentParser(description='''
     Process a list of projects and create Kconfig / CMake include files for
     projects which are also a Zephyr module''')
 
     parser.add_argument('--kconfig-out',
-                        help='File to write with resulting KConfig import'
-                             'statements.')
+                        help="""File to write with resulting KConfig import
+                             statements.""")
+    parser.add_argument('--sanitycheck-out',
+                        help="""File to write with resulting sanitycheck parameters.""")
     parser.add_argument('--cmake-out',
-                        help='File to write with resulting <name>:<path>'
-                             'values to use for including in CMake')
+                        help="""File to write with resulting <name>:<path>
+                             values to use for including in CMake""")
     parser.add_argument('-m', '--modules', nargs='+',
-                        help='List of modules to parse instead of using `west'
-                             'list`')
-    parser.add_argument('-x', '--extra-modules', nargs='+',
+                        help="""List of modules to parse instead of using `west
+                             list`""")
+    parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
                         help='List of extra modules to parse')
     parser.add_argument('-w', '--west-path', default='west',
                         help='Path to west executable')
@@ -131,10 +188,14 @@ def main():
         if p.returncode == 0:
             projects = out.decode(sys.getdefaultencoding()).splitlines()
         elif re.match((r'Error: .* is not in a west installation\.'
-                        '|FATAL ERROR: no west installation found from .*'),
+                       '|FATAL ERROR: no west installation found from .*'
+                       '|FATAL ERROR: no west workspace.*'),
                       err.decode(sys.getdefaultencoding())):
-            # Only accept the error from bootstrapper in the event we are
-            # outside a west managed project.
+            # Only accept the error the event we are outside a west
+            # workspace.
+            #
+            # TODO: we can just use "west topdir" instead if we can
+            # depend on west 0.7.0 or later.
             projects = []
         else:
             print(err.decode(sys.getdefaultencoding()))
@@ -144,26 +205,38 @@ def main():
     else:
         projects = args.modules
 
-    if args.extra_modules is not None:
-        projects += args.extra_modules
+    projects += args.extra_modules
+    extra_modules = set(args.extra_modules)
+
+    kconfig = ""
+    cmake = ""
+    sanitycheck = ""
+
+    for project in projects:
+        # Avoid including Zephyr base project as module.
+        if project == os.environ.get('ZEPHYR_BASE'):
+            continue
+
+        meta = process_module(project)
+        if meta:
+            kconfig += process_kconfig(project, meta)
+            cmake += process_cmake(project, meta)
+            sanitycheck += process_sanitycheck(project, meta)
+        elif project in extra_modules:
+            sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
+                     'is not a valid zephyr module')
 
     if args.kconfig_out:
-        kconfig_out_file = open(args.kconfig_out, 'w', encoding="utf-8")
+        with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
+            fp.write(kconfig)
 
     if args.cmake_out:
-        cmake_out_file = open(args.cmake_out, 'w', encoding="utf-8")
+        with open(args.cmake_out, 'w', encoding="utf-8") as fp:
+            fp.write(cmake)
 
-    try:
-        for project in projects:
-            # Avoid including Zephyr base project as module.
-            if project != os.environ.get('ZEPHYR_BASE'):
-                process_module(project, cmake_out_file, kconfig_out_file)
-    finally:
-        if args.kconfig_out:
-            kconfig_out_file.close()
-        if args.cmake_out:
-            cmake_out_file.close()
-
+    if args.sanitycheck_out:
+        with open(args.sanitycheck_out, 'w', encoding="utf-8") as fp:
+            fp.write(sanitycheck)
 
 if __name__ == "__main__":
     main()

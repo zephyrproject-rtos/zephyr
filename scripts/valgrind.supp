@@ -24,3 +24,17 @@
    fun:posix_boot_cpu
    fun:main
 }
+{
+   lvgl no cleanup
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:lv_mem_alloc
+}
+{
+   lvgl no cleanup 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:lvgl_allocate_rendering_buffers
+}

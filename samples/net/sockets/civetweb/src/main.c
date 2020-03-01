@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <posix/pthread.h>
-#include <json.h>
+#include <data/json.h>
 
 #include "civetweb.h"
 
@@ -166,16 +166,15 @@ void *main_pthread(void *arg)
 	return 0;
 }
 
-int main(void)
+void main(void)
 {
 	pthread_attr_t civetweb_attr;
 	pthread_t civetweb_thread;
 
-	pthread_attr_init(&civetweb_attr);
-	pthread_attr_setstack(&civetweb_attr, &civetweb_stack,
-			      CIVETWEB_MAIN_THREAD_STACK_SIZE);
+	(void)pthread_attr_init(&civetweb_attr);
+	(void)pthread_attr_setstack(&civetweb_attr, &civetweb_stack,
+				    CIVETWEB_MAIN_THREAD_STACK_SIZE);
 
-	pthread_create(&civetweb_thread, &civetweb_attr, &main_pthread, 0);
-
-	return 0;
+	(void)pthread_create(&civetweb_thread, &civetweb_attr,
+			     &main_pthread, 0);
 }

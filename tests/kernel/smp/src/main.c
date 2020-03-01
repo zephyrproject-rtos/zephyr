@@ -45,6 +45,16 @@ static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static volatile int thread_started[THREADS_NUM - 1];
+
+static int curr_cpu(void)
+{
+	unsigned int k = arch_irq_lock();
+	int ret = arch_curr_cpu()->id;
+
+	arch_irq_unlock(k);
+	return ret;
+}
+
 /**
  * @brief Tests for SMP
  * @defgroup kernel_smp_tests SMP Tests
@@ -118,9 +128,9 @@ static void child_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	int parent_cpu_id = (int)p1;
+	int parent_cpu_id = POINTER_TO_INT(p1);
 
-	zassert_true(parent_cpu_id != z_arch_curr_cpu()->id,
+	zassert_true(parent_cpu_id != curr_cpu(),
 		     "Parent isn't on other core");
 
 	sync_count++;
@@ -138,12 +148,12 @@ static void child_fn(void *p1, void *p2, void *p3)
 void test_cpu_id_threads(void)
 {
 	/* Make sure idle thread runs on each core */
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
-	int parent_cpu_id = z_arch_curr_cpu()->id;
+	int parent_cpu_id = curr_cpu();
 
-	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
-				      child_fn, (void *)parent_cpu_id, NULL,
+	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, child_fn,
+				      INT_TO_POINTER(parent_cpu_id), NULL,
 				      NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
 	while (sync_count == -1) {
@@ -157,11 +167,11 @@ static void thread_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	int thread_num = (int)p1;
+	int thread_num = POINTER_TO_INT(p1);
 	int count = 0;
 
 	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = z_arch_curr_cpu()->id;
+	tinfo[thread_num].cpu_id = curr_cpu();
 
 	while (count++ < 5) {
 		k_busy_wait(DELAY_US);
@@ -197,7 +207,7 @@ static void spawn_threads(int prio, int thread_num,
 		}
 		tinfo[i].tid = k_thread_create(&tthread[i], tstack[i],
 					       STACK_SIZE, thread_entry,
-					       (void *)i, NULL, NULL,
+					       INT_TO_POINTER(i), NULL, NULL,
 					       tinfo[i].priority, 0, delay);
 		if (delay) {
 			/* Increase delay for each thread */
@@ -353,7 +363,7 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	int thread_num = (int)p1;
+	int thread_num = POINTER_TO_INT(p1);
 
 	thread_started[thread_num] = 1;
 
@@ -436,7 +446,7 @@ void test_main(void)
 	 * thread from which they can exit correctly to run the main
 	 * test.
 	 */
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	ztest_test_suite(smp,
 			 ztest_unit_test(test_smp_coop_threads),

@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include <riscv32-fe310.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	model = "SiFive HiFive 1 Rev B";
@@ -24,17 +25,46 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 19 0>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 21 0>;
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 22 0>;
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* A0 not connected */
+			   <1 0 &gpio0 9 0>,	/* A1, also CS2 */
+			   <2 0 &gpio0 10 0>,	/* A2, also WF_INT */
+			   <3 0 &gpio0 11 0>,	/* A3 */
+			   <4 0 &gpio0 12 0>,	/* A4 */
+			   <5 0 &gpio0 13 0>,	/* A5 */
+			   <6 0 &gpio0 16 0>,	/* D0, also TX */
+			   <7 0 &gpio0 17 0>,	/* D1, also RX */
+			   <8 0 &gpio0 18 0>,	/* D2 */
+			   <9 0 &gpio0 19 0>,	/* D3 */
+			   <10 0 &gpio0 20 0>,	/* D4 */
+			   <11 0 &gpio0 21 0>,	/* D5 */
+			   <12 0 &gpio0 22 0>,	/* D6 */
+			   <13 0 &gpio0 23 0>,	/* D7 */
+			   <14 0 &gpio0 0 0>,	/* D8 */
+			   <15 0 &gpio0 1 0>,	/* D9 */
+			   <16 0 &gpio0 2 0>,	/* D10 */
+			   <17 0 &gpio0 3 0>,	/* D11, also MOSI */
+			   <18 0 &gpio0 4 0>,	/* D12, also MISO */
+			   <19 0 &gpio0 5 0>,	/* D13, also SCK */
+			   <20 0 &gpio0 12 0>,	/* D14, also SDA */
+			   <21 0 &gpio0 13 0>;	/* D15, also SCL */
 	};
 };
 
@@ -61,6 +91,7 @@
 	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
+		size = <134217728>;
 		label = "FLASH0";
 		jedec-id = [96 60 18];
 		reg = <0>;
@@ -93,8 +124,9 @@
 	clock-frequency = <16000000>;
 };
 
-&i2c0 {
+arduino_i2c: &i2c0 {
 	status = "okay";
+	label = "I2C_0";
 	input-frequency = <16000000>;
 	clock-frequency = <100000>;
 };

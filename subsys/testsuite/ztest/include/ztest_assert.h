@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *
@@ -18,13 +17,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void ztest_test_fail(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
-static inline void z_zassert_(int cond, const char *file, int line)
+static inline void z_zassert_(bool cond, const char *file, int line)
 {
-	if (!(cond)) {
+	if (cond == false) {
 		PRINT("\n    Assertion failed at %s:%d\n",
 		      file, line);
 		ztest_test_fail();
@@ -36,13 +40,13 @@ static inline void z_zassert_(int cond, const char *file, int line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
-static inline void z_zassert(int cond,
+static inline void z_zassert(bool cond,
 			    const char *default_msg,
 			    const char *file,
 			    int line, const char *func,
 			    const char *msg, ...)
 {
-	if (!(cond)) {
+	if (cond == false) {
 		va_list vargs;
 
 		va_start(vargs, msg);
@@ -213,5 +217,9 @@ static inline void z_zassert(int cond,
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZTEST_ASSERT_H__ */

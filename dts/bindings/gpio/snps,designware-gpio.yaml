@@ -1,35 +1,30 @@
-#
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Synopsys Designware GPIO controller
+description: Synopsys DesignWare GPIO node
 
-description: >
-    This is a representation of the Synopsys DesignWare gpio node
+compatible: "snps,designware-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "snps,designware-gpio"
-
     reg:
-      category: required
+      required: true
 
     bits:
       type: int
       description: gpio bits
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

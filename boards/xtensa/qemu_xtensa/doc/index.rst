@@ -45,6 +45,8 @@ QEMU, and display the following console output:
         threadA: Hello World from xtensa!
         threadB: Hello World from xtensa!
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Debugging
 =========
 

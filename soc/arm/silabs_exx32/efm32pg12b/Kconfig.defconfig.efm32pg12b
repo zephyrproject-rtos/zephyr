@@ -1,17 +1,11 @@
-# Kconfig - Silicon Labs EFM32PG-STK3402A platform configuration options
+# Silicon Labs EFM32PG-STK3402A platform configuration options
 
-#
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if GPIO || LOG_BACKEND_SWO
 
 config GPIO_GECKO
 	default y
-
-endif # GPIO || LOG_BACKEND_SWO
+	depends on GPIO
 
 if SERIAL
 
@@ -23,16 +17,10 @@ config LEUART_GECKO
 
 endif # SERIAL
 
-if I2C
-
 config I2C_GECKO
 	default y
-
-endif # I2C
-
-if FLASH
+	depends on I2C
 
 config SOC_FLASH_GECKO
 	default y
-
-endif # FLASH
+	depends on FLASH

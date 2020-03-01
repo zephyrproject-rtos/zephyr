@@ -10,6 +10,7 @@
 
 #include <drivers/can.h>
 
+#define MCP2515_RX_CNT                   2
 #define MCP2515_TX_CNT                   3
 #define MCP2515_FRAME_LEN               13
 
@@ -40,16 +41,19 @@ struct mcp2515_data {
 
 	/* tx data */
 	struct k_sem tx_sem;
-	struct k_mutex tx_mutex;
 	struct mcp2515_tx_cb tx_cb[MCP2515_TX_CNT];
 	u8_t tx_busy_map;
 
 	/* filter data */
-	struct k_mutex filter_mutex;
 	u32_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MCP2515_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MCP2515_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_MCP2515_MAX_FILTER];
+	can_state_change_isr_t state_change_isr;
+
+	/* general data */
+	struct k_mutex mutex;
+	enum can_state old_state;
 };
 
 struct mcp2515_config {
@@ -72,23 +76,30 @@ struct mcp2515_config {
 	u8_t tq_bs1;
 	u8_t tq_bs2;
 	u32_t bus_speed;
+	u32_t osc_freq;
 };
 
 /* MCP2515 Opcodes */
 #define MCP2515_OPCODE_WRITE            0x02
 #define MCP2515_OPCODE_READ             0x03
 #define MCP2515_OPCODE_BIT_MODIFY       0x05
+#define MCP2515_OPCODE_LOAD_TX_BUFFER   0x40
+#define MCP2515_OPCODE_RTS              0x80
+#define MCP2515_OPCODE_READ_RX_BUFFER   0x90
 #define MCP2515_OPCODE_READ_STATUS      0xA0
 #define MCP2515_OPCODE_RESET            0xC0
 
 /* MCP2515 Registers */
 #define MCP2515_ADDR_CANSTAT            0x0E
 #define MCP2515_ADDR_CANCTRL            0x0F
+#define MCP2515_ADDR_TEC                0x1C
+#define MCP2515_ADDR_REC                0x1D
 #define MCP2515_ADDR_CNF3               0x28
 #define MCP2515_ADDR_CNF2               0x29
 #define MCP2515_ADDR_CNF1               0x2A
 #define MCP2515_ADDR_CANINTE            0x2B
 #define MCP2515_ADDR_CANINTF            0x2C
+#define MCP2515_ADDR_EFLG               0x2D
 #define MCP2515_ADDR_TXB0CTRL           0x30
 #define MCP2515_ADDR_TXB1CTRL           0x40
 #define MCP2515_ADDR_TXB2CTRL           0x50
@@ -122,6 +133,23 @@ struct mcp2515_config {
 #define MCP2515_CANINTF_WAKIF           BIT(6)
 #define MCP2515_CANINTF_MERRF           BIT(7)
 
+#define MCP2515_INTE_RX0IE              BIT(0)
+#define MCP2515_INTE_RX1IE              BIT(1)
+#define MCP2515_INTE_TX0IE              BIT(2)
+#define MCP2515_INTE_TX1IE              BIT(3)
+#define MCP2515_INTE_TX2IE              BIT(4)
+#define MCP2515_INTE_ERRIE              BIT(5)
+#define MCP2515_INTE_WAKIE              BIT(6)
+#define MCP2515_INTE_MERRE              BIT(7)
+
+#define MCP2515_EFLG_EWARN              BIT(0)
+#define MCP2515_EFLG_RXWAR              BIT(1)
+#define MCP2515_EFLG_TXWAR              BIT(2)
+#define MCP2515_EFLG_RXEP               BIT(3)
+#define MCP2515_EFLG_TXEP               BIT(4)
+#define MCP2515_EFLG_TXBO               BIT(5)
+#define MCP2515_EFLG_RX0OVR             BIT(6)
+#define MCP2515_EFLG_RX1OVR             BIT(7)
 
 #define MCP2515_TXCTRL_TXREQ			BIT(3)
 

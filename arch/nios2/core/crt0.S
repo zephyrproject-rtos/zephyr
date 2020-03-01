@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <toolchain.h>
+#include <linker/sections.h>
 
 /* exports */
 GTEXT(__start)

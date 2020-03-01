@@ -69,7 +69,6 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, u16_t value)
 {
 }
 
-static struct bt_gatt_ccc_cfg smp_bt_ccc[BT_GATT_CCC_MAX] = {};
 static struct bt_gatt_attr smp_bt_attrs[] = {
 	/* SMP Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&smp_bt_svc_uuid),
@@ -77,9 +76,19 @@ static struct bt_gatt_attr smp_bt_attrs[] = {
 	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
 			       BT_GATT_CHRC_NOTIFY,
+#ifdef CONFIG_MCUMGR_SMP_BT_AUTHEN
+			       BT_GATT_PERM_WRITE_AUTHEN,
+#else
 			       BT_GATT_PERM_WRITE,
+#endif
 			       NULL, smp_bt_chr_write, NULL),
-	BT_GATT_CCC(smp_bt_ccc, smp_bt_ccc_changed),
+	BT_GATT_CCC(smp_bt_ccc_changed,
+#ifdef CONFIG_MCUMGR_SMP_BT_AUTHEN
+			       BT_GATT_PERM_READ_AUTHEN |
+			       BT_GATT_PERM_WRITE_AUTHEN),
+#else
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+#endif
 };
 
 static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(smp_bt_attrs);

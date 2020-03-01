@@ -12,7 +12,7 @@ architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./lpcxpresso55s69.png
+.. image:: ./lpcxpresso55s69.jpg
    :width: 720px
    :align: center
    :alt: LPCXPRESSO55S69
@@ -62,6 +62,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
 
@@ -80,9 +82,17 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | Name    | Function        | Usage                      |
 +=========+=================+============================+
+| PIO0_26 | SPI             | SPI MOSI                   |
++---------+-----------------+----------------------------+
 | PIO0_29 | USART           | USART RX                   |
 +---------+-----------------+----------------------------+
 | PIO0_30 | USART           | USART TX                   |
++---------+-----------------+----------------------------+
+| PIO1_1  | SPI             | SPI SSEL                   |
++---------+-----------------+----------------------------+
+| PIO1_2  | SPI             | SPI SCK                    |
++---------+-----------------+----------------------------+
+| PIO1_3  | SPI             | SPI MISO                   |
 +---------+-----------------+----------------------------+
 | PIO1_4  | GPIO            | RED LED                    |
 +---------+-----------------+----------------------------+

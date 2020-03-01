@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # This option signifies whether DesignWare I2C compatible HW is
 # available
@@ -11,15 +8,11 @@ config HAS_I2C_DW
 
 menuconfig I2C_DW
 	bool "Design Ware I2C support"
-	select HAS_DTS_I2C
 	depends on HAS_I2C_DW
 	help
 	  Enable the Design Ware I2C driver
 
-if I2C_DW
-
 config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	default 32
-
-endif # I2C_DW
+	depends on I2C_DW

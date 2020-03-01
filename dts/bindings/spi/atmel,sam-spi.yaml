@@ -1,28 +1,20 @@
-#
 # Copyright (c) 2018, qianfan Zhao
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Atmel SAM SPI driver
+description: Atmel SAM SPI controller
 
-description: >
-    This binding gives a base representation of the Atmel SAM SPI controller
+compatible: "atmel,sam-spi"
 
-inherits:
-    !include spi.yaml
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-spi"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true

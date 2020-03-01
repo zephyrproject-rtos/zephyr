@@ -1,13 +1,8 @@
-# Kconfig - EFM32HG (Happy Gecko) MCU line
-#
-# Copyright (c) 2018 Marcio Montenegro
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# EFM32HG (Happy Gecko) MCU line
 
-if SOC_SERIES_EFM32HG
+# Copyright (c) 2018 Marcio Montenegro
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_PART_NUMBER_EFM32HG322F64
 	bool
-
-endif # SOC_SERIES_EFM32HG
+	depends on SOC_SERIES_EFM32HG

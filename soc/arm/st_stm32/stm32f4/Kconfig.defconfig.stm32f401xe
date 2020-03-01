@@ -1,18 +1,14 @@
-# Kconfig - ST STM32F401RE MCU configuration options
-#
+# ST STM32F401RE MCU configuration options
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F401XE
 
 config SOC
-	string
 	default "stm32f401xe"
 
 config NUM_IRQS
-	int
 	default 85
 
 endif # SOC_STM32F401XE

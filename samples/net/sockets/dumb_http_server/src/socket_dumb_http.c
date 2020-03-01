@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#ifndef __ZEPHYR__
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -40,7 +40,7 @@ static const char content[] = {
 #endif
 };
 
-int main(void)
+void main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;

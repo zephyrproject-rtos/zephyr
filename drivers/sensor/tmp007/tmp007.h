@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 
-#define TMP007_I2C_ADDRESS		CONFIG_TMP007_I2C_ADDR
+#define TMP007_I2C_ADDRESS		DT_INST_0_TI_TMP007_BASE_ADDRESS
 
 #define TMP007_REG_CONFIG		0x02
 #define TMP007_ALERT_EN_BIT		BIT(8)
@@ -40,6 +40,7 @@ struct tmp007_data {
 #ifdef CONFIG_TMP007_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
+	struct device *dev;
 
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
@@ -53,7 +54,6 @@ struct tmp007_data {
 	struct k_thread thread;
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_TMP007_TRIGGER */

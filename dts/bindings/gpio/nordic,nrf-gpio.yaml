@@ -1,27 +1,22 @@
-#
 # Copyright (c) 2018, marc-cpdesign
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NRF5 GPIO
+description: NRF5 GPIO node
 
-description: >
-    This is a representation of the NRF GPIO nodes
+compatible: "nordic,nrf-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-gpio"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

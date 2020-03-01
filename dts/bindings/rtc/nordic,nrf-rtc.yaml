@@ -1,29 +1,29 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Nordic nRF Real Time Counter
+description: Nordic nRF RTC (Real-Time Counter)
 
-description: >
-    This is a representation of the Nordic nRF RTC node
+compatible: "nordic,nrf-rtc"
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-rtc"
-
     reg:
-      category: required
+      required: true
 
-    #If enabled, overflow different than full range (24 bits) is handled
-    #through PPI channel which ensures precise timing. If disabled then
-    #counter is cleared in the interrupt which results in accumulative
-    #error of counter period if top value is different than maximal.
+    # If enabled, overflow different than full range (24 bits) is handled
+    # through PPI channel which ensures precise timing. If disabled then
+    # counter is cleared in the interrupt which results in accumulative error
+    # of counter period if top value is different than maximal.
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      category: required
+      required: false
+
+   # If enabled then counter based on nRF RTC peripheral supports only maximal
+   # top value. That results in code optimizations and availability of one more
+   # channel
+    fixed-top:
+      type: boolean
+      description: Enable fixed top value
+      required: false

@@ -1,9 +1,7 @@
-# Kconfig - FXOS8700 6-axis accelerometer/magnetometer
-#
+# FXOS8700 6-axis accelerometer/magnetometer
+
 # Copyright (c) 2016 Freescale Semiconductor, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
@@ -205,14 +203,11 @@ menuconfig FXOS8700_MOTION
 	help
 	  Enable motion detection
 
-if FXOS8700_MOTION
-
 config FXOS8700_MOTION_INT1
 	bool "Motion interrupt to INT1 pin"
+	depends on FXOS8700_MOTION
 	help
 	  Say Y to route motion interrupt to INT1 pin. Say N to route to INT2 pin.
-
-endif # FXOS8700_MOTION
 
 endif # FXOS8700_TRIGGER
 

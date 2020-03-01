@@ -6,9 +6,10 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
+#include <irq.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
-		       (CONFIG_HPET_TIMER_BASE_ADDRESS + (off)))
+		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
@@ -38,6 +39,20 @@ static void hpet_isr(void *arg)
 	ARG_UNUSED(arg);
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t now = MAIN_COUNTER_REG;
+
+	if (IS_ENABLED(CONFIG_SMP) &&
+	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
+		/* Qemu in SMP mode has observed the clock going
+		 * "backwards" relative to interrupts already received
+		 * on the other CPU, despite the HPET being
+		 * theoretically a global device.
+		 */
+		s32_t diff = (s32_t)(now - last_count);
+
+		if (last_count && diff < 0) {
+			now = last_count;
+		}
+	}
 	u32_t dticks = (now - last_count) / cyc_per_tick;
 
 	last_count += dticks * cyc_per_tick;
@@ -69,10 +84,11 @@ int z_clock_driver_init(struct device *device)
 	extern int z_clock_hw_cycles_per_sec;
 	u32_t hz;
 
-	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_INTEL_HPET_IRQ_0,
+		    DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY,
 		    hpet_isr, 0, 0);
-	set_timer0_irq(CONFIG_HPET_TIMER_IRQ);
-	irq_enable(CONFIG_HPET_TIMER_IRQ);
+	set_timer0_irq(DT_INST_0_INTEL_HPET_IRQ_0);
+	irq_enable(DT_INST_0_INTEL_HPET_IRQ_0);
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
 	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);
@@ -120,10 +136,17 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t now = MAIN_COUNTER_REG, cyc;
+	u32_t now = MAIN_COUNTER_REG, cyc, adj;
+	u32_t max_cyc = max_ticks * cyc_per_tick;
 
-	/* Round up to next tick boundary */
-	cyc = ticks * cyc_per_tick + (now - last_count) + (cyc_per_tick - 1);
+	/* Round up to next tick boundary. */
+	cyc = ticks * cyc_per_tick;
+	adj = (now - last_count) + (cyc_per_tick - 1);
+	if (cyc <= max_cyc - adj) {
+		cyc += adj;
+	} else {
+		cyc = max_cyc;
+	}
 	cyc = (cyc / cyc_per_tick) * cyc_per_tick;
 	cyc += last_count;
 

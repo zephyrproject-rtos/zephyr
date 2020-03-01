@@ -17,6 +17,11 @@
 #include <drivers/sensor.h>
 #include "lis2dw12_reg.h"
 
+union axis3bit16_t {
+	s16_t i16bit[3];
+	u8_t u8bit[6];
+};
+
 #if defined(CONFIG_LIS2DW12_ODR_1_6)
 	#define LIS2DW12_DEFAULT_ODR	LIS2DW12_XL_ODR_1Hz6_LP_ONLY
 #elif defined(CONFIG_LIS2DW12_ODR_12_5)
@@ -87,7 +92,15 @@ struct lis2dw12_device_config {
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const char *int_gpio_port;
 	u8_t int_gpio_pin;
+	u8_t int_gpio_flags;
 	u8_t int_pin;
+#ifdef CONFIG_LIS2DW12_PULSE
+	u8_t pulse_trigger;
+	u8_t pulse_ths[3];
+	u8_t pulse_shock;
+	u8_t pulse_ltncy;
+	u8_t pulse_quiet;
+#endif /* CONFIG_LIS2DW12_PULSE */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
@@ -102,12 +115,16 @@ struct lis2dw12_data {
 	 /* save sensitivity */
 	u16_t gain;
 
-	lis2dw12_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct device *gpio;
+	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
-	sensor_trigger_handler_t handler_drdy;
-
+	sensor_trigger_handler_t drdy_handler;
+#ifdef CONFIG_LIS2DW12_PULSE
+	sensor_trigger_handler_t tap_handler;
+	sensor_trigger_handler_t double_tap_handler;
+#endif /* CONFIG_LIS2DW12_PULSE */
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DW12_THREAD_STACK_SIZE);
 	struct k_thread thread;

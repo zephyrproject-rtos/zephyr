@@ -1,13 +1,11 @@
-# Kconfig.tls - TLS/DTLS related options
+# TLS/DTLS related options
 
-#
 # Copyright (c) 2018 Intel Corporation
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "TLS configuration"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
 menu "Supported TLS version"
 
@@ -49,7 +47,6 @@ config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
-	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
@@ -68,7 +65,7 @@ config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "Enable the RSA-only based ciphersuite modes"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "Enable the DHE-RSA based ciphersuite modes"
@@ -81,6 +78,9 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "Enable the ECDH-ECDSA based ciphersuite modes"
+
+config MBEDTLS_ECDSA_DETERMINISTIC
+	bool "Enable deterministic ECDSA (RFC 6979)"
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	bool "Enable the ECDH-RSA based ciphersuite modes"
@@ -189,7 +189,7 @@ config MBEDTLS_CIPHER_CAMELLIA_ENABLED
 
 config MBEDTLS_CIPHER_DES_ENABLED
 	bool "Enable the DES block cipher"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CIPHER_ARC4_ENABLED
 	bool "Enable the ARC4 stream cipher"
@@ -214,7 +214,7 @@ config MBEDTLS_CIPHER_MODE_GCM_ENABLED
 
 config MBEDTLS_CIPHER_CBC_ENABLED
 	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "Enable the ChaCha20-Poly1305 AEAD algorithm"
@@ -237,11 +237,11 @@ config MBEDTLS_MAC_MD4_ENABLED
 
 config MBEDTLS_MAC_MD5_ENABLED
 	bool "Enable the MD5 hash algorithm"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA1_ENABLED
 	bool "Enable the SHA1 hash algorithm"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA256_ENABLED
 	bool "Enable the SHA-224 and SHA-256 hash algorithms"
@@ -293,12 +293,22 @@ config MBEDTLS_HAVE_ASM
 	default y if !ARM
 	help
 	  Enable use of assembly code in mbedTLS. This improves the performances
-	  of asymetric cryptography, however this might have an impact on the
+	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
 config MBEDTLS_ENTROPY_ENABLED
 	bool "Enable mbedTLS generic entropy pool"
 	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "Enable mbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
 
 config MBEDTLS_USER_CONFIG_ENABLE
 	bool "Enable user mbedTLS config file"

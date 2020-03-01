@@ -1,7 +1,12 @@
 common:
   depends_on: netif
-  platform_whitelist: native_posix native_posix_64 qemu_x86 qemu_cortex_m3
 tests:
   net.packet:
     min_ram: 20
     tags: net
+  net.packet.large_buffer:
+    min_ram: 20
+    tags: net
+    extra_configs:
+     - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+     - CONFIG_NET_BUF_DATA_SIZE=512

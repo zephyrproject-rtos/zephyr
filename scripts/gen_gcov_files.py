@@ -48,10 +48,10 @@ def create_gcda_files(extracted_coverage_info):
         # if kobject_hash is given for coverage gcovr fails
         # hence skipping it problem only in gcovr v4.1
         if "kobject_hash" in filename:
-            filename = (filename[:-4]) +"gcno"
+            filename = filename[:-4] + "gcno"
             try:
                 os.remove(filename)
-            except:
+            except Exception:
                 pass
             continue
 

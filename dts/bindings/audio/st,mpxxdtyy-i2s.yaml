@@ -1,19 +1,12 @@
-#
 # Copyright (c) 2018 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ST Microelectronics MPXXDTYY digital pdm microphone family
+description: STMicroelectronics MPXXDTYY digital PDM microphone family
 
-description: >
-    This binding gives a base representation of MPXXDTYY digital microphone family
+compatible: "st,mpxxdtyy"
 
-inherits:
-    !include i2s-device.yaml
+include: i2s-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,mpxxdtyy"
     label:
-      category: required
+      required: true

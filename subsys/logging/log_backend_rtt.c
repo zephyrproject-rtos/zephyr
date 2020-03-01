@@ -41,8 +41,10 @@
 
 #define MESSAGE_SIZE CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE
 
-#define CHAR_BUF_SIZE IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ? \
-		CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE : 1
+#define CHAR_BUF_SIZE \
+	((IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) && \
+	 !IS_ENABLED(CONFIG_LOG_IMMEDIATE)) ? \
+		CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE : 1)
 
 #define RTT_LOCK() \
 	COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (SEGGER_RTT_LOCK()), ())
@@ -62,7 +64,7 @@ static u8_t *line_pos;
 static u8_t char_buf[CHAR_BUF_SIZE];
 static int drop_cnt;
 static int drop_warn;
-static bool sync_mode;
+static bool panic_mode;
 static bool host_present;
 
 static int data_out_block_mode(u8_t *data, size_t length, void *ctx);
@@ -71,12 +73,22 @@ static int data_out_drop_mode(u8_t *data, size_t length, void *ctx);
 static int char_out_drop_mode(u8_t data);
 static int line_out_drop_mode(void);
 
+static inline bool is_sync_mode(void)
+{
+	return IS_ENABLED(CONFIG_LOG_IMMEDIATE) || panic_mode;
+}
+
+static inline bool is_panic_mode(void)
+{
+	return panic_mode;
+}
+
 static int data_out_drop_mode(u8_t *data, size_t length, void *ctx)
 {
 	(void) ctx;
 	u8_t *pos;
 
-	if (sync_mode) {
+	if (is_sync_mode()) {
 		return data_out_block_mode(data, length, ctx);
 	}
 
@@ -161,7 +173,7 @@ static void on_failed_write(int retry_cnt)
 {
 	if (retry_cnt == 0) {
 		host_present = false;
-	} else if (sync_mode) {
+	} else if (is_sync_mode()) {
 		k_busy_wait(USEC_PER_MSEC *
 				CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
 	} else {
@@ -172,7 +184,7 @@ static void on_failed_write(int retry_cnt)
 static void on_write(int retry_cnt)
 {
 	host_present = true;
-	if (sync_mode) {
+	if (is_panic_mode()) {
 		/* In panic mode block on each write until host reads it. This
 		 * way it is ensured that if system resets all messages are read
 		 * by the host. While pending on data being read by the host we
@@ -188,18 +200,17 @@ static void on_write(int retry_cnt)
 
 static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 {
-	int ret;
+	int ret = 0;
 	int retry_cnt = CONFIG_LOG_BACKEND_RTT_RETRY_CNT;
 
 	do {
-		if (!sync_mode) {
+		if (!is_sync_mode()) {
 			RTT_LOCK();
 		}
 
 		ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
 						 data, length);
-
-		if (!sync_mode) {
+		if (!is_sync_mode()) {
 			RTT_UNLOCK();
 		}
 
@@ -211,7 +222,7 @@ static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 		}
 	} while ((ret == 0) && host_present);
 
-	return length;
+	return ((ret == 0) && host_present) ? 0 : length;
 }
 
 LOG_OUTPUT_DEFINE(log_output, IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
@@ -221,7 +232,10 @@ LOG_OUTPUT_DEFINE(log_output, IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	log_backend_std_put(&log_output, 0, msg);
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_put(&log_output, flag, msg);
 }
 
 static void log_backend_rtt_cfg(void)
@@ -238,14 +252,13 @@ static void log_backend_rtt_init(void)
 	}
 
 	host_present = true;
-	sync_mode = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? true : false;
 	line_pos = line_buf;
 }
 
 static void panic(struct log_backend const *const backend)
 {
 	log_backend_std_panic(&log_output);
-	sync_mode = true;
+	panic_mode = true;
 }
 
 static void dropped(const struct log_backend *const backend, u32_t cnt)
@@ -259,7 +272,10 @@ static void sync_string(const struct log_backend *const backend,
 		     struct log_msg_ids src_level, u32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	log_backend_std_sync_string(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_string(&log_output, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
@@ -267,7 +283,10 @@ static void sync_hexdump(const struct log_backend *const backend,
 			 struct log_msg_ids src_level, u32_t timestamp,
 			 const char *metadata, const u8_t *data, u32_t length)
 {
-	log_backend_std_sync_hexdump(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_hexdump(&log_output, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 

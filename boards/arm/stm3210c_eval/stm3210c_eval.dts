@@ -21,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
-			gpios = <&gpiod 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -30,7 +30,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpiob 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -42,8 +42,6 @@
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

@@ -1,20 +1,15 @@
-title: Atmel SAM0 External Interrupt Controller
+description: Atmel SAM0 series External Interrupt Controller
 
-description: >
-    This binding describes the Atmel SAM0 series External Interrupt Controller
+compatible: "atmel,sam0-eic"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-  compatible:
-      constraint: "atmel,sam0-eic"
-
   reg:
-    category: required
+    required: true
 
   interrupts:
-    category: required
+    required: true
 
   label:
-    category: required
+    required: true

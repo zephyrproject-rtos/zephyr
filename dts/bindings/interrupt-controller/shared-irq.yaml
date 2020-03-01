@@ -1,17 +1,12 @@
-title: Shared IRQ interrupt dispatcher
+description: Shared IRQ interrupt dispatcher
 
-description: >
-    This binding describes Shared IRQ interrupt dispatcher
+compatible: "shared-irq"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "shared-irq"
-
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true

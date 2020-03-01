@@ -28,10 +28,14 @@ struct sdhc_spi_data {
 	struct spi_config cfg;
 	struct device *cs;
 	u32_t pin;
+	gpio_dt_flags_t flags;
 
+	bool high_capacity;
 	u32_t sector_count;
 	u8_t status;
+#if LOG_LEVEL >= LOG_LEVEL_DBG
 	int trace_dir;
+#endif
 };
 
 DEVICE_DECLARE(sdhc_spi_0);
@@ -68,7 +72,7 @@ static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 /* Asserts or deasserts chip select */
 static void sdhc_spi_set_cs(struct sdhc_spi_data *data, int value)
 {
-	gpio_pin_write(data->cs, data->pin, value);
+	gpio_pin_set(data->cs, data->pin, value);
 }
 
 /* Receives a fixed number of bytes */
@@ -466,8 +470,8 @@ static int sdhc_spi_go_idle(struct sdhc_spi_data *data)
 	return sdhc_spi_cmd_r1_idle(data, SDHC_GO_IDLE_STATE, 0);
 }
 
-/* Checks the supported host volatage and basic protocol */
-static int sdhc_spi_check_card(struct sdhc_spi_data *data)
+/* Checks the supported host voltage and basic protocol of a SDHC card */
+static int sdhc_spi_check_interface(struct sdhc_spi_data *data)
 {
 	u32_t cond;
 	int err;
@@ -499,8 +503,11 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	u32_t ocr;
 	struct sdhc_retry retry;
 	u8_t structure;
+	u8_t readbllen;
 	u32_t csize;
+	u8_t csizemult;
 	u8_t buf[SDHC_CSD_SIZE];
+	bool is_v2;
 
 	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
 	data->status = DISK_STATUS_UNINIT;
@@ -511,10 +518,9 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	do {
 		err = sdhc_spi_go_idle(data);
 		if (err == 0) {
-			err = sdhc_spi_check_card(data);
-			if (err == 0) {
-				break;
-			}
+			err = sdhc_spi_check_interface(data);
+			is_v2 = (err == 0) ? true : false;
+			break;
 		}
 
 		if (!sdhc_retry_ok(&retry)) {
@@ -532,7 +538,8 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	do {
 		sdhc_spi_cmd_r1_raw(data, SDHC_APP_CMD, 0);
 
-		err = sdhc_spi_cmd_r1(data, SDHC_SEND_OP_COND, SDHC_HCS);
+		/* Set HCS only if card conforms to specification v2.00 (cf. 4.2.3) */
+		err = sdhc_spi_cmd_r1(data, SDHC_SEND_OP_COND, is_v2 ? SDHC_HCS : 0);
 		if (err == 0) {
 			break;
 		}
@@ -543,15 +550,31 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 		return -ETIMEDOUT;
 	}
 
-	/* Read OCR and confirm this is a SDHC card */
-	err = sdhc_spi_cmd_r3(data, SDHC_READ_OCR, 0, &ocr);
-	if (err != 0) {
-		return err;
+	ocr = 0;
+	if (is_v2) {
+		do {
+			/* Read OCR to check if this is a SDSC or SDHC card.
+			 * CCS bit is valid after BUSY bit is set.
+			 */
+			err = sdhc_spi_cmd_r3(data, SDHC_READ_OCR, 0, &ocr);
+			if (err != 0) {
+				return err;
+			}
+			if ((ocr & SDHC_BUSY) != 0U) {
+				break;
+			}
+		} while (sdhc_retry_ok(&retry));
 	}
 
-	if ((ocr & SDHC_CCS) == 0U) {
-		/* A 'SDSC' card */
-		return -ENOTSUP;
+	if ((ocr & SDHC_CCS) != 0U) {
+		data->high_capacity = true;
+	} else {
+		/* A 'SDSC' card: Set block length to 512 bytes. */
+		data->high_capacity = false;
+		err = sdhc_spi_cmd_r1(data, SDHC_SET_BLOCK_SIZE, SDMMC_DEFAULT_BLOCK_SIZE);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	/* Read the CSD */
@@ -567,21 +590,42 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 
 	/* Bits 126..127 are the structure version */
 	structure = (buf[0] >> 6);
-	if (structure != SDHC_CSD_V2) {
+	switch (structure) {
+	case SDHC_CSD_V1:
+		/* The maximum read data block length is given by bits 80..83 raised
+		 * to the power of 2. Possible values are 9, 10 and 11 for 512, 1024
+		 * and 2048 bytes, respectively. This driver does not make use of block
+		 * lengths greater than 512 bytes, but forces 512 byte block transfers
+		 * instead.
+		 */
+		readbllen = buf[5] & ((1 << 4) - 1);
+		if ((readbllen < 9) || (readbllen > 11)) {
+			/* Invalid maximum read data block length (cf. section 5.3.2) */
+			return -ENOTSUP;
+		}
+		/* The capacity of the card is given by bits 62..73 plus 1 multiplied
+		 * by bits 47..49 plus 2 raised to the power of 2 in maximum read data
+		 * blocks.
+		 */
+		csize = (sys_get_be32(&buf[6]) >> 14) & ((1 << 12) - 1);
+		csizemult = (u8_t) ((sys_get_be16(&buf[9]) >> 7) & ((1 << 3) - 1));
+		data->sector_count = ((csize + 1) << (csizemult + 2 + readbllen - 9));
+		break;
+	case SDHC_CSD_V2:
+		/* Bits 48..69 are the capacity of the card in 512 KiB units, minus 1.
+		 */
+		csize = sys_get_be32(&buf[6]) & ((1 << 22) - 1);
+		if (csize < 4112) {
+			/* Invalid capacity (cf. section 5.3.3) */
+			return -ENOTSUP;
+		}
+		data->sector_count = (csize + 1) *
+			(512 * 1024 / SDMMC_DEFAULT_BLOCK_SIZE);
+		break;
+	default:
 		/* Unsupported CSD format */
 		return -ENOTSUP;
 	}
-
-	/* Bits 48..69 are the capacity of the card in 512 KiB units, minus 1.
-	 */
-	csize = sys_get_be32(&buf[6]) & ((1 << 22) - 1);
-	if (csize < 4112) {
-		/* Invalid capacity according to section 5.3.3 */
-		return -ENOTSUP;
-	}
-
-	data->sector_count = (csize + 1) *
-		(512 * 1024 / SDMMC_DEFAULT_BLOCK_SIZE);
 
 	LOG_INF("Found a ~%u MiB SDHC card.",
 		data->sector_count / (1024 * 1024 / SDMMC_DEFAULT_BLOCK_SIZE));
@@ -613,16 +657,26 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 	u8_t *buf, u32_t sector, u32_t count)
 {
 	int err;
+	u32_t addr;
 
 	err = sdhc_map_disk_status(data->status);
 	if (err != 0) {
 		return err;
 	}
 
+	/* Translate sector number to data address.
+	 * SDSC cards use byte addressing, SDHC cards use block addressing.
+	 */
+	if (data->high_capacity) {
+		addr = sector;
+	} else {
+		addr = sector * SDMMC_DEFAULT_BLOCK_SIZE;
+	}
+
 	sdhc_spi_set_cs(data, 0);
 
 	/* Send the start read command */
-	err = sdhc_spi_cmd_r1(data, SDHC_READ_MULTIPLE_BLOCK, sector);
+	err = sdhc_spi_cmd_r1(data, SDHC_READ_MULTIPLE_BLOCK, addr);
 	if (err != 0) {
 		goto error;
 	}
@@ -653,6 +707,7 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 	const u8_t *buf, u32_t sector, u32_t count)
 {
 	int err;
+	u32_t addr;
 
 	err = sdhc_map_disk_status(data->status);
 	if (err != 0) {
@@ -663,7 +718,16 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 
 	/* Write the blocks one-by-one */
 	for (; count != 0U; count--) {
-		err = sdhc_spi_cmd_r1(data, SDHC_WRITE_BLOCK, sector);
+		/* Translate sector number to data address.
+		 * SDSC cards use byte addressing, SDHC cards use block addressing.
+		 */
+		if (data->high_capacity) {
+			addr = sector;
+		} else {
+			addr = sector * SDMMC_DEFAULT_BLOCK_SIZE;
+		}
+
+		err = sdhc_spi_cmd_r1(data, SDHC_WRITE_BLOCK, addr);
 		if (err < 0) {
 			goto error;
 		}
@@ -712,10 +776,12 @@ static int sdhc_spi_init(struct device *dev)
 	__ASSERT_NO_MSG(data->cs != NULL);
 
 	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
+	data->flags = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_FLAGS;
 
 	disk_spi_sdhc_init(dev);
 
-	return gpio_pin_configure(data->cs, data->pin, GPIO_DIR_OUT);
+	return gpio_pin_configure(data->cs, data->pin,
+				  GPIO_OUTPUT_INACTIVE | data->flags);
 }
 
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
@@ -798,11 +864,6 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
-
-	if (data->status == DISK_STATUS_OK) {
-		/* Called twice, don't re-init. */
-		return 0;
-	}
 
 	err = sdhc_spi_detect(data);
 	sdhc_spi_set_cs(data, 1);

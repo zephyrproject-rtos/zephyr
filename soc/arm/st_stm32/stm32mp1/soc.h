@@ -54,8 +54,12 @@
 #include <stm32mp1xx_ll_ipcc.h>
 #endif
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32mp1xx_ll_i2c.h>
+#endif
+
+#ifdef CONFIG_WWDG_STM32
+#include <stm32mp1xx_ll_wwdg.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

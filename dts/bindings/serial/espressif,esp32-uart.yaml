@@ -1,0 +1,32 @@
+description: ESP32 UART
+
+compatible: "espressif,esp32-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    tx-pin:
+      type: int
+      description: TX pin
+      required: true
+
+    rx-pin:
+      type: int
+      description: RX pin
+      required: true
+
+    rts-pin:
+      type: int
+      description: RTS pin
+      required: false
+
+    cts-pin:
+      type: int
+      description: CTS pin
+      required: false

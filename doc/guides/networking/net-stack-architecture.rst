@@ -16,7 +16,6 @@ High level overview of the network stack
 ****************************************
 
 .. figure:: zephyr_netstack_overview.svg
-    :align: left
     :alt: Overview of the network stack architecture
     :figclass: align-center
 
@@ -63,11 +62,6 @@ The network stack is layered and consists of the following parts:
 * **Network Device Drivers.** The actual low-level device drivers handle the
   physical sending or receiving of network packets.
 
-.. raw:: html
-
-   <br style="clear:both;" />
-
-
 Network data flow
 *****************
 
@@ -76,12 +70,7 @@ that execute the application logic. When using the
 :ref:`BSD socket API <bsd_sockets_interface>`, the following things will
 happen.
 
-.. raw:: html
-
-   <br style="clear:both;" />
-
 .. figure:: zephyr_netstack_overview-rx_sequence.svg
-    :align: left
     :alt: Network RX data flow
     :figclass: align-center
 
@@ -122,12 +111,8 @@ Data receiving (RX)
    :ref:`BSD socket API <bsd_sockets_interface>` to create a socket
    that will receive the data.
 
-.. raw:: html
-
-   <br style="clear:both;" />
 
 .. figure:: zephyr_netstack_overview-tx_sequence.svg
-    :align: left
     :alt: Network TX data flow
     :figclass: align-center
 
@@ -164,10 +149,6 @@ Data sending (TX)
    sent out.
 
 7. The device driver will send the packet to the network.
-
-.. raw:: html
-
-   <br style="clear:both;" />
 
 Note that in both the TX and RX data paths, the queues
 (:ref:`k_fifo's <fifos_v2>`) form separation points where data is passed from

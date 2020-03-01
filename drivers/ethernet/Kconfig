@@ -1,10 +1,7 @@
-# Kconfig -  Ethernet drivers configuration options
+# Ethernet drivers configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Ethernet Drivers"
 	depends on NET_L2_ETHERNET
@@ -25,8 +22,8 @@ config ETH_INIT_PRIORITY
 	  so that it can start before the networking sub-system.
 
 source "drivers/ethernet/Kconfig.enc28j60"
+source "drivers/ethernet/Kconfig.enc424j600"
 source "drivers/ethernet/Kconfig.mcux"
-source "drivers/ethernet/Kconfig.dw"
 source "drivers/ethernet/Kconfig.e1000"
 source "drivers/ethernet/Kconfig.sam_gmac"
 source "drivers/ethernet/Kconfig.stm32_hal"
@@ -34,5 +31,6 @@ source "drivers/ethernet/Kconfig.smsc911x"
 source "drivers/ethernet/Kconfig.native_posix"
 source "drivers/ethernet/Kconfig.stellaris"
 source "drivers/ethernet/Kconfig.liteeth"
+source "drivers/ethernet/Kconfig.gecko"
 
 endmenu # "Ethernet Drivers"

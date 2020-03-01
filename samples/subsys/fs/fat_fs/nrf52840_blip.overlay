@@ -6,7 +6,7 @@
 
 &spi1 {
         status = "okay";
-        cs-gpios = <&gpio0 17 0>;
+        cs-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 
         sdhc0: sdhc@0 {
                 compatible = "zephyr,mmc-spi-slot";

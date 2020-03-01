@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Testing"
 
@@ -20,7 +17,6 @@ config TEST
 config TEST_SHELL
 	bool "Enable various shells for testing"
 	select GPIO_SHELL if GPIO
-	select PCI_SHELL if PCI
 	help
 	  Enable various platform and driver related shells for testing.
 
@@ -46,19 +42,25 @@ config COVERAGE
 	help
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.
-	  Currently this is fully supported only on the native POSIX port.
+	  For more information see
+	  https://docs.zephyrproject.org/latest/guides/coverage.html
 
-if COVERAGE
 config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
-	depends on !NATIVE_APPLICATION
 	default y
+	depends on COVERAGE
+	depends on !NATIVE_APPLICATION
 	help
 	  This option will select the custom gcov library. The reports will
 	  be available over serial. This serial dump can be passed to
 	  gen_gcov_files.py which creates the required .gcda files. These
 	  can be read by gcov utility. For more details see gcovr.com .
-endif
+
+config COVERAGE_DUMP
+	bool "Dump coverage data on exit"
+	depends on COVERAGE_GCOV
+	help
+	  Dump collected coverage information to console on exit.
 
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
@@ -79,6 +81,18 @@ config TEST_USERSPACE
 	  pass, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
 	  testcase.yaml.
 
+config TEST_LOGGING_DEFAULTS
+	bool "Enable test case logging defaults"
+	depends on TEST
+	select LOG
+	select LOG_MINIMAL
+	default y
+	help
+	  Option which implements default policy of enabling logging in
+	  minimal mode for all test cases. For tests that need alternate
+	  logging configuration, or no logging at all, disable this
+	  in the project-level defconfig.
+
 config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
@@ -92,12 +106,22 @@ config TEST_ENABLE_USERSPACE
 	  case itself indicates that it exercises user mode via
 	  CONFIG_TEST_USERSPACE.
 
+config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
+	bool "Run User Mode tests without additionally enabling stack protection"
+	depends on TEST_ENABLE_USERSPACE
+	default y if SOC_SERIES_KINETIS_KE1XF
+	help
+	  A HW platform might not have sufficient MPU/MMU capabilities to support
+	  running all test cases with User Mode and HW Stack Protection features
+	  simultaneously enabled. For this platforms we execute the User Mode-
+	  related tests without enabling HW stack protection.
+
 config TEST_HW_STACK_PROTECTION
 	bool "Enable hardware-based stack overflow detection if available"
 	depends on ARCH_HAS_STACK_PROTECTION
 	depends on TEST
 	select HW_STACK_PROTECTION
-	default y
+	default y if !TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
 	help
 	  This option will enable hardware-based stack protection by default
 	  for all test cases if the hardware supports it.

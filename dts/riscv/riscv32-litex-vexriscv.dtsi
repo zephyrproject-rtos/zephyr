@@ -44,6 +44,17 @@
 			label = "uart0";
 			status = "disabled";
 		};
+		spi0: spi@e0002000 {
+			compatible = "litex,spi";
+			interrupt-parent = <&intc0>;
+			interrupts = <5 0>;
+			reg = <0xe0002000 0x34>;
+			reg-names = "control";
+			label = "spi0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 		timer0: serial@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
@@ -57,11 +68,68 @@
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
-			reg = <0xb0000000 0x2000 0xe0009800 0x6b>;
+			reg = <0xe0009800 0x6b 0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "buffers", "control";
+			reg-names = "control", "buffers";
 			label = "eth0";
 			status = "disabled";
+		};
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			so it requires 8 bytes.
+			In LiteX each 32-bit register holds
+			only a single byte of meaningful data,
+			hence 8 registers. */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			label = "dna0";
+			status = "disabled";
+		};
+		i2c0: i2c@e0005000 {
+			compatible = "litex,i2c";
+			reg = <0xe0005000 0x4 0xe0005004 0x4>;
+			reg-names = "write", "read";
+			label = "i2c0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		gpio_out: gpio@e0005800 {
+			compatible = "litex,gpio";
+			reg = <0xe0005800 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_out";
+			port-is-output;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		gpio_in: gpio@e0006000 {
+			compatible = "litex,gpio";
+			reg = <0xe0006000 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_in";
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		prbs0: prbs@e0006800 {
+			compatible = "litex,prbs";
+			reg = <0xe0006800 0x4>;
+			reg-names = "status";
+			label = "prbs0";
+			status = "disabled";
+		};
+		pwm0: pwm@e0007000 {
+			compatible = "litex,pwm";
+			reg = <0xe0007000 0x4 0xe0007004 0x10 0xe0007014 0x10>;
+			reg-names = "enable", "width", "period";
+			label = "pwm0";
+			status = "disabled";
+			#pwm-cells = <2>;
 		};
 	};
 };

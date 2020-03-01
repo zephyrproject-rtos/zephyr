@@ -111,7 +111,7 @@ void _timer_int_handler(void *unused)
 	u32_t regval;
 
 	regval = sys_read32(TIMER_BASEADDR + XTTCPS_ISR_OFFSET);
-	accumulated_cycles += sys_clock_hw_cycles_per_tick();
+	accumulated_cycles += k_ticks_to_cyc_floor32(1);
 	z_clock_announce(_sys_idle_elapsed_ticks);
 }
 

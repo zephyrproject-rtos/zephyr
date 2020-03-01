@@ -1,22 +1,25 @@
-title: DesignWare Interrupt Controller
+description: DesignWare programmable interrupt controller
 
-description: >
-    This binding describes DesignWare Programmable Interrupt controller
+compatible: "snps,designware-intc"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "snps,designware-intc"
-
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
-"#cells":
+  "#interrupt-cells":
+      const: 3
+
+  num-irqs:
+      type: int
+      required: true
+      description: Number of irq the controller manages
+
+interrupt-cells:
   - irq
   - sense
   - priority

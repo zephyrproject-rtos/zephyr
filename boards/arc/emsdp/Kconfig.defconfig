@@ -1,9 +1,7 @@
-# Kconfig - DesignWare ARC EM Software Development Platform board configuration
-#
+# DesignWare ARC EM Software Development Platform board configuration
+
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_EMSDP
 
@@ -28,18 +26,12 @@ endif # GPIO_DW
 
 endif # GPIO
 
-if SERIAL
-
 config UART_NS16550
 	default y
-
-endif # SERIAL
-
-if UART_CONSOLE
+	depends on SERIAL
 
 config UART_NS16550_PORT_0
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 endif # BOARD_EMSDP

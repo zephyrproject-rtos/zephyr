@@ -8,7 +8,7 @@
 #include <drivers/entropy.h>
 #include <sys/atomic.h>
 #include <soc.h>
-#include "nrf_rng.h"
+#include <hal/nrf_rng.h>
 
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
@@ -35,7 +35,7 @@
  *
  * Due to the first byte in a stream of bytes being more costly on
  * some platforms a "water system" inspired algorithm is used to
- * ammortize the cost of the first byte.
+ * amortize the cost of the first byte.
  *
  * The algorithm will delay generation of entropy until the amount of
  * bytes goes below THRESHOLD, at which point it will generate entropy
@@ -46,7 +46,7 @@
  *
  * The algorithm and HW together has these characteristics:
  *
- * Setting a low threshold will highly ammortize the extra 120us cost
+ * Setting a low threshold will highly amortize the extra 120us cost
  * of the first byte on nRF52.
  *
  * Setting a high threshold will minimize the time spent waiting for
@@ -102,9 +102,9 @@ static int random_byte_get(void)
 
 	key = irq_lock();
 
-	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
-		retval = nrf_rng_random_value_get();
-		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+	if (nrf_rng_event_check(NRF_RNG, NRF_RNG_EVENT_VALRDY)) {
+		retval = nrf_rng_random_value_get(NRF_RNG);
+		nrf_rng_event_clear(NRF_RNG, NRF_RNG_EVENT_VALRDY);
 	}
 
 	irq_unlock(key);
@@ -166,7 +166,7 @@ static u16_t rng_pool_get(struct rng_pool *rngp, u8_t *buf, u16_t len)
 	len = dst - buf;
 	available = available - len;
 	if (available <= rngp->threshold) {
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_START);
 	}
 
 	return len;
@@ -215,7 +215,7 @@ static void isr(void *arg)
 		ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.thr),
 				   byte);
 		if (ret < 0) {
-			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+			nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_STOP);
 		}
 
 		k_sem_give(&entropy_nrf5_data.sem_sync);
@@ -270,13 +270,14 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		irq_disable(RNG_IRQn);
 		irq_unlock(key);
 
-		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		nrf_rng_event_clear(NRF_RNG, NRF_RNG_EVENT_VALRDY);
+		nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_START);
 
 		do {
 			int byte;
 
-			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
+			while (!nrf_rng_event_check(NRF_RNG,
+						    NRF_RNG_EVENT_VALRDY)) {
 				__WFE();
 				__SEV();
 				__WFE();
@@ -332,14 +333,14 @@ static int entropy_nrf5_init(struct device *device)
 
 	/* Enable or disable bias correction */
 	if (IS_ENABLED(CONFIG_ENTROPY_NRF5_BIAS_CORRECTION)) {
-		nrf_rng_error_correction_enable();
+		nrf_rng_error_correction_enable(NRF_RNG);
 	} else {
-		nrf_rng_error_correction_disable();
+		nrf_rng_error_correction_disable(NRF_RNG);
 	}
 
-	nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
-	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
-	nrf_rng_task_trigger(NRF_RNG_TASK_START);
+	nrf_rng_event_clear(NRF_RNG, NRF_RNG_EVENT_VALRDY);
+	nrf_rng_int_enable(NRF_RNG, NRF_RNG_INT_VALRDY_MASK);
+	nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_START);
 
 	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr,
 		    &entropy_nrf5_data, 0);

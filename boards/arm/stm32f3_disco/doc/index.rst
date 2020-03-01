@@ -94,6 +94,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | CAN                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -112,6 +114,9 @@ For mode details please refer to `STM32F3DISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
+.. rst-class:: rst-columns
+
 - UART_1_TX : PC4
 - UART_1_RX : PC5
 - UART_2_TX : PA2
@@ -128,6 +133,8 @@ Default Zephyr Peripheral Mapping:
 - SPI2_SCK : PB13
 - SPI2_MISO : PB14
 - SPI2_MOSI : PB15
+- CAN1_RX : PD0
+- CAN1_TX : PD1
 - USB_DM : PA11
 - USB_DP : PA12
 - USER_PB : PA0
@@ -164,6 +171,13 @@ USB
 ===
 STM32F3DISCOVERY has a USB 2.0 full-speed device interface available through
 its mini USB connector (USB USER).
+
+CAN
+===
+The STM32F3DISCOVERY does not have an onboard CAN transceiver. In
+order to use the CAN bus on the this board, an external CAN bus
+tranceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
+(``CAN1_TX``).
 
 Programming and Debugging
 *************************

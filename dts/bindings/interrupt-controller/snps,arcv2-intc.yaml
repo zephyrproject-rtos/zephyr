@@ -1,21 +1,16 @@
-#
 # Copyright (c) 2018, synopsys
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARCV2 Interrupt Controller
+description: ARCV2 interrupt controller
 
-description: >
-    This binding describes the ARCV2 IRQ controller
+compatible: "snps,arcv2-intc"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "snps,arcv2-intc"
+    "#interrupt-cells":
+      const: 2
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

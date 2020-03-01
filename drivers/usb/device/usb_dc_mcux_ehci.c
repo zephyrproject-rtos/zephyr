@@ -6,7 +6,7 @@
 
 #include <soc.h>
 #include <string.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <soc.h>
 #include <device.h>
 #include "usb_dc_mcux.h"
@@ -160,7 +160,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		block->data = NULL;
 	}
 
-	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, 10) == 0) {
+	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, K_MSEC(10)) == 0) {
 		memset(block->data, 0, cfg->ep_mps);
 	} else {
 		LOG_ERR("Memory allocation time-out");
@@ -232,7 +232,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	}
 	if (s_Device.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {

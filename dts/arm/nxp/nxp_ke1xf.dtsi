@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/kinetis_pcc.h>
 #include <dt-bindings/clock/kinetis_scg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
@@ -12,7 +13,7 @@
 / {
 	aliases {
 		rtc-0 = &rtc0;
-		wdt-0 = &wdog0;
+		watchdog0 = &wdog0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		uart-2 = &uart2;
@@ -33,10 +34,10 @@
 		adc-0 = &adc0;
 		adc-1 = &adc1;
 		adc-2 = &adc2;
-		ftm-0 = &ftm0;
-		ftm-1 = &ftm1;
-		ftm-2 = &ftm2;
-		ftm-3 = &ftm3;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
 	};
 
 	cpus {
@@ -50,6 +51,42 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP0";
+		status = "disabled";
+	};
+
+	temp1: temp1 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc1 26>, <&adc1 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP1";
+		status = "disabled";
+	};
+
+	temp2: temp2 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc2 26>, <&adc2 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		label = "TEMP2";
+		status = "disabled";
+	};
+
 	soc {
 		mpu: mpu@4000d000 {
 			compatible = "nxp,kinetis-mpu";
@@ -58,7 +95,7 @@
 		};
 
 		sim: sim@40048000 {
-			compatible = "nxp,kinetis-sim";
+			compatible = "nxp,kinetis-ke1xf-sim";
 			reg = <0x40048000 0x1000>;
 			label = "SIM";
 		};
@@ -71,19 +108,22 @@
 		};
 
 		pmc: pmc@4007d000 {
-			compatible = "fixed-clock";
 			reg = <0x4007d000 0x1000>;
 			label = "PMC";
+
+			lpo: lpo128k {
 			/* LPO clock */
-			clock-frequency = <125000>;
-			#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <128000>;
+				#clock-cells = <0>;
+			};
 		};
 
 		pcc: pcc@40065000 {
 			compatible = "nxp,kinetis-pcc";
 			reg = <0x40065000 0x1000>;
 			label = "PCC";
-			#clock-cells = <1>;
+			#clock-cells = <2>;
 		};
 
 		rtc0: rtc@4003d000 {
@@ -100,7 +140,7 @@
 			compatible = "nxp,kinetis-wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
-			clocks = <&pmc>;
+			clocks = <&lpo>;
 			clk-source = <1>;
 			clk-divider = <256>;
 			label = "WDT_0";
@@ -122,7 +162,7 @@
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "transmit", "receive";
-			clocks = <&pcc 0x1a8>;
+			clocks = <&pcc 0x1a8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "UART_0";
 			status = "disabled";
 		};
@@ -132,7 +172,7 @@
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "transmit", "receive";
-			clocks = <&pcc 0x1ac>;
+			clocks = <&pcc 0x1ac KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -142,7 +182,7 @@
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "transmit", "receive";
-			clocks = <&pcc 0x1b0>;
+			clocks = <&pcc 0x1b0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -154,7 +194,7 @@
 			#size-cells = <0>;
 			reg = <0x40066000 0x1000>;
 			interrupts = <24 0>;
-			clocks = <&pcc 0x198>;
+			clocks = <&pcc 0x198 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "I2C_0";
 			status = "disabled";
 		};
@@ -166,7 +206,7 @@
 			#size-cells = <0>;
 			reg = <0x40067000 0x1000>;
 			interrupts = <25 0>;
-			clocks = <&pcc 0x19c>;
+			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "I2C_1";
 			status = "disabled";
 		};
@@ -175,7 +215,7 @@
 			compatible = "nxp,imx-lpspi";
 			reg = <0x4002c000 0x1000>;
 			interrupts = <26 0>;
-			clocks = <&pcc 0xb0>;
+			clocks = <&pcc 0xb0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "SPI_0";
 			status = "disabled";
 			#address-cells = <1>;
@@ -186,7 +226,7 @@
 			compatible = "nxp,imx-lpspi";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <27 0>;
-			clocks = <&pcc 0xb4>;
+			clocks = <&pcc 0xb4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "SPI_1";
 			status = "disabled";
 			#address-cells = <1>;
@@ -232,31 +272,31 @@
 		pinmux_a: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0x1000>;
-			clocks = <&pcc 0x124>;
+			clocks = <&pcc 0x124 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
 		pinmux_b: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0x1000>;
-			clocks = <&pcc 0x128>;
+			clocks = <&pcc 0x128 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
 		pinmux_c: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0x1000>;
-			clocks = <&pcc 0x12c>;
+			clocks = <&pcc 0x12c KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
 		pinmux_d: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0x1000>;
-			clocks = <&pcc 0x130>;
+			clocks = <&pcc 0x130 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
 		pinmux_e: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0x1000>;
-			clocks = <&pcc 0x134>;
+			clocks = <&pcc 0x134 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
 		gpioa: gpio@400ff000 {
@@ -308,72 +348,75 @@
 			compatible = "nxp,kinetis-adc12";
 			reg = <0x4003b000 0x1000>;
 			interrupts = <39 0>;
-			clocks = <&pcc 0xec>;
+			clocks = <&pcc 0xec KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "ADC_0";
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		adc1: adc@40027000 {
 			compatible = "nxp,kinetis-adc12";
 			reg = <0x40027000 0x1000>;
 			interrupts = <73 0>;
-			clocks = <&pcc 0x9c>;
+			clocks = <&pcc 0x9c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "ADC_1";
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		adc2: adc@4003c000 {
 			compatible = "nxp,kinetis-adc12";
 			reg = <0x4003c000 0x1000>;
 			interrupts = <74 0>;
-			clocks = <&pcc 0xf0>;
+			clocks = <&pcc 0xf0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			label = "ADC_2";
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
-		ftm0: pwm@40038000 {
+		pwm0: pwm@40038000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x1000>;
 			interrupts = <42 0>;
-			clocks = <&pcc 0xe0>;
-			label = "FTM_0";
-			#pwm-cells = <2>;
+			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			label = "PWM_0";
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		ftm1: pwm@40039000 {
+		pwm1: pwm@40039000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x1000>;
 			interrupts = <43 0>;
-			clocks = <&pcc 0xe4>;
-			label = "FTM_1";
-			#pwm-cells = <2>;
+			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			label = "PWM_1";
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		ftm2: pwm@4003a000 {
+		pwm2: pwm@4003a000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x1000>;
 			interrupts = <44 0>;
-			clocks = <&pcc 0xe8>;
-			label = "FTM_2";
-			#pwm-cells = <2>;
+			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			label = "PWM_2";
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		ftm3: pwm@40026000 {
+		pwm3: pwm@40026000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40026000 0x1000>;
 			interrupts = <71 0>;
-			clocks = <&pcc 0x98>;
-			label = "FTM_3";
-			#pwm-cells = <2>;
+			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			label = "PWM_3";
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

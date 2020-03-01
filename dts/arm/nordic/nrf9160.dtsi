@@ -37,12 +37,20 @@
 		uart-2 = &uart2;
 		uart-3 = &uart3;
 		adc-0 = &adc;
+		egu-0 = &egu0;
+		egu-1 = &egu1;
+		egu-2 = &egu2;
+		egu-3 = &egu3;
+		egu-4 = &egu4;
+		egu-5 = &egu5;
 		gpio-0 = &gpio0;
 		gpiote-0 = &gpiote;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		i2c-2 = &i2c2;
 		i2c-3 = &i2c3;
+		i2s-0 = &i2s0;
+		pdm-0 = &pdm0;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
@@ -55,6 +63,8 @@
 		timer-0 = &timer0;
 		timer-1 = &timer1;
 		timer-2 = &timer2;
+		cc310 = &cryptocell;
+		arm-cryptocell-310 = &cryptocell310;
 	};
 
 	soc {
@@ -72,6 +82,21 @@
 		};
 
 		/* Additional Secure peripherals */
+		cryptocell: crypto@50840000 {
+			compatible = "nordic,nrf-cc310";
+			reg = <0x50840000 0x1000>;
+			label = "CRYPTOCELL";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell310: crypto@50841000 {
+				compatible = "arm,cryptocell-310";
+				reg = <0x50841000 0x1000>;
+				interrupts = <64 1>;
+				label = "CRYPTOCELL310";
+			};
+		};
+
 		gpiote: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;

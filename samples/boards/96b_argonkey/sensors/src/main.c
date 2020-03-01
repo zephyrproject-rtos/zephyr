@@ -134,15 +134,16 @@ void main(void)
 #endif
 
 	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 1);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
+			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
 
 	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
+			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
 
 	for (i = 0; i < 5; i++) {
-		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, on);
-		k_sleep(200);
+		gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, on);
+		k_sleep(K_MSEC(200));
 		on = (on == 1) ? 0 : 1;
 	}
 
@@ -350,8 +351,6 @@ void main(void)
 #endif /* CONFIG_LSM6DSL */
 
 		printk("- (%d) (trig_cnt: %d)\n\n", ++cnt, lsm6dsl_trig_cnt);
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }
-
-

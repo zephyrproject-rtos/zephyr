@@ -1,10 +1,7 @@
-# Kconfig - Private config options for gPTP sample app
+# Private config options for gPTP sample app
 
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # This sample application will have three network interfaces.
 # gPTP protocol will run in the non-VLAN interface and then there

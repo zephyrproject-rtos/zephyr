@@ -331,7 +331,7 @@ void load_store_high(void)
 		 * once the sleep ends.
 		 */
 
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 
 		/* periodically issue progress report */
 
@@ -373,13 +373,13 @@ K_THREAD_DEFINE(pi_low, STACKSIZE, calculate_pi_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(pi_high, STACKSIZE, calculate_pi_high, NULL, NULL, NULL,
 		HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
 
-void main(void *p1, void *p2, void *p3)
+void main(void)
 {
 	/* This very old test didn't have a main() function, and would
 	 * dump gcov data immediately. Sleep forever, we'll invoke
 	 * gcov manually later when the test completes.
 	 */
 	while (true) {
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

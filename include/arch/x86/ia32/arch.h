@@ -14,24 +14,21 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
-#include <irq.h>
 #include "sys_io.h"
-#include <drivers/interrupt_controller/sysapic.h>
-#include <kernel_arch_thread.h>
-#include <generated_dts_board.h>
-#include <ia32/mmustructs.h>
 #include <stdbool.h>
+#include <kernel_structs.h>
 #include <arch/common/ffs.h>
-#include <misc/util.h>
+#include <sys/util.h>
+#include <arch/x86/ia32/thread.h>
+#include <arch/x86/ia32/syscall.h>
 
 #ifndef _ASMLANGUAGE
+#include <stddef.h>	/* for size_t */
+
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#endif /* _ASMLANGUAGE */
 
 /* GDT layout */
 #define CODE_SEG	0x08
@@ -53,17 +50,11 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* interrupt/exception/error related definitions */
-
-
-/*
- * The TCS must be aligned to the same boundary as that used by the floating
- * point register set.  This applies even for threads that don't initially
- * use floating point, since it is possible to enable floating point support
- * later on.
- */
-
-#define STACK_ALIGN  FP_REG_SET_ALIGN
 
 typedef struct s_isrList {
 	/** Address of ISR/stub */
@@ -167,12 +158,7 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * Internally this function does a few things:
+/* Internally this function does a few things:
  *
  * 1. There is a declaration of the interrupt parameters in the .intList
  * section, used by gen_idt to create the IDT. This does the same thing
@@ -189,16 +175,8 @@ typedef struct s_isrList {
  *
  * 4. z_irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options, as defined in sysapic.h
- *
- * @return The vector assigned to this interrupt
  */
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
@@ -227,12 +205,7 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-/** Configure a 'direct' static interrupt
- *
- * All arguments must be computable by the compiler at build time
- *
- */
-#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
@@ -240,31 +213,90 @@ typedef struct s_isrList {
 	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-
-/**
- * @brief Convert a statically connected IRQ to its interrupt vector number
- *
- * @param irq IRQ number
- */
-extern unsigned char _irq_to_interrupt_vector[];
-#define Z_IRQ_TO_INTERRUPT_VECTOR(irq)                       \
-			((unsigned int) _irq_to_interrupt_vector[irq])
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-extern void z_arch_irq_direct_pm(void);
-#define Z_ARCH_ISR_DIRECT_PM() z_arch_irq_direct_pm()
+/*
+ * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
+ *	  included here due to circular dependency
+ */
+extern void z_sys_power_save_idle_exit(s32_t ticks);
+
+static inline void arch_irq_direct_pm(void)
+{
+	if (_kernel.idle) {
+		s32_t idle_val = _kernel.idle;
+
+		_kernel.idle = 0;
+		z_sys_power_save_idle_exit(idle_val);
+	}
+}
+
+#define ARCH_ISR_DIRECT_PM() arch_irq_direct_pm()
 #else
-#define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
+#define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
-#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
-#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
+#define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
+#define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* FIXME prefer these inline, but see GH-3056 */
-extern void z_arch_isr_direct_header(void);
-extern void z_arch_isr_direct_footer(int maybe_swap);
+/* FIXME:
+ * tracing/tracing.h cannot be included here due to circular dependency
+ */
+#if defined(CONFIG_TRACING)
+extern void sys_trace_isr_enter(void);
+extern void sys_trace_isr_exit(void);
+#endif
 
-#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
+static inline void arch_isr_direct_header(void)
+{
+#if defined(CONFIG_TRACING)
+	sys_trace_isr_enter();
+#endif
+
+	/* We're not going to unlock IRQs, but we still need to increment this
+	 * so that arch_is_in_isr() works
+	 */
+	++_kernel.nested;
+}
+
+/*
+ * FIXME: z_swap_irqlock is an inline function declared in a private header and
+ *	  cannot be referenced from a public header, so we move it to an
+ *	  external function.
+ */
+extern void arch_isr_direct_footer_swap(unsigned int key);
+
+static inline void arch_isr_direct_footer(int swap)
+{
+	z_irq_controller_eoi();
+#if defined(CONFIG_TRACING)
+	sys_trace_isr_exit();
+#endif
+	--_kernel.nested;
+
+	/* Call swap if all the following is true:
+	 *
+	 * 1) swap argument was enabled to this function
+	 * 2) We are not in a nested interrupt
+	 * 3) Next thread to run in the ready queue is not this thread
+	 */
+	if (swap != 0 && _kernel.nested == 0 &&
+	    _kernel.ready_q.cache != _current) {
+		unsigned int flags;
+
+		/* Fetch EFLAGS argument to z_swap() */
+		__asm__ volatile (
+			"pushfl\n\t"
+			"popl %0\n\t"
+			: "=g" (flags)
+			:
+			: "memory"
+			);
+
+		arch_isr_direct_footer_swap(flags);
+	}
+}
+
+#define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt)) void name(void *stack_frame) \
 	{ \
@@ -315,188 +347,13 @@ struct _x86_syscall_stack_frame {
 	u32_t ss;
 };
 
-#endif /* !_ASMLANGUAGE */
-
-#ifndef _ASMLANGUAGE
-
-/**
- *
- * @internal
- *
- * @brief Disable all interrupts on the CPU
- *
- * GCC assembly internals of irq_lock(). See irq_lock() for a complete
- * description.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- */
-
-static ALWAYS_INLINE unsigned int _do_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
-	__asm__ volatile (
-		"pushfl;\n\t"
-		"cli;\n\t"
-		"popl %0;\n\t"
-		: "=g" (key)
-		:
-		: "memory"
-		);
+	__asm__ volatile ("pushfl; cli; popl %0" : "=g" (key) :: "memory");
 
 	return key;
-}
-
-
-/**
- *
- * @internal
- *
- * @brief Enable all interrupts on the CPU (inline)
- *
- * GCC assembly internals of irq_lock_unlock(). See irq_lock_unlock() for a
- * complete description.
- *
- * @return N/A
- */
-
-static ALWAYS_INLINE void z_do_irq_unlock(void)
-{
-	__asm__ volatile (
-		"sti;\n\t"
-		: : : "memory"
-		);
-}
-
-
-/**
- *  @brief read timestamp register ensuring serialization
- */
-
-static inline u64_t z_tsc_read(void)
-{
-	union {
-		struct  {
-			u32_t lo;
-			u32_t hi;
-		};
-		u64_t  value;
-	}  rv;
-
-	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
-	__asm__ volatile (/* serialize */
-		"xorl %%eax,%%eax;\n\t"
-		"cpuid;\n\t"
-		:
-		:
-		: "%eax", "%ebx", "%ecx", "%edx"
-		);
-	/*
-	 * We cannot use "=A", since this would use %rax on x86_64 and
-	 * return only the lower 32bits of the TSC
-	 */
-	__asm__ volatile ("rdtsc" : "=a" (rv.lo), "=d" (rv.hi));
-
-
-	return rv.value;
-}
-
-/**
- *
- * @brief Get a 32 bit CPU timestamp counter
- *
- * @return a 32-bit number
- */
-
-static ALWAYS_INLINE
-	u32_t z_do_read_cpu_timestamp32(void)
-{
-	u32_t rv;
-
-	__asm__ volatile("rdtsc" : "=a"(rv) :  : "%edx");
-
-	return rv;
-}
-
-/**
- * @brief Disable all interrupts on the CPU (inline)
- *
- * This routine disables interrupts.  It can be called from either interrupt
- * or thread level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock() to re-enable interrupts.
- *
- * The lock-out key should only be used as the argument to the irq_unlock()
- * API.  It should never be used to manually re-enable interrupts or to inspect
- * or manipulate the contents of the source register.
- *
- * This function can be called recursively: it will return a key to return the
- * state of interrupt locking to the previous level.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * thread executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * thread disables interrupts and subsequently invokes a kernel
- * routine that causes the calling thread to block, the interrupt
- * disable state will be restored when the thread is later rescheduled
- * for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- *
- */
-
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
-{
-	unsigned int key = _do_irq_lock();
-
-	return key;
-}
-
-
-/**
- *
- * @brief Enable all interrupts on the CPU (inline)
- *
- * This routine re-enables interrupts on the CPU.  The @a key parameter
- * is an architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock().
- *
- * This routine can be called from either interrupt or thread level.
- *
- * @return N/A
- *
- */
-
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
-{
-	if ((key & 0x200U) == 0U) {
-		return;
-	}
-
-	z_do_irq_unlock();
-}
-
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
-{
-	return (key & 0x200) != 0;
-}
-
-/**
- * @brief Explicitly nop operation.
- */
-static ALWAYS_INLINE void arch_nop(void)
-{
-	__asm__ volatile("nop");
 }
 
 
@@ -506,17 +363,6 @@ static ALWAYS_INLINE void arch_nop(void)
  * correspond to any IRQ line (such as spurious vector or SW IRQ)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
-
-/**
- * @brief Enable a specific IRQ
- * @param irq IRQ
- */
-extern void	z_arch_irq_enable(unsigned int irq);
-/**
- * @brief Disable a specific IRQ
- * @param irq IRQ
- */
-extern void	z_arch_irq_disable(unsigned int irq);
 
 /**
  * @defgroup float_apis Floating Point APIs
@@ -534,8 +380,8 @@ struct k_thread;
  * The @a options parameter indicates which floating point register sets
  * will be used by the specified thread:
  *
- *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
- *  b) K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
+ * - K_FP_REGS  indicates x87 FPU and MMX registers only
+ * - K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
  *
  * Invoking this routine initializes the thread's floating point context info
  * to that of an FPU that has been reset. The next time the thread is scheduled
@@ -561,258 +407,24 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
  * @}
  */
 
-#include <stddef.h>	/* for size_t */
-
-extern void	k_cpu_idle(void);
-
-extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
-
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
 #endif
 
-#ifdef CONFIG_USERSPACE
-/* We need a set of page tables for each thread in the system which runs in
- * user mode. For each thread, we have:
- *
- *   - a toplevel PDPT
- *   - a set of page directories for the memory range covered by system RAM
- *   - a set of page tbales for the memory range covered by system RAM
- *
- * Directories and tables for memory ranges outside of system RAM will be
- * shared and not thread-specific.
- *
- * NOTE: We are operating under the assumption that memory domain partitions
- * will not be configured which grant permission to address ranges outside
- * of system RAM.
- *
- * Each of these page tables will be programmed to reflect the memory
- * permission policy for that thread, which will be the union of:
- *
- *   - The boot time memory regions (text, rodata, and so forth)
- *   - The thread's stack buffer
- *   - Partitions in the memory domain configuration (if a member of a
- *     memory domain)
- *
- * The PDPT is fairly small singleton on x86 PAE (32 bytes) and also must
- * be aligned to 32 bytes, so we place it at the highest addresses of the
- * page reserved for the privilege elevation stack.
- *
- * The page directories and tables require page alignment so we put them as
- * additional fields in the stack object, using the below macros to compute how
- * many pages we need.
- */
-
-/* Define a range [Z_X86_PT_START, Z_X86_PT_END) which is the memory range
- * covered by all the page tables needed for system RAM
- */
-#define Z_X86_PT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
-#define Z_X86_PT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024U), \
-					 Z_X86_PT_AREA))
-
-/* Number of page tables needed to cover system RAM. Depends on the specific
- * bounds of system RAM, but roughly 1 page table per 2MB of RAM */
-#define Z_X86_NUM_PT	((Z_X86_PT_END - Z_X86_PT_START) / Z_X86_PT_AREA)
-
-/* Same semantics as above, but for the page directories needed to cover
- * system RAM.
- */
-#define Z_X86_PD_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
-#define Z_X86_PD_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024U), \
-					 Z_X86_PD_AREA))
-/* Number of page directories needed to cover system RAM. Depends on the
- * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM */
-#define Z_X86_NUM_PD	((Z_X86_PD_END - Z_X86_PD_START) / Z_X86_PD_AREA)
-
-/* Number of pages we need to reserve in the stack for per-thread page tables */
-#define Z_X86_NUM_TABLE_PAGES	(Z_X86_NUM_PT + Z_X86_NUM_PD)
-#else
-/* If we're not implementing user mode, then the MMU tables don't get changed
- * on context switch and we don't need any per-thread page tables
- */
-#define Z_X86_NUM_TABLE_PAGES	0U
-#endif /* CONFIG_USERSPACE */
-
-#define Z_X86_THREAD_PT_AREA	(Z_X86_NUM_TABLE_PAGES * MMU_PAGE_SIZE)
-
-#if defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
-#define Z_X86_STACK_BASE_ALIGN	MMU_PAGE_SIZE
-#else
-#define Z_X86_STACK_BASE_ALIGN	STACK_ALIGN
-#endif
-
-#ifdef CONFIG_USERSPACE
-/* If user mode enabled, expand any stack size to fill a page since that is
- * the access control granularity and we don't want other kernel data to
- * unintentionally fall in the latter part of the page
- */
-#define Z_X86_STACK_SIZE_ALIGN	MMU_PAGE_SIZE
-#else
-#define Z_X86_STACK_SIZE_ALIGN	1
-#endif
-
-struct z_x86_kernel_stack_data {
-	struct x86_mmu_pdpt pdpt;
-} __aligned(0x20);
-
-/* With both hardware stack protection and userspace enabled, stacks are
- * arranged as follows:
- *
- * High memory addresses
- * +-----------------------------------------+
- * | Thread stack (varies)                   |
- * +-----------------------------------------+
- * | PDPT (32 bytes)		             |
- * | Privilege elevation stack (4064 bytes)  |
- * +-----------------------------------------+
- * | Guard page (4096 bytes)                 |
- * +-----------------------------------------+
- * | User page tables (Z_X86_THREAD_PT_AREA) |
- * +-----------------------------------------+
- * Low Memory addresses
- *
- * Privilege elevation stacks are fixed-size. All the pages containing the
- * thread stack are marked as user-accessible. The guard page is marked
- * read-only to catch stack overflows in supervisor mode.
- *
- * If a thread starts in supervisor mode, the page containing the PDPT and
- * privilege elevation stack is also marked read-only.
- *
- * If a thread starts in, or drops down to user mode, the privilege stack page
- * will be marked as present, supervior-only. The PDPT will be initialized and
- * used as the active page tables when that thread is active.
- *
- * If KPTI is not enabled, the _main_tss.esp0 field will always be updated
- * updated to point to the top of the privilege elevation stack. Otherwise
- * _main_tss.esp0 always points to the trampoline stack, which handles the
- * page table switch to the kernel PDPT and transplants context to the
- * privileged mode stack.
- */
-struct z_x86_thread_stack_header {
-#ifdef CONFIG_USERSPACE
-	char page_tables[Z_X86_THREAD_PT_AREA];
-#endif
-
-#ifdef CONFIG_HW_STACK_PROTECTION
-	char guard_page[MMU_PAGE_SIZE];
-#endif
-
-#ifdef CONFIG_USERSPACE
-	char privilege_stack[MMU_PAGE_SIZE -
-		sizeof(struct z_x86_kernel_stack_data)];
-
-	struct z_x86_kernel_stack_data kernel_data;
-#endif
-} __packed __aligned(Z_X86_STACK_SIZE_ALIGN);
-
-#define Z_ARCH_THREAD_STACK_RESERVED \
-	((u32_t)sizeof(struct z_x86_thread_stack_header))
-
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
-			Z_ARCH_THREAD_STACK_RESERVED]
-
-#define Z_ARCH_THREAD_STACK_LEN(size) \
-		(ROUND_UP((size), \
-			  MAX(Z_X86_STACK_BASE_ALIGN, \
-			      Z_X86_STACK_SIZE_ALIGN)) + \
-		Z_ARCH_THREAD_STACK_RESERVED)
-
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
-
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
-			Z_ARCH_THREAD_STACK_RESERVED]
-
-#define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
-	(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)
-
-#define Z_ARCH_THREAD_STACK_BUFFER(sym) \
-	((char *)((sym) + Z_ARCH_THREAD_STACK_RESERVED))
-
-#if CONFIG_X86_KERNEL_OOPS
-#define Z_ARCH_EXCEPT(reason_p) do { \
+#define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \
 		: \
-		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
+		: [vector] "i" (Z_X86_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
 } while (false)
-#endif
-
-#ifdef CONFIG_X86_MMU
-/* Kernel's page table. Always active when threads are running in supervisor
- * mode, or handling an interrupt.
- *
- * If KPTI is not enabled, this is used as a template to create per-thread
- * page tables for when threads run in user mode.
- */
-extern struct x86_mmu_pdpt z_x86_kernel_pdpt;
-#ifdef CONFIG_X86_KPTI
-/* Separate page tables for user mode threads. The top-level PDPT is never
- * installed into the CPU; instead used as a template for creating per-thread
- * page tables.
- */
-extern struct x86_mmu_pdpt z_x86_user_pdpt;
-#define USER_PDPT	z_x86_user_pdpt
-#else
-#define USER_PDPT	z_x86_kernel_pdpt
-#endif
-/**
- * @brief Fetch page table flags for a particular page
- *
- * Given a memory address, return the flags for the containing page's
- * PDE and PTE entries. Intended for debugging.
- *
- * @param pdpt Which page table to use
- * @param addr Memory address to example
- * @param pde_flags Output parameter for page directory entry flags
- * @param pte_flags Output parameter for page table entry flags
- */
-void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
-			x86_page_entry_data_t *pde_flags,
-			x86_page_entry_data_t *pte_flags);
-
-
-/**
- * @brief set flags in the MMU page tables
- *
- * Modify bits in the existing page tables for a particular memory
- * range, which must be page-aligned
- *
- * @param pdpt Which page table to use
- * @param ptr Starting memory address which must be page-aligned
- * @param size Size of the region, must be page size multiple
- * @param flags Value of bits to set in the page table entries
- * @param mask Mask indicating which particular bits in the page table entries to
- *	 modify
- * @param flush Whether to flush the TLB for the modified pages, only needed
- *        when modifying the active page tables
- */
-void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
-			 size_t size,
-			 x86_page_entry_data_t flags,
-			 x86_page_entry_data_t mask, bool flush);
-
-int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
-		       int write);
-#endif /* CONFIG_X86_MMU */
-
-#endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_ */

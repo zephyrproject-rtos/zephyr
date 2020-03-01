@@ -26,15 +26,7 @@ extern struct k_mutex settings_lock;
 
 void settings_src_register(struct settings_store *cs)
 {
-	sys_snode_t *prev, *cur;
-
-	prev = NULL;
-
-	SYS_SLIST_FOR_EACH_NODE(&settings_load_srcs, cur) {
-		prev = cur;
-	}
-
-	sys_slist_insert(&settings_load_srcs, prev, &cs->cs_next);
+	sys_slist_append(&settings_load_srcs, &cs->cs_next);
 }
 
 void settings_dst_register(struct settings_store *cs)
@@ -51,6 +43,9 @@ int settings_load_subtree(const char *subtree)
 {
 	struct settings_store *cs;
 	int rc;
+	const struct settings_load_arg arg = {
+		.subtree = subtree
+	};
 
 	/*
 	 * for every config store
@@ -60,11 +55,37 @@ int settings_load_subtree(const char *subtree)
 	 */
 	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs, subtree);
+		cs->cs_itf->csi_load(cs, &arg);
 	}
 	rc = settings_commit_subtree(subtree);
 	k_mutex_unlock(&settings_lock);
 	return rc;
+}
+
+int settings_load_subtree_direct(
+	const char             *subtree,
+	settings_load_direct_cb cb,
+	void                   *param)
+{
+	struct settings_store *cs;
+
+	const struct settings_load_arg arg = {
+		.subtree = subtree,
+		.cb = cb,
+		.param = param
+	};
+	/*
+	 * for every config store
+	 *    load config
+	 *    apply config
+	 *    commit all
+	 */
+	k_mutex_lock(&settings_lock, K_FOREVER);
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+		cs->cs_itf->csi_load(cs, &arg);
+	}
+	k_mutex_unlock(&settings_lock);
+	return 0;
 }
 
 /*

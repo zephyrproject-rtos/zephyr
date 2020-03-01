@@ -18,16 +18,24 @@ under :zephyr_file:`/boards/shields`:
 
    boards/shields/<shield>
    ├── <shield>.overlay
-   └── dts_fixup.h
+   ├── Kconfig.shield
+   └── Kconfig.defconfig
 
 These files provides shield configuration as follows:
 
-* **<shield>.overlay**: This file provides a shield description in device tree
-  format that is merged with the board's device tree information before
+* **<shield>.overlay**: This file provides a shield description in devicetree
+  format that is merged with the board's :ref:`devicetree` before
   compilation.
 
-* **dts_fixup.h**: This is a fixup file to bind board components definitions with
-  application in a generic fashion to enable shield compatibility across boards
+* **Kconfig.shield**: This file defines shield Kconfig symbols that will be
+  used for default shield configuration. To ease use with applications,
+  the default shield configuration here should be consistent with those in
+  the :ref:`default_board_configuration`.
+
+* **Kconfig.defconfig**: This file defines the default shield configuration. It
+  is made to be consistent with the :ref:`default_board_configuration`. Hence,
+  shield configuration should be done by keeping in mind that features
+  activation is application responsibility.
 
 Board compatibility
 *******************
@@ -41,8 +49,8 @@ This should be done at two different level:
 
 * Pinmux: Connector pins should be correctly configured to match shield pins
 
-* Device tree: A board device tree file should define a node alias for each
-  connector interface.  For example, for Arduino I2C:
+* Devicetree: A board :ref:`devicetree` file should define a node alias for
+  each connector interface. For example, for Arduino I2C:
 
 .. code-block:: none
 
@@ -59,16 +67,30 @@ introduced overriding node element:
 
         arduino_i2c:i2c1{};
 
+Board specific shield configuration
+-----------------------------------
+
+If modifications are needed to fit a shield to a particular board, you can
+override a shield description for a specific board by adding board-overriding
+files to a shield, as follows:
+
+.. code-block:: none
+
+   boards/shields/<shield>
+   └── <boards>
+       ├── board.overlay
+       └── board.defconfig
+
 
 Shield activation
 *****************
 
-Activate support for a shield by adding the matching -DSHIELD arg to CMake
-command
+Activate support for one or more shields by adding the matching -DSHIELD arg to
+CMake command
 
   .. zephyr-app-commands::
      :zephyr-app: your_app
-     :shield: x_nucleo_iks01a1
+     :shield: "x_nucleo_idb05a1 x_nucleo_iks01a1"
      :goals: build
 
 
@@ -77,3 +99,106 @@ Alternatively, it could be set by default in a project's CMakeLists.txt:
 .. code-block:: none
 
 	set(SHIELD x_nucleo_iks01a1)
+
+Shield variants
+***************
+
+Some shields may support several variants or revisions. In that case, it is
+possible to provide multiple version of the shields description:
+
+.. code-block:: none
+
+   boards/shields/<shield>
+   ├── <shield_v1>.overlay
+   ├── <shield_v1>.defconfig
+   ├── <shield_v2>.overlay
+   └── <shield_v2>.defconfig
+
+In this case, a shield-particular revision name can be used:
+
+  .. zephyr-app-commands::
+     :zephyr-app: your_app
+     :shield: shield_v2
+     :goals: build
+
+You can also provide a board-specific configuration to a specific shield
+revision:
+
+.. code-block:: none
+
+   boards/shields/<shield>
+   ├── <shield_v1>.overlay
+   ├── <shield_v1>.defconfig
+   ├── <shield_v2>.overlay
+   ├── <shield_v2>.defconfig
+   └── <boards>
+       └── <shield_v2>
+           ├── board.overlay
+           └── board.defconfig
+
+GPIO nexus nodes
+****************
+
+GPIOs accessed by the shield peripherals must be identified using the
+shield GPIO abstraction, for example from the ``arduino-r3-header``
+compatible.  Boards that provide the header must map the header pins
+to SOC-specific pins.  This is accomplished by including a `nexus
+node`_ that looks like the following into the board devicetree file:
+
+.. _nexus node:
+    https://github.com/devicetree-org/devicetree-specification/blob/4b1dac80eaca45b4babf5299452a951008a5d864/source/devicetree-basics.rst#nexus-nodes-and-specifier-mapping
+
+.. code-block:: none
+
+    arduino_header: connector {
+            compatible = "arduino-header-r3";
+            #gpio-cells = <2>;
+            gpio-map-mask = <0xffffffff 0xffffffc0>;
+            gpio-map-pass-thru = <0 0x3f>;
+            gpio-map = <0 0 &gpioa 0 0>,    /* A0 */
+                       <1 0 &gpioa 1 0>,    /* A1 */
+                       <2 0 &gpioa 4 0>,    /* A2 */
+                       <3 0 &gpiob 0 0>,    /* A3 */
+                       <4 0 &gpioc 1 0>,    /* A4 */
+                       <5 0 &gpioc 0 0>,    /* A5 */
+                       <6 0 &gpioa 3 0>,    /* D0 */
+                       <7 0 &gpioa 2 0>,    /* D1 */
+                       <8 0 &gpioa 10 0>,   /* D2 */
+                       <9 0 &gpiob 3 0>,    /* D3 */
+                       <10 0 &gpiob 5 0>,   /* D4 */
+                       <11 0 &gpiob 4 0>,   /* D5 */
+                       <12 0 &gpiob 10 0>,  /* D6 */
+                       <13 0 &gpioa 8 0>,   /* D7 */
+                       <14 0 &gpioa 9 0>,   /* D8 */
+                       <15 0 &gpioc 7 0>,   /* D9 */
+                       <16 0 &gpiob 6 0>,   /* D10 */
+                       <17 0 &gpioa 7 0>,   /* D11 */
+                       <18 0 &gpioa 6 0>,   /* D12 */
+                       <19 0 &gpioa 5 0>,   /* D13 */
+                       <20 0 &gpiob 9 0>,   /* D14 */
+                       <21 0 &gpiob 8 0>;   /* D15 */
+    };
+
+This specifies how Arduino pin references like ``<&arduino_header 11
+0>`` are converted to SOC gpio pin references like ``<&gpiob 4 0>``.
+
+In Zephyr GPIO specifiers generally have two parameters (indicated by
+``#gpio-cells = <2>``): the pin number and a set of flags.  The low 6
+bits of the flags correspond to features that can be configured in
+devicetree.  In some cases it's necessary to use a non-zero flag value
+to tell the driver how a particular pin behaves, as with:
+
+.. code-block:: none
+
+    drdy-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;
+
+After preprocessing this becomes ``<&arduino_header 11 1>``.  Normally
+the presence of such a flag would cause the map lookup to fail,
+because there is no map entry with a non-zero flags value.  The
+``gpio-map-mask`` property specifies that, for lookup, all bits of the
+pin and all but the low 6 bits of the flags are used to identify the
+specifier.  Then the ``gpio-map-pass-thru`` specifies that the low 6
+bits of the flags are copied over, so the SOC GPIO reference becomes
+``<&gpiob 4 1>`` as intended.
+
+See `nexus node`_ for more information about this capability.

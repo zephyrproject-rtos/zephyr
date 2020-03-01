@@ -51,4 +51,3 @@ struct shell_vt100_ctx {
 #endif
 
 #endif /* SHELL_TYPES_H__ */
-

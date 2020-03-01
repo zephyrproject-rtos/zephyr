@@ -1,22 +1,14 @@
-#
 # Copyright (c) 2018, STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: I2S Device Base Structure
+# Common fields for I2S devices
 
-description: >
-    This binding gives the base structures for all i2s devices
+include: base.yaml
 
-inherits:
-    !include base.yaml
-
-parent:
-    bus: i2s
+on-bus: i2s
 
 properties:
     reg:
-      category: required
+      required: true
     label:
-      category: required
+      required: true

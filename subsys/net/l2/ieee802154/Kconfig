@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 Radio"
@@ -36,11 +33,10 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 	  Enable printing out in/out 802.15.4 packets. This is extremely
 	  verbose, do not enable this unless you know what you are doing.
 
-if NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
-
 choice
 	prompt "Which packet do you want to print-out?"
 	default NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL
+	depends on NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 
 config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL
 	bool "Print-out both RX and TX packets"
@@ -58,8 +54,6 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 	  This will print-out transmitted packets only.
 
 endchoice
-
-endif # NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
@@ -118,11 +112,6 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	  Reassembly timer will start as soon as first packet received
 	  from peer. Reassembly should be finished within a given time.
 	  Otherwise all accumulated fragments are dropped.
-
-config  NET_DEBUG_L2_IEEE802154_FRAGMENT
-	bool "Enable debug support for IEEE 802.15.4 fragmentation"
-	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
-	default y if NET_L2_IEEE802154_LOG_LEVEL_DBG
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"

@@ -1,25 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
-title: TI CC32XX GPIO
+description: TI CC32XX GPIO node
 
-description: >
-    This is a representation of the TI CC32XX GPIO node
+compatible: "ti,cc32xx-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "ti,cc32xx-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

@@ -1,7 +1,6 @@
-# Kconfig.sam - Stellaris
-#
+# Stellaris
+
 # Copyright (c) 2018 Zilogic Systems
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_STELLARIS

@@ -1,37 +1,32 @@
-title: Nordic UART
+description: Nordic UART
 
-description: >
-    This binding gives a base representation of the Nordic UART
+compatible: "nordic,nrf-uart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     tx-pin:
       type: int
       description: TX pin
-      category: required
+      required: true
 
     rx-pin:
       type: int
       description: RX pin
-      category: required
+      required: true
 
     rts-pin:
       type: int
       description: RTS pin
-      category: optional
+      required: false
 
     cts-pin:
       type: int
       description: CTS pin
-      category: optional
+      required: false

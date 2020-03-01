@@ -1,26 +1,21 @@
-#
 # Copyright (c) 2018 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MUSCA_A
 
-if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
-
 config BOARD
-	default "musca_a"
-
-endif
-
-if TRUSTED_EXECUTION_NONSECURE
-
-config BOARD
+	default "musca_a" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
 	default "musca_a_nonsecure"
 
+if GPIO
+
+config GPIO_CMSDK_AHB
+	default y
+
+config GPIO_CMSDK_AHB_PORT0
+	default y
+
 endif
-
-
 
 if SERIAL
 

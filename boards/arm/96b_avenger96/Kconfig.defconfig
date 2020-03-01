@@ -1,27 +1,19 @@
-# Kconfig - 96Boards Avenger96 board configuration
-#
+# 96Boards Avenger96 board configuration
+
 # Copyright (c) 2019 Linaro Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_96B_AVENGER96
 
 config BOARD
 	default "96b_avenger96"
 
-if UART_CONSOLE
-
 config UART_7
 	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
+	depends on UART_CONSOLE
 
 config UART_4
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 endif # BOARD_96B_AVENGER96

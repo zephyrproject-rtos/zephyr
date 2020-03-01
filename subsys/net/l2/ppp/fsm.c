@@ -396,24 +396,24 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		/* 2 + 1 + 1 (configure-[req|ack|nack|rej]) +
 		 * data_len (options)
 		 */
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) + data_len;
+		len = sizeof(ppp) + data_len;
 		break;
 
 	case PPP_DISCARD_REQ:
 		break;
 
 	case PPP_ECHO_REQ:
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
-			sizeof(u32_t) + data_len;
+		len = sizeof(ppp) + sizeof(u32_t) + data_len;
 		break;
 
 	case PPP_ECHO_REPLY:
+		len = sizeof(ppp) + net_pkt_remaining_data(req_pkt);
 		break;
 
 	case PPP_PROTOCOL_REJ:
-		len = sizeof(u8_t) + sizeof(u8_t) + sizeof(u16_t) +
-			sizeof(u16_t) + net_pkt_remaining_data(req_pkt);
-		protocol = data_len;
+		len = sizeof(ppp) + sizeof(u16_t) +
+			net_pkt_remaining_data(req_pkt);
+		protocol = PPP_LCP;
 		break;
 
 	case PPP_TERMINATE_REQ:
@@ -482,7 +482,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 				goto out_of_mem;
 			}
 		}
-
+	} else if (type == PPP_ECHO_REPLY) {
+		net_pkt_copy(pkt, req_pkt, len);
 	} else if (type == PPP_CONFIGURE_ACK || type == PPP_CONFIGURE_REQ ||
 		   type == PPP_CONFIGURE_REJ || type == PPP_CONFIGURE_NACK) {
 		/* add options */
@@ -499,9 +500,9 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		fsm ? fsm->name : "?", fsm, net_pkt_get_len(pkt), pkt,
 		data_len);
 
-	if (fsm) {
-		net_pkt_set_ppp(pkt, true);
+	net_pkt_set_ppp(pkt, true);
 
+	if (fsm) {
 		/* Do not call net_send_data() directly in order to make this
 		 * thread run before the sending happens. If we call the
 		 * net_send_data() from this thread, then in fast link (like
@@ -1099,7 +1100,10 @@ enum net_verdict ppp_fsm_recv_echo_req(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	return NET_DROP;
+	(void)ppp_send_pkt(fsm, net_pkt_iface(pkt), PPP_ECHO_REPLY,
+		id, pkt, 0);
+
+	return NET_OK;
 }
 
 enum net_verdict ppp_fsm_recv_echo_reply(struct ppp_fsm *fsm,
@@ -1128,8 +1132,6 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	net_pkt_unref(pkt);
-
 	return NET_OK;
 }
 
@@ -1149,7 +1151,7 @@ void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
 		goto quit;
 	}
 
-	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, protocol);
+	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, 0);
 
 quit:
 	return;

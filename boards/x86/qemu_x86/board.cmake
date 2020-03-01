@@ -6,14 +6,19 @@ if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
 
-set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+if(CONFIG_X86_64)
+  set(QEMU_binary_suffix x86_64)
+  set(QEMU_CPU_TYPE_${ARCH} qemu64,+x2apic)
+else()
+  set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+endif()
+
 set(QEMU_FLAGS_${ARCH}
   -m 9
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
   -nographic
-  -no-acpi
   )
 
 # TODO: Support debug

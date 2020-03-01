@@ -37,6 +37,10 @@ struct lll_scan {
 
 	u16_t interval;
 	u32_t ticks_window;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 int lll_scan_init(void);

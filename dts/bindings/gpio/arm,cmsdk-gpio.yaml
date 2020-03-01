@@ -1,21 +1,19 @@
-title: ARM CMSDK GPIO
+description: ARM CMSDK GPIO
 
-description: >
-    This binding gives a base representation of the ARM CMSDK GPIO
+compatible: "arm,cmsdk-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

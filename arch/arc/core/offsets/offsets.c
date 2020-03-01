@@ -22,8 +22,9 @@
  * completeness.
  */
 
+#include <kernel.h>
+#include <kernel_arch_data.h>
 #include <gen_offset.h>
-#include <kernel_structs.h>
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, relinquish_cause);
@@ -85,9 +86,6 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, r24);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r25);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r26);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fp);
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-GEN_OFFSET_SYM(_callee_saved_stack_t, sec_stat);
-#endif
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 GEN_OFFSET_SYM(_callee_saved_stack_t, kernel_sp);

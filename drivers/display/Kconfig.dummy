@@ -1,10 +1,7 @@
-# Kconfig - Configuration options for dummy display
+# Configuration options for dummy display
 
-#
 # Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DUMMY_DISPLAY
 	bool "Dummy display driver"
@@ -25,4 +22,4 @@ config DUMMY_DISPLAY_Y_RES
 	int "Y resolution for dummy display"
 	default 240
 
-endif #DUMMY_DISPLAY
+endif # DUMMY_DISPLAY

@@ -34,25 +34,25 @@ Supported Features
 The adafruit_feather_m0_basic_proto board configuration supports the
 following hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | Nested vector interrupt controller   |
-+-----------+------------+--------------------------------------+
-| Flash     | on-chip    | Can be used with NFFS to store files |
-+-----------+------------+--------------------------------------+
-| SYSTICK   | on-chip    | Systick                              |
-+-----------+------------+--------------------------------------+
-| WDT       | on-chip    | Watchdog                             |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | I/O ports                            |
-+-----------+------------+--------------------------------------+
-| USART     | on-chip    | Serial port                          |
-+-----------+------------+--------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface port     |
-+-----------+------------+--------------------------------------+
-| USB       | on-chip    | USB device                           |
-+-----------+------------+--------------------------------------+
++-----------+------------+------------------------------------------+
+| Interface | Controller | Driver/Component                         |
++===========+============+==========================================+
+| NVIC      | on-chip    | Nested vector interrupt controller       |
++-----------+------------+------------------------------------------+
+| Flash     | on-chip    | Can be used with LittleFS to store files |
++-----------+------------+------------------------------------------+
+| SYSTICK   | on-chip    | Systick                                  |
++-----------+------------+------------------------------------------+
+| WDT       | on-chip    | Watchdog                                 |
++-----------+------------+------------------------------------------+
+| GPIO      | on-chip    | I/O ports                                |
++-----------+------------+------------------------------------------+
+| USART     | on-chip    | Serial port                              |
++-----------+------------+------------------------------------------+
+| SPI       | on-chip    | Serial Peripheral Interface port         |
++-----------+------------+------------------------------------------+
+| USB       | on-chip    | USB device                               |
++-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

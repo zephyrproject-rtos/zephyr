@@ -1,30 +1,33 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: FXOS8700 6-axis accelerometer/magnetometer
+description: FXOS8700 6-axis accelerometer/magnetometer sensor
 
-description: >
-    This is a representation of the FXOS8700 6-axis accelerometer/magnetometer
-    sensor
+compatible: "nxp,fxos8700"
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,fxos8700"
-
     reset-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
+      description: RST pin
+        This pin defaults to active high when consumed by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
 
     int1-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
+      description: INT1 pin
+        This pin defaults to active low when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
 
     int2-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
+      description: INT2 pin
+        This pin defaults to active low when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.

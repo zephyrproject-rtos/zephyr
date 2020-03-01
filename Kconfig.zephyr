@@ -1,11 +1,8 @@
-# Kconfig - general configuration options
+# General configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Modules"
 
@@ -14,37 +11,30 @@ source "modules/Kconfig"
 
 endmenu
 
-# Include these first so that any properties (e.g. defaults) below can be
-# overridden in *.defconfig files (by defining symbols in multiple locations).
-# After merging all the symbol definitions, Kconfig picks the first property
-# (e.g. the first default) with a satisfied condition.
+# Include Kconfig.defconfig files first so that they can override defaults and
+# other symbol/choice properties by adding extra symbol/choice definitions.
+# After merging all definitions for a symbol/choice, Kconfig picks the first
+# property (e.g. the first default) with a satisfied condition.
 #
-# Board defaults should be parsed before SoC defaults, because boards usually
-# overrides SoC values.
+# Shield defaults should have precedence over board defaults, which should have
+# precedence over SoC defaults, so include them in that order.
 #
-# Note: $ARCH and $BOARD_DIR might be glob patterns.
+# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+source "boards/shields/*/Kconfig.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
-
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
 
 source "boards/Kconfig"
-
 source "$(SOC_DIR)/Kconfig"
-
 source "arch/Kconfig"
-
 source "kernel/Kconfig"
-
 source "dts/Kconfig"
-
 source "drivers/Kconfig"
-
 source "lib/Kconfig"
-
 source "subsys/Kconfig"
-
 source "ext/Kconfig"
 
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
 menu "Build and Link Features"
 
@@ -74,9 +64,9 @@ config LINKER_ORPHAN_SECTION_ERROR
 endchoice
 
 config CODE_DATA_RELOCATION
-       bool "Relocate code/data sections"
-       depends on ARM
-       help
+	bool "Relocate code/data sections"
+	depends on ARM
+	help
 	  When selected this will relocate .text, data and .bss sections from
 	  the specified files and places it in the required memory region. The
 	  files should be specified in the CMakeList.txt file with
@@ -88,17 +78,24 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
-config USE_CODE_PARTITION
-	bool "link into code-partition"
-	depends on HAS_FLASH_LOAD_OFFSET
+if HAS_FLASH_LOAD_OFFSET
+
+config USE_DT_CODE_PARTITION
+	bool "Link application into /chosen/zephyr,code-partition from devicetree"
 	help
-	  When selected application will be linked into chosen code-partition.
+	  When enabled, the application will be linked into the flash partition
+	  selected by the zephyr,code-partition property in /chosen in devicetree.
+	  When this is disabled, the flash load offset and size can be set manually
+	  below.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_OFFSET
-	hex "Kernel load offset"
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET) if USE_CODE_PARTITION
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  This option specifies the byte offset from the beginning of flash that
 	  the kernel should be loaded into. Changing this value from zero will
@@ -108,10 +105,10 @@ config FLASH_LOAD_OFFSET
 	  If unsure, leave at the default value 0.
 
 config FLASH_LOAD_SIZE
-	hex "Kernel load size"
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE) if USE_CODE_PARTITION
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load size" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
-	depends on HAS_FLASH_LOAD_OFFSET
 	help
 	  If non-zero, this option specifies the size, in bytes, of the flash
 	  area that the Zephyr image will be allowed to occupy.  If zero, the
@@ -119,6 +116,8 @@ config FLASH_LOAD_SIZE
 	  the device.
 
 	  If unsure, leave at the default value 0.
+
+endif # HAS_FLASH_LOAD_OFFSET
 
 config TEXT_SECTION_OFFSET
 	hex
@@ -175,12 +174,6 @@ config CUSTOM_SECTIONS_LD
 	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include a customized linker script fragment for inserting additional
 	  arbitrary sections.
-
-config LINK_WHOLE_ARCHIVE
-	bool "Allow linking with --whole-archive"
-	help
-	  This options allows linking external libraries with the
-	  --whole-archive option to keep all symbols.
 
 config KERNEL_ENTRY
 	string "Kernel entry symbol"
@@ -254,6 +247,28 @@ config COMPILER_OPT
 
 endmenu
 
+choice
+	prompt "Error checking behavior for CHECK macro"
+	default RUNTIME_ERROR_CHECKS
+
+config ASSERT_ON_ERRORS
+	bool "Assert on all errors"
+	help
+	  Assert on errors covered with the CHECK macro.
+
+config NO_RUNTIME_CHECKS
+	bool "No runtime error checks"
+	help
+	  Do not do any runtime checks or asserts when using the CHECK macro.
+
+config RUNTIME_ERROR_CHECKS
+	bool "Enable runtime error checks"
+	help
+	  Always perform runtime checks covered with the CHECK macro. This
+	  option is the default and the only option used during testing.
+
+endchoice
+
 menu "Build Options"
 
 config KERNEL_BIN_NAME
@@ -315,7 +330,6 @@ config BUILD_OUTPUT_S19
 
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
-	depends on BUILD_OUTPUT_HEX || BUILD_OUTPUT_BIN || BUILD_OUTPUT_S19
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
@@ -328,6 +342,12 @@ config APPLICATION_DEFINED_SYSCALL
 	help
 	  Scan additional folders inside application source folder
 	  for application defined syscalls.
+
+config MAKEFILE_EXPORTS
+	bool "Generate build metadata files named Makefile.exports"
+	help
+	  Generates a file with build information that can be read by
+	  third party Makefile-based build systems.
 
 endmenu
 endmenu
@@ -357,7 +377,7 @@ config BOOTLOADER_SRAM_SIZE
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_CODE_PARTITION
+	select USE_DT_CODE_PARTITION
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -369,8 +389,6 @@ config BOOTLOADER_MCUBOOT
 	      for the MCUboot image header
 	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
 	      targets with no built-in vector relocation mechanisms
-	    * Including dts/common/mcuboot.overlay when building the Device
-	      Tree in order to place and link the image at the slot0 offset
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
@@ -413,7 +431,6 @@ config MISRA_SANE
 	  arrays are not permitted (and gcc will enforce this).
 
 endmenu
-
 
 menu "Compatibility"
 

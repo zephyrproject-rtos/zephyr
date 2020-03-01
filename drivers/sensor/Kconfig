@@ -1,10 +1,7 @@
-# Kconfig - sensor configuration options
+# Sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SENSOR
 	bool "Sensor Drivers"
@@ -22,6 +19,13 @@ config SENSOR_INIT_PRIORITY
 	default 90
 	help
 	  Sensor initialization priority.
+
+config SENSOR_SHELL
+	bool "Enable sensor shell"
+	depends on SHELL
+	default y
+	help
+	  This shell provides access to basic sensor data.
 
 comment "Device Drivers"
 
@@ -73,6 +77,8 @@ source "drivers/sensor/hp206c/Kconfig"
 
 source "drivers/sensor/hts221/Kconfig"
 
+source "drivers/sensor/iis3dhhc/Kconfig"
+
 source "drivers/sensor/isl29035/Kconfig"
 
 source "drivers/sensor/lis2dh/Kconfig"
@@ -113,7 +119,11 @@ source "drivers/sensor/mpu6050/Kconfig"
 
 source "drivers/sensor/ms5837/Kconfig"
 
+source "drivers/sensor/ms5607/Kconfig"
+
 source "drivers/sensor/nrf5/Kconfig"
+
+source "drivers/sensor/opt3001/Kconfig"
 
 source "drivers/sensor/pms7003/Kconfig"
 
@@ -122,6 +132,8 @@ source "drivers/sensor/qdec_nrfx/Kconfig"
 source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/si7006/Kconfig"
+
+source "drivers/sensor/si7060/Kconfig"
 
 source "drivers/sensor/stts751/Kconfig"
 
@@ -133,6 +145,10 @@ source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/tmp112/Kconfig"
 
+source "drivers/sensor/tmp116/Kconfig"
+
 source "drivers/sensor/vl53l0x/Kconfig"
+
+source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 endif # SENSOR

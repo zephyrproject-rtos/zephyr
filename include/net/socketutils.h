@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+#include <net/socket.h>
+#else
+#include <posix/netdb.h>
+#endif
+
 /**
  * @brief Find port in addr:port string.
  *

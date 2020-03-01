@@ -75,7 +75,7 @@ static void usbip_header_dump(struct usbip_header *hdr)
 void get_interface(u8_t *descriptors)
 {
 	while (descriptors[0]) {
-		if (descriptors[1] == DESC_INTERFACE) {
+		if (descriptors[1] == USB_INTERFACE_DESC) {
 			LOG_DBG("interface found");
 		}
 
@@ -94,7 +94,7 @@ static int send_interfaces(const u8_t *descriptors, int connfd)
 	} __packed iface;
 
 	while (descriptors[0]) {
-		if (descriptors[1] == DESC_INTERFACE) {
+		if (descriptors[1] == USB_INTERFACE_DESC) {
 			struct usb_if_descriptor *desc = (void *)descriptors;
 
 			iface.bInterfaceClass = desc->bInterfaceClass;
@@ -209,24 +209,35 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 	}
 }
 
+bool usbip_skip_setup(void)
+{
+	u64_t setup;
+
+	LOG_DBG("Skip 8 bytes");
+
+	if (usbip_recv((void *)&setup, sizeof(setup)) != sizeof(setup)) {
+		return false;
+	}
+
+	return true;
+}
+
 static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 {
-	struct usbip_unlink *req = &hdr->u.unlink;
-	u64_t setup_padding;
 	int read;
 
 	LOG_DBG("");
 
-	read = recv(connfd, req, sizeof(hdr->u), 0);
+	/* Need to read the whole structure */
+	read = recv(connfd, &hdr->u, sizeof(hdr->u), 0);
 	if (read != sizeof(hdr->u)) {
 		LOG_ERR("recv() failed: %s", strerror(errno));
 		return;
 	}
 
-	/* Read also padding */
-	read = recv(connfd, &setup_padding, sizeof(setup_padding), 0);
-	if (read != sizeof(setup_padding)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+	/* Read USB setup, not handled */
+	if (!usbip_skip_setup()) {
+		LOG_ERR("setup skipping failed");
 		return;
 	}
 
@@ -318,7 +329,7 @@ void usbip_start(void)
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				/* Non-blocking accept */
-				k_sleep(100);
+				k_sleep(K_MSEC(100));
 
 				continue;
 			}
@@ -347,7 +358,7 @@ void usbip_start(void)
 					if (errno == EAGAIN ||
 					    errno == EWOULDBLOCK) {
 						/* Non-blocking accept */
-						k_sleep(100);
+						k_sleep(K_MSEC(100));
 
 						continue;
 					}
@@ -389,7 +400,7 @@ void usbip_start(void)
 			if (read < 0) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					/* Non-blocking accept */
-					k_sleep(100);
+					k_sleep(K_MSEC(100));
 
 					continue;
 				}
@@ -437,7 +448,7 @@ int usbip_send(u8_t ep, const u8_t *data, size_t len)
 	return send(connfd_global, data, len, 0);
 }
 
-int usbip_send_common(u8_t ep, u32_t data_len)
+bool usbip_send_common(u8_t ep, u32_t data_len)
 {
 	struct usbip_submit_rsp rsp;
 
@@ -455,5 +466,9 @@ int usbip_send_common(u8_t ep, u32_t data_len)
 
 	rsp.setup = htonl(0);
 
-	return usbip_send(ep, (u8_t *)&rsp, sizeof(rsp));
+	if (usbip_send(ep, (u8_t *)&rsp, sizeof(rsp)) == sizeof(rsp)) {
+		return true;
+	}
+
+	return false;
 }

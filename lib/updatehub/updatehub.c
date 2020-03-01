@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
 
-#include <updatehub.h>
+#include "include/updatehub.h"
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
@@ -141,7 +141,7 @@ static bool start_coap_client(void)
 	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-	int verify = 0;
+	int verify = TLS_PEER_VERIFY_NONE;
 	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
 	int protocol = IPPROTO_DTLS_1_2;
 	char port[] = "5684";
@@ -802,6 +802,5 @@ void updatehub_autohandler(void)
 	static struct k_delayed_work work;
 
 	k_delayed_work_init(&work, autohandler);
-	k_delayed_work_submit(&work, 0);
+	k_delayed_work_submit(&work, K_NO_WAIT);
 }
-

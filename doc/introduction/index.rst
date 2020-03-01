@@ -99,11 +99,9 @@ Zephyr offers a large and ever growing number of features including:
    drivers configured into the system and Allows the reuse of drivers across
    platforms that have common devices/IP blocks
 
-**Device Tree Support**
-   Use of Device Tree (DTS) to describe hardware and configuration information for
-   boards. The DTS information will be used only during compile time.
-   Information about the system is extracted from the compiled DTS and used to
-   create the application image.
+**Devicetree Support**
+   Use of :ref:`devicetree` to describe hardware. Information from devicetree
+   is used to create the application image.
 
 **Native Networking Stack supporting multiple protocols**
    Networking support is fully featured and optimized, including LwM2M and BSD
@@ -137,8 +135,8 @@ Zephyr offers a large and ever growing number of features including:
    systems. A native POSIX port, lets you build and run Zephyr as a native
    application on Linux and other OSes, aiding development and testing.
 
-**Virtual File System Interface with NFFS and FATFS Support**
-   Newtron Flash Filesystem (NFFS) and FATFS Support,
+**Virtual File System Interface with LittleFS and FATFS Support**
+   LittleFS and FATFS Support,
    FCB (Flash Circular Buffer) for memory constrained applications, and
    file system enhancements for logging and configuration.
 

@@ -45,21 +45,8 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
-static int zephyr_settings_fw_load(struct settings_store *cs,
-				   const char *subtree);
-
-static const struct settings_store_itf zephyr_settings_fw_itf = {
-	.csi_load = zephyr_settings_fw_load,
-};
-
-static struct settings_store zephyr_settings_fw_store = {
-	.cs_itf = &zephyr_settings_fw_itf
-};
-
-static int zephyr_settings_fw_load(struct settings_store *cs,
-				   const char *subtree)
+static int settings_runtime_load(void)
 {
-
 #if defined(CONFIG_BT_GATT_DIS_SETTINGS)
 	settings_runtime_set("bt/dis/model",
 			     "Zephyr Model",
@@ -91,12 +78,6 @@ static int zephyr_settings_fw_load(struct settings_store *cs,
 	return 0;
 }
 
-int settings_backend_init(void)
-{
-	settings_src_register(&zephyr_settings_fw_store);
-	return 0;
-}
-
 void main(void)
 {
 	int err;
@@ -106,7 +87,12 @@ void main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
-	settings_load();
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		settings_load();
+	}
+
+	settings_runtime_load();
 
 	printk("Bluetooth initialized\n");
 

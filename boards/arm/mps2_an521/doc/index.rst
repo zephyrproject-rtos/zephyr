@@ -21,7 +21,16 @@ CPU and the following devices:
      :height: 546px
      :alt: ARM MPS2+ AN521
 
+In addition to enabling actual hardware usage, this board configuration can
+also use QEMU to emulate the AN521 platform running on the MPS2+.
+
 More information about the board can be found at the `MPS2 FPGA Website`_.
+
+.. note::
+   This board configuration makes no claims about its suitability for use
+   with actual MPS2 hardware systems using AN521, or any other hardware
+   system. It has been tested on actual hardware, but its primary purpose is
+   for use with QEMU and unit tests.
 
 Hardware
 ********
@@ -135,7 +144,7 @@ in the following table:
 |      |            | attempt to ARM |                          |
 |      |            | mode           |                          |
 +------+------------+----------------+--------------------------+
-|  7   |SecureFault | Unauthorized   | system fatal error       |
+|  7   | SecureFault| Unauthorized   | system fatal error       |
 |      |            | access to      |                          |
 |      |            | secure region  |                          |
 |      |            | from ns space  |                          |
@@ -181,8 +190,7 @@ All GPIO controller pins are exposed via the following sequence of pin numbers:
 
 Mapping from the ARM MPS2+ AN521 Board pins to GPIO controllers:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - D0 : EXT_0
    - D1 : EXT_4
@@ -239,8 +247,7 @@ Mapping from the ARM MPS2+ AN521 Board pins to GPIO controllers:
 
 Peripheral Mapping:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - UART_3_RX : D0
    - UART_3_TX : D1
@@ -273,8 +280,7 @@ System Clock
 
 MPS2+ AN521 has several clocks connected:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - MAINCLK : 20MHz
    - SYSCLK : 20MHz
@@ -442,7 +448,7 @@ serial port:
    https://developer.arm.com/products/system-design/subsystems/corelink-sse-200-subsystem
 
 .. _IDAU:
-   https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 
 .. _AMBA®:
    https://developer.arm.com/products/architecture/system-architectures/amba

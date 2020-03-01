@@ -10,15 +10,12 @@ Interface)` that is not currently supported.
 The following are examples of ISAs and ABIs that Zephyr supports:
 
 * x86_32 ISA with System V ABI
-* x86_32 ISA with IAMCU ABI
 * ARMv7-M ISA with Thumb2 instruction set and ARM Embedded ABI (aeabi)
 * ARCv2 ISA
 
-For information on Kconfig configuration, see the
-:ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
-Architectures use a similar Kconfig configuration scheme. The
-:ref:`kconfig_tips_and_tricks` page has some general recommendations and tips
-for writing Kconfig files as well.
+For information on Kconfig configuration, see
+:ref:`setting_configuration_values`. Architectures use a Kconfig configuration
+scheme similar to boards.
 
 An architecture port can be divided in several parts; most are required and
 some are optional:
@@ -163,7 +160,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:zephyr_file:`arch/arm/core/fault.c` for an example.
+:zephyr_file:`arch/arm/core/aarch32/cortex_m/fault.c` for an example.
 
 Thread Context Switching
 ************************
@@ -302,7 +299,7 @@ gracefully exits its entry point function.
 This means implementing an architecture-specific version of
 :cpp:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
-:zephyr_file:`arch/arm//core/cortex_m/Kconfig`).
+:zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
 
 Device Drivers
 **************
@@ -408,14 +405,14 @@ CPU Idling/Power Management
 ***************************
 
 The kernel provides support for CPU power management with two functions:
-:c:func:`k_cpu_idle` and :c:func:`k_cpu_atomic_idle`.
+:c:func:`arch_cpu_idle` and :c:func:`arch_cpu_atomic_idle`.
 
-:c:func:`k_cpu_idle` can be as simple as calling the power saving instruction
-for the architecture with interrupts unlocked, for example :code:`hlt` on x86,
-:code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC. This function can be
-called in a loop within a context that does not care if it get interrupted or
-not by an interrupt before going to sleep. There are basically two scenarios
-when it is correct to use this function:
+:c:func:`arch_cpu_idle` can be as simple as calling the power saving
+instruction for the architecture with interrupts unlocked, for example
+:code:`hlt` on x86, :code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC.
+This function can be called in a loop within a context that does not care if it
+get interrupted or not by an interrupt before going to sleep. There are
+basically two scenarios when it is correct to use this function:
 
 * In a single-threaded system, in the only thread when the thread is not used
   for doing real work after initialization, i.e. it is sitting in a loop doing
@@ -423,7 +420,7 @@ when it is correct to use this function:
 
 * In the idle thread.
 
-:c:func:`k_cpu_atomic_idle`, on the other hand, must be able to atomically
+:c:func:`arch_cpu_atomic_idle`, on the other hand, must be able to atomically
 re-enable interrupts and invoke the power saving instruction. It can thus be
 used in real application code, again in single-threaded systems.
 
@@ -512,32 +509,32 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`z_arch_buffer_validate()` to test whether the current thread has
+* :cpp:func:`arch_buffer_validate()` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`z_arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :cpp:func:`arch_user_mode_enter()` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`z_arch_syscall_oops()` which generates a kernel oops when system
+* :cpp:func:`arch_syscall_oops()` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`z_arch_syscall_invoke0()` through
-  :cpp:func:`z_arch_syscall_invoke6()` invoke a system call with the
+* :cpp:func:`arch_syscall_invoke0()` through
+  :cpp:func:`arch_syscall_invoke6()` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`z_arch_is_user_context()` return nonzero if the CPU is currently
+* :cpp:func:`arch_is_user_context()` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`z_arch_mem_domain_max_partitions_get()` which indicates the max
+* :cpp:func:`arch_mem_domain_max_partitions_get()` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`z_arch_mem_domain_partition_remove()` Remove a partition from
+* :cpp:func:`arch_mem_domain_partition_remove()` Remove a partition from
   a memory domain if the currently executing thread was part of that domain.
 
-* :cpp:func:`z_arch_mem_domain_destroy()` Reset the thread's memory domain
+* :cpp:func:`arch_mem_domain_destroy()` Reset the thread's memory domain
   configuration
 
 In addition to implementing these APIs, there are some other tasks as well:
@@ -565,3 +562,54 @@ In addition to implementing these APIs, there are some other tasks as well:
   be looked up in _k_syscall_table. Bad system call IDs should jump to the
   :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
+
+API Reference
+*************
+
+Timing
+======
+
+.. doxygengroup:: arch-timing
+   :project: Zephyr
+
+Threads
+=======
+
+.. doxygengroup:: arch-threads
+   :project: Zephyr
+
+Power Management
+================
+
+.. doxygengroup:: arch-pm
+   :project: Zephyr
+
+Symmetric Multi-Processing
+==========================
+
+.. doxygengroup:: arch-smp
+   :project: Zephyr
+
+Interrupts
+==========
+
+.. doxygengroup:: arch-irq
+   :project: Zephyr
+
+Userspace
+=========
+
+.. doxygengroup:: arch-userspace
+   :project: Zephyr
+
+Benchmarking
+============
+
+.. doxygengroup:: arch-benchmarking
+   :project: Zephyr
+
+Miscellaneous Architecture APIs
+===============================
+
+.. doxygengroup:: arch-misc
+   :project: Zephyr

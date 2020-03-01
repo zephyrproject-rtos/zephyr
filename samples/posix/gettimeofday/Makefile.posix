@@ -1,0 +1,4 @@
+# This makefile builds the sample for a POSIX system, like Linux
+
+gettimeofday: src/main.c
+	$(CC) $^ -o $@

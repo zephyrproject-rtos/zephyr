@@ -35,33 +35,23 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
-# We can set "default" value for QEMU_PTY & QEMU_PIPE on cmake invocation.
+# Set up chardev for console.
 if(QEMU_PTY)
-  # Send console output to a pseudo-tty, used for running automated tests
-  set(CMAKE_QEMU_SERIAL0 pty)
+  # Redirect console to a pseudo-tty, used for running automated tests.
+  list(APPEND QEMU_FLAGS -chardev pty,id=con,mux=on)
+elseif(QEMU_PIPE)
+  # Redirect console to a pipe, used for running automated tests.
+  list(APPEND QEMU_FLAGS -chardev pipe,id=con,mux=on,path=${QEMU_PIPE})
 else()
-  if(QEMU_PIPE)
-    # Send console output to a pipe, used for running automated tests
-    set(CMAKE_QEMU_SERIAL0 pipe:${QEMU_PIPE})
-  else()
-    set(CMAKE_QEMU_SERIAL0 mon:stdio)
-  endif()
+  # Redirect console to stdio, used for manual debugging.
+  list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
 endif()
 
-# But also can set QEMU_PTY & QEMU_PIPE on *make* (not cmake) invocation,
-# like it was before cmake.
-if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-  list(APPEND QEMU_FLAGS
-    -serial
-    \${if \${QEMU_PTY}, pty, \${if \${QEMU_PIPE}, pipe:\${QEMU_PIPE}, ${CMAKE_QEMU_SERIAL0}}}
-    # NB: \$ is not supported by Ninja
-    )
-else()
-  list(APPEND QEMU_FLAGS
-    -serial
-    ${CMAKE_QEMU_SERIAL0}
-    )
-endif()
+# Connect main serial port to the console chardev.
+list(APPEND QEMU_FLAGS -serial chardev:con)
+
+# Connect monitor to the console chardev.
+list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
@@ -233,24 +223,63 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_X86_IAMCU)
-  list(APPEND PRE_QEMU_COMMANDS
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/qemu-machine-hack.py
-    $<TARGET_FILE:${logical_target_for_zephyr_elf}>
-    )
-endif()
-
 if(CONFIG_X86_64)
-  set(QEMU_KERNEL_FILE "${CMAKE_BINARY_DIR}/zephyr-qemu.elf")
+  # QEMU doesn't like 64-bit ELF files. Since we don't use any >4GB
+  # addresses, converting it to 32-bit is safe enough for emulation.
+  add_custom_target(qemu_image_target
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -O elf32-i386
+    $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
+    DEPENDS ${logical_target_for_zephyr_elf}
+    )
+
+  # Split the 'locore' and 'main' memory regions into separate executable
+  # images and specify the 'locore' as the boot kernel, in order to prevent
+  # the QEMU direct multiboot kernel loader from overwriting the BIOS and
+  # option ROM areas located in between the two memory regions.
+  # (for more details, refer to the issue zephyrproject-rtos/sdk-ng#168)
+  add_custom_target(qemu_locore_image_target
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -j .locore
+    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
+    ${CMAKE_BINARY_DIR}/zephyr-qemu-locore.elf
+    2>&1 | grep -iv \"empty loadable segment detected\" || true
+    DEPENDS qemu_image_target
+    )
+
+  add_custom_target(qemu_main_image_target
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -R .locore
+    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
+    ${CMAKE_BINARY_DIR}/zephyr-qemu-main.elf
+    2>&1 | grep -iv \"empty loadable segment detected\" || true
+    DEPENDS qemu_image_target
+    )
+
+  add_custom_target(
+    qemu_kernel_target
+    DEPENDS qemu_locore_image_target qemu_main_image_target
+    )
+
+  set(QEMU_KERNEL_FILE "${CMAKE_BINARY_DIR}/zephyr-qemu-locore.elf")
+
+  list(APPEND QEMU_EXTRA_FLAGS
+    "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr-qemu-main.elf"
+    )
 endif()
 
 if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
 
-if(CONFIG_SMP)
+# Don't just test CONFIG_SMP, there is at least one test of the lower
+# level multiprocessor API that wants an auxiliary CPU but doesn't
+# want SMP using it.
+if(NOT CONFIG_MP_NUM_CPUS MATCHES "1")
   list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_NUM_CPUS})
 endif()
 

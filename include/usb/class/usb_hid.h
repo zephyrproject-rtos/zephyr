@@ -82,7 +82,6 @@ struct hid_ops {
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	hid_int_ready_callback int_out_ready;
 #endif
-	usb_dc_status_callback status_cb;
 };
 
 /* HID Report Definitions */

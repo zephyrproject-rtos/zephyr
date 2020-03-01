@@ -1,0 +1,4 @@
+tests:
+  kernel.timer.starve:
+    build_only: true
+    tags: timer

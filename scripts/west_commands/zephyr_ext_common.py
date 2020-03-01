@@ -8,6 +8,9 @@ Note that common helpers used by the flash and debug extension
 commands are in run_common -- that's for common code used by
 commands which specifically execute runners.'''
 
+import os
+from pathlib import Path
+
 from west import log
 from west.commands import WestCommand
 
@@ -17,7 +20,8 @@ from runners.core import RunnerConfig
 class Forceable(WestCommand):
     '''WestCommand subclass for commands with a --force option.'''
 
-    def add_force_arg(self, parser):
+    @staticmethod
+    def add_force_arg(parser):
         '''Add a -f / --force option to the parser.'''
         parser.add_argument('-f', '--force', action='store_true',
                             help='Ignore any errors and try to proceed')
@@ -51,3 +55,12 @@ def cached_runner_config(build_dir, cache):
                         elf_file, hex_file, bin_file,
                         gdb=gdb, openocd=openocd,
                         openocd_search=openocd_search)
+
+# FIXME we should think of a nicer way to manage sys.path
+# for shared Zephyr code.
+def zephyr_scripts_path():
+    # This relies on this file being zephyr/scripts/foo/bar.py.
+    zephyr_base = Path(os.environ.get('ZEPHYR_BASE',
+                       Path(__file__).parent.parent.parent))
+
+    return str(zephyr_base / 'scripts')

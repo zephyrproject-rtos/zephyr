@@ -247,7 +247,7 @@ static void initialize_event_tests(void)
 	k_thread_create(&thrower_thread_data, thrower_stack,
 			K_THREAD_STACK_SIZEOF(thrower_stack),
 			(k_thread_entry_t)thrower_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
 static int test_core_event(u32_t event, bool (*func)(void))

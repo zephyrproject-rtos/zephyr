@@ -1,8 +1,8 @@
 sample:
   name: SPI FRAM Module Sample
 tests:
-  sample.driver.spi_fujitsu_fram:
+  sample.drivers.spi.fujitsu_fram:
     tags: drivers fram
     harness: fram
-    depends_on: spi
-    filter: CONFIG_SPI_1
+    depends_on: gpio spi
+    filter: dt_alias_exists("spi-1")

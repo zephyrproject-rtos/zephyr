@@ -9,22 +9,11 @@
 	compatible = "nxp,kw41z", "nxp,mkw41z4";
 
 	aliases {
-		adc-0 = &adc0;
-		lpuart-0 = &lpuart0;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_4;
-		rtc-0 = &rtc0;
 	};
 
 	chosen {
@@ -37,15 +26,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpioc 1 0>;
+			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpioa 19 0>;
+			gpios = <&gpioa 19 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpioa 18 0>;
+			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 		};
 	};
@@ -54,12 +43,40 @@
 		compatible = "gpio-keys";
 		user_button_3: button_0 {
 			label = "User SW3";
-			gpios = <&gpioc 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
 		};
 		user_button_4: button_1 {
 			label = "User SW4";
-			gpios = <&gpioc 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* A0 cannot be muxed as gpio */
+			   <1 0 &gpiob 18 0>,	/* A1 */
+			   <2 0 &gpiob 2 0>,	/* A2 */
+			   <3 0 &gpiob 3 0>,	/* A3 */
+			   <4 0 &gpiob 1 0>,	/* A4 */
+			   <6 0 &gpioc 6 0>,	/* D0 */
+			   <7 0 &gpioc 7 0>,	/* D1 */
+			   <8 0 &gpioc 19 0>,	/* D2 */
+			   <9 0 &gpioc 16 0>,	/* D3 */
+			   <10 0 &gpioc 4 0>,	/* D4 */
+			   <11 0 &gpioc 17 0>,	/* D5 */
+			   <12 0 &gpioc 18 0>,	/* D6 */
+			   <13 0 &gpioa 1 0>,	/* D7 */
+			   <14 0 &gpioa 0 0>,	/* D8 */
+			   <15 0 &gpioc 1 0>,	/* D9 */
+			   <16 0 &gpioa 19 0>,	/* D10 */
+			   <17 0 &gpioa 16 0>,	/* D11 */
+			   <18 0 &gpioa 17 0>,	/* D12 */
+			   <19 0 &gpioa 18 0>,	/* D13 */
+			   <20 0 &gpioc 3 0>,	/* D14 */
+			   <21 0 &gpioc 2 0>;	/* D15 */
 	};
 };
 
@@ -74,7 +91,7 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 1 0>;
+		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 	};
 };
 

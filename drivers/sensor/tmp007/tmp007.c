@@ -16,25 +16,14 @@
 
 #include "tmp007.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP007);
+LOG_MODULE_REGISTER(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
-int tmp007_reg_read(struct tmp007_data *drv_data, u8_t reg, u16_t *val)
+int tmp007_reg_read(struct tmp007_data *drv_data,
+		u8_t reg, u16_t *val)
 {
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = (u8_t *)val,
-			.len = 2,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	if (i2c_transfer(drv_data->i2c, msgs, 2, TMP007_I2C_ADDRESS) < 0) {
+	if (i2c_burst_read(drv_data->i2c, TMP007_I2C_ADDRESS,
+				reg, (u8_t *) val, 2) < 0) {
+		LOG_ERR("I2C read failed");
 		return -EIO;
 	}
 
@@ -118,10 +107,10 @@ int tmp007_init(struct device *dev)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(CONFIG_TMP007_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP007_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    CONFIG_TMP007_I2C_MASTER_DEV_NAME);
+			    DT_INST_0_TI_TMP007_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -137,6 +126,7 @@ int tmp007_init(struct device *dev)
 
 struct tmp007_data tmp007_driver;
 
-DEVICE_AND_API_INIT(tmp007, CONFIG_TMP007_NAME, tmp007_init, &tmp007_driver,
+DEVICE_AND_API_INIT(tmp007, DT_INST_0_TI_TMP007_LABEL, tmp007_init,
+		    &tmp007_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &tmp007_driver_api);

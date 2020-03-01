@@ -1,0 +1,14 @@
+identifier: actinius_icarus_ns
+name: Actinius Icarus Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 256
+supported:
+  - i2c
+  - pwm
+  - watchdog

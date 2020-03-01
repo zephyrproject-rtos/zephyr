@@ -37,6 +37,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 			      const unsigned long long num, enum pad_type padding,
 			      int min_width);
 
+#ifdef CONFIG_PRINTK
 /**
  * @brief Default character output routine that does nothing
  * @param c Character to swallow
@@ -47,7 +48,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  * @return 0
  */
 /* LCOV_EXCL_START */
- __attribute__((weak)) int z_arch_printk_char_out(int c)
+__attribute__((weak)) int arch_printk_char_out(int c)
 {
 	ARG_UNUSED(c);
 
@@ -56,7 +57,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 }
 /* LCOV_EXCL_STOP */
 
-int (*_char_out)(int) = z_arch_printk_char_out;
+int (*_char_out)(int) = arch_printk_char_out;
 
 /**
  * @brief Install the character output routine for printk
@@ -84,6 +85,7 @@ void *__printk_get_hook(void)
 {
 	return _char_out;
 }
+#endif /* CONFIG_PRINTK */
 
 static void print_err(out_func_t out, void *ctx)
 {
@@ -219,12 +221,16 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'p':
-				  out('0', ctx);
-				  out('x', ctx);
-				  /* left-pad pointers with zeros */
-				  padding = PAD_ZERO_BEFORE;
-				  min_width = 8;
-				  /* Fall through */
+				out('0', ctx);
+				out('x', ctx);
+				/* left-pad pointers with zeros */
+				padding = PAD_ZERO_BEFORE;
+				if (IS_ENABLED(CONFIG_64BIT)) {
+					min_width = 16;
+				} else {
+					min_width = 8;
+				}
+				/* Fall through */
 			case 'x':
 			case 'X': {
 				unsigned long long x;
@@ -281,6 +287,7 @@ still_might_format:
 	}
 }
 
+#ifdef CONFIG_PRINTK
 #ifdef CONFIG_USERSPACE
 struct buf_out_context {
 	int count;
@@ -344,7 +351,7 @@ void vprintk(const char *fmt, va_list ap)
 
 	z_vprintk(char_out, &ctx, fmt, ap);
 }
-#endif
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_str_out(char *c, size_t n)
 {
@@ -356,14 +363,13 @@ void z_impl_k_str_out(char *c, size_t n)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_str_out, c, n)
+static inline void z_vrfy_k_str_out(char *c, size_t n)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(c, n));
 	z_impl_k_str_out((char *)c, n);
-
-	return 0;
 }
-#endif
+#include <syscalls/k_str_out_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief Output a string
@@ -400,6 +406,7 @@ void printk(const char *fmt, ...)
 	}
 	va_end(ap);
 }
+#endif /* CONFIG_PRINTK */
 
 /**
  * @brief Output an unsigned long long in hex format

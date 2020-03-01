@@ -17,19 +17,15 @@
 
 /* TODO: Decide whether to continue using BLE format or switch to RFC 4122 */
 
-/* Base UUID : 0000[0000]-0000-1000-8000-00805F9B34FB ->
- * { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
- *   0x00, 0x10, 0x00, 0x00, [0x00, 0x00], 0x00, 0x00 }
- * 0x2800    : 0000[2800]-0000-1000-8000-00805F9B34FB ->
- * { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
- *   0x00, 0x10, 0x00, 0x00, [0x00, 0x28], 0x00, 0x00 }
+/* Base UUID : 0000[0000]-0000-1000-8000-00805F9B34FB
+ * 0x2800    : 0000[2800]-0000-1000-8000-00805F9B34FB
  *  little endian 0x2800 : [00 28] -> no swapping required
  *  big endian 0x2800    : [28 00] -> swapping required
  */
 static const struct bt_uuid_128 uuid128_base = {
-	.uuid.type = BT_UUID_TYPE_128,
-	.val = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
-		 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	.uuid = { BT_UUID_TYPE_128 },
+	.val = { BT_UUID_128_ENCODE(
+		0x00000000, 0x0000, 0x1000, 0x8000, 0x00805F9B34FB) }
 };
 
 static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
@@ -80,13 +76,17 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	return -EINVAL;
 }
 
-bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
+bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
 {
-	/* Copy UUID from packet data to internal bt_uuid */
+	/* Copy UUID from packet data/internal variable to internal bt_uuid */
 	switch (data_len) {
 	case 2:
 		uuid->type = BT_UUID_TYPE_16;
 		BT_UUID_16(uuid)->val = sys_get_le16(data);
+		break;
+	case 4:
+		uuid->type = BT_UUID_TYPE_32;
+		BT_UUID_32(uuid)->val = sys_get_le32(data);
 		break;
 	case 16:
 		uuid->type = BT_UUID_TYPE_128;
@@ -98,36 +98,6 @@ bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
 	return true;
 }
 
-bool bt_uuid_create(struct bt_uuid *uuid, u8_t *data, u8_t data_len)
-{
-	/* Copy UUID from internal variable to internal bt_uuid */
-	union {
-		u16_t *u16;
-		u32_t *u32;
-		u8_t *u128;
-	} v;
-
-	v.u128 = data;
-	switch (data_len) {
-	case 2:
-		uuid->type = BT_UUID_TYPE_16;
-		BT_UUID_16(uuid)->val = *v.u16;
-		break;
-	case 4:
-		uuid->type = BT_UUID_TYPE_32;
-		BT_UUID_32(uuid)->val = *v.u32;
-		break;
-	case 16:
-		uuid->type = BT_UUID_TYPE_128;
-		memcpy(&BT_UUID_128(uuid)->val, v.u128, 16);
-		break;
-	default:
-		return false;
-	}
-	return true;
-}
-
-#if defined(CONFIG_BT_DEBUG)
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
 	u32_t tmp1, tmp5;
@@ -138,7 +108,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 		snprintk(str, len, "%04x", BT_UUID_16(uuid)->val);
 		break;
 	case BT_UUID_TYPE_32:
-		snprintk(str, len, "%04x", BT_UUID_32(uuid)->val);
+		snprintk(str, len, "%08x", BT_UUID_32(uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
 		memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));
@@ -156,13 +126,3 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 		return;
 	}
 }
-
-const char *bt_uuid_str_real(const struct bt_uuid *uuid)
-{
-	static char str[37];
-
-	bt_uuid_to_str(uuid, str, sizeof(str));
-
-	return str;
-}
-#endif /* CONFIG_BT_DEBUG */

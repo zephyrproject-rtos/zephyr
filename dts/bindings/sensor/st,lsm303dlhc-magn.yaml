@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2018 Philémon Jaermann
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STMicroelectronics MEMS sensors LSM303DLHC
+description: STMicroelectronics LSM303DLHC magnetometer sensor
 
-description: >
-    This binding gives a base representation of LSM303DLHC magnetometer sensor
+compatible: "st,lsm303dlhc-magn"
 
-inherits:
-    !include i2c-device.yaml
-
-properties:
-    compatible:
-      constraint: "st,lsm303dlhc-magn"
+include: i2c-device.yaml

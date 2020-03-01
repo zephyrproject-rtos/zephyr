@@ -1,7 +1,6 @@
-# Kconfig - Particle Argon board configuration
-#
+# Particle Argon board configuration
+
 # Copyright (c) 2018 Matthias Boesl
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_PARTICLE_ARGON
@@ -9,30 +8,21 @@ if BOARD_PARTICLE_ARGON
 config BOARD
 	default "particle_argon"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_0
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_2
-       default y
-
-endif # SPI
+	default y
+	depends on SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK
@@ -40,12 +30,9 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

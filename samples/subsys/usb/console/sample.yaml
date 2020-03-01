@@ -1,6 +1,6 @@
 sample:
   name: Console over USB
 tests:
-  sample.subsys.usb.console:
+  sample.usb.console:
     depends_on: usb_device usb_cdc
     tags: usb

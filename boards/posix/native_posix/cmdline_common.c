@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 #include "posix_board_if.h"
 #include "zephyr/types.h"
 #include "cmdline_common.h"
@@ -121,7 +121,7 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 			   const char *option)
 {
 	int error = 0;
-	char *endptr;
+	char *endptr = NULL;
 
 	switch (type) {
 	case 'b':
@@ -162,10 +162,11 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 		break;
 	default:
 		posix_print_error_and_exit(CMD_TYPE_ERROR, type);
+		/* Unreachable */
 		break;
 	}
 
-	if (!error && *endptr != 0) {
+	if (!error && endptr && *endptr != 0) {
 		error = 1;
 	}
 

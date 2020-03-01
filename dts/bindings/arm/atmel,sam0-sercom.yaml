@@ -1,17 +1,12 @@
-title: Atmel SERCOM binding
+description: Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit
 
-description: >
-    Binding for the Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit.
+compatible: "atmel,sam0-sercom"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-sercom"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

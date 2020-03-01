@@ -1,15 +1,10 @@
-# Kconfig.pl011
-#
 # Copyright (c) 2018 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig UART_PL011
 	bool "ARM PL011 UART Driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_FAMILY_ARM
 	help
 	  This option enables the UART driver for the PL011
 
@@ -24,5 +19,26 @@ config UART_PL011_PORT1
 	bool "Enable driver for UART 1"
 	help
 	  Build the driver to utilize UART controller Port 1.
+
+config UART_PL011_SHARED_IRQ
+	bool
+
+config UART_PL011_PORT0_SHARED_IRQ
+	bool "Shared IRQ for UART 0"
+	depends on SHARED_IRQ_0
+	depends on UART_PL011_PORT0
+	select UART_PL011_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
+	  driver dispatches the interrupt to the UART driver.
+
+config UART_PL011_PORT1_SHARED_IRQ
+	bool "Shared IRQ for UART 1"
+	depends on SHARED_IRQ_1
+	depends on UART_PL011_PORT1
+	select UART_PL011_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
+	  driver dispatches the interrupt to the UART driver.
 
 endif # UART_PL011

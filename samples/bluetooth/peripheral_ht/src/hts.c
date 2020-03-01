@@ -12,8 +12,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <bluetooth/bluetooth.h>
@@ -22,7 +22,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-static struct bt_gatt_ccc_cfg htmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t simulate_htm;
 static u8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
@@ -47,7 +46,8 @@ BT_GATT_SERVICE_DEFINE(hts_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HTS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT, BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
-	BT_GATT_CCC(htmc_ccc_cfg, htmc_ccc_cfg_changed),
+	BT_GATT_CCC(htmc_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 	/* more optional Characteristics */
 );
 

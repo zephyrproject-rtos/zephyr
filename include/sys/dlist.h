@@ -445,32 +445,6 @@ static inline void sys_dlist_insert(sys_dnode_t *successor, sys_dnode_t *node)
 	successor->prev = node;
 }
 
-static inline void __deprecated sys_dlist_insert_after(sys_dlist_t *list,
-	sys_dnode_t *insert_point, sys_dnode_t *node)
-{
-	if (insert_point == NULL) {
-		sys_dlist_prepend(list, node);
-	} else {
-		node->next = insert_point->next;
-		node->prev = insert_point;
-		insert_point->next->prev = node;
-		insert_point->next = node;
-	}
-}
-
-static inline void __deprecated sys_dlist_insert_before(sys_dlist_t *list,
-	sys_dnode_t *insert_point, sys_dnode_t *node)
-{
-	if (insert_point == NULL) {
-		sys_dlist_append(list, node);
-	} else {
-		node->prev = insert_point->prev;
-		node->next = insert_point;
-		insert_point->prev->next = node;
-		insert_point->prev = node;
-	}
-}
-
 /**
  * @brief insert node at position
  *

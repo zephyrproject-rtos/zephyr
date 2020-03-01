@@ -1,11 +1,9 @@
-# Kconfig - MCUXpresso SDK FTM PWM
-#
-# Copyright (c) 2017, NXP
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# MCUXpresso SDK FTM PWM
 
-menuconfig PWM_MCUX_FTM
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MCUX_FTM
 	bool "MCUX FTM PWM driver"
 	depends on HAS_MCUX_FTM
 	help

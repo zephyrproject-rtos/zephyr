@@ -656,7 +656,7 @@ int arc_core_mpu_get_max_domain_partition_regions(void)
 int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 {
 	int r_index;
-
+	int key = arch_irq_lock();
 
 	/*
 	 * For ARC MPU v3, overlapping is not supported.
@@ -667,13 +667,17 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	/*  match and the area is in one region */
 	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + (size - 1))) {
 		if (_is_user_accessible_region(r_index, write)) {
-			return 0;
+			r_index = 0;
 		} else {
-			return -EPERM;
+			r_index = -EPERM;
 		}
+	} else {
+		r_index = -EPERM;
 	}
 
-	return -EPERM;
+	arch_irq_unlock(key);
+
+	return r_index;
 }
 #endif /* CONFIG_USERSPACE */
 
@@ -711,9 +715,9 @@ static int arc_mpu_init(struct device *arg)
 
 		/* record the static region which can be split */
 		if (mpu_config.mpu_regions[i].attr & REGION_DYNAMIC) {
-			if (dynamic_regions_num >
+			if (dynamic_regions_num >=
 			MPU_DYNAMIC_REGION_AREAS_NUM) {
-				LOG_ERR("no enough dynamic regions %d",
+				LOG_ERR("not enough dynamic regions %d",
 				 dynamic_regions_num);
 				return -EINVAL;
 			}

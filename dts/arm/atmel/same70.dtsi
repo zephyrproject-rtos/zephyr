@@ -10,6 +10,10 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -200,6 +204,7 @@
 			peripheral-id = <29>;
 			status = "disabled";
 			label = "ADC_0";
+			#io-channel-cells = <1>;
 		};
 
 		adc1: adc@40064000 {
@@ -209,6 +214,7 @@
 			peripheral-id = <40>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 
 		porta: gpio@400e0e00 {

@@ -14,6 +14,7 @@ void test_main(void)
 		ztest_unit_test(test_fs_write),
 		ztest_unit_test(test_fs_read),
 		ztest_unit_test(test_fs_close),
+		ztest_unit_test(test_fs_fd_leak),
 		ztest_unit_test(test_fs_unlink),
 		ztest_unit_test(test_fs_mkdir),
 		ztest_unit_test(test_fs_readdir));

@@ -1,7 +1,6 @@
-# Kconfig - TI CC26x2R1 LaunchXL board
-#
+# TI CC26x2R1 LaunchXL board
+
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_CC26X2R1_LAUNCHXL
@@ -9,11 +8,8 @@ if BOARD_CC26X2R1_LAUNCHXL
 config BOARD
 	default "cc26x2r1_launchxl"
 
-if SPI
-
 config SPI_0
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_CC26X2R1_LAUNCHXL

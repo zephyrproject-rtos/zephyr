@@ -792,24 +792,16 @@ static inline void irqb_int_handler(struct device *port,
 	k_sem_give(&mcr20a->isr_sem);
 }
 
-static inline void set_reset(struct device *dev, u32_t value)
-{
-	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	gpio_pin_write(mcr20a->reset_gpio,
-		       DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, value);
-}
-
 static void enable_irqb_interrupt(struct mcr20a_context *mcr20a,
 				 bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(mcr20a->irq_gpio,
-					 DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
-	} else {
-		gpio_pin_disable_callback(mcr20a->irq_gpio,
-					  DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
-	}
+	gpio_flags_t flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(mcr20a->irq_gpio,
+				     DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
+				     flags);
 }
 
 static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
@@ -1269,22 +1261,24 @@ static int power_on_and_setup(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	u8_t timeout = 6U;
-	u32_t status;
+	int pin;
 	u8_t tmp = 0U;
 
 	if (!PART_OF_KW2XD_SIP) {
-		set_reset(dev, 0);
+		gpio_pin_set(mcr20a->reset_gpio,
+			     DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, 1);
 		z_usleep(150);
-		set_reset(dev, 1);
+		gpio_pin_set(mcr20a->reset_gpio,
+			     DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, 0);
 
 		do {
 			z_usleep(50);
 			timeout--;
-			gpio_pin_read(mcr20a->irq_gpio,
-				      DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN, &status);
-		} while (status && timeout);
+			pin = gpio_pin_get(mcr20a->irq_gpio,
+					   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
+		} while (pin > 0 && timeout);
 
-		if (status) {
+		if (pin) {
 			LOG_ERR("Timeout, failed to get WAKE IRQ");
 			return -EIO;
 		}
@@ -1344,9 +1338,7 @@ static inline int configure_gpios(struct device *dev)
 
 	gpio_pin_configure(mcr20a->irq_gpio,
 			   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_PUD_PULL_UP |
-			   GPIO_INT_ACTIVE_LOW);
+			   GPIO_INPUT | DT_INST_0_NXP_MCR20A_IRQB_GPIOS_FLAGS);
 
 	if (!PART_OF_KW2XD_SIP) {
 		/* setup gpio for the modems reset */
@@ -1361,8 +1353,8 @@ static inline int configure_gpios(struct device *dev)
 
 		gpio_pin_configure(mcr20a->reset_gpio,
 				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN,
-				   GPIO_DIR_OUT);
-		set_reset(dev, 0);
+				   GPIO_OUTPUT_ACTIVE |
+				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_FLAGS);
 	}
 
 	return 0;
@@ -1436,7 +1428,7 @@ static int mcr20a_init(struct device *dev)
 	k_thread_create(&mcr20a->mcr20a_rx_thread, mcr20a->mcr20a_rx_stack,
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	return 0;
 }

@@ -1,9 +1,7 @@
-# Kconfig - STM32H747I DISCOVERY board configuration
-#
+# STM32H747I DISCOVERY board configuration
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32H747I_DISCO_M7 || BOARD_STM32H747I_DISCO_M4
 
@@ -38,30 +36,25 @@ config CLOCK_STM32_D3PPRE
 	default 2
 
 config STM32H7_DUAL_CORE
-	def_bool y
+	default y
 
-# Dual core boot configuration
-if STM32H7_DUAL_CORE
-# Boot method is selected in common file to avoid desync issues
+# Dual core boot configuration. Boot method is selected in common file to avoid
+# desync issues.
 choice STM32H7_DUAL_CORE_BOOT
 	# Use out of the box config by default
 	# default STM32H7_BOOT_CM4_CM7
 	default STM32H7_BOOT_CM7_CM4GATED
+	depends on STM32H7_DUAL_CORE
 endchoice
-endif # STM32H7_DUAL_CORE
 
-if UART_CONSOLE
-
+# Change this to assign UART_1 (console) to M4 core
 config UART_1
 	default y if BOARD_STM32H747I_DISCO_M7
+	depends on UART_CONSOLE
 
-endif # UART_CONSOLE
-
-if SERIAL
-
+# Change this to assign UART_8 to M4 core
 config UART_8
 	default y if BOARD_STM32H747I_DISCO_M7
-
-endif # SERIAL
+	depends on SERIAL
 
 endif # BOARD_STM32H747I_DISCO_M7

@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_NSIM_HS_SMP
 
@@ -36,4 +33,10 @@ config ARC_CONNECT
 config MP_NUM_CPUS
 	default 2
 
-endif #SOC_NSIM_HS_SMP
+# When SMP is enabled, use gfrc as wall clock, so sloppy
+# idle should be y
+config SYSTEM_CLOCK_SLOPPY_IDLE
+	default y
+	depends on SMP
+
+endif # SOC_NSIM_HS_SMP

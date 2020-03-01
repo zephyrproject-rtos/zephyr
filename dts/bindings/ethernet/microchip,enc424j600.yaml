@@ -1,0 +1,19 @@
+# Copyright (c) 2019, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ENC424J600 standalone 100BASE-T Ethernet controller with SPI interface
+
+compatible: "microchip,enc424j600"
+
+include: [spi-device.yaml, ethernet.yaml]
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: true
+      description: Interrupt pin.
+
+        The interrupt pin of ENC424J600 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.

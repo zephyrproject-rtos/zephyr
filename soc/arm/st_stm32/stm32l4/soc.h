@@ -19,16 +19,15 @@
 #ifndef _STM32L4X_SOC_H_
 #define _STM32L4X_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 
 #include <autoconf.h>
 #include <stm32l4xx.h>
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <devicetree.h>
 
 #ifdef CONFIG_EXTI_STM32
 #include <stm32l4xx_ll_exti.h>
@@ -56,7 +55,7 @@
 #include <stm32l4xx_ll_spi.h>
 #endif
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32l4xx_ll_i2c.h>
 #endif
 
@@ -64,11 +63,15 @@
 #include <stm32l4xx_ll_iwdg.h>
 #endif
 
+#ifdef CONFIG_WWDG_STM32
+#include <stm32l4xx_ll_wwdg.h>
+#endif
+
 #ifdef CONFIG_ENTROPY_STM32_RNG
 #include <stm32l4xx_ll_rng.h>
 #endif
 
-#if defined(CONFIG_RTC_STM32) || defined(CONFIG_COUNTER_RTC_STM32)
+#if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32l4xx_ll_rtc.h>
 #include <stm32l4xx_ll_exti.h>
 #include <stm32l4xx_ll_pwr.h>
@@ -85,6 +88,15 @@
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32l4xx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32l4xx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_STM32_LPTIM_TIMER
+#include <stm32l4xx_ll_lptim.h>
+#include <stm32l4xx_ll_system.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

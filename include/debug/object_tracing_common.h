@@ -33,15 +33,18 @@
  * @param name Name of the trace list.
  * @param obj Object to be added in the trace list.
  */
-#define SYS_TRACING_OBJ_INIT(name, obj)		       \
-	do {					       \
-		unsigned int key;		       \
-						       \
-		key = irq_lock();		       \
-		(obj)->__next =  _trace_list_ ## name; \
-		_trace_list_ ## name = obj;	       \
-		irq_unlock(key);		       \
-	}					       \
+#define SYS_TRACING_OBJ_INIT(name, obj)			       \
+	do {						       \
+		unsigned int key;			       \
+							       \
+		key = irq_lock();			       \
+		if (!(obj)->__linked) {			       \
+			(obj)->__next =  _trace_list_ ## name; \
+			_trace_list_ ## name = obj;	       \
+			(obj)->__linked = 1;		       \
+		}					       \
+		irq_unlock(key);			       \
+	}						       \
 	while (false)
 
 /**

@@ -1,33 +1,33 @@
-
 .. _sanitycheck_script:
 
-Zephyr Sanity Tests
-###################
+Sanity Tests
+#############
 
 This script scans for the set of unit test applications in the git repository
 and attempts to execute them. By default, it tries to build each test
 case on boards marked as default in the board definition file.
 
 The default options will build the majority of the tests on a defined set of
-boards and will run in an emulated environment (QEMU) if available for the
+boards and will run in an emulated environment if available for the
 architecture or configuration being tested.
 
 In normal use, sanitycheck runs a limited set of kernel tests (inside
-QEMU).  Because of its limited text execution coverage, sanitycheck
+an emulator).  Because of its limited text execution coverage, sanitycheck
 cannot guarantee local changes will succeed in the full build
 environment, but it does sufficient testing by building samples and
 tests for different boards and different configurations to help keep the
-full code tree buildable.
+complete code tree buildable.
 
 When using (at least) one ``-v`` option, sanitycheck's console output
 shows for every test how the test is run (qemu, native_posix, etc.) or
-whether the image is just built.  There are a few reasons why sanitycheck
+whether the binary was just built.  There are a few reasons why sanitycheck
 only builds a test and doesn't run it:
 
 - The test is marked as ``build_only: true`` in its ``.yaml``
   configuration file.
 - The test configuration has defined a ``harness`` but you don't have
   it or haven't set it up.
+- The target device is not connected and not available for flashing
 - You or some higher level automation invoked sanitycheck with
   ``--build-only``.
 
@@ -49,139 +49,12 @@ all possible tests using the following options:
         $ ./scripts/sanitycheck --all --enable-slow
 
 This will build for all available boards and run all applicable tests in
-a simulated (QEMU) environment.
+a simulated (for example QEMU) environment.
 
-The sanitycheck script accepts the following optional arguments:
+The list of command line options supported by sanitycheck can be viewed using::
 
-  -h, --help            Show the complete and most up-to-date help message
-                        and exit.
-  -p PLATFORM, --platform PLATFORM
-                        Platform filter for testing. This option may be used
-                        multiple times. Testcases will only be built/run on
-                        the platforms specified. If this option is not used,
-                        then platforms marked as default in the platform
-                        metadata file will be chosen to build and test.
-  -a ARCH, --arch ARCH  Arch filter for testing. Takes precedence over
-                        --platform. If unspecified, test all arches. Multiple
-                        invocations are treated as a logical 'or' relationship
-  -t TAG, --tag TAG     Specify tags to restrict which tests to run by tag
-                        value. Default is to not do any tag filtering.
-                        Multiple invocations are treated as a logical 'or'
-                        relationship
-  -e EXCLUDE_TAG, --exclude-tag EXCLUDE_TAG
-                        Specify tags of tests that should not run. Default is
-                        to run all tests with all tags.
-  -f, --only-failed     Run only those tests that failed the previous sanity
-                        check invocation.
-  -c CONFIG, --config CONFIG
-                        Specify platform configuration values filtering. This
-                        can be specified two ways: <config>=<value> or just
-                        <config>. The defconfig for all platforms will be
-                        checked. For the <config>=<value> case, only match
-                        defconfig that have that value defined. For the
-                        <config> case, match defconfig that have that value
-                        assigned to any value. Prepend a '!' to invert the
-                        match.
-  -s TEST, --test TEST  Run only the specified test cases. These are named by
-                        <path to test project relative to --testcase-
-                        root>/<testcase.yaml section name>
-  -l, --all             Build/test on all platforms. Any --platform arguments
-                        ignored.
-  -o TESTCASE_REPORT, --testcase-report TESTCASE_REPORT
-                        Output a CSV spreadsheet containing results of the
-                        test run
-  -d DISCARD_REPORT, --discard-report DISCARD_REPORT
-                        Output a CSV spreadsheet showing tests that were
-                        skipped and why
-  --compare-report COMPARE_REPORT
-                        Use this report file for size comparison
-  -B SUBSET, --subset SUBSET
-                        Only run a subset of the tests, 1/4 for running the
-                        first 25%, 3/5 means run the 3rd fifth of the total.
-                        This option is useful when running a large number of
-                        tests on different hosts to speed up execution time.
-  -N, --ninja           Use the Ninja generator with CMake
-  -y, --dry-run         Create the filtered list of test cases, but don't
-                        actually run them. Useful if you're just interested in
-                        --discard-report
-  --list-tags           list all tags in selected tests
-  --list-tests          list all tests.
-  --detailed-report FILENAME
-                        Generate a junit report with detailed testcase
-                        results.
-  -r, --release         Update the benchmark database with the results of this
-                        test run. Intended to be run by CI when tagging an
-                        official release. This database is used as a basis for
-                        comparison when looking for deltas in metrics such as
-                        footprint
-  -w, --warnings-as-errors
-                        Treat warning conditions as errors
-  -v, --verbose         Emit debugging information, call multiple times to
-                        increase verbosity
-  -i, --inline-logs     Upon test failure, print relevant log data to stdout
-                        instead of just a path to it
-  --log-file FILENAME   log also to file
-  -m, --last-metrics    Instead of comparing metrics from the last --release,
-                        compare with the results of the previous sanity check
-                        invocation
-  -u, --no-update       do not update the results of the last run of the
-                        sanity checks
-  -F FILENAME, --load-tests FILENAME
-                        Load list of tests to be run from file.
-  -E FILENAME, --save-tests FILENAME
-                        Save list of tests to be run to file.
-  -b, --build-only      Only build the code, do not execute any of it in QEMU
-  -j JOBS, --jobs JOBS  Number of cores to use when building, defaults to
-                        number of CPUs * 2
-  --device-testing      Test on device directly. Specify the serial device to
-                        use with the --device-serial option.
-  --device-serial DEVICE_SERIAL
-                        Serial device for accessing the board (e.g.,
-                        /dev/ttyACM0)
-  --show-footprint      Show footprint statistics and deltas since last
-                        release.
-  -H FOOTPRINT_THRESHOLD, --footprint-threshold FOOTPRINT_THRESHOLD
-                        When checking test case footprint sizes, warn the user
-                        if the new app size is greater then the specified
-                        percentage from the last release. Default is 5. 0 to
-                        warn on any increase on app size
-  -D, --all-deltas      Show all footprint deltas, positive or negative.
-                        Implies --footprint-threshold=0
-  -O OUTDIR, --outdir OUTDIR
-                        Output directory for logs and binaries. This directory
-                        will be deleted unless '--no-clean' is set.
-  -n, --no-clean        Do not delete the outdir before building. Will result
-                        in faster compilation since builds will be incremental
-  -T TESTCASE_ROOT, --testcase-root TESTCASE_ROOT
-                        Base directory to recursively search for test cases.
-                        All testcase.yaml files under here will be processed.
-                        May be called multiple times. Defaults to the
-                        'samples' and 'tests' directories in the Zephyr tree.
-  -A BOARD_ROOT, --board-root BOARD_ROOT
-                        Directory to search for board configuration files. All
-                        .yaml files in the directory will be processed.
-  -z SIZE, --size SIZE  Don't run sanity checks. Instead, produce a report to
-                        stdout detailing RAM/ROM sizes on the specified
-                        filenames. All other command line arguments ignored.
-  -S, --enable-slow     Execute time-consuming test cases that have been
-                        marked as 'slow' in testcase.yaml. Normally these are
-                        only built.
-  -R, --enable-asserts  Build all test cases with assertions enabled. (This is
-                        the default)
-  --disable-asserts     Build all test cases with assertions disabled.
-  -Q, --error-on-deprecations
-                        Error on deprecation warnings.
-  -x EXTRA_ARGS, --extra-args EXTRA_ARGS
-                        Extra CMake cache entries to define when building test
-                        cases. May be called multiple times. The key-value
-                        entries will be prefixed with -D before being passed
-                        to CMake. E.g "sanitycheck -x=USE_CCACHE=0" will
-                        translate to "cmake -DUSE_CCACHE=0" which will
-                        ultimately disable ccache.
-  --enable-coverage     Enable code coverage when building unit tests and when
-                        targeting the native_posix board
-  -C, --coverage        Generate coverage report for unit tests, and tests and
-                        samples run in native_posix. Implies --enable-coverage.
+        $ ./scripts/sanitycheck --help
+
 
 
 Board Configuration
@@ -199,20 +72,29 @@ required for best test coverage for this specific board:
 
 .. code-block:: yaml
 
-        identifier: tinytile
-        name: tinyTILE
-        type: mcu
-        arch: x86
-        toolchain:
-          - zephyr
-          - issm
-        ram: 52
-        flash: 192
-        testing:
-          default: true
-          ignore_tags:
-            - net
-            - bluetooth
+  identifier: frdm_k64f
+  name: NXP FRDM-K64F
+  type: mcu
+  arch: arm
+  toolchain:
+    - zephyr
+    - gnuarmemb
+    - xtools
+  supported:
+    - arduino_gpio
+    - arduino_i2c
+    - netif:eth
+    - adc
+    - i2c
+    - nvs
+    - spi
+    - gpio
+    - usb_device
+    - watchdog
+    - can
+    - pwm
+  testing:
+    default: true
 
 
 identifier:
@@ -278,9 +160,36 @@ Test Cases
 
 Test cases are detected by the presence of a 'testcase.yaml' or a 'sample.yaml'
 files in the application's project directory. This file may contain one or more
-entries in the test section each identifying a test scenario. The name of
-the test case only needs to be unique for the test cases specified in
-that testcase meta-data.
+entries in the test section each identifying a test scenario.
+
+The name of each testcase needs to be unique in the context of the overall
+testsuite and has to follow basic rules:
+
+#. The format of the test identifier shall be a string without any spaces or
+   special characters (allowed characters: alphanumric and [\_=]) consisting of
+   multiple sections delimited with a dot (.).
+
+#. Each test identifier shall start with a section followed by a subsection
+   separated by a dot. For example, a test that covers semaphores in the kernel
+   shall start with ``kernel.sempahore``.
+
+#. All test identifiers within a testcase.yaml file need to be unique. For
+   example a testcase.yaml file covering semaphores in the kernel can have:
+
+   * ``kernel.semaphore``: For general semaphore tests
+   * ``kernel.semaphore.stress``: Stress testng semaphores in the kernel.
+
+#. Depending on the nature of the test, an identifier can consist of at least
+   two sections:
+
+   * Ztest tests: The individual testcases in the ztest testsuite will be
+     concatenated to identifier in the testcase.yaml file generating unique
+     identifiers for every testcase in the suite.
+
+   * Standalone tests and samples: This type of test should at least have 3
+     sections in the test identifier in the testcase.yaml (or sample.yaml) file.
+     The last section of the name shall signify the test itself.
+
 
 Test cases are written using the YAML syntax and share the same structure as
 samples. The following is an example test with a few options that are
@@ -290,11 +199,11 @@ explained in this document.
 ::
 
         tests:
-          test:
+          bluetooth.gatt:
             build_only: true
             platform_whitelist: qemu_cortex_m3 qemu_x86
             tags: bluetooth
-          test_br:
+          bluetooth.gatt.br:
             build_only: true
             extra_args: CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
@@ -312,14 +221,14 @@ related to the sample and what is being demonstrated:
           name: hello world
           description: Hello World sample, the simplest Zephyr application
         tests:
-          test:
+          sample.basic.hello_world:
             build_only: true
             tags: tests
             min_ram: 16
-          singlethread:
+          sample.basic.hello_world.singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
-            filter: not CONFIG_BT and not CONFIG_GPIO_SCH
+            filter: not CONFIG_BT
             tags: tests
             min_ram: 16
 
@@ -405,8 +314,9 @@ extra_sections: <list of extra binary sections>
     here. They will not be included in the size calculation.
 
 harness: <string>
-    A harness string needed to run the tests successfully. This can be as simple as
-    a loopback wiring or a complete hardware test setup for sensor and IO testing.
+    A harness string needed to run the tests successfully. This can be as
+    simple as a loopback wiring or a complete hardware test setup for
+    sensor and IO testing.
     Usually pertains to external dependency domains but can be anything such as
     console, sensor, net, keyboard, or Bluetooth.
 
@@ -420,6 +330,13 @@ harness_config: <harness configuration options>
 
     type: <one_line|multi_line> (required)
         Depends on the regex string to be matched
+
+
+    record: <recording options>
+
+      regex: <expression> (required)
+        Any string that the particular test case prints to record test
+        results.
 
     regex: <expression> (required)
         Any string that the particular test case prints to confirm test
@@ -527,8 +444,9 @@ filter: <expression>
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or --discard-report can help show why particular test cases
-were skipped.
+running with -v or examining the discard report
+(:file:`sanitycheck_discard.csv`) can help show why particular test cases were
+skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
@@ -548,15 +466,84 @@ Beside being able to run tests in QEMU and other simulated environments,
 sanitycheck supports running most of the tests on real devices and produces
 reports for each run with detailed FAIL/PASS results.
 
-To use this feature, run sanitycheck with the following new options::
+
+Executing tests on a single device
+===================================
+
+To use this feature on a single connected device, run sanitycheck with
+the following new options::
 
 	scripts/sanitycheck --device-testing --device-serial /dev/ttyACM0 -p \
 	frdm_k64f  -T tests/kernel
 
 The ``--device-serial`` option denotes the serial device the board is connected to.
 This needs to be accessible by the user running sanitycheck. You can run this on
-only one board at a time, specified using the
-``--platform`` option.
+only one board at a time, specified using the ``--platform`` option.
+
+
+Executing tests on multiple devices
+===================================
+
+To build and execute tests on multiple devices connected to the host PC, a
+hardware map needs to be created with all connected devices and their
+details such as the serial device and their IDs if available. Run the following
+command to produce the hardware map::
+
+    ./scripts/sanitycheck --generate-hardware-map map.yml
+
+The generated hardware map file (map.yml) will have the list of connected
+devices, for example::
+
+  - available: true
+    id: OSHW000032254e4500128002ab98002784d1000097969900
+    platform: unknown
+    product: DAPLink CMSIS-DAP
+    runner: pyocd
+    serial: /dev/cu.usbmodem146114202
+  - available: true
+    id: 000683759358
+    platform: unknown
+    product: J-Link
+    runner: unknown
+    serial: /dev/cu.usbmodem0006837593581
+
+
+Any options marked as 'unknown' need to be changed and set with the correct
+values, in the above example both the platform names and the runners need to be
+replaced with the correct values corresponding to the connected hardware. In
+this example we are using a reel_board and an nrf52840_pca10056::
+
+  - available: true
+    id: OSHW000032254e4500128002ab98002784d1000097969900
+    platform: reel_board
+    product: DAPLink CMSIS-DAP
+    runner: pyocd
+    serial: /dev/cu.usbmodem146114202
+  - available: true
+    id: 000683759358
+    platform: nrf52840_pca10056
+    product: J-Link
+    runner: nrfjprog
+    serial: /dev/cu.usbmodem0006837593581
+
+If the map file already exists, then new entries are added and existing entries
+will be updated. This way you can use one single master hardware map and update
+it for every run to get the correct serial devices and status of the devices.
+
+With the hardware map ready, you can run any tests by pointing to the map
+file::
+
+  ./scripts/sanitycheck --device-testing --hardware-map map.yml -T samples/hello_world/
+
+The above command will result in sanitycheck building tests for the platforms
+defined in the hardware map and subsequently flashing and running the tests
+on those platforms.
+
+.. note::
+
+  Currently only boards with support for both pyocd and nrfjprog are supported
+  with the hardware map features. Boards that require other runners to flash the
+  Zephyr binary are still work in progress.
 
 To produce test reports, use the ``--detailed-report FILENAME`` option which will
 generate an XML file using the JUNIT syntax. This file can be used to generate

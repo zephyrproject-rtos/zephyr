@@ -1,63 +1,37 @@
-# Kconfig - iMX7 M4 core series
-#
+# iMX7 M4 core series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MCIMX7_M4
 
 config SOC
-	string
 	default "mcimx7d"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 200000000
-
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_IMX_CCM
-	default y
-
-endif # CLOCK_CONTROL
 
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_IMX
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_IMX
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_IMX
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_IMX
 	default y
-
-endif # PWM
-
-if IPM
+	depends on PWM
 
 config IPM_IMX
 	default y
-
-endif # IPM
+	depends on IPM
 
 endif # SOC_MCIMX7_M4

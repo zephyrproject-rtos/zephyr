@@ -2,7 +2,7 @@ sample:
   name: CMSIS_RTOS_V2 Dining Philosophers
 common:
   extra_args: "-DDEBUG_PRINTF=1"
-  tags: cmsis_rtos_v2_philosopher
+  tags: cmsis_rtos
   min_ram: 32
   min_flash: 34
   platform_exclude: qemu_xtensa qemu_x86_64
@@ -16,9 +16,9 @@ common:
       - ".*THINKING.*"
       - ".*EATING.*"
 tests:
-  sample.philosopher:
-    tags: cmsis_rtos_v2_philosopher
-  sample.philosopher.same_prio:
+  sample.portability.cmsis_rtos_v2.philosopher:
+    tags: cmsis_rtos
+  sample.portability.cmsis_rtos_v2.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
-  sample.philosopher.semaphores:
+  sample.portability.cmsis_rtos_v2.philosopher.semaphores:
     extra_args: "-DFORKS=SEMAPHORES"

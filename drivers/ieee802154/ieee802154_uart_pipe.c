@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_uart_pipe.h"

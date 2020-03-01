@@ -1,43 +1,41 @@
-#
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP Kinetis ADC12
+description: NXP Kinetis ADC12
 
-description: >
-    This binding gives a base representation of the NXP Kinetis ADC12
+compatible: "nxp,kinetis-adc12"
 
-inherits:
-    !include adc.yaml
+include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-adc12"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clk-source:
       type: int
-      category: required
+      required: true
       description: converter clock source
 
     clk-divider:
       type: int
-      category: required
+      required: true
       description: clock divider for the converter
 
     alternate-voltage-reference:
       type: boolean
-      category: optional
+      required: false
       description: use alternate voltage reference source
 
     sample-time:
       type: int
-      category: required
+      required: true
       description: sample time in clock cycles
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - input

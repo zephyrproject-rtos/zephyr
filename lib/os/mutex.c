@@ -21,7 +21,7 @@ static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 	return (struct k_mutex *)obj->data;
 }
 
-static bool check_sys_mutex_addr(u32_t addr)
+static bool check_sys_mutex_addr(struct sys_mutex *addr)
 {
 	/* sys_mutex memory is never touched, just used to lookup the
 	 * underlying k_mutex, but we don't want threads using mutexes
@@ -41,15 +41,16 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
 	return k_mutex_lock(kernel_mutex, timeout);
 }
 
-Z_SYSCALL_HANDLER(z_sys_mutex_kernel_lock, mutex, timeout)
+static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
+						 s32_t timeout)
 {
 	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;
 	}
 
-	return z_impl_z_sys_mutex_kernel_lock((struct sys_mutex *)mutex,
-					      timeout);
+	return z_impl_z_sys_mutex_kernel_lock(mutex, timeout);
 }
+#include <syscalls/z_sys_mutex_kernel_lock_mrsh.c>
 
 int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
@@ -67,12 +68,12 @@ int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 	return 0;
 }
 
-Z_SYSCALL_HANDLER(z_sys_mutex_kernel_unlock, mutex)
+static inline int z_vrfy_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
 	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;
 	}
 
-	return z_impl_z_sys_mutex_kernel_unlock((struct sys_mutex *)mutex);
+	return z_impl_z_sys_mutex_kernel_unlock(mutex);
 }
-
+#include <syscalls/z_sys_mutex_kernel_unlock_mrsh.c>

@@ -39,9 +39,3 @@ networking devices, can easily integrate it with Zephyr.
 
 See :zephyr_file:`drivers/wifi/simplelink/simplelink_sockets.c` for a sample
 implementation on how to integrate network offloading at socket level.
-
-API Reference
-*************
-
-.. doxygengroup:: socket_offload
-   :project: Zephyr

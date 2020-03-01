@@ -357,12 +357,7 @@ u8_t *coap_next_token(void);
  *
  * @return a new message id
  */
-static inline u16_t coap_next_id(void)
-{
-	static u16_t message_id;
-
-	return ++message_id;
-}
+u16_t coap_next_id(void);
 
 /**
  * @brief Return the values associated with the option of value @a

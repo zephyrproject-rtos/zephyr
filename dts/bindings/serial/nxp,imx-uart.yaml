@@ -1,33 +1,25 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: iMX Uart
+description: iMX UART
 
-description: >
-    This binding gives a base representation of the iMX UART
+compatible: "nxp,imx-uart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     modem-mode:
      type: int
-     category: required
+     required: true
      description: Set the UART Port to modem mode 0 (dce) 64 (dte)
 
     rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral

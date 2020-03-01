@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef __ZEPHYR__
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -55,7 +55,7 @@ void dump_addrinfo(const struct addrinfo *ai)
 	       ((struct sockaddr_in *)ai->ai_addr)->sin_port);
 }
 
-int main(void)
+void main(void)
 {
 	static struct addrinfo hints;
 	struct addrinfo *res;
@@ -76,7 +76,7 @@ int main(void)
 
 	if (st != 0) {
 		printf("Unable to resolve address, quitting\n");
-		return 1;
+		return;
 	}
 
 #if 0
@@ -116,7 +116,7 @@ int main(void)
 
 		if (len < 0) {
 			printf("Error reading response\n");
-			return 1;
+			return;
 		}
 
 		if (len == 0) {
@@ -130,6 +130,4 @@ int main(void)
 	printf("\n");
 
 	(void)close(sock);
-
-	return 0;
 }

@@ -270,10 +270,12 @@ static int fatfs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 	res = f_readdir(zdp->dirp, &fno);
 	if (res == FR_OK) {
-		entry->type = ((fno.fattrib & AM_DIR) ?
-			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 		strcpy(entry->name, fno.fname);
-		entry->size = fno.fsize;
+		if (entry->name[0] != 0) {
+			entry->type = ((fno.fattrib & AM_DIR) ?
+			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
+			entry->size = fno.fsize;
+		}
 	}
 
 	return translate_error(res);

@@ -15,8 +15,7 @@
 
 #include "iAQcore.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(IAQ_CORE);
+LOG_MODULE_REGISTER(IAQ_CORE, CONFIG_SENSOR_LOG_LEVEL);
 
 static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -51,7 +50,7 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 			return 0;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	if (drv_data->status == 0x01) {

@@ -1,20 +1,15 @@
-#
 # Copyright (c) 2019, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: RISC-V CPU INTC
+description: RISC-V CPU interrupt controller
 
-description: >
-    This binding describes the RISC-V CPU Interrupt Controller
+compatible: "riscv,cpu-intc"
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "riscv,cpu-intc"
+  "#interrupt-cells":
+      const: 1
 
-"#cells":
+interrupt-cells:
   - irq

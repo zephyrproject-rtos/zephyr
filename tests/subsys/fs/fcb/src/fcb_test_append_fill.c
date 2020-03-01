@@ -32,7 +32,7 @@ void fcb_test_append_fill(void)
 
 	while (1) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
-		if (rc == FCB_ERR_NOSPACE) {
+		if (rc == -ENOSPC) {
 			break;
 		}
 		if (loc.fe_sector == &test_fcb_sector[0]) {

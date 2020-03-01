@@ -8,7 +8,7 @@
  *
  */
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <kernel.h>
@@ -210,24 +210,32 @@ static inline void handle_addr(struct device *dev)
 		}
 	}
 
-	if (data->current.is_write || data->current.len > 2) {
+	if (data->current.is_write) {
 		LL_I2C_ClearFlag_ADDR(i2c);
 		return;
 	}
-	if (data->current.len == 0U) {
+	/* according to STM32F1 errata we need to handle these corner cases in
+	 * specific way.
+	 * Please ref to STM32F10xxC/D/E I2C peripheral Errata sheet 2.14.1
+	 */
+	if (data->current.len == 0U && IS_ENABLED(CONFIG_SOC_SERIES_STM32F1X)) {
 		LL_I2C_GenerateStopCondition(i2c);
-		LL_I2C_ClearFlag_ADDR(i2c);
 	} else if (data->current.len == 1U) {
 		/* Single byte reception: enable NACK and clear POS */
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 		LL_I2C_ClearFlag_ADDR(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
+#endif
 	} else if (data->current.len == 2U) {
-		/* 2-byte reception: enable NACK and set POS */
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 		LL_I2C_ClearFlag_ADDR(i2c);
+#endif
+		/* 2-byte reception: enable NACK and set POS */
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 		LL_I2C_EnableBitPOS(i2c);
 	}
+	LL_I2C_ClearFlag_ADDR(i2c);
 }
 
 static inline void handle_txe(struct device *dev)

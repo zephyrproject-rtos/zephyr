@@ -1,11 +1,5 @@
-title: STM32 F2 Flash Controller
+description: STM32 F2 flash controller
 
-description: >
-    This binding gives a base representation of the STM32 F2 Flash Controller
+compatible: "st,stm32f2-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "st,stm32f2-flash-controller"
+include: flash-controller.yaml

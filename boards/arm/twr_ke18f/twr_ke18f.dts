@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_ke18f512vlx16.dtsi>
 #include <dt-bindings/clock/kinetis_scg.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP Kinetis KE18 MCU Tower System Module";
@@ -30,6 +31,7 @@
 		blue-pwm-led = &tri_blue_pwm_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		can-primary = &can0;
 	};
 
 	chosen {
@@ -44,32 +46,32 @@
 	leds {
 		compatible = "gpio-leds";
 		orange_led: led_0 {
-			gpios = <&gpioc 13 0>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED D9";
 		};
 		yellow_led: led_1 {
-			gpios = <&gpioc 12 0>;
+			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "User LED D8";
 		};
 		green_led: led_2 {
-			gpios = <&gpioc 11 0>;
+			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
 			label = "User LED D7";
 		};
 		red_led: led_3 {
-			gpios = <&gpioc 10 0>;
+			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
 			label = "User LED D6";
 		};
 
 		tri_red_led: led_4 {
-			gpios = <&gpiod 16 0>;
+			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Red)";
 		};
 		tri_green_led: led_5 {
-			gpios = <&gpiod 15 0>;
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Green)";
 		};
 		tri_blue_led: led_6 {
-			gpios = <&gpiob 5 0>;
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Blue)";
 		};
 	};
@@ -77,32 +79,32 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		orange_pwm_led: led_pwm_0 {
-			pwms = <&ftm3 7 60000>;
+			pwms = <&pwm3 7 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D9";
 		};
 		yellow_pwm_led: led_pwm_1 {
-			pwms = <&ftm3 6 60000>;
+			pwms = <&pwm3 6 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D8";
 		};
 		green_pwm_led: led_pwm_2 {
-			pwms = <&ftm3 5 60000>;
+			pwms = <&pwm3 5 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D7";
 		};
 		red_pwm_led: led_pwm_3 {
-			pwms = <&ftm3 4 60000>;
+			pwms = <&pwm3 4 60000 PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D6";
 		};
 
 		tri_red_pwm_led: led_pwm_4 {
-			pwms = <&ftm0 1 60000>;
+			pwms = <&pwm0 1 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Red)";
 		};
 		tri_green_pwm_led: led_pwm_5 {
-			pwms = <&ftm0 0 60000>;
+			pwms = <&pwm0 0 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Green)";
 		};
 		tri_blue_pwm_led: led_pwm_6 {
-			pwms = <&ftm0 5 60000>;
+			pwms = <&pwm0 5 60000 PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Blue)";
 		};
 	};
@@ -111,11 +113,11 @@
 		compatible = "gpio-keys";
 		user_button_2: button_0 {
 			label = "User SW2";
-			gpios = <&gpiod 3 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
-			gpios = <&gpiod 6 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -158,11 +160,11 @@
 	current-speed = <115200>;
 };
 
-&ftm0 {
+&pwm0 {
 	status = "okay";
 };
 
-&ftm3 {
+&pwm3 {
 	status = "okay";
 };
 
@@ -173,7 +175,7 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";
-		reset-gpios = <&gpioc 15 0>;
+		reset-gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -192,6 +194,10 @@
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
+};
+
+&temp0 {
+	status = "okay";
 };
 
 &can0 {

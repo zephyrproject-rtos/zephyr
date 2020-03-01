@@ -1,11 +1,7 @@
+# Config for counter alarm sample
 
-# Kconfig - Config for counter alarm sample
-#
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 config COUNTER_RTC0
 	bool

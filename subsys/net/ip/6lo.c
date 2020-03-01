@@ -1353,7 +1353,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		frag = pkt->buffer;
 		net_buf_add(frag, diff);
 		cursor = frag->data + diff;
-		memmove(cursor, frag->data, frag->len);
+		memmove(cursor, frag->data, frag->len - diff);
 	} else {
 		NET_DBG("Not enough tailroom. Get new fragment");
 		cursor =  pkt->buffer->data;
@@ -1434,6 +1434,11 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 	} else {
 		if (iphc & NET_6LO_IPHC_DAC_1) {
 #if defined(CONFIG_NET_6LO_CONTEXT)
+			if (!dst) {
+				NET_ERR("Dst context doesn't exists");
+				goto fail;
+			}
+
 			cursor = uncompress_da_ctx(iphc, cursor, ipv6, dst, pkt);
 #else
 			NET_ERR("Context based uncompression not enabled");

@@ -1,17 +1,13 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: CC1200 802.15.4 Wireless Transceiver
+description: Texas Instruments CC1200 802.15.4 wireless transceiver
 
-description: >
-    This is a representation of the CC1200 wireless transceiver.
+compatible: "ti,cc1200"
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc1200"
+    int-gpios:
+      type: phandle-array
+      required: true

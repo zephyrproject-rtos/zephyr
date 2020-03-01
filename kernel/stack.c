@@ -15,7 +15,7 @@
 #include <linker/sections.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <sys/__assert.h>
+#include <sys/check.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
@@ -71,32 +71,38 @@ s32_t z_impl_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
+static inline s32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
+					      u32_t num_entries)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
-
-	return z_impl_k_stack_alloc_init((struct k_stack *)stack, num_entries);
+	return z_impl_k_stack_alloc_init(stack, num_entries);
 }
+#include <syscalls/k_stack_alloc_init_mrsh.c>
 #endif
 
-void k_stack_cleanup(struct k_stack *stack)
+int k_stack_cleanup(struct k_stack *stack)
 {
-	__ASSERT_NO_MSG(z_waitq_head(&stack->wait_q) == NULL);
+	CHECKIF(z_waitq_head(&stack->wait_q) != NULL) {
+		return -EAGAIN;
+	}
 
 	if ((stack->flags & K_STACK_FLAG_ALLOC) != (u8_t)0) {
 		k_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
 	}
+	return 0;
 }
 
-void z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
+int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
 	struct k_thread *first_pending_thread;
 	k_spinlock_key_t key;
 
-	__ASSERT(stack->next != stack->top, "stack is full");
+	CHECKIF(stack->next == stack->top) {
+		return -ENOMEM;
+	}
 
 	key = k_spin_lock(&stack->lock);
 
@@ -105,30 +111,26 @@ void z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 	if (first_pending_thread != NULL) {
 		z_ready_thread(first_pending_thread);
 
-		z_set_thread_return_value_with_data(first_pending_thread,
+		z_thread_return_value_set_with_data(first_pending_thread,
 						   0, (void *)data);
 		z_reschedule(&stack->lock, key);
-		return;
 	} else {
 		*(stack->next) = data;
 		stack->next++;
 		k_spin_unlock(&stack->lock, key);
 	}
 
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_push, stack_p, data)
+static inline int z_vrfy_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
-	struct k_stack *stack = (struct k_stack *)stack_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(stack, K_OBJ_STACK));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(stack->next != stack->top,
-				    "stack is full"));
 
-	z_impl_k_stack_push(stack, data);
-	return 0;
+	return z_impl_k_stack_push(stack, data);
 }
+#include <syscalls/k_stack_push_mrsh.c>
 #endif
 
 int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout)
@@ -160,12 +162,12 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_pop, stack, data, timeout)
+static inline int z_vrfy_k_stack_pop(struct k_stack *stack,
+				     stack_data_t *data, s32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, sizeof(stack_data_t)));
-
-	return z_impl_k_stack_pop((struct k_stack *)stack, (stack_data_t *)data,
-				 timeout);
+	return z_impl_k_stack_pop(stack, data, timeout);
 }
+#include <syscalls/k_stack_pop_mrsh.c>
 #endif

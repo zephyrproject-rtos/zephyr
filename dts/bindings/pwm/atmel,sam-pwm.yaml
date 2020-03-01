@@ -1,43 +1,38 @@
-#
 # Copyright (c) 2019, Aurelien Jarno
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Atmel SAM PWM
+description: Atmel SAM PWM
 
-description: >
-    This binding gives a base representation of the Atmel SAM PWM
+compatible: "atmel,sam-pwm"
 
-inherits:
-    !include [pwm.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "atmel,sam-pwm"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true
 
     prescaler:
       type: int
-      category: required
+      required: true
       description: Clock prescaler at the input of the PWM (0 to 10)
 
     divider:
       type: int
-      category: required
+      required: true
       description: Clock divider at the input of the PWM (1 to 255)
 
-"#cells":
+    "#pwm-cells":
+      const: 2
+
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

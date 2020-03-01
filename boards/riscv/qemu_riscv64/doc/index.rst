@@ -21,8 +21,7 @@ Get the Toolchain and QEMU
 The minimum version of the `Zephyr SDK tools
 <https://www.zephyrproject.org/developers/#downloads>`_
 with toolchain and QEMU support for the RISV64 architecture is v0.10.2.
-Please see the `installation instructions
-<https://docs.zephyrproject.org/latest/getting_started/index.html#install-the-required-tools>`_
+Please see the :ref:`installation instructions <install-required-tools>`
 for more details.
 
 Programming and Debugging
@@ -61,6 +60,8 @@ QEMU, and display the following console output:
         threadB: Hello World from riscv64!
         threadA: Hello World from riscv64!
         threadB: Hello World from riscv64!
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 Debugging
 =========

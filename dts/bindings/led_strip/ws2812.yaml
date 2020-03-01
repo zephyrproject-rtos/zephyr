@@ -1,0 +1,35 @@
+# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2019, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 (and compatible) LED controller
+
+  Driver bindings for daisy chains of WS2812 (and compatible devices
+  like SK6812) LED controllers.
+
+  The PWM protocol is described here:
+  https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
+
+  A 0 bit's pulse width is between 200 and 500 ns. A 1 bit's is
+  at least 550 ns, with 700 ns or so typical. Pixel order is GRB.
+
+  You can connect the device to either a GPIO on your SoC, or a SPI
+  MOSI line. Use the worldsemi,ws2812-spi.yaml or
+  worldsemi,ws2812-gpio.yaml bindings instead of this file after
+  making your choice.
+
+properties:
+  chain-length:
+    type: int
+    required: true
+    description: |
+      The number of devices in the daisy-chain.
+
+  has-white-channel:
+    type: boolean
+    description: |
+      If true, the device has a white channel. This is not supported
+      by the led_strip.h API, so the white data on the wire will be
+      zero if set.

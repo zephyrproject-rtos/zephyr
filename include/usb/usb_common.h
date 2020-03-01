@@ -45,7 +45,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 #define ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 
-#define BCD(x) ((((x) / 10) << 4) | ((x) / 10))
+#define BCD(x) ((((x) / 10) << 4) | ((x) % 10))
 
 /* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE		18
@@ -65,10 +65,14 @@
 #define USB_INTERFACE_DESC		0x04
 #define USB_ENDPOINT_DESC		0x05
 #define USB_DEVICE_QUAL_DESC		0x06
+#define USB_OTHER_SPEED			0x07
+#define USB_INTERFACE_POWER		0x08
 #define USB_INTERFACE_ASSOC_DESC	0x0B
 #define USB_DEVICE_CAPABILITY_DESC	0x10
 #define USB_HID_DESC			0x21
 #define USB_HID_REPORT_DESC		0x22
+#define USB_CS_INTERFACE_DESC		0x24
+#define USB_CS_ENDPOINT_DESC		0x25
 #define USB_DFU_FUNCTIONAL_DESC		0x21
 #define USB_ASSOCIATION_DESC		0x0B
 #define USB_BINARY_OBJECT_STORE_DESC	0x0F
@@ -82,11 +86,6 @@
 #define BCDDEVICE_RELNUM		(BCD(KERNEL_VERSION_MAJOR) << 8 | \
 					BCD(KERNEL_VERSION_MINOR))
 
-/* 100mA max power, per 2mA units */
-/* USB 1.1 spec indicates 100mA(max) per unit load, up to 5 loads */
-#define MAX_LOW_POWER			0x32
-#define MAX_HIGH_POWER			0xFA
-
 /* Highest value of Frame Number in SOF packets. */
 #define USB_SOF_MAX			2047
 
@@ -96,10 +95,13 @@
  * D5:Remote Wakeup -> 0,
  * D4...0:Reserved -> 0
  */
-#define USB_CONFIGURATION_ATTRIBUTES_REMOTE_WAKEUP  0x20
-#define USB_CONFIGURATION_ATTRIBUTES                0xC0       \
-	| (COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP,        \
-	   (USB_CONFIGURATION_ATTRIBUTES_REMOTE_WAKEUP), (0)))
+#define USB_CONFIGURATION_ATTRIBUTES_REMOTE_WAKEUP	BIT(5)
+#define USB_CONFIGURATION_ATTRIBUTES_SELF_POWERED	BIT(6)
+#define USB_CONFIGURATION_ATTRIBUTES BIT(7) \
+	| ((COND_CODE_1(CONFIG_USB_SELF_POWERED, \
+	   (USB_CONFIGURATION_ATTRIBUTES_SELF_POWERED), (0)))   \
+	| (COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP,         \
+	   (USB_CONFIGURATION_ATTRIBUTES_REMOTE_WAKEUP), (0))))
 
 /* Classes */
 #define COMMUNICATION_DEVICE_CLASS	0x02

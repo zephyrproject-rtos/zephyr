@@ -52,7 +52,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	int ret;
 	s64_t end = 0;
 
-	__ASSERT(!(z_is_in_isr() && timeout != K_NO_WAIT), "");
+	__ASSERT(!(arch_is_in_isr() && timeout != K_NO_WAIT), "");
 
 	if (timeout > 0) {
 		end = k_uptime_get() + timeout;
@@ -61,26 +61,9 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	while (true) {
 		u32_t level_num, block_num;
 
-		/* There is a "managed race" in alloc that can fail
-		 * (albeit in a well-defined way, see comments there)
-		 * with -EAGAIN when simultaneous allocations happen.
-		 * Retry exactly once before sleeping to resolve it.
-		 * If we're so contended that it fails twice, then we
-		 * clearly want to block.
-		 */
-		for (int i = 0; i < 2; i++) {
-			ret = z_sys_mem_pool_block_alloc(&p->base, size,
-							&level_num, &block_num,
-							&block->data);
-			if (ret != -EAGAIN) {
-				break;
-			}
-		}
-
-		if (ret == -EAGAIN) {
-			ret = -ENOMEM;
-		}
-
+		ret = z_sys_mem_pool_block_alloc(&p->base, size,
+						 &level_num, &block_num,
+						 &block->data);
 		block->id.pool = pool_id(p);
 		block->id.level = level_num;
 		block->id.block = block_num;
@@ -205,14 +188,23 @@ void k_thread_system_pool_assign(struct k_thread *thread)
 {
 	thread->resource_pool = _HEAP_MEM_POOL;
 }
+#else
+#define _HEAP_MEM_POOL	NULL
 #endif
 
 void *z_thread_malloc(size_t size)
 {
 	void *ret;
+	struct k_mem_pool *pool;
 
-	if (_current->resource_pool != NULL) {
-		ret = k_mem_pool_malloc(_current->resource_pool, size);
+	if (k_is_in_isr()) {
+		pool = _HEAP_MEM_POOL;
+	} else {
+		pool = _current->resource_pool;
+	}
+
+	if (pool) {
+		ret = k_mem_pool_malloc(pool, size);
 	} else {
 		ret = NULL;
 	}

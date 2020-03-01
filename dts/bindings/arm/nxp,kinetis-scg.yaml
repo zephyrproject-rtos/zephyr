@@ -1,129 +1,121 @@
-#
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP Kinetis SCG (System Clock Generator)
+description: NXP Kinetis SCG (System Clock Generator) IP node
 
-description: >
-    This is a representation of the NXP Kinetis SCG IP node
+compatible: "nxp,kinetis-scg"
 
-inherits:
-    !include [clock.yaml, base.yaml]
+include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-scg"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     clk-divider-slow:
       type: int
       description: system clock to slow clock divider
-      category: required
+      required: true
 
     clk-divider-bus:
       type: int
       description: system clock to bus clock divider
-      category: required
+      required: true
 
     clk-divider-core:
       type: int
       description: system clock to core clock divider
-      category: required
+      required: true
 
     clk-source:
       type: int
       description: system clock source
-      category: optional
+      required: false
 
     sosc-freq:
       type: int
       description: system oscillator (e.g. xtal) frequency
-      category: optional
+      required: false
 
     sosc-mode:
       type: int
       description: system oscillator mode
-      category: optional
+      required: false
 
     sosc-divider-1:
       type: int
       description: system oscillator divider 1
-      category: optional
+      required: false
 
     sosc-divider-2:
       type: int
       description: system oscillator divider 2
-      category: optional
+      required: false
 
     sirc-range:
       type: int
       description: slow internal reference clock range in MHz
-      category: required
+      required: true
 
     sirc-divider-1:
       type: int
       description: slow internal reference clock divider 1
-      category: required
+      required: true
 
     sirc-divider-2:
       type: int
       description: slow internal reference clock divider 2
-      category: required
+      required: true
 
     firc-range:
       type: int
       description: fast internal reference clock range in MHz
-      category: required
+      required: true
 
     firc-divider-1:
       type: int
       description: fast internal reference clock divider 1
-      category: required
+      required: true
 
     firc-divider-2:
       type: int
       description: fast internal reference clock divider 2
-      category: required
+      required: true
 
     spll-source:
       type: int
       description: system phase-locked loop clock source
-      category: required
+      required: true
 
     spll-divider-pre:
       type: int
       description: system phase-locked loop reference clock divider
-      category: required
+      required: true
 
     spll-multiplier:
       type: int
       description: system phase-locked loop reference clock multiplier
-      category: required
+      required: true
 
     spll-divider-1:
       type: int
       description: system phase-locked loop divider 1
-      category: required
+      required: true
 
     spll-divider-2:
       type: int
       description: system phase-locked loop divider 2
-      category: required
+      required: true
 
     clkout-source:
       type: int
       description: clockout clock source
-      category: optional
+      required: false
 
     "#clock-cells":
-      description: should be 1.
+      const: 1
 
-"#cells":
+clock-cells:
   - name

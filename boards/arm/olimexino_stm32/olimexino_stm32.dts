@@ -21,11 +21,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
 		yellow_led_2: led_2 {
-			gpios = <&gpioa 1 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
 	};
@@ -34,7 +34,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpioc 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -42,6 +42,7 @@
 		led0 = &green_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
+		can-primary = &can1;
 	};
 };
 
@@ -51,21 +52,15 @@ uext_serial: &usart1 {};
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 };
 
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_a>;
-	pinctrl-names = "default";
 };
 
 &i2c1 {
@@ -84,7 +79,7 @@ uext_serial: &usart1 {};
 
 &spi2 {
 	status = "okay";
-	cs-gpios = <&gpiod 2 0>;
+	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,mmc-spi-slot";
@@ -97,7 +92,7 @@ uext_serial: &usart1 {};
 
 &usb {
 	status = "okay";
-	disconnect-gpios = <&gpioc 12 0>;
+	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 };
 
 &timers1 {
@@ -109,5 +104,14 @@ uext_serial: &usart1 {};
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&can1 {
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <5>;
+	phase-seg2 = <6>;
 	status = "okay";
 };

@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Cypress Flash Controller
+description: Cypress flash controller
 
-description: >
-    This binding gives a base representation of the Cypress Flash Controller
+compatible: "cypress,psoc6-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "cypress,psoc6-flash-controller"
+include: flash-controller.yaml

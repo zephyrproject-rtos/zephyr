@@ -1,0 +1,22 @@
+# Copyright (c) 2019, Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 GPIO controller
+
+compatible: "espressif,esp32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+        required: true
+
+    label:
+        required: true
+
+    "#gpio-cells":
+        const: 2
+
+gpio-cells:
+  - pin
+  - flags

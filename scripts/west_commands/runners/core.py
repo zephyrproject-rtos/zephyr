@@ -94,18 +94,21 @@ class NetworkPortHelper:
         cmd = ['netstat', '-a', '-n', '-p', 'tcp']
         return self._parser_darwin(cmd)
 
-    def _parser_windows(self, cmd):
+    @staticmethod
+    def _parser_windows(cmd):
         out = subprocess.check_output(cmd).split(b'\r\n')
         used_bytes = [x.split()[1].rsplit(b':', 1)[1] for x in out
                       if x.startswith(b'  TCP')]
         return {int(b) for b in used_bytes}
 
-    def _parser_linux(self, cmd):
+    @staticmethod
+    def _parser_linux(cmd):
         out = subprocess.check_output(cmd).splitlines()[1:]
         used_bytes = [s.split()[3].rsplit(b':', 1)[1] for s in out]
         return {int(b) for b in used_bytes}
 
-    def _parser_darwin(self, cmd):
+    @staticmethod
+    def _parser_darwin(cmd):
         out = subprocess.check_output(cmd).split(b'\n')
         used_bytes = [x.split()[3].rsplit(b':', 1)[1] for x in out
                       if x.startswith(b'tcp')]
@@ -118,8 +121,7 @@ class BuildConfiguration:
     Configuration options can be read as if the object were a dict,
     either object['CONFIG_FOO'] or object.get('CONFIG_FOO').
 
-    Configuration values in .config and generated_dts_board.conf are
-    available.'''
+    Kconfig configuration values are available (parsed from .config).'''
 
     def __init__(self, build_dir):
         self.build_dir = build_dir
@@ -136,12 +138,7 @@ class BuildConfiguration:
         return self.options.get(option, *args)
 
     def _init(self):
-        build_z = os.path.join(self.build_dir, 'zephyr')
-        generated = os.path.join(build_z, 'include', 'generated')
-        files = [os.path.join(build_z, '.config'),
-                 os.path.join(generated, 'generated_dts_board.conf')]
-        for f in files:
-            self._parse(f)
+        self._parse(os.path.join(self.build_dir, 'zephyr', '.config'))
 
     def _parse(self, filename):
         with open(filename, 'r') as f:
@@ -152,7 +149,8 @@ class BuildConfiguration:
                 option, value = line.split('=', 1)
                 self.options[option] = self._parse_value(value)
 
-    def _parse_value(self, value):
+    @staticmethod
+    def _parse_value(value):
         if value.startswith('"') or value.startswith("'"):
             return value.split()
         try:
@@ -360,8 +358,7 @@ class ZephyrBinaryRunner(abc.ABC):
 
         When choosing a name, pick something short and lowercase,
         based on the name of the tool (like openocd, jlink, etc.) or
-        the target architecture/board (like xtensa, em-starterkit,
-        etc.).'''
+        the target architecture/board (like xtensa etc.).'''
 
     @classmethod
     def capabilities(cls):
@@ -448,7 +445,8 @@ class ZephyrBinaryRunner(abc.ABC):
 
         In case of an unsupported command, raise a ValueError.'''
 
-    def require(self, program):
+    @staticmethod
+    def require(program):
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -511,10 +509,7 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return
-        try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
-            raise
+        subprocess.check_call(cmd)
 
     def check_output(self, cmd):
         '''Subclass subprocess.check_output() wrapper.
@@ -526,10 +521,7 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return b''
-        try:
-            return subprocess.check_output(cmd)
-        except subprocess.CalledProcessError:
-            raise
+        return subprocess.check_output(cmd)
 
     def popen_ignore_int(self, cmd):
         '''Spawn a child command, ensuring it ignores SIGINT.

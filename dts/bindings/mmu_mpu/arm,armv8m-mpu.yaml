@@ -1,19 +1,14 @@
-title: ARMv8-M Memory Protection Unit
+description: ARMv8-M MPU (Memory Protection Unit)
 
-description: >
-    This binding describes the ARMv8-M Memory Protection Unit (MPU).
+compatible: "arm,armv8m-mpu"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,armv8m-mpu"
-
     reg:
-      category: required
+      required: true
 
     arm,num-mpu-regions:
-      category: required
+      required: true
       type: int
       description: number of MPU regions supported by hardware

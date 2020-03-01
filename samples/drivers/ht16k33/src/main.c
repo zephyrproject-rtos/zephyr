@@ -68,7 +68,7 @@ void main(void)
 			"one-by-one");
 		for (i = 0; i < 128; i++) {
 			led_on(led_dev, i);
-			k_sleep(100);
+			k_sleep(K_MSEC(100));
 		}
 
 		for (i = 500; i <= 2000; i *= 2) {
@@ -81,7 +81,7 @@ void main(void)
 		for (i = 100; i >= 0; i -= 10) {
 			LOG_INF("Setting LED brightness to %d%%", i);
 			led_set_brightness(led_dev, 0, i);
-			k_sleep(1000);
+			k_sleep(K_MSEC(1000));
 		}
 
 		LOG_INF("Turning all LEDs off and restoring 100%% brightness");

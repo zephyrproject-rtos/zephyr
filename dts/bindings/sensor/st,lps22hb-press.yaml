@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2017, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STMicroelectronics MEMS sensors LPS22HB
+description: STMicroelectronics LPS22HB pressure sensor
 
-description: >
-    This binding gives a base representation of LPS22HB pressure sensor
+compatible: "st,lps22hb-press"
 
-inherits:
-    !include i2c-device.yaml
-
-properties:
-    compatible:
-      constraint: "st,lps22hb-press"
+include: i2c-device.yaml

@@ -1,11 +1,8 @@
-# Kconfig - Arduino Zero board configuration
-#
+# Arduino Zero board configuration
+
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_ARDUINO_ZERO
-
 config BOARD
 	default "arduino_zero"
-
-endif # BOARD_ARDUINO_ZERO
+	depends on BOARD_ARDUINO_ZERO

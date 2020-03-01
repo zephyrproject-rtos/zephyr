@@ -22,8 +22,14 @@
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_0_ATMEL_SAM0_RTC_BASE_ADDRESS)
 
+#ifdef MCLK
+#define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_OSC32K_FREQ_HZ
+#else
+#define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_GCLK0_FREQ_HZ
+#endif
+
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ \
+#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* Maximum number of ticks. */
@@ -76,9 +82,14 @@ static volatile u32_t rtc_timeout;
  */
 static inline void rtc_sync(void)
 {
+	/* Wait for bus synchronization... */
+#ifdef RTC_STATUS_SYNCBUSY
 	while (RTC0->STATUS.reg & RTC_STATUS_SYNCBUSY) {
-		/* Wait for bus synchronization... */
 	}
+#else
+	while (RTC0->SYNCBUSY.reg) {
+	}
+#endif
 }
 
 /*
@@ -88,7 +99,9 @@ static inline void rtc_sync(void)
  */
 static u32_t rtc_count(void)
 {
+#ifdef RTC_READREQ_RREQ
 	RTC0->READREQ.reg = RTC_READREQ_RREQ;
+#endif
 	rtc_sync();
 	return RTC0->COUNT.reg;
 }
@@ -103,12 +116,24 @@ static void rtc_reset(void)
 	RTC0->INTFLAG.reg = RTC_MODE0_INTFLAG_MASK;
 
 	/* Disable RTC module. */
+#ifdef RTC_MODE0_CTRL_ENABLE
 	RTC0->CTRL.reg &= ~RTC_MODE0_CTRL_ENABLE;
+#else
+	RTC0->CTRLA.reg &= ~RTC_MODE0_CTRLA_ENABLE;
+#endif
 
 	rtc_sync();
 
 	/* Initiate software reset. */
-	RTC0->CTRL.reg |= RTC_MODE0_CTRL_SWRST;
+#ifdef RTC_MODE0_CTRL_SWRST
+	RTC0->CTRL.bit.SWRST = 1;
+	while (RTC0->CTRL.bit.SWRST) {
+	}
+#else
+	RTC0->CTRLA.bit.SWRST = 1;
+	while (RTC0->CTRLA.bit.SWRST) {
+	}
+#endif
 }
 
 static void rtc_isr(void *arg)
@@ -152,14 +177,19 @@ int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
+#ifdef MCLK
+	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
+	OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;
+#else
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
 			    | GCLK_GEN(DT_INST_0_ATMEL_SAM0_RTC_CLOCK_GENERATOR);
 
+	/* Synchronize GCLK. */
 	while (GCLK->STATUS.bit.SYNCBUSY) {
-		/* Synchronize GCLK. */
 	}
+#endif
 
 	/* Reset module to hardware defaults. */
 	rtc_reset();
@@ -167,12 +197,25 @@ int z_clock_driver_init(struct device *device)
 	rtc_last = 0U;
 
 	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
+#ifdef RTC_MODE0_CTRL_MODE
 	u16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
+#else
+	u16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
+#endif
+
 #ifndef CONFIG_TICKLESS_KERNEL
+#ifdef RTC_MODE0_CTRL_MATCHCLR
 	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
+#else
+	ctrl |= RTC_MODE0_CTRLA_MATCHCLR;
+#endif
 #endif
 	rtc_sync();
+#ifdef RTC_MODE0_CTRL_MODE
 	RTC0->CTRL.reg = ctrl;
+#else
+	RTC0->CTRLA.reg = ctrl;
+#endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	/* Tickless kernel lets RTC count continually and ignores overflows. */
@@ -188,7 +231,11 @@ int z_clock_driver_init(struct device *device)
 
 	/* Enable RTC module. */
 	rtc_sync();
+#ifdef RTC_MODE0_CTRL_ENABLE
 	RTC0->CTRL.reg |= RTC_MODE0_CTRL_ENABLE;
+#else
+	RTC0->CTRLA.reg |= RTC_MODE0_CTRLA_ENABLE;
+#endif
 
 	/* Enable RTC interrupt. */
 	NVIC_ClearPendingIRQ(DT_INST_0_ATMEL_SAM0_RTC_IRQ_0);

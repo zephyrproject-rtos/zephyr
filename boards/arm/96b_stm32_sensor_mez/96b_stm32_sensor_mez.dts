@@ -21,15 +21,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led_0: led_0 {
-			gpios = <&gpiod 10 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD0";
 		};
 		green_led_1: led_1 {
-			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		blue_led_2: led_2 {
-			gpios = <&gpiod 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -38,7 +38,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpiod 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -84,6 +84,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&dma1 {
+	status = "okay";
+};
+
 &i2s2 {
 	status = "okay";
 };
@@ -93,6 +97,10 @@
 };
 
 &spi2 {
+	status = "okay";
+};
+
+&spi4 {
 	status = "okay";
 };
 
@@ -122,22 +130,21 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart3 {
+	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart4 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart4_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

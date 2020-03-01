@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_echo_server_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 #include <linker/sections.h>
 #include <errno.h>
+#include <shell/shell.h>
 
 #include <net/net_core.h>
 #include <net/tls_credentials.h>
@@ -40,15 +41,29 @@ void quit(void)
 
 static void init_app(void)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+	int err;
+#endif
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	LOG_INF(APP_BANNER);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
-				     TLS_CREDENTIAL_SERVER_CERTIFICATE,
-				     server_certificate,
-				     sizeof(server_certificate));
+#if defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC)
+	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_CA_CERTIFICATE,
+				 ca_certificate,
+				 sizeof(ca_certificate));
+	if (err < 0) {
+		LOG_ERR("Failed to register CA certificate: %d", err);
+	}
+#endif
+
+	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				 server_certificate,
+				 sizeof(server_certificate));
 	if (err < 0) {
 		LOG_ERR("Failed to register public certificate: %d", err);
 	}
@@ -62,8 +77,43 @@ static void init_app(void)
 	}
 #endif
 
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+	err = tls_credential_add(PSK_TAG,
+				TLS_CREDENTIAL_PSK,
+				psk,
+				sizeof(psk));
+	if (err < 0) {
+		LOG_ERR("Failed to register PSK: %d", err);
+	}
+	err = tls_credential_add(PSK_TAG,
+				TLS_CREDENTIAL_PSK_ID,
+				psk_id,
+				sizeof(psk_id) - 1);
+	if (err < 0) {
+		LOG_ERR("Failed to register PSK ID: %d", err);
+	}
+#endif
+
 	init_vlan();
 }
+
+static int cmd_sample_quit(const struct shell *shell,
+			  size_t argc, char *argv[])
+{
+	quit();
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sample_commands,
+	SHELL_CMD(quit, NULL,
+		  "Quit the sample application\n",
+		  cmd_sample_quit),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(sample, &sample_commands,
+		   "Sample application commands", NULL);
 
 void main(void)
 {

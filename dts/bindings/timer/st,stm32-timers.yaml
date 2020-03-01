@@ -1,20 +1,18 @@
-title: STM32 TIMERS
+description: STM32 timers
 
-description: >
-    This binding gives a base representation of the STM32 TIMERS
+compatible: "st,stm32-timers"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-timers"
-
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
+
+    interrupts:
+      required: false

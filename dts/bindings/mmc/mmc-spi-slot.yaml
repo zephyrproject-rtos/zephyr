@@ -1,16 +1,8 @@
-#
 # Copyright (c) 2018 Google LLC.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-title: MMC/SD/SDIO slot connected via SPI
 
 description: MMC/SD/SDIO slot connected via SPI
 
-inherits:
-    !include spi-device.yaml
+compatible: "zephyr,mmc-spi-slot"
 
-properties:
-    compatible:
-      constraint: "zephyr,mmc-spi-slot"
+include: spi-device.yaml

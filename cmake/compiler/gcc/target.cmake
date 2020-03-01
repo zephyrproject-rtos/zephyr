@@ -43,28 +43,7 @@ endforeach()
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
-  list(APPEND TOOLCHAIN_C_FLAGS
-    -mthumb
-    -mcpu=${GCC_M_CPU}
-    )
-  list(APPEND TOOLCHAIN_LD_FLAGS
-    -mthumb
-    -mcpu=${GCC_M_CPU}
-    )
-
-  include(${ZEPHYR_BASE}/cmake/fpu-for-gcc-m-cpu.cmake)
-
-  if(CONFIG_FLOAT)
-    list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
-    list(APPEND TOOLCHAIN_LD_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
-    if    (CONFIG_FP_SOFTABI)
-      list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=softfp)
-      list(APPEND TOOLCHAIN_LD_FLAGS -mfloat-abi=softfp)
-    elseif(CONFIG_FP_HARDABI)
-      list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=hard)
-      list(APPEND TOOLCHAIN_LD_FLAGS -mfloat-abi=hard)
-    endif()
-  endif()
+  include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
 elseif("${ARCH}" STREQUAL "arc")
   list(APPEND TOOLCHAIN_C_FLAGS
     -mcpu=${GCC_M_CPU}
@@ -75,6 +54,8 @@ elseif("${ARCH}" STREQUAL "riscv")
   else()
     list(APPEND TOOLCHAIN_C_FLAGS -mabi=ilp32 -march=rv32ima)
   endif()
+elseif("${ARCH}" STREQUAL "x86")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
 endif()
 
 if(NOT no_libgcc)
@@ -126,7 +107,13 @@ endforeach()
 #
 # Appending onto any existing values lets users specify
 # toolchain-specific flags at generation time.
-list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+list(APPEND CMAKE_REQUIRED_FLAGS
+  -nostartfiles
+  -nostdlib
+  ${isystem_include_flags}
+  -Wl,--unresolved-symbols=ignore-in-object-files
+  -Wl,--entry=0 # Set an entry point to avoid a warning
+  )
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 # Load toolchain_cc-family macros
@@ -140,3 +127,5 @@ include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_baremetal.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_warnings.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_imacros.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_base.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_coverage.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_sanitizers.cmake)

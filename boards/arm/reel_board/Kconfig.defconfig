@@ -1,13 +1,13 @@
-# Kconfig - reel board configuration
-#
-# Copyright (c) 2018 Phytec Messtechnik GmbH
-#
+# reel board configuration
+
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_REEL_BOARD
+if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
 
 config BOARD
-	default "reel_board"
+	default "reel_board" if BOARD_REEL_BOARD
+	default "reel_board_v2" if BOARD_REEL_BOARD_V2
 
 config I2C
 	default y
@@ -20,27 +20,26 @@ config I2C_0
 config I2C_1
 	default n
 
-if I2C_0
-
 choice I2C_0_NRF_TYPE
 	default I2C_0_NRF_TWIM
-
+	depends on I2C_0
 endchoice
-
-endif # I2C_0
-
-if I2C_1
 
 choice I2C_1_NRF_TYPE
 	default I2C_1_NRF_TWIM
-
+	depends on I2C_1
 endchoice
-
-endif # I2C_1
 
 endif # I2C
 
+config PWM_0
+	default y
+	depends on PWM
+
 if SPI
+
+config SPI_1
+	default y
 
 config SPI_3
 	default y
@@ -48,18 +47,11 @@ config SPI_3
 config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
 
-if SPI_3
-
-config SPI_3_NRF_RX_DELAY
-	default 1
-
-endif # SPI_3
-
 endif # SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK
@@ -67,18 +59,16 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
-
-if BT
+	depends on IEEE802154
 
 config BT_CTLR
 	default y
+	depends on BT
 
-endif # BT
+config SSD16XX
+	default y
+	depends on DISPLAY
 
-endif # BOARD_REEL_BOARD
+endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2

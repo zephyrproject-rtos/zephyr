@@ -54,6 +54,6 @@
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";
 		reg = <0>;
-		irq-gpios = <&gpio0 28 0>;
+		irq-gpios = <&gpio0 28 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };

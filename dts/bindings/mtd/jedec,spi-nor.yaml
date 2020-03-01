@@ -1,45 +1,26 @@
-#
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
-#
+# Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: SPI NOR flash devices (JEDEC CFI interface)
+description: |
+  Properties supporting Zephyr spi-nor flash driver (over the Zephyr SPI
+  API) control of serial flash memories using the standard M25P80-based
+  command set.
 
-description: >
-  Any SPI NOR flash that supports the JEDEC CFI interface.
+compatible: "jedec,spi-nor"
 
-inherits:
-  !include spi-device.yaml
+include: [spi-device.yaml, "jedec,spi-nor-common.yaml"]
 
 properties:
-  compatible:
-    constraint: "jedec,spi-nor"
-
-  jedec-id:
-    type: uint8-array
-    category: required
-    description: JEDEC ID as manufacturer ID, memory type, memory density
-
-  has-be32k:
-    type: boolean
-    category: optional
-    description: Indicates the device supports the BE32K command
-
-  size:
-    type: int
-    category: optional
-    description: flash capacity in bits
-
   wp-gpios:
-    type: compound
-    category: optional
+    type: phandle-array
+    required: false
     description: WPn pin
   hold-gpios:
-    type: compound
-    category: optional
+    type: phandle-array
+    required: false
     description: HOLDn pin
   reset-gpios:
-    type: compound
-    category: optional
+    type: phandle-array
+    required: false
     description: RESETn pin

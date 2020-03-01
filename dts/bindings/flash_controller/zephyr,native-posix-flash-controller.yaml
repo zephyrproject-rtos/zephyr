@@ -1,12 +1,5 @@
-title: Native POSIX Flash Controller
+description: Native POSIX flash controller
 
-description: >
-    This binding gives a base representation of the Native POSIX flash
-    controller
+compatible: "zephyr,native-posix-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "zephyr,native-posix-flash-controller"
+include: flash-controller.yaml

@@ -6,14 +6,14 @@
 #include <ztest.h>
 #include <kernel.h>
 
+#include "tests_thread_apis.h"
+
 /* Very simple (and limited) test of the SMP cpu mask API.  Runs on
  * just one CPU.  Creates a thread, sets the CPU mask, starts it,
  * checks if it ran (or didn't run) as expected.
  */
 
 struct k_thread child_thread;
-extern size_t tstack_size;
-K_THREAD_STACK_EXTERN(tstack);
 
 bool child_has_run;
 

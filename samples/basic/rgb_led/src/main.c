@@ -26,10 +26,25 @@
  */
 #define PWM_DEV0	DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER
 #define PWM_CH0		DT_ALIAS_RED_PWM_LED_PWMS_CHANNEL
+#ifdef DT_ALIAS_RED_PWM_LED_PWMS_FLAGS
+#define PWM_FLAGS0	DT_ALIAS_RED_PWM_LED_PWMS_FLAGS
+#else
+#define PWM_FLAGS0	0
+#endif
 #define PWM_DEV1	DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER
 #define PWM_CH1		DT_ALIAS_GREEN_PWM_LED_PWMS_CHANNEL
+#ifdef DT_ALIAS_GREEN_PWM_LED_PWMS_FLAGS
+#define PWM_FLAGS1	DT_ALIAS_GREEN_PWM_LED_PWMS_FLAGS
+#else
+#define PWM_FLAGS1	0
+#endif
 #define PWM_DEV2	DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER
 #define PWM_CH2		DT_ALIAS_BLUE_PWM_LED_PWMS_CHANNEL
+#ifdef DT_ALIAS_BLUE_PWM_LED_PWMS_FLAGS
+#define PWM_FLAGS2	DT_ALIAS_BLUE_PWM_LED_PWMS_FLAGS
+#else
+#define PWM_FLAGS2	0
+#endif
 #else
 #error "Choose supported board or add new board for the application"
 #endif
@@ -44,9 +59,9 @@
 #define STEPSIZE	2000
 
 static int write_pin(struct device *pwm_dev, u32_t pwm_pin,
-		     u32_t pulse_width)
+		     u32_t pulse_width, pwm_flags_t flags)
 {
-	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width);
+	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width, flags);
 }
 
 void main(void)
@@ -68,7 +83,7 @@ void main(void)
 		for (pulse_width0 = 0U; pulse_width0 <= PERIOD;
 		     pulse_width0 += STEPSIZE) {
 			if (write_pin(pwm_dev[0], PWM_CH0,
-				      pulse_width0) != 0) {
+				      pulse_width0, PWM_FLAGS0) != 0) {
 				printk("pin 0 write fails!\n");
 				return;
 			}
@@ -76,7 +91,7 @@ void main(void)
 			for (pulse_width1 = 0U; pulse_width1 <= PERIOD;
 			     pulse_width1 += STEPSIZE) {
 				if (write_pin(pwm_dev[1], PWM_CH1,
-					      pulse_width1) != 0) {
+					      pulse_width1, PWM_FLAGS1) != 0) {
 					printk("pin 1 write fails!\n");
 					return;
 				}
@@ -84,7 +99,8 @@ void main(void)
 				for (pulse_width2 = 0U; pulse_width2 <= PERIOD;
 				     pulse_width2 += STEPSIZE) {
 					if (write_pin(pwm_dev[2], PWM_CH2,
-						      pulse_width2) != 0) {
+						      pulse_width2,
+						      PWM_FLAGS2) != 0) {
 						printk("pin 2 write fails!\n");
 						return;
 					}

@@ -1,9 +1,8 @@
-# Kconfig - DesignWare ARC IoT Development Kit board configuration
-#
+# DesignWare ARC IoT Development Kit board configuration
+
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config BOARD_IOTDK
 	bool "ARC IoT Development Kit"
 	depends on SOC_ARC_IOT

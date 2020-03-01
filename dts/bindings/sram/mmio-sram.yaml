@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Generic on-chip SRAM
+description: Generic on-chip SRAM description
 
-description: >
-    This binding gives a generic on-chip SRAM description
+compatible: "mmio-sram"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "mmio-sram"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: optional
+      required: false

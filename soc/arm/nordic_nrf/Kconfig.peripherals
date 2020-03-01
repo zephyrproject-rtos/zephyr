@@ -1,9 +1,7 @@
-# Kconfig.peripherals - Nordic Semiconductor nRFx MCU peripherals list.
-#
+# Nordic Semiconductor nRFx MCU peripherals list.
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config HAS_HW_NRF_ACL
 	bool
@@ -15,6 +13,9 @@ config HAS_HW_NRF_BPROT
 	bool
 
 config HAS_HW_NRF_CC310
+	bool
+
+config HAS_HW_NRF_CC312
 	bool
 
 config HAS_HW_NRF_CCM
@@ -104,6 +105,9 @@ config HAS_HW_NRF_QDEC
 config HAS_HW_NRF_QSPI
 	bool
 
+config HAS_HW_NRF_RADIO_BLE_CODED
+	bool
+
 config HAS_HW_NRF_RADIO_IEEE802154
 	bool
 
@@ -141,6 +145,9 @@ config HAS_HW_NRF_SPIM2
 	bool
 
 config HAS_HW_NRF_SPIM3
+	bool
+
+config HAS_HW_NRF_SPIM4
 	bool
 
 config HAS_HW_NRF_SPIS0
@@ -242,5 +249,14 @@ config HAS_HW_NRF_UARTE3
 config HAS_HW_NRF_USBD
 	bool
 
+config HAS_HW_NRF_USBREG
+	bool
+
 config HAS_HW_NRF_WDT
+	bool
+
+config HAS_HW_NRF_WDT0
+	bool
+
+config HAS_HW_NRF_WDT1
 	bool

@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DISPLAY_MCUX_ELCDIF
 	bool "MCUX eLCDIF driver"

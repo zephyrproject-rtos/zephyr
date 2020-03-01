@@ -23,7 +23,7 @@ struct settings_io_cb_s {
 	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
 	size_t (*get_len_cb)(void *ctx);
 	u8_t rwbs;
-} settings_io_cb;
+} static settings_io_cb;
 
 #define MAX_ENC_BLOCK_SIZE 4
 
@@ -228,6 +228,10 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	off_t off;
 	int rc;
 
+	if (len_req == 0) {
+		return -EINVAL;
+	}
+
 	rem_size = len_req;
 
 	while (rem_size) {
@@ -315,14 +319,24 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 		enc_buf[read_size] = 0; /* breaking guaranteed */
 		read_size = strlen(enc_buf);
 
-		if (read_size == 0 || read_size % 4) {
-			/* unexpected use case - a NULL value or an encoding */
-			/* problem */
+		if (read_size == 0) {
+			/* a NULL value (deleted entry) */
+			*len_read = 0;
+			return 0;
+		}
+
+		if (read_size % 4) {
+			/* unexpected use case - an encoding problem */
 			return -EINVAL;
 		}
 
 		rc = base64_decode(dec_buf, sizeof(dec_buf), &olen, enc_buf,
 				   read_size);
+
+		if (rc) {
+			return rc;
+		}
+
 		dec_buf[olen] = 0;
 
 		clen = MIN(olen + off_begin - off, rem_size);
@@ -463,6 +477,10 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	int rc;
 	off_t off = 0;
 
+	if (val_len == 0) {
+		return -EINVAL;
+	}
+
 	for (rem = val_len; rem > 0; rem -= len_read) {
 		len_read = exp_len = MIN(sizeof(buf), rem);
 		rc = settings_line_val_read(val_off, off, buf, len_read,
@@ -487,7 +505,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	return rc;
 }
 
-void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
+int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 				off_t off, void *cb_arg)
 {
 	struct settings_line_dup_check_arg *cdca;
@@ -495,7 +513,7 @@ void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 
 	cdca = (struct settings_line_dup_check_arg *)cb_arg;
 	if (strcmp(name, cdca->name)) {
-		return;
+		return 0;
 	}
 
 	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
@@ -511,6 +529,7 @@ void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 			cdca->is_dup = 0;
 		}
 	}
+	return 0;
 }
 
 static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
@@ -530,38 +549,16 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 	return -1;
 }
 
-void settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
-			   void *cb_arg)
+int settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
+			  void *cb_arg)
 {
-	const char *name_key;
-	struct settings_handler_static *ch;
-	struct settings_line_read_value_cb_ctx value_ctx;
-	int rc;
 	size_t len;
-
-	if (cb_arg && !settings_name_steq(name, cb_arg, NULL)) {
-		return;
-	}
-
-	ch = settings_parse_and_lookup(name, &name_key);
-	if (!ch) {
-		return;
-	}
-
+	struct settings_line_read_value_cb_ctx value_ctx;
+	struct settings_load_arg *arg = cb_arg;
 	value_ctx.read_cb_ctx = val_read_cb_ctx;
 	value_ctx.off = off;
-
 	len = settings_line_val_get_len(off, val_read_cb_ctx);
 
-	rc = ch->h_set(name_key, len, settings_line_read_cb,
-		       (void *)&value_ctx);
-
-	if (rc != 0) {
-		LOG_ERR("set-value failure. key: %s error(%d)",
-			log_strdup(name), rc);
-	} else {
-		LOG_DBG("set-value OK. key: %s",
-			log_strdup(name));
-	}
-	(void)rc;
+	return settings_call_set_handler(name, len, settings_line_read_cb,
+					 &value_ctx, arg);
 }

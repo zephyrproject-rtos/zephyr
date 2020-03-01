@@ -47,8 +47,7 @@ extern "C" {
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
-#define NET_ASSERT(cond) __ASSERT_NO_MSG(cond)
-#define NET_ASSERT_INFO(cond, fmt, ...) __ASSERT(cond, fmt, ##__VA_ARGS__)
+#define NET_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
 
 /** @endcond */
 

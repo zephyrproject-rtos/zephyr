@@ -259,7 +259,7 @@ static struct spi_driver_api spi_sifive_api = {
 SPI_INIT(0);
 
 #endif /* DT_INST_0_SIFIVE_SPI0_LABEL */
-#endif /* !DT_SIFIVE_SPI0_0_ROM */
+#endif /* !CONFIG_SIFIVE_SPI_0_ROM */
 
 #ifdef DT_INST_1_SIFIVE_SPI0_LABEL
 
@@ -272,4 +272,3 @@ SPI_INIT(1);
 SPI_INIT(2);
 
 #endif /* DT_INST_2_SIFIVE_SPI0_LABEL */
-

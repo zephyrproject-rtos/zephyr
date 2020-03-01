@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteX SPI
+
+compatible: "litex,spi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+        required: true

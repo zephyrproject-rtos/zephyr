@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "96b_lscon.dtsi"
 
 / {
 	model = "Seeed Studio Nitrogen 96board";
@@ -48,7 +49,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "User Push Button";
 		};
 	};
@@ -73,12 +74,14 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-pin = <20>;
 	scl-pin = <22>;
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <26>;
 	mosi-pin = <23>;
@@ -115,7 +118,7 @@
 		/*
 		 * The flash starting at 0x0007a000 and ending at
 		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for FCB/NFFS
+		 * by the application. If enabled, partition for FCB/LittleFS
 		 * will be created in this area.
 		 */
 		storage_partition: partition@7a000 {

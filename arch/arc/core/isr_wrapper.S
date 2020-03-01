@@ -68,7 +68,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in z_arch_switch().
+the parameter in r0 in arch_switch().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -168,7 +168,7 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from z_arch_switch() is loaded
+    The address of the returning instruction from arch_switch() is loaded
     in ilink and the saved status32 in status32_p0.
 
   o to any irq
@@ -209,27 +209,27 @@ SECTION_FUNC(TEXT, _isr_wrapper)
  * in fact is an action like nop.
  * for firq,  r0 will be restored later
  */
-  st r0, [sp]
+	st_s r0, [sp]
 #endif
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
-  ld r0, [sp]
+	ld_s r0, [sp]
 	/* 1-register bank FIRQ handling must save registers on stack */
 	_create_irq_stack_frame
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
-  lr r0, [_ARC_V2_ERET]
+	lr r0, [_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET]
 
-	mov r3, _firq_exit
-	mov r2, _firq_enter
+	mov_s r3, _firq_exit
+	mov_s r2, _firq_enter
 	j_s [r2]
 rirq_path:
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #else
 	mov.z r3, _firq_exit
@@ -239,25 +239,13 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #endif
 
 #if defined(CONFIG_TRACING)
-GTEXT(z_sys_trace_isr_enter)
-
-.macro log_interrupt_k_event
-	clri r0 /* do not interrupt event logger operations */
-	push_s r0
-	push_s blink
-	jl z_sys_trace_isr_enter
-	pop_s blink
-	pop_s r0
-	seti r0
-.endm
-#else
-	#define log_interrupt_k_event
+GTEXT(sys_trace_isr_enter)
 #endif
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
@@ -303,7 +291,6 @@ SECTION_FUNC(TEXT, _isr_demux)
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
-	log_interrupt_k_event
 
 	lr r0, [_ARC_V2_ICAUSE]
 	/* handle software triggered interrupt */
@@ -314,7 +301,7 @@ irq_hint_handled:
 
 	sub r0, r0, 16
 
-	mov r1, _sw_isr_table
+	mov_s r1, _sw_isr_table
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
 	ld_s r1, [r0, 4] /* ISR into r1 */
@@ -339,4 +326,4 @@ irq_hint_handled:
 	/* back from ISR, jump to exit stub */
 	pop_s r3
 	j_s [r3]
-	nop
+	nop_s

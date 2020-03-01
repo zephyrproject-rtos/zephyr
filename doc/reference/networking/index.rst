@@ -12,3 +12,5 @@ Networking
    protocols.rst
    system_mgmt.rst
    tsn.rst
+   can.rst
+   gsm_modem.rst

@@ -3,6 +3,10 @@
 Documentation Guidelines
 ########################
 
+.. note::
+
+   For instructions on building the documentation, see :ref:`zephyr_doc`.
+
 Zephyr Project content is written using the `reStructuredText`_ markup
 language (.rst file extension) with Sphinx extensions, and processed
 using Sphinx to create a formatted standalone website.  Developers can
@@ -127,27 +131,13 @@ Would be rendered as:
 Multi-column lists
 ******************
 
-If you have a long bullet list of items, where each item is short,
-you can indicate the list items should be rendered in multiple columns
-with a special ``hlist`` directive::
+If you have a long bullet list of items, where each item is short, you
+can indicate the list items should be rendered in multiple columns with
+a special ``.. rst-class:: rst-columns`` directive.  The directive will
+apply to the next non-comment element (e.g., paragraph), or to content
+indented under the directive. For example, this unordered list::
 
-   .. hlist::
-      :columns: 3
-
-      * A list of
-      * short items
-      * that should be
-      * displayed
-      * horizontally
-      * so it doesn't
-      * use up so much
-      * space on
-      * the page
-
-This would be rendered as:
-
-.. hlist::
-   :columns: 3
+   .. rst-class:: rst-columns
 
    * A list of
    * short items
@@ -159,8 +149,24 @@ This would be rendered as:
    * space on
    * the page
 
-Note the optional ``:columns:`` parameter (default is two columns), and
-all the list items are indented by three spaces.
+would be rendered as:
+
+.. rst-class:: rst-columns
+
+   * A list of
+   * short items
+   * that should be
+   * displayed
+   * horizontally
+   * so it doesn't
+   * use up so much
+   * space on
+   * the page
+
+A maximum of three columns will be displayed, and change based on the
+available width of the display window, reducing to one column on narrow
+(phone) screens if necessary.  We've deprecated use of the ``hlist``
+directive because it misbehaves on smaller screens.
 
 Tables
 ******
@@ -233,6 +239,13 @@ This example would render as:
      - body row 2, column 2
      - body row 2, column 3
 
+The ``:widths:`` parameter lets you define relative column widths.  The
+default is equal column widths. If you have a three-column table and you
+want the first column to be half as wide as the other two equal-width
+columns, you can specify ``:widths: 1 2 2``.  If you'd like the browser
+to set the column widths automatically based on the column contents, you
+can use ``:widths: auto``.
+
 File names and Commands
 ***********************
 
@@ -250,56 +263,70 @@ For references to files that are in the Zephyr GitHub tree, a special
 role can be used that creates a hyperlink to that file.  For example a
 reference to the reST file used to create this document can be generated
 using ``:zephyr_file:\`doc/guides/documentation/index.rst\```  that will
-show up as :zephyr_file:`doc/guides/documentation/index.rst`.
+show up as :zephyr_file:`doc/guides/documentation/index.rst`, a link to
+the "blob" file in the github repo.  There's also a
+``:zephyr_raw:\`doc/guides/documentation/index.rst\``` role that will
+link to the "raw" content,
+:zephyr_file:`doc/guides/documentation/index.rst`. (You can click on
+these links to see the difference.)
 
 .. _internal-linking:
 
 Internal Cross-Reference Linking
 ********************************
 
-ReST links are only supported within the current file using the
+Traditional ReST links are only supported within the current file using the
 notation::
 
-   refer to the `internal-linking`_ page
+   Refer to the `internal-linking`_ page
 
 which renders as,
 
-   refer to the `internal-linking`_ page
+   Refer to the `internal-linking`_ page
 
 Note the use of a trailing
 underscore to indicate an outbound link. In this example, the label was
 added immediately before a heading, so the text that's displayed is the
-heading text itself.
+heading text itself. You can change the text that's displayed as the
+link writing this as::
 
-With Sphinx however, we can create
+   Refer to the `show this text instead <internal-linking>`_ page
+
+which renders as,
+
+   Refer to the `show this text instead <internal-linking>`_ page
+
+
+External Cross-Reference Linking
+********************************
+
+With Sphinx's help, we can create
 link-references to any tagged text within the Zephyr Project documentation.
 
-Target locations within documents are defined with a label directive:
+Target locations in a document are defined with a label directive:
 
    .. code-block:: rst
 
       .. _my label name:
 
+      Heading
+      =======
+
 Note the leading underscore indicating an inbound link.
 The content immediately following
-this label is the target for a ``:ref:`my label name```
+this label must be a heading, and is the target for a ``:ref:`my label name```
 reference from anywhere within the Zephyr documentation.
-The label should be added immediately before a heading so there's a
-natural phrase to show when referencing this label (e.g., the heading
-text).
+The heading text is shown when referencing this label.
+You can also change the text that's displayed for this link, such as::
 
-This is the same directive used to
-define a label that's a reference to a URL::
-
-   .. _Zephyr Wikipedia Page:
-      https://en.wikipedia.org/wiki/Zephyr_(operating_system)
+   :ref:`some other text <my label name>`
 
 
 To enable easy cross-page linking within the site, each file should have
 a reference label before its title so it can
 be referenced from another file. These reference labels must be unique
 across the whole site, so generic names such as "samples" should be
-avoided.  For example the top of this document's.rst file is:
+avoided.  For example the top of this document's .rst file is:
 
 
 .. code-block:: rst
@@ -315,6 +342,32 @@ it will show up as :ref:`doc_guidelines`.  This type of internal cross reference
 multiple files, and the link text is obtained from the document source so if the title changes,
 the link text will update as well.
 
+You can also define links to any URL and then reference it in your document.
+For example, with this label definition in the document::
+
+   .. _Zephyr Wikipedia Page:
+      https://en.wikipedia.org/wiki/Zephyr_(operating_system)
+
+you can reference it with::
+
+   Read the `Zephyr Wikipedia Page`_ for more information about the
+   project.
+
+
+\`any\` links
+*************
+
+Within the Zephyr project, we've defined the default role to be "any",
+meaning if you just write a phrase in back-ticks, e.g.,
+```doc_guidelines```, Sphinx will search through all domains looking for
+something called doc_guidelines to link to. In this case it will find
+the label at the top of this document, and link to `doc_guidelines`.
+This can be useful for linking to doxygen-generated links for function
+names and such, but will cause a warning such as::
+
+   WARNING: 'any' reference target not found: doc_giudelines
+
+if you misspelled ```doc_guidelines``` as ```doc_giudelines```.
 
 Non-ASCII Characters
 ********************
@@ -453,3 +506,105 @@ render like this in the generated HTML output:
    :zephyr-app: samples/hello_world
    :board: qemu_x86
    :goals: build
+
+Alternative Tabbed Content
+**************************
+
+As introduced in the :ref:`getting_started`, you can provide alternative
+content to the reader via a tabbed interface. When the reader clicks on
+a tab, the content for that tab is displayed, for example::
+
+   .. tabs::
+
+      .. tab:: Apples
+
+         Apples are green, or sometimes red.
+
+      .. tab:: Pears
+
+         Pears are green.
+
+      .. tab:: Oranges
+
+         Oranges are orange.
+
+will display as:
+
+.. tabs::
+
+   .. tab:: Apples
+
+      Apples are green, or sometimes red.
+
+   .. tab:: Pears
+
+      Pears are green.
+
+   .. tab:: Oranges
+
+      Oranges are orange.
+
+Tabs can also be grouped, so that changing the current tab in one area
+changes all tabs with the same name throughout the page.  For example:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      Linux Line 1
+
+   .. group-tab:: macOS
+
+      macOS Line 1
+
+   .. group-tab:: Windows
+
+      Windows Line 1
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      Linux Line 2
+
+   .. group-tab:: macOS
+
+      macOS Line 2
+
+   .. group-tab:: Windows
+
+      Windows Line 2
+
+In this latter case, we're using ``.. group-tab::`` instead of simply
+``.. tab::``.  Under the hood, we're using the `sphinx-tabs
+<https://github.com/djungelorm/sphinx-tabs>`_ extension that's included
+in the Zephyr setup.  Within a tab, you can have most any content *other
+than a heading* (code-blocks, ordered and unordered lists, pictures,
+paragraphs, and such).  You can read more about sphinx-tabs from the
+link above.
+
+Instruction Steps
+*****************
+
+Also introduced in the :ref:`getting_started` is a style that makes it
+easy to create tutorial guides with clearly identified steps. Add
+the ``.. rst-class:: numbered-step`` directive immediately before a
+second-level heading (by project convention, a heading underlined with
+asterisks ``******``, and it will be displayed as a numbered step,
+sequentially numbered within the document.  For example::
+
+   .. rst-class:: numbered-step
+
+   Put your right hand in
+   **********************
+
+.. rst-class:: numbered-step
+
+Put your right hand in
+**********************
+
+See the :zephyr_raw:`doc/getting_started/index.rst` source file and compare
+with the :ref:`getting_started` to see a full example.  As implemented,
+only one set of numbered steps is intended per document.
+
+For instructions on building the documentation, see :ref:`zephyr_doc`.

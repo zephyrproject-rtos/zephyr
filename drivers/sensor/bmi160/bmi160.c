@@ -17,8 +17,7 @@
 
 #include "bmi160.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMI160);
+LOG_MODULE_REGISTER(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
 struct bmi160_device_data bmi160_data;
 
@@ -902,6 +901,7 @@ const struct bmi160_device_config bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
 	.gpio_port = DT_INST_0_BOSCH_BMI160_INT_GPIOS_CONTROLLER,
 	.int_pin = DT_INST_0_BOSCH_BMI160_INT_GPIOS_PIN,
+	.int_flags = DT_INST_0_BOSCH_BMI160_INT_GPIOS_FLAGS,
 #endif
 };
 

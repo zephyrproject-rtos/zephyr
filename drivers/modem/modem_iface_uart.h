@@ -40,6 +40,7 @@ struct modem_iface_uart_data {
  *
  * @param  *iface: modem interface to initialize.
  * @param  *data: modem interface data to use
+ * @param  *dev_name: name of the UART device to use
  *
  * @retval 0 if ok, < 0 if error.
  */

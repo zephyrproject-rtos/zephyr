@@ -11,7 +11,7 @@
 
 #include <time.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <kernel.h>
@@ -29,7 +29,9 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F3X)	\
 	|| defined(CONFIG_SOC_SERIES_STM32F7X) \
-	|| defined(CONFIG_SOC_SERIES_STM32WBX)
+	|| defined(CONFIG_SOC_SERIES_STM32WBX) \
+	|| defined(CONFIG_SOC_SERIES_STM32G4X) \
+	|| defined(CONFIG_SOC_SERIES_STM32L1X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
 
@@ -108,6 +110,12 @@ static u32_t rtc_stm32_read(struct device *dev)
 	ticks = counter_us_to_ticks(dev, ts * USEC_PER_SEC);
 
 	return ticks;
+}
+
+static int rtc_stm32_get_value(struct device *dev, u32_t *ticks)
+{
+	*ticks = rtc_stm32_read(dev);
+	return 0;
 }
 
 static int rtc_stm32_set_alarm(struct device *dev, u8_t chan_id,
@@ -351,7 +359,7 @@ static const struct rtc_stm32_config rtc_config = {
 static const struct counter_driver_api rtc_stm32_driver_api = {
 		.start = rtc_stm32_start,
 		.stop = rtc_stm32_stop,
-		.read = rtc_stm32_read,
+		.get_value = rtc_stm32_get_value,
 		.set_alarm = rtc_stm32_set_alarm,
 		.cancel_alarm = rtc_stm32_cancel_alarm,
 		.set_top_value = rtc_stm32_set_top_value,

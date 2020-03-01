@@ -4,3 +4,8 @@ tests:
   sample.drivers.can:
     tags: CAN
     depends_on: can
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Counter received: (.*)"

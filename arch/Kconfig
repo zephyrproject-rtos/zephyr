@@ -1,12 +1,9 @@
-# Kconfig - general architecture configuration options
+# General architecture configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2015 Intel Corporation
 # Copyright (c) 2016 Cadence Design Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
@@ -14,52 +11,75 @@
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
-choice ARCH_CHOICE
-	prompt "Architecture"
-	default X86
+# Architecture symbols
+#
+# Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
+# by SOC_*.
 
 config ARC
-	bool "ARC architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  ARC architecture
 
 config ARM
-	bool "ARM architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  ARM architecture
 
 config X86
-	bool "x86 architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
-
-config X86_64
-	bool "x86_64 architecture"
-	select ATOMIC_OPERATIONS_BUILTIN
-	select SCHED_IPI_SUPPORTED
+	help
+	  x86 architecture
 
 config NIOS2
-	bool "Nios II Gen 2 architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
+	help
+	  Nios II Gen 2 architecture
 
 config RISCV
-	bool "RISCV architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  RISCV architecture
 
 config XTENSA
-	bool "Xtensa architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	help
+	  Xtensa architecture
 
 config ARCH_POSIX
-	bool "POSIX (native) architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
 	select NATIVE_APPLICATION
 	select HAS_COVERAGE_SUPPORT
+	help
+	  POSIX (native) architecture
 
-endchoice
-
+config ARCH_IS_SET
+	bool
+	help
+	  Helper symbol to detect SoCs forgetting to select one of the arch
+	  symbols above. See the top-level CMakeLists.txt.
 
 menu "General Architecture Options"
 
@@ -72,15 +92,14 @@ module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
-       bool
-       help
-         This option tells the build system that the target system is
-         big-endian.  Little-endian architecture is the default and
-         should leave this option unselected.  This option is selected
-         by arch/$ARCH/Kconfig, soc/**/Kconfig, or boards/**/Kconfig
-         and the user should generally avoid modifying it.  The option
-         is used to select linker script OUTPUT_FORMAT and command
-         line option for gen_isr_tables.py.
+	bool
+	help
+	  This option tells the build system that the target system is big-endian.
+	  Little-endian architecture is the default and should leave this option
+	  unselected.  This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
+	  and command line option for gen_isr_tables.py.
 
 config 64BIT
 	bool
@@ -91,27 +110,33 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86 || X86_64
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
-	default $(dt_int_val,DT_SRAM_SIZE)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
-	  This option specifies the size of the SRAM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
+	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
+	  devicetree. The user should generally avoid changing it via menuconfig or
+	  in configuration files.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
-	default $(dt_hex_val,DT_SRAM_BASE_ADDRESS)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  This option specifies the base address of the SRAM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
+	  The SRAM base address. The default value comes from from
+	  /chosen/zephyr,sram in devicetree. The user should generally avoid
+	  changing it via menuconfig or in configuration files.
+
+if ARC || ARM || NIOS2 || X86
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_int_val,DT_FLASH_SIZE) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -119,13 +144,13 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86 || X86_64
+endif # ARM || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -172,6 +197,7 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
+	depends on RUNTIME_ERROR_CHECKS
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -217,6 +243,14 @@ config STACK_GROWS_UP
 	  Select this option if the architecture has upward growing thread
 	  stacks. This is not common.
 
+config NO_UNUSED_STACK_INSPECTION
+	bool
+	help
+	  Selected if the architecture will generate a fault if unused stack
+	  memory is examined, which is the region between the current stack
+	  pointer and the deepest available address in the current stack
+	  region.
+
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
 	default 2
@@ -231,31 +265,26 @@ config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
 	depends on USERSPACE
 	help
-	Enabling this option allows for kernel objects to be requested from
-	the calling thread's resource pool, at a slight cost in performance
-	due to the supplemental run-time tables required to validate such
-	objects.
+	  Enabling this option allows for kernel objects to be requested from
+	  the calling thread's resource pool, at a slight cost in performance
+	  due to the supplemental run-time tables required to validate such
+	  objects.
 
-	Objects allocated in this way can be freed with a supervisor-only
-	API call, or when the number of references to that object drops to
-	zero.
-
-if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	  Objects allocated in this way can be freed with a supervisor-only
+	  API call, or when the number of references to that object drops to
+	  zero.
 
 config NOCACHE_MEMORY
 	bool "Support for uncached memory"
+	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Add a "nocache" read-write memory section that is configured to
 	  not be cached. This memory section can be used to perform DMA
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
-endif # ARCH_HAS_NOCACHE_MEMORY_SUPPORT
-
 menu "Interrupt Configuration"
-#
-# Interrupt related configs
-#
+
 config DYNAMIC_INTERRUPTS
 	bool "Enable installation of IRQs at runtime"
 	help
@@ -314,12 +343,13 @@ config GEN_IRQ_START_VECTOR
 	  This is a hidden option which needs to be set per architecture and
 	  left alone.
 
-
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
+	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
-	  run in interrupt context. Mainly useful for test cases.
+	  run in interrupt context. Only useful for test cases that need
+	  to validate the correctness of kernel objects in IRQ context.
 
 endmenu # Interrupt configuration
 
@@ -328,6 +358,7 @@ endmenu
 #
 # Architecture Capabilities
 #
+
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
 
@@ -346,6 +377,9 @@ config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 config ARCH_HAS_RAMFUNC_SUPPORT
 	bool
 
+config ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	bool
+
 #
 # Other architecture related options
 #
@@ -357,57 +391,51 @@ config ARCH_HAS_THREAD_ABORT
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
 #
+
 config HAS_SYS_POWER_STATE_SLEEP_1
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_SLEEP_2
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_SLEEP_3
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
 config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
 	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	# Hidden
 	bool
 	help
 	  This option signifies that the target has options of bootloaders
 	  that support context restore upon resume from deep sleep
 
-
-# End hidden CPU family configs
+#
+# Hidden CPU family configs
 #
 
 config CPU_HAS_TEE
@@ -417,6 +445,12 @@ config CPU_HAS_TEE
 	  Execution Environment (e.g. when it has a security attribution
 	  unit).
 
+config CPU_HAS_DCLS
+	bool
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology.
+
 config CPU_HAS_FPU
 	bool
 	help
@@ -425,13 +459,11 @@ config CPU_HAS_FPU
 
 config CPU_HAS_MPU
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
 config MEMORY_PROTECTION
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when Memory Protection features are supported.
 	  Memory protection support is currently available on ARC, ARM, and x86
@@ -439,17 +471,40 @@ config MEMORY_PROTECTION
 
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires a power of two alignment
 	  and size for MPU regions.
 
 config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 	bool
-	# Omit prompt to signify "hidden" option
 	help
 	  This option is enabled when the MPU requires the active (i.e. enabled)
 	  MPU regions to be non-overlapping with each other.
+
+config MPU_GAP_FILLING
+	bool "Force MPU to be filling in background memory regions"
+	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	default y if !USERSPACE
+	help
+	  This Kconfig option instructs the MPU driver to enforce
+	  a full kernel SRAM partitioning, when it programs the
+	  dynamic MPU regions (user thread stack, PRIV stack guard
+	  and application memory domains) during context-switch. We
+	  allow this to be a configurable option, in order to be able
+	  to switch the option off and have an increased number of MPU
+	  regions available for application memory domain programming.
+
+	  Notes:
+	  An increased number of MPU regions should only be required,
+	  when building with USERSPACE support. As a result, when we
+	  build without USERSPACE support, gap filling should always
+	  be required.
+
+	  When the option is switched off, access to memory areas not
+	  covered by explicit MPU regions is restricted to privileged
+	  code on an ARCH-specific basis. Refer to ARCH-specific
+	  documentation for more information on how this option is
+	  used.
 
 menuconfig FLOAT
 	bool "Floating point"
@@ -462,19 +517,12 @@ menuconfig FLOAT
 	  Disabling this option means that any thread that uses a
 	  floating point register will get a fatal exception.
 
-if FLOAT
-
 config FP_SHARING
 	bool "Floating point register sharing"
+	depends on FLOAT
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
-
-endif # FLOAT
-
-#
-# End hidden PM feature configs
-#
 
 config ARCH
 	string

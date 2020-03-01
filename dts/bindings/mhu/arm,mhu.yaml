@@ -1,26 +1,18 @@
-#
 # Copyright (c) 2019, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARM MHU
+description: ARM MHU (Message Handling Unit)
 
-description: >
-    This binding gives a base representation of the ARM MHU
+compatible: "arm,mhu"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,mhu"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

@@ -726,8 +726,7 @@ static int test_block1_request(struct coap_block_context *req_ctx, u8_t iter)
 		}
 	} else {
 		if (req_ctx->current !=
-		    coap_block_size_to_bytes(COAP_BLOCK_32) *
-		    (iter - 1)) {
+		    coap_block_size_to_bytes(COAP_BLOCK_32) * (iter - 1U)) {
 			TC_PRINT("req:%d,Couldn't get the current block "
 				 "position\n", iter);
 			goto done;
@@ -755,7 +754,7 @@ static int test_block1_response(struct coap_block_context *rsp_ctx, u8_t iter)
 	}
 
 	if (rsp_ctx->current !=
-	    coap_block_size_to_bytes(COAP_BLOCK_32) * (iter - 1)) {
+	    coap_block_size_to_bytes(COAP_BLOCK_32) * (iter - 1U)) {
 		TC_PRINT("rsp:%d, Couldn't get the current block position\n",
 			 iter);
 		goto done;
@@ -954,7 +953,7 @@ static int test_block2_request(struct coap_block_context *req_ctx, u8_t iter)
 	}
 
 	if (req_ctx->current !=
-	    coap_block_size_to_bytes(COAP_BLOCK_64) * (iter - 1)) {
+	    coap_block_size_to_bytes(COAP_BLOCK_64) * (iter - 1U)) {
 		TC_PRINT("req:%d, Couldn't get the current block position\n",
 			 iter);
 		goto done;
@@ -990,8 +989,7 @@ static int test_block2_response(struct coap_block_context *rsp_ctx, u8_t iter)
 		}
 	} else {
 		if (rsp_ctx->current !=
-		    coap_block_size_to_bytes(COAP_BLOCK_64) *
-		    (iter - 1)) {
+		    coap_block_size_to_bytes(COAP_BLOCK_64) * (iter - 1U)) {
 			TC_PRINT("req:%d,Couldn't get the current block "
 				 "position\n", iter);
 			goto done;
@@ -1480,7 +1478,7 @@ static const struct {
 	{ "Test observer client", test_observer_client, },
 };
 
-int main(int argc, char *argv[])
+void main(void)
 {
 	int count, pass, result;
 
@@ -1497,6 +1495,4 @@ int main(int argc, char *argv[])
 	result = pass == count ? TC_PASS : TC_FAIL;
 
 	TC_END_REPORT(result);
-
-	return 0;
 }

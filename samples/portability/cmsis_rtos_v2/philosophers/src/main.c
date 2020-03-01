@@ -257,6 +257,6 @@ void main(void)
 	/* Wait a few seconds before main() exit, giving the sample the
 	 * opportunity to dump some output before coverage data gets emitted
 	 */
-	k_sleep(5000);
+	k_sleep(K_MSEC(5000));
 #endif
 }

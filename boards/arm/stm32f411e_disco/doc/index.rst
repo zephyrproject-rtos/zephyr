@@ -83,6 +83,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -103,7 +105,7 @@ Default Zephyr Peripheral Mapping:
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - LD3 : PD13
-- LD4 : PD12
+- LD4 : PD12 (PWM4 CH1)
 - LD5 : PD14
 - LD6 : PD15
 

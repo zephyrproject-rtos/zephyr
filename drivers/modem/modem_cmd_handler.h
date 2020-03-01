@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 #define MODEM_CMD_DEFINE(name_) \
-static void name_(struct modem_cmd_handler_data *data, u16_t len, \
-		  u8_t **argv, u16_t argc)
+static int name_(struct modem_cmd_handler_data *data, u16_t len, \
+		 u8_t **argv, u16_t argc)
 
 #define MODEM_CMD(cmd_, func_cb_, acount_, adelim_) { \
 	.cmd = cmd_, \
@@ -41,8 +41,8 @@ static void name_(struct modem_cmd_handler_data *data, u16_t len, \
 struct modem_cmd_handler_data;
 
 struct modem_cmd {
-	void (*func)(struct modem_cmd_handler_data *data, u16_t len,
-		     u8_t **argv, u16_t argc);
+	int (*func)(struct modem_cmd_handler_data *data, u16_t len,
+		    u8_t **argv, u16_t argc);
 	const char *cmd;
 	const char *delim;
 	u16_t cmd_len;
@@ -74,6 +74,9 @@ struct modem_cmd_handler_data {
 	size_t match_buf_len;
 
 	int last_error;
+
+	const char *eol;
+	size_t eol_len;
 
 	/* rx net buffer */
 	struct net_buf *rx_buf;

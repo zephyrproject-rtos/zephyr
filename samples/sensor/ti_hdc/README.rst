@@ -42,7 +42,7 @@ This sample builds one application for the HDC1080 sensor.
 Build/Flash Steps:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nucleo_l496zg/sensors
+   :zephyr-app: samples/sensor/ti_hdc/
    :board: nucleo_l496zg
    :goals: build flash
    :compact:

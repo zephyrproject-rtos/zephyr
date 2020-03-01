@@ -1,13 +1,11 @@
-# Kconfig - LPC LPC55XXX Series
-#
+# LPC LPC55XXX Series
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "LPC5500 Series MCU Selection"
-depends on SOC_SERIES_LPC55XXX
+	prompt "LPC5500 Series MCU Selection"
+	depends on SOC_SERIES_LPC55XXX
 
 config SOC_LPC55S69_CPU0
 	bool "SOC_LPC55S69 M33 [CPU 0]"
@@ -16,6 +14,8 @@ config SOC_LPC55S69_CPU0
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select ARM_SECURE_FIRMWARE
+	select HAS_MCUX_IAP
 
 config SOC_LPC55S69_CPU1
 	bool "SOC_LPC55S69 M33 [CPU 1]"

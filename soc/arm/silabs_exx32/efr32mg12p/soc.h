@@ -15,22 +15,16 @@
 
 #include <sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
 #include <em_common.h>
-#include <device.h>
+
+/* Add include for DTS generated information */
+#include <devicetree.h>
 
 #include "soc_pinmap.h"
 #include "../common/soc_gpio.h"
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */

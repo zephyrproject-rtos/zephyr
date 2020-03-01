@@ -128,4 +128,3 @@ void test_config_compress_deleted(void)
 	rc = fcb_walk(&cf.cf_fcb, &fcb_small_sectors[1], check_compressed_cb,
 		      NULL);
 }
-

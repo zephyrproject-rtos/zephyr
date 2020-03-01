@@ -14,7 +14,6 @@
  * and exiting a C exception handler.
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
 #include <arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
 #include <offsets_short.h>
@@ -26,7 +25,7 @@
 	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
-	GTEXT(z_do_kernel_oops)
+	GTEXT(z_x86_do_kernel_oops)
 
 /**
  *
@@ -133,14 +132,14 @@ SECTION_FUNC(TEXT, _exception_enter)
 	incl	_thread_offset_to_excNestCount(%edx)
 
 	/*
-	 * Set the _EXC_ACTIVE state bit of the current thread.
-	 * This enables z_swap() to preserve the thread's FP registers
-	 * (where needed) if the exception handler causes a context switch.
-	 * It also indicates to debug tools that an exception is being
-	 * handled in the event of a context switch.
+	 * Set X86_THREAD_FLAG_EXC in the current thread. This enables
+	 * z_swap() to preserve the thread's FP registers (where needed)
+	 * if the exception handler causes a context switch. It also
+	 * indicates to debug tools that an exception is being handled
+	 * in the event of a context switch.
 	 */
 
-	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
+	orb	$X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%edx)
 
 #endif /* CONFIG_LAZY_FP_SHARING */
 
@@ -161,16 +160,9 @@ SECTION_FUNC(TEXT, _exception_enter)
 	sti
 
 allDone:
-#if CONFIG_X86_IAMCU
-	movl	%esp, %eax		/* z_arch_esf_t * parameter */
-#else
 	pushl	%esp			/* push z_arch_esf_t * parameter */
-#endif
-	INDIRECT_CALL(%ecx)		/* call exception handler */
-
-#ifndef CONFIG_X86_IAMCU
+	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
-#endif
 
 #if defined(CONFIG_LAZY_FP_SHARING)
 
@@ -194,12 +186,12 @@ allDone:
 	jne	nestedException
 
 	/*
-	 * Clear the _EXC_ACTIVE bit in the k_thread of the current execution
+	 * Clear X86_THREAD_FLAG_EXC in the k_thread of the current execution
 	 * context if we are not in a nested exception (ie, when we exit the
 	 * outermost exception).
 	 */
 
-	andb	$~_EXC_ACTIVE, _thread_offset_to_thread_state(%ecx)
+	andb	$~X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%ecx)
 
 nestedException:
 #endif /* CONFIG_LAZY_FP_SHARING */
@@ -227,9 +219,7 @@ nestedException:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	KPTI_IRET
 
-#if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)
 	push $0 /* dummy error code */
-	push $z_do_kernel_oops
+	push $z_x86_do_kernel_oops
 	jmp _exception_enter
-#endif

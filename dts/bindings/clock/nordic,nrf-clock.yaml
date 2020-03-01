@@ -1,26 +1,18 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Nordic nRF clock control
+description: Nordic nRF clock control node
 
-description: >
-    This is a representation of the Nordic nRF clock control node
+compatible: "nordic,nrf-clock"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-clock"
-
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LWM2M_IPSO_SUPPORT
 	bool "IPSO Alliance Smart Object Support"
@@ -10,6 +7,14 @@ menuconfig LWM2M_IPSO_SUPPORT
 	  This option adds general support for IPSO objects
 
 if LWM2M_IPSO_SUPPORT
+
+config LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	bool "Nonstandard IPSO object Timestamp resources"
+	help
+	  If you enable this option, various IPSO objects supported below
+	  will optionally include timestamp resources (ID 5518).
+	  This is an LWM2M protocol extension which can be useful to associate
+	  times with events. If unsure, leave at the default n.
 
 config LWM2M_IPSO_TEMP_SENSOR
 	bool "IPSO Temperature Sensor Support"
@@ -26,6 +31,13 @@ config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
 	help
 	  This setting establishes the total count of IPSO Temperature
 	  Sensor instances available to the LWM2M client.
+
+config LWM2M_IPSO_TEMP_SENSOR_TIMESTAMP
+	bool "Add timestamp resources to IPSO temperature objects"
+	default y
+	depends on LWM2M_IPSO_TEMP_SENSOR && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each temperature object.
 
 config LWM2M_IPSO_LIGHT_CONTROL
 	bool "IPSO Light Control Support"
@@ -55,6 +67,13 @@ config LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
 	help
 	  This setting establishes the total count of IPSO Accelerometer
 	  instances available to the LWM2M client.
+
+config LWM2M_IPSO_ACCELEROMETER_TIMESTAMP
+	bool "Add timestamp resources to IPSO accelerometer objects"
+	default y
+	depends on LWM2M_IPSO_ACCELEROMETER && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each accelerometer object.
 
 config LWM2M_IPSO_BUZZER
 	bool "IPSO Buzzer Support"
@@ -96,6 +115,13 @@ config LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO On/Off Switch
 	  instances available to the LWM2M client.
 
+config LWM2M_IPSO_ONOFF_SWITCH_TIMESTAMP
+	bool "Add a timestamp resource to IPSO on/off switch objects"
+	default y
+	depends on LWM2M_IPSO_ONOFF_SWITCH && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each on/off switch object.
+
 config LWM2M_IPSO_PUSH_BUTTON
 	bool "IPSO Push Button Support"
 	help
@@ -110,5 +136,12 @@ config LWM2M_IPSO_PUSH_BUTTON_INSTANCE_COUNT
 	help
 	  This setting establishes the total count of IPSO Push Button
 	  instances available to the LWM2M client.
+
+config LWM2M_IPSO_PUSH_BUTTON_TIMESTAMP
+	bool "Add a timestamp resource to IPSO Push Button objects"
+	default y
+	depends on LWM2M_IPSO_PUSH_BUTTON && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each Push Button object.
 
 endif # LWM2M_LWM2M_IPSO_SUPPORT

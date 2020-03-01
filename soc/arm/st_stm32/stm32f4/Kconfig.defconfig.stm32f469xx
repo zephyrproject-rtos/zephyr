@@ -1,18 +1,14 @@
-# Kconfig - ST STM32F469XI MCU configuration options
-#
+# ST STM32F469XI MCU configuration options
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32F469XX
 
 config SOC
-	string
 	default "stm32f469xx"
 
 config NUM_IRQS
-	int
 	default 93
 
 if GPIO_STM32
@@ -34,11 +30,8 @@ config GPIO_STM32_PORTK
 
 endif # GPIO_STM32
 
-if ENTROPY_GENERATOR
-
 config ENTROPY_STM32_RNG
 	default y
-
-endif # ENTROPY_GENERATOR
+	depends on ENTROPY_GENERATOR
 
 endif # SOC_STM32F469XX

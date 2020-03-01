@@ -26,7 +26,7 @@ the following devices:
      nRF52 Adafruit Feather Board (Credit: Adafruit)
 
 More information about the board and its features can be found at the
-`Adafruit Feather nRF52 Bluefruit Learning Guide`_. The `Nordic Semiconductor Documentation library`_
+`Adafruit Feather nRF52 Bluefruit Learning Guide`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -187,9 +187,8 @@ References
 .. _Adafruit Feather nRF52 Bluefruit Learning Guide: https://learn.adafruit.com/bluefruit-nrf52-feather-learning-guide/introduction
 .. _schematic: https://learn.adafruit.com/assets/39913
 .. _pinouts: https://cdn-learn.adafruit.com/assets/assets/000/046/210/original/Feather_NRF52_Pinout_v1.2.pdf?1504807075
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _Adafruit Feather nRF52 Bluefruit LE: https://www.adafruit.com/product/3406
 .. _Adafruit Feather nRF52 Pro with myNewt Bootloader: https://www.adafruit.com/product/3574
 .. _Adafruit SWD connector: https://www.adafruit.com/product/752
-

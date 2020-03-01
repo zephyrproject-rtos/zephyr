@@ -72,7 +72,7 @@
 
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
-#define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME
+#define GPIO_DRV_NAME DT_GPIO_SAM_PORTC_LABEL
 #else
 #error "Unsupported GPIO driver"
 #endif
@@ -140,7 +140,7 @@
 
 #define GPIO_PIN_WR(dev, pin, bit)						\
 	do {									\
-		if (gpio_pin_write((dev), (pin), (bit))) {			\
+		if (gpio_pin_set_raw((dev), (pin), (bit))) {			\
 			printk("Err set " GPIO_NAME "%d! %x\n", (pin), (bit));	\
 		}								\
 	} while (0)								\
@@ -309,7 +309,7 @@ void _pi_lcd_write(struct device *gpio_dev, u8_t bits)
 void pi_lcd_home(struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_RETURN_HOME);
-	k_sleep(2);			/* wait for 2ms */
+	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
 /** Set curson position */
@@ -332,7 +332,7 @@ void pi_lcd_set_cursor(struct device *gpio_dev, u8_t col, u8_t row)
 void pi_lcd_clear(struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_CLEAR_DISPLAY);
-	k_sleep(2);			/* wait for 2ms */
+	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
 
@@ -470,7 +470,7 @@ void pi_lcd_init(struct device *gpio_dev, u8_t cols, u8_t rows, u8_t dotsize)
 	 * above 2.7V before sending commands. Arduino can turn on way
 	 * before 4.5V so we'll wait 50
 	 */
-	k_sleep(50);
+	k_sleep(K_MSEC(50));
 
 	/* this is according to the hitachi HD44780 datasheet
 	 * figure 23/24, pg 45/46 try to set 4/8 bits mode
@@ -478,30 +478,30 @@ void pi_lcd_init(struct device *gpio_dev, u8_t cols, u8_t rows, u8_t dotsize)
 	if (lcd_data.disp_func & LCD_8BIT_MODE) {
 		/* 1st try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		k_sleep(5);			/* wait for 5ms */
+		k_sleep(K_MSEC(5));			/* wait for 5ms */
 
 		/* 2nd try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		k_sleep(5);			/* wait for 5ms */
+		k_sleep(K_MSEC(5));			/* wait for 5ms */
 
 		/* 3rd try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		k_sleep(1);			/* wait for 1ms */
+		k_sleep(K_MSEC(1));			/* wait for 1ms */
 
 		/* Set 4bit interface */
 		_pi_lcd_command(gpio_dev, 0x30);
 	} else {
 		/* 1st try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		k_sleep(5);			/* wait for 5ms */
+		k_sleep(K_MSEC(5));			/* wait for 5ms */
 
 		/* 2nd try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		k_sleep(5);			/* wait for 5ms */
+		k_sleep(K_MSEC(5));			/* wait for 5ms */
 
 		/* 3rd try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		k_sleep(1);			/* wait for 1ms */
+		k_sleep(K_MSEC(1));			/* wait for 1ms */
 
 		/* Set 4bit interface */
 		_pi_lcd_command(gpio_dev, 0x02);
@@ -534,16 +534,16 @@ void main(void)
 	}
 
 	/* Setup GPIO output */
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC25_E, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC28_RS, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC12_D0, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC13_D1, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC14_D2, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC15_D3, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC24_D4, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC23_D5, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC22_D6, GPIO_DIR_OUT);
-	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC21_D7, GPIO_DIR_OUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC25_E, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC28_RS, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC12_D0, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC13_D1, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC14_D2, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC15_D3, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC24_D4, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC23_D5, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC22_D6, GPIO_OUTPUT);
+	GPIO_PIN_CFG(gpio_dev, GPIO_PIN_PC21_D7, GPIO_OUTPUT);
 
 	printk("LCD Init\n");
 	pi_lcd_init(gpio_dev, 20, 4, LCD_5x8_DOTS);

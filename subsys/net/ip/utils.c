@@ -276,7 +276,8 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 }
 
 #if defined(CONFIG_USERSPACE)
-Z_SYSCALL_HANDLER(net_addr_ntop, family, src, dst, size)
+char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
+			   char *dst, size_t size)
 {
 	char str[INET6_ADDRSTRLEN];
 	struct in6_addr addr6;
@@ -305,8 +306,9 @@ Z_SYSCALL_HANDLER(net_addr_ntop, family, src, dst, size)
 
 	Z_OOPS(z_user_to_copy((void *)dst, str, MIN(size, sizeof(str))));
 
-	return (int)dst;
+	return dst;
 }
+#include <syscalls/net_addr_ntop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_net_addr_pton(sa_family_t family, const char *src,
@@ -443,7 +445,8 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 }
 
 #if defined(CONFIG_USERSPACE)
-Z_SYSCALL_HANDLER(net_addr_pton, family, src, dst)
+int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
+			 void *dst)
 {
 	char str[INET6_ADDRSTRLEN];
 	struct in6_addr addr6;
@@ -483,6 +486,7 @@ Z_SYSCALL_HANDLER(net_addr_pton, family, src, dst)
 
 	return 0;
 }
+#include <syscalls/net_addr_pton_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static u16_t calc_chksum(u16_t sum, const u8_t *data, size_t len)
@@ -562,7 +566,8 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 		if (proto != IPPROTO_ICMP) {
 			len = 2 * sizeof(struct in_addr);
 			sum = net_pkt_get_len(pkt) -
-				net_pkt_ip_hdr_len(pkt) + proto;
+				net_pkt_ip_hdr_len(pkt) -
+				net_pkt_ipv4_opts_len(pkt) + proto;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
@@ -584,8 +589,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) - len);
 
 	sum = calc_chksum(sum, pkt->cursor.pos, len);
-
-	net_pkt_skip(pkt, len + net_pkt_ipv6_ext_len(pkt));
+	net_pkt_skip(pkt, len + net_pkt_ip_opts_len(pkt));
 
 	sum = pkt_calc_chksum(pkt, sum);
 
@@ -603,7 +607,9 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	u16_t sum;
 
-	sum = calc_chksum(0, pkt->buffer->data, net_pkt_ip_hdr_len(pkt));
+	sum = calc_chksum(0, pkt->buffer->data,
+			  net_pkt_ip_hdr_len(pkt) +
+			  net_pkt_ipv4_opts_len(pkt));
 
 	sum = (sum == 0U) ? 0xffff : htons(sum);
 
@@ -679,10 +685,22 @@ static bool parse_ipv6(const char *str, size_t str_len,
 	}
 
 	if ((ptr + 1) < (str + str_len) && *(ptr + 1) == ':') {
-		len = str_len - end;
+		/* -1 as end does not contain first [
+		 * -2 as pointer is advanced by 2, skipping ]:
+		 */
+		len = str_len - end - 1 - 2;
+
+		ptr += 2;
+
+		for (i = 0; i < len; i++) {
+			if (!ptr[i]) {
+				len = i;
+				break;
+			}
+		}
 
 		/* Re-use the ipaddr buf for port conversion */
-		memcpy(ipaddr, ptr + 2, len);
+		memcpy(ipaddr, ptr, len);
 		ipaddr[len] = '\0';
 
 		ret = convert_port(ipaddr, &port);
@@ -868,4 +886,27 @@ const char *net_family2str(sa_family_t family)
 	}
 
 	return NULL;
+}
+
+const struct in_addr *net_ipv4_unspecified_address(void)
+{
+	static const struct in_addr addr;
+
+	return &addr;
+}
+
+const struct in_addr *net_ipv4_broadcast_address(void)
+{
+	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
+
+	return &addr;
+}
+
+/* IPv6 wildcard and loopback address defined by RFC2553 */
+const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+
+const struct in6_addr *net_ipv6_unspecified_address(void)
+{
+	return &in6addr_any;
 }

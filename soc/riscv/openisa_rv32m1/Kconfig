@@ -1,5 +1,4 @@
 # Copyright (c) 2018 Foundries.io Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 # The OpenISA RV32M1 SoC directory in riscv supports the RISC-V
@@ -13,10 +12,9 @@
 # conventions, those "other" cores would need to be supported under a
 # different soc subdirectory, e.g. soc/arm instead of soc/riscv.
 
-if SOC_OPENISA_RV32M1_RISCV32
-
 choice
-prompt "OpenISA RV32M1 RISC-V Core Selection"
+	prompt "OpenISA RV32M1 RISC-V Core Selection"
+	depends on SOC_OPENISA_RV32M1_RISCV32
 
 config SOC_OPENISA_RV32M1_RI5CY
 	bool "OpenISA RV32M1 RI5CY core"
@@ -25,5 +23,3 @@ config SOC_OPENISA_RV32M1_ZERO_RISCY
 	bool "OpenISA RV32M1 ZERO-RISCY core"
 
 endchoice
-
-endif  # SOC_OPENISA_RV32M1_RISCV32

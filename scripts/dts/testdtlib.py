@@ -9,10 +9,9 @@ import sys
 
 import dtlib
 
-# Test suite for dtlib.py. Can be run directly as an executable.
+# Test suite for dtlib.py. Run it directly as an executable, in this directory:
 #
-# This script expects to be run from the directory its in. This simplifies
-# things, as paths in the output can be assumed below.
+#   $ ./testdtlib.py
 
 # TODO: Factor out common code from error tests
 
@@ -386,7 +385,7 @@ l3: &l1 {
 &{foo} {
 };
 """,
-".tmp.dts:6 (column 1): parse error: node path does not start with '/'")
+".tmp.dts:6 (column 1): parse error: node path 'foo' does not start with '/'")
 
     verify_error("""
 /dts-v1/;
@@ -397,7 +396,7 @@ l3: &l1 {
 &{/foo} {
 };
 """,
-".tmp.dts:6 (column 1): parse error: component 1 ('foo') in path '/foo' does not exist")
+".tmp.dts:6 (column 1): parse error: component 'foo' in path '/foo' does not exist")
 
     #
     # Test property labels
@@ -460,13 +459,13 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-    a = l01: l02: < l03: &node l04: l05: 2 l06: >,
-        l07: l08: [ l09: 03 l10: l11: 04 l12: l13: ] l14:, "A";
+	a = l01: l02: < l03: &node l04: l05: 2 l06: >,
+            l07: l08: [ l09: 03 l10: l11: 04 l12: l13: ] l14:, "A";
 
-    b = < 0 > l23: l24:;
+	b = < 0 > l23: l24:;
 
-    node: node {
-    };
+	node: node {
+	};
 };
 """,
 """
@@ -586,7 +585,7 @@ l3: &l1 {
 	};
 };
 """,
-"/sub: component 2 ('missing') in path '/sub/missing' does not exist")
+"/sub: component 'missing' in path '/sub/missing' does not exist")
 
     #
     # Test phandles
@@ -901,6 +900,13 @@ l3: &l1 {
 """,
 ".tmp.dts:6 (column 15): parse error: undefined node label 'missing'")
 
+    verify_error("""
+/dts-v1/;
+
+/delete-node/ {
+""",
+".tmp.dts:3 (column 15): parse error: expected label (&foo) or path (&{/foo/bar}) reference")
+
     #
     # Test /include/ (which is handled in the lexer)
     #
@@ -1113,6 +1119,13 @@ y /include/ "via-include-path-1"
 """,
 ".tmp.dts:6 (column 18): parse error: undefined node label 'missing'")
 
+    verify_error("""
+/dts-v1/;
+
+/omit-if-no-ref/ {
+""",
+".tmp.dts:3 (column 18): parse error: expected label (&foo) or path (&{/foo/bar}) reference")
+
     #
     # Test expressions
     #
@@ -1272,7 +1285,7 @@ foo
                 fail("expected {} to lead to {}, lead to {}"
                      .format(path, node_name, node.name))
         except dtlib.DTError:
-            fail("no node found for path " + alias)
+            fail("no node found for path " + path)
 
     def verify_path_error(path, msg):
         prefix = "expected looking up '{}' to generate the error '{}', " \
@@ -1321,8 +1334,8 @@ foo
 
     verify_path_error("", "no alias '' found -- did you forget the leading '/' in the node path?")
     verify_path_error("missing", "no alias 'missing' found -- did you forget the leading '/' in the node path?")
-    verify_path_error("/missing", "component 1 ('missing') in path '/missing' does not exist")
-    verify_path_error("/foo/missing", "component 2 ('missing') in path '/foo/missing' does not exist")
+    verify_path_error("/missing", "component 'missing' in path '/missing' does not exist")
+    verify_path_error("/foo/missing", "component 'missing' in path '/foo/missing' does not exist")
 
     verify_path_exists("/")
     verify_path_exists("/foo")
@@ -1378,7 +1391,7 @@ foo
     verify_path_is("alias4/node5", "node5")
 
     verify_path_error("alias4/node5/node6",
-                      "component 3 ('node6') in path 'alias4/node5/node6' does not exist")
+                      "component 'node6' in path 'alias4/node5/node6' does not exist")
 
     verify_error("""
 /dts-v1/;
@@ -1451,13 +1464,17 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 	nums4 = < 1 2 >, < 3 >, < 4 >;
 	string = "foo";
 	strings = "foo", "bar";
-	phandle1 = < &node >;
-	phandle2 = < &{/node} >;
 	path1 = &node;
 	path2 = &{/node};
+	phandle1 = < &node >;
+	phandle2 = < &{/node} >;
+	phandles1 = < &node &node >;
+	phandles2 = < &node >, < &node >;
+	phandle-and-nums-1 = < &node 1 >;
+	phandle-and-nums-2 = < &node 1 2 &node 3 4 >;
+	phandle-and-nums-3 = < &node 1 2 >, < &node 3 4 >;
 	compound1 = < 1 >, [ 02 ];
 	compound2 = "foo", < >;
-	compound3 = < 1 &{/node} 2>;
 
 	node: node {
 	};
@@ -1479,11 +1496,15 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_type("strings", dtlib.TYPE_STRINGS)
     verify_type("phandle1", dtlib.TYPE_PHANDLE)
     verify_type("phandle2", dtlib.TYPE_PHANDLE)
+    verify_type("phandles1", dtlib.TYPE_PHANDLES)
+    verify_type("phandles2", dtlib.TYPE_PHANDLES)
+    verify_type("phandle-and-nums-1", dtlib.TYPE_PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-2", dtlib.TYPE_PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-3", dtlib.TYPE_PHANDLES_AND_NUMS)
     verify_type("path1", dtlib.TYPE_PATH)
     verify_type("path2", dtlib.TYPE_PATH)
     verify_type("compound1", dtlib.TYPE_COMPOUND)
     verify_type("compound2", dtlib.TYPE_COMPOUND)
-    verify_type("compound3", dtlib.TYPE_COMPOUND)
 
     #
     # Test Property.to_{num,nums,string,strings,node}()
@@ -1511,14 +1532,17 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 	strings = "foo", "bar", "baz";
 	invalid_strings = "foo", "\xff", "bar";
 	ref = <&{/target}>;
-	manualref = < 100 >;
-	missingref = < 123 >;
+	refs = <&{/target} &{/target2}>;
+	refs2 = <&{/target}>, <&{/target2}>;
 	path = &{/target};
 	manualpath = "/target";
 	missingpath = "/missing";
 
 	target {
 		phandle = < 100 >;
+	};
+
+	target2 {
 	};
 };
 """)
@@ -1595,8 +1619,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_nums("three_u", False, [1, 2, 3])
     verify_to_nums("three_u_split", False, [1, 2, 3])
 
-    verify_to_nums_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = < (number) (number) ... >', not 'empty;'")
-    verify_to_nums_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) (number) ... >', not 'string = \"foo\\tbar baz\";'")
+    verify_to_nums_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = < (number) (number) ... >;', not 'empty;'")
+    verify_to_nums_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) (number) ... >;', not 'string = \"foo\\tbar baz\";'")
 
     # Test Property.to_bytes()
 
@@ -1625,8 +1649,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_bytes("u8", b"\x01")
     verify_to_bytes("bytes", b"\x01\x02\x03")
 
-    verify_to_bytes_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = [ (byte) (byte) ... ]', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
-    verify_to_bytes_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = [ (byte) (byte) ... ]', not 'empty;'")
+    verify_to_bytes_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = [ (byte) (byte) ... ];', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
+    verify_to_bytes_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = [ (byte) (byte) ... ];', not 'empty;'")
 
     # Test Property.to_string()
 
@@ -1655,8 +1679,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_string("empty_string", "")
     verify_to_string("string", "foo\tbar baz")
 
-    verify_to_string_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\"', not 'u = < 0x1 >;'")
-    verify_to_string_error("strings", "expected property 'strings' on / in .tmp.dts to be assigned with 'strings = \"string\"', not 'strings = \"foo\", \"bar\", \"baz\";'")
+    verify_to_string_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\";', not 'u = < 0x1 >;'")
+    verify_to_string_error("strings", "expected property 'strings' on / in .tmp.dts to be assigned with 'strings = \"string\";', not 'strings = \"foo\", \"bar\", \"baz\";'")
     verify_to_string_error("invalid_string", r"value of property 'invalid_string' (b'\xff\x00') on / in .tmp.dts is not valid UTF-8")
 
     # Test Property.to_strings()
@@ -1687,7 +1711,7 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_strings("string", ["foo\tbar baz"])
     verify_to_strings("strings", ["foo", "bar", "baz"])
 
-    verify_to_strings_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\", \"string\", ...', not u = < 0x1 >;")
+    verify_to_strings_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\", \"string\", ... ;', not 'u = < 0x1 >;'")
     verify_to_strings_error("invalid_strings", r"value of property 'invalid_strings' (b'foo\x00\xff\x00bar\x00') on / in .tmp.dts is not valid UTF-8")
 
     # Test Property.to_node()
@@ -1715,10 +1739,41 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
             fail("{} the non-DTError '{}'".format(prefix, e))
 
     verify_to_node("ref", "/target")
-    verify_to_node("manualref", "/target")
 
-    verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with either 'string = < &foo >' or 'string = < (valid phandle number) >', not string = \"foo\\tbar baz\";")
-    verify_to_node_error("missingref", "the phandle given in property 'missingref' (123) on / in .tmp.dts does not exist")
+    verify_to_node_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = < &foo >;', not 'u = < 0x1 >;'")
+    verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < &foo >;', not 'string = \"foo\\tbar baz\";'")
+
+    # Test Property.to_nodes()
+
+    def verify_to_nodes(prop, paths):
+        try:
+            actual = [node.path for node in dt.root.props[prop].to_nodes()]
+        except dtlib.DTError as e:
+            fail("failed to convert '{}' to nodes: {}".format(prop, e))
+
+        if actual != paths:
+            fail("expected {} to point to the paths {}, pointed to {}"
+                 .format(prop, paths, actual))
+
+    def verify_to_nodes_error(prop, msg):
+        prefix = "expected converting '{}' to a nodes to generate the error " \
+                 "'{}', generated".format(prop, msg)
+        try:
+            dt.root.props[prop].to_nodes()
+            fail(prefix + " no error")
+        except dtlib.DTError as e:
+            if str(e) != msg:
+                fail("{} the error '{}'".format(prefix, e))
+        except Exception as e:
+            fail("{} the non-DTError '{}'".format(prefix, e))
+
+    verify_to_nodes("zero", [])
+    verify_to_nodes("ref", ["/target"])
+    verify_to_nodes("refs", ["/target", "/target2"])
+    verify_to_nodes("refs2", ["/target", "/target2"])
+
+    verify_to_nodes_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = < &foo &bar ... >;', not 'u = < 0x1 >;'")
+    verify_to_nodes_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < &foo &bar ... >;', not 'string = \"foo\\tbar baz\";'")
 
     # Test Property.to_path()
 
@@ -1788,8 +1843,10 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 
     verify_raw_to_num_error(dtlib.to_num, 0, 0, "'0' has type 'int', expected 'bytes'")
     verify_raw_to_num_error(dtlib.to_num, b"", 0, "'length' must be greater than zero, was 0")
+    verify_raw_to_num_error(dtlib.to_num, b"foo", 2, "b'foo' is 3 bytes long, expected 2")
     verify_raw_to_num_error(dtlib.to_nums, 0, 0, "'0' has type 'int', expected 'bytes'")
     verify_raw_to_num_error(dtlib.to_nums, b"", 0, "'length' must be greater than zero, was 0")
+    verify_raw_to_num_error(dtlib.to_nums, b"foooo", 2, "b'foooo' is 5 bytes long, expected a length that's a a multiple of 2")
 
     #
     # Test duplicate label error
@@ -1993,6 +2050,14 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
     if dt.memreserves != expected:
         fail("expected {} for dt.memreserve, got {}"
              .format(expected, dt.memreserves))
+
+    verify_error("""
+/dts-v1/;
+
+foo: / {
+};
+""",
+".tmp.dts:3 (column 6): parse error: expected /memreserve/ after labels at beginning of file")
 
     #
     # Test __repr__() functions

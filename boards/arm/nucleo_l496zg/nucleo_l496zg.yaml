@@ -8,12 +8,15 @@ toolchain:
 ram: 320
 flash: 1024
 supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
   - gpio
   - i2c
   - spi
   - pwm
-  - rtc
   - counter
+  - watchdog
 testing:
   ignore_tags:
     - net

@@ -15,36 +15,55 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
-#include "exp.h"
+#include <arch/riscv/thread.h>
+#include <arch/riscv/exp.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <soc.h>
-#include <generated_dts_board.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <devicetree.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define STACK_ALIGN  16
 
 #ifdef CONFIG_64BIT
-#define LR ld
-#define SR sd
+#define RV_OP_LOADREG ld
+#define RV_OP_STOREREG sd
 #define RV_REGSIZE 8
 #define RV_REGSHIFT 3
 #else
-#define LR lw
-#define SR sw
+#define RV_OP_LOADREG lw
+#define RV_OP_STOREREG sw
 #define RV_REGSIZE 4
 #define RV_REGSHIFT 2
 #endif
 
+/* Common mstatus bits. All supported cores today have the same
+ * layouts.
+ */
+
+#define MSTATUS_IEN	(1UL << 3)
+#define MSTATUS_MPP_M	(3UL << 11)
+#define MSTATUS_MPIE_EN (1UL << 7)
+
+/* This comes from openisa_rv32m1, but doesn't seem to hurt on other
+ * platforms:
+ * - Preserve machine privileges in MPP. If you see any documentation
+ *   telling you that MPP is read-only on this SoC, don't believe its
+ *   lies.
+ * - Enable interrupts when exiting from exception into a new thread
+ *   by setting MPIE now, so it will be copied into IE on mret.
+ */
+#define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
@@ -63,34 +82,21 @@ extern "C" {
  */
 extern u32_t __soc_get_irq(void);
 
-void z_arch_irq_enable(unsigned int irq);
-void z_arch_irq_disable(unsigned int irq);
-int z_arch_irq_is_enabled(unsigned int irq);
+void arch_irq_enable(unsigned int irq);
+void arch_irq_disable(unsigned int irq);
+int arch_irq_is_enabled(unsigned int irq);
+void arch_irq_priority_set(unsigned int irq, unsigned int prio);
 void z_irq_spurious(void *unused);
 
-
-/**
- * Configure a static interrupt.
- *
- * All arguments must be computable by the compiler at build time.
- *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
- */
 #if defined(CONFIG_RISCV_HAS_PLIC)
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	riscv_plic_set_priority(irq_p, priority_p); \
+	arch_irq_priority_set(irq_p, priority_p); \
 	irq_p; \
 })
 #else
-#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	irq_p; \
@@ -101,17 +107,17 @@ void z_irq_spurious(void *unused);
  * use atomic instruction csrrc to lock global irq
  * csrrc: atomic read and clear bits in CSR register
  */
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 	ulong_t mstatus;
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (SOC_MSTATUS_IEN)
+			  : "r" (MSTATUS_IEN)
 			  : "memory");
 
-	key = (mstatus & SOC_MSTATUS_IEN);
+	key = (mstatus & MSTATUS_IEN);
 	return key;
 }
 
@@ -119,43 +125,43 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
  * use atomic instruction csrrs to unlock global irq
  * csrrs: atomic read and set bits in CSR register
  */
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	ulong_t mstatus;
 
 	__asm__ volatile ("csrrs %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (key & SOC_MSTATUS_IEN)
+			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
 }
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	/* FIXME: looking at z_arch_irq_lock, this should be reducable
+	/* FIXME: looking at arch_irq_lock, this should be reducable
 	 * to just testing that key is nonzero (because it should only
 	 * have the single bit set).  But there is a mask applied to
-	 * the argument in z_arch_irq_unlock() that has me worried
+	 * the argument in arch_irq_unlock() that has me worried
 	 * that something elseswhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
-	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
+	return (key & MSTATUS_IEN) == MSTATUS_IEN;
 }
 
-/**
- * @brief Explicitly nop operation.
- */
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
-
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
+
+static inline u32_t arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*_ASMLANGUAGE */
 
@@ -163,8 +169,5 @@ extern u32_t z_timer_cycle_get_32(void);
 #include <arch/riscv/riscv-privilege/asm_inline.h>
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

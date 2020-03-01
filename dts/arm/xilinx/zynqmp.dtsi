@@ -2,7 +2,6 @@
  * Copyright (c) 2019 Lexmark International, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include <mem.h>
@@ -11,19 +10,6 @@
 
 / {
 	soc {
-		interrupt-parent = <&gic>;
-
-		gic: interrupt-controller@f9010000  {
-			compatible = "arm,gic";
-			reg = <0xf9010000 0x1000>,
-					<0xf9020000 0x100>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			interrupt-parent = <&core_intc>;
-			label = "GIC";
-			status = "okay";
-		};
-
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_K(64)>;
@@ -38,7 +24,8 @@
 			compatible = "xlnx,xuartps";
 			reg = <0xff000000 0x4c>;
 			status = "disabled";
-			interrupts = <21 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
 			label = "UART_0";
 		};
@@ -46,9 +33,12 @@
 		ttc0: timer@ff110000 {
 			compatible = "cdns,ttc";
 			status = "disabled";
-			interrupts = <36 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<37 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<38 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 37 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 38 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff110000 0x1000>;
 			label = "ttc0";
@@ -57,9 +47,12 @@
 		ttc1: timer@ff120000 {
 			compatible = "cdns,ttc";
 			status = "disabled";
-			interrupts = <39 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<40 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<41 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 40 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 41 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff120000 0x1000>;
 			label = "ttc1";
@@ -68,9 +61,12 @@
 		ttc2: timer@ff130000 {
 			compatible = "cdns,ttc";
 			status = "disabled";
-			interrupts = <42 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<43 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<44 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 43 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 44 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff130000 0x1000>;
 			label = "ttc2";
@@ -79,9 +75,12 @@
 		ttc3: timer@ff140000 {
 			compatible = "cdns,ttc";
 			status = "disabled";
-			interrupts = <45 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<46 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>,
-						<47 IRQ_DEFAULT_PRIORITY IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 46 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 47 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff140000 0x1000>;
 			label = "ttc3";

@@ -27,4 +27,6 @@ static int framework_background_thread(void)
 		tun_drv_packet_handler();
 		audio_core_process_background_tasks();
 	}
+
+	return 0;
 }

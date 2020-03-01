@@ -30,6 +30,9 @@
 #include <power/power.h>
 #endif
 
+static int gpio_dw_port_set_bits_raw(struct device *port, u32_t mask);
+static int gpio_dw_port_clear_bits_raw(struct device *port, u32_t mask);
+
 /*
  * ARC architecture configure IP through IO auxiliary registers.
  * Other architectures as ARM and x86 configure IP through MMIO registers
@@ -47,7 +50,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_io_clear_bit(base_addr + offset, bit);
@@ -68,7 +71,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_clear_bit(base_addr + offset, bit);
@@ -113,131 +116,25 @@ static inline void gpio_dw_clock_off(struct device *port)
 #define gpio_dw_clock_off(...)
 #endif
 
-static inline void dw_set_both_edges(u32_t base_addr, u32_t pin)
-{
-	dw_set_bit(base_addr, INT_BOTHEDGE, pin, 1);
-}
 static inline int dw_base_to_block_base(u32_t base_addr)
 {
 	return (base_addr & 0xFFFFFFC0);
 }
+
 static inline int dw_derive_port_from_base(u32_t base_addr)
 {
 	u32_t port = (base_addr & 0x3f) / 12U;
 	return port;
 }
+
 static inline int dw_interrupt_support(const struct gpio_dw_config *config)
 {
-	return ((int)(config->irq_num) > 0);
+	return ((int)(config->irq_num) > 0U);
 }
 
-static inline void dw_interrupt_config(struct device *port, int access_op,
-				       u32_t pin, int flags)
+static inline u32_t dw_get_ext_port(u32_t base_addr)
 {
-	struct gpio_dw_runtime *context = port->driver_data;
-	const struct gpio_dw_config *config = port->config->config_info;
-	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u8_t flag_is_set;
-
-	ARG_UNUSED(access_op);
-
-	/* set as an input pin */
-	dw_set_bit(context->base_addr, SWPORTA_DDR, pin, 0);
-
-	if (dw_interrupt_support(config)) {
-
-		/* level or edge */
-		flag_is_set = (flags & GPIO_INT_EDGE);
-		dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
-
-		/* Active low/high */
-		flag_is_set = (flags & GPIO_INT_ACTIVE_HIGH);
-		dw_set_bit(base_addr, INT_POLARITY, pin, flag_is_set);
-
-		/* both edges */
-		flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
-		if (flag_is_set) {
-			dw_set_both_edges(base_addr, pin);
-			dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
-		}
-
-		/* use built-in debounce  */
-		flag_is_set = (flags & GPIO_INT_DEBOUNCE);
-		dw_set_bit(base_addr, PORTA_DEBOUNCE, pin, flag_is_set);
-
-		/* Finally enabling interrupt */
-		dw_set_bit(base_addr, INTEN, pin, 1);
-	}
-}
-
-static inline void dw_pin_config(struct device *port,
-				 u32_t pin, int flags)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	const struct gpio_dw_config *config = port->config->config_info;
-	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u32_t port_base_addr = context->base_addr;
-	int interrupt_support = dw_interrupt_support(config);
-
-	if (interrupt_support) {
-		/* clear interrupt enable */
-		dw_set_bit(base_addr, INTEN, pin, 0);
-	}
-
-	/* set direction */
-	dw_set_bit(port_base_addr, SWPORTA_DDR, pin, (flags & GPIO_DIR_MASK));
-
-	if (interrupt_support && (flags & GPIO_INT)) {
-		dw_interrupt_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
-	}
-}
-
-static inline void dw_port_config(struct device *port, int flags)
-{
-	const struct gpio_dw_config *config = port->config->config_info;
-	int i;
-
-	for (i = 0; i < config->bits; i++) {
-		dw_pin_config(port, i, flags);
-	}
-}
-
-static inline int gpio_dw_config(struct device *port, int access_op,
-				 u32_t pin, int flags)
-{
-	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
-		return -EINVAL;
-	}
-
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_pin_config(port, pin, flags);
-	} else {
-		dw_port_config(port, flags);
-	}
-	return 0;
-}
-
-static inline int gpio_dw_write(struct device *port, int access_op,
-				u32_t pin, u32_t value)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	u32_t base_addr = context->base_addr;
-
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_set_bit(base_addr, SWPORTA_DR, pin, value);
-	} else {
-		dw_write(base_addr, SWPORTA_DR, value);
-	}
-
-	return 0;
-}
-
-static inline int gpio_dw_read(struct device *port, int access_op,
-			       u32_t pin, u32_t *value)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	u32_t base_addr = context->base_addr;
-	u32_t ext_port = EXT_PORTA;
+	u32_t ext_port;
 
 	/* 4-port GPIO implementation translates from base address to port */
 	switch (dw_derive_port_from_base(base_addr)) {
@@ -252,13 +149,264 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 		break;
 	case 0:
 	default:
+		ext_port = EXT_PORTA;
 		break;
 	}
-	*value = dw_read(dw_base_to_block_base(base_addr), ext_port);
 
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		*value = !!(*value & BIT(pin));
+	return ext_port;
+}
+
+static inline u32_t dw_get_data_port(u32_t base_addr)
+{
+	u32_t dr_port;
+
+	/* 4-port GPIO implementation translates from base address to port */
+	switch (dw_derive_port_from_base(base_addr)) {
+	case 1:
+		dr_port = SWPORTB_DR;
+		break;
+	case 2:
+		dr_port = SWPORTC_DR;
+		break;
+	case 3:
+		dr_port = SWPORTD_DR;
+		break;
+	case 0:
+	default:
+		dr_port = SWPORTA_DR;
+		break;
 	}
+
+	return dr_port;
+}
+
+static inline u32_t dw_get_dir_port(u32_t base_addr)
+{
+	u32_t ddr_port;
+
+	/* 4-port GPIO implementation translates from base address to port */
+	switch (dw_derive_port_from_base(base_addr)) {
+	case 1:
+		ddr_port = SWPORTB_DDR;
+		break;
+	case 2:
+		ddr_port = SWPORTC_DDR;
+		break;
+	case 3:
+		ddr_port = SWPORTD_DDR;
+		break;
+	case 0:
+	default:
+		ddr_port = SWPORTA_DDR;
+		break;
+	}
+
+	return ddr_port;
+}
+
+static int gpio_dw_pin_interrupt_configure(struct device *port,
+		gpio_pin_t pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	const struct gpio_dw_config *config = port->config->config_info;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t dir_port = dw_get_dir_port(port_base_addr);
+	u32_t data_port = dw_get_data_port(port_base_addr);
+	u32_t dir_reg;
+
+	/* Check for invalid pin number */
+	if (pin >= config->bits) {
+		return -EINVAL;
+	}
+
+	/* Only PORT-A supports interrupts */
+	if (data_port != SWPORTA_DR) {
+		return -ENOTSUP;
+	}
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		/* Check if GPIO port supports interrupts */
+		if (!dw_interrupt_support(config)) {
+			return -ENOTSUP;
+		}
+
+		/* Interrupt to be enabled but pin is not set to input */
+		dir_reg = dw_read(port_base_addr, dir_port) & BIT(pin);
+		if (dir_reg != 0U) {
+			return -EINVAL;
+		}
+	}
+
+	/* Does not support both edges */
+	if ((mode == GPIO_INT_MODE_EDGE) &&
+	    (trig == GPIO_INT_TRIG_BOTH)) {
+		return -ENOTSUP;
+	}
+
+	/* Clear interrupt enable */
+	dw_set_bit(base_addr, INTEN, pin, false);
+
+	/* Mask and clear interrupt */
+	dw_set_bit(base_addr, INTMASK, pin, true);
+	dw_write(base_addr, PORTA_EOI, BIT(pin));
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		/* level (0) or edge (1) */
+		dw_set_bit(base_addr, INTTYPE_LEVEL, pin,
+			   (mode == GPIO_INT_MODE_EDGE));
+
+		/* Active low/high */
+		dw_set_bit(base_addr, INT_POLARITY, pin,
+			   (trig == GPIO_INT_TRIG_HIGH));
+
+		/* Finally enabling interrupt */
+		dw_set_bit(base_addr, INTEN, pin, true);
+		dw_set_bit(base_addr, INTMASK, pin, false);
+	}
+
+	return 0;
+}
+
+static inline void dw_pin_config(struct device *port,
+				 u32_t pin, int flags)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	const struct gpio_dw_config *config = port->config->config_info;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t dir_port = dw_get_dir_port(port_base_addr);
+	bool pin_is_output, need_debounce;
+
+	/* Set init value then direction */
+	pin_is_output = (flags & GPIO_OUTPUT) != 0U;
+	if (pin_is_output) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			gpio_dw_port_set_bits_raw(port, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			gpio_dw_port_clear_bits_raw(port, BIT(pin));
+		}
+	}
+
+	dw_set_bit(port_base_addr, dir_port, pin, pin_is_output);
+
+	/* Use built-in debounce.
+	 * Note debounce circuit is only available if also supporting
+	 * interrupts according to datasheet.
+	 */
+	if (dw_interrupt_support(config) && (dir_port == SWPORTA_DDR)) {
+		need_debounce = (flags & GPIO_INT_DEBOUNCE);
+		dw_set_bit(base_addr, PORTA_DEBOUNCE, pin, need_debounce);
+	}
+}
+
+static inline int gpio_dw_config(struct device *port,
+				 gpio_pin_t pin,
+				 gpio_flags_t flags)
+{
+	const struct gpio_dw_config *config = port->config->config_info;
+	u32_t io_flags;
+
+	/* Check for invalid pin number */
+	if (pin >= config->bits) {
+		return -EINVAL;
+	}
+
+	/* Does not support disconnected pin, and
+	 * not supporting both input/output at same time.
+	 */
+	io_flags = flags & (GPIO_INPUT | GPIO_OUTPUT);
+	if ((io_flags == GPIO_DISCONNECTED)
+	    || (io_flags == (GPIO_INPUT | GPIO_OUTPUT))) {
+		return -ENOTSUP;
+	}
+
+	/* No open-drain support */
+	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
+		return -ENOTSUP;
+	}
+
+	/* Does not support pull-up/pull-down */
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
+		return -ENOTSUP;
+	}
+
+	dw_pin_config(port, pin, flags);
+
+	return 0;
+}
+
+static int gpio_dw_port_get_raw(struct device *port, u32_t *value)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t ext_port = dw_get_ext_port(port_base_addr);
+
+	*value = dw_read(base_addr, ext_port);
+
+	return 0;
+}
+
+static int gpio_dw_port_set_masked_raw(struct device *port,
+				       u32_t mask, u32_t value)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t data_port = dw_get_data_port(port_base_addr);
+	u32_t pins;
+
+	pins = dw_read(base_addr, data_port);
+	pins = (pins & ~mask) | (mask & value);
+	dw_write(base_addr, data_port, pins);
+
+	return 0;
+}
+
+static int gpio_dw_port_set_bits_raw(struct device *port, u32_t mask)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t data_port = dw_get_data_port(port_base_addr);
+	u32_t pins;
+
+	pins = dw_read(base_addr, data_port);
+	pins |= mask;
+	dw_write(base_addr, data_port, pins);
+
+	return 0;
+}
+
+static int gpio_dw_port_clear_bits_raw(struct device *port, u32_t mask)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t data_port = dw_get_data_port(port_base_addr);
+	u32_t pins;
+
+	pins = dw_read(base_addr, data_port);
+	pins &= ~mask;
+	dw_write(base_addr, data_port, pins);
+
+	return 0;
+}
+
+static int gpio_dw_port_toggle_bits(struct device *port, u32_t mask)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t port_base_addr = context->base_addr;
+	u32_t data_port = dw_get_data_port(port_base_addr);
+	u32_t pins;
+
+	pins = dw_read(base_addr, data_port);
+	pins ^= mask;
+	dw_write(base_addr, data_port, pins);
+
 	return 0;
 }
 
@@ -271,36 +419,35 @@ static inline int gpio_dw_manage_callback(struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-static inline int gpio_dw_enable_callback(struct device *port, int access_op,
-					  u32_t pin)
+static inline int gpio_dw_enable_callback(struct device *port,
+					  gpio_pin_t pin)
 {
-	const struct gpio_dw_config *config = port->config->config_info;
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t data_port = dw_get_data_port(context->base_addr);
 
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_write(base_addr, PORTA_EOI, BIT(pin));
-		dw_set_bit(base_addr, INTMASK, pin, 0);
-	} else {
-		dw_write(base_addr, PORTA_EOI, BIT_MASK(config->bits));
-		dw_write(base_addr, INTMASK, 0);
+	if (data_port != SWPORTA_DR) {
+		return -ENOTSUP;
 	}
+
+	dw_write(base_addr, PORTA_EOI, BIT(pin));
+	dw_set_bit(base_addr, INTMASK, pin, 0);
 
 	return 0;
 }
 
-static inline int gpio_dw_disable_callback(struct device *port, int access_op,
-					   u32_t pin)
+static inline int gpio_dw_disable_callback(struct device *port,
+					   gpio_pin_t pin)
 {
-	const struct gpio_dw_config *config = port->config->config_info;
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
+	u32_t data_port = dw_get_data_port(context->base_addr);
 
-	if (GPIO_ACCESS_BY_PIN == access_op) {
-		dw_set_bit(base_addr, INTMASK, pin, 1);
-	} else {
-		dw_write(base_addr, INTMASK, BIT_MASK(config->bits));
+	if (data_port != SWPORTA_DR) {
+		return -ENOTSUP;
 	}
+
+	dw_set_bit(base_addr, INTMASK, pin, 1);
 
 	return 0;
 }
@@ -391,49 +538,23 @@ static void gpio_dw_isr(void *arg)
 }
 
 static const struct gpio_driver_api api_funcs = {
-	.config = gpio_dw_config,
-	.write = gpio_dw_write,
-	.read = gpio_dw_read,
+	.pin_configure = gpio_dw_config,
+	.port_get_raw = gpio_dw_port_get_raw,
+	.port_set_masked_raw = gpio_dw_port_set_masked_raw,
+	.port_set_bits_raw = gpio_dw_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_dw_port_clear_bits_raw,
+	.port_toggle_bits = gpio_dw_port_toggle_bits,
+	.pin_interrupt_configure = gpio_dw_pin_interrupt_configure,
 	.manage_callback = gpio_dw_manage_callback,
 	.enable_callback = gpio_dw_enable_callback,
 	.disable_callback = gpio_dw_disable_callback,
 };
-
-#ifdef CONFIG_PCI
-static inline int gpio_dw_setup(struct device *dev)
-{
-	struct gpio_dw_runtime *context = dev->driver_data;
-
-	pci_bus_scan_init();
-
-	if (!pci_bus_scan(&context->pci_dev)) {
-		return 0;
-	}
-
-#ifdef CONFIG_PCI_ENUMERATION
-	context->base_addr = context->pci_dev.addr;
-#endif
-	pci_enable_regs(&context->pci_dev);
-
-	pci_show(&context->pci_dev);
-
-	return 1;
-}
-#else
-#define gpio_dw_setup(_unused_) (1)
-#endif /* CONFIG_PCI */
-
 
 static int gpio_dw_initialize(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr;
-
-	if (!gpio_dw_setup(port)) {
-		port->driver_api = NULL;
-		return -EPERM;
-	}
 
 	if (dw_interrupt_support(config)) {
 
@@ -462,6 +583,9 @@ static int gpio_dw_initialize(struct device *port)
 static void gpio_config_0_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_config_0 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_0_IRQ,
 #endif
@@ -477,23 +601,14 @@ static const struct gpio_dw_config gpio_config_0 = {
 
 static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_GPIO_DW_0_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_0_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_0_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_0_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_0_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
 DEVICE_DEFINE(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_0_runtime, &gpio_config_0,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_0_runtime, &gpio_config_0,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 		    &gpio_0_runtime, &gpio_config_0,
@@ -530,6 +645,9 @@ static void gpio_config_0_irq(struct device *port)
 static void gpio_config_1_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_1 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_1_IRQ,
 #endif
@@ -546,22 +664,13 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 
 static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_GPIO_DW_1_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_1_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_1_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_1_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_1_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_1_runtime, &gpio_dw_config_1,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_1_runtime, &gpio_dw_config_1,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 		    &gpio_1_runtime, &gpio_dw_config_1,
@@ -597,6 +706,9 @@ static void gpio_config_1_irq(struct device *port)
 static void gpio_config_2_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_2 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_2_IRQ,
 #endif
@@ -613,22 +725,13 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 
 static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_GPIO_DW_2_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_2_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_2_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_2_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_2_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_2_runtime, &gpio_dw_config_2,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_2_runtime, &gpio_dw_config_2,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
 		    &gpio_2_runtime, &gpio_dw_config_2,
@@ -664,6 +767,9 @@ static void gpio_config_2_irq(struct device *port)
 static void gpio_config_3_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_3 = {
+	.common = {
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_SNPS_DESIGNWARE_GPIO_NGPIOS),
+	},
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	.irq_num = DT_GPIO_DW_3_IRQ,
 #endif
@@ -680,22 +786,13 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 
 static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_GPIO_DW_3_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_3_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_3_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_3_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_3_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_DEFINE(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
-		       gpio_dw_device_ctrl, &gpio_3_runtime, &gpio_dw_config_3,
-		       POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		       &api_funcs);
+	      gpio_dw_device_ctrl, &gpio_3_runtime, &gpio_dw_config_3,
+	      POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      &api_funcs);
 #else
 DEVICE_AND_API_INIT(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
 		    &gpio_3_runtime, &gpio_dw_config_3,

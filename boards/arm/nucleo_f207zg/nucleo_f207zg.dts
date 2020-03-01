@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f2/stm32f207Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F207ZG-NUCLEO board";
@@ -21,15 +22,15 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpiob 0 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		blue_led_1: led_2 {
-			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 		red_led_1: led_3 {
-			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
 	};
@@ -38,7 +39,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -50,18 +51,13 @@
 	};
 };
 
-arduino_serial: &usart6 {};
-
 &usart3 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart3_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart6 {
 	current-speed = <115200>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

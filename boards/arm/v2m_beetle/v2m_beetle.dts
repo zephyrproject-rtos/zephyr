@@ -9,6 +9,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		watchdog0 = &wdog0;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
@@ -87,6 +91,7 @@
 			compatible = "arm,cmsdk-watchdog";
 			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
+			label = "WATCHDOG";
 		};
 
 		gpio0: gpio@40010000 {

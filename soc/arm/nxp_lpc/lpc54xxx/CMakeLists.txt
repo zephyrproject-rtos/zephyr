@@ -7,6 +7,11 @@ zephyr_library()
 
 zephyr_library_sources(soc.c)
 
+zephyr_library_include_directories(
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  )
+
 if (CONFIG_SLAVE_CORE_MCUX)
   set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
   string(CONFIGURE ${CONFIG_SLAVE_IMAGE_MCUX} core_m0_image)

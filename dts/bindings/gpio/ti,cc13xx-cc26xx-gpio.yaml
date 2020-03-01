@@ -1,30 +1,25 @@
-#
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: TI SimpleLink CC13xx / CC26xx GPIO
+description: TI SimpleLink CC13xx / CC26xx GPIO node
 
-description: >
-    This is a representation of the TI SimpleLink CC13xx / CC26xx GPIO node
+compatible: "ti,cc13xx-cc26xx-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

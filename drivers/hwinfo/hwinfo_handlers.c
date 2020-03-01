@@ -7,9 +7,10 @@
 #include <syscall_handler.h>
 #include <drivers/hwinfo.h>
 
-Z_SYSCALL_HANDLER(hwinfo_get_device_id, buffer, length) {
-
+ssize_t z_vrfy_hwinfo_get_device_id(u8_t *buffer, size_t length)
+{
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buffer, length));
 
 	return z_impl_hwinfo_get_device_id((u8_t *)buffer, (size_t)length);
 }
+#include <syscalls/hwinfo_get_device_id_mrsh.c>

@@ -1,15 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-title: DTCM
 
-description: >
-  This binding gives a base representation of the Cortex M7 DTCM (Data Tightly Coupled Memory)
+description: Cortex M7 DTCM (Data Tightly Coupled Memory)
 
-inherits:
-  !include base.yaml
+compatible: "arm,dtcm"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,dtcm"
-
     reg:
-      category: required
+      required: true

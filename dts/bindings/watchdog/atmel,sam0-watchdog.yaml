@@ -1,20 +1,15 @@
-title: Atmel SAM0 watchdog driver
+description: Atmel SAM0 watchdog
 
-description: >
-    This is a representation of the SAM0 watchdog
+compatible: "atmel,sam0-watchdog"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-watchdog"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

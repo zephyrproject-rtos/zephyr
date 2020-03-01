@@ -1,10 +1,7 @@
-# Kconfig - ARM V2M Beetle Board configuration options
+# ARM V2M Beetle Board configuration options
 
-#
 # Copyright (c) 2016 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_V2M_BEETLE
 
@@ -30,12 +27,9 @@ config GPIO_CMSDK_AHB_PORT3
 
 endif # GPIO
 
-if PINMUX
-
 config PINMUX_BEETLE
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 if SERIAL
 
@@ -47,12 +41,9 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if WATCHDOG
-
 config WDOG_CMSDK_APB
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 if COUNTER
 

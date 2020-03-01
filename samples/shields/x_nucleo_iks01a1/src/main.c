@@ -10,6 +10,17 @@
 #include <stdio.h>
 #include <sys/util.h>
 
+#ifdef CONFIG_LIS3MDL_TRIGGER
+static int lis3mdl_trig_cnt;
+
+static void lis3mdl_trigger_handler(struct device *dev,
+				    struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, trig->chan);
+	lis3mdl_trig_cnt++;
+}
+#endif
+
 void main(void)
 {
 	struct sensor_value temp, hum, press;
@@ -18,6 +29,10 @@ void main(void)
 	struct device *lis3mdl = device_get_binding(DT_INST_0_ST_LIS3MDL_MAGN_LABEL);
 	struct device *lsm6ds0 = device_get_binding(DT_INST_0_ST_LSM6DS0_LABEL);
 	struct device *lps25hb = device_get_binding(DT_INST_0_ST_LPS25HB_PRESS_LABEL);
+#if defined(CONFIG_LIS3MDL_TRIGGER)
+	struct sensor_trigger trig;
+	int cnt = 1;
+#endif
 
 	if (hts221 == NULL) {
 		printf("Could not get HTS221 device\n");
@@ -36,6 +51,12 @@ void main(void)
 		return;
 	}
 
+#ifdef CONFIG_LIS3MDL_TRIGGER
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_MAGN_XYZ;
+	sensor_trigger_set(lis3mdl, &trig, lis3mdl_trigger_handler);
+#endif
+
 	while (1) {
 
 		/* Get sensor samples */
@@ -48,10 +69,12 @@ void main(void)
 			printf("LPS25HB Sensor sample update error\n");
 			return;
 		}
+#ifndef CONFIG_LIS3MDL_TRIGGER
 		if (sensor_sample_fetch(lis3mdl) < 0) {
 			printf("LIS3MDL Sensor sample update error\n");
 			return;
 		}
+#endif
 		if (sensor_sample_fetch(lsm6ds0) < 0) {
 			printf("LSM6DS0 Sensor sample update error\n");
 			return;
@@ -98,6 +121,12 @@ void main(void)
 		   sensor_value_to_double(&accel_xyz[1]),
 		   sensor_value_to_double(&accel_xyz[2]));
 
-		k_sleep(2000);
+
+#if defined(CONFIG_LIS3MDL_TRIGGER)
+		printk("%d:: lis3mdl trig %d\n", cnt, lis3mdl_trig_cnt);
+		cnt++;
+#endif
+
+		k_sleep(K_MSEC(2000));
 	}
 }

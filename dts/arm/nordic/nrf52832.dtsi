@@ -71,6 +71,7 @@
 			interrupts = <7 1>;
 			status = "disabled";
 			label = "ADC_0";
+			#io-channel-cells = <1>;
 		};
 
 		clock: clock@40000000 {
@@ -108,7 +109,13 @@
 		};
 
 		i2c0: i2c@40003000 {
-			compatible = "nordic,nrf-i2c";
+			/*
+			 * This i2c node can be TWI, TWIM, or TWIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -119,7 +126,13 @@
 		};
 
 		i2c1: i2c@40004000 {
-			compatible = "nordic,nrf-i2c";
+			/*
+			 * This i2c node can be TWI, TWIM, or TWIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
@@ -135,6 +148,7 @@
 			interrupts = <28 1>;
 			status = "disabled";
 			label = "PWM_0";
+			#pwm-cells = <1>;
 		};
 
 		pwm1: pwm@40021000 {
@@ -143,6 +157,7 @@
 			interrupts = <33 1>;
 			status = "disabled";
 			label = "PWM_1";
+			#pwm-cells = <1>;
 		};
 
 		pwm2: pwm@40022000 {
@@ -151,6 +166,7 @@
 			interrupts = <34 1>;
 			status = "disabled";
 			label = "PWM_2";
+			#pwm-cells = <1>;
 		};
 
 		qdec: qdec@40012000 {
@@ -162,7 +178,13 @@
 		};
 
 		spi0: spi@40003000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -172,7 +194,13 @@
 		};
 
 		spi1: spi@40004000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
@@ -182,7 +210,13 @@
 		};
 
 		spi2: spi@40023000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
@@ -294,4 +328,5 @@
 	clock-prescaler = <0>;
 	ppi-base = <14>;
 	gpiote-base = <0>;
+	#pwm-cells = <1>;
 };

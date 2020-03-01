@@ -1,10 +1,7 @@
-# Kconfig - WNCM 14A2A driver options
+# WNCM 14A2A driver options
 
-#
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MODEM_WNCM14A2A
 	bool "Enable Wistron LTE-M modem driver"

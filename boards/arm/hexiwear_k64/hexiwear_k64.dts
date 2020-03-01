@@ -3,33 +3,13 @@
 /dts-v1/;
 
 #include <nxp/nxp_k6x.dtsi>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "Hexiwear K64 board";
 	compatible = "nxp,hexiwear", "nxp,k64f", "nxp,k6x";
 
 	aliases {
-		adc-0 = &adc0;
-		adc-1 = &adc1;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
-		uart-0 = &uart0;
-		uart-4 = &uart4;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
@@ -51,15 +31,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpioc 8 0>;
+			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpiod 0 0>;
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpioc 9 0>;
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 		};
 	};
@@ -68,13 +48,13 @@
 		compatible = "pwm-leds";
 
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm3 4 15625000>;
+			pwms = <&pwm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm3 0 15625000>;
+			pwms = <&pwm3 0 15625000 PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm3 5 15625000>;
+			pwms = <&pwm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
 };
@@ -112,16 +92,16 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 1 0>;
-		int2-gpios = <&gpiod 13 0>;
+		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 	};
 
 	fxas21002@20 {
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
 		label = "FXAS21002";
-		int1-gpios = <&gpiod 1 0>;
-		int2-gpios = <&gpioc 18 0>;
+		int1-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioc 18 GPIO_ACTIVE_LOW>;
 	};
 };
 

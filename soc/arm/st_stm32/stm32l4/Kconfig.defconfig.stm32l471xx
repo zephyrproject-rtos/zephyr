@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32L476RG MCU
-#
+# ST Microelectronics STM32L476RG MCU
+
 # Copyright (c) 2018 Allterco Robotics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L471XX
 
 config SOC
-	string
 	default "stm32l471xx"
 
 config NUM_IRQS
-	int
 	default 82
 
 if GPIO_STM32

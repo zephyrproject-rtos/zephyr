@@ -12,3 +12,4 @@ tests:
             - "MAX44009 light sensor application"
             - "sensor: lum reading: (.*)"
         fixture: fixture_i2c_max44009
+    filter: dt_compat_enabled("maxim,max44009")

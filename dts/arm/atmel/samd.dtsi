@@ -9,6 +9,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -56,6 +60,7 @@
 			label = "FLASH_CTRL";
 			reg = <0x41004000 0x22>;
 			interrupts = <5 0>;
+			lock-regions = <16>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -178,6 +183,7 @@
 			 */
 			gclk = <3>;
 			prescaler = <4>;
+			#io-channel-cells = <1>;
 		};
 	};
 };

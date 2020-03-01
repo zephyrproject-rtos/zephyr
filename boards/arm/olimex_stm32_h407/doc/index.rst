@@ -9,7 +9,7 @@ Overview
 The OLIMEX-STM32-H407 is open source hardware and is based on
 the STMicroelectronics STM32F407ZG ARM Cortex-M4 CPU.
 
-.. figure:: img/olimex_stm32_h407.png
+.. figure:: img/olimex_stm32_h407.jpg
      :width: 540px
      :align: center
      :height: 454px
@@ -377,4 +377,3 @@ way.  Here is an example for the :ref:`hello_world` application.
 
 .. _ST STM32F407ZG Datasheet:
    http://www.st.com/resource/en/reference_manual/dm00031020.pdf
-

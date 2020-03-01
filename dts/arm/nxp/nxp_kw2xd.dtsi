@@ -7,6 +7,32 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		adc-0 = &adc0;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		gpio-d = &gpiod;
+		gpio-e = &gpioe;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		pinmux-d = &pinmux_d;
+		pinmux-e = &pinmux_e;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		usbd-0 = &usbd;
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -104,9 +130,6 @@
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
 			label = "UART_0";
 
-			pinctrl-0 = <&uart0_default>;
-			pinctrl-names = "default";
-
 			status = "disabled";
 		};
 
@@ -129,9 +152,6 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
 			label = "UART_2";
 
-			pinctrl-0 = <&uart2_default>;
-			pinctrl-names = "default";
-
 			status = "disabled";
 		};
 
@@ -139,26 +159,12 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
-
-			uart0_default: uart0_default {
-				rx-tx {
-					pins = <1>, <2>;
-					function = <2>;
-				};
-			};
 		};
 
 		pinmux_b: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
-
-			spi1_default: spi1_default {
-				miso-mosi-clk {
-					pins = <17>, <16>, <11>;
-					function = <2>;
-				};
-			};
 		};
 
 		pinmux_c: pinmux@4004b000 {
@@ -171,13 +177,6 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
-
-			uart2_default: uart2_default {
-				rx-tx {
-					pins = <2>, <3>;
-					function = <3>;
-				};
-			};
 		};
 
 		pinmux_e: pinmux@4004d000 {
@@ -249,8 +248,6 @@
 			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 
-			pinctrl-0 = <&spi1_default>;
-			pinctrl-names = "default";
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -280,7 +277,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_0";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm1: pwm@40039000{
@@ -290,7 +287,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_1";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@4003a000{
@@ -300,7 +297,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_2";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{
@@ -309,6 +306,7 @@
 			interrupts = <39 0>;
 			label = "ADC_0";
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		usbd: usbd@40072000 {

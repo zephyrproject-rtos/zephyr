@@ -22,9 +22,6 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MAX		0
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
-#define CODEC_RESET_PIN_ASSERT		0
-#define CODEC_RESET_PIN_DEASSERT	1
-
 struct codec_driver_config {
 	struct device	*i2c_device;
 	const char	*i2c_dev_name;
@@ -108,12 +105,11 @@ static int codec_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* configure reset GPIO */
+	/* Configure reset GPIO, and set the line to inactive, which will also
+	 * de-assert the reset line and thus enable the codec.
+	 */
 	gpio_pin_configure(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-				     dev_cfg->gpio_flags);
-	/* de-assert reset */
-	gpio_pin_write(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-				 CODEC_RESET_PIN_DEASSERT);
+			   dev_cfg->gpio_flags | GPIO_OUTPUT_INACTIVE);
 
 	codec_soft_reset(dev);
 

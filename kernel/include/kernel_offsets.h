@@ -64,6 +64,10 @@ GEN_OFFSET_SYM(_thread_t, base);
 GEN_OFFSET_SYM(_thread_t, callee_saved);
 GEN_OFFSET_SYM(_thread_t, arch);
 
+#ifdef CONFIG_USE_SWITCH
+GEN_OFFSET_SYM(_thread_t, switch_handle);
+#endif
+
 #ifdef CONFIG_THREAD_STACK_INFO
 GEN_OFFSET_SYM(_thread_stack_info_t, start);
 GEN_OFFSET_SYM(_thread_stack_info_t, size);

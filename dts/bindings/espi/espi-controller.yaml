@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ESPI devices
+
+include: base.yaml
+
+bus: espi
+
+properties:
+    label:
+      required: true

@@ -13,9 +13,7 @@ This board acts as a mezzanine platform for all 96Boards CE compliant
 boards. It can also be used as a standalone board.
 
 .. figure:: img/96b_stm32_sensor_mez.png
-     :width: 998px
      :align: center
-     :height: 642px
      :alt: 96Boards STM32 Sensor Mezzanine
 
      96Boards STM32 Sensor Mezzanine
@@ -42,7 +40,7 @@ Hardware
 - GPIO with external interrupt capability
 - UART
 - I2C (2)
-- SPI (2)
+- SPI (3)
 - I2S (1)
 
 Supported Features
@@ -110,6 +108,20 @@ Serial Port
 On 96Boards STM32 Sensor Mezzanine, Zephyr console output is assigned to UART4
 exposed via on-board Micro USB connector. Default settings are 115200 8N1.
 
+The default USART mappings for the remaining ones are:
+
+- USART1: Connected to AP via UART0 on the 96Boards Low-Speed Header.
+        - TX: PA9
+        - RX: PA10
+
+- USART2: Connected to D0(RX) and D1(TX) on the Arduino Header.
+        - TX: PD5
+        - RX: PD6
+
+- USART3: Broken out to Grove connector J10.
+        - TX: PD8
+        - RX: PD9
+
 I2C
 ---
 
@@ -125,9 +137,10 @@ I2C2 goes to the Groove connectors and can be used to attach external sensors.
 
 SPI
 ---
-96Boards STM32 Sensor Mezzanine board has 2 SPIs. SPI1 is used in slave mode
+96Boards STM32 Sensor Mezzanine board has 3 SPIs. SPI1 is used in slave mode
 as the communication bus with the AP. SPI2 is used in master mode to control
-the LSM6DS3H sensor. The default SPI mapping is:
+the LSM6DS3H sensor. SPI4 is broken out to Grove Connector J5.
+The default SPI mapping is:
 
 - SPI1_NSS  : PA4
 - SPI1_SCK  : PA5
@@ -137,6 +150,10 @@ the LSM6DS3H sensor. The default SPI mapping is:
 - SPI2_SCK  : PD3
 - SPI2_MISO : PB14
 - SPI2_MOSI : PB15
+- SPI4_NSS  : PE11
+- SPI4_SCK  : PE12
+- SPI4_MISO : PE13
+- SPI4_MOSI : PE14
 
 PWM
 ---

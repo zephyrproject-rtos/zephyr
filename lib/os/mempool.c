@@ -40,7 +40,7 @@ static int get_bit_ptr(struct sys_mem_pool_base *p, int level, int bn,
 	return bn & 0x1f;
 }
 
-static void set_free_bit(struct sys_mem_pool_base *p, int level, int bn)
+static void set_alloc_bit(struct sys_mem_pool_base *p, int level, int bn)
 {
 	u32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
@@ -48,7 +48,7 @@ static void set_free_bit(struct sys_mem_pool_base *p, int level, int bn)
 	*word |= (1<<bit);
 }
 
-static void clear_free_bit(struct sys_mem_pool_base *p, int level, int bn)
+static void clear_alloc_bit(struct sys_mem_pool_base *p, int level, int bn)
 {
 	u32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
@@ -56,10 +56,18 @@ static void clear_free_bit(struct sys_mem_pool_base *p, int level, int bn)
 	*word &= ~(1<<bit);
 }
 
-/* Returns all four of the free bits for the specified blocks
+static inline bool alloc_bit_is_set(struct sys_mem_pool_base *p, int level, int bn)
+{
+	u32_t *word;
+	int bit = get_bit_ptr(p, level, bn, &word);
+
+	return (*word >> bit) & 1;
+}
+
+/* Returns all four of the allocated bits for the specified blocks
  * "partners" in the bottom 4 bits of the return value
  */
-static int partner_bits(struct sys_mem_pool_base *p, int level, int bn)
+static int partner_alloc_bits(struct sys_mem_pool_base *p, int level, int bn)
 {
 	u32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
@@ -94,7 +102,6 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 		void *block = block_ptr(p, p->max_sz, i);
 
 		sys_dlist_append(&p->levels[0].free_list, block);
-		set_free_bit(p, 0, i);
 	}
 }
 
@@ -138,7 +145,7 @@ static void *block_alloc(struct sys_mem_pool_base *p, int l, size_t lsz)
 
 	block = sys_dlist_get(&p->levels[l].free_list);
 	if (block != NULL) {
-		clear_free_bit(p, l, block_num(p, block, lsz));
+		set_alloc_bit(p, l, block_num(p, block, lsz));
 	}
 	return block;
 }
@@ -151,8 +158,12 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		int i, lsz = lsizes[level];
 		void *block = block_ptr(p, lsz, bn);
 
+		/* Detect common double-free occurrences */
+		__ASSERT(alloc_bit_is_set(p, level, bn),
+			 "mempool double-free detected at %p", block);
+
 		/* Put it back */
-		set_free_bit(p, level, bn);
+		clear_alloc_bit(p, level, bn);
 		sys_dlist_append(&p->levels[level].free_list, block);
 
 		/* Relax the lock (might result in it being taken, which is OK!) */
@@ -160,14 +171,13 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		key = pool_irq_lock(p);
 
 		/* Check if we can recombine its superblock, and repeat */
-		if (level == 0 || partner_bits(p, level, bn) != 0xf) {
+		if (level == 0 || partner_alloc_bits(p, level, bn) != 0) {
 			return key;
 		}
 
 		for (i = 0; i < 4; i++) {
 			int b = (bn & ~3) + i;
 
-			clear_free_bit(p, level, b);
 			sys_dlist_remove(block_ptr(p, lsz, b));
 		}
 
@@ -199,13 +209,12 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 	int i, bn;
 
 	bn = block_num(p, block, lsizes[l]);
+	set_alloc_bit(p, l + 1, 4*bn);
 
 	for (i = 1; i < 4; i++) {
-		int lbn = 4*bn + i;
 		int lsz = lsizes[l + 1];
 		void *block2 = (lsz * i) + (char *)block;
 
-		set_free_bit(p, l + 1, lbn);
 		sys_dlist_append(&p->levels[l + 1].free_list, block2);
 	}
 
@@ -354,3 +363,30 @@ void sys_mem_pool_free(void *ptr)
 	sys_mutex_unlock(&p->mutex);
 }
 
+size_t sys_mem_pool_try_expand_inplace(void *ptr, size_t requested_size)
+{
+	struct sys_mem_pool_block *blk;
+	size_t struct_blk_size = WB_UP(sizeof(struct sys_mem_pool_block));
+	size_t block_size, total_requested_size;
+
+	ptr = (char *)ptr - struct_blk_size;
+	blk = (struct sys_mem_pool_block *)ptr;
+
+	/*
+	 * Determine size of previously allocated block by its level.
+	 * Most likely a bit larger than the original allocation
+	 */
+	block_size = blk->pool->base.max_sz;
+	for (int i = 1; i <= blk->level; i++) {
+		block_size = WB_DN(block_size / 4);
+	}
+
+	/* We really need this much memory */
+	total_requested_size = requested_size + struct_blk_size;
+
+	if (block_size >= total_requested_size) {
+		/* size adjustment can occur in-place */
+		return 0;
+	}
+	return block_size - struct_blk_size;
+}

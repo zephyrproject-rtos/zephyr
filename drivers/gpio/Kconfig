@@ -1,10 +1,7 @@
-# Kconfig - GPIO configuration options
+# GPIO configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO
 	bool "GPIO Drivers"
@@ -24,11 +21,7 @@ config GPIO_SHELL
 
 source "drivers/gpio/Kconfig.dw"
 
-source "drivers/gpio/Kconfig.pcal9535a"
-
-source "drivers/gpio/Kconfig.qmsi"
-
-source "drivers/gpio/Kconfig.sch"
+source "drivers/gpio/Kconfig.pca95xx"
 
 source "drivers/gpio/Kconfig.mcux"
 
@@ -37,8 +30,6 @@ source "drivers/gpio/Kconfig.mcux_igpio"
 source "drivers/gpio/Kconfig.mcux_lpc"
 
 source "drivers/gpio/Kconfig.mmio32"
-
-source "drivers/gpio/Kconfig.atmel_sam3"
 
 source "drivers/gpio/Kconfig.stm32"
 
@@ -52,13 +43,9 @@ source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"
 
-source "drivers/gpio/Kconfig.cc2650"
-
 source "drivers/gpio/Kconfig.esp32"
 
 source "drivers/gpio/Kconfig.gecko"
-
-source "drivers/gpio/Kconfig.altera_nios2"
 
 source "drivers/gpio/Kconfig.sam0"
 
@@ -77,5 +64,9 @@ source "drivers/gpio/Kconfig.stellaris"
 source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.ht16k33"
+
+source "drivers/gpio/Kconfig.lmp90xxx"
+
+source "drivers/gpio/Kconfig.litex"
 
 endif # GPIO

@@ -19,8 +19,7 @@ static struct k_sem sync_sema;
 /**TESTPOINT: stack analyze*/
 static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 {
-	stack_analyze("Test", (char *)thread->stack_info.start,
-						thread->stack_info.size);
+	log_stack_usage(thread);
 }
 
 /*
@@ -131,7 +130,7 @@ void test_main(void)
 {
 	ztest_test_suite(profiling_api,
 			 ztest_unit_test(test_call_stacks_analyze_main),
-			 ztest_unit_test(test_call_stacks_analyze_idle),
-			 ztest_unit_test(test_call_stacks_analyze_workq));
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_idle),
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_workq));
 	ztest_run_test_suite(profiling_api);
 }

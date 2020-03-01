@@ -1,9 +1,7 @@
-# Kconfig - EFR32 SLWSTK6061A board
-#
+# EFR32 SLWSTK6061A board
+
 # Copyright (c) 2018, Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_EFR32_SLWSTK6061A
 
@@ -15,6 +13,10 @@ config CMU_HFXO_FREQ
 
 config CMU_LFXO_FREQ
 	default 32768
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
 
 if GPIO_GECKO
 
@@ -38,11 +40,8 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if COUNTER
-
 config COUNTER_GECKO_RTCC
 	default y
-
-endif # COUNTER
+	depends on COUNTER
 
 endif # BOARD_EFR32_SLWSTK6061A

@@ -1,10 +1,7 @@
-# Kconfig - serial driver configuration options
+# Serial driver configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SERIAL
 	bool "Serial Drivers"
@@ -71,7 +68,7 @@ source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.mcux"
 
-source "drivers/serial/Kconfig.mcux_lpc_usart"
+source "drivers/serial/Kconfig.mcux_flexcomm"
 
 source "drivers/serial/Kconfig.mcux_lpsci"
 
@@ -90,8 +87,6 @@ source "drivers/serial/Kconfig.nsim"
 source "drivers/serial/Kconfig.usart_sam"
 
 source "drivers/serial/Kconfig.uart_sam"
-
-source "drivers/serial/Kconfig.qmsi"
 
 source "drivers/serial/Kconfig.stm32"
 

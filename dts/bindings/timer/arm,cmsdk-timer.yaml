@@ -1,20 +1,15 @@
-title: ARM CMSDK TIMER
+description: ARM CMSDK timer
 
-description: >
-    This binding gives a base representation of the ARM CMSDK TIMER
+compatible: "arm,cmsdk-timer"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-timer"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

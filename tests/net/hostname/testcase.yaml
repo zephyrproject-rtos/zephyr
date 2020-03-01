@@ -1,0 +1,11 @@
+common:
+  min_ram: 16
+  tags: net hostname
+  depends_on: netif
+tests:
+  net.hostname:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=n
+  net.hostname.unique:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=y

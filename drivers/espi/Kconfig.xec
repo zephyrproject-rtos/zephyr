@@ -1,26 +1,34 @@
-# Kconfig.xec - Microchip XEC ESPI configuration options
-#
-# Copyright (c) 2019 Intel Corporation
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Microchip XEC ESPI configuration options
 
-menuconfig ESPI_XEC
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
+	depends on SOC_FAMILY_MEC
 	help
 	  Enable the Microchip XEC ESPI driver.
 
-config ESPI_XEC
-	bool "Enable ESPI IO device"
-	depends on SOC_FAMILY_MEC
-	help
-	  This tells the driver to configure the eSPI device at boot
+if ESPI_XEC
+
+config ESPI_OOB_CHANNEL
+	default y
 
 config ESPI_PERIPHERAL_HOST_IO
-	def_bool y
+	default  y
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
-	def_bool y
+	default y
 
 config ESPI_PERIPHERAL_UART
-	def_bool y
+	default y
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	int "SoC port exposed as logical eSPI UART"
+	default 2
+	depends on ESPI_PERIPHERAL_UART
+	help
+	  This tells the driver to which SoC UART to direct the UART traffic
+	  send over eSPI from host.
+
+endif #ESPI_XEC

@@ -51,8 +51,11 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	sec_tag_t sec_tag_list[] = {
 		SERVER_CERTIFICATE_TAG,
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+		PSK_TAG,
+#endif
 	};
-	int role = 1;
+	int role = TLS_DTLS_ROLE_SERVER;
 
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
@@ -199,14 +202,14 @@ void stop_udp(void)
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		k_thread_abort(udp6_thread_id);
-		if (conf.ipv6.udp.sock > 0) {
+		if (conf.ipv6.udp.sock >= 0) {
 			(void)close(conf.ipv6.udp.sock);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		k_thread_abort(udp4_thread_id);
-		if (conf.ipv4.udp.sock > 0) {
+		if (conf.ipv4.udp.sock >= 0) {
 			(void)close(conf.ipv4.udp.sock);
 		}
 	}

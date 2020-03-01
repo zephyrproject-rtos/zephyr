@@ -62,7 +62,7 @@ static void tlifo_read_write(struct k_lifo *plifo)
 	/**TESTPOINT: thread-isr-thread data passing via lifo*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tThread_entry, plifo, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+		K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	TC_PRINT("main lifo put ---> ");
 	tlifo_put(plifo);

@@ -56,7 +56,11 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 
 struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
+#if CONFIG_SPI_LOOPBACK_MODE_LOOP
+	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
+#else
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+#endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
@@ -64,7 +68,11 @@ struct spi_config spi_cfg_slow = {
 
 struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
+#if CONFIG_SPI_LOOPBACK_MODE_LOOP
+	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
+#else
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+#endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
@@ -126,6 +134,62 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 		LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
+
+
+static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
+{
+	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+	(void)memset(buffer_rx, 0x77, BUF_SIZE);
+
+	const struct spi_buf tx_bufs[] = {
+		{
+	       /*
+		* According to documentation, when sending NULL tx buf -
+		*  NOP frames should be sent on MOSI line
+		*/
+			.buf = NULL,
+			.len = BUF_SIZE,
+		},
+	};
+	const struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		},
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+
+	int ret;
+
+	LOG_INF("Start");
+
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+
+	if (memcmp(buffer_rx, EXPECTED_NOP_RETURN_BUF, BUF_SIZE)) {
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Rx Buffer should contain NOP frames but got: %s",
+			buffer_print_rx);
+		zassert_false(1, "Buffer not as expected");
 		return -1;
 	}
 
@@ -312,6 +376,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
+#if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -392,6 +457,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 
 	return 0;
 }
+#endif
 
 static int spi_resource_lock_test(struct device *lock_dev,
 				  struct spi_config *spi_conf_lock,
@@ -417,10 +483,12 @@ static int spi_resource_lock_test(struct device *lock_dev,
 	return 0;
 }
 
-void testing_spi(void)
+void test_spi_loopback(void)
 {
+#if (CONFIG_SPI_ASYNC)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
+#endif
 	struct device *spi_slow;
 	struct device *spi_fast;
 
@@ -441,25 +509,35 @@ void testing_spi(void)
 
 	spi_fast = spi_slow;
 
+#if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
 					  (k_thread_entry_t)spi_async_call_cb,
 					  &async_evt, &caller, NULL,
-					  K_PRIO_COOP(7), 0, 0);
+					  K_PRIO_COOP(7), 0, K_NO_WAIT);
+#endif
 
 	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
+	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
-	    spi_rx_every_4(spi_slow, &spi_cfg_slow) ||
-	    spi_async_call(spi_slow, &spi_cfg_slow)) {
+	    spi_rx_every_4(spi_slow, &spi_cfg_slow)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(spi_slow, &spi_cfg_slow)
+#endif
+	    ) {
 		goto end;
 	}
 
 	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
+	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
-	    spi_rx_every_4(spi_fast, &spi_cfg_fast) ||
-	    spi_async_call(spi_fast, &spi_cfg_fast)) {
+	    spi_rx_every_4(spi_fast, &spi_cfg_fast)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(spi_fast, &spi_cfg_fast)
+#endif
+	    ) {
 		goto end;
 	}
 
@@ -470,12 +548,16 @@ void testing_spi(void)
 
 	LOG_INF("All tx/rx passed");
 end:
+#if (CONFIG_SPI_ASYNC)
 	k_thread_abort(async_thread_id);
+#else
+	;
+#endif
 }
 
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_spi, ztest_unit_test(testing_spi));
+	ztest_test_suite(test_spi, ztest_unit_test(test_spi_loopback));
 	ztest_run_test_suite(test_spi);
 }

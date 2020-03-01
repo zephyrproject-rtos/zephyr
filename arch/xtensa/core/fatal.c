@@ -8,7 +8,10 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <kernel_arch_data.h>
-#include <xtensa/specreg.h>
+#include <xtensa/config/specreg.h>
+#include <xtensa-asm2-context.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -25,9 +28,9 @@
 	})
 
 
-#if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
-static char *cause_str(unsigned int cause_code)
+char *z_xtensa_exccause(unsigned int cause_code)
 {
+#if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	switch (cause_code) {
 	case 0:
 		return "illegal instruction";
@@ -78,49 +81,16 @@ static char *cause_str(unsigned int cause_code)
 	default:
 		return "unknown/reserved";
 	}
-}
+#else
+	ARG_UNUSED(cause_code);
+	return "na";
 #endif
-
-static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
-{
-	int mask;
-
-	mask = BIT(num_bits) - 1;
-	val = val >> offset;
-	return val & mask;
 }
 
-static void dump_exc_state(void)
+void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-#if defined(CONFIG_PRINTK) || defined (CONFIG_LOG)
-	unsigned int cause, ps;
-
-	cause = get_sreg(EXCCAUSE);
-	ps = get_sreg(PS);
-
-	z_fatal_print("Exception cause %d (%s):", cause, cause_str(cause));
-	z_fatal_print("  EPC1     : 0x%08x EXCSAVE1 : 0x%08x EXCVADDR : 0x%08x",
-		      get_sreg(EPC_1), get_sreg(EXCSAVE_1), get_sreg(EXCVADDR));
-
-	z_fatal_print("Program state (PS):");
-	z_fatal_print("  INTLEVEL : %02d EXCM    : %d UM  : %d RING : %d WOE : %d",
-		      get_bits(0, 4, ps), get_bits(4, 1, ps),
-		      get_bits(5, 1, ps), get_bits(6, 2, ps),
-		      get_bits(18, 1, ps));
-#ifndef __XTENSA_CALL0_ABI__
-	z_fatal_print("  OWB      : %02d CALLINC : %d",
-		      get_bits(8, 4, ps), get_bits(16, 2, ps));
-#endif
-#endif /* CONFIG_PRINTK || CONFIG_LOG */
-}
-
-XTENSA_ERR_NORET void z_xtensa_fatal_error(unsigned int reason,
-					   const z_arch_esf_t *esf)
-{
-	dump_exc_state();
-
 	if (esf) {
-		z_fatal_print("Faulting instruction address = 0x%x", esf->pc);
+		z_xtensa_dump_stack(esf);
 	}
 
 	z_fatal_error(reason, esf);
@@ -133,8 +103,8 @@ XTENSA_ERR_NORET void FatalErrorHandler(void)
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 {
-	z_fatal_print("INTENABLE = 0x%x INTERRUPT = 0x%x (%x)",
-		      get_sreg(INTENABLE), (1 << intNo), intNo);
+	LOG_ERR("INTENABLE = 0x%x INTERRUPT = 0x%x (%x)",
+		get_sreg(INTENABLE), (1 << intNo), intNo);
 	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
@@ -149,7 +119,7 @@ void exit(int return_code)
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
 #else
-	z_fatal_print("exit(%d)", return_code);
+	LOG_ERR("exit(%d)", return_code);
 	k_panic();
 #endif
 }

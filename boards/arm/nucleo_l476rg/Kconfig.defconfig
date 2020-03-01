@@ -1,22 +1,17 @@
-# Kconfig - STM32L476RG Nucleo board configuration
-#
+# STM32L476RG Nucleo board configuration
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_L476RG
 
 config BOARD
 	default "nucleo_l476rg"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if SPI
 
@@ -28,18 +23,16 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
-if I2C
-
 config I2C_1
 	default y
-
-endif # SPI
-
-if PWM
+	depends on I2C
 
 config PWM_STM32_2
 	default y
+	depends on PWM
 
-endif # PWM
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_L476RG

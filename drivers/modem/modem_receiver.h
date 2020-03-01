@@ -86,6 +86,10 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 			  const char *uart_dev_name,
 			  u8_t *buf, size_t size);
 
+int mdm_receiver_sleep(struct mdm_receiver_context *ctx);
+
+int mdm_receiver_wake(struct mdm_receiver_context *ctx);
+
 #ifdef __cplusplus
 }
 #endif

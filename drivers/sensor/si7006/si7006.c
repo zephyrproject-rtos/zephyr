@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -12,7 +12,7 @@
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 #include <stdio.h>
 #include <stdlib.h>

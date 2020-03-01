@@ -1,40 +1,32 @@
-#
 # Copyright (c) 2019 Brett Witherspoon
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: TI SimpleLink CC13xx / CC26xx SPI
+description: TI SimpleLink CC13xx / CC26xx SPI node
 
-description: >
-    This is a representation of the TI SimpleLink CC13xx / CC26xx SPI node
+compatible: "ti,cc13xx-cc26xx-spi"
 
-inherits:
-    !include spi.yaml
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-spi"
-
     reg:
-      category: required
+      required: true
 
     sck-pin:
       type: int
-      category: required
+      required: true
       description: SCK pin
 
     mosi-pin:
       type: int
-      category: required
+      required: true
       description: MOSI pin
 
     miso-pin:
       type: int
-      category: required
+      required: true
       description: MISO pin
 
     cs-pin:
       type: int
-      category: optional
+      required: false
       description: CS pin

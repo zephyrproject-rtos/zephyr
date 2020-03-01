@@ -1,22 +1,14 @@
-#
 # Copyright (c) 2018, Aurelien Jarno
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Atmel SAM Flash Controller
+description: Atmel SAM Enhanced Embedded Flash Controller (EEFC)
 
-description: >
-    This binding gives a base representation of the Atmel SAM Enhanced Embedded Flash Controller
+compatible: "atmel,sam-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-flash-controller"
-
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true

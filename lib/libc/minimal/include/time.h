@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <sys/_types.h>
 #include <bits/restrict.h>
+#include <sys/_timespec.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
  * like mbedTLS and to support time APIs.
@@ -41,8 +42,6 @@ typedef _TIME_T_ time_t;
 #define __suseconds_t_defined
 typedef _SUSECONDS_T_ suseconds_t;
 #endif
-
-#include <sys/_timespec.h>
 
 /*
  * Conversion between civil time and UNIX time.  The companion

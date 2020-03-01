@@ -1626,15 +1626,13 @@ static void generate_random_mac(u8_t mac_addr[6])
 
 	entropy = sys_rand32_get();
 
-	/* Atmel's OUI */
-	mac_addr[0] = 0x00;
-	mac_addr[1] = 0x04;
-	mac_addr[2] = 0x25;
+	mac_addr[0] = ATMEL_OUI_B0 | 0x02; /* force LAA bit */
+	mac_addr[1] = ATMEL_OUI_B1;
+	mac_addr[2] = ATMEL_OUI_B2;
 
 	mac_addr[3] = entropy >> 8;
 	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	mac_addr[5] = entropy >> 0;
 }
 #endif
 
@@ -1658,8 +1656,13 @@ static void eth0_iface_init(struct net_if *iface)
 	int result;
 	int i;
 
-	/* For VLAN, this value is only used to get the correct L2 driver */
-	dev_data->iface = iface;
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (dev_data->iface == NULL) {
+		dev_data->iface = iface;
+	}
 
 	ethernet_init(iface);
 

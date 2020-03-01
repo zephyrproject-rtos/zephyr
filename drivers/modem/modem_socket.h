@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2019-2020 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,9 @@
 
 #include <kernel.h>
 #include <net/net_ip.h>
+#include <net/socket.h>
+
+#include "sockets_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +40,8 @@ struct modem_socket {
 	struct k_sem sem_data_ready;
 
 	/** socket state */
+	bool is_connected;
+	bool is_waiting;
 	bool is_polled;
 
 	/** temporary socket data */
@@ -50,9 +55,14 @@ struct modem_socket_config {
 	/* beginning socket id (modems can set this to 0 or 1 as needed) */
 	int base_socket_num;
 	struct k_sem sem_poll;
+	struct k_sem sem_lock;
+
+	const struct socket_op_vtable *vtable;
 };
 
-/* return total size of remaining packets */
+/* return size of the first packet */
+u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+				    struct modem_socket *sock);
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total);
 int modem_socket_get(struct modem_socket_config *cfg, int family, int type,
@@ -65,7 +75,12 @@ struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg);
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd);
 int modem_socket_poll(struct modem_socket_config *cfg,
 		      struct pollfd *fds, int nfds, int msecs);
-int modem_socket_init(struct modem_socket_config *cfg);
+void modem_socket_wait_data(struct modem_socket_config *cfg,
+			    struct modem_socket *sock);
+void modem_socket_data_ready(struct modem_socket_config *cfg,
+			     struct modem_socket *sock);
+int modem_socket_init(struct modem_socket_config *cfg,
+		      const struct socket_op_vtable *vtable);
 
 #ifdef __cplusplus
 }

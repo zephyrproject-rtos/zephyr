@@ -51,7 +51,6 @@ These steps will produce an HTML coverage report for a single application.
    enable the configuration manually:
 
    .. zephyr-app-commands::
-      :tool: all
       :board: mps2_an385
       :gen-args: -DCONFIG_COVERAGE=y
       :goals: build
@@ -110,7 +109,6 @@ You may postprocess these with your preferred tools. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :tool: cmake
    :gen-args: -DCONFIG_COVERAGE=y
    :host-os: unix
    :board: native_posix
@@ -123,6 +121,13 @@ You may postprocess these with your preferred tools. For example:
    # Press Ctrl+C to exit
    lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1
    genhtml lcov.info --output-directory lcov_html -q --ignore-errors source --branch-coverage --highlight --legend
+
+.. note::
+
+   You need a recent version of lcov (at least 1.14) with support for
+   intermediate text format. Such packages exist in recent Linux distributions.
+
+   Alternatively, you can use gcovr (at least version 4.2).
 
 Sanitycheck coverage reports
 ****************************
@@ -143,4 +148,3 @@ which will produce ``sanity-out/coverage/index.html`` with the report.
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
-

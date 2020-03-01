@@ -81,8 +81,11 @@ u8_t ll_feature_req_send(u16_t handle);
 u8_t ll_version_ind_send(u16_t handle);
 u8_t ll_terminate_ind_send(u16_t handle, u8_t reason);
 u8_t ll_rssi_get(u16_t handle, u8_t *rssi);
-u8_t ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl);
+u8_t ll_tx_pwr_lvl_get(u8_t handle_type,
+		       u16_t handle, u8_t type, s8_t *tx_pwr_lvl);
 void ll_tx_pwr_get(s8_t *min, s8_t *max);
+u8_t ll_tx_pwr_lvl_set(u8_t handle_type,
+		       u16_t handle, s8_t *tx_pwr_lvl);
 
 u8_t ll_apto_get(u16_t handle, u16_t *apto);
 u8_t ll_apto_set(u16_t handle, u16_t apto);

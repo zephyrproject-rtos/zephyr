@@ -58,6 +58,12 @@ enum net_context_state {
 /** Remote address set */
 #define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
 
+/** Is the socket accepting connections */
+#define NET_CONTEXT_ACCEPTING_SOCK  BIT(9)
+
+/** Is the socket closing / closed */
+#define NET_CONTEXT_CLOSING_SOCK  BIT(10)
+
 struct net_context;
 
 /**
@@ -244,10 +250,15 @@ struct net_context {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_TCP1)
 	/** TCP connection information */
 	struct net_tcp *tcp;
-#endif /* CONFIG_NET_TCP */
+#endif /* CONFIG_NET_TCP1 */
+
+#if defined(CONFIG_NET_TCP2)
+	/** TCP connection information */
+	void *tcp;
+#endif /* CONFIG_NET_TCP2 */
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
@@ -257,6 +268,9 @@ struct net_context {
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 #if defined(CONFIG_NET_SOCKETS)
+	/** BSD socket private data */
+	void *socket_data;
+
 	/** Per-socket packet or connection queues */
 	union {
 		struct k_fifo recv_q;
@@ -324,6 +338,70 @@ static inline bool net_context_is_used(struct net_context *context)
 	NET_ASSERT(context);
 
 	return context->flags & NET_CONTEXT_IN_USE;
+}
+
+/**
+ * @brief Is this context is accepting data now.
+ *
+ * @param context Network context.
+ *
+ * @return True if the context is accepting connections, False otherwise.
+ */
+static inline bool net_context_is_accepting(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->flags & NET_CONTEXT_ACCEPTING_SOCK;
+}
+
+/**
+ * @brief Set this context to accept data now.
+ *
+ * @param context Network context.
+ * @param accepting True if accepting, False if not
+ */
+static inline void net_context_set_accepting(struct net_context *context,
+					     bool accepting)
+{
+	NET_ASSERT(context);
+
+	if (accepting) {
+		context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
+	} else {
+		context->flags &= ~NET_CONTEXT_ACCEPTING_SOCK;
+	}
+}
+
+/**
+ * @brief Is this context closing.
+ *
+ * @param context Network context.
+ *
+ * @return True if the context is closing, False otherwise.
+ */
+static inline bool net_context_is_closing(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->flags & NET_CONTEXT_CLOSING_SOCK;
+}
+
+/**
+ * @brief Set this context to closing.
+ *
+ * @param context Network context.
+ * @param closing True if closing, False if not
+ */
+static inline void net_context_set_closing(struct net_context *context,
+					   bool closing)
+{
+	NET_ASSERT(context);
+
+	if (closing) {
+		context->flags |= NET_CONTEXT_CLOSING_SOCK;
+	} else {
+		context->flags &= ~NET_CONTEXT_CLOSING_SOCK;
+	}
 }
 
 #define NET_CONTEXT_STATE_SHIFT 1

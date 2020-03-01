@@ -43,6 +43,10 @@ div.rst-other-versions dl {
    margin-bottom: 0;
 }
 
+/* tweak spacing after a toctree, fixing issue from sphinx-tabs */
+.toctree-wrapper ul, ul.simple ol.simple {
+   margin-bottom: 24px !important;
+}
 
 /* code block highlight color in rtd changed to lime green, no no no */
 
@@ -53,6 +57,13 @@ div.rst-other-versions dl {
     color: #000000;
 }
 
+/* code literal links should be blue, and purple after visiting */
+a.internal code.literal {
+   color: #2980B9;
+}
+a.internal:visited code.literal {
+   color: #9B59B9;
+}
 
 /* Make the version number more visible */
 .wy-side-nav-search>div.version {
@@ -62,6 +73,12 @@ div.rst-other-versions dl {
 /* squish the space between a paragraph before a list */
 div > p + ul, div > p + ol {
    margin-top: -20px;
+}
+
+/* squish space before an hlist in a list */
+li table.hlist {
+   margin-top: -10px;
+   margin-bottom: 5px;
 }
 
 /* add some space before the figure caption */
@@ -105,6 +122,7 @@ table {
 /*  make .. hlist:: tables fill the page */
 table.hlist {
     width: 95% !important;
+    table-layout: fixed;
 }
 
 /*  override rtd theme white-space no-wrap in table heading and content  */
@@ -226,8 +244,8 @@ kbd
 
 
 .grid-item a:hover {
-        background-color: #C756E9;
-	color: white;
+    background-color: #C756E9;
+    color: white;
 }
 
 
@@ -240,4 +258,48 @@ kbd
    line-height: 1.8;
    font-size: 4rem;
    color: mediumslateblue;
+}
+
+/* add a class for multi-column support
+ * in docs to replace use of .hlist with
+ * a .. rst-class:: rst-columns
+ */
+
+.rst-columns {
+   column-width: 18em;
+}
+
+/* numbered "h2" steps */
+
+body {
+   counter-reset: step-count;
+}
+
+div.numbered-step h2::before {
+  counter-increment: step-count;
+  content: counter(step-count);
+  background: #cccccc;
+  border-radius: 0.8em;
+  -moz-border-radius: 0.8em;
+  -webkit-border-radius: 0.8em;
+  color: #ffffff;
+  display: inline-block;
+  font-weight: bold;
+  line-height: 1.6em;
+  margin-right: 5px;
+  text-align: center;
+  width: 1.6em;
+}
+
+/* tweak bottom margin of a code block in a list */
+
+.tab div[class^='highlight']:last-child {
+   margin-bottom: 1em;
+}
+
+/* force table content font-size in responsive tables to be 100%
+ * fixing larger font size for paragraphs in the kconfig tables */
+
+.wy-table-responsive td p {
+   font-size:100%;
 }

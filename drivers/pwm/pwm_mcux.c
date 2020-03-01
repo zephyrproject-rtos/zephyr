@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 #include <fsl_pwm.h>
 #include <fsl_clock.h>
@@ -30,7 +30,8 @@ struct pwm_mcux_data {
 };
 
 static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
 	const struct pwm_mcux_config *config = dev->config->config_info;
 	struct pwm_mcux_data *data = dev->driver_data;
@@ -39,6 +40,11 @@ static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
 	if (pwm >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {

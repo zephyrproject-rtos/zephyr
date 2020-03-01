@@ -12,10 +12,8 @@
  */
 
 OUTPUT_ARCH(xtensa)
-#define _LINKER
-#define _ASMLANGUAGE
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include "memory.h"
 #include <autoconf.h>
 #include <linker/sections.h>
@@ -140,6 +138,9 @@ PHDRS
 }
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
+
+PROVIDE(__memctl_default = 0xFFFFFF00);
+PROVIDE(_MemErrorHandler = 0xFFFFFF00);
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
@@ -357,7 +358,7 @@ SECTIONS
     *(.rodata1)
     __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
     KEEP (*(.xt_except_table))
-    KEEP (*(.gcc_except_table))
+    KEEP (*(.gcc_except_table .gcc_except_table.*))
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
     KEEP (*(.eh_frame))
@@ -444,6 +445,7 @@ SECTIONS
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
   } >LPRAM_REGION
+  _heap_sentry = DT_L2_SRAM_BASE + DT_L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }

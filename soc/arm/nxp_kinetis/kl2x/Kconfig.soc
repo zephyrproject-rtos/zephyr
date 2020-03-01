@@ -1,13 +1,11 @@
-# Kconfig - Kinetis KL2x MCU series
-#
+# Kinetis KL2x MCU series
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Kinetis KL2x MCU Selection"
-depends on SOC_SERIES_KINETIS_KL2X
+	prompt "Kinetis KL2x MCU Selection"
+	depends on SOC_SERIES_KINETIS_KL2X
 
 config SOC_MKL25Z4
 	bool "SOC_MKL25Z4"

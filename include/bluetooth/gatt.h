@@ -310,6 +310,12 @@ struct bt_gatt_cpf {
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
  *  BT_GATT_DESCRIPTOR, etc.
  *
+ *  When using :option:`CONFIG_BT_GATT_CACHING` and :option:`CONFIG_BT_SETTINGS`
+ *  then all services that should be included in the GATT Database Hash
+ *  calculation should be added before calling @ref settings_load.
+ *  All services registered after settings_load will trigger a new database hash
+ *  calculation and a new hash stored.
+ *
  *  @param svc Service containing the available attributes
  *
  *  @return 0 in case of success or negative value in case of error.
@@ -546,12 +552,16 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _value) \
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
-			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						    .value_handle = 0U, \
-						    .properties = _props, })), \
+			  ((struct bt_gatt_chrc[]) { { .uuid = _uuid,	\
+						       .value_handle = 0U, \
+						       .properties = _props, } })), \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
-#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
+#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_CONN)
+#else
+	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
+#endif
 
 /** @brief GATT CCC configuration entry.
  *  @param id   Local identity, BT_ID_DEFAULT in most cases.
@@ -563,21 +573,47 @@ struct bt_gatt_ccc_cfg {
 	u8_t                    id;
 	bt_addr_le_t		peer;
 	u16_t			value;
-	u8_t			data[4] __aligned(4);
 };
 
 /* Internal representation of CCC value */
 struct _bt_gatt_ccc {
-	struct bt_gatt_ccc_cfg	*cfg;
-	size_t			cfg_len;
-	u16_t			value;
-	void			(*cfg_changed)(const struct bt_gatt_attr *attr,
-					       u16_t value);
-	bool			(*cfg_write)(struct bt_conn *conn,
-					     const struct bt_gatt_attr *attr,
-					     u16_t value);
-	bool			(*cfg_match)(struct bt_conn *conn,
-					     const struct bt_gatt_attr *attr);
+	/** Configuration for each connection */
+	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
+
+	/** Highest value of all connected peer's subscriptions */
+	u16_t value;
+
+	/** CCC attribute changed callback
+	 *
+	 *  @param attr   The attribute that's changed value
+	 *  @param value  New value
+	 */
+	void (*cfg_changed)(const struct bt_gatt_attr *attr, u16_t value);
+
+	/** CCC attribute write validation callback
+	 *
+	 *  @param conn   The connection that is requesting to write
+	 *  @param attr   The attribute that's being written
+	 *  @param value  CCC value to write
+	 *
+	 *  @return Number of bytes to write, or in case of an error
+	 *          BT_GATT_ERR() with a specific error code.
+	 */
+	ssize_t (*cfg_write)(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, u16_t value);
+
+	/** CCC attribute match handler
+	 * Indicate if it is OK to send a notification or indication
+	 * to the subscriber.
+	 *
+	 *  @param conn   The connection that is being checked
+	 *  @param attr   The attribute that's being checked
+	 *
+	 *  @return true  if application has approved notification/indication,
+	 *          false if application does not approve.
+	 */
+	bool (*cfg_match)(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr);
 };
 
 /** @brief Read Client Characteristic Configuration Attribute helper.
@@ -618,36 +654,48 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       u16_t len, u16_t offset, u8_t flags);
 
+
+/** @def BT_GATT_CCC_INITIALIZER
+ *  @brief Initialize Client Characteristic Configuration Declaration Macro.
+ *
+ *  Helper macro to initialize a Managed CCC attribute value.
+ *
+ *  @param _changed Configuration changed callback.
+ *  @param _write Configuration write callback.
+ *  @param _match Configuration match callback.
+ */
+#define BT_GATT_CCC_INITIALIZER(_changed, _write, _match) \
+	{                                            \
+		.cfg = {},                           \
+		.cfg_changed = _changed,             \
+		.cfg_write = _write,                 \
+		.cfg_match = _match,                 \
+	}
+
 /** @def BT_GATT_CCC_MANAGED
  *  @brief Managed Client Characteristic Configuration Declaration Macro.
  *
  *  Helper macro to declare a Managed CCC attribute.
  *
- *  @param _cfg Initial configuration.
- *  @param _changed Configuration changed callback.
- *  @param _write Configuration write callback.
- *  @param _match Configuration match callback.
+ *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
+ *  @param _perm CCC access permissions.
  */
-#define BT_GATT_CCC_MANAGED(_cfg, _changed, _write, _match)		\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,				\
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,		\
-			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,	\
-			(&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
-					       .cfg_len = ARRAY_SIZE(_cfg), \
-					       .cfg_changed = _changed, \
-					       .cfg_write = _write, \
-					       .cfg_match = _match }))
+#define BT_GATT_CCC_MANAGED(_ccc, _perm)				\
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC, _perm,			\
+			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,  \
+			_ccc)
 
 /** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.
  *
  *  Helper macro to declare a CCC attribute.
  *
- *  @param _cfg Initial configuration.
- *  @param _cfg_changed Configuration changed callback.
+ *  @param _changed Configuration changed callback.
+ *  @param _perm CCC access permissions.
  */
-#define BT_GATT_CCC(_cfg, _cfg_changed)					\
-	BT_GATT_CCC_MANAGED(_cfg, _cfg_changed, NULL, NULL)
+#define BT_GATT_CCC(_changed, _perm)				\
+	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
+		{BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)}), _perm)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
@@ -805,7 +853,7 @@ struct bt_gatt_notify_params {
  *  The callback is run from System Workqueue context.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
- *  parameters, when using this method the attribute given when be used as the
+ *  parameters, when using this method the attribute given is used as the
  *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
@@ -865,7 +913,8 @@ typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
-	struct bt_att_req _req;
+	/** Notification Attribute UUID type */
+	const struct bt_uuid *uuid;
 	/** Indicate Attribute object*/
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
@@ -878,9 +927,21 @@ struct bt_gatt_indicate_params {
 
 /** @brief Indicate attribute value change.
  *
- *  Send an indication of attribute value change.
- *  Note: This function should only be called if CCC is declared with
- *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
+ *  Send an indication of attribute value change. if connection is NULL
+ *  indicate all peer that have notification enabled via CCC otherwise do a
+ *  direct indication only the given connection.
+ *
+ *  The attribute object on the parameters can be the so called Characteristic
+ *  Declaration, which is usually declared with BT_GATT_CHARACTERISTIC followed
+ *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
+ *  automatically created after the Characteristic Declaration when using
+ *  BT_GATT_CHARACTERISTIC.
+ *
+ *  The callback is run from System Workqueue context.
+ *
+ *  Alternatively it is possible to indicate by UUID by setting it on the
+ *  parameters, when using this method the attribute given is used as the
+ *  start range when looking up for possible matches.
  *
  *  Note: This procedure is asynchronous therefore the parameters need to
  *  remains valid while it is active.
@@ -892,6 +953,27 @@ struct bt_gatt_indicate_params {
  */
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
+
+
+/** @brief Check if connection have subscribed to attribute
+ *
+ *  Check if connection has subscribed to attribute value change.
+ *
+ *  The attribute object can be the so called Characteristic Declaration,
+ *  which is usually declared with BT_GATT_CHARACTERISTIC followed
+ *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
+ *  automatically created after the Characteristic Declaration when using
+ *  BT_GATT_CHARACTERISTIC, or the Client Characteristic Configuration
+ *  Descriptor (CCCD) which is created by BT_GATT_CCC.
+ *
+ *  @param conn Connection object.
+ *  @param attr Attribute object.
+ *  @param ccc_value The subscription type, either notifications or indications.
+ *
+ *  @return true if the attribute object has been subscribed.
+ */
+bool bt_gatt_is_subscribed(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, u16_t ccc_value);
 
 /** @brief Get ATT MTU for a connection
  *
@@ -914,7 +996,6 @@ u16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
 /** @brief GATT Exchange MTU parameters */
 struct bt_gatt_exchange_params {
-	struct bt_att_req _req;
 	/** Response callback */
 	void (*func)(struct bt_conn *conn, u8_t err,
 		     struct bt_gatt_exchange_params *params);
@@ -991,7 +1072,6 @@ enum {
 
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
-	struct bt_att_req _req;
 	/** Discover UUID type */
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
@@ -1072,7 +1152,6 @@ typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
  *  @param uuid 2 or 16 octet UUID
  */
 struct bt_gatt_read_params {
-	struct bt_att_req _req;
 	bt_gatt_read_func_t func;
 	size_t handle_count;
 	union {
@@ -1125,7 +1204,6 @@ typedef void (*bt_gatt_write_func_t)(struct bt_conn *conn, u8_t err,
 
 /** @brief GATT Write parameters */
 struct bt_gatt_write_params {
-	struct bt_att_req _req;
 	/** Response callback */
 	bt_gatt_write_func_t func;
 	/** Attribute handle */
@@ -1207,10 +1285,14 @@ struct bt_gatt_subscribe_params;
 /** @typedef bt_gatt_notify_func_t
  *  @brief Notification callback function
  *
- *  @param conn Connection object.
+ *  @param conn Connection object. May be NULL, indicating that the peer is
+ *              being unpaired
  *  @param params Subscription parameters.
  *  @param data Attribute value data. If NULL then subscription was removed.
  *  @param length Attribute value length.
+ *
+ *  @return BT_GATT_ITER_CONTINUE to continue receiving value notifications.
+ *          BT_GATT_ITER_STOP to unsubscribe from value notifications.
  */
 typedef u8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 				      struct bt_gatt_subscribe_params *params,
@@ -1229,6 +1311,20 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_VOLATILE,
 
+	/** No resubscribe flag
+	 *
+	 * By default when BT_GATT_SUBSCRIBE_FLAG_VOLATILE is unset, the
+	 * subscription will be automatically renewed when the client
+	 * reconnects, as a workaround for GATT servers that do not persist
+	 * subscriptions.
+	 *
+	 * This flag will disable the automatic resubscription. It is useful
+	 * if the application layer knows that the GATT server remembers
+	 * subscriptions from previous connections and wants to avoid renewing
+	 * the subscriptions.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_NO_RESUB,
+
 	/** Write pending flag
 	 *
 	 * If set, indicates write operation is pending waiting remote end to
@@ -1241,8 +1337,6 @@ enum {
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
-	struct bt_att_req _req;
-	bt_addr_le_t _peer;
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
 	/** Subscribe value handle */

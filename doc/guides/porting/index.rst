@@ -12,5 +12,4 @@ API interfaces supported by Zephyr.
 
    arch.rst
    board_porting.rst
-   porting_to_zephyr.rst
    shields.rst

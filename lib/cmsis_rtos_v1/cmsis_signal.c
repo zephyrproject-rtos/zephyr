@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 #include <cmsis_os.h>
 
 #define NSEC_PER_MSEC		(NSEC_PER_USEC * USEC_PER_MSEC)
@@ -142,7 +142,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 		 */
 		hwclk_cycles_delta = (u64_t)k_cycle_get_32() - time_stamp_start;
 		time_delta_ns =
-			(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+			(u32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 		time_delta_ms =	(u32_t)time_delta_ns/NSEC_PER_MSEC;
 
 		if (timeout > time_delta_ms) {

@@ -1,38 +1,33 @@
-#
 # Copyright (c) 2018, Diego Sueiro <diego.sueiro@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: i.MX7D PWM
+description: i.MX7D PWM
 
-description: >
-    This binding gives a base representation of the i.MX7D PWM
+compatible: "fsl,imx7d-pwm"
 
-inherits:
-    !include [pwm.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "fsl,imx7d-pwm"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     prescaler:
      type: int
-     category: required
+     required: true
      description: Set the PWM prescale between 0 and 4096
 
     rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral
 
-"#cells":
+    "#pwm-cells":
+     const: 2
+
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period

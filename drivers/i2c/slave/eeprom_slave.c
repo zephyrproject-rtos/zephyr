@@ -207,12 +207,12 @@ static int i2c_eeprom_slave_init(struct device *dev)
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
 
-static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_0_ATMEL_AT24_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_0_ATMEL_AT24_SIZE)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
 	.controller_dev_name = DT_INST_0_ATMEL_AT24_BUS_NAME,
 	.address = DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = (DT_INST_0_ATMEL_AT24_SIZE * 1024),
+	.buffer_size = DT_INST_0_ATMEL_AT24_SIZE,
 	.buffer = i2c_eeprom_slave_0_buffer
 };
 
@@ -228,12 +228,12 @@ DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_0_ATMEL_AT24_LABEL,
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
 
-static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_1_ATMEL_AT24_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_1_ATMEL_AT24_SIZE)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
 	.controller_dev_name = DT_INST_1_ATMEL_AT24_BUS_NAME,
 	.address = DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = (DT_INST_1_ATMEL_AT24_SIZE * 1024),
+	.buffer_size = DT_INST_1_ATMEL_AT24_SIZE,
 	.buffer = i2c_eeprom_slave_1_buffer
 };
 

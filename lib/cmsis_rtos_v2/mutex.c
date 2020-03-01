@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <string.h>
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_mutex_slab, sizeof(struct cv2_mutex),
@@ -38,7 +39,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 	__ASSERT(!(attr->attr_bits & osMutexRobust),
 		 "Zephyr does not support osMutexRobust.\n");
 
-	if (k_mem_slab_alloc(&cv2_mutex_slab, (void **)&mutex, 100) == 0) {
+	if (k_mem_slab_alloc(&cv2_mutex_slab, (void **)&mutex, K_MSEC(100)) == 0) {
 		memset(mutex, 0, sizeof(struct cv2_mutex));
 	} else {
 		return NULL;
@@ -93,7 +94,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 		status = k_mutex_lock(&mutex->z_mutex, K_NO_WAIT);
 	} else {
 		status = k_mutex_lock(&mutex->z_mutex,
-				      __ticks_to_ms(timeout));
+				      k_ticks_to_ms_floor64(timeout));
 	}
 
 	if (status == -EBUSY) {

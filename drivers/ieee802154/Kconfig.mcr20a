@@ -1,12 +1,9 @@
-# Kconfig.mcr20a - NXP MCR20A configuration options
-#
-#
-# Copyright (c) 2017 PHYTEC Messtechnik GmbH
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# NXP MCR20A configuration options
 
-menuconfig  IEEE802154_MCR20A
+# Copyright (c) 2017 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	depends on NETWORKING && SPI
 

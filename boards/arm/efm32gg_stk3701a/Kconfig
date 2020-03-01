@@ -1,0 +1,13 @@
+# EFM32GG STK3701A board configuration
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on BOARD_EFM32GG_STK3701A
+	depends on GPIO
+	help
+	  Board initialization priority. This must be bigger than
+	  GPIO_GECKO_COMMON_INIT_PRIORITY.

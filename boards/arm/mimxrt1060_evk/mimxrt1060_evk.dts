@@ -13,12 +13,6 @@
 	compatible = "nxp,mimxrt1062";
 
 	aliases {
-		gpio-1= &gpio1;
-		gpio-2= &gpio2;
-		gpio-3= &gpio3;
-		gpio-4= &gpio4;
-		gpio-5= &gpio5;
-		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
 	};
@@ -38,7 +32,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -47,8 +41,37 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 26 0>,	/* A0 */
+			   <1 0 &gpio1 27 0>,	/* A1 */
+			   <2 0 &gpio1 20 0>,	/* A2 */
+			   <3 0 &gpio1 21 0>,	/* A3 */
+			   <4 0 &gpio1 17 0>,	/* A4 */
+			   <5 0 &gpio1 16 0>,	/* A5 */
+			   <6 0 &gpio1 23 0>,	/* D0 */
+			   <7 0 &gpio1 22 0>,	/* D1 */
+			   <8 0 &gpio1 11 0>,	/* D2 */
+			   <9 0 &gpio1 24 0>,	/* D3 */
+			   <10 0 &gpio1 9 0>,	/* D4 */
+			   <11 0 &gpio1 10 0>,	/* D5 */
+			   <12 0 &gpio1 18 0>,	/* D6 */
+			   <13 0 &gpio1 19 0>,	/* D7 */
+			   <14 0 &gpio1 3 0>,	/* D8 */
+			   <15 0 &gpio1 2 0>,	/* D9 */
+			   <16 0 &gpio3 13 0>,	/* D10 */
+			   <17 0 &gpio3 14 0>,	/* D11 */
+			   <18 0 &gpio3 15 0>,	/* D12 */
+			   <19 0 &gpio3 12 0>,	/* D13 */
+			   <20 0 &gpio1 17 0>,	/* D14 */
+			   <21 0 &gpio1 16 0>;	/* D15 */
 	};
 
 	panel {
@@ -67,6 +90,7 @@ arduino_serial: &uart3 {};
 	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
+		size = <67108864>;
 		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
@@ -86,9 +110,27 @@ arduino_serial: &uart3 {};
 
 &i2c1 {
 	status = "okay";
+
+	ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpio1 11 0>;
+	};
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&eth {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
+};
+
+&usbd1 {
+	status = "okay";
 };

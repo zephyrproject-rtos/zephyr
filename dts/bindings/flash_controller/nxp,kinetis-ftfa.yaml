@@ -1,11 +1,5 @@
-title: NXP Kinetis Flash Memory Module (FTFA)
+description: NXP Kinetis Flash Memory Module A (FTFA)
 
-description: >
-    This binding gives for the NXP Kinetis Flash Memory Module A (FTFA)
+compatible: "nxp,kinetis-ftfa"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "nxp,kinetis-ftfa"
+include: flash-controller.yaml

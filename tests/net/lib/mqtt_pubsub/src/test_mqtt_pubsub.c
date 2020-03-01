@@ -120,7 +120,8 @@ void publish_handler(struct mqtt_client *const client,
 		goto error;
 	}
 
-	if (memcmp(payload, buf, evt->param.publish.message.payload.len != 0)) {
+	if (memcmp(payload, buf, evt->param.publish.message.payload.len)
+			!=  0) {
 		TC_PRINT("Invalid payload content\n");
 		goto error;
 	}
@@ -412,10 +413,6 @@ static int test_disconnect(void)
 	}
 
 	wait(APP_SLEEP_MSECS);
-	rc = mqtt_input(&client_ctx);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
 
 	if (connected) {
 		return TC_FAIL;

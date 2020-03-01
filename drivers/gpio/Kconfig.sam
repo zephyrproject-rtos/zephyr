@@ -1,9 +1,9 @@
-# Kconfig.sam - Atmel SAM GPIO configuration options
-#
+# Atmel SAM GPIO configuration options
+
 # Copyright (c) 2018 Justin Watson
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_SAM
+config GPIO_SAM
 	bool "Atmel SAM GPIO (PORT) driver"
 	default y
 	depends on SOC_FAMILY_SAM

@@ -113,6 +113,12 @@ static u32_t counter_sam0_tc32_read(struct device *dev)
 	return tc->COUNT.reg;
 }
 
+static int counter_sam0_tc32_get_value(struct device *dev, u32_t *ticks)
+{
+	*ticks = counter_sam0_tc32_read(dev);
+	return 0;
+}
+
 static void counter_sam0_tc32_relative_alarm(struct device *dev, u32_t ticks)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
@@ -385,7 +391,7 @@ static int counter_sam0_tc32_initialize(struct device *dev)
 static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 	.start = counter_sam0_tc32_start,
 	.stop = counter_sam0_tc32_stop,
-	.read = counter_sam0_tc32_read,
+	.get_value = counter_sam0_tc32_get_value,
 	.set_alarm = counter_sam0_tc32_set_alarm,
 	.cancel_alarm = counter_sam0_tc32_cancel_alarm,
 	.set_top_value = counter_sam0_tc32_set_top_value,

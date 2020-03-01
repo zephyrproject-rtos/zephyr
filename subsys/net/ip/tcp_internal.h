@@ -238,7 +238,7 @@ static inline u32_t tcp_init_isn(void)
 
 const char *net_tcp_state_str(enum net_tcp_state state);
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
 #else
 #define net_tcp_change_state(...)
@@ -253,7 +253,7 @@ void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
  * @return Pointer TCP connection context. NULL if no available
  * context can be found.
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 struct net_tcp *net_tcp_alloc(struct net_context *context);
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
@@ -270,7 +270,7 @@ static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_release(struct net_tcp *tcp);
 #else
 static inline int net_tcp_release(struct net_tcp *tcp)
@@ -296,7 +296,7 @@ static inline int net_tcp_release(struct net_tcp *tcp)
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
@@ -329,7 +329,7 @@ static inline int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 			struct net_pkt **pkt);
 #else
@@ -354,7 +354,7 @@ static inline int net_tcp_prepare_ack(struct net_tcp *tcp,
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_prepare_reset(struct net_tcp *tcp,
 			  const struct sockaddr *local,
 			  const struct sockaddr *remote,
@@ -378,7 +378,7 @@ static inline int net_tcp_prepare_reset(struct net_tcp *tcp,
  * @param cb User supplied callback function to call.
  * @param user_data User specified data.
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
 #else
 static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
@@ -397,7 +397,7 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 		      void *user_data);
 #else
@@ -421,7 +421,7 @@ static inline int net_tcp_send_data(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 #else
 static inline int net_tcp_queue_data(struct net_context *context,
@@ -439,7 +439,7 @@ static inline int net_tcp_queue_data(struct net_context *context,
  *
  * @param pkt Packet
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_send_pkt(struct net_pkt *pkt);
 #else
 static inline int net_tcp_send_pkt(struct net_pkt *pkt)
@@ -456,7 +456,7 @@ static inline int net_tcp_send_pkt(struct net_pkt *pkt)
  * @param seq Received ACK sequence number
  * @return False if ACK sequence number is invalid, true otherwise
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 bool net_tcp_ack_received(struct net_context *ctx, u32_t ack);
 #else
 static inline bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
@@ -474,7 +474,7 @@ static inline bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
  *
  * @return Maximum Segment Size
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
 #else
 static inline u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
@@ -491,7 +491,7 @@ static inline u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
  *
  * @return Current TCP receive window
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp);
 #else
 static inline u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
@@ -506,7 +506,7 @@ static inline u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
  *
  * @param tcp TCP context
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
 {
 	return (enum net_tcp_state)tcp->state;
@@ -527,7 +527,7 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
  *
  * @return true if network packet sequence number is valid, false otherwise
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr);
 #else
 static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
@@ -546,7 +546,7 @@ static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
  *
  * @return 0 on success, negative errno otherwise.
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_finalize(struct net_pkt *pkt);
 #else
 static inline int net_tcp_finalize(struct net_pkt *pkt)
@@ -582,7 +582,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
  *
  * @return 0 if no erro, < 0 in case of error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data);
 #else
@@ -607,7 +607,7 @@ static inline int net_tcp_recv(struct net_context *context,
  *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
  *         supported
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_put(struct net_context *context);
 #else
 static inline int net_tcp_put(struct net_context *context)
@@ -626,7 +626,7 @@ static inline int net_tcp_put(struct net_context *context)
  * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
  *         -EPROTONOSUPPORT if TCP is not supported
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_listen(struct net_context *context);
 #else
 static inline int net_tcp_listen(struct net_context *context)
@@ -647,7 +647,7 @@ static inline int net_tcp_listen(struct net_context *context)
  *         if the receive window delta is out of bounds, -EPROTONOSUPPORT
  *         if TCP is not supported
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta);
 #else
 static inline int net_tcp_update_recv_wnd(struct net_context *context,
@@ -667,7 +667,7 @@ static inline int net_tcp_update_recv_wnd(struct net_context *context,
  *
  * @return 0 if successful, < 0 on error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_get(struct net_context *context);
 #else
 static inline int net_tcp_get(struct net_context *context)
@@ -685,7 +685,7 @@ static inline int net_tcp_get(struct net_context *context)
  *
  * @return 0 if successful, < 0 on error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_unref(struct net_context *context);
 #else
 static inline int net_tcp_unref(struct net_context *context)
@@ -705,7 +705,7 @@ static inline int net_tcp_unref(struct net_context *context)
  *
  * @return 0 on success, < 0 on error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		   void *user_data);
 #else
@@ -734,7 +734,7 @@ static inline int net_tcp_accept(struct net_context *context,
  *
  * @return 0 on success, < 0 on error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_connect(struct net_context *context,
 		    const struct sockaddr *addr,
 		    struct sockaddr *laddr,
@@ -770,7 +770,7 @@ static inline int net_tcp_connect(struct net_context *context,
  *
  * @return TCP header on success, NULL on error
  */
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *tcp_access);
 #else
@@ -785,7 +785,7 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 }
 #endif
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_init(void);
 #else
 #define net_tcp_init(...)

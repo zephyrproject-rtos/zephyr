@@ -32,7 +32,7 @@ Building on ArgonKey board
 ==========================
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/lsm6dsl
+   :zephyr-app: samples/sensor/lsm6dsl
    :host-os: unix
    :board: 96b_argonkey
    :goals: build
@@ -42,9 +42,20 @@ Building on disco_l475_iot1 board
 =================================
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/lsm6dsl
+   :zephyr-app: samples/sensor/lsm6dsl
    :host-os: unix
    :board: disco_l475_iot1
+   :goals: build
+   :compact:
+
+Building on nrf52840_pca10056 board with x-nucleo-iks01a2 shield
+================================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/lsm6dsl
+   :host-os: unix
+   :board: nrf52840_pca10056
+   :shield: x_nucleo_iks01a2
    :goals: build
    :compact:
 
@@ -63,4 +74,3 @@ Sample Output
     <repeats endlessly every 2 seconds>
 
 .. note:: The magn row is displayed only when running sample onto 96b_argonkey board, where a magnetometer is connected to LSM6DSL.
-

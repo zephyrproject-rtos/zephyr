@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#ifndef __ZEPHYR__
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -104,7 +104,7 @@ void pollfds_del(int fd)
 	}
 }
 
-int main(void)
+void main(void)
 {
 	int res;
 	static int counter;

@@ -12,6 +12,8 @@
 #ifndef _ARM_BEETLE_SOC_H_
 #define _ARM_BEETLE_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 #include "CMSDK_BEETLE.h"
 #endif
@@ -93,11 +95,8 @@
 
 #ifndef _ASMLANGUAGE
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <devicetree.h>
 
 #include "soc_pins.h"
 #include "soc_power.h"

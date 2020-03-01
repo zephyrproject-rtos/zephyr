@@ -1,10 +1,8 @@
-# Kconfig - Multilevel interrupt configuration
-#
+# Multilevel interrupt configuration
+
 # Copyright (c) 2017 Intel Corporation
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config MULTI_LEVEL_INTERRUPTS
 	bool "Multi-level interrupt support"

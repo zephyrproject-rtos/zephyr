@@ -1,21 +1,16 @@
-title: RV32M1 Pinmux
+description: RV32M1 pinmux node
 
-description: >
-    This is a representation of the RV32M1 Pinmux node
+compatible: "openisa,rv32m1-pinmux"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-pinmux"
-
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

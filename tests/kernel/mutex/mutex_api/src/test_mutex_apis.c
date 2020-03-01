@@ -48,7 +48,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 
@@ -64,7 +64,7 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
-			K_USER | K_INHERIT_PERMS, 0);
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 
@@ -145,11 +145,11 @@ void test_main(void)
 			      &mutex);
 
 	ztest_test_suite(mutex_api,
-			 ztest_user_unit_test(test_mutex_lock_unlock),
-			 ztest_user_unit_test(test_mutex_reent_lock_forever),
+			 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
+			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
 			 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
 			 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
-			 ztest_user_unit_test(test_mutex_reent_lock_timeout_pass)
+			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass)
 			 );
 	ztest_run_test_suite(mutex_api);
 }

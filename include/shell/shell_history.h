@@ -75,7 +75,7 @@ void shell_history_mode_exit(struct shell_history *history);
  * @param[in]     history	Shell history instance.
  * @param[in]     up		Direction.
  * @param[out]    dst		Buffer where line is copied.
- * @param[in,out] len		Buffer size (intput), amount of copied
+ * @param[in,out] len		Buffer size (input), amount of copied
  *				data (output).
  * @return True if remains in history mode.
  */

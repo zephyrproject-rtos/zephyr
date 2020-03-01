@@ -8,16 +8,18 @@
  * @file
  * @brief Kernel swapper code for IA-32
  *
- * This module implements the __swap() routine for the IA-32 architecture.
+ * This module implements the arch_swap() routine for the IA-32 architecture.
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
+#include <kernel.h>
+#include <arch/cpu.h>
+#include <kernel_arch_data.h>
 #include <offsets_short.h>
 
 	/* exports (internal APIs) */
 
-	GTEXT(__swap)
+	GTEXT(arch_swap)
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
@@ -27,23 +29,14 @@
 #endif
 	GDATA(_k_neg_eagain)
 
-/**
- *
- * @brief Initiate a cooperative context switch
- *
- * The __swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking __swap(), the
- * caller disables interrupts (via irq_lock) and the return 'key'
- * is passed as a parameter to __swap().  The 'key' actually represents
- * the EFLAGS register prior to disabling interrupts via a 'cli' instruction.
- *
- * Given that __swap() is called to effect a cooperative context switch, only
- * the non-volatile integer registers need to be saved in the TCS of the
+/*
+ * Given that arch_swap() is called to effect a cooperative context switch,
+ * only the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
- * The _INT_ACTIVE and _EXC_ACTIVE bits in the k_thread->thread_state field
- * will signify that the thread was preemptively context switched out, and thus
- * both the volatile and non-volatile integer registers need to be restored.
+ * The X86_THREAD_FLAG_INT and _EXC bits in the k_thread->arch.flags field will
+ * signify that the thread was preemptively context switched out, and thus both
+ * the volatile and non-volatile integer registers need to be restored.
  *
  * The non-volatile registers need to be scrubbed to ensure they contain no
  * sensitive information that could compromise system security.  This is to
@@ -54,26 +47,22 @@
  * to this routine that alter the values of these registers MUST be reviewed
  * for potential security impacts.
  *
- * Floating point registers are handled using a lazy save/restore
- * mechanism since it's expected relatively few threads will be created
- * with the K_FP_REGS or K_SSE_REGS option bits.  The kernel data structure
- * maintains a 'current_fp' field to keep track of the thread that "owns"
- * the floating point registers.  Floating point registers consist of
- * ST0->ST7 (x87 FPU and MMX registers) and XMM0 -> XMM7.
+ * Floating point registers are handled using a lazy save/restore mechanism
+ * since it's expected relatively few threads will be created with the
+ * K_FP_REGS or K_SSE_REGS option bits.  The kernel data structure maintains a
+ * 'current_fp' field to keep track of the thread that "owns" the floating
+ * point registers.  Floating point registers consist of ST0->ST7 (x87 FPU and
+ * MMX registers) and XMM0 -> XMM7.
  *
- * All floating point registers are considered 'volatile' thus they will
- * only be saved/restored when a preemptive context switch occurs.
+ * All floating point registers are considered 'volatile' thus they will only
+ * be saved/restored when a preemptive context switch occurs.
  *
  * Floating point registers are currently NOT scrubbed, and are subject to
  * potential security leaks.
  *
- * @return -EAGAIN, or a return value set by a call to
- * z_set_thread_return_value()
- *
  * C function prototype:
  *
- * unsigned int __swap (unsigned int eflags);
- *
+ * unsigned int arch_swap (unsigned int eflags);
  */
 
 .macro read_tsc var_name
@@ -85,7 +74,7 @@
 	pop %edx
 	pop %eax
 .endm
-SECTION_FUNC(TEXT, __swap)
+SECTION_FUNC(TEXT, arch_swap)
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values.
@@ -93,17 +82,10 @@ SECTION_FUNC(TEXT, __swap)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__start_swap_time
-	mov %edx,__start_swap_time+4
+	mov %eax,arch_timing_swap_start
+	mov %edx,arch_timing_swap_start+4
 	pop %edx
 	pop %eax
-#endif
-#ifdef CONFIG_X86_IAMCU
-	/* save EFLAGS on stack right before return address, just as SYSV would
-	 * have done
-	 */
-	pushl	0(%esp)
-	movl	%eax, 4(%esp)
 #endif
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
@@ -124,7 +106,7 @@ SECTION_FUNC(TEXT, __swap)
 	 * Carve space for the return value. Setting it to a default of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
 	 * If another value is ever needed, it can be modified with
-	 * z_set_thread_return_value().
+	 * arch_thread_return_value_set().
 	 */
 
 	pushl   _k_neg_eagain
@@ -138,7 +120,7 @@ SECTION_FUNC(TEXT, __swap)
 #ifdef CONFIG_TRACING
 	/* Register the context switch */
 	push %edx
-	call	z_sys_trace_thread_switched_in
+	call	sys_trace_thread_switched_in
 	pop %edx
 #endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
@@ -150,17 +132,10 @@ SECTION_FUNC(TEXT, __swap)
 	 */
 #if defined(CONFIG_X86_USERSPACE) && !defined(CONFIG_X86_KPTI)
 
-#ifdef CONFIG_X86_IAMCU
 	push	%eax
-#else
-	push	%eax
-#endif
 	call	z_x86_swap_update_page_tables
-#ifdef CONFIG_X86_IAMCU
 	pop	%eax
-#else
-	pop	%eax
-#endif
+
 	/* Page tables updated. All memory access after this point needs to be
 	 * to memory that has the same mappings and access attributes wrt
 	 * supervisor mode!
@@ -210,7 +185,7 @@ SECTION_FUNC(TEXT, __swap)
 
 
 	/*
-	 * Determine whether the incoming thread utilizes floating point registers
+	 * Determine whether the incoming thread utilizes floating point regs
 	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
@@ -250,7 +225,7 @@ SECTION_FUNC(TEXT, __swap)
 	 * was preemptively context switched.
 	 */
 
-	testb	$_INT_OR_EXC_MASK, _thread_offset_to_thread_state(%ebx)
+	testb	$X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%ebx)
 	je	restoreContext_NoFloatSave
 
 
@@ -290,7 +265,7 @@ restoreContext_NoFloatSave:
 	 * was previously preemptively context switched out.
 	 */
 
-	testb   $_INT_OR_EXC_MASK, _thread_offset_to_thread_state(%eax)
+	testb   $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
@@ -356,7 +331,7 @@ CROHandlingDone:
 	movl	_thread_offset_to_esp(%eax), %esp
 
 
-	/* load return value from a possible z_set_thread_return_value() */
+	/* load return value from a possible arch_thread_return_value_set() */
 
 	popl	%eax
 
@@ -370,34 +345,23 @@ CROHandlingDone:
 	/*
 	 * %eax may contain one of these values:
 	 *
-	 * - the return value for __swap() that was set up by a call to
-	 * z_set_thread_return_value()
+	 * - the return value for arch_swap() that was set up by a call to
+	 * arch_thread_return_value_set()
 	 * - -EINVAL
 	 */
 
-	/* Utilize the 'eflags' parameter to __swap() */
+	/* Utilize the 'eflags' parameter to arch_swap() */
 
 	pushl	4(%esp)
 	popfl
-#if CONFIG_X86_IAMCU
-	/* Remember that eflags we stuck into the stack before the return
-	 * address? need to get it out of there since the calling convention
-	 * will not do that for us.
-	 */
-	popl	%edx
-	movl	%edx, (%esp)
-#endif
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	cmp $0x1,__read_swap_end_time_value
+	cmp $0x1,arch_timing_value_swap_end
 	jne time_read_not_needed
-	movw $0x2,__read_swap_end_time_value
-	read_tsc __common_var_swap_end_time
-	pushl __start_swap_time
-	popl __temp_start_swap_time
+	movw $0x2,arch_timing_value_swap_end
+	read_tsc arch_timing_value_swap_common
+	pushl arch_timing_swap_start
+	popl arch_timing_value_swap_temp
 time_read_not_needed:
 #endif
 	ret
@@ -407,23 +371,19 @@ time_read_not_needed:
  *
  * @brief Adjust stack/parameters before invoking thread entry function
  *
- * This function adjusts the initial stack frame created by z_new_thread() such
- * that the GDB stack frame unwinders recognize it as the outermost frame in
- * the thread's stack.  For targets that use the IAMCU calling convention, the
- * first three arguments are popped into eax, edx, and ecx. The function then
- * jumps to z_thread_entry().
+ * This function adjusts the initial stack frame created by arch_new_thread()
+ * such that the GDB stack frame unwinders recognize it as the outermost frame
+ * in the thread's stack.
  *
  * GDB normally stops unwinding a stack when it detects that it has
  * reached a function called main().  Kernel threads, however, do not have
  * a main() function, and there does not appear to be a simple way of stopping
  * the unwinding of the stack.
  *
- * SYS V Systems:
- *
- * Given the initial thread created by z_new_thread(), GDB expects to find a
- * return address on the stack immediately above the thread entry routine
- * z_thread_entry, in the location occupied by the initial EFLAGS.
- * GDB attempts to examine the memory at this return address, which typically
+ * Given the initial thread created by arch_new_thread(), GDB expects to find
+ * a return address on the stack immediately above the thread entry routine
+ * z_thread_entry, in the location occupied by the initial EFLAGS.  GDB
+ * attempts to examine the memory at this return address, which typically
  * results in an invalid access to page 0 of memory.
  *
  * This function overwrites the initial EFLAGS with zero.  When GDB subsequently
@@ -436,15 +396,6 @@ time_read_not_needed:
  * first time that the new thread is swapped in, and it jumps to
  * z_thread_entry after it has done its work.
  *
- * IAMCU Systems:
- *
- * There is no EFLAGS on the stack when we get here. z_thread_entry() takes
- * four arguments, and we need to pop off the first three into the
- * appropriate registers. Instead of using the 'call' instruction, we push
- * a NULL return address onto the stack and jump into z_thread_entry,
- * ensuring the stack won't be unwound further. Placing some kind of return
- * address on the stack is mandatory so this isn't conditionally compiled.
- *
  *       __________________
  *      |      param3      |   <------ Top of the stack
  *      |__________________|
@@ -452,10 +403,10 @@ time_read_not_needed:
  *      |__________________|                  |
  *      |      param1      |                  V
  *      |__________________|
- *      |      pEntry      |  <----   ESP when invoked by z_swap() on IAMCU
+ *      |      pEntry      |
  *      |__________________|
- *      | initial EFLAGS   |  <----   ESP when invoked by z_swap() on Sys V
- *      |__________________|             (Zeroed by this routine on Sys V)
+ *      | initial EFLAGS   |  <----   ESP when invoked by z_swap()
+ *      |__________________|             (Zeroed by this routine)
  *
  * The address of the thread entry function needs to be in %edi when this is
  * invoked. It will either be z_thread_entry, or if userspace is enabled,
@@ -465,15 +416,6 @@ time_read_not_needed:
  */
 
 SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
-#ifdef CONFIG_X86_IAMCU
-	/* IAMCU calling convention has first 3 arguments supplied in
-	 * registers not the stack
-	 */
-	pop	%eax
-	pop	%edx
-	pop	%ecx
-	push	$0	 /* Null return address */
-#endif
 	movl	$0, (%esp)
-	INDIRECT_JMP(%edi)
+	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */

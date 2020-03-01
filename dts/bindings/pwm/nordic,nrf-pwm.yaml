@@ -1,57 +1,60 @@
-title: nRF PWM
+description: nRF PWM
 
-description: >
-    This binding gives a base representation of the nRF PWM
+compatible: "nordic,nrf-pwm"
 
-inherits:
-    !include base.yaml
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-pwm"
-
     reg:
-      category: required
+      required: true
 
-    label:
-      category: required
+    center-aligned:
+      type: boolean
+      description: Use center-aligned (up and down) counter mode
+      required: false
 
     ch0-pin:
       type: int
       description: Channel 0 pin
-      category: optional
+      required: false
 
     ch0-inverted:
       type: boolean
       description: Channel 0 inverted
-      category: optional
+      required: false
 
     ch1-pin:
       type: int
       description: Channel 1 pin
-      category: optional
+      required: false
 
     ch1-inverted:
       type: boolean
       description: Channel 1 inverted
-      category: optional
+      required: false
 
     ch2-pin:
       type: int
       description: Channel 2 pin
-      category: optional
+      required: false
 
     ch2-inverted:
       type: boolean
       description: Channel 2 inverted
-      category: optional
+      required: false
 
     ch3-pin:
       type: int
       description: Channel 3 pin
-      category: optional
+      required: false
 
     ch3-inverted:
       type: boolean
       description: Channel 3 inverted
-      category: optional
+      required: false
+
+    "#pwm-cells":
+      const: 1
+
+pwm-cells:
+  - channel

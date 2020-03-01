@@ -10,15 +10,15 @@
 #include <kernel.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
 
 #include <lfs.h>
 #include <fs/littlefs.h>
-#include <flash.h>
-#include <flash_map.h>
+#include <drivers/flash.h>
+#include <storage/flash_map.h>
 
 #include "fs_impl.h"
 
@@ -594,6 +594,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	if (block_size == 0) {
 		block_size = get_block_size(fs->area);
+	}
+	if (block_size == 0) {
+		__ASSERT_NO_MSG(block_size != 0);
+		ret = -EINVAL;
+		goto out;
 	}
 
 	s32_t block_cycles = lcp->block_cycles;

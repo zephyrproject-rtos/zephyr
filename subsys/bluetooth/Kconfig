@@ -1,7 +1,6 @@
-# Kconfig - Bluetooth configuration options
-#
+# Bluetooth configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT
@@ -49,6 +48,14 @@ config BT_HCI_RAW
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
+config BT_HCI_RAW_RESERVE
+	int "Buffer headroom needed for HCI transport"
+	depends on BT_HCI_RAW
+	default 0
+	help
+	  This option is used by the HCI raw transport implementation to
+	  declare how much headroom it needs for any HCI transport headers.
+
 config BT_PERIPHERAL
 	bool "Peripheral Role support"
 	select BT_BROADCASTER
@@ -86,22 +93,9 @@ config BT_OBSERVER
 
 endmenu
 
-config BT_PHY_UPDATE
-	bool "PHY Update"
-	default y
-	help
-	  Enable support for Bluetooth 5.0 PHY Update Procedure.
-
-config BT_DATA_LEN_UPDATE
-	bool "Data Length Update"
-	default y
-	help
-	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
-
 source "subsys/bluetooth/services/Kconfig"
 
 config BT_CONN
-	# Virtual/hidden option
 	bool
 
 config BT_MAX_CONN
@@ -126,11 +120,35 @@ config BT_HCI_ACL_FLOW_CONTROL
 	  to the host. This is particularly useful when the host and
 	  controller are on separate cores since it ensures that we do
 	  not run out of incoming ACL buffers.
+
+config BT_REMOTE_VERSION
+	bool "Enable fetching of remote version"
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+	help
+	  Enable this to get access to the remote version in the Controller and
+	  in the Host through bt_conn_get_info(). The fields in question can
+	  be then found in the bt_conn_info struct.
+
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure.
+
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
 endif # BT_CONN
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_BT_C2H_UART := zephyr,bt-c2h-uart
 
 config BT_CTLR_TO_HOST_UART_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
-	default "$(dt_str_val,DT_BT_C2H_UART_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_C2H_UART))" if HAS_DTS
 	default "UART_0"
 	depends on BT_HCI_RAW
 	help
@@ -144,6 +162,19 @@ source "subsys/bluetooth/controller/Kconfig"
 source "subsys/bluetooth/shell/Kconfig"
 
 endif # BT_HCI
+
+config BT_COMPANY_ID
+	hex "Company Id"
+	default 0x05F1
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier for this device. The Linux
+	  Foundation's Company Identifier (0x05F1) is the default value for
+	  this option although silicon vendors and hardware manufacturers
+	  can set their own. Note that the controller's Company Identifier is
+	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
 source "subsys/bluetooth/mesh/Kconfig"
 

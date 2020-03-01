@@ -1,36 +1,15 @@
-# Kconfig - MCP9808 temperature sensor configuration options
+# MCP9808 temperature sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MCP9808
 	bool "MCP9808 temperature sensor"
 	depends on I2C
 	help
-	 Enable driver for MCP9808 temperature sensor.
+	  Enable driver for MCP9808 temperature sensor.
 
 if MCP9808
-
-config MCP9808_DEV_NAME
-	string "MCP9808 device name"
-	default "MCP9808"
-
-
-config MCP9808_I2C_ADDR
-	hex "MCP9808 I2C slave address"
-	default 0x18
-	help
-	 Specify the I2C slave address for the MCP9808.
-
-config MCP9808_I2C_DEV_NAME
-	string "I2C master where MCP9808 is connected"
-	default "I2C_0"
-	help
-	 Specify the device name of the I2C master device to which MCP9808 is
-	 connected.
 
 choice
 	prompt "MCP9808 trigger mode"
@@ -53,20 +32,6 @@ endchoice
 
 config MCP9808_TRIGGER
 	bool
-
-config MCP9808_GPIO_CONTROLLER
-	string "GPIO controller for MCP9808 interrupt"
-	depends on MCP9808_TRIGGER
-	default "GPIO_0"
-	help
-	  The GPIO controller the MCP9808 interrupt is connected to.
-
-config MCP9808_GPIO_PIN
-	int "GPIO pin for MCP9808 interrupt"
-	depends on MCP9808_TRIGGER
-	default 3
-	help
-	  The GPIO pin the MCP9808 interrupt is connected to.
 
 config MCP9808_THREAD_STACK_SIZE
 	int "Sensor delayed work thread stack size"

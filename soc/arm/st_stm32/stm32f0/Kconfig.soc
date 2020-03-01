@@ -1,13 +1,14 @@
-# Kconfig - ST Microelectronics STM32F0 MCU line
-#
+# ST Microelectronics STM32F0 MCU line
+
 # Copyright (c) 2017 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "STM32F0x MCU Selection"
-depends on SOC_SERIES_STM32F0X
+	prompt "STM32F0x MCU Selection"
+	depends on SOC_SERIES_STM32F0X
+
+config SOC_STM32F030X4
+	bool "STM32F030X4"
 
 config SOC_STM32F030X8
 	bool "STM32F030X8"
@@ -23,5 +24,8 @@ config SOC_STM32F072XB
 
 config SOC_STM32F091XC
 	bool "STM32F091XC"
+
+config SOC_STM32F098XX
+	bool "STM32F098XX"
 
 endchoice

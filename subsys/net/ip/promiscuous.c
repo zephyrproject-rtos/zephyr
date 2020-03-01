@@ -96,4 +96,3 @@ enum net_verdict net_promisc_mode_input(struct net_pkt *pkt)
 
 	return NET_OK;
 }
-

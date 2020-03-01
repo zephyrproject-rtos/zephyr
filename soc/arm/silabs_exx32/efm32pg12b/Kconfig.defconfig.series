@@ -1,10 +1,7 @@
-# Kconfig - EFM32PG12B series configuration options
+# EFM32PG12B series configuration options
 
-#
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_EFM32PG12B
 
@@ -15,7 +12,6 @@ config SOC_PART_NUMBER
 	default "EFM32PG12B500F1024GL125" if SOC_PART_NUMBER_EFM32PG12B500F1024GL125
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 50
 

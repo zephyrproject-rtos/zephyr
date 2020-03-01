@@ -189,7 +189,7 @@ static void net_buf_test_3(void)
 	k_thread_create(&test_3_thread_data, test_3_thread_stack,
 			K_THREAD_STACK_SIZEOF(test_3_thread_stack),
 			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
-			K_PRIO_COOP(7), 0, 0);
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
@@ -457,6 +457,122 @@ static void net_buf_test_var_pool(void)
 	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
 }
 
+static void net_buf_test_byte_order(void)
+{
+	struct net_buf *buf;
+	u8_t le16[2] = { 0x02, 0x01 };
+	u8_t be16[2] = { 0x01, 0x02 };
+	u8_t le24[3] = { 0x03, 0x02, 0x01 };
+	u8_t be24[3] = { 0x01, 0x02, 0x03 };
+	u8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
+	u8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
+	u8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+	u8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	u8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+	u8_t be64[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+	u16_t u16;
+	u32_t u32;
+	u64_t u64;
+
+	buf = net_buf_alloc_len(&fixed_pool, 16, K_FOREVER);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	net_buf_add_mem(buf, &le16, sizeof(le16));
+	net_buf_add_mem(buf, &be16, sizeof(be16));
+
+	u16 = net_buf_pull_le16(buf);
+	zassert_equal(u16, net_buf_pull_be16(buf),
+		      "Invalid 16 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le16(buf, u16);
+	net_buf_add_be16(buf, u16);
+
+	zassert_mem_equal(le16, net_buf_pull_mem(buf, sizeof(le16)),
+			  sizeof(le16), "Invalid 16 bits byte order");
+	zassert_mem_equal(be16, net_buf_pull_mem(buf, sizeof(be16)),
+			  sizeof(be16), "Invalid 16 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_mem(buf, &le24, sizeof(le24));
+	net_buf_add_mem(buf, &be24, sizeof(be24));
+
+	u32 = net_buf_pull_le24(buf);
+	zassert_equal(u32, net_buf_pull_be24(buf),
+		      "Invalid 24 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le24(buf, u32);
+	net_buf_add_be24(buf, u32);
+
+	zassert_mem_equal(le24, net_buf_pull_mem(buf, sizeof(le24)),
+			  sizeof(le24), "Invalid 24 bits byte order");
+	zassert_mem_equal(be24, net_buf_pull_mem(buf, sizeof(be24)),
+			  sizeof(be24), "Invalid 24 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_mem(buf, &le32, sizeof(le32));
+	net_buf_add_mem(buf, &be32, sizeof(be32));
+
+	u32 = net_buf_pull_le32(buf);
+	zassert_equal(u32, net_buf_pull_be32(buf),
+		      "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le32(buf, u32);
+	net_buf_add_be32(buf, u32);
+
+	zassert_mem_equal(le32, net_buf_pull_mem(buf, sizeof(le32)),
+			  sizeof(le32), "Invalid 32 bits byte order");
+	zassert_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
+			  sizeof(be32), "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_mem(buf, &le48, sizeof(le48));
+	net_buf_add_mem(buf, &be48, sizeof(be48));
+
+	u64 = net_buf_pull_le48(buf);
+	zassert_equal(u64, net_buf_pull_be48(buf),
+		      "Invalid 48 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le48(buf, u64);
+	net_buf_add_be48(buf, u64);
+
+	zassert_mem_equal(le48, net_buf_pull_mem(buf, sizeof(le48)),
+			  sizeof(le48), "Invalid 48 bits byte order");
+	zassert_mem_equal(be48, net_buf_pull_mem(buf, sizeof(be48)),
+			  sizeof(be48), "Invalid 48 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_mem(buf, &le64, sizeof(le64));
+	net_buf_add_mem(buf, &be64, sizeof(be64));
+
+	u64 = net_buf_pull_le64(buf);
+	zassert_equal(u64, net_buf_pull_be64(buf),
+		      "Invalid 64 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le64(buf, u64);
+	net_buf_add_be64(buf, u64);
+
+	zassert_mem_equal(le64, net_buf_pull_mem(buf, sizeof(le64)),
+			  sizeof(le64), "Invalid 64 bits byte order");
+	zassert_mem_equal(be64, net_buf_pull_mem(buf, sizeof(be64)),
+			  sizeof(be48), "Invalid 64 bits byte order");
+
+	net_buf_unref(buf);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_buf_test,
@@ -468,7 +584,8 @@ void test_main(void)
 			 ztest_unit_test(net_buf_test_multi_frags),
 			 ztest_unit_test(net_buf_test_clone),
 			 ztest_unit_test(net_buf_test_fixed_pool),
-			 ztest_unit_test(net_buf_test_var_pool)
+			 ztest_unit_test(net_buf_test_var_pool),
+			 ztest_unit_test(net_buf_test_byte_order)
 			 );
 
 	ztest_run_test_suite(net_buf_test);

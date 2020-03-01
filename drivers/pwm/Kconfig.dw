@@ -1,10 +1,7 @@
-# Kconfig.dw - DesignWare PWM configuration options
-#
-#
+# DesignWare PWM configuration options
+
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PWM_DW
 	bool "DesignWare PWM"
@@ -13,12 +10,9 @@ menuconfig PWM_DW
 	  Care must be taken if one is also to use the timer feature, as
 	  they both use the same set of registers.
 
-if PWM_DW
-
 config PWM_DW_0_DRV_NAME
 	string "DesignWare PWM Device Name"
 	default "PWM_0"
+	depends on PWM_DW
 	help
 	  Specify the device name for the DesignWare PWM driver.
-
-endif # PWM_DW

@@ -1,10 +1,7 @@
-# Kconfig - netusb configuration options
+# netusb configuration options
 
-#
 # Copyright (c) 2017 Intel Corp.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "USB Device Networking support"
 
@@ -60,13 +57,10 @@ config USB_DEVICE_NETWORK_ECM_MAC
 
 endif # USB_DEVICE_NETWORK_ECM
 
-if USB_DEVICE_NETWORK_EEM
-
 config CDC_EEM_BULK_EP_MPS
 	int
 	default 64
-
-endif #USB_DEVICE_NETWORK_EEM
+	depends on USB_DEVICE_NETWORK_EEM
 
 if USB_DEVICE_NETWORK_RNDIS
 

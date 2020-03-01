@@ -5,20 +5,17 @@
  */
 
 #include <kernel.h>
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <string.h>
+#include <ksched.h>
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg1,
 			   void *arg2,
 			   void *arg3);
 
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stack_size, k_thread_entry_t thread_func,
-		 void *arg1, void *arg2, void *arg3,
-		 int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t thread_func,
+		     void *arg1, void *arg2, void *arg3,
+		     int priority, unsigned int options)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, thread_func);
@@ -48,7 +45,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *
 	 * Given that context switching is performed via a system call exception
 	 * within the RISCV architecture implementation, initially set:
-	 * 1) MSTATUS to SOC_MSTATUS_DEF_RESTORE in the thread stack to enable
+	 * 1) MSTATUS to MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
 	 * 2) MEPC to the address of the z_thread_entry_wrapper in the thread
 	 *    stack.
@@ -60,7 +57,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
-	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
+	stack_init->mstatus = MSTATUS_DEF_RESTORE;
 	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
 
 	thread->callee_saved.sp = (ulong_t)stack_init;

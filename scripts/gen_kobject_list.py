@@ -19,7 +19,7 @@ validate accesses to kernel objects to make the following assertions:
 
     - The calling thread has sufficient permissions on the object
 
-For more details see the "Kernel Objects" section in the documentation.
+For more details see the :ref:`kernelobjects` section in the documentation.
 
 The zephyr build generates an intermediate ELF binary, zephyr_prebuilt.elf,
 which this script scans looking for kernel objects by examining the DWARF
@@ -73,7 +73,7 @@ from collections import OrderedDict
 # Regular dictionaries are ordered only with Python 3.6 and
 # above. Good summary and pointers to official documents at:
 # https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
-kobjects = OrderedDict ([
+kobjects = OrderedDict([
     ("k_mem_slab", (None, False)),
     ("k_msgq", (None, False)),
     ("k_mutex", (None, False)),
@@ -107,14 +107,17 @@ subsystems = [
     "pinmux_driver_api",
     "pwm_driver_api",
     "entropy_driver_api",
-    "rtc_driver_api",
     "sensor_driver_api",
     "spi_driver_api",
     "uart_driver_api",
     "can_driver_api",
     "ptp_clock_driver_api",
-]
+    "eeprom_driver_api",
+    "wdt_driver_api",
 
+    # Fake 'sample driver' subsystem, used by tests/samples
+    "sample_driver_api"
+]
 
 header = """%compare-lengths
 %define lookup-function-name z_object_lookup
@@ -173,11 +176,11 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         fp.write("};\n")
 
     num_futex = eh.get_futex_counter()
-    if (num_futex != 0):
+    if num_futex != 0:
         fp.write("static struct z_futex_data futex_data[%d] = {\n" % num_futex)
         for i in range(num_futex):
             fp.write("Z_FUTEX_DATA_INITIALIZER(futex_data[%d])" % i)
-            if (i != num_futex - 1):
+            if i != num_futex - 1:
                 fp.write(", ")
         fp.write("};\n")
 
@@ -195,19 +198,29 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         # pre-initialized objects fall within this memory range, they are
         # either completely initialized at build time, or done automatically
         # at boot during some PRE_KERNEL_* phase
-        initialized = obj_addr >= static_begin and obj_addr < static_end
+        initialized = static_begin <= obj_addr < static_end
         is_driver = obj_type.startswith("K_OBJ_DRIVER_")
 
-        byte_str = struct.pack("<I" if eh.little_endian else ">I", obj_addr)
+        if "CONFIG_64BIT" in syms:
+            format_code = "Q"
+        else:
+            format_code = "I"
+
+        if eh.little_endian:
+            endian = "<"
+        else:
+            endian = ">"
+
+        byte_str = struct.pack(endian + format_code, obj_addr)
         fp.write("\"")
         for byte in byte_str:
             val = "\\x%02x" % byte
             fp.write(val)
 
         flags = "0"
-        if (initialized):
+        if initialized:
             flags += " | K_OBJ_FLAG_INITIALIZED"
-        if (is_driver):
+        if is_driver:
             flags += " | K_OBJ_FLAG_DRIVER"
 
         fp.write("\", {}, %s, %s, %s\n" % (obj_type, flags, str(ko.data)))
@@ -221,6 +234,7 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
+    fp.write('Z_GENERIC_SECTION(.kobject_data.data) ')
     fp.write('u8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):
@@ -305,7 +319,7 @@ def write_kobj_size_output(fp):
         dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
-        if kobj == "device" or kobj == "_k_thread_stack_element":
+        if kobj in {"device", "_k_thread_stack_element"}:
             continue
 
         if dep:
@@ -363,10 +377,9 @@ def main():
 
         thread_counter = eh.get_thread_counter()
         if thread_counter > max_threads:
-            sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
-            sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n" %
-                             -(-thread_counter // 8))
-            sys.exit(1)
+            sys.exit("Too many thread objects ({})\n"
+                     "Increase CONFIG_MAX_THREAD_BYTES to {}"
+                     .format(thread_counter, -(-thread_counter // 8)))
 
         with open(args.gperf_output, "w") as fp:
             write_gperf_table(fp, eh, objs,

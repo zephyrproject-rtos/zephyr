@@ -72,4 +72,3 @@ struct spi_sifive_cfg {
 };
 
 #endif /* _SPI_SIFIVE__H */
-

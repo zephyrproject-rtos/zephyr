@@ -1,26 +1,18 @@
-#
 # Copyright (c) 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARM TrustZone CryptoCell 310
+description: ARM TrustZone CryptoCell 310
 
-description: >
-    This is a representation of the ARM TrustZone CryptoCell 310
+compatible: "arm,cryptocell-310"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cryptocell-310"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

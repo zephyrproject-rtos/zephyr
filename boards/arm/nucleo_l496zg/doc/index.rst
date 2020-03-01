@@ -129,6 +129,8 @@ The Zephyr nucleo_l496zg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | System Window Watchdog              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

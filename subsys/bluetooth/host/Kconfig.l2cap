@@ -1,14 +1,10 @@
-# Kconfig - Bluetooth ATT/GATT configuration options
+# Bluetooth ATT/GATT configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "L2CAP Options"
 
-if BT_HCI_ACL_FLOW_CONTROL
 config BT_L2CAP_RX_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
 	default 200 if BT_BREDR
@@ -16,12 +12,14 @@ config BT_L2CAP_RX_MTU
 	default 23
 	range 65 1300 if BT_SMP
 	range 23 1300
+	depends on BT_HCI_ACL_FLOW_CONTROL
 	help
 	  Maximum size of each incoming L2CAP PDU.
-endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
+	default NET_BUF_TX_COUNT if NET_L2_BT
+	default BT_CTLR_TX_BUFFERS if BT_CTLR
 	default 3
 	range 2 255
 	help
@@ -29,6 +27,7 @@ config BT_L2CAP_TX_BUF_COUNT
 
 config BT_L2CAP_TX_FRAG_COUNT
 	int "Number of L2CAP TX fragment buffers"
+	default NET_BUF_TX_COUNT if NET_L2_BT
 	default 2
 	range 0 255
 	help
@@ -56,12 +55,11 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
-if BT_DEBUG
 config BT_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
+	depends on BT_DEBUG
 	help
 	  This option enables debug support for the Bluetooth
 	  L2ACP layer.
-endif # BT_DEBUG
 
 endmenu

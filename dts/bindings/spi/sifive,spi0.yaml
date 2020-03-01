@@ -1,20 +1,12 @@
-#
 # Copyright (c) 2018, SiFive Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Sifive SPI driver
+description: Sifive SPI controller
 
-description: >
-    This binding gives a base representation of the Sifive SPI controller
+compatible: "sifive,spi0"
 
-inherits:
-    !include spi.yaml
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,spi0"
-
     reg:
-      category: required
+      required: true

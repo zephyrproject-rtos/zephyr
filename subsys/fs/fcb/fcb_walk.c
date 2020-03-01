@@ -24,10 +24,10 @@ fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 	if (rc < 0) {
-		return FCB_ERR_ARGS;
+		return -EINVAL;
 	}
 	while ((rc = fcb_getnext_nolock(fcb, &entry_ctx.loc)) !=
-	       FCB_ERR_NOVAR) {
+	       -ENOTSUP) {
 		k_mutex_unlock(&fcb->f_mtx);
 		if (sector && entry_ctx.loc.fe_sector != sector) {
 			return 0;
@@ -41,7 +41,7 @@ fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
 		}
 		rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 		if (rc < 0) {
-			return FCB_ERR_ARGS;
+			return -EINVAL;
 		}
 	}
 	k_mutex_unlock(&fcb->f_mtx);

@@ -1,11 +1,5 @@
-title: STM32 F4 Flash Controller
+description: STM32 F4 flash controller
 
-description: >
-    This binding gives a base representation of the STM32 F4 Flash Controller
+compatible: "st,stm32f4-flash-controller"
 
-inherits:
-    !include flash-controller.yaml
-
-properties:
-    compatible:
-      constraint: "st,stm32f4-flash-controller"
+include: flash-controller.yaml

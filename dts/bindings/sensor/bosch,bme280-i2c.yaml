@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2019, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: BME280 Integrated environmental sensor
+description: BME280 integrated environmental sensor
 
-description: >
-    This is a representation of the BME280 Integrated environmental sensor
+compatible: "bosch,bme280"
 
-inherits:
-    !include i2c-device.yaml
-
-properties:
-    compatible:
-      constraint: "bosch,bme280"
+include: i2c-device.yaml

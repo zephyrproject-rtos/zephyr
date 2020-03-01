@@ -1,0 +1,23 @@
+# STM32 Flight Controller Unit board configuration
+
+# Copyright (c) 2019 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STEVAL_FCU001V1
+
+config BOARD
+	default "steval_fcu001v1"
+
+config UART_1
+	default y
+	depends on UART_CONSOLE
+
+config I2C_2
+	default y
+	depends on I2C
+
+config PWM_STM32_2
+	default y
+	depends on PWM
+
+endif # BOARD_STEVAL_FCU001V1

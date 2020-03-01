@@ -10,6 +10,32 @@
 #include <dt-bindings/rdc/imx_rdc.h>
 
 / {
+	aliases {
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		gpio-3 = &gpio3;
+		gpio-4 = &gpio4;
+		gpio-5 = &gpio5;
+		gpio-6 = &gpio6;
+		gpio-7 = &gpio7;
+		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
+		i2c-3 = &i2c3;
+		i2c-4 = &i2c4;
+		mu-b   = &mub;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
+		pwm-4 = &pwm4;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
+		uart-4 = &uart4;
+		uart-5 = &uart5;
+		uart-6 = &uart6;
+		uart-7 = &uart7;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

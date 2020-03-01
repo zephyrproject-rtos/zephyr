@@ -1,4 +1,11 @@
 tests:
-  peripheral.watchdog:
+  drivers.watchdog:
     depends_on: watchdog
     tags: drivers watchdog
+    filter: not CONFIG_WDT_SAM
+    platform_exclude: nucleo_l496zg nucleo_f401re
+  drivers.watchdog.nucleo_l496zg:
+    depends_on: watchdog
+    tags: drivers watchdog
+    extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
+    platform_whitelist: nucleo_l496zg

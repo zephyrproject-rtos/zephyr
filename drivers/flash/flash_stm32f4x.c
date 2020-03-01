@@ -20,17 +20,28 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 {
 	ARG_UNUSED(write);
 
+#if (FLASH_SECTOR_TOTAL == 12) && defined(FLASH_OPTCR_DB1M)
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	/*
+	 * RM0090, table 7.1: STM32F42xxx, STM32F43xxx
+	 */
+	if (regs->OPTCR & FLASH_OPTCR_DB1M) {
+		/* Device configured in Dual Bank, but not supported for now */
+		return false;
+	}
+#endif
+
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
 static int write_byte(struct device *dev, off_t offset, u8_t val)
 {
-	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -39,29 +50,29 @@ static int write_byte(struct device *dev, off_t offset, u8_t val)
 		return rc;
 	}
 
-	regs->cr &= ~CR_PSIZE_MASK;
-	regs->cr |= FLASH_PSIZE_BYTE;
-	regs->cr |= FLASH_CR_PG;
+	regs->CR &= ~CR_PSIZE_MASK;
+	regs->CR |= FLASH_PSIZE_BYTE;
+	regs->CR |= FLASH_CR_PG;
 
 	/* flush the register write */
-	tmp = regs->cr;
+	tmp = regs->CR;
 
 	*((u8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
 
 	rc = flash_stm32_wait_flash_idle(dev);
-	regs->cr &= (~FLASH_CR_PG);
+	regs->CR &= (~FLASH_CR_PG);
 
 	return rc;
 }
 
 static int erase_sector(struct device *dev, u32_t sector)
 {
-	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -70,15 +81,26 @@ static int erase_sector(struct device *dev, u32_t sector)
 		return rc;
 	}
 
-	regs->cr &= STM32F4X_SECTOR_MASK;
-	regs->cr |= FLASH_CR_SER | (sector << 3);
-	regs->cr |= FLASH_CR_STRT;
+#if FLASH_SECTOR_TOTAL == 24
+	/*
+	 * RM0090, §3.9.8: STM32F42xxx, STM32F43xxx
+	 * RM0386, §3.7.5: STM32F469xx, STM32F479xx
+	 */
+	if (sector >= 12) {
+		/* From sector 12, SNB is offset by 0b10000 */
+		sector += 4U;
+	}
+#endif
+
+	regs->CR &= STM32F4X_SECTOR_MASK;
+	regs->CR |= FLASH_CR_SER | (sector << 3);
+	regs->CR |= FLASH_CR_STRT;
 
 	/* flush the register write */
-	tmp = regs->cr;
+	tmp = regs->CR;
 
 	rc = flash_stm32_wait_flash_idle(dev);
-	regs->cr &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
 
 	return rc;
 }

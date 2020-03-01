@@ -1,17 +1,12 @@
-title: Kinetis LPUART
+description: Kinetis LPUART
 
-description: >
-    This binding gives a base representation of the Kinetis LPUART
+compatible: "nxp,kinetis-lpuart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-lpuart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

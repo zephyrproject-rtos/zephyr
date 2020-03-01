@@ -1,24 +1,39 @@
-#
 # Copyright (c) 2018, Aapo Vienamo
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Semtech SX1509B I2C GPIO
+description: SX1509B GPIO node
 
-description: >
-        This is a representation of the SX1509B GPIO node
+compatible: "semtech,sx1509b"
 
-inherits:
-    !include [i2c-device.yaml, gpio-controller.yaml]
+include: [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
-    compatible:
-      constraint: "semtech,sx1509b"
-
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+    ngpios:
+      required: true
+      const: 16
+
+    init-out-low:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Bit mask identifying pins that should be initialized as outputs
+        driven low.
+
+    init-out-high:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Bit mask identifying pins that should be initialized as outputs
+        driven high.
+
+gpio-cells:
   - pin
   - flags

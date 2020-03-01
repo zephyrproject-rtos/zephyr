@@ -40,3 +40,4 @@ Now start pressing keys on a keyboard, followed by Enter. The input line
 will be printed back, with a hex code of the last character, to show that
 line does not include any special "end of line" characters (like LF, CR,
 etc.)
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

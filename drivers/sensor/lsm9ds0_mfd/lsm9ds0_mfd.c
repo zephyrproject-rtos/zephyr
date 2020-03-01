@@ -19,8 +19,7 @@
 
 #include "lsm9ds0_mfd.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM9DS0_MFD);
+LOG_MODULE_REGISTER(LSM9DS0_MFD, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 {

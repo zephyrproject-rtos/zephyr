@@ -1,21 +1,15 @@
-# Kconfig - Kinetis KE16F16 configuration options
-#
+# Kinetis KE16F16 configuration options
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKE16F16
 
 config SOC
-	string
 	default "mke16f16"
-
-if CAN
 
 config CAN_MCUX_FLEXCAN
 	default y
-
-endif # CAN
+	depends on CAN
 
 endif # SOC_MKE16F16

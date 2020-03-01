@@ -62,4 +62,4 @@ Sample Output
    Philosopher 4 [C:-1]  THINKING [ 2200 ms ]
    Philosopher 5 [C:-2]  THINKING [ 1700 ms ]
 
-
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

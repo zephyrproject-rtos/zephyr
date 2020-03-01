@@ -35,10 +35,18 @@ enum bt_buf_type {
 };
 
 /** Minimum amount of user data size for buffers passed to the stack. */
-#define BT_BUF_USER_DATA_MIN 8
+#define BT_BUF_USER_DATA_MIN __DEPRECATED_MACRO 4
+
+#if defined(CONFIG_BT_HCI_RAW)
+#define BT_BUF_RESERVE MAX(CONFIG_BT_HCI_RESERVE, CONFIG_BT_HCI_RAW_RESERVE)
+#else
+#define BT_BUF_RESERVE CONFIG_BT_HCI_RESERVE
+#endif
+
+#define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))
 
 /** Data size neeed for HCI RX buffers */
-#define BT_BUF_RX_SIZE (CONFIG_BT_HCI_RESERVE + CONFIG_BT_RX_BUF_LEN)
+#define BT_BUF_RX_SIZE (BT_BUF_SIZE(CONFIG_BT_RX_BUF_LEN))
 
 /** Allocate a buffer for incoming data
  *

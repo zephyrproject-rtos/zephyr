@@ -9,19 +9,16 @@
 
 #include <sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <devicetree.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(CONFIG_DISK_ACCESS_USDHC1) ||	\
 	defined(CONFIG_DISK_ACCESS_USDHC2)
@@ -36,10 +33,10 @@ void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb);
 
 #endif
 
-#endif /* !_ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */

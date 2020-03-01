@@ -53,12 +53,10 @@ For more information about the MCR20A SoC and FRDM-CR20A board:
 Programming
 ***********
 
-Set ``-DSHIELD=frdm_cr20a`` when you invoke ``west build`` or ``cmake`` in your
-Zephyr application. For example:
+Set ``-DSHIELD=frdm_cr20a`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wpanusb
-   :tool: all
    :board: frdm_k64f
    :shield: frdm_cr20a
    :goals: build

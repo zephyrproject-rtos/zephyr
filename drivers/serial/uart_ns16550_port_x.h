@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
- * Copyright (c) 2019 Intel Corp.
+ * Copyright (c) 2019-2020 Intel Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -12,10 +12,11 @@ static void irq_config_func_@NUM@(struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
-	.sys_clk_freq = DT_UART_NS16550_PORT_@NUM@_CLK_FREQ,
+	.devconf.port = DT_UART_NS16550_PORT_@NUM@_BASE_ADDR,
+	.devconf.sys_clk_freq = DT_UART_NS16550_PORT_@NUM@_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = irq_config_func_@NUM@,
+	.devconf.irq_config_func = irq_config_func_@NUM@,
 #endif
 
 #ifdef DT_UART_NS16550_PORT_@NUM@_PCP
@@ -30,8 +31,11 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_@NUM@ = {
-	.port = DT_UART_NS16550_PORT_@NUM@_BASE_ADDR,
-	.baud_rate = DT_UART_NS16550_PORT_@NUM@_BAUD_RATE,
+	.uart_config.baudrate = DT_UART_NS16550_PORT_@NUM@_BAUD_RATE,
+	.uart_config.parity = UART_CFG_PARITY_NONE,
+	.uart_config.stop_bits = UART_CFG_STOP_BITS_1,
+	.uart_config.data_bits = UART_CFG_DATA_BITS_8,
+	.uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
 	.options = CONFIG_UART_NS16550_PORT_@NUM@_OPTIONS,
 
 #ifdef DT_UART_NS16550_PORT_@NUM@_DLF

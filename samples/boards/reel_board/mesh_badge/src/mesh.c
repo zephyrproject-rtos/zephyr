@@ -37,9 +37,7 @@
 
 #define MAX_SENS_STATUS_LEN 8
 
-#define SENS_PROP_ID_TEMP_CELSIUS 0x2A1F
-#define SENS_PROP_ID_UNIT_TEMP_CELSIUS 0x272F
-#define SENS_PROP_ID_TEMP_CELSIUS_SIZE 2
+#define SENS_PROP_ID_PRESENT_DEVICE_TEMP 0x0054
 
 enum {
 	SENSOR_HDR_A = 0,
@@ -64,7 +62,8 @@ static struct k_work mesh_start_work;
 
 /* Definitions of models user data (Start) */
 static struct led_onoff_state led_onoff_state[] = {
-	{ .dev_id = DEV_IDX_LED0 },
+	/* Use LED 0 for this model */
+	{ .dev_id = 0 },
 };
 
 static void heartbeat(u8_t hops, u16_t feat)
@@ -157,7 +156,6 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	printk("addr 0x%02x state 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, state->current);
 
-	/* Pin set low turns on LED's on the reel board */
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
 
@@ -205,17 +203,17 @@ static void sensor_desc_get(struct bt_mesh_model *model,
 
 static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 {
-	struct sensor_hdr_b hdr;
+	struct sensor_hdr_a hdr;
 	/* TODO Get only temperature from sensor */
 	struct sensor_value val[2];
 	s16_t temp_degrees;
 
-	hdr.format = SENSOR_HDR_B;
+	hdr.format = SENSOR_HDR_A;
 	hdr.length = sizeof(temp_degrees);
-	hdr.prop_id = SENS_PROP_ID_UNIT_TEMP_CELSIUS;
+	hdr.prop_id = SENS_PROP_ID_PRESENT_DEVICE_TEMP;
 
 	get_hdc1010_val(val);
-	temp_degrees = sensor_value_to_double(&val[0]);
+	temp_degrees = sensor_value_to_double(&val[0]) * 100;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
 	net_buf_simple_add_le16(msg, temp_degrees);
@@ -223,16 +221,19 @@ static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 
 static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
 {
-	struct sensor_hdr_a hdr;
+	struct sensor_hdr_b hdr;
 
 	/*
 	 * When the message is a response to a Sensor Get message that
 	 * identifies a sensor property that does not exist on the element, the
 	 * Length field shall represent the value of zero and the Raw Value for
-	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14)
+	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14).
+	 *
+	 * The length zero is represented using the format B and the special
+	 * value 0x7F.
 	 */
-	hdr.format = SENSOR_HDR_A;
-	hdr.length = 0U;
+	hdr.format = SENSOR_HDR_B;
+	hdr.length = 0x7FU;
 	hdr.prop_id = id;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
@@ -243,7 +244,7 @@ static void sensor_create_status(u16_t id, struct net_buf_simple *msg)
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
 
 	switch (id) {
-	case SENS_PROP_ID_TEMP_CELSIUS:
+	case SENS_PROP_ID_PRESENT_DEVICE_TEMP:
 		sens_temperature_celsius_fill(msg);
 		break;
 	default:

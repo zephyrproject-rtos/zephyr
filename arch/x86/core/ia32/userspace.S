@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
@@ -13,10 +12,10 @@
 /* Exports */
 GTEXT(z_x86_syscall_entry_stub)
 GTEXT(z_x86_userspace_enter)
-GTEXT(z_arch_user_string_nlen)
-GTEXT(z_arch_user_string_nlen_fault_start)
-GTEXT(z_arch_user_string_nlen_fault_end)
-GTEXT(z_arch_user_string_nlen_fixup)
+GTEXT(arch_user_string_nlen)
+GTEXT(z_x86_user_string_nlen_fault_start)
+GTEXT(z_x86_user_string_nlen_fault_end)
+GTEXT(z_x86_user_string_nlen_fixup)
 
 /* Imports */
 GDATA(_k_syscall_table)
@@ -50,22 +49,16 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_pdpt, %esi
+	movl	$z_x86_kernel_ptables, %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
 	movl	%esp, %edi
 
-	/* %esp = _kernel->current->stack_info.start
-	 *
-	 * This is the lowest address of the user mode stack, the PDPT is
-	 * immediately before it, and then the highest address of the kernel
-	 * stack. We want to transplant context here.
-	 */
+	/* Switch to privilege mode stack */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
-	movl	_thread_offset_to_stack_start(%esi), %esp
-	subl	$Z_X86_PDPT_SIZE, %esp
+	movl	_thread_offset_to_psp(%esi), %esp
 
 	/* Transplant stack context and restore ESI/EDI. Taking care to zero
 	 * or put uninteresting values where we stashed ESI/EDI since the
@@ -135,15 +128,11 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_user_always)
 	xchgl	%edi, (%edi)	/* Exchange old edi to restore it and put
 				   trampoline stack address in its old storage
 				   area */
-	/* Switch to user page table. The per-thread user page table is
-	 * located at the highest addresses of the privilege mode elevation
-	 * stack, immediately below the thread stack buffer.
-	 */
+	/* Switch to user page table */
 	pushl	%eax
 	movl	$_kernel, %eax
 	movl	_kernel_offset_to_current(%eax), %eax
-	movl	_thread_offset_to_stack_start(%eax), %eax
-	subl	$Z_X86_PDPT_SIZE, %eax
+	movl	_thread_offset_to_ptables(%eax), %eax
 	movl	%eax, %cr3
 	popl	%eax
 	movl	$0, -4(%esp)	/* Delete stashed EAX data */
@@ -165,22 +154,16 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_pdpt, %esi
+	movl	$z_x86_kernel_ptables, %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
 	movl	%esp, %edi
 
-	/* %esp = _kernel->current->stack_info.start
-	 *
-	 * This is the lowest address of the user mode stack, the PDPT is
-	 * immediately before it, and then the highest address of the kernel
-	 * stack. We want to transplant context here.
-	 */
+	/* Switch to privilege elevation stack */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
-	movl	_thread_offset_to_stack_start(%esi), %esp
-	subl	$Z_X86_PDPT_SIZE, %esp
+	movl	_thread_offset_to_psp(%esi), %esp
 
 	/* Transplant context according to layout above. Variant of logic
 	 * in x86_trampoline_to_kernel */
@@ -218,11 +201,9 @@ _id_ok:
 	push	%ebp		/* arg6 */
 	push	%edi		/* arg5 */
 	push	%ebx		/* arg4 */
-#ifndef CONFIG_X86_IAMCU
 	push	%ecx		/* arg3 */
 	push	%edx		/* arg2	*/
 	push	%eax		/* arg1 */
-#endif
 
 	/* from the call ID in ESI, load EBX with the actual function pointer
 	 * to call by looking it up in the system call dispatch table
@@ -231,25 +212,18 @@ _id_ok:
 	mov	_k_syscall_table(%edi, %esi, 4), %ebx
 
 	/* Run the handler, which is some entry in _k_syscall_table */
-	INDIRECT_CALL(%ebx)
+	call	*%ebx
 
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.
 	 */
-#ifndef CONFIG_X86_IAMCU
 	pop	%edx		/* old arg1 value, discard it */
 	pop	%edx
 	pop	%ecx
-#endif
 	pop	%ebx
 	pop	%edi
-#ifndef CONFIG_X86_IAMCU
 	/* Discard ssf and arg6 */
 	add	$8, %esp
-#else
-	pop	%ecx		/* Clean ECX and get arg6 off the stack */
-	pop	%edx		/* Clean EDX and get ssf off the stack */
-#endif
 	KPTI_IRET_USER
 
 _bad_syscall:
@@ -264,9 +238,9 @@ _bad_syscall:
 
 
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
 	push	%ebp
 	mov	%esp, %ebp
 
@@ -279,10 +253,10 @@ SECTION_FUNC(TEXT, z_arch_user_string_nlen)
 
 	/* This code might page fault */
 strlen_loop:
-z_arch_user_string_nlen_fault_start:
+z_x86_user_string_nlen_fault_start:
 	cmpb	$0x0, (%edx, %eax, 1)	/* *(EDX + EAX) == 0? Could fault. */
 
-z_arch_user_string_nlen_fault_end:
+z_x86_user_string_nlen_fault_end:
 	je	strlen_done
 	cmp	0xc(%ebp), %eax		/* Max length reached? */
 	je	strlen_done
@@ -293,7 +267,7 @@ strlen_done:
 	/* Set error value to 0 since we succeeded */
 	movl	$0, -4(%ebp)
 
-z_arch_user_string_nlen_fixup:
+z_x86_user_string_nlen_fixup:
 	/* Write error value to err pointer parameter */
 	movl	0x10(%ebp), %ecx
 	pop	%edx
@@ -314,11 +288,9 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	pop	%esi	/* Discard return address on stack */
 
 	/* Fetch parameters on the stack */
-#ifndef CONFIG_X86_IAMCU
 	pop	%eax	/* user_entry */
 	pop	%edx	/* p1 */
 	pop	%ecx	/* p2 */
-#endif
 	pop	%esi	/* p3 */
 	pop	%ebx	/* stack_end (high address) */
 	pop	%edi	/* stack_start (low address) */
@@ -377,11 +349,9 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 
 	/* Push arguments to z_thread_entry() */
 	push	%esi	/* p3 */
-#ifndef CONFIG_X86_IAMCU
 	push	%ecx	/* p2 */
 	push	%edx	/* p1 */
 	push	%eax	/* user_entry */
-#endif
 	/* NULL return address */
 	push	$0
 
@@ -407,8 +377,8 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__end_drop_to_usermode_time
-	mov %edx,__end_drop_to_usermode_time+4
+	mov %eax,arch_timing_enter_user_mode_end
+	mov %edx,arch_timing_enter_user_mode_end+4
 	pop %edx
 	pop %eax
 #endif

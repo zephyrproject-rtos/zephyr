@@ -10,8 +10,8 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
+#include <kernel_arch_data.h>
 #include <string.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,16 +22,6 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#define RSR(sr) \
-	({u32_t v; \
-	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
-	 v; })
-
-#define WSR(sr, v) \
-	do { \
-		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
-	} while (false)
-
 extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
@@ -41,36 +31,11 @@ extern void z_xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
-static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
-{
-#ifdef CONFIG_XTENSA_ASM2
-	void *val;
-
-	val = (void *)RSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR);
-
-	return val;
-#else
-	return &_kernel.cpus[0];
-#endif
-}
-
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the
- * kernel.  Trivial stuff is done inline; more complex initialization is
- * done via function calls.
- *
- * @return N/A
- */
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
 	cpu0->nested = 0;
-
-#if CONFIG_XTENSA_ASM2
 	cpu0->irq_stack = (Z_THREAD_STACK_BUFFER(_interrupt_stack) +
 			   CONFIG_ISR_STACK_SIZE);
 
@@ -81,14 +46,6 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	 * already is a big win.
 	 */
 	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
-#endif
-
-#if !defined(CONFIG_XTENSA_ASM2) && XCHAL_CP_NUM > 0
-	/* Initialize co-processor management for threads.
-	 * Leave CPENABLE alone.
-	 */
-	z_xt_coproc_init();
-#endif
 
 #ifdef CONFIG_INIT_STACKS
 	memset(Z_THREAD_STACK_BUFFER(_interrupt_stack), 0xAA,
@@ -96,37 +53,21 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 #endif
 }
 
-/**
- *
- * @brief Set the return value for the specified thread (inline)
- *
- * @param thread pointer to thread
- * @param value value to set as return value
- *
- * The register used to store the return value from a function call invocation
- * is set to <value>.  It is assumed that the specified thread is pending, and
- * thus the thread's context is stored in its k_thread.
- *
- * @return N/A
- */
-#if !CONFIG_USE_SWITCH
-static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+void xtensa_switch(void *switch_to, void **switched_from);
+
+static inline void arch_switch(void *switch_to, void **switched_from)
 {
-	thread->callee_saved.retval = value;
+	return xtensa_switch(switch_to, switched_from);
 }
-#endif
-
-extern void k_cpu_atomic_idle(unsigned int key);
-
-#include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus
 }
 #endif
 
-#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
-
+static inline bool arch_is_in_isr(void)
+{
+	return arch_curr_cpu()->nested != 0U;
+}
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_ */

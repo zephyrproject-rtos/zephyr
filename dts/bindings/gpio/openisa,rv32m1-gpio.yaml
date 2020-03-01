@@ -1,24 +1,22 @@
-title: OpenISA GPIO
+description: OpenISA GPIO node
 
-description: >
-    This is a representation of the OpenISA GPIO nodes
+compatible: "openisa,rv32m1-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

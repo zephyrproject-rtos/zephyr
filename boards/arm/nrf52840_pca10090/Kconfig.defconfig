@@ -1,7 +1,6 @@
-# Kconfig - nRF52840 PCA10090 board configuration
-#
+# nRF52840 PCA10090 board configuration
+
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF52840_PCA10090
@@ -9,12 +8,9 @@ if BOARD_NRF52840_PCA10090
 config BOARD
 	default "nrf52840_pca10090"
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

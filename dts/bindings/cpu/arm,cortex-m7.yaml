@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARM Cortex-M7 CPU
+description: ARM Cortex-M7 CPU
 
-description: >
-    This binding gives a base representation for ARM Cortex-M7 CPU.
+compatible: "arm,cortex-m7"
 
-inherits:
-    !include cpu.yaml
-
-properties:
-    compatible:
-      constraint: "arm,cortex-m7"
+include: cpu.yaml

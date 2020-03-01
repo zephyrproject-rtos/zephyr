@@ -35,7 +35,7 @@ interface.  It does not work on QEMU.  In this example below the
 
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/sht3xd
+   :zephyr-app: samples/sensor/sht3xd
    :board: nrf51_ble400
    :goals: build flash
 
@@ -49,4 +49,3 @@ Sample Output
    SHT3XD: 19.75 Cel ; 42.08 %RH
 
 <repeats endlessly>
-

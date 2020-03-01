@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ARM Cortex-M33 CPU
+description: ARM Cortex-M33 CPU
 
-description: >
-    This binding gives a base representation for ARM Cortex-M33 CPU.
+compatible: "arm,cortex-m33"
 
-inherits:
-    !include cpu.yaml
-
-properties:
-    compatible:
-      constraint: "arm,cortex-m33"
+include: cpu.yaml

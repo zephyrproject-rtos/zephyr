@@ -22,11 +22,11 @@
 	leds {
 		compatible = "gpio-leds";
 		orange_led_1: led_1 {
-			gpios = <&gpioc 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
 			label = "DATA LD1";
 		};
 		red_led_2: led_2 {
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "STAT LD2";
 		};
 	};
@@ -39,8 +39,6 @@
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -61,5 +59,9 @@
 };
 
 &usbotg_fs {
+	status = "okay";
+};
+
+&cryp {
 	status = "okay";
 };

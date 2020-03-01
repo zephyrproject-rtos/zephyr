@@ -1,21 +1,17 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: BMI160 Inertial measurement unit
+description: BMI160 inertial measurement unit
 
-description: >
-    This is a representation of the BMI160 Inertial measurement unit
+compatible: "bosch,bmi160"
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "bosch,bmi160"
-
     int-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
+      description: |
+        This property specifies the connection for INT1, because the
+        Zephyr driver maps all interrupts to INT1.  The signal defaults
+        to output low when produced by the sensor.

@@ -1,40 +1,72 @@
-title: base device binding
-
-description: >
-    Binding for device
+# Common fields for all devices
 
 properties:
+    status:
+        type: string
+        required: false
+        description: indicates the operational status of a device
+        enum:
+           - "ok" # Deprecated form
+           - "okay"
+           - "disabled"
+           - "reserved"
+           - "fail"
+           - "fail-sss"
+
     compatible:
         type: string-array
-        category: required
+        required: true
         description: compatible strings
 
     reg:
         type: array
         description: register space
-        category: optional
+        required: false
 
     reg-names:
         type: string-array
         description: name of each register space
-        category: optional
+        required: false
 
     interrupts:
         type: array
-        category: optional
+        required: false
         description: interrupts for device
+
+    # Does not follow the 'type: phandle-array' scheme, but gets type-checked
+    # by the code. Declare it here just so that other bindings can make it
+    # 'required: true' easily if they want to.
+    interrupts-extended:
+        type: compound
+        required: false
+        description: extended interrupt specifier for device
 
     interrupt-names:
         type: string-array
-        category: optional
+        required: false
         description: name of each interrupt
+
+    interrupt-parent:
+        type: phandle
+        required: false
+        description: phandle to interrupt controller node
 
     label:
         type: string
-        category: optional
+        required: false
         description: Human readable string describing the device (used by Zephyr for API name)
 
     clocks:
-        type: compound
-        category: optional
+        type: phandle-array
+        required: false
         description: Clock gate information
+
+    "#address-cells":
+        type: int
+        required: false
+        description: number of address cells in reg property
+
+    "#size-cells":
+        type: int
+        required: false
+        description: number of size cells in reg property

@@ -1,25 +1,27 @@
-#
 # Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ILI9340 320x240 Display Controller
+description: ILI9340 320x240 display controller
 
-description: >
-    This is a representation of the ILI9340 320x240 Display Controller
+compatible: "ilitek,ili9340"
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "ilitek,ili9340"
-
     reset-gpios:
-      type: compound
-      category: optional
+      type: phandle-array
+      required: false
+      description: RESET pin.
+
+        The RESET pin of ILI9340 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
 
     cmd-data-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
+      description: D/CX pin.
+
+        The D/CX pin of ILI9340 is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.

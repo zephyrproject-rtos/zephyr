@@ -60,6 +60,7 @@ static inline size_t stack_unused_space_get(const char *stack, size_t size)
 	return unused;
 }
 
+__deprecated
 static inline void stack_analyze(const char *name, const char *stack,
 				 unsigned int size)
 {
@@ -82,11 +83,33 @@ static inline void stack_analyze(const char *name, const char *stack,
  * @param name Name of the stack
  * @param sym The symbol of the stack
  */
-#define STACK_ANALYZE(name, sym)				\
+#define STACK_ANALYZE(name, sym) DEPRECATED_MACRO		\
 	do {							\
 		stack_analyze(name,				\
 			      Z_THREAD_STACK_BUFFER(sym),	\
 			      K_THREAD_STACK_SIZEOF(sym));	\
 	} while (false)
 
+static inline void log_stack_usage(const struct k_thread *thread)
+{
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+	size_t unused, size = thread->stack_info.size;
+
+	LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+	if (k_thread_stack_space_get(thread, &unused) == 0) {
+		unsigned int pcnt = ((size - unused) * 100U) / size;
+		const char *tname;
+
+		tname = k_thread_name_get((k_tid_t)thread);
+		if (tname == NULL) {
+			tname = "unknown";
+		}
+
+		LOG_INF("%p (%s):\tunused %zu\tusage %zu / %zu (%u %%)",
+			thread, log_strdup(tname), unused, size - unused, size,
+			pcnt);
+	}
+#endif
+}
 #endif /* ZEPHYR_INCLUDE_DEBUG_STACK_H_ */

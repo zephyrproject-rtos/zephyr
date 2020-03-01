@@ -1,37 +1,31 @@
-title: Flash Partitions
+description: Flash partitions parent node
 
-description: >
-    This binding gives a base FLASH partition description
+compatible: "fixed-partitions"
 
 properties:
-    compatible:
-      constraint: "fixed-partitions"
-      type: string-array
-      category: required
-      description: compatible strings
-
     "#address-cells":
         type: int
-        category: optional
+        required: false
         description: number of address cells in reg property
 
     "#size-cells":
         type: int
-        category: optional
+        required: false
         description: number of size cells in reg property
 
-sub-node:
+child-binding:
+    description: Flash partition child node
     properties:
        label:
-          category: required
+          required: true
           type: string
-          category: optional
+          required: false
           description: Human readable string describing the device (used by Zephyr for API name)
        read-only:
           type: boolean
-          category: optional
+          required: false
           description: if the partition is read-only or not
        reg:
           type: array
           description: register space
-          category: required
+          required: true

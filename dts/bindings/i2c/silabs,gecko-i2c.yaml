@@ -1,36 +1,28 @@
-#
 # Copyright (c) 2018 Diego Sueiro <diego.sueiro@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Silabs Gecko I2C Controller
+description: Silabs Gecko I2C node
 
-description: >
-    This is a representation of the Silabs Gecko I2C nodes
+compatible: "silabs,gecko-i2c"
 
-inherits:
-    !include i2c.yaml
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,gecko-i2c"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     # Note: Not all SoC series support setting individual pin location. If this
     # is a case all location-* properties need to have identical value.
 
     location-sda:
       type: array
-      category: required
+      required: true
       description: SDA pin configuration defined as <location port pin>
 
     location-scl:
       type: array
-      category: required
+      required: true
       description: SCL pin configuration defined as <location port pin>

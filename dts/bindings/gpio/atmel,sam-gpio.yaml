@@ -1,29 +1,27 @@
-title: Atmel SAM GPIO PORT driver
+description: SAM GPIO PORT node
 
-description: >
-    This is a representation of the SAM GPIO PORT nodes
+compatible: "atmel,sam-gpio"
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "atmel,sam-gpio"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true
 
-"#cells":
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
   - pin
   - flags

@@ -67,6 +67,8 @@ struct settings_handler {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -80,11 +82,15 @@ struct settings_handler {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 *  Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
 	/**< This handler gets called after settings has been loaded in full.
 	 * User might use it to apply setting to the application.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_export)(int (*export_func)(const char *name, const void *val,
@@ -101,6 +107,8 @@ struct settings_handler {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	sys_snode_t node;
@@ -125,6 +133,8 @@ struct settings_handler_static {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -138,6 +148,8 @@ struct settings_handler_static {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
@@ -159,6 +171,8 @@ struct settings_handler_static {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 };
 
@@ -172,7 +186,7 @@ struct settings_handler_static {
  * @param _commit commit routine (can be NULL)
  * @param _export export routine (can be NULL)
  *
- * This createa a variable _hname prepended by settings_handler_.
+ * This creates a variable _hname prepended by settings_handler_.
  *
  */
 
@@ -191,7 +205,7 @@ struct settings_handler_static {
  * Initialization of settings and backend
  *
  * Can be called at application startup.
- * In case the backend is NFFS Remember to call it after FS was mounted.
+ * In case the backend is a FS Remember to call it after the FS was mounted.
  * For FCB backend it can be called without such a restriction.
  *
  * @return 0 on success, non-zero on failure.
@@ -225,6 +239,59 @@ int settings_load(void);
  * @return 0 on success, non-zero on failure.
  */
 int settings_load_subtree(const char *subtree);
+
+/**
+ * Callback function used for direct loading.
+ * Used by @ref settings_load_subtree_direct function.
+ *
+ * @param[in]     key     the name with skipped part that was used as name in
+ *                        handler registration
+ * @param[in]     len     the size of the data found in the backend.
+ * @param[in]     read_cb function provided to read the data from the backend.
+ * @param[in,out] cb_arg  arguments for the read function provided by the
+ *                        backend.
+ * @param[in,out] param   parameter given to the
+ *                        @ref settings_load_subtree_direct function.
+ *
+ *  - key[in] the name with skipped part that was used as name in
+ *    handler registration
+ *  - len[in] the size of the data found in the backend.
+ *  - read_cb[in] function provided to read the data from the backend.
+ *  - cb_arg[in] arguments for the read function provided by the
+ *    backend.
+ *
+ * @return When nonzero value is returned, further subtree searching is stopped.
+ *         Use with care as some settings backends would iterate through old
+ *         values, and the current value is returned last.
+ */
+typedef int (*settings_load_direct_cb)(
+	const char      *key,
+	size_t           len,
+	settings_read_cb read_cb,
+	void            *cb_arg,
+	void            *param);
+
+/**
+ * Load limited set of serialized items using given callback.
+ *
+ * This function bypasses the normal data workflow in settings module.
+ * All the settings values that are found are passed to the given callback.
+ *
+ * @note
+ * This function does not call commit function.
+ * It works as a blocking function, so it is up to the user to call
+ * any kind of commit function when this operation ends.
+ *
+ * @param[in]     subtree subtree name of the subtree to be loaded.
+ * @param[in]     cb      pointer to the callback function.
+ * @param[in,out] param   parameter to be passed when callback
+ *                        function is called.
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_load_subtree_direct(
+	const char             *subtree,
+	settings_load_direct_cb cb,
+	void                   *param);
 
 /**
  * Save currently running serialized items. All serialized items which are
@@ -282,6 +349,12 @@ int settings_commit_subtree(const char *subtree);
  */
 
 
+/**
+ * @defgroup settings_backend Settings backend interface
+ * @ingroup file_system_storage
+ * @{
+ */
+
 /*
  * API for config storage
  */
@@ -289,7 +362,6 @@ int settings_commit_subtree(const char *subtree);
 struct settings_store_itf;
 
 /**
- * @struct settings_store
  * Backend handler node for storage handling.
  */
 struct settings_store {
@@ -301,18 +373,49 @@ struct settings_store {
 };
 
 /**
- * @struct settings_store_itf
+ * Arguments for data loading.
+ * Holds all parameters that changes the way data should be loaded from backend.
+ */
+struct settings_load_arg {
+	/**
+	 * @brief Name of the subtree to be loaded
+	 *
+	 * If NULL, all values would be loaded.
+	 */
+	const char *subtree;
+	/**
+	 * @brief Pointer to the callback function.
+	 *
+	 * If NULL then matching registered function would be used.
+	 */
+	settings_load_direct_cb cb;
+	/**
+	 * @brief Parameter for callback function
+	 *
+	 * Parameter to be passed to the callback function.
+	 */
+	void *param;
+};
+
+/**
  * Backend handler functions.
  * Sources are registered using a call to @ref settings_src_register.
  * Destinations are registered using a call to @ref settings_dst_register.
  */
 struct settings_store_itf {
-	int (*csi_load)(struct settings_store *cs, const char *subtree);
-	/**< Loads values from storage limited to subtree defined by subtree. If
-	 * subtree = NULL loads all values.
+	int (*csi_load)(struct settings_store *cs,
+			const struct settings_load_arg *arg);
+	/**< Loads values from storage limited to subtree defined by subtree.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs - Corresponding backend handler node,
+	 *  - arg - Structure that holds additional data for data loading.
+	 *
+	 * @note
+	 * Backend is expected not to provide duplicates of the entities.
+	 * It means that if the backend does not contain any functionality to
+	 * really delete old keys, it has to filter out old entities and call
+	 * load callback only on the final entity.
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);
@@ -371,11 +474,35 @@ void settings_dst_register(struct settings_store *cs);
  * @return settings_handler_static on success, NULL on failure.
  */
 struct settings_handler_static *settings_parse_and_lookup(const char *name,
-							const char **next);
+							  const char **next);
 
+/**
+ * Calls settings handler.
+ *
+ * @param[in]     name        The name of the data found in the backend.
+ * @param[in]     len         The size of the data found in the backend.
+ * @param[in]     read_cb     Function provided to read the data from
+ *                            the backend.
+ * @param[in,out] read_cb_arg Arguments for the read function provided by
+ *                            the backend.
+ * @param[in,out] load_arg    Arguments for data loading.
+ *
+ * @return 0 or negative error code
+ */
+int settings_call_set_handler(const char *name,
+			      size_t len,
+			      settings_read_cb read_cb,
+			      void *read_cb_arg,
+			      const struct settings_load_arg *load_arg);
+/**
+ * @}
+ */
 
-/*
- * API for const name processing
+/**
+ * @defgroup settings_name_proc Settings name processing
+ * @brief API for const name processing
+ * @ingroup settings
+ * @{
  */
 
 /**
@@ -411,12 +538,18 @@ int settings_name_steq(const char *name, const char *key, const char **next);
  *
  */
 int settings_name_next(const char *name, const char **next);
-
-/*
- * API for runtime settings
+/**
+ * @}
  */
 
 #ifdef CONFIG_SETTINGS_RUNTIME
+
+/**
+ * @defgroup settings_rt Settings subsystem runtime
+ * @brief API for runtime settings
+ * @ingroup settings
+ * @{
+ */
 
 /**
  * Set a value with a specific key to a module handler.
@@ -434,9 +567,9 @@ int settings_runtime_set(const char *name, void *data, size_t len);
  *
  * @param name Key in string format.
  * @param data Returned binary value.
- * @param len Returned value length in bytes.
+ * @param len requested value length in bytes.
  *
- * @return 0 on success, non-zero on failure.
+ * @return length of data read on success, negative on failure.
  */
 int settings_runtime_get(const char *name, void *data, size_t len);
 
@@ -448,6 +581,9 @@ int settings_runtime_get(const char *name, void *data, size_t len);
  * @return 0 on success, non-zero on failure.
  */
 int settings_runtime_commit(const char *name);
+/**
+ * @}
+ */
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 

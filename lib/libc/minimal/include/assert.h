@@ -13,8 +13,10 @@
 #ifdef __cplusplus
 extern "C" {
 #else
+#if __STDC_VERSION__ >= 201112L
 #define static_assert _Static_assert
-#endif
+#endif /* __STDC_VERSION__ */
+#endif /* __cplusplus */
 
 #ifndef NDEBUG
 #ifndef assert

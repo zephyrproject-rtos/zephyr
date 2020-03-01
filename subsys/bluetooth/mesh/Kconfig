@@ -1,16 +1,14 @@
-# Kconfig - Bluetooth Mesh configuration options
+# Bluetooth Mesh configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BT_MESH
 	bool "Bluetooth Mesh support"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth Mesh support. The specific
@@ -31,6 +29,44 @@ config BT_MESH_PB_ADV
 	help
 	  Enable this option to allow the device to be provisioned over
 	  the advertising bearer.
+
+config BT_MESH_PROVISIONER
+	bool "Provisioner support"
+	select BT_ECC
+	select BT_MESH_PROV
+	help
+	  Enable this option to have support for provisioning remote devices.
+
+config BT_MESH_CDB
+	bool "Mesh Configuration Database [EXPERIMENTAL]"
+
+if BT_MESH_CDB
+
+config BT_MESH_CDB_NODE_COUNT
+	int "Maximum number of nodes in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many nodes each network can at most
+	  save in the configuration database.
+
+config BT_MESH_CDB_SUBNET_COUNT
+	int "Maximum number of subnets in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many subnets that can at most be
+	  saved in the configuration database.
+
+config BT_MESH_CDB_APP_KEY_COUNT
+	int "Maximum number of application keys in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many application keys that can at most
+	  be saved in the configuration database.
+
+endif # BT_MESH_CDB
 
 if BT_CONN
 
@@ -67,18 +103,15 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-if BT_MESH_PROXY
-
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
 	default 3 if BT_MESH_GATT_PROXY
 	default 1
 	range 1 32767
+	depends on BT_MESH_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
-
-endif # BT_MESH_PROXY
 
 endif # BT_CONN
 
@@ -434,6 +467,12 @@ config BT_MESH_SHELL
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
 
+config BT_MESH_MODEL_EXTENSIONS
+	bool "Support for Model extensions"
+	help
+	  Enable support for the model extension concept, allowing the Access
+	  layer to know about Mesh model relationships.
+
 if BT_SETTINGS
 
 config BT_MESH_STORE_TIMEOUT
@@ -567,6 +606,12 @@ config BT_MESH_DEBUG_SETTINGS
 	depends on BT_SETTINGS
 	help
 	  Use this option to enable persistent settings debug logs.
+
+config BT_MESH_DEBUG_CDB
+	bool "Configuration database debug"
+	depends on BT_MESH_CDB
+	help
+	  Use this option to enable configuration database debug logs.
 
 endif # BT_MESH_DEBUG
 

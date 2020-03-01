@@ -12,9 +12,12 @@
 #include <kernel.h>
 #include <init.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include "pwm_stm32.h"
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pwm_stm32);
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
@@ -68,7 +71,8 @@ static u32_t __get_tim_clk(u32_t bus_clk,
  * return 0, or negative errno code
  */
 static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
-			     u32_t period_cycles, u32_t pulse_cycles)
+			     u32_t period_cycles, u32_t pulse_cycles,
+			     pwm_flags_t flags)
 {
 	struct pwm_stm32_data *data = DEV_DATA(dev);
 	TIM_HandleTypeDef *TimerHandle = &data->hpwm;
@@ -78,6 +82,11 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	/* configure channel */
@@ -160,8 +169,11 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	}
 
 	/* Timer clock depends on APB prescaler */
-	clock_control_get_rate(data->clock,
-			(clock_control_subsys_t *)&cfg->pclken, &bus_clk);
+	if (clock_control_get_rate(data->clock,
+			(clock_control_subsys_t *)&cfg->pclken, &bus_clk) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	tim_clk = __get_tim_clk(bus_clk,
 			(clock_control_subsys_t *)&cfg->pclken);

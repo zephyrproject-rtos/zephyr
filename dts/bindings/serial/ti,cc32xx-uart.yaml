@@ -1,17 +1,12 @@
-title: TI CC32XX Uart
+description: TI CC32XX UART
 
-description: >
-    This binding gives a base representation of the TI CC32XX UART
+compatible: "ti,cc32xx-uart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc32xx-uart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

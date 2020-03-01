@@ -68,13 +68,33 @@ int net_icmpv4_send_error(struct net_pkt *pkt, u8_t type, u8_t code);
  *
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 u16_t identifier,
 				 u16_t sequence,
 				 const void *data,
 				 size_t data_size);
+#else
+static inline int net_icmpv4_send_echo_request(struct net_if *iface,
+					       struct in_addr *dst,
+					       u16_t identifier,
+					       u16_t sequence,
+					       const void *data,
+					       size_t data_size)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(identifier);
+	ARG_UNUSED(sequence);
+	ARG_UNUSED(data);
+	ARG_UNUSED(data_size);
 
+	return -ENOTSUP;
+}
+#endif
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
 void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
@@ -84,10 +104,11 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 
 int net_icmpv4_finalize(struct net_pkt *pkt);
 
-#if defined(CONFIG_NET_IPV4)
 void net_icmpv4_init(void);
 #else
 #define net_icmpv4_init(...)
+#define net_icmpv4_register_handler(...)
+#define net_icmpv4_unregister_handler(...)
 #endif
 
 #endif /* __ICMPV4_H */

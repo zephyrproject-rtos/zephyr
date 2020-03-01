@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: LPC USART
+description: LPC USART
 
-description: >
-    This binding gives a base representation of the LPC USART
+compatible: "nxp,lpc-usart"
 
-inherits:
-    !include uart.yaml
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,lpc-usart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

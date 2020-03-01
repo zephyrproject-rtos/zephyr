@@ -61,9 +61,7 @@
 #include <sys/util.h>
 #include <sys/__assert.h>
 #include <init.h>
-#if defined(CONFIG_USB_VBUS_GPIO)
 #include <drivers/gpio.h>
-#endif
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usbstruct.h>
@@ -76,6 +74,7 @@ LOG_MODULE_REGISTER(usb_device);
 
 #include <usb/bos.h>
 #include <os_desc.h>
+#include "usb_transfer.h"
 
 #define MAX_DESC_HANDLERS           4 /** Device, interface, endpoint, other */
 
@@ -100,8 +99,6 @@ LOG_MODULE_REGISTER(usb_device);
 #define MAX_NUM_REQ_HANDLERS        4
 #define MAX_STD_REQ_MSG_SIZE        8
 
-#define MAX_NUM_TRANSFERS           4 /** Max number of parallel transfers */
-
 /* Default USB control EP, always 0 and 0x80 */
 #define USB_CONTROL_OUT_EP0         0
 #define USB_CONTROL_IN_EP0          0x80
@@ -110,44 +107,25 @@ LOG_MODULE_REGISTER(usb_device);
 extern struct usb_cfg_data __usb_data_start[];
 extern struct usb_cfg_data __usb_data_end[];
 
-struct usb_transfer_data {
-	/** endpoint associated to the transfer */
-	u8_t ep;
-	/** Transfer status */
-	int status;
-	/** Transfer read/write buffer */
-	u8_t *buffer;
-	/** Transfer buffer size */
-	size_t bsize;
-	/** Transferred size */
-	size_t tsize;
-	/** Transfer callback */
-	usb_transfer_callback cb;
-	/** Transfer caller private data */
-	void *priv;
-	/** Transfer synchronization semaphore */
-	struct k_sem sem;
-	/** Transfer read/write work */
-	struct k_work work;
-	/** Transfer flags */
-	unsigned int flags;
-};
-
-static void usb_transfer_work(struct k_work *item);
+K_MUTEX_DEFINE(usb_enable_lock);
 
 static struct usb_dev_priv {
 	/** Setup packet */
 	struct usb_setup_packet setup;
 	/** Pointer to data buffer */
 	u8_t *data_buf;
-	/** Eemaining bytes in buffer */
+	/** Remaining bytes in buffer */
 	s32_t data_buf_residue;
 	/** Total length of control transfer */
 	s32_t data_buf_len;
+	/** Zero length packet flag of control transfer */
+	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
-	/** USB stack status clalback */
+	/** USB stack status callback */
 	usb_dc_status_callback status_callback;
+	/** USB user status callback */
+	usb_dc_status_callback user_status_callback;
 	/** Pointer to registered descriptors */
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
@@ -163,8 +141,6 @@ static struct usb_dev_priv {
 	u8_t configuration;
 	/** Remote wakeup feature status */
 	bool remote_wakeup;
-	/** Transfer list */
-	struct usb_transfer_data transfer[MAX_NUM_TRANSFERS];
 } usb_dev;
 
 /*
@@ -206,8 +182,6 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 	u32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
 	usb_request_handler handler = usb_dev.req_handlers[type];
 
-	LOG_DBG("** %d **", type);
-
 	if (type >= MAX_NUM_REQ_HANDLERS) {
 		LOG_DBG("Error Incorrect iType %d", type);
 		return false;
@@ -234,25 +208,35 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  */
 static void usb_data_to_host(u16_t len)
 {
-	u32_t chunk = usb_dev.data_buf_residue;
+	if (usb_dev.zlp_flag == false) {
+		u32_t chunk = usb_dev.data_buf_residue;
 
-	/*Always EP0 for control*/
-	usb_dc_ep_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
-	usb_dev.data_buf += chunk;
-	usb_dev.data_buf_residue -= chunk;
+		/*Always EP0 for control*/
+		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
+			  usb_dev.data_buf_residue, &chunk);
+		usb_dev.data_buf += chunk;
+		usb_dev.data_buf_residue -= chunk;
 
-	/*
-	 * Send ZLP when host asks for a bigger length and the last chunk
-	 * is wMaxPacketSize long, to indicate the last packet.
-	 */
-	if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
-	    && len > chunk) {
-		int ret;
+#ifndef CONFIG_USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
+		/*
+		 * Set ZLP flag when host asks for a bigger length and the
+		 * last chunk is wMaxPacketSize long, to indicate the last
+		 * packet.
+		 */
+		if (!usb_dev.data_buf_residue && len > usb_dev.data_buf_len) {
+			/* Send less data as requested during the Setup stage */
+			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+				/* Transfers a zero-length packet */
+				LOG_DBG("ZLP, requested %u , length %u ",
+					len, usb_dev.data_buf_len);
+				usb_dev.zlp_flag = true;
+			}
+		}
+#endif
 
-		do {
-			ret = usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0,
-					      NULL);
-		} while (ret == -EAGAIN);
+	} else {
+		usb_dev.zlp_flag = false;
+		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
 	}
 }
 
@@ -270,7 +254,7 @@ static void usb_handle_control_transfer(u8_t ep,
 	u32_t chunk = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
-	LOG_DBG("ep %x, status %x", ep, ep_status);
+	LOG_DBG("ep 0x%02x, status 0x%02x", ep, ep_status);
 
 	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
 		u16_t length;
@@ -287,10 +271,20 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		length = sys_le16_to_cpu(setup->wLength);
+		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+			if (REQTYPE_GET_DIR(setup->bmRequestType)
+			    != REQTYPE_DIR_TO_HOST) {
+				LOG_ERR("Request buffer too small");
+				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+				return;
+			}
+		}
 
 		usb_dev.data_buf = usb_dev.req_data;
 		usb_dev.data_buf_residue = length;
 		usb_dev.data_buf_len = length;
+		usb_dev.zlp_flag = false;
 
 		if (length &&
 		    REQTYPE_GET_DIR(setup->bmRequestType)
@@ -351,7 +345,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
 		/* Send more data if available */
-		if (usb_dev.data_buf_residue != 0) {
+		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
 			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
 		}
 	} else {
@@ -418,8 +412,8 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	 * Invalid types of descriptors,
 	 * see USB Spec. Revision 2.0, 9.4.3 Get Descriptor
 	 */
-	if ((type == DESC_INTERFACE) || (type == DESC_ENDPOINT) ||
-	    (type > DESC_OTHER_SPEED)) {
+	if ((type == USB_INTERFACE_DESC) || (type == USB_ENDPOINT_DESC) ||
+	    (type > USB_OTHER_SPEED)) {
 		return false;
 	}
 
@@ -442,7 +436,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		/* set data pointer */
 		*data = p;
 		/* get length from structure */
-		if (type == DESC_CONFIGURATION) {
+		if (type == USB_CONFIGURATION_DESC) {
 			/* configuration descriptor is an
 			 * exception, length is at offset
 			 * 2 and 3
@@ -460,9 +454,20 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	return found;
 }
 
+/*
+ * @brief configure and enable endpoint
+ *
+ * This function sets endpoint configuration according to one specified in USB
+ * endpoint descriptor and then enables it for data transfers.
+ *
+ * @param [in]  ep_desc Endpoint descriptor byte array
+ *
+ * @return true if successfully configured and enabled
+ */
 static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
+	int ret;
 
 	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
 	ep_cfg.ep_mps = sys_le16_to_cpu(ep_desc->wMaxPacketSize);
@@ -473,20 +478,83 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	ep_cfg.ep_type = ep_desc->bmAttributes;
 
-	LOG_DBG("Configure endpoint 0x%x type %u MPS %u",
+	LOG_DBG("Set endpoint 0x%x type %u MPS %u",
 		ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
-	if (usb_dc_ep_configure(&ep_cfg) < 0) {
-		LOG_WRN("Failed to configure endpoint %x", ep_cfg.ep_addr);
+	ret = usb_dc_ep_configure(&ep_cfg);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already configured", ep_cfg.ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
 	}
 
-	if (usb_dc_ep_enable(ep_cfg.ep_addr) < 0) {
-		LOG_WRN("Failed to enable endpoint %x", ep_cfg.ep_addr);
+	ret = usb_dc_ep_enable(ep_cfg.ep_addr);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already enabled", ep_cfg.ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
 	}
 
 	usb_dev.configured = true;
 
 	return true;
+}
+
+/*
+ * @brief Disable endpoint for transferring data
+ *
+ * This function cancels transfers that are associated with endpoint and
+ * disabled endpoint itself.
+ *
+ * @param [in]  ep_desc Endpoint descriptor byte array
+ *
+ * @return true if successfully deconfigured and disabled
+ */
+static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
+{
+	struct usb_dc_ep_cfg_data ep_cfg;
+	int ret;
+
+	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
+	ep_cfg.ep_type = ep_desc->bmAttributes;
+
+	if (ep_desc->bmAttributes > USB_DC_EP_INTERRUPT) {
+		return false;
+	}
+
+	LOG_DBG("Reset endpoint 0x%02x type %u",
+		ep_cfg.ep_addr, ep_cfg.ep_type);
+
+	usb_cancel_transfer(ep_cfg.ep_addr);
+
+	ret = usb_dc_ep_disable(ep_cfg.ep_addr);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already disabled", ep_cfg.ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to disable endpoint 0x%02x", ep_cfg.ep_addr);
+		return false;
+	}
+
+	return true;
+}
+
+static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
+				u8_t cur_alt_setting,
+				u8_t alt_setting)
+{
+	bool ret;
+
+	if (cur_alt_setting != alt_setting) {
+		LOG_DBG("Disable endpoint 0x%02x", ep_desc->bEndpointAddress);
+		ret = reset_endpoint(ep_desc);
+	} else {
+		LOG_DBG("Enable endpoint 0x%02x", ep_desc->bEndpointAddress);
+		ret = set_endpoint(ep_desc);
+	}
+
+	return ret;
 }
 
 /*
@@ -517,7 +585,7 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	/* configure endpoints for this configuration/altsetting */
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_CONFIGURATION:
+		case USB_CONFIGURATION_DESC:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
 			if (cur_config == config_index) {
@@ -526,13 +594,13 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 
 			break;
 
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting =
 			    p[INTF_DESC_bAlternateSetting];
 			break;
 
-		case DESC_ENDPOINT:
+		case USB_ENDPOINT_DESC:
 			if ((cur_config != config_index) ||
 			    (cur_alt_setting != alt_setting)) {
 				break;
@@ -568,15 +636,16 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 {
 	const u8_t *p = usb_dev.descriptors;
 	const u8_t *if_desc = NULL;
+	struct usb_ep_descriptor *ep;
 	u8_t cur_alt_setting = 0xFF;
 	u8_t cur_iface = 0xFF;
-	bool found = false;
+	bool ret = false;
 
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case DESC_INTERFACE:
+		case USB_INTERFACE_DESC:
 			/* remember current alternate setting */
 			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
@@ -586,15 +655,15 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 				if_desc = (void *)p;
 			}
 
-			LOG_DBG("iface_num %u alt_set %u", iface, alt_setting);
+			LOG_DBG("Current iface %u alt setting %u",
+				cur_iface, cur_alt_setting);
 			break;
-		case DESC_ENDPOINT:
-			if ((cur_iface != iface) ||
-			    (cur_alt_setting != alt_setting)) {
-				break;
+		case USB_ENDPOINT_DESC:
+			if (cur_iface == iface) {
+				ep = (struct usb_ep_descriptor *)p;
+				ret = usb_eps_reconfigure(ep, cur_alt_setting,
+							  alt_setting);
 			}
-
-			found = set_endpoint((struct usb_ep_descriptor *)p);
 			break;
 		default:
 			break;
@@ -608,7 +677,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 		usb_dev.status_callback(USB_DC_INTERFACE, if_desc);
 	}
 
-	return found;
+	return ret;
 }
 
 /*
@@ -956,6 +1025,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 			cfg->cb_usb_status(cfg, status, param);
 		}
 	}
+
+	if (usb_dev.user_status_callback) {
+		usb_dev.user_status_callback(status, param);
+	}
 }
 
 /**
@@ -967,26 +1040,27 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
  */
 static int usb_vbus_set(bool on)
 {
-#if defined(CONFIG_USB_VBUS_GPIO)
+#ifdef DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER
 	int ret = 0;
 	struct device *gpio_dev;
 
-	gpio_dev = device_get_binding(CONFIG_USB_VBUS_GPIO_DEV_NAME);
+	gpio_dev = device_get_binding(DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
 	if (!gpio_dev) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			CONFIG_USB_VBUS_GPIO_DEV_NAME);
+			DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
 		return -ENODEV;
 	}
 
 	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
-				 GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+				 GPIO_OUTPUT |
+				 DT_ALIAS_USBD_0_VBUS_GPIOS_FLAGS);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_write(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
-			     on == true ? 1 : 0);
+	ret = gpio_pin_set(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+			   on == true ? 1 : 0);
 	if (ret) {
 		return ret;
 	}
@@ -1011,6 +1085,9 @@ int usb_deconfig(void)
 
 	/* unregister status callback */
 	usb_register_status_callback(NULL);
+
+	/* unregister user status callback */
+	usb_dev.user_status_callback = NULL;
 
 	/* Reset USB controller */
 	usb_dc_reset();
@@ -1042,15 +1119,19 @@ int usb_disable(void)
 
 int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 {
-	while (true) {
-		int ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+	int tries = CONFIG_USB_NUMOF_EP_WRITE_RETRIES;
+	int ret;
 
-		if (ret != -EAGAIN) {
-			return ret;
+	do {
+		ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+		if (ret == -EAGAIN) {
+			LOG_WRN("Failed to write endpoint buffer 0x%02x", ep);
+			k_yield();
 		}
 
-		k_yield();
-	}
+	} while (ret == -EAGAIN && tries--);
+
+	return ret;
 }
 
 int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
@@ -1076,281 +1157,6 @@ int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
 int usb_ep_read_continue(u8_t ep)
 {
 	return usb_dc_ep_read_continue(ep);
-}
-
-/* Transfer management */
-static struct usb_transfer_data *usb_ep_get_transfer(u8_t ep)
-{
-	for (int i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
-		if (usb_dev.transfer[i].ep == ep) {
-			return &usb_dev.transfer[i];
-		}
-	}
-
-	return NULL;
-}
-
-bool usb_transfer_is_busy(u8_t ep)
-{
-	struct usb_transfer_data *trans = usb_ep_get_transfer(ep);
-
-	if (trans && trans->status == -EBUSY) {
-		return true;
-	}
-
-	return false;
-}
-
-static void usb_transfer_work(struct k_work *item)
-{
-	struct usb_transfer_data *trans;
-	int ret = 0;
-	u32_t bytes;
-	u8_t ep;
-
-	trans = CONTAINER_OF(item, struct usb_transfer_data, work);
-	ep = trans->ep;
-
-	if (trans->status != -EBUSY) {
-		/* transfer cancelled or already completed */
-		goto done;
-	}
-
-	if (trans->flags & USB_TRANS_WRITE) {
-		if (!trans->bsize) {
-			if (!(trans->flags & USB_TRANS_NO_ZLP)) {
-				usb_write(ep, NULL, 0, NULL);
-			}
-			trans->status = 0;
-			goto done;
-		}
-
-		ret = usb_write(ep, trans->buffer, trans->bsize, &bytes);
-		if (ret) {
-			LOG_ERR("Transfer error %d", ret);
-			/* transfer error */
-			trans->status = -EINVAL;
-			goto done;
-		}
-
-		trans->buffer += bytes;
-		trans->bsize -= bytes;
-		trans->tsize += bytes;
-	} else {
-		ret = usb_dc_ep_read_wait(ep, trans->buffer, trans->bsize,
-					  &bytes);
-		if (ret) {
-			/* transfer error */
-			trans->status = -EINVAL;
-			goto done;
-		}
-
-		trans->buffer += bytes;
-		trans->bsize -= bytes;
-		trans->tsize += bytes;
-
-		/* ZLP, short-pkt or buffer full */
-		if (!bytes || (bytes % usb_dc_ep_mps(ep)) || !trans->bsize) {
-			/* transfer complete */
-			trans->status = 0;
-			goto done;
-		}
-
-		/* we expect mote data, clear NAK */
-		usb_dc_ep_read_continue(ep);
-	}
-
-done:
-	if (trans->status != -EBUSY && trans->cb) { /* Transfer complete */
-		usb_transfer_callback cb = trans->cb;
-		int tsize = trans->tsize;
-		void *priv = trans->priv;
-
-		if (k_is_in_isr()) {
-			/* reschedule completion in thread context */
-			k_work_submit(&trans->work);
-			return;
-		}
-
-		LOG_DBG("transfer done, ep=%02x, status=%d, size=%zu",
-			trans->ep, trans->status, trans->tsize);
-
-		trans->cb = NULL;
-		k_sem_give(&trans->sem);
-
-		/* Transfer completion callback */
-		if (trans->status != -ECANCELED) {
-			cb(ep, tsize, priv);
-		}
-	}
-}
-
-void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
-{
-	struct usb_transfer_data *trans = usb_ep_get_transfer(ep);
-
-	if (status != USB_DC_EP_DATA_IN && status != USB_DC_EP_DATA_OUT) {
-		return;
-	}
-
-	if (!trans) {
-		if (status == USB_DC_EP_DATA_OUT) {
-			u32_t bytes;
-			/* In the unlikely case we receive data while no
-			 * transfer is ongoing, we have to consume the data
-			 * anyway. This is to prevent stucking reception on
-			 * other endpoints (e.g dw driver has only one rx-fifo,
-			 * so drain it).
-			 */
-			do {
-				u8_t data;
-
-				usb_dc_ep_read_wait(ep, &data, 1, &bytes);
-			} while (bytes);
-
-			LOG_ERR("RX data lost, no transfer");
-		}
-		return;
-	}
-
-	if (!k_is_in_isr() || (status == USB_DC_EP_DATA_OUT)) {
-		/* If we are not in IRQ context, no need to defer work */
-		/* Read (out) needs to be done from ep_callback */
-		usb_transfer_work(&trans->work);
-	} else {
-		k_work_submit(&trans->work);
-	}
-}
-
-int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
-		 usb_transfer_callback cb, void *cb_data)
-{
-	struct usb_transfer_data *trans = NULL;
-	int i, key, ret = 0;
-
-	LOG_DBG("transfer start, ep=%02x, data=%p, dlen=%zd",
-		ep, data, dlen);
-
-	key = irq_lock();
-
-	for (i = 0; i < MAX_NUM_TRANSFERS; i++) {
-		if (!k_sem_take(&usb_dev.transfer[i].sem, K_NO_WAIT)) {
-			trans = &usb_dev.transfer[i];
-			break;
-		}
-	}
-
-	if (!trans) {
-		LOG_ERR("no transfer slot available");
-		ret = -ENOMEM;
-		goto done;
-	}
-
-	if (trans->status == -EBUSY) {
-		/* A transfer is already ongoing and not completed */
-		k_sem_give(&trans->sem);
-		ret = -EBUSY;
-		goto done;
-	}
-
-	/* Configure new transfer */
-	trans->ep = ep;
-	trans->buffer = data;
-	trans->bsize = dlen;
-	trans->tsize = 0;
-	trans->cb = cb;
-	trans->flags = flags;
-	trans->priv = cb_data;
-	trans->status = -EBUSY;
-
-	if (usb_dc_ep_mps(ep) && (dlen % usb_dc_ep_mps(ep))) {
-		/* no need to send ZLP since last packet will be a short one */
-		trans->flags |= USB_TRANS_NO_ZLP;
-	}
-
-	if (flags & USB_TRANS_WRITE) {
-		/* start writing first chunk */
-		k_work_submit(&trans->work);
-	} else {
-		/* ready to read, clear NAK */
-		ret = usb_dc_ep_read_continue(ep);
-	}
-
-done:
-	irq_unlock(key);
-	return ret;
-}
-
-void usb_cancel_transfer(u8_t ep)
-{
-	struct usb_transfer_data *trans;
-	unsigned int key;
-
-	key = irq_lock();
-
-	trans = usb_ep_get_transfer(ep);
-	if (!trans) {
-		goto done;
-	}
-
-	if (trans->status != -EBUSY) {
-		goto done;
-	}
-
-	trans->status = -ECANCELED;
-	k_work_submit(&trans->work);
-
-done:
-	irq_unlock(key);
-}
-
-void usb_cancel_transfers(void)
-{
-	for (int i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
-		struct usb_transfer_data *trans = &usb_dev.transfer[i];
-		unsigned int key;
-
-		key = irq_lock();
-
-		if (trans->status == -EBUSY) {
-			trans->status = -ECANCELED;
-			k_work_submit(&trans->work);
-			LOG_DBG("Cancel transfer");
-		}
-
-		irq_unlock(key);
-	}
-}
-
-struct usb_transfer_sync_priv {
-	int tsize;
-	struct k_sem sem;
-};
-
-static void usb_transfer_sync_cb(u8_t ep, int size, void *priv)
-{
-	struct usb_transfer_sync_priv *pdata = priv;
-
-	pdata->tsize = size;
-	k_sem_give(&pdata->sem);
-}
-
-int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags)
-{
-	struct usb_transfer_sync_priv pdata;
-	int ret;
-
-	k_sem_init(&pdata.sem, 0, 1);
-
-	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &pdata);
-	if (ret) {
-		return ret;
-	}
-
-	/* Semaphore will be released by the transfer completion callback */
-	k_sem_take(&pdata.sem, K_FOREVER);
-
-	return pdata.tsize;
 }
 
 int usb_wakeup_request(void)
@@ -1400,7 +1206,7 @@ static int class_handler(struct usb_setup_packet *pSetup,
 
 		if ((iface->class_handler) &&
 		    (if_descr->bInterfaceNumber ==
-		     sys_le16_to_cpu(pSetup->wIndex))) {
+		     (sys_le16_to_cpu(pSetup->wIndex) & 0xFF))) {
 			return iface->class_handler(pSetup, len, data);
 		}
 	}
@@ -1506,28 +1312,40 @@ int usb_set_config(const u8_t *device_descriptor)
 	return 0;
 }
 
-int usb_enable(void)
+int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
-	u32_t i;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
+	/* Prevent from calling usb_enable form different contex.
+	 * This should only be called once.
+	 */
+	LOG_DBG("lock usb_enable_lock mutex");
+	k_mutex_lock(&usb_enable_lock, K_FOREVER);
+
 	if (usb_dev.enabled == true) {
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
+	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
 
 	ret = usb_dc_attach();
 	if (ret < 0) {
-		return ret;
+		goto out;
+	}
+
+	ret = usb_transfer_init();
+	if (ret < 0) {
+		goto out;
 	}
 
 	/* Configure control EP */
@@ -1537,54 +1355,51 @@ int usb_enable(void)
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Register endpoint 0 handlers*/
 	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Register endpoint handlers*/
 	ret = composite_setup_ep_cb();
 	if (ret < 0) {
-		return ret;
-	}
-
-	/* Init transfer slots */
-	for (i = 0U; i < MAX_NUM_TRANSFERS; i++) {
-		k_work_init(&usb_dev.transfer[i].work, usb_transfer_work);
-		k_sem_init(&usb_dev.transfer[i].sem, 1, 1);
+		goto out;
 	}
 
 	/* Enable control EP */
 	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = usb_dc_ep_enable(USB_CONTROL_IN_EP0);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	usb_dev.enabled = true;
-
-	return 0;
+	ret = 0;
+out:
+	LOG_DBG("unlock usb_enable_lock mutex");
+	k_mutex_unlock(&usb_enable_lock);
+	return ret;
 }
 
 /*
@@ -1608,9 +1423,7 @@ static int usb_device_init(struct device *dev)
 
 	usb_set_config(device_descriptor);
 
-	usb_enable();
-
 	return 0;
 }
 
-SYS_INIT(usb_device_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

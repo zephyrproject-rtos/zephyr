@@ -43,6 +43,7 @@
 			reg = <0x40010000 0x400>;
 			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "USART_0";
 		};
@@ -52,6 +53,7 @@
 			reg = <0x40010400 0x400>;
 			interrupts = <19 0>, <20 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
 			status = "disabled";
 			label = "USART_1";
 		};
@@ -60,6 +62,7 @@
 			compatible = "silabs,gecko-leuart";
 			reg = <0x4004a000 0x400>;
 			interrupts = <21 0>;
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "LEUART_0";
 		};
@@ -143,6 +146,14 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+		};
+
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x2C>;
+			label = "WDOG0";
+			interrupts = <2 0>;
+			status = "disabled";
 		};
 	};
 };

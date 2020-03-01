@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32L4X=y
 CONFIG_SOC_STM32L4R5XX=y
-CONFIG_BOARD_NUCLEO_L4R5ZI=y
-CONFIG_CORTEX_M_SYSTICK=y
 
 # 120MHz system clock only in 'boost power' mode. DM00310109, section
 # 5.1.7 states that the R1MODE bit must be cleared before system can

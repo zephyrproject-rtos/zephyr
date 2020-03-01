@@ -1,30 +1,20 @@
-# Kconfig - FSL FRDM K64F platform configuration options
+# FSL FRDM K64F platform configuration options
 
-#
 # Copyright (c) 2014-2016 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MK64F12
 
 config SOC
-	string
 	default "mk64f12"
-
-if ADC
 
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CAN
+	depends on ADC
 
 config CAN_MCUX_FLEXCAN
 	default y
-
-endif # CAN
+	depends on CAN
 
 if CLOCK_CONTROL
 
@@ -36,87 +26,58 @@ config CLOCK_CONTROL_MCUX_MCG
 
 endif # CLOCK_CONTROL
 
-if PINMUX
-
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_MCUX_FTM
 	default y
-
-endif # PWM
+	depends on PWM
 
 config SPI
 	default n
 
-if SPI
-
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
-
-if NET_L2_ETHERNET
+	depends on SPI
 
 config ETH_MCUX
 	default y
-
-endif # NET_L2_ETHERNET
-
-if ENTROPY_GENERATOR
+	depends on NET_L2_ETHERNET
 
 config ENTROPY_MCUX_RNGA
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if FLASH
+	depends on ENTROPY_GENERATOR
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
-
-if SERIAL
+	depends on FLASH
 
 config UART_MCUX
 	default y
-
-endif # SERIAL
-
-if USB
+	depends on SERIAL
 
 config USB_KINETIS
 	default y
-
-endif # USB
-
-if WATCHDOG
+	depends on USB
 
 config WDT_MCUX_WDOG
 	default y
+	depends on WATCHDOG
 
-endif # WATCHDOG
+config COUNTER_MCUX_RTC
+	default y
+	depends on COUNTER
 
 endif # SOC_MK64F12

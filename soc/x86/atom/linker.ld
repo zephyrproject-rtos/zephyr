@@ -12,7 +12,7 @@
  */
 
 #include <autoconf.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 /* physical address where the kernel is loaded */
 #define PHYS_LOAD_ADDR DT_PHYS_LOAD_ADDR
 
@@ -42,4 +42,3 @@ MEMORY
     }
 
 #include <arch/x86/ia32/linker.ld>
-

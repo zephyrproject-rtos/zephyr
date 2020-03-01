@@ -268,8 +268,8 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_BOUND:
 		/* Not possible */
-		NET_ASSERT_INFO(0, "Invalid state %s",
-			net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		NET_ASSERT(0, "Invalid state %s",
+			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 		break;
 	case NET_DHCPV4_REQUESTING:
 		with_server_id = true;
@@ -656,6 +656,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 		}
 #if defined(CONFIG_DNS_RESOLVER)
 		case DHCPV4_OPTIONS_DNS_SERVER: {
+			int i;
+			struct dns_resolve_context *ctx;
 			struct sockaddr_in dns;
 			const struct sockaddr *dns_servers[] = {
 				(struct sockaddr *)&dns, NULL
@@ -681,11 +683,18 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			dns.sin_family = AF_INET;
-			dns_resolve_close(dns_resolve_get_default());
+			ctx = dns_resolve_get_default();
+			for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+				if (!ctx->queries[i].cb) {
+					continue;
+				}
 
-			status = dns_resolve_init(dns_resolve_get_default(),
-						  NULL, dns_servers);
+				dns_resolve_cancel(ctx, ctx->queries[i].id);
+			}
+			dns_resolve_close(ctx);
+
+			dns.sin_family = AF_INET;
+			status = dns_resolve_init(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
 					"resolve address: %d", status);

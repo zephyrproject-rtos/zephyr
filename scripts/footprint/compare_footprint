@@ -25,7 +25,6 @@ BASE_COMMIT is the commit used as base to compare results.
 
 import argparse
 import os
-import sys
 import csv
 import subprocess
 import logging
@@ -166,8 +165,6 @@ def read_sanity_report(filename):
     return data
 
 def get_footprint_results(commit=None):
-    results = {}
-
     sanity_file = sanity_results_filename(commit)
     if (not os.path.exists(sanity_file) or not commit) and commit != RELEASE_DATA:
         run_footprint_build(commit)
@@ -265,9 +262,10 @@ def compare_results(base_results, current_results):
                     'current': test_data[metric],
                 }
 
-            if len(tmp) != 0:
+            if tmp:
                 tests[platform] = tmp
-        if len(tests) != 0:
+
+        if tests:
             results[test] = tests
 
     return results

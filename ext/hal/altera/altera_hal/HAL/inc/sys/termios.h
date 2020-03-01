@@ -176,4 +176,3 @@ struct termios {
 #endif
  
 #endif  /* _SYS_TERMIOS_H */
-

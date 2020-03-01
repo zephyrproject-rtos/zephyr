@@ -17,8 +17,7 @@
 
 #include "adxl362.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ADXL362);
+LOG_MODULE_REGISTER(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct adxl362_data adxl362_data;
 
@@ -755,7 +754,7 @@ static int adxl362_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	k_sleep(5);
+	k_sleep(K_MSEC(5));
 
 	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
@@ -795,6 +794,7 @@ static const struct adxl362_config adxl362_config = {
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.gpio_port = DT_INST_0_ADI_ADXL362_INT1_GPIOS_CONTROLLER,
 	.int_gpio = DT_INST_0_ADI_ADXL362_INT1_GPIOS_PIN,
+	.int_flags = DT_INST_0_ADI_ADXL362_INT1_GPIOS_FLAGS,
 #endif
 };
 

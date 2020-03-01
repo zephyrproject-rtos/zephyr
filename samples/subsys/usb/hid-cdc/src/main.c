@@ -542,17 +542,26 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 		LOG_ERR("Could not find PORT");
 		return -ENXIO;
 	}
+
 	gpio_pin_configure(gpio, pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_DEBOUNCE |
-			   GPIO_INT_EDGE | flags);
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
+
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);
-	gpio_pin_enable_callback(gpio, pin);
+	gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_TO_ACTIVE);
+
 	return 0;
+}
+
+static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	LOG_INF("Status %d", status);
 }
 
 void main(void)
 {
+	int ret;
+
 	struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
 	u32_t dtr = 0U;
 	struct app_evt_t *ev;
@@ -620,14 +629,21 @@ void main(void)
 
 	usb_hid_register_device(hid1_dev, hid_kbd_report_desc,
 				sizeof(hid_kbd_report_desc), &ops);
+
 	usb_hid_init(hid0_dev);
 	usb_hid_init(hid1_dev);
+
+	ret = usb_enable(status_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	/* Initialize CDC ACM */
 
 	LOG_INF("Wait for DTR on CDC ACM 0");
 	while (1) {
-		uart_line_ctrl_get(cdc0_dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(cdc0_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -636,7 +652,7 @@ void main(void)
 
 	LOG_INF("Wait for DTR on CDC ACM 1");
 	while (1) {
-		uart_line_ctrl_get(cdc1_dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(cdc1_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}

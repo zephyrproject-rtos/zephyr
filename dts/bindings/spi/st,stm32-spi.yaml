@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: STM32 SPI
+description: STM32 SPI controller
 
-description: >
-    This binding gives a base representation of the STM32 SPI controller
+compatible: "st,stm32-spi"
 
-inherits:
-    !include spi.yaml
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-spi"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

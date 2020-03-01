@@ -1,19 +1,15 @@
-# Kconfig - ESP32 board configuration
-#
+# ESP32 board configuration
+
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_ESP32
 
 config SOC
-	string
 	default "esp32"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7
-
-config XTENSA_ASM2
-	default y
 
 config MP_NUM_CPUS
 	default 2

@@ -32,7 +32,7 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
      nRF52840 PCA10059
 
 More information about the board can be found at the
-`nRF52840 Dongle website`_. The `Nordic Semiconductor Documentation library`_
+`nRF52840 Dongle website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -82,7 +82,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52840 Dongle website`_ and `Nordic Semiconductor Documentation library`_
+See `nRF52840 Dongle website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52840 PCA10059 Development Kit board hardware features.
 
 Connections and IOs
@@ -146,7 +146,6 @@ device. Make sure ``nrfutil`` is installed before proceeding.
       :app: zephyr/samples/basic/blinky
       :board: nrf52840_pca10059
       :goals: build
-      :tool: west
 
 #. Package the application for the bootloader using ``nrfutil``:
 
@@ -193,7 +192,6 @@ to the zephyr repository on your computer.
       :app: mcuboot/boot/zephyr
       :board: nrf52840_pca10059
       :build-dir: mcuboot
-      :tool: west
       :goals: build
 
 #. Package the application for the bootloader using ``nrfutil``:
@@ -236,7 +234,6 @@ over Bluetooth).
       :app: zephyr/samples/subsys/mgmt/mcumgr/smp_svr
       :board: nrf52840_pca10059
       :build-dir: smp_svr
-      :tool: west
       :goals: build
 
 #. Sign ``smp_svr`` for chain-loading by MCUboot.
@@ -275,7 +272,6 @@ name.
       :board: nrf52840_pca10059
       :build-dir: blinky
       :goals: build
-      :tool: west
       :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
 
    You can then sign and flash it using the steps above.
@@ -334,8 +330,8 @@ References
 
 .. _nRF52840 Dongle website:
    https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-Dongle
-.. _Nordic Semiconductor Documentation library:
-   https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter:
+   https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack:
    https://www.segger.com/jlink-software.html
 .. _Nordic Semiconductor USB DFU:

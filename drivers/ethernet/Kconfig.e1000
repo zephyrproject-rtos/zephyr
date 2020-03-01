@@ -1,10 +1,7 @@
-# Kconfig - Intel(R) PRO/1000 Gigabit Ethernet driver configuration options
+# Intel(R) PRO/1000 Gigabit Ethernet driver configuration options
 
-#
-# Copyright (c) 2018 Intel Corporation
-#
+# Copyright (c) 2018-2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_E1000
 	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
@@ -12,7 +9,6 @@ menuconfig ETH_E1000
 	help
 	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
 
-# Hidden option
 config ETH_NIC_MODEL
 	string
 	default "e1000"
@@ -20,3 +16,9 @@ config ETH_NIC_MODEL
 	help
 	  Tells what Qemu network model to use. This value is given as
 	  a parameter to -nic qemu command line option.
+
+config ETH_E1000_VERBOSE_DEBUG
+	bool "Enable hexdump of the received and sent frames"
+	help
+	  Enabling this will turn on the hexdump of the received and sent
+	  frames. Do not leave on for production.

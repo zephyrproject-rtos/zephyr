@@ -11,7 +11,7 @@
 
 #include "mbedtls/md.h"
 
-#ifndef __ZEPHYR__
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -214,7 +214,7 @@ error:
 	(void)close(sock);
 }
 
-int main(void)
+void main(void)
 {
 	static struct addrinfo hints;
 	struct addrinfo *res;
@@ -314,6 +314,4 @@ int main(void)
 	}
 
 	mbedtls_md_free(&hash_ctx);
-
-	return 0;
 }

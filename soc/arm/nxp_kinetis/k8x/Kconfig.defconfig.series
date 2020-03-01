@@ -1,0 +1,81 @@
+# Kinetis K8x series configuration options
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_K8X
+
+config SOC_SERIES
+	default "k8x"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 106
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
+
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x3f
+	depends on KINETIS_FLASH_CONFIG
+
+config ADC_MCUX_ADC16
+	default y
+	depends on ADC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_MCG
+	default y
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+endif # CLOCK_CONTROL
+
+config ENTROPY_MCUX_TRNG
+	default y
+	depends on ENTROPY_GENERATOR
+
+config SOC_FLASH_MCUX
+	default y
+	depends on FLASH
+
+config GPIO
+	default y
+
+config GPIO_MCUX
+	default y
+	depends on GPIO
+
+config I2C_MCUX
+	default y
+	depends on I2C
+
+config PINMUX_MCUX
+	default y
+	depends on PINMUX
+
+config PWM_MCUX_FTM
+	default y
+	depends on PWM
+
+config UART_MCUX_LPUART
+	default y
+	depends on SERIAL
+
+config SPI_MCUX_DSPI
+	default y
+	depends on SPI
+
+config USB_KINETIS
+	default y
+	depends on USB
+
+config WDT_MCUX_WDOG
+	default y
+	depends on WATCHDOG
+
+source "soc/arm/nxp_kinetis/k8x/Kconfig.defconfig.mk*"
+
+endif # SOC_SERIES_KINETIS_K8X

@@ -1,45 +1,80 @@
-# Kconfig - Microchip MEC1501HSZ MCU
-#
+# Microchip MEC1501HSZ MCU
+
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MEC1501_HSZ
 
 config SOC
-	string
 	default "mec1501hsz"
 
-if SERIAL
-
 config UART_NS16550
-	def_bool y
-
-endif # SERIAL
-
-if PINMUX
+	default y
+	depends on SERIAL
 
 config PINMUX_XEC
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 config GPIO
 	default y
 
-if GPIO
+config ADC_XEC
+	default y
+	depends on ADC
 
 config GPIO_XEC
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_XEC
-	def_bool y
+	default y
+	depends on I2C
 
-endif # I2C
+config ESPI_XEC
+	default y
+	depends on ESPI
+
+config COUNTER_XEC
+	default y
+	depends on COUNTER
+
+config PS2_XEC
+	default y
+	depends on PS2
+
+config PWM_XEC
+	default y
+	depends on PWM
+
+config KSCAN_XEC
+	default y
+	depends on KSCAN
+
+config SPI_XEC_QMSPI
+	default y
+	depends on SPI
+
+if SOC_POWER_MANAGEMENT
+
+config SYS_POWER_MANAGEMENT
+	default y
+
+config SYS_POWER_SLEEP_STATES
+	default y
+
+config HAS_SYS_POWER_STATE_SLEEP_1
+	default y
+
+config SYS_POWER_DEEP_SLEEP_STATES
+	default y
+
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+	default y
+
+config DEVICE_POWER_MANAGEMENT
+	default n
+
+endif # SOC_POWER_MANAGEMENT
 
 endif # SOC_MEC1501_HSZ

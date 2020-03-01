@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <kernel.h>
+#include <kernel_internal.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {
@@ -17,20 +19,20 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
-	z_fatal_print("Spurious interrupt detected! IRQ: %ld", mcause);
+	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (mcause == RISCV_MACHINE_EXT_IRQ) {
-		z_fatal_print("PLIC interrupt line causing the IRQ: %d",
-			      riscv_plic_get_irq());
+		LOG_ERR("PLIC interrupt line causing the IRQ: %d",
+			riscv_plic_get_irq());
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
 {
 	ARG_UNUSED(flags);
 

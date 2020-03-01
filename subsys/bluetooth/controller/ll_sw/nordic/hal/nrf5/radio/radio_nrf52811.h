@@ -205,8 +205,8 @@
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_1M_NS  9400 /* 9.4 */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_2M_US  5 /* ceil(5.0) */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_2M_NS  5000 /* 5.0 */
-#define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_US  20 /* ceil(19.6) */
-#define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_NS  19600 /* 19.6 */
+#define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_US  25 /* ceil(24.6) */
+#define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_NS  24600 /* 24.6 */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S8_US  30 /* ceil(29.6) */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S8_NS  29600 /* 29.6 */
 
@@ -450,9 +450,52 @@ static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
 	return mode;
 }
 
+static inline u32_t hal_radio_tx_power_min_get(void)
+{
+	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
+}
+
 static inline u32_t hal_radio_tx_power_max_get(void)
 {
 	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+}
+
+static inline u32_t hal_radio_tx_power_floor(s8_t tx_power_lvl)
+{
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
+		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
+		return RADIO_TXPOWER_TXPOWER_0dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
+	}
+
+	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
+	}
+
+	/* Note: The -30 dBm power level is deprecated so ignore it! */
+	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
 static inline u32_t hal_radio_tx_ready_delay_us_get(u8_t phy, u8_t flags)

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+
+config SOC
+	default "BCM58400"
+	depends on SOC_BCM58400

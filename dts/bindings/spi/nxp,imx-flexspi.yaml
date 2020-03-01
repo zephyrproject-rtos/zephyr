@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: NXP FlexSPI
+description: NXP FlexSPI controller
 
-description: >
-    This binding gives a base representation of the NXP FlexSPI controller
+compatible: "nxp,imx-flexspi"
 
-inherits:
-    !include spi.yaml
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-flexspi"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

@@ -1,8 +1,5 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 choice
 	bool "Timer $(index) prescaler"

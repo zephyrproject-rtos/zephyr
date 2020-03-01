@@ -1,7 +1,5 @@
 # Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
@@ -29,11 +27,12 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 
 # In most Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
-# (in nRF91 Series this limitation concerns UART peripherals as well).
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals as well).
 # In nRF52810 though, there are only single instances of these peripherals
 # and they are arranged in a different way, so this limitation does not apply.
 if SPI_0 && (SOC_NRF52810 || \
-             (!I2C_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)))
+	(!I2C_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)) ||\
+	(!I2C_0 && !(SOC_SERIES_NRF53X && UART_0_NRF_UARTE)))
 
 choice
 	prompt "SPI Port 0 Driver type"
@@ -41,7 +40,7 @@ choice
 config SPI_0_NRF_SPI
 	bool "nRF SPI 0"
 	depends on HAS_HW_NRF_SPI0
-	select NRFX_SPI
+	select NRFX_SPI0
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
@@ -51,7 +50,7 @@ config SPI_0_NRF_SPIM
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
 	depends on HAS_HW_NRF_SPIM0 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM
+	select NRFX_SPIM0
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
@@ -59,7 +58,7 @@ config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
 	depends on HAS_HW_NRF_SPIS0
 	depends on SPI_SLAVE
-	select NRFX_SPIS
+	select NRFX_SPIS0
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 0.
 	  Due to hardware limitations the implementation supports only simple
@@ -67,32 +66,30 @@ config SPI_0_NRF_SPIS
 
 endchoice
 
-if SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
-
 config SPI_0_NRF_ORC
 	hex "SPI Port 0 over-read character"
+	depends on SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 	range 0x00 0xff
 	default 0xff
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
-endif # SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
-
 endif # SPI_0 && (SOC_NRF52810 || ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
-# (in nRF91 Series this limitation concerns UART peripherals as well).
-if SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
-
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals as well).
+if SPI_1 && !I2C_1 && \
+	!(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_1_NRF_UARTE)
 choice
 	prompt "SPI Port 1 Driver type"
 
 config SPI_1_NRF_SPI
 	bool "nRF SPI 1"
 	depends on HAS_HW_NRF_SPI1
-	select NRFX_SPI
+	select NRFX_SPI1
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
@@ -102,7 +99,7 @@ config SPI_1_NRF_SPIM
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
 	depends on HAS_HW_NRF_SPIM1 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM
+	select NRFX_SPIM1
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
@@ -110,7 +107,7 @@ config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
 	depends on HAS_HW_NRF_SPIS1
 	depends on SPI_SLAVE
-	select NRFX_SPIS
+	select NRFX_SPIS1
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 1.
 	  Due to hardware limitations the implementation supports only simple
@@ -118,32 +115,30 @@ config SPI_1_NRF_SPIS
 
 endchoice
 
-if SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
-
 config SPI_1_NRF_ORC
 	hex "SPI Port 1 over-read character"
+	depends on SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 	range 0x00 0xff
 	default 0xff
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
-endif # SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
-
-endif # SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
+endif # SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
-# (in nRF91 Series this limitation concerns UART peripherals as well).
-if SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
-
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals as well).
+if SPI_2 && !I2C_2 && \
+	!(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_2_NRF_UARTE)
 choice
 	prompt "SPI Port 2 Driver type"
 
 config SPI_2_NRF_SPI
 	bool "nRF SPI 2"
 	depends on HAS_HW_NRF_SPI2
-	select NRFX_SPI
+	select NRFX_SPI2
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
@@ -153,7 +148,7 @@ config SPI_2_NRF_SPIM
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
 	depends on HAS_HW_NRF_SPIM2 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM
+	select NRFX_SPIM2
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
@@ -161,7 +156,7 @@ config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
 	depends on HAS_HW_NRF_SPIS2
 	depends on SPI_SLAVE
-	select NRFX_SPIS
+	select NRFX_SPIS2
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 2.
 	  Due to hardware limitations the implementation supports only simple
@@ -169,24 +164,23 @@ config SPI_2_NRF_SPIS
 
 endchoice
 
-if SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
-
 config SPI_2_NRF_ORC
 	hex "SPI Port 2 over-read character"
+	depends on SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 	range 0x00 0xff
 	default 0xff
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
-endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
-
-endif # SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
+endif # SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
-# (in nRF91 Series this limitation concerns UART peripherals as well).
-if SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals as well).
+if SPI_3 && !I2C_3 && \
+	!(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_3_NRF_UARTE)
 
 choice
 	prompt "SPI Port 3 Driver type"
@@ -194,7 +188,7 @@ choice
 config SPI_3_NRF_SPIM
 	bool "nRF SPIM 3"
 	depends on HAS_HW_NRF_SPIM3
-	select NRFX_SPIM
+	select NRFX_SPIM3
 	help
 	  Enable nRF SPI Master with EasyDMA on port 3.
 
@@ -202,7 +196,7 @@ config SPI_3_NRF_SPIS
 	bool "nRF SPIS 3"
 	depends on HAS_HW_NRF_SPIS3
 	depends on SPI_SLAVE
-	select NRFX_SPIS
+	select NRFX_SPIS3
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 3.
 	  Due to hardware limitations the implementation supports only simple
@@ -210,21 +204,18 @@ config SPI_3_NRF_SPIS
 
 endchoice
 
-if SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
-
 config SPI_3_NRF_ORC
 	hex "SPI Port 3 over-read character"
+	depends on SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
 	range 0x00 0xff
 	default 0xff
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
-endif # SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
-
 config SPI_3_NRF_RX_DELAY
 	int "SPIM3 MISO sampling delay"
-	depends on SPI_3_NRF_SPIM && SOC_NRF52840
+	depends on SPI_3_NRF_SPIM && (SOC_NRF52833 || SOC_NRF52840)
 	range 0 7
 	default 2
 	help
@@ -232,13 +223,47 @@ config SPI_3_NRF_RX_DELAY
 	  edge of SCK (leading or trailing, depending on the CPHA setting used)
 	  until the input serial data on MISO is actually sampled.
 
-endif # SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
+endif # SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && ...
 
-if NRFX_SPIM
+if SPI_4
+
+choice
+	prompt "SPI Port 4 Driver type"
+
+config SPI_4_NRF_SPIM
+	bool "nRF SPIM 4"
+	depends on HAS_HW_NRF_SPIM4
+	select NRFX_SPIM4
+	help
+	  Enable nRF SPI Master with EasyDMA on port 4.
+
+endchoice
+
+config SPI_4_NRF_ORC
+	hex "SPI Port 4 over-read character"
+	depends on SPI_4_NRF_SPIM
+	range 0x00 0xff
+	default 0xff
+	help
+	  Over-read character. Character clocked out after an over-read
+	  of the transmit buffer.
+
+config SPI_4_NRF_RX_DELAY
+	int "SPIM4 MISO sampling delay"
+	depends on SPI_4_NRF_SPIM && SOC_NRF5340_CPUAPP
+	range 0 7
+	default 2
+	help
+	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
+	  edge of SCK (leading or trailing, depending on the CPHA setting used)
+	  until the input serial data on MISO is actually sampled.
+
+endif # SPI_4
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
 	default 0
+	depends on NRFX_SPIM
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,
 	  a buffer in RAM needs to be provided for each instance of SPI driver
@@ -248,53 +273,5 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  should be disabled, and the application must then take care of not
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
-
-choice
-	prompt "nRF SPIM MISO pin pull configuration"
-	default SPI_NRFX_SPIM_MISO_PULL_DOWN
-
-config SPI_NRFX_SPIM_MISO_NO_PULL
-	bool "no pull"
-	help
-	  Disable MISO pin pull.
-
-config SPI_NRFX_SPIM_MISO_PULL_DOWN
-	bool "pull down"
-	help
-	  Enable MISO pin pull down.
-
-config SPI_NRFX_SPIM_MISO_PULL_UP
-	bool "pull up"
-	help
-	  Enable MISO pin pull up.
-
-endchoice
-
-endif # NRFX_SPIM
-
-if NRFX_SPI
-
-choice
-	prompt "nRF SPI MISO pin pull configuration"
-	default SPI_NRFX_SPI_MISO_PULL_DOWN
-
-config SPI_NRFX_SPI_MISO_NO_PULL
-	bool "no pull"
-	help
-	  Disable MISO pin pull.
-
-config SPI_NRFX_SPI_MISO_PULL_DOWN
-	bool "pull down"
-	help
-	  Enable MISO pin pull down.
-
-config SPI_NRFX_SPI_MISO_PULL_UP
-	bool "pull up"
-	help
-	  Enable MISO pin pull up.
-
-endchoice
-
-endif # NRFX_SPI
 
 endif # SPI_NRFX

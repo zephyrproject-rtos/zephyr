@@ -28,15 +28,15 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_0: led_0 {
-			gpios = <&gpiof 3 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
 		green_led_1: led_1 {
-			gpios = <&gpiog 0 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
 		green_led_2: led_2 {
-			gpios = <&gpiog 1 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
 	};
@@ -54,14 +54,10 @@
 
 &uart4 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart4_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &uart7 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart7_pins_a &uart7_pins_rts_cts_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };

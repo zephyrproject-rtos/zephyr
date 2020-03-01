@@ -47,7 +47,7 @@
 #include <soc.h>
 #include <string.h>
 #include <usb/usb_device.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
 
@@ -60,22 +60,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 /*
- * USB LL API provides the EP_TYPE_* defines. STM32Cube does not
- * provide USB LL API for STM32F0, STM32F3 and STM32L0 families.
- * Map EP_TYPE_* defines to PCD_EP_TYPE_* defines
- */
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X)
-#define EP_TYPE_CTRL PCD_EP_TYPE_CTRL
-#define EP_TYPE_ISOC PCD_EP_TYPE_ISOC
-#define EP_TYPE_BULK PCD_EP_TYPE_BULK
-#define EP_TYPE_INTR PCD_EP_TYPE_INTR
-#endif
-
-/*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
- * between two kind of USB DC. STM32 F0, F3, and L0 series support USB device
+ * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
  * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
  * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
  *
@@ -400,16 +386,30 @@ int usb_dc_attach(void)
 
 	LOG_DBG("");
 
+#ifdef SYSCFG_CFGR1_USB_IT_RMP
+	/*
+	 * STM32F302/F303: USB IRQ collides with CAN_1 IRQ (§14.1.3, RM0316)
+	 * Remap IRQ by default to enable use of both IPs simultaneoulsy
+	 * This should be done before calling any HAL function
+	 */
+	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
+		LL_SYSCFG_EnableRemapIT_USB();
+	} else {
+		LOG_ERR("System Configuration Controller clock is "
+			"disabled. Unable to enable IRQ remapping.");
+	}
+#endif
+
 	/*
 	 * For STM32F0 series SoCs on QFN28 and TSSOP20 packages enable PIN
 	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
 	 */
-#if defined(DT_USB_ENABLE_PIN_REMAP)
+#if DT_USB_ENABLE_PIN_REMAP == 1
 	if (LL_APB1_GRP2_IsEnabledClock(LL_APB1_GRP2_PERIPH_SYSCFG)) {
 		LL_SYSCFG_EnablePinRemap();
 	} else {
 		LOG_ERR("System Configuration Controller clock is "
-			"disable. Unable to enable pin remapping."
+			"disabled. Unable to enable pin remapping.");
 	}
 #endif
 
@@ -807,7 +807,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* If no more data in the buffer, start a new read transaction.
 	 * DataOutStageCallback will called on transaction complete.
 	 */
-	if (ep != EP0_OUT && !ep_state->read_count) {
+	if (!ep_state->read_count) {
 		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
 				     EP_MPS);
 	}
@@ -1004,17 +1004,10 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 
 	usb_disconnect = device_get_binding(
 				DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_CONTROLLER);
-	gpio_pin_configure(usb_disconnect,
-			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN, GPIO_DIR_OUT);
 
-	if (state) {
-		gpio_pin_write(usb_disconnect,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS);
-	} else {
-		gpio_pin_write(usb_disconnect,
-			       DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
-			       !DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS);
-	}
+	gpio_pin_configure(usb_disconnect,
+			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
+			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS |
+			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 #endif /* USB && CONFIG_USB_DC_STM32_DISCONN_ENABLE */

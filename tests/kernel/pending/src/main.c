@@ -196,7 +196,7 @@ static void timer_tests(void)
 
 	timer_start_tick = k_uptime_get_32();
 
-	k_timer_start(&timer, NUM_SECONDS(1), 0);
+	k_timer_start(&timer, NUM_SECONDS(1), K_NO_WAIT);
 
 	if (k_timer_status_sync(&timer)) {
 		timer_data = timer.user_data;
@@ -249,10 +249,12 @@ void task_high(void)
 	counter = SEM_TEST_START;
 
 	k_thread_create(&coop_thread[0], coop_stack[0], COOP_STACKSIZE,
-			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
+			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0,
+			K_NO_WAIT);
 
 	k_thread_create(&coop_thread[1], coop_stack[1], COOP_STACKSIZE,
-			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+			K_NO_WAIT);
 
 	counter = FIFO_TEST_START;
 	fifo_tests(THIRD_SECOND, &task_high_state, my_fifo_get, k_sem_take);
@@ -285,7 +287,7 @@ void task_low(void)
  *
  * @see k_sleep(), K_THREAD_DEFINE()
  */
-void test_pending(void)
+void test_pending_fifo(void)
 {
 	/*
 	 * Main thread(test_main) priority was 9 but ztest thread runs at
@@ -295,7 +297,6 @@ void test_pending(void)
 	k_thread_priority_set(k_current_get(), 9);
 
 	struct offload_work offload1 = {0};
-	struct offload_work offload2 = {0};
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &start_test_sem;
@@ -350,6 +351,20 @@ void test_pending(void)
 		      (task_high_state != FIFO_TEST_END + 3) ||
 		      (task_low_state != FIFO_TEST_END + 4),
 		      "**** Unexpected delivery order");
+}
+
+
+void test_pending_lifo(void)
+{
+	/*
+	 * Main thread(test_main) priority was 9 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 9);
+
+	struct offload_work offload1 = {0};
+	struct offload_work offload2 = {0};
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &end_test_sem;
@@ -404,6 +419,19 @@ void test_pending(void)
 		      (task_low_state != LIFO_TEST_END + 4),
 		      "**** Unexpected timeout order");
 
+}
+
+void test_pending_timer(void)
+{
+	/*
+	 * Main thread(test_main) priority was 9 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 9);
+
+	struct offload_work offload2 = {0};
+
 	k_work_init(&offload2.work_item, sync_threads);
 	offload2.sem = &end_test_sem;
 	k_work_submit_to_queue(&offload_work_q, &offload2.work_item);
@@ -438,7 +466,10 @@ void test_pending(void)
 void test_main(void)
 {
 	ztest_test_suite(pend,
-			ztest_unit_test(test_pending));
+			ztest_1cpu_unit_test(test_pending_fifo),
+			ztest_1cpu_unit_test(test_pending_lifo),
+			ztest_1cpu_unit_test(test_pending_timer)
+			);
 	ztest_run_test_suite(pend);
 }
 
@@ -447,4 +478,3 @@ K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
 
 K_THREAD_DEFINE(TASK_HIGH, PREEM_STACKSIZE, task_high, NULL, NULL, NULL,
 		5, 0, K_NO_WAIT);
-

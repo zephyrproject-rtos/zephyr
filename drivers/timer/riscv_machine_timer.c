@@ -10,7 +10,8 @@
 
 #define CYC_PER_TICK ((u32_t)((u64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_TICKS ((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
+#define MAX_CYC 0xffffffffu
+#define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
@@ -21,6 +22,9 @@ static u64_t last_count;
 
 static void set_mtimecmp(u64_t time)
 {
+#ifdef CONFIG_64BIT
+	*(volatile u64_t *)RISCV_MTIMECMP_BASE = time;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIMECMP_BASE;
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
@@ -32,10 +36,14 @@ static void set_mtimecmp(u64_t time)
 	r[1] = 0xffffffff;
 	r[0] = (u32_t)time;
 	r[1] = (u32_t)(time >> 32);
+#endif
 }
 
 static u64_t mtime(void)
 {
+#ifdef CONFIG_64BIT
+	return *(volatile u64_t *)RISCV_MTIME_BASE;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIME_BASE;
 	u32_t lo, hi;
 
@@ -46,6 +54,7 @@ static u64_t mtime(void)
 	} while (r[1] != hi);
 
 	return (((u64_t)hi) << 32) | lo;
+#endif
 }
 
 static void timer_isr(void *arg)
@@ -99,12 +108,15 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u64_t now = mtime();
-	u32_t cyc = ticks * CYC_PER_TICK;
+	u32_t adj, cyc = ticks * CYC_PER_TICK;
 
-	/* Round up to next tick boundary.  Note use of 32 bit math,
-	 * max_ticks is calibrated to permit this.
-	 */
-	cyc += (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	/* Round up to next tick boundary. */
+	adj = (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYC - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYC;
+	}
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 
 	if ((s32_t)(cyc + last_count - now) < MIN_DELAY) {

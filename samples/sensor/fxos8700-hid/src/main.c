@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(main);
 
 #define LED_PORT	DT_ALIAS_LED0_GPIOS_CONTROLLER
 #define LED		DT_ALIAS_LED0_GPIOS_PIN
+#define LED_FLAGS	DT_ALIAS_LED0_GPIOS_FLAGS
 
 #ifdef CONFIG_FXOS8700
 #include <drivers/sensor.h>
@@ -79,7 +80,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 	u32_t cur_val;
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
-	gpio_pin_read(gpio, PIN0, &cur_val);
+	cur_val = gpio_pin_get(gpio, PIN0);
 	if (def_val[0] != cur_val) {
 		state |= MOUSE_BTN_LEFT;
 	} else {
@@ -99,7 +100,7 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 	u32_t cur_val;
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
-	gpio_pin_read(gpio, PIN1, &cur_val);
+	cur_val = gpio_pin_get(gpio, PIN1);
 	if (def_val[0] != cur_val) {
 		state |= MOUSE_BTN_RIGHT;
 	} else {
@@ -121,14 +122,18 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 		LOG_ERR("Could not find PORT");
 		return -ENXIO;
 	}
+
 	gpio_pin_configure(gpio, pin,
-			   GPIO_DIR_IN | GPIO_INT |
-			   GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE |
-			   flags);
-	gpio_pin_read(gpio, pin, val);
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
+	*val = gpio_pin_get(gpio, pin);
+	if (*val < 0) {
+		return *val;
+	}
+
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);
-	gpio_pin_enable_callback(gpio, pin);
+	gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_BOTH);
+
 	return 0;
 }
 
@@ -184,8 +189,8 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *tr)
 
 void main(void)
 {
+	int ret;
 	u8_t report[4] = { 0x00 };
-	u8_t toggle = 0U;
 	struct device *led_dev, *accel_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
@@ -200,7 +205,7 @@ void main(void)
 		return;
 	}
 
-	gpio_pin_configure(led_dev, LED, GPIO_DIR_OUT);
+	gpio_pin_configure(led_dev, LED, GPIO_OUTPUT | LED_FLAGS);
 
 	if (callbacks_configure(device_get_binding(PORT0), PIN0, PIN0_FLAGS,
 				&left_button, &callback[0], &def_val[0])) {
@@ -245,6 +250,13 @@ void main(void)
 
 	usb_hid_register_device(hid_dev, hid_report_desc,
 				sizeof(hid_report_desc), NULL);
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	usb_hid_init(hid_dev);
 
 	while (true) {
@@ -258,7 +270,6 @@ void main(void)
 		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
 
 		/* Toggle LED on sent report */
-		gpio_pin_write(led_dev, LED, toggle);
-		toggle = !toggle;
+		gpio_pin_toggle(led_dev, LED);
 	}
 }

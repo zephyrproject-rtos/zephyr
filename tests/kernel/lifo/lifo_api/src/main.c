@@ -31,10 +31,10 @@ extern void test_lifo_loop(void);
 void test_main(void)
 {
 	ztest_test_suite(lifo_api,
-		ztest_unit_test(test_lifo_thread2thread),
+		ztest_1cpu_unit_test(test_lifo_thread2thread),
 		ztest_unit_test(test_lifo_thread2isr),
 		ztest_unit_test(test_lifo_isr2thread),
 		ztest_unit_test(test_lifo_get_fail),
-		ztest_unit_test(test_lifo_loop));
+		ztest_1cpu_unit_test(test_lifo_loop));
 	ztest_run_test_suite(lifo_api);
 }

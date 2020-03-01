@@ -74,7 +74,7 @@ int int_to_thread(void)
 	make_int();
 	if (flag_var == 1) {
 		PRINT_FORMAT(" switching time is %u tcs = %u nsec",
-			     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+			     timestamp, (u32_t)k_cyc_to_ns_floor64(timestamp));
 	}
 	return 0;
 }

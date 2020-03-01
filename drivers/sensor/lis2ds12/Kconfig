@@ -1,13 +1,11 @@
 # ST Microelectronics LIS2DS12 3-axis accelerometer driver
-#
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LIS2DS12
 	bool "LIS2DS12 I2C/SPI accelerometer sensor driver"
-	depends on (I2C && HAS_DTS_I2C) || (SPI && HAS_DTS_SPI)
+	depends on (I2C && HAS_DTS_I2C) || SPI
 	help
 	  Enable driver for LIS2DS12 accelerometer sensor driver
 

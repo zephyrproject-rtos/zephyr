@@ -202,14 +202,7 @@ void timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	__asm__ __volatile__ (
-		"pushl %eax\n\t"
-		"pushl %edx\n\t"
-		"rdtsc\n\t"
-		"mov %eax, __start_tick_time\n\t"
-		"mov %edx, __start_tick_time+4\n\t"
-		"pop %edx\n\t"
-		"pop %eax\n\t");
+	arch_timing_tick_start = z_tsc_read();
 #endif
 	ARG_UNUSED(unused);
 
@@ -289,14 +282,7 @@ void timer_int_handler(void *unused /* parameter is not used */
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	__asm__ __volatile__ (
-		"pushl %eax\n\t"
-		"pushl %edx\n\t"
-		"rdtsc\n\t"
-		"mov %eax, __end_tick_time\n\t"
-		"mov %edx, __end_tick_time+4\n\t"
-		"pop %edx\n\t"
-		"pop %eax\n\t");
+	arch_timing_tick_end = z_tsc_read();
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 }
 
@@ -574,7 +560,7 @@ int z_clock_driver_init(struct device *device)
 	/* determine the timer counter value (in timer clock cycles/system tick)
 	 */
 
-	cycles_per_tick = sys_clock_hw_cycles_per_tick();
+	cycles_per_tick = k_ticks_to_cyc_floor32(1);
 
 	tickless_idle_init();
 

@@ -33,8 +33,12 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
+#if defined(CONFIG_NET_IPV4)
 static struct net_context *ipv4;
+#endif
+#if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
+#endif
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 

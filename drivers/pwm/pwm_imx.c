@@ -52,7 +52,8 @@ static int imx_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 }
 
 static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			   u32_t period_cycles, u32_t pulse_cycles,
+			   pwm_flags_t flags)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = DEV_CFG(dev);
@@ -67,6 +68,11 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
@@ -96,7 +102,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	} else {
 		PWM_PWMCR_REG(base) = PWM_PWMCR_SWR(1);
 		do {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 			cr = PWM_PWMCR_REG(base);
 		} while ((PWM_PWMCR_SWR(cr)) &&
 			 (++wait_count < CONFIG_PWM_PWMSWR_LOOP));

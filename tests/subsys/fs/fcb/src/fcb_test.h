@@ -14,9 +14,10 @@
 
 #include <fs/fcb.h>
 #include "fcb_priv.h"
+#include <errno.h>
 
 #ifdef __cplusplus
-#extern "C" {
+extern "C" {
 #endif
 
 #define TEST_FCB_FLASH_AREA_ID DT_FLASH_AREA_IMAGE_1_ID

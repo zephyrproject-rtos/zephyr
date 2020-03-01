@@ -15,8 +15,10 @@
 #define SPEED_1MHZ_BUS      2
 
 #define WAIT_INTERVAL       5
-#define TIMEOUT             20 /* 100 us */
-#define MAX_CLK_STRETCHING  5  /* 25 us */
+/* 250 us */
+#define TIMEOUT       100
+/* 25 us */
+#define MAX_CLK_STRETCHING  5
 
 struct xec_speed_cfg {
 	u32_t bus_clk;
@@ -68,14 +70,41 @@ static const struct xec_speed_cfg xec_cfg_params[] = {
 static int xec_spin_yield(int *counter)
 {
 	*counter = *counter + 1;
+
 	if (*counter > TIMEOUT) {
 		return -ETIMEDOUT;
 	}
+
 	if (*counter > MAX_CLK_STRETCHING * 2) {
 		k_yield();
 	} else {
 		k_busy_wait(5);
 	}
+
+	return 0;
+}
+
+static void recover_from_error(u32_t ba)
+{
+	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_PIN |
+				   MCHP_I2C_SMB_CTRL_ESO |
+				   MCHP_I2C_SMB_CTRL_STO |
+				   MCHP_I2C_SMB_CTRL_ACK;
+}
+
+static int wait_bus_free(u32_t ba)
+{
+	int ret;
+	int counter = 0;
+
+	while (!(MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_NBB)) {
+		ret = xec_spin_yield(&counter);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -84,20 +113,28 @@ static int wait_completion(u32_t ba)
 	int ret;
 	int counter = 0;
 
+	/* Wait for transaction to be completed */
 	while (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_PIN) {
 		ret = xec_spin_yield(&counter);
+
 		if (ret < 0) {
+			recover_from_error(ba);
 			return ret;
 		}
 	}
 
+	/* Check if Slave send ACK/NACK */
 	if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_LRB_AD0) {
-		return -EINVAL;
+		recover_from_error(ba);
+		return -EIO;
 	}
 
+	/* Check for bus error */
 	if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_BER) {
+		recover_from_error(ba);
 		return -EBUSY;
 	}
+
 	return 0;
 }
 
@@ -180,20 +217,20 @@ static int i2c_xec_configure(struct device *dev, u32_t dev_config_raw)
 	MCHP_I2C_SMB_TMTSC(ba) = xec_cfg_params[speed_id].timeout_scale;
 
 	ctrl |= (MCHP_I2C_SMB_CTRL_PIN | MCHP_I2C_SMB_CTRL_ESO |
-		MCHP_I2C_SMB_CTRL_ENI | MCHP_I2C_SMB_CTRL_ACK);
+		 MCHP_I2C_SMB_CTRL_ENI | MCHP_I2C_SMB_CTRL_ACK);
 	MCHP_I2C_SMB_CTRL_WO(ba) = ctrl;
+
 	return 0;
 }
 
 static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
-	u16_t addr)
+			      u16_t addr)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config->config_info);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
 	u32_t ba = config->base_addr;
-	int counter = 0;
 	int ret;
 
 	if (data->pending_stop == 0) {
@@ -202,21 +239,20 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 			return -EBUSY;
 		}
 
-		/* Wait until bus is not busy */
-		counter = 0;
-		while (!(MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_NBB)) {
-			ret = xec_spin_yield(&counter);
-			if (ret < 0) {
-				return ret;
-			}
+		/* Wait until bus is free */
+		ret = wait_bus_free(ba);
+		if (ret) {
+			return ret;
 		}
 
 		/* Send slave address */
 		MCHP_I2C_SMB_DATA(ba) = (addr & ~BIT(0));
+
 		/* Send start and ack bits */
 		MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_PIN |
 				MCHP_I2C_SMB_CTRL_ESO | MCHP_I2C_SMB_CTRL_STA |
 				MCHP_I2C_SMB_CTRL_ACK;
+
 		ret = wait_completion(ba);
 		if (ret) {
 			return ret;
@@ -225,7 +261,6 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 
 	/* Send bytes */
 	for (int i = 0U; i < msg.len; i++) {
-
 		MCHP_I2C_SMB_DATA(ba) = msg.buf[i];
 		ret = wait_completion(ba);
 		if (ret) {
@@ -247,11 +282,12 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 			}
 		}
 	}
+
 	return 0;
 }
 
 static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
-	u16_t addr)
+			     u16_t addr)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config->config_info);
@@ -261,10 +297,28 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 	u8_t byte, ctrl;
 	int ret;
 
-	/* Send slave address */
-	MCHP_I2C_SMB_DATA(ba) = (addr | BIT(0));
+	if (!(msg.flags & I2C_MSG_RESTART)) {
+		/* Check clock and data lines */
+		if (check_lines(ba)) {
+			return -EBUSY;
+		}
+
+		/* Wait until bus is free */
+		ret = wait_bus_free(ba);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* MCHP I2C spec recommends that for repeated start to write to control
+	 * register before writing to data register
+	 */
 	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO |
 		MCHP_I2C_SMB_CTRL_STA | MCHP_I2C_SMB_CTRL_ACK;
+
+	/* Send slave address */
+	MCHP_I2C_SMB_DATA(ba) = (addr | BIT(0));
+
 	ret = wait_completion(ba);
 	if (ret) {
 		return ret;
@@ -272,7 +326,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 
 	if (msg.len == 1) {
 		/* Send NACK for last transaction */
-		MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_STA;
+		MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO;
 	}
 
 	/* Read dummy byte */
@@ -299,19 +353,13 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 				MCHP_I2C_SMB_CTRL_WO(ba) = ctrl;
 				data->pending_stop = 0;
 			}
-		}
-
-		/* Send NACK for last transaction */
-		else if (i == (msg.len - 2)) {
-			MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_STA;
+		} else if (i == (msg.len - 2)) {
+			/* Send NACK for last transaction */
+			MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_ESO;
 		}
 		msg.buf[i] = MCHP_I2C_SMB_DATA(ba);
 	}
 
-	/* Check clock and data lines */
-	if (check_lines(ba)) {
-		return -EBUSY;
-	}
 	return 0;
 }
 
@@ -324,10 +372,14 @@ static int i2c_xec_transfer(struct device *dev, struct i2c_msg *msgs,
 	for (int i = 0U; i < num_msgs; i++) {
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			ret = i2c_xec_poll_write(dev, msgs[i], addr);
+			if (ret) {
+				return ret;
+			}
 		} else {
 			ret = i2c_xec_poll_read(dev, msgs[i], addr);
 		}
 	}
+
 	return ret;
 }
 
@@ -354,42 +406,6 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_I2C_XEC_0
-static struct i2c_xec_data i2c_xec_data_0;
-static const struct i2c_xec_config i2c_xec_config_0 = {
-	.base_addr = DT_INST_0_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_0_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_0, DT_INST_0_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_0, &i2c_xec_config_0,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_0 */
-
-#ifdef CONFIG_I2C_XEC_1
-static struct i2c_xec_data i2c_xec_data_1;
-static const struct i2c_xec_config i2c_xec_config_1 = {
-	.base_addr	= DT_INST_1_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_1_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_1, DT_INST_1_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_1, &i2c_xec_config_1,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_1 */
-
-#ifdef CONFIG_I2C_XEC_2
-static struct i2c_xec_data i2c_xec_data_2;
-static const struct i2c_xec_config i2c_xec_config_2 = {
-	.base_addr	= DT_INST_2_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_2_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_2, DT_INST_2_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_2, &i2c_xec_config_2,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_2 */
-
 static int i2c_xec_init(struct device *dev)
 {
 	struct i2c_xec_data *data =
@@ -397,3 +413,36 @@ static int i2c_xec_init(struct device *dev)
 	data->pending_stop = 0;
 	return 0;
 }
+
+#define I2C_XEC_DEVICE(n)						\
+	static struct i2c_xec_data i2c_xec_data_##n;			\
+	static const struct i2c_xec_config i2c_xec_config_##n = {	\
+		.base_addr =						\
+			DT_INST_##n##_MICROCHIP_XEC_I2C_BASE_ADDRESS,	\
+		.port_sel = DT_INST_##n##_MICROCHIP_XEC_I2C_PORT_SEL,	\
+	};								\
+	DEVICE_AND_API_INIT(i2c_xec_##n,				\
+		DT_INST_##n##_MICROCHIP_XEC_I2C_LABEL,			\
+		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
+		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
+		&i2c_xec_driver_api)
+
+#ifdef DT_INST_0_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(0);
+#endif
+
+#ifdef DT_INST_1_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(1);
+#endif
+
+#ifdef DT_INST_2_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(2);
+#endif
+
+#ifdef DT_INST_3_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(3);
+#endif
+
+#ifdef DT_INST_4_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(4);
+#endif

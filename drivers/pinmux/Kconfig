@@ -1,10 +1,7 @@
-# Kconfig - Pinmux configuration options
+# Pinmux configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # PinMux options
@@ -33,12 +30,6 @@ config PINMUX_INIT_PRIORITY
 	  rule for particular boards. Don't change this value unless you
 	  know what you are doing.
 
-config PINMUX_QMSI
-	bool "Enable QMSI pinmux dev driver"
-	depends on QMSI
-	help
-	  Enables the pinmux dev driver for QMSI supported boards.
-
 source "drivers/pinmux/Kconfig.mcux"
 
 source "drivers/pinmux/Kconfig.mcux_lpc"
@@ -51,8 +42,6 @@ source "drivers/pinmux/Kconfig.sifive"
 
 source "drivers/pinmux/Kconfig.cc13xx_cc26xx"
 
-source "drivers/pinmux/Kconfig.cc2650"
-
 source "drivers/pinmux/Kconfig.esp32"
 
 source "drivers/pinmux/Kconfig.sam0"
@@ -62,5 +51,7 @@ source "drivers/pinmux/Kconfig.intel_s1000"
 source "drivers/pinmux/Kconfig.rv32m1"
 
 source "drivers/pinmux/Kconfig.xec"
+
+source "drivers/pinmux/Kconfig.hsdk"
 
 endif # PINMUX

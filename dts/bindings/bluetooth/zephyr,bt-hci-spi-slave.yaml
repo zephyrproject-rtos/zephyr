@@ -1,25 +1,17 @@
-#
 # Copyright (c) 2019 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Bluetooth controller that provides Host Controller Interface over SPI
+description: |
+    Bluetooth controller node that provides Host Controller Interface (HCI)
+    over SPI
 
-description: >
-    This binding gives the base representation of a bluetooth controller node
-    that provides HCI over SPI.
+compatible: "zephyr,bt-hci-spi-slave"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
-parent:
-    bus: spi
+on-bus: spi
 
 properties:
-    compatible:
-      constraint: "zephyr,bt-hci-spi-slave"
-
     irq-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true

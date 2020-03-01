@@ -8,13 +8,14 @@ toolchain:
   - xtools
 supported:
   - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
   - pwm
   - spi
   - i2c
   - gpio
   - usb device
   - nvs
-  - rtc
   - counter
 ram: 640
 flash: 2048

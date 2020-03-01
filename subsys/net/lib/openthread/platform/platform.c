@@ -30,4 +30,3 @@ void otSysProcessDrivers(otInstance *aInstance)
 	platformRadioProcess(aInstance);
 	platformAlarmProcess(aInstance);
 }
-

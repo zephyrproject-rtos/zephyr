@@ -21,11 +21,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_0: led_0 {
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
 		green_led_1: led_1 {
-			gpios = <&gpiob 2 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
 	};
@@ -34,7 +34,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -47,8 +47,6 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -64,9 +62,13 @@
 		compatible = "st,lsm6dsl";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
-		irq-gpios = <&gpiob 1 0>;
+		irq-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSL_SPI";
 	};
+};
+
+&dma2 {
+	status = "okay";
 };
 
 &i2s5 {
@@ -92,7 +94,7 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
-		drdy-gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hb-press@5d {

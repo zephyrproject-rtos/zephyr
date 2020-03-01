@@ -1,23 +1,15 @@
-#
 # Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: LiteX timer
+description: LiteX timer
 
-description: >
-    This binding gives a base representation of the LiteX timer
+compatible: "litex,timer0"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "litex,timer0"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

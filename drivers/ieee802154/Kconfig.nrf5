@@ -1,15 +1,12 @@
-# Kconfig.nrf5 - Nordic Semiconductor nRF5 802.15.4 configuration options
-#
-#
+# Nordic Semiconductor nRF5 802.15.4 configuration options
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig IEEE802154_NRF5
 	bool "nRF52 series IEEE 802.15.4 Driver"
 	depends on NETWORKING && HAS_HW_NRF_RADIO_IEEE802154
-	select HAS_NORDIC_DRIVERS
+	select NRF_802154_RADIO_DRIVER
 
 if IEEE802154_NRF5
 
@@ -33,43 +30,5 @@ config IEEE802154_NRF5_INIT_PRIO
 	help
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
-
-choice IEEE802154_NRF5_CCA_MODE
-	prompt "nRF52 IEEE 802.15.4 CCA mode"
-	default IEEE802154_NRF5_CCA_MODE_ED
-	help
-	  CCA mode
-
-config IEEE802154_NRF5_CCA_MODE_ED
-	bool "Energy Above Threshold"
-
-config IEEE802154_NRF5_CCA_MODE_CARRIER
-	bool "Carrier Seen"
-
-config IEEE802154_NRF5_CCA_MODE_CARRIER_AND_ED
-	bool "Energy Above Threshold AND Carrier Seen"
-
-config IEEE802154_NRF5_CCA_MODE_CARRIER_OR_ED
-	bool "Energy Above Threshold OR Carrier Seen"
-
-endchoice
-
-config IEEE802154_NRF5_CCA_ED_THRESHOLD
-	int "nRF52 IEEE 802.15.4 CCA Energy Detection threshold"
-	default 45
-	help
-	  If energy detected in a given channel is above the value then the channel
-	  is deemed busy. The unit is defined as per 802.15.4-2006 spec.
-
-config IEEE802154_NRF5_CCA_CORR_THRESHOLD
-	int "nRF52 IEEE 802.15.4 CCA Correlator threshold"
-	default 45
-
-config IEEE802154_NRF5_CCA_CORR_LIMIT
-	int "nRF52 IEEE 802.15.4 CCA Correlator limit"
-	default 2
-	help
-	  Limit for occurrences above correlator threshold. When not equal to zero the
-	  correlator based signal detect is enabled.
 
 endif

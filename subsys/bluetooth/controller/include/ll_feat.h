@@ -84,6 +84,23 @@
 #define LL_FEAT_BIT_PHY_CODED 0
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
+#if defined(CONFIG_BT_CTLR_SMI_RX)
+#define LL_FEAT_BIT_SMI_RX BIT64(BT_LE_FEAT_BIT_SMI_RX)
+#else /* !CONFIG_BT_CTLR_SMI_RX */
+#define LL_FEAT_BIT_SMI_RX 0
+#endif /* !CONFIG_BT_CTLR_SMI_RX */
+
+#if defined(CONFIG_BT_CTLR_SMI_TX)
+#if defined(CONFIG_BT_CTLR_SMI_TX_SETTING)
+#define LL_FEAT_BIT_SMI_TX (ll_settings_smi_tx() ? \
+			    BIT64(BT_LE_FEAT_BIT_SMI_TX) : 0)
+#else /* !CONFIG_BT_CTLR_SMI_TX_SETTING */
+#define LL_FEAT_BIT_SMI_TX BIT64(BT_LE_FEAT_BIT_SMI_TX)
+#endif /* !CONFIG_BT_CTLR_SMI_TX_SETTING */
+#else /* !CONFIG_BT_CTLR_SMI_TX */
+#define LL_FEAT_BIT_SMI_TX 0
+#endif /* !CONFIG_BT_CTLR_SMI_TX */
+
 #define LL_FEAT_BIT_MASK         0x1FFFF
 #define LL_FEAT_BIT_MASK_VALID   0x1CF2F
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
@@ -96,5 +113,7 @@
 				  LL_FEAT_BIT_EXT_SCAN | \
 				  LL_FEAT_BIT_PHY_2M | \
 				  LL_FEAT_BIT_PHY_CODED | \
+				  LL_FEAT_BIT_SMI_RX | \
+				  LL_FEAT_BIT_SMI_TX | \
 				  LL_FEAT_BIT_CHAN_SEL_2 | \
 				  LL_FEAT_BIT_MIN_USED_CHAN)

@@ -142,11 +142,11 @@ Prerequisites:
 
    Download and install the latest `XDS-110 emulation package`_.
 
-   Follow the directions here to update the firmware:
-   http://software-dl.ti.com/ccs/esd/documents/xdsdebugprobes/emu_xds110.html#updating-the-xds110-firmware
+   Follow these `xds110 firmware update directions
+   <http://software-dl.ti.com/ccs/esd/documents/xdsdebugprobes/emu_xds110.html#updating-the-xds110-firmware>`_
 
    Note that the emulation package install may place the xdsdfu utility
-   in <install_dir>/ccs_base/common/uscif/xds110/.
+   in ``<install_dir>/ccs_base/common/uscif/xds110/``.
 
 #. Switch Jumper SOP[2..0] (J15) back to [001].
 
@@ -213,6 +213,12 @@ To see program output from UART0, connect a separate terminal window:
   % screen /dev/ttyACM0 115200 8N1
 
 Then press the reset button (SW1) on the board to run the program.
+
+When using OpenOCD from Zephyr SDK 0.10.3 to flash the device, you may notice
+the program hangs when starting the network processor on the device, if the
+program uses it. There is a known issue with how that version of OpenOCD
+resets the network processor. You would need to manually hit the reset button
+on the board to properly reset the device after flashing.
 
 Debugging
 =========
@@ -287,15 +293,8 @@ using the TI UniFlash tool for certificate programming.
 
 Limitations
 ***********
-The following features are not supported in Zephyr v1.14:
-
-- IPv6: While the hardware supports it, it has yet to be fully implemented
-  in the SimpleLink Wi-Fi driver.
-- static IP address: It is not currently possible to set
-  :option:`CONFIG_NET_CONFIG_SETTINGS` to ``y`` and assign a static IP
-  address to the device via :option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`. DHCP
-  is automatically handled by the SimpleLink Wi-Fi driver to obtain an
-  address dynamically.
+- While the hardware supports it, IPv6 has yet to be fully implemented
+  in the SimpleLink Wi-Fi device driver in Zephyr.
 
 References
 **********

@@ -3,7 +3,8 @@ sample:
     behavior
   name: Flash shell
 tests:
-  sample.driver.flash_shell:
-    platform_whitelist: 96b_carbon frdm_k64f frdm_kw41z frdm_kl25z nucleo_f746zg
+  sample.drivers.flash.shell:
     tags: flash shell
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
     harness: keyboard
+    min_ram: 12

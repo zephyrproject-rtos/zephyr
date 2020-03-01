@@ -38,16 +38,15 @@ void settings_init(void)
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 int settings_register(struct settings_handler *handler)
 {
-	int rc;
-
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	int rc = 0;
 
 	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (strcmp(handler->name, ch->name) == 0) {
-			rc = -EEXIST;
-			goto end;
+			return -EEXIST;
 		}
 	}
+
+	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
@@ -57,7 +56,7 @@ int settings_register(struct settings_handler *handler)
 		}
 	}
 	sys_slist_append(&settings_handlers, &handler->node);
-	rc = 0;
+
 end:
 	k_mutex_unlock(&settings_lock);
 	return rc;
@@ -188,6 +187,46 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 	}
 #endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 	return bestmatch;
+}
+
+int settings_call_set_handler(const char *name,
+			      size_t len,
+			      settings_read_cb read_cb,
+			      void *read_cb_arg,
+			      const struct settings_load_arg *load_arg)
+{
+	int rc;
+	const char *name_key = name;
+
+	if (load_arg && load_arg->subtree &&
+	    !settings_name_steq(name, load_arg->subtree, &name_key)) {
+		return 0;
+	}
+
+	if (load_arg && load_arg->cb) {
+		rc = load_arg->cb(name_key, len, read_cb, read_cb_arg,
+				  load_arg->param);
+	} else {
+		struct settings_handler_static *ch;
+
+		ch = settings_parse_and_lookup(name, &name_key);
+		if (!ch) {
+			return 0;
+		}
+
+		rc = ch->h_set(name_key, len, read_cb, read_cb_arg);
+
+		if (rc != 0) {
+			LOG_ERR("set-value failure. key: %s error(%d)",
+				log_strdup(name), rc);
+			/* Ignoring the error */
+			rc = 0;
+		} else {
+			LOG_DBG("set-value OK. key: %s",
+				log_strdup(name));
+		}
+	}
+	return rc;
 }
 
 int settings_commit(void)

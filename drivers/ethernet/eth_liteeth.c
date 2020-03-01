@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /* flags */
 #define LITEETH_EV_TX		0x1

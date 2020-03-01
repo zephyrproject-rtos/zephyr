@@ -102,7 +102,6 @@
 		};
 
 		gpio8b0: gpio@80017800 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017800 0x100>;
 			interrupts = <54 1>;
 			interrupt-parent = <&intc>;
@@ -113,7 +112,6 @@
 		};
 
 		gpio8b1: gpio@80017900 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017900 0x100>;
 			interrupts = <55 1>;
 			interrupt-parent = <&intc>;
@@ -124,7 +122,6 @@
 		};
 
 		gpio8b2: gpio@80017a00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017a00 0x100>;
 			interrupts = <56 1>;
 			interrupt-parent = <&intc>;
@@ -135,7 +132,6 @@
 		};
 
 		gpio8b3: gpio@80017b00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017b00 0x100>;
 			interrupts = <57 1>;
 			interrupt-parent = <&intc>;
@@ -146,7 +142,6 @@
 		};
 
 		gpio4b0: gpio@80017c00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017c00 0x100>;
 			interrupts = <19 1>;
 			interrupt-parent = <&intc>;
@@ -157,7 +152,6 @@
 		};
 
 		gpio4b1: gpio@80017d00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017d00 0x100>;
 			interrupts = <52 1>;
 			interrupt-parent = <&intc>;
@@ -168,7 +162,6 @@
 		};
 
 		gpio4b2: gpio@80017e00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017e00 0x100>;
 			interrupts = <53 1>;
 			interrupt-parent = <&intc>;
@@ -180,7 +173,6 @@
 
 
 		i2c0: i2c@80012000 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -194,7 +186,6 @@
 		};
 
 		i2c1: i2c@80012100 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -208,7 +199,6 @@
 		};
 
 		i2c2: i2c@80012200 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;

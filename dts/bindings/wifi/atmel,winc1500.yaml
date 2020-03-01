@@ -1,29 +1,21 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Atmel WINC1500 Wifi module
+description: Atmel WINC1500 WiFi module
 
-description: >
-    This binding gives the base representation of the Atmel WINC1500 Wifi module
+compatible: "atmel,winc1500"
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,winc1500"
-
     irq-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
 
     reset-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
 
     enable-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true

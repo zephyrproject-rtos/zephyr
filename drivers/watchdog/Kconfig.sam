@@ -1,14 +1,11 @@
-# Kconfig - Atmel SAM WDT configuration
-#
-# Copyright (C) 2017 Intel Deutschland GmbH
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Atmel SAM WDT configuration
 
-menuconfig WDT_SAM
+# Copyright (C) 2017 Intel Deutschland GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SAM
 	bool "Atmel SAM MCU Family Watchdog (WDT) Driver"
 	depends on SOC_FAMILY_SAM
-	select HAS_DTS_WDT
 	default y
 	help
 	  Enable WDT driver for Atmel SAM MCUs.

@@ -107,6 +107,9 @@ struct bme280_data {
 #elif defined DT_BOSCH_BME280_BUS_SPI
 	struct device *spi;
 	struct spi_config spi_cfg;
+#if defined(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER)
+	struct spi_cs_control spi_cs_control;
+#endif
 #else
 #error "BME280 device type not specified"
 #endif

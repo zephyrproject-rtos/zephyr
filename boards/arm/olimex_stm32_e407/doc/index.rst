@@ -380,4 +380,3 @@ way.  Here is an example for the :ref:`hello_world` application.
 
 .. _ST STM32F407ZG Datasheet:
    http://www.st.com/resource/en/reference_manual/dm00031020.pdf
-

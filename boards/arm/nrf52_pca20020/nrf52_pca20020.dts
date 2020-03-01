@@ -34,15 +34,15 @@
 		compatible = "gpio-leds";
 		/* Lightwell RGB */
 		led0: led_0 {
-			gpios = <&sx1509b 5 0>;
+			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			gpios = <&sx1509b 6 0>;
+			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			gpios = <&sx1509b 7 0>;
+			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 	};
@@ -51,9 +51,17 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 11 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
 		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 4>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+		power-gpios = <&sx1509b 4 0>;
 	};
 };
 
@@ -70,14 +78,15 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "nordic,nrf-uart";
+	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <3>;
 	rx-pin = <2>;
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <7>;
@@ -89,6 +98,10 @@
 		label = "GPIO_P0";
 		gpio-controller;
 		#gpio-cells = <2>;
+		ngpios = <16>;
+		/* Active-low LEDs init high, all else init low */
+		init-out-high = <0xe0e0>;
+		init-out-low = <0x1f1f>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {
@@ -101,33 +114,35 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
-		drdy-gpios = <&gpio0 24 GPIO_INT_ACTIVE_HIGH>;
+		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
 	};
 };
 
 &i2c1 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <14>;
 	scl-pin = <15>;
+
+	lis2dh12: lis2dh12@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		label = "LIS2DH12-ACCEL";
+	};
 };
 
 &flash0 {
-	/*
-	 * If chosen's zephyr,code-partition
-	 * is unset, the image will be linked
-	 * into the entire flash device.  If
-	 * it points to an individual
-	 * partition, the code will be linked
-	 * to, and restricted to that
-	 * partition.
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -153,8 +168,9 @@
 		/*
 		 * The flash starting at 0x0007a000 and ending at
 		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for NFFS
-		 * will be created in this area.
+		 * by the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
 		 */
 		storage_partition: partition@7a000 {
 			label = "storage";

@@ -1,16 +1,14 @@
-# Kconfig - Atmel SAM flash driver config
-#
+# Atmel SAM flash driver config
+
 # Copyright (c) 2018 Aurelien Jarno
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SAM
-
-menuconfig SOC_FLASH_SAM
+config SOC_FLASH_SAM
 	bool "Atmel SAM flash driver"
 	default y
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	depends on SOC_FAMILY_SAM
+	depends on SOC_SERIES_SAME70
 	help
-	 Enable the Atmel SAM series internal flash driver.
-
-endif
+	  Enable the Atmel SAM series internal flash driver.

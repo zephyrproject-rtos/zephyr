@@ -16,11 +16,12 @@
 #include <storage/flash_map.h>
 
 #ifdef __cplusplus
-#extern "C" {
+extern "C" {
 #endif
 
 #define SETTINGS_TEST_FCB_VAL_STR_CNT   64
 #define SETTINGS_TEST_FCB_FLASH_CNT   4
+
 
 extern u8_t val8;
 extern u8_t val8_un;

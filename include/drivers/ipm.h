@@ -122,11 +122,11 @@ struct ipm_driver_api {
  * @param data Pointer to the data sent in the message.
  * @param size Size of the data.
  *
- * @retval EBUSY    If the remote hasn't yet read the last data sent.
- * @retval EMSGSIZE If the supplied data size is unsupported by the driver.
- * @retval EINVAL   If there was a bad parameter, such as: too-large id value.
- *                  or the device isn't an outbound IPM channel.
- * @retval 0        On success.
+ * @retval -EBUSY    If the remote hasn't yet read the last data sent.
+ * @retval -EMSGSIZE If the supplied data size is unsupported by the driver.
+ * @retval -EINVAL   If there was a bad parameter, such as: too-large id value.
+ *                   or the device isn't an outbound IPM channel.
+ * @retval 0         On success.
  */
 __syscall int ipm_send(struct device *ipmdev, int wait, u32_t id,
 		       const void *data, int size);
@@ -134,7 +134,8 @@ __syscall int ipm_send(struct device *ipmdev, int wait, u32_t id,
 static inline int z_impl_ipm_send(struct device *ipmdev, int wait, u32_t id,
 			   const void *data, int size)
 {
-	const struct ipm_driver_api *api = ipmdev->driver_api;
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->driver_api;
 
 	return api->send(ipmdev, wait, id, data, size);
 }
@@ -150,7 +151,8 @@ static inline int z_impl_ipm_send(struct device *ipmdev, int wait, u32_t id,
 static inline void ipm_register_callback(struct device *ipmdev,
 					 ipm_callback_t cb, void *context)
 {
-	const struct ipm_driver_api *api = ipmdev->driver_api;
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->driver_api;
 
 	api->register_callback(ipmdev, cb, context);
 }
@@ -169,7 +171,8 @@ __syscall int ipm_max_data_size_get(struct device *ipmdev);
 
 static inline int z_impl_ipm_max_data_size_get(struct device *ipmdev)
 {
-	const struct ipm_driver_api *api = ipmdev->driver_api;
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->driver_api;
 
 	return api->max_data_size_get(ipmdev);
 }
@@ -189,7 +192,8 @@ __syscall u32_t ipm_max_id_val_get(struct device *ipmdev);
 
 static inline u32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
 {
-	const struct ipm_driver_api *api = ipmdev->driver_api;
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->driver_api;
 
 	return api->max_id_val_get(ipmdev);
 }
@@ -200,14 +204,15 @@ static inline u32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
  * @param ipmdev Driver instance pointer.
  * @param enable Set to 0 to disable and to nonzero to enable.
  *
- * @retval 0      On success.
- * @retval EINVAL If it isn't an inbound channel.
+ * @retval 0       On success.
+ * @retval -EINVAL If it isn't an inbound channel.
  */
 __syscall int ipm_set_enabled(struct device *ipmdev, int enable);
 
 static inline int z_impl_ipm_set_enabled(struct device *ipmdev, int enable)
 {
-	const struct ipm_driver_api *api = ipmdev->driver_api;
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->driver_api;
 
 	return api->set_enabled(ipmdev, enable);
 }

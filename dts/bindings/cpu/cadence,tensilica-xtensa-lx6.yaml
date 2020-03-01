@@ -1,17 +1,8 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Cadence Tensilica Xtensa LX6 CPU
+description: Cadence Tensilica Xtensa LX6 CPU
 
-description: >
-    This binding gives a base representation for Cadence Tensilica Xtensa LX6 CPU.
+compatible: "cadence,tensilica-xtensa-lx6"
 
-inherits:
-    !include cpu.yaml
-
-properties:
-    compatible:
-      constraint: "cadence,tensilica-xtensa-lx6"
+include: cpu.yaml

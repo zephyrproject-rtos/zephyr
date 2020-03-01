@@ -1,31 +1,23 @@
-#
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Nordic nRF timer
+description: Nordic nRF timer node
 
-description: >
-    This is a representation of the Nordic nRF timer node
+compatible: "nordic,nrf-timer"
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-timer"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     prescaler:
       type: int
-      category: required
+      required: true
       description: Prescaler value determines frequency (16MHz/2^prescaler)

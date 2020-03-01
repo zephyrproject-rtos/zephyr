@@ -1,28 +1,20 @@
-#
 # Copyright (c) 2018 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: i.MX I2C Controller
+description: i.MX I2C node
 
-description: >
-    This is a representation of the i.MX I2C nodes
+compatible: "fsl,imx7d-i2c"
 
-inherits:
-    !include i2c.yaml
+include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "fsl,imx7d-i2c"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral

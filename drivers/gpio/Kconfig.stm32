@@ -1,9 +1,7 @@
-# Kconfig - STM32 GPIO configuration
-#
+# STM32 GPIO configuration
+
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
@@ -47,10 +45,9 @@ config GPIO_STM32_PORTJ
 config GPIO_STM32_PORTK
 	bool "Enable GPIO port K support"
 
-if SOC_SERIES_STM32F1X
-
 choice GPIO_STM32_SWJ
 	prompt "Serial wire JTAG configuration"
+	depends on SOC_SERIES_STM32F1X
 
 config GPIO_STM32_SWJ_ENABLE
 	depends on !(SOC_STM32F103XE && SPI_3)
@@ -67,7 +64,5 @@ config GPIO_STM32_SWJ_DISABLE
 	bool "JTAG-DP Disabled and SW-DP Disabled"
 
 endchoice
-
-endif # SOC_SERIES_STM32F1X
 
 endif # GPIO_STM32

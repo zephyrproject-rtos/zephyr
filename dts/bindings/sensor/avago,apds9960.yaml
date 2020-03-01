@@ -1,21 +1,18 @@
-#
 # Copyright (c) 2018, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: APDS9960 Digital Proximity, Ambient Light, RGB and Gesture Sensor
+description: APDS9960 digital proximity, ambient light, RGB, and gesture sensor
 
-description: >
-    This is a representation of the APDS9960 sensor
+compatible: "avago,apds9960"
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "avago,apds9960"
-
     int-gpios:
-      type: compound
-      category: required
+      type: phandle-array
+      required: true
+      description: Interrupt pin.
+
+        The interrupt pin of APDS9960 is open-drain, active low.
+        If connected directly the MCU pin should be configured
+        as pull-up, active low.
