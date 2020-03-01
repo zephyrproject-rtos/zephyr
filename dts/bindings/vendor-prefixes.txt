@@ -451,6 +451,7 @@ wetek	WeTek Electronics, limited.
 wexler	Wexler
 whwave  Shenzhen whwave Electronics, Inc.
 wi2wi	Wi2Wi, Inc.
+wildlabs	Wilderness Labs
 winbond Winbond Electronics corp.
 winstar	Winstar Display Corp.
 wlf	Wolfson Microelectronics
