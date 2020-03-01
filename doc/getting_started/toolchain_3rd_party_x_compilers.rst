@@ -20,12 +20,6 @@ GNU ARM Embedded
       Windows, we'll assume you install into the directory
       :file:`C:\\gnu_arm_embedded`.
 
-   .. warning::
-
-	  The GNU ARM Embedded Toolchain for Windows, version **8-2018-q4-major**
-	  has a `critical bug <https://github.com/zephyrproject-rtos/zephyr/issues/12257>`_
-	  and should not be used. Toolchain version **7-2018-q2-update** is known to work.
-
 #. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
