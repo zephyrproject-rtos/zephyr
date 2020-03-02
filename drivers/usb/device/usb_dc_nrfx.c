@@ -1526,6 +1526,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 		return -EINVAL;
 	}
 
+	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
 	nrfx_usbd_ep_stall_clear(ep_addr_to_nrfx(ep));
 	LOG_DBG("Unstall on EP 0x%02x", ep);
 
