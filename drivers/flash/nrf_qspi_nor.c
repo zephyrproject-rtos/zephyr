@@ -476,17 +476,42 @@ static inline int qspi_nor_read_id(struct device *dev,
 	return 0;
 }
 
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+u8_t *rx_ram_buf;
+u8_t *tx_ram_buf;
+#endif
+
 static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
+	int ret;
+
 	if (!dest) {
 		return -EINVAL;
 	}
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	rx_ram_buf = NULL;
+	void *tmp_dest = dest;
+	size_t var_size = size;
+
+	if (((uint32_t)dest < CONFIG_SRAM_BASE_ADDRESS)
+	   || (size < sizeof(uint32_t))) {
+		if (size < sizeof(uint32_t)) {
+			size = 4;
+		}
+		rx_ram_buf = k_malloc(size);
+		if (rx_ram_buf == NULL) {
+			return -ENOMEM;
+		}
+		dest = (void *)rx_ram_buf;
+	}
+#endif
 
 	/* read size must be multiple of 4 bytes */
 	if (size % sizeof(uint32_t) ||
 	    !(size > 0)) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	const struct qspi_nor_config *params = dev->config->config_info;
@@ -499,35 +524,70 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 		LOG_ERR("read error: address or size "
 			"exceeds expected values."
 			"Addr: 0x%lx size %zu", (long)addr, size);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	qspi_lock(dev);
 
-	int ret = nrfx_qspi_read(dest, size, addr);
+	ret = nrfx_qspi_read(dest, size, addr);
 
 	qspi_wait_for_completion(dev);
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	if (rx_ram_buf != NULL) {
+		memcpy(tmp_dest, dest, var_size);
+		k_free(rx_ram_buf);
+	}
+#endif
 	return qspi_get_zephyr_ret_code(ret);
+out:
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	k_free(rx_ram_buf);
+#endif
+	return ret;
 }
 
 static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 			  size_t size)
 {
+	int ret;
+
 	if (!src) {
 		return -EINVAL;
 	}
 
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	tx_ram_buf = NULL;
+	if (((uint32_t)src < CONFIG_SRAM_BASE_ADDRESS)
+	   || (size < sizeof(uint32_t))) {
+		size_t var_size = size;
+
+		if (size < sizeof(uint32_t)) {
+			size = 4;
+		}
+		tx_ram_buf = k_malloc(size);
+		if (tx_ram_buf == NULL) {
+			ret = -ENOMEM;
+		}
+		qspi_nor_read(dev, addr, tx_ram_buf, size);
+		memcpy(tx_ram_buf, src, var_size);
+		src = tx_ram_buf;
+	}
+#endif
+
 	/* write size must be multiple of 4 bytes */
 	if (size % sizeof(uint32_t) ||
 	    !(size > 0)) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	struct qspi_nor_data *const driver_data = dev->driver_data;
 	const struct qspi_nor_config *params = dev->config->config_info;
 
 	if (driver_data->write_protection) {
-		return -EACCES;
+		ret = -EACCES;
+		goto out;
 	}
 
 	/* should be between 0 and flash size */
@@ -538,15 +598,26 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		LOG_ERR("write error: address or size "
 			"exceeds expected values."
 			"Addr: 0x%lx size %zu", (long)addr, size);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	qspi_lock(dev);
 
-	int ret = nrfx_qspi_write(src, size, addr);
+	ret = nrfx_qspi_write(src, size, addr);
 
 	qspi_wait_for_completion(dev);
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	if (tx_ram_buf != NULL) {
+		k_free(tx_ram_buf);
+	}
+#endif
 	return qspi_get_zephyr_ret_code(ret);
+out:
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	k_free(tx_ram_buf);
+#endif
+	return ret;
 }
 
 static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
@@ -626,9 +697,15 @@ static int qspi_nor_configure(struct device *dev)
  */
 static int qspi_nor_init(struct device *dev)
 {
+#if defined(CONFIG_MULTITHREADING)
 	IRQ_CONNECT(DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0,
 		    DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
+#else
+	IRQ_DIRECT_CONNECT(DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0,
+		    DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0_PRIORITY,
+		    nrfx_qspi_irq_handler, 0);
+#endif
 	return qspi_nor_configure(dev);
 }
 
