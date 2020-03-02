@@ -266,7 +266,11 @@ Drivers and Sensors
 
 * Display
 
-  * <TBD>
+  * Added generic display driver sample
+  * Added support for BGR565 pixel format
+  * Added support for LVGL v6.1
+  * Introduced KSCAN based ft5336 touch panel driver
+  * Added support for LVGL touch input device
 
 * DMA
 
