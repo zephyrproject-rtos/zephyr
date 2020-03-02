@@ -474,12 +474,14 @@ HALs
 Documentation
 *************
 
-* <TBD>
+* settings: include missing API subgoups into the documentation
+* Documentation for new boards and samples.
+* Improvements and clarity of API documentation.
 
 Tests and Samples
 *****************
 
-* <TBD>
+* Added sample for show settings subsystem API usage
 
 Issue Related Items
 *******************
