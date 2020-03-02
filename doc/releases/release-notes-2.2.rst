@@ -252,7 +252,8 @@ Drivers and Sensors
 
 * Clock Control
 
-  * <TBD>
+  * Modified driver for nRF platform to use single device with multiple
+    subsystems, one for each clock source.
 
 * Console
 
