@@ -173,3 +173,18 @@ peripherals should be disabled by default.
 - Enable all GPIO ports.
 
 - If available, enable pinmux and interrupt controller drivers.
+
+Flash and debug support
+***********************
+
+Zephyr supports :ref:`west-build-flash-debug` via west extension commands.
+
+To add ``west flash`` and ``west debug`` support, you need to add a
+:file:`board.cmake` file to your board directory which configures a "runner"
+for your board. (There's nothing special you need to do to get ``west build``
+support for your board.)
+
+If you're using one of the :ref:`debug-host-tools` that Zephyr already
+supports, this should only be a few lines of code. See the flashing and
+debugging page for more details, and look at :file:`board.cmake` files for
+other boards which support your runner for examples.
