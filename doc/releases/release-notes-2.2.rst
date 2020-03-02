@@ -352,7 +352,7 @@ Drivers and Sensors
 
 * Serial
 
-  * <TBD>
+  * nRF UARTE driver support TX only mode with receiver permanently disabled.
 
 * SPI
 
