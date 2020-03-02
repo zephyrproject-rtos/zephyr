@@ -500,6 +500,12 @@ Libraries / Subsystems
   * LoRa support was added through official LoRaMac-node reference
     implementation.
 
+* Logging
+
+  * Improvements in immediate mode: less interrupts locking, better RTT usage,
+    logging from thread context.
+  * Improved notification about missing log_strdup.
+
 HALs
 ****
 
