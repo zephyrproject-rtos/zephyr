@@ -35,6 +35,11 @@ static const char *const core_devices[] = {
 	"sys_clock",
 	"UART_0",
 };
+#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
+#define MAX_PM_DEVICES		1
+static const char *const core_devices[] = {
+	DT_ETH_MCUX_0_NAME,
+};
 #else
 #error "Add SoC's core devices list for PM"
 #endif
