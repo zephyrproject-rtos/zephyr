@@ -437,7 +437,17 @@ Bluetooth
 
 * Host:
 
-  * <TBD>
+  * GAP: Add dynamic LE scan listener API
+  * GAP: Pre-allocate connection objects for connectable advertising and
+    whitelist initiator.
+  * GAP: Fixes for multi-identity support
+  * GAP: RPA timeout handling fixes
+  * GAP: Add remote version information
+  * GATT: Add return value to cfg_write callback
+  * L2CAP: move channel processing to the system workqueue
+  * L2CAP: multiple fixes for credit-based flowcontrol
+  * SMP: Add pairing_accept callback
+  * SMP: Fix Security Manager timeout handling
 
 * BLE split software Controller:
 
