@@ -286,7 +286,14 @@ Drivers and Sensors
 
 * Flash
 
-  * <TBD>
+  * Added Nordic JEDEC QSPI NOR flash driver
+  * Unified native_posix flash driver with drivers/flash/flash_simulator
+  * fixed: erase native_posix flash in initialization
+  * extend MCUX flash drive to support LPC55xxx devices
+  * stm32: Replace register accesses for Flash driver to use STM32Cube
+  * Nios2: qspi unaligned read support
+  * sam0: Add support for SAME54
+  * Added the flash driver of the stm32f1x family
 
 * GPIO
 
