@@ -2299,7 +2299,7 @@ static struct key_update *cdb_key_update_find(bool app_key, u16_t key_idx,
 	match = NULL;
 	*free_slot = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(key_updates); i++) {
+	for (i = 0; i < ARRAY_SIZE(cdb_key_updates); i++) {
 		struct key_update *update = &cdb_key_updates[i];
 
 		if (!update->valid) {
