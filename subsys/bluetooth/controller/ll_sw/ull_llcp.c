@@ -204,7 +204,7 @@ struct proc_ctx {
 	/* PROC_ */
 	u8_t proc;
 
-	/* LP_STATE_ */
+	/* Procedure FSM */
 	u8_t state;
 
 	/* Expected opcode to be recieved next */
@@ -369,10 +369,56 @@ static struct proc_ctx *create_procedure(u8_t proc)
 	}
 
 	ctx->proc = proc;
-	/* TODO: Fix the initial state */
-	ctx->state = LP_COMMON_STATE_IDLE;
 	ctx->collision = 0U;
 	ctx->pause = 0U;
+
+	return ctx;
+}
+
+static struct proc_ctx *create_local_procedure(u8_t proc)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_procedure(proc);
+	if (!ctx) {
+		return NULL;
+	}
+
+	switch (ctx->proc) {
+	case PROC_VERSION_EXCHANGE:
+		ctx->state = LP_COMMON_STATE_IDLE;
+		break;
+	case PROC_ENCRYPTION_START:
+		ctx->state = LP_ENC_STATE_IDLE;
+		break;
+	default:
+		/* Unknown procedure */
+		LL_ASSERT(0);
+	}
+
+	return ctx;
+}
+
+static struct proc_ctx *create_remote_procedure(u8_t proc)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_procedure(proc);
+	if (!ctx) {
+		return NULL;
+	}
+
+	switch (ctx->proc) {
+	case PROC_VERSION_EXCHANGE:
+		ctx->state = RP_COMMON_STATE_IDLE;
+		break;
+	case PROC_ENCRYPTION_START:
+		ctx->state = RP_ENC_STATE_IDLE;
+		break;
+	default:
+		/* Unknown procedure */
+		LL_ASSERT(0);
+	}
 
 	return ctx;
 }
@@ -1642,7 +1688,7 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 		LL_ASSERT(0);
 	}
 
-	ctx = create_procedure(proc);
+	ctx = create_remote_procedure(proc);
 	if (!ctx) {
 		return;
 	}
@@ -1710,7 +1756,7 @@ u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_procedure(PROC_VERSION_EXCHANGE);
+	ctx = create_local_procedure(PROC_VERSION_EXCHANGE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -1726,7 +1772,7 @@ u8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = create_procedure(PROC_ENCRYPTION_START);
+	ctx = create_local_procedure(PROC_ENCRYPTION_START);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
