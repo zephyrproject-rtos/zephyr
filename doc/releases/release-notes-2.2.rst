@@ -449,6 +449,13 @@ Bluetooth
   * SMP: Add pairing_accept callback
   * SMP: Fix Security Manager timeout handling
 
+* Mesh:
+
+  * Add support for Mesh Configuration Database
+  * Multiple fixes to Friendship feature
+  * Add support for sending segmented control messages
+  * Add support for sending reliable model publication messages
+
 * BLE split software Controller:
 
   * <TBD>
