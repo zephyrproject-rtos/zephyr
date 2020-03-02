@@ -242,7 +242,8 @@ Drivers and Sensors
 
 * Bluetooth
 
-  * <TBD>
+  * Update SPI driver to new GPIO API
+  * Minor fixes to H:5 (Three-wire UART) driver
 
 * CAN
 
