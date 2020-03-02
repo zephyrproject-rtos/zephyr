@@ -306,15 +306,15 @@ including: compiler, assembler, linker, and their dependencies.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.1/zephyr-sdk-0.11.1-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.2/zephyr-sdk-0.11.2-setup.run
 
       #. Run the installation binary, installing the SDK in your home
-         folder :file:`~/zephyr-sdk-0.11.1`:
+         folder :file:`~/zephyr-sdk-0.11.2`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.11.1-setup.run
-            ./zephyr-sdk-0.11.1-setup.run -- -d ~/zephyr-sdk-0.11.1
+            chmod +x zephyr-sdk-0.11.2-setup.run
+            ./zephyr-sdk-0.11.2-setup.run -- -d ~/zephyr-sdk-0.11.2
 
       #. Set environment variables to let the build system know where to
          find the toolchain programs:
@@ -322,7 +322,7 @@ including: compiler, assembler, linker, and their dependencies.
          .. code-block:: bash
 
             export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-            export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.11.1
+            export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.11.2
 
       The SDK contains a udev rules file that provides information
       needed to identify boards and grant hardware access permission to flash
