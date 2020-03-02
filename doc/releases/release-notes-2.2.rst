@@ -270,7 +270,8 @@ Drivers and Sensors
 
 * DMA
 
-  * <TBD>
+  * dw: renaming cavs drivers into DesignWare
+  * stm32: improvements over channels support
 
 * EEPROM
 
