@@ -509,6 +509,15 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				len = pSetup->wLength;
 			}
 
+			if (len > USB_DFU_MAX_XFER_SIZE) {
+				/*
+				 * The host could requests more data as stated
+				 * in wTransferSize. Limit upload length to the
+				 * size of the request-buffer.
+				 */
+				len = USB_DFU_MAX_XFER_SIZE;
+			}
+
 			if (len) {
 				const struct flash_area *fa;
 
