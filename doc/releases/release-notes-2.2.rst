@@ -459,11 +459,22 @@ Bluetooth
 
 * BLE split software Controller:
 
-  * <TBD>
+  * Multiple fixes, including all those required to pass qualification
+  * Implemented software-deferred privacy for platforms without built-in
+    address resolution support
+  * Added dynamic TX power control, including a set of vendor-specific commands
+    to read and write the TX power
+  * Added a Kconfig option, BT_CTLR_PARAM_CHECK, to enable addtional parameter
+    checking
+  * Added basic support for SMI (Stable Modulation Index)
+  * Ticker: Implemented dynamic rescheduling
+  * Nordic: switched to using a single clock device for clock control
+  * openisa: Added encryption and decryption support
 
 * BLE legacy software Controller:
 
-  * <TBD>
+  * Multiple fixes
+  * Added dynamic TX power control support
 
 Build and Infrastructure
 ************************
