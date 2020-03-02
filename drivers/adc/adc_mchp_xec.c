@@ -168,12 +168,14 @@ static int adc_xec_start_read(struct device *dev,
 
 	/* Setup ADC resolution */
 	reg = adc_regs->sar_control_reg;
-	reg &= ~MCHP_ADC_SAR_CTRL_RES_MASK;
+	reg &= ~(MCHP_ADC_SAR_CTRL_RES_MASK |
+		 (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
 
 	if (sequence->resolution == 12) {
 		reg |= MCHP_ADC_SAR_CTRL_RES_12_BITS;
 	} else if (sequence->resolution == 10) {
 		reg |= MCHP_ADC_SAR_CTRL_RES_10_BITS;
+		reg |= MCHP_ADC_SAR_CTRL_SHIFTD_EN;
 	} else {
 		return -EINVAL;
 	}
