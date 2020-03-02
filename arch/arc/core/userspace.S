@@ -123,11 +123,11 @@ _clear_user_stack:
 	jlt _clear_user_stack
 
 /* reload the stack checking regs as the original kernel stack
- * becomess user stack
+ * becomes user stack
  */
 #ifdef CONFIG_ARC_STACK_CHECKING
-	mov_s r1, _kernel
-	ld_s r2, [r1, _kernel_offset_to_current]
+/* current thread in r6, SMP case is also considered */
+	mov r2, r6
 
 	_load_stack_check_regs
 

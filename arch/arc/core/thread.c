@@ -268,8 +268,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	configure_mpu_thread(_current);
 
 	z_arc_userspace_enter(user_entry, p1, p2, p3,
-			     (u32_t)_current->stack_obj,
-			     _current->stack_info.size);
+			      (u32_t)_current->stack_obj,
+			      _current->stack_info.size, _current);
 	CODE_UNREACHABLE;
 }
 
