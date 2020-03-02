@@ -206,57 +206,6 @@ bool bt_mesh_is_provisioned(void)
 	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
 }
 
-int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
-		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
-
-		memcpy(uuid.val, prov->uuid, 16);
-		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		/* Make sure we're scanning for provisioning inviations */
-		bt_mesh_scan_enable();
-		/* Enable unprovisioned beacon sending */
-		bt_mesh_beacon_enable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_enable();
-		bt_mesh_adv_update();
-	}
-
-	return 0;
-}
-
-int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		bt_mesh_beacon_disable();
-		bt_mesh_scan_disable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
-	}
-
-	return 0;
-}
-
 static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
