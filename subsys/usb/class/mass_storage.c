@@ -479,6 +479,11 @@ static bool infoTransfer(void)
 
 static void fail(void)
 {
+	if (cbw.DataLength) {
+		/* Stall data stage */
+		usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
+	}
+
 	csw.Status = CSW_FAILED;
 	sendCSW();
 }
