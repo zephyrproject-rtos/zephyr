@@ -149,7 +149,7 @@ _arc_go_to_user_space:
 
 	/* fake exception return */
 	lr r0, [_ARC_V2_STATUS32]
-	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
+	bset r0, r0, _ARC_V2_STATUS32_AE_BIT
 	kflag r0
 
 /* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
