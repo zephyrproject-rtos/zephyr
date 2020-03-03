@@ -1678,8 +1678,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * up and stop the tx thread for states where it was
 		 * running.
 		 */
-		if (old_state == BT_CONN_CONNECTED ||
-		    old_state == BT_CONN_DISCONNECT) {
+		switch (old_state) {
+		case BT_CONN_CONNECTED:
+		case BT_CONN_DISCONNECT:
 			process_unack_tx(conn);
 			tx_notify(conn);
 
@@ -1691,7 +1692,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
 			k_poll_signal_raise(&conn_change, 0);
 			/* The last ref will be dropped during cleanup */
-		} else if (old_state == BT_CONN_CONNECT) {
+			break;
+		case BT_CONN_CONNECT:
 			/* LE Create Connection command failed. This might be
 			 * directly from the API, don't notify application in
 			 * this case.
@@ -1699,8 +1701,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			if (conn->err) {
 				notify_connected(conn);
 			}
+
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_SCAN) {
+			break;
+		case BT_CONN_CONNECT_SCAN:
 			/* this indicate LE Create Connection with peer address
 			 * has been stopped. This could either be triggered by
 			 * the application through bt_conn_disconnect or by
@@ -1711,24 +1715,31 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_DIR_ADV) {
+			break;
+		case BT_CONN_CONNECT_DIR_ADV:
 			/* this indicate Directed advertising stopped */
 			if (conn->err) {
 				notify_connected(conn);
 			}
 
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_AUTO) {
+			break;
+		case BT_CONN_CONNECT_AUTO:
 			/* this indicates LE Create Connection with filter
 			 * policy has been stopped. This can only be triggered
 			 * by the application, so don't notify.
 			 */
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_ADV) {
+			break;
+		case BT_CONN_CONNECT_ADV:
 			/* This can only happen when application stops the
 			 * advertiser, conn->err is never set in this case.
 			 */
 			bt_conn_unref(conn);
+			break;
+		case BT_CONN_DISCONNECTED:
+			/* Cannot happen, no transition. */
+			break;
 		}
 		break;
 	case BT_CONN_CONNECT_AUTO:
