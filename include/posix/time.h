@@ -43,7 +43,12 @@ struct itimerspec {
 
 #else /* CONFIG_NEWLIB_LIBC */
 /* Not Newlib */
-#include <sys/timespec.h>
+# ifdef CONFIG_ARCH_POSIX
+#  include <bits/types/struct_timespec.h>
+#  include <bits/types/struct_itimerspec.h>
+# else
+#  include <sys/timespec.h>
+# endif
 #endif /* CONFIG_NEWLIB_LIBC */
 
 #include <kernel.h>
