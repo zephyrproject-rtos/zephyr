@@ -274,7 +274,7 @@ static void proc_ctx_release(struct proc_ctx *ctx)
 	mem_release(ctx, &mem_ctx.free);
 }
 
-static bool tx_alloc_peek(void)
+static bool tx_alloc_is_available(void)
 {
 	u16_t mem_free_count;
 
@@ -295,7 +295,7 @@ static void tx_release(struct node_tx *tx)
 	mem_release(tx, &mem_tx.free);
 }
 
-static bool ntf_alloc_peek(void)
+static bool ntf_alloc_is_available(void)
 {
 	u16_t mem_free_count;
 
@@ -583,7 +583,7 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 {
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
-		if (!ntf_alloc_peek()) {
+		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
 		} else {
 			lp_comm_ntf(conn, ctx);
@@ -603,7 +603,7 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->vex.sent) {
-			if (!tx_alloc_peek() || ctx->pause) {
+			if (!tx_alloc_is_available() || ctx->pause) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				lp_comm_tx(conn, ctx);
@@ -742,7 +742,7 @@ static void lp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!ntf_alloc_peek()) {
+	if (!ntf_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_NTF;
 	} else {
 		lp_enc_ntf(conn, ctx);
@@ -753,7 +753,7 @@ static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 
 static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_peek()) {
+	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
 	} else {
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
@@ -764,7 +764,7 @@ static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 
 static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_peek()) {
+	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
@@ -1180,7 +1180,7 @@ static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->vex.sent) {
-			if (!tx_alloc_peek() || ctx->pause) {
+			if (!tx_alloc_is_available() || ctx->pause) {
 				ctx->state = RP_COMMON_STATE_WAIT_TX;
 			} else {
 				rp_comm_tx(conn, ctx);
@@ -1325,7 +1325,7 @@ static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 
 static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!ntf_alloc_peek()) {
+	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_NTF;
 	} else {
 		rp_enc_ntf(conn, ctx);
@@ -1335,7 +1335,7 @@ static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 
 static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!ntf_alloc_peek()) {
+	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_NTF_LTK_REQ;
 	} else {
 		rp_enc_ntf_ltk(conn, ctx);
@@ -1345,7 +1345,7 @@ static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 
 static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_peek()) {
+	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
 	} else {
 		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
@@ -1355,7 +1355,7 @@ static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 
 static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_peek()) {
+	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_REQ;
 	} else {
 		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ);
@@ -1369,7 +1369,7 @@ static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 
 static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_peek()) {
+	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
 		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
