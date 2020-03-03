@@ -167,7 +167,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 			/* Options length should be zero, when cursor reachs to
 			 * End of options.
 			 */
-			if (opts_len) {
+			if (total_opts_len) {
 				return -EINVAL;
 			}
 
