@@ -276,10 +276,7 @@ static void proc_ctx_release(struct proc_ctx *ctx)
 
 static bool tx_alloc_is_available(void)
 {
-	u16_t mem_free_count;
-
-	mem_free_count = mem_free_count_get(mem_tx.free);
-	return mem_free_count > 0;
+	return mem_tx.free != NULL;
 }
 
 static struct node_tx *tx_alloc(void)
@@ -297,10 +294,7 @@ static void tx_release(struct node_tx *tx)
 
 static bool ntf_alloc_is_available(void)
 {
-	u16_t mem_free_count;
-
-	mem_free_count = mem_free_count_get(mem_ntf.free);
-	return mem_free_count > 0;
+	return mem_ntf.free != NULL;
 }
 
 static struct node_rx_pdu *ntf_alloc(void)
