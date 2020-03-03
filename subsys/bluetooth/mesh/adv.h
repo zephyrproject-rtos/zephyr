@@ -106,3 +106,5 @@ static inline void bt_mesh_adv_send_end(
 		adv->cb->end(err, adv->cb_data);
 	}
 }
+
+int bt_mesh_scan_active_set(bool active);

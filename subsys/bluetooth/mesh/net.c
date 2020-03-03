@@ -1034,6 +1034,44 @@ static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 BT_MESH_SETTINGS_DEFINE(seq, "Seq", seq_set);
 
+#if defined(CONFIG_BT_MESH_RPR_SRV)
+static int dev_key_cand_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
+{	int err;
+
+	if (len_rd < 16) {
+		return -EINVAL;
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_arg, bt_mesh.dev_key_cand, 16);
+	if (!err) {
+		LOG_DBG("DevKey candidate recovered from storage");
+		atomic_set_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND);
+	}
+
+	return err;
+}
+
+BT_MESH_SETTINGS_DEFINE(dev_key, "DevKeyC", dev_key_cand_set);
+
+void bt_mesh_net_dev_key_cand_store(void)
+{
+	int err;
+
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND)) {
+		err = settings_save_one("bt/mesh/DevKeyC", bt_mesh.dev_key_cand, 16);
+	} else {
+		err = settings_delete("bt/mesh/DevKeyC");
+	}
+
+	if (err) {
+		LOG_ERR("Failed to update DevKey candidate value");
+	} else {
+		LOG_DBG("Stored DevKey candidate value");
+	}
+}
+#endif
+
 static void clear_iv(void)
 {
 	int err;
