@@ -116,10 +116,11 @@ char *tp_basename(char *path);
 const char *tp_hex_to_str(void *data, size_t len);
 size_t tp_str_to_hex(void *buf, size_t bufsize, const char *s);
 
-void _tp_output(struct net_if *iface, void *data, size_t data_len,
-		const char *file, int line);
-#define tp_output(_iface, _data, _data_len) \
-	_tp_output(_iface, _data, _data_len, tp_basename(__FILE__), __LINE__)
+void _tp_output(sa_family_t af, struct net_if *iface, void *data,
+		size_t data_len, const char *file, int line);
+#define tp_output(_af, _iface, _data, _data_len)			\
+	_tp_output(_af, _iface, _data, _data_len, tp_basename(__FILE__),\
+		   __LINE__)
 
 void tp_pkt_adj(struct net_pkt *pkt, int req_len);
 
@@ -155,8 +156,8 @@ void tp_encode(struct tp *tp, void *data, size_t *data_len);
 void tp_new_to_json(struct tp_new *tp, void *data, size_t *data_len);
 void tp_new_find_and_apply(struct tp_new *tp, const char *key, void *value,
 				int type);
-void tp_out(struct net_if *iface, const char *msg, const char *key,
-		const char *value);
+void tp_out(sa_family_t af, struct net_if *iface, const char *msg,
+	    const char *key, const char *value);
 
 bool tp_tap_input(struct net_pkt *pkt);
 
