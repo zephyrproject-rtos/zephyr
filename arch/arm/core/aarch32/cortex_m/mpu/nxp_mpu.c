@@ -10,6 +10,7 @@
 #include <soc.h>
 #include "arm_core_mpu_dev.h"
 #include <sys/__assert.h>
+#include <sys/math_extras.h>
 #include <linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
@@ -428,11 +429,17 @@ static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
 	u32_t r_addr_start;
 	u32_t r_addr_end;
+	u32_t end;
 
 	r_addr_start = SYSMPU->WORD[r_index][0];
 	r_addr_end = SYSMPU->WORD[r_index][1];
 
-	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
+	size = size == 0 ? 0 : size - 1;
+	if (u32_add_overflow(start, size, &end)) {
+		return 0;
+	}
+
+	if ((start >= r_addr_start) && (end <= r_addr_end)) {
 		return 1;
 	}
 
