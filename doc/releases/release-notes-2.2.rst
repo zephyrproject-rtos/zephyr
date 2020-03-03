@@ -17,7 +17,14 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
-No security vulnerabilities received.
+The following security vulnerabilities (CVEs) were addressed in this release:
+
+  * Fix CVE-2020-10019
+  * Fix CVE-2020-10020
+  * Fix CVE-2020-10021
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 API Changes
 ***********
