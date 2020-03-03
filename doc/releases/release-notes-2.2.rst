@@ -191,7 +191,13 @@ Boards & SoC Support
    * ST STM32L152RET6
    * ST STM32L452XC
    * ST STM32G031
+   * Intel Apollolake Audio DSP
 
+* Added support for these Xtensa boards:
+
+  .. rst-class:: rst-columns
+
+   * Up Squared board Audio DSP
 
 * Added support for these ARM boards:
 
