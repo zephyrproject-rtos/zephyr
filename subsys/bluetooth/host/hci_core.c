@@ -1398,15 +1398,20 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 
-	bt_addr_le_copy(&id_addr, &evt->peer_addr);
-
 	/* Translate "enhanced" identity address type to normal one */
-	if (id_addr.type == BT_ADDR_LE_PUBLIC_ID ||
-	    id_addr.type == BT_ADDR_LE_RANDOM_ID) {
+	if (evt->peer_addr.type == BT_ADDR_LE_PUBLIC_ID ||
+	    evt->peer_addr.type == BT_ADDR_LE_RANDOM_ID) {
+		bt_addr_le_copy(&id_addr, &evt->peer_addr);
 		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+
 		bt_addr_copy(&peer_addr.a, &evt->peer_rpa);
 		peer_addr.type = BT_ADDR_LE_RANDOM;
 	} else {
+		u8_t id = evt->role == BT_HCI_ROLE_SLAVE ? bt_dev.adv_id :
+							   BT_ID_DEFAULT;
+
+		bt_addr_le_copy(&id_addr,
+				bt_lookup_id_addr(id, &evt->peer_addr));
 		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
 	}
 
@@ -1504,7 +1509,6 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	struct bt_hci_evt_le_enh_conn_complete enh;
-	const bt_addr_le_t *id_addr;
 
 	BT_DBG("status 0x%02x role %u %s", evt->status, evt->role,
 	       bt_addr_le_str(&evt->peer_addr));
@@ -1525,19 +1529,7 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 		bt_addr_copy(&enh.local_rpa, BT_ADDR_ANY);
 	}
 
-	if (evt->role == BT_HCI_ROLE_SLAVE) {
-		id_addr = bt_lookup_id_addr(bt_dev.adv_id, &enh.peer_addr);
-	} else {
-		id_addr = bt_lookup_id_addr(BT_ID_DEFAULT, &enh.peer_addr);
-	}
-
-	if (id_addr != &enh.peer_addr) {
-		bt_addr_copy(&enh.peer_rpa, &enh.peer_addr.a);
-		bt_addr_le_copy(&enh.peer_addr, id_addr);
-		enh.peer_addr.type += BT_ADDR_LE_PUBLIC_ID;
-	} else {
-		bt_addr_copy(&enh.peer_rpa, BT_ADDR_ANY);
-	}
+	bt_addr_copy(&enh.peer_rpa, BT_ADDR_ANY);
 
 	enh_conn_complete(&enh);
 }
