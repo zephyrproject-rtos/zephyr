@@ -559,6 +559,13 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	return put_s8(out, path, value_s8);
 }
 
+static size_t put_opaque(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 char *buf, size_t buflen)
+{
+	return put_string(out, path, buf, buflen);
+}
+
 static size_t get_number(struct lwm2m_input_context *in, s64_t *value,
 			 u8_t max_len)
 {
@@ -764,6 +771,7 @@ const struct lwm2m_writer oma_tlv_writer = {
 	.put_float32fix = put_float32fix,
 	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,
+	.put_opaque = put_opaque,
 };
 
 const struct lwm2m_reader oma_tlv_reader = {
