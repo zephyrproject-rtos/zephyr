@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,7 @@ static struct onoff_client spinwait_cli;
 
 static int callback_res;
 static void *callback_ud;
-static void callback(struct onoff_service *srv,
+static void callback(struct onoff_manager *srv,
 		     struct onoff_client *cli,
 		     void *ud,
 		     int res)
@@ -52,8 +53,8 @@ struct transit_state {
 	const char *tag;
 	bool async;
 	int retval;
-	onoff_service_notify_fn notify;
-	struct onoff_service *srv;
+	onoff_notify_fn notify;
+	struct onoff_manager *srv;
 };
 
 static void reset_transit_state(struct transit_state *tsp)
@@ -64,8 +65,8 @@ static void reset_transit_state(struct transit_state *tsp)
 	tsp->srv = NULL;
 }
 
-static void run_transit(struct onoff_service *srv,
-			onoff_service_notify_fn notify,
+static void run_transit(struct onoff_manager *srv,
+			onoff_notify_fn notify,
 			struct transit_state *tsp)
 {
 	if (tsp->async) {
@@ -99,7 +100,7 @@ static void isr_notify(struct k_timer *timer)
 }
 
 struct isr_call_state {
-	struct onoff_service *srv;
+	struct onoff_manager *srv;
 	struct onoff_client *cli;
 	int result;
 };
@@ -124,15 +125,15 @@ static void isr_reset(struct k_timer *timer)
 {
 	struct isr_call_state *rsp = k_timer_user_data_get(timer);
 
-	rsp->result = onoff_service_reset(rsp->srv, rsp->cli);
+	rsp->result = onoff_reset(rsp->srv, rsp->cli);
 	k_sem_give(&isr_sync);
 }
 
 static struct transit_state start_state = {
 	.tag = "start",
 };
-static void start(struct onoff_service *srv,
-		  onoff_service_notify_fn notify)
+static void start(struct onoff_manager *srv,
+		  onoff_notify_fn notify)
 {
 	run_transit(srv, notify, &start_state);
 }
@@ -140,8 +141,8 @@ static void start(struct onoff_service *srv,
 static struct transit_state stop_state = {
 	.tag = "stop",
 };
-static void stop(struct onoff_service *srv,
-		 onoff_service_notify_fn notify)
+static void stop(struct onoff_manager *srv,
+		 onoff_notify_fn notify)
 {
 	run_transit(srv, notify, &stop_state);
 }
@@ -149,8 +150,8 @@ static void stop(struct onoff_service *srv,
 static struct transit_state reset_state = {
 	.tag = "reset",
 };
-static void reset(struct onoff_service *srv,
-		  onoff_service_notify_fn notify)
+static void reset(struct onoff_manager *srv,
+		  onoff_notify_fn notify)
 {
 	run_transit(srv, notify, &reset_state);
 }
@@ -166,39 +167,39 @@ static void clear_transit(void)
 static void test_service_init_validation(void)
 {
 	int rc;
-	struct onoff_service srv;
-	const struct onoff_service_transitions null_transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(NULL, NULL, NULL, 0);
-	const struct onoff_service_transitions start_transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, NULL, NULL, 0);
-	const struct onoff_service_transitions stop_transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(NULL, stop, NULL, 0);
-	struct onoff_service_transitions start_stop_transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
-	const struct onoff_service_transitions all_transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, reset,
-						ONOFF_SERVICE_START_SLEEPS);
+	struct onoff_manager srv;
+	const struct onoff_transitions null_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(NULL, NULL, NULL, 0);
+	const struct onoff_transitions start_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, NULL, NULL, 0);
+	const struct onoff_transitions stop_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(NULL, stop, NULL, 0);
+	struct onoff_transitions start_stop_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
+	const struct onoff_transitions all_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset,
+					      ONOFF_START_SLEEPS);
 
 	clear_transit();
 
-	rc = onoff_service_init(NULL, &null_transitions);
+	rc = onoff_manager_init(NULL, &null_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init null srv %d", rc);
 
-	rc = onoff_service_init(&srv, &null_transitions);
+	rc = onoff_manager_init(&srv, &null_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init null transit %d", rc);
 
-	rc = onoff_service_init(&srv, &start_transitions);
+	rc = onoff_manager_init(&srv, &start_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init null stop %d", rc);
 
-	rc = onoff_service_init(&srv, &stop_transitions);
+	rc = onoff_manager_init(&srv, &stop_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init null start %d", rc);
 
-	start_stop_transitions.flags |= ONOFF_SERVICE_INTERNAL_BASE;
-	rc = onoff_service_init(&srv, &start_stop_transitions);
+	start_stop_transitions.flags |= ONOFF_INTERNAL_BASE;
+	rc = onoff_manager_init(&srv, &start_stop_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init bad flags %d", rc);
 
@@ -206,7 +207,7 @@ static void test_service_init_validation(void)
 	zassert_false(sys_slist_is_empty(&srv.clients),
 		      "slist empty");
 
-	rc = onoff_service_init(&srv, &all_transitions);
+	rc = onoff_manager_init(&srv, &all_transitions);
 	zassert_equal(rc, 0,
 		      "init good %d", rc);
 	zassert_equal(srv.transitions->start, start,
@@ -215,7 +216,7 @@ static void test_service_init_validation(void)
 		      "init stop mismatch");
 	zassert_equal(srv.transitions->reset, reset,
 		      "init reset mismatch");
-	zassert_equal(srv.flags, ONOFF_SERVICE_START_SLEEPS,
+	zassert_equal(srv.flags, ONOFF_START_SLEEPS,
 		      "init flags mismatch");
 	zassert_equal(srv.refs, 0,
 		      "init refs mismatch");
@@ -262,11 +263,11 @@ static void test_client_init_validation(void)
 static void test_validate_args(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig;
 	struct onoff_client cli;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
 
 	clear_transit();
 
@@ -274,7 +275,7 @@ static void test_validate_args(void)
 	 * release, and reset; test it through the request API.
 	 */
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -340,30 +341,30 @@ static void test_validate_args(void)
 static void test_reset(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig;
 	struct onoff_client cli;
 	unsigned int signalled = 0;
 	int result = 0;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
-	struct onoff_service_transitions transitions_with_reset =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL, 0);
+	struct onoff_transitions transitions_with_reset =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
 
 	clear_transit();
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
-	rc = onoff_service_reset(&srv, &cli);
+	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, -ENOTSUP,
 		      "reset: %d", rc);
 
-	rc = onoff_service_init(&srv, &transitions_with_reset);
+	rc = onoff_manager_init(&srv, &transitions_with_reset);
 	zassert_equal(rc, 0,
 		      "service init");
 
-	rc = onoff_service_reset(&srv, NULL);
+	rc = onoff_reset(&srv, NULL);
 	zassert_equal(rc, -EINVAL,
 		      "rst no cli");
 
@@ -375,11 +376,11 @@ static void test_reset(void)
 		      "reset req refs: %u", srv.refs);
 
 
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 	reset_state.retval = 57;
 	init_notify_sig(&cli, &sig);
-	rc = onoff_service_reset(&srv, &cli);
+	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, -EALREADY,
 		      "reset: %d", rc);
 
@@ -390,7 +391,7 @@ static void test_reset(void)
 		      "rel trigger: %d", rc);
 	zassert_equal(srv.refs, 0U,
 		      "reset req refs: %u", srv.refs);
-	zassert_true(onoff_service_has_error(&srv),
+	zassert_true(onoff_has_error(&srv),
 		     "has error");
 	zassert_equal(cli_result(&cli), stop_state.retval,
 		      "cli result");
@@ -405,24 +406,24 @@ static void test_reset(void)
 
 	reset_state.retval = -59;
 	init_notify_sig(&cli, &sig);
-	rc = onoff_service_reset(&srv, &cli);
+	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, 0U,
 		      "reset: %d", rc);
 	zassert_equal(cli_result(&cli), reset_state.retval,
 		      "reset result");
 	zassert_equal(srv.refs, 0U,
 		      "reset req refs: %u", srv.refs);
-	zassert_true(onoff_service_has_error(&srv),
+	zassert_true(onoff_has_error(&srv),
 		     "has error");
 
 	reset_state.retval = 62;
 	init_notify_sig(&cli, &sig);
-	rc = onoff_service_reset(&srv, &cli);
+	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, 0U,
 		      "reset: %d", rc);
 	zassert_equal(cli_result(&cli), reset_state.retval,
 		      "reset result");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	signalled = 0;
@@ -435,19 +436,19 @@ static void test_reset(void)
 
 	zassert_equal(srv.refs, 0U,
 		      "reset req refs: %u", srv.refs);
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
-	transitions_with_reset.flags |= ONOFF_SERVICE_RESET_SLEEPS;
-	rc = onoff_service_init(&srv, &transitions_with_reset);
+	transitions_with_reset.flags |= ONOFF_RESET_SLEEPS;
+	rc = onoff_manager_init(&srv, &transitions_with_reset);
 	zassert_equal(rc, 0,
 		      "service init");
 	start_state.retval = -23;
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 	init_spinwait(&spinwait_cli);
 	rc = onoff_request(&srv, &spinwait_cli);
-	zassert_true(onoff_service_has_error(&srv),
+	zassert_true(onoff_has_error(&srv),
 		     "has error");
 
 	struct isr_call_state isr_state = {
@@ -474,13 +475,13 @@ static void test_reset(void)
 static void test_request(void)
 {
 	int rc;
-	struct onoff_service srv;
-	struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
+	struct onoff_manager srv;
+	struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
 
 	clear_transit();
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -495,7 +496,7 @@ static void test_request(void)
 
 	/* Can't reset when no error present. */
 	init_spinwait(&spinwait_cli);
-	rc = onoff_service_reset(&srv, &spinwait_cli);
+	rc = onoff_reset(&srv, &spinwait_cli);
 	zassert_equal(rc, -EALREADY,
 		      "reset spin client");
 
@@ -517,7 +518,7 @@ static void test_request(void)
 		      "error release");
 	zassert_equal(cli_result(&spinwait_cli), stop_state.retval,
 		      "error retval");
-	zassert_true(onoff_service_has_error(&srv),
+	zassert_true(onoff_has_error(&srv),
 		     "has error");
 
 	/* Can't request when error present. */
@@ -537,10 +538,10 @@ static void test_request(void)
 
 	/* Clear the error */
 	init_notify_sig(&cli, &sig);
-	rc = onoff_service_reset(&srv, &cli);
+	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, 0,
 		      "reset");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	/* Error on start */
@@ -551,20 +552,20 @@ static void test_request(void)
 		      "req with error");
 	zassert_equal(cli_result(&spinwait_cli), start_state.retval,
 		      "req with error");
-	zassert_true(onoff_service_has_error(&srv),
+	zassert_true(onoff_has_error(&srv),
 		     "has error");
 
 	/* Clear the error */
 	init_spinwait(&spinwait_cli);
-	rc = onoff_service_reset(&srv, &spinwait_cli);
+	rc = onoff_reset(&srv, &spinwait_cli);
 	zassert_equal(rc, 0,
 		      "reset");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	/* Diagnose a no-wait delayed start */
-	transitions.flags |= ONOFF_SERVICE_START_SLEEPS;
-	rc = onoff_service_init(&srv, &transitions);
+	transitions.flags |= ONOFF_START_SLEEPS;
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 	start_state.async = true;
@@ -594,13 +595,13 @@ static void test_request(void)
 static void test_sync(void)
 {
 	int rc;
-	struct onoff_service srv;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
+	struct onoff_manager srv;
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
 
 	clear_transit();
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -642,14 +643,15 @@ static void test_sync(void)
 static void test_async(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig[2];
 	struct onoff_client cli[2];
 	unsigned int signalled = 0;
 	int result = 0;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, reset,
-			ONOFF_SERVICE_START_SLEEPS | ONOFF_SERVICE_STOP_SLEEPS);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset,
+					      ONOFF_START_SLEEPS
+					      | ONOFF_STOP_SLEEPS);
 
 	clear_transit();
 	start_state.async = true;
@@ -657,7 +659,7 @@ static void test_async(void)
 	stop_state.async = true;
 	stop_state.retval = 17;
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -837,19 +839,19 @@ static void test_async(void)
 static void test_half_sync(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig;
 	struct onoff_client cli;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL,
-						ONOFF_SERVICE_STOP_SLEEPS);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL,
+					      ONOFF_STOP_SLEEPS);
 
 	clear_transit();
 	start_state.retval = 23;
 	stop_state.async = true;
 	stop_state.retval = 17;
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -895,12 +897,13 @@ static void test_half_sync(void)
 static void test_cancel_request_waits(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig;
 	struct onoff_client cli;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL,
-			ONOFF_SERVICE_START_SLEEPS | ONOFF_SERVICE_STOP_SLEEPS);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL,
+					      ONOFF_START_SLEEPS
+					      | ONOFF_STOP_SLEEPS);
 
 	clear_transit();
 	start_state.async = true;
@@ -908,7 +911,7 @@ static void test_cancel_request_waits(void)
 	stop_state.async = true;
 	stop_state.retval = 31;
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -936,7 +939,7 @@ static void test_cancel_request_waits(void)
 		      "cancel failed: %d", rc);
 	zassert_equal(cli_result(&cli), -ECANCELED,
 		      "cancel notified");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	/* Not allowed to cancel the last pending start.
@@ -944,7 +947,7 @@ static void test_cancel_request_waits(void)
 	rc = onoff_cancel(&srv, &spinwait_cli);
 	zassert_equal(rc, -EWOULDBLOCK,
 		      "last cancel", rc);
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 	zassert_equal(cli_result(&spinwait_cli), -EAGAIN,
 		      "last request");
@@ -952,7 +955,7 @@ static void test_cancel_request_waits(void)
 	notify(&start_state);
 	zassert_equal(cli_result(&spinwait_cli), start_state.retval,
 		      "last request");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 
@@ -976,7 +979,7 @@ static void test_cancel_request_waits(void)
 		      "restart cancel");
 	zassert_equal(cli_result(&spinwait_cli), -ECANCELED,
 		      "restart cancel");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	zassert_equal(cli_result(&cli), -EAGAIN,
@@ -985,26 +988,26 @@ static void test_cancel_request_waits(void)
 	notify(&stop_state);
 	zassert_equal(cli_result(&cli), stop_state.retval,
 		      "released");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 }
 
 static void test_cancel_request_ok(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	struct k_poll_signal sig;
 	struct onoff_client cli;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL,
-						ONOFF_SERVICE_START_SLEEPS);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL,
+					      ONOFF_START_SLEEPS);
 
 	clear_transit();
 	start_state.async = true;
 	start_state.retval = 14;
 	stop_state.retval = 31;
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -1025,11 +1028,11 @@ static void test_cancel_request_ok(void)
 	notify(&start_state);
 	zassert_equal(srv.refs, 1,
 		      "refs");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 	zassert_equal(cli_result(&cli), start_state.retval,
 		      "cancel notified");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	/* You can "cancel" an request that isn't active */
@@ -1047,14 +1050,15 @@ static void test_cancel_request_ok(void)
 static void test_blocked_restart(void)
 {
 	int rc;
-	struct onoff_service srv;
+	struct onoff_manager srv;
 	unsigned int signalled = 0;
 	int result;
 	struct k_poll_signal sig[2];
 	struct onoff_client cli[2];
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL,
-			ONOFF_SERVICE_START_SLEEPS | ONOFF_SERVICE_STOP_SLEEPS);
+	const struct onoff_transitions transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL,
+					      ONOFF_START_SLEEPS
+					      | ONOFF_STOP_SLEEPS);
 
 	clear_transit();
 	start_state.async = true;
@@ -1062,7 +1066,7 @@ static void test_blocked_restart(void)
 	stop_state.async = true;
 	stop_state.retval = 31;
 
-	rc = onoff_service_init(&srv, &transitions);
+	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
@@ -1109,7 +1113,7 @@ static void test_blocked_restart(void)
 		      "isr sync");
 
 	/* Fail-to-restart is not an error */
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	k_poll_signal_check(&sig[0], &signalled, &result);
@@ -1127,20 +1131,16 @@ static void test_blocked_restart(void)
 
 static void test_cancel_release(void)
 {
+	static const struct onoff_transitions srv_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, NULL,
+					      ONOFF_STOP_SLEEPS);
+	struct onoff_manager srv = ONOFF_MANAGER_INITIALIZER(&srv_transitions);
 	int rc;
-	struct onoff_service srv;
-	const struct onoff_service_transitions transitions =
-		ONOFF_SERVICE_TRANSITIONS_INITIALIZER(start, stop, NULL,
-			ONOFF_SERVICE_STOP_SLEEPS);
 
 	clear_transit();
 	start_state.retval = 16;
 	stop_state.async = true;
 	stop_state.retval = 94;
-
-	rc = onoff_service_init(&srv, &transitions);
-	zassert_equal(rc, 0,
-		      "service init");
 
 	init_spinwait(&spinwait_cli);
 	rc = onoff_request(&srv, &spinwait_cli);
@@ -1162,13 +1162,13 @@ static void test_cancel_release(void)
 	rc = onoff_cancel(&srv, &spinwait_cli);
 	zassert_equal(rc, -EWOULDBLOCK,
 		      "cancel succeeded");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 
 	notify(&stop_state);
 	zassert_equal(cli_result(&spinwait_cli), stop_state.retval,
 		      "release pending");
-	zassert_false(onoff_service_has_error(&srv),
+	zassert_false(onoff_has_error(&srv),
 		      "has error");
 }
 
