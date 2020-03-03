@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/timer/riscv-machine-timer.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			clock-frequency = <108000000>;
+			mcause-exception-mask = <0x7ff>;
+			compatible = "nuclei,bumblebee", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "gd,gd32vf103-soc", "simple-bus";
+		ranges;
+
+		mtimer: machine-timer@d1000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xd1000000 0x1
+			       0xd1000008 0x1>;
+			clk-divider = <RISCV_MACHINE_TIMER_DIVIDER_4>;
+		};
+
+		fmc: flash-controller@40022000 {
+			compatible = "gd,gd32-flash-controller";
+			label = "FMC";
+			reg = <0x40022000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH0";
+				write-block-size = <2>;
+			};
+		};
+	};
+};

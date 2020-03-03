@@ -74,6 +74,7 @@
 /soc/riscv/openisa*/                      @dleach02
 /soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
+/soc/riscv/riscv-privilege/gd32vf103/     @soburi
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
