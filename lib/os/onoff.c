@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,33 +8,32 @@
 #include <kernel.h>
 #include <sys/onoff.h>
 
-
-#define SERVICE_CONFIG_FLAGS	    \
-	(ONOFF_SERVICE_START_SLEEPS \
-	| ONOFF_SERVICE_STOP_SLEEPS \
-	| ONOFF_SERVICE_RESET_SLEEPS)
+#define SERVICE_CONFIG_FLAGS \
+	(ONOFF_START_SLEEPS  \
+	 | ONOFF_STOP_SLEEPS \
+	 | ONOFF_RESET_SLEEPS)
 
 #define SERVICE_REFS_MAX UINT16_MAX
 
-#define SERVICE_STATE_OFF 0
-#define SERVICE_STATE_ON ONOFF_SERVICE_INTERNAL_BASE
-#define SERVICE_STATE_TRANSITION (ONOFF_SERVICE_INTERNAL_BASE << 1)
-#define SERVICE_STATE_TO_ON (SERVICE_STATE_TRANSITION | SERVICE_STATE_ON)
-#define SERVICE_STATE_TO_OFF (SERVICE_STATE_TRANSITION | SERVICE_STATE_OFF)
+#define ST_OFF 0
+#define ST_ON ONOFF_INTERNAL_BASE
+#define ST_TRANSITION (ONOFF_INTERNAL_BASE << 1)
+#define ST_TO_ON (ST_TRANSITION | ST_ON)
+#define ST_TO_OFF (ST_TRANSITION | ST_OFF)
 
-#define SERVICE_STATE_MASK (SERVICE_STATE_ON | SERVICE_STATE_TRANSITION)
+#define ST_MASK (ST_ON | ST_TRANSITION)
 
-static void set_service_state(struct onoff_service *srv,
+static void set_service_state(struct onoff_manager *mp,
 			      u32_t state)
 {
-	srv->flags &= ~SERVICE_STATE_MASK;
-	srv->flags |= (state & SERVICE_STATE_MASK);
+	mp->flags &= ~ST_MASK;
+	mp->flags |= (state & ST_MASK);
 }
 
-static int validate_args(const struct onoff_service *srv,
+static int validate_args(const struct onoff_manager *mp,
 			 struct onoff_client *cli)
 {
-	if ((srv == NULL) || (cli == NULL)) {
+	if ((mp == NULL) || (cli == NULL)) {
 		return -EINVAL;
 	}
 
@@ -47,8 +47,8 @@ static int validate_args(const struct onoff_service *srv,
 	return rv;
 }
 
-int onoff_service_init(struct onoff_service *srv,
-		       const struct onoff_service_transitions *transitions)
+int onoff_manager_init(struct onoff_manager *mp,
+		       const struct onoff_transitions *transitions)
 {
 	if (transitions->flags & ~SERVICE_CONFIG_FLAGS) {
 		return -EINVAL;
@@ -58,12 +58,12 @@ int onoff_service_init(struct onoff_service *srv,
 		return -EINVAL;
 	}
 
-	*srv = (struct onoff_service)ONOFF_SERVICE_INITIALIZER(transitions);
+	*mp = (struct onoff_manager)ONOFF_MANAGER_INITIALIZER(transitions);
 
 	return 0;
 }
 
-static void notify_one(struct onoff_service *srv,
+static void notify_one(struct onoff_manager *mp,
 		       struct onoff_client *cli,
 		       int res)
 {
@@ -71,11 +71,11 @@ static void notify_one(struct onoff_service *srv,
 		(onoff_client_callback)async_notify_finalize(&cli->notify, res);
 
 	if (cb) {
-		cb(srv, cli, cli->user_data, res);
+		cb(mp, cli, cli->user_data, res);
 	}
 }
 
-static void notify_all(struct onoff_service *srv,
+static void notify_all(struct onoff_manager *mp,
 		       sys_slist_t *list,
 		       int res)
 {
@@ -86,18 +86,18 @@ static void notify_all(struct onoff_service *srv,
 				     struct onoff_client,
 				     node);
 
-		notify_one(srv, cli, res);
+		notify_one(mp, cli, res);
 	}
 }
 
-static void onoff_start_notify(struct onoff_service *srv,
+static void onoff_start_notify(struct onoff_manager *mp,
 			       int res)
 {
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
-	sys_slist_t clients = srv->clients;
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
+	sys_slist_t clients = mp->clients;
 
 	/* Can't have a queued releaser during start */
-	__ASSERT_NO_MSG(srv->releaser == NULL);
+	__ASSERT_NO_MSG(mp->releaser == NULL);
 
 	/* If the start failed log an error and leave the rest of the
 	 * state in place for diagnostics.
@@ -110,13 +110,13 @@ static void onoff_start_notify(struct onoff_service *srv,
 	 * clients of operation completion.
 	 */
 	if (res < 0) {
-		srv->flags &= ~SERVICE_STATE_TRANSITION;
-		srv->flags |= ONOFF_SERVICE_HAS_ERROR;
+		mp->flags &= ~ST_TRANSITION;
+		mp->flags |= ONOFF_HAS_ERROR;
 	} else {
 		sys_snode_t *node;
 		unsigned int refs = 0U;
 
-		set_service_state(srv, SERVICE_STATE_ON);
+		set_service_state(mp, ST_ON);
 
 		SYS_SLIST_FOR_EACH_NODE(&clients, node) {
 			refs += 1U;
@@ -125,78 +125,78 @@ static void onoff_start_notify(struct onoff_service *srv,
 		/* Update the reference count, or fail if the count
 		 * would overflow.
 		 */
-		if (srv->refs > (SERVICE_REFS_MAX - refs)) {
-			srv->flags |= ONOFF_SERVICE_HAS_ERROR;
+		if (mp->refs > (SERVICE_REFS_MAX - refs)) {
+			mp->flags |= ONOFF_HAS_ERROR;
 		} else {
-			srv->refs += refs;
+			mp->refs += refs;
 		}
-		__ASSERT_NO_MSG(srv->refs > 0U);
+		__ASSERT_NO_MSG(mp->refs > 0U);
 	}
 
-	sys_slist_init(&srv->clients);
+	sys_slist_init(&mp->clients);
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
-	notify_all(srv, &clients, res);
+	notify_all(mp, &clients, res);
 }
 
-int onoff_request(struct onoff_service *srv,
+int onoff_request(struct onoff_manager *mp,
 		  struct onoff_client *cli)
 {
 	bool add_client = false;        /* add client to pending list */
 	bool start = false;             /* invoke start transition */
 	bool notify = false;            /* do client notification */
-	int rv = validate_args(srv, cli);
+	int rv = validate_args(mp, cli);
 
 	if (rv < 0) {
 		return rv;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 
-	if ((srv->flags & ONOFF_SERVICE_HAS_ERROR) != 0) {
+	if ((mp->flags & ONOFF_HAS_ERROR) != 0) {
 		rv = -EIO;
 		goto out;
 	}
 
 	/* Reject if this would overflow the reference count. */
-	if (srv->refs == SERVICE_REFS_MAX) {
+	if (mp->refs == SERVICE_REFS_MAX) {
 		rv = -EAGAIN;
 		goto out;
 	}
 
-	u32_t state = srv->flags & SERVICE_STATE_MASK;
+	u32_t state = mp->flags & ST_MASK;
 
 	switch (state) {
-	case SERVICE_STATE_TO_OFF:
+	case ST_TO_OFF:
 		/* Queue to start after release */
-		__ASSERT_NO_MSG(srv->releaser != NULL);
+		__ASSERT_NO_MSG(mp->releaser != NULL);
 		add_client = true;
 		rv = 3;
 		break;
-	case SERVICE_STATE_OFF:
+	case ST_OFF:
 		/* Reject if in a non-thread context and start could
 		 * wait.
 		 */
 		if ((k_is_in_isr() || k_is_pre_kernel())
-		    && ((srv->flags & ONOFF_SERVICE_START_SLEEPS) != 0U)) {
+		    && ((mp->flags & ONOFF_START_SLEEPS) != 0U)) {
 			rv = -EWOULDBLOCK;
 			break;
 		}
 
 		/* Start with first request while off */
-		__ASSERT_NO_MSG(srv->refs == 0);
-		set_service_state(srv, SERVICE_STATE_TO_ON);
+		__ASSERT_NO_MSG(mp->refs == 0);
+		set_service_state(mp, ST_TO_ON);
 		start = true;
 		add_client = true;
 		rv = 2;
 		break;
-	case SERVICE_STATE_TO_ON:
+	case ST_TO_ON:
 		/* Already starting, just queue it */
 		add_client = true;
 		rv = 1;
 		break;
-	case SERVICE_STATE_ON:
+	case ST_ON:
 		/* Just increment the reference count */
 		notify = true;
 		break;
@@ -207,32 +207,32 @@ int onoff_request(struct onoff_service *srv,
 
 out:
 	if (add_client) {
-		sys_slist_append(&srv->clients, &cli->node);
+		sys_slist_append(&mp->clients, &cli->node);
 	} else if (notify) {
-		srv->refs += 1;
+		mp->refs += 1;
 	}
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
 	if (start) {
-		__ASSERT_NO_MSG(srv->transitions->start != NULL);
-		srv->transitions->start(srv, onoff_start_notify);
+		__ASSERT_NO_MSG(mp->transitions->start != NULL);
+		mp->transitions->start(mp, onoff_start_notify);
 	} else if (notify) {
-		notify_one(srv, cli, 0);
+		notify_one(mp, cli, 0);
 	}
 
 	return rv;
 }
 
-static void onoff_stop_notify(struct onoff_service *srv,
+static void onoff_stop_notify(struct onoff_manager *mp,
 			      int res)
 {
 	bool notify_clients = false;
 	int client_res = res;
 	bool start = false;
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
-	sys_slist_t clients = srv->clients;
-	struct onoff_client *releaser = srv->releaser;
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
+	sys_slist_t clients = mp->clients;
+	struct onoff_client *releaser = mp->releaser;
 
 	/* If the stop operation failed log an error and leave the
 	 * rest of the state in place.
@@ -244,72 +244,72 @@ static void onoff_stop_notify(struct onoff_service *srv,
 	 * waiting clients of operation completion.
 	 */
 	if (res < 0) {
-		srv->flags &= ~SERVICE_STATE_TRANSITION;
-		srv->flags |= ONOFF_SERVICE_HAS_ERROR;
+		mp->flags &= ~ST_TRANSITION;
+		mp->flags |= ONOFF_HAS_ERROR;
 		notify_clients = true;
 	} else if (sys_slist_is_empty(&clients)) {
-		set_service_state(srv, SERVICE_STATE_OFF);
+		set_service_state(mp, ST_OFF);
 	} else if ((k_is_in_isr() || k_is_pre_kernel())
-		   && ((srv->flags & ONOFF_SERVICE_START_SLEEPS) != 0U)) {
-		set_service_state(srv, SERVICE_STATE_OFF);
+		   && ((mp->flags & ONOFF_START_SLEEPS) != 0U)) {
+		set_service_state(mp, ST_OFF);
 		notify_clients = true;
 		client_res = -EWOULDBLOCK;
 	} else {
-		set_service_state(srv, SERVICE_STATE_TO_ON);
+		set_service_state(mp, ST_TO_ON);
 		start = true;
 	}
 
 	__ASSERT_NO_MSG(releaser);
-	srv->refs -= 1U;
-	srv->releaser = NULL;
-	__ASSERT_NO_MSG(srv->refs == 0);
+	mp->refs -= 1U;
+	mp->releaser = NULL;
+	__ASSERT_NO_MSG(mp->refs == 0);
 
 	/* Remove the clients if there was an error or a delayed start
 	 * couldn't be initiated, because we're resolving their
 	 * operation with an error.
 	 */
 	if (notify_clients) {
-		sys_slist_init(&srv->clients);
+		sys_slist_init(&mp->clients);
 	}
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
 	/* Notify the releaser.  If there was an error, notify any
 	 * pending requests; otherwise if there are pending requests
 	 * start the transition to ON.
 	 */
-	notify_one(srv, releaser, res);
+	notify_one(mp, releaser, res);
 	if (notify_clients) {
-		notify_all(srv, &clients, client_res);
+		notify_all(mp, &clients, client_res);
 	} else if (start) {
-		srv->transitions->start(srv, onoff_start_notify);
+		mp->transitions->start(mp, onoff_start_notify);
 	}
 }
 
-int onoff_release(struct onoff_service *srv,
+int onoff_release(struct onoff_manager *mp,
 		  struct onoff_client *cli)
 {
 	bool stop = false;      /* invoke stop transition */
 	bool notify = false;    /* do client notification */
-	int rv = validate_args(srv, cli);
+	int rv = validate_args(mp, cli);
 
 	if (rv < 0) {
 		return rv;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 
-	if ((srv->flags & ONOFF_SERVICE_HAS_ERROR) != 0) {
+	if ((mp->flags & ONOFF_HAS_ERROR) != 0) {
 		rv = -EIO;
 		goto out;
 	}
 
-	u32_t state = srv->flags & SERVICE_STATE_MASK;
+	u32_t state = mp->flags & ST_MASK;
 
 	switch (state) {
-	case SERVICE_STATE_ON:
+	case ST_ON:
 		/* Stay on if release leaves a client. */
-		if (srv->refs > 1U) {
+		if (mp->refs > 1U) {
 			notify = true;
 			rv = 1;
 			break;
@@ -319,23 +319,23 @@ int onoff_release(struct onoff_service *srv,
 		 * wait
 		 */
 		if ((k_is_in_isr() || k_is_pre_kernel())
-		    && ((srv->flags & ONOFF_SERVICE_STOP_SLEEPS) != 0)) {
+		    && ((mp->flags & ONOFF_STOP_SLEEPS) != 0)) {
 			rv = -EWOULDBLOCK;
 			break;
 		}
 
 		stop = true;
 
-		set_service_state(srv, SERVICE_STATE_TO_OFF);
-		srv->releaser = cli;
+		set_service_state(mp, ST_TO_OFF);
+		mp->releaser = cli;
 		rv = 2;
 
 		break;
-	case SERVICE_STATE_TO_ON:
+	case ST_TO_ON:
 		rv = -EBUSY;
 		break;
-	case SERVICE_STATE_OFF:
-	case SERVICE_STATE_TO_OFF:
+	case ST_OFF:
+	case ST_TO_OFF:
 		rv = -EALREADY;
 		break;
 	default:
@@ -344,57 +344,57 @@ int onoff_release(struct onoff_service *srv,
 
 out:
 	if (notify) {
-		srv->refs -= 1U;
+		mp->refs -= 1U;
 	}
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
 	if (stop) {
-		__ASSERT_NO_MSG(srv->transitions->stop != NULL);
-		srv->transitions->stop(srv, onoff_stop_notify);
+		__ASSERT_NO_MSG(mp->transitions->stop != NULL);
+		mp->transitions->stop(mp, onoff_stop_notify);
 	} else if (notify) {
-		notify_one(srv, cli, 0);
+		notify_one(mp, cli, 0);
 	}
 
 	return rv;
 }
 
-static void onoff_reset_notify(struct onoff_service *srv,
+static void onoff_reset_notify(struct onoff_manager *mp,
 			       int res)
 {
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
-	sys_slist_t clients = srv->clients;
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
+	sys_slist_t clients = mp->clients;
 
 	/* If the reset failed clear the transition flag but otherwise
 	 * leave the state unchanged.
 	 *
 	 * If it was successful clear the reference count and all
-	 * flags except capability flags (sets to SERVICE_STATE_OFF).
+	 * flags except capability flags (sets to ST_OFF).
 	 */
 	if (res < 0) {
-		srv->flags &= ~SERVICE_STATE_TRANSITION;
+		mp->flags &= ~ST_TRANSITION;
 	} else {
-		__ASSERT_NO_MSG(srv->refs == 0U);
-		srv->refs = 0U;
-		srv->flags &= SERVICE_CONFIG_FLAGS;
+		__ASSERT_NO_MSG(mp->refs == 0U);
+		mp->refs = 0U;
+		mp->flags &= SERVICE_CONFIG_FLAGS;
 	}
 
-	sys_slist_init(&srv->clients);
+	sys_slist_init(&mp->clients);
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
-	notify_all(srv, &clients, res);
+	notify_all(mp, &clients, res);
 }
 
-int onoff_service_reset(struct onoff_service *srv,
-			struct onoff_client *cli)
+int onoff_reset(struct onoff_manager *mp,
+		struct onoff_client *cli)
 {
-	if (srv->transitions->reset == NULL) {
+	if (mp->transitions->reset == NULL) {
 		return -ENOTSUP;
 	}
 
 	bool reset = false;
-	int rv = validate_args(srv, cli);
+	int rv = validate_args(mp, cli);
 
 	if (rv < 0) {
 		return rv;
@@ -402,70 +402,70 @@ int onoff_service_reset(struct onoff_service *srv,
 
 	/* Reject if in a non-thread context and reset could wait. */
 	if ((k_is_in_isr() || k_is_pre_kernel())
-	    && ((srv->flags & ONOFF_SERVICE_RESET_SLEEPS) != 0U)) {
+	    && ((mp->flags & ONOFF_RESET_SLEEPS) != 0U)) {
 		return -EWOULDBLOCK;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 
-	if ((srv->flags & ONOFF_SERVICE_HAS_ERROR) == 0) {
+	if ((mp->flags & ONOFF_HAS_ERROR) == 0) {
 		rv = -EALREADY;
 		goto out;
 	}
 
-	if ((srv->flags & SERVICE_STATE_TRANSITION) == 0) {
+	if ((mp->flags & ST_TRANSITION) == 0) {
 		reset = true;
-		srv->flags |= SERVICE_STATE_TRANSITION;
+		mp->flags |= ST_TRANSITION;
 	}
 
 out:
 	if (rv >= 0) {
-		sys_slist_append(&srv->clients, &cli->node);
+		sys_slist_append(&mp->clients, &cli->node);
 	}
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
 	if (reset) {
-		srv->transitions->reset(srv, onoff_reset_notify);
+		mp->transitions->reset(mp, onoff_reset_notify);
 	}
 
 	return rv;
 }
 
-int onoff_cancel(struct onoff_service *srv,
+int onoff_cancel(struct onoff_manager *mp,
 		 struct onoff_client *cli)
 {
-	int rv = validate_args(srv, cli);
+	int rv = validate_args(mp, cli);
 
 	if (rv < 0) {
 		return rv;
 	}
 
 	rv = -EALREADY;
-	k_spinlock_key_t key = k_spin_lock(&srv->lock);
-	u32_t state = srv->flags & SERVICE_STATE_MASK;
+	k_spinlock_key_t key = k_spin_lock(&mp->lock);
+	u32_t state = mp->flags & ST_MASK;
 
 	/* Can't remove the last client waiting for the in-progress
 	 * transition, as there would be nobody to receive the
 	 * completion notification, which might indicate a service
 	 * error.
 	 */
-	if (sys_slist_find_and_remove(&srv->clients, &cli->node)) {
+	if (sys_slist_find_and_remove(&mp->clients, &cli->node)) {
 		rv = 0;
-		if (sys_slist_is_empty(&srv->clients)
-		    && (state != SERVICE_STATE_TO_OFF)) {
+		if (sys_slist_is_empty(&mp->clients)
+		    && (state != ST_TO_OFF)) {
 			rv = -EWOULDBLOCK;
-			sys_slist_append(&srv->clients, &cli->node);
+			sys_slist_append(&mp->clients, &cli->node);
 		}
-	} else if (srv->releaser == cli) {
+	} else if (mp->releaser == cli) {
 		/* must be waiting for TO_OFF to complete */
 		rv = -EWOULDBLOCK;
 	}
 
-	k_spin_unlock(&srv->lock, key);
+	k_spin_unlock(&mp->lock, key);
 
 	if (rv == 0) {
-		notify_one(srv, cli, -ECANCELED);
+		notify_one(mp, cli, -ECANCELED);
 	}
 
 	return rv;
