@@ -433,6 +433,13 @@ static bool infoTransfer(void)
 				 (cbw.CB[5] <<  0);
 
 	LOG_DBG("LBA (block) : 0x%x ", n);
+	if ((n * BLOCK_SIZE) >= memory_size) {
+		LOG_ERR("LBA out of range");
+		csw.Status = CSW_FAILED;
+		sendCSW();
+		return false;
+	}
+
 	addr = n * BLOCK_SIZE;
 
 	/* Number of Blocks to transfer */
