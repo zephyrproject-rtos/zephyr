@@ -1456,7 +1456,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	    conn->role == BT_HCI_ROLE_SLAVE) {
 		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
-		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
 			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
 			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 		} else {
@@ -1479,7 +1480,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	    conn->role == BT_HCI_ROLE_MASTER) {
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
-		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
 			bt_addr_copy(&conn->le.init_addr.a, &evt->local_rpa);
 			conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
 		} else {
