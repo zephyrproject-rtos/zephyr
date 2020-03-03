@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Intel Corporation
+ * Copyright (c) 2018-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,6 @@ static sys_slist_t tp_seq = SYS_SLIST_STATIC_INIT(&tp_seq);
 
 bool tp_trace;
 enum tp_type tp_state = TP_NONE;
-
 
 char *tp_basename(char *path)
 {
@@ -376,29 +375,73 @@ out:
 	return type;
 }
 
-static struct net_pkt *tp_make(const char *file, int line)
+static void ip_header_add(struct net_pkt *pkt)
 {
-	struct net_pkt *pkt = tp_pkt_alloc(sizeof(struct net_ipv4_hdr) +
-						sizeof(struct net_udp_hdr),
-						file, line);
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	struct net_udp_hdr *uh = (void *) (ip + 1);
-	size_t len = sizeof(*ip) + sizeof(*uh);
+	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 
-	memset(ip, 0, len);
+	switch (pkt->family) {
+	case AF_INET: {
+		struct net_ipv4_hdr ip;
 
-	ip->vhl = 0x45;
-	ip->ttl = 64;
-	ip->proto = IPPROTO_UDP;
-	ip->len = htons(len);
-	net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &ip->src);
-	net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &ip->dst);
+		memset(&ip, 0, sizeof(ip));
 
-	uh->src_port = htons(4242);
-	uh->dst_port = htons(4242);
-	uh->len = htons(sizeof(*uh));
+		ip.vhl = 0x45;
+		ip.ttl = 64;
+		ip.proto = IPPROTO_UDP;
+		ip.len = htons(net_pkt_get_len(pkt) + sizeof(ip));
 
-	return pkt;
+		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
+			      &ip.src);
+		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
+			      &ip.dst);
+		memcpy(net_buf_add(buf, sizeof(ip)), &ip, sizeof(ip));
+
+		net_pkt_frag_insert(pkt, buf);
+
+		net_pkt_set_ip_hdr_len(pkt, buf->len);
+
+		break;
+	}
+	case AF_INET6: {
+		struct net_ipv6_hdr ip6;
+
+		memset(&ip6, 0, sizeof(ip6));
+
+		ip6.vtc = 0x60;
+		ip6.nexthdr = IPPROTO_UDP;
+		ip6.len = htons(net_pkt_get_len(pkt));
+
+		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR,
+			      &ip6.src);
+		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
+			      &ip6.dst);
+
+		memcpy(net_buf_add(buf, sizeof(ip6)), &ip6, sizeof(ip6));
+
+		net_pkt_frag_insert(pkt, buf);
+
+		net_pkt_set_ip_hdr_len(pkt, buf->len);
+
+		break;
+	}
+	}
+}
+
+static void udp_header_add(struct net_pkt *pkt)
+{
+	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+
+	struct net_udp_hdr uh;
+
+	memset(&uh, 0, sizeof(uh));
+
+	uh.src_port = htons(4242);
+	uh.dst_port = htons(4242);
+	uh.len = htons(sizeof(uh) + net_pkt_get_len(pkt));
+
+	memcpy(net_buf_add(buf, sizeof(uh)), &uh, sizeof(uh));
+
+	net_pkt_frag_insert(pkt, buf);
 }
 
 static void tp_pkt_send(struct net_pkt *pkt)
@@ -412,27 +455,14 @@ static void tp_pkt_send(struct net_pkt *pkt)
 	tp_pkt_unref(pkt, tp_basename(__FILE__), __LINE__);
 }
 
-void tp_pkt_adj(struct net_pkt *pkt, int req_len)
+void _tp_output(sa_family_t af, struct net_if *iface, void *data,
+		size_t data_len, const char *file, int line)
 {
-	struct net_ipv4_hdr *ip = ip_get(pkt);
-	u16_t len = ntohs(ip->len) + req_len;
-
-	ip->len = htons(len);
-
-	if (ip->proto == IPPROTO_UDP) {
-		struct net_udp_hdr *uh = (void *) (ip + 1);
-
-		len = ntohs(uh->len) + req_len;
-		uh->len = htons(len);
-	}
-}
-
-void _tp_output(struct net_if *iface, void *data, size_t data_len,
-		const char *file, int line)
-{
-	struct net_pkt *pkt = tp_make(file, line);
+	struct net_pkt *pkt = tp_pkt_alloc(0, file, line);
 	size_t total = data_len, len;
 	struct net_buf *buf;
+
+	pkt->family = af;
 
 	for ( ; total; total -= len, data = (u8_t *)data + len) {
 
@@ -445,7 +475,9 @@ void _tp_output(struct net_if *iface, void *data, size_t data_len,
 		net_pkt_frag_add(pkt, buf);
 	}
 
-	tp_pkt_adj(pkt, data_len);
+	udp_header_add(pkt);
+
+	ip_header_add(pkt);
 
 	pkt->iface = iface;
 
@@ -572,8 +604,8 @@ void tp_new_to_json(struct tp_new *tp, void *data, size_t *data_len)
 	*data_len = error ? 0 : strlen(data);
 }
 
-void tp_out(struct net_if *iface, const char *msg, const char *key,
-		const char *value)
+void tp_out(sa_family_t af, struct net_if *iface, const char *msg,
+	    const char *key, const char *value)
 {
 	if (tp_trace) {
 		size_t json_len;
@@ -588,7 +620,7 @@ void tp_out(struct net_if *iface, const char *msg, const char *key,
 		json_len = sizeof(buf);
 		tp_new_to_json(&tp, buf, &json_len);
 		if (json_len) {
-			tp_output(iface, buf, json_len);
+			tp_output(af, iface, buf, json_len);
 		}
 	}
 }

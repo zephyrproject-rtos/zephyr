@@ -286,7 +286,8 @@ static int tcp_conn_unref(struct tcp *conn)
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
 	if (ref_count) {
-		tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
+		tp_out(net_context_get_family(conn->context), conn->iface,
+		       "TP_TRACE", "event", "CONN_DELETE");
 		goto out;
 	}
 
@@ -1603,7 +1604,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			u8_t data_to_send[CONFIG_NET_BUF_DATA_SIZE];
 			size_t len = tp_str_to_hex(data_to_send,
 						sizeof(data_to_send), tp->data);
-			tp_output(pkt->iface, buf, 1);
+			tp_output(pkt->family, pkt->iface, buf, 1);
 			responded = true;
 
 			{
@@ -1631,8 +1632,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				tcp_conn_unref(conn);
-				tcp_conn_unref(conn);
+				while (tcp_conn_unref(conn))
+					;
 				tcp_free(context);
 			}
 			tp_mem_stat();
@@ -1662,7 +1663,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			struct tcp *conn =
 				(void *)sys_slist_peek_head(&tcp_conns);
 
-			tp_output(pkt->iface, buf, 1);
+			tp_output(pkt->family, pkt->iface, buf, 1);
 			responded = true;
 			NET_DBG("tcp_send(\"%s\")", tp->data);
 			_tcp_send(conn, buf, len, 0);
@@ -1693,10 +1694,10 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	}
 
 	if (json_len) {
-		tp_output(pkt->iface, buf, json_len);
+		tp_output(pkt->family, pkt->iface, buf, json_len);
 	} else if ((TP_CONFIG_REQUEST == type || TP_COMMAND == type)
 			&& responded == false) {
-		tp_output(pkt->iface, buf, 1);
+		tp_output(pkt->family, pkt->iface, buf, 1);
 	}
 
 	return NET_DROP;
