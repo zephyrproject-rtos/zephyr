@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <net/buf.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/hci_vs.h>
 #include <device.h>
 
 #ifdef __cplusplus
@@ -94,6 +95,15 @@ int bt_recv(struct net_buf *buf);
  * @return 0 on success or negative error number on failure.
  */
 int bt_recv_prio(struct net_buf *buf);
+
+/** @brief Read static addresses from the controller.
+ *
+ *  @param addrs  Random static address and Identity Root (IR) array.
+ *  @param size   Size of array.
+ *
+ *  @return Number of addresses read.
+ */
+u8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], u8_t size);
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
 enum bt_hci_driver_bus {

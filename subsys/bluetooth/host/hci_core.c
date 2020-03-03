@@ -5737,7 +5737,7 @@ void bt_setup_public_id_addr(void)
 }
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
-static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
+u8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], u8_t size)
 {
 	struct bt_hci_rp_vs_read_static_addrs *rp;
 	struct net_buf *rsp;
@@ -5763,7 +5763,7 @@ static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
 	}
 
 	rp = (void *)rsp->data;
-	cnt = MIN(rp->num_addrs, CONFIG_BT_ID_MAX);
+	cnt = MIN(rp->num_addrs, size);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
 	    rsp->len != (sizeof(struct bt_hci_rp_vs_read_static_addrs) +
@@ -5785,8 +5785,6 @@ static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
 
 	return cnt;
 }
-#elif defined(CONFIG_BT_CTLR)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs);
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 int bt_setup_random_id_addr(void)
@@ -5798,7 +5796,7 @@ int bt_setup_random_id_addr(void)
 	if (!bt_dev.id_count) {
 		struct bt_hci_vs_static_addr addrs[CONFIG_BT_ID_MAX];
 
-		bt_dev.id_count = bt_read_static_addr(addrs);
+		bt_dev.id_count = bt_read_static_addr(addrs, CONFIG_BT_ID_MAX);
 
 		if (bt_dev.id_count) {
 			for (u8_t i = 0; i < bt_dev.id_count; i++) {
