@@ -109,7 +109,12 @@ static struct k_thread mass_thread_data;
 static struct k_sem disk_wait_sem;
 static volatile u32_t defered_wr_sz;
 
-static u8_t page[BLOCK_SIZE];
+/*
+ * Keep block buffer larger than BLOCK_SIZE for the case
+ * the dCBWDataTransferLength is multiple of the BLOCK_SIZE and
+ * the length of the transferred data is not aligned to the BLOCK_SIZE.
+ */
+static u8_t page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 /* Initialized during mass_storage_init() */
 static u32_t memory_size;
@@ -648,7 +653,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 	}
 
 	/* if the array is filled, write it in memory */
-	if (!((addr + size) % BLOCK_SIZE)) {
+	if ((addr % BLOCK_SIZE) + size >= BLOCK_SIZE) {
 		if (!(disk_access_status(disk_pdrv) &
 					DISK_STATUS_WR_PROTECT)) {
 			LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
@@ -726,6 +731,11 @@ static void mass_storage_bulk_out(u8_t ep,
 static void thread_memory_write_done(void)
 {
 	u32_t size = defered_wr_sz;
+	size_t overflowed_len = (addr + size) % CONFIG_MASS_STORAGE_BULK_EP_MPS;
+
+	if (overflowed_len) {
+		memcpy(page, &page[BLOCK_SIZE], overflowed_len);
+	}
 
 	addr += size;
 	length -= size;
