@@ -98,9 +98,10 @@ extern "C" {
 #define ONOFF_SERVICE_HAS_ERROR __DEPRECATED_MACRO ONOFF_HAS_ERROR
 #define ONOFF_SERVICE_INTERNAL_BASE __DEPRECATED_MACRO ONOFF_INTERNAL_BASE
 
-/* Forward declaration */
+/* Forward declarations */
 struct onoff_manager;
 struct onoff_monitor;
+struct onoff_notifier;
 
 /**
  * @brief Signature used to notify an on-off manager that a transition
@@ -600,6 +601,12 @@ int onoff_reset(struct onoff_manager *mgr,
  * requests when a transition to off completes the manager will
  * initiate a transition to on.
  *
+ * The onoff_notifier infrastructure provides a wrapper API for
+ * anonymous clients to register requests and releases without
+ * directly maintaining state related to in-progress transitions.
+ * This can be used to work around the complexities that result from
+ * trying to cancel an in-progress transition.
+ *
  * @param mgr the manager for which an operation is to be cancelled.
  *
  * @param cli a pointer to the same client state that was provided
@@ -699,6 +706,143 @@ int onoff_monitor_register(struct onoff_manager *mgr,
  */
 int onoff_monitor_unregister(struct onoff_manager *mgr,
 			     struct onoff_monitor *mon);
+
+/**
+ * @brief Callback for an event-based API for onoff request/release
+ * completions.
+ *
+ * Transition to off (for the client) is indicated by a zero value.
+ * Transition to on (for the client) is indicated by a positive value.
+ * A negative value indicates an error in the onoff service state.
+ *
+ * If the client issues requests or releases before transitions are
+ * incomplete the notifier will be invoked only when the final target
+ * state is reached with no changes pending.  In this case a series of
+ * notifications may repeat the previous notification value, rather
+ * than alternating between on and off.
+ *
+ * @param np pointer to the state object that manages on/off
+ * transitions for a client that prefers event-based notifications
+ * rather than separate request/release operations.
+ *
+ * @param status the status of the service at the time of the
+ * callback: 1 if it's on, 0 if it's not on (including transitioning
+ * to or from on).  A negative status value is passed if the
+ * underlying service has indicated an error; in this case
+ * onoff_notifier_reset() may need to be invoked to restore
+ * functionality.
+ */
+typedef void (*onoff_notifier_callback)(struct onoff_notifier *np,
+					int status);
+
+/**
+ * @brief Convert an onoff manager async API to an event-based API.
+ *
+ * In some use cases it's inconvenient for a client of an onoff
+ * service to manage request and release states itself.  An example is
+ * a case where the client no longer needs the service and wants to
+ * shut down without waiting for the stop to complete.
+ *
+ * An onoff notifier wraps an onoff service, providing state-free
+ * request and release methods and holding a callback that is invoked
+ * whenever the state change for the individual client has completed.
+ *
+ * Note that this does not track the state of the service as a whole:
+ * only the state of the client-specific requests and releases.
+ * Specifically, while notification of a transition to on confirms
+ * that the underlying service is on, notification of a transition to
+ * off does not indicate the state of the underlying service, only
+ * that this client no longer has a demand for the service.
+ */
+struct onoff_notifier {
+	/* Pointer to the underlying onoff service. */
+	struct onoff_manager *onoff;
+
+	/* Callback use to notify of transition to stable state. */
+	onoff_notifier_callback callback;
+
+	/* Protects changes to state. */
+	struct k_spinlock lock;
+
+	/* Client structure used to communicate with onoff service. */
+	struct onoff_client cli;
+
+	/* Internal state of the notifier. */
+	u32_t volatile state;
+
+	/* The completion value for the last onoff operation. */
+	int onoff_result;
+};
+
+/** @brief Initializer for a onoff_notifier object.
+ *
+ * @param _onoff a pointer to the onoff_manager to use for requests
+ * and releases
+ *
+ * @param _callback the onoff_notifier_callback function pointer to be
+ * invoked to inform the client of state changes.
+ */
+#define ONOFF_NOTIFIER_INITIALIZER(_onoff, _callback) {	\
+		.onoff = _onoff,			\
+		.callback = _callback,			\
+}							\
+
+/**
+ * @brief Inform an onoff service that this notifier client needs the
+ * service.
+ *
+ * If the underlying service is already on a positive value is
+ * returned, and the notifier callback is not invoked.  If zero is
+ * returned the notifier's callback will be invoked as soon as the
+ * service completes a transition to on, which may be before the call
+ * to this function returns.
+ *
+ * @param np pointer to the notifier state.
+ *
+ * @retval 0 if the request was successful but the service is not yet on.
+ * @retval positive if the request was successful and the service is stable on.
+ * @retval -EIO if the notifier is in an error state.
+ * @retval -EALREADY if the client already in a state heading toward on.
+ * @retval -EWOULDBLOCK if the client is in the process of resetting
+ * from an error state.
+ * @retval other negative values indicate an error from the onoff manager.
+ */
+int onoff_notifier_request(struct onoff_notifier *np);
+
+/**
+ * @brief Inform the onoff service that this notifier client no longer
+ * needs the service.
+ *
+ * If the underlying service is already off a positive value is
+ * returned.  If zero is returned the notifier's callback will be
+ * invoked as soon as this client's request for the service to turn
+ * off completes, which may be before the call to this function
+ * returns.
+ *
+ * @param np pointer to the notifier state.
+ *
+ * @retval 0 if the request was successful.
+ * @retval -EIO if the notifier is in an error state
+ * @retval -EALREADY if the client is already in a state heading toward off.
+ * @retval -EWOULDBLOCK if the client is in the process of resetting
+ * from an error state.
+ * @retval other negative values indicate an error from the onoff manager.
+ */
+int onoff_notifier_release(struct onoff_notifier *np);
+
+/**
+ * @brief Clear an error state from an onoff notifier.
+ *
+ * This function should be invoked if the notifier has been passed a
+ * negative error code.  On successful invocation the notifier
+ * callback will be invoked to indicate reaching the stable off state,
+ * or with an error indicating why the reset could not be performed.
+ *
+ * @retval 0 if the request was successful.
+ * @retval -EALREADY if the notifier does not have an error state
+ * recorded.  The notifier callback will not be invoked.
+ */
+int onoff_notifier_reset(struct onoff_notifier *np);
 
 /** @} */
 

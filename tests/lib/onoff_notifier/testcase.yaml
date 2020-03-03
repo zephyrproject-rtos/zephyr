@@ -1,0 +1,3 @@
+tests:
+  libraries.onoff_notifier:
+    tags: onoff
