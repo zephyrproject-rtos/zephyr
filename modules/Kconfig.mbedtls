@@ -15,14 +15,17 @@ choice
 	default MBEDTLS_BUILTIN
 
 config MBEDTLS_BUILTIN
-	bool "Enable mbedTLS integrated sources"
+	bool "Use Zephyr in-tree mbedTLS version"
 	help
-	  Link with local mbedTLS sources instead of external library.
+	  Link with mbedTLS sources included with Zephyr distribution.
+	  Included mbedTLS version is well integrated with and supported
+	  by Zephyr, and the recommended choice for most users.
 
 config MBEDTLS_LIBRARY
-	bool "Enable mbedTLS external library"
+	bool "Use external mbedTLS library"
 	help
-	  This option enables mbedTLS library.
+	  Use external, out-of-tree prebuilt mbedTLS library. For advanced
+	  users only.
 
 endchoice
 
@@ -31,7 +34,7 @@ config MBEDTLS_CFG_FILE
 	depends on MBEDTLS_BUILTIN
 	default "config-tls-generic.h"
 	help
-	  Use a specific mbed TLS configuration file. The default config file
+	  Use a specific mbedTLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
 	  suitable to communicate with majority of HTTPS servers on the Internet,
 	  but has relatively many features enabled. To optimize resources for
