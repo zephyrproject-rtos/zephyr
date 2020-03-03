@@ -28,10 +28,6 @@ if UART_NS16550
 config UART_NS16550_PORT_0
 	default y
 
-config UART_NS16550_PORT_0_OPTIONS
-	default 0
-	depends on UART_NS16550_PORT_0
-
 endif # UART_NS16550
 
 endif # SOC_NIOS2F_ZEPHYR
