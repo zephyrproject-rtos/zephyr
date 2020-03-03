@@ -126,8 +126,8 @@ struct usb_dc_stm32_ep_state {
 	u16_t ep_mps;		/** Endpoint max packet size */
 	u16_t ep_pma_buf_len;	/** Previously allocated buffer size */
 	u8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
-	usb_dc_ep_callback cb;	/** Endpoint callback function */
 	u8_t ep_stalled;	/** Endpoint stall flag */
+	usb_dc_ep_callback cb;	/** Endpoint callback function */
 	u32_t read_count;	/** Number of bytes in read buffer  */
 	u32_t read_offset;	/** Current offset in read buffer */
 	struct k_sem write_sem;	/** Write boolean semaphore */
