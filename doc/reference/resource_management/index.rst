@@ -10,21 +10,24 @@ complexity of properly managing multiple consumers of a device in a
 multithreaded system, especially when transitions may be asynchronous,
 suggests that a shared implementation is desirable.
 
+Zephyr provides managers for several coordination policies.  These
+managers are embedded into services that use them for specific
+functions.
+
 .. contents::
     :local:
     :depth: 2
 
-
 .. _resource_mgmt_onoff:
 
-On-Off Services
-***************
+On-Off Manager
+**************
 
-An on-off service supports an arbitrary number of clients of a service
+An on-off manager supports an arbitrary number of clients of a service
 which has a binary state.  Example applications are power rails, clocks,
 and binary device power management.
 
-The service has the following properties:
+The manager has the following properties:
 
 * The stable states are off, on, and error.  The service always begins
   in the off state.  The service may also be in a transition to a given
@@ -39,8 +42,8 @@ The service has the following properties:
 * Each service configuration provides functions that implement the
   transition from off to on, from on to off, and optionally from an
   error state to off.  Transitions that may put a calling thread to
-  sleep must be flagged in the configuration to support safe invocation
-  from non-thread context.
+  sleep must be flagged in the configuration to support detecting unsafe
+  invocation from non-thread context.
 * All operations are asynchronous, and are initiated by a function call
   that references a specific service and is given client notification
   data. The function call will succeed or fail. On success, the
@@ -58,15 +61,15 @@ Requests are reference counted, but not tracked. That means clients are
 responsible for recording whether their requests were accepted, and for
 initiating a release only if they have previously successfully completed
 a request.  Improper use of the API can cause an active client to be
-shut out, and the service does not maintain a record of specific clients
+shut out, and the manager does not maintain a record of specific clients
 that have been granted a request.
 
 Failures in executing a transition are recorded and inhibit further
-requests or releases until the service is reset. Pending requests are
+requests or releases until the manager is reset. Pending requests are
 notified (and cancelled) when errors are discovered.
 
-Transition operation completion notifications are provided through any
-of the following mechanisms:
+Transition operation completion notifications are provided through the
+standard :ref:`async_notification`, supporting these methods:
 
 * Signal: A pointer to a :c:type:`struct k_poll_signal` is provided, and
   the signal is raised when the transition completes. The operation
@@ -81,5 +84,5 @@ Synchronous transition may be implemented by a caller based on its
 context, for example by using :cpp:func:`k_poll()` to wait until the
 completion is signalled.
 
-.. doxygengroup:: resource_mgmt_apis
+.. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr
