@@ -1,0 +1,17 @@
+# MCP23008 I2C GPIO expander configuration options
+
+# Copyright (c) 2020 Ioannis Papamanoglou
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_MCP23008
+	bool "MCP23008 I2C GPIO chip"
+	depends on I2C
+	help
+	  Enable driver for MCP23008 I2C GPIO chip.
+
+config GPIO_MCP23008_INIT_PRIORITY
+	int "Init priority"
+	depends on GPIO_MCP23008
+	default 70
+	help
+	  Device driver initialization priority.

@@ -199,6 +199,19 @@ test_i2c_mcp9808: mcp9808@1b {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_mcp23008: mcp23008@0 {
+	compatible = "microchip,mcp23008";
+	label = "MCP23008";
+	reg = <0x20>;
+	irq-enable;
+	irq-gpios = <&test_gpio 0 0>;
+	reset-enable;
+	reset-gpios = <&test_gpio 0 0>;
+	#gpio-cells = <2>;
+	gpio-controller;
+	ngpios = <8>;
+};
+
 test_i2c_fxas21002: fxas21002@1c {
 	compatible = "nxp,fxas21002";
 	label = "FXAS21002";

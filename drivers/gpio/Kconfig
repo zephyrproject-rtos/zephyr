@@ -72,4 +72,6 @@ source "drivers/gpio/Kconfig.lmp90xxx"
 
 source "drivers/gpio/Kconfig.litex"
 
+source "drivers/gpio/Kconfig.mcp23008"
+
 endif # GPIO

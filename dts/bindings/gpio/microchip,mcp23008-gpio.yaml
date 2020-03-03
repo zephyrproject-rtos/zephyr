@@ -1,0 +1,58 @@
+# Copyright (c) 2020 Ioannis Papamanoglou
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCP23008 GPIO node
+
+compatible: "microchip,mcp23008"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    ngpios:
+      required: true
+      const: 8
+
+    irq-enable:
+      type: boolean
+      required: false
+      description: "Enable non-polling-based irq functionality"
+
+    irq-gpios:
+      type: phandle-array
+      required: false
+      description: "INT pin"
+
+    int-pol:
+      type: boolean
+      required: false
+      description: "Set INT pin to Active-high"
+
+    int-odr:
+      type: boolean
+      required: false
+      description: "Configure INT pin as open drain"
+
+    reset-enable:
+      type: boolean
+      required: false
+      description: "Enables hardware reset functionality"
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: "RESET pin"
+
+    i2c-disslw:
+      type: boolean
+      required: false
+      description: "Disable slew rate on SDA output"
+
+gpio-cells:
+  - pin
+  - flags
