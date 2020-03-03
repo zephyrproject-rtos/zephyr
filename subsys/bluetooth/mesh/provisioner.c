@@ -34,6 +34,10 @@
 #include "proxy.h"
 #include "prov.h"
 #include "settings.h"
+#include "provisioner.h"
+
+/* Timeout for receiving the link open response */
+#define LINK_ESTABLISHMENT_TIMEOUT 60
 
 #define LOG_LEVEL CONFIG_BT_MESH_PROVISIONER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -41,10 +45,11 @@ LOG_MODULE_REGISTER(bt_mesh_provisioner);
 
 static struct {
 	struct bt_mesh_cdb_node *node;
-	uint16_t addr;
 	uint16_t net_idx;
+	uint8_t elem_count;
 	uint8_t attention_duration;
 	uint8_t uuid[16];
+	uint8_t new_dev_key[16];
 } prov_device;
 
 static void send_pub_key(void);
@@ -53,7 +58,8 @@ static void pub_key_ready(const uint8_t *pkey);
 
 static int reset_state(void)
 {
-	if (prov_device.node != NULL) {
+	if (!atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION) &&
+	    prov_device.node != NULL) {
 		bt_mesh_cdb_node_del(prov_device.node, false);
 	}
 
@@ -250,7 +256,8 @@ static void prov_capabilities(const uint8_t *data)
 	LOG_DBG("Input OOB Size:    %u", caps.input_size);
 	LOG_DBG("Input OOB Action:  0x%04x", caps.input_actions);
 
-	if (data[0] == 0) {
+	prov_device.elem_count = caps.elem_count;
+	if (prov_device.elem_count == 0) {
 		LOG_ERR("Invalid number of elements");
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
@@ -271,14 +278,31 @@ static void prov_capabilities(const uint8_t *data)
 
 	bt_mesh_prov_link.algorithm = is_sha256 ? BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM :
 			BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM;
-	prov_device.node =
-		bt_mesh_cdb_node_alloc(prov_device.uuid,
-				       prov_device.addr, data[0],
-				       prov_device.net_idx);
-	if (prov_device.node == NULL) {
-		LOG_ERR("Failed allocating node 0x%04x", prov_device.addr);
-		prov_fail(PROV_ERR_RESOURCES);
-		return;
+
+	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
+		if (!bt_mesh_prov_link.addr) {
+			bt_mesh_prov_link.addr = bt_mesh_cdb_free_addr_get(
+				prov_device.elem_count);
+			if (!bt_mesh_prov_link.addr) {
+				LOG_ERR("Failed allocating address for node");
+				prov_fail(PROV_ERR_ADDR);
+				return;
+			}
+		}
+	} else {
+		prov_device.node =
+			bt_mesh_cdb_node_alloc(prov_device.uuid,
+					       bt_mesh_prov_link.addr,
+					       prov_device.elem_count,
+					       prov_device.net_idx);
+		if (prov_device.node == NULL) {
+			LOG_ERR("Failed allocating node 0x%04x", bt_mesh_prov_link.addr);
+			prov_fail(PROV_ERR_RESOURCES);
+			return;
+		}
+
+		/* Address might change in the alloc call */
+		bt_mesh_prov_link.addr = prov_device.node->addr;
 	}
 
 	memcpy(bt_mesh_prov_link.conf_inputs.capabilities, data, PDU_LEN_CAPABILITIES);
@@ -539,14 +563,14 @@ static void send_prov_data(void)
 	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
-			      bt_mesh_prov_link.prov_salt, prov_device.node->dev_key);
+			      bt_mesh_prov_link.prov_salt, prov_device.new_dev_key);
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("DevKey: %s", bt_hex(prov_device.node->dev_key, 16));
+	LOG_DBG("DevKey: %s", bt_hex(prov_device.new_dev_key, 16));
 
 	sub = bt_mesh_cdb_subnet_get(prov_device.node->net_idx);
 	if (sub == NULL) {
@@ -560,11 +584,12 @@ static void send_prov_data(void)
 	net_buf_simple_add_be16(&pdu, prov_device.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
-	net_buf_simple_add_be16(&pdu, prov_device.node->addr);
+	net_buf_simple_add_be16(&pdu, bt_mesh_prov_link.addr);
 	net_buf_simple_add(&pdu, 8); /* For MIC */
 
-	LOG_DBG("net_idx %u, iv_index 0x%08x, addr 0x%04x", prov_device.node->net_idx,
-		bt_mesh.iv_index, prov_device.node->addr);
+	LOG_DBG("net_idx %u, iv_index 0x%08x, addr 0x%04x",
+		prov_device.node->net_idx, bt_mesh.iv_index,
+		bt_mesh_prov_link.addr);
 
 	err = bt_mesh_prov_encrypt(session_key, nonce, &pdu.data[1],
 				   &pdu.data[1]);
@@ -586,15 +611,33 @@ static void prov_complete(const uint8_t *data)
 {
 	struct bt_mesh_cdb_node *node = prov_device.node;
 
-	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x", bt_hex(node->dev_key, 16),
-		node->net_idx, node->num_elem, node->addr);
+	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
+		bt_hex(prov_device.new_dev_key, 16), node->net_idx, node->num_elem,
+		node->addr);
+
+	bt_mesh_prov_link.expect = PROV_NO_PDU;
+	atomic_set_bit(bt_mesh_prov_link.flags, COMPLETE);
+
+	bt_mesh_prov_link.bearer->link_close(PROV_BEARER_LINK_STATUS_SUCCESS);
+}
+
+static void prov_node_add(void)
+{
+	LOG_DBG("");
+	struct bt_mesh_cdb_node *node = prov_device.node;
+
+	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
+		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
+					prov_device.elem_count);
+	}
+
+	memcpy(node->dev_key, prov_device.new_dev_key, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_node_store(node);
 	}
 
 	prov_device.node = NULL;
-	prov_link_close(PROV_BEARER_LINK_STATUS_SUCCESS);
 
 	if (bt_mesh_prov->node_added) {
 		bt_mesh_prov->node_added(node->net_idx, node->uuid, node->addr,
@@ -689,6 +732,11 @@ static void local_input_complete(void)
 
 static void prov_link_closed(void)
 {
+	LOG_DBG("");
+	if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
+		prov_node_add();
+	}
+
 	reset_state();
 }
 
@@ -778,10 +826,9 @@ int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[BT_PUB_KEY_LEN])
 	return 0;
 }
 
-static int bt_mesh_provisioner_open(const struct prov_bearer *bearer,
-				    const uint8_t uuid[16],
-				    uint16_t net_idx, uint16_t addr,
-				    uint8_t attention_duration)
+static int link_open(const uint8_t *uuid, const struct prov_bearer *bearer,
+		     uint16_t net_idx, uint16_t addr,
+		     uint8_t attention_duration, void *bearer_cb_data, uint8_t timeout)
 {
 	int err;
 
@@ -789,21 +836,28 @@ static int bt_mesh_provisioner_open(const struct prov_bearer *bearer,
 		return -EBUSY;
 	}
 
-	struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
+	if (uuid) {
+		memcpy(prov_device.uuid, uuid, 16);
 
-	memcpy(uuid_repr.val, uuid, 16);
-	LOG_DBG("Provisioning %s", bt_uuid_str(&uuid_repr.uuid));
+		struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
+
+		memcpy(uuid_repr.val, uuid, 16);
+		LOG_DBG("Provisioning %s", bt_uuid_str(&uuid_repr.uuid));
+
+	} else {
+		atomic_set_bit(bt_mesh_prov_link.flags, REPROVISION);
+		LOG_DBG("Reprovisioning");
+	}
 
 	atomic_set_bit(bt_mesh_prov_link.flags, PROVISIONER);
-	memcpy(prov_device.uuid, uuid, 16);
-	prov_device.addr = addr;
-	prov_device.net_idx = net_idx;
-	prov_device.attention_duration = attention_duration;
+	bt_mesh_prov_link.addr = addr;
 	bt_mesh_prov_link.bearer = bearer;
 	bt_mesh_prov_link.role = &role_provisioner;
+	prov_device.net_idx = net_idx;
+	prov_device.attention_duration = attention_duration;
 
-	err = bt_mesh_prov_link.bearer->link_open(prov_device.uuid, PROTOCOL_TIMEOUT,
-						  bt_mesh_prov_bearer_cb_get(), NULL);
+	err = bt_mesh_prov_link.bearer->link_open(
+		uuid, timeout, bt_mesh_prov_bearer_cb_get(), bearer_cb_data);
 	if (err) {
 		atomic_clear_bit(bt_mesh_prov_link.flags, LINK_ACTIVE);
 	}
@@ -815,8 +869,8 @@ static int bt_mesh_provisioner_open(const struct prov_bearer *bearer,
 int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			uint8_t attention_duration)
 {
-	return bt_mesh_provisioner_open(&bt_mesh_pb_adv, uuid,
-					net_idx, addr, attention_duration);
+	return link_open(uuid, &bt_mesh_pb_adv, net_idx, addr, attention_duration, NULL,
+			 LINK_ESTABLISHMENT_TIMEOUT);
 }
 #endif
 
@@ -824,7 +878,42 @@ int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 int bt_mesh_pb_gatt_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			 uint8_t attention_duration)
 {
-	return bt_mesh_provisioner_open(&bt_mesh_pb_gatt, uuid,
-					net_idx, addr, attention_duration);
+	return link_open(uuid, &bt_mesh_pb_gatt, net_idx, addr, attention_duration, NULL,
+			 LINK_ESTABLISHMENT_TIMEOUT);
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_RPR_CLI)
+int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
+			   const struct bt_mesh_rpr_node *srv, const uint8_t uuid[16],
+			   uint16_t net_idx, uint16_t addr)
+{
+	struct pb_remote_ctx ctx = { cli, srv };
+
+	return link_open(uuid, &pb_remote_cli, net_idx, addr, 0, &ctx, 0);
+}
+
+int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
+				struct bt_mesh_rpr_node *srv, uint16_t addr,
+				bool composition_change)
+{
+	struct pb_remote_ctx ctx = { cli, srv };
+
+	if (srv->addr != addr) {
+		ctx.refresh = BT_MESH_RPR_NODE_REFRESH_ADDR;
+	} else if (composition_change) {
+		ctx.refresh = BT_MESH_RPR_NODE_REFRESH_COMPOSITION;
+	} else {
+		ctx.refresh = BT_MESH_RPR_NODE_REFRESH_DEVKEY;
+	}
+
+	prov_device.node = bt_mesh_cdb_node_get(srv->addr);
+	if (!prov_device.node) {
+		LOG_ERR("No CDB node for 0x%04x", srv->addr);
+		return -ENOENT;
+	}
+
+	return link_open(NULL, &pb_remote_cli, prov_device.node->net_idx, addr,
+			 0, &ctx, 0);
 }
 #endif

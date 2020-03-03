@@ -545,6 +545,17 @@ int bt_mesh_lpn_set(bool enable)
 	return 0;
 }
 
+void bt_mesh_lpn_friendship_end(void)
+{
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	if (!lpn->established) {
+		return;
+	}
+
+	clear_friendship(true, false);
+}
+
 static void friend_response_received(struct bt_mesh_lpn *lpn)
 {
 	LOG_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
