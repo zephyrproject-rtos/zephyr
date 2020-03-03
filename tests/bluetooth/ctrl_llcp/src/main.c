@@ -80,7 +80,7 @@ void test_int_mem_tx(void)
 	ull_cp_init();
 
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = tx_alloc_peek();
+		peek = tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
@@ -91,7 +91,7 @@ void test_int_mem_tx(void)
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = tx_alloc_peek();
+	peek = tx_alloc_is_available();
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
@@ -107,7 +107,7 @@ void test_int_mem_tx(void)
 	}
 
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = tx_alloc_peek();
+		peek = tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
@@ -118,7 +118,7 @@ void test_int_mem_tx(void)
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = tx_alloc_peek();
+	peek = tx_alloc_is_available();
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
@@ -143,7 +143,7 @@ void test_int_mem_ntf(void)
 	ull_cp_init();
 
 	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		peek = ntf_alloc_peek();
+		peek = ntf_alloc_is_available();
 
 		/* The previous ntf alloc peek should be valid */
 		zassert_true(peek, NULL);
@@ -154,7 +154,7 @@ void test_int_mem_ntf(void)
 		zassert_not_null(ntfl[i], NULL);
 	}
 
-	peek = ntf_alloc_peek();
+	peek = ntf_alloc_is_available();
 
 	/* The last ntf alloc peek should fail */
 	zassert_false(peek, NULL);
@@ -170,7 +170,7 @@ void test_int_mem_ntf(void)
 	}
 
 	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		peek = ntf_alloc_peek();
+		peek = ntf_alloc_is_available();
 
 		/* The previous ntf alloc peek should be valid */
 		zassert_true(peek, NULL);
@@ -181,7 +181,7 @@ void test_int_mem_ntf(void)
 		zassert_not_null(ntfl[i], NULL);
 	}
 
-	peek = ntf_alloc_peek();
+	peek = ntf_alloc_is_available();
 
 	/* The last ntf alloc peek should fail */
 	zassert_false(peek, NULL);
