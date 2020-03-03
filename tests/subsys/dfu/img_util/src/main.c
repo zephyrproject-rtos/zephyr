@@ -8,6 +8,30 @@
 #include <storage/flash_map.h>
 #include <dfu/flash_img.h>
 
+void test_init_id(void)
+{
+	struct flash_img_context ctx_no_id;
+	struct flash_img_context ctx_id;
+	int ret;
+
+	ret = flash_img_init(&ctx_no_id);
+	zassert_true(ret == 0, "Flash img init");
+
+	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_1_ID);
+	zassert_true(ret == 0, "Flash img init id");
+
+	/* Verify that the default partition ID is IMAGE_1 */
+	zassert_equal(ctx_id.flash_area, ctx_no_id.flash_area,
+		      "Default partition ID is incorrect");
+
+	/* Note: IMAGE_0, not IMAGE_1 as above */
+	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_0_ID);
+	zassert_true(ret == 0, "Flash img init id");
+
+	zassert_equal(ctx_id.flash_area->fa_id, DT_FLASH_AREA_IMAGE_0_ID,
+		      "Partition ID is not set correctly");
+}
+
 void test_collecting(void)
 {
 	const struct flash_area *fa;
@@ -86,6 +110,8 @@ void test_collecting(void)
 void test_main(void)
 {
 	ztest_test_suite(test_util,
-			ztest_unit_test(test_collecting));
+			ztest_unit_test(test_collecting),
+			ztest_unit_test(test_init_id)
+			);
 	ztest_run_test_suite(test_util);
 }
