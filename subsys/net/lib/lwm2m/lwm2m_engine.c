@@ -2106,8 +2106,10 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		switch (obj_field->data_type) {
 
-		/* do nothing for OPAQUE (probably has a callback) */
 		case LWM2M_RES_TYPE_OPAQUE:
+			engine_put_opaque(&msg->out, &msg->path,
+					  (u8_t *)data_ptr,
+					  data_len);
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
