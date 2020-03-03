@@ -1897,6 +1897,24 @@ static void vs_read_supported_features(struct net_buf *buf,
 	(void)memset(&rp->features[0], 0x00, sizeof(rp->features));
 }
 
+u8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
+					u8_t size)
+{
+	ARG_UNUSED(addrs);
+	ARG_UNUSED(size);
+
+	return 0;
+}
+
+/* If Zephyr VS HCI commands are not enabled provide this functionality directly
+ */
+#if !defined(CONFIG_BT_HCI_VS_EXT)
+u8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], u8_t size)
+{
+	return hci_vendor_read_static_addr(addrs, size);
+}
+#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
+
 #if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
 {
@@ -1930,58 +1948,23 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 	memcpy(rp->info, build_info, sizeof(build_info));
 }
 
+void __weak hci_vendor_read_key_hierarchy_roots(u8_t ir[16], u8_t er[16])
+{
+	/* Mark IR as invalid */
+	(void)memset(ir, 0x00, 16);
+
+	/* Mark ER as invalid */
+	(void)memset(er, 0x00, 16);
+}
+
 static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_static_addrs *rp;
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF)
-	/* Read address from nRF5-specific storage
-	 * Non-initialized FICR values default to 0xFF, skip if no address
-	 * present. Also if a public address lives in FICR, do not use in this
-	 * function.
-	 */
-	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
-	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
-	      (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
-		struct bt_hci_vs_static_addr *addr;
-
-		rp = hci_cmd_complete(evt, sizeof(*rp) + sizeof(*addr));
-		rp->status = 0x00;
-		rp->num_addrs = 1U;
-
-		addr = &rp->a[0];
-		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->bdaddr.val[0]);
-		sys_put_le16(NRF_FICR->DEVICEADDR[1], &addr->bdaddr.val[4]);
-		/* The FICR value is a just a random number, with no knowledge
-		 * of the Bluetooth Specification requirements for random
-		 * static addresses.
-		 */
-		BT_ADDR_SET_STATIC(&addr->bdaddr);
-
-		/* If no public address is provided and a static address is
-		 * available, then it is recommended to return an identity root
-		 * key (if available) from this command.
-		 */
-		if ((NRF_FICR->IR[0] != UINT32_MAX) &&
-		    (NRF_FICR->IR[1] != UINT32_MAX) &&
-		    (NRF_FICR->IR[2] != UINT32_MAX) &&
-		    (NRF_FICR->IR[3] != UINT32_MAX)) {
-			sys_put_le32(NRF_FICR->IR[0], &addr->ir[0]);
-			sys_put_le32(NRF_FICR->IR[1], &addr->ir[4]);
-			sys_put_le32(NRF_FICR->IR[2], &addr->ir[8]);
-			sys_put_le32(NRF_FICR->IR[3], &addr->ir[12]);
-		} else {
-			/* Mark IR as invalid */
-			(void)memset(addr->ir, 0x00, sizeof(addr->ir));
-		}
-
-		return;
-	}
-#endif /* CONFIG_SOC_FAMILY_NRF */
-
-	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp = hci_cmd_complete(evt, sizeof(*rp) +
+				   sizeof(struct bt_hci_vs_static_addr));
 	rp->status = 0x00;
-	rp->num_addrs = 0U;
+	rp->num_addrs = hci_vendor_read_static_addr(rp->a, 1);
 }
 
 static void vs_read_key_hierarchy_roots(struct net_buf *buf,
@@ -1991,35 +1974,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
-
-#if defined(CONFIG_SOC_COMPATIBLE_NRF)
-	/* Mark IR as invalid.
-	 * No public address is available, and static address IR should be read
-	 * using Read Static Addresses command.
-	 */
-	(void)memset(rp->ir, 0x00, sizeof(rp->ir));
-
-	/* Fill in ER if present */
-	if ((NRF_FICR->ER[0] != UINT32_MAX) &&
-	    (NRF_FICR->ER[1] != UINT32_MAX) &&
-	    (NRF_FICR->ER[2] != UINT32_MAX) &&
-	    (NRF_FICR->ER[3] != UINT32_MAX)) {
-		sys_put_le32(NRF_FICR->ER[0], &rp->er[0]);
-		sys_put_le32(NRF_FICR->ER[1], &rp->er[4]);
-		sys_put_le32(NRF_FICR->ER[2], &rp->er[8]);
-		sys_put_le32(NRF_FICR->ER[3], &rp->er[12]);
-	} else {
-		/* Mark ER as invalid */
-		(void)memset(rp->er, 0x00, sizeof(rp->er));
-	}
-
-	return;
-#else
-	/* Mark IR as invalid */
-	(void)memset(rp->ir, 0x00, sizeof(rp->ir));
-	/* Mark ER as invalid */
-	(void)memset(rp->er, 0x00, sizeof(rp->er));
-#endif /* CONFIG_SOC_FAMILY_NRF */
+	hci_vendor_read_key_hierarchy_roots(rp->ir, rp->er);
 }
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
@@ -2275,46 +2230,6 @@ int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 	return 0;
 }
 #endif
-
-#if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addr)
-{
-#if defined(CONFIG_SOC_FAMILY_NRF)
-	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
-	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
-	     (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
-		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->bdaddr.val[0]);
-		sys_put_le16(NRF_FICR->DEVICEADDR[1], &addr->bdaddr.val[4]);
-
-		/* The FICR value is a just a random number, with no knowledge
-		 * of the Bluetooth Specification requirements for random
-		 * static addresses.
-		 */
-		BT_ADDR_SET_STATIC(&addr->bdaddr);
-
-		/* If no public address is provided and a static address is
-		 * available, then it is recommended to return an identity root
-		 * key (if available) from this command.
-		 */
-		if ((NRF_FICR->IR[0] != UINT32_MAX) &&
-		    (NRF_FICR->IR[1] != UINT32_MAX) &&
-		    (NRF_FICR->IR[2] != UINT32_MAX) &&
-		    (NRF_FICR->IR[3] != UINT32_MAX)) {
-			sys_put_le32(NRF_FICR->IR[0], &addr->ir[0]);
-			sys_put_le32(NRF_FICR->IR[1], &addr->ir[4]);
-			sys_put_le32(NRF_FICR->IR[2], &addr->ir[8]);
-			sys_put_le32(NRF_FICR->IR[3], &addr->ir[12]);
-		} else {
-			/* Mark IR as invalid */
-			(void)memset(addr->ir, 0x00, sizeof(addr->ir));
-		}
-
-		return 1;
-	}
-#endif /* CONFIG_SOC_FAMILY_NRF */
-	return 0;
-}
-#endif /* !CONFIG_BT_HCI_VS_EXT */
 
 struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 {

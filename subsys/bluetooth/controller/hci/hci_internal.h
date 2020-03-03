@@ -49,6 +49,9 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num);
 #endif
 int hci_vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 			  struct net_buf **evt);
+u8_t hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
+				 u8_t size);
+void hci_vendor_read_key_hierarchy_roots(u8_t ir[16], u8_t er[16]);
 int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 			     struct net_buf **evt);
 void *hci_cmd_complete(struct net_buf **buf, u8_t plen);
