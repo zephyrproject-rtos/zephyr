@@ -84,5 +84,33 @@ Synchronous transition may be implemented by a caller based on its
 context, for example by using :cpp:func:`k_poll()` to wait until the
 completion is signalled.
 
+.. _resource_mgmt_onoff_notification:
+
+On-Off Notification
+===================
+
+The standard client model for an on-off service is to issue a request
+and hold it while the service is in use, then release it on completion.
+Service transitions are asynchronous, and there is currently no
+mechanism to support cancelling a transition and returning to the
+original state.  For some use cases where the need for a service is not
+under application control the standard sequence of service request, use,
+and release may not be easily satisfiable.
+
+An example is functionality that requires both an onoff service (such as
+a clock) and an secondary gating signal (such as a connected USB cable).
+If the cable is removed before the clock is started then the clock is
+not needed anymore, but the client functionality should not be required
+to implement the logic to wait for the request to complete and to then
+submit a release.
+
+The :cpp:type:`onoff_notifier` infrastructure provides an internal state
+machine that reacts immediately to synchronous requests and releases,
+coordinating with the underlying onoff service to ensure the client's
+latest desired state will be reached as soon as possible.  The client
+provides a callback that is invoked on relevant state changes, and
+synchronously indicates on both request and release whether the desired
+state has already been reached.
+
 .. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr
