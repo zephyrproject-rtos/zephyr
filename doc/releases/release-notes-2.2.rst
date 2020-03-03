@@ -377,7 +377,18 @@ Drivers and Sensors
 
 * USB
 
-  * <TBD>
+  * fixed: native_posix handle control transfers with data.
+  * fixed: stm32 do not restrict out stage transfers to one MPS.
+  * fixed: nRF free memory block if event is intended to be dropped.
+  * Add: Make USB descriptor power options configurable.
+  * Add: Switching to alternate interface.
+  * Add: Support for samv71 SoC.
+  * Add: Set USB version to 2.1 when using BOS descriptor.
+  * fixed: Avoid ZLP transfer. Fix for dropped packets in cdc_acm.
+  * fixed: Limit upload length during DFU_UPLOAD to the request buffer size.
+  * Add: Extend USB device support to all NXP IMX RT boards.
+  * Add: Support for SAME54.
+  * Add: Derive USB device Serial Number String from HWINFO.
 
 * Video
 
