@@ -35,9 +35,11 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_@NUM@ = {
 	.uart_config.parity = UART_CFG_PARITY_NONE,
 	.uart_config.stop_bits = UART_CFG_STOP_BITS_1,
 	.uart_config.data_bits = UART_CFG_DATA_BITS_8,
+#if DT_UART_NS16550_PORT_@NUM@_HW_FLOW_CONTROL
+	.uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS,
+#else
 	.uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
-	.options = CONFIG_UART_NS16550_PORT_@NUM@_OPTIONS,
-
+#endif
 #ifdef DT_UART_NS16550_PORT_@NUM@_DLF
 	.dlf = DT_UART_NS16550_PORT_@NUM@_DLF,
 #endif

@@ -27,10 +27,11 @@ config UART_NS16550_DRV_CMD
 	  Says n if not sure.
 
 config UART_NS16750
-	bool "Enable 64-bytes FIFO for UART 16750"
+	bool "Enable UART 16750 (64-bytes FIFO and auto flow control)"
 	depends on UART_NS16550
 	help
-	  This enables support for 64-bytes FIFO if UART controller is 16750.
+	  This enables support for 64-bytes FIFO and automatic hardware
+	  flow control if UART controller is 16750.
 
 config UART_NS16550_ACCESS_WORD_ONLY
 	bool "NS16550 only allows word access"
@@ -40,67 +41,26 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
 
-# ---------- Port 0 ----------
-
 menuconfig UART_NS16550_PORT_0
 	bool "Enable NS16550 Port 0"
 	depends on UART_NS16550
 	help
-	  This tells the driver to configure the UART port at boot, depending on
-	  the additional configure options below.
-
-config UART_NS16550_PORT_0_OPTIONS
-	int "Port 0 Options"
-	default 0
-	depends on UART_NS16550_PORT_0
-	help
-	  Options used for port initialization.
-
-# ---------- Port 1 ----------
+	  This tells the driver to configure the UART port at boot.
 
 menuconfig UART_NS16550_PORT_1
 	bool "Enable NS16550 Port 1"
 	depends on UART_NS16550
 	help
-	  This tells the driver to configure the UART port at boot, depending on
-	  the additional configure options below.
-
-config UART_NS16550_PORT_1_OPTIONS
-	int "Port 1 Options"
-	default 0
-	depends on UART_NS16550_PORT_1
-	help
-	  Options used for port initialization.
-
-# ---------- Port 2 ----------
+	  This tells the driver to configure the UART port at boot.
 
 menuconfig UART_NS16550_PORT_2
 	bool "Enable NS16550 Port 2"
 	depends on UART_NS16550
 	help
-	  This tells the driver to configure the UART port at boot, depending on
-	  the additional configure options below.
-
-
-config UART_NS16550_PORT_2_OPTIONS
-	int "Port 2 Options"
-	default 0
-	depends on UART_NS16550_PORT_2
-	help
-	  Options used for port initialization.
-
-# ---------- Port 3 ----------
+	  This tells the driver to configure the UART port at boot.
 
 menuconfig UART_NS16550_PORT_3
 	bool "Enable NS16550 Port 3"
 	depends on UART_NS16550
 	help
-	  This tells the driver to configure the UART port at boot, depending on
-	  the additional configure options below.
-
-config UART_NS16550_PORT_3_OPTIONS
-	int "Port 3 Options"
-	default 0
-	depends on UART_NS16550_PORT_3
-	help
-	  Options used for port initialization.
+	  This tells the driver to configure the UART port at boot.

@@ -268,7 +268,6 @@ struct uart_ns16550_device_config {
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
 	struct uart_config uart_config;
-	u8_t options;	/**< Serial port options */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	u8_t iir_cache;	/**< cache of IIR since it clears when read */
@@ -402,9 +401,11 @@ static int uart_ns16550_configure(struct device *dev,
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-	if ((dev_data->options & UART_OPTION_AFCE) == UART_OPTION_AFCE) {
+#ifdef CONFIG_UART_NS16750
+	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		mdc |= MCR_AFCE;
 	}
+#endif
 
 	OUTBYTE(MDC(dev), mdc);
 

@@ -233,11 +233,6 @@ struct uart_event {
 typedef void (*uart_callback_t)(struct uart_event *evt, void *user_data);
 
 /**
- * @brief Options for @a UART initialization.
- */
-#define UART_OPTION_AFCE 0x01
-
-/**
  * @brief UART controller configuration structure
  *
  * @param baudrate  Baudrate setting in bps
