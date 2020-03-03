@@ -178,6 +178,7 @@ enum {
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
 	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 	BT_MESH_COMP_DIRTY,      /* Composition data is dirty */
+	BT_MESH_DEVKEY_CAND,     /* Has device key candidate */
 
 	/* Feature flags */
 	BT_MESH_RELAY,
@@ -219,6 +220,10 @@ struct bt_mesh_net {
 	struct k_work_delayable ivu_timer;
 
 	uint8_t dev_key[16];
+
+#if defined(CONFIG_BT_MESH_RPR_SRV)
+	uint8_t dev_key_cand[16];
+#endif
 };
 
 /* Network interface */
@@ -290,6 +295,8 @@ void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 void bt_mesh_net_pending_net_store(void);
 void bt_mesh_net_pending_iv_store(void);
 void bt_mesh_net_pending_seq_store(void);
+void bt_mesh_net_dev_key_cand_store(void);
+
 void bt_mesh_net_clear(void);
 void bt_mesh_net_settings_commit(void);
 

@@ -19,6 +19,7 @@
 #define PROV_ERR_DECRYPT       0x06
 #define PROV_ERR_UNEXP_ERR     0x07
 #define PROV_ERR_ADDR          0x08
+#define PROV_ERR_INVALID_DATA  0x09
 
 #define AUTH_METHOD_NO_OOB     0x00
 #define AUTH_METHOD_STATIC     0x01
@@ -69,8 +70,9 @@
 
 #define PROV_IO_OOB_SIZE_MAX   8  /* in bytes */
 
-#define PROV_BUF(name, len) \
-	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len)
+#define PROV_BUF(name, len)                                                                        \
+	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len +                  \
+					    PROV_BEARER_BUF_TAILROOM)
 
 #if IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)
 #define PROV_AUTH_MAX_LEN   32
@@ -93,6 +95,8 @@ enum {
 	WAIT_AUTH,              /* Wait for auth response */
 	OOB_STATIC_KEY,         /* OOB Static Authentication */
 	WAIT_DH_KEY,            /* Wait for DH Key */
+	REPROVISION,            /* The link was opened as a reprovision target */
+	COMPLETE,               /* The provisioning process completed. */
 
 	NUM_FLAGS,
 };
@@ -115,6 +119,8 @@ struct bt_mesh_prov_link {
 
 	const struct prov_bearer *bearer;
 	const struct bt_mesh_prov_role *role;
+
+	uint16_t addr;                        /* Assigned address */
 
 	uint8_t algorithm;                    /* Authen algorithm */
 	uint8_t oob_method;                   /* Authen method */
@@ -167,6 +173,14 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
 bool bt_mesh_prov_active(void);
 
 int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8_t size);
+
+int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
+			   const struct bt_mesh_rpr_node *srv, const uint8_t uuid[16],
+			   uint16_t net_idx, uint16_t addr);
+
+int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
+				struct bt_mesh_rpr_node *srv,
+				uint16_t addr, bool composition_change);
 
 const struct bt_mesh_prov *bt_mesh_prov_get(void);
 

@@ -126,6 +126,8 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_CFG_CLI                   0x0001
 #define BT_MESH_MODEL_ID_HEALTH_SRV                0x0002
 #define BT_MESH_MODEL_ID_HEALTH_CLI                0x0003
+#define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
+#define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
 
 /* Models from the Mesh Model Specification */
 #define BT_MESH_MODEL_ID_GEN_ONOFF_SRV             0x1000

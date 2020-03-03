@@ -56,11 +56,6 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]))
 
 	pub_key_cb.func = func ? func : pub_key_ready;
 
-	/* Disable Attention Timer if it was set */
-	if (bt_mesh_prov_link.conf_inputs.invite[0]) {
-		bt_mesh_attention(NULL, 0);
-	}
-
 	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
 		     sizeof(bt_mesh_prov_link) - offset);
