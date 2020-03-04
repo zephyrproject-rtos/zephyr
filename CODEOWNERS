@@ -160,8 +160,8 @@
 /drivers/i2c/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_shell.c                  @nashif
-/drivers/ieee802154/                      @jukkar @tbursztyka
-/drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve
+/drivers/ieee802154/                      @jukkar
+/drivers/ieee802154/ieee802154_rf2xx*     @jukkar @nandojve
 /drivers/interrupt_controller/            @andrewboie
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/*/intc_vexriscv_litex.c          @mateusz-holenko @kgugala @pgielda
