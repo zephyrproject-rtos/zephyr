@@ -8,3 +8,4 @@ Debugging
 
    host-tools.rst
    probes.rst
+   thread-analyzer.rst
