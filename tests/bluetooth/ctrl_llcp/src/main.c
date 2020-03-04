@@ -26,7 +26,6 @@ struct ull_tx_q tx_q;
 struct ull_cp_conn conn;
 
 sys_slist_t ll_rx_q;
-bool lll_tx_q_empty = 1;
 
 #define PDU_DC_LL_HEADER_SIZE	(offsetof(struct pdu_data, lldata))
 #define LL_LENGTH_OCTETS_RX_MAX 27

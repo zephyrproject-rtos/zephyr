@@ -61,7 +61,6 @@ enum {
 /* LLCP Local Procedure Encryption FSM states */
 enum {
 	LP_ENC_STATE_IDLE,
-	LP_ENC_STATE_WAIT_TX_Q_EMPTY,
 	LP_ENC_STATE_WAIT_TX_ENC_REQ,
 	LP_ENC_STATE_WAIT_RX_ENC_RSP,
 	LP_ENC_STATE_WAIT_RX_START_ENC_REQ,
@@ -111,7 +110,6 @@ enum {
 enum {
 	RP_ENC_STATE_IDLE,
 	RP_ENC_STATE_WAIT_RX_ENC_REQ,
-	RP_ENC_STATE_WAIT_TX_Q_EMPTY,
 	RP_ENC_STATE_WAIT_TX_ENC_RSP,
 	RP_ENC_STATE_WAIT_NTF_LTK_REQ,
 	RP_ENC_STATE_WAIT_LTK_REPLY,
@@ -339,19 +337,6 @@ static void ull_tx_pause_data(struct ull_cp_conn *conn)
 static void ull_tx_flush(struct ull_cp_conn *conn)
 {
 	/* TODO(thoh): do something here to flush the TX Q */
-}
-
-static bool ull_tx_q_is_empty(struct ull_cp_conn *conn)
-{
-#if !defined(ULL_LLCP_UNITTEST)
-	/* TODO:
-	 * Implement correct ULL->LLL Lpath
-	 * */
-#else
-	/* UNIT TEST SOLUTION TO AVOID INCLUDING THE WORLD */
-	extern bool lll_tx_q_empty;
-	return lll_tx_q_empty;
-#endif
 }
 
 /*
@@ -810,19 +795,6 @@ static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void lp_enc_act_check_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
-{
-	if (ull_tx_q_is_empty(conn)) {
-		if (ctx->pause) {
-			ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
-		} else {
-			lp_enc_send_enc_req(conn, ctx, evt, param);
-		}
-	} else {
-		ctx->state = LP_ENC_STATE_WAIT_TX_Q_EMPTY;
-	}
-}
-
 static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
@@ -830,20 +802,7 @@ static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t 
 	case LP_ENC_EVT_RUN:
 		ull_tx_pause_data(conn);
 		ull_tx_flush(conn);
-		lp_enc_act_check_tx_q_empty(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
-static void lp_enc_st_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
-{
-	/* TODO */
-	switch (evt) {
-	case LP_ENC_EVT_RUN:
-		lp_enc_act_check_tx_q_empty(conn, ctx, evt, param);
+		lp_enc_send_enc_req(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -940,9 +899,6 @@ static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	switch (ctx->state) {
 	case LP_ENC_STATE_IDLE:
 		lp_enc_st_idle(conn, ctx, evt, param);
-		break;
-	case LP_ENC_STATE_WAIT_TX_Q_EMPTY:
-		lp_enc_st_wait_tx_q_empty(conn, ctx, evt, param);
 		break;
 	case LP_ENC_STATE_WAIT_TX_ENC_REQ:
 		lp_enc_st_wait_tx_enc_req(conn, ctx, evt, param);
@@ -1466,12 +1422,6 @@ static void rp_enc_state_wait_rx_enc_req(struct ull_cp_conn *conn, struct proc_c
 	}
 }
 
-static void rp_enc_state_wait_tx_q_empty(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
-{
-	/* TODO */
-	LL_ASSERT(0);
-}
-
 static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
@@ -1589,9 +1539,6 @@ static void rp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 		break;
 	case RP_ENC_STATE_WAIT_RX_ENC_REQ:
 		rp_enc_state_wait_rx_enc_req(conn, ctx, evt, param);
-		break;
-	case RP_ENC_STATE_WAIT_TX_Q_EMPTY:
-		rp_enc_state_wait_tx_q_empty(conn, ctx, evt, param);
 		break;
 	case RP_ENC_STATE_WAIT_TX_ENC_RSP:
 		rp_enc_state_wait_tx_enc_rsp(conn, ctx, evt, param);
