@@ -65,10 +65,11 @@
 #include "intc_ioapic_priv.h"
 
 #define IOAPIC_REG DT_INST_REG_ADDR(0)
-#define BITS_PER_IRQ  3
+#define BITS_PER_IRQ  4
 #define IOAPIC_BITFIELD_HI_LO	0
 #define IOAPIC_BITFIELD_LVL_EDGE 1
 #define IOAPIC_BITFIELD_ENBL_DSBL 2
+#define IOAPIC_BITFIELD_DELIV_MODE 3
 #define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
 #define SUSPEND_BITS_REQD (ROUND_UP((CONFIG_IOAPIC_NUM_RTES * BITS_PER_IRQ), 32))
 
@@ -177,7 +178,7 @@ void z_ioapic_irq_disable(unsigned int irq)
 
 void store_flags(unsigned int irq, u32_t flags)
 {
-	/* Currently only the following three flags are modified */
+	/* Currently only the following four flags are modified */
 	if (flags & IOAPIC_LOW) {
 		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
 			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO));
@@ -191,6 +192,15 @@ void store_flags(unsigned int irq, u32_t flags)
 	if (flags & IOAPIC_INT_MASK) {
 		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
 			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL));
+	}
+
+	/*
+	 * We support lowest priority and fixed mode only, so only one bit
+	 * needs to be saved.
+	 */
+	if (flags & IOAPIC_LOWEST) {
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
+			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_DELIV_MODE));
 	}
 }
 
@@ -211,6 +221,11 @@ u32_t restore_flags(unsigned int irq)
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL))) {
 		flags |= IOAPIC_INT_MASK;
+	}
+
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_DELIV_MODE))) {
+		flags |= IOAPIC_LOWEST;
 	}
 
 	return flags;
@@ -252,7 +267,7 @@ int ioapic_resume_from_suspend(struct device *port)
 			/* Get the saved flags */
 			flags = restore_flags(irq);
 			/* Appending the flags that are never modified */
-			flags = flags | IOAPIC_FIXED | IOAPIC_LOGICAL;
+			flags = flags | IOAPIC_LOGICAL;
 
 			rteValue = (_irq_to_interrupt_vector[irq] &
 					IOAPIC_VEC_MASK) | flags;
@@ -313,7 +328,8 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
 {
 	u32_t rteValue;   /* value to copy into redirection table entry */
 
-	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_LOGICAL |
+	/* the delivery mode is determined by the flags passed from drivers */
+	rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
 		   (vector & IOAPIC_VEC_MASK) | flags;
 	ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
 	ioApicRedSetLo(irq, rteValue);
