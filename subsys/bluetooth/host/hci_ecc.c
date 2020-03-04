@@ -216,8 +216,6 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 		} else {
 			__ASSERT(0, "Unhandled ECC command");
 		}
-
-		log_stack_usage(&ecc_thread_data);
 	}
 }
 

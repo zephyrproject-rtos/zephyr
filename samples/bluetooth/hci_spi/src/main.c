@@ -230,8 +230,6 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			net_buf_unref(buf);
 		}
 
-		log_stack_usage(&bt_tx_thread_data);
-
 		/* Make sure other threads get a chance to run */
 		k_yield();
 	}
