@@ -1634,12 +1634,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	conn->err = evt->reason;
 
-	/* Check stacks usage */
-#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-	log_stack_usage(&rx_thread_data);
-#endif
-	log_stack_usage(&tx_thread_data);
-
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0U;
 

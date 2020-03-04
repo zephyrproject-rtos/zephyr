@@ -360,10 +360,6 @@ static void ack_timeout(struct k_work *work)
 	BT_DBG("");
 
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
-
-	/* Analyze stacks */
-	log_stack_usage(&tx_thread_data);
-	log_stack_usage(&rx_thread_data);
 }
 
 static void h5_process_complete_packet(u8_t *hdr)
