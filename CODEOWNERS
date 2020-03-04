@@ -394,6 +394,7 @@
 /include/linker/app_smem*.ld              @andrewboie
 /include/linker/                          @andrewboie @andyross
 /include/logging/                         @nordic-krch
+/include/lorawan/lorawan.h                @Mani-Sadhasivam
 /include/mgmt/osdp.h                      @cbsiddharth
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
@@ -431,6 +432,7 @@
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/drivers/counter/maxim_ds3231/    @pabigot
+/samples/lorawan/                         @Mani-Sadhasivam
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @rlubos
@@ -503,6 +505,7 @@
 /subsys/fs/nvs/                           @Laczen
 /subsys/logging/                          @nordic-krch
 /subsys/logging/log_backend_net.c         @nordic-krch @jukkar
+/subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
