@@ -281,3 +281,78 @@ config OPENOCD_SUPPORT
 	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
 
 endmenu
+
+menuconfig THREAD_ANALYZER
+	bool "Enable Thread analyzer"
+	select INIT_STACKS
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	help
+	  Enable thread analyzer functionality and all the required modules.
+	  This module may be used to debug thread configuration issues, e.g.
+	  stack size configuration to find stack overflow or to find stacks
+	  which may be optimized.
+
+if THREAD_ANALYZER
+module = THREAD_ANALYZER
+module-str = thread analyzer
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+choice
+	prompt "Thread analysis print mode"
+
+config THREAD_ANALYZER_USE_LOG
+	bool "Use logger output"
+	select LOG
+	help
+	  Use logger output to print thread information.
+
+config THREAD_ANALYZER_USE_PRINTK
+	bool "Use printk function"
+	help
+	  Use kernel printk function to print thread information.
+
+endchoice
+
+config THREAD_ANALYZER_RUN_UNLOCKED
+	bool "Run analysis with interrupts unlocked"
+	default y
+	help
+	  The thread analysis takes quite a long time.
+	  Every thread it finds is analyzed word by word to find any that
+	  does not match the magic number.
+	  Normally while thread are analyzed the k_thread_foreach function
+	  is used.
+	  While this is a safe run from the thread list perspective it may lock
+	  the interrupts for a long time - long enough to disconnect when
+	  Bluetooth communication is used.
+	  Setting this flag will force thread analyzer to use
+	  the k_thread_foreach_unlocked function.
+	  This will allow the interrupts to be processed while the thread is
+	  analyzed.
+	  For the limitation of such configuration see the k_thread_foreach
+	  documentation.
+
+config THREAD_ANALYZER_AUTO
+	bool "Run periodic thread analysis in a thread"
+	help
+	  Run the thread analyzer automatically, without the need to add
+	  any code to the application.
+	  Thread analysis would be called periodically.
+
+if THREAD_ANALYZER_AUTO
+
+config THREAD_ANALYZER_AUTO_INTERVAL
+	int "Thread analysis interval"
+	default 60
+	range 5 3600
+	help
+	  The time in seconds to call thread analyzer periodic printing function.
+
+config THREAD_ANALYZER_AUTO_STACK_SIZE
+	int "Stack size for the periodic thread analysis thread"
+	default 512
+
+endif # THREAD_ANALYZER_AUTO
+
+endif # THREAD_ANALYZER
