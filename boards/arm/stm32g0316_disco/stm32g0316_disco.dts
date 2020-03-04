@@ -44,3 +44,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&iwdg {
+	status = "okay";
+};
