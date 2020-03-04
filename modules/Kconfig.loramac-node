@@ -9,6 +9,12 @@ config HAS_SEMTECH_LORAMAC
 	help
 	  This option enables the use of Semtech's LoRaMac stack
 
+config HAS_SEMTECH_SOFT_SE
+	bool "Semtech Secure Element software implementation"
+	help
+	  This option enables the use of Semtech's Secure Element
+	  software implementation
+
 config HAS_SEMTECH_RADIO_DRIVERS
 	bool "Semtech LoRa Radio Drivers"
 	help
