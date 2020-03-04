@@ -293,7 +293,7 @@ should see the following message in the terminal:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/mimxrt1064-evk-i.mx-rt1064-evaluation-kit:MIMXRT1064-EVK
 
 .. _MIMXRT1064-EVK Quick Reference Guide:
-   https://www.nxp.com/docs/en/quick-reference-guide/IMXRT1064QSG.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1064QSG
 
 .. _MIMXRT1064-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=i.MXRT160EVKDS&Parent_nodeId=1537930933174731284155&Parent_pageType=product
@@ -305,4 +305,4 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/IMXRT1064CEC.pdf
 
 .. _i.MX RT1064 Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMXRT1064RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1064RM
