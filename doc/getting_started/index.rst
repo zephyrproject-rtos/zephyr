@@ -361,6 +361,12 @@ The sample :ref:`blinky-sample` blinks an LED on the target board.  By
 building and running it, we can verify that the environment and tools
 are properly set up for Zephyr development.
 
+   .. note:: This sample is compatible with most boards supported by
+      Zephyr, but not all of them. See the :ref:`blinky sample requirements
+      <blinky-sample-requirements>` for more information. If this sample is not
+      compatible with your board, a good alternative to try is the
+      :ref:`Hello World sample <hello_world>`.
+
 #. Set build environment variables:
 
    .. tabs::
