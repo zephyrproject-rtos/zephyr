@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import pathlib
 import shlex
 
 from west import log
@@ -303,16 +304,19 @@ class Build(Forceable):
         cached_abs = os.path.abspath(cached_app) if cached_app else None
 
         log.dbg('pristine:', self.auto_pristine, level=log.VERBOSE_EXTREME)
+
         # If the build directory specifies a source app, make sure it's
         # consistent with --source-dir.
         apps_mismatched = (source_abs and cached_abs and
-                           source_abs != cached_abs)
+            pathlib.PurePath(source_abs) != pathlib.PurePath(cached_abs))
+
         self.check_force(
             not apps_mismatched or self.auto_pristine,
             'Build directory "{}" is for application "{}", but source '
             'directory "{}" was specified; please clean it, use --pristine, '
             'or use --build-dir to set another build directory'.
             format(self.build_dir, cached_abs, source_abs))
+
         if apps_mismatched:
             self.run_cmake = True  # If they insist, we need to re-run cmake.
 
