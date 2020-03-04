@@ -383,18 +383,9 @@ Drivers and Sensors
 
 * USB
 
-  * fixed: native_posix handle control transfers with data.
-  * fixed: stm32 do not restrict out stage transfers to one MPS.
-  * fixed: nRF free memory block if event is intended to be dropped.
-  * Add: Make USB descriptor power options configurable.
-  * Add: Switching to alternate interface.
-  * Add: Support for samv71 SoC.
-  * Add: Set USB version to 2.1 when using BOS descriptor.
-  * fixed: Avoid ZLP transfer. Fix for dropped packets in cdc_acm.
-  * fixed: Limit upload length during DFU_UPLOAD to the request buffer size.
-  * Add: Extend USB device support to all NXP IMX RT boards.
-  * Add: Support for SAME54.
-  * Add: Derive USB device Serial Number String from HWINFO.
+  * Add support for SAMV71 SoC
+  * Add support for SAME54 SoC
+  * Extend USB device support to all NXP IMX RT boards
 
 * Video
 
@@ -497,6 +488,26 @@ Bluetooth
 
   * Multiple fixes
   * Added dynamic TX power control support
+
+USB Device Stack
+****************
+
+* Stack:
+
+  * API: Add support for user device status callback
+  * Rework switching to alternate interface
+  * Make USB Descriptor power options configurable
+  * Derive USB device Serial Number String from HWINFO (required by USB MSC)
+  * Move USB transfer functions to appropriate file as preparation for
+    the rework
+  * Windows OS compatibility: Set USB version to 2.1 when using BOS descriptor
+  * Convert VBUS control to new GPIO API
+
+* Classes:
+
+  * CDC ACM: Memory and performance improvements, avoid ZLP during IN transactions
+  * DFU: Limit upload length during DFU_UPLOAD to the request buffer size
+  * Loopback: Re-trigger usb_write after interface configuration event
 
 Build and Infrastructure
 ************************
