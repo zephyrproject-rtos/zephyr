@@ -511,6 +511,10 @@ int lorawan_start(void)
 	}
 
 	/* TODO: Move these to a proper location */
+	mib_req.Type = MIB_SYSTEM_MAX_RX_ERROR;
+	mib_req.Param.SystemMaxRxError = CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR;
+	LoRaMacMibSetRequestConfirm(&mib_req);
+
 	mib_req.Type = MIB_PUBLIC_NETWORK;
 	mib_req.Param.EnablePublicNetwork = true;
 	LoRaMacMibSetRequestConfirm(&mib_req);
