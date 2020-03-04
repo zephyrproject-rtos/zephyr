@@ -20,15 +20,19 @@ macro(include_boilerplate location)
   endif()
 endmacro()
 
-set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
-
-if (ZEPHYR_BASE)
+set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   # Get rid of any double folder string before comparison, as example, user provides
   # ZEPHYR_BASE=//path/to//zephyr_base/
   # must also work.
-  get_filename_component(ZEPHYR_BASE ${ZEPHYR_BASE} ABSOLUTE)
+  get_filename_component(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} ABSOLUTE)
+  set(ZEPHYR_BASE ${ZEPHYR_BASE} CACHE PATH "Zephyr base")
+  include_boilerplate("Zephyr base")
+  return()
+endif()
 
-  include_boilerplate("zephyr base")
+if (DEFINED ZEPHYR_BASE)
+  include_boilerplate("Zephyr base (cached)")
   return()
 endif()
 
@@ -39,28 +43,28 @@ endif()
 
 # Find out the current Zephyr base.
 get_filename_component(CURRENT_ZEPHYR_DIR ${CMAKE_CURRENT_LIST_FILE}/${ZEPHYR_RELATIVE_DIR} ABSOLUTE)
-get_filename_component(PROJECT_WORKTREE_DIR ${CMAKE_CURRENT_LIST_FILE}/${PROJECT_WORKTREE_RELATIVE_DIR} ABSOLUTE)
+get_filename_component(CURRENT_WORKSPACE_DIR ${CMAKE_CURRENT_LIST_FILE}/${WORKSPACE_RELATIVE_DIR} ABSOLUTE)
 
 string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_ZEPHYR_DIR}/" COMMON_INDEX)
 if (COMMON_INDEX EQUAL 0)
-  # Project is in-zephyr-tree.
-  # We are in Zephyr tree.
-  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
-  include_boilerplate("in-zephyr-tree")
+  # Project is in Zephyr repository.
+  # We are in Zephyr repository.
+  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
+  include_boilerplate("Zephyr repository")
   return()
 endif()
 
 if(IS_INCLUDED)
-  # A higher level did the checking and included us and as we are not in-zephyr-tree (checked above)
-  # then we must be in work-tree.
-  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
-  include_boilerplate("in-work-tree")
+  # A higher level did the checking and included us and as we are not in Zephyr repository
+  # (checked above) then we must be in Zephyr workspace.
+  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
+  include_boilerplate("Zephyr workspace")
 endif()
 
 if(NOT IS_INCLUDED)
-  string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${PROJECT_WORKTREE_DIR}/" COMMON_INDEX)
+  string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_WORKSPACE_DIR}/" COMMON_INDEX)
   if (COMMON_INDEX EQUAL 0)
-    # Project is in-project-worktree-tree.
+    # Project is in Zephyr workspace.
     # This means this Zephyr is likely the correct one, but there could be an alternative installed along-side
     # Thus, check if there is an even better candidate.
     # This check works the following way.
@@ -69,20 +73,20 @@ if(NOT IS_INCLUDED)
     # comon path with the current sample.
     # and if so, we will retrun here, and let CMake call into the other registered package for real
     # version checking.
-    check_zephyr_package(PROJECT_WORKTREE_DIR ${PROJECT_WORKTREE_DIR})
+    check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
 
     # We are the best candidate, so let's include boiler plate.
-    set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
-    include_boilerplate("in-work-tree")
+    set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
+    include_boilerplate("Zephyr workspace")
     return()
   endif()
 
   check_zephyr_package(SEARCH_PARENTS)
 
-  # Ending here means there were no candidates in-tree of the app.
-  # Thus, the app is build oot.
+  # Ending here means there were no candidates in workspace of the app.
+  # Thus, the app is built as a Zephyr Freestanding application.
   # CMake find_package has already done the version checking, so let's just include boiler plate.
   # Previous find_package would have cleared Zephyr_FOUND variable, thus set it again.
-  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
-  include_boilerplate("out-of-worktree")
+  set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
+  include_boilerplate("Freestanding")
 endif()

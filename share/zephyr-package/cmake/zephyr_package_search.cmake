@@ -3,8 +3,8 @@
 # Linux/MacOS: ~/.cmake/packages
 # Windows:     Registry database
 
-# Relative directory of worktree project dir as seen from Zephyr package file
-set(PROJECT_WORKTREE_RELATIVE_DIR "../../../../..")
+# Relative directory of workspace project dir as seen from Zephyr package file
+set(WORKSPACE_RELATIVE_DIR "../../../../..")
 
 # Relative directory of Zephyr dir as seen from Zephyr package file
 set(ZEPHYR_RELATIVE_DIR "../../../..")
@@ -21,17 +21,22 @@ endmacro()
 
 # This macro can check for additional Zephyr package that has a better match
 # Options:
-# - PROJECT_WORKTREE_DIR: Search for projects in specified  worktree.
+# - ZEPHYR_BASE         : Use the specified ZEPHYR_BASE directly.
+# - WORKSPACE_DIR       : Search for projects in specified  workspace.
 # - SEARCH_PARENTS      : Search parent folder of current source file (application) to locate in-project-tree Zephyr candidates.
 # - CHECK_ONLY          : Only set PACKAGE_VERSION_COMPATIBLE to false if a better candidate is found, default is to also include the found candidate.
 # - VERSION_CHECK       : This is the version check stage by CMake find package
 macro(check_zephyr_package)
-    set(options CHECK_ONLY INCLUDE_FILE SEARCH_PARENTS VERSION_CHECK)
-    set(single_args PROJECT_WORKTREE_DIR)
-    cmake_parse_arguments(CHECK_ZEPHYR_PACKAGE "${options}" "${single_args}" "" ${ARGN})
+  set(options CHECK_ONLY INCLUDE_FILE SEARCH_PARENTS VERSION_CHECK)
+  set(single_args WORKSPACE_DIR ZEPHYR_BASE)
+  cmake_parse_arguments(CHECK_ZEPHYR_PACKAGE "${options}" "${single_args}" "" ${ARGN})
 
-  if(CHECK_ZEPHYR_PACKAGE_PROJECT_WORKTREE_DIR)
-    set(SEARCH_SETTINGS PATHS ${CHECK_ZEPHYR_PACKAGE_PROJECT_WORKTREE_DIR}/zephyr ${CHECK_ZEPHYR_PACKAGE_PROJECT_WORKTREE_DIR} NO_DEFAULT_PATH)
+  if(CHECK_ZEPHYR_PACKAGE_ZEPHYR_BASE)
+    set(SEARCH_SETTINGS PATHS ${CHECK_ZEPHYR_PACKAGE_ZEPHYR_BASE} NO_DEFAULT_PATH)
+  endif()
+
+  if(CHECK_ZEPHYR_PACKAGE_WORKSPACE_DIR)
+    set(SEARCH_SETTINGS PATHS ${CHECK_ZEPHYR_PACKAGE_WORKSPACE_DIR}/zephyr ${CHECK_ZEPHYR_PACKAGE_WORKSPACE_DIR} NO_DEFAULT_PATH)
   endif()
 
   if(CHECK_ZEPHYR_PACKAGE_SEARCH_PARENTS)
@@ -49,11 +54,22 @@ macro(check_zephyr_package)
   list(REMOVE_DUPLICATES Zephyr_CONSIDERED_CONFIGS)
 
   foreach(ZEPHYR_CANDIDATE ${Zephyr_CONSIDERED_CONFIGS})
-    if(CHECK_ZEPHYR_PACKAGE_PROJECT_WORKTREE_DIR)
-      # Check is done in project tree already, thus check only for pure Zephyr candidates.
+    if(CHECK_ZEPHYR_PACKAGE_WORKSPACE_DIR)
+      # Check is done in Zephyr workspace already, thus check only for pure Zephyr candidates.
       get_filename_component(CANDIDATE_DIR ${ZEPHYR_CANDIDATE}/${ZEPHYR_RELATIVE_DIR} ABSOLUTE)
     else()
-      get_filename_component(CANDIDATE_DIR ${ZEPHYR_CANDIDATE}/${PROJECT_WORKTREE_RELATIVE_DIR} ABSOLUTE)
+      get_filename_component(CANDIDATE_DIR ${ZEPHYR_CANDIDATE}/${WORKSPACE_RELATIVE_DIR} ABSOLUTE)
+    endif()
+
+    if(CHECK_ZEPHYR_PACKAGE_ZEPHYR_BASE)
+        if(CHECK_ZEPHYR_PACKAGE_VERSION_CHECK)
+          string(REGEX REPLACE "\.cmake$" "Version.cmake" ZEPHYR_VERSION_CANDIDATE ${ZEPHYR_CANDIDATE})
+          include(${ZEPHYR_VERSION_CANDIDATE} NO_POLICY_SCOPE)
+          return()
+        else()
+          include(${ZEPHYR_CANDIDATE} NO_POLICY_SCOPE)
+          return()
+        endif()
     endif()
 
     string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CANDIDATE_DIR}/" COMMON_INDEX)

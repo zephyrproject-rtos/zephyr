@@ -16,7 +16,7 @@ macro(check_zephyr_version)
   if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
     if(IS_INCLUDED)
       # We are just a candidate, meaning we have been included from other installed module.
-      message("\n  The following in-zephyr-tree configuration file were considered but not accepted:")
+      message("\n  The following Zephyr repository configuration file were considered but not accepted:")
       message("\n    ${CMAKE_CURRENT_LIST_FILE}, version: ${PACKAGE_VERSION}\n")
     endif()
 
@@ -32,8 +32,14 @@ macro(check_zephyr_version)
   endif()
 endmacro()
 
-# First check to see if user has provided a Zephyr base manually.
-set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+# First check to see if user has provided a Zephyr base manually and it is first run (cache not set).
+set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
+  # Get rid of any double folder string before comparison, as example, user provides
+  # ZEPHYR_BASE=//path/to//zephyr_base/
+  # must also work.
+  get_filename_component(ZEPHYR_BASE $ENV{ZEPHYR_BASE} ABSOLUTE)
+endif()
 
 # If ZEPHYR_CANDIDATE is set, it means this file was include instead of called via find_package directly.
 if(ZEPHYR_CANDIDATE)
@@ -42,18 +48,16 @@ else()
   include(${CMAKE_CURRENT_LIST_DIR}/zephyr_package_search.cmake)
 endif()
 
-if (ZEPHYR_BASE)
-  # ZEPHYR_BASE was set in environment, meaning the package version must be ignored and the Zephyr
-  # pointed to by ZEPHYR_BASE is to be used regardless of version
-
-  # Get rid of any double folder string before comparison, as example, user provides
-  # ZEPHYR_BASE=//path/to//zephyr_base/
-  # must also work.
-  get_filename_component(ZEPHYR_BASE ${ZEPHYR_BASE} ABSOLUTE)
+if((DEFINED ZEPHYR_BASE) OR (DEFINED ENV_ZEPHYR_BASE))
+  # ZEPHYR_BASE was set in cache from earlier run or in environment (first run),
+  # meaning the package version must be ignored and the Zephyr pointed to by
+  # ZEPHYR_BASE is to be used regardless of version.
   if (${ZEPHYR_BASE}/share/zephyr-package/cmake STREQUAL ${CMAKE_CURRENT_LIST_DIR})
     # We are the Zephyr to be used
     set(PACKAGE_VERSION_COMPATIBLE TRUE)
     set(PACKAGE_VERSION_EXACT TRUE)
+  elseif ((NOT IS_INCLUDED) AND (DEFINED ZEPHYR_BASE))
+    check_zephyr_package(ZEPHYR_BASE ${ZEPHYR_BASE} VERSION_CHECK)
   else()
     # User has pointed to a different Zephyr installation, so don't use this version
     set(PACKAGE_VERSION_COMPATIBLE FALSE)
@@ -63,9 +67,9 @@ endif()
 
 # Find out the current Zephyr base.
 get_filename_component(CURRENT_ZEPHYR_DIR ${CMAKE_CURRENT_LIST_DIR}/../../.. ABSOLUTE)
-get_filename_component(PROJECT_WORKTREE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../../.. ABSOLUTE)
+get_filename_component(CURRENT_WORKSPACE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../../.. ABSOLUTE)
 
-# Temporary set local Zephyr base to allow using version.cmake to find this Zephyr tree current version
+# Temporary set local Zephyr base to allow using version.cmake to find this Zephyr repository current version
 set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
 
 # Tell version.cmake to not print as printing version for all Zephyr installations being tested
@@ -79,28 +83,28 @@ set(ZEPHYR_BASE)
 # Do we share common index, if so, this is the correct version to check.
 string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_ZEPHYR_DIR}/" COMMON_INDEX)
 if (COMMON_INDEX EQUAL 0)
-  # Project is in-zephyr-tree.
+  # Project is a Zephyr repository app.
 
   check_zephyr_version()
   return()
 endif()
 
 if(NOT IS_INCLUDED)
-  # Only do this if we are an installed CMake Config package and checking for work-tree candidates.
+  # Only do this if we are an installed CMake Config package and checking for workspace candidates.
 
-  string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${PROJECT_WORKTREE_DIR}/" COMMON_INDEX)
+  string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_WORKSPACE_DIR}/" COMMON_INDEX)
   if (COMMON_INDEX EQUAL 0)
     # Project is a Zephyr workspace app.
     # This means this Zephyr is likely the correct one, but there could be an alternative installed along-side
     # Thus, check if there is an even better candidate.
-    check_zephyr_package(PROJECT_WORKTREE_DIR ${PROJECT_WORKTREE_DIR} VERSION_CHECK)
+    check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR} VERSION_CHECK)
 
     # We are the best candidate, so let's check our own version.
     check_zephyr_version()
     return()
   endif()
 
-  # Checking for installed candidates which could also be an worktree candidates.
+  # Checking for installed candidates which could also be an workspace candidates.
   # This check works the following way.
   # CMake finds packages will look all packages registered in the user package registry.
   # As this code is processed inside registered packages, we simply test if
@@ -113,7 +117,7 @@ if(NOT IS_INCLUDED)
   check_zephyr_package(SEARCH_PARENTS VERSION_CHECK)
 endif()
 
-# Ending here means there were no candidates in-tree of the app.
-# Thus, the app is build oot.
+# Ending here means there were no candidates in workspace of the app.
+# Thus, the app is built as a Zephyr Freestanding application.
 # Let's do basic CMake version checking.
 check_zephyr_version()
