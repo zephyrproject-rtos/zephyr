@@ -184,7 +184,7 @@ typedef u32_t (*counter_api_get_guard_period)(struct device *dev, u32_t flags);
 typedef int (*counter_api_set_guard_period)(struct device *dev, u32_t ticks,
 						u32_t flags);
 
-struct counter_driver_api {
+__subsystem struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
 	counter_api_get_value get_value;

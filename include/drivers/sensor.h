@@ -319,7 +319,7 @@ typedef int (*sensor_channel_get_t)(struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);
 
-struct sensor_driver_api {
+__subsystem struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
 	sensor_trigger_set_t trigger_set;
 	sensor_sample_fetch_t sample_fetch;

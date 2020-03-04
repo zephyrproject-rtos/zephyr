@@ -92,30 +92,12 @@ kobjects = OrderedDict([
 ])
 
 subsystems = [
-    "adc_driver_api",
-    "aio_cmp_driver_api",
-    "counter_driver_api",
-    "crypto_driver_api",
-    "dma_driver_api",
-    "flash_driver_api",
-    "gpio_driver_api",
-    "i2c_driver_api",
-    "i2s_driver_api",
-    "ipm_driver_api",
-    "led_driver_api",
-    "pinmux_driver_api",
-    "pwm_driver_api",
-    "entropy_driver_api",
-    "sensor_driver_api",
-    "spi_driver_api",
-    "uart_driver_api",
-    "can_driver_api",
-    "ptp_clock_driver_api",
-    "eeprom_driver_api",
-    "wdt_driver_api",
-
-    # Fake 'sample driver' subsystem, used by tests/samples
-    "sample_driver_api"
+    # Editing the list is deprecated, add the __subsystem sentinal to your driver
+    # api declaration instead. e.x.
+    #
+    # __subsystem struct my_driver_api {
+    #    ....
+    #};
 ]
 
 header = """%compare-lengths

@@ -313,7 +313,7 @@ struct i2s_config {
  *
  * For internal use only, skip these in public documentation.
  */
-struct i2s_driver_api {
+__subsystem struct i2s_driver_api {
 	int (*configure)(struct device *dev, enum i2s_dir dir,
 			 struct i2s_config *cfg);
 	struct i2s_config *(*config_get)(struct device *dev,
