@@ -22,7 +22,7 @@ extern "C" {
 #define PTP_CLOCK_NAME "PTP_CLOCK"
 #endif
 
-struct ptp_clock_driver_api {
+__subsystem struct ptp_clock_driver_api {
 	int (*set)(struct device *dev, struct net_ptp_time *tm);
 	int (*get)(struct device *dev, struct net_ptp_time *tm);
 	int (*adjust)(struct device *dev, int increment);

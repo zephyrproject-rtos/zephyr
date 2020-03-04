@@ -174,7 +174,7 @@ typedef int (*i2c_api_slave_register_t)(struct device *dev,
 typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
 					  struct i2c_slave_config *cfg);
 
-struct i2c_driver_api {
+__subsystem struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
 	i2c_api_slave_register_t slave_register;

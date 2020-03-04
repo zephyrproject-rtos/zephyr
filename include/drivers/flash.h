@@ -70,7 +70,7 @@ typedef void (*flash_api_pages_layout)(struct device *dev,
 				       size_t *layout_size);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-struct flash_driver_api {
+__subsystem struct flash_driver_api {
 	flash_api_read read;
 	flash_api_write write;
 	flash_api_erase erase;

@@ -38,7 +38,7 @@ typedef int (*eeprom_api_write)(struct device *dev, off_t offset,
 				const void *data, size_t len);
 typedef size_t (*eeprom_api_size)(struct device *dev);
 
-struct eeprom_driver_api {
+__subsystem struct eeprom_driver_api {
 	eeprom_api_read read;
 	eeprom_api_write write;
 	eeprom_api_size size;

@@ -135,7 +135,7 @@ typedef int (*wdt_api_install_timeout)(struct device *dev,
 typedef int (*wdt_api_feed)(struct device *dev, int channel_id);
 
 /** @cond INTERNAL_HIDDEN */
-struct wdt_driver_api {
+__subsystem struct wdt_driver_api {
 	wdt_api_setup setup;
 	wdt_api_disable disable;
 	wdt_api_install_timeout install_timeout;
