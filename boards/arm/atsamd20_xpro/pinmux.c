@@ -15,13 +15,13 @@ static int board_pinmux_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 #if DT_ATMEL_SAM0_UART_SERCOM_0_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_1_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_2_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_3_BASE_ADDRESS
 	/* SERCOM3 on RX=PA25, TX=PA24 */
@@ -33,7 +33,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxb,  9, PINMUX_FUNC_D);
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_5_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 
 #if DT_ATMEL_SAM0_SPI_SERCOM_0_BASE_ADDRESS
@@ -43,19 +43,19 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxa,  7, PINMUX_FUNC_D);
 #endif
 #if DT_ATMEL_SAM0_SPI_SERCOM_1_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_SPI_SERCOM_2_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_SPI_SERCOM_3_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_SPI_SERCOM_4_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_SPI_SERCOM_5_BASE_ADDRESS
-#error Pin mapping is not configured
+#warning Pin mapping may not be configured
 #endif
 
 	return 0;
