@@ -76,7 +76,13 @@ enum {
 	LP_ENC_EVT_RUN,
 
 	/* Response recieved */
-	LP_ENC_EVT_RESPONSE,
+	LP_ENC_EVT_ENC_RSP,
+
+	/* Request recieved */
+	LP_ENC_EVT_START_ENC_REQ,
+
+	/* Response recieved */
+	LP_ENC_EVT_START_ENC_RSP,
 
 	/* Reject response recieved */
 	LP_ENC_EVT_REJECT,
@@ -768,7 +774,7 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 {
 	/* TODO */
 	switch (evt) {
-	case LP_ENC_EVT_RESPONSE:
+	case LP_ENC_EVT_ENC_RSP:
 		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
 		break;
@@ -782,7 +788,7 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct pro
 {
 	/* TODO */
 	switch (evt) {
-	case LP_ENC_EVT_RESPONSE:
+	case LP_ENC_EVT_START_ENC_REQ:
 		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
 		break;
 	default:
@@ -801,8 +807,9 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct pro
 {
 	/* TODO */
 	switch (evt) {
-	case LP_COMMON_EVT_RESPONSE:
+	case LP_ENC_EVT_START_ENC_RSP:
 		lp_enc_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -848,6 +855,26 @@ static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
+static void lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_ENC_RSP, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_START_ENC_REQ, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_START_ENC_RSP, pdu);
+		break;
+	default:
+		/* Unknown opcode */
+		LL_ASSERT(0);
+	}
+}
+
 /*
  * LLCP Local Request FSM
  */
@@ -880,7 +907,7 @@ static void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx
 		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 		break;
 	case PROC_ENCRYPTION_START:
-		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_RESPONSE, rx->pdu);
+		lp_enc_rx(conn, ctx, rx);
 		break;
 	default:
 		/* Unknown procedure */
