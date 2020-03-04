@@ -21,8 +21,6 @@ config IEEE802154_RAW_MODE
 	  be built). Used only for very specific cases, such as wpan_serial
 	  and wpanusb samples.
 
-source "drivers/ieee802154/Kconfig.cc2520"
-
 source "drivers/ieee802154/Kconfig.kw41z"
 
 source "drivers/ieee802154/Kconfig.mcr20a"

@@ -13,7 +13,7 @@ Requirements
 ************
 
 The sample assumes that 802.15.4 radio and USB controller are supported on
-a board. You can pick, for example, a transceiver such as a CC2520 or RF2xx
+a board. You can pick, for example, a transceiver such as RF2xx
 using overlays, or by using an SoC with a built-in radio, such as a kw41z,
 nrf5, or samr21.
 
@@ -35,9 +35,6 @@ Building and Running
    - :file:`prj.conf`
      This is the standard default config. This can be used by itself for
      hardware which has native 802.15.4 support.
-
-   - :file:`overlay-cc2520.conf`
-     This overlay enables support for CC2520 transceiver
 
    - :file:`overlay-rf2xx.conf`
      This overlay enables support for RF2XX transceiver

@@ -48,9 +48,6 @@ the ETSI test cases:
 
    sudo ./examples/etsi_coaptest.sh -i tap0 2001:db8::1
 
-To build the version supporting the TI CC2520 radio, use the supplied
-prj_cc2520.conf configuration file enabling IEEE 802.15.4.
-
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 .. _`libcoap`: https://github.com/obgm/libcoap

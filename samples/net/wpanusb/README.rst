@@ -31,9 +31,6 @@ There are configuration files for various setups in the
     This is the standard default config.  This can be used by itself for
     hardware which has native 802.15.4 support.
 
-- :file:`overlay-cc2520.conf`
-    This overlay config enables support for CC2520
-
 Build the wpanusb sample for a board:
 
 .. zephyr-app-commands::
