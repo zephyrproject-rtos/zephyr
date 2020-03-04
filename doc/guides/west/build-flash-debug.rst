@@ -532,8 +532,8 @@ For example, to print usage information about the ``jlink`` runner::
 
 .. _west-runner:
 
-Implementation Details
-**********************
+runners package API
+*******************
 
 The flash and debug commands are implemented as west *extension
 commands*: that is, they are west commands whose source code lives
