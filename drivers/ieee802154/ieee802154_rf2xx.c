@@ -307,12 +307,15 @@ static void rf2xx_thread_main(void *arg)
 
 static inline u8_t *get_mac(struct device *dev)
 {
+	const struct rf2xx_config *conf = dev->config->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 	u32_t *ptr = (u32_t *)(ctx->mac_addr);
 
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (u32_t *)(ctx->mac_addr + 4);
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+	if (!conf->has_mac) {
+		UNALIGNED_PUT(sys_rand32_get(), ptr);
+		ptr = (u32_t *)(ctx->mac_addr + 4);
+		UNALIGNED_PUT(sys_rand32_get(), ptr);
+	}
 
 	/*
 	 * Clear bit 0 to ensure it isn't a multicast address and set
@@ -821,59 +824,73 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 /*
  * Optional features place holders, get a 0 if the "gpio" doesn't exist
  */
-#define DRV_INST_GPIO_LABEL(n, gpio_pha)	     \
-	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+
+#define DRV_INST_GPIO_LABEL(n, gpio_pha)				\
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha),			\
 		 DT_INST_GPIO_LABEL(n, gpio_pha))
-#define DRV_INST_GPIO_PIN(n, gpio_pha)	             \
-	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+
+#define DRV_INST_GPIO_PIN(n, gpio_pha)					\
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha),			\
 		 DT_INST_GPIO_PIN(n, gpio_pha))
-#define DRV_INST_GPIO_FLAGS(n, gpio_pha)	     \
-	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+
+#define DRV_INST_GPIO_FLAGS(n, gpio_pha)				\
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha),			\
 		 DT_INST_GPIO_FLAGS(n, gpio_pha))
-#define DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n)           \
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+
+#define DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n)				\
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
 		 DT_INST_SPI_DEV_CS_GPIOS_LABEL(n))
-#define DRV_INST_SPI_DEV_CS_GPIOS_PIN(n)             \
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+
+#define DRV_INST_SPI_DEV_CS_GPIOS_PIN(n)				\
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
 		 DT_INST_SPI_DEV_CS_GPIOS_PIN(n))
-#define DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n)           \
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+
+#define DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n)				\
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
 		 DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n))
 
-#define IEEE802154_RF2XX_DEVICE_CONFIG(n)					   \
-	static const struct rf2xx_config rf2xx_ctx_config_##n = {		   \
-		.inst = n,							   \
-										   \
-		.irq.devname = DRV_INST_GPIO_LABEL(n, irq_gpios),		   \
-		.irq.pin = DRV_INST_GPIO_PIN(n, irq_gpios),			   \
-		.irq.flags = DRV_INST_GPIO_FLAGS(n, irq_gpios),			   \
-										   \
-		.reset.devname = DRV_INST_GPIO_LABEL(n, reset_gpios),		   \
-		.reset.pin = DRV_INST_GPIO_PIN(n, reset_gpios),			   \
-		.reset.flags = DRV_INST_GPIO_FLAGS(n, reset_gpios),		   \
-										   \
-		.slptr.devname = DRV_INST_GPIO_LABEL(n, slptr_gpios),		   \
-		.slptr.pin = DRV_INST_GPIO_PIN(n, slptr_gpios),			   \
-		.slptr.flags = DRV_INST_GPIO_FLAGS(n, slptr_gpios),		   \
-										   \
-		.dig2.devname = DRV_INST_GPIO_LABEL(n, dig2_gpios),		   \
-		.dig2.pin = DRV_INST_GPIO_PIN(n, dig2_gpios),			   \
-		.dig2.flags = DRV_INST_GPIO_FLAGS(n, dig2_gpios),		   \
-										   \
-		.clkm.devname = DRV_INST_GPIO_LABEL(n, clkm_gpios),		   \
-		.clkm.pin = DRV_INST_GPIO_PIN(n, clkm_gpios),			   \
-		.clkm.flags = DRV_INST_GPIO_FLAGS(n, clkm_gpios),		   \
-										   \
-		.spi.devname = DT_INST_BUS_LABEL(n),				   \
-		.spi.addr = DT_INST_REG_ADDR(n),				   \
-		.spi.freq = DT_INST_PROP(n, spi_max_frequency),			   \
-		.spi.cs.devname = DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n),		   \
-		.spi.cs.pin = DRV_INST_SPI_DEV_CS_GPIOS_PIN(n),			   \
-		.spi.cs.flags = DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n),		   \
-	};
+#define DRV_INST_LOCAL_MAC_ADDRESS(n)					\
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),		\
+		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,	\
+			  DT_INST_PROP(n, local_mac_address)))
 
-#define IEEE802154_RF2XX_DEVICE_DATA(n)			   \
-	static struct rf2xx_context rf2xx_ctx_data_##n;
+#define IEEE802154_RF2XX_DEVICE_CONFIG(n)				\
+	static const struct rf2xx_config rf2xx_ctx_config_##n = {	\
+		.inst = n,						\
+		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address), \
+									\
+		.irq.devname = DRV_INST_GPIO_LABEL(n, irq_gpios),	\
+		.irq.pin = DRV_INST_GPIO_PIN(n, irq_gpios),		\
+		.irq.flags = DRV_INST_GPIO_FLAGS(n, irq_gpios),		\
+									\
+		.reset.devname = DRV_INST_GPIO_LABEL(n, reset_gpios),	\
+		.reset.pin = DRV_INST_GPIO_PIN(n, reset_gpios),		\
+		.reset.flags = DRV_INST_GPIO_FLAGS(n, reset_gpios),	\
+									\
+		.slptr.devname = DRV_INST_GPIO_LABEL(n, slptr_gpios),	\
+		.slptr.pin = DRV_INST_GPIO_PIN(n, slptr_gpios),		\
+		.slptr.flags = DRV_INST_GPIO_FLAGS(n, slptr_gpios),	\
+									\
+		.dig2.devname = DRV_INST_GPIO_LABEL(n, dig2_gpios),	\
+		.dig2.pin = DRV_INST_GPIO_PIN(n, dig2_gpios),		\
+		.dig2.flags = DRV_INST_GPIO_FLAGS(n, dig2_gpios),	\
+									\
+		.clkm.devname = DRV_INST_GPIO_LABEL(n, clkm_gpios),	\
+		.clkm.pin = DRV_INST_GPIO_PIN(n, clkm_gpios),		\
+		.clkm.flags = DRV_INST_GPIO_FLAGS(n, clkm_gpios),	\
+									\
+		.spi.devname = DT_INST_BUS_LABEL(n),			\
+		.spi.addr = DT_INST_REG_ADDR(n),			\
+		.spi.freq = DT_INST_PROP(n, spi_max_frequency),		\
+		.spi.cs.devname = DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n),	\
+		.spi.cs.pin = DRV_INST_SPI_DEV_CS_GPIOS_PIN(n),		\
+		.spi.cs.flags = DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n),	\
+	}
+
+#define IEEE802154_RF2XX_DEVICE_DATA(n)                                \
+	static struct rf2xx_context rf2xx_ctx_data_##n = {              \
+		.mac_addr = DRV_INST_LOCAL_MAC_ADDRESS(n)               \
+	}
 
 #define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \
 	DEVICE_AND_API_INIT(			   \
