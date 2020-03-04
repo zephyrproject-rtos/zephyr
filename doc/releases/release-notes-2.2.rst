@@ -134,7 +134,33 @@ Removed APIs in this release
 Kernel
 ******
 
-* <TBD>
+* Addressed some race conditions observed on SMP-enabled systems
+* Propagate a distinct error code if a workqueue item is submitted that
+  has already been completed
+* Disable preemption when handing fatal errors
+* Fix an issue with the sytsem call stack frame if the system call is
+  preempted and then later tries to Z_OOPS()
+* add k_thread_stack_space_get() system call for analyzing thread stack
+  space. Older methods which had problems in some cases or on some
+  architectures like STACK_ANALYZE() are now deprecated.
+* Many kernel object APIs now optionally return runtime error values
+  instead of relying on assertions. Whether these return values, fail
+  assertions, or do no checking at all is controlled by the new
+  Kconfig options ASSERT_ON_ERRORS, NO_RUNTIME_CHECKS, RUNTIME_ERROR_CHECKS.
+* Cleanups to the arch_cpu_start() API
+* Spinlock validation now dumps the address of the incorrectly used spinlock
+* Various improvements to the assertion mechanism
+* k_poll() may be passed 0 events, in which case it just puts the caller to
+  sleep
+* Add k_thread_foreach_unlocked() API
+* Add an assertion if k_sleep() is called from an ISR
+* Numerous 64-bit fixes, mostly related to data type sizes
+* k_mutex_unlock() is now correctly a rescheduling point
+* Calling k_thread_suspend() on the current thread now correctly invokes
+  the scheduler
+* Calling k_thread_suspend() on any thread cancels any pending timeouts for
+  that thread
+* Fix edge case in meta-IRQ preemption of co-operative threads
 
 Architectures
 *************
@@ -165,7 +191,19 @@ Architectures
 
 * x86:
 
-  * <TBD>
+  * Fix an issue with Kconfig values larger than INT_MAX
+  * Fix an issue where callee-saved registers could be unnecessarily
+    saved on the stack when handling exceptions on x86_64
+  * Fix a potential race with saving RFLAGS on context switch on x86_64
+  * Enable 64-bit mode and X2APIC for the 'acrn' target
+  * Add a poison value of 0xB9 to RIP if a thread is dispatched on multiple
+    cores
+  * Implement CONFIG_USERSPACE on x86_64
+  * Fix an issue where reserved memory could be overwritten when loading the
+    Zephyr image on qemu_x86_64
+  * x86_64 will now exit QEMU when encountering a fatal error, much like
+    32-bit already does
+  * Cleanups and improvements to exception debug messages
 
 Boards & SoC Support
 ********************
