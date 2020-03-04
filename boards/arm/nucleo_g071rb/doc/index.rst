@@ -96,6 +96,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
