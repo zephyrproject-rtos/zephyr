@@ -355,17 +355,10 @@ static bool readFormatCapacity(void)
 
 static bool readCapacity(void)
 {
-	u8_t capacity[] = {
-		(u8_t)(((block_count - 1) >> 24) & 0xff),
-		(u8_t)(((block_count - 1) >> 16) & 0xff),
-		(u8_t)(((block_count - 1) >> 8) & 0xff),
-		(u8_t)(((block_count - 1) >> 0) & 0xff),
+	u8_t capacity[8];
 
-		(u8_t)((BLOCK_SIZE >> 24) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 16) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 8) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 0) & 0xff),
-	};
+	sys_put_be32(block_count - 1, &capacity[0]);
+	sys_put_be32(BLOCK_SIZE, &capacity[4]);
 
 	return write(capacity, sizeof(capacity));
 }
@@ -434,8 +427,7 @@ static bool infoTransfer(void)
 	u32_t n;
 
 	/* Logical Block Address of First Block */
-	n = (cbw.CB[2] << 24) | (cbw.CB[3] << 16) | (cbw.CB[4] <<  8) |
-				 (cbw.CB[5] <<  0);
+	n = sys_get_be32(&cbw.CB[2]);
 
 	LOG_DBG("LBA (block) : 0x%x ", n);
 	if ((n * BLOCK_SIZE) >= memory_size) {
@@ -452,13 +444,12 @@ static bool infoTransfer(void)
 	case READ10:
 	case WRITE10:
 	case VERIFY10:
-		n = (cbw.CB[7] <<  8) | (cbw.CB[8] <<  0);
+		n = sys_get_be16(&cbw.CB[7]);
 		break;
 
 	case READ12:
 	case WRITE12:
-		n = (cbw.CB[6] << 24) | (cbw.CB[7] << 16) |
-			(cbw.CB[8] <<  8) | (cbw.CB[9] <<  0);
+		n = sys_get_be32(&cbw.CB[6]);
 		break;
 	}
 
