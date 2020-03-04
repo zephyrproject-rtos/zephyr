@@ -53,7 +53,7 @@ typedef int (*led_api_off)(struct device *dev, u32_t led);
  *
  * This is the mandatory API any LED driver needs to expose.
  */
-struct led_driver_api {
+__subsystem struct led_driver_api {
 	led_api_blink blink;
 	led_api_set_brightness set_brightness;
 	led_api_on on;

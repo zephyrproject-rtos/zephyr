@@ -66,7 +66,7 @@ typedef int (*pmux_pullup)(struct device *dev, u32_t pin, u8_t func);
  */
 typedef int (*pmux_input)(struct device *dev, u32_t pin, u8_t func);
 
-struct pinmux_driver_api {
+__subsystem struct pinmux_driver_api {
 	pmux_set set;
 	pmux_get get;
 	pmux_pullup pullup;

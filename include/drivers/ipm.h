@@ -85,7 +85,7 @@ typedef void (*ipm_register_callback_t)(struct device *port, ipm_callback_t cb,
  */
 typedef int (*ipm_set_enabled_t)(struct device *ipmdev, int enable);
 
-struct ipm_driver_api {
+__subsystem struct ipm_driver_api {
 	ipm_send_t send;
 	ipm_register_callback_t register_callback;
 	ipm_max_data_size_get_t max_data_size_get;
