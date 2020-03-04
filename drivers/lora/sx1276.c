@@ -435,6 +435,7 @@ const struct Radio_s Radio = {
 	.Random = SX1276Random,
 	.SetRxConfig = SX1276SetRxConfig,
 	.SetTxConfig = SX1276SetTxConfig,
+	.CheckRfFrequency = SX1276CheckRfFrequency,
 	.TimeOnAir = SX1276GetTimeOnAir,
 	.Send = SX1276Send,
 	.Sleep = SX1276SetSleep,
