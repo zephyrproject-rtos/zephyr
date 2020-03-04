@@ -9,6 +9,10 @@ config ARCH
 	default "riscv64" if 64BIT
 	default "riscv32"
 
+config COMPRESSED_ISA
+	bool
+	default y if 64BIT
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
