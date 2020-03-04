@@ -42,6 +42,46 @@ static void ll_i2c_generate_start_condition(I2C_TypeDef *i2c)
 }
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
+
+static void ll_i2c_reset(I2C_TypeDef *i2c)
+{
+	u16_t cr1, cr2, oar1, oar2, trise, ccr;
+#if  defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	u16_t fltr;
+#endif
+
+	/* save all important registers before reset */
+	cr1 = LL_I2C_ReadReg(i2c, CR1);
+	cr2 = LL_I2C_ReadReg(i2c, CR2);
+	oar1 = LL_I2C_ReadReg(i2c, OAR1);
+	oar2 = LL_I2C_ReadReg(i2c, OAR2);
+	ccr = LL_I2C_ReadReg(i2c, CCR);
+	trise = LL_I2C_ReadReg(i2c, TRISE);
+#if  defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	fltr = LL_I2C_ReadReg(i2c, FLTR);
+#endif
+
+	LL_I2C_EnableReset(i2c);
+	LL_I2C_DisableReset(i2c);
+
+	/* some registers (CCR) can only be set when the device is disabled */
+	LL_I2C_Disable(i2c);
+
+	/* restore all important registers after reset */
+	LL_I2C_WriteReg(i2c, CR2, cr2);
+	/* bit 14 of OAR1 must always be 1 */
+	oar1 |= (1 << 14);
+	LL_I2C_WriteReg(i2c, OAR1, oar1);
+	LL_I2C_WriteReg(i2c, OAR2, oar2);
+	LL_I2C_WriteReg(i2c, CCR, ccr);
+	LL_I2C_WriteReg(i2c, TRISE, trise);
+#if  defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	LL_I2C_WriteReg(i2c, FLTR, fltr);
+#endif
+	cr1 &= ~(I2C_CR1_STOP | I2C_CR1_START | I2C_CR1_ACK);
+	LL_I2C_WriteReg(i2c, CR1, cr1);
+}
+
 static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
 	u16_t saddr = data->slave_address;
@@ -244,6 +284,11 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	data->current.is_nack = 0U;
 	data->current.is_err = 0U;
 	data->slave_address = saddr;
+
+	if (LL_I2C_IsActiveFlag_BUSY(i2c)) {
+		LOG_DBG("%s: START while BUSY active!", __func__);
+		ll_i2c_reset(i2c);
+	}
 
 	LL_I2C_EnableIT_EVT(i2c);
 	LL_I2C_EnableIT_ERR(i2c);
