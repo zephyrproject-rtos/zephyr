@@ -5046,23 +5046,27 @@ static void hci_vs_init(void)
 	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
-				   NULL, &rsp);
-	if (err) {
-		BT_WARN("Failed to read supported vendor features");
-		return;
-	}
+	if (BT_VS_CMD_SUP_FEAT(bt_dev.vs_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
+					   NULL, &rsp);
+		if (err) {
+			BT_WARN("Failed to read supported vendor features");
+			return;
+		}
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
-	    rsp->len != sizeof(struct bt_hci_rp_vs_read_supported_features)) {
-		BT_WARN("Invalid Vendor HCI extensions");
+		if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+		    rsp->len !=
+		    sizeof(struct bt_hci_rp_vs_read_supported_features)) {
+			BT_WARN("Invalid Vendor HCI extensions");
+			net_buf_unref(rsp);
+			return;
+		}
+
+		rp.feat = (void *)rsp->data;
+		memcpy(bt_dev.vs_features, rp.feat->features,
+		       BT_DEV_VS_FEAT_MAX);
 		net_buf_unref(rsp);
-		return;
 	}
-
-	rp.feat = (void *)rsp->data;
-	memcpy(bt_dev.vs_features, rp.feat->features, BT_DEV_VS_FEAT_MAX);
-	net_buf_unref(rsp);
 }
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
@@ -5677,7 +5681,7 @@ static void bt_read_identity_root(u8_t *ir)
 	struct net_buf *rsp;
 	int err;
 
-	if (!(bt_dev.vs_commands[1] & BIT(1))) {
+	if (!BT_VS_CMD_READ_KEY_ROOTS(bt_dev.vs_commands)) {
 		return;
 	}
 
@@ -5738,7 +5742,7 @@ static uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr *addrs)
 	int err, i;
 	u8_t cnt;
 
-	if (!(bt_dev.vs_commands[1] & BIT(0))) {
+	if (!BT_VS_CMD_READ_STATIC_ADDRS(bt_dev.vs_commands)) {
 		BT_WARN("Read Static Addresses command not available");
 		return 0;
 	}
