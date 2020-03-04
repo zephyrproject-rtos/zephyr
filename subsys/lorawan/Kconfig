@@ -17,6 +17,13 @@ module = LORAWAN
 module-str = lorawan
 source "subsys/logging/Kconfig.template.log_config"
 
+config LORAWAN_SYSTEM_MAX_RX_ERROR
+	int "LoRaWAN System Max Rx Error"
+	default 20
+	help
+	  System Max Rx timing error value in ms to be used by LoRaWAN stack
+	  for calculating the RX1/RX2 window timing.
+
 choice
 	prompt "LoRaWAN Region Selection"
 	default LORAMAC_REGION_UNKNOWN
