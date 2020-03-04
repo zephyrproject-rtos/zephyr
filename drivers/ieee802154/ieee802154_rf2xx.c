@@ -190,6 +190,50 @@ static void rf2xx_trx_rx(struct device *dev)
 				K_THREAD_STACK_SIZEOF(ctx->trx_stack));
 	}
 }
+
+static void rf2xx_process_rx_frame(struct device *dev)
+{
+	struct rf2xx_context *ctx = dev->driver_data;
+
+	/* Ensures that automatically ACK will be sent
+	 * when requested
+	 */
+	while (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) ==
+	       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
+		;
+	};
+
+	/* Set PLL_ON to avoid transceiver receive
+	 * new data until finish reading process
+	 */
+	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_PLL_ON);
+	k_timer_stop(&ctx->trx_isr_timeout);
+	rf2xx_trx_rx(dev);
+	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_RX_AACK_ON);
+}
+
+static void rf2xx_process_tx_frame(struct device *dev)
+{
+	struct rf2xx_context *ctx = dev->driver_data;
+
+	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
+			 RF2XX_TRAC_STATUS) & 7;
+	k_sem_give(&ctx->trx_tx_sync);
+	rf2xx_trx_set_rx_state(dev);
+}
+
+static void rf2xx_process_trx_end(struct device *dev)
+{
+	struct rf2xx_context *ctx = dev->driver_data;
+
+	if (ctx->trx_state == RF2XX_TRX_PHY_BUSY_RX) {
+		rf2xx_process_rx_frame(dev);
+	} else {
+		rf2xx_process_tx_frame(dev);
+	}
+	ctx->trx_state = RF2XX_TRX_PHY_STATE_IDLE;
+}
+
 static void rf2xx_thread_main(void *arg)
 {
 	struct device *dev = INT_TO_POINTER(arg);
@@ -231,34 +275,7 @@ static void rf2xx_thread_main(void *arg)
 			ctx->trx_state = RF2XX_TRX_PHY_BUSY_RX;
 			k_timer_start(&ctx->trx_isr_timeout, K_MSEC(10), 0);
 		} else if (isr_status & (1 << RF2XX_TRX_END)) {
-			if (ctx->trx_state == RF2XX_TRX_PHY_BUSY_RX) {
-				/* Ensures that automatically ACK will be sent
-				 * when requested
-				 */
-				while (rf2xx_iface_reg_read(dev,
-							    RF2XX_TRX_STATUS_REG) ==
-				       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
-				};
-
-				/* Set PLL_ON to avoid transceiver receive
-				 * new data until finish reading process
-				 */
-				rf2xx_trx_set_state(dev,
-						    RF2XX_TRX_PHY_STATE_CMD_PLL_ON);
-				k_timer_stop(&ctx->trx_isr_timeout);
-				rf2xx_trx_rx(dev);
-				rf2xx_trx_set_state(dev,
-						    RF2XX_TRX_PHY_STATE_CMD_RX_AACK_ON);
-				/*if (ctx->trx_state == RF2XX_TRX_PHY_BUSY_TX)*/
-			} else {
-				ctx->trx_trac =
-					(rf2xx_iface_reg_read(dev,
-							      RF2XX_TRX_STATE_REG) >>
-					 RF2XX_TRAC_STATUS) & 7;
-				k_sem_give(&ctx->trx_tx_sync);
-				rf2xx_trx_set_rx_state(dev);
-			}
-			ctx->trx_state = RF2XX_TRX_PHY_STATE_IDLE;
+			rf2xx_process_trx_end(dev);
 		}
 		k_mutex_unlock(&ctx->phy_mutex);
 	}
