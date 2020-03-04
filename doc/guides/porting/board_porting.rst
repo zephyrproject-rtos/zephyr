@@ -179,12 +179,61 @@ Flash and debug support
 
 Zephyr supports :ref:`west-build-flash-debug` via west extension commands.
 
-To add ``west flash`` and ``west debug`` support, you need to add a
-:file:`board.cmake` file to your board directory which configures a "runner"
-for your board. (There's nothing special you need to do to get ``west build``
-support for your board.)
+To add ``west flash`` and ``west debug`` support for your board, you need to
+create a :file:`board.cmake` file in your board directory. This file's job is
+to configure a "runner" for your board. (There's nothing special you need to
+do to get ``west build`` support for your board.)
 
-If you're using one of the :ref:`debug-host-tools` that Zephyr already
-supports, this should only be a few lines of code. See the flashing and
-debugging page for more details, and look at :file:`board.cmake` files for
-other boards which support your runner for examples.
+"Runners" are Zephyr-specific Python classes that wrap :ref:`flash and debug
+host tools <debug-host-tools>` and integrate with west and the zephyr build
+system to support ``west flash`` and related commands. Each runner supports
+flashing, debugging, or both. You need to configure the arguments to these
+Python scripts in your :file:`board.cmake` to support those commands like this
+example :file:`board.cmake`:
+
+.. code-block:: cmake
+
+   board_runner_args(nrfjprog "--nrf-family=NRF52")
+   board_runner_args(jlink "--device=nrf52" "--speed=4000")
+   board_runner_args(pyocd "--target=nrf52" "--frequency=4000000")
+
+   include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+
+This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
+
+.. warning::
+
+   Runners usually have names which match the tools they wrap, so the ``jlink``
+   runner wraps Segger's J-Link tools, and so on. But the runner command line
+   options like ``--speed`` etc. are specific to the Python scripts.
+
+For more details:
+
+- Run ``west flash --context`` to see a list of available runners which support
+  flashing, and ``west flash --context -r <RUNNER>`` to view the specific options
+  available for an individual runner.
+- Run ``west debug --context`` and ``west debug --context <RUNNER>`` to get
+  the same output for runners which support debugging.
+- Run ``west flash --help`` and ``west debug --help`` for top-level options
+  for flashing and debugging.
+- See :ref:`west-runner` for Python APIs.
+- Look for :file:`board.cmake` files for other boards similar to your own for
+  more examples.
+
+To see what a ``west flash`` or ``west debug`` command is doing exactly, run it
+in verbose mode:
+
+.. code-block:: sh
+
+   west --verbose flash
+   west --verbose debug
+
+Verbose mode prints any host tool commands the runner uses.
+
+The order of the ``include()`` calls in your :file:`board.cmake` matters. The
+first ``include`` sets the default runner if it's not already set. For example,
+including ``nrfjprog.board.cmake`` first means that ``nrjfprog`` is the default
+flash runner for this board. Since ``nrfjprog`` does not support debugging,
+``jlink`` is the default debug runner.
