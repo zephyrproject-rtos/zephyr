@@ -161,12 +161,7 @@ Architectures
 
 * RISC-V:
 
-  * Added GPIO driver for LiteX VexRiscv
-  * Fixed Ethernet networking for LiteX VexRiscv
-  * Added Programmable Interrupt Controller support for SweRV
-  * Fixed invalid channel bug for RV32M1 interrupt controller
-  * Added PWM support for RV32M1
-  * Optimized reads of MTIME/MTIMECMP on 64-bit RISC-V
+  * N/A
 
 * x86:
 
@@ -244,7 +239,11 @@ Drivers and Sensors
 
 * ADC
 
-  * <TBD>
+  * Added LMP90xxx driver with GPIO
+
+* Audio
+
+  * N/A
 
 * Bluetooth
 
@@ -255,6 +254,9 @@ Drivers and Sensors
 
   * Support for CAN_2 on STM32, but no simultaneous use of CAN_1 and CAN_2.
   * Support for STM32F3 and STM32F4 series
+  * Added SocketCAN support to mcux flexcan driver
+  * Fixed bit timing conversion in stm32 driver
+  * Introduced can-primary device tree alias
 
 * Clock Control
 
@@ -263,13 +265,23 @@ Drivers and Sensors
 
 * Console
 
-  * <TBD>
+  * N/A
 
 * Counter
 
   * The counter_read() API function is deprecated in favor of
     counter_get_value(). The new API function adds a return value for
     indicating whether the counter was read successfully.
+  * Added missing syscalls
+
+* Crypto
+
+  * Added AES GCM, ECB, and CBC support to crypto_mtls_shim
+  * Added stm32 CRYP driver
+
+* Debug
+
+  * N/A
 
 * Display
 
@@ -291,11 +303,17 @@ Drivers and Sensors
 
 * Entropy
 
-  * <TBD>
+  * Added support for sam0
+  * Added LiteX PRBS module driver
+
+* ESPI
+
+  * N/A
 
 * Ethernet
 
   * Support for SiLabs Giant Gecko GG11 Ethernet driver
+  * Fixed Ethernet networking for LiteX VexRiscv
 
 * Flash
 
@@ -310,19 +328,25 @@ Drivers and Sensors
 
 * GPIO
 
-  * <TBD>
+  * Updated all drivers to the new API
+  * Added LiteX GPIO driver
 
 * Hardware Info
 
-  * <TBD>
+  * N/A
 
 * I2C
 
-  * <TBD>
+  * Enabled interrupts by default in stm32 driver
+  * Added I2C shell with scan command
+  * Added LiteX I2C controller driver
+  * Added STM32G0X support to stm32 driver
+  * Added support for bus idle timeout property to mcux lpspi driver
+  * Added support for SAME54 to sam0 driver
 
 * I2S
 
-  * <TBD>
+  * N/A
 
 * IEEE 802.15.4
 
@@ -330,19 +354,26 @@ Drivers and Sensors
 
 * Interrupt Controller
 
-  * <TBD>
+  * Added support for multiple GIC versions
+  * Renamed s1000 driver to cavs
+  * Added SweRV Programmable Interrupt Controller driver
+  * Fixed invalid channel bug for RV32M1 interrupt controller
 
 * IPM
 
-  * <TBD>
+  * N/A
 
 * Keyboard Scan
 
-  * <TBD>
+  * Added ft5336 touch panel driver
 
 * LED
 
-  * <TBD>
+  * N/A
+
+* LED Strip
+
+  * Fixed up ws2812 driver
 
 * LoRa
 
@@ -353,33 +384,62 @@ Drivers and Sensors
 
   * Add support for generic GSM modem
 
+* Neural Net
+
+  * N/A
+
+* PCIe
+
+  * N/A
+
 * Pinmux
 
-  * <TBD>
+  * Removed CC2650 driver
 
 * PS/2
 
-  * <TBD>
+  * N/A
+
+ * PTP Clock
+
+   * N/A
 
 * PWM
 
-  * <TBD>
+  * Added RV32M1 timer/PWM driver
+  * Added LiteX PWM peripheral driver
+  * Added support for intverted PWM signals
 
 * Sensor
 
-  * <TBD>
+  * Fixed DRDY interrupt in lis3mdl driver
+  * Added nxp kinetis temperature sensor driver
+  * Reworked ccs811 driver
+  * Fixed tmp007 driver to use i2c_burst_read
+  * Introduced sensor shell module
+  * Added ms5607 driver
 
 * Serial
 
   * nRF UARTE driver support TX only mode with receiver permanently disabled.
+  * Enabled shared interrupts support in uart_pl011 driver
+  * Implemented configure API in ns16550 driver
+  * Removed cc2650 driver
+  * Added async API system calls
 
 * SPI
 
-  * <TBD>
+  * Added support for samv71 to sam driver
+  * Added support for same54 support to sam0 driver
+  * Added PM busy state support in DW driver
+  * Added Gecko SPI driver
+  * Added mcux flexcomm driver
 
 * Timer
 
-  * <TBD>
+  * Optimized reads of MTIME/MTIMECMP on 64-bit RISC-V
+  * Added per-core ARM architected timer driver
+  * Added support for same54 to sam0 rtc timer driver
 
 * USB
 
@@ -389,15 +449,17 @@ Drivers and Sensors
 
 * Video
 
-  * <TBD>
+  * N/A
 
 * Watchdog
 
-  * <TBD>
+  * Added SiLabs Gecko watchdog driver
+  * Added system calls
+  * Fixed callback call on stm32 wwdg enable
 
 * WiFi
 
-  * <TBD>
+  * Reworked offloading mechanism in eswifi and simplelink drivers
 
 Networking
 **********
