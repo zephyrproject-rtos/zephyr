@@ -201,7 +201,7 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/LPC55S6x.pdf
 
 .. _LPC55S69 Reference Manual:
-   https://www.nxp.com/docs/en/user-guide/UM11126.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11126
 
 .. _LPCXPRESSO55S69 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/lpcxpresso55s69-development-board:LPC55S69-EVK
