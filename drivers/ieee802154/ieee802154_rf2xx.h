@@ -88,8 +88,6 @@ struct rf2xx_dt_spi_t {
 };
 
 struct rf2xx_config {
-	u8_t inst;
-
 	struct rf2xx_dt_gpio_t irq;
 	struct rf2xx_dt_gpio_t reset;
 	struct rf2xx_dt_gpio_t slptr;
@@ -97,6 +95,9 @@ struct rf2xx_config {
 	struct rf2xx_dt_gpio_t clkm;
 
 	struct rf2xx_dt_spi_t spi;
+
+	u8_t inst;
+	u8_t has_mac;
 };
 
 struct rf2xx_context {
