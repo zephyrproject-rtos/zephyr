@@ -15,6 +15,29 @@
 extern "C" {
 #endif
 
+#define BT_VS_CMD_BIT_VERSION                       0
+#define BT_VS_CMD_BIT_SUP_CMD                       1
+#define BT_VS_CMD_BIT_SUP_FEAT                      2
+#define BT_VS_CMD_BIT_SET_EVT_MASK                  3
+#define BT_VS_CMD_BIT_RESET                         4
+#define BT_VS_CMD_BIT_WRITE_BDADDR                  5
+#define BT_VS_CMD_BIT_SET_TRACE_ENABLE              6
+#define BT_VS_CMD_BIT_READ_BUILD_INFO               7
+#define BT_VS_CMD_BIT_READ_STATIC_ADDRS             8
+#define BT_VS_CMD_BIT_READ_KEY_ROOTS                9
+#define BT_VS_CMD_BIT_READ_CHIP_TEMP               10
+#define BT_VS_CMD_BIT_READ_HOST_STACK_CMD          11
+#define BT_VS_CMD_BIT_SET_SCAN_REP_ENABLE          12
+#define BT_VS_CMD_BIT_WRITE_TX_POWER               13
+#define BT_VS_CMD_BIT_READ_TX_POWER                14
+
+#define BT_VS_CMD_SUP_FEAT(cmd)                 BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_SUP_FEAT)
+#define BT_VS_CMD_READ_STATIC_ADDRS(cmd)        BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_READ_STATIC_ADDRS)
+#define BT_VS_CMD_READ_KEY_ROOTS(cmd)           BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_READ_KEY_ROOTS)
+
 #define BT_HCI_VS_HW_PLAT_INTEL                 0x0001
 #define BT_HCI_VS_HW_PLAT_NORDIC                0x0002
 #define BT_HCI_VS_HW_PLAT_NXP                   0x0003
