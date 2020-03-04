@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Gerson Fernando Budke
+# Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: ATMEL AT86RF2xx 802.15.4 wireless transceiver
@@ -31,3 +31,8 @@ properties:
       type: phandle-array
       required: false
       description: Master clock signal output
+
+    local-mac-address:
+      type: uint8-array
+      description:
+        Specifies the MAC address that was assigned to the network device
