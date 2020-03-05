@@ -208,7 +208,10 @@ struct proc_ctx {
 	u8_t state;
 
 	/* Expected opcode to be recieved next */
-	u8_t opcode;
+	u8_t rx_opcode;
+
+	/* Last transmitted opcode used for unknown/reject */
+	u8_t tx_opcode;
 
 	/* Instant collision */
 	int collision;
@@ -538,12 +541,14 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
 	ull_tx_enqueue(conn, tx);
@@ -712,6 +717,8 @@ static void lp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcod
 		LL_ASSERT(0);
 	}
 
+	ctx->tx_opcode = pdu->llctrl.opcode;
+
 	/* Enqueue LL Control PDU towards LLL */
 	ull_tx_enqueue(conn, tx);
 }
@@ -751,7 +758,7 @@ static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
 	} else {
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_ENC_RSP;
 	}
 }
@@ -762,7 +769,7 @@ static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_RSP;
 
 		/* Tx Encryption enabled */
@@ -831,7 +838,7 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_ENC_RSP:
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
 		break;
 	default:
@@ -1145,12 +1152,14 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
 	ull_tx_enqueue(conn, tx);
@@ -1275,6 +1284,8 @@ static void rp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcod
 		LL_ASSERT(0);
 	}
 
+	ctx->tx_opcode = pdu->llctrl.opcode;
+
 	/* Enqueue LL Control PDU towards LLL */
 	ull_tx_enqueue(conn, tx);
 }
@@ -1353,7 +1364,7 @@ static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_REQ;
 	} else {
 		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ);
-		ctx->opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 		ctx->state = RP_ENC_STATE_WAIT_RX_START_ENC_RSP;
 
 		/* Rx Decryption enabled */
@@ -1872,6 +1883,22 @@ void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn)
 	}
 }
 
+static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return ctx->rx_opcode == pdu->llctrl.opcode;
+}
+
+static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) && (ctx->tx_opcode == pdu->llctrl.unknown_rsp.type));
+}
+
+static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
+	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+}
+
 void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu;
@@ -1879,29 +1906,20 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 
 	pdu = (struct pdu_data *) rx->pdu;
 
-	/* TODO(thoh):
-	 * Could be optimized by storing the active local opcode in ull_cp_conn,
-	 * and then move the peek into lr_rx() */
 	ctx = lr_peek(conn);
-	if (ctx && ctx->opcode == pdu->llctrl.opcode) {
+	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
 		/* Response on local procedure */
 		lr_rx(conn, ctx, rx);
 		return;
 	}
 
-	/* TODO(thoh):
-	 * Could be optimized by storing the active remote opcode in ull_cp_conn,
-	 * and then move the peek into rr_rx() */
 	ctx = rr_peek(conn);
-	if (ctx && ctx->opcode == pdu->llctrl.opcode) {
+	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
 		/* Response on remote procedure */
 		rr_rx(conn, ctx, rx);
 		return;
 	}
 
-	switch (pdu->llctrl.opcode) {
-	default:
-		/* New remote request */
-		rr_new(conn, rx);
-	}
+	/* New remote request */
+	rr_new(conn, rx);
 }
