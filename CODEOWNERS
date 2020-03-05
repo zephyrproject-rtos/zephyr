@@ -46,9 +46,9 @@
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /arch/x86/                                @andrewboie
 /arch/nios2/                              @andrewboie @wentongwu
-/arch/posix/                              @aescolar
+/arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda @nategraff-sifive
-/soc/posix/                               @aescolar
+/soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda @nategraff-sifive
 /soc/riscv/openisa*/                      @MaureenHelm
 /soc/x86/                                 @andrewboie
@@ -101,7 +101,8 @@
 /boards/nios2/                            @wentongwu
 /boards/nios2/altera_max10/               @wentongwu
 /boards/arm/stm32_min_dev/                @cbsiddharth
-/boards/posix/                            @aescolar
+/boards/posix/                            @aescolar @daor-oti
+/boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda @nategraff-sifive
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
@@ -124,7 +125,7 @@
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*stm32*                        @erwango
-/drivers/*/*native_posix*                 @aescolar
+/drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
@@ -261,7 +262,7 @@
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
-/dts/posix/                               @aescolar @vanwinkeljan
+/dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak @stephanosio
@@ -294,7 +295,7 @@
 /include/arch/arm/aarch32/irq.h           @andrewboie
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
-/include/arch/posix/                      @aescolar
+/include/arch/posix/                      @aescolar @daor-oti
 /include/arch/riscv/                      @nategraff-sifive @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
@@ -392,7 +393,7 @@
 /scripts/west_commands/                   @mbolivar
 /scripts/west-commands.yml                @mbolivar
 /scripts/zephyr_module.py                 @tejlmand
-/scripts/valgrind.supp                    @aescolar
+/scripts/valgrind.supp                    @aescolar @daor-oti
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
@@ -400,7 +401,7 @@
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
 /subsys/tracing/                          @nashif @wentongwu
-/subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar
+/subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
@@ -436,10 +437,10 @@
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot
 /tests/arch/arm/                          @ioannisg
-/tests/boards/native_posix/               @aescolar
+/tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
-/tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar
+/tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
@@ -463,4 +464,4 @@
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
 *.rst                                     @nashif
-*posix*.rst                               @aescolar
+*posix*.rst                               @aescolar @daor-oti
