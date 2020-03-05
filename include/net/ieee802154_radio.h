@@ -84,14 +84,26 @@ enum ieee802154_tx_mode {
 	IEEE802154_TX_MODE_TXTIME_CCA,
 };
 
+/** IEEE802.15.4 Frame Pending Bit table address matching mode. */
+enum ieee802154_fpb_mode {
+	/** The pending bit shall be set only for addresses found in the list.
+	 */
+	IEEE802154_FPB_ADDR_MATCH_THREAD,
+
+	/** The pending bit shall be cleared for short addresses found in
+	 *  the list.
+	 */
+	IEEE802154_FPB_ADDR_MATCH_ZIGBEE,
+};
+
 /** IEEE802.15.4 driver configuration types. */
 enum ieee802154_config_type {
 	/** Indicates how radio driver should set Frame Pending bit in ACK
 	 *  responses for Data Requests. If enabled, radio driver should
 	 *  determine whether to set the bit or not based on the information
-	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config. Otherwise,
-	 *  Frame Pending bit should be set to ``1``(see IEEE Std 802.15.4-2006,
-	 *  7.2.2.3.1).
+	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
+	 *  matching mode specified. Otherwise, Frame Pending bit should be set
+	 *  to ``1``(see IEEE Std 802.15.4-2006, 7.2.2.3.1).
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
@@ -120,6 +132,7 @@ struct ieee802154_config {
 		/** ``IEEE802154_CONFIG_AUTO_ACK_FPB`` */
 		struct {
 			bool enabled;
+			enum ieee802154_fpb_mode mode;
 		} auto_ack_fpb;
 
 		/** ``IEEE802154_CONFIG_ACK_FPB`` */
