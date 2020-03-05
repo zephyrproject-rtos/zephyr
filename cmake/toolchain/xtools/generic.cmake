@@ -36,3 +36,5 @@ set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
 
 unset(some_toolchain_root)
 unset(some_toolchain)
+
+message(STATUS "Found toolchain: xtools (${XTOOLS_TOOLCHAIN_PATH})")
