@@ -40,9 +40,9 @@ static void msg_sender(struct k_mbox *pmbox, s32_t timeout)
 		mmsg.info = PUT_GET_NULL;
 		mmsg.size = 0;
 		mmsg.tx_data = NULL;
-		if (timeout == K_FOREVER) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			k_mbox_put(pmbox, &mmsg, K_FOREVER);
-		} else if (timeout == K_NO_WAIT) {
+		} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			k_mbox_put(pmbox, &mmsg, K_NO_WAIT);
 		} else {
 			k_mbox_put(pmbox, &mmsg, timeout);
@@ -62,10 +62,10 @@ static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id, s32_t timeout)
 	case PUT_GET_NULL:
 		mmsg.size = sizeof(rxdata);
 		mmsg.rx_source_thread = thd_id;
-		if (timeout == K_FOREVER) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			zassert_true(k_mbox_get(pmbox, &mmsg,
 				     rxdata, K_FOREVER) == 0, NULL);
-		} else if (timeout == K_NO_WAIT) {
+		} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			zassert_false(k_mbox_get(pmbox, &mmsg,
 				      rxdata, K_NO_WAIT) == 0, NULL);
 		} else {
@@ -102,7 +102,7 @@ void test_msg_receiver(void)
 			      test_send, &mbox, NULL, NULL,
 			      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
-	msg_receiver(&mbox, K_ANY, 2);
+	msg_receiver(&mbox, K_ANY, K_MSEC(2));
 	k_thread_abort(tid);
 }
 

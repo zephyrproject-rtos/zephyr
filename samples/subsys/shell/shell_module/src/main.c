@@ -31,7 +31,7 @@ static int cmd_log_test_start(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	k_timer_start(&log_timer, period, period);
+	k_timer_start(&log_timer, K_MSEC(period), K_MSEC(period));
 	shell_print(shell, "Log test started\n");
 
 	return 0;

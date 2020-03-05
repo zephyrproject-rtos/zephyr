@@ -54,7 +54,7 @@ void metairq_thread(void)
 	printk("give sem2\n");
 	k_sem_give(&coop_sem2);
 
-	k_sleep(WAIT_MS);
+	k_msleep(WAIT_MS);
 
 	printk("give sem1\n");
 	k_sem_give(&coop_sem1);
@@ -121,13 +121,13 @@ void coop_thread2(void)
 
 K_THREAD_DEFINE(metairq_thread_id, 1024,
 		metairq_thread, 0, 0, 0,
-		K_PRIO_COOP(0), 0, K_NO_WAIT);
+		K_PRIO_COOP(0), 0, 0);
 K_THREAD_DEFINE(coop_thread1_id, 1024,
 		coop_thread1, 0, 0, 0,
-		K_PRIO_COOP(1), 0, K_NO_WAIT);
+		K_PRIO_COOP(1), 0, 0);
 K_THREAD_DEFINE(coop_thread2_id, 1024,
 		coop_thread2, 0, 0, 0,
-		K_PRIO_COOP(2), 0, K_NO_WAIT);
+		K_PRIO_COOP(2), 0, 0);
 
 void test_preempt(void)
 {

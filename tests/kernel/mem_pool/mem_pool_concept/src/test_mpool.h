@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TIMEOUT 2000
+#define TIMEOUT K_MSEC(2000)
 #ifdef CONFIG_RISCV
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #else

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(main);
 #define NUM_LEDS 4
 #define BLINK_DELAY_ON 500
 #define BLINK_DELAY_OFF 500
-#define DELAY_TIME K_MSEC(2000)
+#define DELAY_TIME 2000
 #define COLORS_TO_SHOW 8
 #define VALUES_PER_COLOR 3
 
@@ -188,7 +188,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -204,7 +204,7 @@ void main(void)
 		}
 
 		/* Wait a few blinking before turning off the LEDs */
-		k_sleep(DELAY_TIME * 2);
+		k_msleep(DELAY_TIME * 2);
 
 		/* Change the color of the LEDs while keeping blinking. */
 		for (i = 0; i < COLORS_TO_SHOW; i++) {
@@ -216,7 +216,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME * 2);
+			k_msleep(DELAY_TIME * 2);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -224,6 +224,6 @@ void main(void)
 			return;
 		}
 
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 	}
 }

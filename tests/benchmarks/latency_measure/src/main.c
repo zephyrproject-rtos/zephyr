@@ -55,7 +55,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 
 K_THREAD_DEFINE(tt_id, STACK_SIZE,
 		test_thread, NULL, NULL, NULL,
-		10, 0, K_NO_WAIT);
+		10, 0, 0);
 
 
 void main(void)

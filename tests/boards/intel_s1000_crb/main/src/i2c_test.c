@@ -167,9 +167,9 @@ void i2c_thread(void *dummy1, void *dummy2, void *dummy3)
 		k_sem_give(&thread_sem);
 
 		/* wait a while */
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }
 
 K_THREAD_DEFINE(i2c_thread_id, STACKSIZE, i2c_thread, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);

@@ -70,12 +70,12 @@ LOG_MODULE_REGISTER(lp5562);
  * therefore (16 * 63) = 1008ms. We round it down to 1000ms to be on the safe
  * side.
  */
-#define LP5562_MAX_BLINK_PERIOD K_MSEC(1000)
+#define LP5562_MAX_BLINK_PERIOD 1000
 /*
  * The minimum waiting period is 0.49ms with the prescaler set to 0 and one
  * step. We round up to a full millisecond.
  */
-#define LP5562_MIN_BLINK_PERIOD K_MSEC(1)
+#define LP5562_MIN_BLINK_PERIOD 1
 
 /* Brightness limits in percent */
 #define LP5562_MIN_BRIGHTNESS 0

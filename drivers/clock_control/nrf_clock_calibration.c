@@ -106,7 +106,8 @@ static void start_hw_cal(void)
 static void start_cycle(void)
 {
 	k_timer_start(&backoff_timer,
-		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD), 0);
+		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD),
+		      K_NO_WAIT);
 	hf_release();
 	lf_release();
 	cal_process_in_progress = 0;

@@ -18,7 +18,7 @@ static bool thread_flag;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
-	k_sleep(SLEEP_MS);
+	k_msleep(SLEEP_MS);
 }
 
 static void thread_callback(const struct k_thread *thread, void *user_data)
@@ -63,7 +63,7 @@ void test_k_thread_foreach(void)
 	k_tid_t tid = k_thread_create(&tdata, tstack,
 			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
 			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
-	k_sleep(K_MSEC(1));
+	k_msleep(1);
 
 	/* Call k_thread_foreach() and check
 	 * thread_callback is getting called for

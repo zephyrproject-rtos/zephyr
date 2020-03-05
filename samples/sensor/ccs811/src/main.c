@@ -106,7 +106,7 @@ static void do_main(struct device *dev)
 			printk("Timed fetch failed: %d\n", rc);
 			break;
 		}
-		k_sleep(1000);
+		k_msleep(1000);
 	}
 }
 

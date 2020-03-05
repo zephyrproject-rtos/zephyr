@@ -44,8 +44,8 @@ static int init(const struct shell_transport *transport,
 
 	k_timer_init(&sh_rtt->timer, timer_handler, NULL);
 	k_timer_user_data_set(&sh_rtt->timer, (void *)sh_rtt);
-	k_timer_start(&sh_rtt->timer, CONFIG_SHELL_RTT_RX_POLL_PERIOD,
-			CONFIG_SHELL_RTT_RX_POLL_PERIOD);
+	k_timer_start(&sh_rtt->timer, K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD),
+		      K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD));
 
 	return 0;
 }

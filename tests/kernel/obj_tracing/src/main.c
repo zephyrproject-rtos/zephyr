@@ -25,7 +25,7 @@ extern void test_obj_tracing(void);
 #define TAKE(x) k_sem_take(x, K_FOREVER)
 #define GIVE(x) k_sem_give(x)
 
-#define RANDDELAY(x) k_sleep(10 * (x) + 1)
+#define RANDDELAY(x) k_msleep(10 * (x) + 1)
 
 static int initial_count;
 

@@ -114,7 +114,7 @@ void test_poll_no_wait(void)
 	zassert_equal(k_sem_take(&no_wait_sem, K_NO_WAIT), 0, "");
 
 	zassert_equal(events[1].state, K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
-	msg_ptr = k_fifo_get(&no_wait_fifo, 0);
+	msg_ptr = k_fifo_get(&no_wait_fifo, K_NO_WAIT);
 	zassert_not_null(msg_ptr, "");
 	zassert_equal(msg_ptr, &msg, "");
 	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
@@ -141,7 +141,7 @@ void test_poll_no_wait(void)
 	zassert_equal(events[3].state, K_POLL_STATE_NOT_READY, "");
 
 	zassert_not_equal(k_sem_take(&no_wait_sem, K_NO_WAIT), 0, "");
-	zassert_is_null(k_fifo_get(&no_wait_fifo, 0), "");
+	zassert_is_null(k_fifo_get(&no_wait_fifo, K_NO_WAIT), "");
 }
 
 /* verify k_poll() that has to wait */
@@ -228,7 +228,7 @@ void test_poll_wait(void)
 
 	zassert_equal(wait_events[1].state,
 		      K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
-	msg_ptr = k_fifo_get(&wait_fifo, 0);
+	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	zassert_not_null(msg_ptr, "");
 	zassert_equal(msg_ptr, &wait_msg, "");
 	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");

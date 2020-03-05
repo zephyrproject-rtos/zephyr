@@ -75,8 +75,9 @@ union log_msg_chunk *log_msg_chunk_alloc(void)
 {
 	union log_msg_chunk *msg = NULL;
 	int err = k_mem_slab_alloc(&log_msg_pool, (void **)&msg,
-			block_on_alloc() ?
-			CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS : K_NO_WAIT);
+		   block_on_alloc()
+		   ? K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS)
+		   : K_NO_WAIT);
 
 	if (err != 0) {
 		msg = log_msg_no_space_handle();

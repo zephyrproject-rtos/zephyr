@@ -58,7 +58,7 @@ static int ticks_to_sleep(int ticks)
 	u32_t stop_time;
 
 	start_time = k_cycle_get_32();
-	k_sleep(k_ticks_to_ms_floor64(ticks));
+	k_sleep(K_MSEC(k_ticks_to_ms_floor64(ticks)));
 	stop_time = k_cycle_get_32();
 
 	return (stop_time - start_time) / k_ticks_to_cyc_floor32(1);

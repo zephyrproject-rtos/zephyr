@@ -272,7 +272,7 @@ static void ht16k33_irq_thread(struct device *dev)
 		do {
 			k_sem_reset(&data->irq_sem);
 			pressed = ht16k33_process_keyscan_data(dev);
-			k_sleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
+			k_msleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
 		} while (pressed);
 	}
 }
@@ -441,7 +441,7 @@ static int ht16k33_init(struct device *dev)
 		/* Setup timer for polling key data */
 		k_timer_init(&data->timer, ht16k33_timer_callback, NULL);
 		k_timer_start(&data->timer, K_NO_WAIT,
-			      CONFIG_HT16K33_KEYSCAN_POLL_MSEC);
+			      K_MSEC(CONFIG_HT16K33_KEYSCAN_POLL_MSEC));
 	}
 
 	k_thread_create(&data->irq_thread, data->irq_thread_stack,

@@ -322,7 +322,7 @@ void test_syscall_torture(void)
 	 * abort them. They will all be hammering the cpu(s) with system calls,
 	 * hopefully smoking out any issues and causing a crash.
 	 */
-	k_sleep(15000);
+	k_msleep(15000);
 
 	for (i = 0; i < NR_THREADS; i++) {
 		k_thread_abort(&torture_threads[i]);

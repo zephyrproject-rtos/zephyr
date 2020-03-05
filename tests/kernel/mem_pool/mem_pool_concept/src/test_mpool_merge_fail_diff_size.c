@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#define TIMEOUT 2000
+#define TIMEOUT K_MSEC(2000)
 #define BLK_SIZE_MIN 16
 #define BLK_SIZE_MID 32
 #define BLK_SIZE_MAX 256

@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define TIMEOUT 100
+#define TIMEOUT K_MSEC(100)
 #if !defined(CONFIG_BOARD_QEMU_X86)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #else

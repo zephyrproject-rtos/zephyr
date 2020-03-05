@@ -70,7 +70,7 @@ void blink(const struct led *led, u32_t sleep_ms, u32_t id)
 
 		k_fifo_put(&printk_fifo, mem_ptr);
 
-		k_sleep(sleep_ms);
+		k_msleep(sleep_ms);
 		cnt++;
 	}
 }
@@ -109,8 +109,8 @@ void uart_out(void)
 }
 
 K_THREAD_DEFINE(blink1_id, STACKSIZE, blink1, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);
 K_THREAD_DEFINE(blink2_id, STACKSIZE, blink2, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);
 K_THREAD_DEFINE(uart_out_id, STACKSIZE, uart_out, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);

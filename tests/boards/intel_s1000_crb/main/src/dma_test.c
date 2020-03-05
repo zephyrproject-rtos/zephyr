@@ -42,10 +42,10 @@
 #define PRIORITY                7
 
 /* delay between greetings (in ms) */
-#define SLEEPTIME               500
+#define SLEEPTIME               K_MSEC(500)
 
 /* max time to be waited for dma to complete (in ms) */
-#define WAITTIME                1000
+#define WAITTIME                K_MSEC(1000)
 
 #define MAX_TRANSFERS		4
 
@@ -273,4 +273,4 @@ void dma_thread(void)
 }
 
 K_THREAD_DEFINE(dma_thread_id, STACKSIZE, dma_thread, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);

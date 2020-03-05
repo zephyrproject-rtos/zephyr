@@ -351,7 +351,7 @@ static int switch_to_app_mode(struct device *i2c)
 		return -EIO;
 	}
 
-	k_sleep(1);             /* t_APP_START */
+	k_msleep(1);             /* t_APP_START */
 	status = fetch_status(i2c);
 	if (status < 0) {
 		return -EIO;
@@ -462,7 +462,7 @@ static int ccs811_init(struct device *dev)
 			   | DT_INST_0_AMS_CCS811_WAKE_GPIOS_FLAGS);
 
 	set_wake(drv_data, true);
-	k_sleep(1);
+	k_msleep(1);
 #endif
 #ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
 	drv_data->reset_gpio = device_get_binding(DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
@@ -475,7 +475,7 @@ static int ccs811_init(struct device *dev)
 			   GPIO_OUTPUT_ACTIVE
 			   | DT_INST_0_AMS_CCS811_RESET_GPIOS_FLAGS);
 
-	k_sleep(1);
+	k_msleep(1);
 #endif
 
 #ifdef DT_INST_0_AMS_CCS811_IRQ_GPIOS_CONTROLLER
@@ -509,7 +509,7 @@ static int ccs811_init(struct device *dev)
 		}
 	}
 #endif
-	k_sleep(20);            /* t_START assuming recent power-on */
+	k_msleep(20);            /* t_START assuming recent power-on */
 
 	/* Switch device to application mode */
 	ret = switch_to_app_mode(drv_data->i2c);

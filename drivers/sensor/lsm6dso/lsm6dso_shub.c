@@ -420,7 +420,7 @@ static inline void lsm6dso_shub_wait_completed(struct lsm6dso_data *data)
 	u16_t freq;
 
 	freq = (data->accel_freq == 0) ? 26 : data->accel_freq;
-	k_sleep((2000U / freq) + 1);
+	k_msleep((2000U / freq) + 1);
 }
 
 static inline void lsm6dso_shub_embedded_en(struct lsm6dso_data *data, bool on)

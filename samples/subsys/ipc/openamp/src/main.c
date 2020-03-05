@@ -292,7 +292,7 @@ void main(void)
 	defined(CONFIG_SOC_V2M_MUSCA_A) || \
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
 	wakeup_cpu1();
-	k_sleep(500);
+	k_msleep(500);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 }
 

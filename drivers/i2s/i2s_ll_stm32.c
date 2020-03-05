@@ -374,7 +374,8 @@ static int i2s_stm32_read(struct device *dev, void **mem_block, size_t *size)
 	}
 
 	if (dev_data->rx.state != I2S_STATE_ERROR) {
-		ret = k_sem_take(&dev_data->rx.sem, dev_data->rx.cfg.timeout);
+		ret = k_sem_take(&dev_data->rx.sem,
+				 K_MSEC(dev_data->rx.cfg.timeout));
 		if (ret < 0) {
 			return ret;
 		}
@@ -400,7 +401,7 @@ static int i2s_stm32_write(struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem, dev_data->tx.cfg.timeout);
+	ret = k_sem_take(&dev_data->tx.sem, K_MSEC(dev_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}

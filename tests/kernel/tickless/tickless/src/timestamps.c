@@ -186,7 +186,7 @@ void _timestamp_open(void)
 	_TIMESTAMP_IMASK = 0x0;         /* mask all timer interrupts */
 
 	/* minimum 0.3 sec delay required for oscillator stabilization */
-	k_sleep(0.3 * MSEC_PER_SEC);
+	k_msleep(0.3 * MSEC_PER_SEC);
 
 	/* clear invalid time flag in status register */
 	_TIMESTAMP_VAL = 0x0;

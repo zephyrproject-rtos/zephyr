@@ -122,6 +122,6 @@ void main(void)
 		}
 
 		/* wait a while */
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }

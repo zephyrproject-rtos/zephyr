@@ -53,6 +53,8 @@ extern void z_enable_sys_clock(void);
 /* number of nanoseconds per second */
 #define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
 
+#define k_msleep(ms) k_sleep(ms)
+#define K_TIMEOUT_EQ(a, b) ((a) == (b))
 
 /* kernel clocks */
 
