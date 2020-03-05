@@ -26,7 +26,7 @@
 	};
 };
 
-&uart0 { interrupts = <4 IRQ_TYPE_LEVEL_LOW 3>; };
-&uart1 { interrupts = <5 IRQ_TYPE_LEVEL_LOW 3>; };
-&uart2 { interrupts = <6 IRQ_TYPE_LEVEL_LOW 3>; };
-&uart3 { interrupts = <7 IRQ_TYPE_LEVEL_LOW 3>; };
+&uart0 { interrupts = <4 IRQ_TYPE_LOWEST_LEVEL_LOW 3>; };
+&uart1 { interrupts = <5 IRQ_TYPE_LOWEST_LEVEL_LOW 3>; };
+&uart2 { interrupts = <6 IRQ_TYPE_LOWEST_LEVEL_LOW 3>; };
+&uart3 { interrupts = <7 IRQ_TYPE_LOWEST_LEVEL_LOW 3>; };
