@@ -66,3 +66,9 @@ config COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH
 	default 0x00000018 if COUNTER_RTC_STM32_LSE_DRIVE_HIGH
 
 endif
+
+config COUNTER_RTC_STM32_LSE_BYPASS
+	bool "LSE oscillator bypass"
+	depends on COUNTER_RTC_STM32_CLOCK_LSE
+	help
+	  Enable LSE bypass
