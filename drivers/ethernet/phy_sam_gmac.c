@@ -12,6 +12,10 @@
 #include <net/mii.h>
 #include "phy_sam_gmac.h"
 
+#ifdef CONFIG_SOC_FAMILY_SAM0
+#include "eth_sam0_gmac.h"
+#endif
+
 #define LOG_MODULE_NAME eth_sam_phy
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 

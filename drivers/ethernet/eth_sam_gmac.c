@@ -41,6 +41,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
 
+#ifdef CONFIG_SOC_FAMILY_SAM0
+#include "eth_sam0_gmac.h"
+#endif
+
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 #include <ptp_clock.h>
 #include <net/gptp.h>
@@ -82,6 +86,14 @@ static inline void dcache_clean(u32_t addr, u32_t size)
 #define dcache_is_enabled()
 #define dcache_invalidate(addr, size)
 #define dcache_clean(addr, size)
+#endif
+
+#ifdef CONFIG_SOC_FAMILY_SAM0
+#define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
+#elif CONFIG_SOC_FAMILY_SAM
+#define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
+#else
+#error Unsupported SoC family
 #endif
 
 /*
@@ -1037,7 +1049,7 @@ static void gmac_setup_ptp_clock_divisors(Gmac *gmac)
 
 	u8_t cns, acns, nit;
 
-	min_cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+	min_cycles = MCK_FREQ_HZ;
 	min_period = NSEC_PER_SEC;
 
 	for (i = 0; i < ARRAY_SIZE(mck_divs); ++i) {
@@ -1069,7 +1081,7 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 {
 	int mck_divisor;
 
-	mck_divisor = get_mck_clock_divisor(SOC_ATMEL_SAM_MCK_FREQ_HZ);
+	mck_divisor = get_mck_clock_divisor(MCK_FREQ_HZ);
 	if (mck_divisor < 0) {
 		return mck_divisor;
 	}
@@ -1752,11 +1764,17 @@ static int eth_initialize(struct device *dev)
 
 	cfg->config_func();
 
+#ifdef CONFIG_SOC_FAMILY_SAM
 	/* Enable GMAC module's clock */
 	soc_pmc_peripheral_enable(cfg->periph_id);
 
 	/* Connect pins to the peripheral */
 	soc_gpio_list_configure(cfg->pin_list, cfg->pin_list_size);
+#else
+	/* Enable MCLK clock on GMAC */
+	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
+	*MCLK_GMAC |= MCLK_GMAC_MASK;
+#endif
 
 	return 0;
 }
@@ -2182,13 +2200,17 @@ static void eth0_irq_config(void)
 #endif
 }
 
+#ifdef CONFIG_SOC_FAMILY_SAM
 static const struct soc_gpio_pin pins_eth0[] = PINS_GMAC0;
+#endif
 
 static const struct eth_sam_dev_cfg eth0_config = {
 	.regs = GMAC,
 	.periph_id = ID_GMAC,
+#ifdef CONFIG_SOC_FAMILY_SAM
 	.pin_list = pins_eth0,
 	.pin_list_size = ARRAY_SIZE(pins_eth0),
+#endif
 	.config_func = eth0_irq_config,
 	.phy = {GMAC, CONFIG_ETH_SAM_GMAC_PHY_ADDR},
 };
