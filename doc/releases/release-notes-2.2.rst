@@ -11,6 +11,8 @@ Major enhancements with this release include:
 
 * We added initial support for 64-bit ARMv8-A architecture (Experimental).
 * CANopen protocol support through 3rd party CANopenNode stack
+* LoRa support was added through integration of the Semtech LoRaWAN endpoint
+  stack and addition of a new SX1276 LoRa modem driver.
 
 The following sections provide detailed lists of changes by component.
 
