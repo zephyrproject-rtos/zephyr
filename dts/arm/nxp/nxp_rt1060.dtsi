@@ -16,3 +16,28 @@
 	compatible = "mmio-sram";
 	reg = <0x20200000 0xC0000>;
 };
+
+/* i.MX rt1060 has a second Ethernet controller. */
+/ {
+	aliases {
+		eth1 = &eth1;
+	};
+
+	soc {
+		eth1: ethernet@402d4000 {
+			compatible = "nxp,kinetis-ethernet";
+			reg = <0x402D4000 0x628>;
+			interrupts = <152 0>;
+			interrupt-names = "COMMON";
+			status = "disabled";
+			local-mac-address = [00 00 00 00 00 00];
+			label = "ETH_1";
+			ptp {
+				compatible = "nxp,kinetis-ptp";
+				status = "disabled";
+				interrupts = <153 0>;
+				interrupt-names = "IEEE1588_TMR";
+			};
+		};
+	};
+};
