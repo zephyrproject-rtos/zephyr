@@ -422,9 +422,25 @@ static void memoryRead(void)
 	}
 }
 
+static bool check_cbw_data_length(void)
+{
+	if (!cbw.DataLength) {
+		LOG_WRN("Zero length in CBW");
+		csw.Status = CSW_FAILED;
+		sendCSW();
+		return false;
+	}
+
+	return true;
+}
+
 static bool infoTransfer(void)
 {
 	u32_t n;
+
+	if (!check_cbw_data_length()) {
+		return false;
+	}
 
 	/* Logical Block Address of First Block */
 	n = sys_get_be32(&cbw.CB[2]);
@@ -455,13 +471,6 @@ static bool infoTransfer(void)
 
 	LOG_DBG("Size (block) : 0x%x ", n);
 	length = n * BLOCK_SIZE;
-
-	if (!cbw.DataLength) {              /* host requests no data*/
-		LOG_WRN("Zero length in CBW");
-		csw.Status = CSW_FAILED;
-		sendCSW();
-		return false;
-	}
 
 	if (cbw.DataLength != length) {
 		if ((cbw.Flags & 0x80) != 0U) {
@@ -518,23 +527,33 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			break;
 		case REQUEST_SENSE:
 			LOG_DBG(">> REQ_SENSE");
-			requestSense();
+			if (check_cbw_data_length()) {
+				requestSense();
+			}
 			break;
 		case INQUIRY:
 			LOG_DBG(">> INQ");
-			inquiryRequest();
+			if (check_cbw_data_length()) {
+				inquiryRequest();
+			}
 			break;
 		case MODE_SENSE6:
 			LOG_DBG(">> MODE_SENSE6");
-			modeSense6();
+			if (check_cbw_data_length()) {
+				modeSense6();
+			}
 			break;
 		case READ_FORMAT_CAPACITIES:
 			LOG_DBG(">> READ_FORMAT_CAPACITY");
-			readFormatCapacity();
+			if (check_cbw_data_length()) {
+				readFormatCapacity();
+			}
 			break;
 		case READ_CAPACITY:
 			LOG_DBG(">> READ_CAPACITY");
-			readCapacity();
+			if (check_cbw_data_length()) {
+				readCapacity();
+			}
 			break;
 		case READ10:
 		case READ12:
