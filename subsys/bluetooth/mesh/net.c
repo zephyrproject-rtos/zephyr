@@ -719,63 +719,6 @@ u32_t bt_mesh_next_seq(void)
 	return seq;
 }
 
-int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
-		       bool new_key, const struct bt_mesh_send_cb *cb,
-		       void *cb_data)
-{
-	const u8_t *enc, *priv;
-	u32_t seq;
-	u16_t dst;
-	int err;
-
-	BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
-	       buf->len);
-
-	enc = sub->keys[new_key].enc;
-	priv = sub->keys[new_key].privacy;
-
-	err = bt_mesh_net_obfuscate(buf->data, BT_MESH_NET_IVI_TX, priv);
-	if (err) {
-		BT_ERR("deobfuscate failed (err %d)", err);
-		return err;
-	}
-
-	err = bt_mesh_net_decrypt(enc, &buf->b, BT_MESH_NET_IVI_TX, false);
-	if (err) {
-		BT_ERR("decrypt failed (err %d)", err);
-		return err;
-	}
-
-	/* Update with a new sequence number */
-	seq = bt_mesh_next_seq();
-	sys_put_be24(seq, &buf->data[2]);
-
-	/* Get destination, in case it's a proxy client */
-	dst = DST(buf->data);
-
-	err = bt_mesh_net_encrypt(enc, &buf->b, BT_MESH_NET_IVI_TX, false);
-	if (err) {
-		BT_ERR("encrypt failed (err %d)", err);
-		return err;
-	}
-
-	err = bt_mesh_net_obfuscate(buf->data, BT_MESH_NET_IVI_TX, priv);
-	if (err) {
-		BT_ERR("obfuscate failed (err %d)", err);
-		return err;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_proxy_relay(&buf->b, dst) &&
-	    BT_MESH_ADDR_IS_UNICAST(dst)) {
-		send_cb_finalize(cb, cb_data);
-	} else {
-		bt_mesh_adv_send(buf, cb, cb_data);
-	}
-
-	return 0;
-}
-
 static void bt_mesh_net_local(struct k_work *work)
 {
 	struct net_buf *buf;
