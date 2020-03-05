@@ -244,6 +244,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.11
      - 2.1
 
+   * - :ref:`stream_flash`
+     - Experimental
+     - 2.3
+     - 2.3
+
    * - :ref:`flash_map_api`
      - Stable
      - 1.11
