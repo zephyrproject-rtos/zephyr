@@ -73,7 +73,7 @@ void int_thread(void)
 
 K_THREAD_DEFINE(int_thread_id, 512,
 		(k_thread_entry_t) int_thread, NULL, NULL, NULL,
-		11, 0, K_NO_WAIT);
+		11, 0, 0);
 
 /**
  *

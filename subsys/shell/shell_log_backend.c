@@ -91,7 +91,7 @@ static void msg_to_fifo(const struct shell *shell,
 	};
 
 	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
-			 shell->log_backend->timeout);
+			 K_MSEC(shell->log_backend->timeout));
 
 	switch (err) {
 	case 0:

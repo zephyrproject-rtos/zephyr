@@ -26,7 +26,7 @@ K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, NUM_THREADS, STACK_SIZE);
 /* The static metairq thread we'll use for dispatch */
 static void metairq_fn(void *p1, void *p2, void *p3);
 K_THREAD_DEFINE(metairq_thread, STACK_SIZE, metairq_fn,
-		NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+		NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, 0);
 
 /* Accumulated list of latencies, for a naive variance computation at
  * the end.
@@ -138,7 +138,7 @@ static void record_latencies(struct msg *m, u32_t latency)
 
 		ret = k_sem_take(&report_cookie, K_FOREVER);
 		__ASSERT_NO_MSG(ret == 0);
-		k_sleep(100);
+		k_msleep(100);
 
 		calc_stats(stats.mirq_latencies, stats.num_mirq,
 			   &lo, &hi, &mean, &stdev);

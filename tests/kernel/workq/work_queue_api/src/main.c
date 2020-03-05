@@ -15,7 +15,8 @@
 #include <ztest.h>
 #include <irq_offload.h>
 
-#define TIMEOUT 100
+#define TIMEOUT_MS 100
+#define TIMEOUT K_MSEC(TIMEOUT_MS)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_OF_WORK 2
 
@@ -119,9 +120,6 @@ static void twork_resubmit(void *data)
 	k_sem_give(&sync_sema);
 }
 
-#define TIMEOUT_MS(_timeout) \
-	k_ticks_to_ms_floor64(_timeout)
-
 static void tdelayed_work_submit_1(struct k_work_q *work_q,
 				   struct k_delayed_work *w,
 				   k_work_handler_t handler)
@@ -146,7 +144,7 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	}
 
 	time_remaining = k_delayed_work_remaining_get(w);
-	timeout_ticks = z_ms_to_ticks(TIMEOUT);
+	timeout_ticks = z_ms_to_ticks(TIMEOUT_MS);
 
 	/**TESTPOINT: check remaining timeout after submit */
 	zassert_true(time_remaining <= k_ticks_to_ms_floor64(timeout_ticks +
@@ -344,7 +342,7 @@ static void ttriggered_work_cancel(void *data)
 
 	if (!k_is_in_isr()) {
 		/*wait for completed work_sleepy and triggered_work[1]*/
-		k_sleep(2 * TIMEOUT);
+		k_msleep(2 * TIMEOUT_MS);
 
 		/**TESTPOINT: check pending when work completed*/
 		ret = k_work_pending((struct k_work *)&triggered_work_sleepy);

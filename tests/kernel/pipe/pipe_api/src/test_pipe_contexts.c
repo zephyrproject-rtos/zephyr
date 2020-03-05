@@ -42,7 +42,7 @@ K_SEM_DEFINE(end_sema, 0, 1);
 #endif
 K_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
 
-static void tpipe_put(struct k_pipe *ppipe, int timeout)
+static void tpipe_put(struct k_pipe *ppipe, s32_t timeout)
 {
 	size_t to_wt, wt_byte = 0;
 
@@ -57,7 +57,7 @@ static void tpipe_put(struct k_pipe *ppipe, int timeout)
 }
 
 static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
-			    int timeout)
+			    s32_t timeout)
 {
 	struct k_mem_block block;
 
@@ -73,7 +73,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
 	}
 }
 
-static void tpipe_get(struct k_pipe *ppipe, int timeout)
+static void tpipe_get(struct k_pipe *ppipe, s32_t timeout)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t to_rd, rd_byte = 0;
@@ -318,9 +318,10 @@ void test_half_pipe_saturating_block_put(void)
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_half_pipe_block_put, &khalfpipe,
-				      NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+				      NULL, NULL, K_PRIO_PREEMPT(0), 0,
+				      K_NO_WAIT);
 
-	k_sleep(10);
+	k_msleep(10);
 
 	/* Ensure half the mempool is still queued in the pipe */
 	r[0] = k_mem_pool_alloc(&mpool, &blocks[0], BYTES_TO_WRITE, K_NO_WAIT);

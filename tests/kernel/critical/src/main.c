@@ -172,7 +172,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 	ncalls = critical_loop("reg1", ncalls);
 
 	/* Wait for alternate_thread() to complete */
-	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&REGRESS_SEM, K_MSEC(TEST_TIMEOUT)) == 0,
 		     "Timed out waiting for REGRESS_SEM");
 
 	zassert_equal(critical_var, ncalls + alt_thread_iterations,
@@ -186,7 +186,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 	ncalls = critical_loop("reg2", ncalls);
 
 	/* Wait for alternate_thread() to finish */
-	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&REGRESS_SEM, K_MSEC(TEST_TIMEOUT)) == 0,
 		     "Timed out waiting for REGRESS_SEM");
 
 	zassert_equal(critical_var, ncalls + alt_thread_iterations,
@@ -230,7 +230,7 @@ void test_critical(void)
 	init_objects();
 	start_threads();
 
-	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
+	zassert_true(k_sem_take(&TEST_SEM, K_MSEC(TEST_TIMEOUT * 2)) == 0,
 		     "Timed out waiting for TEST_SEM");
 }
 

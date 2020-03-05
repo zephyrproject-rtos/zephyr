@@ -131,7 +131,7 @@ void test_timer_duration_period(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&duration_timer, DURATION, PERIOD);
+	k_timer_start(&duration_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 	/** TESTPOINT: check expire and stop times */
@@ -161,7 +161,7 @@ void test_timer_period_0(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
-	k_timer_start(&period0_timer, DURATION, K_NO_WAIT);
+	k_timer_start(&period0_timer, K_MSEC(DURATION), K_NO_WAIT);
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + 1);
 
@@ -192,7 +192,7 @@ void test_timer_expirefn_null(void)
 {
 	init_timer_data();
 	/** TESTPOINT: expire function NULL */
-	k_timer_start(&expire_timer, DURATION, PERIOD);
+	k_timer_start(&expire_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
 	k_timer_stop(&expire_timer);
@@ -244,7 +244,7 @@ void test_timer_periodicity(void)
 
 	init_timer_data();
 	/** TESTPOINT: set duration 0 */
-	k_timer_start(&periodicity_timer, K_NO_WAIT, PERIOD);
+	k_timer_start(&periodicity_timer, K_NO_WAIT, K_MSEC(PERIOD));
 
 	/* clear the expiration that would have happened due to
 	 * whatever duration that was set. Since timer is likely
@@ -298,7 +298,7 @@ void test_timer_periodicity(void)
 void test_timer_status_get(void)
 {
 	init_timer_data();
-	k_timer_start(&status_timer, DURATION, PERIOD);
+	k_timer_start(&status_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	/** TESTPOINT: status get upon timer starts */
 	TIMER_ASSERT(k_timer_status_get(&status_timer) == 0, &status_timer);
 	/** TESTPOINT: remaining get upon timer starts */
@@ -327,7 +327,8 @@ void test_timer_status_get(void)
 void test_timer_status_get_anytime(void)
 {
 	init_timer_data();
-	k_timer_start(&status_anytime_timer, DURATION, PERIOD);
+	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
+		      K_MSEC(PERIOD));
 	busy_wait_ms(DURATION + PERIOD * (EXPIRE_TIMES - 1) + PERIOD / 2);
 
 	/** TESTPOINT: status get at any time */
@@ -357,7 +358,7 @@ void test_timer_status_get_anytime(void)
 void test_timer_status_sync(void)
 {
 	init_timer_data();
-	k_timer_start(&status_sync_timer, DURATION, PERIOD);
+	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 
 	for (int i = 0; i < EXPIRE_TIMES; i++) {
 		/** TESTPOINT: check timer not expire */
@@ -392,7 +393,7 @@ void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
@@ -405,14 +406,14 @@ void test_timer_k_define(void)
 
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 
 	/* Call the k_timer_start() again to make sure that
 	 * the initial timeout request gets cancelled and new
 	 * one will get added.
 	 */
 	busy_wait_ms(DURATION / 2);
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
@@ -487,10 +488,11 @@ void test_timer_user_data(void)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		k_timer_start(user_data_timer[ii], 50 + ii * 50, K_NO_WAIT);
+		k_timer_start(user_data_timer[ii], K_MSEC(50 + ii * 50),
+			      K_NO_WAIT);
 	}
 
-	k_sleep(50 * ii + 50);
+	k_msleep(50 * ii + 50);
 
 	for (ii = 0; ii < 5; ii++) {
 		k_timer_stop(user_data_timer[ii]);
@@ -521,7 +523,7 @@ void test_timer_remaining_get(void)
 	u32_t remaining;
 
 	init_timer_data();
-	k_timer_start(&remain_timer, DURATION, K_NO_WAIT);
+	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
 	remaining = k_timer_remaining_get(&remain_timer);
 	k_timer_stop(&remain_timer);

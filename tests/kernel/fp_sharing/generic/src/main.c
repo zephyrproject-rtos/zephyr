@@ -362,16 +362,16 @@ void load_store_high(void)
 #endif
 
 K_THREAD_DEFINE(load_low, STACKSIZE, load_store_low, NULL, NULL, NULL,
-		LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		LO_PRI, THREAD_FP_FLAGS, 0);
 
 K_THREAD_DEFINE(load_high, STACKSIZE, load_store_high, NULL, NULL, NULL,
-		HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		HI_PRI, THREAD_FP_FLAGS, 0);
 
 K_THREAD_DEFINE(pi_low, STACKSIZE, calculate_pi_low, NULL, NULL, NULL,
-		LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		LO_PRI, THREAD_FP_FLAGS, 0);
 
 K_THREAD_DEFINE(pi_high, STACKSIZE, calculate_pi_high, NULL, NULL, NULL,
-		HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		HI_PRI, THREAD_FP_FLAGS, 0);
 
 void main(void)
 {

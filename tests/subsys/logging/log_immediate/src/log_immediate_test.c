@@ -44,7 +44,7 @@ static void thread_func(void *p1, void *p2, void *p3)
 	while (1) {
 		LOG_INF("test string printed %d %d %p", 1, 2, k_current_get());
 		LOG_HEXDUMP_INF(buf, buf_len, "data:");
-		k_sleep(20+id);
+		k_msleep(20+id);
 	}
 }
 
@@ -62,7 +62,7 @@ static void test_log_immediate_preemption(void)
 				k_thread_priority_get(k_current_get()) + i,
 				0, K_MSEC(10));
 	}
-	k_sleep(3000);
+	k_msleep(3000);
 
 	for (int i = 0; i < NUM_THREADS; i++) {
 		k_thread_abort(tids[i]);

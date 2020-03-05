@@ -183,7 +183,7 @@ void main(void)
 
 	cnt = 5;
 	while (1) {
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 		if (reboot_counter < MAX_REBOOT) {
 			if (cnt == 5) {
 				/* print some history information about

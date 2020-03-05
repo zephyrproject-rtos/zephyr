@@ -35,7 +35,7 @@ struct reply_packet {
 struct timeout_order_data {
 	void *link_in_lifo;
 	struct k_lifo *klifo;
-	u32_t timeout;
+	s32_t timeout;
 	s32_t timeout_order;
 	s32_t q_order;
 };
@@ -199,7 +199,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 {
 	u32_t timeout = *((u32_t *)p2);
 
-	k_sleep(timeout);
+	k_msleep(timeout);
 	k_lifo_put((struct k_lifo *)p1, get_scratch_packet());
 }
 
@@ -269,7 +269,7 @@ static void test_timeout_empty_lifo(void)
 
 	start_time = k_cycle_get_32();
 
-	packet = k_lifo_get(&lifo_timeout[0], timeout);
+	packet = k_lifo_get(&lifo_timeout[0], K_MSEC(timeout));
 
 	zassert_equal(packet, NULL, NULL);
 
@@ -324,7 +324,7 @@ static void test_timeout_lifo_thread(void)
 				&timeout, NULL,
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
-	packet = k_lifo_get(&lifo_timeout[0], timeout + 10);
+	packet = k_lifo_get(&lifo_timeout[0], K_MSEC(timeout + 10));
 	zassert_true(packet != NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
 	put_scratch_packet(packet);
@@ -396,7 +396,7 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 	void *packet;
 
 	start_time = k_cycle_get_32();
-	packet = k_lifo_get(d->klifo, d->timeout);
+	packet = k_lifo_get(d->klifo, K_MSEC(d->timeout));
 	zassert_true(packet == NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, d->timeout), NULL);
 

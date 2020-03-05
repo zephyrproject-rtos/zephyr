@@ -97,7 +97,7 @@ static int ms5607_get_measurement(const struct ms5607_data *data,
 		return err;
 	}
 
-	k_sleep(delay);
+	k_msleep(delay);
 
 	err = data->tf->read_adc(data, val);
 	if (err < 0) {

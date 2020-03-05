@@ -183,11 +183,11 @@ void _set_row_offsets(s8_t row0, s8_t row1, s8_t row2, s8_t row3)
 void _pi_lcd_toggle_enable(struct device *gpio_dev)
 {
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, LOW);
-	k_sleep(ENABLE_DELAY);
+	k_msleep(ENABLE_DELAY);
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, HIGH);
-	k_sleep(ENABLE_DELAY);
+	k_msleep(ENABLE_DELAY);
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, LOW);
-	k_sleep(ENABLE_DELAY);
+	k_msleep(ENABLE_DELAY);
 }
 
 
@@ -563,7 +563,7 @@ void main(void)
 		pi_lcd_set_cursor(gpio_dev, 19, 3);
 		pi_lcd_left_to_right(gpio_dev);
 		pi_lcd_string(gpio_dev, "********************");
-		k_sleep(MSEC_PER_SEC * 3U);
+		k_msleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -579,7 +579,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "My super RTOS");
 		pi_lcd_set_cursor(gpio_dev, 0, 3);
 		pi_lcd_string(gpio_dev, "-------------------");
-		k_sleep(MSEC_PER_SEC * 3U);
+		k_msleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -594,7 +594,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "I am home!");
 		pi_lcd_set_cursor(gpio_dev, 0, 2);
 		pi_lcd_string(gpio_dev, "");
-		k_sleep(MSEC_PER_SEC * 3U);
+		k_msleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);

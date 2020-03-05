@@ -164,7 +164,7 @@ void test_mpool_alloc_timeout(void)
 	 * TESTPOINT: Maximum time to wait for operation to complete (in
 	 * milliseconds)
 	 */
-	zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
+	zassert_true(k_uptime_delta(&tms) >= TIMEOUT_MS, NULL);
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		k_mem_pool_free(&block[i]);

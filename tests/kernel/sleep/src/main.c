@@ -113,7 +113,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
@@ -128,7 +128,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -142,7 +142,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -156,7 +156,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);	/* Task will execute */
+	k_sleep(K_SECONDS(1));	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -235,7 +235,7 @@ void test_sleep(void)
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",

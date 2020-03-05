@@ -30,7 +30,7 @@ static int ms5837_get_measurement(struct device *i2c_master,
 		return err;
 	}
 
-	k_sleep(delay);
+	k_msleep(delay);
 
 	err = i2c_burst_read(i2c_master, i2c_address, adc_read_cmd,
 			((u8_t *)val) + 1, 3);

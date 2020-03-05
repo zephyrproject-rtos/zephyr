@@ -27,7 +27,7 @@ void test_cmos_rate(void)
 	err = counter_get_value(cmos, &start);
 	zassert_true(err == 0, "failed to read CMOS counter device");
 
-	k_sleep(DELAY_MS);
+	k_msleep(DELAY_MS);
 
 	err = counter_get_value(cmos, &elapsed);
 	zassert_true(err == 0, "failed to read CMOS counter device");

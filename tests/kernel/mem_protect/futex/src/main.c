@@ -64,7 +64,7 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val >= (int)K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
 			atomic_get(&simple_futex.val), time_val);
@@ -105,7 +105,7 @@ void futex_wait_wake_task(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val >= (int)K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
 			atomic_get(&simple_futex.val), time_val);
@@ -148,7 +148,7 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 	int time_val = *(int *)p1;
 	int idx = *(int *)p2;
 
-	zassert_true(time_val == K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val == (int)K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&multiple_futex[idx],
 		atomic_get(&(multiple_futex[idx].val)), time_val);

@@ -45,7 +45,7 @@ void test_prevent_interruption(void)
 	 * timer ought to have fired during this time if interrupts weren't
 	 * locked -- but since they are, check_lock_new isn't updated.
 	 */
-	k_timer_start(&irqlock_timer, DURATION, K_NO_WAIT);
+	k_timer_start(&irqlock_timer, K_MSEC(DURATION), K_NO_WAIT);
 	k_busy_wait(MS_TO_US(1000));
 	zassert_not_equal(handler_result, HANDLER_TOKEN,
 		"timer interrupt was serviced while interrupts are locked");

@@ -9,7 +9,7 @@
 
 #include <ztest.h>
 
-#define MS_TO_US(ms)  (K_MSEC(ms) * USEC_PER_MSEC)
+#define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>

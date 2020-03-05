@@ -46,7 +46,7 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
 
 	errno = my_errno;
 
-	k_sleep(30 - (n * 10));
+	k_msleep(30 - (n * 10));
 	if (errno == my_errno) {
 		result[n].pass = 1;
 	}
@@ -86,7 +86,7 @@ void test_thread_context(void)
 	}
 
 	for (int ii = 0; ii < N_THREADS; ii++) {
-		struct result *p = k_fifo_get(&fifo, 100);
+		struct result *p = k_fifo_get(&fifo, K_MSEC(100));
 
 		if (!p || !p->pass) {
 			rv = TC_FAIL;

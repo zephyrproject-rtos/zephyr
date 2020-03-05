@@ -115,7 +115,7 @@ static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 
 	while (pin > 0) {
 		__ASSERT(pin >= 0, "Failed to get pin level");
-		k_sleep(SSD16XX_BUSY_DELAY);
+		k_msleep(SSD16XX_BUSY_DELAY);
 		pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
 	}
 }
@@ -456,9 +456,9 @@ static int ssd16xx_controller_init(struct device *dev)
 	LOG_DBG("");
 
 	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
-	k_sleep(SSD16XX_RESET_DELAY);
+	k_msleep(SSD16XX_RESET_DELAY);
 	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
-	k_sleep(SSD16XX_RESET_DELAY);
+	k_msleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(driver);
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SW_RESET, NULL, 0);

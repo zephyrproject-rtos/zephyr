@@ -36,7 +36,7 @@
 #define PRIORITY                7
 
 /* delay between greetings (in ms) */
-#define SLEEPTIME               500
+#define SLEEPTIME               K_MSEC(500)
 
 extern struct k_sem thread_sem;
 
@@ -182,4 +182,4 @@ void i2s_thread(void *dummy1, void *dummy2, void *dummy3)
 }
 
 K_THREAD_DEFINE(i2s_thread_id, STACKSIZE, i2s_thread, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);

@@ -74,7 +74,7 @@ void main(void)
 		for (i = 500; i <= 2000; i *= 2) {
 			LOG_INF("Blinking LEDs with a period of %d ms", i);
 			led_blink(led_dev, 0, i / 2, i / 2);
-			k_sleep(10 * i);
+			k_msleep(10 * i);
 		}
 		led_blink(led_dev, 0, 0, 0);
 

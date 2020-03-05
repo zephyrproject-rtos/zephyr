@@ -440,7 +440,7 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
 	LOG_DBG("%s %d", __func__, ESPI_OOB_REGS->TX_LEN);
 
 	/* Wait until ISR or timeout */
-	ret = k_sem_take(&data->tx_lock, MAX_OOB_TIMEOUT);
+	ret = k_sem_take(&data->tx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
 		return -ETIMEDOUT;
 	}
@@ -465,7 +465,7 @@ static int espi_xec_receive_oob(struct device *dev,
 	}
 
 	/* Wait until ISR or timeout */
-	ret = k_sem_take(&data->rx_lock, MAX_OOB_TIMEOUT);
+	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
 		return -ETIMEDOUT;
 	}

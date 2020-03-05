@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <irq_offload.h>
 
-#define TIMEOUT 100
+#define TIMEOUT K_MSEC(100)
 #define STACK_LEN 2
 
 static ZTEST_BMEM stack_data_t data[STACK_LEN];

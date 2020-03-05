@@ -15,7 +15,7 @@
 #include <string.h>
 #endif
 
-#define SLEEP_TIME	1000
+#define SLEEP_TIME	K_MSEC(1000)
 
 void main(void)
 {

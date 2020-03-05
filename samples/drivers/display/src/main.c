@@ -234,9 +234,9 @@ void main(void)
 	rect_h *= scale;
 
 	if (capabilities.screen_info & SCREEN_INFO_EPD) {
-		grey_scale_sleep = K_MSEC(10000);
+		grey_scale_sleep = 10000;
 	} else {
-		grey_scale_sleep = K_MSEC(100);
+		grey_scale_sleep = 100;
 	}
 
 	buf_size = rect_w * rect_h;
@@ -319,7 +319,7 @@ void main(void)
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
 		display_write(display_dev, x, y, &buf_desc, buf);
 		++grey_count;
-		k_sleep(grey_scale_sleep);
+		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST
 		if (grey_count >= 1024) {
 			break;
