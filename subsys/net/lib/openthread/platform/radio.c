@@ -153,14 +153,10 @@ void platformRadioProcess(otInstance *aInstance)
 
 		sState = OT_RADIO_STATE_RECEIVE;
 
-#if OPENTHREAD_ENABLE_DIAG
-
-		if (otPlatDiagModeGet()) {
+		if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
 			otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame,
 						    result);
-		} else
-#endif
-		{
+		} else {
 			if (sTransmitFrame.mPsdu[0] & IEEE802154_AR_FLAG_SET) {
 				if (ack_frame.mLength == 0) {
 					LOG_DBG("No ACK received.");
