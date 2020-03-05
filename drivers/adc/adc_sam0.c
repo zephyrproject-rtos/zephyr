@@ -526,10 +526,10 @@ static const struct adc_driver_api adc_sam0_api = {
 #define ADC_SAM0_CLOCK_CONTROL(n)					      \
 	.mclk_mask = MCLK_APBDMASK_ADC##n,				      \
 	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK),	      \
+			      DT_INST_##n##_ATMEL_SAM0_ADC_GCLK),	      \
 	.gclk_id = ADC##n##_GCLK_ID,					      \
 	.prescaler = UTIL_CAT(ADC_CTRLA_PRESCALER_DIV,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER),
+			      DT_INST_##n##_ATMEL_SAM0_ADC_PRESCALER),
 #define ADC_SAM0_CONFIGURE(n) do {					      \
 		const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);	      \
 		Adc *const adc = cfg->regs;				      \
@@ -551,10 +551,10 @@ static const struct adc_driver_api adc_sam0_api = {
 
 #define ADC_SAM0_CLOCK_CONTROL(n)					      \
 	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK,				      \
-			 DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK) |		      \
+			 DT_INST_##n##_ATMEL_SAM0_ADC_GCLK) |		      \
 			 GCLK_CLKCTRL_ID_ADC,				      \
 	.prescaler = UTIL_CAT(ADC_CTRLB_PRESCALER_DIV,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER),
+			      DT_INST_##n##_ATMEL_SAM0_ADC_PRESCALER),
 #define ADC_SAM0_CONFIGURE(n) do {					      \
 		const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);	      \
 		Adc *const adc = cfg->regs;				      \
@@ -578,12 +578,12 @@ static const struct adc_driver_api adc_sam0_api = {
 #define ADC_SAM0_DEVICE(n)						      \
 	static void adc_sam0_config_##n(struct device *dev);		      \
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		      \
-		.regs = (Adc *)DT_ATMEL_SAM0_ADC_ADC_##n##_BASE_ADDRESS,      \
+		.regs = (Adc *)DT_INST_##n##_ATMEL_SAM0_ADC_BASE_ADDRESS,     \
 		ADC_SAM0_CLOCK_CONTROL(n)				      \
 		.freq = UTIL_CAT(UTIL_CAT(SOC_ATMEL_SAM0_GCLK,		      \
-					  DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK),  \
+					  DT_INST_##n##_ATMEL_SAM0_ADC_GCLK), \
 					  _FREQ_HZ) /			      \
-			DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER,		      \
+			DT_INST_##n##_ATMEL_SAM0_ADC_PRESCALER,		      \
 		.config_func = &adc_sam0_config_##n,			      \
 	};								      \
 	static struct adc_sam0_data adc_sam_data_##n = {		      \
@@ -591,25 +591,25 @@ static const struct adc_driver_api adc_sam0_api = {
 		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		      \
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		      \
 	};								      \
-	DEVICE_AND_API_INIT(adc0_sam_##n, DT_ATMEL_SAM0_ADC_ADC_##n##_LABEL,  \
+	DEVICE_AND_API_INIT(adc0_sam_##n, DT_INST_##n##_ATMEL_SAM0_ADC_LABEL, \
 			    adc_sam0_init, &adc_sam_data_##n, &adc_sam_cfg_##n,\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    &adc_sam0_api);				      \
 	static void adc_sam0_config_##n(struct device *dev)		      \
 	{								      \
-		IRQ_CONNECT(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0,		      \
-			    DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0_PRIORITY,	      \
+		IRQ_CONNECT(DT_INST_##n##_ATMEL_SAM0_ADC_IRQ_0,		      \
+			    DT_INST_##n##_ATMEL_SAM0_ADC_IRQ_0_PRIORITY,      \
 			    adc_sam0_isr,				      \
 			    DEVICE_GET(adc0_sam_##n),			      \
 			    0);						      \
-		irq_enable(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0);		      \
+		irq_enable(DT_INST_##n##_ATMEL_SAM0_ADC_IRQ_0);		      \
 		ADC_SAM0_CONFIGURE(n);					      \
 	}
 
-#if DT_ATMEL_SAM0_ADC_ADC_0_BASE_ADDRESS
+#if DT_INST_0_ATMEL_SAM0_ADC_BASE_ADDRESS
 ADC_SAM0_DEVICE(0);
 #endif
 
-#if DT_ATMEL_SAM0_ADC_ADC_1_BASE_ADDRESS
+#if DT_INST_1_ATMEL_SAM0_ADC_BASE_ADDRESS
 ADC_SAM0_DEVICE(1);
 #endif
