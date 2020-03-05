@@ -641,6 +641,8 @@ Libraries / Subsystems
     logging from thread context.
   * Improved notification about missing log_strdup.
 
+* mbedTLS updated to 2.16.4
+
 HALs
 ****
 
