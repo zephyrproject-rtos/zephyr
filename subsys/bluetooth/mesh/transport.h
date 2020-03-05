@@ -8,7 +8,12 @@
 
 #define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
-#define BT_MESH_TX_SDU_MAX             (CONFIG_BT_MESH_TX_SEG_MAX * 12)
+#define BT_MESH_SDU_UNSEG_MAX          11
+#define BT_MESH_CTL_SEG_SDU_MAX        8
+#define BT_MESH_APP_SEG_SDU_MAX        12
+#define BT_MESH_TX_SDU_MAX (CONFIG_BT_MESH_TX_SEG_MAX * BT_MESH_APP_SEG_SDU_MAX)
+#define BT_MESH_RX_SDU_MAX (CONFIG_BT_MESH_RX_SEG_MAX * BT_MESH_APP_SEG_SDU_MAX)
+#define BT_MESH_RX_CTL_MAX (CONFIG_BT_MESH_RX_SEG_MAX * BT_MESH_CTL_SEG_SDU_MAX)
 
 #define TRANS_SEQ_ZERO_MASK            ((u16_t)BIT_MASK(13))
 #define TRANS_CTL_OP_MASK              ((u8_t)BIT_MASK(7))
