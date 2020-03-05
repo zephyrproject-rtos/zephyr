@@ -775,7 +775,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 	irq_enable(DT_ATMEL_SAM0_I2C_SERCOM_IRQ(n, m));			\
 	} while (0)
 
-#ifdef DT_ATMEL_SAM0_I2C_0_IRQ_3
+#ifdef DT_INST_0_ATMEL_SAM0_I2C_IRQ_3
 #define I2C_SAM0_IRQ_HANDLER(n)						\
 static void i2c_sam0_irq_config_##n(struct device *dev)			\
 {									\
